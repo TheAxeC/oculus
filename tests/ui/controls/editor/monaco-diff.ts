@@ -8,7 +8,7 @@
 import { DefaultLinesDiffComputer } from 'monaco-editor/editor/common/diff/defaultLinesDiffComputer/defaultLinesDiffComputer.js';
 
 /** One line change as the diff editor answers it. */
-export type MonacoLineChange = {
+type MonacoLineChange = {
     originalStartLineNumber: number;
     originalEndLineNumber: number;
     modifiedStartLineNumber: number;
@@ -34,7 +34,7 @@ type Computer = {
 };
 
 /** The lines of a text as a Monaco model holds them: a final newline leaves an empty last line. */
-export function modelLines(text: string): string[] {
+function modelLines(text: string): string[] {
     return text.split(/\r\n|\r|\n/);
 }
 

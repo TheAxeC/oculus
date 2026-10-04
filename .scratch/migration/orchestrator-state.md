@@ -56,24 +56,9 @@ dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d,
   brief_check: none (Z401)
   review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
   shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
-  builder_usage: claude-sonnet-5-5, 296,409 tokens, 188 tool uses, 28.6 min (completion notice 2026-10-04); round 1: 306,466 tokens, 105 tool uses, 18.9 min
+  builder_usage: claude-sonnet-5-5, 296,409 tokens, 188 tool uses, 28.6 min (completion notice 2026-10-04); round 1: 306,466 tokens, 105 tool uses, 18.9 min; round 2: 292,468 tokens, 6 tool uses, 1.0 min
   landing: not-started
   round: 2 (Z414: one case of tmux.test.ts kept for tmux.ts; brief agents/briefs/T2b-round2.md)
-- step: T2c
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: ad470a4126910170d (builder, launched 2026-10-04 13:44 local)
-  worktree: .agents/worktrees/T2c
-  base: 9233df8df
-  launched: 2026-10-04 13:44 local
-  report: agents/reviews/T2c-report.md
-  brief_check: none (Z401)
-  review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
-  shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
-  builder_usage: claude-sonnet-5-5, 213,508 tokens, 60 tool uses, 7.0 min (completion notice 2026-10-04)
-  landing: not-started
-  round: 0
 - step: T2d
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -242,6 +227,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-04 15:30. T2c landed (Z414). Next: land T2a, then T2b (T2a deletes `commands-pane.test.ts`, which imports a file T2b deletes), then T2d; at each landing name the kept tests under their entries in `agents/guarded.md`; at T2d's landing keep one test per unit where two sweeps kept one, remove the entries with no test (Z403), fix `allow-duplication.txt` and the comments naming deleted tests. Then Q117 (its tests under Z415), T1a.
+  Open for Axel: none.
 - 2026-10-04 13:44. T2a to T2d build a third time, base 9233df8df, under one test per unit an entry covers (Z409). On each report: count the worktree (lines and tests deleted and left) and report it to Axel; land only after his judgement (Z408). Then the last-landing cleanup, Q117, T1a.
   Open for Axel: none.
 - 2026-10-04 13:30. The four deletion sweeps T2a to T2d are building again at once, base 56b23a9f4, under the widened list (Z405, Z406): no brief check, no reviewer, no repair round, builders run nothing. Next:

@@ -18,7 +18,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Test: none named yet.
 - G5. Hub or feed text reaches HTML only through the sanitiser.
   Code: `src/lib/ui/html.ts`.
-  Test: none named yet.
+  Test: `tests/ui/html.test.ts`, 'is the sanitiser over the inline renderer, so no field reaches a card around it'.
 - G6. A git action that can lose work or move a branch needs `confirm: true`. Each action of the `CONFIRMED` lists is a unit.
   Code: `CONFIRMED` in `src/lib/server/git/git-routes.ts` and `deposit-routes.ts`.
   Test: none named yet.
@@ -40,7 +40,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 
 - G28. An unsaved edit survives a tab switch and a reload, and closing a tab, pane or page that holds one asks first: in a form, the manifest editor, the file editor and the review comment box. Closing a Terminal tab whose terminals run asks first, and a move, a split or a reload stops none of them. A page that detaches stops the delivery and leaves the tmux session running.
   Code: `src/lib/state/forms/`, `src/lib/state/sessions/source.svelte.ts`, `src/lib/state/sources/repositories/review-comment.ts`, `src/lib/shell/panes/strip/close-question.svelte.ts`, `src/lib/state/client/context.ts`, `src/lib/state/sessions/terminal/terminal-tabs.ts`, `src/lib/server/machine/pty/channel.ts`.
-  Test: none named yet.
+  Test: close question, unsaved text: `tests/shell/panes/strip/tab-menu.test.ts`, 'asks before Close Others closes a tab holding unsaved text, naming it, and No closes nothing'; close question, a running terminal: same file, 'asks about the terminal running a program among the tabs an item closes'.
 - G33. Each git action does to the repository only what it names: stage changes only the paths named, discard reverts only the files named, a branch action moves only the branch named, a stash drop removes only the stash named.
   Code: `ACTIONS` in `src/lib/server/git/git-routes.ts` (each action but `suggest` is a unit), `git-write.ts`, `git-refs.ts`, `git-index.ts`, `git-remote.ts`.
   Test: none named yet.

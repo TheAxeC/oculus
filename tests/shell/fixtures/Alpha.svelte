@@ -1,5 +1,5 @@
 <script lang="ts">
-    // A view for tests/shell/workbench.test.ts, registered like a real one. It renders a marker and
+    // A view registered like a real one. It renders a marker and
     // the id of the instance it was mounted as, which is what the test looks for.
 
     type Props = { instance: { id: string } };
