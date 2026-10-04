@@ -1,9 +1,8 @@
 In flight:
-- T2e (the sweeps' leftovers: one test kept per unit where two sweeps kept one, and the comments naming deleted tests): next, deletion only.
+- T2e (the sweeps' leftovers and Q117's record-file refusals, Z416): building, no brief check, no reviewer, no repair round.
 
 Queued, in order (33 steps):
-- Q117 (a record file that does not read is never overwritten, G31, its tests under Z415): once T2e has landed.
-- T1a (the test tiers): once T2e and Q117 have landed; the queue below resumes after it.
+- T1a (the test tiers): once T2e has landed; the queue below resumes after it.
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - M6 (the collection forms removed): once S5 has landed.

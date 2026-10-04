@@ -1,0 +1,148 @@
+# Brief: T2e, one kept test per unit, no comment naming a deleted test, and no unreadable record file written over
+
+Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern this step unchanged. Then `tools/oculus/.scratch/migration/agents/guarded.md` in full: it is the list of the only tests that may exist. The configuration lists no other standards, and no ADR touches this step.
+
+A design ruling decides what is built. It never exempts the code: every line is written to the standards pages, so that people can read, use and maintain it.
+
+## What is on the tree (read on main at 1d88f4376)
+
+- `tests/` holds 113 test files and 18,887 lines (from `tools/oculus`: `find tests -name '*.test.ts' | wc -l`; `find tests -type f -exec cat {} + | wc -l`).
+- Every entry of `agents/guarded.md` names its tests under `Test:` (`grep -c 'none named yet' agents/guarded.md` prints 0). Four sweeps each kept tests for the entries in their own folders, so several units now hold two kept tests, one from `tests/server/` and one from `tests/routes/` (or one from `tests/state/` and one from `tests/shell/` or `tests/checks/`). The pairs are listed under "What to build" 1, each test checked to exist at its file and title.
+- The rule (ruling Z409, `agents/spec.md:57`): an entry keeps one test per unit it covers, a unit being each API route, write kind, config reader, parser, client store or other file its text and its Code line name, and each part where its text names several behaviours.
+- 28 lines of comments and of `DESIGN.md` name a test file that no longer exists. Found from `tools/oculus` by grepping every `tests/...test.ts` path in `src`, `tests`, `utils`, `DESIGN.md`, `README.md` and `docs` and keeping those whose file is missing; the list is under "What to build" 3. A search for shorter paths (`<folder>/<name>.test.ts` without `tests/`) whose file is missing found none.
+- Four comments in `src/lib/server/git/` say a test asserts a gate that no test asserts: `git-write.ts:3-5` (that `tests/server/git/git-write.test.ts` enumerates the subcommands, asserts each call site and watches every argument vector), `git-write.ts:306-308` (that the gate in that file asserts the force option appears nowhere), `git-message.ts:11-13` (that `git-write.test.ts` exercises this module), `deposit-git.ts:16-19` (that `git-write.test.ts` asserts the force option appears nowhere, and that `tests/server/git/deposit.test.ts` asserts the count of `forcePushSnapshot`). `grep -rln "forcePushSnapshot\|writing subcommand" tests` prints nothing, and `grep -n "force" tests/server/git/git-write.test.ts` prints only an `rmSync` option.
+- `tests/checks/tree/allow-duplication.txt` is read by the G21 check; a line naming a file this step deletes, or a clone this step ends, fails it.
+- `vite.config.ts` includes every `tests/**/*.test.ts`; `utils/diagrams/source.mjs:12` and `:15` read `tests/checks/tree/boundaries.test.ts` and `tests/checks/imports/order.ts`.
+- The shell is zsh: an unquoted variable is not split into words.
+- Q117's work is part of this step (ruling Z416). The saved commands file already refuses a save over a file that does not read: `src/lib/server/machine/commands/saved.ts:33-46` (`load` answers `{ ok: false, reason: 'is not JSON' | 'cannot be read' | ... }`) and `:77-80` (`refusal(file, reason)` answers `commands.json <reason>: <file>`), used at `:100-101` and `:129-130`; `src/lib/server/machine/approvals/approvals.ts` does the same.
+- The workspaces file does not: `readSaved` (`src/lib/server/files/fs.ts:193-229`) reads a missing, corrupt or wrongly shaped file as nothing saved, and `written` (`:488-492`) then writes the whole file through `writeSaved` (`:229`), so an add-root, remove-root, save-workspace or select-workspace over a corrupt file replaces it with one workspace.
+- The session overrides file does not: `setFlag` (`src/lib/server/sessions/overrides.ts:93-114`) and `setOverride` (`:140-192`) read it with `readJson` (`src/lib/server/core/json.ts:29-35`, which answers `null` for a missing file and for one that is not JSON alike) and write it whole with `writeJsonAtomic`.
+- The saved layout does not: `loadLayout` (`src/lib/state/workbench/layout.svelte.ts:388` on) falls back to the default when `parseLayout` (`src/lib/state/workbench/layout/saved/saved.ts:496`) answers `null`, and the next change writes the default over `LAYOUT_KEY` (`src/lib/state/workbench/layout/saved/storage.ts:19`, `write` at `:83-91`).
+- The bookmarks file: `readBookmarks` (`src/lib/server/files/fs/bookmarks.ts:135-151`) reads an unparseable file as no bookmarks; it is written through the collection writer (`src/lib/server/edit/writes/entries.ts:40` and `:71`, `ensureBookmarksFile` at `bookmarks.ts:65-68` only when the file is missing). Whether that writer writes over an unparseable file is not checked here; item 10 checks it.
+- No ADR folder exists, so no ADR touches the step.
+
+## What to build
+
+1. Delete the second test of each pair below, the test named "delete". Where the deleted test is the last test in its file, delete the file. Delete with it every helper function, constant, import and fixture export that only it used, and a helper file that nothing left imports (`grep -rl` over `tests/`, `utils/`, `src/`, `bin/`, `vite.config.ts`, `package.json`). Paths are under `tools/oculus/tests/`.
+
+   | Entry, unit | Keep | Delete |
+   | --- | --- | --- |
+   | G1, the write route | `routes/edit/write.test.ts` 'refuses a request with no token' | `server/core/auth.test.ts` 'refuses a write that carries no token' |
+   | G1, the ops route | `server/files/ops.test.ts` 'refuses a request without the token, and one that is no operation (case 25)' | `routes/replace/preview.test.ts` 'refuses a preview posted without the write token and reads nothing' |
+   | G2, the fs route | `server/files/fs.test.ts` 'refuses a path that leaves the root, a root nothing names, and a file' | `routes/files/fs.test.ts` 'answers the config folder of the engine under the engine root, and nothing above it' |
+   | G2, the ops route | `server/files/ops.test.ts` 'refuses a path that climbs out, a root not served and an empty root key (case 5)' | `routes/replace/ops-replace.test.ts` 'refuses `binary`, `missing` and `outside` by file' |
+   | G2, the search route | `server/files/search.test.ts` 'refuses a root outside the served list before any process starts' | `data/helpers/search.test.ts` 'answers a plan with the refusal for a folder that climbs out' |
+   | G7, the commands route | `server/machine/commands/placeholders.test.ts` 'creates nothing, for each line, each selection and each shell' | `routes/machine/commands.test.ts` 'saves a line that writes a placeholder inside quotes, after a backslash or in a comment' |
+   | G7, the hpc route | `server/machine/hpc/actions.test.ts` 'accepts only the decided id shape and safe absolute paths' | `routes/machine/hpc.test.ts` 'returns 400 for a bad body or id' |
+   | G7, the open route | `routes/files/open-program.test.ts` 'names the application for a file and reveals a folder, the path last' | `server/files/open-bin.test.ts` 'refuses anything but an https address, and runs no program for it' |
+   | G8, a manifest field | `server/edit/writes.test.ts` 'writes the changed field and nothing else' | `routes/edit/write.test.ts` 'writes the field and says what changed' |
+   | G8, the deck lists | `server/edit/deck-edit.test.ts` 'replaces a list in place and keeps every comment around it' | `routes/edit/write.test.ts` 'writes both lists into the deck file and keeps every other byte of it' |
+   | G8, a session override | `server/sessions/overrides.test.ts` 'keeps the keys it was not given, and the entries of other sessions' | `routes/edit/write.test.ts` 'pins a session to the top of its group through the route, and takes it off' |
+   | G8, a config key | `server/edit/config-key.test.ts` 'replaces the value and keeps every other byte, the comment on its line included' | `routes/edit/config-key.test.ts` 'answers what changed, writes the file and records the change as a setting' |
+   | G8, a config value | `server/edit/config-value.test.ts` 'adds one item, removes one and swaps two, and keeps every other line' | `routes/edit/config-value.test.ts` 'answers what changed, writes the file and records the change as a setting' |
+   | G8, the stale base | `server/edit/config-value.test.ts` 'refuses a base the file no longer holds, with the sentence that it changed since it was read' | `routes/edit/config-value.test.ts` 'refuses the second of two writes of one key made at once with the same base' |
+   | G9, the undo of a clear | `routes/edit/undo/undo.test.ts` (its cases stay) | `server/edit/yaml/yaml-edit-removed.test.ts` 'gives back every shape a clear takes text out in' |
+   | G9, a save cut short | `routes/files/source.test.ts` 'replaces the complete file through a temporary neighbour and atomic rename' | `server/core/json.test.ts` 'is left as it was, the old content with it, by a write under a file' |
+   | G12, the rail list of `layout.yml` | `checks/config/config.test.ts` (held whole) | `state/workbench/navigation/rail.test.ts` 'finds nothing wrong with the shipped rail list' |
+   | G28, closing a tab with unsaved text | `shell/panes/strip/tab-menu.test.ts` 'asks before Close Others closes a tab holding unsaved text, naming it, and No closes nothing' | `state/workbench/navigation/pages.test.ts` 'keeps the unsaved question for one tab holding unsaved text' |
+   | G28, closing a tab with a running terminal | `shell/panes/strip/tab-menu.test.ts` 'asks about the terminal running a program among the tabs an item closes' | `state/workbench/navigation/pages.test.ts` 'asks the busy question over one tab, naming the terminal and its program' |
+   | G31, the approvals file | `server/machine/approvals/approvals.test.ts` 'reads a file that is not JSON as empty and refuses a write over it, leaving it' | `routes/machine/commands.test.ts` 'answers the reason when the approvals file cannot be written over' |
+   | G33, the eleven plain actions | `server/git/git-ops.test.ts` and `server/git/git-write.test.ts`, one case each | `routes/git/git.test.ts` 'takes each plain action with no confirm' |
+   | G33, stage | `server/git/git-write.test.ts` 'stages a path, takes it back out, and leaves the worktree alone' | `routes/git/git.test.ts` 'takes a stage, which needs no confirm' |
+   | G33, commit | `server/git/git-write.test.ts` 'commits a multi-line message holding quotes and backticks' | `routes/git/git.test.ts` 'takes a commit that the page confirmed' |
+   | G33, checkoutDetached | `server/git/refs/detached.test.ts` 'detaches HEAD at a hash on a clean tree' | `routes/git/refs.test.ts` 'detaches HEAD at a confirmed hash' |
+   | G33, createBranch | `server/git/git-write.test.ts` 'creates one and checks it out' | `routes/git/refs.test.ts` 'makes a branch and a tag at the start point the body names' |
+   | G33, cherryPick and deleteBranch | `server/git/refs/cherry-pick.test.ts` 'makes a new commit on the checked-out branch with the commit message', `server/git/refs/delete-branch.test.ts` 'deletes a branch that is merged' | `routes/git/refs.test.ts` 'cherry-picks a confirmed commit and deletes a confirmed merged branch' |
+   | G33, deleteBranchAnyway | `server/git/refs/delete-branch.test.ts` 'deletes a branch git calls not fully merged on Delete Anyway' | `routes/git/refs.test.ts` 'answers a branch git calls unmerged with the code not-merged, and deletes it on Delete Anyway' |
+   | G33, trashUntracked | `server/git/untracked/trash.test.ts` 'moves an untracked file to the Trash by its real path' | `routes/git/untracked.test.ts` 'moves a confirmed untracked file to the Trash' |
+   | G33, ignore | `server/git/untracked/ignore.test.ts` 'appends a path relative to the root, made when the file is missing' | `routes/git/untracked.test.ts` 'appends the path without a confirm and answers the file it wrote' |
+   | G35, start | `routes/sessions/terminal.test.ts` 'lists a terminal immediately after POST starts it' | `server/machine/pty/sessions.test.ts` 'refuses a cwd that is not an absolute existing directory' |
+   | G35, stop | `server/machine/pty/sessions.test.ts` 'starts, lists, feeds, resizes, captures and stops a terminal' | `routes/sessions/terminal.test.ts` 'refuses the stop and the resize with a reason, and runs no tmux command' |
+   | G35, steer and interrupt | `routes/sessions/compose.test.ts` 'types the message as its UTF-8 bytes in hex, then Enter', 'interrupts with Escape, and refuses a session oculus did not start' | `server/machine/pty/sessions.test.ts` 'steers with the text as bytes, then Enter, and interrupts with Escape' |
+   | G35, resume | `routes/sessions/terminal.test.ts` 'starts the terminal in the record cwd, with the tool resume command and the title' | `server/machine/pty/sessions.test.ts` 'starts a resumed terminal in the session directory, with the resume as its command' |
+   | G35, compose | `routes/sessions/compose.test.ts` 'starts the agent with its picks and the prompt as one argument, in the workspace' | `server/machine/pty/compose.test.ts` 'runs the agent with its picks, `--` and the prompt as one last word' |
+
+   Every other kept test stays, including the pairs that are two different units: the terminal route's token check (`routes/sessions/terminal.test.ts`) and the terminal socket's (`server/machine/pty/channel.test.ts`); the hpc route (`routes/machine/hpc.test.ts` 'dispatches refresh, cancel, and log') and `actions.ts` (`server/machine/hpc/actions.test.ts`) under G34; the log of each write (`server/core/changes.test.ts`) and its undo (`routes/edit/undo/undo.test.ts`) under G9; the route table 'refuses each asking action unconfirmed, and takes it confirmed with its fields' in `routes/git/git.test.ts`, which is G6's.
+2. In each file that keeps tests, delete the import names, helpers and fixture lines only the deleted tests used, and the words of a head or case comment that describe a deleted test. A file whose last test is deleted goes whole.
+3. Delete the words of each comment and `DESIGN.md` sentence that name a test file that no longer exists, adding no word; a sentence that says only that is deleted whole, and a comment left empty goes with its comment markers. The lines, as on main at the base (paths under `tools/oculus/`):
+   - `DESIGN.md:181` (`tests/checks/diagrams/readable.test.ts`), `:223` (`tests/checks/look/lane-distance.test.ts`, `tests/views/whole/type-scale.test.ts`), `:227` (`tests/views/whole/chips.test.ts`), `:425` (`tests/checks/look/lane-distance.test.ts`).
+   - `src/lib/data/sources/config/catalog/options.ts:54`, `src/lib/server/core/git/compare.ts:6`, `src/lib/server/core/git/run.ts:62` and `:67`, `src/lib/server/root/hooks.ts:63`, `src/lib/state/life/present.ts:10`, `src/lib/state/sessions/changes.svelte.ts:62`, `src/lib/state/sessions/transcript.svelte.ts:225`, `src/lib/state/shared/words/text.ts:47`, `src/lib/state/shared/words/tones.ts:5`, `src/lib/state/system/config/config-files.ts:13`, `src/lib/state/system/deposit.svelte.ts:134`, `src/lib/state/workbench/navigation/registry.ts:13` and `:102`, `src/lib/themes/derive.ts:65`, `src/lib/ui/controls/editor/kit/colours.ts:12`, `src/lib/ui/tabs/TabFace.svelte:70`.
+   - `tests/data/sources/personal.test.ts:9` and `:11`, `tests/routes/edit/config-value.test.ts:8`, `tests/routes/machine/commands.test.ts:7`, `tests/server/machine/commands/run.test.ts:7`, `tests/state/sources/repositories/diff/comment-draft.client.test.ts:7`.
+   - The four comments of `src/lib/server/git/` named under "What is on the tree": delete the clauses that say a test asserts the subcommand list, the call sites, the argument vectors, the force option or the `forcePushSnapshot` count, and the clause that `git-write.test.ts` exercises `git-message.ts`. What the code itself does (the push never forces, the snapshot mode forces at one call site) stays.
+   - After this step's own deletions, run the same search again (item 6) and treat each new hit the same way.
+4. `tests/checks/tree/allow-duplication.txt`: delete each line that names a file this step deletes, and each line whose clone the duplication check reports as no longer shared. Change no other line, and add none.
+5. Items 1 to 4 are deletion only: no folding, retitling, moving, tagging, rewriting or new test, no edit of an assertion. Items 7 to 11 are the only code and the only new tests of the step. Where removing a deleted test leaves a tool error that only a word change fixes (a `let` nothing reassigns any more, which lint wants as `const`; a type annotation whose other branch nothing sets), make that change and list it in the report.
+6. Run the verify list once, after your last change of items 1 to 11 (item "Verify before you report"), and the two searches: from `tools/oculus`, every `tests/...test.ts` path named in `src`, `tests`, `utils`, `DESIGN.md`, `README.md` and `docs` exists, and `grep -rn "git-write.test.ts" src` prints no line that says the file asserts something it does not.
+
+7. The workspaces file (`src/lib/server/files/fs.ts`): a write over a file that exists and does not read (not JSON, or not the shape `savedFileShape` reads) is refused, the file left byte for byte as it was, with the reason in the shape the saved commands file answers (`<file name> <reason>: <path>`, reasons `is not JSON`, `cannot be read`, `is not the shape`, as `saved.ts` words them), and the route answers it as the other refusals of POST /api/fs are answered. A missing file still reads as nothing saved and is written. The GET keeps reading a broken file as nothing saved.
+8. The session overrides file (`src/lib/server/sessions/overrides.ts`): `setFlag` and `setOverride` refuse a write over a file that exists and is not JSON or not a map, the file left as it was, with the reason in the same shape; a missing file is still written. `overrides()` and `hiddenIds()` keep reading a broken file as none.
+9. The saved layout (`src/lib/state/workbench/layout.svelte.ts`, `saved/storage.ts`): when `LAYOUT_KEY` holds a value that `parseLayout` answers `null` for, `loadLayout` copies that value under a key of its own, `oculus.layout.unread`, before anything writes `LAYOUT_KEY`, and then falls back to the default as it does now. A later unreadable value replaces the copy. Nothing else changes.
+10. The bookmarks file: read the collection writer's path for the bookmarks key (`entries.ts`) and say in the report, with the lines, whether a write over a file that exists and does not parse as YAML is refused or overwrites it. When it overwrites, make it refuse in the same way as item 7. When it already refuses, change nothing and name the test that shows it, if one exists.
+11. Tests (ruling Z415): one test per file items 7 to 10 change, each a table where the file has several outcomes: the unreadable file refused and left byte-identical, the missing file written; for the layout, the unreadable value found under `oculus.layout.unread` after a load and a change. Each fails on the unchanged tree, and the report quotes that failure. Put each next to the kept tests of its module (`tests/server/files/`, `tests/server/sessions/`, `tests/state/workbench/layout/saved/`).
+
+## Cases
+
+- `routes/git/refs.test.ts`: all four of its cases are in the delete column, so the file goes, and `routes/git/request.ts` stays only if a kept file still imports it.
+- `routes/edit/write.test.ts`: three cases deleted; 'refuses a request with no token' stays, with the helpers it uses.
+- `server/machine/pty/compose.test.ts`: its one case deleted, the file goes.
+- `server/core/json.test.ts` and `server/edit/yaml/yaml-edit-removed.test.ts`: each loses its one kept case and goes.
+- `server/machine/pty/sessions.test.ts`: three cases deleted; 'starts, lists, feeds, resizes, captures and stops a terminal' stays with `tmux-server.ts`.
+- `routes/git/git.test.ts`: the table 'takes each plain action with no confirm' and two single cases deleted; 'refuses a request with no token', the G6 table, 'refuses a commit that the page did not confirm' and 'asks for the confirm of an action whose confirm is not the boolean true' stay.
+- `DESIGN.md:223`, a sentence naming two deleted test files among other words: the two names and the words that only introduce them go, the rest of the sentence stays.
+- `src/lib/server/git/git-write.ts:306-308`: "This push never forces" stays; the clause about the gate in the test goes.
+- A kept file whose head comment names a case this step deletes: those words go.
+- A helper file used by a kept file outside the deleted tests: kept.
+- The workspaces file holding `{not json`: an add-root is refused with `workspaces.json is not JSON: <path>` (or the file's own name), and the file still holds `{not json`. A missing workspaces file: an add-root writes it.
+- The overrides file holding `[]`: a pin is refused with the reason `is not the shape`, the file still `[]`. A missing overrides file: a pin writes it.
+- `localStorage` holding `oculus.layout.v1` = `garbage`: after `loadLayout` and one change, `oculus.layout.v1` holds the default's serialisation and `oculus.layout.unread` holds `garbage`.
+- `localStorage` holding no `oculus.layout.v1`: `loadLayout` writes no `oculus.layout.unread`.
+
+The builder's first task, before any change, is the first read of every case above on the unchanged tree, with each case's result noted. The deletion cases are read, not tested. The cases of items 7 to 10 become the tests of item 11.
+
+When the first read finds a case the brief's own rules get wrong, the builder stops there, before changing anything, and hands back the first read and that case, with the rule and the result it gives. The orchestrator rules on the case and resumes the builder with the ruling, and the final report carries it.
+
+## Paths this step writes
+
+- `tools/oculus/tests/`
+- `tools/oculus/src/` (comment lines of "What to build" 3; the code of items 7 to 10 in `src/lib/server/files/fs.ts`, `src/lib/server/sessions/overrides.ts`, `src/lib/state/workbench/layout.svelte.ts`, `src/lib/state/workbench/layout/saved/storage.ts`, and the bookmarks write path when item 10 changes it)
+- `tools/oculus/DESIGN.md` lines 181, 223, 227, 425
+- `tools/oculus/.scratch/migration/agents/reviews/T2e-report.md`
+
+The step writes these paths and nothing else. `agents/guarded.md` is the orchestrator's: the report gives, per entry, the tests deleted, and the orchestrator removes them from the list at landing.
+
+## Decisions taken in this brief (each reversible, none silent)
+
+1. Which test of a pair stays: the one whose unit is the file or route the entry's text and Code line name, and, when both are, the one that asserts the entry's words (the bytes kept, the refusal, the repository state) rather than only a status code or a stub's argument. Five cases from the table under this rule: G33 createBranch keeps the real-repository `git-write.test.ts` case over the route case (both real repositories; the entry's Code line names `git-write.ts`, not the route); G8 a config key keeps the server case that asserts every other byte over the route case that asserts the answer and the log; G35 start keeps the route case, since G35's units are the operations of `routes.ts`, over `sessions.test.ts`'s refusal; G7 the open route keeps `open-program.test.ts`, which asserts the path is passed as the last argument (G7's words), over `open-bin.test.ts`, which asserts a scheme refusal; G9 a save cut short keeps the file-save case of `source.test.ts` (G9's text names the file save) over the generic atomic writer of `json.test.ts`.
+2. The kept-aside layout key is `oculus.layout.unread`, beside `oculus.layout.v1` and `oculus.layout.previous`: an internal storage key no reader sees. The refusal sentences reuse the saved commands file's shape, so no new wording reaches the page.
+3. The stale comment search covers `src`, `tests`, `utils`, `DESIGN.md`, `README.md` and `docs`; the plan's ledger files are history and are not edited.
+
+## Libraries checked
+
+The deletions build nothing. Items 7 to 10 add a read-before-write check to three files that the repository already does by hand in `saved.ts` and `approvals.ts`; the project's JSON and YAML readers (`JSON.parse`, the `yaml` package) and zod are already dependencies, so no new library was looked for. The builder adds no dependency.
+
+## Read, with sections or line ranges
+
+1. `tools/oculus/.scratch/migration/agents/spec.md` whole: the rules.
+2. `tools/oculus/.scratch/migration/agents/guarded.md` whole: the entries, their units and the tests named under them.
+3. Each file of the table and of "What to build" 3, whole, before cutting it.
+
+## What it must do
+
+Delete exactly the tests, files, helpers, comment words and allow-list lines that items 1 to 4 name, leave every other kept test as it is, make the refusals and the kept-aside layout value of items 7 to 10 with the tests of item 11, each seen failing on the unchanged tree, and leave the verify list green. No brief check, no reviewer and no repair round run on this step (ruling Z416): what the report leaves wrong is fixed at landing.
+
+## Conventions
+
+Follow `saved.ts`'s `load` and `refusal` for the shape of items 7, 8 and 10. Delete each file by its explicit path; never pass a list of paths to `rm` through a shell variable. Before each `rm`, print the paths it will remove and check that no kept file is among them. Run no git command. ASCII only. Comment lines stay within 100 columns; a paragraph that lost words is re-wrapped as prettier and the comment-width check want it, adding no word.
+
+## Verify before you report
+
+Run from `tools/oculus` in the worktree, each must hold:
+
+1. The plan's verify list, run as `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` (after `npm run diagrams`), prints `$ <command>` and the output of each command, then `checks: 7 commands passed`, and exits 0; the lines it prints are what the report quotes.
+2. Every test the table's "Keep" column names exists at its file and title (`grep -F` of each title in its file prints one line), and every test the "Delete" column names does not.
+3. The searches of "What to build" 6 print nothing.
+4. Each test of item 11 fails on the unchanged tree (the report quotes the failure) and passes after the change.
+
+## Report
+
+Write it to `tools/oculus/.scratch/migration/agents/reviews/T2e-report.md` in the worktree. First line: anything NOT done, or "Everything in the brief is done". Then the open items of the state file, verbatim (none). Then the cases' first read. Then the DONE / NOT DONE table with the checks above and their output verbatim. Then, per entry, the tests deleted; for items 7 to 10, each file changed with its diff summary, item 10's finding with its lines, and each new test with its failing run on the unchanged tree; the files deleted; the helpers and imports deleted; each comment line changed with its text before and after; each `allow-duplication.txt` line deleted; every change that is not a deletion with its reason; the counts of `tests/` before and after (test files, lines, `it`/`test` calls); and anything in the brief that was wrong or impossible, with the evidence.
