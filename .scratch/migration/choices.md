@@ -38,6 +38,15 @@ The question: Five defects X3e holds out because no read-only look found their c
 
 Where it is built: X3e's brief, section G. Booked in `plan.md` Rulings.
 
+## Z444 (2026-10-05, step D42)
+
+The question: Four details of D42's Timeline that no ruling names: a malformed paging cursor, a pinned file that goes, the Load more row while a page is read, and Open Timeline for a root the workspace lacks.
+
+- Chosen: (a) as the brief's Decisions 9 to 12 take them: a `before` that is no hash is refused with a 400 and the commits failure line drawn, never read as the first page (which would draw the first page twice); a deleted or renamed pinned file keeps the Timeline on its path, and a pin whose root leaves the workspace is dropped; the Load more row says `files.timeline_reading` while its page is read, as VS Code's says Loading; Open Timeline for a root the workspace lacks says the outcome line, opens the section and scrolls nothing.
+- Not chosen: (b) a malformed cursor read as the first page, a pin dropped on any change of the file, and no reading word (the lazy one).
+
+Where it is built: D42's brief, Decisions 9 to 12. Booked in `plan.md` Rulings.
+
 ## Z442 (2026-10-05, step X3e)
 
 The question: The write-token sentence of `server/core/auth.ts:97` is answered by every route, so capitalising it changes routes outside git.

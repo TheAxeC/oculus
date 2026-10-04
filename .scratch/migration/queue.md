@@ -3,7 +3,7 @@ In flight:
 - D37 (the Search view's replace and the LaTeX build and view): building.
 - S5 (the Settings view's controls and headings): building.
 - H3 (the hub's data map): prepared, worktree being made, builder next.
-- D42 (a file's history): brief check in, findings being closed.
+- D42 (a file's history): prepared, worktree being made, builder next.
 - X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): brief written, brief check running.
 - D11 (the debug client for rite): brief being written.
 
