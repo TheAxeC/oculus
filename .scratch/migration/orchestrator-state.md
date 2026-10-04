@@ -181,8 +181,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-04 11:58. T1d stopped by Axel's ruling (Z390) and its worktree, branch and base copy removed; nothing in flight. Axel ruled that T1's sweeps cut far too little (13% of test cases) and that the cut must be deletion only and done by 18:00 tonight. Next:
-  1. Axel's rulings on the rest of the proposal of 11:53: the keep rule (delete unless the only test of a listed failure, at the highest level), the ceiling (about 1,500 cases), deletion only, four builders with a two-hour limit and a review of the kept list, T1a after the cut. Nothing is prepared before he rules.
-  2. The fixture exports left unused are removed in the deletion sweep.
+- 2026-10-04. The closed list of guarantees is in force (Z392 to Z396): `agents/guarded.md` with G1 to G15, `agents/spec.md:57`, `:62`, `:63`, `:67` rewritten, the pinned `spec` and `refute` skills ask a test only under the rules file's test rule. Nothing in flight. Next:
+  1. `/spec` T2a (`state/`), T2b (`server/`) and T2c (`views/`, `shell/`, `ui/`, `themes/`), then their builders at once; T2d (`routes/`, `data/`, `checks/`, `fixtures/`) once Axel has ruled which tree checks become entries.
+  2. T1a after the four deletion sweeps.
   3. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
-  Open for Axel: the deletion sweep's rule, ceiling and schedule (proposal of 11:53, items 2 to 6).
+  Open for Axel: which tree checks under `tests/checks/` become entries of `agents/guarded.md` (Z395).
