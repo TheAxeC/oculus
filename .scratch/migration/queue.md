@@ -3,8 +3,8 @@ In flight:
 - X3f (opening a file row, and the tab row's actions): failures being diagnosed.
 - D37 (the Search view's replace and the LaTeX build): repair round 1 under review.
 - S5 (the Settings view's controls and headings): building.
-- H3 (the hub's data map): repair round 1 built, its review next.
-- D42 (a file's history): repair round 1 written, not yet sent.
+- H3 (the hub's data map): repair round 1 under review.
+- D42 (a file's history): repair round 1 building.
 
 Queued, in order (27 steps):
 - D11 (the debug client for rite): brief ready; once S5 and H3 have landed.
