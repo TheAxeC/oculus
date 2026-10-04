@@ -1126,6 +1126,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z417 (2026-10-04): T1a's quick list holds what the plan names within 30 s measured under Z370's load (four full `npm test` runs looping); the 30 s and the load are not reopened, and the work of T1a is to make the list fit them; the slow placeholders case is fixed without raising any timeout (the user).
 - Z418 (2026-10-04): X3c's item 12 is short on a landed tree, from Axel's report: a double click on a file opens nothing, the strip's file actions show on some files and not others, and Open Preview on a Markdown file opens the source; a new step X3f fixes the three, queued first after T1a (the orchestrator, automode).
 - Z419 (2026-10-04): T1a's builder runs no command of the verify list and no test, as T1a's line states; the orchestrator does not land T1a: when the builder finishes, the orchestrator runs the tests and reports to the user, and does nothing else; T1a and all other test work run outside normal orchestration, as the user directs (the user).
+- Z420 (2026-10-04): Z417's "no timeout is raised" is lifted for the slow tier only: `npm run test:slow` runs with a 20 s test timeout, so the landing list can run its parts at the same time; `npm test` and the quick list keep vitest's 5 s. Option (b), raising it everywhere, was the lazy one (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
