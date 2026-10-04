@@ -181,9 +181,9 @@ Each finding with the change to `agents/briefs/X3f.md` that closes it.
 - Premises, `pressing.ts:56`: corrected to :51.
 - Premises, the (A) cause's code path: rewritten to `openOpened` and `landingFor` (`landing.ts:54-57`); decision 1 rewritten.
 - Premises, decision 3's "the one folder with room": rewritten; the folder counts are listed.
-- Premises, G12 missed: the tests premise names G12, and `npm run test:checks` is in the verify list.
+- Premises, G12 missed: the tests premise names G12, and verify 2 runs `tests/checks/config/config.test.ts`.
 - Premises, item 3's `fileVersion`: item 3 reads through `fs.fileText`, which a source save marks; a premise records both reads; decision 2 rewritten.
-- Cases and checks, the view boundary: item 2 puts the component under `views/shared/links/` only, item 3 the rendering under `views/shared/prose/`; a premise states the boundary; `npm run test:checks` runs it.
+- Cases and checks, the view boundary: item 2 puts the component under `views/shared/links/` only, item 3 the rendering under `views/shared/prose/`; a premise states the boundary; verify 2 runs `tests/checks/tree/boundaries.test.ts`.
 - Cases and checks, cases 5 and 6 against the window listener: item 1 is now a layer over the pane body, which a press into a frame meets first; cases 5 and 6 name the frame.
 - Cases and checks, case 24 against `fileVersion`: closed by item 3's `fs.fileText`.
 - Cases and checks, case 11's wording: rewritten to the disarmed keep.
@@ -192,5 +192,5 @@ Each finding with the change to `agents/briefs/X3f.md` that closes it.
 - The question, item 2 and the retarget teardown: item 2 makes `TabActions.clear` take the snippet it clears; a premise states the order; case 28.
 - The question, item 3's re-read signal: closed as above.
 - The question, cases 8, 11 and 12 to 17 passing without the goal: case 8 rewritten (Files beside the editors, no layer there), case 11 rewritten, case 28 walks a preview tab across views.
-- The question, verify 1 and 4: `npm run test:checks` added; verify 4 says it shows wiring only and names the cases that show behaviour.
+- The question, verify 1 and 4: verify 2 runs the boundary, config and text-key checks; verify 4 says it shows wiring only and names the cases that show behaviour.
 - Implied inputs: cases 28 to 37 add the retarget, two panes, a float, the Monaco selection, the interval, a removed file, a symlink and a name with a space or `#`, the rename, the empty saved state and a read out at close; the 500 ms interval is decision 1's and item 1's named constant.

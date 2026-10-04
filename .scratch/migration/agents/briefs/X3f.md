@@ -31,7 +31,7 @@ Paths are under `tools/oculus/` in the worktree `.agents/worktrees/X3f`. The bas
 - The text a source save changes is read again already: `fs.fileText(root, path)` (`state/sources/fs.svelte.ts:497`) holds the query `['fs','text',root,key]`, which `fs.markText` marks on every source save (`state/client/context.ts:329-331`), and reads through `readText` with `cache: 'no-cache'`. `fs.fileVersion` moves only on a PDF rebuild (`fs.bump`'s one caller is `state/sessions/latex.svelte.ts:506`), and nothing polls the disk (`fs.svelte.ts:12-19`).
 - A rename or move restates the open file tabs through `followedFileTab` (`state/sources/explorer/follow.ts:110`), which knows `source`, `file` and `document` only.
 - A preview tab walked by single presses keeps its instance id and changes its view (`retarget`, `layout/open/preview.ts`; `PaneBody.svelte:113` keys each view by `instance.id`), so the new view's component is made before the old one is destroyed: a view whose cleanup calls `TabActions.clear(id)` (`ui/tabs/tab-actions.svelte.ts:25`) deletes the controls the new view just set.
-- Tests: `grep -n -i "preview\|tab-actions\|row-menu\|opening" agents/guarded.md` names no entry over this step's behaviours, so this step writes no test, and each behaviour is proved at the look. G12 (`agents/guarded.md:68-69`, every shipped config file reads with no finding) covers the `config/text/` files this step writes, so its test runs with the tree checks (`npm run test:checks`, which also holds the boundary check and the text-key check).
+- Tests: `grep -n -i "preview\|tab-actions\|row-menu\|opening" agents/guarded.md` names no entry over this step's behaviours, so this step writes no test, and each behaviour is proved at the look. G12 (`agents/guarded.md:68-69`, every shipped config file reads with no finding) covers the `config/text/` files this step writes, so its test runs (verify 2), with the boundary check and the text-key check.
 - No ADR folder exists (`ls docs/adr tools/oculus/docs/adr`: no such file or directory), so no ADR touches this step.
 
 ## What to build
@@ -157,7 +157,7 @@ On top of `agents/spec.md`: every string from `config/text/` through `t()`; ever
 Run from `tools/oculus` in the worktree:
 
 1. `npm run test:quick` once, after the last change, with `npm run diagrams` right before it; it prints each command and `test:quick: <seconds> s (limit 45.0 s); every command passed`. The report quotes its final lines.
-2. `npm run test:checks` once, after the last change; it ends with every file passed (the boundary check, the text-key check and G12's `tests/checks/config/config.test.ts` among them). The report quotes its final lines.
+2. The tree checks that cover what this step changes, as spec.md's rule on test files allows: `npx vitest run tests/checks/tree/boundaries.test.ts tests/checks/config/config.test.ts` `tests/checks/source/keys.test.ts`, after the last change; the report quotes their final lines. The whole tree-check list runs on main at landing.
 2b. The ASCII gate of `agents/spec.md` over every file you touched prints nothing.
 3. `sh utils/unused-exports.sh`, compared with `.agents/worktrees/X3f-base/unused-exports.txt`: each added line quoted with what was done to it.
 4. `grep -rn "useTabActions()" src/lib` names `Source.svelte`, `File.svelte`, `Document.svelte`, `Doc.svelte` and `MarkdownPreview.svelte` (or the shared component they use); this shows the wiring only, and cases 18, 28 and 29 at the look show the behaviour.

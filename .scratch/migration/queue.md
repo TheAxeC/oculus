@@ -1,9 +1,8 @@
 In flight:
-- None.
+- X3f (a file tab's actions on every file tab, double click and Open Preview): builder launched 2026-10-04 23:57, base 9c7070289.
 
 Queued, in order (33 steps):
-- X3f (a file tab's actions on every file tab, double click and Open Preview): first.
-- S5 (the Settings view's controls and headings): once a slot is free (seven in flight, Z423).
+- S5 (the Settings view's controls and headings): next; its headings ruled (Z426), /spec again.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once a slot is free (seven in flight, Z423).
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.

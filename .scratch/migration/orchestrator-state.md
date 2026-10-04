@@ -24,7 +24,19 @@ workers_at_once: 7           # Axel, 2026-10-04 (Z423): seven, on trial for some
 ```
 
 ```yaml
-dispatch: none
+dispatch:   # steps in flight, up to seven (Z423)
+- step: X3f
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: abb2cc439fd4f1181 (builder, launched 2026-10-04 23:57 local)
+  worktree: .agents/worktrees/X3f
+  base: 9c7070289
+  launched: 2026-10-04 23:57 local
+  report: agents/reviews/X3f-report.md
+  brief_check: agents/reviews/X3f-brief-check.md, claude-opus-5-5, 220,933 tokens, 70 tool uses, 10.3 min
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -32,6 +44,7 @@ dispatch: none
 - Talk to Axel as an expert colleague (Axel, 2026-10-02, ruling Z266, rewritten at his word 13:20): Axel is an expert engineer and scientist, and every message is written to him as to a peer: plain, precise and complete, never simplified as for a child and never clipped to a status line. A step is always named by its id and what it is ("D25, the editor options step"), never by a bare id and never by a vague pointer such as "the new step" or "the source editor step". A ruling number (Z...) is not used in a message to him; the ruling is described in words. Ledger text is never quoted at him. He gets exactly the questions he asked, as many as he asked, in his order, each answered in full. Every decision that is his is presented as the hub rules require: an open item, written first, with each option, the pros and cons of each, one recommendation with its reason, and which option is the lazy one. A choice the orchestrator took in automode is told as such, with what it is and the step it went into. Nothing he did not ask for: no corrections that do not change what he would do next, no process narration, no meta paragraphs, no closing remarks, no passive-aggressive or defensive phrasing.
 - Every builder prompt restates `agents/spec.md:25` (scoped test files while working; the full verify list once, after the last change; a failed command rerun alone, then the full list once more) and asks the report for the number of full-list runs; each landing report states that number. Builders ran the full list 6 to 18 times a step before this (Q88b 18 runs, 38.6 min; Q107 17, 55.3 min), counted from their transcripts.
 - Skills are never edited, ever (Axel, 2026-10-01): the orchestrator, its agents and every session of this plan never change a skill or any file of one (`~/.claude/skills`, `~/.local/share/ordo-stable`, `~/workspace/ordo`: its `SKILL.md`, templates, scripts such as `land/templates/checks.sh`, tests and docs), never offer to, and never put such a change to Axel as an option or an open item, whatever his go; a skill's behaviour that costs time is reported as a fact and nothing more.
+- Long commands run in the background (Axel, 2026-10-04): every command that may take more than a few seconds (an install, a test run, a build, `git archive`, a script over the tree, a worktree set-up) is started with `run_in_background`, and the orchestrator goes on with other work and reads its output when it is told it finished; a foreground command is only a quick read or a quick write.
 - Automode (Axel, 2026-09-30 22:42): every choice goes through the process as before (an open item written in full with its options, pros, cons, recommendation and the lazy option named), and the orchestrator then closes it itself with the option Axel would take, books it everywhere a ruling is booked (the closed log in `orchestrator-history.md`, `plan.md`'s Rulings as "(the orchestrator, automode)", the briefs and the steps), and adds it to `choices.md` beside `queue.md` for Axel's review; the work goes on without waiting. Axel reviews `choices.md` when he likes: an agreed entry is removed from it, and a disagreed one is discussed and, when it changes what was built, becomes a new step that changes it on top. Left open for Axel, never decided in automode: a clash between two of Axel's written rules or rulings; a reversal of a ruling Axel gave; anything that needs Axel's own hands or accounts (a login, a look he must fix, his cluster, money); anything touching a secret or deleting his data; a choice with no clear recommendation.
 - Looks and the machine, the rules every look and every command keep (Axel, in force; booked 2026-10-03 from the session's standing orders):
   - The ICS calendar link is a secret stored only in gitignored `tools/oculus/config/local.yml`. Never put it in git, the ledger or a log; never print, open, grep or hash that file; never fetch a calendar address; never open the Config view's `local.yml` card or the Settings view's `local.yml` tree node; every grep over `config/` uses `--exclude=local.yml` (`':!config/local.yml'` with git grep).
