@@ -28,23 +28,11 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:
-  - step: T1a
-    executor: agent
-    worker: claude-sonnet-5-5 (ordo-high)
-    session_id: a7a1008e55f2cd568
-    worktree: .agents/worktrees/T1a
-    base: 908bd6178
-    launched: 2026-10-04
-    report: tools/oculus/.scratch/migration/agents/reviews/T1a-report.md
-    brief_check: none (Z416)
-    review: none (Z416)
-    landing: not-started
-    round: 0
+dispatch: none
 ```
 
 ## The standing demands (from Axel, in force)
-- Pause just before T1a's landing commit (Axel, 2026-10-04): T1a is cherry-picked onto main, checked, booked and its landing report written, then the session stops before `git commit` and reports to Axel; nothing is committed, prepared or dispatched until Axel says go.
+- T1a is not landed (Z419, Axel, 2026-10-04): when its builder finishes, the orchestrator runs the tests and reports to Axel, and does nothing else; T1a and all other test work run outside normal orchestration, as Axel directs. This replaces the pause before T1a's landing commit.
 - Before T2a to T2d land (Axel, 2026-10-04, Z408): report each sweep's lines removed and left and its tests deleted and left, counted by command in its worktree, and wait for his judgement before `/land`.
 - Talk to Axel as an expert colleague (Axel, 2026-10-02, ruling Z266, rewritten at his word 13:20): Axel is an expert engineer and scientist, and every message is written to him as to a peer: plain, precise and complete, never simplified as for a child and never clipped to a status line. A step is always named by its id and what it is ("D25, the editor options step"), never by a bare id and never by a vague pointer such as "the new step" or "the source editor step". A ruling number (Z...) is not used in a message to him; the ruling is described in words. Ledger text is never quoted at him. He gets exactly the questions he asked, as many as he asked, in his order, each answered in full. Every decision that is his is presented as the hub rules require: an open item, written first, with each option, the pros and cons of each, one recommendation with its reason, and which option is the lazy one. A choice the orchestrator took in automode is told as such, with what it is and the step it went into. Nothing he did not ask for: no corrections that do not change what he would do next, no process narration, no meta paragraphs, no closing remarks, no passive-aggressive or defensive phrasing.
 - Every builder prompt restates `agents/spec.md:25` (scoped test files while working; the full verify list once, after the last change; a failed command rerun alone, then the full list once more) and asks the report for the number of full-list runs; each landing report states that number. Builders ran the full list 6 to 18 times a step before this (Q88b 18 runs, 38.6 min; Q107 17, 55.3 min), counted from their transcripts.
