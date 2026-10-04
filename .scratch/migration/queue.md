@@ -35,7 +35,7 @@ Queued, in order (32 steps):
 - O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.
 - O36 (a second person in the hub): paused (Axel); once O34 has landed.
 
-Owed: the look of Q81 (a Confirm over the update tray), waiting until Axel takes it up.
+Owed: the looks of Q81 (a Confirm over the update tray, waiting until Axel takes it up), D17 (the project card's commands bar), Q88c (Lock Group on an empty pane), Q35 (four items), Q101 (a terminal dragged between tabs), Q86 (the Map's re-tune) and Q97 (the one-pane System arrangement), listed in `agents/reviews/owed-looks.md`; taken before T1a's landing commit, except Q81.
 
 Landed, newest first:
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.

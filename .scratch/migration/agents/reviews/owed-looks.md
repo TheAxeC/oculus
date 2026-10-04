@@ -2,11 +2,26 @@
 
 Every look a landing report records as not taken, and every view a landed step changed that its landing note does not name. Each is taken on TEST at localhost:8790; what is seen is written under it, and each defect is booked to the step that fixes it.
 
-Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/reviews/*-landing.md`.
+Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked at\|not taken\|no look\b\|was not seen\|were not seen" agents/reviews/*-landing.md agents/reviews/owed-looks.md`, each hit read against the looks recorded under "Taken" and in the state file's Booked section.
 
 ## To take
 
-- Q81: a Confirm over the update tray taking the first Escape. It shows only while `tasks.skip_permissions` is on; Axel allowed the edit, and the permission classifier refused it again, so it waits on open item Z314.
+- Q81: a Confirm over the update tray taking the first Escape. It shows only while `tasks.skip_permissions` is on, an edit the session's permission classifier refuses; it waits until Axel takes it up (Z380).
+- D17: the project card's commands bar (`D17-landing.md:15`). No project folder on TEST is its own repository, so the look needs one added as a root for the look and taken out after.
+- Q88c: Lock Group on an empty pane (`owed-looks.md`, Q88c's entry, "Not taken"). TEST has no empty pane; the look makes one and closes it after.
+- Q35: a Customizations row opened from a link, Audit with the arrow keys, the Present `#` link jump in a scaled frame, a narrow pane (`Q35-landing.md:88-92`).
+- Q101: a terminal dragged from one Terminal tab to another (`Q101-landing.md:30`); the tab's list, Split and a terminal's end were seen at the Q102 and L4 looks.
+- Q86: the Map's re-tune (`Q86-landing.md:26`); the drag was seen at Q86c's look and the labels are Q86b's.
+- Q97: the one-pane System arrangement (`Q97-landing.md:15`), seen on a page reset to it, never on a page Axel works on.
+
+## Cannot be taken on this hub (each held by its test, named in its landing report)
+
+- Q91: the follow-up editor with several notes; no manifest holds a list of two or more notes.
+- Q98: the Audit view's code drawing; no live finding holds a backticked word.
+- U1: the Teaching column's icon; the hub has no active teaching entry.
+- Q89: a terminal split outside every place; no terminal on this machine starts outside the composer's places.
+- Q86b: a press on a mover while the last drag still settles; the browser tool's next action comes after the settle.
+- Q67: a live Connect against a real provider; no client half exists on this machine.
 
 ## Taken
 

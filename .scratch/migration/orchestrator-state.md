@@ -195,7 +195,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-04 17:20. T2e landed, with Q117's record-file refusals (Z416); `tests/` holds 108 test files, 18,252 lines and 432 `it`/`test` calls. Every entry of `agents/guarded.md` names a test, each one existing. Next: T1a (the test tiers), then the queue in `queue.md` order; the rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
+- 2026-10-04 17:20. T2e landed, with Q117's record-file refusals (Z416); `tests/` holds 108 test files, 18,252 lines and 432 `it`/`test` calls. Every entry of `agents/guarded.md` names a test, each one existing. Next: T1a (the test tiers), then the queue in `queue.md` order; the rail reorder `/diagnose`. The owed looks in `agents/reviews/owed-looks.md` ("To take") are taken before T1a's landing commit; Q81's waits until Axel takes it up (Z380).
   Open for Axel: none.
 - 2026-10-04 16:00. T2c, T2a and T2b landed (Z414). Next: land T2d; name its kept tests under their entries in `agents/guarded.md`, keep one test per unit where two sweeps kept one, remove the entries with no test (Z403), fix the comments naming deleted tests. Then Q117 (its tests under Z415), T1a.
   Open for Axel: none.
@@ -208,10 +208,10 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - 2026-10-04 13:30. The four deletion sweeps T2a to T2d are building again at once, base 56b23a9f4, under the widened list (Z405, Z406): no brief check, no reviewer, no repair round, builders run nothing. Next:
   1. On each report: read the diff, `/land` it (verify list once on main, `git diff --numstat` shows no added line outside `agents/guarded.md` and the report, each named test exists), write the kept test under its entry in `agents/guarded.md`, keep one test where two sweeps named one for the same part of an entry.
   2. After the last landing: delete the helpers left with no importer, the entries with no test (Z403), and the sentences outside `tests/` that name deleted tests (`DESIGN.md:72` among them).
-  3. Q117 (G31), then T1a. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
+  3. Q117 (G31), then T1a. The rail reorder `/diagnose`. The owed looks in `agents/reviews/owed-looks.md` ("To take") are taken before T1a's landing commit; Q81's waits until Axel takes it up (Z380).
   Open for Axel: none.
 - 2026-10-04 13:05. The four deletion sweeps T2a to T2d are building at once, base ca9d1e119, under Z396 to Z403: no brief check, no reviewer, no repair round, builders run nothing. Next:
   1. On each report: read the diff, `/land` it (verify list once on main, `git diff --numstat` shows no added line outside `agents/guarded.md` and the report, each named test exists), write the kept test under its entry in `agents/guarded.md`, keep one test where two sweeps named one for the same entry.
   2. After the last landing: delete the helpers left with no importer, and the entries with no test (Z403).
-  3. T1a after the sweeps. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
+  3. T1a after the sweeps. The rail reorder `/diagnose`. The owed looks in `agents/reviews/owed-looks.md` ("To take") are taken before T1a's landing commit; Q81's waits until Axel takes it up (Z380).
   Open for Axel: none.
