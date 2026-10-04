@@ -9,7 +9,7 @@ Queued, in order (31 steps):
 - H3 (the hub's data map): once a slot is free (seven in flight, Z423).
 - D38 (the Literature search view): once D37 has landed.
 - D42 (a file's history): once a slot is free (seven in flight, Z423).
-- D44 (Submit on a .slurm file): brief drafted; once X3f and D37 have landed (Z432), and Axel's ruling on its two guarded tests.
+- D44 (Submit on a .slurm file): brief drafted; once X3f and D37 have landed (Z432).
 - D41 (links in Markdown checked): once M7 has landed.
 - X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): once a slot is free (seven in flight, Z423).
 - D15 (PDF reading): once D37 has landed.

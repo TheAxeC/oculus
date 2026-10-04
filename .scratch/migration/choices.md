@@ -2,6 +2,15 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z433 (2026-10-05, step D44)
+
+The question: whether D44's two checks become guarded tests: Submit runs only a confirmed plan equal to the server's plan at the press, and the warning for a job script that never uses `/local/$SLURM_JOB_ID`.
+
+- Chosen (a): both guarded, in `tests/server/machine/hpc/submit.test.ts`, since a failure of either runs a job against the cluster's I/O rule or one the reader did not confirm.
+- Not chosen: (b) neither guarded, checked by quoted runs and the look only (the lazy one), which lets a later change drop either check unseen; (c) only the first, which leaves the scratch warning unprotected.
+
+Where it is built: D44's brief at its /spec run. Booked in `plan.md` Rulings.
+
 ## Z430 (2026-10-05, step D44)
 
 The question: where Submit copies a project's code on the cluster. Only btfno's cluster folder is `~/projects/<id>`; six projects' run scripts read their code from another folder by absolute path.
