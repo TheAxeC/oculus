@@ -1,5 +1,5 @@
-// Layer 4, test helper. What the file browser store tests share: a client state over a page
-// stand-in, the fetch stub that records the addresses it was asked for and answers what a case
+// Layer 2, client-state test helper. What the file browser store tests share: a client state over a
+// page stand-in, the fetch stub that records the addresses it was asked for and answers what a case
 // gives it, and the answers a case builds.
 //
 // `storeHooks()` hands a test file the one object it reads its case from: the client state and the
@@ -53,10 +53,7 @@ export function storeHooks(): StoreCase {
     return store;
 }
 
-/** Let the scheduled request run and its answer land. */
-export async function settle(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-}
+export { settle } from '../../../fixtures/client.ts';
 
 /** A promise a case resolves by hand, so one answer can be made to land late. */
 export function deferred(): { promise: Promise<Response>; land: (answer: Response) => void } {

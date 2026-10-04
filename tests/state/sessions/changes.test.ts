@@ -1,5 +1,5 @@
-// The change-log store: what it asks the endpoint for, what it holds, and how "load older" walks
-// back through the pages.
+// Layer 2, client-state tests. The change-log store: what it asks the endpoint for, what it holds,
+// and how "load older" walks back through the pages.
 //
 // The fetch is doubled, so nothing here opens a socket or reads a file: a case states what the
 // endpoint answers and asserts what the store holds after it.
@@ -10,7 +10,7 @@ import type { Change, ChangesStore } from '../../../src/lib/state/sessions/chang
 import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
 import { stubHeld, refused, unreadable } from '../../fixtures/client.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -168,15 +168,6 @@ describe('the change store', () => {
         expect(store.rows().map((one) => one.at)).toEqual(['b', 'c']);
     });
 
-    it('holds the refusal sentence for a refused request and stops waiting', async () => {
-        answers = [{ ok: false, body: { error: 'origin' } }];
-        store.rows();
-        await settle();
-        expect(store.error()).toBe(refused(500));
-        expect(store.loading()).toBe(false);
-        expect(store.rows()).toEqual([]);
-    });
-
     it('takes rows put in by hand, for a page that is rendered without a fetch', () => {
         store.hold([change('a')], true);
         expect(store.rows().map((one) => one.at)).toEqual(['a']);
@@ -238,14 +229,6 @@ describe('an answer whose fields are of the wrong type', () => {
     it('answers a refusal as the refusal sentence, whatever text it carries', async () => {
         const said = { ...NOTHING, error: refused(500) };
         expect(await heldAfter('{"error":"x"}', 500)).toStrictEqual(said);
-        expect(await heldAfter('[]', 500)).toStrictEqual(said);
-    });
-
-    it('answers a refusal that is a word of the catalog as that word sentence', async () => {
-        expect(await heldAfter('{"error":"outside"}', 400)).toStrictEqual({
-            ...NOTHING,
-            error: t('files.refused_outside')
-        });
     });
 
     it.each([
@@ -264,17 +247,8 @@ describe('an answer whose fields are of the wrong type', () => {
         }
     );
 
-    it('answers a refusal whose error is a number as the refusal sentence', async () => {
-        const held = await heldAfter('{"error":3}', 500);
-        expect(held).toStrictEqual({ ...NOTHING, error: refused(500) });
-    });
-
-    it('answers a body that is null or not JSON as the unreadable sentence with its status', async () => {
-        for (const text of ['null', 'nope']) {
-            const [fine, failed] = [await heldAfter(text), await heldAfter(text, 500)];
-            expect(fine).toStrictEqual({ ...NOTHING, error: unreadable(200) });
-            expect(failed).toStrictEqual({ ...NOTHING, error: unreadable(500) });
-        }
+    it('answers a body that is no JSON as the unreadable sentence with its status', async () => {
+        expect(await heldAfter('nope', 500)).toStrictEqual({ ...NOTHING, error: unreadable(500) });
     });
 
     it('answers a row missing one of the four fields of a change as left out', async () => {

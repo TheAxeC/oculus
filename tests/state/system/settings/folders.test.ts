@@ -60,10 +60,6 @@ describe('the files of a folder', () => {
         ]);
     });
 
-    it('list no folder as a file', () => {
-        expect(listedFiles('text', listing()).files).not.toContain('text/views');
-    });
-
     it('are empty for an empty folder, which is a listing and not a failure', () => {
         expect(listedFiles('catalogs', listing({ catalogs: [] }))).toEqual({
             status: 'rows',

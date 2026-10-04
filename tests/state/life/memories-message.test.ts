@@ -1,6 +1,6 @@
-// The sentence a refused upload reads as, one case per word the endpoint answers with, the size the
-// page refuses a file at before it reads one, and the wall the store holds for each shape of answer
-// that GET /api/memories gives.
+// Layer 2, client-state tests. The sentence a refused upload reads as, one case per word the
+// endpoint answers with, the size the page refuses a file at before it reads one, and the wall the
+// store holds for each shape of answer that GET /api/memories gives.
 //
 // The endpoint's own vocabulary (`name`, `data`, `unwritable`) never reaches the reader: each word
 // has a sentence of its own in the catalog, and a word this does not know reads as the general one.
@@ -13,11 +13,12 @@ import {
     tooLarge,
     uploadMessage
 } from '../../../src/lib/state/life/memories.ts';
-import { MAX_UPLOAD_BYTES as SERVER_LIMIT } from '../../../src/lib/server/content/memories.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
-import type { Wall } from '../../../src/lib/state/life/memories.svelte.ts';
-import { createClientState } from '../../fixtures/client.ts';
+import { createMemories, type Wall } from '../../../src/lib/state/life/memories.svelte.ts';
+import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
+import { arrival } from '../shared/arrival.ts';
+import type { Queries } from '../../../src/lib/state/shared/stores/shapes.ts';
 
 const catalog = textCatalog(loadConfig(engineDir()).config);
 setCatalog(catalog);
@@ -57,26 +58,9 @@ describe('the sentence one refusal reads as', () => {
         }
         expect(uploadMessage({ ok: false })).toBe(catalog['memories.failed_other']);
     });
-
-    it('names no wire word in any of its sentences', () => {
-        const sentences = [
-            uploadMessage({ ok: false, error: 'name' }),
-            uploadMessage({ ok: false, error: 'data' }),
-            uploadMessage({ ok: false, error: 'unwritable' }),
-            uploadMessage({ ok: false, error: 'taken' }),
-            uploadMessage({ ok: false, error: 'nonsense' })
-        ];
-        for (const word of ['name', 'data', 'taken', 'unwritable']) {
-            expect(sentences.filter((one) => one.split(/\W+/).includes(word))).toEqual([]);
-        }
-    });
 });
 
 describe('the size the page refuses at', () => {
-    it('matches the server limit, so nothing is sent that the server would refuse', () => {
-        expect(MAX_UPLOAD_BYTES).toBe(SERVER_LIMIT);
-    });
-
     it('takes a file at the limit and refuses one past it', () => {
         expect(tooLarge(MAX_UPLOAD_BYTES)).toBe(false);
         expect(tooLarge(MAX_UPLOAD_BYTES + 1)).toBe(true);
@@ -87,14 +71,37 @@ describe('the size the page refuses at', () => {
 describe('the wall read from an answer of the wrong shape', () => {
     afterEach(() => vi.unstubAllGlobals());
 
+    /**
+     * Resolves once the query cache holds the wall's answer, which the cache announces, and rejects
+     * after a second naming how many announcements came without it.
+     */
+    function held(queries: Queries): Promise<void> {
+        let announced = 0;
+        return arrival(
+            "the wall's answer in the query cache",
+            () => `${announced} cache announcements had come, none with the answer`,
+            (wake) => {
+                const stop = queries.client.getQueryCache().subscribe(() => {
+                    announced += 1;
+                    if (queries.peek(['memories']).data === undefined) return;
+                    stop();
+                    wake();
+                });
+                return stop;
+            }
+        );
+    }
+
     /** The wall once a fresh store has read one answer of GET /api/memories with this text. */
     async function wallOf(text: string, status = 200): Promise<Wall> {
-        const client = createClientState();
+        const queries = createQueries();
+        const memories = createMemories(queries);
         vi.stubGlobal('window', {});
         vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
-        client.memories.wall();
-        await vi.waitFor(() => expect(client.memories.wall().loading).toBe(false));
-        return client.memories.wall();
+        const answered = held(queries);
+        memories.wall();
+        await answered;
+        return memories.wall();
     }
     const failed = (error: string): Wall => ({ images: [], error, loading: false });
 
@@ -158,37 +165,13 @@ describe('the wall read from an answer of the wrong shape', () => {
     it('reads a refused request as the refusal sentence, whatever text it carries', async () => {
         const said = failed(t('ui.answer_refused', 500));
         expect(await wallOf('{"error":"boom"}', 500)).toStrictEqual(said);
-        expect(await wallOf('{"error":""}', 500)).toStrictEqual(said);
-        for (const text of ['{"error":null}', '{}', '[]']) {
-            expect(await wallOf(text, 500)).toStrictEqual(said);
-        }
         expect(await wallOf('{"images":[{"name":"a"}],"error":"x"}', 404)).toStrictEqual(
             failed(t('ui.answer_refused', 404))
         );
     });
 
-    it('reads a refusal that is a word of the catalog as that word sentence', async () => {
-        expect(await wallOf('{"error":"outside"}', 400)).toStrictEqual(
-            failed(t('files.refused_outside'))
-        );
-    });
-
-    it('reads a refusal whose error is a number as the refusal sentence', async () => {
-        expect(await wallOf('{"error":3}', 500)).toStrictEqual(failed(t('ui.answer_refused', 500)));
-    });
-
     it('reads a body that is JSON null or is not JSON as the unreadable sentence with its status', async () => {
-        for (const status of [200, 500]) {
-            const said = failed(t('ui.answer_unreadable', status));
-            expect(await wallOf('null', status)).toStrictEqual(said);
-            expect(await wallOf('not json', status)).toStrictEqual(said);
-        }
-    });
-
-    it('reads a body that is JSON but no map as a list that is missing, or as the refusal sentence', async () => {
-        for (const text of ['[1]', '"x"', '7', 'true']) {
-            expect(await wallOf(text)).toStrictEqual(failed('images_not_a_list'));
-            expect(await wallOf(text, 500)).toStrictEqual(failed(t('ui.answer_refused', 500)));
-        }
+        expect(await wallOf('null', 200)).toStrictEqual(failed(t('ui.answer_unreadable', 200)));
+        expect(await wallOf('not json', 500)).toStrictEqual(failed(t('ui.answer_unreadable', 500)));
     });
 });

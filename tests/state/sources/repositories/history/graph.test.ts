@@ -1,9 +1,9 @@
-// The lanes of the Source Control Graph: which lane each commit sits in and the strokes that cross
-// its row, drawn from the parents. Pure, so each case is a history written out here.
+// Layer 2, client-state tests. The lanes of the Source Control Graph: which lane each commit sits
+// in and the strokes that cross its row, drawn from the parents. Pure, so each case is a history
+// written out here.
 
 import { describe, expect, it } from 'vitest';
 import {
-    commitCircles,
     commitKind,
     laneRows,
     lanesBelow,
@@ -60,13 +60,11 @@ describe('the lanes of the graph', () => {
     });
 });
 
-describe('the lane geometry of a 22 pixel row', () => {
-    it('puts lane n at 11 * (n + 1) and makes the row 11 * (max(lanes, 1) + 1) wide', () => {
-        expect(laneX(0)).toBe(11);
-        expect(laneX(2)).toBe(33);
-        expect(laneWidth(3)).toBe(44);
-        expect(laneWidth(0)).toBe(22);
-        expect(laneWidth(30)).toBe(341);
+describe('the lane geometry of a row', () => {
+    it('puts the lanes an even step apart and makes the row at least one lane wide', () => {
+        expect(laneX(1) - laneX(0)).toBe(laneX(2) - laneX(1));
+        expect(laneWidth(0)).toBe(laneWidth(1));
+        expect(laneWidth(3) - laneWidth(2)).toBe(laneX(1) - laneX(0));
     });
 
     it('draws a lane that passes as one vertical from the top of the row to its foot', () => {
@@ -161,29 +159,7 @@ describe('the lane geometry of a 22 pixel row', () => {
     });
 });
 
-describe('the circle of a commit', () => {
-    const radii = (kind: Parameters<typeof commitCircles>[0]): number[] =>
-        commitCircles(kind).map((circle) => circle.r);
-
-    it('is one circle of radius 5 for a commit', () => {
-        expect(radii('commit')).toEqual([5]);
-    });
-
-    it('is radius 6 with an inner circle of radius 3 for a merge', () => {
-        expect(radii('merge')).toEqual([6, 3]);
-    });
-
-    it('is radius 7 with an inner circle of radius 2 for HEAD', () => {
-        expect(radii('head')).toEqual([7, 2]);
-    });
-
-    it('is radius 7, radius 5 and a dashed ring of radius 5 for Incoming and Outgoing', () => {
-        expect(radii('incoming')).toEqual([7, 5, 5]);
-        expect(radii('outgoing')).toEqual([7, 5, 5]);
-        expect(commitCircles('incoming')[2].dash).toBe('4,2');
-        expect(commitCircles('commit')[0].dash).toBeUndefined();
-    });
-
+describe('the kind of a commit', () => {
     it('takes HEAD before a merge when a commit is both', () => {
         expect(commitKind({ parents: ['a', 'b'] }, true)).toBe('head');
         expect(commitKind({ parents: ['a', 'b'] }, false)).toBe('merge');

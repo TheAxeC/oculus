@@ -1,6 +1,6 @@
-// The notifications store: a post from anywhere is one call, the list is newest first, the bell's
-// count is what has not been seen, a toast shows unless Do Not Disturb is on, and each can be put
-// away or cleared, one or all.
+// Layer 2, client-state tests. The notifications store: a post from anywhere is one call, the list
+// is newest first, the bell's count is what has not been seen, a toast shows unless Do Not Disturb
+// is on, and each can be put away or cleared, one or all.
 //
 // What this does NOT cover: the bell, the centre and the toasts drawn and pressed.
 

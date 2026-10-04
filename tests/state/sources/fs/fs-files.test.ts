@@ -1,5 +1,6 @@
-// Layer 4, test. The file browser store reading a file: the byte limit, a file held whole, the
-// version that asks a root again, the text held while a fresh one lands, and what a file opens as.
+// Layer 2, client-state tests. The file browser store reading a file: the byte limit, a file held
+// whole, the version that asks a root again, the text held while a fresh one lands, and what a file
+// opens as.
 //
 // `fetch` and `window` are stubs; nothing here reaches a server or the real hub. What this does NOT
 // cover: the endpoints themselves, which are tests/routes/files/fs.test.ts, and the tree drawing
@@ -8,8 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { ENGINE_ROOT, TEXT_LIMIT } from '../../../../src/lib/state/sources/fs.ts';
 import { refused } from '../../../fixtures/client.ts';
-import { listingOf } from './fs-fixture.ts';
-import { deferred, settle, storeHooks } from './fs-fixture.ts';
+import { deferred, listingOf, settle, storeHooks } from './fs-fixture.ts';
 
 describe('the store reading a file', () => {
     const store = storeHooks();
@@ -237,16 +237,6 @@ describe('the store reading a file', () => {
             store.serving(() => bytesOf(body));
 
             expect(await store.client.fs.readFileKind('hub', 'long.csv')).toEqual({ kind: 'text' });
-        });
-
-        it('reads a file whose bytes are not text as a download, whatever its name says', async () => {
-            store.serving(() =>
-                bytesOf(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01, 0x02, 0x03]))
-            );
-
-            expect(await store.client.fs.readFileKind('hub', 'data.txt')).toEqual({
-                kind: 'other'
-            });
         });
 
         it('answers a download for a file the route refused, and holds it for the round', async () => {

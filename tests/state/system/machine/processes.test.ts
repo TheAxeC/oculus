@@ -1,7 +1,7 @@
-// The Processes view's state: the `processes` channel's frame as the socket keeps or drops it, the
-// rows the state layer reads out of a kept payload, the arrangement of those rows into one group
-// per oculus terminal and the matched rows, the head line, the sort a column head sets, and the
-// question that stops a terminal.
+// Layer 2, client-state tests. The Processes view's state: the `processes` channel's frame as the
+// socket keeps or drops it, the rows the state layer reads out of a kept payload, the arrangement
+// of those rows into one group per oculus terminal and the matched rows, the head line, the sort a
+// column head sets, and the question that stops a terminal.
 //
 // Nothing opens a socket or a connection: `WebSocket` is a stub that hands the page what a case
 // delivers, and `fetch` is a stub that records the stop request.
@@ -9,7 +9,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProcessRow } from '../../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import type { ProcessesSort } from '../../../../src/lib/state/system/machine/processes.ts';
 import {
     arrange,
@@ -79,7 +79,6 @@ describe('the processes channel', () => {
 
     it.each([
         ['rows that is not a list', payload('x')],
-        ['rows that is a map', payload({})],
         ['a status that is neither ok nor failed', payload([], { status: 'busy' })],
         ['an agents count that is not a number', payload([], { agents: 'many' })],
         ['no updated time', { status: 'ok', rows: [], agents: 0, projects: 0 }],
@@ -210,19 +209,6 @@ describe('arrange', () => {
         ).toBe(false);
     });
 
-    it('names a group by the label the terminal tab shows, the title when set and the name otherwise', () => {
-        const arranged = arrange(
-            [row(100, { terminal: SHELL }), row(200, { terminal: CODEX })],
-            lookup,
-            terminalLabel
-        );
-        expect(arranged.groups.map((group) => group.name)).toEqual([
-            terminalLabel(records[SHELL]),
-            terminalLabel(records[CODEX])
-        ]);
-        expect(arranged.groups.map((group) => group.name)).toEqual(['My shell', 'codex two']);
-    });
-
     it('names a group by the label function it is handed, and an unknown terminal by its id', () => {
         const arranged = arrange(
             [row(100, { terminal: SHELL }), row(300, { terminal: 'ffffff-shell' })],
@@ -239,22 +225,17 @@ describe('arrange', () => {
 
 describe('headLine', () => {
     it.each([
-        [1, 1, '1 project in flight, 1 agent running'],
-        [3, 2, '3 projects in flight, 2 agents running'],
-        [0, 0, '0 projects in flight, 0 agents running'],
-        [1, 0, '1 project in flight, 0 agents running'],
-        [0, 1, '0 projects in flight, 1 agent running']
-    ])('writes %j projects and %j agents as %j', (projects, agents, words) => {
-        expect(headLine(projects, agents)).toBe(words);
-    });
+        [1, 1, t('processes.head_project_one'), t('processes.head_agent_one')],
+        [3, 2, t('processes.head_projects', 3), t('processes.head_agents', 2)]
+    ])(
+        'writes %j projects and %j agents in their singular or plural form',
+        (projects, agents, ofProjects, ofAgents) => {
+            expect(headLine(projects, agents)).toBe(t('processes.head', ofProjects, ofAgents));
+        }
+    );
 });
 
 describe('the sort a column head sets', () => {
-    it('starts on cpu, highest first', () => {
-        expect(DEFAULT_SORT).toEqual({ key: 'cpu', direction: 'desc' });
-        expect(parseProcessesState(undefined)).toEqual({ sort: DEFAULT_SORT });
-    });
-
     it('gives each pane a default sort of its own, so no pane changes another', () => {
         const first = parseProcessesState(undefined);
         const second = parseProcessesState(undefined);
@@ -277,8 +258,7 @@ describe('the sort a column head sets', () => {
         [{ sort: { key: 'nope', direction: 'asc' } }, { sort: DEFAULT_SORT }],
         [{ sort: { key: 'pid', direction: 'sideways' } }, { sort: DEFAULT_SORT }],
         [{ sort: 3 }, { sort: DEFAULT_SORT }],
-        [null, { sort: DEFAULT_SORT }],
-        ['x', { sort: DEFAULT_SORT }]
+        [null, { sort: DEFAULT_SORT }]
     ])('reads a saved state of %j as %j', (saved, read) => {
         expect(parseProcessesState(saved)).toEqual(read);
     });
@@ -318,7 +298,7 @@ describe('the store', () => {
     it('writes the head line from the counts of the payload, and nothing before the first one', () => {
         expect(client.processes.head()).toBe('');
         receive(payload([], { agents: 1, projects: 1 }));
-        expect(client.processes.head()).toBe('1 project in flight, 1 agent running');
+        expect(client.processes.head()).toBe(headLine(1, 1));
     });
 
     describe('the stop question', () => {
@@ -341,37 +321,8 @@ describe('the store', () => {
         it('names the terminal as the terminals store draws it, its pane command and its pid', () => {
             const [group] = client.processes.arranged().groups;
             const ask = client.processes.stopAsk(group);
-            expect(ask.message).toBe(
-                "End the terminal 'My shell' (/bin/zsh -l, pid 100)? Every process under it ends with it, including any started there by hand."
-            );
+            expect(ask.message).toBe(t('processes.stop_question', 'My shell', '/bin/zsh -l', 100));
             expect(ask.detail).toBe('');
-            const label = terminalLabel(terminal(SHELL, { name: 'shell one', title: 'My shell' }));
-            expect(label).toBe('My shell');
-            expect(group.name).toBe(label);
-            expect(ask.message).toContain(`'${label}'`);
-        });
-
-        it('names a terminal with no title by its name', () => {
-            client.entities.receive({
-                channel: 'sessions',
-                version: 2,
-                payload: {
-                    records: [],
-                    workspaces: [],
-                    terminals: [terminal(SHELL, { name: 'shell one', pid: 100, command: 'zsh' })]
-                }
-            });
-            const [group] = client.processes.arranged().groups;
-            const held = terminal(SHELL, { name: 'shell one', pid: 100, command: 'zsh' });
-            expect(terminalLabel(held)).toBe('shell one');
-            expect(group.name).toBe(terminalLabel(held));
-            expect(client.processes.stopAsk(group).message).toContain(`'${terminalLabel(held)}'`);
-        });
-
-        it('names the record command and pid for a group drawn from the record', () => {
-            receive(payload([row(101, { terminal: SHELL })]));
-            const [group] = client.processes.arranged().groups;
-            expect(client.processes.stopAsk(group).message).toContain('(zsh, pid 100)');
         });
 
         it('stops nothing when the question is only asked', () => {

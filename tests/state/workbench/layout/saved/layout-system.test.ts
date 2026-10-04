@@ -1,7 +1,8 @@
-// The saved System page carried over: the rail has one System button (the page tied to the rail
-// key `views`), so a saved page tied to the rail key `info` is folded into it when a layout is
-// read, and a saved `config` tab, whose view does not exist, becomes a `settings` tab. The pages
-// shown after a reload in a browser are tests/state/workbench/navigation/arrangement.test.ts's.
+// Layer 2, client-state tests. The saved System page carried over: the rail has one System button
+// (the page tied to the rail key `views`), so a saved page tied to the rail key `info` is folded
+// into it when a layout is read, and a saved `config` tab, whose view does not exist, becomes a
+// `settings` tab. The pages shown after a reload in a browser are
+// tests/state/workbench/navigation/arrangement.test.ts's.
 //
 // Nothing here touches localStorage or the DOM: every case reads a hand-built envelope.
 
@@ -288,14 +289,12 @@ describe('the saved System page carried over', () => {
         ];
 
         describe.each(SHAPES)('%s', (_, root, pagesPath, otherPath, pagesTabs) => {
-            it('labels the page System', () => {
-                const held = read(value(root()));
-                expect(viewsPage(held)?.label).toBe('System');
-            });
-
-            it('keeps a label the viewer gave the page', () => {
-                const held = read(value(root(), { label: 'Machine' }));
-                expect(viewsPage(held)?.label).toBe('Machine');
+            it.each([
+                ['the name the rail shipped', undefined, 'System'],
+                ['a name the viewer gave the page', 'Machine', 'Machine']
+            ])('labels the page for %s', (__, label, expected) => {
+                const held = read(value(root(), { label }));
+                expect(viewsPage(held)?.label).toBe(expected);
             });
 
             it('puts the five system views in their own pane below the pane holding pages', () => {

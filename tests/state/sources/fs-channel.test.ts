@@ -1,22 +1,18 @@
-// Layer 4, test. Files-channel backpressure keeps a bookmark change beside a later root change and
-// the combined message makes the page read its bookmarks again; and a bookmark change the page was
-// sent whole, then replaced by a root change before anything asked for the bookmarks, still makes
-// the next ask read them again.
+// Layer 2, client-state tests. Files-channel backpressure keeps a bookmark change beside a later
+// root change and the combined message makes the page read its bookmarks again; and a bookmark
+// change the page was sent whole, then replaced by a root change before anything asked for the
+// bookmarks, still makes the next ask read them again.
 
 import { afterEach, expect, it, vi } from 'vitest';
 import type { FilesPayload, Message } from '../../../src/lib/data/model/index.ts';
 import { Hub, type Sink } from '../../../src/lib/server/core/channels.ts';
 import { registerFilesChannel } from '../../../src/lib/server/files/files-channel.ts';
-import { createClientState } from '../../fixtures/client.ts';
+import { createClientState, settle } from '../../fixtures/client.ts';
 import { noop } from '../../fixtures/doubles.ts';
 
 afterEach(() => {
     vi.unstubAllGlobals();
 });
-
-function settle(): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, 0));
-}
 
 /** Answer every bookmarks read with an empty file, and count the reads. */
 function countedReads(): () => number {

@@ -95,11 +95,9 @@ tests/state/boards/person.test.ts tests/views/boards/person.test.ts 88865773d6e4
 tests/state/boards/person.test.ts tests/views/boards/person.test.ts c78ac91f15ab the same 11 lines at 104 and 120, to fold into one place
 tests/state/boards/person.test.ts tests/views/boards/person.test.ts f19737ed6ac7 the same 13 lines at 20 and 45, to fold into one place
 tests/state/boards/structure/graph.test.ts tests/views/boards/editor/editor.test.ts 0c756ea91199 the same 16 lines at 92 and 110, to fold into one place
-tests/state/client/writes.test.ts tests/state/workbench/navigation/notice-sources.test.ts 5f8d3f4b7492 the same 9 lines at 19 and 340, to fold into one place
 tests/state/feeds/feeds.test.ts tests/state/forms/schema.test.ts ef0d21093748 the same 18 lines at 99 and 132, to fold into one place
 tests/state/feeds/feeds.test.ts tests/views/boards/editor/editor.test.ts 31fc27de1c1f the same 22 lines at 95 and 93, to fold into one place
 tests/state/forms/schema.test.ts tests/views/boards/editor/editor.test.ts 7a490278351a the same 13 lines at 76 and 76, to fold into one place
-tests/state/sessions/terminals.test.ts tests/state/system/machine/hpc.test.ts f86fb737d860 the same 11 lines at 137 and 35, to fold into one place
 tests/state/sources/explorer/explorer.test.ts tests/state/sources/fs/fs-shape.test.ts 20171008d2f9 the same 9 lines at 44 and 41, to fold into one place
 tests/state/workbench/layout/layout-close.test.ts tests/state/workbench/layout/open/preview.test.ts 575b1e88cd84 the same 9 lines at 100 and 108, to fold into one place
 tests/state/workbench/layout/layout-fixture.ts tests/state/workbench/layout/layout-parts.test.ts 3d6329a7c2d7 the same 9 lines at 88 and 30, to fold into one place

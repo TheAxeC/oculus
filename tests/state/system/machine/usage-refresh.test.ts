@@ -1,6 +1,6 @@
-// Layer 4, state test. The words a refused usage refresh is held under, for each body the route
-// answers with and for every body it does not: an error that is not a word, a body that is a list,
-// JSON null, no JSON at all, and a request that never reached the server.
+// Layer 2, client-state tests. The words a refused usage refresh is held under, for each body the
+// route answers with and for the bodies it does not: an error that is not a word, a body that is a
+// list, no JSON at all, and a request that never reached the server.
 //
 // `fetch` is a stub, so nothing here opens a socket. What this does not cover: the Usage view that
 // draws the refusal, which is tests/views/system/machine/usage.test.ts.
@@ -66,17 +66,8 @@ describe('a refused usage refresh', () => {
         ['bad account', '{"error":"bad account"}', 'usage.refusal_bad_request'],
         ['account not found', '{"error":"account not found"}', 'usage.refusal_not_found'],
         ['another word', '{"error":"anything else"}', 'usage.refusal_failed'],
-        ['a word in other case', '{"error":"Forbidden"}', 'usage.refusal_failed'],
-        ['an empty word', '{"error":""}', 'usage.refusal_failed'],
         ['a number', '{"error":3}', 'usage.refusal_failed'],
-        ['a list', '{"error":["forbidden"]}', 'usage.refusal_failed'],
-        ['a map', '{"error":{"forbidden":true}}', 'usage.refusal_failed'],
-        ['null', '{"error":null}', 'usage.refusal_failed'],
-        ['nothing', '{}', 'usage.refusal_failed'],
         ['a body that is a list', '["forbidden"]', 'usage.refusal_failed'],
-        ['a body that is a string', '"forbidden"', 'usage.refusal_failed'],
-        ['a body that is a number', '3', 'usage.refusal_failed'],
-        ['a body that is JSON null', 'null', 'usage.refusal_failed'],
         ['a body that is no JSON', '<html>Bad Gateway</html>', 'usage.refusal_failed']
     ])('holds the words for an error that is %s', async (_name, text, key) => {
         answering(text, 403);

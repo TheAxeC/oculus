@@ -1,4 +1,5 @@
-// The pure LinkedIn cadence, idea rotation, snippets, ordering, search, and instance state.
+// Layer 2, client-state tests. The LinkedIn cadence, idea rotation, snippets, ordering, search and
+// instance state.
 
 import { describe, expect, it } from 'vitest';
 import {

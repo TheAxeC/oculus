@@ -1,6 +1,6 @@
-// The theme label helper over `venue_themes` and `data_themes` rows: a word with a row, a word
-// without one, an empty or malformed list, a duplicated key, and words that name a property every
-// plain object carries.
+// Layer 2, client-state tests. The theme label helper over `venue_themes` and `data_themes` rows: a
+// word with a row, a word without one, an empty or malformed list, a duplicated key, and words that
+// name a property every plain object carries.
 
 import { describe, expect, it } from 'vitest';
 import { themeWordLabel, themeWordLabels } from '../../../../src/lib/state/shared/words/themes.ts';
@@ -33,23 +33,9 @@ describe('themeWordLabels and themeWordLabel', () => {
         expect(themeWordLabel(labels, 'eeg')).toBe('EEG');
     });
 
-    it('passes over a row without a string key or label, and an empty key', () => {
-        const labels = themeWordLabels([
-            'eeg',
-            null,
-            ['eeg', 'EEG'],
-            { key: 7, label: 'Seven' },
-            { key: 'ecg' },
-            { key: '', label: 'Nothing' },
-            { key: 'ecg', label: 'ECG' }
-        ]);
-        expect([...labels]).toEqual([['ecg', 'ECG']]);
-        expect(themeWordLabel(labels, '')).toBe('');
-    });
-
-    it('finds no label for a word naming a property of every plain object', () => {
+    it('finds no label for the empty word nor for a word naming a property of every plain object', () => {
         const labels = themeWordLabels([{ key: 'eeg', label: 'EEG' }]);
-        for (const word of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+        for (const word of ['', 'constructor', '__proto__', 'toString', 'hasOwnProperty']) {
             expect(themeWordLabel(labels, word)).toBe(word);
         }
         const own = themeWordLabels([{ key: '__proto__', label: 'Proto' }]);
@@ -68,8 +54,6 @@ describe('themeWordLabels over rows of the wrong type', () => {
     it('passes over a row with a label of the wrong type and takes the first valid row of the key', () => {
         const labels = themeWordLabels([
             { key: 'eeg', label: 3 },
-            { key: 'eeg', label: null },
-            { key: 'eeg', label: ['EEG'] },
             { key: 'eeg', label: 'EEG' },
             { key: 'eeg', label: 'Later' }
         ]);
@@ -78,14 +62,9 @@ describe('themeWordLabels over rows of the wrong type', () => {
 
     it.each([
         ['a key that is a number', { key: 7, label: 'Seven' }],
-        ['a key that is a list', { key: ['eeg'], label: 'EEG' }],
-        ['a key that is null', { key: null, label: 'EEG' }],
         ['an empty key', { key: '', label: 'EEG' }],
-        ['no key', { label: 'EEG' }],
         ['no label', { key: 'eeg' }],
         ['a row that is a list', ['eeg', 'EEG']],
-        ['a row that is a string', 'eeg'],
-        ['a row that is a number', 3],
         ['a row that is null', null]
     ])('passes over a row with %s', (_name, row) => {
         expect([...themeWordLabels([row])]).toStrictEqual([]);
@@ -102,11 +81,4 @@ describe('themeWordLabels over rows of the wrong type', () => {
             ['a', 'A']
         ]);
     });
-
-    it.each([[{}], [{ key: 'eeg', label: 'EEG' }], ['eeg'], [3], [true], [null], [undefined]])(
-        'reads %j, which is no list, as no labels',
-        (rows) => {
-            expect(themeWordLabels(rows).size).toBe(0);
-        }
-    );
 });

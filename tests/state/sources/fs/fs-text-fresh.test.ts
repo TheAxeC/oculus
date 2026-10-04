@@ -1,7 +1,7 @@
-// Layer 4, test. A file text read again is read from the server and never from the browser's
-// cached copy of the address, so the Settings editors' draft ends after a save however soon the
-// view had read the file before; and a file saved in a source tab is marked, so every reader of
-// its text reads it again.
+// Layer 2, client-state tests. A file text read again is read from the server and never from the
+// browser's cached copy of the address, so the Settings editors' draft ends after a save however
+// soon the view had read the file before; and a file saved in a source tab is marked, so every
+// reader of its text reads it again.
 //
 // `fetch` stands in for a browser with an HTTP cache: a read that does not ask to revalidate is
 // answered with the copy it took the first time, as the file route's `max-age=60` lets a browser
@@ -39,26 +39,14 @@ function browser(disk: Record<string, string>) {
 describe('a Settings save within a minute of the view s last read of the file', () => {
     const store = storeHooks();
 
-    // Case 16: the push after the save re-reads the file from the server, never the browser's
-    // cached copy of the address, so the draft ends; red when the read takes the cached copy.
-    it.each([
-        [
-            'a list with an item removed',
-            'waiting_status',
-            'waiting_status: [one, two, three]\n',
-            1,
-            (value: unknown) => `waiting_status: [${(value as string[]).join(', ')}]\n`,
-            ['two', 'three']
-        ],
-        [
-            'a family emptied and written as {}',
-            'read_limits',
-            'read_limits: { status.line: 220, next: 300 }\n',
-            2,
-            () => 'read_limits: {}\n',
-            {}
-        ]
-    ])('ends the draft of %s', async (_name, key, before, removed, written, value) => {
+    // The push after the save re-reads the file from the server, never the browser's cached copy
+    // of the address, so the draft ends; red when the read takes the cached copy.
+    it('ends the draft of a list with an item removed', async () => {
+        const key = 'waiting_status';
+        const before = 'waiting_status: [one, two, three]\n';
+        const written = (value: unknown): string =>
+            `waiting_status: [${(value as string[]).join(', ')}]\n`;
+        const value = ['two', 'three'];
         const seen = browser({ 'engine/behavior.yml': before });
         const rowNow = (): ConfigRow => {
             const found = fileRows(
@@ -83,8 +71,7 @@ describe('a Settings save within a minute of the view s last read of the file', 
         const row = rowNow();
         let draft = draftOf(row);
         if (draft === null) throw new Error('no draft');
-        for (let one = 0; one < removed; one += 1)
-            draft = applyEdit(draft, { do: 'remove', index: 0 });
+        draft = applyEdit(draft, { do: 'remove', index: 0 });
         await writer.save(row, draft);
 
         // The watcher's push moves the config channel; the Settings view, drawing the row, reads
@@ -118,7 +105,7 @@ describe('a file saved in a source tab', () => {
         });
     }
 
-    it('is read again by every reader of its text (case 33)', async () => {
+    it('is read again by every reader of its text', async () => {
         const disk = { 'hub/.oculus/settings.yml': 'languages: { python: { tab_size: 2 } }\n' };
         server(disk);
         store.client.writes.setToken('token');

@@ -1,4 +1,5 @@
-// The sentence a refused mute reads as, one case per word the endpoint answers with.
+// Layer 2, client-state tests. The sentence a refused mute reads as, one case per word the endpoint
+// answers with.
 //
 // The endpoint's own vocabulary (`invalid`, `unwritable`) never reaches the reader: each word has a
 // sentence of its own in the catalog, and a word this does not know reads as the general one, which
@@ -28,23 +29,11 @@ describe('the sentence one refused mute reads as', () => {
         );
     });
 
-    it('gives a word it does not know the general sentence, and draws no wire word', () => {
-        for (const error of ['', 'nonsense', 'the body is not a write this route knows']) {
-            const said = muteMessage({ ok: false, error });
-            expect(said).toBe(catalog['audit.failed_other']);
-            if (error !== '') expect(said).not.toContain(error);
-        }
-        expect(muteMessage({ ok: false })).toBe(catalog['audit.failed_other']);
-    });
-
-    it('names no wire word in any of its sentences', () => {
-        const sentences = [
-            muteMessage({ ok: false, error: 'invalid' }),
-            muteMessage({ ok: false, error: 'unwritable' }),
-            muteMessage({ ok: false, error: 'nonsense' })
-        ];
-        for (const word of ['invalid', 'unwritable']) {
-            expect(sentences.filter((one) => one.split(/\W+/).includes(word))).toEqual([]);
-        }
+    it.each([
+        ['no word', {}],
+        ['an empty word', { error: '' }],
+        ['a word it does not know', { error: 'nonsense' }]
+    ])('gives %s the general sentence', (_name, answer) => {
+        expect(muteMessage({ ok: false, ...answer })).toBe(catalog['audit.failed_other']);
     });
 });

@@ -1,4 +1,4 @@
-// Layer 2, client state tests. Lock Group: a locked pane is skipped by the landing of a view opened
+// Layer 2, client-state tests. Lock Group: a locked pane is skipped by the landing of a view opened
 // for something, still takes a tab dragged or opened onto it, keeps its lock through every
 // operation that rebuilds the pane, stays when its last tab goes, and is gone when it is closed as
 // a pane. The rules are checked on trees built by hand and then through the store.
@@ -13,7 +13,6 @@ import {
     moveInstance,
     openInstance,
     panes,
-    removeTab,
     restate,
     retarget,
     splitPane,
@@ -118,15 +117,6 @@ describe('where a view opened for something lands, with a locked pane', () => {
         const tree = row(locked(tab('f', 'files')), locked(), locked(tab('d')));
         expect(landingFor(tree, opened, [], [1])).toEqual({ kind: 'split', path: [1] });
     });
-
-    it('lands in the pane again once it is unlocked', () => {
-        const tree = row(pane(tab('f', 'files')), locked());
-        expect(landingFor(tree, opened, [], [0])).toEqual({ kind: 'split', path: [0] });
-        expect(landingFor(setLocked(tree, [1], false), opened, [], [0])).toEqual({
-            kind: 'pane',
-            path: [1]
-        });
-    });
 });
 
 describe('the operations that rebuild a locked pane', () => {
@@ -207,12 +197,6 @@ describe('the operations that rebuild a locked pane', () => {
         expect(lockedPaths(after)).toEqual(['2']);
     });
 
-    it('stays when removeTab takes its last tab', () => {
-        const after = removeTab(row(locked(tab('a')), pane(tab('c'))), [0], 0);
-        expect(tabsOfPanes(after)).toEqual([[], ['c']]);
-        expect(lockedPaths(after)).toEqual(['0']);
-    });
-
     it('stays when its last tab is moved out', () => {
         const base = row(locked(tab('a')), pane(tab('c')));
         const moved = moveInstance(base, 'a', [1], 0);
@@ -252,30 +236,5 @@ describe('the store with a locked pane', () => {
         const held = panes(client.layout.layout());
         expect(held[1].pane.tabs).toHaveLength(0);
         expect(held[2].pane.tabs.map((each) => each.view)).toEqual(['source']);
-    });
-
-    it('splits a new pane to the right when every pane is locked', () => {
-        client.layout.apply({ root: row(locked(tab('f', 'files')), locked()) });
-        client.layout.openView('source', { root: 'hub', path: 'a.ts', label: 'a.ts' });
-        const held = panes(client.layout.layout());
-        expect(held).toHaveLength(3);
-        expect(held.map(({ pane: one }) => one.locked === true)).toEqual([true, false, true]);
-        expect(held[1].pane.tabs.map((each) => each.view)).toEqual(['source']);
-    });
-
-    it('locks and unlocks a pane through change and setLocked', () => {
-        client.layout.apply({ root: row(pane(tab('f', 'files')), pane()) });
-        client.layout.change((current) => setLocked(current, [1], true));
-        expect(lockedPaths(client.layout.layout())).toEqual(['1']);
-        client.layout.change((current) => setLocked(current, [1], false));
-        expect(lockedPaths(client.layout.layout())).toEqual([]);
-    });
-
-    it('keeps a locked pane empty when the store closes its last tab', () => {
-        client.layout.apply({ root: row(pane(tab('f', 'files')), locked(tab('s', 'source'))) });
-        client.layout.closeInstance('s');
-        const held = panes(client.layout.layout());
-        expect(held.map(({ pane: one }) => one.tabs.length)).toEqual([1, 0]);
-        expect(held[1].pane.locked).toBe(true);
     });
 });

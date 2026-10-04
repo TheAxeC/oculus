@@ -1,13 +1,13 @@
-// The three sections under the Files tree and the state they keep: the tabs of Open Editors
-// (sections/open-editors.ts), the headings of Outline (sections/outline.ts), the rows of Timeline
-// and the answers it reads (sections/timeline.ts, timeline-reads.ts), and which sections are open
-// (sections/section-state.ts).
+// Layer 2, client-state tests. The sections under the Files tree and the state they keep: the tabs
+// of Open Editors (sections/open-editors.ts), the headings of Outline (sections/outline.ts), the
+// rows of Timeline and the answers it reads (sections/timeline.ts, timeline-reads.ts), and which
+// sections are open (sections/section-state.ts).
 //
 // What this does NOT cover: the sections drawn
 // (tests/views/sources/files/sections/sections.test.ts) and the requests behind the Timeline
 // (tests/routes/files/history.test.ts).
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
     dirtyIds,
     openGroups,
@@ -49,13 +49,6 @@ describe('Open Editors', () => {
     const c = tab('t3', 'file', { root: 'hub', path: 'c.pdf' });
     const term = tab('t4', 'terminal', { id: 'x' });
     const nameFor = (one: Instance): string => (one.id === 't2' ? 'B' : '');
-
-    // Revert: read the file from a list of views instead of the state.
-    it('reads the file a tab shows from its state, and none for a view without one', () => {
-        expect(fileOfTab(a)).toEqual({ root: 'hub', path: 'notes/a.md' });
-        expect(fileOfTab(term)).toBeNull();
-        expect(fileOfTab(tab('t5', 'source', { root: '', path: 'x' }))).toBeNull();
-    });
 
     // Revert: merge the panes into one group.
     it('groups the tabs by pane: two groups, three rows, the dot on the dirty one', () => {
@@ -169,7 +162,12 @@ describe('Outline', () => {
 });
 
 describe('outlineFollower', () => {
-    const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 30));
+    // Once the parser is loaded a read takes the same microtask steps whatever its text, so a read
+    // started after the asks ends after every outline they started.
+    beforeAll(() => latexOutline(READ, ''));
+    const settle = async (): Promise<void> => {
+        await latexOutline(READ, '');
+    };
 
     // Revert: deliver every outline that arrives.
     it('delivers the outline of the last text asked and not the one asked before it', async () => {

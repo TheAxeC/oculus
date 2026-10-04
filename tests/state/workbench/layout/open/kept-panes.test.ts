@@ -1,4 +1,4 @@
-// Layer 2, client state tests. The pane a page keeps when its last tab goes: a view opened for
+// Layer 2, client-state tests. The pane a page keeps when its last tab goes: a view opened for
 // something leaves an empty documents pane, a Terminal tab an empty terminals pane, and a page
 // holds at most one empty pane of each kind. The rule is checked on trees built by hand, with the
 // rule the store hands the tree functions, and then through the store on the Explorer arrangement,
@@ -10,7 +10,6 @@ import {
     closePane,
     moveInstance,
     panes,
-    removeTab,
     serialiseLayout,
     type Float,
     type KeepRule,
@@ -27,13 +26,13 @@ import {
     heldPages,
     instance,
     pageAround,
-    split,
-    viewsOf
+    split
 } from '../layout-fixture.ts';
 import { present } from '../../../../fixtures/present.ts';
 import Alpha from '../../../../shell/fixtures/Alpha.svelte';
 
-setCatalog(textCatalog(loadConfig(engineDir()).config));
+const SHIPPED = loadConfig(engineDir()).config;
+setCatalog(textCatalog(SHIPPED));
 
 const OPENED = new Set(['source', 'doc', 'file']);
 
@@ -126,11 +125,6 @@ describe('the pane a close keeps, over a tree', () => {
         expect(shape(after)).toEqual([[], ['f', 's']]);
     });
 
-    it('goes through removeTab with the same rule', () => {
-        const tree = row(of('f:files'), of('s:source'));
-        expect(shape(removeTab(tree, [1], 0, keep))).toEqual([['f'], []]);
-    });
-
     it('removes a kept pane when it is closed as a pane', () => {
         const tree = row(of('f:files'), of('s:source'));
         const kept = closeInstance(tree, 's', keep);
@@ -142,12 +136,11 @@ let client: ClientState;
 let loadLayout: ClientState['layout']['loadLayout'];
 let apply: ClientState['layout']['apply'];
 let layout: ClientState['layout']['layout'];
-let openView: ClientState['layout']['openView'];
 let closeInstanceInStore: ClientState['layout']['closeInstance'];
 
 beforeEach(() => {
     client = createClientState();
-    ({ loadLayout, apply, layout, openView } = client.layout);
+    ({ loadLayout, apply, layout } = client.layout);
     closeInstanceInStore = client.layout.closeInstance;
     loadLayout(fakeStorage());
     client.layout.registerOpened((view) => OPENED.has(view));
@@ -155,9 +148,7 @@ beforeEach(() => {
 
 /** The shipped Explorer arrangement, as the rail makes its page. */
 function explorer(): ReturnType<typeof parseArrangement> {
-    return parseArrangement(
-        (loadConfig(engineDir()).config.arrangements as Record<string, unknown>).explorer
-    );
+    return parseArrangement((SHIPPED.arrangements as Record<string, unknown>).explorer);
 }
 
 function onExplorer(): void {
@@ -165,15 +156,6 @@ function onExplorer(): void {
 }
 
 describe('the Explorer arrangement', () => {
-    it('leaves the right pane empty, a documents pane, when its only tab, a source tab, closes', () => {
-        onExplorer();
-        const id = openView('source', { root: 'hub', path: 'a.py', label: 'a.py' });
-        expect(viewsOf(layout())).toEqual(['files', 'repositories', 'search', 'source']);
-        closeInstanceInStore(id);
-        expect(shape(layout())).toHaveLength(2);
-        expect(shape(layout())[1]).toEqual([]);
-    });
-
     it('removes the left pane when its last tab, a tool view, closes, as before', () => {
         onExplorer();
         const ids = panes(layout())[0].pane.tabs.map((tab) => tab.id);

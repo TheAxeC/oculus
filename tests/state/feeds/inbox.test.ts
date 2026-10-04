@@ -1,4 +1,4 @@
-// Pure Inbox kind, tone, grouping, search, age, sender, and saved-state rules.
+// Layer 2, client-state tests. The Inbox kind, grouping, search, age, sender and saved-state rules.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -6,13 +6,11 @@ import {
     ageOf,
     inboxSearch,
     kindOf,
-    kindTone,
     parseInboxState,
     senderParts,
     splitInbox,
     threadAge,
     untriagedActionable,
-    type InboxKind,
     type InboxThread,
     type MailAccount
 } from '../../../src/lib/state/feeds/inbox.ts';
@@ -50,14 +48,8 @@ const threads = [
 ];
 
 describe('inbox selectors', () => {
-    it('reads the kind off the note and assigns the semantic tones', () => {
+    it('reads the kind off the note', () => {
         expect(threads.map(kindOf)).toEqual(['reply', 'action', 'info', null, 'reply']);
-        expect((['reply', 'action', 'info'] as InboxKind[]).map(kindTone)).toEqual([
-            'amber',
-            'red',
-            'teal'
-        ]);
-        expect(kindTone(null)).toBe('slate');
     });
 
     it('splits the plate into the unsorted section, the three kinds and the triaged list', () => {
@@ -122,21 +114,19 @@ describe('the threads still on the plate', () => {
 });
 
 describe('the sender of a thread, split for its card', () => {
-    it('reads the display name and the address of a From line', () => {
-        expect(senderParts('Sparcly.ai <noreply@sparcly.ai>')).toEqual({
-            name: 'Sparcly.ai',
-            address: 'noreply@sparcly.ai'
-        });
-    });
-
-    it('reads a quoted display name without its quotes, a comma inside it included', () => {
-        expect(senderParts('"Faes, Axel" <axel@x.be>')).toEqual({
-            name: 'Faes, Axel',
-            address: 'axel@x.be'
-        });
-    });
-
-    it('reads a bare address as an address with no name', () => {
-        expect(senderParts('axel@x.be')).toEqual({ name: '', address: 'axel@x.be' });
+    it.each([
+        [
+            'a display name and an address',
+            'Sparcly.ai <noreply@sparcly.ai>',
+            { name: 'Sparcly.ai', address: 'noreply@sparcly.ai' }
+        ],
+        [
+            'a quoted display name with a comma inside it',
+            '"Faes, Axel" <axel@x.be>',
+            { name: 'Faes, Axel', address: 'axel@x.be' }
+        ],
+        ['a bare address', 'axel@x.be', { name: '', address: 'axel@x.be' }]
+    ])('reads the From line of %s', (_name, from, parts) => {
+        expect(senderParts(from)).toEqual(parts);
     });
 });

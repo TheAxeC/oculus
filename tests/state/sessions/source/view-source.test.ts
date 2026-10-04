@@ -1,5 +1,5 @@
-// The one rule for which file of the hub a view is drawn from, over the engine's own configuration
-// and over configurations that name nothing.
+// Layer 2, client-state tests. The rule for which file of the hub a view is drawn from, over the
+// engine's own configuration and over configurations that name nothing or are of the wrong shape.
 
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
@@ -9,74 +9,20 @@ import { viewSourceFile } from '../../../../src/lib/state/sessions/view-source.t
 const { config } = loadConfig(engineDir());
 
 describe('the file a view is drawn from', () => {
-    it('answers each feed kind the path its own configuration key names', () => {
-        expect({
-            leads: viewSourceFile('leads', config),
-            radar: viewSourceFile('radar', config),
-            linkedin: viewSourceFile('linkedin', config)
-        }).toEqual({
-            leads: { root: HUB_ROOT, path: config.leads_file },
-            radar: { root: HUB_ROOT, path: config.radar_file },
-            linkedin: { root: HUB_ROOT, path: config.linkedin_dir }
-        });
+    it.each([
+        ['leads', 'leads_file'],
+        ['radar', 'radar_file'],
+        ['linkedin', 'linkedin_dir'],
+        ['people', 'people_file'],
+        ['venues', 'venues_file'],
+        ['datasets', 'datasets_file'],
+        ['pillars', 'pillars_file'],
+        ['domains', 'domains_file']
+    ] as const)('answers the %s view the path its configuration key %s names', (kind, key) => {
+        expect(viewSourceFile(kind, config)).toEqual({ root: HUB_ROOT, path: config[key] });
     });
 
-    it('answers each registry view the path its own configuration key names', () => {
-        expect({
-            people: viewSourceFile('people', config),
-            venues: viewSourceFile('venues', config),
-            datasets: viewSourceFile('datasets', config),
-            pillars: viewSourceFile('pillars', config),
-            domains: viewSourceFile('domains', config)
-        }).toEqual({
-            people: { root: HUB_ROOT, path: config.people_file },
-            venues: { root: HUB_ROOT, path: config.venues_file },
-            datasets: { root: HUB_ROOT, path: config.datasets_file },
-            pillars: { root: HUB_ROOT, path: config.pillars_file },
-            domains: { root: HUB_ROOT, path: config.domains_file }
-        });
-    });
-
-    it('answers a collection key the file of its own entry, under the hub root', () => {
-        expect(viewSourceFile('collection', config, 'funding')).toEqual({
-            root: HUB_ROOT,
-            path: 'funding/funding.yml'
-        });
-        expect(viewSourceFile('collection', config, 'venues')).toEqual({
-            root: HUB_ROOT,
-            path: 'registries/venues.yml'
-        });
-    });
-
-    it('answers null for a configuration that names no file, and for an unknown collection', () => {
-        expect(viewSourceFile('venues', {})).toBeNull();
-        expect(viewSourceFile('datasets', { datasets_file: '  ' })).toBeNull();
-        expect(viewSourceFile('pillars', { pillars_file: 12 })).toBeNull();
-        expect(viewSourceFile('domains', {})).toBeNull();
-        expect(viewSourceFile('radar', {})).toBeNull();
-        expect(viewSourceFile('leads', { leads_file: '   ' })).toBeNull();
-        expect(viewSourceFile('radar', { radar_file: 12 })).toBeNull();
-        expect(viewSourceFile('collection', {}, 'funding')).toBeNull();
-        expect(viewSourceFile('collection', config)).toBeNull();
-        expect(viewSourceFile('collection', config, 'not-a-collection')).toBeNull();
-    });
-
-    it('reads past a collections list holding anything but entries with a key and a file', () => {
-        expect(viewSourceFile('collection', { collections: 'one' }, 'funding')).toBeNull();
-        expect(
-            viewSourceFile(
-                'collection',
-                {
-                    collections: [
-                        null,
-                        'one',
-                        { key: 'funding' },
-                        { key: 'funding', file: 'a.yml' }
-                    ]
-                },
-                'funding'
-            )
-        ).toBeNull();
+    it('answers a collection key the file of the entry that carries it, reading past other rows', () => {
         expect(
             viewSourceFile(
                 'collection',
@@ -85,28 +31,42 @@ describe('the file a view is drawn from', () => {
             )
         ).toEqual({ root: HUB_ROOT, path: 'network/events.yml' });
     });
-});
 
-describe('the file a view is drawn from, over a configuration of the wrong shape', () => {
-    it('answers nothing for a collections key that is a map, and for a row that is a list', () => {
-        expect(
-            viewSourceFile('collection', { collections: { key: 'f', file: 'a.yml' } }, 'f')
-        ).toBeNull();
-        expect(viewSourceFile('collection', { collections: [['f', 'a.yml']] }, 'f')).toBeNull();
+    it.each([
+        ['no collections list', {}, 'funding'],
+        ['no key asked for', { collections: [{ key: 'f', file: 'a.yml' }] }, undefined],
+        ['a key no entry carries', { collections: [{ key: 'f', file: 'a.yml' }] }, 'g'],
+        ['a collections list that is a string', { collections: 'one' }, 'f'],
+        ['a collections key that is a map', { collections: { key: 'f', file: 'a.yml' } }, 'f'],
+        ['a row that is a list', { collections: [['f', 'a.yml']] }, 'f'],
+        ['an entry with no file', { collections: [null, 'one', { key: 'f' }] }, 'f'],
+        ['an entry whose file is an empty string', { collections: [{ key: 'f', file: '' }] }, 'f'],
+        [
+            'a first entry whose file is not a path, before one that is',
+            {
+                collections: [
+                    { key: 'f', file: 3 },
+                    { key: 'f', file: 'b.yml' }
+                ]
+            },
+            'f'
+        ]
+    ])('answers null for a collection with %s', (_name, held, key) => {
+        expect(viewSourceFile('collection', held, key)).toBeNull();
     });
 
-    it('answers the file of the first row that carries the key, whether or not the file is a path', () => {
-        const rows = [
-            { key: 'f', file: 3 },
-            { key: 'f', file: 'b.yml' }
-        ];
-        expect(viewSourceFile('collection', { collections: rows }, 'f')).toBeNull();
-        expect(
-            viewSourceFile('collection', { collections: [{ key: 'f', file: '' }] }, 'f')
-        ).toBeNull();
+    it.each([
+        ['a feed with no key', {}],
+        ['a blank feed path', { leads_file: '   ' }],
+        ['a feed path that is a number', { leads_file: 12 }],
+        ['a feed path that is a list', { leads_file: ['a'] }],
+        ['a feed path that is null', { leads_file: null }],
+        ['a feed path behind an own __proto__ key', JSON.parse('{"__proto__":{"leads_file":"p"}}')]
+    ] as [string, Record<string, unknown>][])('answers null for %s', (_name, held) => {
+        expect(viewSourceFile('leads', held)).toBeNull();
     });
 
-    it('trims a path, and reads an empty key like any other', () => {
+    it('trims a path, and reads an empty collection key like any other', () => {
         expect(
             viewSourceFile('collection', { collections: [{ key: 'f', file: ' a.yml ' }] }, 'f')
         ).toEqual({ root: HUB_ROOT, path: 'a.yml' });
@@ -117,16 +77,5 @@ describe('the file a view is drawn from, over a configuration of the wrong shape
             root: HUB_ROOT,
             path: 'a.yml'
         });
-    });
-
-    it('answers nothing for a feed path that is a list or null, or that sits behind an own __proto__ key', () => {
-        expect(viewSourceFile('leads', { leads_file: ['a'] })).toBeNull();
-        expect(viewSourceFile('leads', { leads_file: null })).toBeNull();
-        expect(
-            viewSourceFile(
-                'leads',
-                JSON.parse('{"__proto__":{"leads_file":"p"}}') as Record<string, unknown>
-            )
-        ).toBeNull();
     });
 });

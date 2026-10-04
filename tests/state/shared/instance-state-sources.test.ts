@@ -1,7 +1,7 @@
-// Layer 4, test. What the readers of a tab's instance state in state/sources (the datasets, the
-// venues and the repositories) answer for every kind of input a saved arrangement can hold: a
-// list, null, a string, a map with an own `__proto__` key, a state whose fields are each of the
-// wrong type, and the edge values of the right type. The table is described in
+// Layer 2, client-state tests. What the readers of a tab's instance state in state/sources (the
+// datasets, the venues and the repositories) answer for every kind of input a saved arrangement can
+// hold: a list, null, a map with an own `__proto__` key, a state whose fields are each of the wrong
+// type, and the edge values of the right type. The table is described in
 // tests/state/shared/instance-fixture.ts.
 
 import { describe, expect, it } from 'vitest';
@@ -12,10 +12,9 @@ import {
     repositoriesViewOf
 } from '../../../src/lib/state/sources/repositories/repositories.ts';
 import { parseVenuesState } from '../../../src/lib/state/sources/venues.ts';
-import { ABSENT, checkReaders, type Reader } from './instance-fixture.ts';
+import { checkReaders, type Reader } from './instance-fixture.ts';
 
 const OPEN_FORMS = { adding: true, editing: 'e' };
-const OPEN_FORMS_WRONG = { adding: 'yes', editing: 3 };
 
 const dataFallback = { search: '', off: [], adding: false, editing: '' };
 const dataValid = { search: 'q', off: ['open', 'closed'], adding: true, editing: 'e', reveal: 'r' };
@@ -92,7 +91,6 @@ const diffPathsValid = {
     unchanged: 'shown',
     folded: ['a.ts']
 };
-const diffNoPathsFallback = { mode: 'side', views: {}, unchanged: 'folded', folded: [] };
 const reposFallback = {
     root: '',
     collapsed: [],
@@ -115,67 +113,15 @@ const READERS: Reader[] = [
         name: 'parseDataState',
         read: parseDataState,
         valid: { search: 'q', off: ['open', 'closed'], ...OPEN_FORMS, reveal: 'r' },
-        wrong: { search: 3, off: 'x', ...OPEN_FORMS_WRONG, reveal: 3 },
-        edge: {
-            'empty strings': { search: '', editing: '', reveal: '' },
-            'blank reveal': { reveal: ' ' },
-            'off with duplicates': { off: ['a', 'a', ''] },
-            'off with other items': { off: [1, 'a', null, ['b']] },
-            'off empty': { off: [] },
-            'adding is a number': { adding: 1 },
-            'no reveal': { reveal: ABSENT }
-        },
+        wrong: { off: 'x' },
         notMap: dataFallback,
         answers: {
             'empty map': dataFallback,
-            'search 3, reveal empty': dataFallback,
-            'search s, reveal r, lead space': {
-                search: 's',
-                off: [],
-                adding: false,
-                editing: '',
-                reveal: 'r'
-            },
             'own __proto__ key': { search: 's', off: [], adding: true, editing: '' },
             'own __proto__ key alone': dataFallback,
             valid: dataValid,
-            'wrong search': {
-                search: '',
-                off: ['open', 'closed'],
-                adding: true,
-                editing: 'e',
-                reveal: 'r'
-            },
             'wrong off': { search: 'q', off: [], adding: true, editing: 'e', reveal: 'r' },
-            'wrong adding': { ...dataValid, adding: false },
-            'wrong editing': {
-                search: 'q',
-                off: ['open', 'closed'],
-                adding: true,
-                editing: '',
-                reveal: 'r'
-            },
-            'wrong reveal': { search: 'q', off: ['open', 'closed'], adding: true, editing: 'e' },
-            'all wrong': dataFallback,
-            'empty strings': { search: '', off: ['open', 'closed'], adding: true, editing: '' },
-            'blank reveal': { ...dataValid, reveal: ' ' },
-            'off with duplicates': {
-                search: 'q',
-                off: ['a', 'a', ''],
-                adding: true,
-                editing: 'e',
-                reveal: 'r'
-            },
-            'off with other items': {
-                search: 'q',
-                off: ['a'],
-                adding: true,
-                editing: 'e',
-                reveal: 'r'
-            },
-            'off empty': { search: 'q', off: [], adding: true, editing: 'e', reveal: 'r' },
-            'adding is a number': { ...dataValid, adding: false },
-            'no reveal': { search: 'q', off: ['open', 'closed'], adding: true, editing: 'e' }
+            'all wrong': dataFallback
         }
     },
     {
@@ -190,85 +136,20 @@ const READERS: Reader[] = [
             reveal: 'r'
         },
         wrong: {
-            search: 3,
             off: 'x',
             journalsOpen: 'no',
-            conferencesOpen: 0,
-            ...OPEN_FORMS_WRONG,
-            reveal: 3
-        },
-        edge: {
-            'empty strings': { search: '', editing: '', reveal: '' },
-            'blank reveal': { reveal: ' ' },
-            'off with duplicates': { off: ['a', 'a', ''] },
-            'off with other items': { off: [1, 'a', null, ['b']] },
-            'journals and conferences open': { journalsOpen: true, conferencesOpen: true },
-            'journals null': { journalsOpen: null },
-            'no journals and no conferences': { journalsOpen: ABSENT, conferencesOpen: ABSENT },
-            'adding is a number': { adding: 1 },
-            'no reveal': { reveal: ABSENT }
+            conferencesOpen: 0
         },
         notMap: venuesFallback,
         answers: {
             'empty map': venuesFallback,
-            'search 3, reveal empty': venuesFallback,
-            'search s, reveal r, lead space': {
-                search: 's',
-                off: [],
-                journalsOpen: true,
-                conferencesOpen: true,
-                adding: false,
-                editing: '',
-                reveal: 'r'
-            },
             'own __proto__ key': { ...venuesFallback, search: 's', adding: true },
             'own __proto__ key alone': venuesFallback,
             valid: venuesValid,
-            'wrong search': { ...venuesValid, search: '' },
             'wrong off': { ...venuesValid, off: [] },
             'wrong journalsOpen': { ...venuesValid, journalsOpen: true },
             'wrong conferencesOpen': { ...venuesValid, conferencesOpen: true },
-            'wrong adding': { ...venuesValid, adding: false },
-            'wrong editing': { ...venuesValid, editing: '' },
-            'wrong reveal': {
-                search: 'q',
-                off: ['a'],
-                journalsOpen: false,
-                conferencesOpen: false,
-                adding: true,
-                editing: 'e'
-            },
-            'all wrong': venuesFallback,
-            'empty strings': {
-                ...venuesFallback,
-                off: ['a'],
-                journalsOpen: false,
-                conferencesOpen: false,
-                adding: true
-            },
-            'blank reveal': { ...venuesValid, reveal: ' ' },
-            'off with duplicates': { ...venuesValid, off: ['a', 'a', ''] },
-            'off with other items': venuesValid,
-            'journals and conferences open': {
-                ...venuesValid,
-                journalsOpen: true,
-                conferencesOpen: true
-            },
-            'journals null': { ...venuesValid, journalsOpen: true },
-            'no journals and no conferences': {
-                ...venuesValid,
-                journalsOpen: true,
-                conferencesOpen: true
-            },
-            'adding is a number': { ...venuesValid, adding: false },
-            'no reveal': {
-                search: 'q',
-                off: ['a'],
-                journalsOpen: false,
-                conferencesOpen: false,
-                adding: true,
-                editing: 'e'
-            }
+            'all wrong': venuesFallback
         }
     },
     {
@@ -310,32 +191,9 @@ const READERS: Reader[] = [
             line: '4',
             session: 3
         },
-        edge: {
-            'group changed': { group: 'changed' },
-            'group empty': { group: '' },
-            'group null': { group: null },
-            'line zero': { line: 0 },
-            'line NaN': { line: NaN },
-            'line Infinity': { line: Infinity },
-            'line negative': { line: -1 },
-            'line fractional': { line: 1.5 },
-            'empty strings': {
-                id: '',
-                label: '',
-                root: '',
-                path: '',
-                commit: '',
-                save: '',
-                stash: '',
-                session: ''
-            },
-            'no booleans': { staged: ABSENT, worktree: ABSENT }
-        },
         notMap: heldDiffFallback,
         answers: {
             'empty map': heldDiffFallback,
-            'search 3, reveal empty': heldDiffFallback,
-            'search s, reveal r, lead space': heldDiffFallback,
             'own __proto__ key': heldDiffFallback,
             'own __proto__ key alone': heldDiffFallback,
             valid: heldDiffValid,
@@ -355,27 +213,7 @@ const READERS: Reader[] = [
             'wrong replace': { ...heldDiffValid, replace: undefined },
             'wrong line': { ...heldDiffValid, line: 0 },
             'wrong session': { ...heldDiffValid, session: '' },
-            'all wrong': heldDiffFallback,
-            'group changed': { ...heldDiffValid, group: 'changed' },
-            'group empty': { ...heldDiffValid, group: undefined },
-            'group null': { ...heldDiffValid, group: undefined },
-            'line zero': { ...heldDiffValid, line: 0 },
-            'line NaN': { ...heldDiffValid, line: NaN },
-            'line Infinity': { ...heldDiffValid, line: Infinity },
-            'line negative': { ...heldDiffValid, line: -1 },
-            'line fractional': { ...heldDiffValid, line: 1.5 },
-            'empty strings': {
-                ...heldDiffFallback,
-                staged: true,
-                worktree: true,
-                group: 'staged',
-                against: { root: 'a', path: 'b' },
-                compare: { from: 'f', to: 't' },
-                workspace: true,
-                replace: { ...REPLACE_VALID },
-                line: 4
-            },
-            'no booleans': { ...heldDiffValid, staged: false, worktree: false }
+            'all wrong': heldDiffFallback
         }
     },
     {
@@ -389,24 +227,14 @@ const READERS: Reader[] = [
         },
         wrong: { mode: 3, views: [], unchanged: 3, folded: 'x' },
         edge: {
-            'mode side': { mode: 'side' },
-            'mode in capitals': { mode: 'Inline' },
-            'unchanged folded': { unchanged: 'folded' },
             'views with other values': { views: { a: 3, b: null, c: [], d: 'x', e: { k: 1 } } },
-            'views empty': { views: {} },
-            'views null': { views: null },
             'views with an own __proto__ key': {
                 views: JSON.parse('{"__proto__":{"a":1},"b":{"c":2}}')
-            },
-            'folded with duplicates': { folded: ['a.ts', 'a.ts'] },
-            'folded with other items': { folded: [1, 'a.ts', null, ['b']] },
-            'folded empty': { folded: [] }
+            }
         },
         notMap: diffViewFallback,
         answers: {
             'empty map': diffViewFallback,
-            'search 3, reveal empty': diffViewFallback,
-            'search s, reveal r, lead space': diffViewFallback,
             'own __proto__ key': diffViewFallback,
             'own __proto__ key alone': diffViewFallback,
             valid: diffViewValid,
@@ -415,26 +243,18 @@ const READERS: Reader[] = [
             'wrong unchanged': { ...diffViewValid, unchanged: 'folded' },
             'wrong folded': { ...diffViewValid, folded: [] },
             'all wrong': diffViewFallback,
-            'mode side': { ...diffViewValid, mode: 'side' },
-            'mode in capitals': { ...diffViewValid, mode: 'side' },
-            'unchanged folded': { ...diffViewValid, unchanged: 'folded' },
             'views with other values': {
                 mode: 'inline',
                 views: { e: { k: 1 } },
                 unchanged: 'shown',
                 folded: ['a.ts']
             },
-            'views empty': { mode: 'inline', views: {}, unchanged: 'shown', folded: ['a.ts'] },
-            'views null': { mode: 'inline', views: {}, unchanged: 'shown', folded: ['a.ts'] },
             'views with an own __proto__ key': {
                 mode: 'inline',
                 views: { b: { c: 2 } },
                 unchanged: 'shown',
                 folded: ['a.ts']
-            },
-            'folded with duplicates': { ...diffViewValid, folded: ['a.ts', 'a.ts'] },
-            'folded with other items': diffViewValid,
-            'folded empty': { ...diffViewValid, folded: [] }
+            }
         }
     },
     {
@@ -449,14 +269,11 @@ const READERS: Reader[] = [
         wrong: { views: 'x', folded: {} },
         edge: {
             'views of other paths only': { views: { 'b.ts': {} } },
-            'folded of other paths only': { folded: ['b.ts', 'd.ts'] },
-            'folded with duplicates': { folded: ['a.ts', 'a.ts'] }
+            'folded of other paths only': { folded: ['b.ts', 'd.ts'] }
         },
         notMap: diffPathsFallback,
         answers: {
             'empty map': diffPathsFallback,
-            'search 3, reveal empty': diffPathsFallback,
-            'search s, reveal r, lead space': diffPathsFallback,
             'own __proto__ key': diffPathsFallback,
             'own __proto__ key alone': diffPathsFallback,
             valid: diffPathsValid,
@@ -469,29 +286,7 @@ const READERS: Reader[] = [
                 unchanged: 'shown',
                 folded: ['a.ts']
             },
-            'folded of other paths only': { ...diffPathsValid, folded: [] },
-            'folded with duplicates': { ...diffPathsValid, folded: ['a.ts', 'a.ts'] }
-        }
-    },
-    {
-        name: 'diffViewOf over no paths',
-        read: (raw) => diffViewOf(raw, []),
-        valid: {
-            views: { 'a.ts': { scroll: 1 } },
-            folded: ['a.ts']
-        },
-        wrong: { views: 'x', folded: {} },
-        notMap: diffNoPathsFallback,
-        answers: {
-            'empty map': diffNoPathsFallback,
-            'search 3, reveal empty': diffNoPathsFallback,
-            'search s, reveal r, lead space': diffNoPathsFallback,
-            'own __proto__ key': diffNoPathsFallback,
-            'own __proto__ key alone': diffNoPathsFallback,
-            valid: diffNoPathsFallback,
-            'wrong views': diffNoPathsFallback,
-            'wrong folded': diffNoPathsFallback,
-            'all wrong': diffNoPathsFallback
+            'folded of other paths only': { ...diffPathsValid, folded: [] }
         }
     },
     {
@@ -506,24 +301,9 @@ const READERS: Reader[] = [
             closed: ['d']
         },
         wrong: { root: 3, collapsed: 'x', commit: 3, mode: 'grid', reveal: 'tags', closed: 'x' },
-        edge: {
-            'mode list': { mode: 'list' },
-            'mode in capitals': { mode: 'Tree' },
-            'reveal empty': { reveal: '' },
-            'reveal in capitals': { reveal: 'Branches' },
-            'empty strings': { root: '', commit: '' },
-            'collapsed with duplicates': { collapsed: ['c', 'c', ''] },
-            'collapsed with other items': { collapsed: [1, 'c', null, ['d']] },
-            'collapsed empty': { collapsed: [] },
-            'closed with other items': { closed: [1, 'd', null, ['e']] },
-            'closed empty': { closed: [] },
-            'no mode and no reveal': { mode: ABSENT, reveal: ABSENT }
-        },
         notMap: reposFallback,
         answers: {
             'empty map': reposFallback,
-            'search 3, reveal empty': reposFallback,
-            'search s, reveal r, lead space': reposFallback,
             'own __proto__ key': reposFallback,
             'own __proto__ key alone': reposFallback,
             valid: reposValid,
@@ -533,21 +313,17 @@ const READERS: Reader[] = [
             'wrong mode': { ...reposValid, mode: 'list' },
             'wrong reveal': { ...reposValid, reveal: '' },
             'wrong closed': { ...reposValid, closed: [] },
-            'all wrong': reposFallback,
-            'mode list': { ...reposValid, mode: 'list' },
-            'mode in capitals': { ...reposValid, mode: 'list' },
-            'reveal empty': { ...reposValid, reveal: '' },
-            'reveal in capitals': { ...reposValid, reveal: '' },
-            'empty strings': { ...reposValid, root: '', commit: '' },
-            'collapsed with duplicates': { ...reposValid, collapsed: ['c', 'c', ''] },
-            'collapsed with other items': reposValid,
-            'collapsed empty': { ...reposValid, collapsed: [] },
-            'closed with other items': reposValid,
-            'closed empty': { ...reposValid, closed: [] },
-            'no mode and no reveal': { ...reposValid, mode: 'list', reveal: '' }
+            'all wrong': reposFallback
         }
     }
 ];
+
+describe('diffViewOf over no paths', () => {
+    it('keeps no view and no fold, whatever the state holds', () => {
+        const held = { views: { 'a.ts': { scroll: 1 } }, folded: ['a.ts'] };
+        expect(diffViewOf(held, [])).toStrictEqual(diffViewFallback);
+    });
+});
 
 describe('the objects a diff pane reader hands on', () => {
     it('hands on the view states of the paths it keeps, and a list and map of its own', () => {

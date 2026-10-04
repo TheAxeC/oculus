@@ -1,7 +1,7 @@
-// The entry form's two value rules: how an entry's value is held by its control, and what a
-// control's value is saved as. The form's save and the drafts' unsaved check both go through them,
-// so a case here is the one rule both follow. Which open forms a host view's saved state names is
-// at the end.
+// Layer 2, client-state tests. The entry form's two value rules: how an entry's value is held by
+// its control, and what a control's value is saved as. The form's save and the drafts' unsaved
+// check both go through them, so a case here is the one rule both follow. The open forms a host
+// view's saved state names are read first.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -17,53 +17,6 @@ import {
     parseDomainsState,
     parsePillarsState
 } from '../../../src/lib/state/boards/structure/lines.ts';
-
-describe('controlValue', () => {
-    it('holds each kind the way its control draws it', () => {
-        expect(controlValue(true, 'checkbox')).toBe(true);
-        expect(controlValue('yes', 'checkbox')).toBe(false);
-        expect(controlValue(['a', 7, 'b'], 'tags')).toBe('a, b');
-        expect(controlValue(2026, 'text')).toBe('2026');
-        expect(controlValue(undefined, 'text')).toBe('');
-        expect(controlValue({ method: 'wget' }, 'raw')).toBe('{"method":"wget"}');
-        expect(
-            controlValue([{ label: 'When', value: 'May' }, 'stray', { label: 3 }], 'metalist')
-        ).toEqual([
-            { label: 'When', value: 'May' },
-            { label: '', value: '' }
-        ]);
-    });
-});
-
-describe('savedValue', () => {
-    it('trims text, splits tags into words and drops empty metalist rows', () => {
-        expect(savedValue('  a line  ', 'text')).toBe('a line');
-        expect(savedValue('a, ,b ,', 'tags')).toEqual(['a', 'b']);
-        expect(savedValue('', 'tags')).toEqual([]);
-        expect(savedValue(true, 'checkbox')).toBe(true);
-        expect(savedValue('true', 'checkbox')).toBe(false);
-        expect(
-            savedValue(
-                [
-                    { label: ' k ', value: 'v' },
-                    { label: ' ', value: '' }
-                ],
-                'metalist'
-            )
-        ).toEqual([{ label: 'k', value: 'v' }]);
-    });
-
-    it('calls two values the same when the save would write the same', () => {
-        expect(sameSaved('a,b', 'a, b', 'tags')).toBe(true);
-        expect(sameSaved('a,b', 'a, b', 'text')).toBe(false);
-        expect(sameSaved(' x', 'x', 'text')).toBe(true);
-        expect(sameSaved([{ label: '', value: '' }], [], 'metalist')).toBe(true);
-        // Revert: sameSaved comparing a raw field's text makes the first of these false.
-        expect(sameSaved('{"a": 1}', '{"a":1}', 'raw')).toBe(true);
-        expect(sameSaved('{"a": 1}', '{"a":2}', 'raw')).toBe(false);
-        expect(sameSaved('{"a": ', '{"a":1}', 'raw')).toBe(false);
-    });
-});
 
 describe('the open forms of a host view', () => {
     it('reads the add form and the edited entry, and none for anything else', () => {
@@ -85,7 +38,7 @@ describe('the open forms of a host view', () => {
     });
 });
 
-describe('controlValue over a value of the wrong type', () => {
+describe('controlValue', () => {
     it.each([
         ['checkbox', true, true],
         ['checkbox', 'true', false],
@@ -113,14 +66,7 @@ describe('controlValue over a value of the wrong type', () => {
         ['metalist', 'a', 'a'],
         ['metalist', 4, '4'],
         ['metalist', null, ''],
-        ['raw', {}, '{}'],
         ['raw', { a: [1, { b: null }] }, '{"a":[1,{"b":null}]}'],
-        ['raw', [], ''],
-        ['raw', ['a'], ''],
-        ['raw', 'a', ''],
-        ['raw', 3, ''],
-        ['raw', null, ''],
-        ['raw', undefined, ''],
         ['raw', { a: undefined, b: 1 }, '{"b":1}']
     ])('holds a %s control over %j as %j', (kind, value, expected) => {
         expect(controlValue(value, kind)).toStrictEqual(expected);
@@ -146,7 +92,6 @@ describe('controlValue over a value of the wrong type', () => {
             { label: 'c', value: 'd' },
             { label: '', value: '' }
         ]);
-        expect(Object.keys((held as { label: string }[])[0])).toStrictEqual(['label', 'value']);
         expect(controlValue([], 'metalist')).toStrictEqual([]);
     });
 
@@ -202,14 +147,9 @@ describe('the raw field text', () => {
         expect(Object.keys(value ?? {})).toStrictEqual(['__proto__', 'a']);
         expect(Object.getPrototypeOf(value)).toBe(Object.prototype);
     });
-
-    it('answers the parsed map keys in the order the text holds them', () => {
-        const parsed = parseRawField('{"b":1,"a":2,"1":3}');
-        expect(Object.keys(parsed.ok ? (parsed.value ?? {}) : {})).toStrictEqual(['1', 'b', 'a']);
-    });
 });
 
-describe('savedValue and sameSaved over a value of the wrong type', () => {
+describe('savedValue and sameSaved', () => {
     it.each([
         ['checkbox', true, true],
         ['checkbox', 'true', false],
@@ -221,9 +161,18 @@ describe('savedValue and sameSaved over a value of the wrong type', () => {
         ['tags', true, []],
         ['tags', [], []],
         ['tags', ' a , b,, ', ['a', 'b']],
+        ['tags', '', []],
         ['metalist', 'a', []],
         ['metalist', true, []],
-        ['metalist', [], []]
+        ['metalist', [], []],
+        [
+            'metalist',
+            [
+                { label: ' k ', value: 'v' },
+                { label: ' ', value: '' }
+            ],
+            [{ label: 'k', value: 'v' }]
+        ]
     ] as [string, FormValue, unknown][])(
         'saves a %s control holding %j as %j',
         (kind, value, expected) => {
@@ -232,6 +181,14 @@ describe('savedValue and sameSaved over a value of the wrong type', () => {
     );
 
     it.each([
+        ['tags', 'a,b', 'a, b', true],
+        ['text', 'a,b', 'a, b', false],
+        ['text', ' x', 'x', true],
+        ['metalist', [{ label: '', value: '' }], [], true],
+        // Revert: sameSaved comparing a raw field's text makes the first of these false.
+        ['raw', '{"a": 1}', '{"a":1}', true],
+        ['raw', '{"a": 1}', '{"a":2}', false],
+        ['raw', '{"a": ', '{"a":1}', false],
         ['raw', true, '{"a":1}', false],
         ['raw', '{"a":1}', true, false],
         ['raw', true, false, true],

@@ -1,13 +1,13 @@
-// Layer 4, client-state test. How a terminal is marked (state/sessions/terminal/terminal-marks.ts):
-// the token of each of the eight colour names, the icon a reader gave it while the vocabulary holds
-// it, and what the strip's tab of a Terminal tab is drawn with, given the terminal the tab shows.
+// Layer 2, client-state tests. How a terminal is marked
+// (state/sessions/terminal/terminal-marks.ts): the icon and colour token a reader gave it while the
+// vocabulary holds them, the result mark of a task terminal, and what the strip's tab of a Terminal
+// tab is drawn with, given the terminal the tab shows.
 //
 // What this does NOT cover: the mark drawn on a row, the bar title or the strip, which is seen at
 // the look and in tests/views/sessions/terminal-style.test.ts.
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
-    colorToken,
     markOf,
     resultMark,
     tabMark,
@@ -81,13 +81,6 @@ describe('the mark of a terminal on the strip', () => {
         });
         expect(tabMarkOf({ view: 'files', state }, found)).toEqual({});
     });
-
-    // Revert: name a colour by the ANSI slot it is drawn in rather than the token in colorToken.
-    it('maps the eight names to their tokens', () => {
-        expect(colorToken('yellow')).toBe('--c-gold');
-        expect(colorToken('black')).toBe('--muted');
-        expect(colorToken('chartreuse')).toBe(null);
-    });
 });
 
 describe('the result mark of a task terminal', () => {
@@ -100,7 +93,6 @@ describe('the result mark of a task terminal', () => {
     it('is a green check for an exit code of zero and a red cross for any other', () => {
         expect(resultMark(task(0))).toEqual({ glyph: 'check', token: '--c-green' });
         expect(resultMark(task(1))).toEqual({ glyph: 'fail', token: '--c-red' });
-        expect(resultMark(task(137))).toEqual({ glyph: 'fail', token: '--c-red' });
     });
 
     it('is empty while the line runs and for a terminal that is no task terminal', () => {
@@ -111,9 +103,7 @@ describe('the result mark of a task terminal', () => {
 
     it('replaces the icon and the colour on the strip and on the row once the line ended', () => {
         expect(tabMark(task(0))).toEqual({ glyph: 'check', token: '--c-green' });
-        expect(tabMark(task(2))).toEqual({ glyph: 'fail', token: '--c-red' });
         expect(markOf(task(0))).toEqual({ glyph: 'check', token: '--c-green' });
-        expect(markOf(task(2))).toEqual({ glyph: 'fail', token: '--c-red' });
     });
 
     it('keeps the icon and the colour of the terminal while its line runs', () => {

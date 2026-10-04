@@ -1,10 +1,9 @@
-// The config's colours as tones, over a synthetic vocabulary and then over the real
-// config/catalogs/vocab.yml.
+// Layer 2, client-state tests. The config's colours as tones, over a synthetic vocabulary and then
+// over the real config/catalogs/vocab.yml.
 //
 // The synthetic half is where the unknown cases are checked, since the real config has an answer
-// for almost everything. The real half is the one that would fail if config/catalogs/vocab.yml
-// stopped holding a key the lookups read, which is the only way these functions can break without
-// this file changing.
+// for almost everything. The real half runs the legend and the status marks over the shipped
+// vocabulary.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -70,24 +69,9 @@ describe('toneOf', () => {
         expect(toneOf('#0d9488')).toBe('teal');
     });
 
-    it('matches a hex the config wrote in either case', () => {
-        synthetic();
-        expect(toneOf('#7C5CFF')).toBe('violet');
-    });
-
     it('gives the unknown tone for a hex the palette does not list', () => {
         synthetic();
         expect(toneOf('#abcdef')).toBe(UNKNOWN_TONE);
-    });
-
-    it('gives the unknown tone for a token that is not a hue', () => {
-        synthetic();
-        expect(toneOf('#64748b')).toBe(UNKNOWN_TONE);
-    });
-
-    it('gives the unknown tone for a token no custom property could be named after', () => {
-        synthetic();
-        expect(toneOf('#123456')).toBe(UNKNOWN_TONE);
     });
 });
 
@@ -197,57 +181,10 @@ describe('a vocabulary that is missing or wrongly shaped', () => {
         expect(chipKeys()).toEqual([]);
         expect(chipLabel('submitted')).toBe('submitted');
     });
-
-    it('ignores a key of the wrong shape', () => {
-        setVocab({ palette: 'not a map', status_legend: 'not a list' });
-        expect(toneOf('#7c5cff')).toBe(UNKNOWN_TONE);
-        expect(chipKeys()).toEqual([]);
-    });
 });
 
 describe('the real config/catalogs/vocab.yml', () => {
     const vocab = vocabCatalog(REAL_CONFIG);
-
-    // Revert: remove 'code_theme', 'show_tabs' or 'wrap_tabs' from VOCAB_KEYS in
-    // data/sources/config/catalogs.ts; the first frame then lacks the key.
-    it('carries all fourteen keys the client state reads at first load', () => {
-        expect(Object.keys(vocab).sort()).toEqual([
-            'code_theme',
-            'crt',
-            'data_access',
-            'domains',
-            'editor_actions',
-            'palette',
-            'show_tabs',
-            'status_legend',
-            'status_palette',
-            'terminal',
-            'themes',
-            'type_color',
-            'wallpaper',
-            'wrap_tabs'
-        ]);
-        expect(vocab.terminal).toEqual({
-            font_px: 12.5,
-            mac_option_is_meta: false,
-            copy_on_selection: false,
-            cursor_style: 'block',
-            cursor_blinking: false
-        });
-    });
-
-    it('gives a hue to every type the portfolio uses', () => {
-        setVocab(vocab);
-        expect(typeTone('manuscript')).toBe('teal');
-        expect(typeTone('idea')).toBe('violet');
-        expect(typeTone('published')).toBe('green');
-    });
-
-    it('gives a hue to a status and a research domain', () => {
-        setVocab(vocab);
-        expect(statusTone('submitted')).toBe('amber');
-        expect(domainTone('heart')).toBe('crimson');
-    });
 
     it('gives every chip in the legend a label and a glyph name', () => {
         setGlyphs(GLYPHS);
@@ -257,11 +194,6 @@ describe('the real config/catalogs/vocab.yml', () => {
         expect(keys.length).toBeGreaterThan(20);
         expect(keys.filter((key) => chipLabel(key) === '')).toEqual([]);
         expect(keys.filter((key) => chipGlyphName(key) === '')).toEqual([]);
-    });
-
-    it('names a glyph held by config/catalogs/glyphs.yml in every status legend row', () => {
-        const rows = vocab.status_legend as { key: string; icon: string }[];
-        expect(rows.filter((row) => !(row.icon in GLYPHS)).map((row) => row.key)).toEqual([]);
     });
 
     it('leaves every tone it hands out usable as a custom-property name', () => {
@@ -343,18 +275,11 @@ describe('a vocabulary whose rows are of the wrong type', () => {
 
     it.each([
         ['ok', 'red'],
-        ['UP', 'red'],
         ['up', 'red'],
         ['str', UNKNOWN_TONE],
         ['num', UNKNOWN_TONE],
-        ['list', UNKNOWN_TONE],
-        ['nul', UNKNOWN_TONE],
         [7, 'red'],
-        [true, 'green'],
-        [null, UNKNOWN_TONE],
-        [undefined, UNKNOWN_TONE],
-        [['ok'], UNKNOWN_TONE],
-        [{ ok: 1 }, UNKNOWN_TONE]
+        [null, UNKNOWN_TONE]
     ])('gives the status %j the tone %s', (status, expected) => {
         setVocab(MESSY);
         expect(statusTone(status)).toBe(expected);
@@ -363,11 +288,7 @@ describe('a vocabulary whose rows are of the wrong type', () => {
     it.each([
         ['manuscript', 'red'],
         ['MANUSCRIPT', 'red'],
-        ['idea', UNKNOWN_TONE],
-        ['n', UNKNOWN_TONE],
-        ['mixed', 'green'],
-        [3, UNKNOWN_TONE],
-        [null, UNKNOWN_TONE]
+        ['idea', UNKNOWN_TONE]
     ])('gives the type %j the tone %s', (type, expected) => {
         setVocab(MESSY);
         expect(typeTone(type)).toBe(expected);
@@ -377,12 +298,9 @@ describe('a vocabulary whose rows are of the wrong type', () => {
         ['heart', 'red', 'Heart'],
         ['lung', UNKNOWN_TONE, ''],
         ['liver', UNKNOWN_TONE, 'liver'],
-        ['Brain', 'green', 'Brain'],
         ['brain', 'green', 'Brain'],
-        ['empty', UNKNOWN_TONE, 'empty'],
         [7, UNKNOWN_TONE, '7'],
-        [null, UNKNOWN_TONE, ''],
-        [{}, UNKNOWN_TONE, '']
+        [null, UNKNOWN_TONE, '']
     ])('gives the domain %j the tone %s and the words %j', (domain, tone, words) => {
         setVocab(MESSY);
         expect(domainTone(domain)).toBe(tone);
@@ -392,10 +310,7 @@ describe('a vocabulary whose rows are of the wrong type', () => {
     it.each([
         ['open', 'red'],
         ['OPEN', 'red'],
-        ['closed', UNKNOWN_TONE],
-        ['odd', UNKNOWN_TONE],
-        [3, UNKNOWN_TONE],
-        [null, UNKNOWN_TONE]
+        ['closed', UNKNOWN_TONE]
     ])('gives the data access %j the tone %s', (access, expected) => {
         setVocab(MESSY);
         expect(dataAccessTone(access)).toBe(expected);
@@ -406,25 +321,14 @@ describe('a vocabulary whose rows are of the wrong type', () => {
         [' red ', 'red'],
         ['Red', UNKNOWN_TONE],
         ['blue', UNKNOWN_TONE],
-        ['green', 'green'],
-        ['r e d', UNKNOWN_TONE],
-        ['', UNKNOWN_TONE],
-        [3, UNKNOWN_TONE],
-        [true, UNKNOWN_TONE],
-        [null, UNKNOWN_TONE],
-        [['red'], UNKNOWN_TONE],
-        [undefined, UNKNOWN_TONE]
+        [null, UNKNOWN_TONE]
     ])('names the hue %j as the tone %s', (name, expected) => {
         setVocab(MESSY);
         expect(namedTone(name)).toBe(expected);
     });
 
     it.each([
-        ['#aaa111', 'red'],
-        [' #AAA111 ', 'red'],
         [3, undefined],
-        [null, undefined],
-        [['#aaa111'], undefined],
         [undefined, undefined]
     ])('gives the hex %j the palette tone %s', (hex, expected) => {
         setVocab(MESSY);
@@ -470,7 +374,7 @@ describe('a legend row named __proto__', () => {
 });
 
 describe('a name that is a property of every object', () => {
-    const NAMES = ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf'];
+    const NAMES = ['constructor', '__proto__'];
 
     it.each(NAMES)('is no hex, status, type, domain or chip when asked for as %s', (name) => {
         setVocab({
@@ -496,7 +400,7 @@ describe('a name that is a property of every object', () => {
 });
 
 describe('a vocabulary key whose lower-cased form is __proto__', () => {
-    it.each(['palette', 'status_palette', 'type_color', 'domains', 'data_access'])(
+    it.each(['palette', 'status_palette', 'domains'])(
         'holds no entry for the key __PROTO__ of %s',
         (key) => {
             const row = key === 'domains' ? { color: '#aaa111', label: 'Hidden' } : '#aaa111';

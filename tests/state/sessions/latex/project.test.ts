@@ -1,5 +1,5 @@
-// The LaTeX store over a project: what one project's state reads as, when it is asked for again,
-// and what a build that has ended does to the PDF's address.
+// Layer 2, client-state tests. The LaTeX store over a project: what one project's state reads as,
+// when it is asked for again, and what a build that has ended does to the PDF's address.
 //
 // `fetch` is a stub answering the shape api/latex answers; nothing here reaches a server, and the
 // terminals the store watches are the ones the case puts in the `sessions` payload.
@@ -92,22 +92,6 @@ describe("one project's LaTeX state", () => {
             loading: false
         });
         expect(asks).toBe(0);
-    });
-
-    it('carries the refusal sentence for a refused request, not the text it gave', async () => {
-        vi.stubGlobal('fetch', () =>
-            Promise.resolve(
-                new Response(JSON.stringify({ error: 'no project with the id ghost' }), {
-                    status: 404,
-                    headers: { 'content-type': 'application/json' }
-                })
-            )
-        );
-        const fresh = createClientState();
-        fresh.latex.state({ id: 'ghost' });
-        await settle();
-
-        expect(fresh.latex.state({ id: 'ghost' }).error).toBe(refused(404));
     });
 });
 
@@ -383,16 +367,9 @@ describe('an answer whose fields are of the wrong type', () => {
         ['a list as the body', '[]', 200, NO_MAINS],
         ['an empty map as the body', '{}', 200, NO_MAINS],
         ['an error that is a number on a 200', '{"error":3}', 200, NO_MAINS],
-        ['a list as the body of a refusal', '[]', 500, { ...NOTHING_HELD, error: refused(500) }],
         [
             'a refusal with a text of its own',
             '{"error":"boom"}',
-            500,
-            { ...NOTHING_HELD, error: refused(500) }
-        ],
-        [
-            'a refusal with an empty text',
-            '{"error":""}',
             500,
             { ...NOTHING_HELD, error: refused(500) }
         ]
@@ -400,17 +377,8 @@ describe('an answer whose fields are of the wrong type', () => {
         expect(await answeredWith(text, status)).toStrictEqual(expected);
     });
 
-    it('answers the refusal sentence for a refusal whose error is a number', async () => {
-        expect(await answeredWith('{"error":3}', 500)).toStrictEqual({
-            ...NOTHING_HELD,
-            error: refused(500)
-        });
-    });
-
     it.each([
         ['null', 'null', 200, { ...NOTHING_HELD, error: unreadable(200) }],
-        ['text that is not JSON', 'nope', 200, { ...NOTHING_HELD, error: unreadable(200) }],
-        ['null on a refusal', 'null', 500, { ...NOTHING_HELD, error: unreadable(500) }],
         [
             'text that is not JSON on a refusal',
             'nope',
@@ -424,5 +392,3 @@ describe('an answer whose fields are of the wrong type', () => {
         }
     );
 });
-
-/** The folder every folder answer below names, against the root `docs`. */

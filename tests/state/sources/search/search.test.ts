@@ -1,5 +1,5 @@
-// What one Search tab holds: the query and the toggles it was given, the last answer, and the
-// refusals it says without sending anything.
+// Layer 2, client-state tests. What one Search tab holds: the query and the toggles it was given,
+// the last answer, and the refusals it says without sending anything.
 //
 // The endpoint is stubbed with a fetch of the case's own, so nothing starts a process and nothing
 // reaches the network; what the request carried is read off that stub.
@@ -85,7 +85,7 @@ describe('what it refuses without asking', () => {
     it('says a search needs a pattern and sends nothing', async () => {
         const held = stub(ANSWER);
         await client.search.runSearch('one', ['hub']);
-        expect(client.search.searchState('one').error).toBe('A search needs a pattern.');
+        expect(client.search.searchState('one').error).toBe(t('search.refused_empty'));
         expect(held.calls).toEqual([]);
     });
 
@@ -93,7 +93,7 @@ describe('what it refuses without asking', () => {
         const held = stub(ANSWER);
         client.search.setSearchState('one', { q: 'needle', root: 'elsewhere' });
         await client.search.runSearch('one', ['hub']);
-        expect(client.search.searchState('one').error).toBe('That root is not one oculus serves.');
+        expect(client.search.searchState('one').error).toBe(t('search.refused_unknown_root'));
         expect(held.calls).toEqual([]);
     });
 
@@ -130,27 +130,6 @@ describe('what it refuses without asking', () => {
 });
 
 describe('the pure readers', () => {
-    it('reads a saved tab back and refuses what is not an answer', () => {
-        expect(parseSearchState({ q: 5, root: 'hub', word: true }, 500).q).toBe('');
-        expect(parseSearchState(null, 500).root).toBe(ALL_ROOTS);
-        expect(answerOf({ files: 'many' })).toBeNull();
-        expect(answerOf({ files: [{ root: 'hub', path: 'a', hits: [{ line: 1 }] }] })).toEqual({
-            files: [{ root: 'hub', path: 'a', hits: [] }],
-            total: 0,
-            truncated: false,
-            ms: 0,
-            failed: []
-        });
-    });
-
-    it('keeps a failed root it can read and drops one it cannot', () => {
-        const held = answerOf({
-            files: [],
-            failed: [{ root: 'hub', reason: 'rg: no such file' }, { reason: 'nameless' }, 7]
-        });
-        expect(held?.failed).toEqual([{ root: 'hub', reason: 'rg: no such file' }]);
-    });
-
     it('sends the query half of a tab and nothing else', () => {
         const state = parseSearchState({ q: 'x', answer: null, error: 'gone' }, 500);
         expect(Object.keys(queryOf(state)).sort()).toEqual([
@@ -291,6 +270,7 @@ describe('an answer read from stored or fetched data', () => {
         ['a reason that is a number', [{ root: 'hub', reason: 3 }], [{ root: 'hub', reason: '' }]],
         ['no reason', [{ root: 'hub' }], [{ root: 'hub', reason: '' }]],
         ['a root that is a number', [{ root: 3, reason: 'r' }], []],
+        ['no root', [{ reason: 'nameless' }], []],
         ['items that are not maps', [null, [], 'x', 7], []]
     ])('reads a failure with %s', (_label, failed, expected) => {
         expect(answerOf({ files: [], failed })).toStrictEqual(answerWith({ failed: expected }));
@@ -403,6 +383,7 @@ describe('a saved tab read back', () => {
             case: 1,
             regex: null,
             error: 3,
+            under: 7,
             answer: { files: 'x' }
         };
         expect(parseSearchState(saved, 500)).toStrictEqual(empty);

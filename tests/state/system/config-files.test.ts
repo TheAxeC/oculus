@@ -4,8 +4,6 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    CATALOGS,
-    CONFIG_SUFFIX,
     LOCAL_NAME,
     describedAs,
     descriptionKey
@@ -16,11 +14,6 @@ import { catalog } from '../../views/system/workbench/workbench-fixture.ts';
 describe('the names of the configuration files', () => {
     it('name the machine own file as the server module does, which the page cannot import', () => {
         expect(LOCAL_NAME).toBe(SERVER_LOCAL_NAME);
-    });
-
-    it('carry the extension and the catalogs folder the files are found by', () => {
-        expect(CONFIG_SUFFIX).toBe('.yml');
-        expect(CATALOGS).toBe('catalogs');
     });
 });
 

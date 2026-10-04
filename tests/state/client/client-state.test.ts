@@ -1,15 +1,15 @@
-// The client object: what one call to createClientState() holds, and that two of them share
-// nothing.
+// Layer 2, client-state tests. The client object: that two calls to createClientState() share
+// nothing, that a store reading another reads the same client's, and the copy of the stores that a
+// tab provides.
 //
-// It is the whole of what the context provides, so the two things worth checking are that every
-// store named in the type is actually built, and that a write through one object is invisible to
-// another. What a single store does is its own test file's; this is about the wiring.
+// What a single store does is its own test file's; this is about the wiring. A store the type names
+// and the factory does not build is a type error, so no test here checks that every store is built.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClientState, type ClientState } from '../../../src/lib/state/client/context.ts';
 import { stubFetch } from '../../fixtures/client.ts';
 
-/** Every key the type names, so a store added to the type and not to the factory fails here. */
+/** The stores the tests below walk: each is compared across two clients and across a tab's copy. */
 const STORES: (keyof ClientState)[] = [
     'graphviz',
     'entities',
@@ -58,13 +58,6 @@ const STORES: (keyof ClientState)[] = [
 ];
 
 describe('the client object', () => {
-    it('holds one instance of every store it names', () => {
-        const client = createClientState();
-        const missing = STORES.filter((name) => typeof client[name] !== 'object');
-        expect(missing).toEqual([]);
-        expect(Object.keys(client).sort()).toEqual([...STORES].sort());
-    });
-
     it('gives two clients separate stores', () => {
         const one = createClientState();
         const two = createClientState();
@@ -146,7 +139,7 @@ describe('the copy of the stores a tab provides', () => {
 
     // Revert: in wrap of the tabScope member of state/client/context.ts, answer the original store
     // for one of the ten, or copy a store the list does not hold.
-    it('audit: replaces exactly the eleven stores handed the query client and no other', () => {
+    it('replaces exactly the eleven stores handed the query client and no other', () => {
         const client = createClientState();
         const copy = client.tabScope.wrap(client, () => false);
         const replaced = STORES.filter((name) => copy[name] !== client[name]);

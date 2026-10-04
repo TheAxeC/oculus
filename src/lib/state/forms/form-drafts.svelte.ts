@@ -48,12 +48,12 @@ type FormDraft = Record<string, TypedField>;
 type Drafts = Record<string, FormDraft>;
 
 /** What turns an instance id into the ui store key its form drafts are kept under. */
-export const FORMS_SUFFIX = '#forms';
+const FORMS_SUFFIX = '#forms';
 
 /**
  * What turns an instance id into the ui store key the entries its add forms made are kept under.
  */
-export const ADDED_SUFFIX = '#added';
+const ADDED_SUFFIX = '#added';
 
 /** The ui store key one instance's form drafts are kept under. */
 export function formsKey(instance: string): string {

@@ -1,8 +1,8 @@
-// Layer 2, client-state tests. A Files tab's follow mode (state/sources/fs.ts): the tab follows
-// when its layout state says `follow: true`, the folder it follows is the session's workspace or a
-// terminal's folder, the tree is rooted at that folder (its head is the folder, read through the
-// root that holds it), and a pin keeps the tab on one session. A file row's drag carries its
-// absolute path.
+// Layer 2, client-state tests. A Files tab's follow mode (state/sources/fs.ts): the folder it
+// follows is the session's workspace or a terminal's folder, and the tree is rooted at that folder
+// (its head is the folder, read through the root that holds it). A file row's drag carries its
+// absolute path. The readers of the `follow` and `session` keys of the layout state are tried in
+// tests/state/shared/instance-state-files.test.ts.
 //
 // Pure functions over plain values; nothing is read or written.
 
@@ -13,13 +13,10 @@ import {
     followRevealed,
     followView,
     followedDirOf,
-    followsSession,
     filterRows,
     rootHolding,
     treeKeyRows,
     treeRows,
-    withFollow,
-    withFollowPin,
     type FsEntry,
     type FsRoot
 } from '../../../src/lib/state/sources/fs.ts';
@@ -46,41 +43,13 @@ describe('the root a folder lies in', () => {
 });
 
 describe("a Files tab's follow mode", () => {
-    it('is on only for layout state that says so', () => {
-        expect(followsSession({ follow: true })).toBe(true);
-        for (const state of [{}, { follow: 'yes' }, { follow: false }, null, [], 'follow']) {
-            expect(followsSession(state)).toBe(false);
-        }
-    });
-
-    it('is rooted at the followed folder inside the root holding it, at nothing when no root holds it, and every root when off', () => {
-        expect(followView({ follow: true }, ROOTS, '/hub/tools/oculus')).toEqual({
-            following: true,
-            dir: '/hub/tools/oculus',
-            found: { root: TOOL, path: 'oculus' },
-            roots: [TOOL],
-            top: { path: 'oculus', name: 'oculus' }
-        });
+    it('draws a followed folder that is a root as that root, and nothing for one no root holds', () => {
         expect(followView({ follow: true }, ROOTS, '/hub/').top).toEqual({ path: '', name: 'hub' });
         expect(followView({ follow: true }, ROOTS, '/tmp')).toEqual({
             following: true,
             dir: '/tmp',
             found: null,
             roots: [],
-            top: null
-        });
-        expect(followView({ follow: true }, ROOTS, null)).toEqual({
-            following: true,
-            dir: null,
-            found: null,
-            roots: [],
-            top: null
-        });
-        expect(followView({}, ROOTS, '/hub')).toEqual({
-            following: false,
-            dir: null,
-            found: null,
-            roots: ROOTS,
             top: null
         });
     });
@@ -94,30 +63,9 @@ describe("a Files tab's follow mode", () => {
         expect(followedDirOf(null, null)).toBe(null);
     });
 
-    it('is set on or off with the rest of the layout state kept', () => {
-        expect(withFollow({ id: 'x', follow: true }, false)).toEqual({ id: 'x', follow: false });
-        expect(withFollow(null, true)).toEqual({ follow: true });
-        expect(withFollow(['x'], true)).toEqual({ follow: true });
-    });
-
-    it('opens the followed folder, the head of its tree, and keeps the rest of the tab', () => {
-        const opened = filesViewOf(
-            followRevealed({ filter: 'x' }, { root: TOOL, path: 'oculus/src' })
-        );
-        expect(opened.expanded).toEqual(['r1:oculus/src']);
-        expect(opened.filter).toBe('x');
+    it('opens the line of a root when the followed folder is that root', () => {
         const atRoot = filesViewOf(followRevealed({}, { root: TOOL, path: '' }));
         expect(atRoot.expanded).toEqual(['r1:']);
-    });
-
-    it('is pinned to one session and let go again, follow mode kept on both ways', () => {
-        expect(withFollowPin({ follow: false, id: 'x' }, 'sess-1')).toEqual({
-            follow: true,
-            id: 'x',
-            session: 'sess-1'
-        });
-        expect(withFollowPin({ follow: true, session: 'sess-1' }, null)).toEqual({ follow: true });
-        expect(withFollowPin(null, 'sess-2')).toEqual({ follow: true, session: 'sess-2' });
     });
 });
 

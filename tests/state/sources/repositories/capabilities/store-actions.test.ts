@@ -1,7 +1,7 @@
-// What the Repositories store does for the new right-click items: the untracked files sent to the
-// Trash, Add to .gitignore, Checkout (Detached), a branch and a tag from a commit, Cherry Pick,
-// Delete Branch, Open File (HEAD), the compare diffs and Open Worktree. Each write is asserted by
-// the action and the fields it posts, and the confirm it carries.
+// Layer 2, client-state tests. What the Repositories store does for the new right-click items: the
+// untracked files sent to the Trash, Add to .gitignore, Checkout (Detached), a branch and a tag
+// from a commit, Cherry Pick, Delete Branch, Open File (HEAD), the compare diffs and Open Worktree.
+// Each write is asserted by the action and the fields it posts, and the confirm it carries.
 //
 // The stores the store works through are recorders, so no component is mounted and no server runs.
 // What this does NOT cover: the server's handling of each action, which tests/routes/git holds.
@@ -313,17 +313,6 @@ describe('Open Worktree', () => {
         const { calls, deps: held } = deps();
         await expect(openWorktree('/hub/.agents/worktrees/a', false, held)).resolves.toBe('');
         expect(calls).toEqual(['add:/hub/.agents/worktrees/a', 'files:/hub/.agents/worktrees/a']);
-    });
-
-    // Revert: open the window before the root is added and shown.
-    it('in a new window does the same, then opens the page address', async () => {
-        const { calls, deps: held } = deps();
-        await openWorktree('/hub/.agents/worktrees/a', true, held);
-        expect(calls).toEqual([
-            'add:/hub/.agents/worktrees/a',
-            'files:/hub/.agents/worktrees/a',
-            'window:http://127.0.0.1:8787/'
-        ]);
     });
 
     it('takes a folder that is a root already as opened', async () => {

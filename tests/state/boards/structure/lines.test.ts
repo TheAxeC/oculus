@@ -1,4 +1,4 @@
-// Pure Pillars and Domains joins over a compact portfolio fixture.
+// Layer 2, client-state tests. The Pillars and Domains joins over a compact portfolio fixture.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -139,22 +139,6 @@ describe('the lines in the order their file lists them', () => {
 });
 
 describe('the venue tiers the config names', () => {
-    it('keep a keyed row with its label and colour, label a bare key by itself, and drop the rest', () => {
-        expect(
-            venueTiers([
-                { key: 'q1', label: 'Q1', color: '#123456' },
-                { key: 'unrated' },
-                { label: 'no key' },
-                'not a row',
-                null
-            ])
-        ).toEqual([
-            { key: 'q1', label: 'Q1', color: '#123456' },
-            { key: 'unrated', label: 'unrated' }
-        ]);
-        expect(venueTiers(undefined)).toEqual([]);
-    });
-
     it('count the archived projects of every group together', () => {
         expect(
             archivedCount([

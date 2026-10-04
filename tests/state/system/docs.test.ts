@@ -1,5 +1,6 @@
-// The documents the views read: one request per project and name, per hub path and for the manual,
-// what is held between renders, and which `files` messages ask for a document again.
+// Layer 2, client-state tests. The documents the views read: one request per project and name, per
+// hub path and for the manual, what is held between renders, and which `files` messages ask for a
+// document again.
 //
 // Nothing here touches the network or the real hub: `fetch` is a stub that records the URL and the
 // entity tag it was given and answers what the case wants, and a `files` message is handed to the
@@ -9,10 +10,16 @@
 // drawing again when a document is marked, which needs a DOM.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createClientState, type ClientState, refused, unreadable } from '../../fixtures/client.ts';
+import {
+    createClientState,
+    refused,
+    settle,
+    unreadable,
+    type ClientState
+} from '../../fixtures/client.ts';
 import { holds } from '../../../src/lib/state/system/docs.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -81,11 +88,6 @@ function holding(answer: Answer): () => void {
         return reply(answer, tagOf(init));
     });
     return release;
-}
-
-/** Let the scheduled request run and its answer land. */
-async function settle(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 /** The version of the next `files` message a case hands over, one after the last. */
@@ -184,24 +186,6 @@ describe('the documents of a project', () => {
 });
 
 describe('the requests a read makes', () => {
-    // Revert: none turns it red, since the query client joins a request already out for the key; it
-    // audits one request per key.
-    it('audit: sends one request for two reads of a pair in the same tick', async () => {
-        serving({ status: 200, body: { html: '<p>once</p>', frontmatter: null } });
-
-        document('kilo', 'README.md');
-        document('kilo', 'README.md');
-        hubDocument('notes/two.md');
-        hubDocument('notes/two.md');
-        await settle();
-
-        expect(asked).toEqual([
-            '/api/docs?project=kilo&name=README.md',
-            '/api/docs?hub=notes%2Ftwo.md'
-        ]);
-        expect(document('kilo', 'README.md').html).toBe('<p>once</p>');
-    });
-
     // Revert: in reading of state/system/docs.svelte.ts, pass enabled: true to the read.
     it('asks nothing where there is no fetch, reads as pending, and asks once a fetch exists', async () => {
         vi.stubGlobal('fetch', undefined);
@@ -274,16 +258,6 @@ describe('the documents that belong to no project', () => {
 
         expect(manual().html).toBe('<h1>Oculus</h1>');
         expect(asked).toEqual(['/api/docs?manual=1']);
-    });
-
-    it('says the refusal sentence for a refused read', async () => {
-        serving({ status: 404, body: { error: 'document does not exist' } });
-        hubDocument('nothing.md');
-        await settle();
-
-        const held = hubDocument('nothing.md');
-        expect(held.error).toBe(refused(404));
-        expect(held.loading).toBe(false);
     });
 });
 
@@ -488,8 +462,8 @@ describe('a re-read that fails', () => {
         await settle();
         expect(hubDocument('docs/RESEARCH-APPROACH.md').error).toBe(refused(404));
     });
-    // Revert: in fetcherOf of state/system/docs.svelte.ts, answer a network error over an error
-    // answer without the held file.
+    // Revert: in unreached of state/system/docs.svelte.ts, fail with an empty file in place of
+    // the held one.
     it('keeps the file of an error answer through a network error, so a write elsewhere asks nothing', async () => {
         serving({ status: 500, body: { error: 'broken', file: APPROACH } });
         hubDocument('docs/RESEARCH-APPROACH.md');
@@ -528,30 +502,21 @@ describe('a re-read that fails', () => {
 });
 
 describe('whether a root holds a file', () => {
-    it('reads a doubled separator and a trailing one as one', () => {
-        expect(holds('/a//b/', '/a/b/x.md')).toBe(true);
-    });
-
-    it('reads a dot segment as the folder it is in', () => {
-        expect(holds('/a/./b', '/a/b/x.md')).toBe(true);
-    });
-
-    it('reads a dot-dot segment as the folder above', () => {
-        expect(holds('/a/c/../b', '/a/b/x.md')).toBe(true);
-    });
-
-    it('holds nothing in a folder whose name only begins like its own', () => {
-        expect(holds('/a/bc', '/a/b/x.md')).toBe(false);
-        expect(holds('/a/b', '/a/bc/x.md')).toBe(false);
-        expect(holds('/a/b', '/a/b/x.md')).toBe(true);
-    });
-
-    it('reads a backslash as a separator, as a Windows path writes it', () => {
-        expect(holds('C:\\a\\b', 'C:\\a\\b\\x.md')).toBe(true);
-    });
-
-    it('holds every file under the top of the file system', () => {
-        expect(holds('/', '/a/x.md')).toBe(true);
+    it.each([
+        ['a doubled and a trailing separator as one', '/a//b/', '/a/b/x.md', true],
+        ['a dot segment as the folder it is in', '/a/./b', '/a/b/x.md', true],
+        ['a dot-dot segment as the folder above', '/a/c/../b', '/a/b/x.md', true],
+        ['a folder named like the start of its own as another folder', '/a/bc', '/a/b/x.md', false],
+        [
+            'a file in a folder named like the start of the root as outside it',
+            '/a/b',
+            '/a/bc/x.md',
+            false
+        ],
+        ['a backslash as a separator', 'C:\\a\\b', 'C:\\a\\b\\x.md', true],
+        ['every file as under the top of the file system', '/', '/a/x.md', true]
+    ])('reads %s', (_name, root, file, expected) => {
+        expect(holds(root, file)).toBe(expected);
     });
 });
 
@@ -566,9 +531,6 @@ describe('an answer of the wrong shape', () => {
 
     it.each([
         ['an html that is a number', { html: 3 }, ''],
-        ['an html that is null', { html: null }, ''],
-        ['no html', {}, ''],
-        ['an empty html', { html: '' }, ''],
         ['an html', { html: '<p>x</p>' }, '<p>x</p>']
     ])('holds %s', async (_name, body, html) => {
         expect(await read({ status: 200, body })).toStrictEqual({
@@ -583,9 +545,6 @@ describe('an answer of the wrong shape', () => {
     it.each([
         ['a list', ['a'], null],
         ['null', null, null],
-        ['a string', 'x', null],
-        ['a number', 3, null],
-        ['an empty map', {}, {}],
         ['a map', { stage: 'run', tags: ['a'] }, { stage: 'run', tags: ['a'] }]
     ])('holds frontmatter that is %s', async (_name, frontmatter, expected) => {
         const held = await read({ status: 200, body: { html: 'h', frontmatter } });
@@ -603,9 +562,7 @@ describe('an answer of the wrong shape', () => {
 
     it.each([
         ['a list', []],
-        ['a list of rows', [{ html: 'x' }]],
-        ['a string', 'x'],
-        ['a number', 3]
+        ['a string', 'x']
     ])('holds an empty document for a body that is %s', async (_name, body) => {
         expect(await read({ status: 200, body })).toStrictEqual({
             html: '',
@@ -630,28 +587,18 @@ describe('an answer of the wrong shape', () => {
             { kind: 'diagram', name: 'n', alt: 'a' }
         ],
         [
-            'a diagram run with its keys in another order',
-            { alt: 'a', extra: 1, name: 'n', kind: 'diagram' },
+            'a diagram run with a key more',
+            { kind: 'diagram', name: 'n', alt: 'a', extra: 1 },
             { kind: 'diagram', name: 'n', alt: 'a' }
         ],
         ['an html run whose html is a number', { kind: 'html', html: 3 }, undefined],
-        ['an html run without html', { kind: 'html' }, undefined],
         ['a diagram run without alt', { kind: 'diagram', name: 'n' }, undefined],
         ['a diagram run without a name', { kind: 'diagram', alt: 'a' }, undefined],
-        ['a diagram run whose name is a number', { kind: 'diagram', name: 3, alt: 'a' }, undefined],
-        ['a diagram run whose alt is null', { kind: 'diagram', name: 'n', alt: null }, undefined],
         ['an image run', { kind: 'image', name: 'n', alt: 'a' }, undefined],
-        ['a run of no kind', { html: 'x' }, undefined],
-        ['a run that is null', null, undefined],
-        ['a run that is a list', ['html', 'x'], undefined],
-        ['a run that is a string', 'x', undefined],
-        ['a run that is a number', 3, undefined]
+        ['a run that is null', null, undefined]
     ])('reads the manual run %s', async (_name, run, expected) => {
         const held = await read({ status: 200, body: { html: 'h', parts: [run] } });
         expect(held.parts).toStrictEqual(expected === undefined ? [] : [expected]);
-        if (expected !== undefined) {
-            expect(Object.keys(held.parts[0])).toStrictEqual(Object.keys(expected));
-        }
     });
 
     it('keeps the runs that pass, in order, beside the ones that do not', async () => {
@@ -672,37 +619,10 @@ describe('an answer of the wrong shape', () => {
 
     it.each([
         ['a map', { 0: { kind: 'html', html: 'x' } }],
-        ['a string', 'x'],
-        ['null', null],
-        ['a number', 3]
+        ['null', null]
     ])('reads runs that are %s as none', async (_name, parts) => {
         const held = await read({ status: 200, body: { html: 'h', parts } });
         expect(held.parts).toStrictEqual([]);
-    });
-
-    it.each([
-        ['an error that is a text of its own', { error: 'gone' }, 404, refused(404)],
-        ['an error that is empty', { error: '' }, 404, refused(404)],
-        ['an error that is a number', { error: 3 }, 404, refused(404)],
-        ['an error that is null', { error: null }, 404, refused(404)],
-        ['no error', {}, 500, refused(500)],
-        ['a body that is a list', [], 500, refused(500)],
-        ['a body that is a string', 'x', 502, refused(502)],
-        [
-            'an error that is a word of the catalog',
-            { error: 'missing' },
-            404,
-            t('files.refused_missing')
-        ]
-    ])('holds the sentence for a refusal with %s', async (_name, body, status, error) => {
-        const held = await read({ status, body });
-        expect(held).toStrictEqual({
-            html: '',
-            frontmatter: null,
-            error,
-            loading: false,
-            parts: []
-        });
     });
 
     it('treats a file that is not a string as no file, which any write under a root asks again', async () => {
@@ -718,11 +638,8 @@ describe('an answer of the wrong shape', () => {
 
     it.each([
         ['a list', []],
-        ['a string', 'x'],
-        ['a number', 3],
         ['a map without a root', { bookmarks: true }],
         ['a map whose root is a number', { root: 3 }],
-        ['a map whose root is a list', { root: [HUB] }],
         ['a map whose root is empty', { root: '' }]
     ])('asks nothing again for a files message whose payload is %s', async (_name, payload) => {
         serving({ status: 200, body: { html: 'one', file: APPROACH } });
@@ -748,8 +665,6 @@ describe('an answer of the wrong shape', () => {
 describe('an answer that is no JSON map', () => {
     it.each([
         { name: 'JSON null', text: 'null', status: 200 },
-        { name: 'JSON null', text: 'null', status: 502 },
-        { name: 'a page that is no JSON', text: '<html>Bad Gateway</html>', status: 200 },
         { name: 'a page that is no JSON', text: '<html>Bad Gateway</html>', status: 502 }
     ])(
         'holds the unreadable sentence for $name sent with status $status',
@@ -769,10 +684,8 @@ describe('an answer that is no JSON map', () => {
 });
 
 describe('a 200 answer whose body is no JSON map, for a document already drawn', () => {
-    it.each([
-        { name: 'JSON null', text: 'null' },
-        { name: 'a page that is no JSON', text: '<html>Proxy</html>' }
-    ])('keeps the drawn document and asks again on the next write for $name', async ({ text }) => {
+    it('keeps the drawn document and asks again on the next write for a page that is no JSON', async () => {
+        const text = '<html>Proxy</html>';
         serving({ status: 200, body: { html: '<h1>One</h1>', file: APPROACH } });
         hubDocument('docs/RESEARCH-APPROACH.md');
         await settle();

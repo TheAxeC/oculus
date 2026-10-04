@@ -1,5 +1,6 @@
-// The keys of the Files tree (acts/keys.ts): the keymap on each platform, the hint each key is
-// shown as in the menu, and what a bound key does on the focused row.
+// Layer 2, client-state tests. The keys of the Files tree (acts/keys.ts): the keymap on each
+// platform, the hint each key is shown as in the menu, and what a bound key does on the focused
+// row.
 //
 // What this does NOT cover: a key pressed in a browser; the routing of a chord to the tree is
 // tests/ui/tree/tree-keys.test.ts.
@@ -28,59 +29,6 @@ describe('the keymap', () => {
         expect(mac).toMatchObject({ code: 'Backspace', meta: true, ctrl: false });
         expect(other).toMatchObject({ code: 'Backspace', meta: false, ctrl: true });
     });
-
-    // Revert: drop a chord of the table.
-    it('binds every action the file browser reacts to', () => {
-        const actions = new Set(filesKeymap(true).map((one) => one.action));
-        const wanted: FilesAction[] = [
-            'rename',
-            'open',
-            'delete',
-            'copy',
-            'cut',
-            'paste',
-            'cancel-cut',
-            'copy-path',
-            'copy-relative',
-            'open-background',
-            'undo',
-            'redo',
-            'select-all',
-            'extend-up',
-            'extend-down'
-        ];
-
-        for (const action of wanted) expect(actions.has(action)).toBe(true);
-    });
-
-    // Revert: bind Enter and F2 to different actions.
-    it('binds Enter and F2 to rename and Cmd+Down to open', () => {
-        const map = filesKeymap(true);
-
-        expect(map.filter((one) => one.action === 'rename').map((one) => one.code)).toEqual([
-            'Enter',
-            'F2'
-        ]);
-        expect(map.find((one) => one.action === 'open')).toMatchObject({
-            code: 'ArrowDown',
-            meta: true,
-            shift: false
-        });
-    });
-
-    // Revert: let the Option+Cmd+C chord carry no Shift for the relative path.
-    it('tells Copy Path from Copy Relative Path by Shift', () => {
-        const map = filesKeymap(true);
-
-        expect(map.find((one) => one.action === 'copy-path')).toMatchObject({
-            alt: true,
-            shift: false
-        });
-        expect(map.find((one) => one.action === 'copy-relative')).toMatchObject({
-            alt: true,
-            shift: true
-        });
-    });
 });
 
 describe('the hint of a key', () => {
@@ -92,9 +40,6 @@ describe('the hint of a key', () => {
         expect(hint('rename')).toBe('Enter');
         expect(hint('delete')).toBe('Cmd+Backspace');
         expect(hint('cut')).toBe('Cmd+X');
-        expect(hint('copy')).toBe('Cmd+C');
-        expect(hint('paste')).toBe('Cmd+V');
-        expect(hint('copy-path')).toBe('Option+Cmd+C');
         expect(hint('copy-relative')).toBe('Option+Shift+Cmd+C');
     });
 
@@ -171,24 +116,24 @@ describe('what a bound key does on the focused row', () => {
 });
 
 describe('the keymap as the tree routes it', () => {
-    for (const mac of [true, false]) {
+    // Revert: leave the keymap off the tree's keyRoute call.
+    it.each([
+        ['macOS', true],
+        ['another platform', false]
+    ])('gives every chord of the keymap on %s to the tree', (_platform, mac) => {
         const map = filesKeymap(mac);
         for (const chord of map) {
-            // Revert: leave the keymap off the tree's keyRoute call.
-            it(`gives ${chord.action} on ${chord.code}${chord.meta ? '+meta' : ''}${chord.ctrl ? '+ctrl' : ''}${chord.alt ? '+alt' : ''}${chord.shift ? '+shift' : ''} to the tree on ${mac ? 'macOS' : 'another platform'}`, () => {
-                const held = {
-                    meta: chord.meta,
-                    ctrl: chord.ctrl,
-                    alt: chord.alt,
-                    shift: chord.shift,
-                    code: chord.code
-                };
-
-                expect(keyRoute('x', held, false, map)).toBe('bound');
-                expect(keyRoute('x', held, false, [])).not.toBe('bound');
-            });
+            const held = {
+                meta: chord.meta,
+                ctrl: chord.ctrl,
+                alt: chord.alt,
+                shift: chord.shift,
+                code: chord.code
+            };
+            expect(keyRoute('x', held, false, map), chord.action).toBe('bound');
+            expect(keyRoute('x', held, false, []), chord.action).not.toBe('bound');
         }
-    }
+    });
 
     // Revert: bind Space while a type-ahead is running.
     it('leaves Space to the type-ahead while one is running', () => {

@@ -1,6 +1,7 @@
-// What a page is called, which tabs it holds, what closing it asks, and which of its tabs hold text
-// no save has taken: the rules the shell's pane menus and page leaves, the Pages view and the
-// status bar's unsaved count all read, over hand-built page lists and instance ids.
+// Layer 2, client-state tests. What a page is called, which tabs it holds, what closing it asks,
+// and which of its tabs hold text no save has taken: the rules the shell's pane menus and page
+// leaves, the Pages view and the status bar's unsaved count all read, over hand-built page lists
+// and instance ids.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -144,18 +145,6 @@ describe('where a page sits in the page list', () => {
     });
 });
 
-describe('what a tab is called', () => {
-    it('is its state label, else its view name, else the view id the registry lacks', () => {
-        const viewFor = (id: string) => (id === 'status' ? { label: 'views.status' } : undefined);
-        const named = { ...instance('a', 'status'), state: { label: 'My notes' } };
-        expect(tabNameOf(named, viewFor)).toBe('My notes');
-        // An empty label names nothing, so the view's name stands.
-        const blank = { ...instance('b', 'status'), state: { label: '' } };
-        expect(tabNameOf(blank, viewFor)).toBe(t('views.status'));
-        expect(tabNameOf(instance('c', 'gone'), viewFor)).toBe('gone');
-    });
-});
-
 describe('the asker a confirm draws', () => {
     it('shows each question, settles it with the answer, and answers a superseded one no', async () => {
         const shown: (Question | null)[] = [];
@@ -252,13 +241,13 @@ describe('what a close asks once a busy terminal is known', () => {
         expect(ask?.detail).toContain(t('ui.terminal_busy_unread', 'build'));
     });
 
-    // Revert: ask the unsaved question alone once the tab holds unsaved text and nothing is busy.
+    // Revert: return null for one tab holding unsaved text when no terminal is busy.
     it('keeps the unsaved question for one tab holding unsaved text', () => {
         const ask = closeAsk({ ids: ['text'], unsaved: dirty, nameOf, many: MANY, busy: [] });
         expect(ask).toEqual({ message: t('ui.tab_close_dirty'), detail: '' });
     });
 
-    // Revert: ask a second question for the busy terminal, or drop the unsaved tab from the detail.
+    // Revert: drop the unsaved tab from the detail, or name the terminal before it.
     it('asks one question over a pane with unsaved text and a busy terminal, the text first', () => {
         const ask = closeAsk({
             ids: ['text', 't'],
@@ -420,24 +409,11 @@ describe('a reset asking about a busy terminal', () => {
 /** The registry of the cases below: one view the registry holds, named by a catalog key. */
 const viewForStatus = (id: string) => (id === 'status' ? { label: 'views.status' } : undefined);
 
-/** A page tied to the rail button of `key`. */
-const tiedPage = (key: string): Page => ({ ...page(`page-${key}`, key), rail: key });
-
-describe('the readers of a tab state and of an arrangement node of the wrong type', () => {
+describe('the name a tab state gives and the views an arrangement node holds', () => {
     const rows: [string, () => unknown, unknown][] = [
-        [
-            'a tab named by a state that is an array',
-            () => tabNameOf({ ...instance('a', 'status'), state: [] }, viewForStatus),
-            'Status'
-        ],
         [
             'a tab named by a state that is null',
             () => tabNameOf({ ...instance('a', 'status'), state: null }, viewForStatus),
-            'Status'
-        ],
-        [
-            'a tab named by a state that is a string',
-            () => tabNameOf({ ...instance('a', 'status'), state: 'label' }, viewForStatus),
             'Status'
         ],
         [
@@ -448,16 +424,6 @@ describe('the readers of a tab state and of an arrangement node of the wrong typ
         [
             'a tab named by a label that is a number',
             () => tabNameOf({ ...instance('a', 'status'), state: { label: 3 } }, viewForStatus),
-            'Status'
-        ],
-        [
-            'a tab named by a label that is a list',
-            () => tabNameOf({ ...instance('a', 'status'), state: { label: ['l'] } }, viewForStatus),
-            'Status'
-        ],
-        [
-            'a tab named by a label that is null',
-            () => tabNameOf({ ...instance('a', 'status'), state: { label: null } }, viewForStatus),
             'Status'
         ],
         [
@@ -488,39 +454,6 @@ describe('the readers of a tab state and of an arrangement node of the wrong typ
             () => tabNameOf({ ...instance('a', 'gone'), state: { label: 3 } }, viewForStatus),
             'gone'
         ],
-        ['the views of a node that is an array', () => railPageViews([], 'k', []), []],
-        ['the views of a node that is null', () => railPageViews([], 'k', null), []],
-        ['the views of a node that is a string', () => railPageViews([], 'k', 'status'), []],
-        [
-            'the views of a node with a root that is a list',
-            () => railPageViews([], 'k', { root: [] }),
-            []
-        ],
-        [
-            'the views of a node with a root that is null',
-            () => railPageViews([], 'k', { root: null }),
-            []
-        ],
-        [
-            'the views of a pane whose view is a number',
-            () => railPageViews([], 'k', { root: { kind: 'pane', view: 3 } }),
-            []
-        ],
-        [
-            'the views of a pane whose view is an empty string',
-            () => railPageViews([], 'k', { root: { kind: 'pane', view: '' } }),
-            []
-        ],
-        [
-            'the views of a pane whose views hold a number',
-            () => railPageViews([], 'k', { root: { kind: 'pane', view: ['a', 3] } }),
-            []
-        ],
-        [
-            'the views of a pane with an empty list',
-            () => railPageViews([], 'k', { root: { kind: 'pane', view: [] } }),
-            []
-        ],
         [
             'the views of a pane whose tab is a map with a view',
             () =>
@@ -528,78 +461,6 @@ describe('the readers of a tab state and of an arrangement node of the wrong typ
                     root: { kind: 'pane', view: ['a', { view: 'b', state: { x: 1 } }, 'a'] }
                 }),
             ['a', 'b']
-        ],
-        [
-            'the views of a pane whose tab state is a list',
-            () =>
-                railPageViews([], 'k', {
-                    root: { kind: 'pane', view: [{ view: 'b', state: [] }] }
-                }),
-            []
-        ],
-        [
-            'the views of a pane whose tab state is null',
-            () =>
-                railPageViews([], 'k', {
-                    root: { kind: 'pane', view: [{ view: 'b', state: null }] }
-                }),
-            []
-        ],
-        [
-            'the views of a split whose children are a map',
-            () =>
-                railPageViews([], 'k', {
-                    root: { kind: 'split', dir: 'row', sizes: [0.5, 0.5], children: {} }
-                }),
-            []
-        ],
-        [
-            'the views of a split whose sizes hold a string',
-            () =>
-                railPageViews([], 'k', {
-                    root: {
-                        kind: 'split',
-                        dir: 'row',
-                        sizes: [0.5, '0.5'],
-                        children: [
-                            { kind: 'pane', view: 'a' },
-                            { kind: 'pane', view: 'b' }
-                        ]
-                    }
-                }),
-            []
-        ],
-        [
-            'the views of a split whose sizes hold NaN',
-            () =>
-                railPageViews([], 'k', {
-                    root: {
-                        kind: 'split',
-                        dir: 'row',
-                        sizes: [Number.NaN, 0.5],
-                        children: [
-                            { kind: 'pane', view: 'a' },
-                            { kind: 'pane', view: 'b' }
-                        ]
-                    }
-                }),
-            []
-        ],
-        [
-            'the views of a split whose sizes hold Infinity',
-            () =>
-                railPageViews([], 'k', {
-                    root: {
-                        kind: 'split',
-                        dir: 'row',
-                        sizes: [Infinity, 0.5],
-                        children: [
-                            { kind: 'pane', view: 'a' },
-                            { kind: 'pane', view: 'b' }
-                        ]
-                    }
-                }),
-            []
         ],
         [
             'the views of a split of two panes',
@@ -616,51 +477,6 @@ describe('the readers of a tab state and of an arrangement node of the wrong typ
                     }
                 }),
             ['a', 'b']
-        ],
-        [
-            'a reset over a node that is a list',
-            () =>
-                (() => {
-                    const plan = resetPlan([tiedPage('k')], [{ page: 'k', label: 'K', node: [] }]);
-                    return [plan.rebuilt.length, plan.removed.length];
-                })(),
-            [0, 0]
-        ],
-        [
-            'a reset over a node that is null',
-            () =>
-                (() => {
-                    const plan = resetPlan(
-                        [tiedPage('k')],
-                        [{ page: 'k', label: 'K', node: null }]
-                    );
-                    return [plan.rebuilt.length, plan.removed.length];
-                })(),
-            [0, 0]
-        ],
-        [
-            'a reset over a node with a root that is a string',
-            () =>
-                (() => {
-                    const plan = resetPlan(
-                        [tiedPage('k')],
-                        [{ page: 'k', label: 'K', node: { root: 'x' } }]
-                    );
-                    return [plan.rebuilt.length, plan.removed.length];
-                })(),
-            [0, 0]
-        ],
-        [
-            'a reset over a node that parses',
-            () =>
-                (() => {
-                    const plan = resetPlan(
-                        [tiedPage('k')],
-                        [{ page: 'k', label: 'K', node: { root: { kind: 'pane', view: 'a' } } }]
-                    );
-                    return [plan.rebuilt.length, plan.removed.length];
-                })(),
-            [1, 0]
         ]
     ];
 

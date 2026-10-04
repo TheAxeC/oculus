@@ -1,4 +1,4 @@
-// Layer 4, client-state test. The terminals store keeping which Terminal tab owns which terminal,
+// Layer 2, client-state tests. The terminals store keeping which Terminal tab owns which terminal,
 // through the client's own wiring (state/client/context.ts hands it every page's Terminal tabs and
 // the layout's restate, activate, switch, open and close): a terminal shown in the tab that owns
 // it, on whichever page that is, or taken into the Terminal tab of the page on screen; a terminal
@@ -10,7 +10,7 @@
 // and the presses of the components that start a terminal, which a server render cannot make; the
 // store call each of them makes is the one asserted here.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { createClientState, type ClientState } from '../../../../src/lib/state/client/context.ts';
 import { readTab } from '../../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
 import {
@@ -51,8 +51,6 @@ beforeEach(() => {
     client.layout.loadLayout(fakeStorage());
     version = 0;
 });
-
-afterEach(() => vi.unstubAllGlobals());
 
 function terminal(id: string): Terminal {
     return {
@@ -445,24 +443,9 @@ describe('attaching a terminal no tab owns', () => {
     });
 });
 
-describe('a Terminal tab closed', () => {
-    // Revert: make closeInstance skip access.ui.endTerminals.
-    it('ends its terminals, and a terminal no tab owns is taken by a tab only when shown', () => {
-        const stopped: string[] = [];
-        vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
-            stopped.push((JSON.parse(String(init?.body)) as { id: string }).id);
-            return Promise.resolve({
-                ok: true,
-                status: 200,
-                json: () => Promise.resolve({ ok: true })
-            });
-        });
+describe('a terminal no tab owns', () => {
+    it('is taken by a tab only when it is shown, not when the payload lists it', () => {
         const page = client.layout.currentPage().id;
-        const t1 = owning(page, [A, B]);
-        listed([A, B]);
-        client.layout.closeInstance(t1, page);
-        expect(holds(t1)).toBe(false);
-        expect(stopped).toEqual([A, B]);
         const other = owning(page, [C]);
         listed([A, B, C]);
         expect(tab(other).terminals).toEqual([C]);

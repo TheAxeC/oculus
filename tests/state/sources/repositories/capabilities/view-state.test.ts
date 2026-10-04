@@ -1,6 +1,6 @@
-// What a Repositories tab keeps for Close Repository, Close Other Repositories and Reopen Closed
-// Repositories; the message git prepared for a merge or a cherry pick; and which change groups the
-// 200-entry cut shortened.
+// Layer 2, client-state tests. What a Repositories tab keeps for Close Repository, Close Other
+// Repositories and Reopen Closed Repositories; the message git prepared for a merge or a cherry
+// pick; and which change groups the 200-entry cut shortened.
 //
 // What this does NOT cover: the quick pick and the rows drawn, which tests/views holds.
 
@@ -22,14 +22,6 @@ const VIEW = repositoriesViewOf({ root: '/a' });
 const ROOTS = ['/a', '/b', '/c'];
 
 describe('the repositories a tab has closed', () => {
-    // Revert: leave `closed` out of repositoriesViewOf.
-    it('keeps the closed roots in the tab state, their strings only, none for a state that names none', () => {
-        expect(repositoriesViewOf({}).closed).toEqual([]);
-        expect(repositoriesViewOf({ closed: ['/b'] }).closed).toEqual(['/b']);
-        expect(repositoriesViewOf({ closed: 3 }).closed).toEqual([]);
-        expect(repositoriesViewOf({ closed: ['/b', 4] }).closed).toEqual(['/b']);
-    });
-
     // Revert: filter nothing in visibleRoots.
     it('draws the roots not closed, in the channel order', () => {
         expect(visibleRoots(ROOTS, [])).toEqual(ROOTS);
@@ -102,11 +94,6 @@ describe('the groups the 200-entry cut shortened', () => {
             held: { staged: 10, changes: 250, untracked: 0, merge: 0 }
         });
         expect(cutGroups(state)).toEqual(['changed']);
-    });
-
-    it('names none for a repository nothing was cut from', () => {
-        expect(cutGroups(git({ unstaged: rows(10) }))).toEqual([]);
-        expect(cutGroups(git())).toEqual([]);
     });
 
     it('names every group that was cut', () => {

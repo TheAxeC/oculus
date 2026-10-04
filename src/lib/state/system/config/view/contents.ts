@@ -4,7 +4,7 @@
 // wide, so the first draw puts the table beside the list.
 
 /** The narrowest the view may be with the table of contents beside the list. */
-export const NARROW = 700;
+const NARROW = 700;
 
 /** What a press does to the table shown over the list. */
 export type Press = 'toggle' | 'choose' | 'escape';

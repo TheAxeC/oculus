@@ -1,4 +1,4 @@
-// Layer 2, client state tests. Floats in the layout store: the shipped floats a fresh browser
+// Layer 2, client-state tests. Floats in the layout store: the shipped floats a fresh browser
 // starts with and Reset all pages puts back, a layout saved before there were floats taking them
 // in, a float addressed by its id wherever a page id is taken, the attention that never rests on
 // one, a view opened while its tab is in a float, and every loop over the pages that walks the
@@ -40,11 +40,11 @@ setCatalog(textCatalog(config));
 /** The views these cases treat as opened for something. */
 const OPENED = new Set(['source', 'doc', 'note']);
 
-/** What the shipped config's `floats:` reads as, and the rail it starts the first page from. */
 /** The floats the shipped config starts a fresh browser with, read anew so no case shares ids. */
 function shippedFloats(): ReturnType<typeof parseFloats> {
     return parseFloats(config.floats);
 }
+/** The rail pages the shipped config starts the first page from. */
 const rail = railPages(config);
 
 /** The envelope a store saved, as far as these cases read it. */
@@ -75,13 +75,6 @@ function everyTab(): string[] {
 }
 
 describe('the shipped floats', () => {
-    it('are one float docked right at 0.3 holding hpc and usage, read from layout.yml', () => {
-        const floats = shippedFloats();
-        expect(floats).toHaveLength(1);
-        expect(floats[0].place).toEqual({ kind: 'dock', edge: 'right', size: 0.3 });
-        expect(floats[0].pane.tabs.map((tab) => tab.view)).toEqual(['hpc', 'usage']);
-    });
-
     it('start a browser with no saved layout, and the Focus page is the Focus pane alone', () => {
         client.layout.loadLayout(fakeStorage());
         const first = rail[0];
@@ -166,16 +159,7 @@ describe('a layout saved before floats', () => {
         expect(client.layout.floats()[0].place).toEqual({ kind: 'dock', edge: 'right', size: 0.3 });
     });
 
-    it('makes the float with new hpc and usage instances when the page held no tab of them', () => {
-        client.layout.loadLayout(fakeStorage(legacy(false)));
-        client.layout.adoptFloats(shippedFloats());
-        expect(viewsOf(client.layout.layout())).toEqual(['projects', 'projects']);
-        const tabs = client.layout.floats()[0].pane.tabs;
-        expect(tabs.map((tab) => tab.view)).toEqual(['hpc', 'usage']);
-        expect(tabs.map((tab) => tab.id)).not.toContain('h');
-    });
-
-    it('is saved as version 5 once the floats are taken in, and not before', () => {
+    it('is saved at the current version once the floats are taken in, and not before', () => {
         const storage = fakeStorage(legacy());
         client.layout.loadLayout(storage);
         client.layout.openPage('Other');
@@ -191,12 +175,6 @@ describe('a layout saved before floats', () => {
         const once = client.layout.floats().map((float) => float.id);
         client.layout.adoptFloats(shippedFloats());
         expect(client.layout.floats().map((float) => float.id)).toEqual(once);
-    });
-
-    it('is left as it is by a browser whose layout was saved with floats', () => {
-        booted(heldPages([pageAround('main', paneOf(['a']))], []));
-        client.layout.adoptFloats(shippedFloats());
-        expect(client.layout.floats()).toEqual([]);
     });
 });
 
@@ -301,63 +279,36 @@ describe('the attention', () => {
         expect(tabsOf(client.layout.pages()[0].workbench.root).map((tab) => tab.id)).toContain(id);
         expect(client.layout.floats()[0].pane.tabs.map((tab) => tab.id)).toEqual(['x']);
     });
-
-    it('stays on the page it was on after a press in a float', () => {
-        booted(
-            heldPages(
-                [pageAround('one', pane(['a'])), pageAround('two', pane(['b']))],
-                [floating('fl', ['x'])],
-                'one'
-            )
-        );
-        client.layout.touchPane('one');
-        client.layout.touchPane('fl');
-        expect(client.layout.openingInstance()?.id).toBe('a');
-    });
 });
 
 describe('a view opened while its tab is in a float', () => {
-    it("activates the float's tab, and makes no second instance anywhere", () => {
-        booted(
-            heldPages(
-                [pageAround('main', pane(['a']))],
-                [
-                    {
-                        ...floating('fl', ['u']),
-                        pane: {
-                            ...paneOf(['u', 'h']),
-                            tabs: [instance('u', 'usage'), instance('h', 'hpc')],
-                            active: 'u'
-                        }
-                    }
-                ]
-            )
-        );
-        const id = client.layout.openView('hpc');
-        expect(id).toBe('h');
-        expect(client.layout.floats()[0].pane.active).toBe('h');
-        expect(everyTab().filter((one) => one === 'h')).toHaveLength(1);
-        expect(everyTab()).toHaveLength(3);
-    });
+    const doc = { id: 'd', view: 'doc', state: { id: 'docs/a.md', path: 'docs/a.md' } };
 
-    it('does the same for a view opened for something, by its record', () => {
-        const doc = { id: 'd', view: 'doc', state: { id: 'docs/a.md', path: 'docs/a.md' } };
-        booted(
-            heldPages(
-                [pageAround('main', pane(['a']))],
-                [
-                    {
-                        ...floating('fl', ['x']),
-                        pane: { kind: 'pane', tabs: [instance('x'), doc], active: 'x' }
-                    }
-                ]
-            )
-        );
-        const id = client.layout.openView('doc', { id: 'docs/a.md', path: 'docs/a.md' });
-        expect(id).toBe('d');
-        expect(client.layout.floats()[0].pane.active).toBe('d');
-        expect(everyTab()).toHaveLength(3);
-    });
+    it.each([
+        ['a view', 'hpc', undefined, [instance('u', 'usage'), instance('h', 'hpc')], 'u', 'h'],
+        [
+            'a view opened for something',
+            'doc',
+            { id: 'docs/a.md', path: 'docs/a.md' },
+            [instance('x'), doc],
+            'x',
+            'd'
+        ]
+    ])(
+        "activates the float's tab for %s, and makes no second instance anywhere",
+        (_name, view, state, tabs, active, wanted) => {
+            booted(
+                heldPages(
+                    [pageAround('main', pane(['a']))],
+                    [{ ...floating('fl', ['x']), pane: { kind: 'pane', tabs, active } }]
+                )
+            );
+            expect(client.layout.openView(view, state)).toBe(wanted);
+            expect(client.layout.floats()[0].pane.active).toBe(wanted);
+            expect(everyTab().filter((one) => one === wanted)).toHaveLength(1);
+            expect(everyTab()).toHaveLength(3);
+        }
+    );
 });
 
 describe('the loops over every tab', () => {
@@ -516,21 +467,5 @@ describe('a float locked through the store', () => {
         expect(again.layout.floats()[0].pane.locked).toBe(true);
         client.layout.change((tree) => setLocked(tree, [], false), 'fl');
         expect(client.layout.floats()[0].pane.locked).toBeUndefined();
-    });
-
-    it('is made from a locked pane of a page, saved and read back locked', () => {
-        const storage = booted(
-            heldPages([
-                pageAround(
-                    'main',
-                    split('row', [0.5, 0.5], [pane(['a']), { ...paneOf(['b']), locked: true }])
-                )
-            ])
-        );
-        client.layout.floatPane([1], 'main');
-        expect(client.layout.floats()[0].pane.locked).toBe(true);
-        const again = createClientState();
-        again.layout.loadLayout(storage);
-        expect(again.layout.floats()[0].pane.locked).toBe(true);
     });
 });

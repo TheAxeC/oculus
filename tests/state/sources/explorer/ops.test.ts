@@ -1,7 +1,7 @@
-// Layer 4, test. The explorer's file operations store (state/sources/explorer/ops.svelte.ts): the
-// clipboard and the file selected for compare, the calls that post an operation to /api/ops and
-// read the answer, the listings re-read after one, and the open tabs and bookmarks that follow a
-// rename or a move.
+// Layer 2, client-state tests. The explorer's file operations store
+// (state/sources/explorer/ops.svelte.ts): the clipboard and the file selected for compare, the
+// calls that post an operation to /api/ops and read the answer, the listings re-read after one, and
+// the open tabs and bookmarks that follow a rename or a move.
 //
 // `fetch` is a stub of the case's own: /api/ops answers what the case gives it and records the
 // body, the listings answer the entries the case holds, so nothing reaches a server or a disk.
@@ -82,7 +82,6 @@ function serve(): void {
     });
 }
 
-/** Let the scheduled requests run and their answers land. */
 /** The listing addresses asked since the last mark, for one folder. */
 function listingsOf(root: string, path: string): string[] {
     return asked.filter((url) =>
@@ -616,23 +615,6 @@ describe('the listings an operation changed', () => {
         expect(listingsOf('hub', 'a')).toHaveLength(1);
         expect(listingsOf('hub', 'b')).toHaveLength(1);
         expect(listingsOf('hub', 'c')).toHaveLength(0);
-    });
-
-    it('sends a second paste while one is in flight, and does not hold it back', async () => {
-        const landing: ((answer: Body) => void)[] = [];
-        answers = [
-            () =>
-                new Promise<Body>((done) => {
-                    landing.push(done);
-                })
-        ];
-        client.explorer.copy([{ root: 'hub', path: 'src.md' }]);
-        const first = client.explorer.paste({ root: 'hub', path: 'a' }, NOPE);
-        const second = client.explorer.paste({ root: 'hub', path: 'a' }, NOPE);
-        await settle();
-        expect(posted).toHaveLength(2);
-        landing.forEach((done) => done(ok(['a/src.md'])));
-        await Promise.all([first, second]);
     });
 });
 

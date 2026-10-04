@@ -1,9 +1,10 @@
-// The diff pane's hunks against git's. The pane cuts its hunks from the line changes Monaco's diff
-// editor computes, and a hunk it stages must be the hunk `git add -p` offers, so for five pairs of
-// texts the line changes Monaco answers (its own diff algorithm, run here as the editor runs it)
-// are compared with git's changes (`diff -U0`) and the hunks built over them with git's hunks
-// (`diff -U3`), both read by `git diff --no-index` over the two texts written to a scratch folder,
-// which needs no repository and no commit.
+// Layer 2, client-state tests. The diff pane's hunks against git's. The pane cuts its hunks from
+// the line changes Monaco's diff editor computes, and a hunk it stages must be the hunk `git add
+// -p` offers, so for five pairs of texts the line changes Monaco answers (its own diff algorithm,
+// run here as the editor runs it) are compared with git's changes (`diff -U0`) and the hunks built
+// over them with git's hunks (`diff -U3`), both read by `git diff --no-index` over the two texts
+// written to a scratch folder, which needs no repository and no commit.
+// @module-tag slow: starts git in a child process for each case.
 
 import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
@@ -68,27 +69,25 @@ function gitLines(value: string): number {
 }
 
 describe('the hunks against git', () => {
-    for (const [name, original, modified] of PAIRS) {
-        it(`finds git's changes and git's hunks for ${name}`, () => {
-            const changes = monacoLineChanges(original, modified);
-            // git -U0 names an empty side by the line before it, as Monaco's line changes do.
-            const monaco = changes.map((change) => {
-                const olds =
-                    change.originalEndLineNumber === 0
-                        ? 0
-                        : change.originalEndLineNumber - change.originalStartLineNumber + 1;
-                const news =
-                    change.modifiedEndLineNumber === 0
-                        ? 0
-                        : change.modifiedEndLineNumber - change.modifiedStartLineNumber + 1;
-                return `-${change.originalStartLineNumber},${olds} +${change.modifiedStartLineNumber},${news}`;
-            });
-            expect(monaco).toEqual(heads(gitDiff(original, modified, 0)));
-            const built = hunksOf(changes).map((hunk) => {
-                const head = hunkHead(hunk, gitLines(original), gitLines(modified));
-                return `-${head.oldStart},${head.oldCount} +${head.newStart},${head.newCount}`;
-            });
-            expect(built).toEqual(heads(gitDiff(original, modified, 3)));
+    it.each(PAIRS)("finds git's changes and git's hunks for %s", (_name, original, modified) => {
+        const changes = monacoLineChanges(original, modified);
+        // git -U0 names an empty side by the line before it, as Monaco's line changes do.
+        const monaco = changes.map((change) => {
+            const olds =
+                change.originalEndLineNumber === 0
+                    ? 0
+                    : change.originalEndLineNumber - change.originalStartLineNumber + 1;
+            const news =
+                change.modifiedEndLineNumber === 0
+                    ? 0
+                    : change.modifiedEndLineNumber - change.modifiedStartLineNumber + 1;
+            return `-${change.originalStartLineNumber},${olds} +${change.modifiedStartLineNumber},${news}`;
         });
-    }
+        expect(monaco).toEqual(heads(gitDiff(original, modified, 0)));
+        const built = hunksOf(changes).map((hunk) => {
+            const head = hunkHead(hunk, gitLines(original), gitLines(modified));
+            return `-${head.oldStart},${head.oldCount} +${head.newStart},${head.newCount}`;
+        });
+        expect(built).toEqual(heads(gitDiff(original, modified, 3)));
+    });
 });

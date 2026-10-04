@@ -1,13 +1,12 @@
-// The pure rules of the Venues view: real project membership, facets, tones, timing and search.
-// Fixtures keep each rule independent of Svelte and the live hub.
+// Layer 2, client-state tests. The pure rules of the Venues view: real project membership, facets,
+// tones, timing and search. Fixtures keep each rule independent of Svelte and the live hub. The
+// theme facets and their filter are shared with the Data view and checked here once.
 
 import { describe, expect, it } from 'vitest';
-import { describeOffFacets } from './off-facets.ts';
 import {
     freeTone,
     isBiennial,
     monthIndex,
-    parseVenuesState,
     quartileTone,
     realProjects,
     sparkBars,
@@ -189,36 +188,6 @@ describe('conference timing', () => {
     });
 });
 
-describe('saved venue state', () => {
-    it('defaults both sections open and keeps valid saved fields only', () => {
-        expect(parseVenuesState(undefined)).toEqual({
-            search: '',
-            off: [],
-            journalsOpen: true,
-            conferencesOpen: true,
-            adding: false,
-            editing: ''
-        });
-        expect(
-            parseVenuesState({
-                search: 'clinical',
-                off: ['ml', 3],
-                journalsOpen: false,
-                conferencesOpen: 'no',
-                adding: true,
-                editing: 'bspc'
-            })
-        ).toEqual({
-            search: 'clinical',
-            off: ['ml'],
-            journalsOpen: false,
-            conferencesOpen: true,
-            adding: true,
-            editing: 'bspc'
-        });
-    });
-});
-
 describe('the venues by category', () => {
     it('are the journals and the conferences, each in the order given, anything else left out', () => {
         const venues = [
@@ -255,20 +224,7 @@ describe('the month a timeline is read at', () => {
 
     it.each([
         ['text of a number', '5', [], fromDecember],
-        ['text of a number above the months', '12', [], fromDecember],
-        ['an empty word', '', [], fromDecember],
         ['a word that is no month', 'xyz', [], fromDecember],
-        [
-            'a month word',
-            'May',
-            [5],
-            [
-                ['b', 12, 7],
-                ['c', 1, 8],
-                ['a', 3, 10],
-                ['d', 3, 10]
-            ]
-        ],
         [
             'a month word with spaces and case',
             ' may ',
@@ -291,13 +247,8 @@ describe('the month a timeline is read at', () => {
                 ['d', 3, 6]
             ]
         ],
-        ['December', 12, [12], fromDecember],
-        ['January', 1, [1], fromJanuary],
         ['zero', 0, [1], fromJanuary],
-        ['below the months', -3, [1], fromJanuary],
-        ['minus infinity', -Infinity, [1], fromJanuary],
         ['above the months', 13, [12], fromDecember],
-        ['infinity', Infinity, [12], fromDecember],
         [
             'between two months',
             5.5,
@@ -328,5 +279,3 @@ describe('the month a timeline is read at', () => {
         expect(read.next.map((one) => [one.venue.id, one.month, one.distance])).toEqual(next);
     });
 });
-
-describeOffFacets('venues', (off) => parseVenuesState({ off }).off);

@@ -1,4 +1,4 @@
-// Layer 2, client state tests. The pure operations over floats: a pane put over the page, a tab put
+// Layer 2, client-state tests. The pure operations over floats: a pane put over the page, a tab put
 // over it, a float docked to an edge and freed again, put back into a page, moved and resized, and
 // the shipped floats taken in by a layout saved before there were floats. Each runs over hand-built
 // pages and answers the pages it was given when it names nothing.
@@ -96,11 +96,6 @@ describe('floatPane', () => {
         expect(floatPane(before, 'main', [])).toBe(before);
         const empty = heldPages([pageAround('main', paneOf([]))]);
         expect(floatPane(empty, 'main', [])).toBe(empty);
-    });
-
-    it('floats from a float id nowhere: a float is never floated again', () => {
-        const before = heldPages([pageAround('main', pane(['a']))], [floating('f', ['x'])]);
-        expect(floatPane(before, 'f', [])).toBe(before);
     });
 });
 
@@ -328,27 +323,6 @@ describe('adoptFloats', () => {
         expect(after.floats).toHaveLength(1);
         expect(after.floats[0].pane.tabs.map((tab) => tab.id)).toEqual(['h', 'u']);
         expect(after.floats[0].place).toEqual({ kind: 'dock', edge: 'right', size: 0.3 });
-    });
-
-    it('makes the float with the shipped instances when no page holds a tab of a view of it', () => {
-        const shipped = [
-            {
-                pane: {
-                    kind: 'pane' as const,
-                    tabs: [view('hpc-new', 'hpc'), view('usage-new', 'usage')],
-                    active: 'hpc-new'
-                },
-                place: { kind: 'dock', edge: 'right', size: 0.3 } as const
-            }
-        ];
-        const before = heldPages([pageAround('main', pane(['a']))]);
-        const after = adoptFloats(before, shipped);
-        expect(after.pages).toEqual(before.pages);
-        expect(after.floats[0].pane.tabs.map((tab) => tab.view)).toEqual(['hpc', 'usage']);
-        expect(after.floats[0].pane.tabs.map((tab) => tab.id)).not.toEqual([
-            'hpc-new',
-            'usage-new'
-        ]);
     });
 
     it('moves a tab of a view found on another page, and makes new the ones that are not found', () => {

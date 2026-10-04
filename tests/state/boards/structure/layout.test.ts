@@ -1,5 +1,6 @@
-// Graphviz's neato placement of a Map graph through @viz-js/viz: repeatable for one seed, moved by
-// another, inside the Map's box, and faithful to every node id whatever characters it holds.
+// Layer 2, client-state tests. Graphviz's neato placement of a Map graph through @viz-js/viz:
+// repeatable for one seed, moved by another, inside the Map's box, and faithful to every node id
+// whatever characters it holds.
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Viz } from '@viz-js/viz';
@@ -349,11 +350,6 @@ describe("the positions of Graphviz's answer", () => {
             [497, 343],
             [503, 337]
         ]);
-    });
-
-    it('leaves out an item that is null, as it does one that is a number', () => {
-        const objects = [{ name: 'a', pos: '1,2' }, { name: 3 }, null];
-        expect(placement(stub({ objects }), one, 1)).toStrictEqual(NONE);
     });
 
     it('places the node a position beside an item that is null names', () => {

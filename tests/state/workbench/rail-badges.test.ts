@@ -129,31 +129,6 @@ describe('view badge counts', () => {
         });
     });
 
-    it('reads one collection live-status rule and counts normalised entry fields', () => {
-        const config = {
-            nav_live: {
-                funding: { match: ['in-prep', 'submitted'], label: 'undecided', tone: 'amber' }
-            }
-        };
-        const rule = liveRule(config, 'funding');
-        expect(rule).toEqual({
-            match: ['in-prep', 'submitted'],
-            label: 'undecided',
-            tone: 'amber'
-        });
-        expect(
-            liveEntries(
-                [
-                    { fields: { status: ' In-Prep ' } },
-                    { fields: { status: 'awarded' } },
-                    { fields: { status: 'submitted' } }
-                ],
-                rule
-            )
-        ).toBe(2);
-        expect(liveRule(config, 'events')).toBe(null);
-    });
-
     it('suppresses the text of a zero count', () => {
         expect(countText(2)).toBe('2');
         expect(countText(0)).toBe('');
@@ -383,18 +358,6 @@ describe('registered board badge descriptors', () => {
         }
     );
 
-    it('reads split tones from config independently of type_color', () => {
-        installBadges(client, {
-            ...config,
-            tab_split: { active: 'blue', manuscript: 'cyan', idea: 'pink' }
-        });
-        expect(
-            badgeOf(present(viewFor('projects'), 'projects view'), client).cells?.map(
-                (cell) => cell.color
-            )
-        ).toEqual(['blue', 'cyan', 'pink']);
-    });
-
     it('uses the collection rule label and hides its count at zero', () => {
         registerCollections(client.registry, ['funding']);
         installBadges(client, config);
@@ -459,11 +422,7 @@ describe('the badge rules over config and records of the wrong type', () => {
     const rows: [string, () => unknown, unknown][] = [
         ['a rule of a config with no nav_live', () => liveRule({}, 'k'), null],
         ['a rule of a nav_live that is a list', () => liveRule({ nav_live: [] }, 'k'), null],
-        ['a rule of a nav_live that is a string', () => liveRule({ nav_live: 'k' }, 'k'), null],
-        ['a rule of a nav_live that is null', () => liveRule({ nav_live: null }, 'k'), null],
         ['a rule of a row that is a list', () => liveRule({ nav_live: { k: [] } }, 'k'), null],
-        ['a rule of a row that is null', () => liveRule({ nav_live: { k: null } }, 'k'), null],
-        ['a rule of a row that is a string', () => liveRule({ nav_live: { k: 'x' } }, 'k'), null],
         [
             'a rule of a row with no match',
             () => liveRule({ nav_live: { k: { label: 'l' } } }, 'k'),
@@ -475,34 +434,14 @@ describe('the badge rules over config and records of the wrong type', () => {
             null
         ],
         [
-            'a rule of a match that is a map',
-            () => liveRule({ nav_live: { k: { match: { a: 'x' } } } }, 'k'),
-            null
-        ],
-        [
             'a rule of a match that is empty',
             () => liveRule({ nav_live: { k: { match: [] } } }, 'k'),
-            null
-        ],
-        [
-            'a rule of a match that holds only numbers',
-            () => liveRule({ nav_live: { k: { match: [1, null] } } }, 'k'),
             null
         ],
         [
             'a rule of a match that holds numbers and words',
             () => liveRule({ nav_live: { k: { match: [1, ' In-Prep ', 'b', ''] } } }, 'k'),
             { match: ['in-prep', 'b', ''] }
-        ],
-        [
-            'a rule of a match that holds a blank word',
-            () => liveRule({ nav_live: { k: { match: ['  '] } } }, 'k'),
-            { match: [''] }
-        ],
-        [
-            'a rule of a label that is a number',
-            () => liveRule({ nav_live: { k: { match: ['a'], label: 3 } } }, 'k'),
-            { match: ['a'] }
         ],
         [
             'a rule of an empty label',
@@ -517,11 +456,6 @@ describe('the badge rules over config and records of the wrong type', () => {
         [
             'a rule of a tone that is empty',
             () => liveRule({ nav_live: { k: { match: ['a'], tone: '' } } }, 'k'),
-            { match: ['a'] }
-        ],
-        [
-            'a rule of a tone that is a number',
-            () => liveRule({ nav_live: { k: { match: ['a'], tone: 3 } } }, 'k'),
             { match: ['a'] }
         ],
         [
@@ -551,11 +485,6 @@ describe('the badge rules over config and records of the wrong type', () => {
             null
         ],
         [
-            'a rule of the key __proto__ in a literal map',
-            () => liveRule({ nav_live: {} }, '__proto__'),
-            null
-        ],
-        [
             'a rule of an own __proto__ key',
             () => liveRule({ nav_live: JSON.parse('{"__proto__":{"match":["x"]}}') }, '__proto__'),
             { match: ['x'] }
@@ -563,11 +492,6 @@ describe('the badge rules over config and records of the wrong type', () => {
         [
             'entries counted by a status that is a number',
             () => liveEntries([{ fields: { status: 3 } }], { match: ['active', '3', 'true'] }),
-            1
-        ],
-        [
-            'entries counted by a status that is a boolean',
-            () => liveEntries([{ fields: { status: true } }], { match: ['active', '3', 'true'] }),
             1
         ],
         [
@@ -581,12 +505,6 @@ describe('the badge rules over config and records of the wrong type', () => {
                 liveEntries([{ fields: { status: ['active'] } }], {
                     match: ['active', '3', 'true']
                 }),
-            0
-        ],
-        [
-            'entries counted by a status that is a map',
-            () =>
-                liveEntries([{ fields: { status: { a: 1 } } }], { match: ['active', '3', 'true'] }),
             0
         ],
         [
@@ -612,17 +530,7 @@ describe('the badge rules over config and records of the wrong type', () => {
             () => leadsDue([{ status: 3, deadline: '2026-09-14' }], 14, now),
             1
         ],
-        [
-            'leads due with a status that is null',
-            () => leadsDue([{ status: null, deadline: '2026-09-14' }], 14, now),
-            1
-        ],
         ['leads due with no status', () => leadsDue([{ deadline: '2026-09-14' }], 14, now), 1],
-        [
-            'leads due with a status that is a list',
-            () => leadsDue([{ status: ['applied'], deadline: '2026-09-14' }], 14, now),
-            1
-        ],
         [
             'leads due with a closed status',
             () => leadsDue([{ status: 'Applied', deadline: '2026-09-14' }], 14, now),
@@ -631,21 +539,6 @@ describe('the badge rules over config and records of the wrong type', () => {
         [
             'leads due with a deadline that is a number',
             () => leadsDue([{ status: 'open', deadline: 20260914 }], 14, now),
-            0
-        ],
-        [
-            'leads due with a deadline that is a list',
-            () => leadsDue([{ status: 'open', deadline: ['2026-09-14'] }], 14, now),
-            0
-        ],
-        [
-            'leads due with a deadline that is null',
-            () => leadsDue([{ status: 'open', deadline: null }], 14, now),
-            0
-        ],
-        [
-            'leads due with a deadline that is a map',
-            () => leadsDue([{ status: 'open', deadline: { at: '2026-09-14' } }], 14, now),
             0
         ],
         [
@@ -664,33 +557,18 @@ describe('the badge rules over config and records of the wrong type', () => {
             0
         ],
         [
-            'leads due over a window of Infinity',
-            () => leadsDue([{ status: 'open', deadline: '2026-09-14' }], Infinity, now),
-            1
-        ],
-        [
             'leads due over a negative window',
             () => leadsDue([{ status: 'open', deadline: '2026-09-14' }], -1, now),
             0
         ],
         ['overdue with a post date in words', () => linkedinOverdue('last week', 30, now), false],
-        ['overdue with a post date that is empty', () => linkedinOverdue('', 30, now), false],
         ['overdue with a cadence of zero', () => linkedinOverdue('2026-09-11', 0, now), true],
         [
             'overdue with a cadence of NaN',
             () => linkedinOverdue('2026-01-01', Number.NaN, now),
             false
         ],
-        [
-            'overdue with a cadence of Infinity',
-            () => linkedinOverdue('2026-01-01', Infinity, now),
-            false
-        ],
-        ['overdue with a negative cadence', () => linkedinOverdue('2026-09-11', -1, now), true],
-        ['the text of a count that is negative', () => countText(-1), ''],
-        ['the text of a count that is NaN', () => countText(Number.NaN), ''],
-        ['the text of a count that is Infinity', () => countText(Infinity), 'Infinity'],
-        ['the text of a count that is fractional', () => countText(1.5), '1.5']
+        ['the text of a count that is NaN', () => countText(Number.NaN), '']
     ];
 
     it.each(rows)('%s', (_name, run, expected) => {
@@ -700,19 +578,12 @@ describe('the badge rules over config and records of the wrong type', () => {
 
 describe('the projects badge over scan rows and a split of the wrong type', () => {
     const rows: [string, () => unknown, unknown][] = [
-        [
-            'the shipped config',
-            () => projectCells({}),
-            'active 1 green, manuscript 0 amber, idea 1 violet'
-        ],
         ['a scan that is empty', () => projectCells({ scan: [] }), ''],
-        ['a scan that is a string', () => projectCells({ scan: 'projects' }), ''],
         [
             'a scan that is a map',
             () => projectCells({ scan: { tier: 'projects', type: 'active' } }),
             ''
         ],
-        ['a scan that is null', () => projectCells({ scan: null }), ''],
         [
             'a scan of rows that are not maps',
             () => projectCells({ scan: [[], 'x', null, 3, { tier: 'projects', type: 'active' }] }),
@@ -730,11 +601,6 @@ describe('the projects badge over scan rows and a split of the wrong type', () =
             'idea 1 violet'
         ],
         [
-            'a scan of rows whose type is a list',
-            () => projectCells({ scan: [{ tier: 'projects', type: ['idea'] }] }),
-            ''
-        ],
-        [
             'a scan of rows of another tier',
             () =>
                 projectCells({
@@ -744,17 +610,6 @@ describe('the projects badge over scan rows and a split of the wrong type', () =
                     ]
                 }),
             'idea 1 violet'
-        ],
-        [
-            'a scan of rows with a tier that is a list',
-            () => projectCells({ scan: [{ tier: ['projects'], type: 'active' }] }),
-            ''
-        ],
-        ['a scan of rows with no tier', () => projectCells({ scan: [{ type: 'active' }] }), ''],
-        [
-            'a scan of rows with no type',
-            () => projectCells({ scan: [{ tier: 'projects', dir: 'x' }] }),
-            ''
         ],
         [
             'a scan of rows with a type no preset lists',
@@ -778,16 +633,6 @@ describe('the projects badge over scan rows and a split of the wrong type', () =
             'active 1 grey, manuscript 0 grey, idea 1 grey'
         ],
         [
-            'a split that is a string',
-            () => projectCells({ tab_split: 'green' }),
-            'active 1 grey, manuscript 0 grey, idea 1 grey'
-        ],
-        [
-            'a split that is null',
-            () => projectCells({ tab_split: null }),
-            'active 1 grey, manuscript 0 grey, idea 1 grey'
-        ],
-        [
             'a split that is empty',
             () => projectCells({ tab_split: {} }),
             'active 1 grey, manuscript 0 grey, idea 1 grey'
@@ -795,11 +640,6 @@ describe('the projects badge over scan rows and a split of the wrong type', () =
         [
             'a split of tones that are not strings',
             () => projectCells({ tab_split: { active: 3, manuscript: null, idea: ['violet'] } }),
-            'active 1 grey, manuscript 0 grey, idea 1 grey'
-        ],
-        [
-            'a split of tones that are empty',
-            () => projectCells({ tab_split: { active: '', manuscript: '', idea: '' } }),
             'active 1 grey, manuscript 0 grey, idea 1 grey'
         ],
         [

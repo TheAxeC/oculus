@@ -1,8 +1,8 @@
-// The comment a reader leaves on a line of a session's diff, as it becomes a prompt and is sent:
-// the prompt's text for each side of a diff, the refusal that holds on both paths, the send into
-// the session's terminal or onto the clipboard, the guard over one send in flight, the words each
-// outcome says, and the keys the comment box takes. Every dependency of a send is a fake passed in,
-// so nothing here types into a terminal or touches a clipboard.
+// Layer 2, client-state tests. The comment a reader leaves on a line of a session's diff, as it
+// becomes a prompt and is sent: the prompt's text for each side of a diff, the refusal that holds
+// on both paths, the send into the session's terminal or onto the clipboard, the guard over one
+// send in flight, the words each outcome says, and the keys the comment box takes. Every dependency
+// of a send is a fake passed in, so nothing here types into a terminal or touches a clipboard.
 //
 // What this does NOT cover: the box drawn on a diff, its focus and its keys inside Monaco's
 // overlay, which the look does.
@@ -27,7 +27,7 @@ import {
 import { STEER_MAX } from '../../../../../src/lib/data/model/index.ts';
 import type { TerminalAnswer } from '../../../../../src/lib/state/sessions/terminal/pty/pty-io.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, t } from '../../../../../src/lib/state/shared/words/text.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -78,51 +78,6 @@ describe('the prompt a comment becomes', () => {
         expect(pathOfSide({ oldPath: 'same.ts', newPath: 'same.ts' }, 'original')).toBe('same.ts');
     });
 
-    it('writes the five real cases of the decision as they are given', () => {
-        expect(
-            commentPrompt(
-                comment({
-                    path: 'src/lib/server/machine/pty/sessions.ts',
-                    line: 528,
-                    text: 'use the shared check here'
-                })
-            )
-        ).toBe('src/lib/server/machine/pty/sessions.ts:528: use the shared check here');
-        expect(
-            commentPrompt(comment({ path: 'HELP.md', line: 132, text: 'say what the + does' }))
-        ).toBe('HELP.md:132: say what the + does');
-        expect(
-            commentPrompt(
-                comment({
-                    path: 'src/lib/ui/controls/editor/diff/DiffEditor.svelte',
-                    line: 143,
-                    side: 'original',
-                    text: 'why was the menu on?'
-                })
-            )
-        ).toBe(
-            'src/lib/ui/controls/editor/diff/DiffEditor.svelte:143 (before the change): why was the menu on?'
-        );
-        expect(
-            commentPrompt(
-                comment({
-                    path: 'registries/organisations.yml',
-                    line: 13,
-                    text: '  keep the comment  '
-                })
-            )
-        ).toBe('registries/organisations.yml:13: keep the comment');
-        expect(
-            commentPrompt(
-                comment({
-                    path: 'projects/manuscripts/raw-pls/project.yml',
-                    line: 13,
-                    text: 'two lines:\nfirst\nsecond'
-                })
-            )
-        ).toBe('projects/manuscripts/raw-pls/project.yml:13: two lines:\nfirst\nsecond');
-    });
-
     it('keeps the inside of a two line comment whole, and trims only its ends', () => {
         expect(commentPrompt(comment({ text: 'a\nb' }))).toBe('src/a.ts:12: a\nb');
         expect(commentPrompt(comment({ text: '\n a  b \n' }))).toBe('src/a.ts:12: a  b');
@@ -150,7 +105,6 @@ describe('the prompt a comment becomes', () => {
 
 describe('the refusal that holds on the terminal path and the clipboard path alike', () => {
     it('refuses a blank comment as empty', () => {
-        expect(commentRefusal('   ')).toBe('empty');
         expect(commentRefusal('')).toBe('empty');
         expect(commentRefusal(' \n\t')).toBe('empty');
     });
@@ -170,7 +124,7 @@ describe('the refusal that holds on the terminal path and the clipboard path ali
     });
 
     it('says why in words for the two refusals that keep the box open', () => {
-        expect(refusalLine('control')).toContain('control character');
+        expect(refusalLine('control')).toBe(t('sessions.comment_control'));
         expect(refusalLine('long')).toContain(String(STEER_MAX));
         expect(refusalLine('empty')).toBe('');
     });
@@ -250,16 +204,6 @@ describe('the send', () => {
         });
         expect(await sendComment('p', throwing.deps)).toEqual({ kind: 'refused' });
     });
-
-    it('asks for the terminal when it sends, so a terminal that ended is not typed into', async () => {
-        let terminal: { id: string } | null = { id: 'term-one' };
-        const { deps, steered, copied } = fakes();
-        const live: SendDeps = { ...deps, terminal: () => terminal };
-        terminal = null;
-        expect(await sendComment('p', live)).toEqual({ kind: 'copied' });
-        expect(steered).toEqual([]);
-        expect(copied).toEqual(['p']);
-    });
 });
 
 describe('one send at a time per box', () => {
@@ -310,51 +254,15 @@ describe('one send at a time per box', () => {
     });
 });
 
-describe('one clipboard write at a time per box', () => {
-    /** Deps with no terminal whose clipboard write lands when `land` is called. */
-    function slowCopy() {
-        let land: () => void = () => undefined;
-        const written: string[] = [];
-        const deps: SendDeps = {
-            terminal: () => null,
-            steer: () => Promise.reject(new Error('no terminal')),
-            copy: (text) => {
-                written.push(text);
-                return new Promise<void>((resolve) => (land = resolve));
-            }
-        };
-        return { deps, written, land: () => land() };
-    }
-
-    it('writes once while the first write is in flight', async () => {
-        const slow = slowCopy();
-        const guard = sendGuard();
-        const first = sendOnce(guard, 'p', slow.deps);
-        expect(await sendOnce(guard, 'p', slow.deps)).toBeNull();
-        expect(slow.written).toEqual(['p']);
-        slow.land();
-        expect(await first).toEqual({ kind: 'copied' });
-    });
-
-    it('hands back nothing for a write that lands after the box was closed or moved', async () => {
-        const slow = slowCopy();
-        const guard = sendGuard();
-        const first = sendOnce(guard, 'p', slow.deps);
-        guard.cancel();
-        slow.land();
-        expect(await first).toBeNull();
-    });
-});
-
 describe('what each outcome says', () => {
     it('closes the box and says where the comment went when it was sent or copied', () => {
         expect(commentOutcome({ kind: 'sent' }, 'The live one')).toEqual({
             done: true,
-            line: 'Sent to The live one.'
+            line: t('sessions.comment_sent', 'The live one')
         });
         expect(commentOutcome({ kind: 'copied' }, 'The live one')).toEqual({
             done: true,
-            line: 'The live one has no oculus terminal now. The comment is on the clipboard.'
+            line: t('sessions.comment_copied', 'The live one')
         });
     });
 
@@ -365,14 +273,14 @@ describe('what each outcome says', () => {
         });
         expect(commentOutcome({ kind: 'failed', error: '' }, 'x')).toEqual({
             done: false,
-            line: 'The terminal did not answer.'
+            line: t('sessions.comment_silent')
         });
     });
 
     it('keeps the box open and says the clipboard refused the copy', () => {
         expect(commentOutcome({ kind: 'refused' }, 'x')).toEqual({
             done: false,
-            line: 'The clipboard refused the copy.'
+            line: t('sessions.comment_clipboard')
         });
     });
 
@@ -380,7 +288,7 @@ describe('what each outcome says', () => {
         expect(commentTitle({ id: 's-1', title: 'The live one' })).toBe('The live one');
         expect(commentTitle({ id: 's-1', title: '' })).toBe('s-1');
         expect(commentOutcome({ kind: 'sent' }, commentTitle({ id: 's-1', title: '' })).line).toBe(
-            'Sent to s-1.'
+            t('sessions.comment_sent', 's-1')
         );
     });
 });

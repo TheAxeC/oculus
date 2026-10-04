@@ -1,5 +1,6 @@
-// The one drag in progress: the threshold that tells a click from a drag, what each kind of drop
-// performs, and the geometry that turns a point inside a pane body into an edge.
+// Layer 2, client-state tests. The one drag in progress: the threshold that tells a click from a
+// drag, what each kind of drop performs, and the geometry that turns a point inside a pane body
+// into an edge.
 //
 // The store is handed a sink that records what it was asked to do, so nothing here touches the
 // layout store or storage. There is no DOM in this suite either, which the store's own guard
@@ -331,28 +332,25 @@ describe('the drop zones of a body', () => {
 describe('a tab dragged with Alt held', () => {
     afterEach(() => vi.unstubAllGlobals());
 
-    it('floats on drop at the pointer, wherever the pointer was released', () => {
-        begin();
-        move({ x: 500, y: 300 }, true);
-        hover({ kind: 'centre', path: [0] }, { x: 0, y: 0, width: 10, height: 10 });
-        end();
-        expect(sink.calls).toEqual(['float a at 500,300']);
-    });
-
-    it('floats over no drop at all, and over a strip or an edge', () => {
-        begin();
-        move({ x: 40, y: 50 }, true);
-        end();
-        begin('b');
-        move({ x: 60, y: 70 }, true);
-        hover({ kind: 'strip', path: [1], index: 0 });
-        end();
-        begin('c');
-        move({ x: 80, y: 90 }, true);
-        hover({ kind: 'edge', path: [], edge: 'left' });
-        end();
-        expect(sink.calls).toEqual(['float a at 40,50', 'float b at 60,70', 'float c at 80,90']);
-    });
+    it.each([
+        ['no drop', null, null],
+        [
+            'the middle of a body',
+            { kind: 'centre', path: [0] },
+            { x: 0, y: 0, width: 10, height: 10 }
+        ],
+        ['a strip', { kind: 'strip', path: [1], index: 0 }, null],
+        ['an edge', { kind: 'edge', path: [], edge: 'left' }, null]
+    ] as [string, Parameters<typeof hover>[0], Parameters<typeof hover>[1]][])(
+        'floats at the pointer over %s, wherever the pointer was released',
+        (_name, drop, rect) => {
+            begin();
+            move({ x: 500, y: 300 }, true);
+            if (drop !== null) hover(drop, rect);
+            end();
+            expect(sink.calls).toEqual(['float a at 500,300']);
+        }
+    );
 
     it('is a plain drop when Alt is let go before the pointer comes up', () => {
         begin();

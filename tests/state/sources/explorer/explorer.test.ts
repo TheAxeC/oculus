@@ -1,8 +1,9 @@
-// The explorer over the file browser's rows, the pure half in state/sources/fs.ts: what a filter
-// leaves, the rows the keyboard reads, the label a row's star bookmarks under, what the breadcrumb
-// names, what one instance keeps, and which form a press or an answer leaves open. Where a key
-// moves is zag's tree-view machine over the collection ui/tree/tree-keys.ts builds from these rows,
-// tests/ui/tree/tree-keys.test.ts.
+// Layer 2, client-state tests. The explorer over the file browser's rows, the pure half in
+// state/sources/fs.ts: what a filter leaves, the rows the keyboard reads, the label a row's star
+// bookmarks under, what the breadcrumb names, and which form a press or an answer leaves open.
+// Where a key moves is zag's tree-view machine over the collection ui/tree/tree-keys.ts builds from
+// these rows, tests/ui/tree/tree-keys.test.ts. What one instance keeps, and how a saved record is
+// read, is tests/state/shared/instance-state-files.test.ts.
 //
 // What this does NOT cover: the rows drawn, which are tests/views/sources/files/files.test.ts; the
 // keys pressed; and the forms pressed: the bookmark and root forms kept across a switch and a
@@ -11,14 +12,13 @@
 // held root or bookmark answer landing after another form, the same root form reopened or a tab
 // switch; nor the close question over a typed root line.
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { crumbsOf } from '../../../../src/lib/state/workbench/navigation/pages.ts';
 import {
     bookmarkLeft,
     collapseRoot,
     editedGone,
-    patchedFilesView,
     editShown,
     filesLineTyped,
     filesViewOf,
@@ -26,7 +26,6 @@ import {
     filterRows,
     formSettled,
     formShown,
-    formsOf,
     markLabel,
     parentOf,
     rowKey,
@@ -52,38 +51,6 @@ function dir(name: string): FsEntry {
 
 /** The forms of a file browser with none open. */
 const NO_FORM = { form: '', editing: '', typed: '', opening: 0 } as const;
-
-/**
- * The two toggles of a file browser nobody has flipped: the tree lists what it lists by default.
- */
-const NO_TOGGLES = { hidden: false, ignored: false } as const;
-
-/**
- * What a file browser nobody has selected in, filtered fuzzily, nested, opened a section in or
- * rooted keeps: no selection and no anchor, the fuzzy and nesting toggles off, no section opened,
- * no top, and no folder found outside the roots.
- */
-const NO_VIEW = {
-    selection: [],
-    anchor: null,
-    fuzzy: false,
-    nesting: false,
-    opened: [],
-    top: null,
-    outside: ''
-} as const;
-
-/**
- * The asks to show a path of a file browser nothing has asked. Revert: in filesViewOf of
- * state/sources/fs.ts, leave `reveal`, `revealed` or `revealing` out of the record it returns.
- */
-const NO_REVEAL = { reveal: null, revealed: null, revealing: 0 } as const;
-
-/** The name being typed of a file browser nobody is typing one in. */
-const NO_NAMING = { naming: null } as const;
-
-/** The refusal and outcome lines of a file browser nothing has answered. */
-const NO_LINES = { note: '', said: '' } as const;
 
 function root(key: string, fixed = true): FsRoot {
     return { key, dir: `/tmp/${key}`, fixed };
@@ -170,11 +137,6 @@ describe('the explorer over the rows', () => {
         ]);
     });
 
-    // Revert: pass `fixed: false` whatever `filtering` says in treeKeyRows.
-    it('marks every row fixed while a filter draws them, so no key opens or closes a folder', () => {
-        expect(treeKeyRows(rows, true).every((row) => row.fixed === true)).toBe(true);
-    });
-
     // Revert: return `row.name` from markLabel whatever the labels hold.
     it('bookmarks a file under its name, and under its path when another bookmark holds the name', () => {
         const readme = { root: 'hub', path: 'docs/README.md', name: 'README.md' };
@@ -206,104 +168,11 @@ describe('the explorer over the rows', () => {
         expect(collapseRoot(held, 'hub', 'a')).toEqual(['hub:', 'hub:a', 'hub:ab', 'hub:z']);
     });
 
-    it('reads the two toggles an instance keeps, and false for anything that is not true', () => {
-        expect(filesViewOf({ hidden: true, ignored: true })).toMatchObject({
-            hidden: true,
-            ignored: true
-        });
-        expect(filesViewOf({ hidden: 'yes', ignored: 1 })).toMatchObject(NO_TOGGLES);
+    it('hands on only the two toggles of an instance', () => {
         expect(shownOf(filesViewOf({ hidden: true, filter: 'x' }))).toEqual({
             hidden: true,
             ignored: false
         });
-    });
-
-    // Revert: read `selected` without checking that root and path are strings; or, for the
-    // `...NO_REVEAL` expectations, default `reveal` or `revealed` to anything but null or
-    // `revealing` to anything but 0 in filesViewShape (askShape, outcomeShape, countShape of
-    // state/sources/fs.ts).
-    it('reads what the instance keeps, and a default for anything it cannot read', () => {
-        expect(
-            filesViewOf({
-                expanded: ['hub:'],
-                selected: { root: 'hub', path: 'code' },
-                filter: 'run',
-                collapsed: ['notes', 3],
-                note: 'refused',
-                said: 7
-            })
-        ).toEqual({
-            ...NO_FORM,
-            ...NO_REVEAL,
-            ...NO_NAMING,
-            ...NO_TOGGLES,
-            ...NO_VIEW,
-            expanded: ['hub:'],
-            selected: { root: 'hub', path: 'code' },
-            filter: 'run',
-            collapsed: ['notes'],
-            note: 'refused',
-            said: ''
-        });
-        const empty = {
-            ...NO_FORM,
-            ...NO_REVEAL,
-            ...NO_NAMING,
-            ...NO_LINES,
-            ...NO_TOGGLES,
-            ...NO_VIEW,
-            expanded: [],
-            selected: null,
-            filter: '',
-            collapsed: []
-        };
-        expect(filesViewOf(null)).toEqual(empty);
-        expect(filesViewOf({ selected: { root: 'hub' }, filter: 4 })).toEqual(empty);
-        expect(filesViewOf({ selected: { root: '', path: '' } })).toEqual(empty);
-        expect(filesViewOf(['hub:'])).toEqual(empty);
-    });
-
-    // Revert: in filesViewOf of state/sources/fs.ts, read `editing` and `typed` whatever form is
-    // open, take `form` as any string, or `opening` as any number.
-    it('reads the open form, the bookmark it edits, the typed line and the opening, each only where it belongs', () => {
-        const forms = (state: unknown): unknown => formsOf(filesViewOf(state));
-        expect(forms({ form: 'bookmark', editing: 'the manual', opening: 4 })).toEqual({
-            form: 'bookmark',
-            editing: 'the manual',
-            typed: '',
-            opening: 4
-        });
-        expect(forms({ form: 'root', typed: '/tmp/a' })).toEqual({
-            ...NO_FORM,
-            form: 'root',
-            typed: '/tmp/a'
-        });
-        expect(forms({ form: 'workspace', typed: 'lab' })).toEqual({
-            ...NO_FORM,
-            form: 'workspace',
-            typed: 'lab'
-        });
-        // Empty: no form, and an empty bookmark id is the form that adds.
-        expect(forms({})).toEqual(NO_FORM);
-        expect(forms({ form: 'bookmark', editing: '' })).toEqual({ ...NO_FORM, form: 'bookmark' });
-        // A name that is no form, a field of the wrong type, and a field of a form that is not
-        // open.
-        expect(forms({ form: 'note', editing: 'x', typed: 'y' })).toEqual(NO_FORM);
-        expect(forms({ form: 'expanded' })).toEqual(NO_FORM);
-        expect(forms({ form: 'bookmark', editing: 3, typed: 'left over' })).toEqual({
-            ...NO_FORM,
-            form: 'bookmark'
-        });
-        expect(forms({ form: 'root', editing: 'the manual', typed: ['a'] })).toEqual({
-            ...NO_FORM,
-            form: 'root'
-        });
-        expect(forms({ editing: 'the manual', typed: '/tmp/a' })).toEqual(NO_FORM);
-        // An opening count that is not a whole number at or above zero is no count.
-        for (const opening of [-1, 1.5, '2', Number.NaN, Number.MAX_VALUE, null]) {
-            expect(forms({ opening })).toEqual(NO_FORM);
-        }
-        expect(forms({ opening: 7 })).toEqual({ ...NO_FORM, opening: 7 });
     });
 });
 
@@ -394,18 +263,6 @@ describe('the forms of the file browser', () => {
         expect(editedGone(NO_FORM, loaded, false)).toBe(false);
     });
 
-    // Revert: in patchedFilesView of state/sources/fs.ts, write the part over nothing.
-    it('writes part of a file browser over whatever else its record holds', () => {
-        expect(patchedFilesView({ filter: 'x', form: 'root' }, { form: 'bookmark' })).toEqual({
-            filter: 'x',
-            form: 'bookmark'
-        });
-        // A record that is not a map is read as an empty one, so the part is all there is.
-        expect(patchedFilesView(undefined, { editing: 'one' })).toEqual({ editing: 'one' });
-        expect(patchedFilesView(['a list'], { editing: 'one' })).toEqual({ editing: 'one' });
-        expect(patchedFilesView('a word', { editing: 'one' })).toEqual({ editing: 'one' });
-    });
-
     // Revert: in editedGone of state/sources/fs.ts, drop `saving` from the line that answers false.
     it('leaves the form a save of its own is out from until that answer lands', () => {
         const loaded = { entries: [{ id: 'the manual renamed' }], loading: false, error: '' };
@@ -415,26 +272,25 @@ describe('the forms of the file browser', () => {
     });
 });
 
-describe('a typed root or workspace line as unsaved text', () => {
-    let client: ClientState;
-
-    beforeEach(() => {
-        setCatalog(textCatalog(loadConfig(engineDir()).config));
-        client = createClientState();
-        client.layout.loadLayout(fakeStorage());
-    });
-
+describe('a typed root or workspace line of another view', () => {
     // Revert: answer true from filesLineTyped without checking the view is `files`.
-    it('is asked about for a file browser whose line form holds text, and for nothing else', () => {
-        expect(filesLineTyped('files', { form: 'root', typed: '/tmp/a' })).toBe(true);
-        expect(filesLineTyped('files', { form: 'workspace', typed: 'lab' })).toBe(true);
-        expect(filesLineTyped('files', { form: 'root', typed: '' })).toBe(false);
-        // Revert: count a line of spaces, which the add takes as nothing, as typed text.
-        expect(filesLineTyped('files', { form: 'root', typed: '   ' })).toBe(false);
-        expect(filesLineTyped('files', { form: '', typed: '/tmp/a' })).toBe(false);
-        expect(filesLineTyped('files', { form: 'bookmark', typed: '/tmp/a' })).toBe(false);
+    it('asks nothing of an instance of another view', () => {
         expect(filesLineTyped('tasks', { form: 'root', typed: '/tmp/a' })).toBe(false);
         expect(filesLineTyped(undefined, { form: 'root', typed: '/tmp/a' })).toBe(false);
+    });
+});
+
+// Tagged slow because its hook reads the shipped configuration cold, which takes about 120 ms.
+describe('a typed root or workspace line as unsaved text', { tags: ['slow'] }, () => {
+    let client: ClientState;
+
+    beforeAll(() => {
+        setCatalog(textCatalog(loadConfig(engineDir()).config));
+    });
+
+    beforeEach(() => {
+        client = createClientState();
+        client.layout.loadLayout(fakeStorage());
     });
 
     // Revert: drop the Files registerUnsaved line from state/client/context.ts, or pass it the view

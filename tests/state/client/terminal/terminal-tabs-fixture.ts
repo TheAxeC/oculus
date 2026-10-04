@@ -1,6 +1,6 @@
-// Layer 4, test helper. The Terminal tabs of a case's client, read and opened the way the client
-// tests of the terminals store need them: every tab of every page with its state, one tab read
-// through the tab's own reader, and a tab opened owning some terminals.
+// Layer 2, client-state test helper. The Terminal tabs of a case's client, read and opened the way
+// the client tests of the terminals store need them: every tab of every page with its state, one
+// tab read through the tab's own reader, and a tab opened owning some terminals.
 
 import type { ClientState } from '../../../../src/lib/state/client/context.ts';
 import { tabsOf } from '../../../../src/lib/state/workbench/layout/instance.ts';

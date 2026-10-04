@@ -1,7 +1,7 @@
-// Layer 4, test. The name being typed in the Files view and the paths that follow a move: the
-// pending row treeRows draws for a new file or folder and the row it marks for a rename, what the
-// view's record keeps of it, what starting a name opens, and where a path, a tab's state, a diff
-// pane and a Files view's open folders go when a file or folder moves (explorer/follow.ts).
+// Layer 2, client-state tests. The name being typed in the Files view and the paths that follow a
+// move: the pending row treeRows draws for a new file or folder and the row it marks for a rename,
+// what the view's record keeps of it, what starting a name opens, and where a path, a tab's state,
+// a diff pane and a Files view's open folders go when a file or folder moves (explorer/follow.ts).
 //
 // What this does NOT cover: the input drawn, its keys and its message, which need a DOM
 // (tests/views/sources/files/menu/files-naming.test.ts covers the message rules and the markup that
@@ -133,9 +133,6 @@ describe('what the view keeps of the name', () => {
             path: 'a.md'
         });
         for (const bad of [
-            null,
-            'file',
-            [],
             { mode: 'copy', root: 'hub', path: 'a' },
             { mode: 'file', root: '', path: 'a' },
             { mode: 'file', root: 'hub' },
@@ -143,7 +140,6 @@ describe('what the view keeps of the name', () => {
         ]) {
             expect(filesViewOf({ naming: bad }).naming, JSON.stringify(bad)).toBeNull();
         }
-        expect(filesViewOf({}).naming).toBeNull();
     });
 
     // Revert: leave the folders above the row closed when a name starts.

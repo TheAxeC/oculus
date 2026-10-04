@@ -1,7 +1,7 @@
-// The appearance store when several browser tabs of one server write the one key. Each tab saves
-// the state its views remember, one record per view instance, and a tab that saves must not drop
-// the records another tab saved; a tab also takes the records another tab saved when the browser
-// says so, and keeps its own appearance.
+// Layer 2, client-state tests. The appearance store when several browser tabs of one server write
+// the one key. Each tab saves the state its views remember, one record per view instance, and a tab
+// that saves must not drop the records another tab saved; a tab also takes the records another tab
+// saved when the browser says so, and keeps its own appearance.
 //
 // Client states stand for browser tabs over one fake Storage, and an EventTarget stands for each
 // one's window: a case raises the event the browser would fire. Nothing here touches localStorage
@@ -93,14 +93,6 @@ describe('two browser tabs saving the state their views remember', () => {
         second.ui.setInstanceState('b', 2);
         first.ui.clearInstanceState('x');
         expect(records(storage)).toEqual({ b: 2 });
-    });
-
-    it('save their own records when the stored value cannot be read', () => {
-        const storage = fakeStorage();
-        const first = browserTab(storage);
-        storage.held[UI_KEY] = '{ not the ui state';
-        first.ui.setInstanceState('a', 1);
-        expect(records(storage)).toEqual({ a: 1 });
     });
 
     it('write every record they hold when the stored value becomes unreadable after a save', () => {

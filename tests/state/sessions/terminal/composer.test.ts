@@ -83,10 +83,6 @@ describe("a tab's composer record", () => {
             accounts: { claude: 'Uni', codex: undefined },
             picks: { claude: { model: 'opus' }, codex: {} }
         });
-        for (const state of [null, [], {}, { composer: 'x' }]) {
-            expect(composerOf(state)).toBe(COMPOSER_EMPTY);
-        }
-        expect(composerOf({ composer: { agent: 'rm' } }).agent).toBe('claude');
     });
 
     it('writes the record beside the rest of the tab state', () => {
@@ -158,23 +154,9 @@ describe('a composer opened by Split', () => {
         });
     });
 
-    it('reads the split folder as a string, and drops an empty or malformed one', () => {
+    it('reads the split folder as a string, and drops an empty one', () => {
         expect(composerOf({ composer: { split: '/w/x' } }).split).toBe('/w/x');
         expect('split' in composerOf({ composer: { split: '' } })).toBe(false);
-        expect('split' in composerOf({ composer: { split: 7 } })).toBe(false);
-    });
-
-    it('opens a split tab whose composer offers and starts in a folder outside every place', () => {
-        const record = composerOf(splitState('/tmp/elsewhere', 'shell'));
-        expect(record.agent).toBe('shell');
-        expect(offeredPlaces(['/hub', '/hub/tools'], record)).toEqual([
-            '/tmp/elsewhere',
-            '/hub',
-            '/hub/tools'
-        ]);
-        expect(
-            composerWorkspace(record, offeredPlaces(['/hub', '/hub/tools'], record), '/hub')
-        ).toBe('/tmp/elsewhere');
     });
 
     it('offers a split folder no place holds first, by its path, and starts in it', () => {
@@ -401,19 +383,26 @@ describe('a composer record out of a state of the wrong shape', () => {
         picks: { claude: {}, codex: {} }
     };
 
-    it('keeps the picks that are non-empty words, and leaves no split behind an empty one', () => {
-        const record = composerOf({
-            composer: { picks: { claude: { a: 'b', c: 1, '': 'x' } }, split: '' }
-        });
+    it('keeps the picks that are non-empty words', () => {
+        const record = composerOf({ composer: { picks: { claude: { a: 'b', c: 1, '': 'x' } } } });
         expect(record).toStrictEqual({
             ...UNSET,
             picks: { claude: { a: 'b', '': 'x' }, codex: {} }
         });
-        expect('split' in record).toBe(false);
     });
 
     it('answers the empty record itself for a state with no map under composer', () => {
-        for (const state of ['x', 3, undefined, { composer: [] }, { composer: null }]) {
+        for (const state of [
+            'x',
+            3,
+            undefined,
+            null,
+            [],
+            {},
+            { composer: 'x' },
+            { composer: [] },
+            { composer: null }
+        ]) {
             expect(composerOf(state)).toBe(COMPOSER_EMPTY);
         }
     });

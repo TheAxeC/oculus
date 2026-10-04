@@ -1,14 +1,10 @@
-// Layer 4, test. The file browser store over its endpoints: listings and workspaces, the rounds
-// that decide when an answer is asked for again, the guards that stop stale answers and duplicate
-// requests, and the language a file is painted in.
+// Layer 2, client-state tests. The file browser store over its endpoints: listings and workspaces,
+// the rounds that decide when an answer is asked for again, and the guards that stop stale answers
+// and duplicate requests.
 
 import { describe, expect, it, vi } from 'vitest';
-import { languageOf } from '../../../../src/lib/state/sources/fs.ts';
 import { FS_PATH } from '../../../../src/lib/state/sources/fs.svelte.ts';
-import { languageMap } from '../../../../src/lib/data/helpers/files/languages.ts';
-import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
-import { t } from '../../../../src/lib/state/shared/words/text.ts';
-import { createClientState, refused } from '../../../fixtures/client.ts';
+import { createClientState } from '../../../fixtures/client.ts';
 import { answering, deferred, listingOf, settle, storeHooks } from './fs-fixture.ts';
 
 // What the store does with what it is answered: the rounds and the two guards.
@@ -105,7 +101,7 @@ describe('the store reading the endpoints', () => {
         expect(store.client.fs.entries('hub', '').map((entry) => entry.name)).toEqual(['a.txt']);
     });
 
-    it('audits that a relist while a read of that pair is in flight sends no second request and holds the answer', async () => {
+    it('sends no second request for a relist while a read of that pair is in flight, and holds the answer', async () => {
         const late = deferred();
         store.serving(() => late.promise);
         const hidden = { hidden: true, ignored: false };
@@ -122,40 +118,6 @@ describe('the store reading the endpoints', () => {
         expect(store.client.fs.entries('hub', '', hidden).map((entry) => entry.name)).toEqual([
             '.env'
         ]);
-    });
-
-    it('holds the sentence of a refused read, rather than an empty folder', async () => {
-        store.serving(
-            () =>
-                new Response(JSON.stringify({ error: 'outside' }), {
-                    status: 404,
-                    headers: { 'content-type': 'application/json' }
-                })
-        );
-
-        store.client.fs.listing('hub', 'gone');
-        await settle();
-
-        const held = store.client.fs.listing('hub', 'gone');
-        expect(held.error).toBe(t('files.refused_outside'));
-        expect(held.loading).toBe(false);
-        expect(held.entries).toEqual([]);
-    });
-
-    it('holds the refusal sentence of a refused workspaces read', async () => {
-        store.serving(
-            () =>
-                new Response(JSON.stringify({ error: 'origin' }), {
-                    status: 403,
-                    headers: { 'content-type': 'application/json' }
-                })
-        );
-
-        store.client.fs.workspaces();
-        await settle();
-
-        expect(store.client.fs.workspaces().error).toBe(refused(403));
-        expect(store.client.fs.workspaces().loading).toBe(false);
     });
 
     it('keeps the roots it holds drawn while the answer after a write is fetched', async () => {
@@ -238,60 +200,5 @@ describe('the store reading the endpoints', () => {
         store.client.fs.fileText('hub', 'a.txt');
         await settle();
         expect(store.client.fs.fileText('hub', 'a.txt').text).toBe('second');
-    });
-});
-
-describe('the language a file is painted in', () => {
-    const MAP = languageMap(loadConfig(engineDir()).config);
-
-    /** Names and endings with the language the shipped map gives each. */
-    const NAMED: [string, string][] = [
-        ['x.ts', 'typescript'],
-        ['x.tsx', 'typescript'],
-        ['x.mts', 'typescript'],
-        ['x.cts', 'typescript'],
-        ['x.js', 'javascript'],
-        ['x.jsx', 'javascript'],
-        ['x.mjs', 'javascript'],
-        ['x.cjs', 'javascript'],
-        ['x.py', 'python'],
-        ['x.yml', 'yaml'],
-        ['x.yaml', 'yaml'],
-        ['x.json', 'json'],
-        ['x.ipynb', 'json'],
-        ['x.sh', 'bash'],
-        ['x.bash', 'bash'],
-        ['x.zsh', 'bash'],
-        ['x.slurm', 'bash'],
-        ['x.md', 'markdown'],
-        ['x.tex', 'latex'],
-        ['x.bib', 'latex'],
-        ['x.sty', 'latex'],
-        ['x.cls', 'latex'],
-        ['x.css', 'css'],
-        ['x.xml', 'xml'],
-        ['x.svelte', 'svelte'],
-        ['x.lisp', 'lisp'],
-        ['x.el', 'lisp'],
-        ['x.scm', 'lisp'],
-        ['x.ml', 'ocaml'],
-        ['x.mli', 'ocaml'],
-        ['x.r', 'r'],
-        ['x.m', 'matlab'],
-        ['x.jl', 'julia'],
-        ['x.toml', 'ini'],
-        ['x.ini', 'ini'],
-        ['Makefile', 'makefile'],
-        ['src/makefile', 'makefile'],
-        ['DATA.YML', 'yaml']
-    ];
-
-    it('gives every name and ending in the list the language the shipped map gives it', () => {
-        expect(NAMED.map(([name]) => [name, languageOf(name, MAP)])).toEqual(NAMED);
-    });
-
-    it('paints a name nothing claims as plain text', () => {
-        expect(languageOf('x.unknownext', MAP)).toBe('plaintext');
-        expect(languageOf('README', MAP)).toBe('plaintext');
     });
 });

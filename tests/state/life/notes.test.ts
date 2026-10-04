@@ -1,6 +1,7 @@
-// The pure half of the scratch notes: what a note is filed under, what it is called when it carries
-// no title, when it says it was saved, how long it waits before saving, that the wait is one save
-// however long the typing goes on, and which keystroke writes its note without waiting at all.
+// Layer 2, client-state tests. The pure half of the scratch notes: what a note is filed under, what
+// it is called when it carries no title, when it says it was saved, how long it waits before
+// saving, that the wait is one save however long the typing goes on, and which keystroke writes its
+// note without waiting at all.
 //
 // The wait is driven by a clock of this file's own rather than by real time: the scheduler takes
 // the two timer calls, so a case runs the wait forward by hand and nothing here sleeps.
@@ -53,13 +54,6 @@ describe('what a note is filed under', () => {
         expect(noteId(new Date(2026, 8, 15, 14, 30, 5, 7))).toBe('20260915-143005-007');
         expect(noteId(new Date(2026, 0, 1, 0, 0, 0, 0))).toBe('20260101-000000-000');
     });
-
-    it('gives two notes started in two milliseconds two names', () => {
-        const one = noteId(new Date(2026, 8, 15, 14, 30, 5, 7));
-        const two = noteId(new Date(2026, 8, 15, 14, 30, 5, 8));
-
-        expect(one).not.toBe(two);
-    });
 });
 
 describe('what a note with no title of its own is called', () => {
@@ -88,34 +82,23 @@ describe('when a note says it was saved', () => {
         expect(stamp(new Date(2026, 8, 15, 9, 5).getTime())).toBe('2026-09-15 09:05');
     });
 
-    it('is nothing for a note that has never been written', () => {
-        expect(stamp(0)).toBe('');
-        expect(stamp(Number.NaN)).toBe('');
-    });
-
-    it('is nothing for a time that is infinite or before the epoch', () => {
-        for (const when of [Infinity, -Infinity, -1]) expect(stamp(when)).toBe('');
+    it.each([
+        ['a note that has never been written', 0],
+        ['a time that is not a number', Number.NaN],
+        ['an infinite time', Infinity],
+        ['a negative infinite time', -Infinity],
+        ['a time before the epoch', -1]
+    ])('is nothing for %s', (_name, when) => {
+        expect(stamp(when)).toBe('');
     });
 });
 
 describe('how long the wait is', () => {
-    it('is the number config/behavior.yml carries under notes', () => {
-        expect(autosaveMs({ notes: { autosave_ms: 250 } })).toBe(250);
-        expect(autosaveMs({ notes: { autosave_ms: 0 } })).toBe(0);
-    });
-
-    it('is the built-in number before a configuration push, and for a broken one', () => {
-        const before = autosaveMs({});
-
-        expect(before).toBeGreaterThan(0);
-        expect(autosaveMs({ notes: 'soon' })).toBe(before);
-        expect(autosaveMs({ notes: { autosave_ms: 'soon' } })).toBe(before);
-        expect(autosaveMs({ notes: { autosave_ms: -5 } })).toBe(before);
-    });
-});
-
-describe('how long the wait is for a config of the wrong type', () => {
     const before = autosaveMs({});
+
+    it('is a built-in number above zero before a configuration push', () => {
+        expect(before).toBeGreaterThan(0);
+    });
 
     it.each([
         [{ notes: { autosave_ms: -1 } }],
@@ -129,7 +112,9 @@ describe('how long the wait is for a config of the wrong type', () => {
         [{ notes: {} }],
         [{ notes: [] }],
         [{ notes: null }],
-        [{ notes: 5 }]
+        [{ notes: 5 }],
+        [{ notes: 'soon' }],
+        [{ notes: { autosave_ms: 'soon' } }]
     ])('is the built-in number for the config %j', (config) => {
         expect(autosaveMs(config)).toBe(before);
     });
@@ -277,16 +262,17 @@ describe('a wait its caller is going away from', () => {
 });
 
 describe('the keystroke that writes its note at once', () => {
-    it('is the first one into a note whose file is not there yet', () => {
-        expect(writesNow(true, false)).toBe(true);
-    });
-
-    it('is not the ones after it, which go through the wait like any other', () => {
-        expect(writesNow(true, true)).toBe(false);
-    });
-
-    it('is not any keystroke into a note that has a file already', () => {
-        expect(writesNow(false, false)).toBe(false);
-        expect(writesNow(false, true)).toBe(false);
+    it.each([
+        ['a keystroke into a note whose file is not there yet', true, false, true],
+        [
+            'a keystroke after the first into that note, which goes through the wait',
+            true,
+            true,
+            false
+        ],
+        ['a first keystroke into a note that has a file already', false, false, false],
+        ['a later keystroke into a note that has a file already', false, true, false]
+    ])('writes at once, or not, for %s', (_name, fresh, touched, now) => {
+        expect(writesNow(fresh, touched)).toBe(now);
     });
 });

@@ -1,4 +1,4 @@
-// Layer 2, client state tests. The preview tab: the tab a single click opens, which the next single
+// Layer 2, client-state tests. The preview tab: the tab a single click opens, which the next single
 // click in the same pane is pointed at instead of opening a second one, and the four things that
 // keep it.
 
@@ -74,32 +74,6 @@ describe('the preview tab', () => {
 
         // The tab keeps its id, so a draft left under it would be read as the next file's.
         expect(client.ui.instanceState(first)).toBeUndefined();
-    });
-
-    it('reads the file it was retargeted to, and not the one it was opened on', async () => {
-        const bodies: Record<string, string> = {
-            '/api/file/hub/a.py': 'print("a")\n',
-            '/api/file/hub/b.py': 'print("b")\n'
-        };
-        vi.stubGlobal('fetch', (url: string) =>
-            Promise.resolve(
-                url.startsWith('/api/source')
-                    ? new Response(JSON.stringify({ ok: true, readonly: false }), {
-                          headers: { 'content-type': 'application/json' }
-                      })
-                    : new Response(bodies[url] ?? '')
-            )
-        );
-        const tab = openView('source', file('a.py'), undefined, { preview: true });
-        await client.source.loadSourceDraft(tab, 'hub', 'a.py');
-        expect(client.source.sourceDraft(tab).text).toBe('print("a")\n');
-
-        const again = openView('source', file('b.py'), undefined, { preview: true });
-        expect(again).toBe(tab);
-        await client.source.loadSourceDraft(tab, 'hub', 'b.py');
-
-        expect(client.source.sourceDraft(tab).text).toBe('print("b")\n');
-        expect(client.source.sourceDraft(tab).saved).toBe('print("b")\n');
     });
 
     it("throws away the first file's read when it lands after the tab was pointed at the second", async () => {

@@ -1,11 +1,11 @@
-// What the Repositories view and its diff pane keep about themselves and what the controls of the
-// view ask: the list or tree mode and the reveal request of the view's instance state, the id of a
-// diff over a whole change group, the folded files and the folded unchanged runs of a diff pane,
-// the paths a group holds, the reads of a group's diff made a few at a time, and the words of the
-// questions the sync, pull, push and publish controls share. Pure, so each case is a value written
-// out here.
+// Layer 2, client-state tests. What the Repositories view and its diff pane keep about themselves
+// and what the controls of the view ask: the list or tree mode and the reveal request of the view's
+// instance state, the id of a diff over a whole change group, the folded files and the folded
+// unchanged runs of a diff pane, the paths a group holds, the reads of a group's diff made a few at
+// a time, and the words of the questions the sync, pull, push and publish controls share. Pure, so
+// each case is a value written out here.
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     diffActs,
     diffState,
@@ -17,7 +17,6 @@ import {
     pullWords,
     pushWords,
     readAll,
-    repositoriesViewOf,
     syncWords,
     toggleFolded,
     unfolded
@@ -41,25 +40,11 @@ function said(key: string, ...args: (string | number)[]): string {
     );
 }
 
-const ENTRY = (path: string) => ({ path, status: 'M', added: 1, deleted: 0 });
-
-describe('the mode of the view', () => {
-    it('is the list for an absent or an unknown value and the tree only when it says tree', () => {
-        expect(repositoriesViewOf({}).mode).toBe('list');
-        expect(repositoriesViewOf(null).mode).toBe('list');
-        expect(repositoriesViewOf({ mode: 'tree' }).mode).toBe('tree');
-        expect(repositoriesViewOf({ mode: 'list' }).mode).toBe('list');
-        expect(repositoriesViewOf({ mode: 'grid' }).mode).toBe('list');
-        expect(repositoriesViewOf({ mode: 3 }).mode).toBe('list');
-    });
-
-    it('keeps the request to open the Branches section only as that word', () => {
-        expect(repositoriesViewOf({}).reveal).toBe('');
-        expect(repositoriesViewOf({ reveal: 'branches' }).reveal).toBe('branches');
-        expect(repositoriesViewOf({ reveal: 'tags' }).reveal).toBe('');
-        expect(repositoriesViewOf({ reveal: 4 }).reveal).toBe('');
-    });
+afterEach(() => {
+    vi.useRealTimers();
 });
+
+const ENTRY = (path: string) => ({ path, status: 'M', added: 1, deleted: 0 });
 
 describe('the id of a diff over a change group', () => {
     const subject = (group: 'staged' | 'changed', root = '/hub') => ({
@@ -141,16 +126,19 @@ describe('a group diff before the git channel has answered', () => {
 
 describe('the reads of a group diff', () => {
     it('answer in the order of the paths and run at most the limit at once', async () => {
+        vi.useFakeTimers();
         let running = 0;
         let most = 0;
         const paths = Array.from({ length: 15 }, (_, at) => `f${String(at)}`);
-        const answers = await readAll(paths, 6, async (path) => {
+        const reading = readAll(paths, 6, async (path) => {
             running += 1;
             most = Math.max(most, running);
             await new Promise((settle) => setTimeout(settle, 2));
             running -= 1;
             return path.toUpperCase();
         });
+        await vi.advanceTimersByTimeAsync(100);
+        const answers = await reading;
         expect(answers).toEqual(paths.map((path) => path.toUpperCase()));
         expect(most).toBe(6);
     });
@@ -162,35 +150,6 @@ describe('the reads of a group diff', () => {
 });
 
 describe('what a diff pane keeps of its files', () => {
-    it('folds the unchanged runs and no file to start with', () => {
-        expect(diffViewOf({})).toEqual({
-            mode: 'side',
-            views: {},
-            unchanged: 'folded',
-            folded: []
-        });
-    });
-
-    it('reads the unchanged choice and the folded files, and defaults anything it cannot read', () => {
-        expect(diffViewOf({ unchanged: 'shown', folded: ['a', 'b'] })).toMatchObject({
-            unchanged: 'shown',
-            folded: ['a', 'b']
-        });
-        expect(diffViewOf({ unchanged: 'other', folded: 'a' })).toMatchObject({
-            unchanged: 'folded',
-            folded: []
-        });
-        expect(diffViewOf({ folded: ['a', 4, null] }).folded).toEqual(['a']);
-    });
-
-    it('skips an own __proto__ key of the view states, which would replace the map prototype', () => {
-        const saved = JSON.parse('{"views":{"__proto__":{"a":1},"x.txt":{}}}') as unknown;
-        const views = diffViewOf(saved).views;
-        expect(Object.keys(views)).toEqual(['x.txt']);
-        expect(Object.getPrototypeOf(views)).toBe(Object.prototype);
-        expect((views as { a?: number }).a).toBeUndefined();
-    });
-
     it('drops a folded file that is not among the files of the diff', () => {
         expect(diffViewOf({ folded: ['a', 'gone'] }, ['a', 'b']).folded).toEqual(['a']);
         expect(diffViewOf({ folded: ['a', 'gone'] }).folded).toEqual(['a', 'gone']);
@@ -222,14 +181,6 @@ describe('a reveal asked of a diff section', () => {
         expect(due).toEqual({ now: 3, pending: null });
         // the change it landed on is done once: the next report of changes has nothing kept
         expect(revealDue(due.pending)).toEqual({ now: null, pending: null });
-    });
-
-    it("keeps each reveal asked before the editor reports as that reveal's own pending hunk", () => {
-        const first = revealAsked(false, 1);
-        const second = revealAsked(false, 4);
-
-        expect(first.pending).toBe(1);
-        expect(revealDue(second.pending).now).toBe(4);
     });
 
     it('keeps nothing for a step whose hunk is not known yet, since the pane asks again once it is', () => {

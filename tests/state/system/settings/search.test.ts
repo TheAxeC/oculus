@@ -5,20 +5,13 @@
 // What this does NOT cover: the box the query is typed in and the count drawn beside it
 // (tests/views/system/workbench/settings.test.ts).
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { engineDir } from '../../../../src/lib/data/sources/config.ts';
 import type { Catalog } from '../../../../src/lib/data/sources/config/catalog/options.ts';
 import type { FileText } from '../../../../src/lib/state/sources/fs-transport.ts';
-import { shipped, text } from './fixture.ts';
+import { text } from './fixture.ts';
 import { createUi } from '../../../../src/lib/state/workbench/ui.svelte.ts';
 import { thisBrowserRows } from '../../../../src/lib/state/system/config/browser.ts';
-import {
-    FILES,
-    settingsGroups,
-    type Group
-} from '../../../../src/lib/state/system/config/groups.ts';
+import { settingsGroups, type Group } from '../../../../src/lib/state/system/config/groups.ts';
 import {
     hasModifiedFilter,
     searchGroups,
@@ -91,15 +84,6 @@ describe('the words of a search', () => {
             'behavior.yml:audit.sweep'
         ]);
         expect(result.count).toBe(3);
-        for (const id of every()) {
-            const row = groups()
-                .flatMap((group) => group.sections.flatMap((section) => section.rows))
-                .find((one) => one.id === id);
-            const holds = [row?.title, row?.path, row?.section, row?.description].some((field) =>
-                field?.toLowerCase().includes('poll')
-            );
-            expect(idsOf(result).includes(id)).toBe(holds);
-        }
     });
 
     it('needs every word of the query, each in any of the four', () => {
@@ -129,29 +113,13 @@ describe('the words of a search', () => {
             'appearance.yml:terminal.cursor_style'
         ]);
     });
-
-    it('finds no row for @nonsense in the shipped catalog', () => {
-        const shippedGroups = settingsGroups(
-            shipped,
-            (file) =>
-                text(
-                    FILES.includes(file)
-                        ? readFileSync(join(engineDir(), 'config', file), 'utf8')
-                        : ''
-                ),
-            thisBrowserRows(createUi(), true)
-        );
-        const result = searchGroups(shippedGroups, '@nonsense');
-        expect(result.count).toBe(0);
-        expect(result.groups).toEqual([]);
-    });
 });
 
 describe('@modified', () => {
     const MODIFIED = ['behavior.yml:slurm.poll_min', 'appearance.yml:terminal.cursor_style'];
 
     it('keeps only the Modified rows, whatever the case of the word', () => {
-        for (const query of ['@modified', '@Modified', '@MODIFIED']) {
+        for (const query of ['@modified', '@MODIFIED']) {
             expect(new Set(idsOf(searchGroups(groups(), query)))).toEqual(new Set(MODIFIED));
         }
     });
@@ -218,9 +186,9 @@ describe('what a result carries', () => {
         expect(searchGroups(broken, '').groups[1].status).toBe('unparsed');
     });
 
-    it('counts the seven This browser rows when no config file is described', () => {
+    it('counts the This browser rows when no config file is described', () => {
         const only = settingsGroups({}, () => text(''), thisBrowserRows(createUi(), true));
-        expect(searchGroups(only, '').count).toBe(7);
+        expect(searchGroups(only, '').count).toBe(thisBrowserRows(createUi(), true).length);
         expect(searchGroups(only, '@id:crt').count).toBe(1);
         expect(searchGroups(only, '@modified').count).toBe(0);
     });

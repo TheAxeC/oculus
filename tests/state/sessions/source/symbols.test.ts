@@ -1,7 +1,8 @@
-// The document symbols a source tab gives Monaco for sticky scroll and the outline: a tree of the
-// headings of a Markdown or LaTeX text with their ranges, and the provider that answers for its own
-// model only, waits for a LaTeX parser that has not loaded, and answers nothing for a text that was
-// typed into meanwhile, a cancelled request or a tab that closed.
+// Layer 2, client-state tests. The document symbols a source tab gives Monaco for sticky scroll and
+// the outline: a tree of the headings of a Markdown or LaTeX text with their ranges, and the
+// provider that answers for its own model only, waits for a LaTeX parser that has not loaded, and
+// answers nothing for a text that was typed into meanwhile, a cancelled request or a tab that
+// closed.
 //
 // What this does NOT cover: that Monaco's sticky scroll draws these symbols, which the look does.
 
@@ -111,12 +112,7 @@ const MARKDOWN = '# A\n## B\n## C\n# D';
 describe('the heading tree', () => {
     // Red when a range runs to the next heading of any level, or the last heading stops early.
     it.each([
-        [
-            'headings of two levels (case 12)',
-            markdownOutline(MARKDOWN),
-            4,
-            ['A:1-3[B:2-2,C:3-3]', 'D:4-4']
-        ],
+        ['headings of two levels', markdownOutline(MARKDOWN), 4, ['A:1-3[B:2-2,C:3-3]', 'D:4-4']],
         [
             'a skipped level, which nests one step',
             [
@@ -139,7 +135,7 @@ describe('the heading tree', () => {
 describe('the provider', () => {
     const TEX = '\\section{A}\n\\subsection{B}';
 
-    it('is registered for its model s language and answers its headings (case 12)', async () => {
+    it('is registered for its model s language and answers its headings', async () => {
         const own = model(MARKDOWN, 'markdown');
         const { registered, provider } = attach((text) => markdownOutline(text), own);
         expect(registered.map((one) => one.language)).toEqual(['markdown']);
@@ -150,7 +146,7 @@ describe('the provider', () => {
 
     // Red when the first request on a freshly opened file answers none while the parser loads:
     // sticky scroll would stay empty until the next edit.
-    it('answers once the LaTeX parser has loaded (case 13)', async () => {
+    it('answers once the LaTeX parser has loaded', async () => {
         const own = model(TEX, 'latex');
         const gate = deferred<undefined>();
         const reader = createLatexReader();
@@ -187,7 +183,7 @@ describe('the provider', () => {
             }
         ],
         [
-            'a text typed into while the request waited (case 13)',
+            'a text typed into while the request waited',
             () => {
                 const own = model(TEX, 'latex');
                 const gate = deferred<OutlineItem[]>();

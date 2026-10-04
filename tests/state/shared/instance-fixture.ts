@@ -1,10 +1,10 @@
-// Layer 4, test helper. The inputs and the runner of the instance-state tables: the readers of the
-// state a view keeps per tab (`parse...State`, `...ViewOf`), each given the same kinds of input and
-// compared with the answer written beside it.
+// Layer 2, client-state test helper. The inputs and the runner of the instance-state tables: the
+// readers of the state a view keeps per tab (`parse...State`, `...ViewOf`), each given the same
+// kinds of input and compared with the answer written beside it.
 //
 // A reader is described by one state with every field right (`valid`), one wrong value per field
 // (`wrong`) and named edge cases (`edge`, each a patch laid over `valid`). The inputs a reader
-// meets are the shared ones (a list, null, a string, a map holding an own `__proto__` key made by
+// meets are the shared ones (a list, null, undefined, a map holding an own `__proto__` key made by
 // JSON.parse, ...), `valid`, `valid` with one field wrong at a time, every field wrong at once and
 // the edge cases. `answers` holds what the reader answers for each of them, compared whole with
 // `toStrictEqual`, with the keys of an answer checked in their order.
@@ -20,13 +20,13 @@ export type Reader = {
     valid: Record<string, unknown>;
     wrong: Record<string, unknown>;
     edge?: Record<string, Record<string, unknown>>;
-    /** The answer to a list, null, undefined, a string and a number, unless `answers` names one. */
+    /** The answer to a list, null and undefined, unless `answers` names one. */
     notMap?: unknown;
     answers: Record<string, unknown>;
 };
 
 /** The inputs that are not a map. */
-const NOT_MAP = ['empty list', 'null', 'undefined', 'string', 'number'];
+const NOT_MAP = ['empty list', 'null', 'undefined'];
 
 /** What a reader answers for each input, `notMap` standing for the inputs that are not a map. */
 export function answersOf(reader: Reader): Record<string, unknown> {
@@ -52,11 +52,7 @@ export function inputsOf(reader: Reader): Record<string, unknown> {
         'empty list': [],
         null: null,
         undefined,
-        string: 'x',
-        number: 3,
         'empty map': {},
-        'search 3, reveal empty': { search: 3, reveal: '' },
-        'search s, reveal r, lead space': { search: 's', reveal: 'r', lead: ' ' },
         'own __proto__ key': JSON.parse(
             '{"__proto__":{"search":"p","adding":true},"search":"s","adding":true}'
         ) as unknown,
@@ -86,12 +82,6 @@ export function checkReaders(readers: Reader[]): void {
             const objects = labels.filter((label) => {
                 const answer = answers[label];
                 return typeof answer === 'object' && answer !== null;
-            });
-            it('has an answer for each input and none for another', () => {
-                expect(Object.keys(answers)).toStrictEqual(labels);
-                expect(
-                    Object.keys(reader.answers).filter((label) => !labels.includes(label))
-                ).toStrictEqual([]);
             });
             it.each(labels)('answers %s', (label) => {
                 const answer = reader.read(inputsOf(reader)[label]);

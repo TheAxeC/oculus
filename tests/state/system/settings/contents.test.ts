@@ -7,14 +7,13 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    NARROW,
     contentsAfter,
     contentsPlace
 } from '../../../../src/lib/state/system/config/view/contents.ts';
 
 describe('the table of contents by width', () => {
     it('is beside the list at 700 px and over, with no toggle offered', () => {
-        for (const width of [700, 701, 1200]) {
+        for (const width of [700, 1200]) {
             expect(contentsPlace(width, false), String(width)).toEqual({
                 beside: true,
                 toggle: false,
@@ -26,14 +25,13 @@ describe('the table of contents by width', () => {
     });
 
     it('is not beside the list under 700 px, and the toggle is offered', () => {
-        for (const width of [699, 400, 1]) {
+        for (const width of [699, 1]) {
             expect(contentsPlace(width, false), String(width)).toEqual({
                 beside: false,
                 toggle: true,
                 over: false
             });
         }
-        expect(NARROW).toBe(700);
     });
 
     it('is shown over the list under 700 px once the toggle was pressed', () => {

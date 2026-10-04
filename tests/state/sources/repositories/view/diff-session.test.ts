@@ -1,6 +1,7 @@
-// The session a diff pane was opened for: the part of the pane's id it makes, how a saved pane
-// state reads it, and how the Changes view's rows carry it into the diff they open. A pane opened
-// from the Repositories view has no session, and its id names the side, root and path alone.
+// Layer 2, client-state tests. The session a diff pane was opened for: the part of the pane's id it
+// makes, how a saved pane state reads it, and how the Changes view's rows carry it into the diff
+// they open. A pane opened from the Repositories view has no session, and its id names the side,
+// root and path alone.
 //
 // The store is exercised with a recording layout, so nothing here opens a tab or reaches git.
 
@@ -38,9 +39,7 @@ describe('the id of a diff opened for a session', () => {
         expect(staged).toBe('staged@s-1:/hub:src/a.ts');
     });
 
-    it('gives the same subject the same id each time, and an empty session the id of no session', () => {
-        const subject = { ...FILE, session: 's-1' };
-        expect(diffState(subject, 'a.ts').id).toBe(diffState(subject, 'a.ts').id);
+    it('gives an empty session the id of no session', () => {
         expect(diffState({ ...FILE, session: '' }, 'a.ts').id).toBe(diffState(FILE, 'a.ts').id);
     });
 
@@ -102,25 +101,11 @@ describe('the session a saved pane state names', () => {
         ...over
     });
 
-    it('reads the session the state holds', () => {
-        expect(heldDiff(saved({ session: 's-1' })).session).toBe('s-1');
-    });
-
-    it('reads a state with no session key as none, and keeps the other fields', () => {
-        const held = heldDiff(saved());
+    it('reads a session that is not a string as none, so the pane has the id of no session', () => {
+        const held = heldDiff(saved({ session: 4 }));
         expect(held.session).toBe('');
-        expect(held).toMatchObject({ root: '/hub', path: 'src/a.ts', label: 'a.ts' });
-        expect(heldDiff({}).session).toBe('');
-        expect(heldDiff(null).session).toBe('');
-    });
-
-    it('reads an empty session or one that is not a string as none, without disturbing the other fields', () => {
-        for (const session of ['', 4, null, true, {}, ['s-1']]) {
-            const held = heldDiff(saved({ session }));
-            expect(held.session).toBe('');
-            expect(held.path).toBe('src/a.ts');
-            expect(diffState(held, held.label).id).toBe('changed:/hub:src/a.ts');
-        }
+        expect(held.path).toBe('src/a.ts');
+        expect(diffState(held, held.label).id).toBe('changed:/hub:src/a.ts');
     });
 });
 

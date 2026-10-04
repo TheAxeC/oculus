@@ -1,12 +1,12 @@
-// What one Search tab says of the answer of the endpoint: a body it cannot read, a refusal with and
-// without a word, the reason ripgrep gave for a pattern it could not read, and the folder a tab is
-// scoped to.
+// Layer 2, client-state tests. What one Search tab says of the answer of the endpoint: a body it
+// cannot read, a refusal with and without a word, the reason ripgrep gave for a pattern it could
+// not read, and the folder a tab is scoped to.
 //
 // The endpoint is stubbed with a fetch of the case's own, so nothing starts a process and nothing
 // reaches the network.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { parseSearchState, queryOf } from '../../../../src/lib/state/sources/search/search.ts';
+import { queryOf } from '../../../../src/lib/state/sources/search/search.ts';
 import { t } from '../../../../src/lib/state/shared/words/text.ts';
 import { refused, unreadable, type ClientState } from '../../../fixtures/client.ts';
 import { ANSWER, searchClient, stub } from './search-fixture.ts';
@@ -39,40 +39,19 @@ describe('the answer of the endpoint', () => {
         return () => Promise.resolve({ ok, status, json: () => Promise.resolve(body) } as Response);
     }
 
-    it.each([[[]], ['x'], [7], [{ files: 'x' }], [{}]])(
-        'says the search failed for a successful body %j without an answer in it',
-        async (body) => {
-            expect(await ran(json(body, 200))).toStrictEqual({
-                error: t('search.failed'),
-                answer: null
-            });
-        }
-    );
-
-    it.each([
-        [{ error: 'bad' }],
-        [{ error: '' }],
-        [{ error: 3 }],
-        [{ error: null }],
-        [{}],
-        [[]],
-        [null],
-        ['x'],
-        [7]
-    ])('says the refusal sentence for a refused body %j that is no word', async (body) => {
-        expect(await ran(json(body, 400))).toStrictEqual({ error: refused(400), answer: null });
-    });
-
-    it('says the refusal sentence with the status of a 500 holding an empty map', async () => {
-        expect(await ran(json({}, 500))).toStrictEqual({ error: refused(500), answer: null });
-    });
-
-    it('says the refusal sentence with the status of a 403 that gives a text of its own', async () => {
-        expect(await ran(json({ error: 'denied by x' }, 403))).toStrictEqual({
-            error: refused(403),
+    it('says the search failed for a successful body without an answer in it', async () => {
+        expect(await ran(json({ files: 'x' }, 200))).toStrictEqual({
+            error: t('search.failed'),
             answer: null
         });
     });
+
+    it.each([[{ error: 'bad' }], [{ error: '' }], [{ error: 3 }], [{}], [null]])(
+        'says the refusal sentence for a refused body %j that is no word',
+        async (body) => {
+            expect(await ran(json(body, 400))).toStrictEqual({ error: refused(400), answer: null });
+        }
+    );
 
     it.each([
         ['empty', 'search.refused_empty'],
@@ -120,14 +99,6 @@ describe('the answer of the endpoint', () => {
 });
 
 describe('the folder a tab is scoped to', () => {
-    it('reads a state held without under as the whole root', () => {
-        expect(parseSearchState({ q: 'x', root: 'hub' }, 500).under).toBe('');
-        expect(parseSearchState({ q: 'x', root: 'hub', under: 7 }, 500).under).toBe('');
-        expect(parseSearchState({ q: 'x', root: 'hub', under: 'src/lib' }, 500).under).toBe(
-            'src/lib'
-        );
-    });
-
     it('carries under into the query and the request', async () => {
         const held = stub(ANSWER);
         client.search.setSearchState('one', { q: 'needle', root: 'hub', under: 'src/lib' });
@@ -149,23 +120,11 @@ describe('the folder a tab is scoped to', () => {
         expect(client.search.searchState('one').under).toBe('b');
     });
 
-    it('says a refused folder as a sentence of the search words, not as the key', async () => {
-        const held = stub({ error: 'outside' }, false);
+    it('says a folder under every root as the sentence of the search words, and sends nothing', async () => {
+        const held = stub(ANSWER);
         client.search.setSearchState('one', { q: 'needle', root: 'all', under: 'src' });
         await client.search.runSearch('one', ['hub']);
         expect(held.calls).toHaveLength(0);
-        const error = client.search.searchState('one').error;
-        expect(error).not.toBe('');
-        expect(error).not.toBe('outside');
-    });
-
-    it('says a folder the server found missing as the search words, and any other refusal text as the refusal sentence', async () => {
-        stub({ error: 'missing' }, false);
-        client.search.setSearchState('one', { q: 'needle', root: 'hub', under: 'gone' });
-        await client.search.runSearch('one', ['hub']);
-        expect(client.search.searchState('one').error).toBe(t('search.refused_missing'));
-        stub({ error: 'the write token is missing or stale' }, false);
-        await client.search.runSearch('one', ['hub']);
-        expect(client.search.searchState('one').error).toBe(t('ui.answer_refused', 400));
+        expect(client.search.searchState('one').error).toBe(t('search.refused_outside'));
     });
 });

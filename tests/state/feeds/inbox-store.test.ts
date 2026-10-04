@@ -1,5 +1,6 @@
-// The inbox client store's commands: the sentence each one answers when the endpoint refused it or
-// no readable answer came back, which the Inbox view and its cards say as it came.
+// Layer 2, client-state tests. The inbox client store's commands: the sentence each one answers
+// when the endpoint refused it or no readable answer came back, which the Inbox view and its cards
+// say as it came.
 //
 // Nothing opens a socket: `fetch` is a stub that hands back the answer the case wants.
 
@@ -33,18 +34,22 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('what the inbox store commands answer', () => {
-    it('answers ok and no sentence when the endpoint took the command', async () => {
-        vi.stubGlobal('fetch', () => Promise.resolve(new Response(JSON.stringify({ ok: true }))));
-        expect(await client.inbox.archive(THREAD)).toEqual({ ok: true });
-    });
+/** Answer every request with the JSON text given and the status given. */
+function answering(body: string, status: number): void {
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response(body, { status })));
+}
 
-    it('answers a refusal in the catalog sentence carrying its code', async () => {
-        vi.stubGlobal('fetch', () =>
-            Promise.resolve(
-                new Response(JSON.stringify({ error: 'no such thread' }), { status: 400 })
-            )
-        );
+describe('what the inbox store commands answer', () => {
+    it.each([['{"ok":true}'], ['{"error":3}'], ['[]'], ['null'], ['"x"']])(
+        'takes a command answered with a status below 400 and the body %s as taken',
+        async (body) => {
+            answering(body, 200);
+            expect(await client.inbox.archive(THREAD)).toStrictEqual({ ok: true });
+        }
+    );
+
+    it('answers a refusal in the catalog sentence carrying its code, only when the code is text', async () => {
+        answering('{"error":"no such thread"}', 400);
         expect(await client.inbox.reply(THREAD, 'Thanks')).toEqual({
             ok: false,
             error: t('inbox.refused', 'no such thread')
@@ -66,11 +71,6 @@ describe('what the inbox store commands answer', () => {
 });
 
 describe('a refusal whose code is not text', () => {
-    /** Answer every request with the JSON text given and the status given. */
-    function answering(body: string, status: number): void {
-        vi.stubGlobal('fetch', () => Promise.resolve(new Response(body, { status })));
-    }
-
     it.each([
         ['{"error":3}'],
         ['{"error":null}'],
@@ -87,21 +87,6 @@ describe('a refusal whose code is not text', () => {
         expect(await client.inbox.archive(THREAD)).toStrictEqual({
             ok: false,
             error: t('inbox.refused', '')
-        });
-    });
-
-    it('takes a command the endpoint answered with a status below 400 as taken, whatever the body', async () => {
-        for (const body of ['{"error":3}', '[]', 'null', '"x"']) {
-            answering(body, 200);
-            expect(await client.inbox.archive(THREAD)).toStrictEqual({ ok: true });
-        }
-    });
-
-    it('says the code of a refusal only when it is text', async () => {
-        answering('{"error":"stale","reason":3}', 409);
-        expect(await client.inbox.triage(THREAD, { triaged: true })).toStrictEqual({
-            ok: false,
-            error: t('inbox.refused', 'stale')
         });
     });
 });

@@ -1,6 +1,6 @@
-// What the source tab needs to put git in its gutter: the repository that holds a tab's file, the
-// tab a repository's file opens in, how long ago a commit was, a blamed line's words, where a run
-// of one commit's lines starts, and the gutter mark of each line.
+// Layer 2, client-state tests. What the source tab needs to put git in its gutter: the repository
+// that holds a tab's file, the tab a repository's file opens in, how long ago a commit was, a
+// blamed line's words, where a run of one commit's lines starts, and the gutter mark of each line.
 
 import { describe, expect, it } from 'vitest';
 import type { GitBlameLine } from '../../../../../src/lib/data/model/index.ts';
@@ -14,7 +14,7 @@ import {
     tabOfFile
 } from '../../../../../src/lib/state/sources/repositories/file-git.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, t } from '../../../../../src/lib/state/shared/words/text.ts';
 
 // The words are the page's own, so the real catalog is installed as a rendered page installs it.
 setCatalog(textCatalog(loadConfig(engineDir()).config));
@@ -94,25 +94,28 @@ describe('the words a blamed line carries', () => {
     const NOW = Date.parse('2026-09-25T12:00:00Z');
 
     it('says how long ago in the largest unit that is at least one', () => {
-        expect(ago('2026-09-25T11:59:30Z', NOW)).toBe('just now');
-        expect(ago('2026-09-25T11:00:00Z', NOW)).toBe('1 hour ago');
-        expect(ago('2026-09-25T10:00:00Z', NOW)).toBe('2 hours ago');
-        expect(ago('2026-09-24T12:00:00Z', NOW)).toBe('1 day ago');
-        expect(ago('2026-09-18T12:00:00Z', NOW)).toBe('1 week ago');
-        expect(ago('2026-09-20T12:00:00Z', NOW)).toBe('5 days ago');
-        expect(ago('2026-08-01T12:00:00Z', NOW)).toBe('1 month ago');
+        expect(ago('2026-09-25T11:59:30Z', NOW)).toBe(t('repositories.ago_now'));
+        expect(ago('2026-09-25T11:00:00Z', NOW)).toBe(t('repositories.ago_hour'));
+        expect(ago('2026-09-25T10:00:00Z', NOW)).toBe(t('repositories.ago_hours', 2));
+        expect(ago('2026-09-24T12:00:00Z', NOW)).toBe(t('repositories.ago_day'));
+        expect(ago('2026-09-18T12:00:00Z', NOW)).toBe(t('repositories.ago_week'));
+        expect(ago('2026-09-20T12:00:00Z', NOW)).toBe(t('repositories.ago_days', 5));
+        expect(ago('2026-08-01T12:00:00Z', NOW)).toBe(t('repositories.ago_month'));
         expect(ago('not a date', NOW)).toBe('');
     });
 
     it('names the author, the age and the subject, and Not Committed Yet for a line no commit holds', () => {
         const line = blamed(3, 'abcdef123');
+        const when = t('repositories.ago_days', 5);
         expect(blameWords(line, NOW)).toEqual({
-            gutter: 'Ada, 5 days ago',
-            title: 'abcdef1 commit abcdef123 (2026-09-20). Open this commit in the graph.'
+            gutter: t('repositories.blame_gutter', 'Ada', when),
+            title: t('repositories.blame_title', 'abcdef1', 'commit abcdef123', '2026-09-20')
         });
-        expect(blameStatus(line, NOW)).toBe('Ada, 5 days ago: commit abcdef123');
-        expect(blameWords(blamed(4, ''), NOW).gutter).toBe('Not Committed Yet');
-        expect(blameStatus(blamed(4, ''), NOW)).toBe('Not Committed Yet');
+        expect(blameStatus(line, NOW)).toBe(
+            t('repositories.blame_status', 'Ada', when, 'commit abcdef123')
+        );
+        expect(blameWords(blamed(4, ''), NOW).gutter).toBe(t('repositories.blame_uncommitted'));
+        expect(blameStatus(blamed(4, ''), NOW)).toBe(t('repositories.blame_uncommitted'));
         expect(blameStatus(undefined, NOW)).toBe('');
     });
 

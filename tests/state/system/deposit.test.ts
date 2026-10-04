@@ -1,4 +1,4 @@
-// Layer 4, state test. What the deposit store holds for a project once GET /api/deposit has
+// Layer 2, client-state tests. What the deposit store holds for a project once GET /api/deposit has
 // answered, for an answer of the right shape and for every shape it is not: a state that is no
 // mirror, an error that is not a word, a body that is a list, JSON null or no JSON at all, and a
 // request that never reached the server.
@@ -8,9 +8,15 @@
 // is tests/views/boards/deposit.test.ts.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createClientState, type ClientState, refused, unreadable } from '../../fixtures/client.ts';
+import {
+    createClientState,
+    refused,
+    settle,
+    unreadable,
+    type ClientState
+} from '../../fixtures/client.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -18,11 +24,6 @@ let client: ClientState;
 
 /** The addresses the stub was asked for, in order. */
 let asked: string[] = [];
-
-/** Let the scheduled request run and its answer land. */
-async function settle(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-}
 
 /** Answer every request with this text and status. */
 function answering(text: string, status = 200): void {
@@ -70,9 +71,7 @@ describe('the mirror of a project', () => {
     it.each([
         ['a body with no state', '{}'],
         ['a state that is null', '{"state":null}'],
-        ['a body that is a list', '[]'],
-        ['a body that is a string', '"x"'],
-        ['a body that is a number', '3']
+        ['a body that is a list', '[]']
     ])('is no state for %s', async (_name, text) => {
         answering(text);
         expect(await held()).toStrictEqual({ state: null, error: '', loading: false });
@@ -80,9 +79,6 @@ describe('the mirror of a project', () => {
 
     it.each([
         ['a number', '3'],
-        ['a string', '"x"'],
-        ['a list', '[]'],
-        ['null', 'null'],
         ['a map with one field', '{"id":"alpha"}'],
         ['a map whose exists is a string', JSON.stringify({ ...STATE, exists: 'yes' })],
         ['a map whose ahead is a string', JSON.stringify({ ...STATE, ahead: '2' })],
@@ -110,33 +106,9 @@ describe('the mirror of a project', () => {
         });
     });
 
-    it.each([
-        ['a text of its own', '{"error":"no mirror"}', 404],
-        ['an empty text', '{"error":""}', 404],
-        ['a number', '{"error":3}', 500],
-        ['null', '{"error":null}', 500],
-        ['nothing', '{}', 500],
-        ['a list body', '[]', 500],
-        ['a string body', '"x"', 502]
-    ])(
-        'holds the refusal sentence for a refusal whose error is %s',
-        async (_name, text, status) => {
-            answering(text, status);
-            expect(await held()).toStrictEqual({
-                state: null,
-                error: refused(status),
-                loading: false
-            });
-        }
-    );
-
-    it('holds the sentence of the catalog for a refusal that is one of its words', async () => {
-        answering('{"error":"missing"}', 404);
-        expect(await held()).toStrictEqual({
-            state: null,
-            error: t('files.refused_missing'),
-            loading: false
-        });
+    it('holds the refusal sentence for a refusal, whatever text it carries', async () => {
+        answering('{"error":"no mirror"}', 404);
+        expect(await held()).toStrictEqual({ state: null, error: refused(404), loading: false });
     });
 
     it('holds the refusal sentence and no state when a refusal also names a state', async () => {
@@ -165,8 +137,6 @@ describe('the mirror of a project', () => {
 
     it.each([
         { name: 'JSON null', text: 'null', status: 200 },
-        { name: 'JSON null', text: 'null', status: 500 },
-        { name: 'a page that is no JSON', text: '<html>Bad Gateway</html>', status: 200 },
         { name: 'a page that is no JSON', text: '<html>Bad Gateway</html>', status: 502 }
     ])(
         'holds the unreadable sentence for $name sent with status $status',

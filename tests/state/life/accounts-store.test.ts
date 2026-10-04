@@ -1,6 +1,6 @@
-// The accounts client store: the body each account command sends, the refusals it says in words
-// before anything is sent, the Add that waits on its provider's setup and is made once the half is
-// saved, and the scopes the setup page lists.
+// Layer 2, client-state tests. The accounts client store: the body each account command sends, the
+// refusals it says in words before anything is sent, the Add that waits on its provider's setup and
+// is made once the half is saved, and the scopes the setup page lists.
 //
 // Nothing opens a socket: `fetch` is a stub that records each request and answers it by its
 // address, and the view the store opens is recorded by a stub opener.
@@ -224,16 +224,6 @@ describe('the Add of a published calendar link', () => {
 });
 
 describe('the Add that waits on its provider', () => {
-    it('reads the setup answer the page draws from', async () => {
-        answers.set('GET /api/connect', {
-            status: 200,
-            body: setupWith({ google: true, microsoft: false })
-        });
-        expect(store.setup()).toBe(null);
-        await store.loadSetup();
-        expect(store.setup()?.ready).toEqual({ google: true, microsoft: false });
-    });
-
     it('waits and opens the setup page, sending nothing, when the provider is known not set up', async () => {
         answers.set('GET /api/connect', {
             status: 200,
@@ -341,21 +331,6 @@ describe('a press whose request fails', () => {
         expect(store.connecting('calendar', WORK)).toBe(false);
     });
 
-    it('says in words that a Remove got no answer, and does not reject', async () => {
-        failing('unreachable');
-        await expect(store.remove('calendar', WORK)).resolves.toBe(t('accounts.unreachable'));
-    });
-
-    it('says in words that a Save answer could not be read, and does not reject', async () => {
-        failing('unreadable');
-        const said = store.saveHalf('google', {
-            clientId: GOOGLE_ID,
-            clientSecret: 'the-secret',
-            tenant: ''
-        });
-        await expect(said).resolves.toBe(t('accounts.unreadable'));
-    });
-
     it('says in words that the setup page could not be read, and keeps no setup', async () => {
         failing('unreachable');
         await store.loadSetup();
@@ -421,15 +396,8 @@ describe('the setup answer read from a body of the wrong shape', () => {
         expect(store.setupFailed()).toBe('');
     });
 
-    it('holds nothing and says it could not be read for a body that is JSON null', async () => {
-        answers.set('GET /api/connect', { status: 200, body: null });
-        await store.loadSetup();
-        expect(store.setup()).toBe(null);
-        expect(store.setupFailed()).toBe(t('accounts.unreadable'));
-    });
-
-    it('holds nothing and says it could not be read for a body that is not a setup map', async () => {
-        for (const body of [[], 'x', 3, {}, { ready: 3 }]) {
+    it('holds nothing and says it could not be read for a body that is JSON null or not a setup map', async () => {
+        for (const body of [null, [], 'x', 3, {}, { ready: 3 }]) {
             answers.set('GET /api/connect', { status: 200, body });
             await store.loadSetup();
             expect(store.setup()).toBe(null);

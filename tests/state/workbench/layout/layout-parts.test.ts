@@ -1,12 +1,12 @@
-// The two parts of the layout store that stand alone from its reactive page list: the storage an
-// arrangement is written to and read back from, and the memory of what the reader last acted in.
+// Layer 2, client-state tests. The two parts of the layout store that stand alone from its reactive
+// page list: the storage an arrangement is written to and read back from, and the memory of what
+// the reader last acted in.
 //
 // Neither needs a mounted shell, so both are built here directly rather than through createLayout:
 // the storage takes nothing at all, and the attention takes an access object, which is a page list
 // and the four readers over it. What this does NOT cover is either part wired into the store, which
 // is tests/state/workbench/layout/layout.test.ts, tests/state/workbench/layout/pages.test.ts and
-// tests/state/workbench/layout/open/show-in-files.test.ts. Each case names the change that turns it
-// red.
+// tests/state/workbench/layout/open/show-in-files.test.ts.
 
 import { describe, expect, it } from 'vitest';
 import {

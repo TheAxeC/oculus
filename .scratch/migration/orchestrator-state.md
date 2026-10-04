@@ -28,24 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # two steps in flight (2026-10-04): T1b and T1e, each in repair round 1; T1c landed, T1d is prepared again after T1b lands, under Z376 (b) (workers_at_once: 5).
-- step: T1b
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 01:03)
-  session_id: abd43d8d8cfbcff37 (builder, launched 2026-10-04 01:03 local)
-  worktree: .agents/worktrees/T1b
-  base: 12bf19450
-  base_copy: .agents/worktrees/T1b-base/tools/oculus (src/ and tests/ at the base, from git archive; removed with the worktree)
-  launched: 2026-10-04 01:03 local
-  report: agents/reviews/T1b-report.md
-  builder_usage: claude-sonnet-5-5, 331,587 tokens, 1122 tool uses, 226.4 min; round 1: 304,335 tokens, 270 tool uses, 66.4 min (completion notices 2026-10-04)
-  reviewer_report: agents/reviews/T1b-refuter.md; reviewer a7468f675784a9dfd, claude-opus-5-5, 375,118 tokens, 129 tool uses, 28.4 min
-  reviewer_report_round1: agents/reviews/T1b-refuter.md, "Repair round 1, refuted"; reviewer a7cc996d36a42bc9e, ordo-high, running
-  brief_check: agents/reviews/T1b-brief-check.md; claude-opus-5-5, 249,285 tokens, 92 tool uses, 10.6 min (run on main at 1e14d279; findings closed under Closed, and T1d's brief check's points that hold for tests/state carried in)
-  shared_paths: with T1e, in flight: `tests/checks/tree/allow-duplication.txt` only (T1b lines 30 and 65-110 at its base, T1e lines 26-29, 31-36, 38 and 47), separate lines and removals only, so the merge is simple; T1c, which shared the file, landed 2026-10-04
-  landing: not-started
-  round: 1 (agents/briefs/T1b-round1.md, sent 2026-10-04)
+dispatch:   # one step in flight (2026-10-04): T1e, repair round 1; T1c and T1b landed; T1d is prepared next, under Z376 (b) (workers_at_once: 5).
 - step: T1e
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -59,7 +42,7 @@ dispatch:   # two steps in flight (2026-10-04): T1b and T1e, each in repair roun
   builder_usage: claude-sonnet-5-5, 365,620 tokens, 760 tool uses, 252.7 min (completion notice 2026-10-04)
   reviewer_report: agents/reviews/T1e-refuter.md; reviewer a83115633ce9293bf, claude-opus-5-5, 99,803 tokens, 138 tool uses, 41.3 min
   brief_check: agents/reviews/T1e-brief-check.md; claude-opus-5-5, 250,547 tokens, 78 tool uses, 10.2 min (run on main at 1e14d279; findings closed under Closed, the audits check booked as Z376)
-  shared_paths: with T1b, in flight: `tests/checks/tree/allow-duplication.txt` only (T1e lines 26-29, 31-36, 38 and 47; T1b line 30 and 65-110), separate lines and removals only, so the merge is simple; T1c, which shared the file, landed 2026-10-04
+  shared_paths: with T1b, landed 2026-10-04: `tests/checks/tree/allow-duplication.txt` only (T1e lines 26-29, 31-36, 38 and 47; T1b line 30 and 65-110), separate lines and removals only, so the merge is simple; T1c, which shared the file, landed 2026-10-04
   landing: not-started
   round: 1 (agents/briefs/T1e-round1.md, sent 2026-10-04)
 ```
@@ -214,10 +197,10 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-04. T1c landed (the sweep of `tests/server/`). In flight: T1b (`tests/state/`), repair round 1, and T1e (`tests/routes/`, `data/`, `checks/`, `fixtures/`), repair round 1. T1d (`tests/views/`, `shell/`, `ui/`, `themes/`) waits for T1b's landing (Z376 (b)). Next:
-  1. T1b and T1e: on each report, `/refute`, then `/land`.
-  2. T1d: once T1b lands, its brief finished by Z376 (b) (the audits check rewritten, kept non-rendering cases moved to the folder of the code they call), prepared again from main's head and dispatched.
-  3. At the last of the four sweeps' landings: the fixture exports they left unused removed (Booked).
+- 2026-10-04. T1b landed (the sweep of `tests/state/`), after T1c. In flight: T1e (`tests/routes/`, `data/`, `checks/`, `fixtures/`), repair round 1. Next:
+  1. T1d (`tests/views/`, `shell/`, `ui/`, `themes/`): its brief finished by Z376 (b) (the audits check rewritten, kept non-rendering cases moved to the folder of the code they call), prepared again from main's head and dispatched.
+  2. T1e: on its round's report, `/refute` over the round, then `/land`, removing the stale `allow-duplication.txt` entries it names (memories/images `505416a28794`; calendar-config/poll already gone on main) and fixing `tests/server/git/refs/detached.test.ts:6-7`.
+  3. At the last of the four sweeps' landings: the fixture exports they left unused removed (Booked), with `tests/shell/rail/rail-fixture.ts` `COLLECTIONS` and `tests/shell/rail/shipped-rail.ts` `SHIPPED_RAIL_LABELS` that T1b named.
   4. T1a after the four sweeps, its timings under a reproduced load (Z370 (a)), T1c's file-tagged tmux files moved to `await import` in their slow `beforeAll` (Z383), the size check at 880 and 520 (Z377 (a)); then the queue in order, O33 to O36 paused (Z369).
   5. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
   Open for Axel: none.

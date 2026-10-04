@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z388, closed by the orchestrator in automode 2026-10-04: a bound cleared on success is no Decision 1 cause; options (a) no timer on success, unverified, (b) no cause, (c) tagged slow, the lazy option; (b) taken.
 - Z387, closed by the orchestrator in automode 2026-10-04: six same-branch rows of T1b's failed-read table deleted at landing; options (a) kept, the lazy option, (b) deleted; (b) taken.
 - Z386, closed by the orchestrator in automode 2026-10-04: a distinct-keys test of `refusalSentence`'s 19 words added at T1b's landing; options (a) left, the lazy option, (b) added; (b) taken.
 - Z385, closed by the orchestrator in automode 2026-10-04: `tests/routes/shape.test.ts` deleted; options (a) deleted, (b) a rule written and the check moved, (c) kept with no rule, the lazy option; (a) taken.

@@ -1,4 +1,4 @@
-// Layer 2, client state test. What the Open Editors section does with the strip's tabs
+// Layer 2, client-state tests. What the Open Editors section does with the strip's tabs
 // (sections/open-editors.ts): a tab that is pinned is left open by Close All, a document tab is a
 // file of the hub, and a row dragged onto another row names the pane and the place the tab moves
 // to.
@@ -56,6 +56,7 @@ describe('a document tab', () => {
     it('names no file when it holds no path, and reads a tab of another view by its root and path', () => {
         expect(fileOfTab(tab('d', 'doc', { id: 'x' }))).toBeNull();
         expect(fileOfTab(tab('t', 'terminal', { path: 'x' }))).toBeNull();
+        expect(fileOfTab(tab('e', 'source', { root: '', path: 'x' }))).toBeNull();
         expect(fileOfTab(tab('s', 'source', file('a.md')))).toEqual(file('a.md'));
     });
 });

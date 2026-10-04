@@ -1,12 +1,13 @@
-// Layer 4, client-state test. Where the diagnostics of a task terminal come from and which folder
+// Layer 2, client-state tests. Where the diagnostics of a task terminal come from and which folder
 // their paths are read from: the output of a task that ended in a terminal no pane shows, asked of
-// the server once from the terminal's captured pane; and the output of a chain, whose commands
-// each print a marker (the run's token and their name) before they run, read command by command
-// from the chain and the token the terminal's mark carries.
+// the server once from the terminal's captured pane; and the output of a chain, whose commands each
+// print a marker (the run's token and their name) before they run, read command by command from the
+// chain and the token the terminal's mark carries.
 //
 // `fetch` is a stub that records each request and answers from the case. What this does NOT cover:
 // a mounted grid, which needs a DOM (the cases call `subscribePty` and `note` as the grid does),
-// and the capture of a real pane, which tests/server/machine/pty/task.test.ts runs.
+// and the capture of a real pane, which commands-pane.test.ts beside this file and
+// tests/server/machine/pty/task.test.ts run.
 
 import { describe, expect, it, vi } from 'vitest';
 import { json, settle } from '../../../fixtures/client.ts';
@@ -266,12 +267,6 @@ describe('the diagnostics of a chain', () => {
             ['src/a.c', 'from build'],
             ['sub/src/b.c', 'from test']
         ]);
-    });
-
-    it('reads the folders from the mark when the repository list was never read', () => {
-        ranTest();
-        state.client.commands.note(ID, OUTPUT, false);
-        expect(files()).toEqual(['src/a.c', 'sub/src/b.c']);
     });
 
     it('reads the folders from the mark when the list now holds the commands elsewhere', () => {

@@ -1,4 +1,6 @@
-// The source tab's pure access and identity rules plus its GET and authenticated POST requests.
+// Layer 2, client-state tests. The source tab's drafts and saves: tab identity, the reads and the
+// authenticated save against the file routes, the locks a route or a refusal puts on a draft, the
+// unsaved-text rule a close asks, the HEAD and index reads, and the reload of a clean tab.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -25,21 +27,13 @@ let editSourceDraft: ClientState['source']['editSourceDraft'];
 let saveSourceDraft: ClientState['source']['saveSourceDraft'];
 let sourceDraft: ClientState['source']['sourceDraft'];
 let sourceDirty: ClientState['source']['sourceDirty'];
-let toggleSourceRendered: ClientState['source']['toggleSourceRendered'];
 let setToken: ClientState['writes']['setToken'];
 let loadUi: ClientState['ui']['loadUi'];
 
 beforeEach(() => {
     client = createClientState();
-    ({
-        saveSource,
-        loadSourceDraft,
-        editSourceDraft,
-        saveSourceDraft,
-        sourceDraft,
-        sourceDirty,
-        toggleSourceRendered
-    } = client.source);
+    ({ saveSource, loadSourceDraft, editSourceDraft, saveSourceDraft, sourceDraft, sourceDirty } =
+        client.source);
     ({ setToken } = client.writes);
     ({ loadUi } = client.ui);
 });
@@ -60,9 +54,6 @@ describe('source tab state', () => {
         expect(sourceFileUrl('hub', 'folder/a b.md')).toBe('/api/file/hub/folder/a%20b.md');
         expect(sourceInfoUrl('hub', 'folder/a b.md')).toBe(
             '/api/source?root=hub&path=folder%2Fa%20b.md'
-        );
-        expect(stateId(sourceTabState('hub', 'feeds/literature-radar.yml'))).toBe(
-            JSON.stringify(['hub', 'feeds/literature-radar.yml'])
         );
     });
 
@@ -248,32 +239,27 @@ describe('source tab state', () => {
     });
 
     // Revert: default `rendered` to true in the draft.
-    it('keeps the rendered half per instance, off until the toggle turns it on', () => {
-        expect(sourceDraft('one').rendered).toBe(false);
+    it.each([
+        ['rendered', 'toggleSourceRendered'],
+        ['blame', 'toggleSourceBlame']
+    ] as const)(
+        'keeps the %s half per instance, off until the toggle turns it on',
+        (field, toggle) => {
+            expect(sourceDraft('one')[field]).toBe(false);
 
-        toggleSourceRendered('one');
-        expect(sourceDraft('one').rendered).toBe(true);
-        // The other tab knows nothing of it, which is what per instance means.
-        expect(sourceDraft('two').rendered).toBe(false);
+            client.source[toggle]('one');
+            expect(sourceDraft('one')[field]).toBe(true);
+            // The other tab knows nothing of it, which is what per instance means.
+            expect(sourceDraft('two')[field]).toBe(false);
 
-        // Typing and reverting are the draft's other writes, and neither touches the toggle.
-        editSourceDraft('one', 'typed');
-        expect(sourceDraft('one')).toMatchObject({ text: 'typed', rendered: true });
+            // Typing is the draft's other write, and it does not touch the toggle.
+            editSourceDraft('one', 'typed');
+            expect(sourceDraft('one')).toMatchObject({ text: 'typed', [field]: true });
 
-        toggleSourceRendered('one');
-        expect(sourceDraft('one').rendered).toBe(false);
-    });
-
-    it('keeps the blame per instance, off until the toggle turns it on', () => {
-        expect(sourceDraft('one').blame).toBe(false);
-        client.source.toggleSourceBlame('one');
-        expect(sourceDraft('one').blame).toBe(true);
-        expect(sourceDraft('two').blame).toBe(false);
-        editSourceDraft('one', 'typed');
-        expect(sourceDraft('one')).toMatchObject({ text: 'typed', blame: true });
-        client.source.toggleSourceBlame('one');
-        expect(sourceDraft('one').blame).toBe(false);
-    });
+            client.source[toggle]('one');
+            expect(sourceDraft('one')[field]).toBe(false);
+        }
+    );
 
     it('keeps the language and the indentation chosen from the status bar per instance, and drops them for another file', async () => {
         vi.stubGlobal('fetch', () => Promise.resolve(new Response('text\n')));
@@ -292,11 +278,6 @@ describe('source tab state', () => {
         expect(sourceDraft('one').language).toBe('yaml');
         await loadSourceDraft('one', 'hub', 'b.txt');
         expect(sourceDraft('one')).toMatchObject({ language: '', indent: null });
-        // An indentation kept wrongly in storage is read as none.
-        client.ui.setInstanceState('three', { indent: { tabs: 'no', size: 4 } });
-        expect(sourceDraft('three').indent).toBe(null);
-        client.ui.setInstanceState('three', { indent: { tabs: false, size: 99 } });
-        expect(sourceDraft('three').indent).toBe(null);
     });
 
     it('loads complete text through the existing file route', async () => {
@@ -353,7 +334,14 @@ describe('a save tells the LaTeX store which file was written', () => {
         const saved = vi.spyOn(client.latex, 'onSaved').mockResolvedValue(undefined);
         vi.stubGlobal('fetch', () =>
             Promise.resolve(
-                new Response(JSON.stringify({ ok: false, error: 'readonly' }), { status: 403 })
+                new Response(
+                    JSON.stringify({
+                        ok: false,
+                        error: 'readonly',
+                        refused: [{ field: 'path', reason: 'readonly' }]
+                    }),
+                    { status: 403 }
+                )
             )
         );
         setToken('source-token');
@@ -564,15 +552,12 @@ describe('a draft read from an instance state of the wrong shape', () => {
         ]
     ])('answers %s as the draft it names, with every key present', (_name, held, expected) => {
         client.ui.setInstanceState('one', held);
-        const draft = sourceDraft('one');
-        expect(draft).toStrictEqual(expected);
-        expect(Object.keys(draft).toSorted()).toStrictEqual(Object.keys(NO_DRAFT).toSorted());
+        expect(sourceDraft('one')).toStrictEqual(expected);
     });
 
     it.each([
         ['tabs and a size of 4', { tabs: true, size: 4 }, { tabs: true, size: 4 }],
         ['no tabs and a size of 1', { tabs: false, size: 1 }, { tabs: false, size: 1 }],
-        ['tabs and a size of 8', { tabs: true, size: 8 }, { tabs: true, size: 8 }],
         ['a key beyond the two', { tabs: true, size: 4, extra: 1 }, { tabs: true, size: 4 }],
         ['tabs that are a string', { tabs: 'yes', size: 4 }, null],
         ['a size of 9', { tabs: true, size: 9 }, null],

@@ -1,15 +1,13 @@
-// The manifest form's values for the fields the model carries since the project record holds them:
-// priority, waiting-on, snooze, the subtasks and the follow-up notes. What the form opens with,
-// which fields it may write and what a save posts.
+// Layer 2, client-state tests. The manifest form's values for the fields the model carries since
+// the project record holds them: priority, waiting-on, snooze, the subtasks and the follow-up
+// notes. What the form opens with, which fields it may write and what a save posts.
 //
 // The schema is the real config and the projects are synthetic; what is checked is the rule in
 // state/forms/schema.ts. The write itself is tests/server/edit/ and tests/routes/edit/.
 
-import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 import {
-    NOT_IN_MODEL,
     fieldValues,
     followupWritable,
     manifestPayload,
@@ -63,10 +61,10 @@ describe('the fields the model carries', () => {
         expect(fieldValues(done).subtasks).toBe('');
     });
 
-    it('opens waiting-on as the model reads it when the manifest text holds a bare word, and validate reports it', () => {
-        // The text goes through the reader, validate and normalise: the model reads
-        // `waiting-on: stephanie` as no list, so the form opens with none, and the finding names
-        // the file.
+    it('opens waiting-on with no list when the manifest text holds a bare word', () => {
+        // The text goes through the reader and normalise: the model reads `waiting-on: stephanie`
+        // as no list, so the form opens with none. The finding validate raises for it is
+        // tests/data/snapshot/validate.test.ts.
         const hub = plantScratch('oculus-schema-modelled-', {
             'projects/active/alpha/project.yml':
                 'id: alpha\ntype: active\ntitle: Alpha\nwaiting-on: stephanie\n'
@@ -75,15 +73,6 @@ describe('the fields the model carries', () => {
         const alpha = present(snapshot.entities.projects.alpha, 'project alpha');
         expect(alpha.waitingOn).toEqual([]);
         expect(fieldValues(alpha)['waiting-on']).toEqual([]);
-        expect(
-            snapshot.findings.filter((one) => one.key === 'waiting-on' && one.file.startsWith(hub))
-        ).toEqual([
-            {
-                file: join(hub, 'projects/active/alpha/project.yml'),
-                key: 'waiting-on',
-                message: 'waiting-on must be a list, not a string'
-            }
-        ]);
     });
 });
 
@@ -119,8 +108,6 @@ describe('the follow-up fields', () => {
         // A project that holds a note takes a date whatever the text box says.
         const held = project({ followups: [BARE_NOTE] });
         expect(writableField(held, 'followup.after', {})).toBe(true);
-        expect(NOT_IN_MODEL).not.toContain('followup.do');
-        expect(NOT_IN_MODEL).not.toContain('followup.after');
     });
 
     it('opens the fields of two notes read-only, showing every note', () => {

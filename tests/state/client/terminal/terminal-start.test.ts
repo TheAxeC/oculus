@@ -1,4 +1,4 @@
-// Layer 4, client-state test. The terminals store starting a terminal at once: the bar's New
+// Layer 2, client-state tests. The terminals store starting a terminal at once: the bar's New
 // Terminal, the kinds dropdown, the pane strip's New Terminal in its own pane, and Split, each a
 // `start` post whose answer joins the Terminal tab and is shown; a refusal said on the tab; the
 // presses made before the hub root is known; a start answered after its tab closed; and the
@@ -154,32 +154,27 @@ describe('New Terminal on the bar', () => {
         expect(starts()).toEqual([{ kind: 'shell', cwd: '/hub' }]);
     });
 
-    // Revert: post at once in startInTab with the hub root as it stands.
-    it('posts nothing before the hub root is known, and never an empty folder', async () => {
-        const id = owning([]);
-        const pending = client.terminals.startInTab(id, 'shell');
-        await Promise.resolve();
-        expect(posts).toEqual([]);
-        hubKnown('/hub');
-        await pending;
-        expect(starts()).toEqual([{ kind: 'shell', cwd: '/hub' }]);
-    });
-
     // Revert: drop the wait for the hub root, or post one start for all the held presses.
-    it('posts one start for each of three presses made before the hub root, once it is known', async () => {
-        const id = owning([]);
-        const pending = [1, 2, 3].map(() => client.terminals.startInTab(id, 'shell'));
-        await Promise.resolve();
-        expect(posts).toEqual([]);
-        hubKnown('/hub');
-        await Promise.all(pending);
-        expect(starts()).toEqual([
-            { kind: 'shell', cwd: '/hub' },
-            { kind: 'shell', cwd: '/hub' },
-            { kind: 'shell', cwd: '/hub' }
-        ]);
-        expect(tab(id).terminals).toHaveLength(3);
-    });
+    it.each([
+        ['one press', 1],
+        ['three presses', 3]
+    ])(
+        'posts one start per press, with %s made before the hub root, once it is known',
+        async (_name, count) => {
+            const id = owning([]);
+            const pending = Array.from({ length: count }, () =>
+                client.terminals.startInTab(id, 'shell')
+            );
+            await Promise.resolve();
+            expect(posts).toEqual([]);
+            hubKnown('/hub');
+            await Promise.all(pending);
+            expect(starts()).toEqual(
+                Array.from({ length: count }, () => ({ kind: 'shell', cwd: '/hub' }))
+            );
+            expect(tab(id).terminals).toHaveLength(count);
+        }
+    );
 
     // Revert: serialise startInTab behind the earlier press so the second waits for the first.
     it('starts two terminals for two quick presses, the second not waiting for the first answer', async () => {

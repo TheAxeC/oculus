@@ -1,7 +1,7 @@
-// The software cross-link of a board item: one edge, read from either side. A software project's
-// own join names the projects its `related:` holds; every other project's join names the software
-// whose `related:` holds it, which is why a paper needs no manifest key of its own for the
-// software.
+// Layer 2, client-state tests. The software cross-link of a board item: one edge, read from either
+// side. A software project's own join names the projects its `related:` holds; every other
+// project's join names the software whose `related:` holds it, which is why a paper needs no
+// manifest key of its own for the software.
 //
 // Its own fixture rather than tests/state/boards/board/board.test.ts's, which is the whole
 // portfolio and says nothing about relations: what is checked here is three projects and one
@@ -88,13 +88,6 @@ describe('the software cross-link', () => {
 
     it('names nothing on a project neither end of the link reaches', () => {
         expect(tagsOf(snapshot(), 'other')).toEqual([]);
-    });
-
-    it('names no software while the portfolio holds none', () => {
-        const bare = snapshot();
-        bare.relations = NO_RELATIONS;
-        delete bare.entities.projects.kit;
-        expect(tagsOf(bare, 'paper')).toEqual([]);
     });
 
     it('lists a software project named by another one on both cards', () => {

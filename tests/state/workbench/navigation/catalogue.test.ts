@@ -1,11 +1,10 @@
-// The view catalogue's fold: what arrange() puts under which `nav_groups` heading, the key order a
-// chord counts into and the key drawn beside an entry, the readers of the three layout.yml keys it
-// is built from, and the catalogue over the application's own registry and config.
+// Layer 2, client-state tests. The view catalogue's fold: what arrange() puts under which
+// `nav_groups` heading, the key order a chord counts into and the key drawn beside an entry, and
+// the readers of the three layout.yml keys it is built from.
 //
-// The catalog and glyphs are the real config. The registrations are this file's own, except in the
-// last block, which reads the application's.
+// The catalog and glyphs are the real config. The registrations are this file's own.
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
     arrange,
     type DocEntry,
@@ -23,20 +22,7 @@ import {
     readGroups,
     listedViews
 } from '../../../../src/lib/state/workbench/navigation/catalogue.ts';
-import { registerAll, registerCollections } from '../../../../src/routes/views.ts';
-import { createClientState, type ClientState } from '../../../fixtures/client.ts';
-import { COLLECTIONS, catalog, config, doc, probe } from '../../../shell/rail/rail-fixture.ts';
-
-let client: ClientState;
-
-let views: ClientState['registry']['views'];
-
-beforeEach(() => {
-    client = createClientState();
-    ({ views } = client.registry);
-    registerAll(client.registry);
-    registerCollections(client.registry, COLLECTIONS);
-});
+import { catalog, doc, probe } from '../../../shell/rail/rail-fixture.ts';
 
 describe('arrange', () => {
     it("puts a group's views in the group's own key order, and the rest at the end", () => {
@@ -104,18 +90,6 @@ describe('arrange', () => {
             o: ['a', 'doc:ONE.md']
         });
     });
-
-    it("carries the group's glyph when it has one, and leaves it off when it has none", () => {
-        const found = arrange(
-            [probe('a', 'iconed'), probe('b', 'bare')],
-            [
-                { id: 'iconed', label: 'Iconed', glyph: 'chat' },
-                { id: 'bare', label: 'Bare' }
-            ]
-        );
-        expect(found[0].glyph).toBe('chat');
-        expect(found[1].glyph).toBe(undefined);
-    });
 });
 
 describe('railOrder and keyOf', () => {
@@ -178,176 +152,6 @@ describe('railOrder and keyOf', () => {
     });
 });
 
-describe('the readers of layout.yml', () => {
-    it('reads nav_groups in order, dropping a group with no label and a chord that is no letter', () => {
-        expect(
-            readGroups({
-                one: { label: 'One', glyph: 'chat', chord: 'o' },
-                two: { label: 'Two', chord: 'TWO' },
-                bad: { glyph: 'chat' },
-                worse: 'no'
-            })
-        ).toEqual([
-            { id: 'one', label: 'One', glyph: 'chat', chord: 'o' },
-            { id: 'two', label: 'Two' }
-        ]);
-        expect(readGroups(['one'])).toEqual([]);
-        expect(readGroups(undefined)).toEqual([]);
-    });
-
-    it('reads the direct chord as one lowercase letter or nothing', () => {
-        expect(readChord('v')).toBe('v');
-        expect(readChord('V')).toBe(undefined);
-        expect(readChord('vv')).toBe(undefined);
-        expect(readChord('')).toBe(undefined);
-        expect(readChord(3)).toBe(undefined);
-    });
-
-    it('reads docs as three non-empty strings each, dropping any other entry', () => {
-        expect(
-            readDocs([
-                { label: 'One', path: 'ONE.md', group: 'g' },
-                { label: 'Two', path: '', group: 'g' },
-                { label: '', path: 'X.md', group: 'g' },
-                { label: 'Three', path: 'T.md' },
-                'four'
-            ])
-        ).toEqual([{ label: 'One', path: 'ONE.md', group: 'g' }]);
-        expect(readDocs({})).toEqual([]);
-    });
-});
-
-describe('the catalogue of the real config', () => {
-    let sections: ReturnType<typeof arrange>;
-
-    const groups = readGroups(config.nav_groups);
-    const docs: DocEntry[] = readDocs(config.docs);
-
-    beforeEach(() => {
-        sections = arrange(
-            views().filter((view) => view.listed !== false),
-            groups,
-            docs
-        );
-    });
-
-    it('lists the manual, the photo wall and the three hub documents under Help, apart from System', () => {
-        const system = sections.find((found) => found.label === 'System');
-        expect(system?.items.map((view) => view.id)).toEqual([
-            'settings',
-            'account-setup',
-            'catalogue',
-            'pages',
-            'status',
-            'findings',
-            'audit',
-            'history',
-            'gallery',
-            'processes'
-        ]);
-        expect(system?.docs).toEqual([]);
-        const help = sections.find((found) => found.label === 'Help');
-        expect(help?.items.map((view) => view.id)).toEqual(['help', 'memories']);
-        expect(help?.docs.map((entry) => entry.path)).toEqual([
-            'docs/RESEARCH-APPROACH.md',
-            'docs/AGENT-APPROACH.md',
-            'docs/HPC-UTwente-howto.md'
-        ]);
-    });
-
-    it('leaves no view out of a group, the collections of sources.yml included', () => {
-        const rest = sections.find((found) => found.label === null)?.items ?? [];
-        expect(COLLECTIONS.length).toBeGreaterThan(0);
-        expect(rest.map((view) => view.id)).toEqual([]);
-    });
-
-    it('lists one group per rail page, in rail order, labelled with its button, and System after Help', () => {
-        const rail = config.rail as { label: string; page: string }[];
-        expect(groups.map((group) => group.id)).toEqual(rail.map((entry) => entry.page));
-        expect(groups.map((group) => group.label)).toEqual(rail.map((entry) => entry.label));
-        const labels = sections.map((section) => section.label);
-        expect(labels).toEqual(rail.map((entry) => entry.label));
-        expect(labels.indexOf('System')).toBe(labels.indexOf('Help') + 1);
-        expect(labels).not.toContain('Views and Settings');
-    });
-
-    it('gives every group a letter and a glyph, and one letter to one list', () => {
-        expect(
-            sections
-                .filter(isChorded)
-                .map((one) => `${one.label ?? ''}:${one.chord ?? ''}:${one.glyph ?? ''}`)
-        ).toEqual([
-            'Focus:f:focus',
-            'Sessions:m:live',
-            'Projects:p:paper',
-            'Incoming:e:email',
-            'Explorer:s:folder',
-            'Academic Life:c:scout',
-            'Pillars:l:book',
-            'References:r:venue_dist',
-            'Present:t:conference',
-            'Help:h:page',
-            'System:y:settings'
-        ]);
-    });
-
-    it('counts the real keys: every page under its own letter, the direct chord counting none', () => {
-        const order = railOrder(
-            views().filter((view) => view.listed !== false),
-            groups,
-            readChord(config.direct_chord),
-            docs
-        );
-        // Every listed view sits on a page, so nothing is left to the direct chord, which is
-        // therefore bound to no list at all.
-        expect(order.direct).toEqual([]);
-        expect(order.chords).toEqual({
-            f: ['focus', 'hpc', 'usage'],
-            m: [
-                'session-list',
-                'terminal',
-                'transcript',
-                'timeline',
-                'session-detail',
-                'changes',
-                'agents'
-            ],
-            p: ['projects', 'coauthor', 'archive', 'personal'],
-            e: ['inbox', 'radar', 'leads', 'linkedin', 'calendar'],
-            s: ['files', 'repositories', 'search'],
-            c: ['funding', 'events', 'education', 'applications', 'joint-work', 'tasks'],
-            l: ['pillars', 'domains', 'map'],
-            r: ['venues', 'data', 'code', 'statements'],
-            t: ['present'],
-            y: [
-                'settings',
-                'account-setup',
-                'catalogue',
-                'pages',
-                'status',
-                'findings',
-                'audit',
-                'history',
-                'gallery',
-                'processes'
-            ],
-            h: [
-                'help',
-                'memories',
-                'doc:docs/RESEARCH-APPROACH.md',
-                'doc:docs/AGENT-APPROACH.md',
-                'doc:docs/HPC-UTwente-howto.md'
-            ]
-        });
-        expect(keyOf(order, 'calendar')).toBe('e5');
-        expect(keyOf(order, 'settings')).toBe('y1');
-        expect(keyOf(order, 'account-setup')).toBe('y2');
-        expect(keyOf(order, 'gallery')).toBe('y9');
-        // The tenth view of System lies past the nine keys a chord reaches.
-        expect(keyOf(order, 'processes')).toBe('');
-    });
-});
-
 describe('the page a catalogue press opens on', () => {
     const views = {
         kind: 'split',
@@ -363,13 +167,6 @@ describe('the page a catalogue press opens on', () => {
         { page: 'focus', node: { root: { kind: 'pane', view: 'focus' } } },
         { page: 'views', node: { root: views } }
     ];
-
-    it("finds a view anywhere in an arrangement, alone or among a pane's tabs", () => {
-        expect(nodeHolds(views, 'catalogue')).toBe(true);
-        expect(nodeHolds(views, 'pages')).toBe(true);
-        expect(nodeHolds(views, 'focus')).toBe(false);
-        expect(nodeHolds('not a node', 'catalogue')).toBe(false);
-    });
 
     it('names only the rail page whose arrangement holds the catalogue as its own page', () => {
         expect(onCataloguePage('views', pages, 'catalogue')).toBe(true);
@@ -416,14 +213,7 @@ describe('the readers of layout.yml over values of the wrong type', () => {
     const rows: [string, () => unknown, unknown][] = [
         ['groups of an array', () => readGroups([]), []],
         ['groups of null', () => readGroups(null), []],
-        ['groups of a string', () => readGroups('a'), []],
-        ['groups of a number', () => readGroups(3), []],
-        ['groups of an empty map', () => readGroups({}), []],
-        ['groups holding an array', () => readGroups({ a: [] }), []],
         ['groups holding null', () => readGroups({ a: null }), []],
-        ['groups holding a string', () => readGroups({ a: 'A' }), []],
-        ['a group with a label that is a number', () => readGroups({ a: { label: 3 } }), []],
-        ['a group with a label that is null', () => readGroups({ a: { label: null } }), []],
         ['a group with no label', () => readGroups({ a: { glyph: 'g', chord: 'a' } }), []],
         [
             'a group with an empty label',
@@ -441,39 +231,14 @@ describe('the readers of layout.yml over values of the wrong type', () => {
             [{ id: 'a', label: 'A', glyph: '' }]
         ],
         [
-            'a group with a chord of two letters',
-            () => readGroups({ a: { label: 'A', chord: 'AB' } }),
-            [{ id: 'a', label: 'A' }]
-        ],
-        [
             'a group with a chord that is a capital',
             () => readGroups({ a: { label: 'A', chord: 'A' } }),
-            [{ id: 'a', label: 'A' }]
-        ],
-        [
-            'a group with a chord that is a number',
-            () => readGroups({ a: { label: 'A', chord: 3 } }),
-            [{ id: 'a', label: 'A' }]
-        ],
-        [
-            'a group with an empty chord',
-            () => readGroups({ a: { label: 'A', chord: '' } }),
             [{ id: 'a', label: 'A' }]
         ],
         [
             'a group with a chord of one letter',
             () => readGroups({ a: { label: 'A', chord: 'q' } }),
             [{ id: 'a', label: 'A', chord: 'q' }]
-        ],
-        [
-            'a group with a chord of one letter and a newline',
-            () => readGroups({ a: { label: 'A', chord: 'q\n' } }),
-            [{ id: 'a', label: 'A' }]
-        ],
-        [
-            'a group with every field',
-            () => readGroups({ a: { label: 'A', glyph: 'g', chord: 'a', extra: 1 } }),
-            [{ id: 'a', label: 'A', glyph: 'g', chord: 'a' }]
         ],
         [
             'the keys of a group',
@@ -497,42 +262,14 @@ describe('the readers of layout.yml over values of the wrong type', () => {
             ]
         ],
         ['a chord that is a letter', () => readChord('a'), 'a'],
-        ['a chord that is two letters', () => readChord('ab'), undefined],
         ['a chord that is a capital', () => readChord('A'), undefined],
-        ['a chord that is a digit', () => readChord('1'), undefined],
-        ['a chord that is empty', () => readChord(''), undefined],
         ['a chord that is a number', () => readChord(3), undefined],
-        ['a chord that is null', () => readChord(null), undefined],
-        ['a chord that is a list', () => readChord(['a']), undefined],
         ['a chord that is a letter and a newline', () => readChord('a\n'), undefined],
         ['docs of a map', () => readDocs({}), []],
-        ['docs of null', () => readDocs(null), []],
-        ['docs of a string', () => readDocs('x'), []],
         ['docs holding things that are not maps', () => readDocs([null, 3, 'x', []]), []],
         ['a doc with no label', () => readDocs([{ path: 'p', group: 'g' }]), []],
-        [
-            'a doc with a label that is a number',
-            () => readDocs([{ label: 3, path: 'p', group: 'g' }]),
-            []
-        ],
-        ['a doc with an empty label', () => readDocs([{ label: '', path: 'p', group: 'g' }]), []],
         ['a doc with an empty path', () => readDocs([{ label: 'l', path: '', group: 'g' }]), []],
-        [
-            'a doc with a path that is a number',
-            () => readDocs([{ label: 'l', path: 3, group: 'g' }]),
-            []
-        ],
         ['a doc with an empty group', () => readDocs([{ label: 'l', path: 'p', group: '' }]), []],
-        [
-            'a doc with a group that is null',
-            () => readDocs([{ label: 'l', path: 'p', group: null }]),
-            []
-        ],
-        [
-            'a doc with fields it does not read',
-            () => readDocs([{ group: 'g', extra: 1, path: 'p', label: 'l' }]),
-            [{ label: 'l', path: 'p', group: 'g' }]
-        ],
         [
             'the keys of a doc',
             () => Object.keys(readDocs([{ group: 'g', path: 'p', label: 'l' }])[0]),
@@ -558,8 +295,6 @@ describe('the readers of layout.yml over values of the wrong type', () => {
         ],
         ['a node that is an array', () => nodeHolds([], 'v'), false],
         ['a node that is null', () => nodeHolds(null, 'v'), false],
-        ['a node that is a string', () => nodeHolds('v', 'v'), false],
-        ['a node that is a number', () => nodeHolds(3, 'v'), false],
         ['a node with no kind', () => nodeHolds({ view: 'v' }, 'v'), false],
         ['a pane naming the view', () => nodeHolds({ kind: 'pane', view: 'v' }, 'v'), true],
         ['a pane naming another view', () => nodeHolds({ kind: 'pane', view: 'w' }, 'v'), false],
@@ -569,21 +304,10 @@ describe('the readers of layout.yml over values of the wrong type', () => {
             true
         ],
         [
-            'a pane naming a list without the view',
-            () => nodeHolds({ kind: 'pane', view: ['w', 3] }, 'v'),
-            false
-        ],
-        [
             'a pane whose view is a list holding a map',
             () => nodeHolds({ kind: 'pane', view: [{ view: 'v' }] }, 'v'),
             false
         ],
-        [
-            'a pane whose view is a map',
-            () => nodeHolds({ kind: 'pane', view: { v: 1 } }, 'v'),
-            false
-        ],
-        ['a pane whose view is a number', () => nodeHolds({ kind: 'pane', view: 3 }, 'v'), false],
         ['a pane with no view', () => nodeHolds({ kind: 'pane' }, 'v'), false],
         [
             'a node of a kind that is not a pane holding the view',
@@ -604,11 +328,6 @@ describe('the readers of layout.yml over values of the wrong type', () => {
                     'v'
                 ),
             true
-        ],
-        [
-            'a split whose children are a map',
-            () => nodeHolds({ kind: 'split', children: { 0: { kind: 'pane', view: 'v' } } }, 'v'),
-            false
         ],
         [
             'a split whose children are a string',
@@ -632,11 +351,6 @@ describe('the readers of layout.yml over values of the wrong type', () => {
             true
         ],
         ['a root that is null', () => nodeHolds({ root: null }, 'v'), false],
-        [
-            'a root that is a list',
-            () => nodeHolds({ root: [{ kind: 'pane', view: 'v' }] }, 'v'),
-            false
-        ],
         [
             'a root beside a pane',
             () => nodeHolds({ root: { kind: 'pane', view: 'w' }, kind: 'pane', view: 'v' }, 'v'),
@@ -671,16 +385,6 @@ describe('the readers of layout.yml over values of the wrong type', () => {
                     'v'
                 ),
             true
-        ],
-        [
-            'a rail page whose node is null',
-            () => onCataloguePage('a', [{ page: 'a', node: null }], 'v'),
-            false
-        ],
-        [
-            'a rail page whose node is a list',
-            () => onCataloguePage('a', [{ page: 'a', node: [] }], 'v'),
-            false
         ],
         [
             'no rail page',

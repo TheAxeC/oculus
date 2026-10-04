@@ -1,16 +1,21 @@
-// Layer 4, test. The two requests the terminals store makes of /api/terminal that carry no state
-// of their own (state/sessions/terminal/pty/pty-io.ts): the action posted with the write token, and
-// the busy read. Each case states the body the stub `fetch` answers and what the request makes of
-// it, for bodies of the right shape and for bodies whose fields are of the wrong type.
+// Layer 2, client-state tests. The two requests the terminals store makes of /api/terminal that
+// carry no state of their own (state/sessions/terminal/pty/pty-io.ts): the action posted with the
+// write token, and the busy read. Each case states the body the stub `fetch` answers and what the
+// request makes of it, for bodies of the right shape and for bodies whose fields are of the wrong
+// type.
 //
 // What this does NOT cover: the store's use of the answers, which is
-// tests/state/sessions/terminals.test.ts and tests/state/client/terminal/.
+// tests/state/sessions/terminals.test.ts, pty-socket.test.ts beside this file and
+// tests/state/client/terminal/.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { postTerminal, readBusy } from '../../../../src/lib/state/sessions/terminal/pty/pty-io.ts';
-import { refused, unreadable } from '../../../fixtures/client.ts';
+import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
+import {
+    postTerminal,
+    readBusy
+} from '../../../../../src/lib/state/sessions/terminal/pty/pty-io.ts';
+import { refused, unreadable } from '../../../../fixtures/client.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -57,11 +62,6 @@ describe('the answer of an action posted to /api/terminal', () => {
         });
     });
 
-    it('is ok for a stop answered `{ ok: true }` at 200', async () => {
-        answering('{"ok":true}');
-        expect(await postTerminal({ action: 'stop', id: A }, 't')).toStrictEqual(BARE);
-    });
-
     it('starts the terminal a start answers with an id', async () => {
         answering('{"terminal":{"id":"t1"}}');
         expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual({
@@ -75,9 +75,7 @@ describe('the answer of an action posted to /api/terminal', () => {
     it.each([
         ['a terminal whose id is a number', '{"terminal":{"id":3}}'],
         ['a terminal whose id is empty', '{"terminal":{"id":""}}'],
-        ['a terminal that is a string', '{"terminal":"x"}'],
-        ['no terminal beside an id', `{"ok":true,"id":"${A}"}`],
-        ['an empty map', '{}']
+        ['no terminal beside an id', `{"ok":true,"id":"${A}"}`]
     ])('fails a start answered at 200 with %s, in the unreadable sentence', async (_name, text) => {
         answering(text);
         expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual({
@@ -87,13 +85,8 @@ describe('the answer of an action posted to /api/terminal', () => {
         });
     });
 
-    it.each([
-        ['an error that is a number', '{"error":3}'],
-        ['a sentence', '{"error":"x"}'],
-        ['an empty sentence', '{"error":""}'],
-        ['a list', '[]']
-    ])('is the refusal sentence for %s in the body of a 500', async (_name, text) => {
-        answering(text, 500);
+    it('is the refusal sentence for a sentence in the body of a 500', async () => {
+        answering('{"error":"x"}', 500);
         expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual({
             ok: false,
             id: '',
@@ -101,20 +94,9 @@ describe('the answer of an action posted to /api/terminal', () => {
         });
     });
 
-    it('is the catalog sentence for a refusal word in the body of a 400', async () => {
-        answering('{"error":"outside"}', 400);
-        expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual({
-            ok: false,
-            id: '',
-            error: t('files.refused_outside')
-        });
-    });
-
     it.each([
-        ['null on a refusal', 'null', 500],
         ['text that is not JSON on a refusal', 'nope', 500],
-        ['null', 'null', 200],
-        ['text that is not JSON', 'nope', 200]
+        ['null', 'null', 200]
     ])(
         'is the unreadable sentence with its status for a body that is %s',
         async (_name, text, status) => {
@@ -173,8 +155,8 @@ describe('the terminals a busy read names', () => {
 
     it.each([
         [
-            'items that are not busy, and an id that is a number',
-            '{"busy":[{"id":3},{"id":"a","busy":true,"command":"x"},{"id":"b","busy":false}]}',
+            'items that are not busy, an id that is a number, and a null',
+            '{"busy":[null,{"id":3},{"id":"a","busy":true,"command":"x"},{"id":"b","busy":false}]}',
             [{ id: 'a', name: 'La', command: 'x' }]
         ],
         ['a busy list that is a string', '{"busy":"x"}', []],
@@ -208,15 +190,5 @@ describe('the terminals a busy read names', () => {
         expect(await readBusy(IDS, label, (id) => id === 'a')).toStrictEqual([
             { id: 'a', name: 'La', command: 'zsh' }
         ]);
-    });
-
-    it('names no terminal the server calls idle when `always` picks none', async () => {
-        answering('{"busy":[{"id":"a","busy":false,"command":"zsh"}]}');
-        expect(await readBusy(IDS, label, () => false)).toStrictEqual([]);
-    });
-
-    it('leaves out an item that is null and names the busy ones that follow it', async () => {
-        answering('{"busy":[null,{"id":3},{"id":"a","busy":true,"command":"x"}]}');
-        expect(await readBusy(IDS, label)).toStrictEqual([{ id: 'a', name: 'La', command: 'x' }]);
     });
 });

@@ -1,5 +1,6 @@
-// The calendar client store: the body each of its two commands sends to the endpoint, and what it
-// reads off the socket entity. Its accounts' commands are tested in accounts-store.test.ts.
+// Layer 2, client-state tests. The calendar client store: the body each of its two commands sends
+// to the endpoint, and what it reads off the socket entity. Its accounts' commands are tested in
+// accounts-store.test.ts.
 //
 // Nothing opens a socket: `fetch` is a stub that records the request and hands back the answer the
 // case wants, and nothing reads or writes outside it. The pure rules the store reads are
@@ -99,13 +100,6 @@ describe('the calendar store commands', () => {
 });
 
 describe('what the calendar store commands say', () => {
-    it('says nothing when the endpoint took the command', async () => {
-        answering();
-        expect(await client.calendar.refresh()).toBe('');
-        answering();
-        expect(await client.calendar.openEvent('google-work-primary-one')).toBe('');
-    });
-
     it('says a refusal in the catalog sentence carrying its code', async () => {
         vi.stubGlobal('fetch', () =>
             Promise.resolve(

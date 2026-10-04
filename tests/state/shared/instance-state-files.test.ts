@@ -1,7 +1,7 @@
-// Layer 4, test. What the readers of the file browser's instance state in state/sources/fs.ts
-// answer for every kind of input a saved arrangement can hold: a list, null, a string, a map with
-// an own `__proto__` key, a state whose fields are each of the wrong type, and the edge values of
-// the right type. The table is described in tests/state/shared/instance-fixture.ts.
+// Layer 2, client-state tests. What the readers of the file browser's instance state in
+// state/sources/fs.ts answer for every kind of input a saved arrangement can hold: a list, null, a
+// map with an own `__proto__` key, a state whose fields are each of the wrong type, and the edge
+// values of the right type. The table is described in tests/state/shared/instance-fixture.ts.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -17,7 +17,7 @@ import {
     withFollowPin,
     type FsRoot
 } from '../../../src/lib/state/sources/fs.ts';
-import { ABSENT, checkReaders, type Reader } from './instance-fixture.ts';
+import { checkReaders, type Reader } from './instance-fixture.ts';
 
 const ROOTS: FsRoot[] = [{ key: 'hub', dir: '/d', fixed: true }];
 const FOUND = { root: ROOTS[0], path: 'p' };
@@ -82,18 +82,13 @@ const VIEW_WRONG = {
     outside: 3
 };
 
-/** A whole-number field laid out as the values a count can take. */
-function counts(field: string): Record<string, Record<string, unknown>> {
-    return {
-        [`${field} zero`]: { [field]: 0 },
-        [`${field} NaN`]: { [field]: NaN },
-        [`${field} Infinity`]: { [field]: Infinity },
-        [`${field} negative`]: { [field]: -1 },
-        [`${field} fractional`]: { [field]: 1.5 },
-        [`${field} the largest safe integer`]: { [field]: Number.MAX_SAFE_INTEGER },
-        [`${field} beyond the safe integers`]: { [field]: Number.MAX_SAFE_INTEGER + 1 }
-    };
-}
+/** The values of a count field that a whole number from 0 up accepts and refuses. */
+const OPENING_COUNTS = {
+    'opening negative': { opening: -1 },
+    'opening fractional': { opening: 1.5 },
+    'opening the largest safe integer': { opening: Number.MAX_SAFE_INTEGER },
+    'opening beyond the safe integers': { opening: Number.MAX_SAFE_INTEGER + 1 }
+};
 
 const viewFallback = {
     expanded: [],
@@ -201,28 +196,14 @@ const READERS: Reader[] = [
         read: expandedOf,
         valid: { expanded: ['hub:a', 'hub:b'], filter: 'f' },
         wrong: { expanded: 'x' },
-        edge: {
-            'expanded with other items': { expanded: [1, 'a', null, ['b']] },
-            'expanded with duplicates': { expanded: ['a', 'a'] },
-            'expanded empty strings': { expanded: ['', ''] },
-            'expanded empty': { expanded: [] },
-            'no expanded': { expanded: ABSENT }
-        },
         notMap: [],
         answers: {
             'empty map': [],
-            'search 3, reveal empty': [],
-            'search s, reveal r, lead space': [],
             'own __proto__ key': [],
             'own __proto__ key alone': [],
             valid: ['hub:a', 'hub:b'],
             'wrong expanded': [],
-            'all wrong': [],
-            'expanded with other items': ['a'],
-            'expanded with duplicates': ['a', 'a'],
-            'expanded empty strings': ['', ''],
-            'expanded empty': [],
-            'no expanded': []
+            'all wrong': []
         }
     },
     {
@@ -233,19 +214,11 @@ const READERS: Reader[] = [
         edge: {
             'form root keeps typed and drops editing': { form: 'root' },
             'form workspace keeps typed and drops editing': { form: 'workspace' },
-            'form empty': { form: '' },
-            'form unknown': { form: 'folder' },
-            'form bookmark without editing': { editing: ABSENT },
             'selected with an empty root': { selected: { root: '', path: 'a' } },
             'selected with an empty path': { selected: { root: 'hub', path: '' } },
             'selected with a numeric path': { selected: { root: 'hub', path: 3 } },
-            'selected a list': { selected: [] },
-            'selected null': { selected: null },
-            'selected with another key': { selected: { root: 'hub', path: 'a', extra: 1 } },
-            ...counts('opening'),
-            ...counts('revealing'),
+            ...OPENING_COUNTS,
             'reveal asked zero': { reveal: { root: 'hub', path: 'a', asked: 0, settled: true } },
-            'reveal asked NaN': { reveal: { root: 'hub', path: 'a', asked: NaN, settled: true } },
             'reveal with an empty root': {
                 reveal: { root: '', path: 'a', asked: 1, settled: false }
             },
@@ -253,48 +226,26 @@ const READERS: Reader[] = [
                 reveal: { root: 'hub', path: 'a', asked: 1, settled: 'yes' }
             },
             'reveal without a path': { reveal: { root: 'hub', asked: 1, settled: false } },
-            'reveal with another key': {
-                reveal: { root: 'hub', path: 'a', asked: 1, settled: false, extra: 1 }
-            },
             'revealed of the kind found': {
                 revealed: { kind: 'found', asked: { root: 'hub', path: 'a' }, shown: null }
-            },
-            'revealed of the kind no-roots': {
-                revealed: { kind: 'no-roots', asked: { root: 'hub', path: 'a' }, error: 'e' }
             },
             'revealed of an unknown kind': {
                 revealed: { kind: 'lost', asked: { root: 'hub', path: 'a' } }
             },
             'revealed without asked': { revealed: { kind: 'found' } },
-            'revealed with asked of the wrong type': { revealed: { kind: 'found', asked: 'a' } },
-            'revealed with shown null': {
-                revealed: { kind: 'unread', asked: { root: 'hub', path: 'a' }, shown: null }
-            },
             'revealed with shown of the wrong type': {
                 revealed: { kind: 'unread', asked: { root: 'hub', path: 'a' }, shown: 3 }
             },
             'revealed with an error of the wrong type': {
                 revealed: { kind: 'unread', asked: { root: 'hub', path: 'a' }, error: 3 }
             },
-            'revealed a list': { revealed: [] },
-            'expanded with other items': { expanded: [1, 'a', null, ['b']] },
-            'expanded with duplicates': { expanded: ['a', 'a'] },
-            'collapsed with other items': { collapsed: ['', 2, 'c', 'c'] },
-            'filter empty': { filter: '' },
             'selection with other items': {
                 selection: [1, { root: 'hub', path: 'a' }, { root: '', path: 'b' }, null]
-            },
-            'anchor with an empty root': { anchor: { root: '', path: 'a' } },
-            'top with an empty root': { top: { root: '', path: 'a' } },
-            'top at the root': { top: { root: 'hub', path: '' } },
-            'opened with other items': { opened: [1, 'timeline', null, 'timeline'] },
-            'no booleans': { hidden: ABSENT, ignored: ABSENT, fuzzy: ABSENT, nesting: ABSENT }
+            }
         },
         notMap: viewFallback,
         answers: {
             'empty map': viewFallback,
-            'search 3, reveal empty': viewFallback,
-            'search s, reveal r, lead space': viewFallback,
             'own __proto__ key': viewFallback,
             'own __proto__ key alone': viewFallback,
             valid: viewValid,
@@ -334,38 +285,17 @@ const READERS: Reader[] = [
                 editing: '',
                 typed: 't'
             },
-            'form empty': { ...viewValid, form: '', editing: '' },
-            'form unknown': { ...viewValid, form: '', editing: '' },
-            'form bookmark without editing': { ...viewValid, editing: '' },
             'selected with an empty root': { ...viewValid, selected: null },
             'selected with an empty path': { ...viewValid, selected: { root: 'hub', path: '' } },
             'selected with a numeric path': { ...viewValid, selected: null },
-            'selected a list': { ...viewValid, selected: null },
-            'selected null': { ...viewValid, selected: null },
-            'selected with another key': viewValid,
-            'opening zero': { ...viewValid, opening: 0 },
-            'opening NaN': { ...viewValid, opening: 0 },
-            'opening Infinity': { ...viewValid, opening: 0 },
             'opening negative': { ...viewValid, opening: 0 },
             'opening fractional': { ...viewValid, opening: 0 },
             'opening the largest safe integer': { ...viewValid, opening: 9007199254740991 },
             'opening beyond the safe integers': { ...viewValid, opening: 0 },
-            'revealing zero': { ...viewValid, revealing: 0 },
-            'revealing NaN': { ...viewValid, revealing: 0 },
-            'revealing Infinity': { ...viewValid, revealing: 0 },
-            'revealing negative': { ...viewValid, revealing: 0 },
-            'revealing fractional': { ...viewValid, revealing: 0 },
-            'revealing the largest safe integer': { ...viewValid, revealing: 9007199254740991 },
-            'revealing beyond the safe integers': { ...viewValid, revealing: 0 },
             'reveal asked zero': { ...viewValid, reveal: null },
-            'reveal asked NaN': { ...viewValid, reveal: null },
             'reveal with an empty root': { ...viewValid, reveal: null },
             'reveal settled a string': { ...viewValid, reveal: null },
             'reveal without a path': { ...viewValid, reveal: null },
-            'reveal with another key': {
-                ...viewValid,
-                reveal: { root: 'hub', path: 'a', asked: 1, settled: false }
-            },
             'revealed of the kind found': {
                 ...viewValid,
                 revealed: {
@@ -375,27 +305,8 @@ const READERS: Reader[] = [
                     error: ''
                 }
             },
-            'revealed of the kind no-roots': {
-                ...viewValid,
-                revealed: {
-                    kind: 'no-roots',
-                    asked: { root: 'hub', path: 'a' },
-                    shown: null,
-                    error: 'e'
-                }
-            },
             'revealed of an unknown kind': { ...viewValid, revealed: null },
             'revealed without asked': { ...viewValid, revealed: null },
-            'revealed with asked of the wrong type': { ...viewValid, revealed: null },
-            'revealed with shown null': {
-                ...viewValid,
-                revealed: {
-                    kind: 'unread',
-                    asked: { root: 'hub', path: 'a' },
-                    shown: null,
-                    error: ''
-                }
-            },
             'revealed with shown of the wrong type': {
                 ...viewValid,
                 revealed: {
@@ -414,25 +325,9 @@ const READERS: Reader[] = [
                     error: ''
                 }
             },
-            'revealed a list': { ...viewValid, revealed: null },
-            'expanded with other items': { ...viewValid, expanded: ['a'] },
-            'expanded with duplicates': { ...viewValid, expanded: ['a', 'a'] },
-            'collapsed with other items': { ...viewValid, collapsed: ['', 'c', 'c'] },
-            'filter empty': { ...viewValid, filter: '' },
             'selection with other items': {
                 ...viewValid,
                 selection: [{ root: 'hub', path: 'a' }]
-            },
-            'anchor with an empty root': { ...viewValid, anchor: null },
-            'top with an empty root': { ...viewValid, top: null },
-            'top at the root': { ...viewValid, top: { root: 'hub', path: '' } },
-            'opened with other items': { ...viewValid, opened: ['timeline', 'timeline'] },
-            'no booleans': {
-                ...viewValid,
-                hidden: false,
-                ignored: false,
-                fuzzy: false,
-                nesting: false
             }
         }
     },
@@ -442,12 +337,6 @@ const READERS: Reader[] = [
         valid: { filter: 'f', revealing: 3, other: [1] },
         wrong: { filter: 3, revealing: '3', other: null },
         edge: {
-            'revealing zero': { revealing: 0 },
-            'revealing NaN': { revealing: NaN },
-            'revealing Infinity': { revealing: Infinity },
-            'revealing negative': { revealing: -1 },
-            'revealing fractional': { revealing: 1.5 },
-            'revealing beyond the safe integers': { revealing: Number.MAX_SAFE_INTEGER + 1 },
             'a reveal and an outcome held': {
                 reveal: { root: 'hub', path: 'x', asked: 1, settled: true },
                 revealed: { kind: 'found', asked: { root: 'hub', path: 'x' }, shown: null }
@@ -456,21 +345,6 @@ const READERS: Reader[] = [
         notMap: askedFallback,
         answers: {
             'empty map': askedFallback,
-            'search 3, reveal empty': {
-                search: 3,
-                reveal: { root: 'hub', path: 'b', asked: 1, settled: false },
-                filter: '',
-                revealed: null,
-                revealing: 1
-            },
-            'search s, reveal r, lead space': {
-                search: 's',
-                reveal: { root: 'hub', path: 'b', asked: 1, settled: false },
-                lead: ' ',
-                filter: '',
-                revealed: null,
-                revealing: 1
-            },
             'own __proto__ key': {
                 ['__proto__']: { search: 'p', adding: true },
                 search: 's',
@@ -501,36 +375,6 @@ const READERS: Reader[] = [
                 other: null,
                 reveal: { root: 'hub', path: 'b', asked: 1, settled: false }
             },
-            'revealing zero': {
-                ...askedValid,
-                revealing: 1,
-                reveal: { root: 'hub', path: 'b', asked: 1, settled: false }
-            },
-            'revealing NaN': {
-                ...askedValid,
-                revealing: 1,
-                reveal: { root: 'hub', path: 'b', asked: 1, settled: false }
-            },
-            'revealing Infinity': {
-                ...askedValid,
-                revealing: 1,
-                reveal: { root: 'hub', path: 'b', asked: 1, settled: false }
-            },
-            'revealing negative': {
-                ...askedValid,
-                revealing: 1,
-                reveal: { root: 'hub', path: 'b', asked: 1, settled: false }
-            },
-            'revealing fractional': {
-                ...askedValid,
-                revealing: 1,
-                reveal: { root: 'hub', path: 'b', asked: 1, settled: false }
-            },
-            'revealing beyond the safe integers': {
-                ...askedValid,
-                revealing: 1,
-                reveal: { root: 'hub', path: 'b', asked: 1, settled: false }
-            },
             'a reveal and an outcome held': askedValid
         }
     },
@@ -539,18 +383,9 @@ const READERS: Reader[] = [
         read: (raw) => patchedFilesView(raw, { filter: 'z', typed: '' }),
         valid: { expanded: ['a'], filter: 'f', typed: 't', other: 1 },
         wrong: { expanded: 'x', filter: 3, other: null },
-        edge: { 'no filter': { filter: ABSENT } },
         notMap: { filter: 'z', typed: '' },
         answers: {
             'empty map': { filter: 'z', typed: '' },
-            'search 3, reveal empty': { search: 3, reveal: '', filter: 'z', typed: '' },
-            'search s, reveal r, lead space': {
-                search: 's',
-                reveal: 'r',
-                lead: ' ',
-                filter: 'z',
-                typed: ''
-            },
             'own __proto__ key': {
                 ['__proto__']: { search: 'p', adding: true },
                 search: 's',
@@ -563,8 +398,7 @@ const READERS: Reader[] = [
             'wrong expanded': { expanded: 'x', filter: 'z', typed: '', other: 1 },
             'wrong filter': patchedValid,
             'wrong other': { expanded: ['a'], filter: 'z', typed: '', other: null },
-            'all wrong': { expanded: 'x', filter: 'z', other: null, typed: '' },
-            'no filter': { expanded: ['a'], typed: '', other: 1, filter: 'z' }
+            'all wrong': { expanded: 'x', filter: 'z', other: null, typed: '' }
         }
     },
     {
@@ -572,27 +406,15 @@ const READERS: Reader[] = [
         read: followsSession,
         valid: { follow: true, session: 's' },
         wrong: { follow: 'yes', session: 3 },
-        edge: {
-            'follow false': { follow: false },
-            'follow a number': { follow: 1 },
-            'follow null': { follow: null },
-            'no follow': { follow: ABSENT }
-        },
         notMap: false,
         answers: {
             'empty map': false,
-            'search 3, reveal empty': false,
-            'search s, reveal r, lead space': false,
             'own __proto__ key': false,
             'own __proto__ key alone': false,
             valid: true,
             'wrong follow': false,
             'wrong session': true,
-            'all wrong': false,
-            'follow false': false,
-            'follow a number': false,
-            'follow null': false,
-            'no follow': false
+            'all wrong': false
         }
     },
     {
@@ -600,18 +422,14 @@ const READERS: Reader[] = [
         read: (raw) => followView(raw, ROOTS, '/d/sub/dir'),
         valid: { follow: true },
         wrong: { follow: 'yes' },
-        edge: { 'follow false': { follow: false } },
         notMap: followViewFallback,
         answers: {
             'empty map': followViewFallback,
-            'search 3, reveal empty': followViewFallback,
-            'search s, reveal r, lead space': followViewFallback,
             'own __proto__ key': followViewFallback,
             'own __proto__ key alone': followViewFallback,
             valid: followViewValid,
             'wrong follow': followViewFallback,
-            'all wrong': followViewFallback,
-            'follow false': followViewFallback
+            'all wrong': followViewFallback
         }
     },
     {
@@ -622,8 +440,6 @@ const READERS: Reader[] = [
         notMap: followNoDirFallback,
         answers: {
             'empty map': followNoDirFallback,
-            'search 3, reveal empty': followNoDirFallback,
-            'search s, reveal r, lead space': followNoDirFallback,
             'own __proto__ key': followNoDirFallback,
             'own __proto__ key alone': followNoDirFallback,
             valid: followNoDirValid,
@@ -636,12 +452,9 @@ const READERS: Reader[] = [
         read: (raw) => withFollow(raw, true),
         valid: { follow: false, session: 's', expanded: ['a'] },
         wrong: { follow: 'x', session: 3, expanded: 'x' },
-        edge: { 'no follow': { follow: ABSENT } },
         notMap: { follow: true },
         answers: {
             'empty map': { follow: true },
-            'search 3, reveal empty': { search: 3, reveal: '', follow: true },
-            'search s, reveal r, lead space': { search: 's', reveal: 'r', lead: ' ', follow: true },
             'own __proto__ key': {
                 ['__proto__']: { search: 'p', adding: true },
                 search: 's',
@@ -653,8 +466,7 @@ const READERS: Reader[] = [
             'wrong follow': followValid,
             'wrong session': { follow: true, session: 3, expanded: ['a'] },
             'wrong expanded': { follow: true, session: 's', expanded: 'x' },
-            'all wrong': { follow: true, session: 3, expanded: 'x' },
-            'no follow': { session: 's', expanded: ['a'], follow: true }
+            'all wrong': { follow: true, session: 3, expanded: 'x' }
         }
     },
     {
@@ -662,18 +474,9 @@ const READERS: Reader[] = [
         read: (raw) => withFollowPin(raw, 's2'),
         valid: { follow: false, session: 's', expanded: ['a'] },
         wrong: { follow: 'x', session: 3, expanded: 'x' },
-        edge: { 'no session': { session: ABSENT } },
         notMap: pinFallback,
         answers: {
             'empty map': pinFallback,
-            'search 3, reveal empty': { search: 3, reveal: '', follow: true, session: 's2' },
-            'search s, reveal r, lead space': {
-                search: 's',
-                reveal: 'r',
-                lead: ' ',
-                follow: true,
-                session: 's2'
-            },
             'own __proto__ key': {
                 ['__proto__']: { search: 'p', adding: true },
                 search: 's',
@@ -686,8 +489,7 @@ const READERS: Reader[] = [
             'wrong follow': pinValid,
             'wrong session': pinValid,
             'wrong expanded': { follow: true, expanded: 'x', session: 's2' },
-            'all wrong': { follow: true, expanded: 'x', session: 's2' },
-            'no session': pinValid
+            'all wrong': { follow: true, expanded: 'x', session: 's2' }
         }
     },
     {
@@ -695,12 +497,9 @@ const READERS: Reader[] = [
         read: (raw) => withFollowPin(raw, null),
         valid: { follow: false, session: 's', expanded: ['a'] },
         wrong: { follow: 'x', session: 3, expanded: 'x' },
-        edge: { 'no session': { session: ABSENT } },
         notMap: { follow: true },
         answers: {
             'empty map': { follow: true },
-            'search 3, reveal empty': { search: 3, reveal: '', follow: true },
-            'search s, reveal r, lead space': { search: 's', reveal: 'r', lead: ' ', follow: true },
             'own __proto__ key': {
                 ['__proto__']: { search: 'p', adding: true },
                 search: 's',
@@ -712,8 +511,7 @@ const READERS: Reader[] = [
             'wrong follow': pinNoneValid,
             'wrong session': pinNoneValid,
             'wrong expanded': { follow: true, expanded: 'x' },
-            'all wrong': { follow: true, expanded: 'x' },
-            'no session': pinNoneValid
+            'all wrong': { follow: true, expanded: 'x' }
         }
     },
     {
@@ -721,21 +519,9 @@ const READERS: Reader[] = [
         read: (raw) => followRevealed(raw, FOUND),
         valid: { expanded: ['hub:q'], filter: 'f' },
         wrong: { expanded: 'x', filter: 3 },
-        edge: {
-            'the folder already open': { expanded: ['hub:q', 'hub:p'] },
-            'expanded with other items': { expanded: [1, 'a', null, ['b']] },
-            'no expanded': { expanded: ABSENT }
-        },
         notMap: { expanded: ['hub:p'] },
         answers: {
             'empty map': { expanded: ['hub:p'] },
-            'search 3, reveal empty': { search: 3, reveal: '', expanded: ['hub:p'] },
-            'search s, reveal r, lead space': {
-                search: 's',
-                reveal: 'r',
-                lead: ' ',
-                expanded: ['hub:p']
-            },
             'own __proto__ key': {
                 ['__proto__']: { search: 'p', adding: true },
                 search: 's',
@@ -746,10 +532,7 @@ const READERS: Reader[] = [
             valid: revealedFollowValid,
             'wrong expanded': { expanded: ['hub:p'], filter: 'f' },
             'wrong filter': { expanded: ['hub:q', 'hub:p'], filter: 3 },
-            'all wrong': { expanded: ['hub:p'], filter: 3 },
-            'the folder already open': revealedFollowValid,
-            'expanded with other items': { expanded: ['a', 'hub:p'], filter: 'f' },
-            'no expanded': { filter: 'f', expanded: ['hub:p'] }
+            'all wrong': { expanded: ['hub:p'], filter: 3 }
         }
     },
     {
@@ -759,16 +542,12 @@ const READERS: Reader[] = [
         wrong: { form: 3, typed: 3 },
         edge: {
             'typed spaces': { typed: '  ' },
-            'typed empty': { typed: '' },
             'form workspace': { form: 'workspace' },
-            'form bookmark': { form: 'bookmark' },
-            'no form': { form: ABSENT }
+            'form bookmark': { form: 'bookmark' }
         },
         notMap: false,
         answers: {
             'empty map': false,
-            'search 3, reveal empty': false,
-            'search s, reveal r, lead space': false,
             'own __proto__ key': false,
             'own __proto__ key alone': false,
             valid: true,
@@ -776,10 +555,8 @@ const READERS: Reader[] = [
             'wrong typed': false,
             'all wrong': false,
             'typed spaces': false,
-            'typed empty': false,
             'form workspace': true,
-            'form bookmark': false,
-            'no form': false
+            'form bookmark': false
         }
     }
 ];

@@ -1,11 +1,11 @@
-// The command palette's pure index, ranking and command vocabulary over a synthetic snapshot and
-// feed entries, including the state adapter over one complete socket message.
+// Layer 2, client-state tests. The command palette's pure index, ranking and command vocabulary
+// over a synthetic snapshot and feed entries, including the state adapter over one complete socket
+// message.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
     buildIndex,
     commands,
-    kindWord,
     lineQuery,
     parseCommand,
     ranked,
@@ -13,7 +13,7 @@ import {
 } from '../../../src/lib/state/workbench/palette.ts';
 import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
@@ -104,16 +104,6 @@ describe('paletteSource', () => {
 });
 
 describe('buildIndex', () => {
-    it('opens the disclosure a feed entry may sit behind when it is revealed', () => {
-        const state = (id: string) => index.find((item) => item.id === id)?.state;
-        expect(state('feed:leads:Chair opening')).toEqual({
-            reveal: 'Chair opening',
-            expiredOpen: true
-        });
-        expect(state('feed:radar:A paper')).toEqual({ reveal: 'A paper', dismissedOpen: true });
-        expect(state('feed:linkedin:xx-idea.md')).toEqual({ reveal: 'xx-idea.md' });
-    });
-
     it('indexes views, projects, every collection entry and every socket feed entry', () => {
         expect(index.map((item) => item.id)).toEqual([
             'view:focus',
@@ -136,31 +126,15 @@ describe('buildIndex', () => {
         expect(project?.text).toContain('Methods Journal');
         expect(project?.text).toContain('keeper');
     });
-
-    it('indexes every nested string field of collection and feed entries', () => {
-        expect(ranked(index, 'Leuven keynote').map((found) => found.item.id)).toEqual([
-            'collection:events:talk'
-        ]);
-        expect(ranked(index, 'Public methods').map((found) => found.item.id)).toEqual([
-            'feed:linkedin:xx-idea.md'
-        ]);
-    });
 });
 
 describe('ranked', () => {
-    it('requires every word and ranks a title hit above a body-only hit', () => {
+    it('requires every word of the query', () => {
         expect(ranked(index, 'alpha').map((found) => found.item.id)).toEqual([
             'project:alpha',
             'project:beta'
         ]);
         expect(ranked(index, 'alpha missing').map((found) => found.item)).toEqual([]);
-    });
-
-    // An audit of what an empty query lists. Red when an empty or blank query lists anything but
-    // the views.
-    it('lists the views alone for an empty query and for one of spaces only', () => {
-        expect(ranked(index, '').map((found) => found.item.id)).toEqual(['view:focus']);
-        expect(ranked(index, '   ').map((found) => found.item.id)).toEqual(['view:focus']);
     });
 
     it('lists nothing for an empty query over an index that holds no view', () => {
@@ -193,12 +167,11 @@ describe('the fuzzy match', () => {
         expect(ranked(fuzzy, 'zzzq').map((found) => found.item)).toEqual([]);
     });
 
-    // Red when the empty query lists every item, or lists the views out of index order.
+    // Red when an empty or blank query lists every item, or lists the views out of index order.
     it('lists the views alone, in index order, for no word', () => {
-        expect(ranked(fuzzy, '').map((found) => found.item.id)).toEqual([
-            'view:focus',
-            'view:status'
-        ]);
+        const views = ['view:focus', 'view:status'];
+        expect(ranked(fuzzy, '').map((found) => found.item.id)).toEqual(views);
+        expect(ranked(fuzzy, '   ').map((found) => found.item.id)).toEqual(views);
     });
 
     // Red when the rank drops the title-first rule: the text holds the query whole and the title
@@ -215,43 +188,7 @@ describe('the fuzzy match', () => {
     });
 });
 
-describe('the kind a result row draws', () => {
-    it('names each of the four kinds in its own catalog word', () => {
-        expect(
-            ['view', 'project', 'collection', 'feed'].map((kind) => kindWord(kind as never, t))
-        ).toEqual([
-            t('app.palette.kind_view'),
-            t('app.palette.kind_project'),
-            t('app.palette.kind_collection'),
-            t('app.palette.kind_feed')
-        ]);
-        expect(new Set(index.map((item) => kindWord(item.kind, t))).size).toBe(4);
-    });
-});
-
 describe('commands', () => {
-    const list = commands({ themes: [{ name: 'light' }, { name: 'nord' }] });
-
-    it('lists the eleven commands, theme names and the three unavailable with no source tab', () => {
-        expect(list.map((command) => command.name)).toEqual([
-            'theme',
-            'crt',
-            'accent',
-            'tab',
-            'goto',
-            'language',
-            'help',
-            'update',
-            'workspace',
-            'workspace-save',
-            'folder'
-        ]);
-        expect(list[0].hint).toContain('light | nord');
-        expect(list.filter((command) => !command.available).map((command) => command.name)).toEqual(
-            ['accent', 'language', 'help']
-        );
-    });
-
     it('offers the language list only while a source tab is on screen', () => {
         const language = (source: boolean) =>
             commands({}, source).find((command) => command.name === 'language');
@@ -271,27 +208,8 @@ describe('commands', () => {
     });
 
     it('parses a command prefix and its argument', () => {
-        const parsed = parseCommand(':th nord');
-        expect(parsed).toEqual({ name: 'th', argument: 'nord' });
-        expect(list.filter((command) => command.name.startsWith(parsed?.name ?? ''))).toHaveLength(
-            1
-        );
+        expect(parseCommand(':th nord')).toEqual({ name: 'th', argument: 'nord' });
         expect(parseCommand('theme nord')).toBe(null);
-    });
-
-    it('matches every command by two-letter prefix, rejects an unknown prefix and lists all for an empty prefix', () => {
-        function names(query: string): string[] {
-            const parsed = parseCommand(query);
-            return list
-                .filter((command) => command.name.startsWith(parsed?.name ?? ''))
-                .map((command) => command.name);
-        }
-
-        for (const command of list) {
-            expect(names(`:${command.name.slice(0, 2)}`)).toContain(command.name);
-        }
-        expect(names(':zz')).toEqual([]);
-        expect(names(':')).toEqual(list.map((command) => command.name));
     });
 });
 
@@ -321,26 +239,6 @@ describe('the palette readers over config and entries of the wrong type', () => 
             { name: 'theme', hint: '<>', available: false }
         ],
         [
-            'themes that are a string',
-            () => commands({ themes: 'a' })[0],
-            { name: 'theme', hint: '<>', available: false }
-        ],
-        [
-            'themes that are null',
-            () => commands({ themes: null })[0],
-            { name: 'theme', hint: '<>', available: false }
-        ],
-        [
-            'themes that are empty',
-            () => commands({ themes: [] })[0],
-            { name: 'theme', hint: '<>', available: false }
-        ],
-        [
-            'themes with a name that is a number and a row that is a string',
-            () => commands({ themes: [{ name: 3 }, 'x'] })[0],
-            { name: 'theme', hint: '<>', available: false }
-        ],
-        [
             'themes with rows that are not maps',
             () => commands({ themes: [null, 3, [], 'a', { name: 'b' }] })[0],
             { name: 'theme', hint: '<b>', available: true }
@@ -351,49 +249,14 @@ describe('the palette readers over config and entries of the wrong type', () => 
             { name: 'theme', hint: '<b>', available: true }
         ],
         [
-            'themes with a name that is a list',
-            () => commands({ themes: [{ name: ['a'] }, { name: 'b' }] })[0],
-            { name: 'theme', hint: '<b>', available: true }
-        ],
-        [
-            'themes with a name that is null',
-            () => commands({ themes: [{ name: null }, { name: 'b' }] })[0],
-            { name: 'theme', hint: '<b>', available: true }
-        ],
-        [
             'themes with a blank name',
             () => commands({ themes: [{ name: ' ' }] })[0],
             { name: 'theme', hint: '< >', available: true }
         ],
         [
-            'themes with extra fields',
-            () => commands({ themes: [{ name: 'a', extra: 1 }, { name: 'b' }] })[0],
-            { name: 'theme', hint: '<a | b>', available: true }
-        ],
-        [
             'themes in the order the list holds them',
             () => commands({ themes: [{ name: 'b' }, { name: 'a' }] })[0],
             { name: 'theme', hint: '<b | a>', available: true }
-        ],
-        [
-            'the commands of a config with themes of the wrong type',
-            () => commands({ themes: [{ name: 3 }] }).map((command) => command.available),
-            [false, true, false, true, true, false, false, true, true, true, true]
-        ],
-        [
-            'a lead with a title that is a number and a subject',
-            () => feedIndex('leads', [{ title: 3, subject: 's' }]),
-            [
-                {
-                    id: 'feed:leads:s',
-                    kind: 'feed',
-                    label: 's',
-                    title: 's',
-                    text: 's',
-                    view: 'leads',
-                    state: { reveal: 's', expiredOpen: true }
-                }
-            ]
         ],
         [
             'a lead with a title and a subject',
@@ -441,21 +304,6 @@ describe('the palette readers over config and entries of the wrong type', () => 
             ]
         ],
         [
-            'a lead with an empty title and an empty subject',
-            () => feedIndex('leads', [{ title: '', subject: '', company: 'c' }]),
-            [
-                {
-                    id: 'feed:leads:c',
-                    kind: 'feed',
-                    label: 'c',
-                    title: 'c',
-                    text: 'c',
-                    view: 'leads',
-                    state: { reveal: 'c', expiredOpen: true }
-                }
-            ]
-        ],
-        [
             'a lead with a title that is null and a subject that is a list',
             () => feedIndex('leads', [{ title: null, subject: ['x'], company: 'c' }]),
             [
@@ -467,36 +315,6 @@ describe('the palette readers over config and entries of the wrong type', () => 
                     text: 'x c',
                     view: 'leads',
                     state: { reveal: 'x', expiredOpen: true }
-                }
-            ]
-        ],
-        [
-            'a lead with no title and a subject',
-            () => feedIndex('leads', [{ subject: 'S' }]),
-            [
-                {
-                    id: 'feed:leads:S',
-                    kind: 'feed',
-                    label: 'S',
-                    title: 'S',
-                    text: 'S',
-                    view: 'leads',
-                    state: { reveal: 'S', expiredOpen: true }
-                }
-            ]
-        ],
-        [
-            'a lead with nothing a string',
-            () => feedIndex('leads', [{ title: 3, subject: 4 }]),
-            [
-                {
-                    id: 'feed:leads:leads#0',
-                    kind: 'feed',
-                    label: 'leads#0',
-                    title: 'leads#0',
-                    text: '',
-                    view: 'leads',
-                    state: { reveal: 'leads#0', expiredOpen: true }
                 }
             ]
         ],
@@ -556,21 +374,6 @@ describe('the palette readers over config and entries of the wrong type', () => 
             ]
         ],
         [
-            'a radar entry with a title that is a number and a subject',
-            () => feedIndex('radar', [{ title: 3, subject: 's' }]),
-            [
-                {
-                    id: 'feed:radar:s',
-                    kind: 'feed',
-                    label: 's',
-                    title: 's',
-                    text: 's',
-                    view: 'radar',
-                    state: { reveal: 's', dismissedOpen: true }
-                }
-            ]
-        ],
-        [
             'a radar entry with a title',
             () => feedIndex('radar', [{ title: 'R', subject: 'S' }]),
             [
@@ -612,21 +415,6 @@ describe('the palette readers over config and entries of the wrong type', () => 
                     text: 'f.md',
                     view: 'linkedin',
                     state: { reveal: 'f.md' }
-                }
-            ]
-        ],
-        [
-            'a linkedin entry with an empty file and a title',
-            () => feedIndex('linkedin', [{ file: '', title: 't' }]),
-            [
-                {
-                    id: 'feed:linkedin:t',
-                    kind: 'feed',
-                    label: 't',
-                    title: 't',
-                    text: 't',
-                    view: 'linkedin',
-                    state: { reveal: 't' }
                 }
             ]
         ],

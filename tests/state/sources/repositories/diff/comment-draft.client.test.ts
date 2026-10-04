@@ -1,9 +1,9 @@
-// Layer 4, test. The comment box of one file section (views/sources/repositories/diff/
-// comment-draft.svelte.ts), in Svelte's client runtime since it registers effects: where the box is
-// and what it keeps when it closes or moves, what a send does for each way it can end, the box
-// closing when its side stops being offered, the line saying where a comment went clearing after
-// NOTICE_MS, and a send that ends after its box went handing nothing back. Every dependency of a
-// send is a fake, so no terminal or clipboard is reached.
+// Layer 2, client-state tests. The comment box of one file section
+// (views/sources/repositories/diff/comment-draft.svelte.ts), in Svelte's client runtime since it
+// registers effects: where the box is and what it keeps when it closes or moves, what a send does
+// for each way it can end, the box closing when its side stops being offered, the line saying where
+// a comment went clearing after NOTICE_MS, and a send that ends after its box went handing nothing
+// back. Every dependency of a send is a fake, so no terminal or clipboard is reached.
 //
 // It does not cover the markup that draws the box
 // (tests/views/sources/repositories/diff/diff-pane.test.ts) or the box inside Monaco's overlay,
@@ -12,7 +12,7 @@
 import { flushSync } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, t } from '../../../../../src/lib/state/shared/words/text.ts';
 import {
     NOTICE_MS,
     type DiffSide
@@ -90,7 +90,7 @@ describe('where the box is and what it keeps', () => {
 
     it('forgets the last failure when the text changes', () => {
         const { box, stop } = make();
-        box.failure = 'The terminal did not answer.';
+        box.failure = 'a failure';
         box.write('x');
         expect(box.failure).toBe('');
         stop();
@@ -137,7 +137,7 @@ describe('a send', () => {
         box.write('  rename this  ');
         await box.send();
         expect(typed).toEqual(['a.ts:3: rename this']);
-        expect(box.notice).toBe('Sent to The live one.');
+        expect(box.notice).toBe(t('sessions.comment_sent', 'The live one'));
         expect(box.at).toBeNull();
         expect(box.text).toBe('');
         expect(box.sending).toBe(false);
@@ -160,9 +160,7 @@ describe('a send', () => {
         await box.send();
         expect(typed).toEqual([]);
         expect(copied).toEqual(['a.ts:3: fix']);
-        expect(box.notice).toBe(
-            'The live one has no oculus terminal now. The comment is on the clipboard.'
-        );
+        expect(box.notice).toBe(t('sessions.comment_copied', 'The live one'));
         stop();
     });
 
@@ -185,7 +183,7 @@ describe('a send', () => {
         box.open('modified', 3);
         box.write('fix');
         await box.send();
-        expect(box.failure).toBe('The clipboard refused the copy.');
+        expect(box.failure).toBe(t('sessions.comment_clipboard'));
         expect(box.at).not.toBeNull();
         stop();
     });
@@ -200,7 +198,7 @@ describe('a send', () => {
         box.write('bell\u0007');
         await box.send();
         expect(typed).toEqual([]);
-        expect(box.failure).toContain('control character');
+        expect(box.failure).toBe(t('sessions.comment_control'));
         stop();
     });
 

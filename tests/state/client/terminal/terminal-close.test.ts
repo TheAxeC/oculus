@@ -1,8 +1,8 @@
-// Layer 4, client-state test. Closing ends what a Terminal tab owns: closing the tab, the pane
-// holding it, the page holding it and a page reset each stop the running terminals the tab lists;
-// a move to another pane or page, a split, a reload, a view leaving the registry and a terminal
-// that ended on its own stop none. The fresh busy read a close asks first, and a start answered
-// after its tab was closed.
+// Layer 2, client-state tests. Closing ends what a Terminal tab owns: closing the tab, the pane
+// holding it, the page holding it and a page reset each stop the running terminals the tab lists; a
+// move to another pane or page, a split, a reload, a view leaving the registry and a terminal that
+// ended on its own stop none. The fresh busy read a close asks first, and a start answered after
+// its tab was closed.
 //
 // The client is built through the client's own wiring (state/client/context.ts) over a stubbed
 // `fetch` that records each stop and answers the busy read from a table the case sets.
@@ -275,10 +275,9 @@ describe('a tab that is moved, split or reloaded', () => {
 });
 
 describe('a terminal that ended on its own', () => {
-    // Revert: close the tab in closeEnded before it is written without the ended terminal; the
-    // running check of the store's ending catches the ended terminal as well, so no revert of the
-    // order alone turns this red.
-    it('audits that closes its tab as before and tries to stop nothing', async () => {
+    // Revert: close no tab left owning none in closeEnded of terminal-lists.ts. The empty stops
+    // list holds because the ended terminal is not listed, so closing its tab sends no stop.
+    it('closes the tab of its last terminal and sends no stop for it', async () => {
         const id = owning([A]);
         listed([A]);
         listed([]);

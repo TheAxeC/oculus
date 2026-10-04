@@ -1,5 +1,5 @@
-// The edit form as config/catalogs/manifest-schema.yml describes it: every field has a widget and a
-// section, and every widget that offers choices can find them.
+// Layer 2, client-state tests. The edit form as config/catalogs/manifest-schema.yml describes it:
+// every field has a widget and a section, and every widget that offers choices can find them.
 //
 // The schema read here is the real config, so this is the gate on that file: a field added without
 // a type, or put in a section that does not exist, fails here rather than rendering as a blank row.
@@ -152,12 +152,7 @@ function snapshot(): Snapshot {
 }
 
 describe('the form the schema describes', () => {
-    it('holds the whole manifest, one field at a time', () => {
-        expect(fields.length).toBe(46);
-    });
-
-    it('names seven sections and puts every field in one of them', () => {
-        expect(sections.length).toBe(7);
+    it('puts every field in one of the sections', () => {
         const stray = fields.filter((one) => !sections.includes(one.section));
         expect(stray.map((one) => `${one.field}: ${one.section}`)).toEqual([]);
     });
@@ -180,11 +175,6 @@ describe('the form the schema describes', () => {
             (one) => one.from !== undefined && !SOURCES.includes(one.from)
         );
         expect(unknown.map((one) => `${one.field}: ${one.from}`)).toEqual([]);
-    });
-
-    it('keeps the order the file has', () => {
-        expect(fields.slice(0, 3).map((one) => one.field)).toEqual(['id', 'tier', 'type']);
-        expect(fields[fields.length - 1].field).toBe('subtasks');
     });
 });
 
@@ -224,13 +214,6 @@ describe('where the choices come from', () => {
         ]);
     });
 
-    it('resolves a literal list to itself', () => {
-        expect(choicesOf('code_availability.visibility')).toEqual([
-            { id: 'public', label: 'public' },
-            { id: 'private', label: 'private' }
-        ]);
-    });
-
     it('has no choices before the snapshot arrives, rather than an error', () => {
         const field = fields.find((one) => one.field === 'venue_id');
         expect(choicesFor(present(field, 'field venue_id'), null, config)).toEqual([]);
@@ -251,22 +234,11 @@ describe('the values a form opens with', () => {
 
     it('opens the compute field with the keys of the resources the project names', () => {
         expect(values.compute).toEqual(['utwente']);
-        expect(fields.find((one) => one.field === 'compute')).toMatchObject({
-            type: 'chips',
-            from: 'resources'
-        });
     });
 
     it('has nothing for the fields the model does not carry', () => {
         const missing = fields.filter((one) => !(one.field in values)).map((one) => one.field);
         expect(missing.sort()).toEqual([...NOT_IN_MODEL].sort());
-    });
-
-    it('shows a list as one item per line and reads it back as a list', () => {
-        expect(asText(['one', 'two'])).toBe('one\ntwo');
-        expect(asList(['one'])).toEqual(['one']);
-        expect(asList('one')).toEqual(['one']);
-        expect(asText(undefined)).toBe('');
     });
 });
 
@@ -378,19 +350,6 @@ describe('the fields of a schema of the wrong shape', () => {
         expect(found).toStrictEqual([bare('f', { options: expected })]);
     });
 
-    it('answers a field as its name, label, help, type, section, from and options, all present', () => {
-        const found = formFields(withSchema({ fields: { f: {} } }));
-        expect(Object.keys(found[0])).toStrictEqual([
-            'field',
-            'label',
-            'help',
-            'type',
-            'section',
-            'from',
-            'options'
-        ]);
-    });
-
     it('keeps a field named __proto__', () => {
         const fields = parsed('{"__proto__":{"label":"P","type":"text"},"a":{}}');
         expect(formFields(withSchema({ fields })).map((one) => one.field)).toStrictEqual([
@@ -432,7 +391,6 @@ describe('the choices of a vocabulary of the wrong shape', () => {
             { id: 'a', label: 'a' },
             { id: 'k5', label: 'k5' }
         ]);
-        expect(Object.keys(found[1])).toStrictEqual(['id', 'label']);
     });
 
     it.each([
@@ -477,16 +435,14 @@ describe('the choices of a vocabulary of the wrong shape', () => {
 });
 
 describe('the values and the text of a form over the wrong type', () => {
-    it('opens a pin as ticked only when the project says true', () => {
-        for (const [pin, expected] of [
-            [true, true],
-            [false, false],
-            ['true', false],
-            [1, false],
-            [undefined, false]
-        ] as [unknown, boolean][]) {
-            expect(fieldValues(project({ pin } as Partial<Project>)).pin).toBe(expected);
-        }
+    it.each([
+        ['true', true, true],
+        ['false', false, false],
+        ['the text true', 'true', false],
+        ['the number 1', 1, false],
+        ['nothing', undefined, false]
+    ])('opens a pin as ticked only when the project says true, for %s', (_name, pin, expected) => {
+        expect(fieldValues(project({ pin } as Partial<Project>)).pin).toBe(expected);
     });
 
     it('opens the fields of a project without code availability or a domain as undefined', () => {

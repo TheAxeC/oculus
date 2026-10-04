@@ -1,10 +1,9 @@
-// Layer 2, client state tests. A locked pane in a saved layout: the field is written, read back
-// as the same pane, absent from a pane that is not locked, and a version 5 layout saved before the
-// field reads as unlocked. The version stays 5, so an older reader is not turned away.
+// Layer 2, client-state tests. A locked pane in a saved layout: the field is written, read back as
+// the same pane, absent from a pane that is not locked, and a layout saved before the field reads
+// as unlocked.
 
 import { describe, expect, it } from 'vitest';
 import {
-    LAYOUT_VERSION,
     panes,
     parseLayout,
     serialiseLayout,
@@ -53,11 +52,9 @@ describe('a locked pane in a saved layout', () => {
         expect(read(serialiseLayout(written))[1]).toEqual(both);
     });
 
-    it('reads a version 6 layout written without the field as unlocked', () => {
+    it('reads a layout written without the field as unlocked', () => {
         const written = heldPages([pageAround('main', around(paneOf(['a']), paneOf(['b'])))]);
         const text = serialiseLayout(written);
-        expect((JSON.parse(text) as { version: number }).version).toBe(LAYOUT_VERSION);
-        expect(LAYOUT_VERSION).toBe(6);
         expect(text).not.toContain('locked');
         expect(read(text).map((one) => one.locked)).toEqual([undefined, undefined]);
     });

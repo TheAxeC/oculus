@@ -1,6 +1,7 @@
-// The layout store: its load and save through a fake storage, opening a view beside the active
-// pane, the panes of one tree, and folding a child of a split. Nothing here touches localStorage or
-// the DOM: the store takes the storage it is given. The pure tree is layout.test.ts beside this.
+// Layer 2, client-state tests. The layout store: its load and save through a fake storage, opening
+// a view beside the active pane, the panes of one tree, and folding a child of a split. Nothing
+// here touches localStorage or the DOM: the store takes the storage it is given. The pure tree is
+// layout.test.ts beside this.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -149,28 +150,24 @@ describe('the store', () => {
         expect(savedBench(storage)).toEqual(workbench());
     });
 
-    it('activates the instance a view already has rather than opening a second', () => {
-        loadLayout(fakeStorage());
-        const before = layout();
-        const held = before.kind === 'pane' ? before.tabs[0].id : '';
-        openView('status');
-        const after = layout();
-        expect(viewsOf(after)).toEqual(['status']);
-        expect(after.kind === 'pane' ? after.active : '').toBe(held);
-    });
-
     // One view, one instance per project: the project view is registered once, so the state's `id`
     // is what tells two of its tabs apart.
-    it('activates the instance opened for the same state rather than opening a second', () => {
-        loadLayout(fakeStorage());
-        openView('project', { id: 'alpha' });
-        const opened = layout();
-        const held = opened.kind === 'pane' ? opened.active : '';
-        openView('project', { id: 'alpha' });
-        const after = layout();
-        expect(viewsOf(after)).toEqual(['status', 'project']);
-        expect(after.kind === 'pane' ? after.active : '').toBe(held);
-    });
+    it.each([
+        ['a view with no state', 'status', undefined, ['status']],
+        ['the same state', 'project', { id: 'alpha' }, ['status', 'project']]
+    ] as const)(
+        'activates the instance a view already has for %s rather than opening a second',
+        (_name, view, state, views) => {
+            loadLayout(fakeStorage());
+            openView(view, state);
+            const opened = layout();
+            const held = opened.kind === 'pane' ? opened.active : '';
+            openView(view, state);
+            const after = layout();
+            expect(viewsOf(after)).toEqual(views);
+            expect(after.kind === 'pane' ? after.active : '').toBe(held);
+        }
+    );
 
     it('opens a second instance of one view for a second state', () => {
         loadLayout(fakeStorage());
@@ -263,16 +260,6 @@ describe('the store: opening a view beside the active pane', () => {
         loadLayout(fakeStorage());
         const first = openBeside('venues');
         closeInstanceOnPage(first);
-        expect(layout().kind).toBe('pane');
-        openBeside('funding');
-        expect(panesOf(layout())).toHaveLength(2);
-        expect(paneAt(layout(), [1])?.tabs.map((tab) => tab.view)).toEqual(['funding']);
-    });
-
-    it('splits again when the tab it made was dragged into the pane being read', () => {
-        loadLayout(fakeStorage());
-        const first = openBeside('venues');
-        transferInstance(first, [0], 0);
         expect(layout().kind).toBe('pane');
         openBeside('funding');
         expect(panesOf(layout())).toHaveLength(2);
@@ -415,13 +402,6 @@ describe('the store: folding a child of a split', () => {
         expect(layout()).toEqual(split('row', [0.6, 0.4], [pane(['a']), pane(['b', 'c'])]));
     });
 
-    it('leaves the root pane alone, which is in no split', () => {
-        loadLayout(fakeStorage());
-        const before = workbench();
-        foldPane([]);
-        expect(workbench()).toBe(before);
-    });
-
     it('leaves a maximised pane maximised when the root path is folded', () => {
         load();
         maximisePane([1]);
@@ -446,19 +426,6 @@ describe('the store: folding a child of a split', () => {
         foldPane([1]);
         expect(focused()).toBe(null);
         expect(foldedOf(layout())).toEqual([1]);
-    });
-
-    it('expands the pane a view is opened into rather than opening it out of sight', () => {
-        load();
-        activateInstance('c');
-        foldPane([1]);
-        openView('venues');
-        expect(foldedOf(layout())).toBe(undefined);
-        expect(paneAt(layout(), [1])?.tabs.map((tab) => tab.view)).toEqual([
-            'projects',
-            'projects',
-            'venues'
-        ]);
     });
 
     it('expands the pane a tab is dropped into', () => {

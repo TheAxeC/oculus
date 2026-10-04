@@ -1,7 +1,7 @@
-// The Calendar's pure rules: which day an event lands on, how many of today's are still to come
-// (the number the view's badge draws), the view kept in the instance state, the payload's events in
-// the calendar library's shape with each one's tooltip, the dates the calendar may page between,
-// and the options the library is handed.
+// Layer 2, client-state tests. The Calendar's rules: which day an event lands on, how many of
+// today's are still to come (the number the view's badge draws), the view kept in the instance
+// state, the payload's events in the calendar library's shape with each one's tooltip, the dates
+// the calendar may page between, and the options the library is handed.
 
 import { describe, expect, it } from 'vitest';
 import type {
@@ -266,19 +266,13 @@ describe('the options the library is handed', () => {
         ).toEqual({ start: '2031-03-01', end: '2031-03-16' });
     });
 
-    it('carry the view the instance keeps', () => {
-        for (const view of ['timeGridDay', 'timeGridWeek', 'dayGridMonth', 'listWeek'] as const) {
-            expect(calendarOptions(PAYLOAD, view, WORDS, HUES).view).toBe(view);
-        }
-    });
-
     it('carry no dates to page between for a payload that names no moment it was read at', () => {
         const options = calendarOptions({ ...PAYLOAD, updated: '' }, 'timeGridWeek', WORDS, HUES);
         // With no moment there is no window, so the library pages without bound.
         expect('validRange' in options).toBe(false);
     });
 
-    it("carry the payload's events, the catalog's words and the pane's height", () => {
+    it("carry the payload's events, and none without a payload", () => {
         const one = event({ id: 'google-work-primary-o' });
         const options = calendarOptions(
             { ...PAYLOAD, events: [one], accounts: [account('google', 'work')] },
@@ -287,9 +281,6 @@ describe('the options the library is handed', () => {
             HUES
         );
         expect(options.events.map((shaped) => shaped.id)).toEqual(['google-work-primary-o']);
-        expect(options.allDayContent).toBe(WORDS.allDay);
-        expect(options.noEventsContent).toBe(WORDS.noEvents);
-        expect(options.height).toBe('100%');
         expect(calendarOptions(null, 'listWeek', WORDS, HUES).events).toEqual([]);
     });
 });

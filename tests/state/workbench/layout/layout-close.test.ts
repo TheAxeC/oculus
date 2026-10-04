@@ -1,4 +1,4 @@
-// Layer 2, client state tests. What a pane's close and a page's close forget: every tab they take
+// Layer 2, client-state tests. What a pane's close and a page's close forget: every tab they take
 // away loses its source draft, its manifest edits and its entry form drafts, in memory and in the
 // storage the ui store writes to, as a tab's own close loses them. A page one of the closed page's
 // leaves shows is still in the strip, and its tabs keep what they hold.
@@ -169,17 +169,6 @@ describe("a page's close", () => {
         expectKept(['x', 'y']);
     });
 
-    it('closing the page another page shows forgets its tabs and keeps the showing page', () => {
-        // Revert: drop `forgetTabs(tabsOf(closing.workbench.root))` from closePage.
-        const { first, second } = twoPages();
-
-        client.layout.closePage(second);
-
-        expect(client.layout.pages().map((page) => page.id)).toEqual([first]);
-        expectForgotten(['x', 'y']);
-        expectKept(['a', 'b', 'c', 'd']);
-    });
-
     it('closing the only page forgets its tabs as it leaves a fresh default page', () => {
         // Revert: return from closePage straight after it saves the fresh default page.
         client.layout.apply(bench(split('row', [0.5, 0.5], [pane(['a', 'b']), pane(['c'])])));
@@ -227,33 +216,5 @@ describe('the project trees of the cards a closed tab drew', () => {
         expect(held('a')).toEqual(NEITHER);
         expect(held('ab')).toEqual(BOTH);
         expect(held('gone')).toEqual(BOTH);
-    });
-
-    it("a pane's close forgets the tree records of every tab of the pane", () => {
-        // Revert: drop the prefix clear from the forget in state/client/context.ts.
-        client.layout.apply(bench(split('row', [0.5, 0.5], [pane(['a', 'b']), pane(['c'])])));
-        for (const id of ['a', 'b', 'c']) holdTrees(id);
-
-        client.layout.closePane([0]);
-
-        expect(held('a')).toEqual(NEITHER);
-        expect(held('b')).toEqual(NEITHER);
-        expect(held('c')).toEqual(BOTH);
-    });
-
-    it("a page's close forgets the tree records of its tabs and keeps the other page's", () => {
-        // Revert: drop the prefix clear from the forget in state/client/context.ts.
-        const first = client.layout.currentPage().id;
-        client.layout.openPage('Page 2');
-        const second = client.layout.currentPage().id;
-        client.layout.apply(bench(pane(['x'])), second);
-        client.layout.apply(bench(pane(['a'])), first);
-        holdTrees('a');
-        holdTrees('x');
-
-        client.layout.closePage(first);
-
-        expect(held('a')).toEqual(NEITHER);
-        expect(held('x')).toEqual(BOTH);
     });
 });

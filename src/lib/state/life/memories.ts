@@ -8,7 +8,7 @@
 //
 // The limit is data/file-ops.ts's, which the server enforces in server/content/memories.ts and the
 // file operations of the Files view enforce for an upload, so the page and the server hold one
-// number; tests/state/life/memories-message.test.ts pins the two exports equal.
+// number.
 
 import { MAX_UPLOAD_BYTES } from '../../data/file-ops.ts';
 import { t } from '../shared/words/text.ts';

@@ -1,6 +1,6 @@
-// The board's facets and filters over a hand-built snapshot: what the facets count, what a filter
-// and a search leave, which bucket an item falls in, and what a saved state parses to. Everything
-// here is pure, so nothing reads a file and nothing renders.
+// Layer 2, client-state tests. The board's facets and filters over a hand-built snapshot: what the
+// facets count, what a filter and a search leave, which bucket an item falls in, and what a saved
+// state parses to. Everything here is pure, so nothing reads a file and nothing renders.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -339,9 +339,5 @@ describe('applyFilters, the quick filters and the type toggles', () => {
             'alpha',
             'bravo'
         ]);
-    });
-
-    it('changes nothing when it is given no quick filter at all', () => {
-        expect(ids(applyFilters(items, {}, ''))).toEqual(ids(items));
     });
 });

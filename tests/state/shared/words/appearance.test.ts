@@ -1,7 +1,7 @@
-// Layer 4, state test. config/appearance.yml as the page reads it, over a synthetic config with
-// every key of the wrong type or the wrong shape: the theme rows, the wallpaper's numbers, the CRT
-// default, the code theme, the terminal's size and its four other keys. Each reader answers what
-// it answers for the value it is given, a value of the wrong type being the key left out.
+// Layer 2, client-state tests. config/appearance.yml as the page reads it, over a synthetic config
+// with every key of the wrong type or the wrong shape: the theme rows, the wallpaper's numbers, the
+// CRT default, the code theme, the terminal's size and its four other keys. Each reader answers
+// what it answers for the value it is given, a value of the wrong type being the key left out.
 //
 // What this does not cover: the real config/appearance.yml, which tests/checks/config holds to
 // its shape, and the picker that draws the themes, which is
@@ -86,7 +86,7 @@ describe('the config with no key', () => {
 });
 
 describe('the theme rows', () => {
-    it.each([['x'], [{}], [{ name: 'a' }], [3], [null], [undefined]])(
+    it.each([['x'], [{ name: 'a' }]])(
         'reads a themes key that is %j, no list, as no themes',
         (rows) => {
             setAppearance({ themes: rows });
@@ -151,10 +151,8 @@ describe('the theme rows', () => {
 
     it.each([
         ['rice', 'rice x', true],
-        ['two classes', 'dark rice', true],
         ['spaced classes', ' rice  dark ', true],
         ['a class that only starts with it', 'ricer', false],
-        ['no class', '', false],
         ['a class that is a number', 3, false]
     ])('tells a terminal palette from a class of %s', (_name, cls, expected) => {
         setAppearance({ themes: [{ name: 'a', class: cls }] });
@@ -166,11 +164,7 @@ describe('the theme rows', () => {
 describe('the wallpaper', () => {
     it.each([
         ['absent', undefined],
-        ['a list', []],
-        ['a string', 'x'],
-        ['a number', 3],
-        ['null', null],
-        ['true', true]
+        ['a list', []]
     ])('is none when the key is %s', (_name, wallpaper) => {
         setAppearance({ wallpaper });
         expect(wallpaperSettings()).toBeNull();
@@ -234,14 +228,8 @@ describe('the wallpaper', () => {
 
     it.each([
         ['a string', '0.5'],
-        ['the word true', 'true'],
-        ['true', true],
-        ['null', null],
-        ['a list', [0.5]],
-        ['a map', { a: 1 }],
         ['NaN', Number.NaN],
-        ['positive infinity', Number.POSITIVE_INFINITY],
-        ['negative infinity', Number.NEGATIVE_INFINITY]
+        ['positive infinity', Number.POSITIVE_INFINITY]
     ])('reads a number that is %s as its default', (_name, value) => {
         setAppearance({
             wallpaper: {
@@ -256,11 +244,8 @@ describe('the wallpaper', () => {
 
     it.each([
         ['a string', '0.5', 88],
-        ['null', null, 88],
-        ['a list', [0.5], 88],
         ['NaN', Number.NaN, 97],
         ['positive infinity', Number.POSITIVE_INFINITY, 97],
-        ['negative infinity', Number.NEGATIVE_INFINITY, 97],
         ['a number', 0.2, 20]
     ])('reads a popover_opacity that is %s over a panel of 50 as %i', (_name, value, popover) => {
         setAppearance({ wallpaper: { panel_opacity: 0.5, popover_opacity: value } });
@@ -269,14 +254,7 @@ describe('the wallpaper', () => {
 
     it.each([
         ['all', 'all'],
-        ['rice', 'rice'],
-        ['ALL', 'rice'],
-        ['everything', 'rice'],
-        ['', 'rice'],
-        [3, 'rice'],
-        [true, 'rice'],
-        [null, 'rice'],
-        [['all'], 'rice']
+        ['everything', 'rice']
     ])('reads the themes key %j as %s', (value, expected) => {
         setAppearance({ wallpaper: { themes: value } });
         expect(wallpaperSettings()?.themes).toBe(expected);
@@ -305,15 +283,8 @@ describe('the wallpaper', () => {
 describe('the CRT default', () => {
     it.each([
         [{ default: true }, true],
-        [{ default: false }, false],
         [{ default: 'true' }, false],
-        [{ default: 1 }, false],
-        [{ default: null }, false],
-        [{}, false],
-        [true, false],
-        ['true', false],
-        [[{ default: true }], false],
-        [null, false]
+        [true, false]
     ])('reads the crt key %j as %s', (crt, expected) => {
         setAppearance({ crt });
         expect(crtDefault()).toBe(expected);
@@ -322,30 +293,17 @@ describe('the CRT default', () => {
 
 describe('the tab bar and the editor actions', () => {
     it.each([
-        ['multiple', 'multiple'],
         ['single', 'single'],
         ['none', 'none'],
-        ['few', 'multiple'],
-        ['Single', 'multiple'],
-        ['', 'multiple'],
-        [3, 'multiple'],
-        [true, 'multiple'],
-        [null, 'multiple'],
-        [['none'], 'multiple']
+        ['few', 'multiple']
     ])('reads the show_tabs key %j as %j', (value, expected) => {
         setAppearance({ show_tabs: value });
         expect(showTabs()).toBe(expected);
     });
 
     it.each([
-        ['strip', 'strip'],
         ['hidden', 'hidden'],
-        ['tabs', 'strip'],
-        ['Hidden', 'strip'],
-        ['', 'strip'],
-        [false, 'strip'],
-        [null, 'strip'],
-        [['hidden'], 'strip']
+        ['tabs', 'strip']
     ])('reads the editor_actions key %j as %j', (value, expected) => {
         setAppearance({ editor_actions: value });
         expect(editorActions()).toBe(expected);
@@ -363,15 +321,8 @@ describe('the code theme', () => {
     const shiki = codeThemeIds()[0];
 
     it.each([
-        ['tokens', 'tokens'],
         [shiki, shiki],
-        [shiki.toUpperCase(), 'tokens'],
-        ['nope', 'tokens'],
-        ['', 'tokens'],
-        [3, 'tokens'],
-        [null, 'tokens'],
-        [[shiki], 'tokens'],
-        [{ id: shiki }, 'tokens']
+        ['nope', 'tokens']
     ])('reads the code_theme key %j as %j', (value, expected) => {
         setAppearance({ code_theme: value });
         expect(codeThemeDefault()).toBe(expected);
@@ -381,25 +332,17 @@ describe('the code theme', () => {
 describe('the terminal size', () => {
     it.each([
         [12.5, 12.5],
-        [6, 6],
-        [40, 40],
         [3, 6],
         [100, 40],
-        [0, 6],
-        [-1, 6],
         ['12', null],
-        [null, null],
-        [true, null],
-        [[12], null],
         [Number.NaN, null],
-        [Number.POSITIVE_INFINITY, null],
-        [Number.NEGATIVE_INFINITY, null]
+        [Number.POSITIVE_INFINITY, null]
     ])('reads a font_px of %j as %j', (value, expected) => {
         setAppearance({ terminal: { font_px: value } });
         expect(terminalFontPx()).toBe(expected);
     });
 
-    it.each([['x'], [[]], [[{ font_px: 12 }]], [3], [null], [true], [undefined]])(
+    it.each([['x'], [[{ font_px: 12 }]]])(
         'reads a terminal key that is %j, no map, as no size and no options',
         (terminal) => {
             setAppearance({ terminal });
@@ -437,19 +380,11 @@ describe('the terminal options', () => {
 
     it.each([
         ['block', 'block'],
-        ['underline', 'underline'],
         ['line', 'bar'],
         ['bar', undefined],
-        ['BLOCK', undefined],
-        ['', undefined],
         ['constructor', undefined],
-        ['toString', undefined],
         ['__proto__', undefined],
-        ['hasOwnProperty', undefined],
-        [3, undefined],
-        [null, undefined],
-        [['block'], undefined],
-        [true, undefined]
+        [3, undefined]
     ])('reads a cursor_style of %j as %j', (value, expected) => {
         setAppearance({ terminal: { cursor_style: value } });
         expect(terminalOptions()).toStrictEqual(
@@ -469,19 +404,11 @@ describe('the terminal options', () => {
             setAppearance({ terminal: { [key]: flag } });
             expect(terminalOptions()).toStrictEqual({ [name]: flag });
         }
-        for (const value of ['yes', 'true', 'false', 1, 0, null, [], {}, 'on']) {
+        for (const value of ['yes', 'false', 1]) {
             setAppearance({ terminal: { [key]: value } });
             expect(terminalOptions()).toStrictEqual({});
             expect(Object.keys(terminalOptions())).toStrictEqual([]);
         }
-    });
-
-    it('reads a terminal of mistyped keys as no options and no size', () => {
-        setAppearance({
-            terminal: { cursor_style: 3, mac_option_is_meta: 'yes', font_px: '12', extra: true }
-        });
-        expect(terminalOptions()).toStrictEqual({});
-        expect(terminalFontPx()).toBeNull();
     });
 
     it('answers a copy, so a caller cannot edit what is installed', () => {

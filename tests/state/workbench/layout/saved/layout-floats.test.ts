@@ -1,4 +1,4 @@
-// Layer 2, client state tests. The floats in a saved layout: the envelope written with them, the
+// Layer 2, client-state tests. The floats in a saved layout: the envelope written with them, the
 // older envelopes read with none, a float that does not add up dropped with the rest kept, the ids
 // a float may not take, and the kind a kept empty pane carries.
 
@@ -30,7 +30,7 @@ function pages(floats: Float[] = []): Pages {
     return heldPages([pageAround('main', pane(['a', 'b']))], floats);
 }
 
-/** A version 5 envelope of these pages with the floats the caller wrote by hand. */
+/** An envelope of these pages at LAYOUT_VERSION with the floats the caller wrote by hand. */
 function envelope(floats: unknown, over: Record<string, unknown> = {}): string {
     const held = pages();
     return JSON.stringify({

@@ -1,6 +1,6 @@
-// The manifest editor's draft: the edits kept in the editor instance's ui record, compared against
-// the project's value in the snapshot now, forgotten by Revert and by what a save took, and read
-// back after a reload through a fake storage.
+// Layer 2, client-state tests. The manifest editor's draft: the edits kept in the editor instance's
+// ui record, compared against the project's value in the snapshot now, forgotten by Revert and by
+// what a save took, and read back after a reload through a fake storage.
 //
 // The project is synthetic and handed to the store through its projectOf argument, so what is
 // checked is the draft. Typing into the form and pressing Save are DOM events no case here fires.
@@ -167,15 +167,18 @@ describe('a reload', () => {
         expect(again.manifestDirty('ed-1')).toBe(true);
     });
 
-    it('reads nothing out of a record that is not a draft', () => {
-        expect(parseManifestDraft({ project: '', edits: {} })).toBeNull();
-        expect(parseManifestDraft({ project: 'alpha', edits: [] })).toBeNull();
-        expect(parseManifestDraft({ project: 'alpha' })).toBeNull();
-        expect(parseManifestDraft('alpha')).toBeNull();
-        expect(parseManifestDraft({ project: 'alpha', edits: { title: 'x' } })).toEqual({
-            project: 'alpha',
-            edits: { title: 'x' }
-        });
+    it.each([
+        ['a project with no name', { project: '', edits: {} }, null],
+        ['edits that are a list', { project: 'alpha', edits: [] }, null],
+        ['no edits', { project: 'alpha' }, null],
+        ['a string', 'alpha', null],
+        [
+            'a project and its edits',
+            { project: 'alpha', edits: { title: 'x' } },
+            { project: 'alpha', edits: { title: 'x' } }
+        ]
+    ])('reads %s of a saved record as %j', (_name, record, expected) => {
+        expect(parseManifestDraft(record)).toEqual(expected);
     });
 });
 

@@ -1,9 +1,9 @@
-// Layer 4, state test. The row of terminals a Terminal tab draws side by side (state/sessions/
-// terminal/terminal-tabs.ts): an ordered list with a share each and no count, the widths those
-// shares give in a pane of a given width with 80 pixels the least any terminal keeps, a Split
-// putting the new terminal right of the one split, Unsplit taking one out, a terminal leaving the
-// row, and every older saved shape read into it. Every rule is pure, so a case hands it a state and
-// reads the state it gives back.
+// Layer 2, client-state tests. The row of terminals a Terminal tab draws side by side
+// (state/sessions/terminal/terminal-tabs.ts): an ordered list with a share each and no count, the
+// widths those shares give in a pane of a given width with 80 pixels the least any terminal keeps,
+// a Split putting the new terminal right of the one split, Unsplit taking one out, a terminal
+// leaving the row, and every older saved shape read into it. Every rule is pure, so a case hands it
+// a state and reads the state it gives back.
 //
 // What this does NOT cover: the sideways scroll of a row wider than the pane and the left grid
 // staying mounted when a second joins, which are seen on screen; the store that starts the
@@ -60,7 +60,6 @@ describe('a row of any number', () => {
         const widths = rowWidths(four().shares, 300);
         expect(widths).toHaveLength(4);
         for (const width of widths) expect(width).toBeGreaterThanOrEqual(ROW_MIN);
-        expect(ROW_MIN).toBe(80);
         expect(sum(widths)).toBeGreaterThan(300);
     });
 

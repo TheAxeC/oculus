@@ -1,4 +1,4 @@
-// Layer 2, client-state test. The lines the Settings view says under the `editor.languages` row
+// Layer 2, client-state tests. The lines the Settings view says under the `editor.languages` row
 // about where a value comes from: each served root whose `.oculus/settings.yml` sets a language, a
 // root whose file was not read and why, and the entries of a read file that were skipped, driven
 // with a fake file store holding two roots.
@@ -40,7 +40,7 @@ function said(origins: ReturnType<typeof repoOrigins>): string[] {
 
 describe('where an editor.languages value comes from', () => {
     // Red when a root's languages, an unread file or a skipped entry is not said, or a root with
-    // nothing to say draws a line (cases 9, 10 and 30).
+    // nothing to say draws a line.
     it.each([
         [
             'the languages a root s file sets, by name, and nothing for a file without them',

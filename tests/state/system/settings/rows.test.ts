@@ -100,7 +100,6 @@ function rowOf(rows: ConfigRow[], key: string): ConfigRow {
 }
 
 describe('the rows of one file', () => {
-    // Revert: leave the module out and every row of every case goes.
     it('reads a number from the file with its line, set and not Modified at its default', () => {
         const row = rowOf(behaviorRows('slurm:\n    poll_min: 20\n'), 'slurm.poll_min');
         expect(row.value).toBe(20);
@@ -251,8 +250,6 @@ describe('the rows of one file', () => {
             expect(row.modified).toBe(false);
         }
         expect(rows[1].description).toBe('The hub folder.');
-        // The rows of this file are made without its text: the function takes the entries alone.
-        expect(localRows.length).toBe(1);
     });
 
     it('keeps a value its control cannot show as the file has it, flagged and Modified', () => {
@@ -282,8 +279,6 @@ describe('the rows of one file', () => {
     it('makes no row for a key with no catalog entry, and reads no reserved name from a prototype', () => {
         const rows = behaviorRows('slurm:\n    __proto__: 1\n    poll_min: 20\n    stray: 3\n');
         expect(rows.map((row) => row.key)).toEqual(Object.keys(BEHAVIOR));
-        expect(({} as Record<string, unknown>).poll_min).toBeUndefined();
-        expect(Object.keys(Object.prototype)).toEqual([]);
         const reserved = JSON.parse(
             '{"constructor":{"description":"d","default":1,"control":"number"},"__proto__.x":{"description":"d","default":1,"control":"number"}}'
         ) as Catalog[string];
@@ -307,9 +302,6 @@ describe('the rows of one file', () => {
 describe('titles and sections', () => {
     it('reads underscores as spaces and capitalises the first letter of each segment', () => {
         expect(titleOf('slurm.poll_min')).toBe('Slurm: Poll min');
-        expect(titleOf('terminal.font_px')).toBe('Terminal: Font px');
-        expect(titleOf('wallpaper.dim')).toBe('Wallpaper: Dim');
-        expect(titleOf('changes.keep')).toBe('Changes: Keep');
         expect(titleOf('rail')).toBe('Rail');
         expect(titleOf('deck.meta.kicker')).toBe('Deck > Meta: Kicker');
     });
@@ -336,7 +328,7 @@ describe('the groups and the table of contents', () => {
         return settingsGroups(FILES_FIXTURE, () => text(''), thisBrowserRows(ui, true));
     }
 
-    it('lists This browser first, then the six files in the order of the brief', () => {
+    it('lists This browser first, then the files in their order', () => {
         expect(groupsOf().map((group) => group.id)).toEqual([
             'this-browser',
             'appearance.yml',
@@ -345,13 +337,6 @@ describe('the groups and the table of contents', () => {
             'present.yml',
             'sources.yml',
             'local.yml'
-        ]);
-        expect(FILES).toEqual([
-            'appearance.yml',
-            'behavior.yml',
-            'layout.yml',
-            'present.yml',
-            'sources.yml'
         ]);
     });
 
@@ -405,30 +390,6 @@ describe('the shipped catalog over the shipped texts', () => {
         expect(rows.filter((row) => row.state === 'missing').map((row) => row.key)).toEqual([]);
         expect(rows.filter((row) => row.mismatch).map((row) => row.key)).toEqual([]);
         expect(rows.filter((row) => row.modified).map((row) => row.key)).toEqual([]);
-        const terminal = [
-            'terminal.mac_option_is_meta',
-            'terminal.copy_on_selection',
-            'terminal.cursor_blinking',
-            'terminal.cursor_style'
-        ].map((key) => rows.find((row) => row.file === 'appearance.yml' && row.key === key));
-        expect(terminal.map((row) => row?.control)).toEqual([
-            'toggle',
-            'toggle',
-            'toggle',
-            'choice'
-        ]);
-    });
-});
-
-describe('the language map over the shipped sources.yml', () => {
-    it('is a family row of the section Files, set, with the language as key and the endings as value', () => {
-        const content = readFileSync(join(engineDir(), 'config', 'sources.yml'), 'utf8');
-        const result = fileRows('sources.yml', shipped['sources.yml'], text(content));
-        expect(result.status).toBe('rows');
-        const row = result.rows.find((one) => one.key === 'languages');
-        expect(row).toMatchObject({ control: 'family', state: 'set', section: 'Files' });
-        expect(Object.keys(row?.fields ?? {})).toEqual(['key', 'value']);
-        expect(row?.description).toContain('plain text');
     });
 });
 

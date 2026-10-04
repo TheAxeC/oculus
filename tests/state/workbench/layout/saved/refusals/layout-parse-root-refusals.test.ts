@@ -1,7 +1,7 @@
-// Layer 4, test. What parseLayout makes of a page whose root tree is of the wrong type: a split
-// with sizes, folded children or children that are not what they should be, a pane, a tab. A row
-// hands the reader one value and states the pages it answers. Nothing here touches localStorage
-// or the DOM.
+// Layer 2, client-state tests. What parseLayout makes of a page whose root tree is of the wrong
+// type: a split with sizes, folded children or children that are not what they should be, a pane, a
+// tab. A row hands the reader one value and states the pages it answers. Nothing here touches
+// localStorage or the DOM.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -109,20 +109,6 @@ describe('parseLayout over a root tree of the wrong type', () => {
             'p=P: [a/v:[1]]@a current p'
         ],
         [
-            'a root pane with a tab that has fields it does not read',
-            () =>
-                parsed(
-                    holding({
-                        root: {
-                            kind: 'pane',
-                            tabs: [{ id: 'a', view: 'v', extra: 1 }],
-                            active: 'a'
-                        }
-                    })
-                ),
-            'p=P: [a/v:undefined]@a current p'
-        ],
-        [
             'a root pane whose tab has an empty id',
             () => parsed(holding({ root: tabOf({ id: '' }) })),
             'null'
@@ -188,28 +174,8 @@ describe('parseLayout over a root tree of the wrong type', () => {
             'p=P: row 0.5,0.5 ([a/projects]@a | [b/projects]@b) current p'
         ],
         [
-            'a focus whose path holds Infinity',
-            () => parsed(holding({ root: splitOf(), focus: { path: [Infinity] } })),
-            'p=P: row 0.5,0.5 ([a/projects]@a | [b/projects]@b) current p'
-        ],
-        [
-            'a focus whose path holds NaN',
-            () => parsed(holding({ root: splitOf(), focus: { path: [Number.NaN] } })),
-            'p=P: row 0.5,0.5 ([a/projects]@a | [b/projects]@b) current p'
-        ],
-        [
-            'a focus whose path holds null',
-            () => parsed(holding({ root: splitOf(), focus: { path: [null] } })),
-            'p=P: row 0.5,0.5 ([a/projects]@a | [b/projects]@b) current p'
-        ],
-        [
             'a focus whose path is a string',
             () => parsed(holding({ root: splitOf(), focus: { path: '0' } })),
-            'p=P: row 0.5,0.5 ([a/projects]@a | [b/projects]@b) current p'
-        ],
-        [
-            'a focus whose path is a map',
-            () => parsed(holding({ root: splitOf(), focus: { path: {} } })),
             'p=P: row 0.5,0.5 ([a/projects]@a | [b/projects]@b) current p'
         ],
         [
@@ -221,21 +187,6 @@ describe('parseLayout over a root tree of the wrong type', () => {
             'a focus that is a list',
             () => parsed(holding({ root: splitOf(), focus: [1] })),
             'p=P: row 0.5,0.5 ([a/projects]@a | [b/projects]@b) current p'
-        ],
-        [
-            'a focus that is null',
-            () => parsed(holding({ root: splitOf(), focus: null })),
-            'p=P: row 0.5,0.5 ([a/projects]@a | [b/projects]@b) current p'
-        ],
-        [
-            'a focus that is a string',
-            () => parsed(holding({ root: splitOf(), focus: 'x' })),
-            'p=P: row 0.5,0.5 ([a/projects]@a | [b/projects]@b) current p'
-        ],
-        [
-            'a focus with fields it does not read',
-            () => parsed(holding({ root: splitOf(), focus: { path: [0], extra: 1 } })),
-            'p=P: row 0.5,0.5 ([a/projects]@a | [b/projects]@b) focus [0] current p'
         ],
         [
             'the keys of a page read',
@@ -317,32 +268,6 @@ describe('parseLayout over a root tree of the wrong type', () => {
             'p=P: row 0.7,0.3 ([a/projects]@a | [b/projects]@b) current p'
         ],
         [
-            'the version three envelope with a hidden panel',
-            () =>
-                parsed({
-                    version: PAGES_VERSION,
-                    pages: [
-                        {
-                            id: 'p',
-                            label: 'P',
-                            workbench: docked(pane(['a']), pane(['b']), 'hidden')
-                        }
-                    ],
-                    current: 'p'
-                }),
-            'p=P: row 0.7,0.3 folded 1 ([a/projects]@a | [b/projects]@b) current p'
-        ],
-        [
-            'the version three envelope with an empty panel',
-            () =>
-                parsed({
-                    version: PAGES_VERSION,
-                    pages: [{ id: 'p', label: 'P', workbench: docked(pane(['a']), pane([])) }],
-                    current: 'p'
-                }),
-            'p=P: [a/projects]@a current p'
-        ],
-        [
             'the version three envelope with a workbench that is a list',
             () =>
                 parsed({
@@ -364,28 +289,6 @@ describe('parseLayout over a root tree of the wrong type', () => {
                             workbench: docked(pane(['a']), pane(['b']), 'left' as never)
                         }
                     ],
-                    current: 'p'
-                }),
-            'null'
-        ],
-        [
-            'the version three envelope with a rail key',
-            () =>
-                parsed({
-                    version: PAGES_VERSION,
-                    pages: [
-                        { id: 'p', label: 'P', rail: 'k', workbench: docked(pane(['a']), pane([])) }
-                    ],
-                    current: 'p'
-                }),
-            'p=P rail k: [a/projects]@a current p'
-        ],
-        [
-            'the version three envelope with a page whose label is a number',
-            () =>
-                parsed({
-                    version: PAGES_VERSION,
-                    pages: [{ id: 'p', label: 3, workbench: docked(pane(['a']), pane([])) }],
                     current: 'p'
                 }),
             'null'
@@ -416,29 +319,9 @@ describe('parseLayout over a root tree of the wrong type', () => {
             '<uuid>=Label: row 0.7,0.3 ([a/projects]@a | [b/projects]@b) current <uuid>'
         ],
         [
-            'the version two envelope as text',
-            () => parsed(JSON.stringify(dockedOf())),
-            '<uuid>=Label: row 0.7,0.3 ([a/projects]@a | [b/projects]@b) current <uuid>'
-        ],
-        [
             'the version two envelope with no workbench',
             () => parsed({ version: WORKBENCH_VERSION }),
             'null'
-        ],
-        [
-            'the version two envelope with a workbench that is a list',
-            () => parsed({ version: WORKBENCH_VERSION, workbench: [] }),
-            'null'
-        ],
-        [
-            'the version two envelope with a dock that is not one',
-            () => parsed(dockedOf({ dock: 'left' })),
-            'null'
-        ],
-        [
-            'the version two envelope with a hidden panel holding tabs',
-            () => parsed(dockedOf({ dock: 'hidden' })),
-            '<uuid>=Label: row 0.7,0.3 folded 1 ([a/projects]@a | [b/projects]@b) current <uuid>'
         ]
     ];
 

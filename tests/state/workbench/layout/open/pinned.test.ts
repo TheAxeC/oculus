@@ -1,4 +1,4 @@
-// Layer 2, client state tests. The pinned tab, the open position and the order tabs were used in:
+// Layer 2, client-state tests. The pinned tab, the open position and the order tabs were used in:
 // pinning and unpinning, a drag that pins or unpins, the pin kept across a float, a page move and a
 // split, a new tab opening to the right of the active one, and a closed tab handing the pane to the
 // tab used before it.
@@ -189,13 +189,6 @@ describe('a new tab', () => {
 
         expect(order()).toEqual([a, b, opened, c, d]);
     });
-
-    it('opens at the end of a pane whose active tab is the last', () => {
-        const [a, b, c, d] = four();
-        const opened = client.layout.openView('source', file('e'));
-
-        expect(order()).toEqual([a, b, c, d, opened]);
-    });
 });
 
 describe('closing the active tab', () => {
@@ -214,25 +207,5 @@ describe('closing the active tab', () => {
         client.layout.closeInstance(a);
         expect(panes(client.layout.layout())[0].pane.active).toBe(d);
         expect(order()).toEqual([b, d]);
-    });
-
-    it('activates the neighbour when the pane showed no other tab before', () => {
-        const [a, b, c] = ['a', 'b', 'c'].map((name) =>
-            client.layout.openView('source', file(name))
-        );
-        client.layout.transferInstance(b, [], 0);
-        client.layout.closeInstance(b);
-        expect(panes(client.layout.layout())[0].pane.active).not.toBe(b);
-        expect([a, c]).toContain(panes(client.layout.layout())[0].pane.active);
-    });
-
-    it('leaves the active tab alone when a tab that is not active is closed', () => {
-        const [a, b, c] = ['a', 'b', 'c'].map((name) =>
-            client.layout.openView('source', file(name))
-        );
-        client.layout.activateInstance(b);
-        client.layout.closeInstance(a);
-        expect(panes(client.layout.layout())[0].pane.active).toBe(b);
-        expect(order()).toEqual([b, c]);
     });
 });

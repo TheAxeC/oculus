@@ -5,7 +5,7 @@
 import { hasText, lookup } from '../../shared/words/text.ts';
 
 /** The extension a configuration file carries. */
-export const CONFIG_SUFFIX = '.yml';
+const CONFIG_SUFFIX = '.yml';
 
 /**
  * The machine's own file inside the config folder. It is the client's half of the name

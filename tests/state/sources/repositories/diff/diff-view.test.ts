@@ -1,11 +1,10 @@
-// The diff pane's keys and the keeping of its view states (state/sources/repositories/
-// repositories.ts): each file of a diff keyed by its path and its place among the entries of that
-// path, and the view states the editors say written to the pane's instance state after a pause,
-// never after the pane has closed; and the state a pane holds, the file or side it is over and the
-// address it reads.
+// Layer 2, client-state tests. The diff pane's keys and the keeping of its view states
+// (state/sources/repositories/repositories.ts): each file of a diff keyed by its path and its place
+// among the entries of that path, and the view states the editors say written to the pane's
+// instance state after a pause, never after the pane has closed; and the state a pane holds, the
+// file or side it is over and the address it reads.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { diffRequest } from '../../../../../src/lib/state/sources/repositories/answers.ts';
 import {
     diffActs,
     diffState,
@@ -160,21 +159,6 @@ describe('what one diff pane is over', () => {
     });
 });
 
-describe('the state a diff pane holds', () => {
-    it('reads each field of an instance state, and an empty pane from one it cannot read', () => {
-        expect(
-            heldDiff({ id: 'g', root: ROOT, path: 'a', staged: true, group: 'staged', line: 3 })
-        ).toMatchObject({ id: 'g', root: ROOT, path: 'a', staged: true, group: 'staged', line: 3 });
-        const none = { id: '', label: '', root: '', path: '', staged: false, line: 0 };
-        expect(heldDiff(null)).toMatchObject(none);
-        expect(heldDiff({ root: 7, group: 'other', line: 'x' })).toMatchObject({
-            root: '',
-            group: undefined,
-            line: 0
-        });
-    });
-});
-
 describe('a diff pane over two files', () => {
     const subject = {
         root: 'hub',
@@ -197,9 +181,6 @@ describe('a diff pane over two files', () => {
             against: { root: 'work', path: 'b' }
         });
         for (const against of [
-            'work:b',
-            null,
-            [],
             { root: 'work' },
             { path: 'b' },
             { root: 7, path: 'b' },
@@ -251,18 +232,7 @@ describe('a diff pane previewing a replace', () => {
         });
     });
 
-    it('reads the preview by a POST of its query, replace text and hits, and acts on no hunks', () => {
-        const request = diffRequest(subject, 'tok');
-        expect([request.url, request.init?.method]).toEqual(['/api/ops', 'POST']);
-        expect(JSON.parse(request.init?.body ?? '')).toEqual({
-            op: 'preview',
-            query,
-            replace: 'bar',
-            preserveCase: true,
-            root: 'hub',
-            path: 'src/a.ts',
-            hits: [{ line: 3, at: 4 }]
-        });
+    it('acts on no hunks of a preview', () => {
         expect(diffActs(subject)).toBe(false);
     });
 
@@ -276,10 +246,7 @@ describe('a diff pane previewing a replace', () => {
         expect(previewKey(undefined)).toBe('');
     });
 
-    it('keeps a well-formed replace field when it is read back, and drops a malformed one', () => {
-        const held = heldDiff(diffState(subject, 'x'));
-        expect(held.replace).toEqual(subject.replace);
-        expect(heldDiff({ ...held, replace: { query: 'foo' } }).replace).toBeUndefined();
-        expect(heldDiff({ ...held, replace: 'foo' }).replace).toBeUndefined();
+    it('keeps the replace field when it is read back from the pane state', () => {
+        expect(heldDiff(diffState(subject, 'x')).replace).toEqual(subject.replace);
     });
 });

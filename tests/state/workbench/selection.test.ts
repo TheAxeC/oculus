@@ -1,4 +1,5 @@
-// The workbench's current session, and the pin that lets one view stop following it.
+// Layer 2, client-state tests. The workbench's current session, and the pin that lets one view stop
+// following it.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { pinnedSession } from '../../../src/lib/state/workbench/selection.svelte.ts';
@@ -35,32 +36,12 @@ describe('the selection', () => {
     });
 });
 
-describe('the pin a view instance keeps', () => {
-    it('reads the session a saved state names', () => {
-        expect(pinnedSession({ session: 'abc' })).toBe('abc');
-    });
-
-    it('reads no pin out of a state that names none, or names it wrongly', () => {
-        expect(pinnedSession({})).toBe(null);
-        expect(pinnedSession({ session: '' })).toBe(null);
-        expect(pinnedSession({ session: 7 })).toBe(null);
-        expect(pinnedSession(undefined)).toBe(null);
-        expect(pinnedSession(null)).toBe(null);
-        expect(pinnedSession(['session'])).toBe(null);
-    });
-});
-
-describe('the pin over a state of the wrong type', () => {
+describe('the pin a view instance keeps over the state it saved', () => {
     const rows: [string, () => unknown, unknown][] = [
         ['an array', () => pinnedSession([]), null],
-        ['null', () => pinnedSession(null), null],
         ['undefined', () => pinnedSession(undefined), null],
-        ['a string', () => pinnedSession('s'), null],
-        ['a number', () => pinnedSession(3), null],
         ['a map with no session', () => pinnedSession({ id: 's' }), null],
         ['a session that is a number', () => pinnedSession({ session: 3 }), null],
-        ['a session that is a list', () => pinnedSession({ session: ['s'] }), null],
-        ['a session that is null', () => pinnedSession({ session: null }), null],
         ['an empty session', () => pinnedSession({ session: '' }), null],
         ['a session that is a string', () => pinnedSession({ session: 's' }), 's'],
         [

@@ -1,4 +1,4 @@
-// Layer 2, client state test. The hooks block is JSON Claude Code reads: two events, one command
+// Layer 2, client-state tests. The hooks block is JSON Claude Code reads: two events, one command
 // hook each, the second-long caps, and the origin it was given in the address it posts to.
 
 import { describe, expect, it } from 'vitest';
@@ -34,17 +34,14 @@ describe('hooksSnippet', () => {
         }
     });
 
-    it('carries another port and never the first one', () => {
-        const text = hooksSnippet('http://127.0.0.1:8793');
+    it.each([
+        ['another port', 'http://127.0.0.1:8793'],
+        ['no port', 'http://oculus.local'],
+        ['a scheme and a port', 'https://oculus.local:8443']
+    ])('carries the origin whole, for %s, and never the default port', (_name, origin) => {
+        const text = hooksSnippet(origin);
         expect(JSON.parse(text)).toBeTypeOf('object');
-        expect(text).toContain('http://127.0.0.1:8793/api/hook');
+        expect(text).toContain(`${origin}/api/hook`);
         expect(text).not.toContain('8790');
-    });
-
-    it('carries the origin whole, scheme and all, with or without a port', () => {
-        expect(hooksSnippet('http://oculus.local')).toContain('http://oculus.local/api/hook');
-        expect(hooksSnippet('https://oculus.local:8443')).toContain(
-            'https://oculus.local:8443/api/hook'
-        );
     });
 });

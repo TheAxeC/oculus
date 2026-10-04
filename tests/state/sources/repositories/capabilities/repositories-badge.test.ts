@@ -1,4 +1,4 @@
-// Layer 2, client-state test. The count the rail item that opens the Repositories view carries:
+// Layer 2, client-state tests. The count the rail item that opens the Repositories view carries:
 // the held counts of the merge, staged, changed and untracked groups summed over the repositories
 // the git channel lists (VS Code's git.countBadge "all", with oculus's separate Untracked group).
 //
@@ -109,14 +109,5 @@ describe('the Repositories rail badge', () => {
         });
         client.ui.setInstanceState('repositories-one', { root: '/a', closed: ['/b'] });
         expect(badge()).toBe('5');
-    });
-
-    it('names the badge by what it counts in its hover words', () => {
-        put({ '/a': git({ unstaged: entries(3) }) });
-        const shown = badgeOf(
-            present(client.registry.viewFor('repositories'), 'repositories view'),
-            client
-        );
-        expect(shown.title).toContain('3');
     });
 });

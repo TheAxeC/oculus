@@ -13,7 +13,7 @@ import {
     type AgentsStore
 } from '../../../src/lib/state/sessions/agents.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
 import type { Held } from '../../../src/lib/state/sessions/agents.svelte.ts';
 import { refused, unreadable } from '../../fixtures/client.ts';
@@ -140,21 +140,6 @@ describe('an answer whose fields are of the wrong type', () => {
     }
 
     it.each([
-        ['a refusal whose error is a number', '{"error":3}', 500, refused(500)],
-        ['a refusal with a list as its body', '[]', 500, refused(500)],
-        ['a refusal with a text of its own', '{"error":"x"}', 500, refused(500)],
-        [
-            'a refusal with a word of the catalog',
-            '{"error":"outside"}',
-            400,
-            t('files.refused_outside')
-        ]
-    ])('answers %s as its sentence', async (_name, text, status, error) => {
-        expect(await heldAfter(text, status)).toStrictEqual({ value: null, pending: false, error });
-    });
-
-    it.each([
-        ['none of its lists', '{}'],
         ['no findings', '{"agents":[],"accounts":[]}'],
         ['no accounts', '{"agents":[],"findings":[]}'],
         ['no agents', '{"accounts":[],"findings":[]}']
@@ -234,13 +219,10 @@ describe('an answer whose fields are of the wrong type', () => {
     });
 
     it.each([
-        ['null on a refusal', 'null', 500, unreadable(500)],
         ['text that is not JSON on a refusal', 'nope', 500, unreadable(500)],
         ['null', 'null', 200, unreadable(200)],
-        ['text that is not JSON', 'nope', 200, unreadable(200)],
         ['a list', '[]', 200, unreadable(200)],
-        ['a map whose agents are a string', '{"agents":"x"}', 200, unreadable(200)],
-        ['a map whose accounts are a map', '{"accounts":{}}', 200, unreadable(200)]
+        ['a map whose agents are a string', '{"agents":"x"}', 200, unreadable(200)]
     ])(
         'answers a body that is %s as the unreadable sentence',
         async (_name, text, status, error) => {

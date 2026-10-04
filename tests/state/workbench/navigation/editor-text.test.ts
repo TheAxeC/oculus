@@ -1,6 +1,6 @@
-// The rules the status bar's source items read a file's text by: the indentation a file's own
-// lines give, its line ending, how many lines it holds, and the language the editor opens it under,
-// over hand-written texts.
+// Layer 2, client-state tests. The rules the status bar's source items read a file's text by: the
+// indentation a file's own lines give, its line ending, how many lines it holds, and the language
+// the editor opens it under, over hand-written texts.
 //
 // What this does NOT cover: the editor moving the caret and rewriting the indentation and the line
 // endings on its model, which the look does, and the bar drawing them.

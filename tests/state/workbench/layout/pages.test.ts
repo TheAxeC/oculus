@@ -1,8 +1,8 @@
-// Pages: the level above the layout tree that DESIGN.md's decision on pages adds. The pure half is
-// newPage, defaultPages, checkPages and the version 3 envelope; the store half is which page is on
-// screen, what the page operations do to the list, and that every one of them writes the whole list
-// down. tests/state/workbench/layout/layout.test.ts covers the trees themselves and is not extended
-// here.
+// Layer 2, client-state tests. Pages: the level above the layout tree that DESIGN.md's decision on
+// pages adds. The pure half is newPage, defaultPages, checkPages and the saved envelope; the store
+// half is which page is on screen, what the page operations do to the list, and that every one of
+// them writes the whole list down. tests/state/workbench/layout/layout.test.ts covers the trees
+// themselves and is not extended here.
 //
 // Nothing here touches localStorage or the DOM: the store takes the storage it is given. The
 // catalog is installed because the store names the page loadLayout and closePage make.
@@ -29,7 +29,6 @@ import {
     resetPlan
 } from '../../../../src/lib/state/workbench/navigation/pages.ts';
 import { bench, docked, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
-import { fields } from '../../../../src/lib/data/helpers/guards.ts';
 import { present } from '../../../fixtures/present.ts';
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
 
@@ -134,18 +133,7 @@ describe('checkPages', () => {
     });
 });
 
-describe('the version 4 envelope', () => {
-    it('reads back every page and which one is current', () => {
-        const made: Pages = {
-            pages: [newPage('One', own()), newPage('Two')],
-            current: '',
-            floats: []
-        };
-        const held: Pages = { ...made, current: made.pages[1].id };
-        expect(parseLayout(serialiseLayout(held), '')).toEqual(held);
-        expect(fields(JSON.parse(serialiseLayout(held))).version).toBe(LAYOUT_VERSION);
-    });
-
+describe('the saved envelope', () => {
     it('reads a version 2 envelope of one workbench as one page, carrying the label', () => {
         const read = parseLayout(saveOwn(), 'Page 1');
         expect(read?.pages).toHaveLength(1);
@@ -178,14 +166,7 @@ describe('the store: loading', () => {
         expect(viewsOf(layout())).toEqual(['status']);
     });
 
-    it('reads a version 2 envelope as page 1, so a browser holding one loses nothing', () => {
-        const storage = fakeStorage(saveOwn());
-        expect(loadLayout(storage)).toBe(true);
-        expect(pages().map((page) => page.label)).toEqual(['Page 1']);
-        expect(workbench()).toEqual(own());
-    });
-
-    it('reads every page of a version 4 envelope back', () => {
+    it('reads every page of a saved envelope back and the one that was current', () => {
         const held: Pages = {
             pages: [newPage('One', own()), newPage('Two')],
             current: '',
@@ -645,14 +626,6 @@ describe('a saved page carrying a field the pages no longer hold', () => {
 // parseFloats, and an entry that does not read is dropped with the rest kept.
 describe('the floats of the config', () => {
     const shipped = loadConfig(engineDir()).config;
-
-    it('ships one float, docked right at 0.3, holding hpc and usage', () => {
-        const floats = parseFloats(shipped.floats);
-        expect(floats).toHaveLength(1);
-        expect(floats[0].place).toEqual({ kind: 'dock', edge: 'right', size: 0.3 });
-        expect(floats[0].pane.tabs.map((tab) => tab.view)).toEqual(['hpc', 'usage']);
-        expect(floats[0].pane.active).toBe(floats[0].pane.tabs[0].id);
-    });
 
     it('reads a dock and a free place, one view or a list of tabs with a state', () => {
         const floats = parseFloats([

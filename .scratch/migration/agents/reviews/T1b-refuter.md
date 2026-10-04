@@ -230,3 +230,221 @@ The builder's judgment calls, as asked:
 - The row-by-row "same branch" claims of the large table prunes (instance-state-* 1932 to 1039 tests; refusal tables in workbench/layout/saved/refusals): I sampled the holders listed above but did not read every pruned row against its zod shape.
 
 Reviewer usage: token count not available to me, about 80 tool uses, about 40 minutes (04:46 to 05:25, machine load 5 to 10 with T1e building).
+
+## Repair round 1, refuted
+
+All ten round items are closed. The verify list is green. My reruns reproduce every closure claim that a decision rests on. Three things remain, all small enough to fix at landing or for the orchestrator to rule on, and none needs a further round:
+
+- **Standards 1:** `arrival` arms a real 1000 ms timer on the success path. Under the reading in my prompt that makes it a Decision 1 cause. Under the brief's own words it is not.
+- **Spec 1:** one pure test now sits in the new slow describe without needing its hook. As a result `npm test` no longer checks the view gate of `filesLineTyped`.
+- **Proof 1:** the assertion-edit list misses one rewritten kept table, the `headLine` rows of `processes.test.ts`. Every one of the 20+ rows I sampled holds.
+
+The facts behind Z386 and Z387 hold. One more row of `answers.test.ts`, the LaTeX word row of the word table, is same-branch.
+
+```
+$ uptime (06:26:59)  load averages: 5.07 6.93 7.54
+$ npm run diagrams                      exit 0; `git status --short` afterwards lists nothing under docs/
+$ uptime (06:27:11)  load averages: 5.23 6.90 7.52
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (exit 0)
+$ npm test
+fatal: Needed a single revision
+ Test Files  598 passed | 27 skipped (625)
+      Tests  12404 passed | 668 skipped (13072)
+   Duration  195.29s (transform 32.07s, setup 0ms, import 464.33s, tests 257.55s, environment 246ms)
+$ npm run test:checks
+ Test Files  31 passed | 2 skipped (33)
+      Tests  471 passed | 9 skipped (480)
+   Duration  50.88s (transform 17.79s, setup 0ms, import 61.40s, tests 106.57s, environment 6ms)
+$ npm run check
+1791088299991 COMPLETED 3375 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+built in 4.23s        (the line's leading check glyph dropped here)
+built in 10.44s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+$ uptime (06:34:03)  load averages: 7.90 8.70 8.35
+```
+
+Evidence commands, rerun:
+
+```
+diff -rq <base>/src src                                  -> nothing (src unchanged)
+git diff 12bf19450 --stat -- . ':!tests/state'           -> allow-duplication.txt (2 removals) and .scratch/.../briefs/T1b.md (cmp equal to main's copy, the orchestrator's sync)
+cmp over the 226 .ts files of tests/state vs base        -> equal=53 changed=167 new=6 (report's corrected figure holds)
+cmp of the six helpers imported from outside tests/state -> all six equal to base
+find tests src -newer agents/briefs/T1b-round1.md        -> fixtures/client.ts (cmp equal to base), client-state, queries, terminal-close, memories-message, commands-pane, pty/pty-fixture, pty/pty-socket, shared/answers.test.ts, shared/arrival.ts, explorer, arrangement, registry
+folder item counts                                       -> no folder of tests/state above 10 (tests/state/shared 9); sh utils/folder-check.sh exit 0
+largest tests/state .ts                                  -> life/present.test.ts 807, sessions/source.test.ts 797
+grep "it('audits" tests/state                            -> nothing; grep -c waitFor -> 0
+@module-tag slow                                         -> commands-pane.test.ts, hunks-git.test.ts; describe tag: explorer.test.ts:276
+
+Shim proof (scratchpad shims for tmux and git, each appending "<pid> <name> <args>" to shim.log, then exec of the real binary), from tools/oculus in the worktree, load 7.91 8.47 8.30:
+  commands-pane.test.ts --tagsFilter '!slow' -> Tests 1 skipped (1); import 12.82s; shim.log 0 lines
+  hunks-git.test.ts --tagsFilter '!slow'     -> Tests 5 skipped (5); import 530ms; shim.log 0 lines
+  commands-output.test.ts (starts nothing) --tagsFilter '!slow' -> import 8.09s; commands-pane again -> import 6.21s (load 5.53): the import is the client graph's cold start, as the builder says
+Slow run, commands-pane.test.ts --tagsFilter slow (load 6.29): Tests 1 passed (1), tests 907ms; shim.log 23 lines:
+  6 calls "tmux -S <private sock> ...": new-session holds-the-server, set-hook, wait-for -S printed, wait-for printed, wait-for died, kill-server
+  12 calls "tmux -u -S <private sock> ..." (sessions.ts: new-session, set-option, list-sessions, capture-pane, kill-session)
+  1 call "tmux -V" (the version probe, no server)
+  no other tmux call; before and after: ls -d $TMPDIR/oculus-pane-* -> no match; ps shows no tmux process naming oculus-pane-
+hunks-git.test.ts --tagsFilter slow -> Tests 5 passed (5)
+
+explorer.test.ts, three runs --tagsFilter slow --reporter=verbose (load 3.69 to 4.39): the two tests 7 ms and 3 ms; "tests" 109, 110, 109 ms (the hook about 99 to 100 ms); --tagsFilter '!slow' -> Tests 19 passed | 2 skipped (21), tests 5ms
+Scratch copy (cp -c clone of the worktree's tools/oculus without config/local.yml), explorer.test.ts with the beforeAll and the tag removed -> both tests fail: "text key not in the text catalog (config/text/): ui.page_default" at catalogEntry src/lib/state/shared/words/text.ts:54, from the describe's beforeEach (loadLayout)
+
+Waits, scratch copy, src edits restored and cmp equal after each:
+  pty-subscribe.ts never calls subscribe() -> "Error: timed out after 1000 ms waiting for 1 messages sent on the socket; 0 had been sent" and "... waiting for 3 messages sent on the socket; 2 had been sent", failing tests at 1001 to 1011 ms
+  pty-subscribe.ts settle returns true without comparing the size -> 1 failed | 28 passed; "Error: timed out after 1000 ms waiting for 2 requests posted; 1 had been posted", 1003ms
+  memories.svelte.ts fetch replaced by a promise that never settles -> "Error: timed out after 1000 ms waiting for the wall's answer in the query cache; 2 cache announcements had come, none with the answer"
+  probe test (scratch only, deleted): vi.useFakeTimers() then arrival(...) on nothing -> rejected within the 4 s test timeout (Tests 1 passed): the bound fires under fake timers, as arrival.ts:13 says
+  arrival.ts instrumented to log each arm (scratch only), quick run of pty-socket.test.ts + memories-message.test.ts: Tests 51 passed (51); arms: 8 "messages sent on the socket", 3 "requests posted", 19 "the wall's answer in the query cache"
+  same two files, worktree, quick, verbose: slowest three tests 3, 13, 14 ms; Tests 51 passed (51)
+
+answers.test.ts controls, scratch copy:
+  C10 (exists -> files.refused_denied) -> Tests 13 passed (13)
+  C7 (failedAnswer returns another sentence when readAs gives null) -> 6 failed | 7 passed: the rows number, null, no error, list, string, number body
+  Z386 test added in the scratch copy (expect(new Set(OPS_REFUSALS.map((word) => refusedAnswer(400, word))).size).toBe(OPS_REFUSALS.length)): unchanged src -> Tests 14 passed (14); under C10 -> 1 failed | 13 passed, at answers.test.ts:25:84
+  OPS_REFUSALS: 19 words (src/lib/data/file-ops.ts:63-83); refusalSentence: 19 cases, 19 distinct keys (answers.ts:25-66)
+
+Builder transcript (agent-abd43d8d8cfbcff37.jsonl), Bash calls after 03:19Z matching "git ": 5 hits, each the word inside a grep, sed or python text, none a git invocation
+```
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- **1 (Delete): holds.** The first review's 30-sample stands, and the round deletes no test beyond `answers.test.ts`'s catalog-text test (finding 4). Z387's six rows are deleted at landing.
+- **2 (Fold): holds.** The round changed no fold.
+- **3 (Tag): partial.**
+  - Holds by process cause: in the quick tier, `commands-pane.test.ts` and `hunks-git.test.ts` load with an empty shim log.
+  - Holds for the hook: the explorer describe's cold read is in a slow `beforeAll` (Z382), about 100 ms by my three runs.
+  - Partial: one pure test sits in that slow describe (Spec 1), and the arrival bound question is the orchestrator's to rule (Standards 1).
+- **4 (Keep): holds under Z381.** The cuts are accepted as deletions and listed. The list misses one rewritten table (Proof 1).
+- **5 (Comments and helpers): holds.**
+  - `client-state.test.ts:1-6` and `:12` say what the file tests now.
+  - `arrangement.test.ts:252` is titled for what its body asserts.
+  - The `registry.test.ts` head differs from the base only in line 1 (my diff of lines 1-14).
+  - The three waits reject with what was awaited and what arrived, reproduced.
+  - The six helpers imported from outside `tests/state/` are equal to the base.
+- **6 (Allow list): holds.** Two removals, no addition. `test:checks` is green.
+- **7 (Report): partial (Proof 1).**
+  - The corrected figures hold: 53, 167 and 6; six git calls; the `kindWord` sentence; the hook DONE row now names the two measured file-level hooks; "never loads" is gone.
+  - The new-test controls hold: C7 and C10 reproduced, C5 and C6 confirmed by reading.
+- **8 (Doc text): holds.** The first review's checks stand. The round changed no `src` and no doc.
+
+Cases of the brief's "Cases":
+
+- `registry.test.ts:505`, `:522` and `:547`: met (deleted; no "audits" left).
+- `forces.test.ts:257`: met.
+- `fs.test.ts:108`: met (retitled).
+- `terminal-close.test.ts:281`: met. The comment at `:278-279` now says "is not listed".
+- `generation.test.ts:156-175`: met.
+- `client/socket-timing.test.ts`: met (deleted; no reference left in `src` or `tests`).
+- `rows.test.ts:394-421`: met (kept; reads only `FILES`).
+- `registry.test.ts:468` and `:473`: met.
+- `config-files.test.ts:17` kept, `memories-message.test.ts:76` deleted: met.
+- A helper imported from outside keeps every export: met (cmp, all six equal).
+- A stale allow-list entry removed with `test:checks` green: met.
+- A fold reported title to row: met.
+- The 95 ms / 105 ms minimum rule: met. The two file-level hooks (minimums 95 and 94 ms) stay quick, and their times are quoted in the report.
+
+### 1. Spec
+
+- **Spec 1.** `tests/state/sources/explorer/explorer.test.ts:288-292`:
+  - The quoted hunk: `it('asks nothing of an instance of another view', () => { expect(filesLineTyped('tasks', { form: 'root', typed: '/tmp/a' })).toBe(false); ...`, placed inside `describe('a typed root or workspace line as unsaved text', { tags: ['slow'] }, ...)` at `:276`.
+  - What is wrong: the test calls a pure function and needs neither the catalog nor the client. Only the describe's `beforeEach` (`loadLayout`, which reads `ui.page_default`) and therefore the catalog hook are needed, and only by the second test. My scratch run without the hook fails both tests only through that `beforeEach`. The only other test of `filesLineTyped` (`shared/instance-state-files.test.ts:539-540`) always passes `'files'`. So `npm test` no longer checks that another view's typed line is not asked about.
+  - Placing it there follows the round brief's ruling to the letter, and it moves a test with no cause of its own into the slow tier.
+  - Failure scenario: `filesLineTyped` answers true for every view. Every tab holding a root form with text then asks the close question, and no quick test goes red.
+  - Fix at landing: move this one test out of the slow describe, for example into `describe('the workspaces to pick among')` or a describe of its own.
+  - Verdict: item 3 partial.
+
+### 2. Proof
+
+- **Proof 1.** `tests/state/system/machine/processes.test.ts:225-235`, the `headLine` table:
+  - What changed: at the base (`:240-249`) the table held five rows with literal sentences such as `'1 project in flight, 1 agent running'`. The worktree keeps two rows, `[1, 1, t('processes.head_project_one'), t('processes.head_agent_one')]` and `[3, 2, ...]`, asserting `toBe(t('processes.head', ofProjects, ofAgents))`.
+  - What is wrong: the two kept rows' assertions were rewritten from literals to `t()`. The round brief's item 5 and spec.md's assertion-edit rule ask for one row per rewritten assertion. The 128-row list has none for this table. It appears only in the per-file entry (report line 813, "headLine rows 5->2 with t()"). Row 81 names the table only as a holder.
+  - Sample: 21 rows of the list, checked by grepping the quoted assertion in the base copy and the worktree, all hold (the assertion is at the base, gone or rewritten in the worktree, and the named holder exists). The rows were 1, 4, 7, 12, 17, 24, 29, 33, 40 to 42, 47, 52, 57, 63, 72, 81, 88, 96, 104, 115, 119 and 126. The holders checked include `tests/data/snapshot/validate.test.ts:281`, `view-source.test.ts:39`, `composer.test.ts:402`, `diff-read.test.ts:80` and `text-kind.test.ts:19`.
+  - The omission comes from the builder's pairing method: a retitled `it.each` with its title on its own line was not paired. Other retitled tables may have the same gap. I found no second case among the literal-to-`t()` files: the rows match the removed literals in `hpc`, `search`, `endpoint`, `folders`, `review-comment`, `comment-draft` and `file-git`.
+  - The decision that rests on it: whether every edit to a kept assertion was put to the orchestrator. This one is harmless, since the rows still fail when `headLine` picks the wrong plural key.
+  - Failure scenario: the orchestrator treats the list as complete and lands rewritten assertions it never saw as rows.
+  - Verdict: item 7 partial.
+
+### 3. Standards
+
+- **Standards 1.** `tests/state/shared/arrival.ts:20-33`:
+  - The quoted hunk: `const bound = startBound(() => { cleanup(); reject(...) }, ARRIVAL_BOUND_MS);` runs in the promise executor before `register`. It is cleared in `wake`.
+  - What is wrong: every call that is not already satisfied arms a real 1000 ms node timer on the success path, and clears it on arrival. `sentCount` (`pty-fixture.ts:46`) and `posted` (`pty-socket.test.ts:93`) return early when the count is already reached. `held` (`memories-message.test.ts:78-92`) always arms.
+  - My instrumented scratch run counted 30 arms across the 51 passing quick tests of the two files: 8 tests of `pty-socket.test.ts` and the wall describe of `memories-message.test.ts`.
+  - The test time is unaffected: the slowest is 14 ms, and the timer never fires on success.
+  - Under the criterion in my prompt (a quick test arms no real timer of 1 ms or more on success), these tests have a Decision 1 cause. Under the brief's Decision 1 text ("awaits a real timer of 1 ms or more"), they do not, since each test awaits the `wake`.
+  - Failure scenario: T1a applies the cause rule by reading the code, tags about 25 quick tests slow and takes them out of `npm test`. Or the quick tier keeps tests that arm real timers against the stated criterion.
+  - Options for the orchestrator:
+    - (a) A bound with no timer on success: register the pending wait with vitest's `onTestFailed`, or reject on the test context's `signal`. Both are declared in `node_modules/@vitest/runner/dist/tasks.d-DEYaIMIu.d.ts:1292` and `:1298`. That either carries the message into a timed-out test's report is not verified.
+    - (b) Rule that a bound cleared on success is no Decision 1 cause.
+    - (c) Tag the tests slow. This is the lazy option: it removes about 25 passing checks from every gate.
+  - Verdict: item 3 partial under my prompt's reading, holds under the brief's words. The ruling is the orchestrator's.
+- **Standards 2.** `tests/state/sessions/terminal/commands-pane.test.ts:61-65`:
+  - The quoted hunk: `test.afterAll(() => { if (server.socket === '') return; spawnSync('tmux', ['-S', server.socket, 'kill-server'], ...); rmSync(server.dir, ...); });`, with the scratch directory made at `:55-56`.
+  - What is wrong: this is a second copy of `privateTmux`'s hooks (`tests/server/machine/pty/tmux-fixture.ts:27-44`), without its `try`/`finally`. Z383 forces it, because importing `tmux-fixture.ts` runs `tmux -V` at load. `duplication.test.ts` passes. The missing `try` costs nothing in practice, since `spawnSync` returns its error rather than throwing.
+  - Failure scenario: none today. The two copies can drift when one changes.
+  - The single copy comes back when T1a moves `tmux-fixture.ts`'s probe out of module load (Z383 books T1c's tmux files there). `commands-pane.test.ts` can then call `privateTmux` again.
+  - Verdict: none.
+
+The rest of the round's delta checks clean:
+- No history word in the added comments or titles. The `terminal-close.test.ts:278-279` wording changed from "no longer listed" to "is not listed". The "still" comment in `arrangement.test.ts:259` is at the base (`:427`).
+- Non-ASCII: the gate in the verify list prints nothing.
+- Head comments are true:
+  - `arrival.ts:1-3` and `:13` (my fake-timer probe rejected);
+  - `commands-pane.test.ts:13-15` (shim log empty in the quick tier);
+  - `explorer.test.ts:275` (hook about 100 ms);
+  - `answers.test.ts:11-12`;
+  - `client-state.test.ts:1-6`.
+- File and folder sizes are within limits.
+- New exports have importers: `arrival` has 3. Of `pty-fixture`'s exports, `ID`, `CHANNEL` and `serving` each have 2 importers, and `forgetSockets`, `connected`, `asked` and `lastBody` 1 each.
+- No new helper replaces an existing one: the builder's grep shows no named-bound wait in `tests`, and `vi.waitFor` is the polling the brief removes.
+
+### 4. Behaviour
+
+None. The commands-pane cleanup leaves no server and no `$TMPDIR/oculus-pane-*` after a slow run, and every tmux call that reaches a server carries the private `-S` socket.
+
+### Z386 and Z387, the facts checked
+
+- **Z386:**
+  - `refusalSentence` maps the 19 words of `OPS_REFUSALS` to 19 distinct keys (`answers.ts:25-66` against `file-ops.ts:63-83`).
+  - C10 leaves all 13 tests green (rerun).
+  - The distinct-keys test, run over the file's Proxy catalog, passes on the unchanged `src` and fails under C10 at `answers.test.ts:25:84` (rerun in the scratch copy).
+- **Z387:**
+  - C7 turns exactly the six rows number, null, no error, list, string and number body red (rerun). They share `failedAnswer`'s `?.` on a null `readAs` (`answers.ts:134`, `shapes.ts:209-212`).
+  - C5 and C6 hold by reading: the 'empty' row and the 'text of its own' row both reach `refusedAnswer:121` with a string that is no word.
+  - Deleting 'empty', 'null', 'no error', 'a body that is a list', 'a body that is a string' and 'a body that is a number' leaves 'a text of its own' and 'a number', one per side of the `?.`.
+- **One more same-branch row:** the row 'an error that is a word of the LaTeX endpoint' (`answers.test.ts:33-38`).
+  - C4 turns it red only together with the test at `:23`, and no control turns it red alone.
+  - The handoff from `failedAnswer` to `refusedAnswer` is already the wire the ops-word row at `:32` covers. That row is red under C1 to C3 together with `:18`. The 'text of its own' row cannot serve as that wire, because it gives `refused(status)` whether or not the error is handed over.
+  - The LaTeX row is therefore a second case of one wire and one branch. The ops-word row stays.
+- No other row of the file is same-branch. The two statuses in `:18` and in `:56` are assertions inside one test. In `:18` the second status is what the title promises.
+
+### Declined to judge
+
+- What the round changed in `client/queries.test.ts` and `client/terminal/terminal-close.test.ts`. Both carry an mtime after the round brief (05:34:50), and without a snapshot at the round's start their round delta cannot be separated from the first run's. Against the base, `queries.test.ts`'s head is true (the empty-key test is at `:237`), and `terminal-close.test.ts:278-279` reads "is not listed".
+- Whether `onTestFailed` or the context `signal` (Standards 1, option (a)) would put the awaited and arrived text into a timed-out test's report. Settling it needs a prototype in a scratch copy. The choice between (a) and (b) is the orchestrator's.
+- C1 to C6, C8 and C9 rerun one by one. I reran C7 and C10 and confirmed C5 and C6 by reading. The others carry no decision.
+- Every one of the 128 assertion-list rows. I sampled 21, plus a literal-to-`t()` completeness scan over the changed files.
+
+Scratch files: everything is under the session scratchpad `T1b-r1/`: the clone without `config/local.yml`, the shims and their logs. Every src or test edit there was restored and checked with cmp. No file in the worktree or the main checkout was changed.
+
+Reviewer usage: claude-opus-5-5. The token count is not available to me. About 60 tool uses, about 23 minutes (06:26 to 06:49), at a machine load of 3.7 to 8.7 with T1e's builder running.
+
+## Closed
+
+First run (the ten findings): each closed by repair round 1, as "Repair round 1, refuted" verifies item by item.
+
+Repair round 1, refuted:
+- Spec 1 (`explorer.test.ts:288-292`, the pure `filesLineTyped` test inside the slow describe): fixed at landing, the test moved out of the slow describe into a describe of its own.
+- Proof 1 (the `headLine` table of `processes.test.ts:225-235` missing from the assertion-edit list): closed at landing, named in the landing report as a rewrite of two kept rows from literals to `t()`; the rows still fail on a wrong plural key.
+- Standards 1 (`arrival.ts` arms a real 1000 ms bound on the success path): Z388, a bound cleared on success is no Decision 1 cause; no change.
+- Standards 2 (`commands-pane.test.ts:61-65`, a second copy of `privateTmux`'s hooks): no change; the single copy returns when T1a moves `tmux-fixture.ts`'s probe out of module load (Z383).
+- The LaTeX word row of `answers.test.ts:33-38`, same branch as the ops-word row: deleted at landing under Z387.
+- Z386 and Z387: applied at landing.

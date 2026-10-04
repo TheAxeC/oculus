@@ -1,6 +1,8 @@
-// The pure rules behind the collection view: how a field is drawn, which fields a card draws and in
-// what order, what the status facet offers, and what the search and the facet leave. Nothing here
-// renders; tests/views/boards/collection/collection.test.ts is the same rules through the markup.
+// Layer 2, client-state tests. The pure rules behind the collection view: how a field is drawn,
+// which fields a card draws and in what order, what the status facet offers, and what the search
+// and the facet leave. The readers of a named field or a config value, each over values of the
+// wrong type, are collection-fields.test.ts. Nothing here renders;
+// tests/views/boards/collection/collection.test.ts is the same rules through the markup.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -11,8 +13,6 @@ import {
     crossLinks,
     drawnFields,
     emptyCollectionState,
-    entryStatus,
-    entrySubtasks,
     formFields,
     groupProjects,
     hasStatusField,
@@ -219,21 +219,9 @@ describe('the status facet', () => {
         expect(hasStatusField(undefined)).toBe(false);
     });
 
-    it('counts each value, in the order the entries first carry it', () => {
-        expect(statusValues(entries)).toEqual([
-            { value: 'upcoming', count: 2 },
-            { value: 'completed', count: 1 }
-        ]);
-    });
-
     it('offers nothing where one value or none occurs, since it would split nothing', () => {
         expect(statusValues([entries[0], entries[2]])).toEqual([]);
         expect(statusValues([entry(0, { title: 'None' })])).toEqual([]);
-    });
-
-    it("reads an entry's status only when it is a word", () => {
-        expect(entryStatus(entries[0])).toBe('upcoming');
-        expect(entryStatus(entry(0, { title: 'None', status: 7 }))).toBe(undefined);
     });
 });
 
@@ -249,27 +237,6 @@ describe('applyCollectionFilters', () => {
 
     it('shows everything an untouched instance holds', () => {
         expect(applyCollectionFilters(entries, emptyCollectionState())).toEqual(entries);
-    });
-
-    it('keeps the entries of every selected status and no other', () => {
-        const found = applyCollectionFilters(entries, {
-            search: '',
-            statuses: ['completed'],
-            hidden: []
-        });
-        expect(found.map((held) => held.title)).toEqual(['A visit']);
-    });
-
-    it('searches inside a list and inside a map, not only the top-level words', () => {
-        const state = { search: 'enschede', statuses: [], hidden: [] };
-        expect(applyCollectionFilters(entries, state).map((held) => held.title)).toEqual([
-            'A talk'
-        ]);
-        expect(
-            applyCollectionFilters(entries, { search: 'travel', statuses: [], hidden: [] }).map(
-                (held) => held.title
-            )
-        ).toEqual(['A visit']);
     });
 });
 
@@ -401,12 +368,6 @@ describe('identityValue', () => {
         expect(identityValue(scheme, [{ field: 'key', type: 'text' }])).toBe('FAIR');
         expect(identityField(undefined)).toBe('title');
     });
-
-    it('falls back to the title when the entry does not carry the identity field', () => {
-        expect(identityValue(entry(0, { title: 'A talk' }), [{ field: 'key', type: 'text' }])).toBe(
-            'A talk'
-        );
-    });
 });
 
 describe('pinnedFirst', () => {
@@ -467,40 +428,6 @@ describe('statusFacets', () => {
         expect(statusFacets([entry(0, { title: 'One', status: 'todo' })])).toEqual([
             { value: 'todo', count: 1 }
         ]);
-    });
-
-    it('hides the entries of a status the facet bar has switched off', () => {
-        const entries = [
-            entry(0, { title: 'One', status: 'todo' }),
-            entry(1, { title: 'Two', status: 'done' })
-        ];
-        const state = { search: '', statuses: [], hidden: ['done'] };
-        expect(applyCollectionFilters(entries, state).map((held) => held.title)).toEqual(['One']);
-    });
-});
-
-describe('entrySubtasks', () => {
-    it('reads a list of flow maps, keyed by position, and drops a line with no do', () => {
-        const held = entry(0, {
-            title: 'A task',
-            subtasks: [
-                { do: 'read it', deadline: '2026-10-01' },
-                { do: 'write it', done: true, snooze: '2026-11-01' },
-                { note: 'no do line' },
-                'a bare line'
-            ]
-        });
-        expect(entrySubtasks(held)).toEqual([
-            { key: '0', do: 'read it', done: false, deadline: '2026-10-01' },
-            { key: '1', do: 'write it', done: true, snooze: '2026-11-01' },
-            { key: '3', do: 'a bare line', done: false }
-        ]);
-    });
-
-    it('reads a map of keys by its own keys, and an entry with no block as nothing', () => {
-        const held = entry(0, { title: 'A task', subtasks: { one: { do: 'read it' } } });
-        expect(entrySubtasks(held)).toEqual([{ key: 'one', do: 'read it', done: false }]);
-        expect(entrySubtasks(entry(1, { title: 'Another' }))).toEqual([]);
     });
 });
 
@@ -590,18 +517,6 @@ describe('crossLinks', () => {
         ]);
     });
 
-    it("groups the projects a joint-work entry's person names", () => {
-        const who = entry(0, { title: 'A shared paper', person: 'naesens' });
-        expect(crossLinks({ ...who, id: 'naesens-paper' }, 'joint-work', projects, [])).toEqual([
-            {
-                type: 'work',
-                count: 1,
-                members: [{ id: 'gamma', label: 'gamma', type: 'active' }],
-                warn: false
-            }
-        ]);
-    });
-
     it("reads the entry's own related list for every other collection, and skips a dead id", () => {
         const talk = entry(0, { title: 'A talk', related: ['alpha', 'nobody'] });
         expect(crossLinks(talk, 'events', projects, [])).toEqual([
@@ -652,33 +567,6 @@ describe('formFields', () => {
                 help: 'what it is now'
             },
             { field: 'weight', label: 'weight', kind: 'text', options: [], required: false }
-        ]);
-    });
-
-    it('resolves optionsFrom over a list of strings when inline options are absent', () => {
-        const schema: SchemaField[] = [
-            { field: 'category', type: 'select', optionsFrom: 'venue_categories' }
-        ];
-        expect(
-            formFields(schema, { venue_categories: ['journal', 'conference'] })[0].options
-        ).toEqual(['journal', 'conference']);
-    });
-
-    it('resolves optionsFrom over keyed maps and leaves out unassignable rows', () => {
-        const schema: SchemaField[] = [
-            { field: 'tier', type: 'select', optionsFrom: 'venue_tiers' },
-            { field: 'fixed', type: 'select', options: ['own'], optionsFrom: 'venue_tiers' }
-        ];
-        const config = {
-            venue_tiers: [
-                { key: 'flagship', label: 'flagship' },
-                { key: 'unrated', assignable: false },
-                { label: 'missing key' }
-            ]
-        };
-        expect(formFields(schema, config).map((field) => field.options)).toEqual([
-            ['flagship'],
-            ['own']
         ]);
     });
 });

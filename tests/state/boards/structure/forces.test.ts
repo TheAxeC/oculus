@@ -1,7 +1,7 @@
-// The Map's force simulation on d3-force: the settle from neato's placement of the dense graph of
-// map-fixture.ts at seed 1, the collision and the charge each on their own, a press, a drag through
-// the dense middle and across the map, the box, and the inputs at the edges (no node, one node, an
-// unknown id, an edge to a node that is not there).
+// Layer 2, client-state tests. The Map's force simulation on d3-force: the settle from neato's
+// placement of the dense graph of map-fixture.ts at seed 1, the collision and the charge each on
+// their own, a press, a drag through the dense middle and across the map, the box, and the inputs
+// at the edges (an unknown id, an edge to a node that is not there, nodes on one point).
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Viz } from '@viz-js/viz';
@@ -252,18 +252,6 @@ describe("the Map's forces on their own", () => {
             }
         }
         expect(near).toEqual([]);
-    });
-
-    it('audits that an empty node set settles to no node', () => {
-        expect(settleForces(createForces([], []))).toEqual([]);
-    });
-
-    it('settles one node finite and inside the box', () => {
-        // Revert: settleForces() running no tick leaves the node where it started, outside the box.
-        const nodes = settleForces(createForces([project('project::one', 20, 900)], []));
-        expect(nodes).toHaveLength(1);
-        expect(finite(nodes)).toBe(true);
-        expect(inside(nodes)).toBe(true);
     });
 
     it('parts five nodes placed on one point', () => {

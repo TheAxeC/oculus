@@ -30,6 +30,7 @@ import {
     typedText,
     withTypedText
 } from '../../../../src/lib/state/system/config/typed.ts';
+import { settle } from '../../../fixtures/client.ts';
 import { rowOf, shipped, shippedRows, text } from './fixture.ts';
 
 const BODY = 'waiting_status: [one, two, three]\n';
@@ -83,8 +84,6 @@ function setup(holds = false) {
     });
     return { sent, ended, writer, moves: () => moves };
 }
-
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe('a Save', () => {
     it('sends one config-value with the whole value and the row value as its base', () => {
@@ -426,7 +425,6 @@ describe('Reset Setting on a list', () => {
         const row = waiting('waiting_status: [one]\n');
         void writer.reset(row);
         expect(sent.calls).toEqual([['behavior.yml', 'waiting_status', row.default, ['one']]]);
-        expect(row.default).toEqual(['submitted', 'pending', 'under review', 'under-review']);
     });
 
     it('writes nothing for a row at its default, and nothing for a family', async () => {

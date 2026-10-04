@@ -1,7 +1,7 @@
-// Layer 2, client-state tests. The folds the session views draw from, over a synthetic tree of
-// two workspaces: the rows, the tree cut to the rows kept, the counts, the places a terminal may
-// start and the agents newest first; then the sessions list's filter, search, groups and order,
-// the relative time a row says, the timeline cut into turns and an agent's tokens.
+// Layer 2, client-state tests. The folds the session views draw from, over a synthetic tree of two
+// workspaces: the rows, the tree cut to the rows kept, the counts, the places a terminal may start
+// and the agents newest first; then the sessions list's filter, search, groups and order, the
+// relative time a row says, the timeline cut into turns and an agent's tokens.
 
 import { describe, expect, it } from 'vitest';
 
@@ -132,17 +132,7 @@ describe("the sessions list's rows", () => {
         expect(rowState(listed('a', { liveStatus: 'busy' }), false)).toBe('working');
     });
 
-    it('read the filter out of the instance state, anything malformed as unset', () => {
-        expect(
-            listFilterOf({ states: ['ended', 'bogus'], agents: ['codex', 3], query: 'x' })
-        ).toEqual({ states: ['ended'], agents: ['codex'], query: 'x' });
-        expect(listFilterOf(null)).toEqual({ states: [], agents: [], query: '' });
-        expect(listFilterOf([])).toEqual({ states: [], agents: [], query: '' });
-        expect(listFilterOf({ states: 'ended', query: 7 })).toEqual({
-            states: [],
-            agents: [],
-            query: ''
-        });
+    it('toggle a value into a list that lacks it and out of one that holds it', () => {
         expect(toggled(['a'], 'b')).toEqual(['a', 'b']);
         expect(toggled(['a', 'b'], 'a')).toEqual(['b']);
     });
@@ -229,18 +219,6 @@ describe('a timeline cut into turns', () => {
             ['t4', 'second', []]
         ]);
         expect(timelineTurns([])).toEqual([]);
-    });
-});
-
-describe("an agent's tokens", () => {
-    it('are the count its result reports, and nothing for a count that is not one', () => {
-        const agent = (tokens: unknown) => ({ id: 'a', tokens }) as unknown as SessionAgent;
-        expect(agentTokens(agent(48200))).toBe(48200);
-        expect(agentTokens(agent(0))).toBe(0);
-        expect(agentTokens(agent(-1))).toBe(null);
-        expect(agentTokens(agent(Number.NaN))).toBe(null);
-        expect(agentTokens(agent('9'))).toBe(null);
-        expect(agentTokens(agent(undefined))).toBe(null);
     });
 });
 
@@ -376,15 +354,6 @@ describe("the Terminal view's list of terminals", () => {
         ]);
     });
 
-    it('titles a task terminal by its command, unless the reader gave it a title', () => {
-        const ran = { ...shell, task: true, exit: 1, job: { repo: '/r', name: 'build' } };
-        const renamed = { ...ran, title: 'mine' };
-        expect(terminalChoices([ran, renamed], sessions).map((one) => one.title)).toEqual([
-            'build',
-            'mine'
-        ]);
-    });
-
     it('titles a shell tmux reports no command for "shell"', () => {
         const [row] = terminalChoices([idle], sessions);
         expect(row.title).toBe(catalog['sessions.terminal_title_shell']);
@@ -401,6 +370,11 @@ describe("the Terminal view's list of terminals", () => {
 
 describe("the list's filter out of an instance state of the wrong shape", () => {
     it.each([
+        [
+            'a known state beside a word that is no state, a known agent beside a number, a query',
+            { states: ['ended', 'bogus'], agents: ['codex', 3], query: 'x' },
+            { states: ['ended'], agents: ['codex'], query: 'x' }
+        ],
         [
             'states that are a string, an agent list holding a number, a query that is a number',
             { states: 'x', agents: [1, 'claude'], query: 3 },
@@ -451,7 +425,7 @@ describe("the list's filter out of an instance state of the wrong shape", () => 
     });
 });
 
-describe("an agent's tokens out of a result of the wrong shape", () => {
+describe("an agent's tokens", () => {
     const tokens = (value: unknown) => agentTokens({ id: 'a', tokens: value } as SizedAgent);
 
     it.each([
@@ -465,13 +439,14 @@ describe("an agent's tokens out of a result of the wrong shape", () => {
         ['null', null, null],
         ['true', true, null],
         ['a list holding a number', [5], null],
-        ['a map', {}, null]
+        ['a map', {}, null],
+        ['48200', 48200, 48200],
+        ['a negative number', -1, null],
+        ['not a number', Number.NaN, null],
+        ['text', '9', null],
+        ['nothing', undefined, null]
     ])('is the tokens of %s', (_name, value, expected) => {
         expect(tokens(value)).toBe(expected);
-    });
-
-    it('is null for an agent whose result reports none', () => {
-        expect(agentTokens({ id: 'a' } as SizedAgent)).toBe(null);
     });
 });
 

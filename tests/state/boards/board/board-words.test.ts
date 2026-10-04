@@ -1,6 +1,6 @@
-// The board's small readers: the venue and author lines, the first sentence, the day counts, the
-// slug, the stats and type counts, staleness, sizes and dissemination. Everything here is pure, so
-// nothing reads a file and nothing renders.
+// Layer 2, client-state tests. The board's small readers: the venue and author lines, the first
+// sentence, the day counts, the slug, the stats and type counts, staleness, sizes and
+// dissemination. Everything here is pure, so nothing reads a file and nothing renders.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -31,18 +31,11 @@ import {
     over
 } from './board-fixture.ts';
 
-describe('venueText and authorLine', () => {
+describe('venueText', () => {
     it('leaves out a JIF the registry wrote as nothing', () => {
         expect(venueText(venue('x', { name: 'X', jif: 'none' }))).toBe('X');
         expect(venueText(venue('x', { name: 'X', jif: ' - ' }))).toBe('X');
         expect(venueText(venue('x', { name: 'X', jif: '2.1' }))).toBe('X | JIF 2.1');
-    });
-
-    it('keeps an authors line that was written as one string', () => {
-        expect(authorLine(project('x', 'ideas', { authors: 'Faes and others' }))).toBe(
-            'Faes and others'
-        );
-        expect(authorLine(project('x', 'ideas', { authors: [], lead: 'Faes' }))).toBe('Faes');
     });
 });
 
@@ -256,10 +249,6 @@ describe('disseminated', () => {
             'fellowship'
         ]);
         expect(disseminated(snap, 'alpha').map((one) => one.collection)).toContain('applications');
-    });
-
-    it('leaves out an events entry the reader only attended', () => {
-        expect(disseminated(activity(), 'alpha').some((one) => one.id === 'other')).toBe(false);
     });
 
     it('finds nothing for a project nothing names, and none at all without the files', () => {

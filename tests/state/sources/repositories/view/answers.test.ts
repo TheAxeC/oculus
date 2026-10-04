@@ -1,8 +1,9 @@
-// What the views read out of the bodies of the git endpoints they fetch: the branches of the
-// Changes tab, a commit's files, a diff, a page of the graph, the three sides of a conflict and
-// the gutter's marks and blame. Each function takes the status and the parsed body, so a case
-// states a body and asserts what the view draws, without a fetch. What this does NOT cover: the
-// fetch itself and the catch around it, which are the components' and are drawn in their tests.
+// Layer 2, client-state tests. What the views read out of the bodies of the git endpoints they
+// fetch: the branches of the Changes tab, a commit's files, a diff, a page of the graph, the three
+// sides of a conflict and the gutter's marks and blame. Each function takes the status and the
+// parsed body, so a case states a body and asserts what the view draws, without a fetch. What this
+// does NOT cover: the fetch itself and the catch around it, which are the components' and are drawn
+// in their tests.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -56,8 +57,7 @@ const MERGE = { base: 'a\n', ours: 'b\n', theirs: 'c\n', deleted: '' };
 /** A body that is no JSON or is JSON null reads as undefined; the rest is what a server sends. */
 const NOT_LISTS: [string, unknown][] = [
     ['no JSON', undefined],
-    ['a list', []],
-    ['a text', 'x']
+    ['a list', []]
 ];
 
 const failed = (): string => t('repositories.graph_failed');

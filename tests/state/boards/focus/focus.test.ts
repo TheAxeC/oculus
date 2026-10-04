@@ -1,5 +1,6 @@
-// The Focus board's arithmetic over a synthetic portfolio: the lanes, what sits on each of them,
-// the ideas backlog, what is out for an answer, the ticker's six groups and the band under it.
+// Layer 2, client-state tests. The Focus board's arithmetic over a synthetic portfolio: what sits
+// on each lane, the ideas backlog, what is out for an answer, the ticker's six groups and the band
+// under it.
 //
 // The vocabulary is the real config, so the lanes, the clusters, the status palette, the priority
 // flames and the funding stages checked here are the ones config/catalogs/vocab.yml holds. The
@@ -12,17 +13,15 @@
 
 import { describe, expect, it } from 'vitest';
 import { NO_FEEDS, fixtureProject } from '../../../fixtures/entities-fixture.ts';
-import { attention, refresh, staleAfter } from '../../../../src/lib/state/feeds/feeds.ts';
+import { attention, refresh } from '../../../../src/lib/state/feeds/feeds.ts';
 import { engineDir, loadConfig, vocabCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { scalar } from '../../../../src/lib/data/helpers/guards.ts';
 import { setVocab } from '../../../../src/lib/state/shared/words/tones.ts';
 import {
     backlog,
-    holdingTone,
     laneItems,
     movable,
     lanes,
-    priorities,
     unplaced,
     waiting,
     lanesIn,
@@ -296,58 +295,11 @@ const all = Object.values(snap.entities.projects);
 const board = lanes(config);
 const week = ticker(snap, config, NOW);
 
-describe('lanes', () => {
-    it('reads the nine lanes of vocab.yml in three clusters, each hue already a tone', () => {
-        expect(board.map((one) => one.key)).toEqual([
-            'run',
-            'push',
-            'revise',
-            'review',
-            'blocked',
-            'backburner',
-            'scope',
-            'derisk',
-            'build'
-        ]);
-        expect(board[0]).toEqual({
-            key: 'run',
-            label: 'Run',
-            sub: 'experiments / getting the numbers',
-            tone: 'green',
-            cluster: 'now'
-        });
-        expect(board.filter((one) => one.cluster === 'now')).toHaveLength(3);
-    });
-
-    it('reads the ideas colour and the priority levels out of the same file', () => {
-        expect(holdingTone(config)).not.toBe('');
-        expect(priorities(config).map((one) => [one.key, one.flames])).toEqual([
-            ['high', 3],
-            ['med', 2],
-            ['low', 1]
-        ]);
-    });
-});
-
 describe('laneItems', () => {
     it('puts a project on the lane its focus names, deadline first then title', () => {
         const held = laneItems(all, board);
         expect(held.run.map((one) => one.id)).toEqual(['run-dated', 'run-plain']);
         expect(held.push.map((one) => one.id)).toEqual(['push-late']);
-    });
-
-    it('leaves holding and an unset focus off every lane', () => {
-        const held = laneItems(all, board);
-        expect(
-            Object.values(held)
-                .flat()
-                .map((one) => one.id)
-        ).not.toContain('idea-parked');
-        expect(
-            Object.values(held)
-                .flat()
-                .map((one) => one.id)
-        ).not.toContain('unplaced-ms');
     });
 });
 
@@ -447,17 +399,6 @@ describe('waiting', () => {
         expect(strip.people).toEqual([{ label: 'Some One', count: 1 }]);
         expect(strip.venues).toEqual([{ label: 'JBI', count: 1 }]);
         expect(strip.blocked).toBe(1);
-    });
-
-    it('counts a blocked project of every tier, not only the ones on the board', () => {
-        const wider = snapshot();
-        wider.entities.projects['blocked-archive'] = project('blocked-archive', 'archive', {
-            chips: ['blocked']
-        });
-        wider.entities.projects['blocked-coauthor'] = project('blocked-coauthor', 'coauthor', {
-            chips: ['blocked']
-        });
-        expect(waiting(wider, config, {}).blocked).toBe(strip.blocked + 2);
     });
 
     it('counts a blocked project once even when it is waiting on somebody as well', () => {
@@ -573,11 +514,6 @@ describe('ticker, deadlines', () => {
         ]);
     });
 
-    it('takes a live lead inside the leads window, leaving one beyond it and a dismissed one', () => {
-        const leads = week.deadlines.filter((one) => one.target?.kind === 'lead');
-        expect(leads.map((one) => one.label)).toEqual(['A lead']);
-    });
-
     it('folds a conference into the paper aimed at it and drops that call of its own', () => {
         const paper = week.deadlines.find((one) => one.kind === 'paper');
         expect(paper?.venue).toBe('ConfX');
@@ -586,11 +522,6 @@ describe('ticker, deadlines', () => {
 
     it('dates a call with no exact deadline by the months to its usual one', () => {
         expect(week.deadlines.find((one) => one.label === 'ConfY')?.months).toBe(1);
-    });
-
-    it('leaves a submitted paper off, since its own deadline is met', () => {
-        expect(week.deadlines.map((one) => one.id)).not.toContain('review-out');
-        expect(week.overdue.map((one) => one.id)).not.toContain('review-out');
     });
 });
 
@@ -648,12 +579,6 @@ describe('ticker, the undated tasks the command center does not carry', () => {
         expect(week.followups.map((one) => one.label)).toEqual(['holder - the dated note']);
         const notes = week.tasks.filter((one) => one.target?.kind === 'followup');
         expect(notes.map((one) => one.label)).toEqual(['holder - the open note']);
-    });
-
-    it('keeps a dated subtask on the command center and moves an undated one to the tasks', () => {
-        expect(week.subtasks.every((one) => one.days !== null)).toBe(true);
-        expect(week.subtasks.map((one) => one.label)).toContain('backburner-list: redraw figure 2');
-        expect(week.tasks.map((one) => one.label)).toContain('A review to write: read the paper');
     });
 
     it('makes an undated task entry a task line and a dated one a deadline line', () => {
@@ -767,7 +692,7 @@ describe('what a line can be written to', () => {
 });
 
 describe('attention and refresh', () => {
-    it('counts the inbox the channel gave and the days since the last post, and warns on venue load', () => {
+    it('counts the inbox the channel gave and the days since the last post', () => {
         expect(attention(snap, config, NOW, 2)).toEqual([
             { kind: 'inbox', count: 2 },
             { kind: 'linkedin', count: 102 }
@@ -796,12 +721,6 @@ describe('attention and refresh', () => {
             }
         };
         expect(refresh(never, config, NOW, null)[0]).toEqual({ feed: 'litwatch', days: null });
-    });
-
-    it('reads the threshold of each feed out of refresh_stale_days', () => {
-        expect(staleAfter(config, 'litwatch')).toBe(14);
-        expect(staleAfter(config, 'inbox')).toBe(2);
-        expect(staleAfter(config, 'scout')).toBe(7);
     });
 });
 

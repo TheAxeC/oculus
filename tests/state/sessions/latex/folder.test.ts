@@ -1,6 +1,6 @@
-// The LaTeX store over a folder of a root: how it asks, how its answer is read against the root,
-// the problems of the latest build as diagnostics, the outline, the word count and the root of a
-// file, and the build that follows a save.
+// Layer 2, client-state tests. The LaTeX store over a folder of a root: how it asks, how its answer
+// is read against the root, the problems of the latest build as diagnostics, the outline, the word
+// count and the root of a file, and the build that follows a save.
 //
 // `fetch` is a router stub answering by address; nothing here reaches a server, and the terminals
 // the store watches are the ones the case puts in the `sessions` payload.
@@ -64,30 +64,6 @@ describe('the LaTeX state of a folder of a root', () => {
         await settle();
 
         expect(seen.asked).toEqual(['GET /api/latex?id=x', 'GET /api/latex?root=x&path=x']);
-    });
-
-    it('asks again on every sessions push while a watched build runs, and stops when it ends', async () => {
-        const seen = router({ '/api/latex?root=docs&path=proposal': () => json(folderAnswer(5)) });
-        const { state, watch } = client.latex;
-        state(DOCS);
-        await settle();
-        watch(DOCS, 'aabbcc-shell');
-        receiveTerminals(client, 1, ['aabbcc-shell']);
-        state(DOCS);
-        await settle();
-        receiveTerminals(client, 2, ['aabbcc-shell']);
-        state(DOCS);
-        await settle();
-        expect(seen.asked).toEqual([ASKED_DOCS, ASKED_DOCS, ASKED_DOCS]);
-
-        receiveTerminals(client, 3, []);
-        state(DOCS);
-        await settle();
-        receiveTerminals(client, 4, []);
-        state(DOCS);
-        await settle();
-
-        expect(seen.asked).toEqual([ASKED_DOCS, ASKED_DOCS, ASKED_DOCS, ASKED_DOCS]);
     });
 
     // Revert: leave the mark out of watch in state/sessions/latex.svelte.ts.

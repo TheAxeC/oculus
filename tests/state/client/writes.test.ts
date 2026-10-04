@@ -1,6 +1,6 @@
-// Layer 4, state test. How long a write waits for its answer: the duration config/behavior.yml
-// names under `writes`, read at each write, and a write that outlasts it given up with the answer
-// saying so, so a form waiting on it is let go.
+// Layer 2, client-state tests. How long a write waits for its answer: the duration
+// config/behavior.yml names under `writes`, read at each write, and a write that outlasts it given
+// up with the answer saying so, so a form waiting on it is let go.
 //
 // What this does NOT cover: the form's own line and its Save control, which need a DOM.
 
@@ -17,6 +17,7 @@ setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
 });
 
 /** A fetch that never answers, and fails only once its request is given up. */
@@ -31,58 +32,52 @@ function silent(): void {
 }
 
 describe('the time a write waits', () => {
-    it('is the positive number of seconds the configuration names, in milliseconds', () => {
-        expect(writeTimeout({ writes: { timeout_seconds: 30 } })).toBe(30000);
-        expect(writeTimeout({ writes: { timeout_seconds: 0.5 } })).toBe(500);
-    });
-
-    it('is none for a configuration that names no positive number', () => {
-        expect(writeTimeout(null)).toBeNull();
-        expect(writeTimeout({})).toBeNull();
-        expect(writeTimeout({ writes: [] })).toBeNull();
-        expect(writeTimeout({ writes: { timeout_seconds: 0 } })).toBeNull();
-        expect(writeTimeout({ writes: { timeout_seconds: -3 } })).toBeNull();
-        expect(writeTimeout({ writes: { timeout_seconds: '30' } })).toBeNull();
-    });
-
     it.each([
-        [0, null],
-        [-1, null],
-        ['5', null],
-        [Number('1e999'), null],
-        [5, 5000],
-        [undefined, null]
-    ])('is read from a timeout_seconds of %p as %p', (seconds, wait) => {
-        expect(writeTimeout({ writes: { timeout_seconds: seconds } })).toBe(wait);
+        ['thirty seconds', { writes: { timeout_seconds: 30 } }, 30000],
+        ['half a second', { writes: { timeout_seconds: 0.5 } }, 500],
+        ['five seconds', { writes: { timeout_seconds: 5 } }, 5000],
+        ['no configuration', null, null],
+        ['an empty configuration', {}, null],
+        ['writes that is a list', { writes: [] }, null],
+        ['zero', { writes: { timeout_seconds: 0 } }, null],
+        ['a negative number', { writes: { timeout_seconds: -3 } }, null],
+        ['a number written as text', { writes: { timeout_seconds: '30' } }, null],
+        ['infinity', { writes: { timeout_seconds: Number('1e999') } }, null],
+        ['no timeout_seconds', { writes: { timeout_seconds: undefined } }, null]
+    ])('is read from %s', (_name, config, wait) => {
+        expect(writeTimeout(config)).toBe(wait);
     });
 });
 
 describe('a write that no answer reaches', () => {
-    it(
-        'is given up once the configured time has passed, and says so',
-        { timeout: 5000 },
-        async () => {
-            silent();
-            const writes = createWrites(() => ({ writes: { timeout_seconds: 0.05 } }));
-            const answer = writes.send({ action: 'set', collection: 'tasks' });
-            expect(writes.pending()).toBe(true);
-            expect(await answer).toEqual({
-                ok: false,
-                changed: [],
-                refused: [],
-                error: t('app.write_timed_out')
-            });
-            expect(writes.pending()).toBe(false);
-            expect(writes.lastError()).toBe(t('app.write_timed_out'));
-        }
-    );
+    it('is given up once the configured time has passed, and says so', async () => {
+        vi.useFakeTimers();
+        silent();
+        const writes = createWrites(() => ({ writes: { timeout_seconds: 0.05 } }));
+        const answer = writes.send({ action: 'set', collection: 'tasks' });
+        expect(writes.pending()).toBe(true);
+        await vi.advanceTimersByTimeAsync(49);
+        expect(writes.pending()).toBe(true);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(await answer).toEqual({
+            ok: false,
+            changed: [],
+            refused: [],
+            error: t('app.write_timed_out')
+        });
+        expect(writes.pending()).toBe(false);
+        expect(writes.lastError()).toBe(t('app.write_timed_out'));
+    });
 
     it('reads the time at each write, so a changed configuration holds for the next one', async () => {
+        vi.useFakeTimers();
         silent();
         let seconds = 60;
         const writes = createWrites(() => ({ writes: { timeout_seconds: seconds } }));
         seconds = 0.05;
-        expect((await writes.send({ action: 'set' })).error).toBe(t('app.write_timed_out'));
+        const answer = writes.send({ action: 'set' });
+        await vi.advanceTimersByTimeAsync(50);
+        expect((await answer).error).toBe(t('app.write_timed_out'));
     });
 });
 

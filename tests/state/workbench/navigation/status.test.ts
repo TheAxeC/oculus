@@ -1,7 +1,8 @@
-// The words of the status bar that the page makes and the bar draws: the server, usage, HPC and
-// live-session items from what their channels hold, the repository of the tab on screen from the
-// `git` channel and the served roots, and the source items' words, the caret, the indentation and
-// the language list. The rules of state/workbench/navigation/status.ts over hand-built payloads.
+// Layer 2, client-state tests. The words of the status bar that the page makes and the bar draws:
+// the server, usage, HPC and live-session items from what their channels hold, the repository of
+// the tab on screen from the `git` channel and the served roots, and the source items' words, the
+// caret, the indentation and the language list. The rules of state/workbench/navigation/status.ts
+// over hand-built payloads.
 //
 // What this does NOT cover: the bar drawing the words, which is
 // tests/shell/status/status-bar.test.ts's, and an item pressed.
@@ -16,7 +17,6 @@ import {
     languageName,
     liveCount,
     repoStatus,
-    socketWords,
     statusWords,
     tabFile,
     usageWords
@@ -32,7 +32,7 @@ import { git } from '../../../fixtures/sessions-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { languageMap } from '../../../../src/lib/data/helpers/files/languages.ts';
 import { registered } from '../../../../src/lib/state/shared/words/languages.ts';
-import { languageOf, languages } from '../../../../src/lib/state/sources/fs.ts';
+import { languages } from '../../../../src/lib/state/sources/fs.ts';
 import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import { allFindings, entityCount } from '../../../../src/lib/state/workbench/navigation/status.ts';
 
@@ -73,14 +73,6 @@ const ROOTS = [
     { key: 'paper', dir: '/work/hub/projects/paper', fixed: false },
     { key: 'notes', dir: '/work/notes', fixed: false }
 ];
-
-describe('the server item', () => {
-    it('names each of the three socket states in its own word', () => {
-        expect(socketWords('closed')).toBe(t('statusbar.server_closed'));
-        expect(socketWords('connecting')).toBe(t('statusbar.server_connecting'));
-        expect(socketWords('open')).toBe(t('statusbar.server_open'));
-    });
-});
 
 describe('the usage item', () => {
     it('takes the refreshers together: down wins, then refreshing, and none says so', () => {
@@ -150,17 +142,6 @@ describe('the findings item', () => {
 });
 
 describe('the repository of the tab on screen', () => {
-    it('reads a file tab state as its root key and path, and anything else as no file', () => {
-        expect(tabFile({ root: 'hub', path: 'a.md', label: 'a.md' })).toEqual({
-            root: 'hub',
-            path: 'a.md'
-        });
-        expect(tabFile({ root: '', path: 'a.md' })).toBe(null);
-        expect(tabFile({ path: 'a.md' })).toBe(null);
-        expect(tabFile(null)).toBe(null);
-        expect(tabFile(['hub', 'a.md'])).toBe(null);
-    });
-
     it('is the innermost repository holding the file, found through the root its key serves', () => {
         const git: GitPayload = {
             '/work/hub': repo({ ahead: 1 }),
@@ -235,10 +216,9 @@ describe('the repository of the tab on screen', () => {
         ).toBe('draft');
     });
 
-    it('holds no repository for a folder no repository contains, and for a key that is no folder', () => {
+    it('holds no repository for a folder no repository contains', () => {
         const git: GitPayload = { '/work/hub': repo() };
         expect(repoStatus({ root: '/elsewhere', path: 'a.ts' }, ROOTS, git, 'hub')).toBe(null);
-        expect(repoStatus({ root: 'unknown', path: 'a.ts' }, ROOTS, git, 'hub')).toBe(null);
     });
 
     it('holds no file in a repository whose key is empty', () => {
@@ -280,25 +260,8 @@ describe('the source items words', () => {
         expect(languageName('cobol')).toBe(t('statusbar.language_plaintext'));
     });
 
-    it('names a C++ file C++, the new languages by their display names, and lists every language of the map', () => {
+    it('lists every language of the language map', () => {
         const map = languageMap(CONFIG);
-        expect(languageName(languageOf('rite.cpp', map))).toBe('C++');
-        expect(
-            ['c', 'cmake', 'lua', 'ruby', 'scss', 'java', 'dart', 'fortran', 'fortran-fixed'].map(
-                languageName
-            )
-        ).toEqual([
-            'C',
-            'CMake',
-            'Lua',
-            'Ruby',
-            'SCSS',
-            'Java',
-            'Dart',
-            'Fortran',
-            'Fortran (Fixed Form)'
-        ]);
-        expect(['jinja', 'svelte', 'rite'].map(languageName)).toEqual(['Jinja', 'Svelte', 'Rite']);
         const listed = languageMatches('').map((found) => found.choice.name);
         expect([...listed].sort()).toEqual(languages(map).sort());
     });
@@ -322,10 +285,6 @@ describe('the source items words', () => {
 
     // Red when languageMatches goes back to substrings: 'pyth' still holds, 'tscript' does not.
     it('matches a language by the letters of its name in their order', () => {
-        const all = languageMatches('').map((found) => found.choice);
-        expect(all[0].name).toBe('plaintext');
-        const rest = all.slice(1).map((choice) => choice.label);
-        expect(rest).toEqual([...rest].sort((left, right) => left.localeCompare(right)));
         expect(languageMatches('pyth').map((found) => found.choice.label)).toContain('Python');
         expect(languageMatches('tscript').map((found) => found.choice.label)).toContain(
             'TypeScript'
@@ -354,19 +313,12 @@ describe('the file a tab names over a state of the wrong type', () => {
     const rows: [string, () => unknown, unknown][] = [
         ['an array', () => tabFile([]), null],
         ['null', () => tabFile(null), null],
-        ['undefined', () => tabFile(undefined), null],
-        ['a string', () => tabFile('r/p'), null],
-        ['a number', () => tabFile(3), null],
-        ['an empty map', () => tabFile({}), null],
         ['a root and a path', () => tabFile({ root: 'r', path: 'p' }), { root: 'r', path: 'p' }],
         ['a root alone', () => tabFile({ root: 'r' }), null],
         ['a path alone', () => tabFile({ path: 'p' }), null],
         ['an empty root', () => tabFile({ root: '', path: 'p' }), null],
         ['an empty path', () => tabFile({ root: 'r', path: '' }), { root: 'r', path: '' }],
         ['a root that is a number', () => tabFile({ root: 3, path: 'p' }), null],
-        ['a path that is a number', () => tabFile({ root: 'r', path: 3 }), null],
-        ['a path that is null', () => tabFile({ root: 'r', path: null }), null],
-        ['a root that is a list', () => tabFile({ root: ['r'], path: 'p' }), null],
         [
             'more keys than the two',
             () => tabFile({ extra: 1, path: 'p', root: 'r', id: 'i' }),

@@ -1,6 +1,6 @@
-// Replacing from a Search tab: Replace All and Replace of one hit over the query the answer was
-// found by, the files with unsaved text, the refusals a replace says, the Replace Preview a hit
-// opens, and a replace that lands after its tab closed or after a newer run.
+// Layer 2, client-state tests. Replacing from a Search tab: Replace All and Replace of one hit over
+// the query the answer was found by, the files with unsaved text, the refusals a replace says, the
+// Replace Preview a hit opens, and a replace that lands after its tab closed or after a newer run.
 //
 // The endpoint is stubbed with a fetch of the case's own, so nothing starts a process and nothing
 // reaches the network.
@@ -334,7 +334,7 @@ describe('replacing from a tab', () => {
         expect(client.search.replaceSaid('one')).toBeNull();
     });
 
-    it('writes the count line back when a Replace follows a Replace All', async () => {
+    it('takes the count line of a Replace All away when a Replace of one hit follows', async () => {
         serve(wrote);
         armed();
         await client.search.replaceHits('one', { kind: 'all' });
@@ -344,7 +344,7 @@ describe('replacing from a tab', () => {
         expect(client.search.replaceSaid('one')).toBeNull();
     });
 
-    it('writes the count line back when a hit is dismissed after a Replace All', async () => {
+    it('takes the count line of a Replace All away when a hit is dismissed', async () => {
         // Revert: drop the unsay of dismissHits.
         serve(wrote);
         armed();

@@ -1,7 +1,8 @@
-// The appearance store: the theme, the CRT overlay, the wallpaper, the glyph mode, the terminal
-// size and what each view instance remembers, read and written through a fake storage. Nothing here
-// touches localStorage, and the theme names it accepts are the ones config/appearance.yml lists, so
-// a theme that was dropped from that file cannot come back out of a browser that still holds it.
+// Layer 2, client-state tests. The appearance store: the theme, the CRT overlay, the wallpaper, the
+// glyph mode, the terminal size and what each view instance remembers, read and written through a
+// fake storage. Nothing here touches localStorage, and the theme names it accepts are the ones
+// config/appearance.yml lists, so a theme that was dropped from that file cannot come back out of a
+// browser that still holds it.
 //
 // What a browser that saved nothing starts on is config/appearance.yml's too, so the defaults are
 // asserted against that file rather than against a literal: the first theme of its list, its
@@ -74,12 +75,10 @@ beforeEach(() => {
 
 // The store checks a stored theme against the theme list, so the list the server ships is installed
 // first, exactly as the page installs it before the workbench renders.
-setAppearance(loadConfig(engineDir()).config);
+const SHIPPED = loadConfig(engineDir()).config;
+setAppearance(SHIPPED);
 
 const DEFAULT_THEME = defaultTheme();
-
-/** The envelope before the toggle's value became the viewer's own choice alone. */
-const EARLIER_VERSION = UI_VERSION - 1;
 
 /** A fake Storage: what the store needs of one, and a window on what it wrote. */
 function fakeStorage(seed?: unknown) {
@@ -163,24 +162,6 @@ describe('the appearance store', () => {
         expect(again.ui.statusQuiet()).toBe(true);
     });
 
-    it('reads a hidden list saved wrongly as the entries it can use, and one saved before it as none', () => {
-        const odd = createClientState();
-        odd.ui.loadUi(
-            fakeStorage({
-                version: UI_VERSION,
-                theme: DEFAULT_THEME,
-                statusHidden: ['sync', 3, '', 'sync', null, 'host'],
-                statusQuiet: 'yes'
-            })
-        );
-        expect(odd.ui.statusHidden()).toEqual(['sync', 'host']);
-        expect(odd.ui.statusQuiet()).toBe(false);
-        const before = createClientState();
-        before.ui.loadUi(fakeStorage({ version: UI_VERSION, theme: DEFAULT_THEME }));
-        expect(before.ui.statusHidden()).toEqual([]);
-        expect(before.ui.statusQuiet()).toBe(false);
-    });
-
     it('loads an envelope that still carries dismissed lead ids without keeping the field', () => {
         const storage = fakeStorage({
             version: UI_VERSION,
@@ -244,112 +225,6 @@ describe('the appearance store', () => {
         expect(saved(storage).textScale).toBe(null);
     });
 
-    it('bounds a saved app scale and rejects a non-number', () => {
-        expect(loadUi(fakeStorage({ version: UI_VERSION, textScale: 5, instances: {} }))).toBe(
-            true
-        );
-        expect(textScale()).toBe(1.6);
-        expect(
-            loadUi(fakeStorage({ version: UI_VERSION, textScale: 'large', instances: {} }))
-        ).toBe(true);
-        expect(textScale()).toBe(null);
-    });
-
-    it('bounds a saved terminal size and rejects a non-number', () => {
-        expect(loadUi(fakeStorage({ version: UI_VERSION, terminalFont: 80, instances: {} }))).toBe(
-            true
-        );
-        expect(terminalFont()).toBe(40);
-        expect(
-            loadUi(fakeStorage({ version: UI_VERSION, terminalFont: 'large', instances: {} }))
-        ).toBe(true);
-        expect(terminalFont()).toBe(null);
-    });
-
-    it('reads the wallpaper and the glyph mode back, each on its own', () => {
-        const first = fakeStorage();
-        loadUi(first);
-        setWallpaper(true);
-        setIcons(false);
-
-        const second = fakeStorage(saved(first));
-        expect(loadUi(second)).toBe(true);
-        expect(wallpaper()).toBe(true);
-        expect(icons()).toBe(false);
-
-        setWallpaper(false);
-        setIcons(true);
-        const third = fakeStorage(saved(second));
-        expect(loadUi(third)).toBe(true);
-        expect(wallpaper()).toBe(false);
-        expect(icons()).toBe(true);
-    });
-
-    it('reads a choice saved under the older field name when no icons field is saved', () => {
-        const older = fakeStorage({
-            version: UI_VERSION,
-            theme: 'mocha',
-            crt: false,
-            unicode: true,
-            instances: {}
-        });
-        expect(loadUi(older)).toBe(true);
-        expect(icons()).toBe(true);
-        const both = fakeStorage({
-            version: UI_VERSION,
-            theme: 'mocha',
-            crt: false,
-            unicode: true,
-            icons: false,
-            instances: {}
-        });
-        expect(loadUi(both)).toBe(true);
-        expect(icons()).toBe(false);
-    });
-
-    it('writes a choice read under the older field name back under icons at once', () => {
-        const older = fakeStorage({
-            version: UI_VERSION,
-            theme: 'mocha',
-            crt: false,
-            unicode: false,
-            instances: {}
-        });
-        loadUi(older);
-        expect(saved(older)).toMatchObject({ theme: 'mocha', icons: false });
-        // the choice now lives under its own name, so the older field is not carried on
-        expect(saved(older)).not.toHaveProperty('unicode');
-    });
-
-    it('takes the two flags from the config when the saved appearance predates them', () => {
-        const storage = fakeStorage({
-            version: UI_VERSION,
-            theme: 'mocha',
-            crt: false,
-            instances: {}
-        });
-        expect(loadUi(storage)).toBe(true);
-        expect(theme()).toBe('mocha');
-        expect(wallpaper()).toBe(wallpaperOnTheme('mocha'));
-        expect(icons()).toBe(false);
-    });
-
-    it('reads a wallpaper saved by the earlier envelope as no choice at all', () => {
-        // Every save wrote that field then, so a false there is not a press of the toggle.
-        const storage = fakeStorage({
-            version: EARLIER_VERSION,
-            theme: 'mocha',
-            crt: true,
-            wallpaper: false,
-            instances: { a: 1 }
-        });
-        expect(loadUi(storage)).toBe(true);
-        expect(wallpaperOnTheme('mocha')).toBe(true);
-        expect(wallpaper()).toBe(true);
-        expect(crt()).toBe(true);
-        expect(instanceState('a')).toBe(1);
-    });
-
     it('keeps a wallpaper the toggle turned off under a theme that shows one', () => {
         const first = fakeStorage();
         loadUi(first);
@@ -381,53 +256,6 @@ describe('the appearance store', () => {
         expect(wallpaper()).toBe(wallpaperOnTheme('mocha'));
     });
 
-    it('reads back what it wrote', () => {
-        const first = fakeStorage();
-        loadUi(first);
-        setTheme('nord');
-        setCrt(true);
-        setInstanceState('a', { at: 2 });
-
-        const second = fakeStorage(saved(first));
-        expect(loadUi(second)).toBe(true);
-        expect(theme()).toBe('nord');
-        expect(crt()).toBe(true);
-        expect(instanceState('a')).toEqual({ at: 2 });
-    });
-
-    it('saves and restores distinct source working and saved copies by instance id', () => {
-        const first = fakeStorage();
-        loadUi(first);
-        const one = {
-            text: 'unsaved one',
-            saved: 'disk one',
-            loaded: true,
-            error: '',
-            message: ''
-        };
-        const two = {
-            text: 'unsaved two',
-            saved: 'disk two',
-            loaded: true,
-            error: '',
-            message: ''
-        };
-        setInstanceState('source-one', one);
-        setInstanceState('source-two', two);
-        const second = fakeStorage(saved(first));
-        expect(loadUi(second)).toBe(true);
-        expect(instanceState('source-one')).toEqual(one);
-        expect(instanceState('source-two')).toEqual(two);
-    });
-
-    it('keeps two instances of the same view apart by their ids', () => {
-        loadUi(fakeStorage());
-        setInstanceState('one', { pick: 'a' });
-        setInstanceState('two', { pick: 'b' });
-        expect(instanceState('one')).toEqual({ pick: 'a' });
-        expect(instanceState('two')).toEqual({ pick: 'b' });
-    });
-
     it('lists the instance records whose key starts with a prefix and clears them in one save', () => {
         const storage = fakeStorage();
         loadUi(storage);
@@ -452,40 +280,11 @@ describe('the appearance store', () => {
         expect(instanceState('t1')).toEqual({ pick: 'a' });
     });
 
-    it('falls back to the default theme for a stored name the theme list does not hold', () => {
-        const storage = fakeStorage({
-            version: UI_VERSION,
-            theme: 'chartreuse',
-            crt: true,
-            instances: { a: 1 }
-        });
-        expect(loadUi(storage)).toBe(true);
-        expect(theme()).toBe(DEFAULT_THEME);
-        expect(crt()).toBe(true);
-        expect(instanceState('a')).toBe(1);
-    });
-
     it('refuses a name the theme list does not hold when it is set as well', () => {
         loadUi(fakeStorage());
         setTheme('mocha');
         setTheme('chartreuse');
         expect(theme()).toBe(DEFAULT_THEME);
-    });
-
-    it('falls back whole on another version, on nothing readable, and on a broken shape', () => {
-        expect(loadUi(fakeStorage({ version: UI_VERSION + 1, theme: 'mocha' }))).toBe(false);
-        expect(theme()).toBe(DEFAULT_THEME);
-
-        const broken = fakeStorage();
-        broken.held[UI_KEY] = 'not json';
-        expect(loadUi(broken)).toBe(false);
-        expect(theme()).toBe(DEFAULT_THEME);
-
-        expect(loadUi(fakeStorage({ version: UI_VERSION, theme: 5, instances: 'none' }))).toBe(
-            true
-        );
-        expect(theme()).toBe(DEFAULT_THEME);
-        expect(instanceState('a')).toBe(undefined);
     });
 
     it('accepts every theme config/appearance.yml lists', () => {
@@ -529,11 +328,11 @@ describe('the keyboard reorder request', () => {
 describe('the code theme', () => {
     /** The configured code theme, put in place for one case and restored after. */
     function configured(value: unknown): void {
-        setAppearance({ ...loadConfig(engineDir()).config, code_theme: value });
+        setAppearance({ ...SHIPPED, code_theme: value });
     }
 
     afterEach(() => {
-        setAppearance(loadConfig(engineDir()).config);
+        setAppearance(SHIPPED);
     });
 
     // Revert: answer `store.current.codeTheme ?? 'tokens'` in codeTheme(); the configured default
@@ -614,40 +413,6 @@ describe('the code theme', () => {
             expect(saved(storage).codeTheme, value).toBeNull();
             expect(codeTheme(), value).toBe('dark-plus');
         }
-    });
-
-    // Revert: keep whatever string an envelope holds; a saved id the list lost is then painted.
-    it('reads a saved id the list does not hold as no pick', () => {
-        configured('dark-plus');
-        for (const value of ['gone', '', 5, null, ['nord']]) {
-            const again = createClientState();
-            again.ui.loadUi(
-                fakeStorage({ version: UI_VERSION, theme: DEFAULT_THEME, codeTheme: value })
-            );
-            expect(again.ui.codeTheme(), String(value)).toBe('dark-plus');
-        }
-    });
-
-    // Revert: make the field required in loadUi; an envelope from before the field is refused.
-    it('loads an envelope saved before the field, every other value as saved', () => {
-        configured('dark-plus');
-        const before = createClientState();
-        expect(
-            before.ui.loadUi(
-                fakeStorage({
-                    version: UI_VERSION,
-                    theme: 'mocha',
-                    crt: true,
-                    textScale: 1.3,
-                    instances: { a: 1 }
-                })
-            )
-        ).toBe(true);
-        expect(before.ui.codeTheme()).toBe('dark-plus');
-        expect(before.ui.theme()).toBe('mocha');
-        expect(before.ui.crt()).toBe(true);
-        expect(before.ui.textScale()).toBe(1.3);
-        expect(before.ui.instanceState('a')).toBe(1);
     });
 
     // Revert: share one field between the code theme and the UI theme; a pick moves both.

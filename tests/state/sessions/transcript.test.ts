@@ -1,12 +1,15 @@
-// What the transcript store holds and when it lets go. Nothing is fetched here: the store's own
-// guard leaves the network alone when there is no window, so every case puts turns in through
-// hold(), the module's test-only door, and reads them back through turnsFor().
+// Layer 2, client-state tests. What the transcript store holds and when it lets go: the turns a
+// session holds until its last viewer closes, the tail read from the held offset when a session's
+// stamp moves, and the answers whose fields are of the wrong type. The release cases put turns in
+// through hold(), the module's test-only door, and read them back through turnsFor(); the others
+// answer a `fetch` stub.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Turn } from '../../../src/lib/data/model/index.ts';
 import type { TurnsState } from '../../../src/lib/state/sessions/transcript.svelte.ts';
 import {
     createClientState,
+    settle,
     stubHeld,
     type ClientState,
     refused,
@@ -99,10 +102,6 @@ describe('the tail of a session', () => {
             cut: false,
             tool: { id, name: 'Bash', summary: 'ls', ok: null }
         };
-    }
-
-    async function settle(): Promise<void> {
-        await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
     beforeEach(() => {
@@ -250,7 +249,7 @@ describe('an answer whose fields are of the wrong type', () => {
         vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
         const fresh = createClientState();
         fresh.transcripts.turnsFor('one');
-        await new Promise((wake) => setTimeout(wake, 0));
+        await settle();
         return fresh.transcripts.turnsFor('one');
     }
 
@@ -283,7 +282,6 @@ describe('an answer whose fields are of the wrong type', () => {
     it('answers a refusal as the refusal sentence, whatever text it carries', async () => {
         const said = { ...NOTHING, error: refused(500) };
         expect(await answeredWith('{"error":"x"}', 500)).toStrictEqual(said);
-        expect(await answeredWith('[]', 500)).toStrictEqual(said);
     });
 
     it.each([
@@ -319,21 +317,11 @@ describe('an answer whose fields are of the wrong type', () => {
         }
     );
 
-    it('answers a refusal whose error is a number as the refusal sentence', async () => {
-        expect(await answeredWith('{"error":3}', 500)).toStrictEqual({
+    it('answers a body that is no JSON as the unreadable sentence with its status', async () => {
+        expect(await answeredWith('nope', 500)).toStrictEqual({
             ...NOTHING,
-            error: refused(500)
+            error: unreadable(500)
         });
-    });
-
-    it('answers a body that is null or not JSON as the unreadable sentence with its status', async () => {
-        for (const text of ['null', 'nope']) {
-            expect(await answeredWith(text)).toStrictEqual({ ...NOTHING, error: unreadable(200) });
-            expect(await answeredWith(text, 500)).toStrictEqual({
-                ...NOTHING,
-                error: unreadable(500)
-            });
-        }
     });
 
     it('keeps the turns it holds when a later read answers null or text that is not JSON', async () => {
@@ -342,11 +330,11 @@ describe('an answer whose fields are of the wrong type', () => {
         vi.stubGlobal('fetch', () => Promise.resolve(new Response(bodies.shift())));
         const fresh = createClientState();
         fresh.transcripts.turnsFor('one');
-        await new Promise((wake) => setTimeout(wake, 0));
+        await settle();
         fresh.transcripts.follow('one', '0');
         for (const stamp of ['1', '2']) {
             fresh.transcripts.follow('one', stamp);
-            await new Promise((wake) => setTimeout(wake, 0));
+            await settle();
             expect(fresh.transcripts.turnsFor('one')).toStrictEqual({
                 turns: [user],
                 offset: 2,

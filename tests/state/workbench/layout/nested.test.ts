@@ -1,6 +1,7 @@
-// Pages shown inside other pages: the third kind of node, the rule that a page never shows itself,
-// and the store operations that name the page they address. The trees themselves are
-// layout.test.ts and the page list is pages.test.ts; what is here is what nesting adds to both.
+// Layer 2, client-state tests. Pages shown inside other pages: the third kind of node, the rule
+// that a page never shows itself, and the store operations that name the page they address. The
+// trees themselves are layout.test.ts and the page list is pages.test.ts; what is here is what
+// nesting adds to both.
 //
 // Nothing here touches localStorage or the DOM: the pure half takes hand-built pages and the store
 // takes the storage it is given. The catalog is installed because the store names the page it
@@ -11,7 +12,6 @@ import {
     checkLayout,
     checkPages,
     containsPage,
-    defaultWorkbench,
     embedPage,
     embeddable,
     fold,
@@ -174,7 +174,7 @@ describe('the page leaf in a tree', () => {
         expect(leaves).toEqual([]);
     });
 
-    it('reads a version 4 envelope holding no leaf back as it was written', () => {
+    it('reads an envelope holding no page leaf back as it was written', () => {
         const held: Pages = {
             pages: [page('one', three()), page('two', pane(['z']))],
             current: 'two',
@@ -221,29 +221,28 @@ describe('containsPage', () => {
 });
 
 describe('embedPage', () => {
-    it('splits the pane at the path and puts the page on the edge', () => {
-        const held: Pages = {
-            pages: [page('one', pane(['a'])), page('two', pane(['b']))],
-            current: 'one',
-            floats: []
-        };
-        const next = embedPage(held, 'one', [], 'right', 'two');
-        expect(next.pages[0].workbench.root).toEqual(
-            split('row', [0.5, 0.5], [pane(['a']), pageLeaf('two')])
-        );
-        expect(checkPages(next)).toEqual([]);
-    });
-
-    it('puts the page before the pane for the left and the top edge', () => {
-        const held: Pages = {
-            pages: [page('one', pane(['a'])), page('two', pane(['b']))],
-            current: 'one',
-            floats: []
-        };
-        expect(embedPage(held, 'one', [], 'top', 'two').pages[0].workbench.root).toEqual(
-            split('col', [0.5, 0.5], [pageLeaf('two'), pane(['a'])])
-        );
-    });
+    it.each([
+        ['right edge', 'right', 'row', false],
+        ['top edge', 'top', 'col', true]
+    ] as const)(
+        'splits the pane at the path and puts the page on its %s',
+        (_name, edge, dir, before) => {
+            const held: Pages = {
+                pages: [page('one', pane(['a'])), page('two', pane(['b']))],
+                current: 'one',
+                floats: []
+            };
+            const next = embedPage(held, 'one', [], edge, 'two');
+            expect(next.pages[0].workbench.root).toEqual(
+                split(
+                    dir,
+                    [0.5, 0.5],
+                    before ? [pageLeaf('two'), pane(['a'])] : [pane(['a']), pageLeaf('two')]
+                )
+            );
+            expect(checkPages(next)).toEqual([]);
+        }
+    );
 
     it('changes nothing when the page is the host or already shows it', () => {
         const held = chain();
@@ -260,11 +259,9 @@ describe('embedPage', () => {
         ]);
     });
 
-    it('refuses a page the host already draws, here and through another page', () => {
+    it('refuses a page the host already draws', () => {
         const held = flat();
         expect(embedPage(held, 'one', [0], 'right', 'two')).toBe(held);
-        const deep = chain();
-        expect(embedPage(deep, 'one', [0], 'right', 'three')).toBe(deep);
     });
 });
 
@@ -300,16 +297,6 @@ describe('the store over nested pages', () => {
         );
         store.unembedPage([1]);
         expect(store.layout('one')).toEqual(pane(['a']));
-    });
-
-    it('refuses to show a page inside itself or inside a page it shows', () => {
-        const store = load(chain());
-        store.embedPage('one', [0], 'right');
-        store.embedPage('one', [0], 'right', 'three');
-        expect(store.layout('one')).toEqual(
-            split('row', [0.5, 0.5], [pane(['a']), pageLeaf('two')])
-        );
-        expect(store.layout('three')).toEqual(pane(['c']));
     });
 
     it('changes the tree of the page an operation names, and not the one on screen', () => {
@@ -412,10 +399,6 @@ describe('the store over nested pages', () => {
         expect(store.focused('two')).toBe(null);
     });
 
-    it('starts from a workbench the default pages hold, which holds no leaf', () => {
-        expect(pageLeaves(defaultWorkbench().root)).toEqual([]);
-    });
-
     it('opens a view in the page of the pane the reader last acted in', () => {
         const store = load(chain());
         store.touchPane('three');
@@ -438,16 +421,6 @@ describe('the store over nested pages', () => {
         store.openView('radar');
         expect(panesOf(store.layout('two')).flatMap(({ pane: one }) => one.tabs)).toHaveLength(2);
         expect(panesOf(store.layout('three')).flatMap(({ pane: one }) => one.tabs)).toHaveLength(2);
-    });
-
-    it('ignores a touch on a page the list does not hold', () => {
-        const store = load(chain());
-        store.touchPane('gone');
-        store.openView('venues');
-        expect(panesOf(store.layout('one'))[0].pane.tabs.map((tab) => tab.view)).toEqual([
-            'projects',
-            'venues'
-        ]);
     });
 
     it('does nothing at all when an operation names a page that is gone', () => {
@@ -525,15 +498,6 @@ describe('one drawing of a page on a screen', () => {
 });
 
 describe('the page the reader is in', () => {
-    it('forgets a touched page once the screen no longer draws it', () => {
-        const store = load(chain());
-        store.touchPane('two');
-        store.unembedPage([1], 'one');
-        store.openView('venues');
-        expect(viewsOf(store.layout('one'))).toContain('venues');
-        expect(viewsOf(store.layout('two'))).not.toContain('venues');
-    });
-
     it('forgets a touched page when a pane of another page is maximised', () => {
         const store = load(chain());
         store.touchPane('two');

@@ -1,6 +1,7 @@
-// The merge editor's model: the three versions of a conflicted file cut into settled regions and
-// conflicts, a conflict settled each way, the result typed into by hand, and the count of what is
-// still open. The rules are pure; what the server writes and stages is tests/server/git.
+// Layer 2, client-state tests. The merge editor's model: the three versions of a conflicted file
+// cut into settled regions and conflicts, a conflict settled each way, the result typed into by
+// hand, and the count of what is still open. The rules are pure; what the server writes and stages
+// is tests/server/git.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -205,10 +206,6 @@ describe('Complete Merge on a path a side deleted', () => {
             expect(takesDeletion(deleted, ''), deleted).toBe(true);
             expect(takesDeletion(deleted, 'kept\n'), deleted).toBe(false);
         }
-        expect(takesDeletion('', '')).toBe(false);
-    });
-
-    it('writes an empty Result over a path neither side deleted, as the file it now is', () => {
         expect(takesDeletion('', '')).toBe(false);
     });
 

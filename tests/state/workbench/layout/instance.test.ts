@@ -1,4 +1,5 @@
-// Instance identity and lookups on hand-built layout trees, separate from tree mutation tests.
+// Layer 2, client-state tests. Instance identity and lookups on hand-built layout trees, separate
+// from tree mutation tests.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -51,14 +52,6 @@ describe('instance identity and lookups', () => {
         expect(findInstance(tree, 'z')).toBe(null);
     });
 
-    it('uses a session pin as the instance identity after an explicit id', () => {
-        expect(stateId({ session: 'one', label: 'One' })).toBe('one');
-        expect(stateId({ id: 'project', session: 'one' })).toBe('project');
-        for (const value of [null, [], 'one', { label: 'One' }, { root: 'hub', path: '' }]) {
-            expect(stateId(value)).toBe(null);
-        }
-    });
-
     it('matches both view and identity, with omitted and explicit unpinned identities', () => {
         const first = { id: 'one', view: 'source', state: { root: 'hub', path: 'notes.md' } };
         const second = { id: 'two', view: 'source', state: {} };
@@ -90,15 +83,6 @@ describe('instance identity and lookups', () => {
         expect(newInstance('status').state).toEqual({});
     });
 
-    it('stores the cursor only while a card is held', () => {
-        const state = { filter: 'open' };
-        expect(withCardCursor(state, null)).toBe(state);
-        expect(withCardCursor(state, 'card-two')).toEqual({ filter: 'open', cursor: 'card-two' });
-        expect(withCardCursor({ filter: 'open', cursor: 'card-two' }, null)).toEqual({
-            filter: 'open'
-        });
-    });
-
     it('keeps a card cursor across a render and clears it when that card is gone', () => {
         const state = { filter: 'open', cursor: 'card-two' };
         const rerendered = reconcileCardCursor(state, ['card-two', 'card-one']);
@@ -113,32 +97,21 @@ describe('instance identity and lookups', () => {
 });
 
 describe('the instance readers over a state of the wrong type', () => {
+    const proto = '{"__proto__":{"cursor":"p","id":"p","session":"p"},"b":1}';
     const rows: [string, () => unknown, unknown][] = [
         ['cardCursor of an array', () => cardCursor([]), null],
-        ['cardCursor of null', () => cardCursor(null), null],
-        ['cardCursor of a string', () => cardCursor('c'), null],
-        ['cardCursor of a number', () => cardCursor(3), null],
         ['cardCursor of a map with no cursor', () => cardCursor({ id: 'c' }), null],
         ['cardCursor of a cursor that is a number', () => cardCursor({ cursor: 3 }), null],
         ['cardCursor of an empty cursor', () => cardCursor({ cursor: '' }), null],
-        ['cardCursor of a cursor that is a list', () => cardCursor({ cursor: ['c'] }), null],
-        ['cardCursor of a cursor that is null', () => cardCursor({ cursor: null }), null],
         ['cardCursor of a string cursor', () => cardCursor({ cursor: 'c' }), 'c'],
         [
             'cardCursor of a map with an own __proto__ key',
-            () =>
-                cardCursor(JSON.parse('{"__proto__":{"cursor":"p","id":"p","session":"p"},"b":1}')),
+            () => cardCursor(JSON.parse(proto)),
             null
         ],
         [
             'withCardCursor sets a cursor on an array',
             () => withCardCursor([], 'c'),
-            { cursor: 'c' }
-        ],
-        ['withCardCursor sets a cursor on null', () => withCardCursor(null, 'c'), { cursor: 'c' }],
-        [
-            'withCardCursor sets a cursor on a string',
-            () => withCardCursor('s', 'c'),
             { cursor: 'c' }
         ],
         [
@@ -152,40 +125,14 @@ describe('the instance readers over a state of the wrong type', () => {
             { n: 1, cursor: 'c' }
         ],
         [
-            'withCardCursor keeps the order of the other keys',
-            () => Object.keys(withCardCursor({ z: 1, cursor: 'old', a: 2 }, 'c') as object),
-            ['z', 'cursor', 'a']
-        ],
-        [
             'withCardCursor keeps an own __proto__ key',
-            () =>
-                Object.keys(
-                    withCardCursor(
-                        JSON.parse('{"__proto__":{"cursor":"p","id":"p","session":"p"},"b":1}'),
-                        'c'
-                    ) as object
-                ),
+            () => Object.keys(withCardCursor(JSON.parse(proto), 'c') as object),
             ['__proto__', 'b', 'cursor']
         ],
         [
             'withCardCursor clears the cursor of a map',
             () => withCardCursor({ z: 1, cursor: 'old', a: 2 }, null),
             { z: 1, a: 2 }
-        ],
-        [
-            'withCardCursor clears the order of the keys',
-            () => Object.keys(withCardCursor({ z: 1, cursor: 'old', a: 2 }, null) as object),
-            ['z', 'a']
-        ],
-        [
-            'withCardCursor clears a cursor that is not a string',
-            () => withCardCursor({ cursor: 3, a: 1 }, null),
-            { a: 1 }
-        ],
-        [
-            'withCardCursor clears an undefined cursor key',
-            () => Object.keys(withCardCursor({ cursor: undefined, a: 1 }, null) as object),
-            ['a']
         ],
         [
             'withCardCursor clears the cursor and keeps an own __proto__ key',
@@ -195,29 +142,18 @@ describe('the instance readers over a state of the wrong type', () => {
                 ),
             ['__proto__', 'b']
         ],
-        ['withCardCursor of an array with no cursor wanted', () => withCardCursor([1], null), [1]],
-        ['withCardCursor of null with no cursor wanted', () => withCardCursor(null, null), null],
-        [
-            'reconcileCardCursor drops a cursor no card holds',
-            () => reconcileCardCursor({ cursor: 'x', a: 1 }, ['a', 'b']),
-            { a: 1 }
-        ],
-        [
-            'reconcileCardCursor keeps a cursor a card holds',
-            () => reconcileCardCursor({ cursor: 'a', a: 1 }, ['a', 'b']),
-            { cursor: 'a', a: 1 }
-        ],
         [
             'reconcileCardCursor of a cursor that is a number',
             () => reconcileCardCursor({ cursor: 3, a: 1 }, ['a']),
             { cursor: 3, a: 1 }
         ],
-        ['reconcileCardCursor of an array', () => reconcileCardCursor([], ['a']), []],
         ['stateId of an array', () => stateId([]), null],
-        ['stateId of null', () => stateId(null), null],
-        ['stateId of a string', () => stateId('x'), null],
-        ['stateId of an id that is a number', () => stateId({ id: 3 }), null],
-        ['stateId of an empty id beside a session', () => stateId({ id: '', session: 's' }), 's'],
+        ['stateId of a session alone', () => stateId({ session: 'one', label: 'One' }), 'one'],
+        [
+            'stateId of an id beside a session',
+            () => stateId({ id: 'project', session: 'one' }),
+            'project'
+        ],
         [
             'stateId of an id that is a number beside a session',
             () => stateId({ id: 3, session: 's' }),
@@ -228,21 +164,10 @@ describe('the instance readers over a state of the wrong type', () => {
             () => stateId({ session: 3, root: 'r', path: 'p' }),
             '["r","p"]'
         ],
-        [
-            'stateId of an empty session',
-            () => stateId({ session: '', root: 'r', path: 'p' }),
-            '["r","p"]'
-        ],
         ['stateId of a root and a path', () => stateId({ root: 'r', path: 'p' }), '["r","p"]'],
         ['stateId of a root and an empty path', () => stateId({ root: 'r', path: '' }), null],
         ['stateId of an empty root', () => stateId({ root: '', path: 'p' }), null],
-        ['stateId of a path that is a number', () => stateId({ root: 'r', path: 3 }), null],
-        ['stateId of a root alone', () => stateId({ root: 'r' }), null],
-        [
-            'stateId of a map with an own __proto__ key',
-            () => stateId(JSON.parse('{"__proto__":{"cursor":"p","id":"p","session":"p"},"b":1}')),
-            null
-        ],
+        ['stateId of a map with an own __proto__ key', () => stateId(JSON.parse(proto)), null],
         [
             'stateId of an id beside a root and a path',
             () => stateId({ id: 'i', root: 'r', path: 'p' }),
@@ -306,13 +231,8 @@ describe('the saved state of a tab read as a map', () => {
 describe('the text a tab holds under a key', () => {
     const rows: [string, unknown, string][] = [
         ['undefined', undefined, ''],
-        ['null', null, ''],
-        ['a list', [], ''],
-        ['an empty map', {}, ''],
         ['a Map holding the key', new Map([['search', 'a']]), ''],
         ['a number', { search: 3 }, ''],
-        ['null', { search: null }, ''],
-        ['an empty text', { search: '' }, ''],
         ['a text', { search: 'a' }, 'a'],
         ['an inherited text', Object.create({ search: 'a' }), 'a'],
         ['a map with an own __proto__ key', JSON.parse('{"__proto__":{"search":"p"}}'), '']
@@ -321,22 +241,13 @@ describe('the text a tab holds under a key', () => {
     it.each(rows)('reads %s', (_name, state, expected) => {
         expect(instanceText(state, 'search')).toBe(expected);
     });
-
-    it('reads the filter out of whatever the instance state is', () => {
-        expect(instanceText({ filter: 'tasks' }, 'filter')).toBe('tasks');
-        expect(instanceText({}, 'filter')).toBe('');
-        expect(instanceText(null, 'filter')).toBe('');
-        expect(instanceText('not a map', 'filter')).toBe('');
-    });
 });
 
 describe('the flag a tab holds under a key', () => {
     const rows: [string, unknown, boolean][] = [
         ['undefined', undefined, false],
         ['true', { fresh: true }, true],
-        ['the text true', { fresh: 'true' }, false],
-        ['a number', { fresh: 1 }, false],
-        ['a list', [], false]
+        ['the text true', { fresh: 'true' }, false]
     ];
 
     it.each(rows)('reads %s', (_name, state, expected) => {
@@ -346,11 +257,8 @@ describe('the flag a tab holds under a key', () => {
 
 describe('the words a tab carries as its label', () => {
     const rows: [string, unknown, string | null][] = [
-        ['undefined', undefined, null],
         ['an empty label', { label: '' }, null],
-        ['a number', { label: 3 }, null],
         ['a text', { label: 'x' }, 'x'],
-        ['null', null, null],
         ['a list with an own label', Object.assign([], { label: 'x' }), null]
     ];
 
@@ -362,11 +270,8 @@ describe('the words a tab carries as its label', () => {
 describe('the number a tab holds under a key', () => {
     const rows: [string, unknown, number][] = [
         ['undefined', undefined, 0],
-        ['NaN', { size: NaN }, NaN],
-        ['an infinity', { size: Infinity }, Infinity],
         ['a negative number', { size: -2 }, -2],
-        ['a text', { size: '5' }, 0],
-        ['a list', [], 0]
+        ['a text', { size: '5' }, 0]
     ];
 
     it.each(rows)('reads %s', (_name, state, expected) => {

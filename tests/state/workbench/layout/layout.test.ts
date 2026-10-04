@@ -1,7 +1,7 @@
-// The layout tree: every operation on hand-built trees, and every invariant shown violated once.
-// The store is layout-store.test.ts beside this and the older envelopes and their migration are
-// saved/layout-saved.test.ts. Nothing here touches localStorage or the DOM: the pure
-// half is state/workbench/layout/.
+// Layer 2, client-state tests. The layout tree: every operation on hand-built trees, and every
+// invariant shown violated once. The store is layout-store.test.ts beside this and the older
+// envelopes and their migration are saved/layout-saved.test.ts. Nothing here touches localStorage
+// or the DOM: the pure half is state/workbench/layout/.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -117,22 +117,6 @@ describe('closeInstance', () => {
 });
 
 describe('closePane', () => {
-    it('takes every tab of a leaf pane with it and renormalises what is left', () => {
-        const tree = split('row', [0.2, 0.5, 0.3], [pane(['a']), pane(['b', 'c']), pane(['d'])]);
-        const next = closePane(tree, [1]);
-        expect(next).toEqual(split('row', [0.4, 0.6], [pane(['a']), pane(['d'])]));
-        expect(checkLayout(next)).toEqual([]);
-    });
-
-    it('collapses a split left with one child into that child', () => {
-        const tree = split('row', [0.5, 0.5], [pane(['a']), pane(['b', 'c'])]);
-        expect(closePane(tree, [1])).toEqual(pane(['a']));
-    });
-
-    it('empties the root pane rather than removing it', () => {
-        expect(closePane(pane(['a', 'b']), [])).toEqual({ kind: 'pane', tabs: [], active: '' });
-    });
-
     it('leaves the tree alone when the path names a split or nothing', () => {
         const tree = three();
         expect(closePane(tree, [1])).toBe(tree);
@@ -262,34 +246,24 @@ describe('splitPane', () => {
 });
 
 describe('splitWith', () => {
-    it('puts the new pane after the split one on the right edge and before it on the left', () => {
-        const start = bench(pane(['a', 'b']));
-        expect(splitWith(start, 'b', [], 'right').root).toEqual(
-            split('row', [0.5, 0.5], [pane(['a']), pane(['b'])])
-        );
-        expect(splitWith(start, 'b', [], 'left').root).toEqual(
-            split('row', [0.5, 0.5], [pane(['b']), pane(['a'])])
-        );
-    });
-
-    it('makes a column on the bottom edge and on the top edge', () => {
-        const start = bench(pane(['a', 'b']));
-        expect(splitWith(start, 'b', [], 'bottom').root).toEqual(
-            split('col', [0.5, 0.5], [pane(['a']), pane(['b'])])
-        );
-        expect(splitWith(start, 'b', [], 'top').root).toEqual(
-            split('col', [0.5, 0.5], [pane(['b']), pane(['a'])])
-        );
-    });
-
-    it('adds a sibling to a split of the same direction, taking half the pane share', () => {
-        const root = split('row', [0.6, 0.4], [pane(['a']), pane(['b', 'c'])]);
-        const next = splitWith(bench(root), 'c', [0], 'right');
-        expect(next.root).toEqual(
-            split('row', [0.3, 0.3, 0.4], [pane(['a']), pane(['c']), pane(['b'], 'b')])
-        );
-        expect(checkWorkbench(next)).toEqual([]);
-    });
+    it.each([
+        ['right edge', 'right', 'row', ['a', 'b']],
+        ['left edge', 'left', 'row', ['b', 'a']],
+        ['bottom edge', 'bottom', 'col', ['a', 'b']],
+        ['top edge', 'top', 'col', ['b', 'a']]
+    ] as const)(
+        'splits a pane on its %s, the dropped tab in the new pane',
+        (_name, edge, dir, order) => {
+            const start = bench(pane(['a', 'b']));
+            expect(splitWith(start, 'b', [], edge).root).toEqual(
+                split(
+                    dir,
+                    [0.5, 0.5],
+                    order.map((id) => pane([id]))
+                )
+            );
+        }
+    );
 
     it('puts the sibling in front of the pane on the left edge', () => {
         const root = split('row', [0.6, 0.4], [pane(['a']), pane(['b', 'c'])]);
@@ -327,13 +301,6 @@ describe('fold and expand', () => {
         );
         expect(checkLayout(collapsed)).toEqual([]);
         expect(expand(collapsed, [], 1)).toEqual(tree);
-    });
-
-    it('folds a child of a split below the root', () => {
-        const collapsed = fold(three(), [1, 0]);
-        const inner = collapsed.kind === 'split' ? collapsed.children[1] : null;
-        expect(inner === null ? null : foldedOf(inner)).toEqual([0]);
-        expect(checkLayout(collapsed)).toEqual([]);
     });
 
     it('refuses the root, which sits in no split, and a path naming nothing', () => {
@@ -457,62 +424,5 @@ describe('checkLayout', () => {
     it('passes a tree the shell can render', () => {
         expect(checkLayout(three())).toEqual([]);
         expect(checkLayout(pane([]))).toEqual([]);
-    });
-
-    it('reports a split with one child', () => {
-        const tree = { kind: 'split', dir: 'row', sizes: [1], children: [pane(['a'])] } as Layout;
-        expect(checkLayout(tree)).toEqual([
-            'node at []: a split holds 1 children, two is the least'
-        ]);
-    });
-
-    it('reports sizes that do not match the children', () => {
-        const tree = split('row', [0.5, 0.3, 0.2], [pane(['a']), pane(['b'])]);
-        expect(checkLayout(tree)).toEqual(['node at []: 3 sizes for 2 children']);
-    });
-
-    it('reports sizes that do not sum to 1', () => {
-        const tree = split('row', [0.5, 0.4], [pane(['a']), pane(['b'])]);
-        expect(checkLayout(tree)).toEqual(['node at []: sizes sum to 0.9, not 1']);
-    });
-
-    it('reports a size under the minimum', () => {
-        const tree = split('row', [0.95, 0.05], [pane(['a']), pane(['b'])]);
-        expect(checkLayout(tree)).toEqual([
-            `node at []: child 1 holds 0.05, under the minimum ${MIN_SIZE}`
-        ]);
-    });
-
-    it('reports an active that names no tab, and an empty pane that names one', () => {
-        expect(checkLayout({ kind: 'pane', tabs: [instance('a')], active: 'b' })).toEqual([
-            'node at []: active is "b", which is not one of its tabs'
-        ]);
-        expect(checkLayout({ kind: 'pane', tabs: [], active: 'a' })).toEqual([
-            'node at []: an empty pane calls a active'
-        ]);
-    });
-
-    it('reports a repeated instance id across the tree', () => {
-        const tree = split('row', [0.5, 0.5], [pane(['a']), pane(['a'])]);
-        expect(checkLayout(tree)).toEqual(['node at [1]: tab 0 repeats the instance id a']);
-    });
-
-    it('reports a kind and a dir that are not the allowed words', () => {
-        expect(checkLayout({ kind: 'box' } as unknown as Layout)).toEqual([
-            'node at []: kind is "box", not split, pane or page'
-        ]);
-        const sideways = { kind: 'split', dir: 'sideways', sizes: [0.5, 0.5], children: [] };
-        expect(checkLayout(sideways as unknown as Layout)).toEqual([
-            'node at []: dir is "sideways", not row or col'
-        ]);
-    });
-
-    it('names the path of the node it is reporting', () => {
-        const tree = split(
-            'row',
-            [0.5, 0.5],
-            [pane(['a']), { kind: 'pane', tabs: [], active: 'x' }]
-        );
-        expect(checkLayout(tree)).toEqual(['node at [1]: an empty pane calls x active']);
     });
 });

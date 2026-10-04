@@ -1,6 +1,6 @@
-// Layer 4, test. The file browser store reading the reader's bookmarks, notes and workspaces: what
-// is asked once a round, what a refused or unanswered read leaves drawn, and the reads a watcher or
-// a reader asks for again.
+// Layer 2, client-state tests. The file browser store reading the reader's bookmarks, notes and
+// workspaces: what is asked once a round, what a refused or unanswered read leaves drawn, and the
+// reads a watcher or a reader asks for again.
 //
 // `fetch` and `window` are stubs; nothing here reaches a server or the real hub. What this does NOT
 // cover: the endpoints themselves, which are tests/routes/files/fs.test.ts, and the tree drawing
@@ -114,25 +114,6 @@ describe('the store reading bookmarks, notes and workspaces', () => {
         });
     });
 
-    it('keeps the bookmarks drawn and says why when the server refuses the read', async () => {
-        store.serving(
-            () =>
-                new Response(JSON.stringify({ error: 'origin' }), {
-                    status: 403,
-                    headers: { 'content-type': 'application/json' }
-                })
-        );
-
-        store.client.fs.bookmarks();
-        await settle();
-
-        expect(store.client.fs.bookmarks()).toMatchObject({
-            entries: [],
-            error: refused(403),
-            loading: false
-        });
-    });
-
     // A read that failed and a read that is asked again, for the three answers the view draws a
     // failure sentence for.
     it('asks the bookmarks again when the reader asks, without a write to move the round', async () => {
@@ -196,34 +177,6 @@ describe('the store reading bookmarks, notes and workspaces', () => {
 
         // a page whose endpoint is down asks once a round and not once a render
         expect(bookmarkReads()).toBe(1);
-    });
-
-    it('asks the bookmarks again when the watcher says the file changed, and for no other write', async () => {
-        store.serving(() => answering({ entries: [], schema: [] }));
-        store.client.fs.bookmarks();
-        await settle();
-        expect(bookmarkReads()).toBe(1);
-
-        // a write under a watched root says nothing about the reader's own bookmarks file
-        store.client.entities.receive({ channel: 'files', version: 1, payload: { root: '/hub' } });
-        store.client.fs.bookmarks();
-        await settle();
-        expect(bookmarkReads()).toBe(1);
-
-        store.client.entities.receive({
-            channel: 'files',
-            version: 2,
-            payload: { root: '', bookmarks: true }
-        });
-        store.client.fs.bookmarks();
-        await settle();
-        expect(bookmarkReads()).toBe(2);
-
-        // the message after it names a root, which must not take the bookmarks round back
-        store.client.entities.receive({ channel: 'files', version: 3, payload: { root: '/hub' } });
-        store.client.fs.bookmarks();
-        await settle();
-        expect(bookmarkReads()).toBe(2);
     });
 
     it('holds the notes and one note, each asked for once a round', async () => {

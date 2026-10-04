@@ -1,4 +1,4 @@
-// Layer 2, client state tests. The pinned tab and the order a pane showed its tabs in, in a saved
+// Layer 2, client-state tests. The pinned tab and the order a pane showed its tabs in, in a saved
 // layout: a version 5 envelope read with no tab pinned and nothing else changed, the version 6
 // envelope written and read back, a pin read only from `true`, the pinned tabs put first on read,
 // and the used-order list read back as the tabs the pane holds.
@@ -53,7 +53,6 @@ const saved = (id: string, extra: Record<string, unknown> = {}): Record<string, 
 });
 
 describe('a version 5 envelope', () => {
-    // Revert: LAYOUT_VERSION back to 5.
     it('reads into the version 6 layout with no tab pinned, its float and locked pane kept', () => {
         const locked: Pane = { ...paneOf(['c']), locked: true };
         const written = heldPages(
@@ -68,7 +67,6 @@ describe('a version 5 envelope', () => {
         });
 
         expect(parseLayout(JSON.parse(five), '')).toEqual(written);
-        expect((JSON.parse(serialiseLayout(written)) as { version: number }).version).toBe(6);
     });
 
     it('is not given the shipped floats again, and a version 4 envelope is', () => {
@@ -80,14 +78,6 @@ describe('a version 5 envelope', () => {
         expect(needsFloats(five)).toBe(false);
         expect(needsFloats(four)).toBe(true);
         expect(needsFloats(six)).toBe(false);
-    });
-
-    it('reads a pane with its active tab as the only one used', () => {
-        const held = heldPages([pageAround('main', paneOf(['a', 'b'], 'b'))]);
-        const five = JSON.stringify({ version: 5, pages: held.pages, current: 'main', floats: [] });
-
-        expect(read(five)[0].recent).toBeUndefined();
-        expect(read(five)[0].active).toBe('b');
     });
 });
 

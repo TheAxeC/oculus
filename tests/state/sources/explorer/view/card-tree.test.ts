@@ -1,7 +1,8 @@
-// Layer 4, test. The pure rules behind a project card's file tree: the key of the record a card's
-// tree keeps its state under (view/card-tree.ts), and the folder a tree is drawn from when the
-// folder is given as an absolute path (view/tab-roots.ts `folderView`): the root holding it, the
-// folder as the head of the tree, and no root at all for a folder outside the workspace.
+// Layer 2, client-state tests. The pure rules behind a project card's file tree: the key of the
+// record a card's tree keeps its state under (view/card-tree.ts), and the folder a tree is drawn
+// from when the folder is given as an absolute path (view/tab-roots.ts `folderView`): the root
+// holding it, the folder as the head of the tree, and no root at all for a folder outside the
+// workspace.
 //
 // What this does NOT cover: the tree drawn, which is tests/views/shared/explorer/, and the record
 // cleared with its tab, which is tests/state/workbench/layout/layout-close.test.ts.
@@ -39,12 +40,6 @@ describe('the key of a card tree record', () => {
         expect(cardTreeKey('t10', 'alpha').startsWith(cardTreePrefix('t1'))).toBe(false);
         expect(cardTreeKey('t1#files:x', 'alpha').startsWith(cardTreePrefix('t1'))).toBe(true);
         expect(cardTreePrefix('t1')).not.toBe(cardTreePrefix('t10'));
-    });
-
-    it('is not the key the tab keeps its forms or its own state under', () => {
-        expect(cardTreeKey('t1', 'alpha')).not.toBe('t1');
-        expect(cardTreeKey('t1', 'alpha')).not.toBe('t1#forms');
-        expect(cardTreeKey('t1', 'alpha')).not.toBe('t1#added');
     });
 });
 

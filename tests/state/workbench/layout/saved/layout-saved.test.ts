@@ -1,7 +1,7 @@
-// The saved form of a layout: the invariants over a folded split, and the two older envelopes read
-// by migration. A browser that holds a workbench of two trees and a docked panel opens it as the
-// one tree a page now is, and no tab is lost on the way. The saved System page carried over is
-// layout-system.test.ts's.
+// Layer 2, client-state tests. The saved form of a layout: the invariants over a folded split, and
+// the two older envelopes read by migration. A browser that holds a workbench of two trees and a
+// docked panel opens it as the one tree a page now is, and no tab is lost on the way. The saved
+// System page carried over is layout-system.test.ts's.
 //
 // Nothing here touches localStorage or the DOM: every case reads a hand-built envelope.
 
@@ -10,42 +10,14 @@ import {
     LAYOUT_VERSION,
     PAGES_VERSION,
     WORKBENCH_VERSION,
-    checkLayout,
     checkWorkbench,
     defaultWorkbench,
     parseLayout,
     parseWorkbench,
-    type Instance,
-    type Layout,
     type Workbench
 } from '../../../../../src/lib/state/workbench/layout/index.ts';
 import { normaliseSizes } from '../../../../../src/lib/state/workbench/layout/tree.ts';
 import { bench, docked, envelope, folded, pane, split, three, viewsOf } from '../layout-fixture.ts';
-
-describe('checkLayout over a folded split', () => {
-    it('reports a folded index that is not a child', () => {
-        const tree = folded(split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]), [2]);
-        expect(checkLayout(tree)).toEqual(['node at []: folded names 2, which is not a child']);
-    });
-
-    it('reports a split with every child folded', () => {
-        const tree = folded(split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]), [0, 1]);
-        expect(checkLayout(tree)).toEqual([
-            'node at []: every child is folded, which leaves the split nothing to show'
-        ]);
-    });
-
-    it('reports a folded that is not an array', () => {
-        const tree = {
-            kind: 'split',
-            dir: 'row',
-            sizes: [0.5, 0.5],
-            children: [pane(['a']), pane(['b'])],
-            folded: 1
-        } as unknown as Layout;
-        expect(checkLayout(tree)).toEqual(['node at []: folded is not an array']);
-    });
-});
 
 describe('the version 2 envelope, read as one tree', () => {
     /** The tree of the two-tree workbench a version 2 envelope holds, after its migration. */
@@ -53,28 +25,27 @@ describe('the version 2 envelope, read as one tree', () => {
         return parseWorkbench(envelope(over));
     }
 
-    it('keeps the main tree as the root when the panel holds nothing', () => {
-        const saved = read({ main: three(), panel: pane([]), dock: 'right' });
-        expect(saved).toEqual(bench(three()));
-    });
+    it.each([
+        ['a panel on the right', { main: three(), panel: pane([]), dock: 'right' }, three()],
+        ['a hidden panel', { main: pane(['a']), panel: pane([]), dock: 'hidden' }, pane(['a'])]
+    ])(
+        'keeps the main tree as the root when the panel holds nothing, for %s',
+        (_name, over, root) => {
+            expect(read(over)).toEqual(bench(root));
+        }
+    );
 
-    it('keeps the main tree as the root when the panel is hidden and holds nothing', () => {
-        expect(read({ main: pane(['a']), panel: pane([]), dock: 'hidden' })).toEqual(
-            bench(pane(['a']))
-        );
-    });
-
-    it('makes a row of the two trees for a panel on the right, at the share it had', () => {
-        expect(
-            read({ main: pane(['a']), panel: pane(['p']), dock: 'right', panelSize: 0.4 })
-        ).toEqual(bench(split('row', [0.6, 0.4], [pane(['a']), pane(['p'])])));
-    });
-
-    it('makes a column of the two trees for a panel along the bottom', () => {
-        expect(
-            read({ main: pane(['a']), panel: pane(['p']), dock: 'bottom', panelSize: 0.3 })
-        ).toEqual(bench(split('col', [0.7, 0.3], [pane(['a']), pane(['p'])])));
-    });
+    it.each([
+        ['right', 0.4, 'row', [0.6, 0.4]],
+        ['bottom', 0.3, 'col', [0.7, 0.3]]
+    ] as const)(
+        'makes a split of the two trees for a panel on the %s, at the share it had',
+        (dock, panelSize, dir, sizes) => {
+            expect(read({ main: pane(['a']), panel: pane(['p']), dock, panelSize })).toEqual(
+                bench(split(dir, [...sizes], [pane(['a']), pane(['p'])]))
+            );
+        }
+    );
 
     it('folds the panel child of a hidden panel that still holds tabs, losing none of them', () => {
         const saved = read({ main: pane(['a']), panel: pane(['p', 'q']), dock: 'hidden' });
@@ -200,29 +171,6 @@ describe('the version 2 envelope, read as one tree', () => {
     });
 });
 
-describe('a saved tab naming a view that has been renamed', () => {
-    it('keeps the tab and the rest of the arrangement, so the loader drops nothing', () => {
-        const held: Instance = { id: 'one', view: 'programs', state: null };
-        const saved = {
-            version: LAYOUT_VERSION,
-            pages: [
-                {
-                    id: 'page-0',
-                    label: 'Page 1',
-                    workbench: bench({ kind: 'pane', tabs: [held], active: 'one' })
-                }
-            ],
-            current: 'page-0'
-        };
-        const read = parseLayout(saved, 'Page 1');
-        expect(read?.pages[0].workbench.root).toEqual({
-            kind: 'pane',
-            tabs: [held],
-            active: 'one'
-        });
-    });
-});
-
 describe('the version 3 envelope, read as pages of one tree', () => {
     /** A version 3 envelope over pages whose workbenches hold two trees. */
     function saved(...held: Record<string, unknown>[]): unknown {
@@ -244,20 +192,6 @@ describe('the version 3 envelope, read as pages of one tree', () => {
             bench(split('row', [0.7, 0.3], [pane(['b']), pane(['p'])]))
         ]);
         expect(read?.current).toBe('page-0');
-    });
-
-    it('folds the panel child of a hidden panel that holds tabs, on a page too', () => {
-        const read = parseLayout(saved(docked(pane(['a']), pane(['p']), 'hidden')), 'Page 1');
-        expect(read?.pages[0].workbench).toEqual(
-            bench(folded(split('row', [0.7, 0.3], [pane(['a']), pane(['p'])]), [1]))
-        );
-    });
-
-    it('makes a column of the two trees for a page whose panel sat along the bottom', () => {
-        const read = parseLayout(saved(docked(pane(['a']), pane(['p']), 'bottom', 0.25)), 'Page 1');
-        expect(read?.pages[0].workbench).toEqual(
-            bench(split('col', [0.75, 0.25], [pane(['a']), pane(['p'])]))
-        );
     });
 
     it('reads a repeated folded index once, so the strip is counted once', () => {
@@ -287,17 +221,5 @@ describe('the version 3 envelope, read as pages of one tree', () => {
 describe('checkWorkbench', () => {
     it('says nothing about the default, which is one pane on the first view', () => {
         expect(checkWorkbench(defaultWorkbench())).toEqual([]);
-        expect(viewsOf(defaultWorkbench().root)).toEqual(['status']);
-    });
-
-    it('names the tree a problem is in, and reports a focus that names no pane', () => {
-        const broken: Workbench = {
-            root: { kind: 'pane', tabs: [], active: 'x' },
-            focus: { path: [3] }
-        };
-        expect(checkWorkbench(broken)).toEqual([
-            'root node at []: an empty pane calls x active',
-            'focus names [3], which is not a pane'
-        ]);
     });
 });

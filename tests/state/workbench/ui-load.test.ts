@@ -1,8 +1,8 @@
-// Layer 4, test. The appearance store's load over a storage holding values of the wrong type:
-// each field falls back to its own default, the version decides whether anything is read, the
-// older field name `unicode` is written back under `icons`, and the instance records come back as
-// the map the storage held. Every case reads a hand-written envelope through a fake Storage and
-// states what the store reads and what the save that follows it writes. Nothing here touches
+// Layer 2, client-state tests. The appearance store's load over a storage holding values of the
+// wrong type: each field falls back to its own default, the version decides whether anything is
+// read, the older field name `unicode` is written back under `icons`, and the instance records come
+// back as the map the storage held. Every case reads a hand-written envelope through a fake Storage
+// and states what the store reads and what the save that follows it writes. Nothing here touches
 // localStorage or the DOM.
 
 import { describe, expect, it } from 'vitest';
@@ -110,25 +110,11 @@ describe('loadUi over a storage holding values of the wrong type', () => {
     const rows: [string, () => unknown, unknown][] = [
         ['nothing held', () => loadedFrom(null), 'unread wrote 0 {}'],
         ['text that is not JSON', () => loadedFrom('not json'), 'unread wrote 0 {}'],
-        ['an empty string', () => loadedFrom(''), 'unread wrote 0 {}'],
         ['an array', () => loadedFrom('[]'), 'unread wrote 0 {}'],
-        ['a JSON string', () => loadedFrom('"x"'), 'unread wrote 0 {}'],
-        ['JSON null', () => loadedFrom('null'), 'unread wrote 0 {}'],
-        ['a JSON number', () => loadedFrom('3'), 'unread wrote 0 {}'],
         ['a map with no version', () => loadedFrom('{"theme":"mocha"}'), 'unread wrote 0 {}'],
-        [
-            'a map with a version that is a string',
-            () => loadedFrom('{"version":"2","theme":"mocha"}'),
-            'unread wrote 0 {}'
-        ],
         [
             'a map with another version',
             () => loadedFrom('{"version":3,"theme":"mocha"}'),
-            'unread wrote 0 {}'
-        ],
-        [
-            'a map with version zero',
-            () => loadedFrom('{"version":0,"theme":"mocha"}'),
             'unread wrote 0 {}'
         ],
         [
@@ -181,18 +167,11 @@ describe('loadUi over a storage holding values of the wrong type', () => {
                 ),
             'read wrote 0 {"theme":"mocha","crt":true,"wallpaper":false,"icons":true,"textScale":1.3,"terminalFont":14.5,"codeTheme":"nord","statusHidden":["a","b"],"statusQuiet":true,"instances":{"a":{"s":1}}} records {"afterLoad":[{"s":1},"<undefined>","Object.prototype"],"afterSave":[{"s":1},"<undefined>","Object.prototype"]}'
         ],
-        ['a theme that is null', () => loadedFrom(withField('theme', null)), 'read wrote 0 {}'],
         [
             'a theme the list does not hold',
             () => loadedFrom(withField('theme', 'chartreuse')),
             'read wrote 0 {}'
         ],
-        [
-            'a theme that is a list',
-            () => loadedFrom(withField('theme', ['mocha'])),
-            'read wrote 0 {}'
-        ],
-        ['a theme in capitals', () => loadedFrom(withField('theme', 'MOCHA')), 'read wrote 0 {}'],
         ['an overlay that is a number', () => loadedFrom(withField('crt', 1)), 'read wrote 0 {}'],
         [
             'an overlay that is true',
@@ -202,11 +181,6 @@ describe('loadUi over a storage holding values of the wrong type', () => {
         [
             'a wallpaper that is a string',
             () => loadedFrom(withField('wallpaper', 'true')),
-            'read wrote 0 {}'
-        ],
-        [
-            'a wallpaper that is null',
-            () => loadedFrom(withField('wallpaper', null)),
             'read wrote 0 {}'
         ],
         [
@@ -226,11 +200,6 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'read wrote 0 {"icons":true}'
         ],
         [
-            'icons that are null beside unicode true',
-            () => loadedFrom(envelopeText({ icons: null, unicode: true })),
-            'read wrote 1 {"icons":true}'
-        ],
-        [
             'icons that are absent beside unicode false',
             () => loadedFrom(withField('unicode', false)),
             'read wrote 1 {}'
@@ -241,32 +210,15 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'read wrote 1 {"icons":true}'
         ],
         [
-            'icons that are a string beside unicode a string',
-            () => loadedFrom(envelopeText({ icons: 'x', unicode: 'y' })),
-            'read wrote 0 {}'
-        ],
-        [
             'icons that are false beside unicode true',
             () => loadedFrom(envelopeText({ icons: false, unicode: true })),
             'read wrote 0 {}'
         ],
         [
-            'icons that are true beside unicode false',
-            () => loadedFrom(envelopeText({ icons: true, unicode: false })),
-            'read wrote 0 {"icons":true}'
-        ],
-        ['unicode that is a number', () => loadedFrom(withField('unicode', 1)), 'read wrote 0 {}'],
-        [
             'a text scale that is a string',
             () => loadedFrom(withField('textScale', '1.2')),
             'read wrote 0 {}'
         ],
-        [
-            'a text scale that is null',
-            () => loadedFrom(withField('textScale', null)),
-            'read wrote 0 {}'
-        ],
-        ['a text scale of one', () => loadedFrom(withField('textScale', 1)), 'read wrote 0 {}'],
         [
             'a text scale of 1.24',
             () => loadedFrom(withField('textScale', 1.24)),
@@ -288,11 +240,6 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'read wrote 0 {"textScale":1.6}'
         ],
         [
-            'a text scale that is negative',
-            () => loadedFrom(withField('textScale', -2)),
-            'read wrote 0 {"textScale":0.7}'
-        ],
-        [
             'a text scale that is 1.04',
             () => loadedFrom(withField('textScale', 1.04)),
             'read wrote 0 {}'
@@ -303,23 +250,8 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'read wrote 0 {}'
         ],
         [
-            'a text scale of negative infinity',
-            () => loadedFrom(rawEnvelope('"textScale":-1e999')),
-            'read wrote 0 {}'
-        ],
-        [
-            'a text scale that is a list',
-            () => loadedFrom(withField('textScale', [1.2])),
-            'read wrote 0 {}'
-        ],
-        [
             'a terminal size that is a string',
             () => loadedFrom(withField('terminalFont', '14')),
-            'read wrote 0 {}'
-        ],
-        [
-            'a terminal size that is null',
-            () => loadedFrom(withField('terminalFont', null)),
             'read wrote 0 {}'
         ],
         [
@@ -338,23 +270,8 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'read wrote 0 {"terminalFont":40}'
         ],
         [
-            'a terminal size that is negative',
-            () => loadedFrom(withField('terminalFont', -5)),
-            'read wrote 0 {"terminalFont":6}'
-        ],
-        [
-            'a terminal size of zero',
-            () => loadedFrom(withField('terminalFont', 0)),
-            'read wrote 0 {"terminalFont":6}'
-        ],
-        [
             'a terminal size of infinity',
             () => loadedFrom(rawEnvelope('"terminalFont":1e999')),
-            'read wrote 0 {}'
-        ],
-        [
-            'a terminal size of negative infinity',
-            () => loadedFrom(rawEnvelope('"terminalFont":-1e999')),
             'read wrote 0 {}'
         ],
         [
@@ -368,11 +285,6 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'read wrote 0 {}'
         ],
         [
-            'a code theme that is empty',
-            () => loadedFrom(withField('codeTheme', '')),
-            'read wrote 0 {}'
-        ],
-        [
             'a code theme that is tokens',
             () => loadedFrom(withField('codeTheme', 'tokens')),
             'read wrote 0 {"codeTheme":"tokens"}'
@@ -383,23 +295,8 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'read wrote 0 {"codeTheme":"nord"}'
         ],
         [
-            'a code theme that is null',
-            () => loadedFrom(withField('codeTheme', null)),
-            'read wrote 0 {}'
-        ],
-        [
             'hidden items that are a string',
             () => loadedFrom(withField('statusHidden', 'a')),
-            'read wrote 0 {}'
-        ],
-        [
-            'hidden items that are a map',
-            () => loadedFrom(withField('statusHidden', { a: true })),
-            'read wrote 0 {}'
-        ],
-        [
-            'hidden items that are null',
-            () => loadedFrom(withField('statusHidden', null)),
             'read wrote 0 {}'
         ],
         [
@@ -413,11 +310,6 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'read wrote 0 {}'
         ],
         [
-            'quiet that is a string',
-            () => loadedFrom(withField('statusQuiet', 'true')),
-            'read wrote 0 {}'
-        ],
-        [
             'quiet that is true',
             () => loadedFrom(withField('statusQuiet', true)),
             'read wrote 0 {"statusQuiet":true}'
@@ -428,28 +320,8 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'read wrote 0 {}'
         ],
         [
-            'instances that are an array with items',
-            () => loadedFrom(envelopeText({ instances: [1, 2] })),
-            'read wrote 0 {}'
-        ],
-        [
             'instances that are a string',
             () => loadedFrom(withField('instances', 'none')),
-            'read wrote 0 {}'
-        ],
-        [
-            'instances that are null',
-            () => loadedFrom(withField('instances', null)),
-            'read wrote 0 {}'
-        ],
-        [
-            'instances that are a number',
-            () => loadedFrom(withField('instances', 3)),
-            'read wrote 0 {}'
-        ],
-        [
-            'instances that are empty',
-            () => loadedFrom(withField('instances', {})),
             'read wrote 0 {}'
         ],
         [
@@ -463,11 +335,6 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'read wrote 0 {"instances":{"a":1,"b":null,"x":[1],"c":"text","d":{"e":{"f":1}}}} records {"afterLoad":[1,[1],"Object.prototype"],"afterSave":[1,[1],"Object.prototype"]}'
         ],
         [
-            'dismissed lead ids beside instances',
-            () => loadedFrom(envelopeText({ leadsDismissed: ['x'], instances: { a: 1 } })),
-            'read wrote 0 {"instances":{"a":1}} records {"afterLoad":[1,"<undefined>","Object.prototype"],"afterSave":[1,"<undefined>","Object.prototype"]}'
-        ],
-        [
             'instances with an own __proto__ key holding a map',
             () => loadedFrom(rawEnvelope('"instances":{"__proto__":{"x":1},"a":{"search":"s"}}')),
             'read wrote 0 {"instances":{"a":{"search":"s"}}} records {"afterLoad":[{"search":"s"},"<undefined>",{"x":1}],"afterSave":[{"search":"s"},"<undefined>","Object.prototype"]}'
@@ -476,16 +343,6 @@ describe('loadUi over a storage holding values of the wrong type', () => {
             'instances with an own __proto__ key holding a string',
             () => loadedFrom(rawEnvelope('"instances":{"__proto__":"y","a":{"search":"s"}}')),
             'read wrote 0 {"instances":{"a":{"search":"s"}}} records {"afterLoad":[{"search":"s"},"<undefined>","y"],"afterSave":[{"search":"s"},"<undefined>","Object.prototype"]}'
-        ],
-        [
-            'instances with an own __proto__ key holding null',
-            () => loadedFrom(rawEnvelope('"instances":{"__proto__":null,"a":{"search":"s"}}')),
-            'read wrote 0 {"instances":{"a":{"search":"s"}}} records {"afterLoad":[{"search":"s"},"<undefined>",null],"afterSave":[{"search":"s"},"<undefined>","Object.prototype"]}'
-        ],
-        [
-            'instances with an own __proto__ key holding a number',
-            () => loadedFrom(rawEnvelope('"instances":{"__proto__":3,"a":{"search":"s"}}')),
-            'read wrote 0 {"instances":{"a":{"search":"s"}}} records {"afterLoad":[{"search":"s"},"<undefined>",3],"afterSave":[{"search":"s"},"<undefined>","Object.prototype"]}'
         ]
     ];
 
@@ -495,30 +352,12 @@ describe('loadUi over a storage holding values of the wrong type', () => {
 });
 
 describe('the numbers a viewer sets', () => {
-    it.each([Number.NaN, Infinity, -Infinity])('reads %s as no text scale', (scale) => {
-        const { ui } = createClientState();
-        ui.loadUi(rawStorage(null));
-        ui.setTextScale(1.3);
-        ui.setTextScale(scale);
-        expect(ui.textScale()).toBe(null);
-    });
-
     it.each([Number.NaN, Infinity, -Infinity])('reads %s as no terminal size', (size) => {
         const { ui } = createClientState();
         ui.loadUi(rawStorage(null));
         ui.setTerminalFont(14);
         ui.setTerminalFont(size);
         expect(ui.terminalFont()).toBe(null);
-    });
-
-    it('rounds a text scale to a tenth and reads one as the default', () => {
-        const { ui } = createClientState();
-        ui.loadUi(rawStorage(null));
-        const scales = [1.04, 1.05, 1.24, 1.25, 0.64, 1.66, 1].map((scale) => {
-            ui.setTextScale(scale);
-            return ui.textScale();
-        });
-        expect(scales).toStrictEqual([null, 1.1, 1.2, 1.3, 0.7, 1.6, null]);
     });
 });
 

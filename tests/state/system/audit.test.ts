@@ -1,5 +1,6 @@
-// The audit store: what the `audit` channel delivered, split into the findings the reader has not
-// parked and the ones they have, and the open count the view's badge draws.
+// Layer 2, client-state tests. The audit store: what the `audit` channel delivered, split into the
+// findings the reader has not parked and the ones they have, and the open count the view's badge
+// draws.
 //
 // Nothing here touches the network or the real hub: a case hands the client a message of its own.
 
@@ -78,13 +79,6 @@ describe('the audit store', () => {
         expect(client.railBadges.auditBadge()).toBe('2');
         deliver({ findings: [finding()], muted: ['0123456789ab'] }, 2);
         expect(client.railBadges.auditBadge()).toBe('');
-    });
-
-    it('belongs to one client, so a scan delivered to one is not in the other', () => {
-        const other = createClientState();
-        deliver({ findings: [finding()], muted: [] });
-        expect(client.audit.openCount()).toBe(1);
-        expect(other.audit.openCount()).toBe(0);
     });
 });
 

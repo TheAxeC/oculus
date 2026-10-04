@@ -1,12 +1,12 @@
-// What a source tab is handed for its indentation, word wrap and rulers, driven through the tab's
-// resolution module with a fake file store and configuration: the language a record is looked up
-// by (the one in force for the tab), the file's own indentation, the repository's
-// `.oculus/settings.yml` read through the file store, and the tab following its root and that
-// file's text.
+// Layer 2, client-state tests. What a source tab is handed for its indentation, word wrap and
+// rulers, driven through the tab's resolution module with a fake file store and configuration: the
+// language a record is looked up by (the one in force for the tab), the file's own indentation, the
+// repository's `.oculus/settings.yml` read through the file store, and the tab following its root
+// and that file's text.
 //
-// What this does NOT cover: the order the values are taken in (tests/data/helpers/
-// editor-options.test.ts), the editor taking the values and Alt+Z's keypress, which are seen at
-// the look.
+// What this does NOT cover: the order the values are taken in
+// (tests/data/helpers/editor-options.test.ts), the editor taking the values and Alt+Z's keypress,
+// which are seen at the look.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
@@ -98,7 +98,7 @@ function module(): ReturnType<typeof createSourceOptions> {
 const REPO = 'hub/.oculus/settings.yml';
 
 describe('the indentation of a file that indents', () => {
-    it('is the file s own indentation when it indents (case 3)', () => {
+    it('is the file s own indentation when it indents', () => {
         held.text = 'def f():\n  return 1\n';
         held.editor = { tab_size: 4 };
         expect(detectIndent(held.text)).toEqual({ tabs: false, size: 2 });
@@ -106,7 +106,7 @@ describe('the indentation of a file that indents', () => {
     });
 });
 
-describe('the language a record is taken by (case 31)', () => {
+describe('the language a record is taken by', () => {
     it('is the one chosen from the status bar, whatever the file s name says', () => {
         held.path = 'a.txt';
         held.language = 'python';
@@ -144,16 +144,13 @@ describe('the repository s file as the tab reads it', () => {
     it.each([
         ['a root without the file', MISSING],
         ['a file still being read', { ...NO_TEXT }],
-        ['a file that does not parse (case 9)', present('languages: [unclosed\n')],
-        ['a languages that is a list (case 9)', present('languages: [a, b]\n')],
+        ['a file that does not parse', present('languages: [unclosed\n')],
+        ['a languages that is a list', present('languages: [a, b]\n')],
         [
-            'a file cut at the read limit (case 30)',
+            'a file cut at the read limit',
             present('languages: { python: { tab_size: 8 } }\n', { truncated: true })
         ],
-        [
-            'a file the read refuses (case 30)',
-            { ...NO_TEXT, loading: false, error: refusedAnswer(500) }
-        ]
+        ['a file the read refuses', { ...NO_TEXT, loading: false, error: refusedAnswer(500) }]
     ])('sets nothing for %s', (_label, file) => {
         held.files[REPO] = file;
         expect(module().indent).toEqual({ tabs: false, size: 3 });
@@ -161,7 +158,7 @@ describe('the repository s file as the tab reads it', () => {
 });
 
 describe('a tab whose root changes or whose file is saved', () => {
-    it('takes the new root s values and drops the old root s answer (case 32)', () => {
+    it('takes the new root s values and drops the old root s answer', () => {
         held.files['one/.oculus/settings.yml'] = present(
             'languages: { python: { tab_size: 2 } }\n'
         );
@@ -177,7 +174,7 @@ describe('a tab whose root changes or whose file is saved', () => {
         expect(options.indent.size).toBe(4);
     });
 
-    it('takes the new text of the repository s file without a reload (case 33)', () => {
+    it('takes the new text of the repository s file without a reload', () => {
         held.files[REPO] = present('languages: { python: { tab_size: 2 } }\n');
         const options = module();
         expect(options.indent.size).toBe(2);

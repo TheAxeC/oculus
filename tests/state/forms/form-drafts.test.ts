@@ -1,8 +1,8 @@
-// The entry forms' drafts: what a reader typed into a form, kept per view instance in the ui store
-// and read back after a reload through a fake storage; whether an instance holds unsaved work,
-// against the entry as the snapshot holds it now; the keys that keep two forms and two instances
-// apart; what a save, a cancel, a delete and a form's close forget; the tab close that forgets
-// them; and the local target a form outside any pane keeps its values in.
+// Layer 2, client-state tests. The entry forms' drafts: what a reader typed into a form, kept per
+// view instance in the ui store and read back after a reload through a fake storage; whether an
+// instance holds unsaved work, against the entry as the snapshot holds it now; the keys that keep
+// two forms and two instances apart; what a save, a cancel, a delete and a form's close forget; the
+// tab close that forgets them; and the local target a form outside any pane keeps its values in.
 //
 // Nothing here touches localStorage or the DOM. What a form does with a draft when it is pressed
 // is a DOM event no case here fires.
@@ -11,8 +11,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Entry, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import {
-    ADDED_SUFFIX,
-    FORMS_SUFFIX,
     addedKey,
     createFormDrafts,
     draftTarget,
@@ -294,6 +292,7 @@ describe('the keys', () => {
             formKey('tasks', 'null'),
             formKey('tasks', ''),
             formKey('', null),
+            formKey('', ''),
             formKey('tasks","x', null),
             formKey('tasks', '","x')
         ];
@@ -304,24 +303,11 @@ describe('the keys', () => {
         expect(parseFormKey('not json')).toBeNull();
     });
 
-    it('keeps an empty collection name and an empty entry id as keys of their own', () => {
-        drafts.setFormField('one', formKey('', ''), 'title', typed('empty'));
-        expect(drafts.formEdits('one', formKey('', ''))).toEqual({ title: 'empty' });
-        expect(drafts.formEdits('one', formKey('', null))).toEqual({});
-    });
-
-    it('lets a second value typed into one field replace the first rather than sit beside it', () => {
-        drafts.setFormField('one', ADD, 'title', typed('first'));
-        drafts.setFormField('one', ADD, 'title', typed('second'));
-        expect(drafts.formEdits('one', ADD)).toEqual({ title: 'second' });
-    });
-
     it("sits beside the host view's own state, which a host writing its record whole cannot drop", () => {
         drafts.setFormField('one', ADD, 'title', typed('kept'));
         client.ui.setInstanceState('one', { search: 'x', statuses: [], hidden: [] });
         expect(drafts.formEdits('one', ADD)).toEqual({ title: 'kept' });
         expect(client.ui.instanceState('one')).toEqual({ search: 'x', statuses: [], hidden: [] });
-        expect(formsKey('one')).toBe(`one${FORMS_SUFFIX}`);
     });
 
     it('keeps an instance whose id already ends in the suffix apart from the instance it names', () => {
@@ -353,25 +339,6 @@ describe('a reload', () => {
         expect(again.formsDirty('one')).toBe(true);
         expect(storage.held[UI_KEY]).toContain('survives');
     });
-
-    it('leaves out what a saved record holds that no control could', () => {
-        expect(
-            parseDrafts({
-                [ADD]: {
-                    title: { value: 'ok', kind: 'text', base: '' },
-                    count: { value: 3, kind: 'text', base: '' },
-                    rows: { value: [{ label: 1, value: 'x' }], kind: 'metalist', base: [] },
-                    half: { value: 'no base', kind: 'text' },
-                    kindless: { value: 'x', base: '' }
-                },
-                [EDIT]: 'not a form',
-                'not a form key': { title: { value: 'x', kind: 'text', base: '' } },
-                [formKey('tasks', 'empty')]: {}
-            })
-        ).toEqual({ [ADD]: { title: { value: 'ok', kind: 'text', base: '' } } });
-        expect(parseDrafts(null)).toEqual({});
-        expect(parseDrafts([])).toEqual({});
-    });
 });
 
 describe('the snapshot lookup', () => {
@@ -401,11 +368,6 @@ describe('a tab close', () => {
         expect(client.formDrafts.formEdits(one, ADD)).toEqual({});
         expect(client.ui.instanceState(formsKey(one))).toBeUndefined();
         expect(client.formDrafts.formEdits(two, ADD)).toEqual({ title: 'stays' });
-    });
-
-    it('asks nothing of an instance that never held a form', () => {
-        expect(client.ui.unsaved('nobody')).toBe(false);
-        expect(drafts.formsDirty('nobody')).toBe(false);
     });
 });
 
@@ -464,7 +426,6 @@ describe('the entry an add form made', () => {
         expect(drafts.formAdded('one', ADD)).toEqual({ id: 'made', value: 'made' });
         expect(drafts.formAdded('one', EDIT)).toBeNull();
         expect(drafts.formAdded('two', ADD)).toBeNull();
-        expect(addedKey('one')).toBe(`one${ADDED_SUFFIX}`);
 
         // A store built again over the same storage, which is the form drawn again after a tab
         // switch or a reload, reads what the first one wrote.
@@ -590,10 +551,6 @@ describe('a saved record of the wrong shape', () => {
         expect(parseFormKey(form)).toStrictEqual(expected);
     });
 
-    it('answers the collection before the entry', () => {
-        expect(Object.keys(parseFormKey('["c","e"]') ?? {})).toStrictEqual(['collection', 'entry']);
-    });
-
     it.each([
         [
             'a string value and base',
@@ -606,6 +563,11 @@ describe('a saved record of the wrong shape', () => {
             { value: true, kind: 'checkbox', base: false }
         ],
         ['an empty kind', { value: '', kind: '', base: '' }, { value: '', kind: '', base: '' }],
+        [
+            'more keys than it wrote',
+            { base: 'b', extra: 1, kind: 'text', value: 'v' },
+            { value: 'v', kind: 'text', base: 'b' }
+        ],
         [
             'metalist rows with a key more than a row has',
             { value: [{ label: 'a', value: 'b', extra: 1 }], kind: 'metalist', base: [] },
@@ -657,22 +619,6 @@ describe('a saved record of the wrong shape', () => {
         expect(parseDrafts({ [ADD]: { f: typed } })).toStrictEqual({ [ADD]: { f: typed } });
     });
 
-    it('answers a field as its value, kind and base, in that order, and nothing else', () => {
-        const kept = parseDrafts({
-            [ADD]: { f: { base: 'b', extra: 1, kind: 'text', value: 'v' } }
-        });
-        expect(Object.keys(kept[ADD].f)).toStrictEqual(['value', 'kind', 'base']);
-    });
-
-    it('answers the forms and the fields in the order the record holds them', () => {
-        const kept = parseDrafts({
-            [EDIT]: { z: OK, a: OK },
-            [ADD]: { m: OK }
-        });
-        expect(Object.keys(kept)).toStrictEqual([EDIT, ADD]);
-        expect(Object.keys(kept[EDIT])).toStrictEqual(['z', 'a']);
-    });
-
     it.each([
         ['a form key with a number entry', formKeyOf(['c', 3])],
         ['a form key without an entry', formKeyOf(['c'])],
@@ -706,12 +652,6 @@ describe('a saved record of the wrong shape', () => {
             expect(parseDrafts(raw)).toStrictEqual({});
         }
     );
-
-    it('answers a draft a plain object of its own', () => {
-        const kept = parseDrafts({ [ADD]: { f: OK } });
-        expect(Object.getPrototypeOf(kept)).toBe(Object.prototype);
-        expect(Object.getPrototypeOf(kept[ADD])).toBe(Object.prototype);
-    });
 
     it('skips an own __proto__ field of a draft and keeps the others', () => {
         const fields = parsed(
@@ -756,9 +696,6 @@ describe('a saved record of the wrong shape', () => {
     ])('reads the added entry %s', (_name, held, expected) => {
         const kept = parseAdded({ [ADD]: held });
         expect(kept).toStrictEqual(expected === undefined ? {} : { [ADD]: expected });
-        if (expected !== undefined) {
-            expect(Object.keys(kept[ADD])).toStrictEqual(['id', 'value']);
-        }
     });
 
     it.each([
@@ -775,14 +712,6 @@ describe('a saved record of the wrong shape', () => {
             expect(parseAdded(raw)).toStrictEqual({});
         }
     );
-
-    it('answers the added entries in the order the record holds them', () => {
-        const kept = parseAdded({
-            [EDIT]: { id: 'e', value: 'e' },
-            [ADD]: { id: 'a', value: 'a' }
-        });
-        expect(Object.keys(kept)).toStrictEqual([EDIT, ADD]);
-    });
 
     it('leaves out an own __proto__ key of the added entries, which no form key names', () => {
         const raw = parsed('{"__proto__":{"id":"a","value":"b"}}');

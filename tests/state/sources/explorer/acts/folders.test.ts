@@ -1,6 +1,6 @@
-// The folder panel's answer and what Add Folder to Workspace and Open Folder make of it
-// (acts/folders.ts), the choices of `:workspace` (acts/workspaces.ts) and the folder New File and
-// New Folder act in (naming.ts).
+// Layer 2, client-state tests. The folder panel's answer and what Add Folder to Workspace and Open
+// Folder make of it (acts/folders.ts), the choices of `:workspace` (acts/workspaces.ts) and the
+// folder New File and New Folder act in (naming.ts).
 //
 // What this does NOT cover: the panel itself or the route that opens it (tests/server/files/
 // picker.test.ts) and the writes that add a root (tests/routes/edit/roots.test.ts).
@@ -16,6 +16,7 @@ import {
 import { workspaceMatches } from '../../../../../src/lib/state/sources/explorer/acts/workspaces.ts';
 import { newItemFolder } from '../../../../../src/lib/state/sources/explorer/naming.ts';
 import type { FsRoot, TreeRow } from '../../../../../src/lib/state/sources/fs.ts';
+import { t } from '../../../../../src/lib/state/shared/words/text.ts';
 import { installRealText } from '../../../../views/shared/real-text.ts';
 
 installRealText();
@@ -52,7 +53,6 @@ describe('the answer of the folder panel', () => {
         );
 
         expect(new Set(lines).size).toBe(5);
-        expect(lines[0]).toBe('The folder panel is available on macOS only.');
     });
 });
 
@@ -68,14 +68,12 @@ describe('Add Folder to Workspace', () => {
     it('says why the panel did not open, the first refusal of a write, or the folders skipped', () => {
         const refuse = (code: string): string => `refused:${code}`;
 
-        expect(addedLine({ ok: false, picker: 'busy' }, refuse)).toBe(
-            'The folder panel is already open.'
-        );
+        expect(addedLine({ ok: false, picker: 'busy' }, refuse)).toBe(t('files.picker_busy'));
         expect(
             addedLine({ ok: true, added: 1, skipped: ['/a'], refused: 'root-fixed' }, refuse)
         ).toBe('refused:root-fixed');
         expect(addedLine({ ok: true, added: 0, skipped: ['/a', '/b'], refused: '' }, refuse)).toBe(
-            'Already folders of this workspace: /a, /b'
+            t('files.add_skipped', '/a, /b')
         );
         expect(addedLine({ ok: true, added: 2, skipped: [], refused: '' }, refuse)).toBe('');
     });

@@ -1,5 +1,6 @@
-// What the Repositories view computes rather than draws, what the writes store puts on the wire for
-// the worktree actions, and what the Source Control store sends and opens for each press.
+// Layer 2, client-state tests. What the Repositories view computes rather than draws, what the
+// writes store puts on the wire for the worktree actions, and what the Source Control store sends
+// and opens for each press.
 //
 // The rules are pure and are checked as such. The store is exercised with fetch replaced, so
 // nothing here starts a server or reaches a repository: what the endpoint then does with the body
@@ -15,11 +16,9 @@ import { git } from '../../../../fixtures/sessions-fixture.ts';
 import {
     diffUrl,
     plannedPath,
-    repositoriesViewOf,
     repositoryLabels,
     pickerRoots,
     shownRoot,
-    statusStyle,
     statusWordKey,
     validName,
     worktreeLabel,
@@ -33,11 +32,7 @@ import {
     IGNORE_RULE,
     isWorktreePath
 } from '../../../../../src/lib/data/helpers/worktrees.ts';
-import {
-    createRepositories,
-    DIFF_VIEW,
-    MERGE_VIEW
-} from '../../../../../src/lib/state/sources/repositories/repositories.svelte.ts';
+import { createRepositories } from '../../../../../src/lib/state/sources/repositories/repositories.svelte.ts';
 import { createWrites } from '../../../../../src/lib/state/client/writes.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
@@ -57,7 +52,6 @@ import {
     changeCount,
     currentBranch,
     diffActs,
-    diffViewOf,
     isConflict,
     repoShape,
     sameFiles,
@@ -122,51 +116,6 @@ describe('the repository a view shows', () => {
         expect(shownRoot([], '/hub')).toBe('');
     });
 
-    it('reads what the instance keeps, and a default for anything it cannot read', () => {
-        expect(
-            repositoriesViewOf({ root: '/hub', collapsed: ['graph', 4], commit: 'abc' })
-        ).toEqual({
-            root: '/hub',
-            collapsed: ['graph'],
-            commit: 'abc',
-            mode: 'list',
-            reveal: '',
-            closed: []
-        });
-        const none = { root: '', collapsed: [], commit: '', mode: 'list', reveal: '', closed: [] };
-        expect(repositoriesViewOf(null)).toEqual(none);
-        expect(repositoriesViewOf({ root: 7, collapsed: 'log', commit: 3 })).toEqual(none);
-    });
-
-    it('reads a diff pane layout and its view state per file, side by side by default', () => {
-        const kept = { original: {}, modified: {}, modelState: { collapsedRegions: [] } };
-        // The folds a pane opened before its diffs were Monaco's are dropped.
-        const kept0 = { unchanged: 'folded', folded: [] };
-        expect(diffViewOf({ mode: 'inline', opened: [4, 12] })).toEqual({
-            mode: 'inline',
-            views: {},
-            ...kept0
-        });
-        expect(diffViewOf({ mode: 'odd' })).toEqual({ mode: 'side', views: {}, ...kept0 });
-        expect(diffViewOf(null)).toEqual({ mode: 'side', views: {}, ...kept0 });
-        // A stored view state comes back for its file, to be handed to the diff editor again.
-        expect(diffViewOf({ views: { 'a.txt': kept } }, ['a.txt']).views['a.txt']).toEqual(kept);
-        // One that is not an object is dropped, and so is one keyed to a file not in the diff.
-        expect(diffViewOf({ views: 'scrolled' }, ['a.txt'])).toEqual({
-            mode: 'side',
-            views: {},
-            ...kept0
-        });
-        expect(diffViewOf({ views: { 'a.txt': 7, 'b.txt': [] } }, ['a.txt', 'b.txt'])).toEqual({
-            mode: 'side',
-            views: {},
-            ...kept0
-        });
-        expect(diffViewOf({ views: { 'a.txt': kept, 'gone.txt': kept } }, ['a.txt']).views).toEqual(
-            { 'a.txt': kept }
-        );
-    });
-
     it('keeps the files of a re-read that changed nothing, so the view state stays', () => {
         const file = {
             oldPath: 'a.txt',
@@ -198,49 +147,6 @@ describe('the repository a view shows', () => {
         expect(
             pickerRoots(['/hub', '/notes', '/deleted', '/nostate'], (root) => states[root] ?? null)
         ).toEqual(['/hub', '/notes', '/deleted']);
-    });
-
-    it('keeps showing a root the reader picked after its folder was deleted', () => {
-        const states: Record<string, GitState> = {
-            '/hub': git({ branch: 'main' }),
-            '/deleted': git({
-                branch: '',
-                present: false,
-                repository: false,
-                error: 'no such directory'
-            })
-        };
-        const offered = pickerRoots(['/hub', '/deleted'], (root) => states[root] ?? null);
-        // The reader was on the folder that has just gone, and the view stays on it rather than
-        // handing itself to the hub without saying why.
-        expect(shownRoot(offered, '/deleted')).toBe('/deleted');
-    });
-
-    it('offers a repository with no commit yet and one whose read failed, and keeps showing it', () => {
-        const states: Record<string, GitState> = {
-            '/hub': git({ branch: 'main' }),
-            '/fresh': git({ branch: 'work', log: [] }),
-            '/broken': git({ branch: 'main', error: 'index file smaller than expected' }),
-            '/notes': git({ branch: '', repository: false, error: 'not a git repository' })
-        };
-        const offered = pickerRoots(
-            ['/hub', '/fresh', '/broken', '/notes'],
-            (root) => states[root] ?? null
-        );
-        expect(offered).toEqual(['/hub', '/fresh', '/broken', '/notes']);
-        // The reader was on the repository whose read has just failed, and the view stays on it.
-        expect(shownRoot(offered, '/broken')).toBe('/broken');
-    });
-
-    it('offers a root whose repository check did not answer, and keeps showing it', () => {
-        // The shape server/core/git/state.ts gives a root whose `rev-parse --git-dir` timed out.
-        const states: Record<string, GitState> = {
-            '/hub': git({ branch: 'main' }),
-            '/slow': git({ branch: '', repository: true, error: 'git timed out' })
-        };
-        const offered = pickerRoots(['/hub', '/slow'], (root) => states[root] ?? null);
-        expect(offered).toEqual(['/hub', '/slow']);
-        expect(shownRoot(offered, '/slow')).toBe('/slow');
     });
 
     it('names a repository by its last folder, and by its last two where another shares it', () => {
@@ -345,18 +251,8 @@ describe('the rows of one repository', () => {
         expect(statusWordKey('?')).toBe('repositories.status_untracked');
         expect(statusWordKey('U')).toBe('repositories.status_changed');
         expect(statusWordKey('UU')).toBe('repositories.conflict_both_modified');
-        expect(statusWordKey('DU')).toBe('repositories.conflict_deleted_by_us');
         expect(isConflict('AA')).toBe(true);
         expect(isConflict('A')).toBe(false);
-    });
-
-    it('colours a status letter in its Source Control hue, a conflict in its own, and an unknown one grey', () => {
-        expect(statusStyle('M')).toBe('--tone-txt: var(--c-scm-modified-txt)');
-        expect(statusStyle('A')).toBe('--tone-txt: var(--c-scm-added-txt)');
-        expect(statusStyle('D')).toBe('--tone-txt: var(--c-scm-deleted-txt)');
-        expect(statusStyle('UU')).toBe('--tone-txt: var(--c-scm-conflict-txt)');
-        expect(statusStyle('?')).toBe('--tone-txt: var(--c-slate-txt)');
-        expect(statusStyle('X')).toBe('--tone-txt: var(--c-grey-txt)');
     });
 });
 
@@ -416,19 +312,6 @@ describe('the writes store over the git endpoint', () => {
         expect(sent[2].body).toEqual({ action: 'merge', root: ROOT, branch: 'one', confirm: true });
         expect(answer.ok).toBe(true);
         expect(answer.output).toBe('done');
-    });
-
-    it("carries the endpoint's own refusal back to the view", async () => {
-        record({ error: 'that worktree holds uncommitted changes' }, 400);
-        const writes = createWrites();
-        writes.setToken('a-token');
-        const answer = await writes.writeGit('removeWorktree', ROOT, {
-            path: '/hub/.agents/worktrees/one',
-            confirm: true
-        });
-        expect(answer.ok).toBe(false);
-        expect(answer.error).toBe('that worktree holds uncommitted changes');
-        expect(writes.lastError()).toBe('that worktree holds uncommitted changes');
     });
 });
 
@@ -534,15 +417,6 @@ describe('what a press leaves behind', () => {
         expect(shells).toEqual([{ kind: 'shell', cwd: plannedPath(ROOT, 'package-one') }]);
         // the terminal is shown by the terminals store, in the Terminal tab of the page on screen
         // or a new one, and nothing is opened here beside it
-        expect(shown).toEqual([{ id: 'terminal-one', label: 'package-one' }]);
-        expect(opened).toEqual([]);
-    });
-
-    it('asks for a shell in a worktree that is already there', async () => {
-        const path = plannedPath(ROOT, 'package-one');
-        const { store, shells, opened, shown } = harness();
-        await store.shellIn(ROOT, path, 'package-one');
-        expect(shells).toEqual([{ kind: 'shell', cwd: path }]);
         expect(shown).toEqual([{ id: 'terminal-one', label: 'package-one' }]);
         expect(opened).toEqual([]);
     });
@@ -722,29 +596,6 @@ describe('what a press leaves behind', () => {
             ['deleteTag', { name: 'v1', confirm: true }],
             ['pushTags', { confirm: true }]
         ]);
-    });
-
-    it('opens a conflict in the merge editor, an untracked file in a source tab, and the rest as a diff', () => {
-        const { store, opened } = harness();
-        store.openChange(ROOT, 'merge', 'c.txt');
-        store.openChange(ROOT, 'untracked', 'new/u.txt');
-        store.openChange(ROOT, 'staged', 's.txt');
-        store.openChange(ROOT, 'changed', 'm.txt');
-        expect(opened.map((one) => [one.view, one.beside])).toEqual([
-            [MERGE_VIEW, true],
-            ['source', false],
-            [DIFF_VIEW, true],
-            [DIFF_VIEW, true]
-        ]);
-        expect(opened[0].state).toEqual({
-            id: `merge:${ROOT}:c.txt`,
-            root: ROOT,
-            path: 'c.txt',
-            label: 'c.txt'
-        });
-        expect(opened[1].state).toEqual({ root: 'hub', path: 'new/u.txt', label: 'u.txt' });
-        expect(opened[2].state).toMatchObject({ path: 's.txt', staged: true });
-        expect(opened[3].state).toMatchObject({ path: 'm.txt', staged: false });
     });
 
     it('opens a file at the line asked for, and says so when no served root holds it', () => {

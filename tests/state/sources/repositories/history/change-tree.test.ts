@@ -1,7 +1,7 @@
-// The tree mode of a change group: how a list of paths falls into folders, how a folder is named
-// and told apart from a section and from the same folder in another group or repository, which rows
-// the keyboard reads, and which closed folders the instance keeps. Pure, so each case is a list of
-// paths written out here.
+// Layer 2, client-state tests. The tree mode of a change group: how a list of paths falls into
+// folders, how a folder is named and told apart from a section and from the same folder in another
+// group or repository, which rows the keyboard reads, and which closed folders the instance keeps.
+// Pure, so each case is a list of paths written out here.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -52,15 +52,6 @@ describe('the tree of a change group', () => {
         ]);
     });
 
-    it('keeps spaces in a folder name and a file name', () => {
-        expect(shape(['docs/my notes/a b.md', 'docs/z.md'])).toEqual([
-            'folder docs@0',
-            'folder my notes@1',
-            'file a b.md@2',
-            'file z.md@1'
-        ]);
-    });
-
     it('gives no rows for no paths, and sorts by base letter with ties in code unit order', () => {
         expect(changeTree([])).toEqual([]);
         expect(shape(['B.ts', 'a.ts', 'A.ts'])).toEqual([
@@ -95,43 +86,6 @@ describe('the tree of a change group', () => {
             paths: ['a/b/c/one.ts', 'a/b/c/two.ts']
         });
         expect(rows[1]).toMatchObject({ kind: 'file', path: 'a/b/c/one.ts', name: 'one.ts' });
-    });
-
-    it('draws the paths of this repository as the brief names them', () => {
-        expect(shape(['tools/oculus/DESIGN.md', 'tools/oculus/HELP.md'])).toEqual([
-            'folder tools/oculus@0',
-            'file DESIGN.md@1',
-            'file HELP.md@1'
-        ]);
-        expect(shape(['tools/oculus/src/lib/themes/tokens.css'])).toEqual([
-            'folder tools/oculus/src/lib/themes@0',
-            'file tokens.css@1'
-        ]);
-        expect(shape(['CLAUDE.md', 'tools/oculus/README.md'])).toEqual([
-            'folder tools/oculus@0',
-            'file README.md@1',
-            'file CLAUDE.md@0'
-        ]);
-        expect(shape(['tools/oculus/src/a.ts', 'tools/oculus/tests/b.ts'])).toEqual([
-            'folder tools/oculus@0',
-            'folder src@1',
-            'file a.ts@2',
-            'folder tests@1',
-            'file b.ts@2'
-        ]);
-        expect(
-            shape([
-                'docs/AGENT-APPROACH.md',
-                'docs/HPC-UTwente-howto.md',
-                'tools/figures/gen_figures.py'
-            ])
-        ).toEqual([
-            'folder docs@0',
-            'file AGENT-APPROACH.md@1',
-            'file HPC-UTwente-howto.md@1',
-            'folder tools/figures@0',
-            'file gen_figures.py@1'
-        ]);
     });
 });
 

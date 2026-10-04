@@ -1,4 +1,5 @@
-// The session joins: what the six views read instead of touching the payload themselves.
+// Layer 2, client-state tests. The session joins and the config readers of state/client/selectors:
+// what the views read instead of touching the payload themselves.
 //
 // The payload is synthetic and is handed to the entities store the way the socket would hand it
 // over. Nothing here reads ~/.claude, ~/.codex or ~/.oculus, and nothing writes anywhere.
@@ -14,7 +15,6 @@ let client: ClientState;
 let receive: ClientState['entities']['receive'];
 let apply: ClientState['layout']['apply'];
 let select: ClientState['selection']['select'];
-let contextWindow: ClientState['selectors']['contextWindow'];
 let gitFor: ClientState['selectors']['gitFor'];
 let sessionById: ClientState['selectors']['sessionById'];
 let sessionFor: ClientState['selectors']['sessionFor'];
@@ -27,15 +27,8 @@ beforeEach(() => {
     ({ receive } = client.entities);
     ({ apply } = client.layout);
     ({ select } = client.selection);
-    ({
-        contextWindow,
-        gitFor,
-        sessionById,
-        sessionFor,
-        sessionsByWorkspace,
-        sessionsForProject,
-        touchers
-    } = client.selectors);
+    ({ gitFor, sessionById, sessionFor, sessionsByWorkspace, sessionsForProject, touchers } =
+        client.selectors);
     installFixture();
 });
 
@@ -213,7 +206,7 @@ describe('sessionsForProject', () => {
     });
 });
 
-describe('sessionFor and the context window', () => {
+describe('sessionFor', () => {
     /** Put one view instance with this state in the layout that sessionFor reads. */
     function holdInstance(id: string, state: unknown): void {
         const instance: Instance = { id, view: 'session-detail', state };
@@ -235,10 +228,6 @@ describe('sessionFor and the context window', () => {
     it('shows nothing when the pinned session is no longer in the payload', () => {
         holdInstance('three', { session: 'gone-away' });
         expect(sessionFor('three')).toBe(null);
-    });
-
-    it('reads the window out of the config', () => {
-        expect(contextWindow()).toBe(1000000);
     });
 });
 

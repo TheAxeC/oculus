@@ -1,4 +1,4 @@
-// Layer 4, client state test. An Applications entry added from a position lead: the fields a lead
+// Layer 2, client-state tests. An Applications entry added from a position lead: the fields a lead
 // fills, the prefill of the Applications tab's add form, the add write first and then the lead's
 // status set to `applied` once the add answered with the entry written, and no write to the lead
 // when the add was refused, never reached the server or the form was cancelled. The tab's drafts
@@ -183,13 +183,6 @@ describe('the prefill of the Applications add form', () => {
             adding: true,
             lead: ' Postdoc, ML '
         });
-    });
-
-    it('names no lead for a lead with no title', () => {
-        const { tab, states } = tabOf();
-        prefillFromLead(tab, 'app-1', { title: '  ' }, SCHEMA);
-        expect(states.get('app-1')).toMatchObject({ adding: true });
-        expect(states.get('app-1')).not.toHaveProperty('lead', expect.anything());
     });
 });
 

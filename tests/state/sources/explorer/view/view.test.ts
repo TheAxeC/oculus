@@ -1,6 +1,6 @@
-// What a Files tab keeps beyond its open folders: the folder it is rooted at (view/tab-roots.ts),
-// the ask to show a path, open or not (view/reveal.ts), and the bookmarks as the tree and the rail
-// read them (view/bookmark-rows.ts).
+// Layer 2, client-state tests. What a Files tab keeps beyond its open folders: the folder it is
+// rooted at (view/tab-roots.ts), the ask to show a path, open or not (view/reveal.ts), and the
+// bookmarks as the tree and the rail read them (view/bookmark-rows.ts).
 //
 // What this does NOT cover: the tab drawn (tests/views/sources/files/files.test.ts) and the
 // bookmarks file read from disk (tests/server/files/fs.test.ts).
@@ -9,7 +9,6 @@ import { describe, expect, it } from 'vitest';
 import {
     bookmarkRows,
     filesViewOf,
-    markedKeys,
     revealAsked,
     revealSettled,
     rootedState,
@@ -121,48 +120,21 @@ describe('the ask to show a path', () => {
         ]);
         expect(revealSettled(plain, asked(plain), found)?.expanded).toEqual(['hub:', 'hub:p']);
     });
-
-    // Revert: drop the sameAsk test.
-    it('drops the answer of an ask the tab no longer holds', () => {
-        const first = asked(filesViewOf(revealAsked({}, 'a', 'hub')));
-        const now = filesViewOf(revealAsked(revealAsked({}, 'a', 'hub'), 'b', 'hub'));
-        const found = {
-            kind: 'found' as const,
-            asked: { root: 'hub', path: 'a' },
-            shown: { root: 'hub', path: 'a' },
-            error: ''
-        };
-
-        expect(revealSettled(now, first, found)).toBeNull();
-    });
 });
 
 describe('the bookmarks', () => {
     // Revert: give a folder the file view.
     it('opens a folder bookmark in the Files view, with its kind, and a gone one as gone', () => {
         const rows = bookmarkRows([
-            { title: 'plan', fields: { root: 'hub', path: 'plan.md' } },
             { title: 'src', fields: { root: 'hub', path: 'src' }, kind: 'folder' },
             { title: 'old', fields: { root: 'hub', path: 'old.md' }, kind: 'missing' },
-            { title: 'page', fields: { root: 'hub', path: 'index.html' }, kind: 'file' },
-            { title: 'none', fields: { root: 'hub', path: '' } }
+            { title: 'page', fields: { root: 'hub', path: 'index.html' }, kind: 'file' }
         ]);
 
         expect(rows).toEqual([
-            { label: 'plan', root: 'hub', path: 'plan.md', view: 'file' },
             { label: 'src', root: 'hub', path: 'src', view: 'files', kind: 'folder' },
             { label: 'old', root: 'hub', path: 'old.md', view: 'file', kind: 'missing' },
             { label: 'page', root: 'hub', path: 'index.html', view: 'document' }
         ]);
-    });
-
-    // Revert: key the star by the path alone.
-    it('draws a star on the file or the folder a bookmark names', () => {
-        expect(
-            markedKeys([
-                { fields: { root: 'hub', path: 'src' } },
-                { fields: { root: 3, path: 'x' } }
-            ])
-        ).toEqual(['hub:src']);
     });
 });

@@ -1,7 +1,8 @@
-// Showing a path in the file browser: the ask the layout store's showInFiles writes into the Files
-// instance of the page the reader is in, the folders state/sources/fs.ts's resolveReveal reads on
-// the way and what the path comes to, what an answer writes and when it writes nothing, the rule
-// that tells a path from an address on a card, and the store's awaited listing read.
+// Layer 2, client-state tests. Showing a path in the file browser: the ask the layout store's
+// showInFiles writes into the Files instance of the page the reader is in, the folders
+// state/sources/fs.ts's resolveReveal reads on the way and what the path comes to, what an answer
+// writes and when it writes nothing, the rule that tells a path from an address on a card, and the
+// store's awaited listing read.
 //
 // Nothing here touches the network or the real hub: the reader is a stub over synthetic listings,
 // and the store's fetch a stub that records what it was asked. What this does NOT cover: the effect
@@ -446,35 +447,6 @@ describe('what an answer writes', () => {
         expect(revealScrolled(filesViewOf(undefined), done)).toBeNull();
     });
 
-    // Revert: in askShape or outcomeShape of state/sources/fs.ts, take the record as it is.
-    it('reads an ask and an outcome out of a saved record, and nothing out of anything else', () => {
-        expect(
-            filesViewOf({ reveal: { root: 'hub', path: 'a', asked: 0, settled: false } }).reveal
-        ).toBeNull();
-        expect(filesViewOf({ reveal: { root: 'hub', path: 'a', asked: 2 } }).reveal).toBeNull();
-        expect(filesViewOf({ reveal: ['hub', 'a'] }).reveal).toBeNull();
-        expect(
-            filesViewOf({ revealed: { kind: 'lost', asked: { root: 'hub', path: 'a' } } }).revealed
-        ).toBeNull();
-        expect(filesViewOf({ revealed: { kind: 'missing', asked: 'a' } }).revealed).toBeNull();
-        expect(filesViewOf({ revealing: -1 }).revealing).toBe(0);
-        expect(
-            filesViewOf({
-                revealed: {
-                    kind: 'unread',
-                    asked: { root: 'hub', path: 'a/b' },
-                    shown: { root: 'hub', path: 'a' },
-                    error: 'EACCES'
-                }
-            }).revealed
-        ).toEqual({
-            kind: 'unread',
-            asked: { root: 'hub', path: 'a/b' },
-            shown: { root: 'hub', path: 'a' },
-            error: 'EACCES'
-        });
-    });
-
     // Revert: in revealAsked, start the count again at 1 when no ask is held.
     it('counts asks on across a cleared ask, so an old answer never matches a new ask of the same path', () => {
         const once = revealAsked({ revealing: 7, reveal: null }, 'funding');
@@ -498,7 +470,6 @@ describe('a path told from an address', () => {
         expect(hubPathsOf({ link: 'mailto:someone@example.org' })).toEqual([]);
         expect(hubPathsOf({ link: '/Users/someone/elsewhere' })).toEqual([]);
         expect(hubPathsOf({ note: 'funding/x', sub: 'funding/y' })).toEqual([]);
-        expect(hubPathsOf({ link: 3, folder: ['a'] })).toEqual([]);
     });
 
     // Revert: drop the `!HOSTED.test(value)` term from isHubPath of data/hub-address.ts.

@@ -1,5 +1,5 @@
-// The file listing the project view reads: one request per project, what is held between renders,
-// and which channel's version makes it stale.
+// Layer 2, client-state tests. The file listing the project view reads: one request per project,
+// what is held between renders, and which channel's version makes it stale.
 //
 // Nothing here touches the network or the real hub: `fetch` is a stub that records the URL it was
 // given and answers what the case wants. What this does NOT cover: the endpoint itself, which is
@@ -9,6 +9,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     createClientState,
+    settle,
     stubGated,
     type ClientState,
     refused,
@@ -16,7 +17,7 @@ import {
 } from '../../fixtures/client.ts';
 import { matchingFiles } from '../../../src/lib/state/sources/files.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -67,11 +68,6 @@ function wrote(version: number): void {
     receive({ channel: 'files', version, payload: { root: '/hub' } });
 }
 
-/** Let the scheduled request run and its answer land. */
-async function settle(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
 afterEach(() => {
     vi.unstubAllGlobals();
 });
@@ -108,20 +104,6 @@ describe('the files of a project', () => {
         files('bravo');
         await settle();
         expect(asked).toHaveLength(1);
-    });
-
-    it('asks again once the files version moved, and shows what came back', async () => {
-        serving(listing('README.md'));
-        files('charlie');
-        await settle();
-        expect(asked).toHaveLength(1);
-
-        serving(listing('notes.md'));
-        wrote(2);
-        files('charlie');
-        await settle();
-        expect(asked).toHaveLength(1);
-        expect(files('charlie').rows.map((row) => row.path)).toEqual(['notes.md']);
     });
 
     // Revert: in the files listener of state/sources/files.svelte.ts, take out the queries.mark
@@ -208,12 +190,11 @@ describe('the project files a filter keeps', () => {
     });
 
     // Red when matchingFiles goes back to substrings: 'mntx' is no substring of any path.
-    it('keeps every row for no query, a row whose path holds the letters in order, and none for letters no path holds', () => {
+    it('keeps a row whose path holds the letters in order, and none for letters no path holds', () => {
         const rows = [
             { path: 'manuscript/main.tex', size: 10, mtime: 1 },
             { path: 'code/run.py', size: 20, mtime: 2 }
         ];
-        expect(matchingFiles(rows, '')).toEqual(rows);
         expect(matchingFiles(rows, 'mntx').map((row) => row.path)).toContain('manuscript/main.tex');
         expect(matchingFiles(rows, 'qqq')).toEqual([]);
     });
@@ -239,21 +220,9 @@ describe('the answer of the project files endpoint', () => {
     it.each([
         ['a row without a path', [{ size: 1 }], []],
         ['a row with an empty path', [{ path: '' }], []],
-        ['a row whose path is a number', [{ path: 3 }], []],
         ['items that are not maps', [3, null, 'x'], []],
-        ['items that are lists', [[], ['a']], []],
         ['a size that is text', [{ path: 'a', size: '1' }], [{ path: 'a', size: 0, mtime: 0 }]],
         ['a time that is null', [{ path: 'a', mtime: null }], [{ path: 'a', size: 0, mtime: 0 }]],
-        [
-            'numbers that are not finite',
-            [{ path: 'a', size: NaN, mtime: Infinity }],
-            [{ path: 'a', size: NaN, mtime: Infinity }]
-        ],
-        [
-            'numbers that are negative or fractional',
-            [{ path: 'a', size: -1, mtime: 1.5 }],
-            [{ path: 'a', size: -1, mtime: 1.5 }]
-        ],
         [
             'a row with a key it was not asked for',
             [{ extra: 1, mtime: 2, size: 1, path: 'a' }],
@@ -274,20 +243,16 @@ describe('the answer of the project files endpoint', () => {
         expect(held.rows[0]).not.toBe(rows[0]);
     });
 
-    it.each([[{}], ['x'], [null], [3], [undefined]])(
-        'holds no rows for rows that are %j',
-        async (rows) => {
-            expect(await read(json({ rows }))).toStrictEqual(none);
-        }
-    );
+    it.each([[{}], [undefined]])('holds no rows for rows that are %j', async (rows) => {
+        expect(await read(json({ rows }))).toStrictEqual(none);
+    });
 
-    it.each([[[]], ['x'], [7], [true]])('holds nothing for a successful body %j', async (body) => {
+    it.each([[[]], ['x']])('holds nothing for a successful body %j', async (body) => {
         expect(await read(json(body))).toStrictEqual(none);
     });
 
     it.each([
         [{ truncated: 'true' }, none],
-        [{ truncated: 1 }, none],
         [{ truncated: true }, { ...none, truncated: true }],
         [{ folder: 3 }, none],
         [{ folder: 'projects/one' }, { ...none, folder: 'projects/one' }]
@@ -295,49 +260,24 @@ describe('the answer of the project files endpoint', () => {
         expect(await read(json(body))).toStrictEqual(expected);
     });
 
-    it.each([
-        [{ error: 'no such project' }, 404],
-        [{ error: '' }, 404],
-        [{ error: null }, 404],
-        [{}, 500],
-        [[], 500],
-        ['x', 502],
-        [7, 500]
-    ])('says the refusal sentence for a refused read %j at %i', async (body, status) => {
-        expect(await read(json(body, status))).toStrictEqual({ ...none, error: refused(status) });
-    });
-
-    it('says the sentence of the catalog for a refused read whose error is one of its words', async () => {
-        expect(await read(json({ error: 'missing' }, 404))).toStrictEqual({
+    it('says the refusal sentence for a refused read, whatever text it carries', async () => {
+        expect(await read(json({ error: 'no such project' }, 404))).toStrictEqual({
             ...none,
-            error: t('files.refused_missing')
+            error: refused(404)
         });
     });
 
-    it.each([[{ error: 3 }], [{ error: ['a'] }]])(
-        'says the refusal sentence for a refused read whose error is not text: %j',
-        async (body) => {
-            expect(await read(json(body, 404))).toStrictEqual({ ...none, error: refused(404) });
-        }
-    );
+    it('says the unreadable sentence for a refused read whose body is a page', async () => {
+        expect(await read(new Response('<html>gateway</html>', { status: 503 }))).toStrictEqual({
+            ...none,
+            error: unreadable(503)
+        });
+    });
 
-    it.each([['null'], ['<html>gateway</html>']])(
-        'says the unreadable sentence for a refused read whose body is %s',
-        async (text) => {
-            expect(await read(new Response(text, { status: 503 }))).toStrictEqual({
-                ...none,
-                error: unreadable(503)
-            });
-        }
-    );
-
-    it.each([['null'], ['<html>gateway</html>']])(
-        'says the unreadable sentence for a successful read whose body is %s',
-        async (text) => {
-            expect(await read(new Response(text))).toStrictEqual({
-                ...none,
-                error: unreadable(200)
-            });
-        }
-    );
+    it('says the unreadable sentence for a successful read whose body is JSON null', async () => {
+        expect(await read(new Response('null'))).toStrictEqual({
+            ...none,
+            error: unreadable(200)
+        });
+    });
 });

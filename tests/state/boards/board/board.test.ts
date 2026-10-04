@@ -1,6 +1,6 @@
-// The board's presets over a hand-built snapshot: which projects each preset shows, how they sort,
-// and what they are joined with. Everything here is pure, so nothing reads a file and nothing
-// renders.
+// Layer 2, client-state tests. The board's presets over a hand-built snapshot: which projects each
+// preset shows, how they sort, and what they are joined with. Everything here is pure, so nothing
+// reads a file and nothing renders.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -165,12 +165,6 @@ describe('boardItems, the tier split', () => {
         );
     });
 
-    it('shows the three project tiers on the projects board', () => {
-        expect(new Set(ids(ITEMS))).toEqual(
-            new Set(['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'])
-        );
-    });
-
     it('shows one tier on each of the other two boards', () => {
         expect(ids(boardItems(SNAPSHOT, presetFor('archive', CONFIG)))).toEqual(['zulu']);
         expect(ids(boardItems(SNAPSHOT, presetFor('coauthor', CONFIG)))).toEqual(['yankee']);
@@ -180,10 +174,6 @@ describe('boardItems, the tier split', () => {
 describe('boardItems, the sort', () => {
     it('puts the pinned first, then the config type order, then the title', () => {
         expect(ids(ITEMS)).toEqual(['charlie', 'alpha', 'bravo', 'foxtrot', 'delta', 'echo']);
-    });
-
-    it('sorts a type the order does not name after every type it does', () => {
-        expect(ids(ITEMS).at(-1)).toBe('echo');
     });
 });
 

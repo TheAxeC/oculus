@@ -1,8 +1,8 @@
-// Layer 4, state test. The rules over one Terminal tab's own layout state (state/sessions/terminal/
-// terminal-tabs.ts): a saved state read into the tab's shape, the terminals it owns, the tab owning
-// a terminal, a terminal added, removed or reordered, the split, New, a start from the composer and
-// the Terminal tab of a page a terminal no tab owns is taken into. Every rule is pure, so each case
-// hands it a state and reads the state it gives back.
+// Layer 2, client-state tests. The rules over one Terminal tab's own layout state
+// (state/sessions/terminal/terminal-tabs.ts): a saved state read into the tab's shape, the
+// terminals it owns, the tab owning a terminal, a terminal added, removed or reordered, the split,
+// New, a start from the composer and the Terminal tab of a page a terminal no tab owns is taken
+// into. Every rule is pure, so each case hands it a state and reads the state it gives back.
 //
 // What this does NOT cover: the store that applies these rules to the layout, which is
 // tests/state/client/terminal/terminal-tabs.test.ts, and the view that draws a tab, which is
@@ -21,7 +21,6 @@ import {
     splitDrawn,
     splitRight,
     tabTerminals,
-    withLabel,
     withStarted,
     withTerminal,
     withoutTerminal,
@@ -33,7 +32,6 @@ const B = 'b2b2b2-shell';
 const C = 'c3c3c3-claude';
 const D = 'd4d4d4-codex';
 const F = 'f6f6f6-shell';
-const G = 'a7a7a7-shell';
 
 /** A tab owning these terminals, showing the first, with nothing else set. */
 function owning(terminals: string[], over: Partial<TerminalTabState> = {}): TerminalTabState {
@@ -61,7 +59,7 @@ describe('a saved state read into the tab', () => {
     });
 
     it('reads an old fresh or following tab as a tab with no terminal, composing', () => {
-        for (const old of [{}, { id: 'x', follow: true }, { id: 'x' }, undefined, null, ['a']]) {
+        for (const old of [{}, { id: 'x', follow: true }, { id: 'x' }, undefined]) {
             const tab = readTab(old);
             expect(tab.terminals).toEqual([]);
             expect(tab.shown).toBe(null);
@@ -74,22 +72,11 @@ describe('a saved state read into the tab', () => {
         expect(readTab({}).id).not.toBe(readTab({}).id);
     });
 
-    it('drops an id that is not a terminal and keeps a repeated one once', () => {
-        expect(readTab({ terminals: [A, 'nope', A] }).terminals).toEqual([A]);
-        expect(readTab({ terminals: [A, 7, '', B] }).terminals).toEqual([A, B]);
-    });
-
-    it('reads a shown or beside id the tab does not own as none, and a share out of range as the default', () => {
-        const tab = readTab({ terminals: [A, B], shown: C, beside: C, share: 7 });
+    it('reads a shown or beside id the tab does not own as none', () => {
+        const tab = readTab({ terminals: [A, B], shown: C, beside: C });
         expect(tab.shown).toBe(A);
         expect(tab.row).toEqual([A]);
         expect(readTab({ terminals: [A, B], shown: A, beside: A }).row).toEqual([A]);
-        expect(readTab({ terminals: [A, B], shown: A, beside: B, share: 7 }).shares).toEqual([
-            0.5, 0.5
-        ]);
-        expect(readTab({ terminals: [A, B], shown: A, beside: B, share: 0.3 }).shares).toEqual([
-            0.3, 0.7
-        ]);
     });
 
     it('reads a tab that owns nothing as composing, whatever it says', () => {
@@ -227,14 +214,6 @@ describe('New and Split in a tab, and what the composer starts', () => {
         });
     });
 
-    it('Split on a row puts the new terminal right of it in the tab order too', () => {
-        const started = splitRight(owning([A, B]), A, G);
-        expect(started).toMatchObject({ terminals: [A, G, B], shown: A, row: [A, G] });
-        expect(started.composing).toBe(false);
-        // a press on a terminal outside the row then shows it alone
-        expect(showingRow(started, B)).toMatchObject({ shown: B, row: [B] });
-    });
-
     it('New in a split tab puts the composer right of the row, and what it starts joins the row', () => {
         const split = owning([A, B], { shown: A, row: [A, B] });
         const composing = composingIn(split);
@@ -254,10 +233,6 @@ describe('New and Split in a tab, and what the composer starts', () => {
             shown: F,
             composing: false
         });
-    });
-
-    it("keeps the shown terminal's name as the label", () => {
-        expect(withLabel(owning([A]), 'vim').label).toBe('vim');
     });
 });
 

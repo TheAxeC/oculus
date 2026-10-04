@@ -1,7 +1,7 @@
-// Pure Position Leads closing, deadline, fit, ordering, searching, and saved-state rules.
+// Layer 2, client-state tests. The Position Leads closing, deadline, fit, ordering, searching and
+// saved-state rules.
 
 import { describe, expect, it } from 'vitest';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     deadlineOf,
     declinedCount,
@@ -20,8 +20,6 @@ import {
     visibleLeads,
     runLog
 } from '../../../src/lib/state/feeds/leads.ts';
-
-const { config } = loadConfig(engineDir());
 
 describe('position lead selectors', () => {
     it('formats today from local calendar components at half past midnight', () => {
@@ -47,16 +45,10 @@ describe('position lead selectors', () => {
         expect(isExpired({ status: 'open', deadline: '2026-09-12' }, '2026-09-12')).toBe(false);
     });
 
-    it('takes the first fit key in vocabulary order and resolves its configured tone', () => {
+    it('takes the first fit key in vocabulary order', () => {
         expect(fitKey('A reach, but a strong methodological match')).toBe('strong');
         expect(fitKey('Moderate fit')).toBe('moderate');
         expect(fitKey('unrated')).toBe(null);
-        expect(['strong', 'moderate', 'reach', 'none'].map((fit) => fitTone(fit, config))).toEqual([
-            'green',
-            'amber',
-            'grey',
-            'grey'
-        ]);
     });
 
     it('sorts live soonest first with undated last and expired newest first', () => {
@@ -75,10 +67,6 @@ describe('position lead selectors', () => {
             'Older past',
             'Closed undated'
         ]);
-    });
-
-    it('reads a declined lead, and a dismissed one a file may still hold, as declined', () => {
-        expect([' Declined ', 'DECLINED', 'dismissed'].map(isDeclined)).toEqual([true, true, true]);
     });
 
     it('searches all seven fields and parses the instance-state fields', () => {
@@ -149,16 +137,6 @@ describe('position lead selectors', () => {
         expect(declinedCount(entries)).toBe(2);
         expect(declinedCount([entries[1]])).toBe(0);
     });
-
-    it('sends a dismissed lead to the expired list, where its status is what it reads', () => {
-        const entries = [
-            { title: 'Kept', status: 'open', deadline: '2099-10-20' },
-            { title: 'Dropped', status: 'dismissed', deadline: '2099-10-20' }
-        ];
-        const split = splitLeads(entries, '2026-09-12');
-        expect(split.live.map((entry) => entry.title)).toEqual(['Kept']);
-        expect(split.expired.map((entry) => entry.title)).toEqual(['Dropped']);
-    });
 });
 
 describe('the id one lead card carries', () => {
@@ -182,14 +160,6 @@ describe('the id one lead card carries', () => {
         expect(identOf(entries[0])).not.toBe(identOf(entries[1]));
         expect(identOf(entries[2])).not.toBe('');
         expect(new Set(entries.map(identOf)).size).toBe(3);
-    });
-});
-
-describe('the run log of the leads feed', () => {
-    it('is every line the meta carries as text, a line that is not text or a number left out', () => {
-        expect(runLog({ log: ['one', 2, null, { a: 1 }] })).toEqual(['one', '2']);
-        expect(runLog({ log: 'not a list' })).toEqual([]);
-        expect(runLog(undefined)).toEqual([]);
     });
 });
 

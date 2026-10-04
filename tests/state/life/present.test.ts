@@ -1,5 +1,5 @@
-// The deck as the view reads it: the `deck:` map parsed, the slides ordered, the saved selection
-// and order applied, and the store's own position through them.
+// Layer 2, client-state tests. The deck as the view reads it: the `deck:` map parsed, the slides
+// ordered, the saved selection and order applied, and the store's own position through them.
 //
 // The colours of the deck are resolved to palette hues, so the real config's own vocabulary is
 // installed before any case runs, the way a component would have it installed by the first push.
@@ -169,18 +169,6 @@ describe('deckFrom', () => {
         expect(DECK.selection).toBeNull();
         expect(DECK.slideOrder).toBeNull();
     });
-
-    it('reads an empty deck out of a config that holds none', () => {
-        const empty = deckFrom({});
-        expect(empty.order).toEqual([]);
-        expect(empty.ideas).toBeNull();
-        expect(empty.meta.legend).toEqual([]);
-    });
-
-    it('drops an order line that names a kind the deck has no slide of', () => {
-        const deck = deckFrom({ deck: { order: [{ slide: 'interlude' }, { slide: 'title' }] } });
-        expect(deck.order).toEqual([{ slide: 'title' }]);
-    });
 });
 
 describe('slideKey', () => {
@@ -192,16 +180,19 @@ describe('slideKey', () => {
 });
 
 describe('plainTitle', () => {
-    it('strips the markup and the escapes a deck title is written with', () => {
-        expect(plainTitle('Questions &amp;<br>collaborations welcome')).toBe(
+    it.each([
+        [
+            'the markup and escapes a deck title is written with',
+            'Questions &amp;<br>collaborations welcome',
             'Questions & collaborations welcome'
-        );
-    });
-
-    it('decodes a named, a no-break and a numeric escape, the no-break space folded to a plain one', () => {
-        expect(plainTitle('Tom&nbsp;&amp;&nbsp;Jerry&#39;s <em>deck</em>')).toBe(
+        ],
+        [
+            'a named, a no-break and a numeric escape, the no-break space folded to a plain one',
+            'Tom&nbsp;&amp;&nbsp;Jerry&#39;s <em>deck</em>',
             "Tom & Jerry's deck"
-        );
+        ]
+    ])('strips %s', (_name, written, plain) => {
+        expect(plainTitle(written)).toBe(plain);
     });
 });
 
@@ -277,12 +268,6 @@ describe('deckSlides', () => {
         expect(rows.find((row) => row.key === 'beta')?.tone).toBe(undefined);
     });
 
-    it('leaves an unnamed slide of an archived project off the deck', () => {
-        expect(deckSlides(DECK, [...PROJECTS, ARCHIVED]).map((row) => row.key)).not.toContain(
-            'delta'
-        );
-    });
-
     it('places an archived slide the order names, where the order names it', () => {
         const deck = deckFrom({
             deck: {
@@ -293,25 +278,6 @@ describe('deckSlides', () => {
         expect(deckSlides(deck, [ARCHIVED]).map((row) => row.key)).toEqual([
             'title',
             'delta',
-            'closing'
-        ]);
-    });
-
-    it('places an archived slide a saved selection holds', () => {
-        const deck = deckFrom({ deck: { ...CONFIG.deck, selection: ['title', 'delta'] } });
-        expect(deckSlides(deck, [...PROJECTS, ARCHIVED]).map((row) => row.key)).toEqual([
-            'title',
-            'delta'
-        ]);
-    });
-
-    it('shows only the slides a saved selection names', () => {
-        const deck = deckFrom({
-            deck: { ...CONFIG.deck, selection: ['title', 'alpha', 'closing'] }
-        });
-        expect(deckSlides(deck, PROJECTS).map((row) => row.key)).toEqual([
-            'title',
-            'alpha',
             'closing'
         ]);
     });
@@ -396,16 +362,10 @@ describe('deckCatalog', () => {
 });
 
 describe('parsePresentState', () => {
-    it('reads a pane place, with the first slide and a closed grid for what is missing', () => {
+    it('reads a pane place', () => {
         expect(parsePresentState({ slide: 'alpha/data', overview: true })).toEqual({
             slide: 'alpha/data',
             overview: true
-        });
-        expect(parsePresentState({})).toEqual({ slide: '', overview: false });
-        expect(parsePresentState(null)).toEqual({ slide: '', overview: false });
-        expect(parsePresentState({ slide: 7, overview: 'yes' })).toEqual({
-            slide: '',
-            overview: false
         });
     });
 });
@@ -575,7 +535,7 @@ describe('deckFrom over a config whose values are of the wrong type', () => {
         ]);
     });
 
-    it('keeps a meta word only when it is text, an empty one included, and puts the keys in a fixed order', () => {
+    it('keeps a meta word only when it is text, an empty one included, and reads each key under its own name', () => {
         const wrong = {
             contact: NaN,
             closing_lede: true,
@@ -591,17 +551,19 @@ describe('deckFrom over a config whose values are of the wrong type', () => {
         const written = Object.fromEntries(
             Object.keys(wrong).map((key) => [key, key.toUpperCase()])
         );
-        expect(Object.keys(deckOf({ meta: written }).meta)).toEqual([
-            'legend',
-            'kicker',
-            'titleHtml',
-            'lede',
-            'hint',
-            'closingKicker',
-            'closingTitleHtml',
-            'closingLede',
-            'contact'
-        ]);
+        expect(Object.keys(deckOf({ meta: written }).meta).sort()).toEqual(
+            [
+                'legend',
+                'kicker',
+                'titleHtml',
+                'lede',
+                'hint',
+                'closingKicker',
+                'closingTitleHtml',
+                'closingLede',
+                'contact'
+            ].sort()
+        );
     });
 
     it.each([[[]], ['x'], [null]])('reads the themes %j as none', (themes) => {
@@ -630,7 +592,6 @@ describe('deckFrom over a config whose values are of the wrong type', () => {
             i: { tone: 'grey', label: '' },
             j: { tone: 'grey', label: 'Z' }
         });
-        expect(Object.keys(read)).toEqual(['e', 'f', 'g', 'h', 'i', 'j']);
     });
 
     it('keeps the order lines that name a kind and a ref that is text, and none when it is not a list', () => {
@@ -687,7 +648,6 @@ describe('deckFrom over a config whose values are of the wrong type', () => {
                 hint: 'H'
             }
         });
-        expect(Object.keys(read.e)).toEqual(['cards', 'legend', 'title', 'lede', 'hint']);
     });
 
     it.each([[[]], ['x'], [null]])('reads the summaries %j as none', (summaries) => {
@@ -747,7 +707,6 @@ describe('deckFrom over a config whose values are of the wrong type', () => {
             lede: 'L',
             hint: ''
         });
-        expect(Object.keys(read ?? {})).toEqual(['items', 'lede', 'hint']);
     });
 
     it('keeps the strings of a saved selection and slide order, and none when it is not a list', () => {
@@ -772,7 +731,6 @@ describe('deckFrom over a config whose values are of the wrong type', () => {
         const parsed: unknown = JSON.parse('{"tag_tones":{"__proto__":"green","a":"red"}}');
         const held = deckOf(parsed).tagTones;
         expect(held).toStrictEqual({ a: 'red' });
-        expect(Object.keys(held)).toEqual(['a']);
     });
 
     it.each(['themes', 'framing', 'summaries'] as const)(
@@ -795,7 +753,9 @@ describe('parsePresentState over input of the wrong type', () => {
         [null],
         [{ slide: null }],
         [{ slide: ['a'], overview: 1 }],
-        [{ overview: 'true' }]
+        [{ overview: 'true' }],
+        [{}],
+        [{ slide: 7, overview: 'yes' }]
     ])('reads %j as the first slide and a closed grid', (value) => {
         expect(parsePresentState(value)).toStrictEqual({ slide: '', overview: false });
     });

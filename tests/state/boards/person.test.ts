@@ -1,7 +1,7 @@
-// The five joins one person is drawn from, over a hand-built snapshot: the registry entry, the
-// organisations, the joint work, the projects and the supervision folder. The joins read the
-// relation tables data/snapshot/normalise.ts wrote, so the fixture writes those tables the way a
-// snapshot carries them.
+// Layer 2, client-state tests. The five joins one person is drawn from, over a hand-built snapshot:
+// the registry entry, the organisations, the joint work, the projects and the supervision folder.
+// The joins read the relation tables data/snapshot/normalise.ts wrote, so the fixture writes those
+// tables the way a snapshot carries them.
 
 import { describe, expect, it } from 'vitest';
 import { NO_CAREER, NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
@@ -185,13 +185,6 @@ describe('personJoin', () => {
             folder: ''
         });
         expect(personJoin(null, 'naesens').person).toBeNull();
-    });
-
-    it('joins every organisation the entry names, in its own order, the primary first', () => {
-        expect(personJoin(snapshot(), 'naesens').organisations.map((one) => one.id)).toEqual([
-            'ku-leuven',
-            'uz-leuven'
-        ]);
     });
 
     it('leaves an affiliation the organisation registry does not hold out of the join', () => {

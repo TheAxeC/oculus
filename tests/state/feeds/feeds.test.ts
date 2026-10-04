@@ -1,4 +1,5 @@
-// The feed reader over the latest complete socket payload, plus feed-summary attention lines.
+// Layer 2, client-state tests. The feed reader over the latest complete socket payload, the refresh
+// thresholds of the feeds and the feed-summary attention lines.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { attention, refresh, staleAfter } from '../../../src/lib/state/feeds/feeds.ts';
@@ -136,20 +137,6 @@ describe('the refresh thresholds', () => {
     });
     const radarNeverRun = holding({ ...NO_FEEDS, radar: { lastRun: null } });
 
-    it('takes a feed its threshold from refresh_stale_days and none from anywhere else', () => {
-        const only = { refresh_stale_days: { inbox: 2 } };
-        expect(staleAfter(only, 'inbox')).toBe(2);
-        expect(staleAfter({}, 'scout')).toBe(Infinity);
-        expect(staleAfter({ refresh_stale_days: { scout: 'soon' } }, 'scout')).toBe(Infinity);
-        expect(staleAfter({ ...only, stale_days: { inbox: 30, litwatch: 14 } }, 'inbox')).toBe(2);
-    });
-
-    it('never nudges a feed that the key does not name', () => {
-        const only = { refresh_stale_days: { inbox: 2 } };
-        expect(staleAfter(only, 'litwatch')).toBe(Infinity);
-        expect(staleAfter({ ...only, stale_days: { litwatch: 14 } }, 'litwatch')).toBe(Infinity);
-    });
-
     it('nudges only the feeds the key names, however old the others are', () => {
         const nudged = refresh(old, { refresh_stale_days: { scout: 7 } }, now, '2020-01-01');
         expect(nudged.map((one) => one.feed)).toEqual(['scout']);
@@ -166,7 +153,7 @@ describe('the refresh thresholds', () => {
     });
 });
 
-describe('the thresholds of a config whose values are of the wrong type', () => {
+describe('the thresholds of a config whose values are missing or of the wrong type', () => {
     const now = Date.UTC(2026, 8, 11, 12);
 
     it.each([
@@ -183,6 +170,9 @@ describe('the thresholds of a config whose values are of the wrong type', () => 
         [{ refresh_stale_days: null }, Infinity],
         [{ refresh_stale_days: 'inbox' }, Infinity],
         [{ refresh_stale_days: { scout: 3 } }, Infinity],
+        [{}, Infinity],
+        [{ stale_days: { inbox: 30, litwatch: 14 } }, Infinity],
+        [{ refresh_stale_days: { inbox: 2 }, stale_days: { inbox: 30 } }, 2],
         [JSON.parse('{"refresh_stale_days":{"__proto__":4,"inbox":2}}'), 2]
     ])('reads the limit of the inbox feed from %j as %j', (config, limit) => {
         expect(staleAfter(config as Record<string, unknown>, 'inbox')).toBe(limit);

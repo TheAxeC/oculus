@@ -1,5 +1,5 @@
-// Layer 4, state test. The Slides view's own state: what the file says, one tick, one move, the
-// state a pane holds, and the line the status region shows for each answer the endpoint gives.
+// Layer 2, client-state tests. The Slides view's own state: what the file says, one tick, one move,
+// the state a pane holds, and the line the status region shows for each answer the endpoint gives.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -28,11 +28,6 @@ const OPEN = ['title', 'framing:engine', 'alpha', 'closing'];
 describe('fileState', () => {
     it('ticks the slides a deck with no saved selection shows, and no others', () => {
         expect(fileState(KEYS, null, OPEN)).toEqual({ order: KEYS, picked: OPEN });
-    });
-
-    it('lists an archived slide the deck does not show, unticked', () => {
-        expect(fileState(KEYS, null, OPEN).order).toContain('delta');
-        expect(fileState(KEYS, null, OPEN).picked).not.toContain('delta');
     });
 
     it('ticks the saved selection alone, in the catalog order rather than the saved one', () => {

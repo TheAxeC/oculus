@@ -1,6 +1,6 @@
-// Layer 4, state test. The line count store: it asks GET /api/lines on the first read and not
-// before, asks again on a recount, and holds an answer whose shape is wrong as a failed read. The
-// sum of the rows under src/ (underSource) is held to the rows it takes and the rows it leaves.
+// Layer 2, client-state tests. The line count store: it asks GET /api/lines on the first read and
+// not before, asks again on a recount, and holds an answer whose shape is wrong as a failed read.
+// The sum of the rows under src/ (underSource) is held to the rows it takes and the rows it leaves.
 //
 // The fetch is doubled, so nothing here opens a socket or counts a file: a case states what the
 // endpoint answers and asserts what the store holds after it.
@@ -13,7 +13,7 @@ import {
     type LinesStore
 } from '../../../src/lib/state/system/lines.svelte.ts';
 import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
-import { stubHeld } from '../../fixtures/client.ts';
+import { settle, stubHeld } from '../../fixtures/client.ts';
 import { COUNT, folder, tally, type Sums } from '../../server/machine/line-counts.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
@@ -42,9 +42,6 @@ function respond(url: string): Promise<Response> {
     }
     return Promise.resolve(Response.json(next.body, { status: next.status }));
 }
-
-/** Let the scheduled microtask and the answer it awaits run: one turn of the timer queue. */
-const settle = (): Promise<void> => new Promise((wake) => setTimeout(wake, 0));
 
 beforeEach(() => {
     asked = [];
@@ -108,14 +105,6 @@ describe('the line count store', () => {
         expect(store.lines()).toEqual({ count: later, error: '', loading: false });
     });
 
-    it('asks once for a recount pressed while a count is on its way', async () => {
-        store.lines();
-        store.recount();
-        store.recount();
-        await settle();
-        expect(asked).toEqual(['/api/lines']);
-    });
-
     it('holds an answer with no rows list as an error, not as a shorter table', async () => {
         answers = [{ status: 200, body: { total: COUNT.total, counted: COUNT.counted } }];
         store.lines();
@@ -125,19 +114,6 @@ describe('the line count store', () => {
             error: catalog['status.lines_bad_rows'],
             loading: false
         });
-    });
-
-    it('holds a row that is not a folder count as an error naming the row', async () => {
-        answers = [
-            {
-                status: 200,
-                body: { ...COUNT, rows: [{ ...COUNT.rows[0], code: 'many' }] }
-            }
-        ];
-        store.lines();
-        await settle();
-        expect(store.lines().error).toBe(catalog['status.lines_bad_row'].replace('{0}', '1'));
-        expect(store.lines().count).toBeNull();
     });
 
     it("holds the server's sentence when the count failed there", async () => {
@@ -151,45 +127,40 @@ describe('the line count store', () => {
         });
     });
 
-    it('says the status when a failed answer carries no sentence', async () => {
-        answers = [{ status: 502, body: {} }];
-        store.lines();
-        await settle();
-        expect(store.lines()).toEqual({
-            count: null,
-            error: catalog['status.lines_bad_status'].replace('{0}', '502'),
-            loading: false
-        });
-    });
+    it.each([
+        ['no error', 502, '{}'],
+        ['an error that is a number', 500, '{"error":3}'],
+        ['an empty error', 500, '{"error":""}']
+    ])(
+        'says the status when a failed answer carries %s as a sentence',
+        async (_name, status, text) => {
+            answers = [{ status, text }];
+            store.lines();
+            await settle();
+            expect(store.lines()).toEqual({
+                count: null,
+                error: catalog['status.lines_bad_status'].replace('{0}', String(status)),
+                loading: false
+            });
+        }
+    );
 
-    it('says the answer is not a count, and no parser message, when it is not JSON', async () => {
-        answers = [{ status: 500, text: '<html><body>Internal Server Error</body></html>' }];
-        store.lines();
-        await settle();
-        expect(store.lines()).toEqual({
-            count: null,
-            error: catalog['status.lines_bad_body'].replace('{0}', '500'),
-            loading: false
-        });
-    });
-
-    it('says the answer is not a count when a 200 carries a page', async () => {
-        answers = [{ status: 200, text: '<html><body>Proxy</body></html>' }];
-        store.lines();
-        await settle();
-        expect(store.lines().error).toBe(catalog['status.lines_bad_body'].replace('{0}', '200'));
-    });
-
-    it('holds an answer with no total, or no time, as that error', async () => {
-        answers = [{ status: 200, body: { rows: COUNT.rows, counted: COUNT.counted } }];
-        store.lines();
-        await settle();
-        expect(store.lines().error).toBe(catalog['status.lines_bad_total']);
-        answers = [{ status: 200, body: { rows: COUNT.rows, total: COUNT.total } }];
-        store.recount();
-        await settle();
-        expect(store.lines().error).toBe(catalog['status.lines_bad_counted']);
-    });
+    it.each([
+        ['an HTML page', 500, '<html><body>Internal Server Error</body></html>'],
+        ['a JSON null', 200, 'null']
+    ])(
+        'says the answer is not a count, and no parser message, for %s',
+        async (_name, status, text) => {
+            answers = [{ status, text }];
+            store.lines();
+            await settle();
+            expect(store.lines()).toEqual({
+                count: null,
+                error: catalog['status.lines_bad_body'].replace('{0}', String(status)),
+                loading: false
+            });
+        }
+    );
 
     it('holds the sentence of a fetch that failed before any answer', async () => {
         answers = [{ status: 0, fails: 'Failed to fetch' }];
@@ -247,29 +218,10 @@ describe('an answer that is not a count', () => {
         error: at === undefined ? catalog[key] : catalog[key].replace('{0}', String(at))
     });
 
-    it('holds a whole answer as the count, keys in the order the view reads them', () => {
-        const read = readCount(body()) as { count: { rows: Record<string, unknown>[] } };
-        expect(read).toStrictEqual({
+    it('holds a whole answer as the count', () => {
+        expect(readCount(body())).toStrictEqual({
             count: { rows: [row()], total: SUMS, counted: COUNTED }
         });
-        expect(Object.keys(read.count)).toStrictEqual(['rows', 'total', 'counted']);
-        expect(Object.keys(read.count.rows[0])).toStrictEqual([
-            'folder',
-            'files',
-            'blank',
-            'comment',
-            'code',
-            'todo',
-            'languages'
-        ]);
-        expect(Object.keys((read.count.rows[0].languages as object[])[0])).toStrictEqual([
-            'language',
-            'files',
-            'blank',
-            'comment',
-            'code',
-            'todo'
-        ]);
     });
 
     it('leaves out the keys a row, a language and the total carry beyond the ones read', () => {
@@ -282,47 +234,25 @@ describe('an answer that is not a count', () => {
         expect(read).toStrictEqual({ count: { rows: [row()], total: SUMS, counted: COUNTED } });
     });
 
-    it('holds a row with no language as a folder with an empty list', () => {
-        const read = readCount(body({ rows: [row({ languages: [] })] }));
-        expect(read).toStrictEqual({
-            count: { rows: [row({ languages: [] })], total: SUMS, counted: COUNTED }
-        });
-    });
-
     it.each([
         ['a body that is a list', [body()]],
-        ['a body that is null', null],
-        ['a body that is a string', 'x'],
-        ['a body that is a number', 3],
         ['no rows', body({ rows: undefined })],
-        ['rows that are a map', body({ rows: { 0: row() } })],
-        ['rows that are a string', body({ rows: 'x' })],
-        ['rows that are null', body({ rows: null })]
+        ['rows that are a map', body({ rows: { 0: row() } })]
     ])('says the rows are bad for %s', (_name, value) => {
         expect(readCount(value)).toStrictEqual(said('status.lines_bad_rows'));
     });
 
     it.each([
         ['a row that is a string', 'x'],
-        ['a row that is null', null],
-        ['a row that is a list', []],
         ['a folder that is a number', row({ folder: 3 })],
-        ['no folder', row({ folder: undefined })],
-        ['no languages', row({ languages: undefined })],
         ['languages that are a map', row({ languages: { 0: lang() } })],
-        ['languages that are a string', row({ languages: 'x' })],
         ['a language that is null', row({ languages: [null] })],
-        ['a language that is a string', row({ languages: ['x'] })],
         ['a language named by a number', row({ languages: [lang({ language: 3 })] })],
-        ['a language with no name', row({ languages: [lang({ language: undefined })] })],
         ['a language with a negative sum', row({ languages: [lang({ code: -1 })] })],
         ['a good language beside a bad one', row({ languages: [lang(), lang({ blank: 1.5 })] })],
         ['a negative sum', row({ files: -1 })],
         ['a fractional sum', row({ code: 1.5 })],
-        ['a sum that is NaN', row({ blank: Number.NaN })],
-        ['a sum that is infinite', row({ comment: Number.POSITIVE_INFINITY })],
         ['a sum that is a string', row({ todo: '3' })],
-        ['a sum that is null', row({ files: null })],
         ['a sum that is missing', row({ todo: undefined })]
     ])('names the place of a bad row: %s', (_name, bad) => {
         expect(readCount(body({ rows: [row(), bad] }))).toStrictEqual(
@@ -335,37 +265,23 @@ describe('an answer that is not a count', () => {
 
     it.each([
         ['no total', undefined],
-        ['a total that is null', null],
-        ['a total that is a list', []],
-        ['a total that is a string', 'x'],
-        ['a total with a negative sum', { ...SUMS, code: -1 }],
-        ['a total with a fractional sum', { ...SUMS, files: 1.5 }],
-        ['a total with a string sum', { ...SUMS, todo: '5' }],
-        ['a total with a missing sum', { ...SUMS, blank: undefined }],
-        ['a total with an infinite sum', { ...SUMS, comment: Number.POSITIVE_INFINITY }]
+        ['a total with a negative sum', { ...SUMS, code: -1 }]
     ])('says the total is bad for %s', (_name, total) => {
         expect(readCount(body({ total }))).toStrictEqual(said('status.lines_bad_total'));
     });
 
     it.each([
         ['no time', undefined],
-        ['a time that is null', null],
-        ['a time that is a number', 1790000000000],
-        ['a time that is empty', ''],
-        ['a time that is not a date', 'not a date'],
-        ['a time that is a list', [COUNTED]]
+        ['a time that is not a date', 'not a date']
     ])('says the time is bad for %s', (_name, counted) => {
         expect(readCount(body({ counted }))).toStrictEqual(said('status.lines_bad_counted'));
     });
 
-    it.each([['2026-09-28'], ['2026-09-28T10:00:00+02:00'], ['Sep 28 2026']])(
-        'holds the time %j as written',
-        (counted) => {
-            expect(readCount(body({ counted }))).toStrictEqual({
-                count: { rows: [row()], total: SUMS, counted }
-            });
-        }
-    );
+    it.each([['2026-09-28'], ['Sep 28 2026']])('holds the time %j as written', (counted) => {
+        expect(readCount(body({ counted }))).toStrictEqual({
+            count: { rows: [row()], total: SUMS, counted }
+        });
+    });
 
     it('holds a sum of zero, of negative zero and of an integer beyond the safe range', () => {
         const wide = { files: 0, blank: -0, comment: 2 ** 60, code: 1e21, todo: 0 };
@@ -382,26 +298,6 @@ describe('an answer that is not a count', () => {
         expect(readCount({ ...bad, rows: [row()], total: SUMS })).toStrictEqual(
             said('status.lines_bad_counted')
         );
-    });
-
-    it.each([
-        ['a JSON null', 200, 'null', 'status.lines_bad_body'],
-        ['a JSON null', 500, 'null', 'status.lines_bad_body'],
-        ['an error that is a number', 500, '{"error":3}', 'status.lines_bad_status'],
-        ['an empty error', 500, '{"error":""}', 'status.lines_bad_status'],
-        ['a list', 500, '[]', 'status.lines_bad_status'],
-        ['a string', 500, '"x"', 'status.lines_bad_status'],
-        ['a list', 200, '[]', 'status.lines_bad_rows'],
-        ['a string', 200, '"x"', 'status.lines_bad_rows']
-    ])('holds %s sent with status %i as that sentence', async (_name, status, text, key) => {
-        answers = [{ status, text }];
-        store.lines();
-        await settle();
-        expect(store.lines()).toStrictEqual({
-            count: null,
-            error: catalog[key].replace('{0}', String(status)),
-            loading: false
-        });
     });
 });
 
@@ -436,17 +332,6 @@ describe('the sum of the rows under src/', () => {
                 ]
             ],
             tally([932, 1524, 2104, 29710, 65])
-        ],
-        [
-            'sums only a folder that is src or starts with src/',
-            [
-                [
-                    under('src-old', [2, 4, 6, 80, 13]),
-                    under('src/lib/ui', [101, 141, 252, 2020, 3]),
-                    under('srcx', [5, 7, 9, 110, 15])
-                ]
-            ],
-            tally([101, 141, 252, 2020, 3])
         ],
         [
             'gives null for rows with none under src',

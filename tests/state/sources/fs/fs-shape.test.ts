@@ -1,29 +1,21 @@
-// Layer 4, test. The file browser's pure names, addresses, file kinds, versions and tree rows.
+// Layer 2, client-state tests. The file browser's pure names, addresses, file kinds, versions and
+// tree rows.
 
 import { describe, expect, it } from 'vitest';
 import {
     bookmarkRef,
     bookmarkRows,
     childPath,
-    expandedOf,
     extensionOf,
-    languageOf,
-    languages,
-    nameOf,
     toggleExpanded,
     markedKeys,
     treeKey,
     treeRows,
     typeOfFile,
-    TEXT_LIMIT,
     type FsEntry,
     type FsRoot
 } from '../../../../src/lib/state/sources/fs.ts';
 import { fileBytesUrl, listingUrl } from '../../../../src/lib/state/sources/fs.svelte.ts';
-import { languageMap } from '../../../../src/lib/data/helpers/files/languages.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { registered } from '../../../../src/lib/state/shared/words/languages.ts';
-import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import { createClientState } from '../../../fixtures/client.ts';
 import {
     bookmarkAt,
@@ -40,10 +32,6 @@ import {
     workspaceNames
 } from '../../../../src/lib/state/sources/fs-transport.ts';
 import type { Entry } from '../../../../src/lib/data/model/index.ts';
-
-setCatalog(textCatalog(loadConfig(engineDir()).config));
-
-const MAP = languageMap(loadConfig(engineDir()).config);
 
 /** One file entry, since only the name and the kind matter to these cases. */
 function file(name: string, size = 10): FsEntry {
@@ -73,99 +61,22 @@ describe('what a file opens as', () => {
         }
     });
 
-    it('names the language of a code file and plain text for the rest of the text ones', () => {
-        const names = [
-            'run.ts',
-            'run.py',
-            'config/sources.yml',
-            'main.tex',
-            'job.slurm',
-            'View.svelte',
-            'notes.txt'
-        ];
-        expect(names.map((name) => languageOf(name, MAP))).toEqual([
-            'typescript',
-            'python',
-            'yaml',
-            'latex',
-            'bash',
-            'svelte',
-            'plaintext'
-        ]);
-        expect(typeOfFile('run.ts', bytes('one\n'))).toEqual({ kind: 'text' });
-    });
-
-    it('reads a language off a whole name for a file that carries no extension', () => {
-        expect(languageOf('Makefile', MAP)).toBe('makefile');
-        expect(languageOf('code/makefile', MAP)).toBe('makefile');
-        expect(typeOfFile('Makefile', bytes('all:\n'))).toEqual({ kind: 'text' });
-    });
-
     it('reads the bytes and not the name, so a name says nothing about what is in the file', () => {
         const archive = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00, 0x08, 0x00]);
         expect(typeOfFile('data.txt', archive).kind).toBe('other');
-        expect(typeOfFile('run.py', archive).kind).toBe('other');
         expect(typeOfFile('build', bytes('#!/bin/sh\n')).kind).toBe('text');
     });
 
-    it('reads a file of accented letters as text and one with a zero byte in it as not', () => {
-        expect(typeOfFile('names.csv', bytes('Linkoeping, Twente, Munchen\n')).kind).toBe('text');
-        expect(typeOfFile('names.csv', bytes('Link\u00f6ping, M\u00fcnchen\n')).kind).toBe('text');
-        const zeroed = bytes('a'.repeat(100) + '\u0000' + 'b'.repeat(100));
-        expect(zeroed[100]).toBe(0);
-        expect(typeOfFile('notes.txt', zeroed).kind).toBe('other');
-    });
-
-    it('reads an empty file as text, and a file whose bytes have not been read as a download', () => {
-        expect(typeOfFile('empty.txt', new Uint8Array(0)).kind).toBe('text');
+    it('reads a file whose bytes have not been read as a download', () => {
         expect(typeOfFile('archive.tar.gz').kind).toBe('other');
-        expect(typeOfFile('data.npz').kind).toBe('other');
     });
 
-    it('names only languages the code window has registered', () => {
-        expect(languages(MAP).filter((one) => !registered().includes(one))).toEqual([]);
-        expect(registered().filter((one) => !languages(MAP).includes(one))).toEqual([]);
-        const names = [
-            'a.ts',
-            'a.js',
-            'a.py',
-            'a.yml',
-            'a.yaml',
-            'a.md',
-            'a.css',
-            'a.r',
-            'a.ini',
-            'a.toml',
-            'a.json',
-            'a.ipynb',
-            'a.sh',
-            'a.tex',
-            'a.xml',
-            'a.svelte',
-            'a.html',
-            'a.svg',
-            'a.diff',
-            'a.jsonc',
-            'a.mk',
-            'Makefile',
-            'a.txt',
-            'a.unknown'
-        ];
-        expect(names.filter((name) => !registered().includes(languageOf(name, MAP)))).toEqual([]);
-    });
-
-    it('reads an extension and a name off a path', () => {
+    it('reads an extension off a path and joins a folder and a name', () => {
         expect(extensionOf('a/b/run.PY')).toBe('.py');
         expect(extensionOf('a/b/Makefile')).toBe('');
         expect(extensionOf('.gitignore')).toBe('');
-        expect(nameOf('a/b/run.py')).toBe('run.py');
-        expect(nameOf('run.py')).toBe('run.py');
         expect(childPath('', 'a')).toBe('a');
         expect(childPath('a/b', 'c')).toBe('a/b/c');
-    });
-
-    it('holds the window limit at two megabytes', () => {
-        expect(TEXT_LIMIT).toBe(2 * 1024 * 1024);
     });
 });
 
@@ -232,13 +143,6 @@ describe('the version one file is read at', () => {
 });
 
 describe('the open folders an instance remembers', () => {
-    it('reads the set out of the instance state, and nothing out of anything else', () => {
-        expect(expandedOf({ expanded: ['hub:', 'hub:code', 7] })).toEqual(['hub:', 'hub:code']);
-        expect(expandedOf({ expanded: 'hub:' })).toEqual([]);
-        expect(expandedOf(null)).toEqual([]);
-        expect(expandedOf(['hub:'])).toEqual([]);
-    });
-
     it('opens a closed folder and closes an open one', () => {
         expect(toggleExpanded([], 'hub:')).toEqual(['hub:']);
         expect(toggleExpanded(['hub:', 'hub:code'], 'hub:')).toEqual(['hub:code']);

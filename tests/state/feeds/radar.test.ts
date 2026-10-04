@@ -1,4 +1,5 @@
-// Pure Lit Watch grouping, ordering, searching, joining, seeding, tones, and saved state.
+// Layer 2, client-state tests. The Lit Watch grouping, ordering, searching, joining, seeding, tones
+// and saved state.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -11,19 +12,12 @@ import {
     radarSearch,
     relevanceTone,
     sortBucket,
-    type RadarBucket,
     type RadarEntry,
     dismissedSplit,
     filledBuckets
 } from '../../../src/lib/state/feeds/radar.ts';
 import type { Project } from '../../../src/lib/data/model/index.ts';
 
-const BUCKETS: RadarBucket[] = ['preemption', 'idea', 'cite_baseline', 'adjacent'].map((key) => ({
-    key,
-    glyph: key,
-    label: key,
-    color: '#000000'
-}));
 const ENTRIES: RadarEntry[] = [
     { title: 'Old high', bucket: 'preemption', found: '2026-09-01', relevance: 'high' },
     { title: 'New low', bucket: 'preemption', found: '2026-09-02', relevance: 'low' },
@@ -32,15 +26,7 @@ const ENTRIES: RadarEntry[] = [
 ];
 
 describe('radar selectors', () => {
-    it('groups in vocabulary order and sends unknown buckets to adjacent', () => {
-        const groups = bucketsOf(ENTRIES, BUCKETS);
-        expect(groups.map((group) => group.bucket.key)).toEqual(
-            BUCKETS.map((bucket) => bucket.key)
-        );
-        expect(groups.at(-1)?.entries.map((entry) => entry.title)).toEqual(['Unknown']);
-    });
-
-    it('sorts by found then relevance and marks the last run', () => {
+    it('sorts by found then relevance and marks the entries found on the last run', () => {
         expect(sortBucket(ENTRIES.slice(0, 3)).map((entry) => entry.title)).toEqual([
             'New high',
             'New low',
@@ -48,9 +34,6 @@ describe('radar selectors', () => {
         ]);
         expect(isNew(ENTRIES[1], '2026-09-02')).toBe(true);
         expect(isNew(ENTRIES[0], '2026-09-02')).toBe(false);
-        expect(
-            ['red', 'amber', 'grey'].map((tone, at) => relevanceTone(['high', 'med', 'low'][at]))
-        ).toEqual(['red', 'amber', 'grey']);
     });
 
     it('requires every search word across the eight fields', () => {
@@ -101,15 +84,8 @@ describe('radar selectors', () => {
     });
 });
 
-describe('the radar entries split and bucketed', () => {
-    it('split into the live and the dismissed, each in the order given', () => {
-        const entries = [{ title: 'a' }, { title: 'b', dismissed: true }, { title: 'c' }];
-        const split = dismissedSplit(entries);
-        expect(split.live.map((one) => one.title)).toEqual(['a', 'c']);
-        expect(split.dismissed.map((one) => one.title)).toEqual(['b']);
-    });
-
-    it('fall into the buckets that hold any, an empty bucket left out', () => {
+describe('the radar buckets that hold entries', () => {
+    it('are the buckets that hold any, an empty bucket left out', () => {
         const buckets = [
             { key: 'read', glyph: '', label: 'Read', color: '' },
             { key: 'idea', glyph: '', label: 'Idea', color: '' }

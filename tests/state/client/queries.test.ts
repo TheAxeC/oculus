@@ -1,7 +1,8 @@
-// Layer 4, state test. What the fetch stores share: one request for a key however often it is read,
-// a failed read that is not asked again, an answer held across time with no reader, a request that
-// goes while the browser says it is offline, the value a hold puts in, a reload dropped while a
-// request is out, two clients that share nothing, and an empty key that builds nothing.
+// Layer 2, client-state tests. What the fetch stores share: one request for a key however often it
+// is read, a failed read that is not asked again, an answer held across time with no reader, a
+// request that goes while the browser says it is offline, the value a hold puts in, a reload
+// dropped while a request is out, two clients that share nothing, and an empty key that builds
+// nothing.
 //
 // `fetch` and `window` are stubs; nothing here reaches a server. What this does NOT cover: a store
 // read inside a `$derived` on a mounted page, which needs a DOM and is seen at the look on landing.
@@ -9,8 +10,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryCache, environmentManager, isServer, onlineManager } from '@tanstack/query-core';
 import type { Turn } from '../../../src/lib/data/model/index.ts';
-import { createDocs } from '../../../src/lib/state/system/docs.svelte.ts';
-import { createEntities } from '../../../src/lib/state/client/entities.svelte.ts';
 import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
 import {
     createClientState,
@@ -259,36 +258,6 @@ describe('an empty id, name, path or root', () => {
 
 describe('the query helper on its own', () => {
     const KEY = ['probe', 'one'];
-
-    // Revert: in document of state/system/docs.svelte.ts, take out the empty id and name test.
-    it('builds no query for an empty key, in the cache of the client that docs reads through', async () => {
-        const queries = createQueries();
-        const docs = createDocs(createEntities(), queries);
-        serving(() => json({}));
-        docs.document('', 'README.md');
-        docs.document('alpha', '');
-        docs.hubDocument('');
-        await settle();
-        expect(queries.client.getQueryCache().getAll()).toEqual([]);
-        expect(asked).toEqual([]);
-    });
-
-    // Revert: none turns it red, since Queries.fetch and the scheduled read go through
-    // client.query, which never retries; it audits that a throwing query function is called once.
-    it('audit: calls a query function that throws once, where the runtime retries by default', async () => {
-        environmentManager.setIsServer(() => false);
-        vi.useFakeTimers();
-        const queries = createQueries();
-        let calls = 0;
-        const throwing = (): Promise<string> => {
-            calls += 1;
-            return Promise.reject(new Error('down'));
-        };
-        queries.read(KEY, throwing, { enabled: true });
-        await vi.advanceTimersByTimeAsync(0);
-        await vi.advanceTimersByTimeAsync(60_000);
-        expect(calls).toBe(1);
-    });
 
     // Revert: in hold of state/client/queries.svelte.ts, take out the line that marks the
     // key again when it was marked before.
@@ -683,9 +652,9 @@ describe('a read and a refetch inside a hidden scope', () => {
         expect(hiddenOne.calls()).toBe(0);
     });
 
-    // Revert: none turns it red, since peek, fetch, hold and mark read no scope; it audits that a
-    // hidden scope leaves them as they are in no scope.
-    it('audit: leaves peek, fetch, hold and mark as they are in no scope', async () => {
+    // Revert: make peek, fetch, hold or mark read the current scope, as read does, and a hidden
+    // scope changes what they answer.
+    it('leaves peek, fetch, hold and mark as they are in a hidden scope', async () => {
         const queries = createQueries();
         const { fetcher, calls } = counting();
         const hidden = <T>(run: () => T): T => queries.scoped(() => false, run);
@@ -715,26 +684,6 @@ describe('a read and a refetch inside a hidden scope', () => {
             () => queries.read(KEY, fetcher, { enabled: true })
         );
         shown = false;
-        await settle();
-        expect(calls()).toBe(1);
-    });
-
-    // Revert: none turns it red, since query-core joins a request already out and the microtask
-    // runs a schedule once; it audits that toggling the flag inside one tick sends one request.
-    it('audit: sends one request when the flag goes shown, hidden and shown inside one tick', async () => {
-        const queries = createQueries();
-        const { fetcher, calls } = counting();
-        let shown = true;
-        const read = () =>
-            queries.scoped(
-                () => shown,
-                () => queries.read(KEY, fetcher, { enabled: true })
-            );
-        read();
-        shown = false;
-        read();
-        shown = true;
-        read();
         await settle();
         expect(calls()).toBe(1);
     });

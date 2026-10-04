@@ -1,9 +1,10 @@
-// The notifications the channels and the writes post, through one case's own client: a message is
-// handed to the entities store as the socket hands it, and what the notifications store holds
-// afterwards is read. A session that starts waiting, a Live HPC job that ends and an update task
-// whose run date moves on each post once, never again for the same state on a later message, and
-// nothing for what the first message after the page loads already says; a write that does not
-// land, refused or given no answer, posts once, unless its caller words it itself.
+// Layer 2, client-state tests. The notifications the channels and the writes post, through one
+// case's own client: a message is handed to the entities store as the socket hands it, and what the
+// notifications store holds afterwards is read. A session that starts waiting, a Live HPC job that
+// ends and an update task whose run date moves on each post once, never again for the same state on
+// a later message, and nothing for what the first message after the page loads already says; a
+// write that does not land, refused or given no answer, posts once, unless its caller words it
+// itself.
 //
 // What this does NOT cover: the toast, the bell and the centre drawing what is posted.
 
@@ -14,15 +15,12 @@ import type {
     Snapshot
 } from '../../../../src/lib/data/model/index.ts';
 import {
-    createNoticeSources,
     feedRuns,
     jobFinished,
     notesRuns,
     waitingOf,
     waitsOnReader
 } from '../../../../src/lib/state/workbench/navigation/notice-sources.ts';
-import { createNotices } from '../../../../src/lib/state/workbench/navigation/notices.svelte.ts';
-import { createWrites } from '../../../../src/lib/state/client/writes.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
@@ -215,12 +213,6 @@ describe('a Live HPC job that ends', () => {
         expect(client.layout.activeInstance()?.view).toBe('hpc');
     });
 
-    it('is not started by a poll the cluster did not answer', () => {
-        receive('hpc', hpc('error', []));
-        receive('hpc', hpc('ok', [['1', 'COMPLETED', '0:0']]));
-        expect(said()).toEqual([]);
-    });
-
     it('reads COMPLETED with a zero exit as finished, and any other state or code as failed', () => {
         expect(jobFinished({ state: 'COMPLETED', exit: '0:0' })).toBe(true);
         expect(jobFinished({ state: 'COMPLETED', exit: '' })).toBe(true);
@@ -335,31 +327,6 @@ describe('a write that does not land', () => {
         expect(calls).toBe(2);
         expect(said()).toEqual([t('statusbar.notice_write_refused', 'forbidden')]);
     });
-
-    it(
-        'is told as a write that got no answer when it is given up for want of one',
-        { timeout: 5000 },
-        async () => {
-            vi.stubGlobal(
-                'fetch',
-                (_url: string, init: RequestInit) =>
-                    new Promise((_done, fail) => {
-                        init.signal?.addEventListener('abort', () => fail(new Error('aborted')));
-                    })
-            );
-            const notices = createNotices({ statusQuiet: () => false });
-            const writes = createWrites(() => ({ writes: { timeout_seconds: 0.05 } }));
-            const sources = createNoticeSources(notices, {
-                openSession: () => undefined,
-                openView: () => undefined
-            });
-            writes.onUnwritten(sources.unwritten);
-            await writes.send({ action: 'set' });
-            expect(notices.list().map((notice) => notice.message)).toEqual([
-                t('statusbar.notice_write_failed', t('app.write_timed_out'))
-            ]);
-        }
-    );
 });
 
 describe('the payloads the notifications read, of any shape', () => {
@@ -368,11 +335,8 @@ describe('the payloads the notifications read, of any shape', () => {
 
     it.each([
         ['no payload', null, []],
-        ['a payload with no records', {}, []],
         ['records that are a string', { records: 'x' }, []],
-        ['records that are a map', { records: {} }, []],
         ['a record with no hook', { records: [{ id: 'a', title: 'A' }] }, []],
-        ['a record whose hook is a string', { records: [{ id: 'a', title: 'A', hook: 'x' }] }, []],
         ['a title that is empty', { records: [{ id: 'a', title: '', hook }] }, [waiting('a')]],
         [
             'a record that is a list',
@@ -381,11 +345,6 @@ describe('the payloads the notifications read, of any shape', () => {
         ]
     ])('reads the waiting sessions of %s', (_name, payload, expected) => {
         expect(waitingOf(payload)).toStrictEqual(expected);
-    });
-
-    it('leaves out a record that is no session record', () => {
-        const payload = { records: [null, { id: 'a', title: 'A', hook }] };
-        expect(waitingOf(payload)).toStrictEqual([waiting('a', 'A')]);
     });
 
     it('leaves out a record whose id is not text', () => {
@@ -400,17 +359,6 @@ describe('the payloads the notifications read, of any shape', () => {
 
     it.each([
         ['no payload', null, { litwatch: '', scout: '', linkedin: '' }],
-        ['no entities', {}, { litwatch: '', scout: '', linkedin: '' }],
-        [
-            'entities that are a string',
-            { entities: 'x' },
-            { litwatch: '', scout: '', linkedin: '' }
-        ],
-        [
-            'feeds that are a list',
-            { entities: { feeds: [] } },
-            { litwatch: '', scout: '', linkedin: '' }
-        ],
         [
             'a feed that is a number',
             { entities: { feeds: { radar: 3 } } },
@@ -436,12 +384,6 @@ describe('the payloads the notifications read, of any shape', () => {
         ]
     ])('reads the run dates of %s', (_name, snapshot, expected) => {
         expect(feedRuns(snapshot)).toStrictEqual(expected);
-    });
-
-    it('reads a run date that is not text as no run date', () => {
-        const snapshot = { entities: { feeds: { radar: { lastRun: 3 } } } };
-        expect(feedRuns(snapshot)).toStrictEqual({ litwatch: '', scout: '', linkedin: '' });
-        expect(notesRuns({ notesRun: 3 })).toStrictEqual({ inbox: '' });
     });
 
     it.each([
