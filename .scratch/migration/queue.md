@@ -1,6 +1,6 @@
 In flight:
 - T1b (the test sweep of tests/state/): building.
-- T1d (the test sweep of tests/views/, shell/, ui/ and themes/): waiting for Axel's ruling on the audits check.
+- T1d (the test sweep of tests/views/, shell/, ui/ and themes/): once T1b has landed, with the audits check rewritten.
 - T1e (the test sweep of tests/routes/, data/, checks/ and fixtures): building.
 
 Queued, in order (33 steps):
@@ -38,10 +38,10 @@ Queued, in order (33 steps):
 - O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.
 - O36 (a second person in the hub): paused (Axel); once O34 has landed.
 
-Owed: the look of Q81 (a Confirm over the update tray).
+Owed: the look of Q81 (a Confirm over the update tray), waiting until Axel takes it up.
 
 Landed, newest first:
-- T1c (the test sweep of tests/server/), 2026-10-04, this landing's commit.
+- T1c (the test sweep of tests/server/), 2026-10-04, ffb4457a.
 - X3c (the tab strip as VS Code's), 2026-10-04, 1e14d279.
 - Q116 (the Status view's line count of everything under src/), 2026-10-03, 5a7654bf.
 - D25 (the editor's options), 2026-10-03, 4c7cf915.

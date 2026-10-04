@@ -28,7 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # two steps in flight (2026-10-04): T1b and T1e, building; T1c landed, T1d waits for Z376 (workers_at_once: 5).
+dispatch:   # two steps in flight (2026-10-04): T1b and T1e, building; T1c landed, T1d is prepared again after T1b lands, under Z376 (b) (workers_at_once: 5).
 - step: T1b
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -150,11 +150,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z314 (2026-10-03, the owed look Q81): a Confirm drawn over the update tray. It shows only while `tasks.skip_permissions` is on in `config/behavior.yml`. Axel allowed the edit for the look (2026-10-03); the Claude Code auto-mode classifier refused it again with his permission given, so the session cannot make it. Options: (a) Axel sets `skip_permissions: true` himself, the look is taken, and Axel sets it back (the session checks `git diff --exit-code -- tools/oculus/config/behavior.yml` after); (b) the point is dropped from the look. Recommendation: (a), one line each way and (b) is the lazy option.
-
-- Z376 (2026-10-04, /spec T1d, the sweep of tests/views/, shell/, ui/ and themes/): a clash between two rulings. `tests/checks/tree/audits.test.ts` (added by R14, which Axel approved) fails on a case under `tests/views/` that renders nothing unless its title starts with "audits" or it is on `allow-audits.txt` (107 entries); Z354 says no audits, and T1d's brief retitles and deletes such cases, so T1d's `npm run test:checks` cannot pass as briefed. Options: (a) T1d deletes `audits.test.ts` and `allow-audits.txt`, and Z354 is held by `agents/spec.md:57` and `:61` alone; pros: T1d starts now, one less check; cons: nothing stops a non-rendering case landing under `tests/views/` again, the kind of rule the recurring pass finds broken in step after step. (b) T1d rewrites the check to compute one fact: each case under `tests/views/` whose body reaches no `render()`, no `mount()` and no name the file binds to one, with no title escape and no allow list; a kept case of that kind moves to the folder of the code it calls (a pure function's test to `tests/state/` and so on), so T1d starts after T1b has landed; pros: Z365's lowest-level rule is held by a check, the allow list goes; cons: T1d waits for T1b, and the check needs Axel's approval of what it computes, written here. (c) The kept non-rendering cases keep "audits" in their titles; pros: no change to the check; cons: it keeps audits Z354 removes. Recommendation: (b), since it holds his ruling by a fact a machine computes; (c) is the lazy option.
-
-- Z377 (2026-10-04, the recurring-findings pass): in 9 of the last 14 steps a builder left a file it changed within 20 lines of the size check's line (`tests/checks/tree/size.test.ts:28-29` refuses 900 lines and 540 for a component), and the reviewer then raised it; `agents/spec.md:45` now says 880 and 520. Proposal: the size check (and `utils/size-check.sh`, which holds the same rule) refuses a file over 880 lines and a component over 520, so the rule is a fact the check computes: a line count per file. Options: (a) the check moved to 880 and 520, built at the next step that changes the size check, T1a; pros: a builder sees the line in its own run, no reviewer finding; cons: 13 files on main today pass 880 lines or 520 for a component (`find src tests utils ... | xargs wc -l` with that rule, run 2026-10-04), each split in that step. (b) The rule stays a sentence in `agents/spec.md` only; pros: no change; cons: the sentence was already there in substance and nine steps passed it. Recommendation: (a); (b) is the lazy option.
+None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -213,10 +209,10 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-04. T1c landed (the sweep of `tests/server/`). In flight: T1b (`tests/state/`) and T1e (`tests/routes/`, `data/`, `checks/`, `fixtures/`), building. T1d (`tests/views/`, `shell/`, `ui/`, `themes/`) waits for Z376. Next:
+- 2026-10-04. T1c landed (the sweep of `tests/server/`). In flight: T1b (`tests/state/`) and T1e (`tests/routes/`, `data/`, `checks/`, `fixtures/`), building. T1d (`tests/views/`, `shell/`, `ui/`, `themes/`) waits for T1b's landing (Z376 (b)). Next:
   1. T1b and T1e: on each report, `/refute`, then `/land`.
-  2. T1d: on Axel's ruling of Z376, its brief finished by the ruling, then dispatched (after T1b lands under (b)).
+  2. T1d: once T1b lands, its brief finished by Z376 (b) (the audits check rewritten, kept non-rendering cases moved to the folder of the code they call), prepared again from main's head and dispatched.
   3. At the last of the four sweeps' landings: the fixture exports they left unused removed (Booked).
-  4. T1a after the four sweeps, its timings under a reproduced load (Z370 (a)), the size check at Z377's ruling; then the queue in order, O33 to O36 paused (Z369).
-  5. The rail reorder `/diagnose`; the Q81 look when Axel sets `skip_permissions`.
-  Open for Axel: Z314, Z376, Z377.
+  4. T1a after the four sweeps, its timings under a reproduced load (Z370 (a)), the size check at 880 and 520 (Z377 (a)); then the queue in order, O33 to O36 paused (Z369).
+  5. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
+  Open for Axel: none.

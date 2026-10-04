@@ -997,6 +997,18 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z380 (2026-10-04, Axel): the look of Q81
+
+Axel: leave the look of Q81 for later. It waits until he takes it up, is not asked of him in reports, and other landings go on.
+
+## Z377 (2026-10-04, the recurring-findings pass): the size check's line
+
+In 9 of the last 14 steps a builder left a file within 20 lines of the size check's line. Options: (a) `tests/checks/tree/size.test.ts` and `utils/size-check.sh` refuse a file over 880 lines and a component over 520, built in T1a, which splits the 13 files on main over those numbers; (b) the rule stays a sentence in `agents/spec.md`, the lazy option. Chosen (a): a builder then sees the line in its own run.
+
+## Z376 (2026-10-04, /spec T1d): the audits check against Z354
+
+`tests/checks/tree/audits.test.ts` fails a non-rendering case under `tests/views/` unless its title starts with "audits" or it is on `allow-audits.txt`; Z354 says no audits. Options: (a) delete the check and its list; (b) rewrite the check to compute one fact, each case under `tests/views/` whose body reaches no `render()`, no `mount()` and no name the file binds to one, failed with no title escape and no allow list, a kept case of that kind moved to the folder of the code it calls, T1d dispatched after T1b lands; (c) keep "audits" in the titles, the lazy option. Chosen (b): it holds Z354 by a fact a machine computes. What the check computes is the sentence of (b), for Axel's review.
+
 ## Z379 (2026-10-04, T1c's landing): the tests near the 100 ms line
 
 Two five-run samples, the builder's and the round reviewer's, taken at different loads, put 8 tagged tests under 100 ms and one untagged test over it, and no test sat on the wrong side in both. Options: (a) the builder's measured tags stand, and T1a chooses the quick list from measured file times within its 30 s limit; (b) retag every test by the minimum over both samples; (c) tag every test near the line, the lazy option. Chosen (a): the line moves with the load, and T1a decides what runs quick.

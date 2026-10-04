@@ -4,6 +4,9 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z380, closed by Axel 2026-10-04: the look of Q81 (Z314) waits until he takes it up and is no longer asked of him; landings go on.
+- Z377, closed by the orchestrator in automode 2026-10-04: the size check refuses over 880 lines and 520 for a component, built in T1a; options (a) the check moved, (b) the rule as text only, the lazy option; (a) taken.
+- Z376, closed by the orchestrator in automode 2026-10-04: T1d rewrites the audits check to fail any case under `tests/views/` reaching no render, no mount and no name bound to one, no title escape and no allow list, T1d after T1b; options (a) delete the check, (b) the rewrite, (c) keep "audits" titles, the lazy option; (b) taken.
 - Z379, closed by the orchestrator in automode 2026-10-04: T1c's tests near the 100 ms line keep the builder's measured tags; options (a) the tags stand and T1a chooses the quick list, (b) retag by both samples, (c) tag every test near the line, the lazy option; (a) taken.
 - Z378, closed by the orchestrator in automode 2026-10-04: the recurring pass's nine causes ended in rule sentences in `agents/spec.md` and the state file's standing demands; options (a) adopted under Z251, (b) each raised to Axel, (c) nothing changed, the lazy option; (a) taken.
 - Z375, closed by the orchestrator in automode 2026-10-03: D25-owed-4a booked into D42; options (a) D42, the next open step on the diff view, (b) a step of its own, which needs Axel's ruling to enter the plan, (c) left, the lazy option; (a) taken.
