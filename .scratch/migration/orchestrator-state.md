@@ -41,7 +41,7 @@ dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d,
   brief_check: none (Z401)
   review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
   shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
-  builder_usage: claude-sonnet-5-5, 78,627 tokens, 103 tool uses, 17.9 min (completion notice 2026-10-04)
+  builder_usage: claude-sonnet-5-5, 78,627 tokens, 103 tool uses, 17.9 min (completion notice 2026-10-04); round 1: 146,586 tokens, 25 tool uses, 2.7 min
   landing: not-started
   round: 1 (Z413: G33 to G35 and the G6 rows, files put back from the base)
 - step: T2b
@@ -56,9 +56,9 @@ dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d,
   brief_check: none (Z401)
   review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
   shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
-  builder_usage: claude-sonnet-5-5, 296,409 tokens, 188 tool uses, 28.6 min (completion notice 2026-10-04)
+  builder_usage: claude-sonnet-5-5, 296,409 tokens, 188 tool uses, 28.6 min (completion notice 2026-10-04); round 1: 306,466 tokens, 105 tool uses, 18.9 min
   landing: not-started
-  round: 1 (Z413: G33 to G35 and the G6 rows, files put back from the base)
+  round: 2 (Z414: one case of tmux.test.ts kept for tmux.ts; brief agents/briefs/T2b-round2.md)
 - step: T2c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -86,7 +86,7 @@ dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d,
   brief_check: none (Z401)
   review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
   shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
-  builder_usage: claude-sonnet-5-5, 337,205 tokens, 310 tool uses, 50.4 min (completion notice 2026-10-04)
+  builder_usage: claude-sonnet-5-5, 337,205 tokens, 310 tool uses, 50.4 min (completion notice 2026-10-04); round 1: 268,310 tokens, 100 tool uses, 15.3 min
   landing: not-started
   round: 1 (Z413: G33 to G35 and the G6 rows, files put back from the base)
 ```
