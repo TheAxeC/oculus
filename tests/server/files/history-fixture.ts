@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** One delete copy as the index lists it. */
-export type DeleteListed = { folder: string; id: string; at: number };
+type DeleteListed = { folder: string; id: string; at: number };
 
 /** The delete copies the history's index lists, oldest first. */
 export function deletesListed(history: string): DeleteListed[] {

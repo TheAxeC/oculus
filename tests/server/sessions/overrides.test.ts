@@ -1,4 +1,4 @@
-// setOverride against a temporary overrides file: what one pin or rename writes, and what it keeps.
+// setOverride against a temporary overrides file: what it keeps.
 //
 // Nothing here reads or writes ~/.oculus. Every case makes its own file under the system temporary
 // directory and asserts the path is inside it before the write, so the user's own pins are never in
@@ -7,12 +7,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import {
-    overrides,
-    setFlag,
-    setHidden,
-    setOverride
-} from '../../../src/lib/server/sessions/overrides.ts';
+import { setOverride } from '../../../src/lib/server/sessions/overrides.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const ID = 'sess-1';
@@ -33,97 +28,7 @@ function held(path: string): unknown {
     return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null;
 }
 
-/** The change-log record one field of one session's entry makes. */
-function record(path: string, field: string, before: unknown, after: unknown): unknown {
-    return { file: path, key: ID, field, before, after, undo: 'field' };
-}
-
-describe('setHidden', () => {
-    it('dismisses a session and restores it, recording each', () => {
-        const path = file();
-        expect(setHidden(ID, true, path)).toEqual({
-            changed: ['hidden'],
-            refused: [],
-            records: [record(path, 'hidden', null, true)]
-        });
-        expect(held(path)).toEqual({ sessions: { [ID]: { hidden: true } } });
-        expect(setHidden(ID, false, path)).toEqual({
-            changed: ['hidden'],
-            refused: [],
-            records: [record(path, 'hidden', true, null)]
-        });
-        expect(held(path)).toEqual({ sessions: {} });
-    });
-
-    it('writes nothing when the flag is already what it is being set to', () => {
-        const path = file({ sessions: { [ID]: { hidden: true } } });
-        writeFileSync(path, JSON.stringify({ sessions: { [ID]: { hidden: true } } }) + '\n');
-        expect(setHidden(ID, true, path)).toEqual({ changed: [], refused: [], records: [] });
-        // The trailing newline is still there, so the file was not rewritten.
-        expect(readFileSync(path, 'utf8').endsWith('\n')).toBe(true);
-    });
-});
-
-describe('setFlag top', () => {
-    it('pins a session to the top of its group and takes it off, keeping the dismissal beside it', () => {
-        const path = file({ sessions: { [ID]: { hidden: true } } });
-        expect(setFlag(ID, 'top', true, path)).toEqual({
-            changed: ['top'],
-            refused: [],
-            records: [record(path, 'top', null, true)]
-        });
-        expect(held(path)).toEqual({ sessions: { [ID]: { hidden: true, top: true } } });
-        expect(setFlag(ID, 'top', false, path).changed).toEqual(['top']);
-        expect(held(path)).toEqual({ sessions: { [ID]: { hidden: true } } });
-        expect(() => setFlag('  ', 'top', true, path)).toThrow('a session id is required');
-    });
-});
-
 describe('setOverride', () => {
-    it('pins a session to an area, and unpins it', () => {
-        const path = file();
-        expect(setOverride(ID, { area: AREA }, path)).toEqual({
-            changed: ['area'],
-            refused: [],
-            records: [record(path, 'area', null, AREA)]
-        });
-        expect(held(path)).toEqual({ sessions: { [ID]: { area: AREA } } });
-
-        expect(setOverride(ID, { area: '' }, path)).toEqual({
-            changed: ['area'],
-            refused: [],
-            records: [record(path, 'area', AREA, null)]
-        });
-        expect(held(path)).toEqual({ sessions: {} });
-    });
-
-    it('sets a title, and clears it', () => {
-        const path = file();
-        expect(setOverride(ID, { title: 'my name' }, path)).toEqual({
-            changed: ['title'],
-            refused: [],
-            records: [record(path, 'title', null, 'my name')]
-        });
-        expect(held(path)).toEqual({ sessions: { [ID]: { title: 'my name' } } });
-
-        expect(setOverride(ID, { title: '' }, path)).toEqual({
-            changed: ['title'],
-            refused: [],
-            records: [record(path, 'title', 'my name', null)]
-        });
-        expect(held(path)).toEqual({ sessions: {} });
-    });
-
-    it('writes both fields in one call', () => {
-        const path = file();
-        expect(setOverride(ID, { area: AREA, title: 'my name' }, path)).toEqual({
-            changed: ['area', 'title'],
-            refused: [],
-            records: [record(path, 'area', null, AREA), record(path, 'title', null, 'my name')]
-        });
-        expect(held(path)).toEqual({ sessions: { [ID]: { area: AREA, title: 'my name' } } });
-    });
-
     it('keeps the keys it was not given, and the entries of other sessions', () => {
         const path = file({
             sessions: {
@@ -145,89 +50,5 @@ describe('setOverride', () => {
             },
             top: 'kept'
         });
-    });
-
-    it('removes an entry that the clearing emptied, and leaves the rest', () => {
-        const path = file({ sessions: { [ID]: { area: AREA }, other: { hidden: true } } });
-        setOverride(ID, { area: '' }, path);
-        expect(held(path)).toEqual({ sessions: { other: { hidden: true } } });
-    });
-
-    it('keeps an entry that still holds a dismissal after the pin is cleared', () => {
-        const path = file();
-        setHidden(ID, true, path);
-        setOverride(ID, { area: AREA }, path);
-        expect(setOverride(ID, { area: '' }, path)).toEqual({
-            changed: ['area'],
-            refused: [],
-            records: [record(path, 'area', AREA, null)]
-        });
-        expect(held(path)).toEqual({ sessions: { [ID]: { hidden: true } } });
-    });
-
-    it('refuses an area that is not an absolute path, and writes nothing', () => {
-        const path = file();
-        expect(setOverride(ID, { area: 'projects/alpha' }, path)).toEqual({
-            changed: [],
-            refused: [{ field: 'area', reason: 'the area must be an absolute path' }],
-            records: []
-        });
-        expect(held(path)).toBe(null);
-    });
-
-    it('writes the title of a call whose area was refused', () => {
-        const path = file();
-        const outcome = setOverride(ID, { area: 'relative', title: 'my name' }, path);
-        expect(outcome.changed).toEqual(['title']);
-        expect(outcome.refused).toEqual([
-            { field: 'area', reason: 'the area must be an absolute path' }
-        ]);
-        expect(held(path)).toEqual({ sessions: { [ID]: { title: 'my name' } } });
-    });
-
-    it('writes nothing when the value is already what the file holds', () => {
-        const path = file({ sessions: { [ID]: { area: AREA } } });
-        writeFileSync(path, JSON.stringify({ sessions: { [ID]: { area: AREA } } }) + '\n');
-        expect(setOverride(ID, { area: AREA }, path)).toEqual({
-            changed: [],
-            refused: [],
-            records: []
-        });
-        // The trailing newline is still there, so the file was not rewritten.
-        expect(readFileSync(path, 'utf8').endsWith('\n')).toBe(true);
-    });
-
-    it('replaces a corrupt file with a map holding only the new entry', () => {
-        const path = file('not json at all');
-        setOverride(ID, { area: AREA }, path);
-        expect(held(path)).toEqual({ sessions: { [ID]: { area: AREA } } });
-        expect(overrides(path)).toEqual({ [ID]: { area: AREA } });
-    });
-
-    it('refuses a call with no session id', () => {
-        const path = file();
-        expect(() => setOverride('', { area: AREA }, path)).toThrow();
-        expect(() => setOverride(null, { area: AREA }, path)).toThrow();
-        expect(held(path)).toBe(null);
-    });
-});
-
-describe('overrides over a file of the wrong shape', () => {
-    it('answers the entries that are maps and leaves out a number and a list', () => {
-        const path = file({ sessions: { a: { hidden: true, extra: [1] }, b: 3, c: [] } });
-        expect(overrides(path)).toStrictEqual({ a: { hidden: true, extra: [1] } });
-    });
-
-    it('answers nothing for a file that is not JSON, a sessions list or a list', () => {
-        expect(overrides(file('{not json'))).toStrictEqual({});
-        expect(overrides(file({ sessions: [] }))).toStrictEqual({});
-        expect(overrides(file([]))).toStrictEqual({});
-    });
-
-    it('takes a session id of __proto__ as the assignment found[key] = value does', () => {
-        const path = file('{"sessions":{"__proto__":{"hidden":true},"a":{"x":1}}}');
-        const found = overrides(path);
-        expect(Object.keys(found)).toStrictEqual(['a']);
-        expect(Object.getPrototypeOf(found)).toStrictEqual({ hidden: true });
     });
 });

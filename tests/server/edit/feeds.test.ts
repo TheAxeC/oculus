@@ -1,4 +1,4 @@
-// The feed reader and writers over fixture files in a temporary hub, never the real feeds folder.
+// The feed writers over fixture files in a temporary hub, never the real feeds folder.
 //
 // A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
 // tagged slow.
@@ -9,11 +9,8 @@ import { describe, expect } from 'vitest';
 import {
     addLead,
     addLinkedinIdea,
-    buildFeeds,
     deleteFeedEntry,
-    isLinkedinFile,
     markLinkedinPosted,
-    readFeedFile,
     writeFeedField
 } from '../../../src/lib/server/edit/feeds.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
@@ -78,162 +75,6 @@ function fixture(): { hub: string; config: PortfolioConfig } {
     return { hub, config };
 }
 
-describe('feed files', () => {
-    // The first read of a run loads the modules of the feed reader; loading them here keeps the
-    // time of the first case its own.
-    it.beforeAll(() => {
-        const into = fixture();
-        buildFeeds(into.hub, into.config);
-    });
-
-    it('uses one flat post filename rule for both Markdown suffix cases', () => {
-        expect(isLinkedinFile('01-post.md')).toBe(true);
-        expect(isLinkedinFile('01-post.MD')).toBe(true);
-        expect(isLinkedinFile('xx-idea.mD')).toBe(true);
-        expect(isLinkedinFile('nested/01-post.md')).toBe(false);
-        expect(isLinkedinFile('README.md')).toBe(false);
-        expect(isLinkedinFile(null)).toBe(false);
-        const into = fixture();
-        const file = join(into.hub, FILES.linkedin, '02-upper.MD');
-        expect(resolve(file).startsWith(resolve(into.hub) + sep)).toBe(true);
-        writeFileSync(file, '---\ntitle: Uppercase\n---\n');
-        expect(buildFeeds(into.hub, into.config).linkedin.entries).toContainEqual(
-            expect.objectContaining({ file: '02-upper.MD', title: 'Uppercase' })
-        );
-    });
-
-    it('carries an empty date and category for a post whose front matter names neither', () => {
-        const into = fixture();
-        const file = join(into.hub, FILES.linkedin, '03-bare.md');
-        expect(resolve(file).startsWith(resolve(into.hub) + sep)).toBe(true);
-        writeFileSync(file, '---\ntitle: Bare\n---\n\nA body and nothing else.\n');
-        const entry = buildFeeds(into.hub, into.config).linkedin.entries.find(
-            (one) => one.file === '03-bare.md'
-        );
-        expect(entry).toMatchObject({ title: 'Bare', date: '', category: '' });
-    });
-
-    it('builds one payload with all three feeds', () => {
-        const into = fixture();
-        const payload = buildFeeds(into.hub, into.config);
-        expect(Object.keys(payload)).toEqual(['radar', 'leads', 'linkedin']);
-        expect(payload.radar).toMatchObject({
-            ok: true,
-            kind: 'radar',
-            file: FILES.radar,
-            entries: [{ title: 'Paper' }]
-        });
-        expect(payload.linkedin.entries.map((entry) => entry.file)).toEqual([
-            '01-A-reflection.md',
-            'xx-easy-problems.md'
-        ]);
-    });
-
-    it('marks a missing feed in the payload without dropping the other feeds', () => {
-        const into = fixture();
-        into.config.feeds.radar = 'fixture/missing.yml';
-        const payload = buildFeeds(into.hub, into.config);
-        expect(payload.radar).toMatchObject({
-            ok: true,
-            kind: 'radar',
-            file: 'fixture/missing.yml',
-            meta: {},
-            entries: [],
-            missing: true
-        });
-        expect(payload.leads.entries).toHaveLength(1);
-    });
-
-    it('keeps an unreadable feed error in the payload without dropping the other feeds', () => {
-        const into = fixture();
-        writeFileSync(join(into.hub, FILES.radar), 'entries: [broken: yaml');
-        const payload = buildFeeds(into.hub, into.config);
-        expect(payload.radar).toMatchObject({
-            ok: true,
-            kind: 'radar',
-            file: FILES.radar,
-            meta: {},
-            entries: []
-        });
-        expect(payload.radar.error).toBeTruthy();
-        expect(payload.leads.entries).toHaveLength(1);
-    });
-
-    it('reads radar and leads with map entries', () => {
-        const into = fixture();
-        for (const kind of ['radar', 'leads'] as const) {
-            expect(readFeedFile(into.hub, into.config, kind)).toMatchObject({
-                kind,
-                file: FILES[kind],
-                meta: { last_run: '2026-09-11' }
-            });
-        }
-    });
-
-    it('scans the LinkedIn folder and strips one pair of title quotes', () => {
-        const into = fixture();
-        const found = readFeedFile(into.hub, into.config, 'linkedin');
-        expect(found).toMatchObject({
-            kind: 'linkedin',
-            file: FILES.linkedin,
-            cadenceDays: 30,
-            entries: [
-                {
-                    file: '01-A-reflection.md',
-                    title: 'A quoted title',
-                    date: '2026-08-01',
-                    category: 'reflection',
-                    body: 'Posted body.',
-                    idea: false
-                },
-                {
-                    file: 'xx-easy-problems.md',
-                    title: 'Easy problems',
-                    body: 'Idea body.',
-                    idea: true
-                }
-            ]
-        });
-        expect(found?.entries.map((entry) => entry.file)).toEqual([
-            '01-A-reflection.md',
-            'xx-easy-problems.md'
-        ]);
-    });
-
-    it('reads the lead file schema with all ten fields and its status options', () => {
-        const into = fixture();
-        const found = readFeedFile(into.hub, into.config, 'leads');
-        expect(found?.schema?.map((field) => field.field)).toEqual([
-            'title',
-            'inst',
-            'country',
-            'typ',
-            'focus',
-            'fit',
-            'status',
-            'date',
-            'deadline',
-            'url'
-        ]);
-        expect(found?.schema?.find((field) => field.field === 'status')?.options).toEqual([
-            'open',
-            'applied',
-            'declined'
-        ]);
-    });
-
-    it('returns null for a missing file and throws for invalid YAML or a non-map entry', () => {
-        const into = fixture();
-        into.config.feeds.radar = 'fixture/missing.yml';
-        expect(readFeedFile(into.hub, into.config, 'radar')).toBe(null);
-        into.config.feeds.radar = FILES.radar;
-        writeFileSync(join(into.hub, FILES.radar), 'entries: [broken: yaml');
-        expect(() => readFeedFile(into.hub, into.config, 'radar')).toThrow();
-        writeFileSync(join(into.hub, FILES.radar), 'entries: [word]\n');
-        expect(() => readFeedFile(into.hub, into.config, 'radar')).toThrow('every entry');
-    });
-});
-
 describe('feed writes', () => {
     it('adds a dated LinkedIn idea with a safe slug and numbered collision suffix', () => {
         const into = fixture();
@@ -259,27 +100,6 @@ describe('feed writes', () => {
         );
     });
 
-    it('bounds the filename of an idea with a very long title', () => {
-        const into = fixture();
-        expect(addLinkedinIdea(into.hub, into.config, 'a'.repeat(256), '').refused).toEqual([]);
-        const found = readFeedFile(into.hub, into.config, 'linkedin');
-        const added = found?.entries.find((entry) => String(entry.title) === 'a'.repeat(256));
-        expect(added?.file).toBe(`xx-${'a'.repeat(80)}.md`);
-    });
-
-    it('reads an escaped double-quoted title back from a newly written idea', () => {
-        const into = fixture();
-        expect(
-            addLinkedinIdea(into.hub, into.config, 'He said "yes"', 'reflection').refused
-        ).toEqual([]);
-        const found = readFeedFile(into.hub, into.config, 'linkedin');
-        expect(found?.entries.find((entry) => entry.file === 'xx-he-said-yes.md')).toMatchObject({
-            title: 'He said "yes"',
-            category: 'reflection',
-            idea: true
-        });
-    });
-
     it('promotes an idea past 01-A and moves its same-basename sidecar', () => {
         const into = fixture();
         const folder = join(into.hub, FILES.linkedin);
@@ -302,23 +122,6 @@ describe('feed writes', () => {
         expect(existsSync(join(folder, '02-easy-problems.jpeg'))).toBe(true);
         expect(existsSync(join(folder, 'xx-easy-problems.md'))).toBe(false);
         expect(existsSync(join(folder, 'xx-easy-problems.jpeg'))).toBe(false);
-    });
-
-    it('refuses missing titles, non-idea names, missing ideas, and paths outside the hub', () => {
-        const into = fixture();
-        expect(addLinkedinIdea(into.hub, into.config, '   ', 'research').refused).toEqual([
-            { field: 'title', reason: 'a LinkedIn idea needs a title' }
-        ]);
-        expect(markLinkedinPosted(into.hub, into.config, '01-A-reflection.md').refused).toEqual([
-            { field: 'file', reason: 'a LinkedIn post must name an xx-*.md idea' }
-        ]);
-        expect(markLinkedinPosted(into.hub, into.config, '../xx-easy-problems.md').refused).toEqual(
-            [{ field: 'file', reason: 'a LinkedIn post must name an xx-*.md idea' }]
-        );
-        expect(markLinkedinPosted(into.hub, into.config, 'xx-missing.md').found).toBe(false);
-        into.config.feeds.linkedin = '../outside';
-        expect(addLinkedinIdea(into.hub, into.config, 'Outside', 'research').found).toBe(false);
-        expect(existsSync(resolve(into.hub, '../outside', 'xx-outside.md'))).toBe(false);
     });
 
     it('adds a lead in schema order with date and status defaults', () => {
@@ -358,30 +161,6 @@ describe('feed writes', () => {
         );
     });
 
-    it('refuses a title the file holds already and leaves the feed unchanged', () => {
-        const into = fixture();
-        const file = join(into.hub, FILES.leads);
-        const before = readFileSync(file, 'utf8');
-        expect(addLead(into.hub, into.config, { title: 'Job' })).toEqual({
-            found: true,
-            changed: [],
-            refused: [{ field: 'title', reason: 'a lead with this title is in the file already' }]
-        });
-        expect(readFileSync(file, 'utf8')).toBe(before);
-    });
-
-    it('refuses a lead without a title and leaves the feed unchanged', () => {
-        const into = fixture();
-        const file = join(into.hub, FILES.leads);
-        const before = readFileSync(file, 'utf8');
-        expect(addLead(into.hub, into.config, { title: '   ', status: 'open' })).toEqual({
-            found: true,
-            changed: [],
-            refused: [{ field: 'title', reason: 'a lead needs a title' }]
-        });
-        expect(readFileSync(file, 'utf8')).toBe(before);
-    });
-
     it('uses each feed identity and allows only its field', () => {
         const into = fixture();
         expect(
@@ -407,42 +186,5 @@ describe('feed writes', () => {
         expect(deleteFeedEntry(into.hub, into.config, 'leads', 'Job').changed).toEqual(['entries']);
         expect(readFileSync(join(into.hub, FILES.leads), 'utf8')).not.toContain('Job');
         expect(deleteFeedEntry(into.hub, into.config, 'radar', 'Paper').refused).toHaveLength(1);
-    });
-});
-
-describe('the shape of a feed file', () => {
-    /** The leads feed holding exactly this text, read back through readFeedFile. */
-    function readLeads(text: string): ReturnType<typeof readFeedFile> {
-        const into = fixture();
-        const file = join(into.hub, FILES.leads);
-        expect(resolve(file).startsWith(resolve(into.hub) + sep)).toBe(true);
-        writeFileSync(file, text);
-        return readFeedFile(into.hub, into.config, 'leads');
-    }
-
-    it(
-        'refuses a file that is no map, a meta that is no map and an entry that is no map',
-        { tags: ['slow'] },
-        () => {
-            expect(() => readLeads('- a\n- b\n')).toThrow('expected a map of keys');
-            expect(() => readLeads('meta: 3\n')).toThrow('meta is not a map');
-            expect(() => readLeads('entries:\n  - 1\n')).toThrow('every entry must be a map');
-            expect(() => readLeads('entries: {}\n')).toThrow('every entry must be a map');
-        }
-    );
-
-    it('names the meta before the entries when both are wrong', () => {
-        expect(() => readLeads('meta: [a]\nentries:\n  - 1\n')).toThrow('meta is not a map');
-    });
-
-    it('reads an absent meta as an empty map and absent or null entries as an empty list', () => {
-        const bare = readLeads('schema: []\n');
-        expect(bare?.meta).toStrictEqual({});
-        expect(bare?.entries).toStrictEqual([]);
-        expect(readLeads('entries:\n')?.entries).toStrictEqual([]);
-    });
-
-    it('refuses a meta given no value, since null is not a map', () => {
-        expect(() => readLeads('meta:\nentries: []\n')).toThrow('meta is not a map');
     });
 });

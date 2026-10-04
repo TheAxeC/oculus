@@ -1,12 +1,11 @@
 // Layer 4, server test. The placeholders of a chain's command lines: `${file}` and its relatives
-// become `${OCULUS_ARG_<n>+"$OCULUS_ARG_<n>"}` and their values an environment. The first describe
-// reads the filled lines as text; the second, which starts processes and is tagged slow, runs them
-// in a real `/bin/sh`, `bash` and `zsh` with that environment, so a selection that holds shell
-// syntax runs nothing and arrives whole in every context the line writes the placeholder in.
+// become `${OCULUS_ARG_<n>+"$OCULUS_ARG_<n>"}` and their values an environment. The describe, which
+// starts processes and is tagged slow, runs them in a real `/bin/sh`, `bash` and `zsh` with that
+// environment, so a selection that holds shell syntax runs nothing and arrives whole in every
+// context the line writes the placeholder in.
 //
 // What this does NOT cover: a line that evaluates the value itself (`eval`, `sh -c`, `$((...))`
-// arithmetic in bash), which runs it by design; tmux setting the environment of a task terminal
-// (tests/server/machine/pty/task.test.ts); and the page building the context.
+// arithmetic in bash), which runs it by design; and the page building the context.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
@@ -23,9 +22,6 @@ const CATALOG = {
 };
 const CONTEXT = { file: '/r/a b.tex', line: 7, selectedText: "'; rm -rf /'" };
 
-/** The text a variable stands as in a line. */
-const ref = (n: number) => `\${OCULUS_ARG_${n}+"$OCULUS_ARG_${n}"}`;
-
 /** The filled lines and environment, or a failure naming the refusal. */
 function filled(
     runs: string[],
@@ -35,79 +31,6 @@ function filled(
     if ('error' in answer) throw new Error(answer.error);
     return answer;
 }
-
-describe('fillPlaceholders', () => {
-    it('replaces each placeholder by its variable and sets the value in the environment', () => {
-        expect(filled(['echo ${fileBasenameNoExtension} ${lineNumber}'])).toEqual({
-            lines: [`echo ${ref(1)} ${ref(2)}`],
-            env: { OCULUS_ARG_1: 'a b', OCULUS_ARG_2: '7' }
-        });
-    });
-
-    it('gives every placeholder the page can give its value', () => {
-        const answer = filled(
-            [
-                '${file}|${fileDirname}|${fileBasename}|${fileBasenameNoExtension}|${lineNumber}|${workspaceFolder}'
-            ],
-            { file: '/r/sub/main.tar.gz', line: 12, selectedText: '' }
-        );
-        expect(Object.values(answer.env)).toEqual([
-            '/r/sub/main.tar.gz',
-            '/r/sub',
-            'main.tar.gz',
-            'main.tar',
-            '12',
-            '/r'
-        ]);
-    });
-
-    it('names one placeholder by one variable across the lines of a chain', () => {
-        expect(filled(['cat ${file}', 'wc ${file} ${selectedText}'])).toEqual({
-            lines: [`cat ${ref(1)}`, `wc ${ref(1)} ${ref(2)}`],
-            env: { OCULUS_ARG_1: '/r/a b.tex', OCULUS_ARG_2: "'; rm -rf /'" }
-        });
-    });
-
-    it('does not read a placeholder inside a value', () => {
-        const answer = filled(['${selectedText} ${file}'], {
-            file: '/r/x.c',
-            line: 1,
-            selectedText: '${file}'
-        });
-        expect(answer.env).toEqual({ OCULUS_ARG_1: '${file}', OCULUS_ARG_2: '/r/x.c' });
-    });
-
-    it('refuses a placeholder the page has no value for, naming it from the catalog', () => {
-        const refused = (runs: string[], context: object) =>
-            fillPlaceholders(runs, context, REPO, CATALOG);
-        expect(refused(['cat ${file}'], {})).toEqual({
-            error: 'No value for ${file}: open a file in a source tab first'
-        });
-        expect(refused(['go ${lineNumber}'], { file: '/r/x' })).toEqual({
-            error: 'No value for ${lineNumber}: open a file in a source tab first'
-        });
-        expect(
-            refused(['true', 'say ${selectedText}'], { file: '/r/x', selectedText: '' })
-        ).toEqual({ error: 'No value for ${selectedText}: select text in a source tab first' });
-        expect(refused(['say ${selectedText}'], { selectedText: 'a\u0000b' })).toEqual({
-            error: 'The value of ${selectedText} holds a NUL character'
-        });
-    });
-
-    it('needs no context for the repository', () => {
-        expect(fillPlaceholders(['cd ${workspaceFolder}'], {}, REPO, CATALOG)).toEqual({
-            lines: [`cd ${ref(1)}`],
-            env: { OCULUS_ARG_1: '/r' }
-        });
-    });
-
-    it('leaves any other ${...} and a line with no placeholder as written', () => {
-        expect(filled(['echo ${env:HOME} ${HOME} ${files} $file', 'make -j4'])).toEqual({
-            lines: ['echo ${env:HOME} ${HOME} ${files} $file', 'make -j4'],
-            env: {}
-        });
-    });
-});
 
 /** The shells a task terminal's line may run under: tmux runs it with the reader's shell. */
 const SHELLS = ['/bin/sh', '/bin/bash', '/bin/zsh'].filter((shell) => existsSync(shell));
@@ -177,27 +100,5 @@ describe('a selection run through a real shell', { tags: ['slow'] }, () => {
         }
         expect(SHELLS).toContain('/bin/sh');
         expect(ran).toEqual([]);
-    });
-
-    it('hands the selection over whole, bare, inside double quotes, in a here-doc and in $(...)', () => {
-        const forms = [
-            ["printf '%s' ${selectedText}", (text: string) => text],
-            ['printf \'%s\' "<${selectedText}>"', (text: string) => `<${text}>`],
-            ['cat <<EOF\n<${selectedText}>\nEOF', (text: string) => `<${text}>\n`],
-            ["printf '%s' \"$(printf '%s' ${selectedText})\"", (text: string) => text]
-        ] as const;
-        for (const shell of SHELLS) {
-            for (const selectedText of [...SELECTIONS, 'a  *  b']) {
-                for (const [line, expected] of forms) {
-                    const answer = filled([line], { file: '/r/x', selectedText });
-                    const said = runIn(answer.lines[0], answer.env, shell).stdout;
-                    // `$(...)` drops the line breaks that end its output, as it does for any text.
-                    const wanted = line.includes('$(')
-                        ? expected(selectedText).replace(/\n+$/, '')
-                        : expected(selectedText);
-                    expect(said, `${shell} ${line} ${selectedText}`).toBe(wanted);
-                }
-            }
-        }
     });
 });

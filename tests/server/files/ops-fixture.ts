@@ -5,8 +5,7 @@
 // Every directory comes from tests/fixtures/scratch.ts, which refuses a path outside the system
 // temporary directory, so nothing here can write into the checkout or the hub.
 
-import { existsSync, readdirSync, realpathSync } from 'node:fs';
-import { join } from 'node:path';
+import { readdirSync, realpathSync } from 'node:fs';
 import { vi } from 'vitest';
 import type { OpsAnswer } from '../../../src/lib/data/file-ops.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
@@ -17,9 +16,7 @@ import { plantScratch } from '../../fixtures/scratch.ts';
 export const TOKEN = 'an-ops-token';
 
 /** The spy a case hands in as the trash call. */
-export type Spy = ReturnType<
-    typeof vi.fn<(path: string, options?: { glob: boolean }) => Promise<void>>
->;
+type Spy = ReturnType<typeof vi.fn<(path: string, options?: { glob: boolean }) => Promise<void>>>;
 
 export function spy(): Spy {
     return vi.fn<(path: string, options?: { glob: boolean }) => Promise<void>>(() =>
@@ -40,7 +37,7 @@ export type World = {
     post: (body: unknown, deps?: OpsDeps, headers?: Record<string, string>) => Promise<Answer>;
 };
 
-export type Answer = { status: number; body: OpsAnswer & Record<string, unknown> };
+type Answer = { status: number; body: OpsAnswer & Record<string, unknown> };
 
 export function worldOver(roots: Root[], hub: string): World {
     const target: OpsTarget = { roots, writes: fsWrites() };
@@ -73,12 +70,6 @@ export function world(files: Record<string, string> = {}, dirs: string[] = []): 
 export function names(dir: string): string[] {
     return readdirSync(dir).sort();
 }
-
-/** Whether this machine's volume reads `README.md` and `readme.md` as one name. */
-export const INSENSITIVE = (() => {
-    const dir = folder({ 'Probe.txt': 'x' });
-    return existsSync(join(dir, 'probe.txt'));
-})();
 
 export const create = (path: string, name: string, folder = false, root = 'hub') => ({
     op: 'create',

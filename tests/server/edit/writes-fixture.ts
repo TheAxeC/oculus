@@ -81,7 +81,7 @@ export const TASKS = [
     ''
 ].join('\n');
 
-export const VENUES = [
+const VENUES = [
     'title: Venues',
     'schema:',
     '  - { field: name, type: text }',
@@ -117,30 +117,4 @@ export function wider(): string {
 
 export function tasksOf(root: string): string {
     return readFileSync(join(root, 'tasks', 'tasks.yml'), 'utf8');
-}
-
-export function venuesOf(root: string): string {
-    return readFileSync(join(root, 'registries', 'venues.yml'), 'utf8');
-}
-
-/** A collection file whose schema names one field of each type a form control writes. */
-export const TYPED = [
-    'title: Typed',
-    'schema:',
-    '  - { field: title, type: text }',
-    '  - { field: note, type: textarea }',
-    '  - { field: status, type: select, options: [open, done] }',
-    '  - { field: deadline, type: date }',
-    '  - { field: pin, type: checkbox }',
-    'entries:',
-    '  - title: "One"',
-    '    status: open',
-    ''
-].join('\n');
-
-/** The wider hub with the typed collection under the `tasks` key, or the body a case names. */
-export function typed(body = TYPED): string {
-    const root = wider();
-    writeFileSync(join(root, 'tasks', 'tasks.yml'), body);
-    return root;
 }

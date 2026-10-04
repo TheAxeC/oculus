@@ -40,7 +40,7 @@ export function commandsYml(entries: string): string {
 }
 
 /** The pane a task terminal double holds. */
-export type TaskPane = {
+type TaskPane = {
     cwd: string;
     /** The one shell word the session was started with. */
     line: string;

@@ -17,7 +17,7 @@ export function tally([files, blank, comment, code, todo]: Sums): LineTally {
 }
 
 /** One language row. */
-export function language(name: string, sums: Sums): LanguageLines {
+function language(name: string, sums: Sums): LanguageLines {
     return { language: name, ...tally(sums) };
 }
 

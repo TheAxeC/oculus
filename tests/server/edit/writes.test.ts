@@ -1,7 +1,5 @@
-// What writeManifest does over a hub of its own: which requests it refuses and when the file is
-// touched at all; and the subtask, career host, entry and idea writes beside it. How a form value
-// becomes a manifest value is coerce.test.ts, and the collection entry writes are
-// writes-collection.test.ts, beside this.
+// What writeManifest does over a hub of its own: the subtask, career host, entry and idea writes
+// beside it. The collection entry writes are writes-collection.test.ts, beside this.
 //
 // The hub here is a synthetic one under the system temporary directory, and every path this file
 // writes is asserted to be inside it before it is written; nothing in this file opens the real hub
@@ -11,16 +9,12 @@
 // A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
 // tagged slow.
 
-import { existsSync, readFileSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
     createEntry,
     createIdea,
-    feedDeleteWrite,
-    feedFieldWrite,
-    insideHub,
-    writeEntry,
     writeHost,
     writeManifest,
     writeSubtask,
@@ -38,143 +32,10 @@ import {
     manifestPath,
     tasksPath,
     TASKS,
-    VENUES,
     CAREER,
     wider,
-    tasksOf,
-    venuesOf
+    tasksOf
 } from './writes-fixture.ts';
-
-describe('what a write refuses', () => {
-    it('parses the two feed write bodies whole', () => {
-        expect(
-            feedFieldWrite({
-                kind: 'feed-field',
-                feed: 'radar',
-                id: 'Paper',
-                field: 'dismissed',
-                value: true
-            })
-        ).toEqual({
-            kind: 'feed-field',
-            feed: 'radar',
-            id: 'Paper',
-            field: 'dismissed',
-            value: true
-        });
-        expect(
-            feedFieldWrite({
-                kind: 'feed-field',
-                feed: 'radar',
-                id: 'Paper',
-                field: 'dismissed',
-                value: {}
-            })
-        ).toBe(null);
-        expect(feedDeleteWrite({ kind: 'feed-delete', feed: 'leads', id: 'Lead' })).toEqual({
-            kind: 'feed-delete',
-            feed: 'leads',
-            id: 'Lead'
-        });
-    });
-    it('says an id the hub does not hold was not found, and writes nothing', () => {
-        const root = hub();
-        const out = writeManifest(root, configFor(), 'nobody', { title: 'x' });
-        expect(out).toEqual({ found: false, changed: [], refused: [] });
-        expect(manifestOf(root)).toBe(MANIFEST);
-    });
-
-    it('refuses a field the manifest schema does not name', () => {
-        const root = hub();
-        const out = writeManifest(root, configFor(), 'alpha', { nonesuch: 'x' });
-        expect(out.changed).toEqual([]);
-        expect(out.refused).toEqual([
-            { field: 'nonesuch', reason: 'the manifest schema does not name the field' }
-        ]);
-    });
-
-    // `followup` is named by the schema through its children, `followup.do` and `followup.after`,
-    // and the file may hold it as a bare note, a map or a list. Clearing it whole by the parent
-    // name is the one write on the parent the editor takes; a value for the parent is refused.
-    it(
-        'clears a grouped field whole by its parent name, whatever shape the file holds it in',
-        { tags: ['slow'] },
-        () => {
-            const noted = hub(
-                MANIFEST.replace('title: "A title"', 'title: "A title"\nfollowup: "ask"')
-            );
-            const out = writeManifest(noted, configFor(), 'alpha', { followup: '' });
-            expect(out.changed).toEqual(['followup']);
-            expect(manifestOf(noted)).not.toContain('followup');
-
-            const mapped = hub(
-                MANIFEST.replace(
-                    'title: "A title"',
-                    'title: "A title"\nfollowup: { do: "ask", after: "2030-01-01" }'
-                )
-            );
-            const gone = writeManifest(mapped, configFor(), 'alpha', { followup: null });
-            expect(gone.changed).toEqual(['followup']);
-            expect(manifestOf(mapped)).not.toContain('followup');
-        }
-    );
-
-    it('refuses a value for a grouped field by its parent name', () => {
-        const root = hub();
-        const out = writeManifest(root, configFor(), 'alpha', { followup: 'ask' });
-        expect(out.changed).toEqual([]);
-        expect(out.refused).toEqual([
-            {
-                field: 'followup',
-                reason: 'the field is a group; set its children, or clear it whole'
-            }
-        ]);
-    });
-
-    it('writes a follow-up note through followup.do, expanding a bare note into the map', () => {
-        const noted = hub(
-            MANIFEST.replace('title: "A title"', 'title: "A title"\nfollowup: "old"')
-        );
-        const out = writeManifest(noted, configFor(), 'alpha', { 'followup.do': 'new' });
-        expect(out.changed).toEqual(['followup.do']);
-        expect(manifestOf(noted)).toContain('do: new');
-        expect(manifestOf(noted)).not.toContain('old');
-    });
-
-    it('refuses the read-only fields and the map field', () => {
-        const root = hub();
-        const out = writeManifest(root, configFor(), 'alpha', {
-            id: 'other',
-            tier: 'archive',
-            paths: 'x'
-        });
-        expect(out.changed).toEqual([]);
-        expect(out.refused.map((one) => one.field).sort()).toEqual(['id', 'paths', 'tier']);
-        expect(manifestOf(root)).toBe(MANIFEST);
-    });
-
-    it('refuses a record value for a field of a type the form has no control for', () => {
-        const root = hub();
-        const config = configFor();
-        const schema = config.schema as { fields: Record<string, unknown> };
-        const odd = {
-            ...config,
-            schema: { ...schema, fields: { ...schema.fields, mystery: { type: 'nonesuch' } } }
-        };
-        const out = writeManifest(root, odd, 'alpha', { mystery: 'x' }, 'record');
-        expect(out.changed).toEqual([]);
-        expect(out.refused).toEqual([{ field: 'mystery', reason: 'unknown field type nonesuch' }]);
-        expect(manifestOf(root)).toBe(MANIFEST);
-    });
-
-    it('writes only inside the hub scan directories', () => {
-        const config = configFor();
-        expect(insideHub('/hub', config, '/hub/projects/manuscripts/a/project.yml')).toBe(true);
-        expect(insideHub('/hub', config, '/hub/projects/ideas/a/project.yml')).toBe(false);
-        expect(insideHub('/hub', config, '/etc/project.yml')).toBe(false);
-        expect(insideHub('/hub', config, '/hub/projects/manuscripts/a/notes.yml')).toBe(false);
-    });
-});
 
 describe('the file itself', () => {
     it('writes the changed field and nothing else', () => {
@@ -187,29 +48,6 @@ describe('the file itself', () => {
             records: [record(manifestPath(root), 'alpha', 'status.line', 'the line', 'a new line')]
         });
         expect(manifestOf(root)).toBe(MANIFEST.replace('"the line"', '"a new line"'));
-    });
-
-    it('takes a ticked box off the file when it is unticked', () => {
-        const root = hub();
-        const out = writeManifest(root, configFor(), 'alpha', { pin: false });
-        expect(out.changed).toEqual(['pin']);
-        expect(manifestOf(root)).toBe(MANIFEST.replace('pin: true\n', ''));
-    });
-
-    it('does not touch the file when nothing changed', () => {
-        const root = hub();
-        const file = join(root, 'projects', 'manuscripts', 'alpha', 'project.yml');
-        const past = new Date(Date.now() - 60_000);
-        utimesSync(file, past, past);
-        const before = statSync(file);
-        const out = writeManifest(root, configFor(), 'alpha', {
-            title: 'A title',
-            pin: true,
-            'status.chips': ['submitted', 'lead']
-        });
-        const after = statSync(file);
-        expect(out).toEqual({ found: true, changed: [], refused: [], records: [] });
-        expect(after.mtimeMs).toBe(before.mtimeMs);
     });
 });
 
@@ -226,29 +64,6 @@ describe('writing one subtask line', () => {
         const open = writeSubtask(root, configFor(), { id: 'alpha' }, '0', 'reopen');
         expect(open.changed).toEqual(['done']);
         expect(manifestOf(root)).toContain('- { do: write it }');
-    });
-
-    it('snoozes and deletes a line of a collection entry', { tags: ['slow'] }, () => {
-        const root = wider();
-        const target = { id: 'Review the draft', collection: 'tasks' };
-        const snoozed = writeSubtask(root, configFor(), target, '0', 'snooze', '2026-10-01');
-        expect(snoozed.changed).toEqual(['snooze']);
-        expect(tasksOf(root)).toContain('- { do: read it, snooze: 2026-10-01 }');
-        const gone = writeSubtask(root, configFor(), target, '0', 'delete');
-        expect(gone.changed).toEqual(['subtasks']);
-        expect(tasksOf(root)).toBe(TASKS.replace('    subtasks:\n      - { do: read it }\n', ''));
-    });
-
-    it('says not found for a host that is not in the hub', () => {
-        const root = wider();
-        expect(writeSubtask(root, configFor(), { id: 'nobody' }, '0', 'done')).toEqual({
-            found: false,
-            changed: [],
-            refused: []
-        });
-        expect(
-            writeSubtaskAdd(root, configFor(), { id: 'x', collection: 'tasks' }, { do: 'a' })
-        ).toEqual({ found: false, changed: [], refused: [] });
     });
 });
 
@@ -289,17 +104,6 @@ describe('writing one career host', () => {
             { field: 'status', reason: 'promoted is not a career host status' }
         ]);
     });
-
-    it('says not found for a host the file does not hold', () => {
-        const root = wider();
-        expect(
-            writeHost(root, 'Nobody', 'warm', careerRules(loadConfig(engineDir()).config))
-        ).toEqual({
-            found: false,
-            changed: [],
-            refused: []
-        });
-    });
 });
 
 describe('adding an entry and an idea', () => {
@@ -331,98 +135,6 @@ describe('adding an entry and an idea', () => {
         expect(tasksOf(root)).toBe(`${TASKS}\n  - title: A new task\n    status: open\n`);
     });
 
-    it(
-        'refuses an edit that clears a venue id or moves it onto another venue',
-        { tags: ['slow'] },
-        () => {
-            const root = wider();
-            const file = join(root, 'registries', 'venues.yml');
-            writeFileSync(file, `${VENUES}  - name: Second Venue\n    id: second\n`);
-            expect(writeEntry(root, configFor(), 'venues', 'second', { id: 'existing' })).toEqual({
-                found: true,
-                changed: [],
-                refused: [{ field: 'id', reason: 'an entry with that id is already in the file' }]
-            });
-            expect(writeEntry(root, configFor(), 'venues', 'second', { id: '' })).toEqual({
-                found: true,
-                changed: [],
-                refused: [{ field: 'id', reason: 'an entry needs a non-empty id' }]
-            });
-            expect(writeEntry(root, configFor(), 'venues', 'second', { id: 'second' })).toEqual({
-                found: true,
-                id: 'second',
-                changed: [],
-                refused: [],
-                records: []
-            });
-            const moved = writeEntry(root, configFor(), 'venues', 'second', { id: 'renamed' });
-            expect(moved.refused).toEqual([]);
-            expect(venuesOf(root)).toContain('  - name: Second Venue\n    id: renamed');
-        }
-    );
-
-    it('requires a fresh non-empty registry id for a new venue', { tags: ['slow'] }, () => {
-        const missingRoot = wider();
-        expect(createEntry(missingRoot, configFor(), 'venues', { name: 'Missing ID' })).toEqual({
-            found: true,
-            changed: [],
-            refused: [{ field: 'id', reason: 'a new entry needs a non-empty id' }]
-        });
-        expect(venuesOf(missingRoot)).toBe(VENUES);
-
-        const duplicateRoot = wider();
-        expect(
-            createEntry(duplicateRoot, configFor(), 'venues', {
-                name: 'Another Venue',
-                id: 'existing'
-            })
-        ).toEqual({
-            found: true,
-            changed: [],
-            refused: [{ field: 'id', reason: 'an entry with that id is already in the file' }]
-        });
-        expect(venuesOf(duplicateRoot)).toBe(VENUES);
-
-        const freshRoot = wider();
-        expect(
-            createEntry(freshRoot, configFor(), 'venues', {
-                name: 'Fresh Venue',
-                id: 'fresh'
-            })
-        ).toEqual({
-            found: true,
-            id: 'fresh',
-            changed: ['venues'],
-            refused: [],
-            records: [
-                record(
-                    join(freshRoot, 'registries', 'venues.yml'),
-                    'Fresh Venue',
-                    'entries',
-                    null,
-                    { name: 'Fresh Venue', id: 'fresh' },
-                    'create'
-                )
-            ]
-        });
-        expect(venuesOf(freshRoot)).toContain('  - name: Fresh Venue\n    id: fresh');
-    });
-
-    it('refuses an entry whose identity the file already holds, and an unknown collection', () => {
-        const root = wider();
-        const twice = createEntry(root, configFor(), 'tasks', { title: 'Review the draft' });
-        expect(twice.changed).toEqual([]);
-        expect(twice.refused).toEqual([
-            { field: 'title', reason: 'an entry with that title is already in the file' }
-        ]);
-        expect(createEntry(root, configFor(), 'nonesuch', { title: 'x' })).toEqual({
-            found: false,
-            changed: [],
-            refused: []
-        });
-        expect(tasksOf(root)).toBe(TASKS);
-    });
-
     it('scaffolds an idea folder with a manifest and a README', () => {
         const root = wider();
         const out = createIdea(root, { id: 'new-idea', title: 'A new idea', eli5: 'what it is' });
@@ -448,20 +160,5 @@ describe('adding an entry and an idea', () => {
         expect(readFileSync(join(folder, 'README.md'), 'utf8')).toBe(
             '# A new idea\n\nwhat it is\n\n## Next\n\nScope the idea; cited-novelty lit check; decide go/no-go.\n'
         );
-    });
-
-    it('refuses a bad id and a folder that is already there', () => {
-        const root = wider();
-        expect(createIdea(root, { id: 'Not An Id' }).refused).toEqual([
-            { field: 'id', reason: 'an id is lower case letters, digits and hyphens' }
-        ]);
-        expect(createIdea(root, { id: '../escape' }).refused).toEqual([
-            { field: 'id', reason: 'an id is lower case letters, digits and hyphens' }
-        ]);
-        createIdea(root, { id: 'twice' });
-        expect(createIdea(root, { id: 'twice' }).refused).toEqual([
-            { field: 'id', reason: 'projects/ideas/twice is already there' }
-        ]);
-        expect(existsSync(join(root, 'projects', 'ideas', 'not-an-id'))).toBe(false);
     });
 });

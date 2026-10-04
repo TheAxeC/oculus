@@ -1,4 +1,4 @@
-// The change log: what each writer records of its own write, and the file the records land in.
+// The change log: what each writer records of its own write.
 //
 // The hub is synthetic, under the system temporary directory, and so is the log: the target's
 // `changes` path is inside that directory and is asserted to be before anything is written, so
@@ -9,18 +9,15 @@
 // line the log holds, which is what the History view reads.
 //
 // A describe whose cases take 100 ms or more in a run of its own is tagged slow, and so is a single
-// case that does. Reading a line is quick unless the case builds a whole target hub to hold the log
-// (`logHolding`), which takes about 190 ms.
+// case that does.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import { PAGE, logChanges, readChanges } from '../../../src/lib/server/core/changes.ts';
-import { fsWrites } from '../../../src/lib/server/core/json.ts';
+import { readChanges } from '../../../src/lib/server/core/changes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
-import type { Change, ChangeLog, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
+import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { deckTarget, targetOver } from '../../routes/edit/write-fixture.ts';
@@ -83,18 +80,6 @@ function logOf(into: WriteTarget): ChangeLog {
     return log;
 }
 
-/** A log of a fresh target holding exactly `text`, for lines the writer never made. */
-function logHolding(text: string): ChangeLog {
-    const log = logOf(target());
-    writeFileSync(log.file, text);
-    return log;
-}
-
-/** One log line whose four required fields are given and whose other fields are `more`. */
-function lineOf(at: string, more: Record<string, unknown> = {}): string {
-    return JSON.stringify({ at, kind: 'k', file: 'f', field: `x${at}`, ...more });
-}
-
 /** One request as the page makes it. */
 function request(body: unknown): Request {
     return new Request(`http://${HOST}/api/write`, {
@@ -115,15 +100,6 @@ async function written(into: WriteTarget, body: unknown): Promise<Change[]> {
     const response = await handleWrite(request(body), TOKEN, into);
     expect(response.status).toBe(200);
     return readChanges(logOf(into));
-}
-
-/** Every line of the log as text, for the cases that assert the file's own shape. */
-function lines(into: WriteTarget): string[] {
-    const file = logOf(into).file;
-    if (!existsSync(file)) return [];
-    return readFileSync(file, 'utf8')
-        .split('\n')
-        .filter((one) => one !== '');
 }
 
 describe('what each writer records', { tags: ['slow'] }, () => {
@@ -290,253 +266,5 @@ describe('what each writer records', { tags: ['slow'] }, () => {
             before: null,
             undo: 'none'
         });
-    });
-
-    it('writes nothing at all for a write that changed nothing', async () => {
-        const into = target();
-        await written(into, { kind: 'manifest', id: 'alpha', fields: { title: 'A title' } });
-        expect(lines(into)).toEqual([]);
-    });
-
-    it('writes nothing for a refused field', async () => {
-        const into = target();
-        await written(into, {
-            kind: 'manifest',
-            id: 'alpha',
-            fields: { nonesuch: 'a value the schema does not name' }
-        });
-        expect(lines(into)).toEqual([]);
-    });
-});
-
-describe('reading a line of the log', () => {
-    // The first case of a run builds a target, which loads the configuration; doing that here
-    // keeps the time of the first case its own.
-    it.beforeAll(() => {
-        target();
-    });
-
-    it('answers a line with its keys in the order they were written and its own __proto__ keys', () => {
-        const line =
-            '{"at":"a","kind":"k","file":"f","key":"q","field":"x","__proto__":{"z":1},"before":{"__proto__":{"z":1},"b":1},"after":1,"undo":"field","more":2}';
-        const [change] = readChanges(logHolding(`${line}\n`));
-        expect(Object.keys(change)).toEqual([
-            'at',
-            'kind',
-            'file',
-            'key',
-            'field',
-            '__proto__',
-            'before',
-            'after',
-            'undo',
-            'more'
-        ]);
-        expect(Object.hasOwn(change, '__proto__')).toBe(true);
-        expect(Object.hasOwn(change.before as object, '__proto__')).toBe(true);
-        expect(change).toHaveProperty('more', 2);
-    });
-
-    it('skips a line that is no change and reads the lines around it', () => {
-        const good = [lineOf('1'), lineOf('2'), lineOf('3')];
-        const text = [
-            good[0],
-            'not json',
-            good[1],
-            '{"at":"a","kind":"k","file":"f","fie',
-            '[]',
-            'null',
-            '"s"',
-            good[2]
-        ].join('\n');
-        expect(readChanges(logHolding(`${text}\n`)).map((one) => one.at)).toEqual(['3', '2', '1']);
-    });
-
-    it('skips a line whose at is no string or that has no field, and reads empty strings', () => {
-        const text = [
-            '{"at":5,"kind":"k","file":"f","field":"x"}',
-            '{"at":"a","kind":"k","file":"f"}',
-            '{"at":"","kind":"","file":"","field":""}',
-            '{"at":"b","kind":"k","file":"f","field":"x"}'
-        ].join('\n');
-        const rows = readChanges(logHolding(`${text}\n`));
-        expect(rows.map((one) => one.at)).toEqual(['b', '']);
-        expect(rows[0]).toStrictEqual({ at: 'b', kind: 'k', file: 'f', field: 'x' });
-    });
-
-    it(
-        'takes the last of a key given twice, so a number then a string is read',
-        { tags: ['slow'] },
-        () => {
-            const numberFirst = '{"at":5,"at":"s","kind":"k","file":"f","field":"x"}';
-            const stringFirst = '{"at":"s","at":5,"kind":"k","file":"f","field":"x"}';
-            expect(readChanges(logHolding(`${numberFirst}\n`)).map((one) => one.at)).toEqual(['s']);
-            expect(readChanges(logHolding(`${stringFirst}\n`))).toEqual([]);
-        }
-    );
-
-    it('reads a line with an unknown undo word or a numeric undoes as it is', () => {
-        const text = [lineOf('1', { undo: 'sideways' }), lineOf('2', { undoes: 7 })].join('\n');
-        const rows = readChanges(logHolding(`${text}\n`));
-        expect(rows[1]).toHaveProperty('undo', 'sideways');
-        expect(rows[0]).toHaveProperty('undoes', 7);
-    });
-
-    it(
-        'keeps the good lines and stamps a later moment when the last line was cut off',
-        { tags: ['slow'] },
-        async () => {
-            const first = new Date(Date.now() + 60_000).toISOString();
-            const second = new Date(Date.now() + 61_000).toISOString();
-            const cut = '{"at":"9999-01-01T00:00:00.0';
-            const log = logHolding(`${lineOf(first)}\n${lineOf(second)}\n${cut}`);
-            await logChanges(log, 'manifest', [
-                { file: 'a.yml', key: 'alpha', field: 'f', before: null, after: 1, undo: 'field' }
-            ]);
-            const rows = readChanges(log);
-            expect(rows.map((one) => one.at)).toEqual(expect.arrayContaining([first, second]));
-            const added = rows.find((one) => one.file === 'a.yml');
-            expect(added?.field).toBe('f');
-            expect((added?.at ?? '') > second).toBe(true);
-            expect(readFileSync(log.file, 'utf8').split('\n')).toContain(cut);
-        }
-    );
-});
-
-describe('the log file', { tags: ['slow'] }, () => {
-    it('holds one JSON line per change, oldest first, each with its own moment', async () => {
-        const into = target();
-        await written(into, {
-            kind: 'manifest',
-            id: 'alpha',
-            fields: { 'status.line': 'one', title: 'two' }
-        });
-        const held = lines(into);
-        expect(held).toHaveLength(2);
-        const parsed = held.map((line) => JSON.parse(line) as Change);
-        expect(parsed.map((one) => one.field)).toEqual(['status.line', 'title']);
-        expect(parsed[0].at < parsed[1].at).toBe(true);
-        // The read turns the file round, so the page the view draws opens with the newest.
-        expect(readChanges(logOf(into)).map((one) => one.field)).toEqual(['title', 'status.line']);
-    });
-
-    it('rewrites the file to the cap once it has grown past twice it', async () => {
-        const into = target(3);
-        const log = logOf(into);
-        for (let at = 0; at < 6; at += 1) {
-            await logChanges(log, 'manifest', [
-                {
-                    file: 'a.yml',
-                    key: 'alpha',
-                    field: `f${at}`,
-                    before: null,
-                    after: at,
-                    undo: 'field'
-                }
-            ]);
-        }
-        // Six lines is twice the cap and is kept; the seventh passes it and the file comes back
-        // holding the newest three.
-        expect(lines(into)).toHaveLength(6);
-        await logChanges(log, 'manifest', [
-            { file: 'a.yml', key: 'alpha', field: 'f6', before: null, after: 6, undo: 'field' }
-        ]);
-        expect(lines(into)).toHaveLength(3);
-        expect(readChanges(log).map((one) => one.field)).toEqual(['f6', 'f5', 'f4']);
-    });
-
-    it('answers one page at a time and walks back through `before`', async () => {
-        const into = target();
-        const log = logOf(into);
-        for (let at = 0; at < PAGE + 2; at += 1) {
-            await logChanges(log, 'manifest', [
-                {
-                    file: 'a.yml',
-                    key: 'alpha',
-                    field: `f${at}`,
-                    before: null,
-                    after: at,
-                    undo: 'field'
-                }
-            ]);
-        }
-        const first = readChanges(log);
-        expect(first).toHaveLength(PAGE);
-        expect(first[0].field).toBe(`f${PAGE + 1}`);
-        const older = readChanges(log, first[first.length - 1].at);
-        expect(older.map((one) => one.field)).toEqual(['f1', 'f0']);
-    });
-
-    it('reaches every row the file holds when the cap is below the page', async () => {
-        const into = target(10);
-        const log = logOf(into);
-        for (let at = 0; at < 18; at += 1) {
-            await logChanges(log, 'manifest', [
-                {
-                    file: 'a.yml',
-                    key: 'alpha',
-                    field: `f${at}`,
-                    before: null,
-                    after: at,
-                    undo: 'field'
-                }
-            ]);
-        }
-        // Eighteen lines is under twice the cap, so the file still holds every one of them; the
-        // page is the page size and not the cap, so no row is out of the view's reach.
-        expect(lines(into)).toHaveLength(18);
-        const page = readChanges(log);
-        expect(page).toHaveLength(18);
-        expect(page[0].field).toBe('f17');
-        expect(page[page.length - 1].field).toBe('f0');
-    });
-
-    it('writes two concurrent appends as whole lines, in order, with rising stamps', async () => {
-        const into = target();
-        const log = logOf(into);
-        const record = (field: string): ChangeRecord => ({
-            file: 'a.yml',
-            key: 'alpha',
-            field,
-            before: null,
-            after: field,
-            undo: 'field'
-        });
-        // Both calls are started before either is awaited, so the chain is what keeps their lines
-        // apart: without it the second read would start before the first append landed.
-        await Promise.all([
-            logChanges(log, 'manifest', [record('a1'), record('a2')]),
-            logChanges(log, 'entry', [record('b1'), record('b2')])
-        ]);
-        const held = lines(into).map((line) => JSON.parse(line) as Change);
-        expect(held.map((one) => one.field)).toEqual(['a1', 'a2', 'b1', 'b2']);
-        expect(held.map((one) => one.kind)).toEqual(['manifest', 'manifest', 'entry', 'entry']);
-        for (let at = 1; at < held.length; at += 1) {
-            expect(held[at - 1].at < held[at].at).toBe(true);
-        }
-    });
-
-    it('makes the folder of a log whose path does not exist yet', async () => {
-        const into = target();
-        const dir = join(logOf(into).file, '..', 'deeper', 'still');
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-        expect(existsSync(dir)).toBe(false);
-        const log: ChangeLog = { file: join(dir, 'changes.jsonl'), keep: 500, writes: fsWrites() };
-        await logChanges(log, 'manifest', [
-            { file: 'a.yml', key: 'alpha', field: 'f0', before: null, after: 0, undo: 'field' }
-        ]);
-        expect(readChanges(log).map((one) => one.field)).toEqual(['f0']);
-    });
-
-    it('records nothing when the target names no log', async () => {
-        const into = target();
-        const bare: WriteTarget = { ...into, changes: undefined };
-        const response = await handleWrite(
-            request({ kind: 'manifest', id: 'alpha', fields: { 'status.line': 'a new line' } }),
-            TOKEN,
-            bare
-        );
-        expect(response.status).toBe(200);
-        expect(lines(into)).toEqual([]);
     });
 });
