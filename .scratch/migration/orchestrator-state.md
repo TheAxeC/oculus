@@ -36,8 +36,9 @@ dispatch:   # steps in flight, up to seven (Z423)
   report: agents/reviews/X3f-report.md
   brief_check: agents/reviews/X3f-brief-check.md, claude-opus-5-5, 220,933 tokens, 70 tool uses, 10.3 min
   landing: not-started
-  round: 0 (the case-33 ruling sent, agents/briefs/X3f-cases.md, Z429)
-  builder_usage: first run, stopped at case 33: 213,532 tokens, 38 tool uses, 6.8 min
+  round: 1 (repair round 1 sent from the refuter's findings, agents/briefs/X3f-round1.md; round 0 was the case-33 ruling, agents/briefs/X3f-cases.md, Z429)
+  reviewer_report: agents/reviews/X3f-refuter.md, claude-opus-5-5, 246,295 tokens, 57 tool uses, 11.0 min
+  builder_usage: first run, stopped at case 33: 213,532 tokens, 38 tool uses, 6.8 min; build after the ruling: 344,227 tokens, 87 tool uses, 18.5 min
 - step: D37
   executor: agent
   worker: claude:sonnet at ordo-high
