@@ -40,7 +40,7 @@ Queued, in order (33 steps):
 Owed: the look of Q81 (a Confirm over the update tray), waiting until Axel takes it up.
 
 Landed, newest first:
-- T1b (the test sweep of tests/state/), 2026-10-04.
+- T1b (the test sweep of tests/state/), 2026-10-04, fa5e42a2.
 - T1c (the test sweep of tests/server/), 2026-10-04, ffb4457a.
 - X3c (the tab strip as VS Code's), 2026-10-04, 1e14d279.
 - Q116 (the Status view's line count of everything under src/), 2026-10-03, 5a7654bf.
