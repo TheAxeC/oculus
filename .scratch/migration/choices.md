@@ -2,6 +2,24 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z429 (2026-10-05, step X3f)
+
+The question: X3f's builder found that case 33 (a removed file pressed opens the cannot-open line) has no rule in the brief; today a removed file of a name outside the named formats opens a download tab with a dead link.
+
+- Chosen (1): a 404 is read as a `missing` kind and opens the source tab's cannot-open line with Retry, as VS Code opens an editor saying the file was not found; three paths join the step.
+- Not chosen: (2) open nothing and say it in the Files view, a new place to say it that nothing names; (3) reword the case to the download tab, which keeps a dead link (the lazy one).
+
+Where it is built: `agents/briefs/X3f-cases.md`. Booked in `plan.md` Rulings.
+
+## Z428 (2026-10-05, step S5)
+
+The question: S5 needs a heading for every option and a control for every text, list and family field, and the catalog keys that say them.
+
+- Chosen: the table and the decisions of `agents/briefs/S5.md`; each field takes the control its value needs (a choice of a short list or of another list's keys, a glyph, a hue or palette colour picker, a multi-pick, a folder or file box, a nested sub-editor), text only for free words and for names the reader makes up.
+- Not chosen: keeping text boxes for the fields whose values come from a list (the lazy one), and per-option control code in the view in place of catalog keys, which would put the vocabulary outside `options.yml`.
+
+Where it is built: S5's brief. Booked in `plan.md` Rulings.
+
 ## Z151 (2026-10-01 11:43, step Q88b)
 
 The question: building the Files view's file operations takes user-visible choices the plan leaves open: whether they show in History with an undo, their route, the label of a two-file diff, the name rule, Upload's limit, the delete question, where the clipboard lives, what of the Explorer stays X3a's, how local.yml is guarded, where Find in Folder shows, and what a read-only row offers.

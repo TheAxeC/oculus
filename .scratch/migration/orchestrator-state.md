@@ -36,7 +36,8 @@ dispatch:   # steps in flight, up to seven (Z423)
   report: agents/reviews/X3f-report.md
   brief_check: agents/reviews/X3f-brief-check.md, claude-opus-5-5, 220,933 tokens, 70 tool uses, 10.3 min
   landing: not-started
-  round: 0
+  round: 0 (the case-33 ruling sent, agents/briefs/X3f-cases.md, Z429)
+  builder_usage: first run, stopped at case 33: 213,532 tokens, 38 tool uses, 6.8 min
 ```
 
 ## The standing demands (from Axel, in force)
@@ -132,7 +133,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- None.
+- Z427 (2026-10-04, D37's /spec): Cmd+Z after Format Document on a `.tex` file does not undo the format (D14's look, with `latex.formatter: tex-fmt`), though typing is undone. Its cause was not found by reading: Monaco 0.57 pushes undo stops around a format's edit, the page's formatter is Monaco's own provider, the page frees only Cmd+K and Ctrl+K from Monaco, and the editor's model is made again only on a new name or path. No probe could be run without a formatter set, since the page's Monaco is not reachable from a script and `latex.formatter` is `none`. D37 is built without this defect; the other twelve go ahead. Options: (a) a diagnosis on TEST now, in parallel with D37's build: set `latex.formatter` to `tex-fmt` in `config/behavior.yml` for the probe (one write, recorded in History, put back afterwards and its hash checked, as D14's look did), format a scratch `.tex` file in `zz-look-d37/` at the hub root, and probe Cmd+Z; the found fix joins D37 as its first repair round when it is found before D37 lands, else a small step after it; pro: the cause is found while D37 is still open; con: a config write and a scratch folder on the hub for the length of the probe. (b) D37 lands first and the diagnosis runs at its landing look, which opens TEST anyway; pro: one look instead of two; con: the fix then needs its own step. (c) drop the defect; con: HELP.md keeps saying undo takes the format back, which is false. Recommendation: (a), since it finds the cause before D37 lands and keeps the fix inside D37. (c) is the lazy one.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
