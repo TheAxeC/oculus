@@ -28,7 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # two steps in flight (2026-10-04): T1d, building; T1e, repair round 1; T1c and T1b landed (workers_at_once: 5).
+dispatch:   # two steps in flight (2026-10-04): T1d, stopped at its first run on Z389; T1e, repair round 1; T1c and T1b landed (workers_at_once: 5).
 - step: T1d
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -39,6 +39,7 @@ dispatch:   # two steps in flight (2026-10-04): T1d, building; T1e, repair round
   base_copy: .agents/worktrees/T1d-base/tools/oculus (src/, tests/, utils/ and config/ less local.yml at the base, from git archive; unused-exports.txt beside it, 257 exports; removed with the worktree)
   launched: 2026-10-04 07:09 local
   report: agents/reviews/T1d-report.md
+  builder_usage: claude-sonnet-5-5, 184,237 tokens, 36 tool uses, 5.8 min (completion notice 2026-10-04; stopped at its first run on Z389, nothing changed)
   brief_check: agents/reviews/T1d-brief-check.md; claude-opus-5-5 (run on main at 1e14d279; findings closed under Closed, Z376 (b) closed at this /spec)
   shared_paths: with T1e, in flight: `tests/checks/tree/allow-duplication.txt` (T1d removes entries on lines 61-123 naming its folders, T1e entries naming its own, separate lines, removals only); `tests/data/` (T1d adds new files only, T1e changes existing ones); `tests/checks/` (T1d rewrites `tree/audits.test.ts`, deletes `tree/allow-audits.txt` and adds `views/`, three paths T1e leaves byte-identical); so the merge is simple
   landing: not-started
@@ -152,7 +153,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-None.
+- Z389 (2026-10-04, T1d's first run): the audits check as ruled in Z376 (b) clashes with how `tests/` is laid out. `tests/` mirrors `src/lib/` (`themes`, `shell`, `views`, `ui`, `state`, `server`, `data`, plus `checks`, `fixtures`, `routes`: 10 items, the folder limit), and `src/lib/views/` holds plain `.ts` modules (menu builders, press handlers, layout functions) beside its components. Their tests sit in `tests/views/` and render nothing: the builder's scan of the rewritten check over the unchanged tree flags 494 cases in 74 files, 393 of them in 47 files that test such a module (`repositories-menu.test.ts`'s 36 cases of `changeMenu` and `hasMenu` among them, menus the user relies on). Z376 (b) moves them to "the folder of the code they call", which is `tests/views/` itself, and a new folder for them would make `tests/` 11 items. Options: (a) the check reads only the test files under `tests/views/` that import a `.svelte` component, and fails each case there that reaches no `render(`, no `mount(` and no name bound to one, with no title escape and no allow list; a file that imports no component tests a view-layer module and stays where it is; pros: one fact a machine computes, the mirror and the folder limit hold, nothing moves; cons: it narrows what Z376 (b) said, and a source-text case in a file with no component is caught only by the sweep's reading under `spec.md:61`. (b) A new folder for tests of view-layer modules (for example `tests/view-modules/`, mirroring `src/lib/views/`), with `tests/themes/derive.test.ts` folded into `tests/ui/theme/` so `tests/` stays at 10; pros: Z376 (b) as written; cons: about 47 files and 393 cases move, the mirror between `tests/` and `src/lib/` breaks for `themes` and for the view modules, and many `allow-duplication.txt` entries change path. (c) Keep the allow list and the "audits" titles, the lazy option, which keeps what Z354 removes. Recommendation: (a), since it holds the rule Z376 (b) set (a view test draws its view) without moving tests away from the code they test.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -217,4 +218,4 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
   3. At the last of the four sweeps' landings: the fixture exports they left unused removed (Booked), with `tests/shell/rail/rail-fixture.ts` `COLLECTIONS` and `tests/shell/rail/shipped-rail.ts` `SHIPPED_RAIL_LABELS` that T1b named.
   4. T1a after the four sweeps, its timings under a reproduced load (Z370 (a)), T1c's file-tagged tmux files moved to `await import` in their slow `beforeAll` (Z383), the size check at 880 and 520 (Z377 (a)); then the queue in order, O33 to O36 paused (Z369).
   5. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
-  Open for Axel: none.
+  Open for Axel: Z389.
