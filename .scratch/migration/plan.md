@@ -1188,6 +1188,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z469 (2026-10-05, the orchestrator, automode): X3e's brief-check closing, open item 1: Z451 removes A6's move of an open editor within its pane; Z284 rules Alt+Up and Alt+Down for roots, bookmarks, notes and section heads. Chosen (a) only the open-editor move is removed and the four lists keep Alt+Up and Alt+Down, which keeps both rulings.
 - Z470 (2026-10-05, the orchestrator, automode): X3e's brief-check closing, open item 2: Add Folder and Remove Folder drop a comment line inside `sources.yml`'s `roots:` list without a word. Chosen (a) every roots write refuses with `files.refused_roots_invalid` when the list holds a comment line among its entries, so no comment Axel wrote is lost and he is told why.
 - Z471 (2026-10-05, the orchestrator, automode): X3e's brief-check closing, open item 3: D5's catalog sentences cover `server/git` and `auth.ts`; the git reads under `server/core/git` (run.ts, compare.ts, files.ts, reads.ts) answer in lower-case English too, which Q88c-6 names. Chosen (a) D5 covers `server/core/git` too, after D42 lands (Z452), the write list widened by the handlers and the tests that call them.
+- Z472 (2026-10-05, the user): Axel: "Please set workers at once to 5 in both files. We'll get down from 7 to 5 by doing landings". `workers_at_once` is 5 in `.agents/plan.yaml` and the state file; the seven steps in flight run on, no step is stopped, and no new step is started until landings bring the count below five.
 
 ## Agents
 
