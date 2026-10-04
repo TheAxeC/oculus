@@ -28,15 +28,28 @@ One entry per guarantee. A test exists only as the test of one entry, named unde
 
 ## Your work is not lost or misplaced
 
-- G8. Each write kind changes only the file and key it names; the rest of that file stays byte-identical.
-  Code: `src/lib/server/edit/writes.ts` and `writes/`.
+- G8. Each write kind changes only the file and key it names; the rest of that file stays byte-identical. A write whose base the file no longer holds is refused with the sentence that the file changed since it was read.
+  Code: `src/lib/server/edit/writes.ts` and `writes/`, `src/lib/server/edit/writes/config/config-value.ts`.
   Test: none named yet.
-- G9. Each write is logged, and its undo puts the file back.
-  Code: `src/lib/server/core/changes.ts`, `src/lib/server/edit/writes/file-undo.ts`.
+- G9. Each write is logged, and its undo puts the file back. A file save keeps a copy of the text it replaces in the file history, and writes through a temporary file and an atomic rename, so a save cut short leaves the old file whole.
+  Code: `src/lib/server/core/changes.ts`, `src/lib/server/edit/writes/file-undo.ts`, `src/routes/api/(files)/source`, `src/lib/server/files/fs/history.ts`.
   Test: none named yet.
-- G10. A file operation does what it names, and a delete goes to the Trash, never a permanent delete.
-  Code: `src/routes/api/(files)/ops`.
+- G10. A file operation does what it names: Move to Trash sends the item to the Trash, and Delete for good first keeps a copy of a file up to 5 MB in the file history. A paste or a move with Replace sends the replaced item to the Trash first, and moves nothing when the Trash fails.
+  Code: `src/routes/api/(files)/ops`, `src/lib/server/files/fs/ops.ts`, `src/lib/server/files/fs/file-changes.ts`.
   Test: none named yet.
+
+- G28. An unsaved edit survives a tab switch and a reload, and closing a tab, pane or page that holds one asks first: in a form, the manifest editor, the file editor and the review comment box. Closing a Terminal tab whose terminals run asks first, and a move, a split or a reload stops none of them. A page that detaches stops the delivery and leaves the tmux session running.
+  Code: `src/lib/state/forms/`, `src/lib/state/sessions/source.svelte.ts`, `src/lib/state/sources/repositories/review-comment.ts`, `src/lib/shell/panes/strip/close-question.svelte.ts`, `src/lib/state/client/context.ts`, `src/lib/state/sessions/terminal/terminal-tabs.ts`, `src/lib/server/machine/pty/channel.ts`.
+  Test: none named yet.
+- G29. A saved layout of an earlier version is read into the current one with every page and tab kept.
+  Code: `src/lib/state/workbench/layout/saved/`.
+  Test: none named yet.
+- G30. A deposit commit is refused while the secret scan finds a secret in it.
+  Code: `src/lib/server/git/deposit.ts`.
+  Test: none named yet.
+- G31. A record file that does not read is never overwritten by the next save; the save is refused with the reason. The saved commands and the approvals files do this; the workspaces file, the session overrides file and the saved layout are brought to it by step Q117.
+  Code: `src/lib/server/machine/commands/saved.ts`, `src/lib/server/machine/approvals/approvals.ts`, `src/lib/server/files/fs.ts`, `src/lib/server/sessions/overrides.ts`, `src/lib/state/workbench/layout/saved/`.
+  Test: none named yet; Q117 writes the tests of the three it changes.
 
 ## It starts, and configuration is checked
 

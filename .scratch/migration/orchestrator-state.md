@@ -28,59 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # four steps in flight (2026-10-04 13:05): the deletion sweeps T2a to T2d (Z396 to Z403).
-- step: T2a
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a77757591c213a6a6 (builder, launched 2026-10-04 13:05 local)
-  worktree: .agents/worktrees/T2a
-  base: ca9d1e119
-  launched: 2026-10-04 13:05 local
-  report: agents/reviews/T2a-report.md
-  brief_check: none (Z401)
-  review: none (Z402); at landing `git diff --numstat` and the named tests checked
-  landing: not-started
-  round: 0
-- step: T2b
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a518d5775c38fa0f3 (builder, launched 2026-10-04 13:05 local)
-  worktree: .agents/worktrees/T2b
-  base: ca9d1e119
-  launched: 2026-10-04 13:05 local
-  report: agents/reviews/T2b-report.md
-  brief_check: none (Z401)
-  review: none (Z402); at landing `git diff --numstat` and the named tests checked
-  landing: not-started
-  round: 0
-- step: T2c
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a69f0156ff00266f2 (builder, launched 2026-10-04 13:05 local)
-  worktree: .agents/worktrees/T2c
-  base: ca9d1e119
-  launched: 2026-10-04 13:05 local
-  report: agents/reviews/T2c-report.md
-  brief_check: none (Z401)
-  review: none (Z402); at landing `git diff --numstat` and the named tests checked
-  landing: not-started
-  round: 0
-- step: T2d
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a10c3e512d66966e2 (builder, launched 2026-10-04 13:05 local)
-  worktree: .agents/worktrees/T2d
-  base: ca9d1e119
-  launched: 2026-10-04 13:05 local
-  report: agents/reviews/T2d-report.md
-  brief_check: none (Z401)
-  review: none (Z402); at landing `git diff --numstat` and the named tests checked
-  landing: not-started
-  round: 0
+dispatch: []   # nothing in flight (2026-10-04): the first runs of T2a to T2d thrown away under Z405; the four are prepared again.
 ```
 
 ## The standing demands (from Axel, in force)
