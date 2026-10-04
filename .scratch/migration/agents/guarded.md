@@ -1,6 +1,6 @@
 # What the tests guard
 
-One entry per guarantee. A test exists only as the test of one entry, named under it by file and title. A new entry needs Axel's yes. Views have no entry: the look on TEST covers them.
+One entry per guarantee. An entry keeps one test per unit it covers: each API route, write kind, config reader, parser, client store or other file its text and its Code line name, written as a table where a unit has several outcomes. A test exists only as the test of one entry, named under it by file and title, or by file and describe where one table covers several units. A new entry needs Axel's yes. Views have no entry: the look on TEST covers them.
 
 ## Never happens
 
@@ -67,6 +67,9 @@ One entry per guarantee. A test exists only as the test of one entry, named unde
   Test: none named yet.
 - G15. A manifest with a broken field still shows its project, with a finding.
   Code: `src/lib/data/snapshot/`.
+  Test: none named yet.
+- G32. What the hub shows is what its files say: each parser of the hub's files reads a well-formed file into the values the file holds (manifests, registries, collections, career, feeds, docs, present, the snapshot built from them).
+  Code: `src/lib/data/sources/`, `src/lib/data/snapshot/`, `src/lib/data/model/`.
   Test: none named yet.
 
 ## The repository's rules, checked by a machine
