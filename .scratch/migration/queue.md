@@ -39,7 +39,7 @@ Queued, in order (33 steps):
 Owed: the look of Q81 (a Confirm over the update tray), waiting until Axel takes it up.
 
 Landed, newest first:
-- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, 30838596.
+- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, b8f89eb1.
 - T1b (the test sweep of tests/state/), 2026-10-04, fa5e42a2.
 - T1c (the test sweep of tests/server/), 2026-10-04, ffb4457a.
 - X3c (the tab strip as VS Code's), 2026-10-04, 1e14d279.
