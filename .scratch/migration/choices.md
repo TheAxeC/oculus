@@ -65,6 +65,208 @@ The question: Q35's owed look found the Audit's arrow keys moving a card cursor 
 
 Where it is built: step Q118. Booked in `plan.md` Rulings.
 
+## Z447 (2026-10-05, step D11)
+
+The question: D11's local.yml key naming the debug adapter `rite_dap` (O1 of its brief).
+
+- Chosen: (a) `rite_dap_bin`, read as `claude_bin` is: an absolute path or a name on PATH, default `rite_dap`; a live debug look on TEST then needs Axel to set the key in his local.yml, since `rite_dap` is not on PATH (`which rite_dap` exits 1).
+- Not chosen: (b) a nested `debug: { adapter }` block, which no other program key uses; (c) (a) plus a fallback to the repository's `bin/debug/rite_dap`, which runs a repository's binary without its text approved, against DESIGN.md:153 (the lazy one).
+
+Where it is built: D11's brief. Booked in `plan.md` Rulings.
+
+## Z448 (2026-10-05, step D11)
+
+The question: D11's DAP transport (O2): hand-written framing or a library.
+
+- Chosen: (a) hand-written Content-Length framing and request pairing in `server/machine/debug/wire.ts` on the `@vscode/debugprotocol` types LA17 ruled, since `@vscode/debugadapter-testsupport` 1.68.0's `ProtocolClient` parses each message unguarded (`protocolClient.js:82`, one bad message throws in the server), waits forever on a bad Content-Length and never settles pending requests when the adapter exits.
+- Not chosen: (b) `@vscode/debugadapter-testsupport`'s `ProtocolClient` (the lazy one, three defects to wrap); (c) `node-debugprotocol-client` 0.5.1, last released 2022-11-13 on the deprecated `vscode-debugprotocol` types.
+
+Where it is built: D11's brief. Booked in `plan.md` Rulings.
+
+## Z449 (2026-10-05, step D11)
+
+The question: Where D11 keeps breakpoints, function breakpoints, watch expressions and the chosen launch configuration (O3).
+
+- Chosen: (a) the browser's localStorage under `oculus.debug.v1`, beside the saved layout, read as empty lists when storage throws or holds another shape; chosen because the pages and tabs are already kept per browser there.
+- Not chosen: (b) a record file under `~/.oculus/` with a new local.yml key, per machine, needing the unreadable-file handling G31 holds.
+
+Where it is built: D11's brief. Booked in `plan.md` Rulings.
+
+## Z450 (2026-10-05, step D11)
+
+The question: What a launch configuration's `before` may name (O4).
+
+- Chosen: (a) any command of the repository, found by D17's `depends_on` rule (the file's commands, then the saved ones, then the found ones, `server/machine/commands/resolve.ts:5-7`), as a command name already resolves inside `commands.yml`.
+- Not chosen: (b) only an entry of `.oculus/commands.yml`, the narrower reading of Z92 (1) (a).
+
+Where it is built: D11's brief. Booked in `plan.md` Rulings.
+
+## Z451 (2026-10-05, step X3e)
+
+The question: X3e's A6 (Alt+Up and Alt+Down move an open editor within its pane): no ruling names it, and the step line, Z263 and Z284 name four lists reordered by drag (roots, bookmarks, notes, sections), with no drop for A6 to follow (X3e brief check finding 8).
+
+- Chosen: (a) A6 removed from X3e's brief, since nothing asked for it and it would add a keybinding no ruling names.
+- Not chosen: (b) A6 kept as a decision of the brief with a case, which adds a user-visible keybinding nothing asked for.
+
+Where it is built: X3e's brief. Booked in `plan.md` Rulings.
+
+## Z452 (2026-10-05, step X3e)
+
+The question: X3e shares `Sections.svelte`, `Files.svelte` and the Files view's state with D42 in flight, both restructuring them (A5 adds `sections` to `FilesView` where D42 adds the Timeline's state) (X3e brief check finding 15).
+
+- Chosen: (a) X3e is prepared after D42 lands, its brief closed now against D42's write list and premises checked again at /spec then; its slot goes to Q118. The Z441 diagnoses run before X3e's builder starts, as ruled.
+- Not chosen: (b) X3e dispatched now with a hand merge at the second landing, which `agents/spec.md`'s rule on parallel steps does not allow for two structural changes to the same components.
+
+Where it is built: X3e's brief. Booked in `plan.md` Rulings.
+
+## Z443 (2026-10-05, from X3e's /spec)
+
+The question: G13 (approved by Axel) says a wrong config value is refused with a finding naming the key and its default is used; the setting readers of `data/sources/config/settings.ts` (`blockOf`, `settingOf`, :65-81) throw instead, so a wrong value in `behavior.yml` stops the server at start (`server/root/context.ts:273-285`) and, on a change while it runs, is only logged and the old settings kept (`server/root/live-settings.ts:152-170`), with no finding in the page.
+
+- Chosen: (a) the readers made to keep G13, through step Q119: a wrong value gives a finding naming the key and the default is used, so a typo costs one setting and the server still starts. The code breaking an approved rule is a defect, and fixing it keeps the ruling, so it closes in automode.
+- Not chosen: (b) G13's sentence changed to what the readers do, which reverses Axel's approved entry (the lazy one, and not the orchestrator's to take).
+
+Where it is built: step Q119. Booked in `plan.md` Rulings.
+
+## Z469 (2026-10-05, from X3e's brief check)
+
+The question: X3e's brief-check closing, open item 1: Z451 removes A6's move of an open editor within its pane; Z284 rules Alt+Up and Alt+Down for roots, bookmarks, notes and section heads.
+
+- Chosen: (a) only the open-editor move is removed and the four lists keep Alt+Up and Alt+Down, which keeps both rulings.
+- Not chosen: (b) all of A6 removed, which reverses Z284 (not the orchestrator's to take).
+
+Booked in `plan.md` Rulings.
+
+## Z470 (2026-10-05, from X3e's brief check)
+
+The question: X3e's brief-check closing, open item 2: Add Folder and Remove Folder drop a comment line inside `sources.yml`'s `roots:` list without a word.
+
+- Chosen: (a) every roots write refuses with `files.refused_roots_invalid` when the list holds a comment line among its entries, so no comment Axel wrote is lost and he is told why.
+- Not chosen: (b) the comment kept with the entry below it, a change to `setItems`, which four writers share; (c) dropped without a word (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z471 (2026-10-05, from X3e's brief check)
+
+The question: X3e's brief-check closing, open item 3: D5's catalog sentences cover `server/git` and `auth.ts`; the git reads under `server/core/git` (run.ts, compare.ts, files.ts, reads.ts) answer in lower-case English too, which Q88c-6 names.
+
+- Chosen: (a) D5 covers `server/core/git` too, after D42 lands (Z452), the write list widened by the handlers and the tests that call them.
+- Not chosen: (b) D5 left at `server/git` and `auth.ts`, which leaves GET /api/git's answers in lower case (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z468 (2026-10-05, Axel)
+
+Axel ruled that no step is ever added: the content of Q118, Q119, Q121 and Q122 is folded into S5 (Q119, Q122) and D33 (Q118, Q121), nothing dropped. Booked in `plan.md` Rulings.
+
+## Z462 (2026-10-05, from Q119's brief)
+
+The question: Q119's brief shares `config/catalogs/options.yml` with S5, which rewrites the entries whose descriptions Q119 edits, and HELP.md:282 and DESIGN.md 358-431 with D11.
+
+- Chosen: (a) Q119 is prepared once S5 has landed, its line numbers read again then; D11, prepared after S5 and H3, follows Q119 in the queue where they share lines.
+- Not chosen: (b) prepared now and merged by hand at landing, which the `spec` skill rules out for a merge judged not simple (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z463 (2026-10-05, from Q119's brief)
+
+The question: Q119's brief decision 10: a wrong `port` in behavior.yml while the server runs takes its default under G13, which moves the server to 8790.
+
+- Chosen: (a) the port takes its default as every other setting does, the move stated in HELP.md with its before and after, as G13's words say.
+- Not chosen: (b) the port in force kept as a special case, an exception G13 does not name (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z464 (2026-10-05, from Q119's brief)
+
+The question: Q119's brief premise 2: `config/catalogs/options.yml:3` cites `tests/checks/config/options-catalog.test.ts`, which does not exist, and nothing holds a catalog `default` to the tracked file's value.
+
+- Chosen: (a) a step of its own, Q122: the sentence at `options.yml:3` made true, by naming the check that holds each catalog `default` equal to the tracked value or, if none is to exist, by saying what does.
+- Not chosen: (b) left as a false sentence (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z458 (2026-10-05, from Q118's brief)
+
+The question: Q118's brief O1: an Audit row has no place link (`Audit.svelte:124-126`) and `AuditFinding` carries no file (`data/model/index.ts:258-264`), so Enter on a row has nothing to open.
+
+- Chosen: (a) each finding carries `file`, the hub-relative path it is about (empty for a missing file or a folder); the place becomes a link that opens it in a source tab, and Enter presses it, as VS Code's Problems list opens a row on Enter; the signature does not read `file`, so every mute is kept.
+- Not chosen: (b) Enter presses the mute control, which writes `behavior.yml` from a key press and is not what VS Code gives a row's Enter; (c) Enter does nothing (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z459 (2026-10-05, from Q118's brief)
+
+The question: Q118's brief O2: Enter on a Focus lane card does nothing, its name button carrying no `dataCardToggle` (`LaneCard.svelte:107-109`).
+
+- Chosen: (a) folded into Q118: the name button gets `dataCardToggle`, `LaneCard.svelte` joins the write list.
+- Not chosen: (b) a step of its own for one prop; (c) left dead (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z460 (2026-10-05, from Q118's brief)
+
+The question: Q118's brief Decision 4 leaves the doc line of `ToolButton.svelte:106` ("Marks the project-card control...") false once the Audit and the lane card use `dataCardToggle`, and books its rewrite with a later split of the file.
+
+- Chosen: (a) Q118 rewrites that one doc line to name what the prop marks on any card, as a one-line change that keeps the file at its line count, so `ToolButton.svelte` joins the write list.
+- Not chosen: (b) booking the rewrite with a later split, leaving a false comment on main (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z461 (2026-10-05, from Q118's brief)
+
+The question: Q118's brief records that a held card cursor may be lost on a reload, since the shell reconciles before a view's channel sends its first rows, for every view that reads the cursor, while the cursor is kept in the instance state the layout restores.
+
+- Chosen: (a) a step of its own, Q121: the card cursor survives a reload in every view that reads it; diagnosed first, then built.
+- Not chosen: (b) recorded as a case of Q118 and left (the lazy one); (c) folded into Q118, which is about the Audit rows and would grow into the shell's reconcile.
+
+Booked in `plan.md` Rulings.
+
+## Z454 (2026-10-05, from D11's brief check)
+
+The question: D11's brief check case 31: `loadLocal` (`data/sources/config/local.ts:163-172`) throws on the first wrong `local.yml` key and `loadLocalOrDefaults` (:349-359) then uses every default, against G13 (a wrong value gives a finding naming the key and that key's default is used).
+
+- Chosen: (a) Q119 widened to the readers of `local.ts`: a wrong key gives its finding and only that key takes its default; D11's case 31 expects the finding `local.yml: rite_dap_bin must be a non-empty string`, which holds before and after Q119. The code breaking an approved rule is a defect, fixed as Z443 fixes `settings.ts`.
+- Not chosen: (b) a second step for `local.ts`, splitting one defect of one rule over two steps; (c) D11 alone fixing `local.ts` for its own key, which leaves every other key under the defect (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z455 (2026-10-05, from D11's brief check)
+
+The question: D11's brief check N7 and N8: D11's brief shares `config/catalogs/options.yml` with S5 (adjacent hunks at the `claude_bin` and `open_bin` entries, and S5 gives each local.yml entry a `section:` the new `rite_dap_bin` entry then needs) and `config/text/app.yml` line 12 with H3 (one physical line both rewrite).
+
+- Chosen: (a) D11 is prepared once S5 and H3 have landed, as the `spec` skill's Steps 5 says for a merge that is not simple; its brief check findings are closed now, and its premises are read again at its preparation.
+- Not chosen: (b) D11 prepared now and the two files merged by hand at landing, which the skill rules out for a merge judged not simple (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z456 (2026-10-05, from D11's brief check)
+
+The question: D11's brief check, declined to judge: whether a debug launch from a repository with no `.oculus/launch.yml` runs with no approval question, while `DESIGN.md:153` names a debug launch among the processes that need approval and Z92 says a launch runs after that approval.
+
+- Chosen: (a) every debug launch asks the approval DESIGN.md:153 requires, the default configuration included, keyed by its launch text as a configured one is.
+- Not chosen: (b) the default configuration launching without a question, which breaks DESIGN.md:153 (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z457 (2026-10-05, from D11's brief check)
+
+The question: D11's brief check P6: rite_dap's `evaluate` of an undefined name adds that name to the frame's Module scope as `<undefined>`, so a hover over a comment word or a special form changes what the Variables section shows.
+
+- Chosen: (a) the hover evaluates only a word that a scope of the paused frame already holds (read from the published variables), so a hover never writes into the adapter; a watch and a console line evaluate as the reader typed them, and Variables shows what the adapter answers.
+- Not chosen: (b) the client hiding `<undefined>` entries, which hides a value the adapter reports; (c) a fix in cathedra's adapter, outside this repository and this plan (the lazy one for this step, since it leaves the hover writing).
+
+Booked in `plan.md` Rulings.
+
+## Z453 (2026-10-05, step X3f's landing)
+
+The question: the landing look found the keyboard not in the kept tab's editor after a double click (round 1 item 7), cause not known.
+
+- Chosen: (a) X3f lands with its three fixes at landing; the defect is step Q120, its cause found with /diagnose first.
+- Not chosen: (b) X3f held off main until the cause is found, holding back the parts the look found working.
+
+Where it is built: step Q120. Booked in `plan.md` Rulings.
+
 ## Z442 (2026-10-05, step X3e)
 
 The question: The write-token sentence of `server/core/auth.ts:97` is answered by every route, so capitalising it changes routes outside git.

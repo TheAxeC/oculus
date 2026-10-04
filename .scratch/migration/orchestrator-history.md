@@ -7,6 +7,29 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 - Z444 (2026-10-05, closed in automode): Four details of D42's Timeline that no ruling names: a malformed paging cursor, a pinned file that goes, the Load more row while a page is read, and Open Timeline for a root the workspace lacks.; `choices.md`.
 - Z445 (2026-10-05, closed in automode): S5's first run: which held value passes the server's check (cases 35 and 22), the closed-groups premise of item 1.6, and the key a catalog finding names.; `choices.md`.
 - Z446 (2026-10-05, closed in automode): Q35's owed look found the Audit's arrow keys moving a card cursor that no row draws: `Audit.svelte:115` gives each row `data-card`, but the view never reads `cardCursor`, and before Q35 it passed `cursor={false}`.; `choices.md`.
+- Z447 (2026-10-05, closed in automode): D11's local.yml key naming the debug adapter `rite_dap` (O1 of its brief).; `choices.md`.
+- Z448 (2026-10-05, closed in automode): D11's DAP transport (O2): hand-written framing or a library.; `choices.md`.
+- Z449 (2026-10-05, closed in automode): Where D11 keeps breakpoints, function breakpoints, watch expressions and the chosen launch configuration (O3).; `choices.md`.
+- Z450 (2026-10-05, closed in automode): What a launch configuration's `before` may name (O4).; `choices.md`.
+- Z451 (2026-10-05, closed in automode): X3e's A6 (Alt+Up and Alt+Down move an open editor within its pane): no ruling names it, and the step line, Z263 and Z284 name four lists reordered by drag (roots, bookmarks, notes, sections), with no drop for A6 to follow (X3e brief check finding 8).; `choices.md`.
+- Z452 (2026-10-05, closed in automode): X3e shares `Sections.svelte`, `Files.svelte` and the Files view's state with D42 in flight, both restructuring them (A5 adds `sections` to `FilesView` where D42 adds the Timeline's state) (X3e brief check finding 15).; `choices.md`.
+- Z443 (2026-10-05, closed in automode): G13 (approved by Axel) says a wrong config value is refused with a finding naming the key and its default is used; the setting readers of `data/sources/config/settings.ts` (`blockOf`, `settingOf`, :65-81) throw instead, so a wrong value in `behavior.yml` stops the server at start (`server/root/context.ts:273-285`) and, on a change while it runs, is only logged and the old settings kept (`server/root/live-settings.ts:152-170`), with no finding in the page.; `choices.md`.
+- Z462 (2026-10-05, closed in automode): Q119's brief shares `config/catalogs/options.yml` with S5, which rewrites the entries whose descriptions Q119 edits, and HELP.md; `choices.md`.
+- Z463 (2026-10-05, closed in automode): Q119's brief decision 10; `choices.md`.
+- Z464 (2026-10-05, closed in automode): Q119's brief premise 2; `choices.md`.
+- Z469 (2026-10-05, closed in automode): X3e's brief-check closing, open item 1; `choices.md`.
+- Z470 (2026-10-05, closed in automode): X3e's brief-check closing, open item 2; `choices.md`.
+- Z471 (2026-10-05, closed in automode): X3e's brief-check closing, open item 3; `choices.md`.
+- Z468 (2026-10-05, Axel): no step is ever added; Q118, Q119, Q121 and Q122 folded into S5 and D33.
+- Z458 (2026-10-05, closed in automode): Q118's brief O1; `choices.md`.
+- Z459 (2026-10-05, closed in automode): Q118's brief O2; `choices.md`.
+- Z460 (2026-10-05, closed in automode): Q118's brief Decision 4 leaves the doc line of `ToolButton.svelte; `choices.md`.
+- Z461 (2026-10-05, closed in automode): Q118's brief records that a held card cursor may be lost on a reload, since the shell reconciles before a view's channel sends its first rows, for every view that reads the cursor, while the cursor is kept in the instance state the layout restores.; `choices.md`.
+- Z454 (2026-10-05, closed in automode): D11's brief check case 31; `choices.md`.
+- Z455 (2026-10-05, closed in automode): D11's brief check N7 and N8; `choices.md`.
+- Z456 (2026-10-05, closed in automode): D11's brief check, declined to judge; `choices.md`.
+- Z457 (2026-10-05, closed in automode): D11's brief check P6; `choices.md`.
+- Z453 (2026-10-05, closed in automode): X3f's look found the keyboard not in the kept tab's editor after a double click; `choices.md`.
 - Z442 (2026-10-05, closed in automode): The write-token sentence of `server/core/auth.ts:97` is answered by every route, so capitalising it changes routes outside git.; `choices.md`.
 - Z441 (2026-10-05, closed in automode): Five defects X3e holds out because no read-only look found their cause: D27-3, the hub Graph's 10 s first read, X3a-1's 5 s Delete, Q88c-19's server half, Q88c-22.; `choices.md`.
 - Z440 (2026-10-05, closed in automode): The `repository_scan_depth` reader: G13 says a wrong value is refused with a finding and its default used, while the setting readers of `settings.ts` throw naming the key.; `choices.md`.
