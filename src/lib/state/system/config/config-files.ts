@@ -10,7 +10,7 @@ const CONFIG_SUFFIX = '.yml';
 /**
  * The machine's own file inside the config folder. It is the client's half of the name
  * data/sources/config.ts leaves out of the merge, since nothing client-side may import a server
- * module; tests/state/system/config-files.test.ts holds the two to one another.
+ * module.
  */
 export const LOCAL_NAME = 'local.yml';
 

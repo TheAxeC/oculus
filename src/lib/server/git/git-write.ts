@@ -1,10 +1,7 @@
 // Layer 2, server. The writing half of git, kept apart from server/core/git/ on purpose.
 //
-// DESIGN.md, "Git": the read-only module runs only its enumerated read-only commands and a test
-// asserts that its source names no writing subcommand at all. Every write therefore lives here, and
-// this module's own gate is the opposite one: tests/server/git/git-write.test.ts enumerates the
-// subcommands it may run, asserts each appears at exactly one call site, and watches every argument
-// vector the suite ran.
+// DESIGN.md, "Git": the read-only module runs only its enumerated read-only commands. Every write
+// therefore lives here.
 //
 //     git -C <root> add [-u] -- <paths | .>
 //     git -C <root> apply --cached [--reverse] --recount -    (the patch on standard input)
@@ -303,9 +300,7 @@ async function pushedAlready(root: string): Promise<boolean> {
 /**
  * Push the current branch to its upstream. A branch with no upstream is refused with that as the
  * reason, before anything is sent: `--set-upstream` decides where a branch lives, and that decision
- * is Axel's at a terminal rather than a side effect of a button. This push never forces: the gate
- * in tests/server/git/git-write.test.ts asserts that the force option of git appears nowhere in
- * this file.
+ * is Axel's at a terminal rather than a side effect of a button. This push never forces.
  */
 export async function push(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
     if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');

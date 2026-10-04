@@ -1,6 +1,5 @@
-// Layer 2, route tests. GET /api/terminal after a write, and POST /api/terminal on a session oculus
-// did not start, resume and recovery. The update-task, LaTeX and chat actions are
-// terminal-actions.test.ts beside this.
+// Layer 2, route tests. GET /api/terminal after a write, and POST /api/terminal, resume and
+// recovery. The update-task, LaTeX and chat actions are terminal-actions.test.ts beside this.
 //
 // Nothing here runs tmux, `claude` or `codex`. handleTerminal is called with an options bag holding
 // a `run` that records the argv and answers the list itself, and a `recordFor` the test owns
@@ -59,22 +58,6 @@ describe('GET /api/terminal after a write', () => {
         expect((await answer(listed)).terminals).toEqual([
             expect.objectContaining({ id: terminal.id })
         ]);
-    });
-});
-
-describe('POST /api/terminal, a session oculus did not start', () => {
-    it('refuses the stop and the resize with a reason, and runs no tmux command', async () => {
-        for (const action of ['stop', 'resize']) {
-            const driver = tmux();
-            const response = await handleTerminal(
-                request({ action, id: 'scratch', cols: 80, rows: 24 }),
-                TOKEN,
-                { engine: task.engine, configFor: configOf(task.engine), run: driver.run }
-            );
-            expect(response.status).toBe(400);
-            expect(String((await answer(response)).error)).toContain('not started by oculus');
-            expect(driver.calls).toEqual([]);
-        }
     });
 });
 

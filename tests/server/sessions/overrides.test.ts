@@ -4,10 +4,10 @@
 // directory and asserts the path is inside it before the write, so the user's own pins are never in
 // reach of this suite.
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { basename, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { setOverride } from '../../../src/lib/server/sessions/overrides.ts';
+import { setHidden, setOverride } from '../../../src/lib/server/sessions/overrides.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const ID = 'sess-1';
@@ -50,5 +50,38 @@ describe('setOverride', () => {
             },
             top: 'kept'
         });
+    });
+
+    it('writes a missing file and refuses one it cannot read, leaving it as it was', () => {
+        const missing = file();
+        expect(setOverride(ID, { area: AREA }, missing).changed).toEqual(['area']);
+        expect(held(missing)).toEqual({ sessions: { [ID]: { area: AREA } } });
+
+        const cases: [string | null, string][] = [
+            ['{"sessions": ', 'is not JSON'],
+            ['["a", "list"]', 'is not the shape'],
+            [null, 'cannot be read']
+        ];
+        for (const [body, reason] of cases) {
+            const path = file();
+            if (body === null) mkdirSync(path);
+            else writeFileSync(path, body);
+            const said = `${basename(path)} ${reason}: ${path}`;
+
+            const pinned = setOverride(ID, { area: AREA, title: 'name' }, path);
+            expect(pinned.changed).toEqual([]);
+            expect(pinned.records).toEqual([]);
+            expect(pinned.refused).toEqual([
+                { field: 'area', reason: said },
+                { field: 'title', reason: said }
+            ]);
+
+            const archived = setHidden(ID, true, path);
+            expect(archived.changed).toEqual([]);
+            expect(archived.refused).toEqual([{ field: 'hidden', reason: said }]);
+
+            if (body === null) expect(statSync(path).isDirectory()).toBe(true);
+            else expect(readFileSync(path, 'utf8')).toBe(body);
+        }
     });
 });

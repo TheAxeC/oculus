@@ -28,19 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:
-  - step: T2e
-    executor: agent
-    worker: claude-sonnet-5-5 (ordo-high)
-    session_id: a494e4a2e6a15444c
-    worktree: .agents/worktrees/T2e
-    base: bdbe1b53f
-    launched: 2026-10-04
-    report: tools/oculus/.scratch/migration/agents/reviews/T2e-report.md
-    brief_check: none (Z416)
-    review: none (Z416)
-    landing: not-started
-    round: 0
+dispatch: []   # none in flight
 ```
 
 ## The standing demands (from Axel, in force)
@@ -194,7 +182,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-04 16:15. T2a to T2d landed (Z414); `tests/` holds 113 test files and 18,887 lines (192,814 before). Every entry of `agents/guarded.md` names a test. Next: T2e (booked, ruling Z409, Z414): one test per unit where two sweeps kept one, and the comments and `DESIGN.md` sentences naming deleted tests; then Q117 (its tests under Z415), T1a.
+- 2026-10-04 17:20. T2e landed, with Q117's record-file refusals (Z416); `tests/` holds 108 test files, 18,252 lines and 432 `it`/`test` calls. Every entry of `agents/guarded.md` names a test, each one existing. Next: T1a (the test tiers), then the queue in `queue.md` order; the rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
   Open for Axel: none.
 - 2026-10-04 16:00. T2c, T2a and T2b landed (Z414). Next: land T2d; name its kept tests under their entries in `agents/guarded.md`, keep one test per unit where two sweeps kept one, remove the entries with no test (Z403), fix the comments naming deleted tests. Then Q117 (its tests under Z415), T1a.
   Open for Axel: none.

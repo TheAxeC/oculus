@@ -5,10 +5,7 @@
 // Covered: the hub tier's reading and each field of the manifest read into a SideProject with its
 // finding.
 // Not covered: which roots of the file browser are handed to the reader (the hub under another
-// key, a second key or a link to one directory, the engine's config folder, `~`), which is
-// personalRoots in tests/server/root/watch/portfolio/personal-roots.test.ts, the watcher
-// (tests/server/root/watch/portfolio/) and the card on screen
-// (tests/views/boards/personal.test.ts).
+// key, a second key or a link to one directory, the engine's config folder, `~`).
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';

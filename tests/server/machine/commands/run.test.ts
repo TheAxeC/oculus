@@ -2,9 +2,6 @@
 // chain runs in, and the Rerun and Restart of the task terminal it left. handleTerminal is called
 // with a tmux double that keeps every argument vector and runs nothing, a scratch repository, and a
 // scratch home.
-//
-// What this does NOT cover: the page asking the reader
-// (tests/state/sessions/terminal/commands.test.ts).
 
 import { afterEach, beforeEach, describe, expect } from 'vitest';
 import { it, test } from '../../../fixtures/scratch.ts';

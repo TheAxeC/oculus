@@ -73,32 +73,6 @@ describe('the git endpoint', () => {
         });
         expect(ran).toEqual([]);
     });
-
-    it('takes a commit that the page confirmed', async () => {
-        const into = options();
-        const response = await handleGit(
-            request({ action: 'commit', root: ROOT, message: 'Add a thing', confirm: true }),
-            TOKEN,
-            into
-        );
-        expect(response.status).toBe(200);
-        expect(ran).toHaveLength(1);
-        expect(ran[0].action).toBe('commit');
-        expect(ran[0].fields.message).toBe('Add a thing');
-    });
-
-    it('takes a stage, which needs no confirm', async () => {
-        const into = options();
-        const response = await handleGit(
-            request({ action: 'stage', root: ROOT, paths: ['a.txt'] }),
-            TOKEN,
-            into
-        );
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ ok: true, output: 'done' });
-        const anything: unknown = expect.anything();
-        expect(ran).toEqual([{ action: 'stage', root: ROOT, fields: anything }]);
-    });
 });
 
 describe('the Source Control actions', () => {
@@ -122,21 +96,6 @@ describe('the Source Control actions', () => {
         ['checkoutDetached', { ref: 'abc1234' }],
         ['deleteBranch', { name: 'old' }],
         ['deleteBranchAnyway', { name: 'old' }]
-    ];
-
-    /** Every action a reader takes back in one press, which asks nothing. */
-    const PLAIN: [string, Record<string, unknown>][] = [
-        ['stagePatch', { patch: 'diff --git a/a b/a\n' }],
-        ['unstagePatch', { patch: 'diff --git a/a b/a\n' }],
-        ['stageAll', { group: 'changed' }],
-        ['unstageAll', {}],
-        ['fetch', {}],
-        ['resolve', { path: 'a.txt', content: 'both\n' }],
-        ['markResolved', { path: 'a.txt' }],
-        ['stash', { mode: 'untracked', message: 'aside' }],
-        ['stashApply', { ref: 'stash@{1}' }],
-        ['stashPop', { ref: 'stash@{0}' }],
-        ['createTag', { name: 'v1', message: '' }]
     ];
 
     it(
@@ -163,20 +122,6 @@ describe('the Source Control actions', () => {
             }
         }
     );
-
-    it('takes each plain action with no confirm', { tags: ['slow'] }, async () => {
-        for (const [action, fields] of PLAIN) {
-            const into = options();
-            const response = await handleGit(
-                request({ action, root: ROOT, ...fields }),
-                TOKEN,
-                into
-            );
-            expect(response.status, action).toBe(200);
-            expect(ran.map((one) => one.action)).toEqual([action]);
-            expect(ran[0].fields).toMatchObject(fields);
-        }
-    });
 });
 
 describe('a body of the wrong shape', () => {

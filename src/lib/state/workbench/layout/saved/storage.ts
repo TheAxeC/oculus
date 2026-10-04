@@ -27,6 +27,13 @@ export const LAYOUT_KEY = 'oculus.layout.v1';
  */
 export const PREVIOUS_KEY = 'oculus.layout.previous';
 
+/**
+ * The key a value under LAYOUT_KEY that parseLayout cannot read is copied under when the default
+ * arrangement is about to be written over it, so what the reader had saved can be recovered by
+ * hand. A later unreadable value replaces the copy.
+ */
+export const UNREAD_KEY = 'oculus.layout.unread';
+
 /** What the store needs of a Storage, so a test can hand it a plain object. */
 export type Storable = Pick<Storage, 'getItem' | 'setItem'>;
 

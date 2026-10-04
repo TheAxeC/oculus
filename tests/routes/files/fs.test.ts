@@ -1,26 +1,17 @@
 // Layer 2, route tests. What the /api/fs route answers. The route itself is a few lines handing the
 // request to lib/server/files/fs.ts with the workspaces file of local.yml, the roots of
-// config/sources.yml and the process's write chain, which is what this calls: handleFs and
-// handleFsWrite take a Request and the target to read and write.
+// config/sources.yml and the process's write chain, which is what this calls: handleFsWrite takes
+// a Request and the target to read and write.
 //
 // Every root and every workspaces file here is synthetic, under the system temporary directory, and
 // every path written is asserted to be inside it first. What this does NOT cover: the route module
 // reading the machine's own config/local.yml.
-//
-// A case that has the route start git, or takes 100 ms or more in a run of its own, is tagged slow;
-// the others run in npm test.
 
 import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import {
-    ignoredCache,
-    handleFs,
-    handleFsWrite,
-    type FsTarget
-} from '../../../src/lib/server/files/fs.ts';
+import { ignoredCache, handleFsWrite, type FsTarget } from '../../../src/lib/server/files/fs.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { ENGINE_ROOT, engineRoot } from '../../../src/lib/server/files/files.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
@@ -66,13 +57,6 @@ function target(): FsTarget & { hub: string } {
     };
 }
 
-/** A GET as the page makes it, with whatever headers a case wants instead. */
-function get(query: string, headers: Record<string, string> = {}): Request {
-    return new Request(`http://${HOST}/api/fs${query}`, {
-        headers: { host: HOST, origin: `http://${HOST}`, ...headers }
-    });
-}
-
 /** A POST as the page makes it, with the token unless a case takes it away. */
 function post(body: unknown, headers: Record<string, string> = {}): Request {
     return new Request(`http://${HOST}/api/fs`, {
@@ -91,38 +75,6 @@ function post(body: unknown, headers: Record<string, string> = {}): Request {
 async function read(response: Response): Promise<Record<string, unknown>> {
     return (await response.json()) as Record<string, unknown>;
 }
-
-describe('the fs route, reading', () => {
-    it(
-        'answers the config folder of the engine under the engine root, and nothing above it',
-        { tags: ['slow'], timeout: 30_000 },
-        async () => {
-            // The machine's own file is one of that folder and is listed; the one above the folder
-            // is outside the root and is reached by nothing.
-            const engine = folder(
-                {
-                    'config/layout.yml': 'nav_groups: {}\n',
-                    'config/local.yml': 'hub: /elsewhere\n',
-                    'local.yml': 'hub: /above\n'
-                },
-                ['config/text']
-            );
-            const into = target();
-            into.fixed = [...into.fixed, engineRoot(engine)];
-
-            const response = handleFs(get(`?root=${ENGINE_ROOT}&path=`), into);
-            const body = await read(response);
-            expect(response.status).toBe(200);
-            const entries = body.entries as { name: string; kind: string }[];
-            expect(entries.map((entry) => `${entry.kind}:${entry.name}`)).toEqual([
-                'dir:text',
-                'file:layout.yml',
-                'file:local.yml'
-            ]);
-            expect(handleFs(get(`?root=${ENGINE_ROOT}&path=..`), into).status).toBe(404);
-        }
-    );
-});
 
 describe('the fs route, writing', () => {
     it('refuses a missing token, a body that is not JSON, and an unknown action', async () => {

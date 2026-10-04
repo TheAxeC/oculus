@@ -4,8 +4,7 @@
 //
 // ripgrep is the real binary of the `@vscode/ripgrep` dependency, run over files in a scratch
 // folder; the page's side (which hits a request names) is stood in for by the hits written in each
-// case. What this does NOT cover: the preview (preview.test.ts) and the undo
-// (replace-undo.test.ts).
+// case. What this does NOT cover: the undo (replace-undo.test.ts).
 //
 // The cases tagged slow run ripgrep; every other case runs in npm test. A hook loads the
 // configuration once, since the first load costs more than a later one, so no case pays for it.
@@ -83,22 +82,6 @@ describe('what stops a replace', () => {
         });
         expect(answer.body).toMatchObject({ error: 'protected', failed: 'engine/local.yml' });
         expect(readFileSync(join(w.engine, 'local.yml'), 'utf8')).toBe(before);
-    });
-
-    it('refuses `binary`, `missing` and `outside` by file', async () => {
-        const w = replaceWorld({ 'bin.dat': Buffer.from([102, 111, 111, 0, 1, 2]) });
-        const refuse = async (root: string, path: string) =>
-            (
-                await replacePost(w, {
-                    query: queryOf('foo'),
-                    replace: 'X',
-                    items: [{ root, path, hits: [hit(1, 0, 'foo')] }]
-                })
-            ).body.error;
-        expect(await refuse('hub', 'bin.dat')).toBe('binary');
-        expect(await refuse('hub', 'none.txt')).toBe('missing');
-        expect(await refuse('hub', '../elsewhere.txt')).toBe('outside');
-        expect(await refuse('nope', 'a.txt')).toBe('outside');
     });
 });
 

@@ -106,7 +106,7 @@ export {
     serialiseLayout
 } from './saved/saved.ts';
 export type { LayoutAccess } from './access.ts';
-export { LAYOUT_KEY, PREVIOUS_KEY, createStorage } from './saved/storage.ts';
+export { LAYOUT_KEY, PREVIOUS_KEY, UNREAD_KEY, createStorage } from './saved/storage.ts';
 export type { LayoutStorage, Storable } from './saved/storage.ts';
 export { createAttention } from './open/attention.ts';
 export type { Attention, Beside, Touched } from './open/attention.ts';

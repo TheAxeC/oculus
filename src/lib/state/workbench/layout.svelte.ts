@@ -78,6 +78,7 @@ import {
     type Storable,
     type Touched,
     type ViewId,
+    UNREAD_KEY,
     type Workbench
 } from './layout/index.ts';
 import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
@@ -378,11 +379,13 @@ export function createLayout(ui: UiStore): LayoutStore {
 
     /**
      * Read the saved arrangement and make it current, falling back to the default when there is
-     * none or the saved value fails parseLayout. Returns whether a saved arrangement was restored,
-     * which is how a page knows whether it is looking at the default. The default argument is
-     * evaluated at the call and not at the import, so a test that never calls this touches no
-     * localStorage. A source of the browser's `storage` events (the window) makes this tab follow
-     * the arrangement the other browser tabs of the server save; without one it follows none.
+     * none or the saved value fails parseLayout; a value that fails is first copied under
+     * UNREAD_KEY, since the next change writes the default over it. Returns whether a saved
+     * arrangement was restored, which is how a page knows whether it is looking at the default. The
+     * default argument is evaluated at the call and not at the import, so a test that never calls
+     * this touches no localStorage. A source of the browser's `storage` events (the window) makes
+     * this tab follow the arrangement the other browser tabs of the server save; without one it
+     * follows none.
      */
     function loadLayout(held: Storable = localStorage, source?: EventTarget): boolean {
         storage.attach(held);
@@ -391,6 +394,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         const first = t('ui.page_default', 1);
         const raw = storage.read(LAYOUT_KEY);
         const parsed = raw === null ? null : parseLayout(raw, first);
+        if (raw !== null && raw !== '' && parsed === null) storage.remember(UNREAD_KEY, raw);
         const previous = parseWorkbench(storage.read(PREVIOUS_KEY));
         attention.clear();
         // A browser that ran before pages holds one workbench, and holds the user's own arrangement

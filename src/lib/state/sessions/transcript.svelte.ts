@@ -221,9 +221,7 @@ export function createTranscripts(queries: Queries): TranscriptsStore {
     }
 
     /**
-     * Put turns in as though they had been fetched. The one caller is
-     * tests/views/sessions/sessions.test.ts, which renders on the server where no fetch runs;
-     * nothing in the application calls it.
+     * Put turns in as though they had been fetched. Nothing in the application calls it.
      */
     function hold(id: string, turns: Turn[], offset = 0): void {
         const held: TurnsState = { turns, offset, pending: false, error: '' };

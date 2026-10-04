@@ -62,9 +62,8 @@ const ACCENT_SHARE = 0.2;
  * How much of a hue a lane header's surface carries, the rest being the panel. At half, with every
  * Focus cluster open and every band column drawn, the headers drawn next to each other, stacked in
  * a column and beside the full-width Ideas lane stay a CIEDE2000 of 10 apart under every theme in
- * the colours config/catalogs/vocab.yml gives them, which tests/checks/look/lane-distance.test.ts
- * holds. A smaller share folds those neighbours into one colour in a theme that gives two hues near
- * values.
+ * the colours config/catalogs/vocab.yml gives them. A smaller share folds those neighbours into one
+ * colour in a theme that gives two hues near values.
  */
 const LANE_SHARE = 0.5;
 

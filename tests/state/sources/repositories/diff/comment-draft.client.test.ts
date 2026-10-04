@@ -3,9 +3,8 @@
 // registers effects: where the box is and what it keeps when it closes. Every dependency of a send
 // is a fake, so no terminal or clipboard is reached.
 //
-// It does not cover the markup that draws the box
-// (tests/views/sources/repositories/diff/diff-pane.test.ts) or the box inside Monaco's overlay,
-// which the look does.
+// It does not cover the markup that draws the box or the box inside Monaco's overlay, which the
+// look does.
 
 import { flushSync } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

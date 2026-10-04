@@ -13,12 +13,12 @@
 // replaced.
 
 import { createHash } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
+import { chmodSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join, relative } from 'node:path';
 import { z } from 'zod';
 import type { ChainLine } from '../../../data/model/index.ts';
-import { writeTextAtomic } from '../../core/json.ts';
+import { readJsonChecked, writeTextAtomic } from '../../core/json.ts';
 
 /** The mode of the file: the texts it holds name commands of this machine's repositories. */
 const FILE_MODE = 0o600;
@@ -71,21 +71,15 @@ type Loaded = { ok: true; approvals: Approvals } | { ok: false; error: string };
 
 /** The file as it stands: empty when it is not there, and the reason when it does not read. */
 function load(file: string): Loaded {
-    if (!existsSync(file)) return { ok: true, approvals: { version: 1, approved: {} } };
-    let parsed: unknown;
-    try {
-        parsed = JSON.parse(readFileSync(file, 'utf8'));
-    } catch (error) {
-        const why = error instanceof SyntaxError ? 'is not JSON' : 'cannot be read';
-        return { ok: false, error: `${basename(file)} ${why}: ${file}` };
-    }
-    const read = approvalsShape.safeParse(parsed);
-    if (!read.success) {
+    const read = readJsonChecked(file);
+    if (!read.ok) return { ok: false, error: `${basename(file)} ${read.reason}: ${file}` };
+    if (read.value === undefined) return { ok: true, approvals: { version: 1, approved: {} } };
+    if (!approvalsShape.safeParse(read.value).success) {
         return { ok: false, error: `${basename(file)} is not the approvals shape: ${file}` };
     }
     // The schema accepts or refuses; the parsed value is what the file holds, so an entry's
     // fields the schema does not name are kept.
-    return { ok: true, approvals: parsed as Approvals };
+    return { ok: true, approvals: read.value as Approvals };
 }
 
 /** The approvals the file holds, or none for a file that is not there or does not read. */

@@ -6,11 +6,10 @@
 // of it would let the view and the write disagree about what a key is. What is here is the typed
 // Deck the config map reads into, and the words and the hue each placed entry is drawn with.
 //
-// Nothing here reads a store or a file: the caller hands in the config map and the projects, which
-// is what makes every case of tests/state/life/present.test.ts a plain call. The one thing it
-// reaches for is the tone catalog, because a colour the deck writes as a hex is painted as the
-// palette hue that hex stands for, which is what keeps every pair on a slide inside the set
-// contrast.test.ts measures.
+// Nothing here reads a store or a file: the caller hands in the config map and the projects. The
+// one thing it reaches for is the tone catalog, because a colour the deck writes as a hex is
+// painted as the palette hue that hex stands for, which is what keeps every pair on a slide inside
+// the set contrast.test.ts measures.
 
 import { decodeHTML } from 'entities';
 import { z } from 'zod';

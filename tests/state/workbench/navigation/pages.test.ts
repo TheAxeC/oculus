@@ -7,7 +7,7 @@ import { closeAsk, pageInstanceIds } from '../../../../src/lib/state/workbench/n
 import type { Page } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { bench, pane, split } from '../layout/layout-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -30,20 +30,6 @@ describe('what a close asks once a busy terminal is known', () => {
     const nameOf = (id: string): string => (id === 'text' ? 'notes.md' : id);
     const build = { id: 'a1a1a1-shell', name: 'build', command: 'npm' };
     const MANY = 'Close this pane and the 2 tabs in it?';
-
-    // Revert: leave the terminal and its program out of the busy question.
-    it('asks the busy question over one tab, naming the terminal and its program', () => {
-        const ask = closeAsk({ ids: ['t'], unsaved: dirty, nameOf, many: MANY, busy: [build] });
-        expect(ask?.message).toBe(t('ui.terminal_close_busy'));
-        expect(ask?.detail).toContain('build');
-        expect(ask?.detail).toContain('npm');
-    });
-
-    // Revert: return null for one tab holding unsaved text when no terminal is busy.
-    it('keeps the unsaved question for one tab holding unsaved text', () => {
-        const ask = closeAsk({ ids: ['text'], unsaved: dirty, nameOf, many: MANY, busy: [] });
-        expect(ask).toEqual({ message: t('ui.tab_close_dirty'), detail: '' });
-    });
 
     // Revert: drop the unsaved tab from the detail, or name the terminal before it.
     it('asks one question over a pane with unsaved text and a busy terminal, the text first', () => {

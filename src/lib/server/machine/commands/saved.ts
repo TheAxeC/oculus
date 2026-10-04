@@ -7,11 +7,11 @@
 // one finding when listed and is never written over: a save or a remove over it is refused with
 // the reason, so what the reader put there is not replaced.
 
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { writeTextAtomic } from '../../core/json.ts';
+import { readJsonChecked, writeTextAtomic } from '../../core/json.ts';
 import { collect, fileFinding, type Entry, type Reading, type Taken } from './files.ts';
 
 /** The mode of the file: it names the folders of this machine. */
@@ -30,20 +30,13 @@ type Loaded = { ok: true; saved: Saved } | { ok: false; reason: string };
 
 /** The file as it stands: empty when it is not there, and the reason when it does not read. */
 function load(file: string): Loaded {
-    if (!existsSync(file)) return { ok: true, saved: {} };
-    let parsed: unknown;
-    try {
-        parsed = JSON.parse(readFileSync(file, 'utf8'));
-    } catch (error) {
-        return {
-            ok: false,
-            reason: error instanceof SyntaxError ? 'is not JSON' : 'cannot be read'
-        };
-    }
-    if (!savedShape.safeParse(parsed).success) {
+    const read = readJsonChecked(file);
+    if (!read.ok) return read;
+    if (read.value === undefined) return { ok: true, saved: {} };
+    if (!savedShape.safeParse(read.value).success) {
         return { ok: false, reason: 'is not a map of repositories to lists' };
     }
-    return { ok: true, saved: parsed as Saved };
+    return { ok: true, saved: read.value as Saved };
 }
 
 /** The commands saved for a repository, with a finding when the file does not read. */

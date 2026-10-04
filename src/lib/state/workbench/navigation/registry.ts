@@ -9,9 +9,7 @@
 // A registration's label, glyph and badge mark words are catalog keys rather than words: the label
 // reads through t() at the call site that draws it, the glyph key's value is a name in
 // config/catalogs/glyphs.yml, and the mark words are what a badge that is a mark says on hover. A
-// view is therefore renamed or re-iconed in config, and
-// tests/state/workbench/navigation/registry.test.ts checks that the keys resolve, which is the gate
-// tests/checks/source/keys.test.ts cannot give a key that comes from data.
+// view is therefore renamed or re-iconed in config.
 
 import type { Component } from 'svelte';
 import type { Instance, ViewId } from '../layout/index.ts';
@@ -98,8 +96,7 @@ export type Registration = {
     /**
      * A text-catalog key whose value says in words what the badge's mark means, which is the
      * badge's hover words when it is a mark and no count. A registration with `badgeGlyph` names
-     * one; a mark drawn without it is hovered by the view's name alone, and
-     * tests/state/workbench/rail-badges.test.ts fails on a registration that lacks it.
+     * one; a mark drawn without it is hovered by the view's name alone.
      */
     badgeMark?: string;
     /** A hue name from state/shared/words/tones.ts; absent keeps the accent badge. */

@@ -35,6 +35,30 @@ export function readJson(path: string): unknown {
 }
 
 /**
+ * What a read made for a write found: the parsed value, which is `undefined` for a file that is not
+ * there, or the reason the file that is there does not read.
+ */
+export type JsonRead = { ok: true; value: unknown } | { ok: false; reason: string };
+
+/**
+ * Read one JSON file for a write that must not replace what it cannot read. A file that is not
+ * there is `{ ok: true, value: undefined }`; one that is not JSON is `is not JSON`, and one that is
+ * there and cannot be read is `cannot be read`. A caller refuses its write on `ok: false`, so the
+ * bytes the reader put there are left as they are.
+ */
+export function readJsonChecked(path: string): JsonRead {
+    if (!existsSync(path)) return { ok: true, value: undefined };
+    try {
+        return { ok: true, value: JSON.parse(readFileSync(path, 'utf8')) as unknown };
+    } catch (error) {
+        return {
+            ok: false,
+            reason: error instanceof SyntaxError ? 'is not JSON' : 'cannot be read'
+        };
+    }
+}
+
+/**
  * Write one JSON file whole: a temporary file in the same directory, then a rename, which is
  * atomic on the same filesystem. The temporary name is the target's with a hash of the process,
  * the thread and a counter after it, so two writers cannot collide. Throws when the file cannot be

@@ -611,15 +611,15 @@
 <path fill="none" stroke="currentColor" d="M618.13,-743.84C625.99,-740.16 634.08,-735.2 640.03,-728.73 672.76,-693.11 763.8,-369.88 802.45,-313.09"/>
 <polygon fill="currentColor" stroke="currentColor" points="803.85,-314.71 805.95,-308.71 800.56,-312.09 803.85,-314.71"/>
 </g>
-<!-- ? src/lib/server/files/fs.ts:209 -->
+<!-- ? src/lib/server/files/fs.ts:223 -->
 <g id="node27" class="node">
-<title>? src/lib/server/files/fs.ts:209</title>
+<title>? src/lib/server/files/fs.ts:223</title>
 <polygon fill="none" stroke="currentColor" points="941.42,-709.53 728.36,-709.53 728.36,-687.93 941.42,-687.93 941.42,-709.53"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="834.89" y="-695.73" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/files/fs.ts:209 rootShape.safeParse(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="834.89" y="-695.73" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/files/fs.ts:223 rootShape.safeParse(</text>
 </g>
-<!-- lib/server/files/fs.ts&#45;&gt;? src/lib/server/files/fs.ts:209 -->
+<!-- lib/server/files/fs.ts&#45;&gt;? src/lib/server/files/fs.ts:223 -->
 <g id="edge70" class="edge">
-<title>lib/server/files/fs.ts&#45;&gt;? src/lib/server/files/fs.ts:209</title>
+<title>lib/server/files/fs.ts&#45;&gt;? src/lib/server/files/fs.ts:223</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M618.14,-746.85C655.87,-738.43 726.23,-722.74 776.34,-711.56"/>
 <polygon fill="currentColor" stroke="currentColor" points="776.71,-713.63 782.11,-710.28 775.79,-709.53 776.71,-713.63"/>
 </g>
@@ -666,7 +666,7 @@
 </g>
 <!-- lib/server/sessions/overrides.ts&#45;&gt;lib/server/core/json.ts -->
 <g id="edge79" class="edge">
-<title>lib/server/sessions/overrides.ts&#45;&gt;lib/server/core/json.ts: readJson, writeJsonAtomic</title>
+<title>lib/server/sessions/overrides.ts&#45;&gt;lib/server/core/json.ts: readJson, readJsonChecked, writeJsonAtomic</title>
 <path fill="none" stroke="currentColor" d="M328.78,-211.88C383.23,-239.55 522.19,-309.53 545.11,-314.73 635.64,-335.28 745.96,-316.78 800.32,-304.9"/>
 <polygon fill="currentColor" stroke="currentColor" points="800.73,-306.96 806.13,-303.6 799.82,-302.86 800.73,-306.96"/>
 </g>

@@ -2,8 +2,7 @@
 // Open File (HEAD) and Compare with Workspace: a file as HEAD or the index holds it, the files and
 // the two sides of a file between a ref and a commit, the refs a picker offers, and the base a
 // branch is compared against. state.ts, reads.ts and files.ts hold the state of a workspace and the
-// rest of the reads; every module of this folder reaches git through run.ts's one call site, and
-// tests/server/core/git/compare-gate.test.ts holds this one to its list.
+// rest of the reads; every module of this folder reaches git through run.ts's one call site.
 //
 // DESIGN.md, "Git": exactly these read-only commands run here, besides those run.ts lists.
 //

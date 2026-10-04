@@ -24,10 +24,13 @@
 // and named back to the page, so a saved file can only ever add a root and never redirect one the
 // rest of the application reads. The file is written whole and atomically, as the other two
 // ~/.oculus files are, because it holds work the reader did by hand, and the writes of one process
-// are chained so two requests in flight cannot lose one another's change.
+// are chained so two requests in flight cannot lose one another's change. A file that is there and
+// does not read is never written over: a write is refused with the reason, as the saved commands
+// file refuses one, and the file is left as it was.
 //
 // The fold from a saved file to the roots on screen is pure: workspaceRoots takes the configured
-// roots and the object the file parsed to, and reads nothing. The reading is readSaved's alone.
+// roots and the object the file parsed to, and reads nothing. The reading is readSaved's, for a
+// page, and loadSaved's, for a write.
 //
 // Nothing here holds state between calls: the path of the file, the roots and the write chain all
 // come in from the request's ServerContext, so two servers in one process read two files.
@@ -46,7 +49,13 @@ import { expandHome, HUB_ROOT, resolveRootPath, rootShape, type Root } from './f
 import { readBookmarks } from './fs/bookmarks.ts';
 import { ignoredIn } from '../core/git/files.ts';
 import { deleteNote, listNotes, readNote, saveNote } from './fs/notes.ts';
-import { chained, readJson, writeJsonAtomic, type FsWrites } from '../core/json.ts';
+import {
+    chained,
+    readJson,
+    readJsonChecked,
+    writeJsonAtomic,
+    type FsWrites
+} from '../core/json.ts';
 import { inside, realPath } from '../core/paths.ts';
 
 /**
@@ -190,15 +199,20 @@ const workspaceFileShape = z.object({
     roots: z.array(z.unknown()).catch(() => [])
 });
 
+/** What no workspace is saved reads as. A fresh object each call, since a write adds to it. */
+function emptySaved(): Saved {
+    return { current: DEFAULT_WORKSPACE, workspaces: [], dropped: [] };
+}
+
 /**
- * Every workspace the file holds. Missing, corrupt or the wrong shape all read as nothing saved. A
- * saved root whose key is one of `reserved` is dropped and its key is named in `dropped`, so the
- * page can say what was left out rather than showing a root that silently does nothing.
+ * The workspaces a parsed file holds, or null when it is not the shape of the file. A saved root
+ * whose key is one of `reserved` is dropped and its key is named in `dropped`, so the page can say
+ * what was left out rather than showing a root that silently does nothing.
  */
-export function readSaved(file: string, reserved: string[] = []): Saved {
-    const file_ = savedFileShape.safeParse(readJson(file));
+function foldSaved(raw: unknown, reserved: string[]): Saved | null {
+    const file_ = savedFileShape.safeParse(raw);
     const dropped: string[] = [];
-    if (!file_.success) return { current: DEFAULT_WORKSPACE, workspaces: [], dropped };
+    if (!file_.success) return null;
     const workspaces: SavedWorkspace[] = [];
     for (const item of file_.data.workspaces) {
         const entry = workspaceFileShape.safeParse(item);
@@ -221,6 +235,28 @@ export function readSaved(file: string, reserved: string[] = []): Saved {
     const current = file_.data.current;
     const known = current === DEFAULT_WORKSPACE || workspaces.some((one) => one.name === current);
     return { current: known ? current : DEFAULT_WORKSPACE, workspaces, dropped };
+}
+
+/** Every workspace the file holds. A missing, corrupt or wrong-shaped file reads as none saved. */
+export function readSaved(file: string, reserved: string[] = []): Saved {
+    return foldSaved(readJson(file), reserved) ?? emptySaved();
+}
+
+/**
+ * The workspaces for a write: what readSaved answers, with the reason when the file is there and
+ * does not read, in the sentence the saved commands file refuses a write in. Such a file is never
+ * written over, so what the reader put there is not replaced by one workspace.
+ */
+function loadSaved(
+    file: string,
+    reserved: string[]
+): { ok: true; saved: Saved } | { ok: false; error: string } {
+    const read = readJsonChecked(file);
+    if (!read.ok) return { ok: false, error: `${basename(file)} ${read.reason}: ${file}` };
+    if (read.value === undefined) return { ok: true, saved: emptySaved() };
+    const saved = foldSaved(read.value, reserved);
+    if (saved === null) return { ok: false, error: `${basename(file)} is not the shape: ${file}` };
+    return { ok: true, saved };
 }
 
 /**
@@ -589,7 +625,9 @@ function act(fields: FsFields, into: FsTarget): Response {
     const action = fields.action;
     if (action === 'note-save') return writeNote(fields, into);
     if (action === 'note-delete') return removeNote(fields, into);
-    const saved = readSaved(into.file, reservedKeys(into.fixed));
+    const loaded = loadSaved(into.file, reservedKeys(into.fixed));
+    if (!loaded.ok) return json({ error: loaded.error }, { status: 400, headers: NO_STORE });
+    const saved = loaded.saved;
     if (action === 'add-root') return addRoot(saved, fields, into);
     if (action === 'remove-root') return removeRoot(saved, fields, into);
     if (action === 'save-workspace') return saveWorkspace(saved, fields, into);

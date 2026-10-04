@@ -4,13 +4,11 @@
 //
 // A value is a token, or a token and a two-digit alpha where VS Code's default is translucent; the
 // theme builder (theme.ts) reads the token off the body and appends the alpha. A key VS Code's
-// themes leave unset is named too, since a key left out would still paint Monaco's default
-// wherever one exists: a border or a fill VS Code leaves unset is transparent here, and a text
-// colour it leaves unset takes the ink the text would inherit. A text colour is a token's `-txt`
-// form, which themes/derive.ts nudges until it reads on every surface, as every text of the page
-// is painted. The keys are the installed
-// package's own, read from its `registerColor` calls by tests/ui/controls/editor/kit/theme.test.ts,
-// which turns red on a key this map misses or names in excess.
+// themes leave unset is named too, since a key left out would paint Monaco's default wherever one
+// exists: a border or a fill VS Code leaves unset is transparent here, and a text colour it leaves
+// unset takes the ink the text would inherit. A text colour is a token's `-txt` form, which
+// themes/derive.ts nudges until it reads on every surface, as every text of the page is painted.
+// The keys are the installed package's own.
 
 /** Monaco's colour key to the token it is painted from, with an alpha where one is written. */
 export const COLOURS: Record<string, string> = {

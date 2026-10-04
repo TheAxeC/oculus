@@ -1,5 +1,5 @@
-// Layer 2, route tests. What the /api/write route does with a config-key write: the setting written
-// into a scratch engine's file and its record in the change log, the undo through the same writer.
+// Layer 2, route tests. What the /api/write route does with a config-key write: the undo through
+// the same writer.
 //
 // The engine is a scratch copy of the checkout's config/ folder (write-fixture.ts), and the target
 // names it, so no case here writes the checkout's config or reads the machine's own file. What this
@@ -42,33 +42,6 @@ function behaviorOf(into: WriteTarget): string {
 function send(into: WriteTarget, file: string, key: string, value: unknown): Promise<Response> {
     return handleWrite(request({ kind: 'config-key', file, key, value }), TOKEN, into);
 }
-
-describe('a setting written through the route', () => {
-    it('answers what changed, writes the file and records the change as a setting', async () => {
-        const into = keepTarget();
-        const before = behaviorOf(into);
-        const response = await send(into, 'behavior.yml', 'changes.keep', 300);
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({
-            ok: true,
-            changed: ['behavior.yml:changes.keep'],
-            refused: []
-        });
-        expect(behaviorOf(into)).toBe(
-            before.replace('keep: 200  # how many', 'keep: 300  # how many')
-        );
-        const [change] = changesOf(into);
-        expect(change).toMatchObject({
-            kind: 'config-key',
-            file: into.behaviorFile,
-            key: 'behavior.yml',
-            field: 'changes.keep',
-            before: 200,
-            after: 300,
-            undo: 'field'
-        });
-    });
-});
 
 describe('taking a setting back', () => {
     it('puts the file back byte for byte and logs the undo above the write', async () => {

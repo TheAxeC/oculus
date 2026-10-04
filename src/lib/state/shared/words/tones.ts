@@ -1,8 +1,7 @@
 // Layer 2, client state. The config's colours as tones. A tone is the hue part of a palette token:
 // the config says a status is `#7c5cff`, `palette:` says that hex is the token `c-violet`, and the
 // tone is `violet`, which a component turns into `--c-violet`, `--c-violet-txt` and
-// `--on-c-violet`. Nothing outside this module reads a hex, so no component carries one and the
-// colour gate in tests/ui/theme/colours.test.ts can insist on that.
+// `--on-c-violet`. Nothing outside this module reads a hex, so no component carries one.
 //
 // The maps are installed the way the text catalog and the glyph vocabulary are: the server ships
 // them as the page's data at first load, and every later edit of config/catalogs/vocab.yml arrives

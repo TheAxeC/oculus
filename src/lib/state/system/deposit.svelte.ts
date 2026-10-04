@@ -131,9 +131,7 @@ export function createDeposit(queries: Queries): DepositStore {
     }
 
     /**
-     * Put a state in by hand. The panel does not call it; tests/views/boards/deposit.test.ts does,
-     * because there is no fetch in a server-rendered test and a panel with nothing held renders its
-     * first line and stops.
+     * Put a state in by hand. The panel does not call it.
      */
     function hold(id: string, state: MirrorState | null, error = ''): void {
         const held: Held = { state, error, loading: false };

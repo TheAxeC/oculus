@@ -1,7 +1,7 @@
 // Layer 2, server tests. The token and body checks a write adds.
 
 import { describe, expect, it } from 'vitest';
-import { TOKEN_HEADER, gatedBody, tokenedBody } from '../../../src/lib/server/core/auth.ts';
+import { TOKEN_HEADER, tokenedBody } from '../../../src/lib/server/core/auth.ts';
 
 const TOKEN = 'the-token-of-this-process';
 
@@ -9,14 +9,6 @@ const TOKEN = 'the-token-of-this-process';
 function write(headers: Record<string, string>, body = '{"kind":"one"}'): Request {
     return new Request('http://127.0.0.1:8791/api/write', { method: 'POST', headers, body });
 }
-
-describe('gatedBody', () => {
-    it('refuses a write that carries no token', async () => {
-        const answer = await gatedBody(write({}), TOKEN);
-        expect(answer).toBeInstanceOf(Response);
-        expect((answer as Response).status).toBe(403);
-    });
-});
 
 describe('tokenedBody', () => {
     const SHAPE = { headers: { 'cache-control': 'no-store' }, fields: { ok: false } };

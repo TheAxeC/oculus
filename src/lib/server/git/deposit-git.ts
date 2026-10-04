@@ -13,10 +13,9 @@
 //     gh repo edit <owner/repo> --description ... --homepage ... --add-topic ...
 //     gh repo edit <owner/repo> --default-branch main
 //
-// This module exists rather than growing git-write.ts because git-write.ts's gate
-// (tests/server/git/git-write.test.ts) asserts that the force option appears nowhere in that file,
-// and the snapshot mode of DESIGN.md's step 6 needs it exactly once. Here it appears at one call
-// site, `forcePushSnapshot`, and tests/server/git/deposit.test.ts asserts that count.
+// This module exists rather than growing git-write.ts because the force option appears nowhere in
+// that file, and the snapshot mode of DESIGN.md's step 6 needs it exactly once. Here it appears at
+// one call site, `forcePushSnapshot`.
 //
 // Every operation answers `{ ok, output, error }` and never throws. Nothing here is reachable from
 // a watcher, a timer or the socket: the one caller is server/git/deposit.ts, itself reached only
@@ -69,7 +68,7 @@ export type GhRun = (args: string[], timeout: number) => Promise<Outcome>;
 export type GitRunner = (args: string[], timeout: number) => Promise<Outcome>;
 
 /**
- * Every git subcommand this module may run. tests/server/git/deposit.test.ts asserts no other ran.
+ * Every git subcommand this module may run.
  */
 export const SUBCOMMANDS = [
     'add',
@@ -250,8 +249,7 @@ export function push(at: Where): Promise<Outcome> {
 /**
  * The snapshot of DESIGN.md's step 6, kept as a second button: the orphan commit replaces the
  * remote's `main` outright, so the history that was there is gone. This is the one call in oculus
- * that forces a push, and tests/server/git/deposit.test.ts asserts the option appears once in this
- * file.
+ * that forces a push.
  */
 export function forcePushSnapshot(at: Where): Promise<Outcome> {
     return pushCmd(at, ['--force', 'origin', 'HEAD:main']);

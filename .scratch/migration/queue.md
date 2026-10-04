@@ -1,8 +1,8 @@
 In flight:
-- T2e (the sweeps' leftovers and Q117's record-file refusals, Z416): building, no brief check, no reviewer, no repair round.
+- None.
 
 Queued, in order (33 steps):
-- T1a (the test tiers): once T2e has landed; the queue below resumes after it.
+- T1a (the test tiers): next; the queue below resumes after it.
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - M6 (the collection forms removed): once S5 has landed.
@@ -39,6 +39,7 @@ Queued, in order (33 steps):
 Owed: the look of Q81 (a Confirm over the update tray), waiting until Axel takes it up.
 
 Landed, newest first:
+- T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, f34debc5.
 - T1e (the test sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, b8f89eb1.
 - T1b (the test sweep of tests/state/), 2026-10-04, fa5e42a2.
 - T1c (the test sweep of tests/server/), 2026-10-04, ffb4457a.

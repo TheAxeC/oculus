@@ -7,9 +7,7 @@
 // config/behavior.yml, read through a schema, with a default when the key is missing or malformed.
 // Empty means the CLI's own default model, so nothing is passed.
 //
-// The diff and the subprocess are both options with real defaults, which is what lets
-// tests/server/git/git-write.test.ts exercise this without a `claude` on the machine ever being
-// run.
+// The diff and the subprocess are both options with real defaults.
 
 import { execFile } from 'node:child_process';
 import { z } from 'zod';

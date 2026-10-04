@@ -50,9 +50,7 @@ const catalogShape = unchangedAs<Catalog>(mapShape);
 
 /**
  * The catalog held by the merged config's `options` key, and an empty one when the key is missing
- * or is not a map. The shape inside is not checked here: the check in
- * tests/checks/config/options-catalog.test.ts fails a catalog that does not match the types above,
- * so a reader may rely on them.
+ * or is not a map. The shape inside is not checked here.
  */
 export function catalogOf(config: Record<string, unknown>): Catalog {
     return readOr(catalogShape, config.options, {});

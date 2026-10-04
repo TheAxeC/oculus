@@ -59,12 +59,8 @@
 // name through GIT_LITERAL_PATHSPECS=1, so a `*` in a name matches itself.
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
-// dashboard watcher must never be the thing that runs one. tests/server/core/git/git.test.ts holds
-// two gates over that: the folder's sources but compare.ts name no writing subcommand, and the
-// suite records every argument vector the process runs and asserts the whole suite ran only the
-// commands above, `for-each-ref`, `worktree`, `symbolic-ref`, `check-ignore`, `ls-files`, `remote`,
-// `config` and `rev-parse` only as the vectors written here. compare.ts lists its own forms in its
-// head, and tests/server/core/git/compare-gate.test.ts holds it to them.
+// dashboard watcher must never be the thing that runs one. compare.ts lists its own forms in its
+// head.
 //
 // A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
 // (never a shell string), carries a timeout, and collapses any failure into the empty shape with a

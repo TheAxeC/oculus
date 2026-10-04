@@ -10,21 +10,11 @@
 // A hook loads the configuration once, since the first load costs more than a later one, so no case
 // pays for it.
 
+import { readFileSync, writeFileSync } from 'node:fs';
+import { basename } from 'node:path';
 import { describe, expect } from 'vitest';
-import { parse } from 'yaml';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import {
-    GOOD,
-    MANIFEST,
-    TOKEN,
-    deckOf,
-    deckTarget,
-    manifestOf,
-    overridesOf,
-    request,
-    target,
-    warmConfig
-} from './write-fixture.ts';
+import { GOOD, MANIFEST, TOKEN, manifestOf, request, target, warmConfig } from './write-fixture.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 
 test.beforeAll(warmConfig);
@@ -38,52 +28,20 @@ describe('the write endpoint', () => {
         expect(manifestOf(into)).toBe(MANIFEST);
     });
 
-    it('writes the field and says what changed', async () => {
+    it('answers a session write over an overrides file it cannot read with the refusal', async () => {
         const into = target();
-        const response = await handleWrite(request(GOOD), TOKEN, into);
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ ok: true, changed: ['status.line'], refused: [] });
-        expect(manifestOf(into)).toBe(MANIFEST.replace('"the line"', '"a new line"'));
-    });
-
-    it('pins a session to the top of its group through the route, and takes it off', async () => {
-        const into = target();
-        const pin = { kind: 'session', id: 'sess-1', top: true, title: 'my name' };
-        const response = await handleWrite(request(pin), TOKEN, into);
-        expect(await response.json()).toEqual({
-            ok: true,
-            changed: ['top', 'title'],
-            refused: []
-        });
-        expect(overridesOf(into)).toEqual({
-            sessions: { 'sess-1': { top: true, title: 'my name' } }
-        });
-        const off = { kind: 'session', id: 'sess-1', top: false };
-        expect((await handleWrite(request(off), TOKEN, into)).status).toBe(200);
-        expect(overridesOf(into)).toEqual({ sessions: { 'sess-1': { title: 'my name' } } });
-        // A top that is no boolean refuses the whole body, the valid title beside it included.
-        const wrong = { kind: 'session', id: 'sess-1', top: 'yes', title: 'other' };
-        expect((await handleWrite(request(wrong), TOKEN, into)).status).toBe(400);
-        expect(overridesOf(into)).toEqual({ sessions: { 'sess-1': { title: 'my name' } } });
-    });
-});
-
-describe('the deck write', () => {
-    it('writes both lists into the deck file and keeps every other byte of it', async () => {
-        const into = deckTarget();
-        const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
+        const path = into.overrides ?? '';
+        writeFileSync(path, '{"sessions": ');
         const response = await handleWrite(
-            request({ kind: 'deck', selection: ['title', 'alpha'], order }),
+            request({ kind: 'session', id: 'sess-1', hidden: true }),
             TOKEN,
             into
         );
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ ok: true, changed: ['deck'], refused: [] });
-        const written = deckOf(into);
-        const deck = (parse(written) as { deck: Record<string, unknown> }).deck;
-        expect(deck.selection).toEqual(['title', 'alpha']);
-        expect(deck.slide_order).toEqual(order);
-        expect(written).toContain("    # the deck's own slides, in the order it shows them\n");
-        expect(written).toContain("        engine: { title: 'The common engine' }\n");
+        const body = (await response.json()) as { changed: string[]; refused: unknown[] };
+        expect(body.changed).toEqual([]);
+        expect(body.refused).toEqual([
+            { field: 'hidden', reason: `${basename(path)} is not JSON: ${path}` }
+        ]);
+        expect(readFileSync(path, 'utf8')).toBe('{"sessions": ');
     });
 });

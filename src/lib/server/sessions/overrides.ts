@@ -7,13 +7,16 @@
 // that has ended and nothing else.
 //
 // A write keeps every other key of the file and every other key of the session's own entry, and
-// goes through one atomic replace, because the file holds work the user did by hand.
+// goes through one atomic replace, because the file holds work the user did by hand. A file that is
+// there and is not JSON, or is not a map, is never written over: the write is refused with the
+// reason, as the saved commands file refuses one, and the file is left as it was. The reads below
+// take such a file as holding no override.
 
 import { homedir } from 'node:os';
-import { isAbsolute, join } from 'node:path';
+import { basename, isAbsolute, join } from 'node:path';
 import { plain } from '../core/changes.ts';
 import { z } from 'zod';
-import { isMap, readJson, writeJsonAtomic } from '../core/json.ts';
+import { isMap, readJson, readJsonChecked, writeJsonAtomic } from '../core/json.ts';
 import { mapShape, readAs } from '../../data/shapes/shapes.ts';
 import type { ChangeRecord } from '../core/changes.ts';
 
@@ -80,6 +83,20 @@ export function setHidden(sessionId: unknown, hidden: boolean, path?: string): O
     return setFlag(sessionId, 'hidden', hidden, path);
 }
 
+/** The overrides file as a write finds it: its map, or why a file that is there does not read. */
+type Loaded = { ok: true; data: Record<string, unknown> } | { ok: false; reason: string };
+
+/** The file for a write: empty when it is not there, and the reason when it does not read. */
+function load(file: string): Loaded {
+    const read = readJsonChecked(file);
+    if (!read.ok) return { ok: false, reason: `${basename(file)} ${read.reason}: ${file}` };
+    if (read.value === undefined) return { ok: true, data: {} };
+    if (!isMap(read.value)) {
+        return { ok: false, reason: `${basename(file)} is not the shape: ${file}` };
+    }
+    return { ok: true, data: { ...read.value } };
+}
+
 /** A copy of a record with one key left out, the others in their order. */
 function without(record: Record<string, unknown>, key: string): Record<string, unknown> {
     return Object.fromEntries(Object.entries(record).filter(([name]) => name !== key));
@@ -101,13 +118,16 @@ export function setFlag(
     }
     const ident = sessionId.trim();
     const file = path ?? defaultOverridesPath();
-    const read = readJson(file);
-    const data: Record<string, unknown> = isMap(read) ? { ...read } : {};
+    const loaded = load(file);
+    const data = loaded.ok ? loaded.data : {};
     const sessions: Record<string, unknown> = isMap(data.sessions) ? { ...data.sessions } : {};
     const existing = sessions[ident];
     const entry: Record<string, unknown> = isMap(existing) ? { ...existing } : {};
     const before = entry[flag];
     if (on === (before === true)) return { changed: [], refused: [], records: [] };
+    if (!loaded.ok) {
+        return { changed: [], refused: [{ field: flag, reason: loaded.reason }], records: [] };
+    }
     const next = on ? { ...entry, [flag]: true } : without(entry, flag);
     data.sessions =
         Object.keys(next).length > 0 ? { ...sessions, [ident]: next } : without(sessions, ident);
@@ -147,8 +167,8 @@ export function setOverride(
     }
     const ident = sessionId.trim();
     const file = path ?? defaultOverridesPath();
-    const read = readJson(file);
-    const data: Record<string, unknown> = isMap(read) ? { ...read } : {};
+    const loaded = load(file);
+    const data = loaded.ok ? loaded.data : {};
     const sessions: Record<string, unknown> = isMap(data.sessions) ? { ...data.sessions } : {};
     const existing = sessions[ident];
     const entry: Record<string, unknown> = isMap(existing) ? { ...existing } : {};
@@ -185,6 +205,10 @@ export function setOverride(
     }
 
     if (changed.length === 0) return { changed, refused, records };
+    if (!loaded.ok) {
+        const unwritten = changed.map((field) => ({ field, reason: loaded.reason }));
+        return { changed: [], refused: [...refused, ...unwritten], records: [] };
+    }
     if (Object.keys(entry).length > 0) sessions[ident] = entry;
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     else delete sessions[ident];

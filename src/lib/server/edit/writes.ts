@@ -285,6 +285,7 @@ export async function handleWrite(
                 if (value === undefined) continue;
                 const outcome = setFlag(session.id, flag, value, into.overrides);
                 changed.push(...outcome.changed);
+                refused.push(...outcome.refused);
                 records.push(...outcome.records);
             }
             if (session.area !== undefined || session.title !== undefined) {

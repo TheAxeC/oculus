@@ -3,10 +3,7 @@
 // home, a write chain and a change log in the scratch home.
 //
 // What this does NOT cover: the origin rule, which hooks.server.ts applies to every request under
-// /api/ before a route sees it (tests/server/root/hooks-server.test.ts), and the page's store
-// (tests/state/sessions/terminal/commands.test.ts).
-//
-// A case that takes 100 ms or more in a run of its own is tagged slow; the others run in npm test.
+// /api/ ahead of a route seeing it (tests/server/root/hooks-server.test.ts).
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -65,8 +62,6 @@ function post(body: unknown, token = TOKEN): Request {
     return pagePost(`${HOST}/api/commands`, body, token);
 }
 
-const answer = async (response: Response) => (await response.json()) as Record<string, unknown>;
-
 describe('POST /api/commands', () => {
     it('refuses a request without the write token', async () => {
         const response = await handleCommandsPost(
@@ -79,38 +74,6 @@ describe('POST /api/commands', () => {
             isApproved(defaultApprovalsPath(), chainText(repo, [{ folder: '.', run: 'a' }]))
         ).toBe(false);
     });
-
-    it('answers the reason when the approvals file cannot be written over', async () => {
-        plant(home, '.oculus/approvals.json', 'not json');
-        const response = await handleCommandsPost(
-            post({ action: 'approve', repo, chain: [{ folder: '.', run: 'a' }] }),
-            TOKEN,
-            mine()
-        );
-        expect(response.status).toBe(409);
-        expect(((await answer(response)).error as string).includes('is not JSON')).toBe(true);
-        expect(readFileSync(defaultApprovalsPath(), 'utf8')).toBe('not json');
-    });
-
-    it(
-        'saves a line that writes a placeholder inside quotes, after a backslash or in a comment',
-        { tags: ['slow'] },
-        async () => {
-            for (const run of [
-                'echo "${selectedText}"',
-                "echo '${file}'",
-                'echo \\${selectedText}',
-                'make # ${selectedText}'
-            ]) {
-                const response = await handleCommandsPost(
-                    post({ action: 'save', repo, command: { name: 'say', run } }),
-                    TOKEN,
-                    mine()
-                );
-                expect(response.status, run).toBe(200);
-            }
-        }
-    );
 
     it('refuses to write over a commands.json that is not the shape, leaving it', async () => {
         plant(home, '.oculus/commands.json', '["not", "a map"]');

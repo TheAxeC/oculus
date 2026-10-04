@@ -59,9 +59,7 @@ export type ChangesStore = {
     /** Ask for the page before the oldest row now held. */
     older: () => void;
     /**
-     * Put rows in by hand. The view does not call it; tests/views/system/history.test.ts does,
-     * because there is no fetch in a server-rendered test and a view with nothing held draws its
-     * first line and stops.
+     * Put rows in by hand. The view does not call it.
      */
     hold: (rows: Change[], more?: boolean) => void;
 };

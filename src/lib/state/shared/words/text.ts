@@ -43,9 +43,8 @@ export function setIcons(next: Record<string, string>): void {
 /**
  * The catalog entry for a dotted key, with no interpolation. It exists for the keys that are named
  * by data rather than by a call site: the label and glyph keys a view hands the registry.
- * tests/checks/source/keys.test.ts can only check a literal key, so that family is checked instead
- * by tests/state/workbench/navigation/registry.test.ts, and this throws on a missing key exactly as
- * t() does.
+ * tests/checks/source/keys.test.ts can only check a literal key, and this throws on a missing key
+ * exactly as t() does.
  */
 function catalogEntry(key: string): string {
     configGeneration();
