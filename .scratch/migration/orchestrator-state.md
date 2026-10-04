@@ -38,7 +38,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   landing: not-started
   round: 1 (repair round 1 sent from the refuter's findings, agents/briefs/X3f-round1.md; round 0 was the case-33 ruling, agents/briefs/X3f-cases.md, Z429)
   reviewer_report: agents/reviews/X3f-refuter.md, claude-opus-5-5, 246,295 tokens, 57 tool uses, 11.0 min
-  builder_usage: first run, stopped at case 33: 213,532 tokens, 38 tool uses, 6.8 min; build after the ruling: 344,227 tokens, 87 tool uses, 18.5 min
+  builder_usage: first run, stopped at case 33: 213,532 tokens, 38 tool uses, 6.8 min; build after the ruling: 344,227 tokens, 87 tool uses, 18.5 min; repair round 1: 193,522 tokens, 70 tool uses, 12.1 min, 3 full-list runs
 - step: D37
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -50,6 +50,18 @@ dispatch:   # steps in flight, up to seven (Z423)
   report: agents/reviews/D37-report.md
   pending_round: the Format Document undo fix from `agents/reviews/D37-diagnosis.md` (Cause, Fix, Test), sent with the refuter's findings in repair round 1 (Z427 (a))
   brief_check: agents/reviews/D37-brief-check.md, claude-opus-5-5, 259,613 tokens, 81 tool uses, 10.2 min
+  landing: not-started
+  round: 0
+- step: S5
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a6db7168e2d955eea (builder, launched 2026-10-05)
+  worktree: .agents/worktrees/S5
+  base: 6005baee6
+  launched: 2026-10-05
+  report: agents/reviews/S5-report.md
+  brief_check: agents/reviews/S5-brief-check.md, claude-opus-5-5, 273,684 tokens, 104 tool uses, 12.6 min
   landing: not-started
   round: 0
 ```

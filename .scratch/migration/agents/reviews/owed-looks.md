@@ -11,8 +11,6 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 - Q88c: Lock Group on an empty pane (`owed-looks.md`, Q88c's entry, "Not taken"). TEST has no empty pane; the look makes one and closes it after.
 - Q35: a Customizations row opened from a link, Audit with the arrow keys, the Present `#` link jump in a scaled frame, a narrow pane (`Q35-landing.md:88-92`).
 - Q101: a terminal dragged from one Terminal tab to another (`Q101-landing.md:30`); the tab's list, Split and a terminal's end were seen at the Q102 and L4 looks.
-- Q86: the Map's re-tune (`Q86-landing.md:26`); the drag was seen at Q86c's look and the labels are Q86b's.
-- Q97: the one-pane System arrangement (`Q97-landing.md:15`), seen on a page reset to it, never on a page Axel works on.
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
@@ -22,8 +20,11 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 - Q89: a terminal split outside every place; no terminal on this machine starts outside the composer's places.
 - Q86b: a press on a mover while the last drag still settles; the browser tool's next action comes after the settle.
 - Q67: a live Connect against a real provider; no client half exists on this machine.
+- Q97: the one-pane System arrangement. It no longer exists: S4 (ff048bf35) replaced the `info` page with the `views` page, three panes (`config/layout.yml:98-110`), and the rail's System button now opens it. That page is seen only by a rail press or a reset of Axel's System page, which a look on TEST never does; `tests/data/sources/config/rail.test.ts` holds that every rail page names an arrangement.
 
 ## Taken
+
+- Q86, 2026-10-05, TEST, dark theme: the Map's re-tune. The Map tab on TEST drew 33 ideas, 15 manuscripts and 5 active projects with pillar hubs; a press on the header's `re-tune` control (aria-label read by JS) drew a new placement within 2.5 s, the first three nodes moving from (452,277), (376,400), (758,186) to (555,299), (446,229), (313,609); no error line. `~/.oculus/workspaces.json` 1bf5d57a and `changes.jsonl` 00b23e5d (39 lines) unchanged after it (`shasum`). Defects: none.
 
 - Q79c (taken 2026-10-03 09:41 to 09:58, open item Z315 ruled (a)): the Live HPC jobs table and log. With EduVPN connected the view read live ("live | queue empty | as of 09:41 | every 20m", 25 partitions' capacity bars, the sinfo table of 96 rows). A look job, 609233, then showed in the jobs table as RUNNING with Cancel job and log on hover; the log drew both of its lines; after the end the view drew it under Recent (finished). The table scrolls sideways inside a 422 px pane, so every column is reachable.
 
