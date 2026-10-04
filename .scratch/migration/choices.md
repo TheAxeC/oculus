@@ -997,6 +997,10 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z389 (2026-10-04, T1d's first run): which view tests the audits check reads
+
+The check as Z376 (b) set it flags 393 cases in 47 files that test plain `.ts` modules of `src/lib/views/`, whose own folder is `tests/views/`. Options: (a) the check reads only files that import a `.svelte` component, and a file that imports none tests a view-layer module and stays; (b) a new folder for those tests, about 47 files moved and `tests/` mirroring `src/lib/` no longer; (c) the allow list and "audits" titles kept, the lazy option. Chosen (a): every view test that imports a view must draw it, and nothing moves away from the code it tests.
+
 ## Z388 (2026-10-04, T1b's round review): a bound cleared on success
 
 `arrival.ts` arms a real 1000 ms timer while a test waits for a signal and clears it when the signal comes. Options: (a) a bound with no timer on success, through `onTestFailed` or the test's `signal`, not verified to carry the message; (b) no Decision 1 cause, since the test awaits the signal; (c) the tests tagged slow, the lazy option. Chosen (b).
