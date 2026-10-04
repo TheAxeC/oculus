@@ -4,6 +4,10 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z437 (2026-10-05, closed in automode): S5's new list check would refuse the G9 route test's input `'queued'`, and its new catalog-findings test needs a guarded entry.; `choices.md`.
+- Z434 (2026-10-05, closed in automode): How D42 pages a file's history, since `--skip` under `--follow` counts the whole walk and repeats page one.; `choices.md`.
+- Z435 (2026-10-05, closed in automode): D42's user-visible shapes (menu items, row content, date, section controls, tab label) were taken in the brief without booking.; `choices.md`.
+- Z436 (2026-10-05, closed in automode): H3's brief check found lines the map makes false outside its write list, a third map it did not name, and no later step keeping the map true.; `choices.md`.
 - Z433 (2026-10-05, closed in automode): D44's two checks are guarded tests; `choices.md`.
 - Z430 (2026-10-05, closed in automode): D44's cluster folder, a manifest key `paths.cluster` defaulting to `~/projects/<id>`, six values read from the projects' run scripts; `choices.md`.
 - Z431 (2026-10-05, closed in automode): D44 parses job scripts with `sh-syntax`; `choices.md`.

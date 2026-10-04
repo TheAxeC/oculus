@@ -1,40 +1,41 @@
 In flight:
-- D37 (the Search view's replace and the LaTeX build and view): builder launched 2026-10-05, base ed0e6de58.
-- H3, D42: brief checks running. S5: brief revision running. X3e, D11: in /spec (briefs by agents).
-- X3f (a file tab's actions on every file tab, double click and Open Preview): builder launched 2026-10-04 23:57, base 9c7070289.
+- X3f (a file tab's actions on every file tab, double click and Open Preview): repair round 1 running.
+- D37 (the Search view's replace and the LaTeX build and view): building.
+- S5 (the Settings view's controls and headings): prepared, worktree being made, builder next.
+- H3 (the hub's data map): brief check in, findings being closed.
+- D42 (a file's history): brief check in, findings being closed.
+- X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): brief being written.
+- D11 (the debug client for rite): brief being written.
 
-Queued, in order (31 steps):
+Queued, in order (26 steps):
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
-- H3 (the hub's data map): once a slot is free (seven in flight, Z423).
 - D38 (the Literature search view): once D37 has landed.
-- D42 (a file's history): once a slot is free (seven in flight, Z423).
-- D44 (Submit on a .slurm file): brief drafted; once X3f and D37 have landed (Z432).
+- D44 (Submit on a .slurm file): brief drafted; once X3f and D37 have landed.
 - D41 (links in Markdown checked): once M7 has landed.
-- X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): once a slot is free (seven in flight, Z423).
 - D15 (PDF reading): once D37 has landed.
-- D23 (language servers): once D25 has landed.
+- D23 (language servers): once a slot is free.
 - M8 (the hub's YAML checked and completed in the editor): once D23 and H3 have landed.
 - D43 (LaTeX navigation): once D23 has landed.
-- D20 (an agent from a task or a worktree): once a slot is free (seven in flight, Z423).
-- A3 (scheduled Update runs): once a slot is free (seven in flight, Z423).
-- D28 (saving a file as VS Code does): once D25 has landed.
+- D20 (an agent from a task or a worktree): once a slot is free.
+- A3 (scheduled Update runs): once a slot is free.
+- D28 (saving a file as VS Code does): once a slot is free.
 - D23b (cross-file language features): once D23 has landed.
 - D39 (hub keys as links): once M8 and D23b have landed.
 - D33 (the Problems view): once D23 has landed.
 - D36 (linters on save): once D33 has landed.
 - D40 (the writing rules as editor marks): once D36 has landed.
-- E4 (the apps): once a slot is free (seven in flight, Z423).
-- Q72 (the architecture re-read): paused (Axel, Z425); after every code step.
-- R2 (release readiness): paused (Axel, Z425); after Q72.
-- O29 (retiring the cockpit): paused (Axel, Z425); after R2.
-- O30 (the native window in Electron): once a slot is free (seven in flight, Z423); it does not wait for O29 (Axel, Z425).
+- E4 (the apps): once a slot is free.
+- Q72 (the architecture re-read): paused (Axel); after every code step.
+- R2 (release readiness): paused (Axel); after Q72.
+- O29 (retiring the cockpit): paused (Axel); after R2.
+- O30 (the native window in Electron): once a slot is free; it does not wait for O29.
 - O33 (oculus in its own repository): paused (Axel); once O29 has landed.
 - O34 (remote access): paused (Axel); once O33 has landed.
 - O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.
 - O36 (a second person in the hub): paused (Axel); once O34 has landed.
 
-Owed: the looks of Q81 (a Confirm over the update tray, waiting until Axel takes it up), D17 (the project card's commands bar), Q88c (Lock Group on an empty pane), Q35 (four items), Q101 (a terminal dragged between tabs), Q86 (the Map's re-tune) and Q97 (the one-pane System arrangement), listed in `agents/reviews/owed-looks.md`; taken before T1a's landing commit, except Q81.
+Owed: the looks of Q81 (a Confirm over the update tray, waiting until Axel takes it up), D17 (the project card's commands bar), Q88c (Lock Group on an empty pane), Q35 (four items), Q101 (a terminal dragged between tabs), Q86 (the Map's re-tune) and Q97 (the one-pane System arrangement), listed in `agents/reviews/owed-looks.md`; taken before the next landing, except Q81.
 
 Landed, newest first:
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.

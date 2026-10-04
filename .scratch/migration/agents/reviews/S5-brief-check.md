@@ -25,4 +25,16 @@ ADRs: none. Declined to judge: whether each heading assignment is the right subj
 
 ## Closed
 
-Each finding is closed in the brief by the orchestrator's rulings, applied by a /spec agent; this section lists them when the revised brief is read.
+Each finding is closed in `agents/briefs/S5.md` as revised, read whole by the orchestrator:
+- A, the server writes: What to build 7 (`config-fit.ts`, `config-sources.ts`, `WriteTarget`'s portfolio reader, a sentence per refusal), Decisions 4 to 7, cases 17, 22, 32, 33, 35, 37, 41, 47, 59, 64; the G9 route test's input `'queued'` becomes `'revision'` (Decision 25, ruling Z437).
+- B, the catalog findings: items 2.4 and 2.5 (`optionFindings`, gathered in `context.ts`, `portfolio.ts` and `FINDERS`, worded under `findings.options`); T1 in `options.test.ts`, its title added to G13 in `agents/guarded.md`; T2 in `config.test.ts`, held whole by G12; the false G12 claim removed.
+- C, the eight wrong rows: the table of item 6.4 and Decisions 21 and 23 (`tab_rollup.color` a colour, `cards.n` and `rows.project` text, `scan.tier` the five tiers, `scan.dir` a folder allowed missing while `optional`, `roots.dir` a `path`, `wallpaper.file` text with suggestions, `direct_chord` a to z with empty, `models` the ids carrying `pass`).
+- D, the three rows the vocabulary could not write: `values_by` for `deck.order.ref`, `tab_rollup.keys` a multi of status chips and project types, `slots` for `board.cols_*` (item 2.2, Decisions 3, 14, 15, cases 45 to 47).
+- E, case 20 and the primitives: case 4; Checkbox's three-state mode, NumberInput's `min` and `max`, the caller's not-in-the-list mark, `SuggestInput` on bits-ui Combobox (item 4.4, Decisions 8 to 11, cases 4, 15, 16, 17, 54).
+- F, where new files go: `editors/sources.ts`, `editors/fields.ts`, `editors/FieldControl.svelte`; nothing new in the two folders at 10.
+- Names: the written files in the write list; literal heading reads; `Section.heading` renamed `title`; HELP.md:157, :261 and DESIGN.md:408 rewritten (item 9).
+- Z331 re-check: Decision 2 and the table.
+- Premises: corrected under What is on the tree (78 family fields, `CONTROLS` at :21, the collection test at `config-value.ts:242`, the line ranges, the source table).
+- Headings: item 1, the Section column, Decision 1 (Terminal's five options, no repeated words, Presentation in eight sections, File languages its own section).
+- Two files under one heading: items 1.4 and 1.5, cases 2, 3, 5, 7.
+- The read list, the checks that could pass without the goal (T1, T2, item 6.2's comparison, case 12, case 55, the crafted writes) and every implied input as a case (13, 14, 15, 16, 18 to 22, 25, 29, 30, 36, 40 to 42, 45, 47, 49, 52 to 54, 61 to 63).

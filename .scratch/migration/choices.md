@@ -2,6 +2,42 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z437 (2026-10-05, step S5)
+
+The question: S5's new list check would refuse the G9 route test's input `'queued'`, and its new catalog-findings test needs a guarded entry.
+
+- Chosen: (a) the input becomes `'revision'`, a status the list holds, so the test still proves a list write's undo through the route; T1 joins G13.
+- Not chosen: (b) leave `waiting_status` unchecked by the server (the lazy one), which accepts a value the page refuses.
+
+Where it is built: S5's brief, Decision 25, and `agents/guarded.md` G13. Booked in `plan.md` Rulings.
+
+## Z434 (2026-10-05, step D42)
+
+The question: How D42 pages a file's history, since `--skip` under `--follow` counts the whole walk and repeats page one.
+
+- Chosen: a cursor `before=<hash>` with the path at that commit, which pages correctly (probe: `git log --follow -51 8b9cbc3db^ -- tools/oculus/HELP.md`).
+- Not chosen: (b) read the whole history once and page on the client, which reads every commit of a 1,000-commit file to show 50; (c) keep the cap of 50 with no paging (the lazy one), which hides history.
+
+Where it is built: D42's brief. Booked in `plan.md` Rulings.
+
+## Z435 (2026-10-05, step D42)
+
+The question: D42's user-visible shapes (menu items, row content, date, section controls, tab label) were taken in the brief without booking.
+
+- Chosen: the brief's options (a) for each, as VS Code's Timeline has them.
+- Not chosen: the smaller options (author only, no controls, no menu item), the lazy ones, which leave the Timeline short of VS Code's.
+
+Where it is built: D42's brief. Booked in `plan.md` Rulings.
+
+## Z436 (2026-10-05, step H3)
+
+The question: H3's brief check found lines the map makes false outside its write list, a third map it did not name, and no later step keeping the map true.
+
+- Chosen: widen H3 to those lines and add the map to M6's and M8's paths.
+- Not chosen: (b) leave them for a later step (the lazy one), which ships a map false at M6's landing and a README calling itself the map.
+
+Where it is built: H3's brief. Booked in `plan.md` Rulings.
+
 ## Z433 (2026-10-05, step D44)
 
 The question: whether D44's two checks become guarded tests: Submit runs only a confirmed plan equal to the server's plan at the press, and the warning for a job script that never uses `/local/$SLURM_JOB_ID`.
