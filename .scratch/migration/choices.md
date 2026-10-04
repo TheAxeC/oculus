@@ -1495,3 +1495,10 @@ Where it applies: S4, D18. Booked in the state file's closed log and `plan.md` R
 - Not chosen: the three widened parts left out of D17, the lazy option.
 
 Where it applies: D17. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z418 (2026-10-04, Axel's report of X3c): a new step for the file tab's actions and opening
+
+- Chosen: a new step X3f, first in the queue after T1a's landing, for the double click, the file actions on every file tab and Open Preview; its /spec reproduces each on TEST and finds the causes.
+- Not chosen: folding them into X3e, eleventh in the queue, which leaves them broken for ten landings; a note in X3c's landing report and no step, the lazy option.
+
+Where it applies: X3f. Booked in `plan.md` Rulings and the queue.
