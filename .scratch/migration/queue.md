@@ -1,5 +1,5 @@
 In flight (4 of 5 slots):
-- A3 (scheduled Update runs): building.
+- A3 (scheduled Update runs): review.
 - D44 (Submit on a .slurm file): repair round 1.
 - O30 (the native window in Electron): building.
 - E4 (the apps): building.
