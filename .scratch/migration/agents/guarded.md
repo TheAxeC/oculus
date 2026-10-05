@@ -77,10 +77,16 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G41. A git command that fails says why: timed out, ended by a signal, an exit status with no output, or too much output.
   Code: `classifyFailure` in `src/lib/server/core/git/parse.ts`, read by `src/lib/server/git/git-write.ts` and `src/lib/server/git/deposit-git.ts`; `failureText` in `src/lib/server/git/git-routes.ts`, which says each code in the catalog's words.
   Test: `tests/server/core/git-failure.test.ts`, 'classifyFailure' and 'failureText'.
+- G43. Submit runs only the plan the reader confirmed, equal to the plan the server computes at the press, and a job script whose code and sourced files never name `/local/$SLURM_JOB_ID` gets the warning before Submit.
+  Code: `src/lib/server/machine/hpc/submit.ts`, `src/lib/server/machine/hpc/scratch.ts`.
+  Test: `tests/server/machine/hpc/submit.test.ts`, its two tables, written by D44.
+- G44. A git write stopped by Cancel says what it left in progress: a merge, a rebase or a cherry-pick cancelled midway is named in the answer, and the view shows it with its Abort.
+  Code: `stoppedOn`, `cherryPick`, `continueRebase` in `src/lib/server/git/git-index.ts`; `src/lib/server/git/git-routes.ts`.
+  Test: `tests/server/git/git-write.test.ts` 'names the merge a cancelled run left in progress, and nothing once it is aborted'; `tests/routes/git/git.test.ts` 'says the merge a cancelled run left in progress'.
 - G45. Hits that share an identifier are one hit, and hits that share none are never one.
   Code: the merge of `src/lib/state/feeds/literature/`.
   Test: `tests/state/feeds/literature-merge.test.ts` 'merges hits by DOI, PubMed id or arXiv id and keeps hits that share none apart', written by D38.
-- G46. A scheduled update task starts once per due time: a due time missed while the server was down starts one catch-up run at the next start, a due time while that task's earlier run is going starts nothing and is recorded as skipped, a due time already recorded as handled never starts again, and close() leaves no timer and starts nothing.
+- G46. A scheduled update task starts once per due time: a due time missed while the server was down starts one catch-up run at the next start, a due time while that task's earlier run is working starts nothing and is recorded as skipped, a due time while that run sits idle ends its terminal and then starts the new run, a due time already recorded as handled never starts again, and close() leaves no timer and starts nothing.
   Code: `src/lib/server/machine/tasks/schedule.ts`, `src/lib/server/machine/tasks/start.ts`.
   Test: written by A3, its file and titles named in `agents/briefs/A3.md`.
 

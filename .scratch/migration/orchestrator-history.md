@@ -4,6 +4,10 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z545 (raised 2026-10-05, closed 2026-10-05 by Axel: "(b)"): a scheduled run's idle earlier terminal is ended before the next run; a working one makes the due time skipped; `DESIGN.md:153` gains that exception.
+- Z543 (raised 2026-10-05, closed 2026-10-05 by Axel: "(a)"): G44 for D20's Cancel of a merge, rebase or cherry-pick.
+- Z538 (raised 2026-10-05, closed 2026-10-05 by Axel: "(a)"): G43 for D44's Submit tests.
+- Z539 (raised 2026-10-05, closed 2026-10-05 by Axel: "(a)"): D44's look submits one one-minute `main-cpu` job from engram's `code/hpc/oculus_submit_check.slurm`.
 - The ruling audit (`agents/reviews/ruling-audit.md`), closed 2026-10-05 by Axel: "None of those are open. 3. is booked, and 1 and 2 are fine". The 84 rulings without a quote and Z367 stand as booked; no transcript search.
 
 - Z536 (raised 2026-10-05, closed 2026-10-05 by Axel: "(b)"): VS Code's title actions on a file tab go in its breadcrumb bar.
