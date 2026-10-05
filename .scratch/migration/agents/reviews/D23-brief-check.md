@@ -474,3 +474,23 @@ Missing, each with its expected result:
 Agent a06e5bd28d3450606, claude-opus-5-5: 372,291 tokens, 139 tool uses, 16.4 min (completion notice). The brief's premises reread on main at a21aa859d: 42 corrections marked "(corrected after S5: ...)", among them Format on save's four places after S5 moved the readers to `data/sources/config/editor-options.ts`, `DESIGN.md:85` and `HELP.md:169` added to the doc text, and the Outline following the followed tab (Z490). Shared paths: X3f shares 23 paths, `Source.svelte` and `Outline.svelte` rewritten by both, so D23 is prepared on a base after X3f lands; D20's shared files merge simply; D44's `Source.svelte` is not simple, so the second of D23 and D44 is prepared on the other's landing. The "Closed" line numbers above refer to the brief before this recheck.
 
 Closed by the orchestrator: F3 as case 58, F12 as case 59, the first check's case 19 as case 60. Show AST stays in Monaco's right-click menu opening a Files view section, as VS Code's clangd does (Z483, Z496).
+
+## Rechecked after X3f (2026-10-05)
+
+The brief's premises reread on main at b1aedbfc6, whose source tree is X3f's landing ee0407a5a (`git log --oneline a21aa859d..HEAD -- tools/oculus ':!tools/oculus/.scratch'` prints only ee0407a5a). 42 places are marked "(corrected after X3f: ...)" and 17 "(added after X3f ...)", and two paths in "Shared paths" are marked "added to D23's paths by this recheck". The main ones:
+
+- `Source.svelte` is 528 lines on main, over the 520 a component may have, so the step must leave it at or under 520; the split into `language/` and by concern into `status/`, `actions/` or `save/` is now required, not conditional.
+- The palette lists the source tab's own actions and what the editor says through `onactions`, so an action added by `addAction` inside an extension is listed nowhere. The language actions are handed to the tab as `EditorOwnAction`s joined to `own`; `EditorOwnAction` gains an optional context menu group for Show AST; labels carry VS Code's category, as X3f's `cmd_*` keys do. `status/ask-perform.ts` joins the paths.
+- The breadcrumb's segments carry no icon and the bar is drawn by `PaneStrip.svelte`'s `path` snippet; `Breadcrumb.svelte` gains an optional glyph per segment, and `PaneStrip.svelte` joins the paths.
+- The References view makes the Explorer group's chords `s1-s4`: `HELP.md:69` and `config/text/app.yml:12` join the doc text. `DESIGN.md:430`, rewritten by X3f, lists the status bar's right group and must name the three language items.
+- `tests/server/root/context-fixture.ts` (it builds a whole `ServerContext`) and `src/lib/server/root/watch/local.ts` (`FIELDS`, so a changed `lsp` is seen) join the paths.
+- Every `HELP.md` line after 85 is one higher; every `plan.md` cite moved by three, `orchestrator-history.md` by eight, `choices.md` Z260 to 1631-1636; each quoted ruling compared with its line at b1aedbfc6, all identical. Every reference to X3f's worktree or to X3f being in flight is rewritten to main.
+
+Shared paths, rewritten for D38 and D20, with merges simulated by `git merge-file` on D38's files as its worktree held them:
+
+- D38: not simple. Both write `HELP.md:283`, `DESIGN.md:85`, `config/text/app.yml:12`, and both insert after `DESIGN.md:403`; `HELP.md:68` and `:69` are adjacent. Each simulated: conflict. D23 waits for D38's landing and is prepared on main after it. `options.yml`, `local.ts`, `local.test.ts`, `watch/local.ts`, `index.ts`, `context.ts`, `context-fixture.ts`, `behavior.yml` and `package.json` merge cleanly with the placements the brief now names (`lsp` after `approvals`, never at a list's end; the wire types' export as a new line after `index.ts:510`).
+- D20: simple on `DESIGN.md`, `HELP.md`, `index.ts`, `context.ts`, `context-fixture.ts` and `docs/diagrams/` (the nearest pair five unchanged lines apart; the code files simulated clean, D20 and D38 together).
+
+Usage of this recheck: not known to the agent that wrote it; the completion notice carries it.
+
+Usage of the recheck after X3f: ordo-high on claude-opus-5-5 (a109988b506ff31e4), 166,278 tokens, 172 tool uses, 26.9 min (completion notice). `grep -o` counts 31 "(corrected after X3f" and 5 "(added after X3f" markers in `agents/briefs/D23.md`. D23 waits for D38's landing: their merge in `HELP.md`, `DESIGN.md` and `config/text/app.yml` is not simple (`git merge-file` conflicts on each).

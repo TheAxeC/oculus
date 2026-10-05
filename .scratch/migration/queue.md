@@ -1,12 +1,12 @@
-In flight (2 of 5 slots, and two agents preparing steps):
+In flight (2 of 5 slots, and one agent preparing a step):
 - D20 (an agent from a task or a worktree): landing prepared in the gate with its diagnosis fix and round-1 fixes; its commit waits for Axel's ruling on G44 (Z543).
 - D38 (the Literature search view): builder running.
-- D23 (language servers): brief rechecked after X3f by an agent; then /spec.
 - M6 (the collection forms removed): brief written (Z550 closes its choices); brief check running; prepared once D20, D38 and D28 have landed.
 
 Waiting for a landing or a ruling:
 - A3 (scheduled Update runs): brief closed; prepared once Axel rules Z545 (the brief is written to (b)).
 - D44 (Submit on a .slurm file): brief closed; prepared once Z538 and Z539 are ruled.
+- D23 (language servers): brief rechecked after X3f; prepared once D38 has landed (HELP.md, DESIGN.md and app.yml merge not simply).
 - D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked; prepared once D20 has landed, after the inventory look on TEST.
 
 Queued, in order (22 steps):
