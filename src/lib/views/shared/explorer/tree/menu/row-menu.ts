@@ -68,6 +68,7 @@ export const ROW_ADD_ROOT = 'add-root';
 export const ROW_REMOVE_ROOT = 'remove-root';
 export const ROW_PREVIEW = 'preview';
 export const ROW_LATEX = 'latex';
+const ROW_TIMELINE = 'timeline';
 export const ROW_RUN = 'run-command';
 
 /** The id of one command in the Run Command submenu, ahead of its source and its name. */
@@ -211,18 +212,18 @@ export function rowFacts(
 /**
  * The row's items, in VS Code's groups. A file: Open to the Side, with Open in Program after it on
  * a file `open.program_ext` names an application for, Reveal in Finder and Open in Integrated
- * Terminal (a shell in its folder), the compare items, Cut and Copy, Download..., the two copies,
- * Open Preview on a Markdown file, then Rename... and Delete. Open LaTeX is its own group after
- * Reveal in Finder and the terminal, on a `.tex` file and on a folder or root whose listing has
- * one: the listing the fs store holds, else the one the menu read when it opened (picks.svelte.ts).
- * A folder: New File... and New Folder..., Reveal in Finder and its shell, Find in Folder..., Cut,
- * Copy and Paste, Upload..., the two copies, then Rename... and Delete. A folder or root that is a
- * repository with project commands also offers Run Command, a submenu of them. A root: those of a
- * folder without Cut, Copy, Rename... and Delete, and Add Folder to Workspace... with Remove Folder
- * from Workspace on a root the reader added. Compare with Selected needs a file selected for
- * compare. With two or more rows selected the menu is the one for the selection: Compare Selected
- * for exactly two files, Cut and Copy, the two copies of every path, and Delete. Each item carries
- * the key hint its id has in `hints`.
+ * Terminal (a shell in its folder), the compare items, Open Timeline in a group of its own, Cut and
+ * Copy, Download..., the two copies, Open Preview on a Markdown file, then Rename... and Delete.
+ * Open LaTeX is its own group after Reveal in Finder and the terminal, on a `.tex` file and on a
+ * folder or root whose listing has one: the listing the fs store holds, else the one the menu read
+ * when it opened (picks.svelte.ts). A folder: New File... and New Folder..., Reveal in Finder and
+ * its shell, Find in Folder..., Cut, Copy and Paste, Upload..., the two copies, then Rename... and
+ * Delete. A folder or root that is a repository with project commands also offers Run Command, a
+ * submenu of them. A root: those of a folder without Cut, Copy, Rename... and Delete, and Add
+ * Folder to Workspace... with Remove Folder from Workspace on a root the reader added. Compare with
+ * Selected needs a file selected for compare. With two or more rows selected the menu is the one
+ * for the selection: Compare Selected for exactly two files, Cut and Copy, the two copies of every
+ * path, and Delete. Each item carries the key hint its id has in `hints`.
  */
 export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string): MenuItem => {
@@ -265,6 +266,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
                     : []),
                 item(ROW_SELECT_COMPARE, t('files.menu_select_compare'))
             ],
+            [item(ROW_TIMELINE, t('files.menu_timeline'))],
             cutCopy,
             [item(ROW_DOWNLOAD, t('files.menu_download'))],
             copies,
@@ -340,6 +342,7 @@ export function shellFolder(dir: string, row: Pick<TreeRow, 'kind' | 'path'>): s
 export type RowStores = {
     openBeside: ClientState['layout']['openBeside'];
     openView: ClientState['layout']['openView'];
+    showTimeline: ClientState['layout']['showTimeline'];
     rootOf: ClientState['latex']['rootOf'];
     keepPreview: ClientState['layout']['keepPreview'];
     readFileKind: ClientState['fs']['readFileKind'];
@@ -359,6 +362,7 @@ export function rowStores(client: ClientState): RowStores {
     return {
         openBeside: client.layout.openBeside,
         openView: client.layout.openView,
+        showTimeline: client.layout.showTimeline,
         rootOf: client.latex.rootOf,
         keepPreview: client.layout.keepPreview,
         readFileKind: client.fs.readFileKind,
@@ -489,6 +493,7 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         else if (pick === ROW_ADD_ROOT) deps.addRoot();
         else if (pick === ROW_REMOVE_ROOT) deps.removeRoot(row.root);
         else if (pick === ROW_LATEX) void latex(row);
+        else if (pick === ROW_TIMELINE) deps.showTimeline(row.path, row.root);
         else if (pick.startsWith(RUN_PREFIX)) {
             const command = keyOf(pick.slice(RUN_PREFIX.length));
             if (command !== null) deps.runCommand(paths.absolute, command.name, command.source);

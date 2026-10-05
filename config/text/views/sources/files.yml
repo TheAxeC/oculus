@@ -107,6 +107,7 @@ text:
         menu_show_ignored: Show Ignored Files
         menu_switch_workspace: Switch Workspace...
         menu_terminal: Open in Integrated Terminal
+        menu_timeline: Open Timeline
         menu_upload: Upload...
         move_button: Move
         move_question: "Are you sure you want to move '{0}' into '{1}'?"
@@ -203,19 +204,29 @@ text:
         row_open_tab_title: Open {0} in a tab that stays
         row_unbookmark_title: Take the bookmark on {0} away
         timeline: Timeline
+        timeline_actions: More Actions...
+        timeline_commit_authored: Authored {0}.
         timeline_commit_diff: '{0} ({1})'
+        timeline_commit_title: '{0} <{1}>, {2} ({3}): {4} ({5})'
+        timeline_commits_failed: The commits of this file could not be read.
+        timeline_copies_failed: The local history of this file could not be read.
         timeline_deleted: File Deleted
         timeline_empty: The file has no history yet.
-        timeline_failed: 'The history could not be read: {0}'
+        timeline_git: Git History
+        timeline_load_more: Load more
+        timeline_local: Local History
         timeline_menu: History entry
         timeline_no_file: The active editor cannot provide timeline information.
+        timeline_pin: Pin the Current Timeline
         timeline_reading: Reading...
+        timeline_refresh: Refresh
         timeline_replaced: File Replaced
         timeline_restore: Restore
         timeline_restore_failed: The file could not be restored.
         timeline_row_title: Compare {0} with the file now
         timeline_save_diff: '{0} (Local History)'
         timeline_saved: File Saved
+        timeline_unpin: Unpin the Current Timeline
         toolbar: File browser controls
         tree: Roots and folders
         undo_button: Undo

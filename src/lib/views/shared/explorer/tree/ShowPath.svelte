@@ -1,10 +1,14 @@
 <script lang="ts">
     // Layer 3, shared view partial, drawn by views/sources/files/Files.svelte. What answers an ask
     // to show one path, which another view writes into the instance's state through the layout
-    // store's showInFiles: the folders on the way are read here, outermost first and each only once
-    // the one above it said the next name is a folder, then the ask is settled into the open
-    // folders and the selected row, the row is scrolled into view once the tree has drawn it and
-    // takes the keyboard, and the outcome line says when the path was not found as asked.
+    // store's showInFiles or showTimeline: the folders on the way are read here, outermost first
+    // and each only once the one above it said the next name is a folder, then the ask is settled
+    // into the open folders and the selected row, the row is scrolled into view once the tree has
+    // drawn it and takes the keyboard, and the outcome line says when the path was not found as
+    // asked. An ask for the Timeline (showTimeline) also opens that section; its scroll is the
+    // section's head brought to the top of the pane in place of the row's, so each ask scrolls
+    // once, and an ask whose outcome has no row scrolls nothing, which keeps the outcome line in
+    // view.
     //
     // Every step goes through the instance's state and is written only while that state still holds
     // the ask it was made for (state/sources/fs.ts's revealSettled and revealScrolled): an answer
@@ -97,7 +101,11 @@
             `[data-instance="${CSS.escape(owner)}"] [data-fs-row="${CSS.escape(key)}"]`
         );
         if (node === null) return;
-        node.scrollIntoView({ block: 'center' });
+        const timeline = ask.timeline === true;
+        const head = timeline
+            ? document.querySelector(`[data-instance="${CSS.escape(owner)}"] [data-fs-timeline]`)
+            : null;
+        (head ?? node).scrollIntoView({ block: head === null ? 'center' : 'start' });
         // The reader asked to be taken to the path, so the keyboard goes there too: the arrow keys
         // then move from the row that was shown rather than from the control that asked.
         const item = node.querySelector('[role="treeitem"]');

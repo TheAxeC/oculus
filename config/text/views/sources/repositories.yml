@@ -50,6 +50,7 @@ text:
         copy_id: Copy Commit ID
         copy_message: Copy Commit Message
         diff_binary: Binary file, no lines to show.
+        diff_commit_failed: The change in commit {0} could not be read.
         diff_conflicted: Resolve this file in the merge editor from Merge Changes
         diff_eol_only: Only the line endings differ
         diff_inline: Inline View

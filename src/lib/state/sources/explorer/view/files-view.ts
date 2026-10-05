@@ -18,7 +18,8 @@ export const FILES_VIEW = 'files';
 
 /**
  * One ask to show a path: the row asked for, which ask it is, whether the folder asked for is to
- * be shown open (`open`), and whether the view has read the folders on its way and selected what it
+ * be shown open (`open`), whether the Timeline section is to be opened and scrolled to instead of
+ * the row (`timeline`), and whether the view has read the folders on its way and selected what it
  * found (`settled`), which leaves only the scroll to it.
  */
 export type RevealAsk = RowRef & {
@@ -26,6 +27,10 @@ export type RevealAsk = RowRef & {
     settled: boolean;
     /** Set when the row asked for is a folder to be shown open as well as selected. */
     open?: true;
+    /**
+     * Set when the ask is for the file's history: the Timeline section opens and is scrolled to.
+     */
+    timeline?: true;
 };
 
 /**
@@ -49,9 +54,10 @@ export type RevealOutcome = {
  * (`opened`), its open form with what was typed into a line form, the refusal and outcome lines
  * that answered its last press, which come back with the form they answered, its toggles (hidden
  * files, the files git ignores, nested files), the folder a rooted tab is drawn from (`top`) and
- * the folder Open Folder found outside every root (`outside`). A bookmark form's typed values are
- * not here: they are the form drafts of state/forms/form-drafts.svelte.ts, kept beside this record
- * as every entry form's are.
+ * the folder Open Folder found outside every root (`outside`), and the Timeline's pin and the two
+ * lists it shows (`timelinePinned`, `timelineGit`, `timelineLocal`). A bookmark form's typed values
+ * are not here: they are the form drafts of state/forms/form-drafts.svelte.ts, kept beside this
+ * record as every entry form's are.
  */
 export type FilesView = FilesForms &
     ListingShown & {
@@ -88,6 +94,12 @@ export type FilesView = FilesForms &
         top: RowRef | null;
         /** The folder Open Folder found outside every root, or the empty string. */
         outside: string;
+        /** The file the Timeline section is held on, or null while it follows the editor. */
+        timelinePinned: RowRef | null;
+        /** Whether the Timeline lists the commits that touched its file. */
+        timelineGit: boolean;
+        /** Whether the Timeline lists the copies of its file in the local history. */
+        timelineLocal: boolean;
     };
 
 /** A count a saved record holds, and 0 for anything that is not a whole number from 0 up. */
@@ -102,7 +114,8 @@ const askShape = z.object({
     path: z.string(),
     asked: z.number().int().min(1),
     settled: z.boolean(),
-    open: z.literal(true).optional().catch(undefined)
+    open: z.literal(true).optional().catch(undefined),
+    timeline: z.literal(true).optional().catch(undefined)
 }) satisfies z.ZodType<RevealAsk>;
 
 /** The outcome a saved record holds: a kind, the row asked, the row shown and the reason. */
@@ -162,7 +175,10 @@ const filesViewShape = z
         nesting: z.boolean().catch(false),
         opened: fieldItemsShape,
         top: selectedShape.nullable().catch(null),
-        outside: z.string().catch('')
+        outside: z.string().catch(''),
+        timelinePinned: selectedShape.nullable().catch(null),
+        timelineGit: z.boolean().catch(true),
+        timelineLocal: z.boolean().catch(true)
     })
     .transform((held): FilesView => ({
         ...held,
@@ -202,7 +218,10 @@ function emptyFilesView(): FilesView {
         nesting: false,
         opened: [],
         top: null,
-        outside: ''
+        outside: '',
+        timelinePinned: null,
+        timelineGit: true,
+        timelineLocal: true
     };
 }
 

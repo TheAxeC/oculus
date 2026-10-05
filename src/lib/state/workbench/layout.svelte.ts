@@ -73,6 +73,7 @@ import {
     type Layout,
     type OpenOptions,
     type Opening,
+    type ShowInFiles,
     type Page,
     type Pages,
     type Storable,
@@ -209,6 +210,11 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> & {
      * path of the hub. The returned id names the Files instance.
      */
     showInFiles: (path: string, root?: string, open?: boolean) => string;
+    /**
+     * Show one file in the file browser as showInFiles does, and open the Timeline section on it,
+     * scrolled to the top of the pane. A path given with no root is a path of the hub.
+     */
+    showTimeline: ShowInFiles['showTimeline'];
     /** Show one folder as a Files tab rooted at it, found again by the folder. */
     showFolderInFiles: (path: string, root?: string) => string;
 };
@@ -808,6 +814,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         openNextTo: away.openNextTo,
         paneHolds: away.paneHolds,
         showInFiles: files.showInFiles,
+        showTimeline: files.showTimeline,
         showFolderInFiles: files.showFolderInFiles,
         registerOpened: (rule) => {
             openedRule = rule;

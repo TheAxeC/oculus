@@ -112,6 +112,9 @@ export function createTabMenu(deps: TabMenuDeps) {
             showInFiles: () => {
                 if (file !== null) layout.showInFiles(file.path, file.root);
             },
+            timeline: () => {
+                if (file !== null) layout.showTimeline(file.path, file.root);
+            },
             selectForCompare: () => {
                 if (file !== null) explorer.selectForCompare(file);
             },

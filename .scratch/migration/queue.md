@@ -1,14 +1,13 @@
-In flight (3 of 5 slots):
-- D42 (a file's history): landing; gate passed in the gate worktree, look on TEST under way.
+In flight (2 of 5 slots):
 - X3f (opening a file row, and the tab row's actions): round-2 brief being written (the diagnosis's fixes, the Outline, the Data map's contents list, tests under G37); then repair round 2.
 - S5 (the Settings view's controls and headings): Q119's brief being closed; then repair round 1 with Q119 and Q122.
 
 Queued, in order (29 steps):
-- D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief written, its choices being ruled; once D42 has landed.
+- D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief written, its choices being ruled; once a slot is free.
 - D23 (language servers): brief closed; once X3f and S5 have landed.
 - D38 (the Literature search view): brief written; once S5 has landed.
 - D11 (the debug client for rite): brief ready; once S5 has landed.
-- X3e (Files lists reordered by drag): brief ready; once D42 has landed.
+- X3e (Files lists reordered by drag): brief ready; once a slot is free.
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D44 (Submit on a .slurm file, in its editor title bar): no brief yet; once X3f has landed.
@@ -37,6 +36,7 @@ Queued, in order (29 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D42 (a file's history), 2026-10-05, the commit that carries this line.
 - H3 (the hub's data map), 2026-10-05, 575c997c.
 - D37 (the Search view's replace and the LaTeX build), 2026-10-05, a5f1285b.
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.

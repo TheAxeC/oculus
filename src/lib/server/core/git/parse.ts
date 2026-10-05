@@ -21,6 +21,7 @@ import type {
     GitCommit,
     GitCommitFile,
     GitEntry,
+    GitFileCommit,
     GitGraphCommit,
     GitLineMark,
     GitStash,
@@ -36,8 +37,11 @@ import { scalar } from '../../../data/helpers/guards.ts';
  */
 export const LOG_FORMAT = '--format=%H%x1f%h%x1f%s%x1f%aI';
 
-/** The field separator of LOG_FORMAT, which no field of it can hold. */
+/** The field separator of the log formats, which no field of them can hold. */
 const UNIT = '\x1f';
+
+/** What opens one commit of a file's log and ends one commit of the graph's output. */
+const RECORD = '\x1e';
 
 /** The rows of a `log` in LOG_FORMAT, newest first, as git printed them. */
 export function parseLog(output: string): GitCommit[] {
@@ -49,6 +53,50 @@ export function parseLog(output: string): GitCommit[] {
         const hash = parts[0].trim();
         if (hash === '') continue;
         rows.push({ hash, short: parts[1], subject: parts[2], when: parts[3].trim() });
+    }
+    return rows;
+}
+
+/**
+ * The format of one file's log: the hash, the abbreviated hash, the subject, the author's name and
+ * email, the author date and the committer date, unit separated. Each commit's record opens with
+ * the record separator, since `--name-status -z` prints the commit's status lines after its format
+ * line and they belong to that commit.
+ */
+export const FILE_LOG_FORMAT = '--format=%x1e%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%aI%x1f%cI';
+
+/**
+ * The rows of a `log --follow -z --name-status` in FILE_LOG_FORMAT, newest first. The format line
+ * ends at the NUL or the newline git writes after it, and the status lines follow it: the rename
+ * or copy that brought the file to its path in that commit, or the change made to it there. A
+ * commit whose first-parent diff names no path for the file (a merge) is read at the path the
+ * newer commit above it started from, and the first of the list at `asked`, the path the log was
+ * asked for.
+ */
+export function parseFileLog(output: string, asked: string): GitFileCommit[] {
+    const rows: GitFileCommit[] = [];
+    let at = asked;
+    for (const record of output.split(RECORD)) {
+        const end = record.search(/[\0\n]/);
+        const parts = (end < 0 ? record : record.slice(0, end)).split(UNIT);
+        const hash = parts[0].trim();
+        if (parts.length < 7 || hash === '') continue;
+        const named = end < 0 ? [] : parseNameStatus(record.slice(end).replace(/^[\0\n]+/, ''));
+        const file = named.at(0);
+        const path = file === undefined ? at : file.path;
+        const from = file === undefined ? at : file.from || file.path;
+        rows.push({
+            hash,
+            short: parts[1],
+            subject: parts[2],
+            author: parts[3],
+            email: parts[4],
+            when: parts[5],
+            committed: parts[6].trim(),
+            path,
+            from
+        });
+        at = from;
     }
     return rows;
 }
@@ -91,9 +139,6 @@ export function parseWorktrees(output: string): GitWorktree[] {
  * each commit ended by the record separator, since the message runs over several lines.
  */
 export const GRAPH_FORMAT = '--format=%H%x1f%h%x1f%P%x1f%D%x1f%an%x1f%aI%x1f%s%x1f%B%x1e';
-
-/** What ends one commit of the graph's output. */
-const RECORD = '\x1e';
 
 /**
  * The one ref listing's format, over the branches, the tags and the stash ref together: the whole

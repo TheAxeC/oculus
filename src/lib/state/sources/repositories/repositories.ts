@@ -136,6 +136,8 @@ export type DiffSubject = {
     staged: boolean;
     worktree: boolean;
     commit?: string;
+    /** The commit as git abbreviates it (`%h`), which the sentence for a failed read names. */
+    short?: string;
     stash?: string;
     /** Every path of a change group, for the diff pane a group head opens; the path is empty. */
     group?: 'staged' | 'changed';
@@ -206,6 +208,7 @@ const heldDiffShape = z
         staged: z.boolean().catch(false),
         worktree: z.boolean().catch(false),
         commit: z.string().catch(''),
+        short: z.string().catch(''),
         save: z.string().catch(''),
         stash: z.string().catch(''),
         group: z.enum(['staged', 'changed']).optional().catch(undefined),
@@ -216,24 +219,7 @@ const heldDiffShape = z
         line: anyNumberShape.catch(0),
         session: z.string().catch('')
     })
-    .transform((held): DiffState => ({
-        id: held.id,
-        label: held.label,
-        root: held.root,
-        path: held.path,
-        staged: held.staged,
-        worktree: held.worktree,
-        commit: held.commit,
-        save: held.save,
-        stash: held.stash,
-        group: held.group,
-        against: held.against,
-        compare: held.compare,
-        workspace: held.workspace,
-        replace: held.replace,
-        line: held.line,
-        session: held.session
-    }));
+    .transform((held): DiffState => held);
 
 /** The diff pane's state out of what an instance carries, each field read defensively. */
 export function heldDiff(state: unknown): DiffState {
@@ -246,6 +232,7 @@ export function heldDiff(state: unknown): DiffState {
             staged: false,
             worktree: false,
             commit: '',
+            short: '',
             save: '',
             stash: '',
             group: undefined,

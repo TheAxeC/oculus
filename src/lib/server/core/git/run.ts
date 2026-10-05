@@ -18,7 +18,8 @@
 //     git -C <root> diff --no-color --no-ext-diff -U0 -- <path>
 //     git -C <root> diff --no-color --no-ext-diff -U0 -M <stash>^1 <stash>
 //     git -C <root> log -<n> --format=...
-//     git -C <root> log --follow -<n> --format=... -- <path>   (GIT_LITERAL_PATHSPECS=1)
+//     git -C <root> log --follow --relative -z --name-status --diff-merges=first-parent
+//         --format=... [-51] -- <path>   (GIT_LITERAL_PATHSPECS=1)
 //     git -C <root> log --topo-order --format=... --skip=<n> -<n> HEAD --
 //     git -C <root> log --topo-order --format=... -<n> <HEAD..@{upstream} | @{upstream}..HEAD> --
 //     git -C <root> log --walk-reflogs --format=... refs/stash --
@@ -30,7 +31,8 @@
 //     git -C <root> blame --porcelain -- <path>
 //     git -C <root> show :<1|2|3>:<path>
 //     git -C <root> show --no-textconv <revision>:<path>
-//     git -C <root> show --format= --name-status -z [-M] --diff-merges=first-parent <commit>
+//     git -C <root> show --format= --name-status -z [-M] [--relative] --diff-merges=first-parent
+//         <commit>
 //     git -C <root> show --format= --no-color --no-ext-diff -U0 -M --diff-merges=first-parent
 //         <commit> -- [<old path>] <path>
 //     git -C <root> show -s --format=%P <stash>
@@ -54,9 +56,13 @@
 // `config --get` say whether git converts a file's text, which decides whether the pane may cut a
 // partial patch from it. `config --get --default= core.sshCommand` is the ssh command the
 // repository names, which an unattended fetch extends (server/root/watch/autofetch.ts). `config` is
-// held to those two reading vectors. `log --follow` is the Timeline's: the commits that touched one
-// file across its renames (fileLog in files.ts), the path handed after `--` and read as a literal
-// name through GIT_LITERAL_PATHSPECS=1, so a `*` in a name matches itself.
+// held to those two reading vectors. `log --follow --relative -z --name-status
+// --diff-merges=first-parent` is the Timeline's: a page of the commits that touched one file across
+// its renames and copies (fileLog in files.ts), each with the path the file has in it relative to
+// the served root, the first page asking for 51 so the 51st only says more remain and a later page
+// reading the log from HEAD and taking the rows after the cursor's commit; the path handed after
+// `--` is read as a literal name through GIT_LITERAL_PATHSPECS=1, so a `*` in a name matches
+// itself.
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
 // dashboard watcher must never be the thing that runs one. compare.ts lists its own forms in its

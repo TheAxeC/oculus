@@ -15,13 +15,15 @@
     // file is folded, or not made yet) is kept and brought into view once the editor reports its
     // changes.
     //
-    // Above each hunk (git's grouping of Monaco's line changes, state/sources/repositories/
-    // diff-hunks.ts) is a bar with git's hunk head and the actions the file allows: Stage Block and
-    // Revert Block, or Unstage Block in a staged diff, each over the rows the selections choose in
-    // that hunk while they choose any. Where a partial patch cannot be built the bar says to act
-    // on the file whole from Changes, or, for a path in conflict, to resolve it in the merge
-    // editor. What the actions do is the pane's: this reports presses. Bars sit after lines of
-    // either side: the hunk bars of the modified side, and the comment box.
+    // Above each hunk (git's grouping of Monaco's line changes,
+    // state/sources/repositories/diff/diff-hunks.ts) is a bar (diff/HunkBar.svelte) with git's hunk
+    // head and the actions the file allows: Stage Block and Revert Block, or Unstage Block in a
+    // staged diff, each over the rows the selections choose in that hunk while they choose any.
+    // Where a partial patch cannot be built the bar says to act on the file whole from Changes, or,
+    // for a path in conflict, to resolve it in the merge editor. The bar draws its buttons as
+    // glyphs while the editor leaves it too little width for their words. What the actions do is
+    // the pane's: this reports presses. Bars sit after lines of either side: the hunk bars of the
+    // modified side, and the comment box.
     //
     // A file's own diff opened for a session that the sessions payload still holds takes a comment
     // on a line of either side (the editor's `+` or Add Comment on Line): the box opens after that
@@ -38,10 +40,10 @@
         DiffSelections,
         EditorAction
     } from '$lib/ui/controls/editor/types';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import CommentBox from './CommentBox.svelte';
     import { CommentDraft } from './comment-draft.svelte';
     import FileHeader from './FileHeader.svelte';
+    import HunkBar from './HunkBar.svelte';
     import { createSourceOptions } from '$lib/views/shared/prose/source-options';
     import {
         CONTEXT,
@@ -335,48 +337,18 @@
         {@const at = Number(id)}
         {@const hunk = hunks.at(at)}
         {#if hunk !== undefined}
-            {@const count = pickedIn(hunk).count}
-            <div
-                class="hunk"
-                class:current={at === current}
-                data-hunk={at}
-                data-hunk-id={`${index}:${id}`}
-            >
-                <span class="head">{headOf(hunk)}</span>
-                {#if actions === 'none'}
-                    <span class="whole"
-                        >{conflicted
-                            ? t('repositories.diff_conflicted')
-                            : t('repositories.diff_whole')}</span
-                    >
-                {:else if actions !== 'read' && staged}
-                    <ToolButton
-                        label={count > 0
-                            ? t('repositories.lines_unstage', count)
-                            : t('repositories.hunk_unstage')}
-                        glyph="unstage"
-                        disabled={busy}
-                        onclick={() => act(hunk, 'unstage')}
-                    />
-                {:else if actions !== 'read'}
-                    <ToolButton
-                        label={count > 0
-                            ? t('repositories.lines_stage', count)
-                            : t('repositories.hunk_stage')}
-                        glyph="stage"
-                        disabled={busy}
-                        onclick={() => act(hunk, 'stage')}
-                    />
-                    <ToolButton
-                        label={count > 0
-                            ? t('repositories.lines_revert', count)
-                            : t('repositories.hunk_revert')}
-                        glyph="note_back"
-                        disabled={busy}
-                        onclick={() => act(hunk, 'revert')}
-                    />
-                {/if}
-            </div>
+            <HunkBar
+                head={headOf(hunk)}
+                {at}
+                id={`${index}:${id}`}
+                {actions}
+                count={pickedIn(hunk).count}
+                {conflicted}
+                {staged}
+                {busy}
+                current={at === current}
+                onact={(doing: PatchMode) => act(hunk, doing)}
+            />
         {/if}
     {/if}
 {/snippet}
@@ -479,37 +451,5 @@
     .heads {
         font-family: var(--font-mono);
         white-space: pre-wrap;
-    }
-
-    .hunk {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 1px 6px;
-        border-top: 1px solid var(--line);
-        background: var(--chip);
-        color: var(--muted-txt, var(--muted));
-        white-space: nowrap;
-    }
-
-    .hunk.current {
-        border-top-color: var(--accent);
-    }
-
-    /* A narrow pane cuts the header's text with an ellipsis and leaves the buttons whole. */
-    .hunk .head {
-        min-width: 0;
-        margin-right: auto;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-family: var(--font-mono);
-    }
-
-    .hunk > :global(:not(.head)) {
-        flex: none;
-    }
-
-    :global(body.wall) .hunk {
-        background: var(--chip-on-wall);
     }
 </style>

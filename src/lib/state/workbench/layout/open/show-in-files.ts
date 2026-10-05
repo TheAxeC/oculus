@@ -16,6 +16,8 @@ import { focusedPane } from '../workbench.ts';
 
 export type ShowInFiles = {
     showInFiles: (path: string, root?: string, open?: boolean) => string;
+    /** The same ask, and the Files tab opens its Timeline section on the path too. */
+    showTimeline: (path: string, root?: string) => string;
     showFolderInFiles: (path: string, root?: string) => string;
 };
 
@@ -27,9 +29,15 @@ export function createShowInFiles(
     /**
      * Show one path in the file browser. The Files tab of the page the reader is in is activated,
      * or one is opened there when the page has none, and it is asked to open the folders on the
-     * way, select the path and scroll it into view; with `open` a folder is shown open too.
+     * way, select the path and scroll it into view; with `open` a folder is shown open too, and
+     * with `timeline` the Timeline section is opened and scrolled to in place of the row.
      */
-    function showInFiles(path: string, root?: string, open = false): string {
+    function show(
+        path: string,
+        root: string | undefined,
+        open: boolean,
+        timeline: boolean
+    ): string {
         const page = attention.touched().id;
         const tree = access.layout(page);
         const held = findView(tree, 'files', null);
@@ -43,7 +51,10 @@ export function createShowInFiles(
         }
         const id = openView('files', undefined, page);
         if (id === '') return '';
-        access.ui.setInstanceState(id, revealAsked(access.ui.instanceState(id), path, root, open));
+        access.ui.setInstanceState(
+            id,
+            revealAsked(access.ui.instanceState(id), path, root, open, timeline)
+        );
         return id;
     }
 
@@ -63,5 +74,9 @@ export function createShowInFiles(
         return id;
     }
 
-    return { showInFiles, showFolderInFiles };
+    return {
+        showInFiles: (path, root, open = false) => show(path, root, open, false),
+        showTimeline: (path, root) => show(path, root, false, true),
+        showFolderInFiles
+    };
 }

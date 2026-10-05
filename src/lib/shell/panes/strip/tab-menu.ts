@@ -1,8 +1,8 @@
 // Layer 3, shell. The right-click menu of one tab, VS Code's tab context menu in its groups and
 // words, less what oculus has no part for (Share and the moves into a new window): the closes, the
-// two copies of a file's path, Reveal in Finder and Show in Files, the two compare items, Keep Open
-// and Pin or Unpin, and the splits. Apart from the component so the items, the tabs each close
-// closes and the path copies can be read without a DOM.
+// two copies of a file's path, Reveal in Finder, Show in Files and Open Timeline, the two compare
+// items, Keep Open and Pin or Unpin, and the splits. Apart from the component so the items, the
+// tabs each close closes and the path copies can be read without a DOM.
 
 import type { Edge } from '$lib/state/workbench/layout';
 import { absoluteOf } from '$lib/state/workbench/navigation/pages';
@@ -34,6 +34,7 @@ export const TAB_COPY_PATH = 'copy-path';
 export const TAB_COPY_RELATIVE = 'copy-relative';
 export const TAB_REVEAL = 'reveal';
 export const TAB_SHOW_IN_FILES = 'show-in-files';
+const TAB_TIMELINE = 'timeline';
 export const TAB_SELECT_COMPARE = 'select-compare';
 export const TAB_COMPARE_WITH = 'compare-with';
 export const TAB_KEEP_OPEN = 'keep-open';
@@ -57,10 +58,11 @@ function tabEdge(id: string): Edge | null {
 }
 
 /**
- * The menu of one tab, in VS Code's groups: the closes; the path copies; Reveal in Finder and Show
- * in Files; the compare items; Keep Open and Pin or Unpin; the splits. The file groups are offered
- * for a tab showing a file only. Close Others needs a second tab and Close to the Right a tab to
- * the right; Keep Open is drawn on every tab and enabled on a preview.
+ * The menu of one tab, in VS Code's groups: the closes; the path copies; Reveal in Finder, Show in
+ * Files and Open Timeline, which shows the file's history in the Files view; the compare items;
+ * Keep Open and Pin or Unpin; the splits. The file groups are offered for a tab showing a file
+ * only. Close Others needs a second tab and Close to the Right a tab to the right; Keep Open is
+ * drawn on every tab and enabled on a preview.
  */
 export function tabMenu(facts: TabFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string, disabled = false): MenuItem =>
@@ -83,7 +85,8 @@ export function tabMenu(facts: TabFacts, t: Words): MenuItem[] {
         file
             ? [
                   item(TAB_REVEAL, t('files.menu_reveal')),
-                  item(TAB_SHOW_IN_FILES, t('ui.tab_show_in_files'))
+                  item(TAB_SHOW_IN_FILES, t('ui.tab_show_in_files')),
+                  item(TAB_TIMELINE, t('files.menu_timeline'))
               ]
             : [],
         file
@@ -196,6 +199,7 @@ export type TabPickDeps = {
     copy: (which: 'absolute' | 'relative') => void;
     reveal: () => void;
     showInFiles: () => void;
+    timeline: () => void;
     selectForCompare: () => void;
     compareWith: () => void;
     keepOpen: () => void;
@@ -214,6 +218,7 @@ export function tabPicked(id: string, deps: TabPickDeps): void {
     else if (id === TAB_COPY_RELATIVE) deps.copy('relative');
     else if (id === TAB_REVEAL) deps.reveal();
     else if (id === TAB_SHOW_IN_FILES) deps.showInFiles();
+    else if (id === TAB_TIMELINE) deps.timeline();
     else if (id === TAB_SELECT_COMPARE) deps.selectForCompare();
     else if (id === TAB_COMPARE_WITH) deps.compareWith();
     else if (id === TAB_KEEP_OPEN) deps.keepOpen();

@@ -7,6 +7,7 @@
 // another.
 
 import { isMap } from '../../../../data/helpers/guards.ts';
+import { sectionOpened } from '../sections/section-state.ts';
 import { filesViewOf, type FilesView, type RevealAsk, type RevealOutcome } from './files-view.ts';
 import {
     HUB_ROOT,
@@ -24,13 +25,15 @@ import {
  * so `network/../funding` is `funding`; a path still climbing above its root is asked for as it is
  * and is shown at the root's own line, since no listing holds an entry named `..`. The filter is
  * cleared, since a filter would leave the row asked for out of the tree, and the last ask's outcome
- * goes with it. With `open` the folder asked for is shown open as well as selected.
+ * goes with it. With `open` the folder asked for is shown open as well as selected, and with
+ * `timeline` the Timeline section is opened and scrolled to in place of the row.
  */
 export function revealAsked(
     state: unknown,
     path: string,
     root: string = HUB_ROOT,
-    open = false
+    open = false,
+    timeline = false
 ): object {
     const kept = isMap(state) ? state : {};
     const revealing = filesViewOf(state).revealing + 1;
@@ -39,7 +42,8 @@ export function revealAsked(
         path: normalisePath(path),
         asked: revealing,
         settled: false,
-        ...(open ? { open: true as const } : {})
+        ...(open ? { open: true as const } : {}),
+        ...(timeline ? { timeline: true as const } : {})
     };
     return { ...kept, filter: '', reveal, revealed: null, revealing };
 }
@@ -97,6 +101,8 @@ function sameAsk(held: RevealAsk | null, ask: RevealAsk): boolean {
  * replaced it, the reader closed the tab (whose record is then gone), or another reading of the
  * same ask has already settled it. The folders above the row shown are opened, the row is
  * selected, and the ask waits for its scroll; a root the workspace lacks has nothing to scroll to.
+ * An ask for the Timeline opens that section in either case and releases a pin, so the Timeline
+ * shows the file asked for.
  */
 export function revealSettled(
     now: FilesView,
@@ -105,13 +111,21 @@ export function revealSettled(
 ): Partial<FilesView> | null {
     if (ask.settled || !sameAsk(now.reveal, ask)) return null;
     const revealed = outcome.kind === 'found' ? null : outcome;
-    if (outcome.shown === null) return { reveal: null, revealed };
+    const sections = ask.timeline === true ? sectionOpened(now, 'timeline') : null;
+    const opened = sections === null ? {} : { opened: sections.opened, timelinePinned: null };
+    if (outcome.shown === null) return { reveal: null, revealed, ...opened };
     const opening = ask.open === true && outcome.kind === 'found' ? [outcome.shown] : [];
     const expanded = [...ancestorsOf(outcome.shown), ...opening].reduce(
         (open, row) => (open.includes(rowKey(row)) ? open : setExpanded(open, rowKey(row), true)),
         now.expanded
     );
-    return { expanded, selected: outcome.shown, reveal: { ...ask, settled: true }, revealed };
+    return {
+        expanded,
+        selected: outcome.shown,
+        reveal: { ...ask, settled: true },
+        revealed,
+        ...opened
+    };
 }
 
 /** What the scroll to a settled ask writes, or null when the instance holds another ask. */

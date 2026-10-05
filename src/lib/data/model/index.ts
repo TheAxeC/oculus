@@ -426,6 +426,8 @@ export type {
     GitBlameLine,
     GitCommitFile,
     GitEntry,
+    GitFileCommit,
+    GitFilePage,
     GitGraphCommit,
     GitGraphPage,
     GitLineMark,

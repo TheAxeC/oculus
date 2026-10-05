@@ -35,14 +35,15 @@
     // tab has: the workspace header, follow mode, the rooted tab, the sections and the bookmark
     // form.
     //
-    // The sections are files/sections/'s: the outline and the timeline read what the active tab and
-    // the selected file hold, the bookmarks and the notes read their own files and answer a read of
-    // either that failed. What this view reads of them is what its tree and its bookmark form are
-    // built on: the roots of the workspace in force, and the bookmarks the tree draws its stars
-    // from. A bookmark is a collection entry, so it is added and edited by the form every other
-    // collection is edited by, over the schema its own file carries; the one thing this view
-    // supplies is the list of roots a bookmark may name, since that is what the workspace in force
-    // says and not what the file said when it was written.
+    // The sections are files/sections/'s: the outline reads what the active tab holds, the timeline
+    // the file pinned, else the one selected, else the one of the file tab last active, the
+    // bookmarks and the notes read their own files and answer a read of either that failed. What
+    // this view reads of them is what its tree and its bookmark form are built on: the roots of the
+    // workspace in force, and the bookmarks the tree draws its stars from. A bookmark is a
+    // collection entry, so it is added and edited by the form every other collection is edited by,
+    // over the schema its own file carries; the one thing this view supplies is the list of roots a
+    // bookmark may name, since that is what the workspace in force says and not what the file said
+    // when it was written.
     //
     // The folders of the default workspace are the roots config/sources.yml lists, and those can be
     // taken out; every root the configuration names in a saved workspace is in it and cannot be,
@@ -157,7 +158,7 @@
     const rootKeys = $derived(rootKeysOf(saved));
     /** Whether the roots show under the workspace header. */
     const headerOpen = $derived(sectionOpen(view, 'files'));
-    /** The file the timeline is of: the selected row when it is a file. */
+    /** The file the timeline is of unless it is pinned: the selected row when it is a file. */
     const selectedFile = $derived.by<RowRef | null>(() => {
         const at = view.selected;
         if (at === null) return null;
@@ -297,6 +298,7 @@
             {view}
             selected={selectedFile}
             onsection={toggleSection}
+            onpatch={patch}
             onaddmark={marking.showMarkForm}
             onopenmark={(entry: Entry) => openBookmark(tree.opener, entry)}
             oneditmark={marking.edit}

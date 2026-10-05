@@ -332,6 +332,7 @@
         <CommitFiles
             {root}
             hash={one.hash}
+            short={one.short}
             {place}
             {nav}
             passing={lane === undefined ? [] : lanesBelow(lane)}
@@ -381,6 +382,7 @@
             <CommitFiles
                 {root}
                 hash={commit}
+                short={commit.slice(0, 7)}
                 place="outside"
                 {nav}
                 passing={[]}

@@ -115,7 +115,15 @@ export function commitDiff(
     const ms = milliseconds(timeout);
     const listed = show(
         root,
-        ['--format=', '--name-status', '-z', '-M', '--diff-merges=first-parent', hash],
+        [
+            '--format=',
+            '--name-status',
+            '-z',
+            '-M',
+            '--relative',
+            '--diff-merges=first-parent',
+            hash
+        ],
         ms
     );
     if (!listed.ok) return refused(listed.text);

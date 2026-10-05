@@ -415,6 +415,24 @@ export type GitCommit = {
     when: string;
 };
 
+/**
+ * One commit of the history of a single file, as the Timeline lists it: the commit with its author,
+ * the committer date git orders the list by, and the file's path in that commit. `from` is the path
+ * the commit started from, which is `path` unless the commit renamed or copied the file. Both are
+ * relative to the served root the log was read from.
+ */
+export type GitFileCommit = GitCommit & {
+    author: string;
+    email: string;
+    /** The committer date, ISO 8601 with its offset, as git wrote it. */
+    committed: string;
+    path: string;
+    from: string;
+};
+
+/** One page of a file's commits and whether the history holds commits older than the page's. */
+export type GitFilePage = { commits: GitFileCommit[]; more: boolean };
+
 /** One branch of a repository, its upstream and whether it is the checked-out one. */
 export type GitBranch = { name: string; upstream: string; current: boolean };
 

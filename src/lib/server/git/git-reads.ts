@@ -160,8 +160,11 @@ export async function worktreeSides(
  * GET /api/git: one read, by the parameter it names. `diff=<root>&path=&staged=<0|1>` answers a
  * file's diff, `worktree=<path>&root=` a worktree's, `graph=<root>&skip=<n>` a page of the graph,
  * `commit=<hash>&root=[&path=]` a commit's files or its diff of one, `blame=<root>&path=`,
- * `marks=<root>&path=`, `sides=<root>&path=`, `log=<root>&path=` (the commits that touched the
- * file, newest first and across renames) and `stash=<ref>&root=`, `head=<root>&path=&stage=` a file
+ * `marks=<root>&path=`, `sides=<root>&path=`, `log=<root>&path=[&before=<hash>]` (a page of the
+ * commits that touched the file, newest first and across renames and copies, answered with `more`
+ * for whether older commits remain; `before` names the last commit of the page read, the page being
+ * the rows after it, and `path` is the file as the first page named it; a `before` that is no hash
+ * or is in no row of the log is refused) and `stash=<ref>&root=`, `head=<root>&path=&stage=` a file
  * as HEAD or the index holds it, `compare=<root>&from=<ref>&to=<hash>[&path=]` a comparison,
  * `refs=<root>` the refs a picker lists, `workspace=<root>&path=` a linked worktree's file against
  * the main worktree's, and `root=` alone the branch listing.
@@ -253,7 +256,12 @@ export async function handleGitGet(request: Request, options: ReadOptions): Prom
         const root = named(key);
         if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         if (key === 'blame') return answer(reads.blame(root, path), 'lines');
-        if (key === 'log') return answer(reads.log(root, path), 'commits');
+        if (key === 'log') {
+            const before = parameters.has('before') ? (parameters.get('before') ?? '') : undefined;
+            const page = reads.log(root, path, before);
+            if (!page.ok) return json({ error: page.error }, { status: 400, headers: NO_STORE });
+            return json({ ok: true, ...page.value }, { headers: NO_STORE });
+        }
         if (key === 'marks') return answer(reads.marks(root, path), 'marks');
         return answer(reads.sides(root, path), 'sides');
     }

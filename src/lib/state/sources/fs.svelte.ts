@@ -111,7 +111,13 @@ import {
     type ListingShown
 } from './fs.ts';
 import { t } from '../shared/words/text.ts';
-import { createFileHistory, reasonOf, type FileCommits, type FileCopies } from './fs-history.ts';
+import {
+    createFileHistory,
+    reasonOf,
+    type CommitPage,
+    type FileCommits,
+    type FileCopies
+} from './fs-history.ts';
 
 export { fileBytesUrl, FS_PATH, listingUrl, readCapped } from './fs-transport.ts';
 export type {
@@ -274,13 +280,26 @@ export type FsStore = {
     /** Say that one file was written, which moves its version and its address with it. */
     bump: (root: string, path: string) => void;
     /**
-     * The copies the local history holds of one file, newest first. A file written since is read
-     * again, since the key carries the file's version; a read for another file never replaces this
-     * one's, so the Timeline draws the file it is on and an answer for the one before is not shown.
+     * The copies the local history holds of one file, newest first. They are read again when a
+     * `files` message says something under the file's root was written, and a read for another
+     * file never replaces this one's, so the Timeline draws the file it is on and an answer for
+     * the one before is not shown.
      */
     copies: (root: string, path: string) => FileCopies;
-    /** The commits that touched one file of a repository, newest first, read the same way. */
-    commits: (repository: string, path: string, root: string, shown: string) => FileCommits;
+    /**
+     * The first page of the commits that touched one file of a repository, newest first. `head`
+     * names the commit and branch the repository is at, so a commit, a checkout or a pull reads
+     * the first page again.
+     */
+    commits: (repository: string, path: string, head: string) => FileCommits;
+    /** One page of those commits: the rows that follow a commit in the history of `path`. */
+    commitPage: (repository: string, path: string, before: string) => Promise<CommitPage>;
+    /**
+     * Read the copies and the first page of the commits of one file again; the file is named as
+     * the file browser names it (`root`, `path`) and as its repository does (`repository`,
+     * `shown`).
+     */
+    refreshFile: (root: string, path: string, repository: string, shown: string) => void;
     /** The text of one copy of a file, or null when the server does not hold it. */
     copyText: (root: string, path: string, id: string) => Promise<string | null>;
     /** The reader's own bookmarks, asked for once a round like the workspaces. */
@@ -560,7 +579,7 @@ export function createFs(
         }
     }
 
-    const history = createFileHistory(queries, fileVersion);
+    const history = createFileHistory(queries, entities, roots);
 
     /** The reader's own bookmarks, asked for once and held until they are marked. */
     function bookmarks(): BookmarksState {
@@ -777,6 +796,8 @@ export function createFs(
         bump,
         copies: history.copies,
         commits: history.commits,
+        commitPage: history.commitPage,
+        refreshFile: history.refreshFile,
         copyText: history.copyText,
         bookmarks,
         bookmarksNow,

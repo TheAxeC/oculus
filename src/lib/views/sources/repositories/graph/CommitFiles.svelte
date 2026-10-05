@@ -38,6 +38,8 @@
     type Props = {
         root: string;
         hash: string;
+        /** The commit's abbreviated hash, git's `%h`, which a file's diff names the commit by. */
+        short: string;
         /**
          * Where the commit is drawn (`in`, `out`, `log` or `outside`), which a commit drawn in two
          * lists needs so the ids of its rows and its folders are each one row's.
@@ -66,6 +68,7 @@
     let {
         root,
         hash,
+        short,
         place,
         nav,
         onrows,
@@ -155,8 +158,8 @@
 
     function opened(file: GitCommitFile): void {
         repositories.openDiff(
-            { root, path: file.path, staged: false, worktree: false, commit: hash },
-            t('repositories.commit_diff_label', nameOf(file.path), hash.slice(0, 7))
+            { root, path: file.path, staged: false, worktree: false, commit: hash, short },
+            t('repositories.commit_diff_label', nameOf(file.path), short)
         );
     }
 </script>

@@ -7,6 +7,9 @@
 //
 // A Replace Preview is refused with the words of a replace (data/file-ops.ts OPS_REFUSALS), and the
 // pane says the sentence the catalog holds for the word, or its general one for any other.
+//
+// A read of the change a commit made that fails says so with the commit's short form as git prints
+// it, the one the pane's title shows, and none of git's words.
 
 import { refusalSentence, refusalWord } from '$lib/state/shared/answers/answers';
 
@@ -34,16 +37,27 @@ function previewSentence(word: unknown, t: (key: string) => string): string {
 
 /**
  * The sentence a failed read of a diff pane is told in: the preview's for a Replace Preview, the
- * comparison's for a comparison of two files or of a file with a copy, else the server's own text.
+ * comparison's for a comparison of two files or of a file with a copy, the commit's for the change
+ * a commit made when the pane carries git's short form of the commit (naming it, with none of git's
+ * words), else the server's own text.
  */
 export function failureSentence(
-    subject: { replace?: unknown; against?: unknown; save?: string },
+    subject: {
+        replace?: unknown;
+        against?: unknown;
+        save?: string;
+        commit?: string;
+        short?: string;
+    },
     error: string | undefined,
-    t: (key: string) => string
+    t: (key: string, ...args: string[]) => string
 ): string {
     if (subject.replace !== undefined) return previewSentence(error, t);
     if (subject.against !== undefined || (subject.save ?? '') !== '') {
         return compareSentence(error, t);
+    }
+    if ((subject.commit ?? '') !== '' && (subject.short ?? '') !== '') {
+        return t('repositories.diff_commit_failed', subject.short ?? '');
     }
     return error ?? t('repositories.diff_failed');
 }

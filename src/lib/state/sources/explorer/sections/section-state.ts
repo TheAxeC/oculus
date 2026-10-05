@@ -23,3 +23,8 @@ export function sectionFlipped(view: SectionState, id: string): SectionState {
         ? { collapsed: view.collapsed, opened: toggleExpanded(view.opened, id) }
         : { collapsed: toggleExpanded(view.collapsed, id), opened: view.opened };
 }
+
+/** The lists after one section is opened, and the same lists for a section that is open already. */
+export function sectionOpened(view: SectionState, id: string): SectionState {
+    return sectionOpen(view, id) ? view : sectionFlipped(view, id);
+}

@@ -48,6 +48,8 @@
         selected: RowRef | null;
         /** Open or close one section under the trees. */
         onsection: (id: string) => void;
+        /** Write part of the file browser's own state, which the Timeline's pin and lists are. */
+        onpatch: (part: Partial<FilesView>) => void;
         onaddmark: () => void;
         onopenmark: (entry: Entry) => void;
         oneditmark: (id: string) => void;
@@ -55,8 +57,17 @@
         onnote: (owner: string, note: string) => void;
     };
 
-    let { owner, view, selected, onsection, onaddmark, onopenmark, oneditmark, onnote }: Props =
-        $props();
+    let {
+        owner,
+        view,
+        selected,
+        onsection,
+        onpatch,
+        onaddmark,
+        onopenmark,
+        oneditmark,
+        onnote
+    }: Props = $props();
 
     const marks = $derived(bookmarks());
     const held = $derived(notes());
@@ -84,7 +95,13 @@
 </script>
 
 <Outline open={sectionOpen(view, 'outline')} ontoggle={() => onsection('outline')} />
-<Timeline open={sectionOpen(view, 'timeline')} ontoggle={() => onsection('timeline')} {selected} />
+<Timeline
+    open={sectionOpen(view, 'timeline')}
+    ontoggle={() => onsection('timeline')}
+    {selected}
+    {view}
+    {onpatch}
+/>
 <Bookmarks
     rows={marks.entries}
     error={marks.error}
