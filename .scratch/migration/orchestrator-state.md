@@ -40,6 +40,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   round2_reviewer: agents/reviews/X3f-refuter.md (Repair round 2, refuted), claude-opus-5-5 (a4505c32f469215eb), 136,251 tokens, 114 tool uses, 17.1 min; Spec 1, Proof 2, Standards 5, Behaviour 2, each fixed at landing or closed there
   landing2: 5f9640b2a, taken back out by Axel (Z532)
   round: 3 (agents/briefs/X3f-round3.md)
+  round3_builder: abb2cc439fd4f1181 resumed 2026-10-05, served claude-sonnet-5-5 (the transcript's message.model, read after the resume)
 - step: S5
   executor: agent
   worker: claude:sonnet at ordo-high
