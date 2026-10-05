@@ -84,8 +84,8 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Code: `classifyFailure` in `src/lib/server/core/git/parse.ts`, read by `src/lib/server/git/git-write.ts` and `src/lib/server/git/deposit-git.ts`; `failureText` in `src/lib/server/git/git-routes.ts`, which says each code in the catalog's words.
   Test: `tests/server/core/git-failure.test.ts`, 'classifyFailure' and 'failureText'.
 - G43. Submit runs only the plan the reader confirmed, equal to the plan the server computes at the press, and a job script whose code and sourced files never name `/local/$SLURM_JOB_ID` gets the warning before Submit.
-  Code: `src/lib/server/machine/hpc/submit.ts`, `src/lib/server/machine/hpc/scratch.ts`.
-  Test: `tests/server/machine/hpc/submit.test.ts`, its two tables, written by D44.
+  Code: `src/lib/server/machine/hpc/submit.ts`, `src/lib/server/machine/hpc/scratch.ts`, `keptFiles` in `src/lib/server/core/git/files.ts`.
+  Test: `tests/server/machine/hpc/submit.test.ts`, 'the run of a confirmed plan' and 'the scratch rule'; `tests/server/machine/hpc/submit-files.test.ts`, 'the files Submit sends from a code folder'.
 - G44. A git write stopped by Cancel says what it left in progress: a merge, a rebase or a cherry-pick cancelled midway is named in the answer, and the view shows it with its Abort.
   Code: `stoppedOn`, `cherryPick`, `continueRebase` in `src/lib/server/git/git-index.ts`; `src/lib/server/git/git-routes.ts`.
   Test: `tests/server/git/git-write.test.ts` 'names the merge a cancelled run left in progress, and nothing once it is aborted'; `tests/routes/git/git.test.ts` 'says the merge a cancelled run left in progress'.
@@ -115,7 +115,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Test: `tests/checks/config/integrity.test.ts`, held whole.
 - G15. A manifest with a broken field still shows its project, with a finding.
   Code: `src/lib/data/snapshot/`.
-  Test: `tests/data/snapshot/resources.test.ts`, 'answers a scalar compute: with the list-shape finding and reads it as none'.
+  Test: `tests/data/snapshot/resources.test.ts`, 'answers a scalar compute: with the list-shape finding and reads it as none'; `tests/data/snapshot/cluster-folder.test.ts`, "a manifest's paths.cluster".
 - G32. What the hub shows is what its files say: each parser of the hub's files reads a well-formed file into the values the file holds (manifests, registries, collections, career, feeds, docs, present, the snapshot built from them).
   Code: `src/lib/data/sources/`, `src/lib/data/snapshot/`, `src/lib/data/model/`.
   Test: manifests: `tests/data/sources/manifests.test.ts`, 'carries the provenance of a flat project'; registries: `tests/data/sources/registries.test.ts`, 'reads entries with their provenance and returns the other keys as meta'; collections: `tests/data/sources/collections.test.ts`, 'reads a title-keyed collection with its entries in file order'; career: `tests/data/sources/career.test.ts`, 'parses it as the map it is, with no key renamed', 'reads the title, the milestone and the situation strip'; feeds: `tests/data/sources/feeds.test.ts`, 'keeps the live leads with the ISO date inside their deadline text, dismissed ones out'; docs: `tests/data/sources/docs.test.ts`, 'splits a leading frontmatter block from the body', 'finds the documents that are there and no others'; present: `tests/data/sources/present.test.ts`, 'reads the front matter into one slide under the project id'; personal: `tests/data/sources/personal.test.ts`, 'is read as one raw record per folder, in the folder's own place', 'reads the five fields'; snapshot: `tests/data/snapshot/normalise.test.ts`, 'fills a project from the manifest keys of the same meaning'.

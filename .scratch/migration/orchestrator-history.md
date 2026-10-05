@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z565 (2026-10-05, closed in automode): D44's cluster-folder test under G15; `choices.md`.
+- Z564 (2026-10-05, closed in automode): D44's submit-files test under G43, `keptFiles` in its Code line; `choices.md`.
 - Z563 (2026-10-05, closed in automode): O30's find bar in its own view; `choices.md`.
 - Z562 (2026-10-05, closed in automode): O30's spelling facts from the preload under Z555 (a); `choices.md`.
 - Z561 (2026-10-05, closed in automode): the apps entries' Settings sections; `choices.md`.

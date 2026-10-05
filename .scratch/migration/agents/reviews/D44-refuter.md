@@ -279,3 +279,87 @@ Usage from the completion notice: aa5a6d5c963790bee, claude-opus-5-5, 315,905 to
 ## Closed
 
 Every finding is sent to the builder in repair round 1 (`agents/briefs/D44-round1.md`), with its ruling there; Spec 2 is accepted as built (ruling 2 of the round).
+
+## Repair round 1, refuted
+
+Reviewer over round 1: a023b1cea1940a333, claude-opus-5-5. Worktree `.agents/worktrees/D44`, base 6044d753c; the round's delta read against the round-0 diff (`scratchpad/d44.diff`) and the whole diff since the base.
+
+### Verification
+
+```
+$ npm run diagrams            (from tools/oculus)
+diagrams-unchanged            (md5 of docs/diagrams/* before and after)
+
+$ sh /Users/axelfaes/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+        tests/server/machine/hpc/submit-files.test.ts: changed, run by npm run test:checks or test:slow
+ok      prettier (6.7 s): All matched files use Prettier code style!
+ok      ASCII gate (7.4 s)
+ok      svelte-kit sync (10.6 s)
+ok      eslint (18.2 s)
+ok      svelte-check (47.1 s): 1791218490293 COMPLETED 373 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (80.0 s): Duration  62.76s (transform 124.95s, setup 0ms, import 183.88s, tests 47.90s, environment 1.24s)
+test:quick: 88.0 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+checks: 1 commands passed
+```
+
+`checks.sh` takes only the state file, so `-- --base 6044d753c` is not passed; the quick tier's default base is HEAD, which is the base. The 45 s limit was run with four other agents on the machine; whether the step alone stays under it is not verified.
+
+Brief verify 2 (as written): 7 files, 55 tests passed; with the round's new files: 11 files, 72 tests. `submit.test.ts` 29 passed, 1.92 s; `submit-files.test.ts` 4 passed, 1.52 s. Verify 3: `sh-syntax` prints `echo /local/$SLURM_JOB_ID`, the build exits 0 and `build/server/chunks/chunks/submit.js-DovpnpQa.js` imports it. Verify 4: 177 scripts, named 99, warned 78, the eight rows of section 2's table. Verify 5: the ASCII gate and `LC_ALL=C grep` print nothing; `folder-check.sh` exits 0; `Source.svelte` 520 of 520. Verify 6: unused exports 255 to 254, only `KILL_GRACE_MS` leaving. Tree checks: 15 passed, 1 skipped; 226 tests passed, 3 skipped.
+
+Round 1 mutations on a scratch copy, each failing its row: M1 copyFailureLine as lastLine (1 failed); M2 project from the real path (2 failed); M3 and M4 the two `closed` checks (1 failed each); M5 and M6 the `closed` and `outside` sentences (1 failed each); M7a progress as refusal (2 failed); M7b SourceNote ignoring the tone (1 failed); M8 checkClusterFolder removed (5 failed). Round 0's equality (4 failed) and busy (1 failed) mutations still fail. `submit-files.test.ts`: results/logs filter removed, `expected { files: 5, bytes: 83 } to deeply equal { files: 3, bytes: 81 }`; missing-path filter removed, `expected { files: 3, bytes: 70 } to deeply equal { files: 2, bytes: 70 }`.
+
+### The 14 rulings
+
+1 closed (`submit.ts:266-269`, `:330`; M1). 2 accepted as built. 3 closed (`submit.ts:166-169`, `:206-210`; P1b, P1c; M2). 4 closed (`:72-85`, `:303`, `:308`; state `submit.ts:46`; M3 to M5); a `plan` request after the close still runs `git ls-files`, outside the ruling's rows. 5 closed (state `submit.ts:45`; M6); the comment at `submit.ts:36` is now false (Standards 2). 6 closed (`SourceNote.svelte:34-40`, `tab-said.svelte.ts`, `submit-job.svelte.ts:86,93,108`; M7a, M7b). 7 closed by reading. 8 closed (`Source.svelte:260`). 9 closed for the read vectors; the git-writes sentence is false (Spec 1). 10 closed; the paragraph contradicts itself (Standards 1). 11 closed. 12 closed by moving rows, no check deleted. 13 closed (seven rows, M8 fails five). 14 partly closed (Proof 1, Proof 2).
+
+The builder's `deepestHolding` choice: both callers (`processes/read.ts:120`, `submit.ts:157`) import `deepestHolding` from `src/lib/data/helpers/files/paths.ts:56`; round 0's second copy under `src/lib/server/core/paths.ts` is gone. It does not match the brief's literal location (`D44.md:272`) and meets decision 13's purpose (the rule exists once). The boundary table allows `server` to import `data/**` (`boundaries.test.ts:185`). The rule is the same on a POSIX host over `realPath` output; it differs only on a host whose separator is not `/` and for an empty holder, which `realPath` never returns.
+
+### Verdicts, for the whole diff since the base
+
+Items: 1 holds; 2 holds; 3 holds; 4 holds; 5 violated (Spec 1, Standards 1); 6 holds for G43's two tables (Standards 3, Proof 2 for the rest).
+
+Cases: 1 to 8 met; 9 not verifiable for the 8 s bound against an unreachable host (the look, off the VPN); 10 to 18 met; 19 not verifiable here (the orchestrator's look, Z539 (a)); 20 to 26 met.
+
+### Spec
+
+- Spec 1. `DESIGN.md:128`: "the list and the absence of `--force` are held by the same two lists, read at review": the two lists are the head comment of `run.ts` and the paragraph, and `run.ts:10-43` lists only read forms; the write forms are in the head comment of `server/git/git-write.ts`. A reader adding a write form looks in the wrong module. Item 5.
+
+### Proof
+
+- Proof 1. `agents/reviews/D44-report.md` keeps round-0 text: "Doc text" (`:187-195`) quotes round-0 DESIGN.md:128 sentences and proposes G43's Test line without `submit-files.test.ts`; case 7's row (`:32`) says rsync's line is shown; verify 2 (`:58`) says 6 files and 45 tests; the Files table (`:85-116`) omits `said-tone.ts`, `tab-said.svelte.ts`, `submit-world.ts`, `submit-files.test.ts`, `cluster-folder.test.ts`, the state `submit.test.ts`, `source-note.test.ts`, `submit-job.client.test.ts`, and keeps round-0 counts; the history-word section (`:272`) judges `core/paths.ts`. A G43 Test line written from "Doc text" would leave `submit-files.test.ts` guarding nothing. Ruling 14.
+- Proof 2. `tests/server/machine/hpc/submit-files.test.ts` has no quoted run with its behaviour removed, which `agents/spec.md:62` requires; the reviewer's two mutation runs above show it fails without the behaviour.
+
+### Standards
+
+- Standards 1. `DESIGN.md:135`: "(`copy-failed` carries rsync's last line, ...)" contradicts the sentence added later in the paragraph, "A failed copy carries one line of rsync's stderr: the first line that begins `ssh:` when there is one, else the last." A reader trusting the first clause reverts `copyFailureLine`. Item 5.
+- Standards 2. `src/lib/server/machine/hpc/submit.ts:36`: "`outside` is the page's `failed`" is false after ruling 5; a maintainer removes the `outside` sentence as redundant.
+- Standards 3. New test files no `agents/guarded.md` entry names: `tests/server/machine/hpc/submit-files.test.ts` (G43's Test line names only `submit.test.ts`; its Code line lacks `keptFiles`), `tests/data/snapshot/cluster-folder.test.ts` (G15 names `resources.test.ts`), `tests/state/system/machine/submit.test.ts` (no entry), `tests/views/sources/source-note.test.ts` and `tests/views/sources/submit-job.client.test.ts` (`guarded.md:3`: views have no entry). The round ordered these rows; the disposition is the orchestrator's at landing.
+- Standards 4. `src/lib/data/helpers/files/paths.ts:1-11`: the head comment gives a page-only reason for the `/` rules and does not name the server's two callers, so a change for the page's sake would silently change the processes read and Submit's project.
+
+### Behaviour
+
+None: each visible change of the round is stated with its before and after in the report's "Repair round 1".
+
+### Declined to judge
+
+- Case 19 and the real ward and btfno plans at the confirm (the orchestrator's look, Z539 (a)).
+- Case 9's 8 s bound against a real unreachable host.
+- Whether GNU rsync on the cluster expands `~/` in the unquoted target and creates the last missing level.
+- Submit's place among the bar's actions and its glyph (the look).
+- A path spelling a project folder in another letter case would now plan as `no-project`; the page sends paths from the file browser's listing.
+- The 45 s limit of the quick list.
+
+Usage from the completion notice: a023b1cea1940a333, claude-opus-5-5, 321,296 tokens, 75 tool uses, 18.5 min.
+
+### Closed
+
+None of this run's findings is sent to the builder (the run over the last round).
+- Spec 1: fixed at landing; DESIGN.md:128 now says the write forms are held by the head comment of `server/git/git-write.ts` and the paragraph.
+- Standards 1: fixed at landing; DESIGN.md:135's first clause now says `copy-failed` carries one line of rsync's stderr, which the later sentence defines.
+- Standards 2: fixed at landing; `submit.ts:36` reads "`outside`: the path is no file under a served root."
+- Standards 4: fixed at landing; the head comment of `src/lib/data/helpers/files/paths.ts` names the server's two readers of `deepestHolding`.
+- Standards 3: `submit-files.test.ts` named under G43 with `keptFiles` in its Code line (Z564); `cluster-folder.test.ts` named under G15 (Z565); the state test and the two view tests raised to Axel as Z566.
+- Proof 1: the landing reads the tree, never the report's stale sections: G43's Test line is written from the tree (Z564), DESIGN.md:128 is read at landing, and the changed paths are compared with the write list from `git diff --name-only`.
+- Proof 2: closed by this run's two mutation runs of `submit-files.test.ts`, quoted above, which the booking carries.
+- The `deepestHolding` choice: accepted; it meets decision 13's purpose (one copy of the rule) inside the boundary table.

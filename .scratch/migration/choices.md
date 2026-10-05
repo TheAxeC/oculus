@@ -2,6 +2,24 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z565 (2026-10-05, step D44)
+
+The question: D44's `tests/data/snapshot/cluster-folder.test.ts` falls under no entry of `agents/guarded.md`.
+
+- Chosen: (a) name it under G15, whose sentence (a manifest with a broken field still shows its project, with a finding) it tests, and whose Code line holds `validate.ts`.
+- Not chosen: (b) fold its rows into `resources.test.ts`, which mixes two readers' tables in one file. The lazy one was neither; (a) and (b) cost the same.
+
+Where it is built: `agents/guarded.md`, G15's Test line. Booked in `plan.md` Rulings.
+
+## Z564 (2026-10-05, step D44)
+
+The question: D44's `tests/server/machine/hpc/submit-files.test.ts` falls under no entry, and G43's Code line does not name `keptFiles`, which its rows exercise.
+
+- Chosen: (a) name the file under G43 and add `keptFiles` in `src/lib/server/core/git/files.ts` to G43's Code line; the files of the plan are part of G43's sentence.
+- Not chosen: (b) leave it under no entry, which breaks `agents/spec.md:57`. The lazy one was (b).
+
+Where it is built: `agents/guarded.md`, G43's Code and Test lines. Booked in `plan.md` Rulings.
+
 ## Z563 (2026-10-05, step O30)
 
 The question: O30's find bar: `findInPage` counts a text box of the page holding the query, so a bar drawn in the page counts itself (the builder's probe2 and probe4).
