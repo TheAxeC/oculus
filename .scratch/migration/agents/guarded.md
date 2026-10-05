@@ -59,6 +59,18 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G31. A record file that does not read is never overwritten by the next save; the save is refused with the reason. The saved commands, approvals, workspaces and session overrides files do this; the saved layout that does not read is kept under `oculus.layout.unread` before the default is written over it; the bookmarks file's writers leave a file that does not parse as it was.
   Code: `src/lib/server/machine/commands/saved.ts`, `src/lib/server/machine/approvals/approvals.ts`, `src/lib/server/files/fs.ts`, `src/lib/server/sessions/overrides.ts`, `src/lib/state/workbench/layout/saved/`.
   Test: approvals: `tests/server/machine/approvals/approvals.test.ts`, 'reads a file that is not JSON as empty and refuses a write over it, leaving it'; approvals through the route: `tests/server/machine/approvals/approvals.test.ts`, 'reads a file that is not JSON as empty and refuses a write over it, leaving it'; saved commands: same file, 'refuses to write over a commands.json that is not the shape, leaving it'; the shared read: `tests/server/core/json-checked.test.ts`, 'answers each state of the file'; workspaces: `tests/server/files/workspaces.test.ts`, 'writes a missing file and refuses one that does not read, leaving it as is'; session overrides: `tests/server/sessions/overrides.test.ts`, 'writes a missing file and refuses one it cannot read, leaving it as it was'; session overrides through the route: `tests/routes/edit/write.test.ts`, 'answers a session write over an overrides file it cannot read with the refusal'; saved layout: `tests/state/workbench/layout/saved/layout-unread.test.ts`, 'is kept under the unread key when the next change writes the default'.
+- G38. A seeded agent runs only after its exact seed, folder and agent are approved; a changed seed asks again.
+  Code: `src/lib/server/machine/pty/compose.ts`, `src/lib/server/machine/approvals/approvals.ts`, `src/lib/server/machine/seeds/task-start.ts`.
+  Test: rows in `tests/routes/sessions/compose.test.ts`, written by D20's repair round 1.
+- G39. A start in a mode the agents catalog marks `confirm: true` is refused without the confirmation.
+  Code: `src/lib/server/machine/pty/compose.ts`, `src/routes/api/(sessions)/terminal/+server.ts`.
+  Test: a row in `tests/routes/sessions/compose.test.ts`, written by D20's repair round 1.
+- G40. A transcript above Node's string limit is read whole in pieces, and the next read asks from where the last one stopped.
+  Code: `src/lib/server/sessions/stores/transcripts.ts`, `src/lib/server/sessions/stores/turns.ts`.
+  Test: `tests/server/sessions/transcripts.test.ts` with a small piece size, written by D20's repair round 1.
+- G41. A git command that fails says why: timed out, ended by a signal, an exit status with no output, or too much output.
+  Code: `shortReason` in `src/lib/server/core/git/run.ts`, `src/lib/server/core/git/parse.ts`.
+  Test: a table beside `shortReason`, written by D20's repair round 1.
 
 ## It starts, and configuration is checked
 
