@@ -465,3 +465,38 @@ Cases (these replace cases 12 to 19, 25, 28, 29 and the strip half of 30 of X3f.
 - `followedTab` has no test of its own. It is not under G37's Code line. It is to be reconciled with D42's `followedFile` at landing (brief item 5a).
 
 Usage: ordo-high on claude-opus-5-5 (a4505c32f469215eb), 136,251 tokens, 114 tool uses, 17.1 min.
+
+## Repair round 3, refuted
+
+Reviewer a74583b625c668d96, claude-opus-5-5: 323,724 tokens, 102 tool uses, 18.5 min (completion notice). Worktree `.agents/worktrees/X3f`, base f672330af.
+
+### Verification
+
+`npm run diagrams` exit 0, diagrams unchanged. `checks.sh` from `tools/oculus`: prettier, ASCII gate, svelte-kit sync, vitest (35.07 s), eslint, svelte-check (359 FILES 0 ERRORS 0 WARNINGS) ok; `test:quick: 45.8 s (limit 45.0 s); every command passed`; `checks: 1 commands passed`. `npm run test:quick -- --base f672330af`: 14.0 s, every command passed. `npx vitest run tests/checks`: 16 files, 227 tests passed. `sh utils/folder-check.sh` exit 0. Reproduced: the round-2 tree red (10 failed | 12 passed (22)), File.svelte without 'bar' (4 failed), handUp ignoring its place (2 failed), handUp cleanup dropping the place (1 failed), the route probe (`stage=bogus` 400 with no read, head and index 200), the unused-exports list, the line and folder counts, VS Code 1.137.0's `git.blame.statusBarItem.enabled` default True. Not reproduced: "DESIGN.md: the Git form list adds blame --porcelain HEAD and --contents -".
+
+### Verdicts
+
+Items: 1 holds; 2 holds by reading; 3 holds (as `blameAt`, Spec 1); 4 holds (Z537 overrides the cases ruling 2 for HEAD and index in the status bar); 5 violated (Standards 1, Proof 1); 6 holds.
+Cases: 1 to 6, 9, 10, 12 met by reading; 7 met by reading except the staged-line attribution not run; 8 met (probe); 11 not verifiable (CSS, the look); 13 partial (Behaviour 2). Cases ruling 1 and 3 hold, 2 holds for the gutter and is superseded by Z537 for the status bar, 4 partial.
+
+### Findings
+
+- Spec 1. `blameAt` in `server/core/git/compare.ts:94` in place of a stage on `blameOf`, since `reads.ts` to `compare.ts` to `reads.ts` would be an import cycle.
+- Spec 2. `icons.yml` gives Open Preview to the Side `panel-right-open` and Open Preview `file-search`, where Z508 named `file-search` for Side; the report does not say it departs from Z508.
+- Spec 3. The report's G37 text changes the words booked for Z491 and adds `tests/views/sources/bar-actions.test.ts`, a view test, while guarded.md says views have no entry.
+- Proof 1. The report says DESIGN.md's Git form list gained `blame --porcelain HEAD -- <path>` and `blame --porcelain --contents - -- <path>`; `grep -n "\-\-contents" DESIGN.md` prints nothing.
+- Standards 1. Sentences made false: `Breadcrumb.svelte:5` and `DESIGN.md:427` ("an item at most 80% of the row"), `DESIGN.md:128`, `PaneStrip.svelte:8-9` (Open Preview to the Side handed in as `tabActions`), `Source.svelte`'s head ("the palette ... lists every action of the tab").
+- Standards 2. `MarkdownPreview.svelte:35-36`: a comment paragraph broken mid-line.
+- Standards 3. `export type ActionsPlace` in `ui/tabs/tab-actions.svelte.ts:24` has no importer.
+- Standards 4. The `strip` place, `PaneStrip`'s `tabActions` prop, `stripShape(..., tabActions !== undefined)` and `PaneView.svelte:428` have no user after Z536.
+- Standards 5. `git-reads.ts:222` and `:267` repeat one 400 answer; `BarActions.svelte:69` repeats the Save key `shell/keys/keys.ts:118` decides.
+- Standards 6. The builder ran one read-only `git status`, disclosed.
+- Behaviour 1. `PaneStrip.svelte:97` draws the bar for any handed snippet, so a tab with no path and no applying action draws an empty 22 px bar with an empty path landmark and an empty "File controls" toolbar.
+- Behaviour 2. `fileOfTab` answers a Files tab opened on a folder and a LaTeX tab, which then draw a Seti file icon in place of their view glyph, against Z533's "a tab showing no file keeps its view's icon".
+- The round-2 run's Standards 2 and 3 named as still in the tree: both were closed at the earlier landing (5f9640b2a, `X3f-landing.md` fixes 4 and 5) and those fixes are in the patch the round built on: the shell check reads `deps.client` (`boundaries.test.ts:364`) and the tab menu wraps a refusal in `files.bookmark_failed` (`tab-menu-state.svelte.ts:94`).
+
+### Declined to judge
+
+The look cases; `git blame --contents -` on a real repository with a staged line; the cost of the blame read per gutter read; whether a HEAD tab's root always equals a `gitFor` key; round-2 items round 3 did not touch.
+
+### Closed

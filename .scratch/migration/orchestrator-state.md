@@ -32,7 +32,6 @@ dispatch:   # steps in flight, up to seven (Z423)
   base: f672330af (round 3; the patch agents/reviews/X3f-backed-out.patch applied, 95 files, docs/DATA-MAP.md outside the sparse paths)
   launched: 2026-10-05 (taken back out of main; the patch agents/reviews/X3f-backed-out.patch applied at ec4c6f577)
   report: agents/reviews/X3f-report.md
-  landing: backed-out (repair round 2 after the diagnosis agents/reviews/X3f-diagnosis.md and ruling Z466)
   diagnosis: agents/reviews/X3f-diagnosis.md, claude-opus-5-5 (aea533fdd969879a2), 182,164 tokens, 165 tool uses, 88.1 min; three causes found and proved, the "no tab opened" form of symptom 1 not found
   round2_widened: Z490 (the Outline, the DATA-MAP contents list), Z491 (tests under G37)
   round2_brief: agents/briefs/X3f-round2.md, claude-opus-5-5 (a91dafc2010e37e55), 209,890 tokens, 208 tool uses, 29.5 min
@@ -43,7 +42,8 @@ dispatch:   # steps in flight, up to seven (Z423)
   round3_builder: abb2cc439fd4f1181 resumed 2026-10-05, served claude-sonnet-5-5 (the transcript's message.model, read after the resume)
   round3_cases: agents/briefs/X3f-round3-cases.md (Open in Program only on mapped extensions, Blame only on tabs with a gutter, Open Preview as the row menu's)
   round3_builder_usage: first run handed back (cases 1, 3, 4, 5), 310,369 tokens, 29 tool uses, 4.0 min, 0 full-list runs; resumed with the cases ruling; build: 319,520 tokens, 250 tool uses, 39.7 min, 2 full-list runs; continued with Z536 (Open Preview to the Side to the bar) and Z537; with Z536 and Z537 (completion notice, whole run): 352,573 tokens, 271 tool uses, 48.3 min, 3 full-list runs
-  round3_reviewer: a74583b625c668d96, claude-opus-5-5, running
+  round3_reviewer: agents/reviews/X3f-refuter.md (Repair round 3, refuted), claude-opus-5-5 (a74583b625c668d96), 323,724 tokens, 102 tool uses, 18.5 min
+  landing: gate (findings fixed at landing)
 - step: D20
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -60,7 +60,8 @@ dispatch:   # steps in flight, up to seven (Z423)
   reviewer_report: agents/reviews/D20-refuter.md, claude-opus-5-5 (a4074e57a1552c160, stopped by mistake and resumed), 167,719 tokens, 110 tool uses, 22.1 min
   round: 1 (agents/briefs/D20-round1.md: the review's findings, G38 to G41's tests, Z515 (1)'s record, Z534)
   round1_builder_usage: 261,365 tokens, 168 tool uses, 43.3 min, the full list 3 times (items 1 to 21; item 21 sent by message)
-  round1_reviewer: a1d2b19ab1091cd56, claude-opus-5-5, running
+  round1_reviewer: agents/reviews/D20-refuter.md (Repair round 1, refuted), claude-opus-5-5 (a1d2b19ab1091cd56), 307,540 tokens, 99 tool uses, 20.1 min
+  diagnosis: round 1 Behaviour 4.1 (a cancelled merge left without MERGE_HEAD), a5f48ddcdb6f0ab3f, claude-opus-5-5, running
 ```
 
 ## The standing demands (from Axel, in force)
@@ -165,6 +166,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Z545 (raised 2026-10-05, A3's brief check, implied input I4). A scheduled run of an update task is an interactive Claude session that never ends by itself, so at `@hourly` each run leaves one more idle Claude terminal open (24 a day). (a) A due time while the task's earlier terminal is still open, idle or not, starts nothing and is recorded as skipped. For: nothing piles up; VS Code's Automations run one session at a time. Against: the schedule stops until you close the earlier terminal. (b) A due time while the earlier run is idle ends that earlier terminal (oculus started it) and then starts the new run; a run that is still working is skipped. For: the schedule keeps running and one terminal per task stays open. Against: an idle session you were reading is closed under you. (c) Every due time starts a new terminal and the earlier ones stay. For: nothing is closed. Against: idle Claude processes pile up, the lazy option. Recommendation: (b).
 
 - Z543 (raised 2026-10-05, D20's repair round 1). A new guarded entry for D20's Cancel of a merge, rebase or cherry-pick needs your yes (Z392): "G44. A git write stopped by Cancel says what it left in progress: a merge, a rebase or a cherry-pick cancelled midway is named in the answer, and the view shows it with its Abort." Code: `stoppedOn`, `cherryPick`, `continueRebase` in `src/lib/server/git/git-index.ts`, `src/lib/server/git/git-routes.ts`. Test: `tests/server/git/git-write.test.ts` 'names the merge a cancelled run left in progress, and nothing once it is aborted', `tests/routes/git/git.test.ts` 'says the merge a cancelled run left in progress'. (a) Yes: a user who cancels a merge and goes on working inside it can commit half a merge; the suite keeps the answer true. (b) No: the two tests are removed at landing. Recommendation: (a). The lazy option is (b).
 

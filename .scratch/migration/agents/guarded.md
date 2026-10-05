@@ -59,8 +59,8 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G30. A deposit commit is refused while the secret scan finds a secret in it.
   Code: `src/lib/server/git/deposit.ts`.
   Test: `tests/server/git/deposit.test.ts`, 'finds a secret and refuses the commit while it stands'.
-- G31. A record file that does not read is never overwritten by the next save; the save is refused with the reason. The saved commands, approvals, workspaces, notes order and session overrides files do this; the saved layout that does not read is kept under `oculus.layout.unread` before the default is written over it; the bookmarks file's writers leave a file that does not parse as it was.
-  Code: `src/lib/server/machine/commands/saved.ts`, `src/lib/server/machine/approvals/approvals.ts`, `src/lib/server/files/fs.ts`, `src/lib/server/files/fs/notes.ts`, `src/lib/server/sessions/overrides.ts`, `src/lib/state/workbench/layout/saved/`.
+- G31. A record file that does not read is never overwritten by the next save; the save is refused with the reason. The saved commands, approvals, workspaces, notes order, session overrides and schedule record (`~/.oculus/schedule.json`) files do this; the saved layout that does not read is kept under `oculus.layout.unread` before the default is written over it; the bookmarks file's writers leave a file that does not parse as it was.
+  Code: `src/lib/server/machine/commands/saved.ts`, `src/lib/server/machine/approvals/approvals.ts`, `src/lib/server/files/fs.ts`, `src/lib/server/files/fs/notes.ts`, `src/lib/server/sessions/overrides.ts`, `src/lib/state/workbench/layout/saved/`, `src/lib/server/machine/tasks/record.ts`.
   Test: approvals: `tests/server/machine/approvals/approvals.test.ts`, 'reads a file that is not JSON as empty and refuses a write over it, leaving it'; approvals through the route: `tests/server/machine/approvals/approvals.test.ts`, 'reads a file that is not JSON as empty and refuses a write over it, leaving it'; saved commands: same file, 'refuses to write over a commands.json that is not the shape, leaving it'; the shared read: `tests/server/core/json-checked.test.ts`, 'answers each state of the file'; workspaces: `tests/server/files/workspaces.test.ts`, 'writes a missing file and refuses one that does not read, leaving it as is'; session overrides: `tests/server/sessions/overrides.test.ts`, 'writes a missing file and refuses one it cannot read, leaving it as it was'; session overrides through the route: `tests/routes/edit/write.test.ts`, 'answers a session write over an overrides file it cannot read with the refusal'; saved layout: `tests/state/workbench/layout/saved/layout-unread.test.ts`, 'is kept under the unread key when the next change writes the default'; the notes order file: `tests/server/files/notes.test.ts`, 'refuses a write over an order file it cannot read, leaving it', written by X3e.
 - G38. A seeded agent runs only after its exact seed, folder and agent are approved; a changed seed asks again.
   Code: `src/lib/server/machine/pty/compose.ts`, `src/lib/server/machine/approvals/approvals.ts`, `src/lib/server/machine/seeds/task-start.ts`.
@@ -74,6 +74,12 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G41. A git command that fails says why: timed out, ended by a signal, an exit status with no output, or too much output.
   Code: `shortReason` and the failure classifier in `src/lib/server/core/git/parse.ts`, read by `src/lib/server/core/git/run.ts`.
   Test: a table beside `shortReason`, written by D20's repair round 1.
+- G45. Hits that share an identifier are one hit, and hits that share none are never one.
+  Code: the merge of `src/lib/state/feeds/literature/`.
+  Test: `tests/state/feeds/literature-merge.test.ts` 'merges hits by DOI, PubMed id or arXiv id and keeps hits that share none apart', written by D38.
+- G46. A scheduled update task starts once per due time: a due time missed while the server was down starts one catch-up run at the next start, a due time while that task's earlier run is going starts nothing and is recorded as skipped, a due time already recorded as handled never starts again, and close() leaves no timer and starts nothing.
+  Code: `src/lib/server/machine/tasks/schedule.ts`, `src/lib/server/machine/tasks/start.ts`.
+  Test: written by A3, its file and titles named in `agents/briefs/A3.md`.
 
 ## It starts, and configuration is checked
 
