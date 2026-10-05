@@ -1318,6 +1318,9 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z586 (2026-10-05): A3-10, (a): a prompt schedule runs only in the hub or a root the file browser serves ("All recommendations again"). (the user)
 - Z587 (2026-10-05): A3-11, (a): `local.yml` keys `schedules` and `schedule_record`, defaulting to `~/.oculus/schedules.yml` and `~/.oculus/schedule.json`; the lazy option was (b) ("All recommendations again"). (the user)
 - Z588 (2026-10-05): A3-12, (a): a scheduled task run's terminal is `task <kind>`, a command run's the command's name, a prompt run's the schedule's name ("All recommendations again"). (the user)
+- Z589 (2026-10-05): A3, an entry of `schedules.yml` that is not a map has the problem `entry-wrong`, "Entry {0} of the file is not a map of keys, so it does not run.", with Delete only. (the orchestrator, automode)
+- Z590 (2026-10-05): A3, Z586 read as "in or under": a prompt schedule runs in the hub, a root the file browser serves, or any folder under one of them; a folder outside them is `folder-not-served`. (the orchestrator, automode)
+- Z591 (2026-10-05): A3, DESIGN.md:153 reads "A plain object built from an outside map's keys skips an own `__proto__` key; a `Map` keeps it.", so a schedule named `__proto__` keeps its record entry in a `Map`. (the orchestrator, automode)
 
 ## Agents
 

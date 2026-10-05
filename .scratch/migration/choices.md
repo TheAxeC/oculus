@@ -2,6 +2,33 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z591 (2026-10-05, step A3)
+
+The question: DESIGN.md:153 says a map built from an outside map's keys skips an own `__proto__` key, and the brief check asked that a schedule named `__proto__` keep its own record entry.
+
+- Chosen: (a) reword DESIGN.md:153 to "A plain object built from an outside map's keys skips an own `__proto__` key; a `Map` keeps it.", which keeps the guard where it applies and lets the record use a `Map`.
+- Not chosen: (b) refuse `__proto__` as a schedule name, which adds a refusal for a name only because of how the record is stored. The lazy one was (b).
+
+Where it is built: A3's brief, item 3 and the DESIGN.md line in its write list. Booked in `plan.md` Rulings.
+
+## Z590 (2026-10-05, step A3)
+
+The question: Z586 says a prompt schedule runs "only in the hub or a root the file browser serves"; read literally, a project folder under the hub is refused.
+
+- Chosen: (a) in or under the hub or a served root, so a prompt can run in `projects/x`, and a folder outside them (`~/`, any other folder) is still refused.
+- Not chosen: (b) exactly the hub folder or a root folder, which refuses every project folder and makes prompt schedules unusable for project work. The lazy one was (b), the literal reading.
+
+Where it is built: A3's brief, items 1, 2 and 5, Decision 10, cases S49 and S50. Booked in `plan.md` Rulings.
+
+## Z589 (2026-10-05, step A3)
+
+The question: an entry of `schedules.yml` that is not a map (`- just text`, `- null`) had an outcome in the brief but no problem word.
+
+- Chosen: (a) `entry-wrong`, worded "Entry {0} of the file is not a map of keys, so it does not run.", shown with Delete only.
+- Not chosen: (b) leave the row without a word, so the reader sees a row that does not run and no reason. The lazy one was (b).
+
+Where it is built: A3's brief, `SCHEDULE_WORDS`, Decision 5, case S38. Booked in `plan.md` Rulings.
+
 ## Z568 (2026-10-05, step A3)
 
 The question: the run over A3's round 1 found item 5 unbuilt (a 29 February pattern stops the server process; a due time before the first sessions payload is dropped), and the fix is too large for landing.

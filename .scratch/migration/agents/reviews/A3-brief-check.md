@@ -155,7 +155,7 @@ Findings: none. The brief names `tools/oculus/docs` where the default folder is 
 
 ## 8. Dictated text
 
-- `findings.config.skip_permissions_retired` → "'{0} is not read; a schedule in the update tray runs unattended through its Run unattended choice'" (`grep -n` :263): holds.
+- `findings.config.skip_permissions_retired`: "'{0} is not read; a schedule in the update tray runs unattended through its Run unattended choice'" (`grep -n` :263): holds.
 - The `app.tasks` and `app.schedules` words, item 8 (:252): hold. They are ASCII, use plain prose and have no history words. `outcome_skipped`'s "still going" describes the present state, and spec.md's history-word rule binds comments and test titles.
 - HELP.md "With it on, a scheduled run lets an agent edit files and run commands with nobody asked, on a timer." (:291): holds.
 - Decision 5's problem sentences (:521): hold, with one weakness. `update_task_unknown` writes the four kinds literally ("the tasks are litwatch, scout, linkedin and inbox"), a second copy of `UPDATE_TASKS` that goes stale if the list changes (spec.md "The principles", one rule exists once). A `{1}` filled from `UPDATE_TASKS` would avoid it.
@@ -214,3 +214,14 @@ Agent usage: brief-check agent (id not visible to me), claude-opus-5-5, about 25
 Usage: a48d9494f333f3e40, claude-opus-5-5, 268,096 tokens, 87 tool uses, 13.9 min.
 
 ## Closed
+
+Each finding is closed by a change to `agents/briefs/A3.md`, made by the brief writer (a42ad450094192df4) on the orchestrator's numbered list, and the three choices it raised closed by rulings:
+
+- Names, HELP.md:294: item 13 dictates the sentence, and the two files take `local.yml` keys (Z587), so "or wherever `local.yml` puts each of them" holds for them.
+- Premises: the base is 89f35ff83; the plan-line sentence is removed; S3 and look step 12 expect line 2 for a file ending in a newline; the ADR premise checks `docs/adr` and `tools/oculus/docs/adr`.
+- Cases: G46 is one table for `schedules/watch.ts` and one for `schedules/run.ts`; a name that is a prototype key keeps its record entry in a `Map` (S35, Z591 rewords DESIGN.md:153); C1 uses its own `TMUX_TMPDIR`.
+- The question: S20 and item 1 splice only the changed entry's bytes, over a hand-written fixture; C26 is checked by reading each test; verify item 8 asks for the behaviour's own failing row.
+- Implied inputs: S36 to S48 and S52, with `entry-wrong` for an entry that is not a map (Z589).
+- Dictated text: :221's comment rewritten; `update_task_unknown` takes `{1}` from `UPDATE_TASKS`.
+- Also checked: the dialog reaches the shell through the `schedule` store's `preview` and `check`, so no boundary row widens; `UpdateTask` is defined in `model-processes.ts`; item 4 takes `refresh`; the tray mock-up is in item 11 verbatim; Decisions 12 to 16 name the route, the name rule, the next-run format, the change-log kind and the `local.yml` keys; item 14's wording governs whichever of A3 and E4 lands second, recorded on E4's dispatch entry; `catalogs.ts` is in the shared list.
+- Declined points ruled: the prompt folder (Z586, read as in or under by Z590); the terminal names (Z588).
