@@ -60,8 +60,10 @@ dispatch:   # steps in flight, up to seven (Z423)
 - step: D20
   executor: agent
   worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a65b04c696467576e (builder, launched 2026-10-05)
   worktree: .agents/worktrees/D20
-  base: (the preparation commit)
+  base: 16b31cef0
   launched: 2026-10-05
   report: agents/reviews/D20-report.md
   brief_check: agents/reviews/D20-brief-check.md, claude-opus-5-5, first check (in the file), second check aba2fdc1ad025072b 317,222 tokens 96 tool uses 15.5 min, closing a8fd060ce54f0ef7c 293,050 tokens 87 tool uses 19.5 min
