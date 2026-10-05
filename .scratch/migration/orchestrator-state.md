@@ -36,6 +36,8 @@ dispatch:   # steps in flight, up to seven (Z423)
   diagnosis: agents/reviews/X3f-diagnosis.md, claude-opus-5-5 (aea533fdd969879a2), 182,164 tokens, 165 tool uses, 88.1 min; three causes found and proved, the "no tab opened" form of symptom 1 not found
   round2_widened: Z490 (the Outline, the DATA-MAP contents list), Z491 (tests under G37)
   round2_brief: agents/briefs/X3f-round2.md, claude-opus-5-5 (a91dafc2010e37e55), 209,890 tokens, 208 tool uses, 29.5 min
+  round2_builder_usage: 200,564 tokens, 261 tool uses, 45.2 min, 1 full-list run (test:quick over its time limit, 70.5 s against 45.0 s)
+  round2_reviewer: a4505c32f469215eb (claude-opus-5-5), running
   round: 2 (agents/briefs/X3f-round2.md)
 - step: S5
   executor: agent

@@ -1,5 +1,5 @@
 In flight (5 of 5 slots):
-- X3f (opening a file row, and the tab row's actions): repair round 2 sent to its builder (the diagnosis's fixes, Z466, the Outline, `[TOC]` in the Data map, tests under G37).
+- X3f (opening a file row, and the tab row's actions): repair round 2 built; its review over the round running; then the landing.
 - S5 (the Settings view's controls and headings): repair round 1 sent to its builder (its review findings, Q119, Q122, Z505, Z506, Z509); Z507 (where its look runs) open for Axel.
 - X3e (Files lists reordered by drag): brief re-based on D42; the three diagnoses Z441 asks before its builder (the hub Graph's 10 s first read, the 5 s Delete, the folder panel's server half) running; its builder starts once X3f and S5 have landed (merges not simple).
 - D20 (an agent from a task or a worktree): brief written (agents/briefs/D20.md), choices Z513; its brief check running; Z514 and Z515 open for Axel.
