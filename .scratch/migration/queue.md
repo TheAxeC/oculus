@@ -1,13 +1,13 @@
-In flight (3 of 5 slots):
+In flight (5 of 5 slots):
 - X3f (opening a file row, and the tab row's actions): round 3, the actions in the breadcrumb bar; its builder is building.
 - D20 (an agent from a task or a worktree): repair round 1 building.
-- D44 (Submit on a .slurm file): brief written; its brief check, then its builder once X3f has landed.
+- D44 (Submit on a .slurm file): brief check running; its builder once X3f has landed and Z536 is ruled.
+- D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked against main after S5.
+- D23 (language servers): brief rechecked against main after S5.
 
-Queued, in order (27 steps):
-- X3e (Files lists reordered by drag): brief ready; unblocked.
+Queued, in order (25 steps):
+- X3e (Files lists reordered by drag): brief ready; once D20 has landed (Z519), its premises then reread after S5.
 - D28 (saving a file as VS Code does): brief ready; once X3e has landed.
-- D45 (LaTeX as VS Code's LaTeX Workshop): brief checked; unblocked.
-- D23 (language servers): brief ready; unblocked.
 - A3 (scheduled Update runs): brief ready; unblocked.
 - D38 (the Literature search view): brief ready; unblocked.
 - D11 (the debug client for rite): brief ready; unblocked.

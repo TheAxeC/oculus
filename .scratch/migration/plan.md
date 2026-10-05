@@ -1262,6 +1262,9 @@ Independent of each other; two may run side by side under R9's rule when their b
 
 ## Agents
 
+- ac16e2d4304d7aa9e: ruling audit, claude-opus-5-5
+- a4074e57a1552c160: reviewer of step D20, claude-opus-5-5
+- a015fd2562646830c: brief writer of step D44, claude-opus-5-5
 - a3ca7570713047701: brief check of step S5, claude-opus-5-5
 - aa2ac51de06275004: brief closing of step S5, claude-opus-5-5
 - a6db7168e2d955eea: builder of step S5, claude-sonnet-5-5
