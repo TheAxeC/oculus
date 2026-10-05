@@ -2,6 +2,33 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z601 (2026-10-06, step E4)
+
+The question: the app-store table's brief title names a 405 answer that round item 13 removed.
+
+- Chosen: (a) the title drops "405".
+- Not chosen: (b) keep a title no row can meet.
+
+Where it is built: E4's extra round 2. Booked in `plan.md` Rulings.
+
+## Z600 (2026-10-06, step E4)
+
+The question: E4's tables hold rows beyond the cases each brief line lists.
+
+- Chosen: (a) keep every row that gives a different outcome of the table's unit, as the test rule allows; drop a row that repeats an outcome.
+- Not chosen: (b) cut each table to the listed cases, which drops the rows that prove round item 12's new answers. The lazy one was neither; (b) loses proof.
+
+Where it is built: E4's extra round 2. Booked in `plan.md` Rulings.
+
+## Z599 (2026-10-06, step E4)
+
+The question: Z595 sent an app's outside link to a browser tab, but the bridge runs in the app's realm, so an app could open any address it builds and carry what it read out in it.
+
+- Chosen: (a) `open({ url })` with a Confirm showing the whole address before a browser tab opens; a link no longer kills the frame.
+- Not chosen: (b) leave links killing the frame, with Reload. The lazy one was (b). Z595 is replaced.
+
+Where it is built: E4's extra round 2. Booked in `plan.md` Rulings.
+
 ## Z598 (2026-10-06, step O30)
 
 The question: the app lets through only six named Chromium switches, where the brief says every Chromium switch passes.
