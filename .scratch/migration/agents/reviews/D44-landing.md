@@ -4,7 +4,7 @@ Position: roadmap entry oculus/migration (the cockpit-to-oculus migration); D44,
 
 ## Open items (verbatim)
 
-- Ordo's pinned skills: the brief template's three breakage-run lines are removed in Ordo's source (ordo 5c299c0), while `~/.local/share/ordo-stable` is still pinned at `v2.8.0`; (a) tag `v2.8.1` on 5c299c0 and run `utils/pin.sh v2.8.1`, which changes the skills of every session, Ordo's own plan session included (recommended); (b) wait for Ordo's next release, the lazy one.
+None.
 
 ## Not done
 

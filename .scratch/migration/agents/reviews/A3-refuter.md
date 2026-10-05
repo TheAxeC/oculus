@@ -233,3 +233,64 @@ None.
 - Look cases 1 to 11 and `npm run test:landing`: the orchestrator's at landing.
 - Whether the half-minute look starts a spring-day run up to 30 s after its due time on a live server: not run.
 - Probe side effects, outside the repository: one empty `oculus-fixture-schedule-*` folder and `a3race-*` in the temp folder, `scratchpad/probe/rec29`.
+
+## Repair round 2, refuted
+
+Reviewer a27a399928a3abcf5, claude-opus-5-5, ordo-high: 290,335 tokens, 77 tool uses, 37.2 min (completion notice). Reruns from the worktree's `tools/oculus`, base 6044d753c; nothing in the worktree changed (`git status --short | wc -l` 56 before and after).
+
+### Verification
+
+```
+$ sh /Users/axelfaes/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (exit 0)
+ok      ASCII gate (0.4 s)
+ok      prettier (0.4 s): All matched files use Prettier code style!
+ok      svelte-kit sync (1.4 s)
+ok      eslint (1.7 s)
+ok      svelte-check (4.9 s): 1791227949878 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (11.5 s): Duration  8.72s (transform 12.64s, setup 0ms, import 21.82s, tests 10.93s, environment 143ms)
+test:quick: 12.0 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+$ npx vitest run <the brief's six files>: Test Files 6 passed (6) | Tests 107 passed (107)
+$ npx vitest run tests/server/machine/tasks --reporter=verbose: 9 passed; sixth test 245 to 850 ms over six runs
+$ npx vitest run tests/checks --testTimeout 120000 --reporter=dot: Test Files 16 passed (16) | Tests 229 passed (229)
+$ sh utils/unused-exports.sh | wc -l: 379, diff against the base empty
+$ npx tsc --noEmit -p .: 2 errors, task-card.ts(10,15) and card.ts(9,15), TS2614, files the step does not change
+fixture folders in the temp folder: 0 before, 0 after the skipped and the full runs
+reviewer probes (real, unchanged modules): rule.mts: "0 0 31 4,6,9,11 *", "0 0 15W * +0", "0 0 LW * +0" -> the value rule THROWS RangeError: Maximum call stack size exceeded; fuzz.mts (3087 patterns): accepted 3007, refused 64, rule threw 16, croner's forward walk never throws for an accepted pattern; never2.mts "0 0 31 4,6,9,11 *": taskSchedules THROWS, settingProblems [], writeConfigKey THROWS; R1 the round-1 race case: 1 start for today's 07:00, no skipped row; R2 "0 0 29 2 *": new-session at 2028-02-28T23:00:00.000Z; R3 a half-minute look of "* * * 2 *" outside February 273 to 324 ms, "0 7 * * *" 0 ms; R4 a pattern emptied while its decision waits: the run starts after the payload
+```
+
+### Verdicts
+
+Rulings of the round: 1 to 6 closed (no finding closed by removing a check; no fix reaching beyond its finding). The builder's judgment that older held due times leave no record row is accepted (item 5's catch-up rule).
+
+Items of A3.md over the whole diff: 1, 3, 4, 6, 7 hold; 8 holds except the DESIGN.md Schedules sentence made false by 4.1; 2 violated (Behaviour 4.1); 5 violated (Behaviour 4.2, with 4.3 a cost in the same place); 9 violated (Spec 1.1).
+
+Cases: C1 to C4, C6 to C10, C12 to C36 met; C5 met for `0 0 31 2 *` and `0 0 29 2 *`, the overflowing class is 4.1; C11 partial (4.2).
+
+### Findings
+
+#### 1. Spec
+
+- 1.1. A3-report.md: rewritten for round 2, it holds only the six rulings and the verify lines; the cases' first run C1 to C36, the DONE / NOT DONE table, the final runs per case, the look's stub, the files with line counts, the judgment calls and the before-and-after section of item 9 are gone (they stand in the builder's scratch `a3-builder/A3-report.prev.md`, 914 lines). Item 9 violated.
+
+#### 2. Proof
+
+- 2.1. A3-report.md "Verify lines" says `tsc --noEmit` prints 0 errors; it prints 2, in files the step does not change. No decision rests on it.
+- 2.2. schedule.test.ts:427-439 plants `handled: local(-1, 7)`, so nothing is missed and the row named `missed` is not the catch-up race; `local(-2, 7)` makes it that case.
+
+#### 3. Standards
+
+None.
+
+#### 4. Behaviour
+
+- 4.1. value-rule.ts `formProblem`: `job.nextRun()` runs outside `cronOf`'s try; croner overflows the stack for `0 0 31 4,6,9,11 *`, `0 0 15W * +0`, `0 0 LW * +0`. `taskSchedules` throws, `createServerContext` calls it without a try (context.ts:302), so such a pattern in behavior.yml stops the server at every start; `settingProblems` swallows it (no finding); `writeConfigKey` throws in place of refusing with `cron_never`. Fix: the rule answers `cron_never` when `nextRun()` throws, with a G13 row for `0 0 31 4,6,9,11 *`; the DESIGN.md Schedules sentence then holds. Item 2 violated.
+- 4.2. schedule.ts:302-367: `decide` keeps the pattern it started with; a pattern emptied or changed by `set` while the decision waits for the first `sessions` payload still starts the old due time (probe R4). Fix: after the awaits, a decision whose job is no longer `jobs[kind]` or whose pattern changed decides nothing and drops its held due time. Item 5 violated (narrow), C11 partial.
+- 4.3. schedule.ts:94-105 `walkedDueAt` walks every run from the start of its span up to now; for minute-level patterns limited to some months a half-minute look takes about 0.3 s outside those months, stalling the server's event loop. Fix: bisection over `nextRun` inside the found span.
+
+### Declined to judge
+
+- Look cases 1 to 11 and `npm run test:landing`: the orchestrator's at landing.
+- A real server started with a pattern of 4.1: not run (ports); read from context.ts:302 and src/server.ts:41.
+- What the Settings view draws when its text field throws: the look's.
+- The spring-day start up to 30 s after its due time on a live server; the sixth test's timing under heavier load.

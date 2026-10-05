@@ -6,7 +6,7 @@ In flight (3 of 5 slots):
 Queued, in order (23 steps):
 - D23 (language servers): once A3 has landed.
 - X3e (Files lists reordered by drag): once A3 has landed.
-- D45 (LaTeX as VS Code's LaTeX Workshop): to prepare.
+- D45 (LaTeX as VS Code's LaTeX Workshop): once A3 has landed (its brief rechecked on main; A3 writes the same lines of routes.ts and settings.ts).
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.
 - D11 (the debug client for rite): once D45 and D23 have landed.
@@ -31,7 +31,7 @@ Queued, in order (23 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D44 (Submit on a .slurm file), 2026-10-05, 2e139fa1f.
+- D44 (Submit on a .slurm file), 2026-10-05, 297349683.
 - D20 (an agent from a task or a worktree), 2026-10-05, 0aea28449.
 - D38 (the Literature search view), 2026-10-05, b07d24766.
 - X3f (a file tab's actions, file icons and the double click), 2026-10-05, ee0407a5a.
