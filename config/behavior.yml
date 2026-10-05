@@ -1,6 +1,6 @@
 # ===========================================================================
 # behavior.yml
-# oculus's own configuration, its thresholds and horizons: the soft limits an audit warns on, how long before a feed counts as stale, how far ahead each kind of date is shown, and the two subsystem cadences. Source roots and permitted file extensions live in sources.yml. Merged by loadConfig().
+# oculus's own configuration, its thresholds and horizons: the soft limits an audit warns on, how long before a feed counts as stale, how far ahead each kind of date is shown, and the two subsystem cadences. The source roots and the editor language of each file extension live in sources.yml. Merged by loadConfig().
 # ===========================================================================
 
 

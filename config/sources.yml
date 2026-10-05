@@ -9,8 +9,7 @@
 # ===========================================================================
 
 
-# Where to find projects (paths relative to research/). A project is any subfolder that contains a
-# project.yml; its tier/outcome comes from the LOCATION below (mirrored in the manifest). Folder == id.
+# Where to find projects: each `dir` is relative to the hub root. A project is any subfolder that contains a project.yml; a flat rule gives every manifest its type, a nested rule reads the type from each manifest, and the folder name is the id.
 scan:
   - { dir: projects/ideas,       type: idea,       tier: projects }
   - { dir: side-projects,        type: side-project, tier: personal, optional: true }   # the Personal board only; no research reader reads it
@@ -21,37 +20,32 @@ scan:
   - { dir: projects/archive,     nested: true, tier: archive }    # nested; type (the outcome) read from each manifest
 
 
-# Venue catalogue tab (Venues, in Collections) - journals + conferences (registries/venues.yml).
+# Venue catalogue: the Venues view, journals and conferences (registries/venues.yml).
 venues_file: registries/venues.yml
 
 
-# Dataset registry tab (Data) - provenance + recovery recipe per dataset (registries/data.yml).
-# `used_by:` ids cross-link to project cards; the re-downloader (tools/data/redownload.py) reads the same file.
+# Dataset registry: the Data view, provenance and a recovery recipe per dataset (registries/data.yml). The projects that use a dataset come from the manifests' `datasets:`, and the re-downloader (tools/data/redownload.py) reads the same file.
 datasets_file: registries/data.yml
 
 
-# Pillars registry -> the Pillars tab (membership computed from manifests' `pillar:`). key must match.
+# Pillars registry: the Pillars view, with membership computed from the manifests' `pillar:`, which names an entry's key.
 pillars_file: registries/pillars.yml
 
-# Domains tab (group projects by the `domain:` field -> application area). key matches a domain value.
+# Domains registry: the Domains view, projects grouped by the manifests' `domain:`, which names an entry's key.
 domains_file: registries/domains.yml
 
 
-# People registry - one entry per human the hub names. A project's `collaborators:` and `waiting-on:`,
-# a joint-work entry's `person:` and the Person view all read a name from here. Exactly one entry
-# carries `self: true`, the hub's owner. `affiliations:` are keys of the organisations file below.
+# People registry: one entry per human the hub names. A project's `collaborators:` and `waiting-on:`, a joint-work entry's `person:` and the Person view all read a name from here. Exactly one entry carries `self: true`, the hub's owner, and `affiliations:` are keys of the organisations file below.
 people_file: registries/people.yml
 
-# Organisation registry - the universities, hospitals, funders and companies a person's `affiliations:`
-# and a funding scheme's `funder:` point at, so an organisation is named once.
+# Organisation registry: the universities, hospitals, funders and companies that a person's `affiliations:` and a funding entry's `funder:` point at, so an organisation is named once.
 organisations_file: registries/organisations.yml
 
-# Resources registry: the clusters, machines and storage a project's `compute:` and `slurm.resource` of behavior.yml name by key.
+# Resources registry: the clusters, machines and storage that a project's `compute:` and the `slurm.resource` of behavior.yml name by key.
 resources_file: registries/resources.yml
 
 
-# Collection tabs - a generic card list from one YAML (entries: title/sub/status/date/meta/tags/related/link/url/note).
-# Schema: README.md. Files are editable in served mode. `related:` ids cross-link to project cards.
+# Collection views: one card list per key, from one YAML file each, except the keys data, venues, pillars and domains, whose views are Data, Venues, Pillars and Domains and not a card list. The schema is the file's own `schema:` block, and the links between files are in docs/DATA-MAP.md. An entry is edited in the card's form.
 collections:
   - { key: data,           file: "registries/data.yml" }
   - { key: venues,         file: "registries/venues.yml" }
@@ -74,15 +68,13 @@ leads_file: feeds/position-leads.yml
 # Lit Watch reads the literature scout's accumulated radar. The refresh workflow deduplicates by URL and appends entries.
 radar_file: feeds/literature-radar.yml
 
-# Public website publications feed, cross-checked in the Audit tab (missing / leaked / wrong-section / untracked).
-# Separate repo dir - if it is not checked out, the check is skipped silently.
+# Public website publications feed, cross-checked in the Audit view (missing / leaked / wrong-section / untracked). It is a separate repository folder, and the check is skipped silently when it is not checked out.
 publications_file: theaxec.github.io/_data/publications.yml
 
-# LinkedIn tab: posts pipeline from the website (_linkedin/: numbered = posted, xx- = ideas).
+# LinkedIn view: the posts pipeline from the website (_linkedin/: numbered = posted, xx- = ideas).
 linkedin_dir: theaxec.github.io/_linkedin
 
-# Career tab: per-scheme `statement:` fields surface on the Funding tab; the strategy
-# (order of work | hosts | eligibility | dropped) lives in registries/career.yml and surfaces on the Focus "Career strategy" panel.
+# Career strategy: the order of work, hosts, eligibility and dropped options live in registries/career.yml and are drawn by the Focus board's Career strategy panel. A funding entry's `statement:` shows on the Funding view.
 career_file: registries/career.yml
 
 

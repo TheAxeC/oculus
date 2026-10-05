@@ -1,20 +1,19 @@
 In flight:
-- D23 (language servers): brief check in, its findings being closed in the brief.
+- D23 (language servers): brief being closed; waits for Axel on Z485.
 - X3f (opening a file row, and the tab row's actions): failures being diagnosed.
-- S5 (the Settings view's controls and headings): built, under review.
-- H3 (the hub's data map): repair round 1 reviewed, landing next.
-- D42 (a file's history): repair round 1 reviewed, lands after H3.
+- S5 (the Settings view's controls and headings): reviewed; Q119's brief being checked, then repair round 1.
+- D42 (a file's history): repair round 1 reviewed, landing next.
+- D38 (the Literature search view): brief being written.
 
-Queued, in order (27 steps):
-- D11 (the debug client for rite): brief ready; once S5 and H3 have landed.
+Queued, in order (26 steps):
+- D11 (the debug client for rite): brief ready; once S5 has landed.
 - X3e (Files lists reordered by drag): brief ready; once D42 has landed.
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
-- D38 (the Literature search view): once a slot is free.
 - D44 (Submit on a .slurm file): brief drafted; once X3f has landed.
 - D41 (links in Markdown checked): once M7 has landed.
 - D15 (PDF reading): once a slot is free.
-- M8 (the hub's YAML checked in the editor): once D23 and H3 have landed.
+- M8 (the hub's YAML checked in the editor): once D23 has landed.
 - D43 (LaTeX navigation): once D23 has landed.
 - D20 (an agent from a task or a worktree): once a slot is free.
 - A3 (scheduled Update runs): once a slot is free.
@@ -37,7 +36,8 @@ Queued, in order (27 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D37 (the Search view's replace and the LaTeX build), 2026-10-05, the commit that carries this line.
+- H3 (the hub's data map), 2026-10-05, the commit that carries this line.
+- D37 (the Search view's replace and the LaTeX build), 2026-10-05, a5f1285b.
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.
 - T1a (the test tiers), 2026-10-04, 6c8a217be.
 - T2d (the deletion sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, 1d88f437.

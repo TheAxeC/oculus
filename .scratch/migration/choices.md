@@ -209,6 +209,42 @@ The question: clangd's semantic tokens.
 
 Booked in `plan.md` Rulings.
 
+## Z482 (2026-10-05, from D23's brief check)
+
+The question: a language server under Z72 (1) (a) "ended with their tab" ends 60 s after the last tab of its root and language closes on the page, unless a tab of them opens again inside the 60 s, besides the page closing, the root no longer served and the oculus server's close; written into D23's brief and its cases.
+
+- Chosen: (a) the server ends 60 s after the last tab of its root and language closes, a tab opened again inside the 60 s keeping it.
+- Not chosen: (b) at once when the last tab closes, which restarts pyright's index on every close and reopen; (c) kept while the page is open, which leaves Z72 (1) (a)'s "ended with their tab" unbuilt, the lazy option.
+
+Booked in `plan.md` Rulings.
+
+## Z483 (2026-10-05, from D23's brief check)
+
+The question: the References view in the side bar and clangd's AST and memory-usage views are inside D23's ruled scope (Z72 (4) (b1)) and are built in D23; the uncommitted widening of D23b's line that moved them is withdrawn.
+
+- Chosen: (a) the three views built in D23, as Z72 (4) (b1) rules.
+- Not chosen: (b) moved to D23b, a deferral inside D23's scope with no ruling behind it, the lazy option.
+
+Booked in `plan.md` Rulings.
+
+## Z484 (2026-10-05, from D23's brief check)
+
+The question: each closed in D23's brief by a session agent, the brief re-read on main's head after H3 lands, every closing listed under the brief check's Closed heading.
+
+- Chosen: (a) every finding closed in the brief before dispatch.
+- Not chosen: (b) the findings handed to the builder to settle, which makes the builder find causes and choose shapes, the lazy option.
+
+Booked in `plan.md` Rulings.
+
+## Z486 (2026-10-05, from S5's review)
+
+The question: S5's review Spec 1: the catalog key `empty` takes `true` or words (`empty: <words>`, on `chat.model`, `git.message_model` and `direct_chord`), the words drawn as the choice's empty item, where item 2.2 named `true` only
+
+- Chosen: (a) both forms kept and said in the catalog's head and DESIGN.md.
+- Not chosen: (b) `true` only, every empty item drawn with one generic word, which hides what the empty value does, the lazy option; (c) a separate key `empty_label`, two keys for one fact.
+
+Booked in `plan.md` Rulings.
+
 ## Z474 (2026-10-05, from D42's review)
 
 The question: D42's review Spec 1: paging by `<hash>^` walks the first parent only, so the page after a merge, or after a side-branch commit at a page boundary, leaves out commits that changed the file; `--skip` under `--follow` repeats the first page on git 2.49.0 (Z434).

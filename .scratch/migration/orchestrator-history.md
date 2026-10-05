@@ -26,6 +26,10 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 - Z479 (2026-10-05, closed in automode): D23's OI-4, a new guarded entry for language server lifetimes; `choices.md`.
 - Z480 (2026-10-05, closed in automode): D23's OI-5, a file this machine locks by its mode; `choices.md`.
 - Z481 (2026-10-05, closed in automode): D23's OI-6, clangd's semantic tokens; `choices.md`.
+- Z482 (2026-10-05, closed in automode): D23's brief check L1; `choices.md`.
+- Z483 (2026-10-05, closed in automode): D23's brief check L2; `choices.md`.
+- Z484 (2026-10-05, closed in automode): D23's brief check, the other findings (N1 to N4, P1 to P6, C1 to C3 and C5 to C7, I1 to I11, W1 to W9 and the points declined to judge that a probe settles); `choices.md`.
+- Z486 (2026-10-05, closed in automode): S5's review Spec 1, `empty: <words>`; `choices.md`.
 - Z474 (2026-10-05, closed in automode): D42's review Spec 1; `choices.md`.
 - Z475 (2026-10-05, closed in automode): D42's review, declined to judge; `choices.md`.
 - Z468 (2026-10-05, Axel): no step is ever added; Q118, Q119, Q121 and Q122 folded into S5 and D33.

@@ -3,9 +3,8 @@
 //
 // The long documents stay out of the snapshot (DESIGN.md, "Layer 1, data"): the snapshot is a few
 // hundred kilobytes because the READMEs are not in it, and a view that opens one asks the server
-// for that one file. readDoc is what that request calls, and hub-level documents
-// (docs/HPC-UTwente-howto.md, docs/RESEARCH-APPROACH.md, docs/AGENT-APPROACH.md) go through it
-// like any other.
+// for that one file. readDoc is what that request calls, and the hub-level documents, the files of
+// the `docs:` list of config/layout.yml, go through it like any other.
 // projectDocs is the cheap existence check a project card shows, and it opens no file. The one
 // document the build does read is PRESENT.md, through sources/present.ts, which splits its front
 // matter with splitFrontmatter below so the two readers agree on where a block ends.
