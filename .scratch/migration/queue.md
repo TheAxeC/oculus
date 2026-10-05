@@ -1,5 +1,5 @@
 In flight (3 of 5 slots):
-- X3f (opening a file row, and the tab row's actions): round 2 reviewed; landing.
+- X3f (opening a file row, and the tab row's actions): round 3, the actions in the breadcrumb bar; builder starting.
 - S5 (the Settings view's controls and headings): round 1 built; its review next.
 - D20 (an agent from a task or a worktree): built; its review next.
 

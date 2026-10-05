@@ -29,7 +29,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   executor: agent
   worker: claude:sonnet at ordo-high
   worktree: .agents/worktrees/X3f
-  base: ec4c6f577
+  base: f672330af (round 3; the patch agents/reviews/X3f-backed-out.patch applied, 95 files, docs/DATA-MAP.md outside the sparse paths)
   launched: 2026-10-05 (taken back out of main; the patch agents/reviews/X3f-backed-out.patch applied at ec4c6f577)
   report: agents/reviews/X3f-report.md
   landing: backed-out (repair round 2 after the diagnosis agents/reviews/X3f-diagnosis.md and ruling Z466)
@@ -38,7 +38,8 @@ dispatch:   # steps in flight, up to seven (Z423)
   round2_brief: agents/briefs/X3f-round2.md, claude-opus-5-5 (a91dafc2010e37e55), 209,890 tokens, 208 tool uses, 29.5 min
   round2_builder_usage: 200,564 tokens, 261 tool uses, 45.2 min, 1 full-list run (test:quick over its time limit, 70.5 s against 45.0 s)
   round2_reviewer: agents/reviews/X3f-refuter.md (Repair round 2, refuted), claude-opus-5-5 (a4505c32f469215eb), 136,251 tokens, 114 tool uses, 17.1 min; Spec 1, Proof 2, Standards 5, Behaviour 2, each fixed at landing or closed there
-  round: 2 (agents/briefs/X3f-round2.md)
+  landing2: 5f9640b2a, taken back out by Axel (Z532)
+  round: 3 (agents/briefs/X3f-round3.md)
 - step: S5
   executor: agent
   worker: claude:sonnet at ordo-high
