@@ -260,6 +260,15 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z508 (2026-10-05, from X3f's round-2 brief)
+
+The question: eight choices the round-2 brief of X3f leaves to the orchestrator.
+
+- Chosen: Z466 carried; the rendered half kept, reached from the palette; Title Case menu items; a `headings` field on `api/docs` from the same render; `[TOC]` in `docs/DATA-MAP.md`; Cmd+S always takes the browser's save dialog away; Open in Browser Tab by file name; lucide `file-search`.
+- Not chosen: Z466 left out (a ruling unmet); the rendered half removed (a feature dropped, spec.md:85); the old sentence-case words reused; the headings read off the rendered page or parsed twice (the lazy option); an explicit 24-link list that goes stale; Cmd+S bound inside Monaco only (the lazy option); the file kind read when the menu opens.
+
+Where it applies: X3f's repair round 2. Booked in `plan.md` Rulings.
+
 ## Z505 (2026-10-05, from Q119's closing, C1)
 
 The question: four rules the readers apply are not a catalog control, `min`, `max` or list: whole numbers, a program name, an extension with its dot, a bundle id.

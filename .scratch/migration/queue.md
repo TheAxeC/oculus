@@ -1,11 +1,12 @@
 In flight (5 of 5 slots):
-- X3f (opening a file row, and the tab row's actions): round-2 brief being written (the diagnosis's fixes, the Outline, the Data map's contents list, tests under G37); then repair round 2.
-- S5 (the Settings view's controls and headings): Q119's brief being closed; then repair round 1 with Q119 and Q122.
-- D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief check running; choice 8 (Docker and Live Share) open for Axel as Z504.
+- X3f (opening a file row, and the tab row's actions): repair round 2 sent to its builder (the diagnosis's fixes, Z466, the Outline, `[TOC]` in the Data map, tests under G37).
+- S5 (the Settings view's controls and headings): Z505 and Z506 being written into Q119's brief; then repair round 1 with Q119 and Q122.
 - X3e (Files lists reordered by drag): brief being re-based on D42's landing; then dispatch.
 - D20 (an agent from a task or a worktree): brief being written (it was a stub); the brief check of the stub is in, its findings closed in the brief.
+- A3 (scheduled Update runs): brief being written.
 
 Queued, in order (26 steps):
+- D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief check in (agents/reviews/D45-brief-check.md); its merges with X3f and S5 are not simple, so once X3f and S5 have landed, its findings then closed in the brief; choice 8 open for Axel as Z504.
 - D23 (language servers): brief closed; once X3f and S5 have landed.
 - D38 (the Literature search view): brief written; once S5 has landed.
 - D11 (the debug client for rite): brief ready; once S5 has landed.
@@ -16,7 +17,6 @@ Queued, in order (26 steps):
 - D15 (PDF reading): no brief yet (a stub); once D45 has landed (it builds on D45's PDF viewer).
 - M8 (the hub's YAML checked in the editor): once D23 has landed.
 - D43 (LaTeX navigation): once D23 has landed.
-- A3 (scheduled Update runs): once a slot is free.
 - D28 (saving a file as VS Code does): no brief yet (a stub); once a slot is free.
 - D23b (cross-file language features): no brief yet (a stub); once D23 has landed.
 - D39 (hub keys as links): once M8 and D23b have landed.

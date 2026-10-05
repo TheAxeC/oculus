@@ -35,7 +35,8 @@ dispatch:   # steps in flight, up to seven (Z423)
   landing: backed-out (repair round 2 after the diagnosis agents/reviews/X3f-diagnosis.md and ruling Z466)
   diagnosis: agents/reviews/X3f-diagnosis.md, claude-opus-5-5 (aea533fdd969879a2), 182,164 tokens, 165 tool uses, 88.1 min; three causes found and proved, the "no tab opened" form of symptom 1 not found
   round2_widened: Z490 (the Outline, the DATA-MAP contents list), Z491 (tests under G37)
-  round: 1
+  round2_brief: agents/briefs/X3f-round2.md, claude-opus-5-5 (a91dafc2010e37e55), 209,890 tokens, 208 tool uses, 29.5 min
+  round: 2 (agents/briefs/X3f-round2.md)
 - step: S5
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -157,7 +158,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 - Z507 (2026-10-05, S5's look with Q119, an exception to the looks rule): the round moves oculus's port default (8791 to 8790) and makes a wrong value take its default with a finding at start; showing that needs a server started with a wrong value, which Axel's server on 8790 never is. (a) the look runs on a scratch oculus with its own config, HOME and TMUX_TMPDIR, as D35's port move was looked at. For: the look is taken before the commit (Z467); Axel's server is never restarted. Against: a second exception to "looks only on TEST". (b) the look on Axel's server after he restarts it with a wrong value. For: the TEST page. Against: the look is owed, which Z494 forbids, and it needs Axel's hands. Recommendation: (a).
-- Z504 (2026-10-05, D45's choice 8, a feature dropped): LaTeX Workshop runs its tools in a Docker image when `docker.enabled` (off by default) and shares its viewer over Live Share. `docker` is not installed on this machine (`command -v docker` prints nothing), and oculus has no shared-session layer. (a) build the Docker wrapper (`latex.docker_image`), untested here. For: no LaTeX Workshop feature dropped. Against: code no run on this machine proves. (b) leave both out. For: nothing built that cannot be tried. Against: two LaTeX Workshop features dropped. (c) Docker built, Live Share left out. Recommendation: (b) for Live Share, which has nothing in oculus to attach to, and (b) for Docker until a machine with Docker is in use. No lazy option applies: (b) is a drop, and a drop is yours to rule.
+- Z504 (2026-10-05, D45's choice 8, a feature dropped): LaTeX Workshop runs its tools in a Docker image when `docker.enabled` is on (off by default; three keys: `docker.enabled`, `docker.image.latex`, `docker.path`) and shares its viewer over Live Share. `command -v docker` prints nothing on this machine, and oculus has no shared-session layer, so Live Share cannot be built under either option. (a) the Docker wrapper built (three `latex.docker_*` keys, the tools looked up as `docker`, SyncTeX paths translated from the container), Live Share left out. For: one of the two features kept. Against: no case or look can run it here, so every Docker claim stays not verified. (b) both left out. For: nothing built that cannot be tried. Against: two LaTeX Workshop features dropped, which needs your yes (Z468). Recommendation: (b), with Docker added when a machine with Docker is in use.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
