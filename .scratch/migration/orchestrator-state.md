@@ -40,6 +40,19 @@ dispatch:   # steps in flight, up to seven (Z423)
   cases_ruling: agents/briefs/O30-cases.md (round 0)
   landing: not-started
   round: 0
+- step: A3
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a2764a62793cc286e (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/A3
+  base: 995e6dfad
+  launched: 2026-10-06
+  report: agents/reviews/A3-report.md
+  brief_check: agents/reviews/A3-brief-check.md (a48d9494f333f3e40, claude-opus-5-5, 268,096 tokens, 87 tool uses, 13.9 min), closed in the brief by a42ad450094192df4 (claude-opus-5-5; 213,493 tokens, 44 tool uses, 10.9 min)
+  shared_paths: with E4: +page.svelte's connect list, DESIGN.md:114, HELP.md:269 (one line, each step's clause), server context.ts's close() list (both-add, both kept), catalogs.ts (A3's behaviorFindings beside E4's closed_paths_shape), local.ts, local.test.ts, options.yml, behavior.yml, findings.yml, workbench.yml, boundaries.test.ts, context-fixture.ts, client payloads, entities and context, model index (separate hunks); with O30: +page.svelte and client context.ts (separate hunks), package.json (one dependency each, the lockfile regenerated at landing); the second of A3 and E4 adds schedule to the closed channels in A3's item 14 wording; so the merge is simple
+  landing: not-started
+  round: 0
 - step: E4
   executor: agent
   worker: claude:sonnet at ordo-high
