@@ -1,11 +1,9 @@
-In flight (5 of 5 slots):
+In flight (3 of 5 slots):
 - D42 (a file's history): landing; gate passed in the gate worktree, look on TEST under way.
 - X3f (opening a file row, and the tab row's actions): round-2 brief being written (the diagnosis's fixes, the Outline, the Data map's contents list, tests under G37); then repair round 2.
 - S5 (the Settings view's controls and headings): Q119's brief being closed; then repair round 1 with Q119 and Q122.
-- D20 (an agent from a task or a worktree): brief ready; brief check next.
-- D28 (saving a file as VS Code does): brief ready; brief check next.
 
-Queued, in order (27 steps):
+Queued, in order (29 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief written, its choices being ruled; once D42 has landed.
 - D23 (language servers): brief closed; once X3f and S5 have landed.
 - D38 (the Literature search view): brief written; once S5 has landed.
@@ -18,7 +16,9 @@ Queued, in order (27 steps):
 - D15 (PDF reading): brief ready; once a slot is free.
 - M8 (the hub's YAML checked in the editor): once D23 has landed.
 - D43 (LaTeX navigation): once D23 has landed.
+- D20 (an agent from a task or a worktree): brief ready; once a slot is free.
 - A3 (scheduled Update runs): once a slot is free.
+- D28 (saving a file as VS Code does): brief ready; once a slot is free.
 - D23b (cross-file language features): brief ready; once D23 has landed.
 - D39 (hub keys as links): once M8 and D23b have landed.
 - D33 (the Problems view): once D23 has landed.
