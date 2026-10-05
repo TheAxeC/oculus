@@ -649,3 +649,107 @@ History-word grep over the comment lines and test titles this step added or chan
 ## Standing-rule notes
 
 One read-only `git status -- tools/oculus` ran by my own slip in this last pass (it printed nothing); no other git command was run, no commit made. The scratch folders `$S/o30-look` and `/tmp/o30t` are removed after this report; the case scripts and outputs under `$S/cases` stay. `pgrep -fl "o30-look"` is the last check of the report's run.
+
+# Repair round 1
+
+NOT done or not verified in round 1: the full-screen menu role (case 21), Monaco's edit keys (case 21), the terminal's Cmd+A, Cmd+C, Cmd+X and Cmd+Z (case 21), and a run of `tests/server/desktop/start.test.ts` (P3); every other item of `O30-round1.md` is done and its run or command is in the table.
+
+## Open items for Axel
+
+- Restart now reloads every open window (user-visible, `src/desktop/app.ts:233-235`): the server a Restart starts mints a new write token that an open page does not hold, so a page left as it was got HTTP 403 on the first terminal start. HELP.md:13 says so. The run shows the reload working; the alternative of re-running each page's load without a reload was not tried.
+- The save answer of the bridge gains a refusal with `held: null` (`SaveAnswer` in `src/lib/state/shared/stores/desktop.ts:32`): the host did not answer or the arguments were invalid. A page that gets it writes nothing and records no refusal. This is a wire shape between the preload and the page; no other reader exists.
+
+## Items
+
+| Item | Status | Command or run that shows it |
+| --- | --- | --- |
+| P7 case 21, full screen | NOT verified | `Toggle Full Screen` role click from the main process: `isFullScreen` stayed false and no `enter-full-screen` event came within 3 s while the app was not the active application (r09) |
+| P7 case 21, Monaco edit keys | NOT verified | the Monaco textarea of a source tab is `readOnly=true` without OS focus; Cmd+A selected nothing and Cmd+X, Cmd+V, Cmd+Z and Shift+Cmd+Z changed nothing (r11) |
+| P7 case 21, terminal Cmd+A, Cmd+C, Cmd+X, Cmd+Z | NOT verified | one run (r26) found no terminal to type into (the Sessions page of the scratch HOME showed no Terminal tab, and the palette did not open from the harness's Cmd+K), so the keys went to the page body and are no evidence; Cmd+V in the terminal is shown (r12) |
+| P3 run of `start.test.ts` | NOT verified | the test opens real windows and focuses one, which the no-focus rule forbids; `checks.sh` lists it as `changed, run by npm run test:checks or test:slow` and runs it in neither |
+| S1 / case 12 | DONE | r25 on the final tree: the original reads line 6 (`{"n":"6","top":-16,"bottom":1}`, one pixel of line 6 shown); the Copy into New Window window `?float=2566df19-...` reads `{"n":"6","top":0,"bottom":17}`; the Move into New Window window `?float=8ebcb5ef-...` reads `{"n":"6","top":0,"bottom":17}`; the first line is equal on all three, and the two new windows start at the top of that line |
+| B1 | DONE | r02: `local.yml` port 8817 to 8819 in the scratch Settings; all windows destroyed; the `File > New Window` item click and then `app.emit('activate')` opened `http://127.0.0.1:8819/` and `http://127.0.0.1:8819/?float=cd2e8c89-...`; `app.ts:224` is `forked.onListening((port) => (origin = ...))` |
+| B2 | DONE | r04 over the preload: `saveLayout(123, null)` and `saveLayout('x', 7)` both returned `{"admitted":false,"held":null}`; `bridge.ts:29` `REFUSED`, `bridge.ts:102`; `preload.cjs:29` |
+| B3 | DONE | `CONFIRM_MS` and its `setTimeout` are gone from `saved/storage.ts`; `own` (:144) and `putBack` (:265) re-append an own write that no `storage` event delivered, driven by the `storage` event on `oculus.layout.writes.v1`, not a time; case 35 (r03) shows both writes of the same second in the record (`splitInstance` by `l0vawh`, `closeInstance` by `uqxwp3`); `npx vitest run tests/state/workbench/layout/saved` passes |
+| P6 / case 35 | DONE | cause: `workbench.ts:61` makes splitting a pane away from its only tab a no-op, and the earlier run split `Focus`, alone in its pane; r03 split `Repositories` (one of three tabs) while `Usage` closed in the popped-out window within one second: main after `[["Files","Search"],[],["Repositories"]]`, window after `[["Live HPC"],[]]`, saved arrangement holds panes `focus`, `files,search`, `repositories`, `source` |
+| S4 | DONE | `node` over `parseAppArgs` (`$S/cases/s4.out`): `["--lang=nl"]`, `["--remote-debugging-port=9333","--enable-logging"]` and `["--engine=/tmp/x","--foo"]` give an engine and no error; `["file.txt"]`, `["-x"]`, `["--"]`, `["--engine"]`, `["--engine","--foo"]`, `["--default-port","9"]` and `["--default-port=9"]` give `unknown argument` or the `--engine needs...` sentence. G48 does not read the list, so no assertion changed |
+| S2 | DONE | `--default-port` stays; HELP.md:353 and README.md:11 name `--engine <dir>` and `--default-port <port>` with one clause each (`grep -n "default-port" HELP.md README.md`) |
+| S3 | DONE | HELP.md:68 `| Cmd+R | reload the window (in the app) |`; `config/text/desktop.yml:26` carries the row too |
+| P2 | DONE | deleted: all of `tests/ui/controls/text/text-menu.test.ts` (7 tests, listed in the first report), all of `tests/state/workbench/drag-outside.client.test.ts` (3 tests: 'hands the host the screen point as plain data', 'becomes a window at that point when no other window takes it', 'is left where it is when another window takes it'), and 'starts a page in the app on the dark theme, keeps a saved choice and leaves a browser tab its own start' in `window-guard.test.ts` (G47 keeps its four named tests) |
+| P3 | DONE (code) | `start.test.ts` waits on the child's output stream events and its `exit` and `close` events only; no `wait()`, `alive()` or polling remains; the Quit row reads the exit code after `exit`; the `slow` tag stays (`:10`) |
+| P1 | DONE | `app.ts:233-235` (a restarted listen reloads every window and opens a main only when none is open). r19 on the final tree: the server killed with `kill -9`, the stub pressed Restart (dialog: `The oculus server ended (exit code 9): ...`), new server pid 37201; main windows 1 before and 1 after, all windows 4 before and 4 after; the main page's `performance.timeOrigin` moved from 1791242036051 to 1791242133416 (it reloaded) and New Terminal then started `21cba6-shell` with no 403 |
+| P5 / case 2 | DONE | cause: the scratch hub had no project, so the Terminal view said "No folder to start the terminal in" and started nothing; `hubRoot()` (`selectors.svelte.ts:237`) is the first project folder. Not a defect in this step. r21 on the packaged `oculus.app` (bundle `local.research.oculus`) with `hub/projects/active/demo/project.yml` present: New Terminal added the tmux session `oculus-d99014-shell`; the server utility process held `TMUX_TMPDIR=/tmp/o30t` |
+| P7 case 14 | DONE | r06/r07: unsaved text set through the Monaco model over the debugging port (`dirty.js`); closing the Terminal window and the long.ts window with `win.close()` brought the tabs back into main as free floats, `UNSAVEDTEXT` kept and the tab marked; the tmux session ran `sleep 600`; `dialogs.log` stayed at 1 line |
+| P7 case 41 | DONE | r08: Cmd+W on the last tab of a popped-out window with unsaved text asked "Close this tab and lose its unsaved changes?" (Cancel, Confirm); after Confirm the window closed and the saved floats were `[["hpc:"],["terminal:"]]` |
+| P7 case 17 | DONE | r14 to r16, r24: `UNSAVEDTEXT` set, quit, started again: the long.ts tab read `UNSAVEDTEXT const line` with `aria-label` `long.ts, unsaved` (r24, packaged app) and the stub app's restart (r16) |
+| P7 case 21, DevTools and text keys | DONE | r09: the Toggle Developer Tools role click gave `isDevToolsOpened` true, then false; r10 in a text field: Cmd+A, Cmd+C (clipboard `hello world`), Cmd+X (value empty), Cmd+V (restored), Cmd+Z (empty) and Shift+Cmd+Z (restored) with editing commands; r12 Cmd+V in the terminal put `hello world` into the tmux pane |
+| P7 case 16 | DONE | r14/r15 and r22/r23: with `sleep 900` running in the terminal's tmux session, `app.quit()` ended the main in 3 s, `lsof -iTCP:8819` printed nothing, the utility server was gone, the tmux session stayed with `sleep`; started again on the same HOME, the Terminal tab drew the terminal with `sleep 900` (`hu b % sl ee p 90 0`); the `Quit oculus` menu item clicked with `item.click(undefined, win, contents)` did nothing in the scratch app, so the quit is `app.quit()` |
+| P7 case 27 | DONE | r13: windows set apart with `setBounds` (main 20,100,700x700; popped-out 800,100,500x500); dragging `Search` into the popped-out window left it in the popped-out window (`[["Live HPC","Search"],[],[]]`), `focus.log` shows `window.show id 10`; one earlier drag in the same state left `Search` in main and I did not settle why (not verified as repeatable) |
+| P7 case 9 | DONE | `--engine /tmp/o30t/noconfig` through the stub (press file): dialog `oculus did not start: /tmp/o30t/noconfig holds no config/ folder, so there is nothing to serve` with button `Quit`, press 0; the app exited with code 1 and `ps` showed no utility server |
+| P7 cases 20 and 39 | left to the look | the real folder sheet |
+| P4 | DONE | tables below |
+| S5 | DONE | reasons below |
+| St1 | DONE | `layout.svelte.ts:90` the doc comment sits on `GONE`; `MAX_TURNS` keeps its own |
+| St2 | DONE | `decide/window-file.ts:4` names `src/desktop/windows/window-state.ts` |
+| St3 | DONE | `port.ts:4-5` says what a start without the flag does |
+| St4 | DONE | `preload.cjs` head comment wrapped under 100 columns (`awk 'length>100' src/desktop/preload.cjs` prints nothing) |
+| St5 | DONE | `utils/diagrams/graphs.mjs` two comment paragraphs wrapped at 97 columns |
+| St6 | DONE | `menu.ts` `label: t('desktop.menu.app')`; `config/text/desktop.yml` `menu.app: oculus` |
+| St7 | DONE | `app.ts:19` imports `LISTEN_HOST` and `app.ts:24` imports `ZOOM_LEAST, ZOOM_MOST` (exported from `decide/window-file.ts:18`); `health.ts:6` imports `LISTEN_HOST` |
+| St8 | DONE | `src/lib/state/shared/install.ts` `installPageConfig`, called by `routes/+page.ts` and `routes/find/+page.ts` |
+| St9 | DONE, with a disclosure | no git command was run for the work in round 1 except one `git -C . rev-parse` run by my own slip, which printed one line and changed nothing; `checks.sh` runs git itself in `tests/tiers/quick.mjs` (the `113 changed file(s), from git since HEAD` line) |
+
+## Edits made for the verify list
+
+- `Editor.svelte` (`src/lib/ui/controls/editor/`) is 519 lines (limit 520): the first-line follower is `followFirstLine` and `lineAtTop` in `commands.ts` (96 lines), which the component calls from `build` and from the model effect.
+- `installPageConfig` sits at `src/lib/state/shared/install.ts` because `shared/words/` would hold 11 items (`sh utils/folder-check.sh` exits 0 now).
+- `src/desktop/app.ts:235` tests `origin !== null` before `openMain`, which `svelte-check` required.
+- `Source.svelte` is 531 lines against 528 at the base copy (and 520 on today's main): the three added lines pass `draft.first` and `setSourceFirst` to the editor; the file was already over 520 at the base, and bringing it under belongs to the work that splits it on main.
+
+## Runs
+
+- Starts of the app in round 1: seven (the stub app of the first lifetime, the case 9 start, two stub lifetimes of cases 16, 17 and 12, two starts of the packaged `oculus.app` for cases 2, 16 and 17, one stub start for case 21's terminal keys), each on the scratch HOME `$S/o30-look/home`, each closed by its pid with `app.quit()`; `pgrep` showed no process, no listener on 8817, 8819, 9333 or 9229, and the clipboard at 0 bytes afterwards. No focus call was made; `focus.log` holds only the app's own `window.show` calls.
+- Tests run: `npx vitest run tests/server/desktop/window-guard.test.ts tests/state/sessions/source.test.ts tests/state/workbench/layout/saved` (4 files, 10 tests passed); `npx vitest run tests/checks/config/config-folder.test.ts tests/checks/tree/boundaries.test.ts --testTimeout 0 --hookTimeout 0` (`Test Files  2 passed (2)`, `Tests  31 passed (31)`).
+- `checks.sh` (once, after the last code change): `ok svelte-kit sync (2.6 s)`, `ok ASCII gate (2.8 s)`, `ok prettier (3.1 s): All matched files use Prettier code style!`, `ok vitest (23.4 s): Duration  18.87s`, `ok svelte-check (25.2 s): ... COMPLETED 377 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok eslint (30.7 s)`, `test:quick: 33.1 s (limit 45.0 s); every command passed`, `checks: 1 commands passed`. Not covered by it: `start.test.ts`, the slow tests, the build, lint of unchanged files.
+- `sh utils/folder-check.sh` exits 0 with no output. `node --check src/desktop/preload.cjs` exits 0. The ASCII gate's `perl` line over `src tests config` prints nothing (`bin` does not exist in the tree); `LC_ALL=C grep -n '[^ -~]' HELP.md README.md DESIGN.md` prints nothing.
+- `sh utils/unused-exports.sh` against the base list: `engineDir`, `DEFAULT_PORT` (config.ts, config/local.ts) left the list because `src/desktop/` now imports them; three entries are new: `src/lib/server/root/process/parent.ts: parentOf, askParentToPick` and the type `ParentPort`, which `src/server.ts:16` imports; knip's production run does not read `src/server.ts` as an entry (the base list holds `engineDir` and `DEFAULT_PORT` for the same reason), so nothing was removed.
+- `wc -l`: `layout.svelte.ts` 830, `saved/load.ts` 132, `saved/storage.ts` 306, `app.ts` 317, `bridge.ts` 171, `source.svelte.ts` 505, `start.test.ts` 289; `Editor.svelte` 519; `Source.svelte` 531 as above; `Palette.svelte` 523 and `Graph.svelte` 524 are not changed by this step.
+
+## Tests
+
+- Deleted: `tests/ui/controls/text/text-menu.test.ts` (7 tests), `tests/state/workbench/drag-outside.client.test.ts` (3 tests), and in `tests/server/desktop/window-guard.test.ts` the test 'starts a page in the app on the dark theme, keeps a saved choice and leaves a browser tab its own start' with the three imports only it used (`WINDOW_BACKGROUND`, `setAppearance`, `themeFor`).
+- Changed: `tests/server/desktop/start.test.ts` (signal-only waits, as in P3) and `window-guard.test.ts` (the removal above, with its head comment shortened). No test was added.
+- Edits to existing assertions: none beyond those removals and the `start.test.ts` rewrite of how the child is awaited; no threshold, tolerance or predicate was loosened.
+
+## P4, the paragraphs of the brief's line 71 (line numbers are this worktree's)
+
+| File and line | Mark | What |
+| --- | --- | --- |
+| HELP.md:3 | rewritten | names the window of the app beside the browser tab |
+| HELP.md:11-17 | rewritten | :13 is new (browser tab or app, what the app adds, Restart on a server that ended); the rail paragraph :15 and the tooltip paragraph :17 are still true |
+| HELP.md:42 (Float) | rewritten | Move into New Window in a float's menus |
+| HELP.md:45 (pane menu) | rewritten | Move into New Window while the pane shows a tab |
+| HELP.md:46 (right-click menus) | rewritten | Move into and Copy into New Window; the app's spelling suggestions; the sentence that the browser's own menu stays inside a text box, the code editor and the terminal is still true in a browser tab |
+| HELP.md:58-104 (keys table) | rewritten | rows added for Ctrl+Tab, Cmd+W, Cmd+N, Cmd+Shift+N and Cmd+Shift+W, Cmd+, , Cmd+R (:63-68) and Cmd+F (:103); every other row is still true |
+| HELP.md:166 (`pages`) | rewritten | the windows of the app share the arrangement |
+| HELP.md:323 (diagrams) | rewritten | the desktop box |
+| HELP.md:353-355 (built server) | rewritten | both server arguments, and The app paragraph |
+| DESIGN.md:71 | still true | the `server.ts` listing line |
+| DESIGN.md:72 | rewritten | the `desktop/` line is new |
+| DESIGN.md:152 (Auth) | rewritten | adds `/api/health` for the host |
+| DESIGN.md:218 (floats) | rewritten | windows beside floats |
+| DESIGN.md:379-380 (pages and floats saved) | rewritten | the layout-write record and the floats that become windows |
+| DESIGN.md:396 (environment) | rewritten | the app hands the server the login shell's environment |
+| DESIGN.md:409 (Tab, Ctrl bracket) | rewritten | Ctrl+Tab in the app |
+| DESIGN.md:436 (native window) | rewritten | the "Still undecided" section is gone and the decision is in the decisions list |
+| DESIGN.md:249-341 (apps) | still true | unchanged by this step, as the brief says |
+| README.md:7 | still true | `npm run dev` |
+| README.md:9 | rewritten | new paragraph on the native app |
+| README.md:11 | rewritten | two server arguments |
+| README.md:15 (dependencies) | rewritten | adds `shell-env`, `electron` and `@electron/packager` |
+
+## S5, why each new `process/` module exists
+
+- `parent.ts`: the one place the message shapes between the server process and the host, the readers of raw values, the channel over a utility process's parent port and the health body are written, so `src/server.ts` and `src/desktop/server/process.ts`, `health.ts` and `windows/pick.ts` spell a message once; it is under `lib/server/root/process/` because the built server imports it and the host reaches the same folder.
+- `port.ts`: `readLocalWithDefault` is the reader of `local.yml` that takes the host's default port while the file is missing, which `src/server.ts` uses when started with `--default-port`; it sits apart from `args.ts` (which only parses) because it reads the file system.
+- `words.ts`: `wordsOf` is the catalog reader for a process that speaks outside a request (the lines the server prints at start and the host's dialogs and menus), shared by `src/server.ts`, `app.ts`, `menu.ts` and `pick.ts`; it reads the config once on the first line asked for.
