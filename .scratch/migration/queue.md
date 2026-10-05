@@ -1,10 +1,10 @@
-In flight (0 of 5 slots):
+In flight (2 of 5 slots):
+- A3 (scheduled Update runs): building.
+- D44 (Submit on a .slurm file): building.
 - M6 (the collection forms removed): brief written (Z550 closes its choices), checked, and its findings closed in the brief; prepared once X3e and D28 have landed.
 
 Waiting for a landing or a ruling:
-- A3 (scheduled Update runs): brief rechecked after D20 and ruled (Z545 (b)); next to prepare.
-- D44 (Submit on a .slurm file): brief rechecked after D20 and ruled (Z538 (a), Z539 (a)); next to prepare.
-- D23 (language servers): brief rechecked after D38 and D20; next to prepare.
+- D23 (language servers): brief rechecked after D38 and D20; prepared once A3 and D44 have landed (DESIGN.md:155 and Source.svelte's split do not merge simply).
 - D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked; prepared once D20 has landed, after the inventory look on TEST.
 
 Queued, in order (22 steps):
