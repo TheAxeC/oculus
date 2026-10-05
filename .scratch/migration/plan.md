@@ -1315,6 +1315,9 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z583 (2026-10-05): E4-1, (c): a pane's frames stay mounted when the layout changes, built in E4's repair round with `shell/panes/` added to its paths; the lazy option was (a) ("I will accept all recommendations"). (the user)
 - Z584 (2026-10-05): E4-2, (a): the app policy keeps `frame-ancestors <host>`, and the section says why ("I will accept all recommendations"). (the user)
 - Z585 (2026-10-05): E4-3, (a): `list_shape` and `file_unreadable` kept, named in the section and in findings.yml ("I will accept all recommendations"). (the user)
+- Z586 (2026-10-05): A3-10, (a): a prompt schedule runs only in the hub or a root the file browser serves ("All recommendations again"). (the user)
+- Z587 (2026-10-05): A3-11, (a): `local.yml` keys `schedules` and `schedule_record`, defaulting to `~/.oculus/schedules.yml` and `~/.oculus/schedule.json`; the lazy option was (b) ("All recommendations again"). (the user)
+- Z588 (2026-10-05): A3-12, (a): a scheduled task run's terminal is `task <kind>`, a command run's the command's name, a prompt run's the schedule's name ("All recommendations again"). (the user)
 
 ## Agents
 
