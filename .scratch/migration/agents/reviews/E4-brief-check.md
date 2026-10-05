@@ -356,4 +356,55 @@ Agent usage: aeb43ede13fd69892, claude-opus-5-5, 315,721 tokens, 114 tool uses, 
 
 ## Closed
 
-- Left to the session.
+Closed in `agents/briefs/E4.md` on main at b732308e9, each change checked against the tree by the command named. Section numbers are this report's.
+
+Section 1, Names:
+- keys.test.ts:322 and the four app registration keys: `badgeMark` stays a string catalog key, `registerApps` gives each row `apps.editing_mark` or `apps.unapproved_mark` and registers again on every push (item 3, Decision 19); keys.test.ts gains `registerApps` over a two-row fixture in its `beforeEach` (`grep -n "beforeEach\|registration.badgeMark" tests/checks/source/keys.test.ts`: :34, :322) and joins the write list.
+- `tests/server/root/context-fixture.ts`: in the write list (`grep -n "const context: ServerContext" tests/server/root/context-fixture.ts`: :53).
+- `tests/routes/edit/write-fixture.ts`: in the write list; the store folder is an optional `WriteTarget` field (item 9; `grep -n "function targetOver\|export function target" tests/routes/edit/write-fixture.ts`: :68, :122).
+- `tests/routes/files/file.test.ts:51`: `serveFile`'s `folders` parameter is optional, so the file runs unchanged (item 12; `grep -n serveFile tests/routes/files/file.test.ts`: :14, :51).
+- read-again.ts:38: the apps-folder rule goes into `tabForKind`, read-again.ts joins the write list, case C87 (item 12; `grep -rn tabForKind src`: opening.ts:50, read-again.ts:11, :38).
+
+Section 3, Premises:
+- Document.svelte: the premise is rewritten (204 lines, the iframe at :169-176, `loaded()` at :139-142, `keyInFrame` at :117-133, no `window.open`), and item 6 puts the link listener in `loaded()` and cites `pages.ts:506` and `row-menu.ts:524` (`grep -n "iframe\|function loaded\|function keyInFrame\|window.open" src/lib/views/sources/document/Document.svelte`; `grep -rn "window.open(fileBytesUrl" src`).
+- opening.ts: the premise names `tabForKind` (:50-61), `openRow` :72-85, `openRowBeside` :88-92, `openBookmark` :98-110, 110 lines, and read-again.ts (`grep -n "export function\|export async function" src/lib/views/shared/explorer/opening.ts`; `wc -l`).
+- `radar-add`: in the kind list, item 13 says fifteen open kinds, case C84 (`grep -o "answer(.*'[a-z-]*'" src/lib/server/edit/writes.ts`; `grep -n radar-add src/lib/server/edit/writes/undo.ts`: :348).
+- S5's rule: the premise quotes the reader rule (`settings.ts:1-10`), `appsSettings` joins `PROBLEM_READERS` (:447-466), and every `apps.*` options entry carries `description`, `heading: apps`, `section`, `default` and `control` under Z558, with HEADINGS, `headingTitle`, `workbench.settings_heading_apps`, `options.yml:9` and `DESIGN.md:85` in the write list (item 13; `sed -n 55,66p src/lib/data/sources/config/catalog/options.ts`; `grep -n settings_heading src/lib/state/system/config/groups.ts`; `grep -n "one of ten subject words" DESIGN.md`: :85). The `section` words are `App limits` and `Closed folders` (Z561, item 13).
+- `data/helpers` holds 10: the module is `src/lib/data/helpers/files/apps.ts`, Decision 1 says why (`ls -A src/lib/data/helpers | wc -l` 10, `ls -A src/lib/data | wc -l` 10, `ls -A src/lib/data/helpers/files | wc -l` 5, and the other Layer-1 folders counted), and `tests/checks/tree/boundaries.test.ts` gains it in the state row, since that row lists every data module the page may import (`sed -n 150,183p tests/checks/tree/boundaries.test.ts`).
+- Line moves: every premise, read range, write-list line, plan and state line renumbered at HEAD, each by the `grep -n`, `wc -l`, `sed -n` or `ls -A | wc -l` named beside it in the brief (plan.md :624, :777, :787, :792, :795, :796; state :123, :125; DESIGN.md section :249-341, :151; HELP.md :200, :269, :284; options.yml :664, :1280; behavior.yml :183, :190; the sizes; the folder counts).
+- Test plan, Decision 16 and Decision 9: rewritten under Z523 and Z521; "listed for Axel" on Decisions 5, 6, 10, 11 and 17 replaced by Z520 (`sed -n 1245,1247p plan.md`; `sed -n 1287p plan.md`).
+- `open_program` draws `app-window`: `app_view` draws `layout-panel-top` under Z559 (Decision 5; `grep -c layout-panel-top config/catalogs/icons.yml` 0; `ls node_modules/lucide-static/icons | grep -x layout-panel-top.svg`).
+
+Section 4, Cases:
+- The proposed GA and GC cases and C76: "The tests of this step" names one table per unit, each with file and title: the manifest reader (`tests/server/machine/apps/manifest.test.ts`), the app file route (`tests/routes/apps/app-files.test.ts`), the approve, app-store and app-open routes (`tests/routes/apps/`), the app gate (`tests/routes/edit/app-gate.test.ts`), the store cache (`tests/state/system/apps/store-cache.test.ts`), and G1's 'refuses a request without the write token' in the approve file (`sed -n 34,36p agents/guarded.md`, `sed -n 98,100p`, `sed -n 8p`). Each file joins the write list; the parent counts are in the brief (`ls -A tests/routes | wc -l` 7 and the others). Under Z560, C60, C62's rate, C63 and C72 are rows of the page methods' table (`tests/state/system/apps/methods.test.ts`), C81's tab a row of the tab choice's table (`tests/views/shared/explorer/opening-apps.test.ts`), and C81's answer and C89 rows of a G49 table in `tests/routes/files/file.test.ts`, since `ls -A tests/routes/files | wc -l` prints 10; Decision 16 says so (`sed -n 35p agents/guarded.md`).
+- C40: a look case with real windows (item 15); no DOM-less client test.
+- C74: split; the finding half under G13, the "every file target closed" half a row of the app-open route's table under G49.
+- C48: the word is `not_json`, held by `apps.refused_not_json`, for a cycle, `undefined`, `NaN`, a `Map` and a `Date`, in `setState` and `setStore`; the section's word list and `apps.yml` in the write list gain it (item 8, item 13, C86).
+- C49, C55 and C56: the store and `.undo` folders come from a parameter of the store module, `~/.oculus/app-data` by default; the tests write under a temporary folder and assert the resolved path is inside it (item 9, C98).
+- C82: rewritten with the synthetic catalog's default and the problems `apps.writes_per_min: range` and `apps.keys_per_s: number` (`sed -n 14,26p src/lib/data/sources/config/catalog/value-rule.ts`; `sed -n 336,354p tests/data/sources/config/settings.test.ts`).
+
+Section 5, The question:
+- C40: as above. C48: as above. C67's last clause: the app-open route takes its file system as an argument, and the test's recording file system shows no stat, real path or read of the file before the answer (item 10, C67).
+- C81's view half: the rule is in `tabForKind`, `openBookmark` goes through it, and the five places that open the Document view without it are each named and changed (`grep -rn "openView('document'" src`: RailFoot.svelte:56, card.ts:85, CardDocs.svelte:81, EntryCard.svelte:225, Lanes.svelte:151, opening.ts:106), with `bookmark-rows.ts:71-72` and `+page.svelte:163` for the rail; cases C87, C88, C89; the files join the write list.
+- C19: the catalogue half is a run through `registerApps`; the ids, keys and approvals half is a row of the manifest reader's table.
+- Item 6's `color-scheme`: case C101, and in the look.
+- M1, M2 and M4: each runs as a control on a static server with no policy or sandbox and inside the frame AppFrame draws under `frame-src 'self'` on the scratch server; a control that shows nothing is reported as not measurable (item 14).
+
+Section 6, Implied inputs:
+- 1 to 17: cases C84 to C100, each with the result the check gives. 2 is C85 and Decision 20 (whichever of A3 and E4 lands second adds `schedule`; `cd .agents/worktrees/A3 && git diff HEAD -U0 -- tools/oculus/src/routes/+page.svelte` shows `'schedule'`). 13's unreadable `app.yml` is worded as `manifests.ts:234-236` words an unreadable manifest (`grep -n does_not_parse src/lib/data/sources/manifests.ts src/lib/data/sources/yaml-file.ts`). 14 is a finding naming `apps_dir`, key `findings.apps.apps_dir_not_folder` (C97). 15 is C98. 16 is C99, under Z558. 17 is C100: the builder's first run of it settles `import.meta.resolve` under Vite's module runner, and the fallback finds `penpal/package.json` through `createRequire(import.meta.url).resolve.paths('penpal')`, because `resolve('penpal/package.json')` throws `ERR_PACKAGE_PATH_NOT_EXPORTED` for penpal's exports map (`npm view penpal@8.0.1 exports --json`, and a Node 24.21.0 probe over a scratch package with that map).
+
+Section 8, Dictated text:
+- The options entries: item 13 gives each `apps.*` entry `description`, `heading: apps`, `section`, `default` and `control`, and `closed_paths` `control: list`; the sections are `App limits` and `Closed folders` (Z561).
+- `node build`: item 14 starts `node src/server.ts --engine <scratch>/engine` after `npm run build` (`sed -n 344p HELP.md`; `sed -n 19,23p src/server.ts`).
+
+Shared paths:
+- The brief's section is rewritten: S5, X3f, D38 and D20 landed (`git log --oneline 53908af5c..HEAD -- tools/oculus ':!tools/oculus/.scratch'`), A3 and D44 read from their worktrees, A3's and D44's shared files judged simple as the check gives them, with the files this closing added (`options.ts`, `workbench.yml`, `boundaries.test.ts`, `DESIGN.md:85`) read the same way (`git diff HEAD -U0` in each worktree); O30's `+page.svelte` change starts at :191, so E4's :177-190 is simple, and O30 leaves the apps section to the second of the two to land.
+
+Declined to judge:
+- `app-window`: Z559. The heading: Z558. Vite's `import.meta.resolve`: C100. Chrome's behaviour: the control runs of item 14. O30's `+page.svelte` hunk: :191. The `__data.json` token for `curl` is not changed: item 14 still reads it from the page data, and the builder quotes how.
+
+Shared `DESIGN.md:85`: the shared section says it is one line changed by both A3 and E4, resolved at the second landing.
+
+Nothing is left open.
+
+Closing agent usage: ae0e68f75ea2cd5a2, claude-opus-5-5; first run 335,301 tokens, 81 tool uses, 18.7 min; Z560 and Z561 344,740 tokens, 7 tool uses, 1.2 min (from its completion notices).
