@@ -1321,6 +1321,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z589 (2026-10-05): A3, an entry of `schedules.yml` that is not a map has the problem `entry-wrong`, "Entry {0} of the file is not a map of keys, so it does not run.", with Delete only. (the orchestrator, automode)
 - Z590 (2026-10-05): A3, Z586 read as "in or under": a prompt schedule runs in the hub, a root the file browser serves, or any folder under one of them; a folder outside them is `folder-not-served`. (the orchestrator, automode)
 - Z591 (2026-10-05): A3, DESIGN.md:153 reads "A plain object built from an outside map's keys skips an own `__proto__` key; a `Map` keeps it.", so a schedule named `__proto__` keeps its record entry in a `Map`. (the orchestrator, automode)
+- Z592 (2026-10-06): O30, case 12's scroll clause: (a) a source tab's saved state gains its scroll position, so Copy into New Window and Move into New Window open at the same line; the lazy option was (b), the copy opening at the top. Sent with O30's review findings in its repair round. (the orchestrator, automode)
 
 ## Agents
 

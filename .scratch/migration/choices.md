@@ -2,6 +2,15 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z592 (2026-10-06, step O30)
+
+The question: a Copy into New Window of a source tab scrolled to line 3 opens at line 1, so case 12's scroll clause is not met.
+
+- Chosen: (a) a source tab's saved state gains its scroll position, so a copied or moved tab opens where the original was read.
+- Not chosen: (b) accept that the copy opens at the top. The lazy one was (b).
+
+Where it is built: O30's repair round, with its review findings. Booked in `plan.md` Rulings.
+
 ## Z591 (2026-10-05, step A3)
 
 The question: DESIGN.md:153 says a map built from an outside map's keys skips an own `__proto__` key, and the brief check asked that a schedule named `__proto__` keep its own record entry.
