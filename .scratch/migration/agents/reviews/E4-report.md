@@ -1368,3 +1368,109 @@ checks: 1 commands passed
 - Two read-only git commands were run in this step in total: `git status 2>&1 | head -1` (finding 5 above) and `git diff --stat` in round 1; neither changed anything.
 - Scratch state: the scratch oculus on 8797, the listeners on 9443, 9444, 9445 and UDP 3478 are stopped; `lsof -nP -iTCP:8797 -iTCP:9443 -iTCP:9444 -iTCP:9445 -iUDP:3478` prints nothing (exit 1) and `pgrep -fl "scratchpad/e4"` prints nothing.
 - Not covered by these runs: the look on TEST of Axel's own server (item 15 of the brief) and a press inside a frame activating its pane (open item 2).
+
+# Repair round 2
+
+Not done: C85 (A3's `schedule` channel is not on main, as above). Every one of the 8 items of `agents/briefs/E4-round2.md` is done; none is NOT DONE.
+
+## The 8 items
+
+| # | Item | State | Command or reading |
+|---|---|---|---|
+| 1 | Z599, `open({ url })` with the app's Confirm, and the outside link | DONE | Code: `methods.ts` (`webAddress`, the `shape === 'url'` branch of `open`), `apps.svelte.ts` (`openUrl` calls `window.open(address, '_blank', 'noopener,noreferrer')`), `oculus.js` (`ownAddress`, `outsideLink`, the click listener in `connect`), `apps.yml` (`confirm_open_url`), HELP.md apps section, DESIGN.md:327 and :337 and :339. Run `z599` below. Tests: 5 new rows in `methods.test.ts` |
+| 2 | Z593, `color-scheme: dark` on the 13 dark theme classes | DONE | `grep -n "^\s*color-scheme: dark;" src/lib/themes/themes.css \| wc -l` prints 13; the light classes have none. Run `c101z` below |
+| 3 | Z594, a press inside a frame activates its pane | DONE | `onblur={keyboard.frameFocused}` on the `<svelte:window>` at `Workbench.svelte:299-304`; `frameFocused` in `shell/keys/workbench-keys.svelte.ts` beside `paneFocused`. Run `z594` below |
+| 4 | S1, the second effect on `data.apps` | DONE | `+page.svelte:84-92` (seed and register again inside `untrack`), after the token effect at :79-81 |
+| 5 | S2, DESIGN.md cites the sandbox and `svelte:window` | DONE | `grep -on "FrameLayer.svelte:172\|Workbench.svelte:299-304" DESIGN.md` prints `335:FrameLayer.svelte:172` and `337:Workbench.svelte:299-304`; `grep -n 'sandbox="allow-same-origin' FrameLayer.svelte` prints :172 and `grep -n "svelte:window" Workbench.svelte` prints :299. DESIGN.md:278 cites `+page.svelte:84-92` and :79-81 |
+| 6 | Z601, the app-store table's title | DONE | `app-store.test.ts:32`: `describe("answers a held row's store, and 400 or 404 for every other request"` |
+| 7 | Z600, a row that repeats an outcome is dropped | DONE | The list "Rows dropped" below |
+| 8 | P1 (M4), the frame-side measurement | DONE, not rerun | Below |
+
+## Word for a refused target
+
+An `open({ url })` whose url is not text, is over 2048 characters, is not `http:` or `https:`, or carries a user name or a password rejects with `closed` (`REFUSED.closed`, the word the other refused targets use); a no from the reader rejects `declined`. The run shows `closed` for `ftp://`, an address with `u:p@`, the number `5` and a 2069-character address, and `declined` after Cancel. The `open` rate limit counts it, because `opens.take()` runs first in `open`.
+
+## Runs
+
+`$S` is the builder's scratch folder named in round 1. All runs: headless Chrome on a scratch `--user-data-dir`, a real pointer press (`Input.dispatchMouseEvent`), the scratch oculus on 8797 from the final build (`sh $S/bin/rebuild.sh`). No git command and no curl.
+
+**Z599** (`node $S/runs/z599.mjs`, output in `$S/runs/z599.out`; scratch app `probez`, `connects: []`, with an outside link, an anchor, a link to a page of the app, a `mailto:` link, a link with a password and a `javascript:` link):
+
+```
+1. outside link pressed, the Confirm: {"message":"The app Probe zed asks to open this address in a new browser tab. The address can carry what the app has read.","detail":"https://example.org/outside?x=1#frag","buttons":["Cancel","Confirm"]}
+   browser tabs opened before an answer: []
+   after Cancel: dialog null | browser tabs opened [] | mark "3bbuz36ftnp", location .../apps/probez/<key>/index.html
+2. outside link pressed again, the Confirm: (same text)
+   after Confirm: dialog null | browser tabs opened ["Target.targetInfoChanged https://example.org/outside?x=1#frag"] | mark "3bbuz36ftnp", same location
+3. link #pw, #mail, #js: dialog null | browser tabs opened [] | mark and location unchanged
+   link #inside: location .../index.html#here, hashchange heard in the app, no dialog
+4. open({ url: "ftp://example.org/" }) -> rejected "closed"; "https://u:p@example.org/" -> rejected "closed"; { url: 5 } -> rejected "closed"; a 2069-character address -> rejected "closed"; none shows a dialog
+   open({ url: "https://example.org/direct" }) shows the Confirm with detail "https://example.org/direct"; Cancel -> rejected "declined", browser tabs opened []
+5. link to a page of the app: location .../apps/probez/<key>/other.html, no dialog
+```
+
+The Confirm shows the app's title in the message and the whole address as `detail` on its own line. The tab opens only after the yes, and a `Target.targetInfoChanged` for the address is the browser tab. The frame's in-memory mark (`window.mark`, set once per load) is the same after the Confirm, so the frame kept its document; the frame count stays 1 and the tab strip is unchanged. For `#pw`, `#mail` and `#js` the frame's location and mark are unchanged after the press and no dialog opens. The press in this run needed `Page.bringToFront` before each press because the new browser tab takes the page's focus in headless Chrome.
+
+**Z593** (`node $S/runs/c101z.mjs`, output in `$S/runs/c101z.out`; app `probe4` mounted throughout, `window.mark` identical on every line):
+
+```
+start                      {"bodyClass":"","body":"normal","frameStyle":"normal"}
+theme dark                 {"bodyClass":"dark","body":"dark","frameStyle":"dark"}
+theme nord                 {"bodyClass":"rice nord wall","body":"dark","frameStyle":"dark"}
+theme vscode-light-modern  {"bodyClass":"vscode-light-modern","body":"normal","frameStyle":"normal"}
+theme light                {"bodyClass":"","body":"normal","frameStyle":"normal"}
+theme tokyoneon            {"bodyClass":"rice tokyoneon wall","body":"dark","frameStyle":"dark"}
+```
+
+`body` is `getComputedStyle(document.body).colorScheme`; `frameStyle` is the frame element's `style.colorScheme` after the theme change with the app still mounted (C101). A dark theme gives `dark` for both, a light theme `normal` for both.
+
+**Z594** (`node $S/runs/z594.mjs`, output in `$S/runs/z594.out`; the app `probe4` split to a second pane, the Focus tab chosen in its own pane, then a pointer press inside the app frame; `activePane` is "the pane has no `.unfocused` strip"):
+
+```
+before the press in the frame: Focus pane activePane true,  Probe four pane activePane false
+after a press inside the app frame: Focus false, Probe four true   (document.activeElement is the IFRAME)
+after choosing the Focus tab again: Focus true, Probe four false
+after a second press inside the app frame: Focus false, Probe four true
+```
+
+`document.activeElement` is the iframe when the window `blur` handler runs, so `frameFocused` dispatches the `focusin` at once with no deferral.
+
+## Rows dropped (Z600)
+
+The rule applied: a row is dropped only when its input reaches the same decision or clause of the unit and gives the same outcome as a row that stays; a row on a different clause stays even when its outcome word is the same. Counts after the round: `manifest.test.ts` 55, `app-files.test.ts` 23, `approve.test.ts` 10, `app-open.test.ts` 30, `app-gate.test.ts` 17, `methods.test.ts` 42 (6 dropped, 5 added), `app-store.test.ts`, `file.test.ts` and `settings.test.ts` together with the others 242 tests in 9 files (`npx vitest run` over the 9 files: `Test Files  9 passed (9)`, `Tests  242 passed (242)`).
+
+- `manifest.test.ts`, "reads each apps folder to its rows and its findings": a manifest that is a number (the same `not_a_map` as the list row); a name starting with a hyphen and a name starting with an at sign (the first-character clause the upper-case name row exercises); an entry in a dot-led folder and an entry with an empty segment (the segment rule the `../x.html` row exercises); the origins `https://h.org/p` and `https://h.org?q=1` (the `url.origin !== bare` clause the userinfo row exercises) and `ftp://h.org` (the protocol clause the `wss` row exercises); a write of the rail, of the roots and of a session (the `CLOSED_WRITES` membership the undo and app-store rows exercise); a root key holding a space (the id construction the slash row exercises). 12 rows.
+- `app-files.test.ts`, "answers an app file only while every condition holds, and an empty 404 otherwise": the manifest path with no file name (the empty-segment clause); an encoded dot pair as a segment and an encoded climb to a key file (the decoded-slash clause the encoded climb to a sibling's folder exercises); a link inside the folder by its name (the not-recorded decision the "another path of no record" row exercises); the key of another app (the key mismatch the wrong-key row exercises); a shared file asked by a POST and by a foreign host (the method and host checks of the earlier row). 6 rows; the `symlinkSync` import and the link line left with them.
+- `approve.test.ts`, "approves only the hash the reader was shown, and revokes by folder" and "refuses a request without the write token": an approval with no hash (the `approveShape` failure of the neither-approve-nor-revoke row); a revoke of a view no row names (the `app === undefined` decision of the approve row); a token that is not the server's (the single token comparison of the no-token row, now a one-row table). 3 rows.
+- `app-open.test.ts`, "answers closed, missing or ok in the order of the checks, and reads no hidden file first": `.ssh/id_ed25519`, the approvals file, `a/.git/config` and a dot segment (the dot-led clause the `.env` row exercises); an absolute path (the empty-segment clause of `a//x`); a literal percent escape that is absent (the `missing` decision of the absent-file row); a binary file and a `.docx` file (the `isFile` to `ok` decision of the ordinary file); a path given twice (the `once` clause of the absent-app row). 9 rows; the world files they used are removed.
+- `app-gate.test.ts`, "refuses a write whose matched kind is not the open kind its header names": a page body with a kind header and no app header and a store write with no app header (the no-header decision of the first such row); an app header that is no view id (the `id === null` decision of the malformed-escape row); a body whose kind header is another open kind, a closed kind, and an open body under no kind header (the `named !== kind` decision of the other-kind row); a root app by its escaped root key (the decode of the slash row); the endpoint rows for a closed kind and for a store write with no app header (the gate-refused to 403 decision of the other endpoint row). 9 rows; the `my repo` root is removed from the fixture.
+- `methods.test.ts`, "refuses an open target or a write by the page's own checks before any request" and the not-JSON table: the view kinds document, file, source and project (the `unlisted` to `closed` decision of the terminal row); an error status with no word (the `failedWith(status)` line of the server-error row); a `Date` as a not-JSON value (the prototype clause the `Map` row exercises). 6 rows.
+- `file.test.ts`, "answers a file of an apps folder as plain text with nosniff": a script of an app (the in-apps-folder to `text/plain` decision of the page row); the fixture `app.js` is removed. 1 row.
+- `settings.test.ts`, `appsSettings`: `closed_paths` that is not a list (the `!Array.isArray` clause of the missing-key row); with an absolute entry and with a trailing slash (the empty-segment clause of the empty-entry row); with a dot-dot (the dot-led clause of the `.x` row). 4 rows.
+- `app-store.test.ts` (the Z601 title): a view given twice (the `once` clause of the no-view row) and a built-in view (the `appById` undefined decision of the "a view no row names" row). 2 rows.
+- No row dropped: the store-cache table (each row is a different decision), the opening-apps table, the server `app-store.test.ts` (the over-limit and unparseable files are different clauses), and the single cases of `changes`, `undo`, `approvals` and `local.test.ts`.
+
+## Test titles changed and rows added
+
+- `app-store.test.ts`: the describe is now "answers a held row's store, and 400 or 404 for every other request".
+- `methods.test.ts`, five rows added to "refuses an open target or a write by the page's own checks before any request"'s open table, one per outcome of `open({ url })`: "an https address the reader accepts, opened once with the app and the whole address shown"; "an address the reader declines, rejected declined with nothing opened"; "an address of a scheme other than http: and https:, rejected closed with nothing asked"; "an address with a user name or a password, rejected closed with nothing asked"; "an address of more than 2048 characters, rejected closed with nothing asked".
+- No other title changed. No test is added besides those five rows.
+
+## P1, the M4 frame-side measurement
+
+The frame-side measurement is settled by the net log, not by the probe's record: the logs of `m4r1-frame` and `m4r2-frame` (`$S/cdp/netcount.py`, `$S/cdp/netpre.py`) print `127.0.0.1:9444: preconnects 1, URL_REQUESTs 0, request headers sent 0`, so the frame made a preconnect to the loopback listener and no request, and sent no header. The probe's own record (`"click":"about to click"`) is the last line the frame wrote before the click destroyed it. It is not rerun, as the brief says.
+
+## Files written outside the original path list
+
+`src/lib/server/machine/apps/oculus.js`, `src/lib/state/system/apps/methods.ts`, `src/lib/state/system/apps/apps.svelte.ts`, `config/text/views/apps/apps.yml`, `HELP.md`, `src/lib/themes/themes.css`, `src/lib/shell/keys/workbench-keys.svelte.ts`, `src/lib/shell/Workbench.svelte`, `src/routes/+page.svelte`, `DESIGN.md`, and the nine test files above. The round-1 open items 1 (themes set no `color-scheme`) and 2 (a press inside a frame does not activate its pane) are closed by items 2 and 3 of this round; the round-1 open item 3 (an app whose frame navigates away loses its frame) now has the outside-link path through `open({ url })` and keeps `apps.load_failed` with Reload for every other navigation.
+
+## Verify (after the last change)
+
+- `npm run diagrams`: exit 0, ends with `docs/diagrams/writes.dot` and `docs/diagrams/writes.svg`.
+- `bash ~/.claude-work/skills/land/templates/checks.sh .../orchestrator-state.md`, first run: `ok prettier`, `ok ASCII gate`, `ok svelte-kit sync`, `ok eslint (43.7 s)`, `ok svelte-check (35.5 s): 1791242949866 COMPLETED 380 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok vitest (52.0 s): Duration  35.49s`, `test:quick: 52.8 s (limit 45.0 s); every command passed`, `test:quick: over the time limit`, `checks: 1 commands passed`, exit 0. The two background builders were running at the time. The full list rerun: `test:quick: 17.1 s (limit 45.0 s); every command passed`, `ok svelte-check (7.3 s): 1791243022310 COMPLETED 380 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok vitest (16.4 s): Duration  13.06s`, `checks: 1 commands passed`, exit 0.
+- `npm run test:checks`: exit 0, `Test Files  15 passed | 1 skipped (16)`, `Tests  226 passed | 3 skipped (229)`.
+- `sh utils/folder-check.sh`: exit 0. `sh utils/unused-exports.sh` against the base list: one new line, `src/lib/server/machine/apps/oculus.js: connect` (the module is loaded by the apps, not imported by the page).
+- `awk 'length>100' src/lib/server/machine/apps/oculus.js` prints nothing; `LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md` prints nothing.
+- Git: no git command was run in round 2. The two read-only commands of round 1 (`git status 2>&1 | head -1`, `git diff --stat`) were run, as finding 5 above says.
+- Scratch state: the scratch oculus on 8797 is stopped (`sh $S/bin/scratch.sh stop`); `lsof -nP -iTCP:8797 -iTCP:9443 -iTCP:9444 -iTCP:9445 -iUDP:3478` prints nothing. Ports 8787 and 8790 were not touched.
+- Not covered by these runs: the look on TEST of Axel's own server, and a press on an outside link inside an app drawn in a floating window.

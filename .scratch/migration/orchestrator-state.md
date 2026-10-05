@@ -66,10 +66,11 @@ dispatch:   # steps in flight, up to seven (Z423)
   builder_usage: 341,893 tokens, 466 tool uses, 114.9 min (the completion notice of its last run, after the stop at 20:23)
   brief_check: agents/reviews/E4-brief-check.md (aeb43ede13fd69892, claude-opus-5-5, 315,721 tokens, 114 tool uses, 17.3 min), closed in the brief by ae0e68f75ea2cd5a2 (claude-opus-5-5; 335,301 tokens, 81 tool uses, 18.7 min; Z560 and Z561 344,740 tokens, 7 tool uses, 1.2 min)
   shared_paths: with A3 (as re-specified under Z569 to Z585): +page.svelte's connect list, DESIGN.md:114, HELP.md:269, server context.ts's close() list (each both-add, both kept), catalogs.ts (E4's closed_paths_shape beside A3's behaviorFindings, separate hunks), options.yml, behavior.yml, findings.yml, workbench.yml, boundaries.test.ts, context-fixture.ts, client payloads, entities and context, model index (separate hunks); with D44: server context.ts, context-fixture.ts, glyphs.yml, icons.yml, findings.yml, model index (separate hunks or both-add); with O30: +page.svelte (O30 from :191, E4 to :190), client context.ts (:204 vs :443), HELP.md disjoint, DESIGN.md:151 (both add a sentence, both kept) and the apps section's popped-out-window sentence written at the second landing; package.json one dependency each, the lockfile and docs/diagrams regenerated at landing; the second of A3 and E4 adds schedule to the closed channels, with A3's brief item 14 wording of findings.apps.carries.schedule; so the merge is simple
-  reviewer_report: agents/reviews/E4-refuter.md (a4f365f02f4be4d29, claude-opus-5-5, 291,670 tokens, 164 tool uses, 25.1 min); over round 1: a18a7261ae0aad603, claude-opus-5-5, 116,643 tokens, 134 tool uses, 22.0 min
+  reviewer_report: agents/reviews/E4-refuter.md (a4f365f02f4be4d29, claude-opus-5-5, 291,670 tokens, 164 tool uses, 25.1 min); over round 1: a18a7261ae0aad603, claude-opus-5-5, 116,643 tokens, 134 tool uses, 22.0 min; over round 2: ada0676ed07f8b726, claude-opus-5-5, running since 2026-10-06
   landing: not-started
   round: 2 (agents/briefs/E4-round2.md, sent 2026-10-06, the plan's extra round for Z599); round 1 agents/briefs/E4-round1.md, sent 2026-10-05
   round_1_usage: 133,019 tokens, 281 tool uses, 68.6 min
+  round_2_usage: 118,930 tokens, 107 tool uses, 28.6 min
 ```
 
 ## The standing demands (from Axel, in force)
