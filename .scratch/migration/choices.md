@@ -2,6 +2,33 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z598 (2026-10-06, step O30)
+
+The question: the app lets through only six named Chromium switches, where the brief says every Chromium switch passes.
+
+- Chosen: (a) every `--name` or `--name=value` that is not an oculus flag passes to Chromium; only a positional argument or a wrong oculus value gets the dialog.
+- Not chosen: (b) keep the list of six, which refuses `--lang=nl` and every other switch. The lazy one was (b).
+
+Where it is built: O30's repair round 1. Booked in `plan.md` Rulings.
+
+## Z597 (2026-10-06, step O30)
+
+The question: four test files of O30 hold tests no `guarded.md` entry names.
+
+- Chosen: (a) delete them; each behaviour is shown by a run in the report.
+- Not chosen: (b) new guarded entries, which need Axel and add tests the entry rule exists to stop.
+
+Where it is built: O30's repair round 1. Booked in `plan.md` Rulings.
+
+## Z596 (2026-10-06, step O30)
+
+The question: O30 added a server flag `--default-port` the brief does not name, and two docs say the server takes one argument.
+
+- Chosen: (a) keep the flag and name it in HELP.md and README.md.
+- Not chosen: (b) an environment variable, the same shape hidden. The lazy one was leaving the docs false.
+
+Where it is built: O30's repair round 1. Booked in `plan.md` Rulings.
+
 ## Z595 (2026-10-06, step E4)
 
 The question: an app frame that navigates to an outside address is refused by the page policy and the app tab shows that it did not load.
