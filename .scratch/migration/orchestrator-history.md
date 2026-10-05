@@ -42,6 +42,11 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 - Z495 (2026-10-05, closed in automode): X3f's "no tab opened" form tried at its landing look; `choices.md`.
 - Z496 (2026-10-05, closed in automode): D23's UV-1, UV-2, UV-4, UV-5 and the lsp folder name; `choices.md`.
 - Z497 (2026-10-05, closed in automode): D38's choices 2 to 13; `choices.md`.
+- Z498 (2026-10-05, Axel): D23's interpreter runs after approval, (a).
+- Z499 (2026-10-05, Axel): G36's new wording, (a).
+- Z500 (2026-10-05, Axel): D38's keys in `local.yml` under `literature:`, (a); Google Scholar stays a link.
+- Z501 (2026-10-05, Axel): D38's merge gets a guarded entry.
+- Z502 (2026-10-05, Axel): D38's libraries as recommended.
 - Z474 (2026-10-05, closed in automode): D42's review Spec 1; `choices.md`.
 - Z475 (2026-10-05, closed in automode): D42's review, declined to judge; `choices.md`.
 - Z468 (2026-10-05, Axel): no step is ever added; Q118, Q119, Q121 and Q122 folded into S5 and D33.
