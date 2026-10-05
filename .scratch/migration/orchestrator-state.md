@@ -44,6 +44,19 @@ dispatch:   # steps in flight, up to seven (Z423)
   round3_builder_usage: first run handed back (cases 1, 3, 4, 5), 310,369 tokens, 29 tool uses, 4.0 min, 0 full-list runs; resumed with the cases ruling; build: 319,520 tokens, 250 tool uses, 39.7 min, 2 full-list runs; continued with Z536 (Open Preview to the Side to the bar) and Z537; with Z536 and Z537 (completion notice, whole run): 352,573 tokens, 271 tool uses, 48.3 min, 3 full-list runs
   round3_reviewer: agents/reviews/X3f-refuter.md (Repair round 3, refuted), claude-opus-5-5 (a74583b625c668d96), 323,724 tokens, 102 tool uses, 18.5 min
   landing: gate (findings fixed at landing)
+- step: D38
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a9235d4e14cc878c9 (builder, launched 2026-10-05)
+  worktree: .agents/worktrees/D38
+  base: b9cb4b3a2
+  launched: 2026-10-05
+  report: agents/reviews/D38-report.md
+  brief_check: agents/reviews/D38-brief-check.md, claude-opus-5-5 (a2a467a6aab8994d0), 294,737 tokens, 97 tool uses, 12.6 min; closed by a4558e3331a0b5998, claude-opus-5-5, 250,737 tokens, 61 tool uses, 12.6 min
+  shared_paths: HELP.md and DESIGN.md with X3f and D20 (separate lines; D38's DESIGN.md paragraph between :131 and :132), writes.svelte.ts and context.ts with D20 (separate hunks), docs/diagrams regenerated
+  landing: not-started
+  round: 0
 - step: D20
   executor: agent
   worker: claude:sonnet at ordo-high
