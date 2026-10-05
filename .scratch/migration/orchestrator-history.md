@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z563 (2026-10-05, closed in automode): O30's find bar in its own view; `choices.md`.
+- Z562 (2026-10-05, closed in automode): O30's spelling facts from the preload under Z555 (a); `choices.md`.
 - Z561 (2026-10-05, closed in automode): the apps entries' Settings sections; `choices.md`.
 - Z560 (2026-10-05, closed in automode): G49's Code line names every unit its sentence covers; `choices.md`.
 - Z559 (2026-10-05, closed in automode): the icon of `app_view`; `choices.md`.

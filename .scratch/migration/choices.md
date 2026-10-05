@@ -2,6 +2,24 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z563 (2026-10-05, step O30)
+
+The question: O30's find bar: `findInPage` counts a text box of the page holding the query, so a bar drawn in the page counts itself (the builder's probe2 and probe4).
+
+- Chosen: (a) the bar is a `WebContentsView` over the window's top right loading the server's own small route `/find`, drawn with `ui/` primitives, so the page's document holds no find box and the count is the page's own.
+- Not chosen: (b) subtract one from the count and skip the bar's own match, which breaks whenever the box is not the first match or the query is not in it. The lazy one was (b).
+
+Where it is built: `agents/briefs/O30-cases.md`. Booked in `plan.md` Rulings.
+
+## Z562 (2026-10-05, step O30)
+
+The question: O30's spelling suggestions: Electron emits no `context-menu` when the page cancels the DOM right-click, which oculus's text menu does, so Z555 (a)'s mechanism cannot work (the builder's probe3).
+
+- Chosen: (a) keep everything Z555 (a) rules (no library, no native menu, oculus's text menu shows the suggestions at its top in the app) and take the facts from the preload's `webFrame.isWordMisspelled` and `getWordSuggestions`, the page finding the word at the pointer in its own box and replacing it as Paste does, the spell server warmed when the preload loads.
+- Not chosen: (b) drop the app's spelling suggestions, which leaves the ruled feature unbuilt. The lazy one was (b).
+
+Where it is built: `agents/briefs/O30-cases.md`. Booked in `plan.md` Rulings.
+
 ## Z561 (2026-10-05, step E4)
 
 The question: the Settings section words of the nine `apps.*` entries under the Apps heading (Z558).
