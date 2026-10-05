@@ -2,6 +2,33 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z604 (2026-10-06, step E4)
+
+The question: `color-scheme: dark` on the dark themes leaves an app with no scheme of its own on a white backdrop, and a light theme lets an app follow the system's dark mode.
+
+- Chosen: (a) `color-scheme: light` on the base body, and `oculus.js` sets `light dark` on the app's root unless the app sets its own.
+- Not chosen: (b) keep Z593 as built, so the defect it names stays. The lazy one was (b).
+
+Where it is built: E4's landing. Booked in `plan.md` Rulings.
+
+## Z603 (2026-10-06, step E4)
+
+The question: an app's Confirm takes the keyboard on its Confirm button, so an Enter typed into the app confirms an address the app chose.
+
+- Chosen: (a) an app's Confirm opens on Cancel.
+- Not chosen: (b) the Confirm button ignores presses for a moment after it opens, a timing guard; (c) leave it. The lazy one was (c).
+
+Where it is built: E4's landing. Booked in `plan.md` Rulings.
+
+## Z602 (2026-10-06, step E4)
+
+The question: round 2's drops left 14 of E4.md's cases with no row, against Z600's text that the case list is the least a table holds.
+
+- Chosen: (a) restore those inputs at landing.
+- Not chosen: (b) accept the drops and narrow E4.md's case list. The lazy one was (b).
+
+Where it is built: E4's landing. Booked in `plan.md` Rulings.
+
 ## Z601 (2026-10-06, step E4)
 
 The question: the app-store table's brief title names a 405 answer that round item 13 removed.
