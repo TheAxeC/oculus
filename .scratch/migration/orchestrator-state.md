@@ -37,8 +37,9 @@ dispatch:   # steps in flight, up to seven (Z423)
   brief_check: agents/reviews/D38-brief-check.md, claude-opus-5-5 (a2a467a6aab8994d0), 294,737 tokens, 97 tool uses, 12.6 min; closed by a4558e3331a0b5998, claude-opus-5-5, 250,737 tokens, 61 tool uses, 12.6 min
   shared_paths: HELP.md and DESIGN.md with X3f and D20 (separate lines; D38's DESIGN.md paragraph between :131 and :132), writes.svelte.ts and context.ts with D20 (separate hunks), docs/diagrams regenerated
   landing: not-started
-  builder_usage: first run handed back (cases 18 and 21), 277,221 tokens, 56 tool uses, 10.3 min, 0 full-list runs
-  round: 0 (cases ruling agents/briefs/D38-cases.md sent)
+  builder_usage: first run handed back (cases 18 and 21), 277,221 tokens, 56 tool uses, 10.3 min, 0 full-list runs; after the cases ruling, 128,713 tokens, 379 tool uses, 110.6 min, the full list 8 times (5 direct, 3 in checks.sh)
+  reviewer_report: agents/reviews/D38-refuter.md (a556243e326d2c316, claude-opus-5-5, 156,924 tokens, 109 tool uses, 16.8 min)
+  round: 1 (agents/briefs/D38-round1.md: the review's findings B1, B2, S1, T1 to T4, S2)
 - step: D20
   executor: agent
   worker: claude:sonnet at ordo-high

@@ -1,0 +1,14 @@
+# D38, repair round 1
+
+The findings of the review (`agents/reviews/D38-refuter.md`), each with its ruling. Work in `.agents/worktrees/D38` only, under the brief and `agents/spec.md`; no git command. After the last change, run the verify list once through `sh /Users/axelfaes/.claude-work/skills/land/templates/checks.sh <main checkout>/tools/oculus/.scratch/migration/orchestrator-state.md` from the worktree's root, and append to your report a section "Repair round 1" with one row per item: what changed (file:line), the run that shows it, and for each behaviour changed a failure on the tree before the change quoted in the form the check has after it.
+
+1. B1, `sources/openalex.ts:152`: an `http:` landing page falls back to the OpenAlex page. `url: httpsLink(landing) ?? one.id` (or the same through the common reader), and a row in your stub run for a landing page `http://x.org/p` that prints `url` = the OpenAlex id.
+2. B2, `sources/scopus.ts:141`: a Scopus record link on the host `www.scopus.com` given as `http:` is read as the same address with `https:`; every other `http:` link stays dropped, as case 37 says. A stub row over the documented sample's fifth hit prints its `url`.
+3. S1, `DESIGN.md:326`: `radar-add` joins the open kinds beside `lead-add`, since it edits the hub's data, the sentence's own rule.
+4. T1, `views/personal/calendar/Calendar.svelte:2`: "the fifth" of the Incoming page's group.
+5. T2, `sources/common.ts:181-182` and `:198-200`: the comment's sentence on one line at the comment width, and the doc comment of `looseText` directly above it.
+6. T3, `literature/desk.ts:50-66`: a waiter whose signal aborts while the request before it is in flight stops waiting at once with the signal's reason (race `turn` with the signal), and the lane still goes on in order for the requests after it; the comment then holds. A stub run shows an abort during a 2 s request answered within 50 ms, and the next request still waiting its gap.
+7. T4: the tests outside T1 to T6 are folded into the named tests' tables, none deleted: the bucket, relevance and missing-title rows into T3 (`tests/server/edit/feeds.test.ts`); the key-name assertion into T2's `?sources` row (`tests/routes/docs/literature.test.ts`); the unknown key and the wrong map into the existing unknown-key case and the `checkLocal` table of `tests/data/sources/config/local.test.ts`; the `literatureSettings` cases into one case, as `searchSettings` has (`tests/data/sources/config/settings.test.ts`). The report lists every changed assertion with its before and after.
+8. S2: the three departures (OpenAlex `conference` to `conference-paper`, Semantic Scholar's `venue` parameter, Europe PMC's `<offset>|<cursorMark>` cursor) stay; the report names each with its reason in the round's section.
+
+Not for you: P1 (the guarded entries for T1 to T5 are written by the orchestrator) and P2 (Semantic Scholar over a real answer is settled at the look).

@@ -1,6 +1,6 @@
 In flight (2 of 5 slots):
 - D20 (an agent from a task or a worktree): landing prepared in the gate with its diagnosis fix and round-1 fixes; its commit waits for Axel's ruling on G44 (Z543).
-- D38 (the Literature search view): builder running.
+- D38 (the Literature search view): reviewed; repair round 1 sent to its builder.
 - M6 (the collection forms removed): brief written (Z550 closes its choices), checked, and its findings closed in the brief; prepared once D20, D38, X3e and D28 have landed.
 
 Waiting for a landing or a ruling:
