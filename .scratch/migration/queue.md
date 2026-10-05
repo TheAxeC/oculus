@@ -5,7 +5,7 @@ In flight (2 of 5 slots):
 
 Waiting for a landing or a ruling:
 - D23 (language servers): brief rechecked after D38 and D20; prepared once A3 and D44 have landed (DESIGN.md:155 and Source.svelte's split do not merge simply).
-- D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked; prepared once D20 has landed, after the inventory look on TEST.
+- D45 (LaTeX as VS Code's LaTeX Workshop): inventory look on TEST taken; prepared once D44 has landed, its premises then rechecked after X3f, D38, D20 and D44.
 
 Queued, in order (22 steps):
 - D11 (the debug client for rite): brief rechecked after S5; prepared once D20, D44, D45 and D23 have landed.
