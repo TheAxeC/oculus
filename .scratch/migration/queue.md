@@ -9,7 +9,7 @@ Waiting for a landing or a ruling:
 
 Queued, in order (22 steps):
 - D11 (the debug client for rite): brief rechecked after S5; prepared once D20, D44, D45 and D23 have landed.
-- X3e (Files lists reordered by drag): brief ready; once D20 has landed (Z519), its premises then reread after S5.
+- X3e (Files lists reordered by drag): brief rechecked after S5 to D20, its stops closed (Z552 to Z554); prepared once D44 has landed (Z553).
 - D28 (saving a file as VS Code does): brief ready; once X3e has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D41 (links in Markdown checked): once M7 has landed.

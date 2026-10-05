@@ -2,6 +2,33 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z554 (2026-10-05, step X3e)
+
+The question: a stop of X3e's recheck after S5 to D20 (`agents/reviews/X3e-brief-check.md`).
+
+- Chosen: (a) H1.4 makes `keptFiles` asynchronous, and X3e's paths gain D44's `src/lib/server/machine/hpc/submit.ts` for its await, added at X3e's dispatch.
+- Not chosen: (b) D44's builder makes it asynchronous now, outside D44's brief. (the lazy one was (b)).
+
+Where it is built: X3e's brief, "Rulings after the recheck". Booked in `plan.md` Rulings.
+
+## Z553 (2026-10-05, step X3e)
+
+The question: a stop of X3e's recheck after S5 to D20 (`agents/reviews/X3e-brief-check.md`).
+
+- Chosen: (a) X3e is dispatched after D44 lands, and its D2 change goes into whichever file then holds `Source.svelte`'s load effect after D44's split (`Source.svelte` is 528 lines, over the 520 limit, its folder at 10 items).
+- Not chosen: (b) X3e splits it too, two splits that do not merge; (c) no split, which breaks the size rule. (the lazy one was (c)).
+
+Where it is built: X3e's brief, "Rulings after the recheck". Booked in `plan.md` Rulings.
+
+## Z552 (2026-10-05, step X3e)
+
+The question: a stop of X3e's recheck after S5 to D20 (`agents/reviews/X3e-brief-check.md`).
+
+- Chosen: (a) X3e's read failures are worded through D20's failure codes and `server.git` keys (`classifyFailure`, `parse.ts:703-730`): `answered` and `ran` stay, a timeout fills `timed_out`'s two arguments, a signal takes `signal`, and no `server.git.failed` key is added.
+- Not chosen: (b) new read keys, two wordings for one ending; (c) the brief as written, which leaves two placeholders unfilled. (the lazy one was (c)).
+
+Where it is built: X3e's brief, "Rulings after the recheck". Booked in `plan.md` Rulings.
+
 ## Z438 (2026-10-05, step X3e)
 
 The question: G31 names no notes order file, so the order X3e writes has no guarded test.
