@@ -62,6 +62,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   worker: claude:sonnet at ordo-high
   model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
   session_id: a65b04c696467576e (builder, launched 2026-10-05)
+  builder_usage: first run handed back (case 62), 298,835 tokens, 76 tool uses, 14.2 min, 0 full-list runs
   worktree: .agents/worktrees/D20
   base: 16b31cef0
   launched: 2026-10-05
@@ -69,7 +70,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   brief_check: agents/reviews/D20-brief-check.md, claude-opus-5-5, first check (in the file), second check aba2fdc1ad025072b 317,222 tokens 96 tool uses 15.5 min, closing a8fd060ce54f0ef7c 293,050 tokens 87 tool uses 19.5 min
   shared_paths: tools/oculus/DESIGN.md and HELP.md with X3f (different paragraphs, the one-line shift after HELP.md:85 once X3f lands) and S5 (config/text/server.yml, S5 at :19-49, D20 at :61-64); each a separate hunk, so the merge is simple
   landing: not-started
-  round: 0
+  round: 0 (agents/briefs/D20-cases.md: case 62 split in two, the classifier's order, `ticker.ts` widened)
 ```
 
 ## The standing demands (from Axel, in force)
