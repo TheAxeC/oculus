@@ -60,3 +60,34 @@ X3f, D20, D44: simple (D44's `close()` insertion read at landing). D11, D23, D38
 Look case 9 on Axel's running server; D44's `close()` line; the choice behind I4.
 
 ## Closed
+
+Closing agent a29086760e73aef5a, claude-opus-5-5: 312,666 tokens, 106 tool uses, 19.8 min (completion notice).
+
+- Line drift (section 3): every tree and ledger citation renumbered on main at 2b42bc9ea, each bullet carrying its command (A3.md:13-21, 25-50, 300-354); "S5 in flight" and "goes to Axel" removed and Z510, Z511, Z512 stated as ruled (A3.md:18-19, 371-401); `grep -n "goes to Axel\|127525b40\|until Axel rules" agents/briefs/A3.md` prints nothing.
+- N1: `'schedule'` joins `connect([...])` at `+page.svelte:177-190` (A3.md:36, 186, 326); the guessed `socket.svelte.ts` path is dropped, since it takes `channels: string[]` and names none (A3.md:36).
+- N2: the `cron` arms of `formWords`/`mustBe`, `sentenceOf`, `formMessage`/`Trouble`/`troubleOf`/`troubleMessage` and `SETTINGS_MESSAGES` with their words (A3.md:40, 97-101, 314, 321, 331-332), and `options.yml:11`, `options.ts:102`, `value-rule.ts:59`, `DESIGN.md:85` and `findings.yml:102` rewritten to name four forms (A3.md:94, 101-102, 201, 305-313, 348).
+- N3 and P2: `empty` joins the text control in `value-rule.ts`, `''` right only under `empty` for a text with a form, `emptyIsValue` adding `text` (A3.md:39, 95); `options.yml:11`, `options.ts:132-134` and `DESIGN.md:85` say it applies to a choice, a path or a text (A3.md:102, 201).
+- N4: `taskSchedules` joins `PROBLEM_READERS` (A3.md:37, 104-109); `catalogs.ts` left the write list; `wrong-settings.ts:6-26` and `config.test.ts:397-472` rows added and `settings.test.ts`'s rows named (A3.md:284-291, 340-341).
+- N5: item 8 rewrites the "no schema" clause of `DESIGN.md:411` and `tasks.ts:10-12` (A3.md:31, 205-206).
+- L1: the table "VS Code's Automations, feature by feature", each row built or left out with why (A3.md:52-68); look case 11 compares the tray with it side by side (A3.md:226).
+- L2: Z511's risk in the dictated words "With it on, a scheduled run lets an agent edit files and run commands with nobody asked, on a timer." in `HELP.md:25` and the option's description (A3.md:199, 208); held: plain, no dash, no negation-contrast.
+- P1: `heldAt` walks every segment as `config-key.ts:55-59` does, an inner non-map a `block` problem by its dotted path (A3.md:38, 103); the settings row 'reads a pattern the Settings view wrote at its three-level key' writes through `writeConfigKey` and reads through `taskSchedules`, red on the unchanged tree (A3.md:289).
+- P3: a pattern that does not construct is `{ kind: 'form', form: 'cron' }`, one with no next run the new kind `{ kind: 'cron_never' }`, each with its words in the four catalogs (A3.md:96-101, 377).
+- P4: "Shared with the steps in flight" is the check report's comparison: X3f, D20, D44 simple, D11, D23, D38, D45 not simple, A3 prepared first or after each and the other prepared on main after it lands (A3.md:358-369).
+- P5 and I6: `ServerContext.scheduleRecord` reaches the route through `+server.ts`; `makeTaskConfig` and `contextFixture` hand scratch paths; a start with no record path writes nothing (A3.md:143-144, 182, 262, 325, 344-345).
+- C1: G46's `tests/server/machine/tasks/schedule.test.ts` with four dictated titles, one per clause, over the real `startUpdateTask` and a recording tmux runner; G31's row 'refuses a write over a schedule record it cannot read, leaving it' in `tests/server/machine/tasks/record.test.ts`; both in the write list (A3.md:278-283, 337-338).
+- C2: C4's `5`, `null`, `[]` expect `{ kind: 'text' }` and "must be text; the default is used" (A3.md:233, 291).
+- C3: C25 states no job and no finding for a key outside the catalog (A3.md:254, 288).
+- Look case 7 (section 4): it goes on past the refusal, takes `0 7 * * 1` and sees the tray's next run move with no restart, and refuses `0 0 31 2 *` in the `cron_never` words (A3.md:222).
+- D3: the findings go through `findings.config.setting_default` filled by `mustBe` with new `findings.words.cron` and `findings.words.cron_never` (A3.md:98, 216, 291); held: each line fits "{0} must be {1}; the default is used".
+- D4: `taskSchedules(config, problems: SettingProblem[] = [])` (A3.md:107-112).
+- Skipped words (section 8): `outcome_skipped` is 'skipped, the earlier run was still going', which needs no earlier time (A3.md:189, 192, 218); held.
+- Q1: C35 writes a changed pattern through `liveSettings` and sees the payload's next run move, by a quoted probe (A3.md:148, 264).
+- Q2: C36 starts the real `taskCommand` argv with a stub `claude` writing its registry entry and transcript into the configured account folder, the one-run rule reading it; look case 10 runs one real task by hand and checks its registry entry is found; the rule at the head names that one exception (A3.md:9, 34, 214, 225, 265).
+- I1: C28, a lock older than 60 s taken over with one stderr line (A3.md:180, 257).
+- I2: C29, a due time while the task's start is awaited recorded `skipped` with `terminal` null (A3.md:155, 177, 258).
+- I3: C30, the decision waits for the first `sessions` payload (A3.md:153, 259).
+- I4: C31 and item 5 follow Z545's recommendation (b), an idle earlier run ended by `stopTerminal` before the new run, a working one skipped, with the note that the case changes if Axel rules otherwise (A3.md:20, 154, 204, 260, 401).
+- I5: C32, `tasks.litwatch` and `tasks` non-maps as `block` findings, an extra field read past with no finding (A3.md:103, 261).
+- I7: C34, a key outside the four kept and not shown, the 21st run dropping the oldest (A3.md:177, 179, 263).
+- Dictated lines added after the check, each held against `spec.md:20` and the prose rules (plain, ASCII, no dash, no negation-contrast): the `findings.words`, `server.config_key` and `workbench.yml` cron lines and `findings.options.form` (A3.md:98-101), the `app.tasks` words (A3.md:192), the risk sentence (A3.md:199), the test titles (A3.md:279-292).
