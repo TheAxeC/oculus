@@ -35,6 +35,7 @@ Queued, in order (27 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- S5 (the Settings view's controls and headings), 2026-10-05, 71017ce60.
 - D42 (a file's history), 2026-10-05, 8077dd55.
 - H3 (the hub's data map), 2026-10-05, 575c997c.
 - D37 (the Search view's replace and the LaTeX build), 2026-10-05, a5f1285b.

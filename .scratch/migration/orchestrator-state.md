@@ -163,6 +163,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Z536 (raised 2026-10-05, step D44's brief and the ruling audit). Where VS Code's title actions go on a file tab: Submit on an open `.slurm` file (D44), and Open Preview to the Side on a Markdown file (X3f keeps it on the tab row). Your Z532 put a file tab's actions "off the tab into the breadcrumb"; VS Code draws Run as a title action at the end of the tab row, where X3f keeps Open Preview to the Side. (a) The tab row's end, beside Open Preview to the Side: where VS Code puts Run, but one more control on the row Z532 cleared. (b) The breadcrumb bar with Save, Revert, the star, Open in Program and Blame: every file action in one place as Z532 says, but not where VS Code puts Run. Recommendation: (b), since it follows your words in Z532. Neither is the lazy option. D44 waits for X3f's landing either way.
+
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
