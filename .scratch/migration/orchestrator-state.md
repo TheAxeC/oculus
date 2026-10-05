@@ -48,6 +48,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   builder_usage: first run handed back, 105,563 tokens, 75 tool uses, 10.0 min, 0 full-list runs
   brief_check: agents/reviews/S5-brief-check.md, claude-opus-5-5, 273,684 tokens, 104 tool uses, 12.6 min
   q119_brief_check: agents/reviews/Q119-brief-check.md, claude-opus-5-5 (a5b40ed74302680f1), 280,042 tokens, 91 tool uses, 15.1 min
+  q119_closing: ad7f5c6d3c49f4f40 (claude-opus-5-5), 218,136 tokens, 128 tool uses, 28.8 min; C1 and C3 ruled Z505 and Z506 and sent back to it; C2 open as Z507
   widened: Z468 folds Q119 (agents/briefs/Q119.md, its brief check running) and Q122 into this step; they go to the builder as repair round 1 with its review findings
   reviewer_report: agents/reviews/S5-refuter.md, claude-opus-5-5 (ab608db77fb2265cd), 365,219 tokens, 97 tool uses, 22.0 min
   landing: not-started
@@ -155,6 +156,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Z507 (2026-10-05, S5's look with Q119, an exception to the looks rule): the round moves oculus's port default (8791 to 8790) and makes a wrong value take its default with a finding at start; showing that needs a server started with a wrong value, which Axel's server on 8790 never is. (a) the look runs on a scratch oculus with its own config, HOME and TMUX_TMPDIR, as D35's port move was looked at. For: the look is taken before the commit (Z467); Axel's server is never restarted. Against: a second exception to "looks only on TEST". (b) the look on Axel's server after he restarts it with a wrong value. For: the TEST page. Against: the look is owed, which Z494 forbids, and it needs Axel's hands. Recommendation: (a).
 - Z504 (2026-10-05, D45's choice 8, a feature dropped): LaTeX Workshop runs its tools in a Docker image when `docker.enabled` (off by default) and shares its viewer over Live Share. `docker` is not installed on this machine (`command -v docker` prints nothing), and oculus has no shared-session layer. (a) build the Docker wrapper (`latex.docker_image`), untested here. For: no LaTeX Workshop feature dropped. Against: code no run on this machine proves. (b) leave both out. For: nothing built that cannot be tried. Against: two LaTeX Workshop features dropped. (c) Docker built, Live Share left out. Recommendation: (b) for Live Share, which has nothing in oculus to attach to, and (b) for Docker until a machine with Docker is in use. No lazy option applies: (b) is a drop, and a drop is yours to rule.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)

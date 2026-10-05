@@ -260,6 +260,24 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z505 (2026-10-05, from Q119's closing, C1)
+
+The question: four rules the readers apply are not a catalog control, `min`, `max` or list: whole numbers, a program name, an extension with its dot, a bundle id.
+
+- Chosen: (a) two catalog words, `whole: true` and `form: program|extension|bundle_id`, read by the one value rule, so every place refuses the same values.
+- Not chosen: (b) the readers keep their own rules, two rules for one value; (c) the rules dropped, so `slurm.days: 1.5` reaches `sacct -S`, the lazy option.
+
+Where it applies: S5's repair round 1. Booked in `plan.md` Rulings.
+
+## Z506 (2026-10-05, from Q119's closing, C3)
+
+The question: `readEditorOptions` and `parseRepoSettings` in `editor.ts` hold their own copy of the catalog's rules for the editor's settings.
+
+- Chosen: (a) folded into S5's round 1: both read through the catalog's rule and their copies go.
+- Not chosen: (b) a later step, which keeps a second copy until it runs; (c) left as it is, the lazy option.
+
+Where it applies: S5's repair round 1. Booked in `plan.md` Rulings.
+
 ## Z503 (2026-10-05, from D45's brief)
 
 The question: D45's user-visible choices 1 to 7 and 9.
