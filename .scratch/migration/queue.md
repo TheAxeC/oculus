@@ -1,14 +1,16 @@
-In flight (5 of 5 slots):
-- A3 (scheduled Update runs): brief check running.
-- D38 (the Literature search view): brief closed; builder starting.
-- D11 (the debug client for rite): brief rechecked against main after S5.
-- X3f (opening a file row, and the tab row's actions): round 3 built; its review is running, then the gate and the look on TEST.
-- D20 (an agent from a task or a worktree): repair round 1 built; its review is running.
-- D44 (Submit on a .slurm file): brief closed; prepared once X3f has landed, its tests and look as Z538 and Z539 are ruled.
-- D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked after S5; prepared once X3f and D20 have landed, after the inventory look on TEST.
-- D23 (language servers): brief rechecked after S5; prepared once X3f has landed (both rewrite Source.svelte).
+In flight (4 of 5 slots):
+- X3f (opening a file row, and the tab row's actions): round 3 reviewed; landing in the gate, then the look on TEST.
+- D20 (an agent from a task or a worktree): round 1 reviewed; diagnosis of a cancelled merge running, then landing.
+- D38 (the Literature search view): builder running.
+- A3 (scheduled Update runs): brief check done; its findings being closed in the brief.
 
-Queued, in order (22 steps):
+Waiting for a landing:
+- D44 (Submit on a .slurm file): brief closed; prepared once X3f has landed, its tests and look as Z538 and Z539 are ruled.
+- D23 (language servers): brief rechecked; prepared once X3f has landed.
+- D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked; prepared once X3f and D20 have landed, after the inventory look on TEST.
+
+Queued, in order (23 steps):
+- D11 (the debug client for rite): brief rechecked after S5; prepared once X3f, D20, D44, D45 and D23 have landed.
 - X3e (Files lists reordered by drag): brief ready; once D20 has landed (Z519), its premises then reread after S5.
 - D28 (saving a file as VS Code does): brief ready; once X3e has landed.
 - M6 (the collection forms removed): unblocked.
