@@ -260,6 +260,15 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z516 (2026-10-05, from O30's brief)
+
+The question: O30's shapes D4 to D15 that the plan does not name.
+
+- Chosen: as booked in `plan.md` Z516.
+- Not chosen, the lazy ones: window state not kept; Electron's own icon and menu; `npm run app` only; no pop-out; the pop-out's tabs closed with a question; the app quit with its last window; a dialog then quit on a port in use; the menu roles only for keys; no find.
+
+Where it applies: O30. Booked in `plan.md` Rulings.
+
 ## Z513 (2026-10-05, from D20's brief)
 
 The question: D20's ten shapes the plan does not name.

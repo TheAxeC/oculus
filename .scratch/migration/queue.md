@@ -3,7 +3,7 @@ In flight (5 of 5 slots):
 - S5 (the Settings view's controls and headings): repair round 1 sent to its builder (its review findings, Q119, Q122, Z505, Z506, Z509); Z507 (where its look runs) open for Axel.
 - X3e (Files lists reordered by drag): brief re-based on D42; the three diagnoses Z441 asks before its builder (the hub Graph's 10 s first read, the 5 s Delete, the folder panel's server half) running; its builder starts once X3f and S5 have landed (merges not simple).
 - D20 (an agent from a task or a worktree): brief written (agents/briefs/D20.md), choices Z513; its brief check running; Z514 and Z515 open for Axel.
-- O30 (the native window in Electron): brief being written.
+- E4 (the apps): brief being written.
 
 Queued, in order (26 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief check in (agents/reviews/D45-brief-check.md); its merges with X3f and S5 are not simple, so once X3f and S5 have landed, its findings then closed in the brief; choice 8 open for Axel as Z504.
@@ -24,7 +24,7 @@ Queued, in order (26 steps):
 - D33 (the Problems view): once D23 has landed.
 - D36 (linters on save): once D33 has landed.
 - D40 (the writing rules as editor marks): once D36 has landed.
-- E4 (the apps): once a slot is free.
+- O30 (the native window in Electron): brief written (agents/briefs/O30.md), choices Z516; once X3f has landed (merge not simple); Z517 (libraries) and Z518 open for Axel.
 - Q72 (the architecture re-read): paused (Axel); after every code step.
 - R2 (release readiness): paused (Axel); after Q72.
 - O29 (retiring the cockpit): paused (Axel); after R2.
