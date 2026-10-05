@@ -5,7 +5,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 ## Never happens
 
 - G1. A route that writes, runs or opens something refuses a request without the page's token.
-  Code: `src/routes/api/` write, ops, open, git, deposit, terminal, commands, hpc, mail, calendar, literature.
+  Code: `src/routes/api/` write, ops, open, git, deposit, terminal, commands, hpc, mail, calendar, literature, approve.
   Test: write: `tests/routes/edit/write.test.ts`, 'refuses a request with no token'; the token guard behind mail, calendar, connect, usage and hpc: same file, 'refuses an empty process token, a missing one and a wrong one, in the route shape'; ops: `tests/server/files/ops.test.ts`, 'refuses a request without the token, and one that is no operation (case 25)'; terminal: `tests/server/machine/pty/channel.test.ts`, 'refuses input from a socket that carried no token'; mail: `tests/server/accounts/mail/routes.test.ts`, 'refuses a request with no write token'; calendar: `tests/server/accounts/connect/oauth.test.ts`, 'refuses a request with no write token'; folder picker: `tests/server/files/picker.test.ts`, 'refuses a request without the token with a 403, before it runs anything'; usage refresh: `tests/server/machine/usage/refresh.test.ts`, 'refreshes exactly the requested account behind the write token'; connect setup: `tests/server/accounts/connect/accounts.test.ts`, 'saves a half behind the token, reads every account again, and answers no field of it'.; write route: `tests/routes/edit/write.test.ts`, 'refuses a request with no token'; ops route: `tests/server/files/ops.test.ts`, 'refuses a request without the token, and one that is no operation (case 25)'; open: `tests/routes/files/open.test.ts`, 'requires the write token'; source: `tests/routes/files/source.test.ts`, 'requires the current write token'; fs: `tests/routes/files/fs.test.ts`, 'refuses a missing token, a body that is not JSON, and an unknown action'; search: `tests/routes/files/search.test.ts`, 'refuses a request without the write token'; git: `tests/routes/git/git.test.ts`, 'refuses a request with no token'; deposit: `tests/routes/git/deposit.test.ts`, 'refuses a request with no token'; terminal route: `tests/routes/sessions/terminal.test.ts`, 'refuses a request without the write token, before reading any record'; commands: `tests/routes/machine/commands.test.ts`, 'refuses a request without the write token'; memories: `tests/routes/docs/memories.test.ts`, 'refuses a request without the token, and writes nothing'; latex: `tests/routes/sessions/latex.test.ts`, 'refuses a request without the write token and a body that is no format request'; literature: `tests/routes/docs/literature.test.ts`, 'refuses a request without the write token, before any source is asked'.
 - G2. A path outside the configured roots is refused.
   Code: `src/routes/api/` fs, ops, open, source, search, history, project-files, file/[root].
@@ -31,6 +31,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G47. An app window shows only its own server's page: a navigation or a window opened to any other address goes to the default browser when it is an http, https or mailto address and is refused otherwise, and never opens in an app window; the bridge answers only the top frame of the server's page, and every app window keeps Node integration off and context isolation and the sandbox on, subframes included.
   Code: `src/desktop/`, the link decision, the window options and the sender check.
   Test: written by O30, its file and titles named in `agents/briefs/O30.md` (Z518, Z556).
+- G49. An app reaches only what its approval names: its files are served only while it is approved, under its current address key, and only from its recorded list inside its real folder; `open` never reaches the engine root, oculus's own config folder, a dot path or a `closed_paths` folder by any root key or link; a write it sends is refused unless the kind its body matched is the open kind its header names; an approval is taken only for the hash the reader was shown; a manifest asking for a closed channel or write is refused before approval.
+  Code: the manifest reader, `src/routes/apps/`, the `(apps)` routes, the write route's app gate.
+  Test: written by E4, its files and titles named in `agents/briefs/E4.md` (Z523).
 
 ## Your work is not lost or misplaced
 
@@ -92,6 +95,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G46. A scheduled update task starts once per due time: a due time missed while the server was down starts one catch-up run at the next start, a due time while that task's earlier run is working starts nothing and is recorded as skipped, a due time while that run sits idle ends its terminal and then starts the new run, a due time already recorded as handled never starts again, and close() leaves no timer and starts nothing.
   Code: `src/lib/server/machine/tasks/schedule.ts`, `src/lib/server/machine/tasks/start.ts`.
   Test: written by A3, its file and titles named in `agents/briefs/A3.md`.
+- G50. An app's tab never receives a store value older than one the page has seen pushed: an answer a later push contradicts is dropped and fetched again.
+  Code: the page's app store cache under `src/lib/state/system/apps/`.
+  Test: written by E4, its file and titles named in `agents/briefs/E4.md` (Z523).
 
 ## It starts, and configuration is checked
 

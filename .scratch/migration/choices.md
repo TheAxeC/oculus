@@ -2,6 +2,24 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z559 (2026-10-05, step E4)
+
+The question: the icon of `app_view` (E4's brief check: Z520 gave it lucide `app-window`, which `open_program` already draws, `icons.yml:17`).
+
+- Chosen: (a) `app_view` draws lucide `layout-panel-top`, which no entry of `icons.yml` uses (`grep -c`: 0).
+- Not chosen: (b) keep `app-window`, so an app's tab and Open in Program draw the same icon. The lazy one was (b).
+
+Where it is built: E4's brief. Booked in `plan.md` Rulings.
+
+## Z558 (2026-10-05, step E4)
+
+The question: the Settings heading of the `apps.*` limits (E4's brief check: `options.yml:9` requires a heading and HEADINGS has no word for apps).
+
+- Chosen: (a) HEADINGS gains `apps`, drawn "Apps" after `calendar`, and the `apps.*` entries sit under it.
+- Not chosen: (b) the entries under `sources`, where a reader looking for the apps' limits would not look. The lazy one was (b).
+
+Where it is built: E4's brief. Booked in `plan.md` Rulings.
+
 ## Z554 (2026-10-05, step X3e)
 
 The question: a stop of X3e's recheck after S5 to D20 (`agents/reviews/X3e-brief-check.md`).

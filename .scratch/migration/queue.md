@@ -2,7 +2,7 @@ In flight (4 of 5 slots):
 - A3 (scheduled Update runs): building.
 - D44 (Submit on a .slurm file): review.
 - O30 (the native window in Electron): brief check closing.
-- E4 (the apps): brief check.
+- E4 (the apps): brief check closing.
 
 Queued, in order (23 steps):
 - D23 (language servers): once D44 and A3 have landed.
