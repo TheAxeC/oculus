@@ -2,6 +2,33 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z595 (2026-10-06, step E4)
+
+The question: an app frame that navigates to an outside address is refused by the page policy and the app tab shows that it did not load.
+
+- Chosen: (a) keep the policy; the bridge script turns a press on an outside link into a browser tab through `open`, and other navigation keeps the load-failed message with Reload.
+- Not chosen: (b) loosen `frame-src`, which lets an app frame load any address; leaving every link to kill the frame was the lazy one.
+
+Where it is built: E4's landing. Booked in `plan.md` Rulings.
+
+## Z594 (2026-10-06, step E4)
+
+The question: a press inside an app frame does not make its pane the active pane, since Chrome sends the page no focus event for it.
+
+- Chosen: (b) activate the pane when the window blurs and the focused element is a frame of the frame layer, as a press anywhere else in a pane does.
+- Not chosen: (a) leave it, the builder's recommendation, which was the lazy one.
+
+Where it is built: E4's landing. Booked in `plan.md` Rulings.
+
+## Z593 (2026-10-06, step E4)
+
+The question: no theme declares `color-scheme`, so an app frame's native controls and scrollbars stay light in a dark theme.
+
+- Chosen: (b) the dark theme classes declare `color-scheme: dark`, checked in the look in both schemes.
+- Not chosen: (a) leave it. The lazy one was (a).
+
+Where it is built: E4's landing. Booked in `plan.md` Rulings.
+
 ## Z592 (2026-10-06, step O30)
 
 The question: a Copy into New Window of a source tab scrolled to line 3 opens at line 1, so case 12's scroll clause is not met.

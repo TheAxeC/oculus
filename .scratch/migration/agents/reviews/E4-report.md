@@ -1157,3 +1157,214 @@ Cases and the item 15 list, each with the view, the state and what should differ
 - The brief's M4 trigger in item 14 and Decision 11 differ (finding 2).
 - Line numbers of the section and of the brief's "What is on the tree" are from main at b732308e9; the build's tree is renumbered (the Files section lists every changed file; DESIGN.md's citations were each read at the new line).
 - C85 cannot run on main (finding 4).
+
+
+# Repair round 1
+
+Not done: C85 (A3's `schedule` channel is not on main, as above). Not as the round asked: item 18, the return value of the download click in the frame run (the click destroys the frame before the probe can report it; the click's time and the absence of a request are recorded); item 9, the look "the frame's `color-scheme` changes with a theme change" cannot show a change, because the body's computed `color-scheme` is `normal` in every theme (open item 1 below). Everything else of the 19 items is built and checked, and this section replaces the statements of the sections above where they differ: C64 is now `resolved` with the app's document kept (finding 1 above is closed), the two read-only git commands are counted below, and DESIGN.md's lines are those of this section.
+
+## Open items for Axel
+
+- **1. Themes set no `color-scheme`.** `grep -rn "color-scheme" src` finds it only in `Calendar.svelte:313` and in the frame code; the run `c101r1` prints `bodyColorScheme: "normal"` for light, dark, nord and vscode-light-modern. So the frame takes `normal` in every theme, which is what the body has, and native controls and scrollbars inside an app frame stay light in a dark theme. Options: (a) leave it, the frame follows whatever the body declares; (b) declare `color-scheme: dark` in the dark theme classes of `src/lib/themes/themes.css`, which also changes the page's own scrollbars and native controls (`body.dark` opens at `themes.css:11`). Recommendation: (b), as its own small step with a look, since the brief's C101 only has a meaning once the body declares a scheme. The lazy option is (a).
+- **2. A press inside an app frame does not make its pane the active pane.** Chrome sends the page no `focusin` for a press inside a cross-document iframe (run `focus3`: the page heard `window blur` only). The pane activation (`PaneView.entered`) hangs on `focusin` and on a pointer press captured in the pane, so a press in the frame activates nothing. Not verified on the base tree, where the frame sat inside the pane; the browser's behaviour for the iframe element does not depend on where the element sits. What does work: the keyboard addresses the pane of the frame's slot while the frame holds the focus (run `keys3`). Options: (a) leave; (b) activate the pane when the window blurs and `document.activeElement` is a layer frame, which is a user-visible behaviour nothing names. Recommendation: (a) until Axel asks for (b).
+- **3. An app whose frame navigates away loses its frame.** Run `m4r1-frame`: after the download click the frame requested `http://127.0.0.1:9444/x`, the frame went to `chrome-error://chromewebdata/` and was detached; the page's `frame-src 'self'` is the policy that refuses the address (`Content-Security-Policy` of the page, DESIGN.md:306), and the tab shows `apps.load_failed`, `The app did not answer in time.`, with the Reload control. This is the behaviour of `failed` (the frame is dropped, the control loads it again), listed so the ruling on `allow-downloads` (finding 2 above) has it.
+
+## The 19 items
+
+| # | Item | State | Command or reading |
+|---|---|---|---|
+| 18 | P2, M4 rerun with the probe's own click record | NOT DONE as written, see the first line | The runs are quoted under "M4" below |
+| 9 | B2/C101, `AppFrame` reads the theme from reactive state | DONE for the code, the look is open item 1 | `AppFrame.svelte:98-113` (`scheme` state, set in a frame after `ui.theme()`, `wallpaper()`, `crt()` and `textScale()` change); run `c101c`: with the body forced to `color-scheme: dark` in the page, a theme change to `light` and to `nord` leaves `frameStyle: "dark"`, `frameComputed: "dark"` |
+| 1 | E4-1 (c), frame layer outside the pane tree | DONE | `grep -rn "<iframe" src` prints only `FrameLayer.svelte:168,181,191`; runs `c64r3`, `float3c`, `float4c`, `close1`, `menu1`, `keys3c` below; DESIGN.md:306 and :327 |
+| 2 | E4-2 (a), `frame-ancestors <host>` | DONE | DESIGN.md:298 (adapter-node `handler.js:210`, quoted in the sentence), :301 unchanged with `frame-ancestors <host>`; `address.ts:101` builds it |
+| 3 | E4-3 (a), `list_shape` and `file_unreadable` stay | DONE | DESIGN.md:274 names both in the list of what refuses an app |
+| 4 | S3, `not_json`, undeclared write kind | DONE | DESIGN.md:319 |
+| 5 | S4, `roots` and `processes` | DONE | DESIGN.md:325 (`roots`), :321 (`processes`, closed channels), :339 (`carries.processes`); `data/helpers/files/apps.ts:84` (`CLOSED_CHANNELS` holds `processes`) and :135 (`roots`) and `config/text/findings.yml:210` hold both |
+| 6 | T8, where `refused:<reason>` comes from | DONE | DESIGN.md:319 (`methods.ts:159` for the first `refused` reason of a 200 answer, `:162` for the `error` word of a 4xx) |
+| 7 | T7, HELP.md:205 | DONE | `sed -n 205p HELP.md \| grep -c "cannot ask for the app store as a write"` prints 0 |
+| 8 | B1/C38, link finding without `instanceof Element` | DONE | `Document.svelte:148-150`; run `c38r3` below |
+| 10 | B3/S6, one rule for a root key on the page | DONE | `context.ts:340` defines `servedRoots = (): { key: string; dir: string }[] => fs.roots()`, used at :371 (Repositories), :437 (commands) and :468 (apps); diff below |
+| 11 | B4, `scan.ts` reads `app.yml` once | DONE | `grep -n readFileSync manifest.ts scan.ts` prints `manifest.ts:11` and `:221` only; `ManifestRead.bytes` carries them to `scan.ts` |
+| 12 | B5, `missing` only for a 404 or a gone row; the confirm queue | DONE | `store-cache.ts` `load()`: `answer === null` rejects `failed:0`, a 404 continues and ends `missing`, any other status rejects `failed:<status>`, a store that moved under all five tries rejects `failed:0`; DESIGN.md:319 and :323 name them. `apps.svelte.ts:143-195`: a second confirm of a tab waits for the first (`waiting`, `showFirst`), because refusing it would reject a write whose question the reader never saw |
+| 13 | T3, the 405 branches | DONE | `grep -n "405\|request.method" routes.ts` prints nothing; the two 'answers a POST with 405' tests are gone from `app-store.test.ts` and `app-open.test.ts`; DESIGN.md:323 and :327 say SvelteKit answers the 405 |
+| 14 | T4, `holds` required | DONE | `opening.ts:32,47,61`: `holds` is required in `Opener`, `BesideOpener` and `tabForKind`; `svelte-check` prints 0 errors |
+| 15 | T5, header names in one place | DONE | `data/helpers/files/apps.ts:48-49` defines `APP_HEADER` and `KIND_HEADER`; `writes.svelte.ts:28` and `app-gate.ts` import them; `grep -rn "x-oculus-app'" src` prints that one line |
+| 16 | T6, `settings.test.ts` header comment | DONE | `settings.test.ts:1-8` is one paragraph wrapped at full width with no short line before its last (`sed -n 1,8p`); `awk 'length>100'` over the file prints its first line at 201, which is code; `tests/checks/source/comment-width.test.ts` passes |
+| 17 | T1/T2, one table per unit | DONE | the list "New tests" below; `grep -n "it.each\|^\s*it(" ` over the 16 files prints one table per unit; `comment-width.test.ts` passes |
+| 19 | P1/P3, before/after table and judgment calls | DONE | the sections below |
+
+## Runs
+
+**C64**, `open({ file: { root: 'hub', path: 'README.md' } })` from an app on a page with one pane (scratch app `probe4` sets `window.mark` once per load; `node $S/runs/c64.mjs`, final build):
+
+```
+before: {"panes":2,"frames":1,"framesInsidePanes":0,"tabs":"Focus | Probe four | Live HPC | Usage","overSlot":"0,0,0,0","sandbox":"allow-scripts allow-downloads"} | app mark: b52v4rp930m | app log lines: 1
+open({ file: { root: "hub", path: "README.md" } }) -> resolved
+after: {"panes":3,"frames":1,"framesInsidePanes":0,"tabs":"Focus | Probe four |  README.md | Live HPC | Usage","overSlot":"0,0,0,0",...} | app mark: b52v4rp930m | app log lines: 1
+same document (mark unchanged): true
+```
+
+The pane was added, the call resolved, and the app's in-memory `mark` and its log are those of the same document. C64 is a look and not a unit outcome, so item 1 adds no test row. Further runs of the layer, each on the final build:
+
+- A tab moved into a floating pane (`float3c`, strip menu Pane, Float): `before mark vimzii2phn`, `after float: {"frame":"503,312,394,246","slot":"503,312,394,246","z":"6","display":"block","floatZ":"5",...,"topAtCenter":"the frame"}`, `mark after (same document): vimzii2phn`.
+- A page frame under a floating pane (`float4c`): `after split (both in page): ... "z":"0" ... "top":["frame","frame","frame"]`, then after the other pane floats over it `"top":["frame","float:P","frame"]` (the float is above the frame where they overlap).
+- Menus over a frame (`menu1`): the seven items of the Pane menu, each as `[label, overlaps the frame's rectangle, is the element at its own centre]`: `[["Close pane",false,true],["Maximise pane",true,true],["Move tab to page..",true,true],["Show a page here..",true,true],["Split tab to the r",true,true],["Split tab downward",true,true],["Float",true,true]]`, so the six that overlap the frame are the topmost element at their centre.
+- Tab switch and close (`close1`): `frames before closing the tab: 1`, another tab shown `frames 1 | frame display none`, the app tab shown again `frames 1 | frame display block`, after Close tab `frames 0`.
+- Keyboard while a frame holds the focus (`keys3c`): `control: j typed in the Focus pane moves its cursor: {"focusPane":["eeg-saad-challenge"],"probePane":0}`, then with the frame focused and the app forwarding `j`, the cursors are unchanged: the key was addressed to the pane of the frame, which holds no cards.
+
+**C38**, a manual's external link (`node $S/runs/c38.mjs`, `rootx/manual.html` with `https://example.org/outside` and an inside link; real pointer press through `Input.dispatchMouseEvent`):
+
+```
+before: {"src":"/api/file/rootx/manual.html","sandbox":"allow-same-origin allow-scripts","location":"http://localhost:8797/api/file/rootx/manual.html","insidePane":false,...}
+after the outside link, pressed with the pointer: {... "location":"http://localhost:8797/api/file/rootx/manual.html" ...}
+window.open calls of the page: [["https://example.org/outside","_blank","noopener"]]
+page targets created or changed after the press: ["Target.targetCreated ","Target.targetInfoChanged https://example.org/outside"]
+after the inside link: {... "location":"http://localhost:8797/api/file?root=rootx&path=manual.html#here" ...}
+```
+
+The external link opened in a browser tab through `window.open(..., '_blank', 'noopener')` and the frame kept its address; the inside link navigated the frame. A synthetic `element.click()` opens nothing, since Chrome blocks `window.open` without a user activation.
+
+**M4**, the download link to an outside address from an app with `connects: []` (probe app `probem4`: waits 1.5 s, records `clickedAt = Date.now()`, hands each record to the harness through a `Runtime.addBinding` function before the click and after it; listener lines and net-log counts are read afterwards; `node $S/cdp/m4run.mjs $S <label> control|frame`). Control, run 1 and 2 (the probe's page loaded top-level from the static server on 9445):
+
+```
+m4r1-control every record the probe handed out, in order:
+   {"loadedAt":1791238550917,"clickedAt":null,"click":null,"finishedAt":null}
+   {"loadedAt":1791238550917,"clickedAt":1791238552419,"click":"about to click","finishedAt":null}
+   {"loadedAt":1791238550917,"clickedAt":1791238552419,"click":"returned undefined","finishedAt":1791238552420}
+m4r1-control listener lines (time, event):
+   1791238552421 tcp 9444 connection from 127.0.0.1
+   1791238552423 tcp 9444 data 695b
+   1791238552436 tcp 9444 connection from 127.0.0.1
+   1791238552444 tcp 9444 data 603b
+m4r1-control click at 1791238552419; first 9444 line at 1791238552421; difference 2 ms
+127.0.0.1:9444: preconnects 2, URL_REQUESTs 2, request headers sent 2
+```
+
+`m4r2-control`: click at `1791238697322`, first 9444 line `1791238697325` (3 ms), `preconnects 2, URL_REQUESTs 2, request headers sent 2`. The control shows the effect: the click is followed by requests carrying data. Frame, run 1 (the probe inside the iframe the layer draws, the scratch oculus on 8797 with its page policy):
+
+```
+m4r1-frame every record the probe handed out, in order:
+   {"loadedAt":1791238655032,"clickedAt":1791238656534,"click":"about to click","finishedAt":null}
+m4r1-frame navigation and download events: [... "Page.frameRequestedNavigation \"http://127.0.0.1:9444/x\"","Page.frameStartedLoading \"\"","Page.frameNavigated \"chrome-error://chromewebdata/\"","Page.frameDetached \"remove\"","Target.detachedFromTarget ..."]
+m4r1-frame listener lines (time, event):
+   1791238656542 tcp 9444 connection from 127.0.0.1
+127.0.0.1:9444: preconnects 1, URL_REQUESTs 0, request headers sent 0
+```
+
+`m4r2-frame`: click at `1791238709713`, one connection line at `1791238709716` (3 ms later), `preconnects 1, URL_REQUESTs 0, request headers sent 0`. Reading: the click ran at the time the probe recorded, 2 to 8 ms later one connection was opened to 9444 that carried no bytes (the listener logs no `data` line), and the net log holds no `URL_REQUEST` for that address. The frame asked to navigate to `http://127.0.0.1:9444/x`, was refused, and was destroyed, which is why the probe's second record (the click's return value) never arrived; the control returns `undefined`. This is the measurement the P2 finding asked for; the decision on `allow-downloads` stays with finding 2 above.
+
+**C101**, `node $S/runs/c101.mjs` (a reload per theme) and `c101c.mjs` (a theme change on the running page through the palette `:theme`):
+
+```
+light -> {"bodyClass":"","bodyColorScheme":"normal",...}
+dark -> {"bodyClass":"dark","bodyColorScheme":"normal",...}
+nord -> {"bodyClass":"rice nord wall","bodyColorScheme":"normal",...}
+vscode-light-modern -> {"bodyClass":"vscode-light-modern","bodyColorScheme":"normal",...}
+body forced to color-scheme dark in the page (a probe, no oculus file changed)
+theme light  {"bodyClass":"","body":"dark","frameStyle":"dark","frameComputed":"dark"}
+theme nord   {"bodyClass":"rice nord wall","body":"dark","frameStyle":"dark","frameComputed":"dark"}
+```
+
+The look state to check on TEST: with an app tab open, change the theme from the palette (`:theme dark`); the frame element's `style.color-scheme` equals `getComputedStyle(document.body).colorScheme` one frame later. Both are `normal` until a theme declares a scheme (open item 1).
+
+**Item 10, the Repositories change** (`diff -u` against the base copy, `context.ts`):
+
+```
+-        served: () => fs.workspaces().workspaces.flatMap((workspace) => workspace.roots),
++        served: servedRoots,
+```
+
+Before, the Repositories view (and the commands, and the apps) searched the roots of every saved workspace for a root key, so a key that names one folder in the current workspace and another in a different workspace could resolve to the other folder. After, all three call `servedRoots`, the current workspace's roots, which are the ones the server's file route serves (`addedRoots`, `server/files/fs.ts`). The look state to check: in a second workspace that gives the key `hub` to another folder, a repository file opens from the current workspace's `hub`.
+
+## P1 table: changed lines of existing assertions, allow lists and fixtures
+
+Made with `diff -U0 <base>/tests/<file> tests/<file>` over every test file that differs (`diff -rq <base>/tests tests`); the base is `.agents/worktrees/E4-base/tools/oculus`. No existing `expect(...)` line changed in meaning except the one marked.
+
+| File:line | Before | After |
+|---|---|---|
+| `tests/checks/config/config.test.ts:371-378` | `const WORDS = { text: loadConfig(engineDir()).config.text };` | `const WORDS = { text: ..., apps: { closed_paths: ['secrets'] } };` and the comment above it extended (a configuration without that key gets a finding, so the existing cases' map carries it) |
+| `tests/checks/tree/boundaries.test.ts:96-100, 165` | the allow list without `data/helpers/files/apps` | the entry `'data/helpers/files/apps'` at :165 and the comment at :96-100 saying why (page and server judge the same file paths); nothing removed |
+| `tests/checks/config/config-folder.test.ts:153` | `'open'` last in the `behavior.yml` key list | `'open', 'apps'` |
+| `tests/checks/config/config-folder.test.ts:235` | no apps text file | `'views/apps/apps.yml'` in the text file list |
+| `tests/checks/imports/order.ts:81-92` | `shell: ['shell', 'shell/rail', 'shell/status', 'shell/panes', 'shell/keys', 'shell/commands']`, views without apps | the same list with `'shell/frames'` after `'shell'`; `'views/apps'` at :92 in `views` |
+| `tests/checks/source/keys.test.ts:24-25, 40-43` | `import { registerAll, registerCollections }` | also `registerApps` and `fixtureApp`, and a `registerApps` call over two `fixtureApp` rows, so the key check sees app views |
+| `tests/fixtures/kinds.ts:12-25` | `[...new Set([...found, FILES_KIND])]...`, comment ending "and the file operations' own." | `[...found, FILES_KIND, APP_STORE]` and the comment extended (the app store is a `store` body and no `kind`) |
+| `tests/fixtures/entities-fixture.ts:4-7, 71-96` | no app row; import without `AppRow` | `fixtureApp(change)` added and `AppRow` imported; header sentence extended |
+| `tests/server/root/context-fixture.ts:7, 91-101` | no `apps` and no `appsSecret` in the server context | `apps: { held: noApps, reread: noop, ... close: noop }`, `appsSecret: 'the-apps-secret-of-this-context'` and the `noApps` import |
+| `tests/views/shared/explorer/opening.client.test.ts:36, 90` | fake `Opener` without `holds`; `tabForKind(kind, root, path, size)` | `holds: () => false`; a fifth argument `() => false` (the only changed assertion line, forced by `holds` being required) |
+| `tests/data/sources/config/settings.test.ts:1-8, 26, 74-82` | header without the apps readers; import without `appsSettings`; map without `apps.*` | header re-wrapped over the same paragraph with the apps' readers added; `appsSettings` and `behaviorFindings` imported; the eight `apps.*` default keys of the synthetic catalog (`sed -n 70,90p` counts 8 lines with `apps.`) |
+| `tests/data/sources/config/local.test.ts:85` | the `checkLocal` table without `apps_dir` | one row `['apps_dir: 3', 'local.yml: apps_dir must be a path']` added |
+| `tests/routes/edit/undo/undo.test.ts`, `tests/server/core/changes.test.ts`, `tests/server/machine/approvals/approvals.test.ts`, `tests/routes/files/file.test.ts` | import lines | widened for the new case of each; no existing assertion changed |
+
+## Judgment calls the brief did not make
+
+- **The `<host>` policy** (E4-2, ruled): `frame-ancestors <host>`, host with no scheme, DESIGN.md:298.
+- **Two finding keys** (E4-3, ruled): `list_shape` and `file_unreadable`, DESIGN.md:274.
+- **The Repositories rule** (item 10): one `servedRoots` over the current workspace's roots for Repositories, commands and apps; the Repositories behaviour changes as the diff above shows.
+- **The fixture edit**: `config.test.ts` `WORDS` carries `apps.closed_paths`, because a map without it now gets a finding.
+- **Failed reads of a store** (item 12): `failed:0` for no answer and for a store that moved under all five tries, `failed:<status>` for another status, `missing` for a 404 on every try.
+- **A second confirm waits for the first** (item 12): refusing it would reject a write whose question the reader never saw.
+- **`parseYamlMap` in `data/sources/yaml-file.ts`** (item 11): `readManifest` reads the file once and parses the bytes it holds, so `scan.ts` hashes the same bytes it parsed.
+- **Where the frame code lives**: the store and the slot in `ui/tabs/` (`tab-frames.svelte.ts`, `FrameSlot.svelte`) and the layer in `shell/frames/` (`FrameLayer.svelte`), because the views may import `ui/**` and not `shell/**`, and `shell/panes/` and `ui/frame/` are full (`sh utils/folder-check.sh` exits 0).
+- **The layer has no stacking context of its own** (`display: contents`, each frame `position: fixed`): a frame's depth is then compared with the floats' and menus', which is what puts a floating pane's frame above its float and a page frame below every float (runs `float3c`, `float4c`, `menu1`).
+- **Float depths are doubled** (`float-geometry.ts`: `BASE_DEPTH + 2 * rank`), so the odd depth above a float is free for its frames.
+- **A loop on animation frames places the frames** (`FrameLayer.svelte`, `place()`): a slot moves with sashes, splits, floats and the window, and nothing tells a layer outside the tree; a frame is written only when its box changed.
+- **Every frame takes no pointer while any tab drag or sash drag runs, and while the pane's keep layer is up** (`inert`, `body.sashing`, `shield`), so the pane under it hears the drop and the double click.
+- **`key: ''` for the Document and PDF frames**: a changed address navigates the element in place; an app frame's key carries its address key and its reload count, which draws a new element on purpose.
+- **The keyboard's pane while a frame holds the focus** is the pane of its slot (`workbench-keys.svelte.ts` `focusedPaneElement`): the frames are outside the panes, and `document.activeElement.closest('[data-pane]')` found none.
+- **`FrameSlot` draws `class="frame-place"`**, since `boundaries.test.ts` refuses a view styling a primitive's class and `Collection.svelte` styles `.slot`.
+- **Exports made local** after `sh utils/unused-exports.sh` listed them: `AppQuestion`, `AppRun`, `Mount`, `FrameKind`, `FrameHear`, `TAB_FRAMES`. The one line the base's list lacks is `src/lib/server/machine/apps/oculus.js: connect`, which is the module an app imports at run time (`import { connect } from '/apps/-/oculus.js'`), so it has an importer outside the repository.
+- **The tests**: every row is `[title, observe, expected]` and each unit has one `it.each` over its rows, so a row is one input and one outcome; a parse failure's sentence names a file, so the manifest table compares only its start (`plain()`), as the earlier test did with `toContain`. The title of the app-store route table keeps "405" as the brief names it; no row reaches it, since SvelteKit answers it before the handler.
+
+## New tests, by file and title
+
+| File | Title |
+|---|---|
+| `tests/server/machine/apps/manifest.test.ts` | `reads each apps folder to its rows and its findings` |
+| `tests/routes/apps/app-files.test.ts` | `answers an app file only while every condition holds, and an empty 404 otherwise` |
+| `tests/routes/apps/approve.test.ts` | `approves only the hash the reader was shown, and revokes by folder`; `refuses a request without the write token` |
+| `tests/routes/apps/app-store.test.ts` | `answers a held row's store, and 400, 404 or 405 for every other request` |
+| `tests/routes/apps/app-open.test.ts` | `answers closed, missing or ok in the order of the checks, and reads no hidden file first` |
+| `tests/routes/edit/app-gate.test.ts` | `refuses a write whose matched kind is not the open kind its header names` |
+| `tests/state/system/apps/methods.test.ts` | `refuses an open target or a write by the page's own checks before any request` (the wait for the rate limit runs on a fake clock, `vi.useFakeTimers()` at :362 and `advanceTimersByTimeAsync` at :377) |
+| `tests/views/shared/explorer/opening-apps.test.ts` | `opens a file of an apps folder as source text, whichever opener asks` |
+| `tests/routes/files/file.test.ts` | `answers a file of an apps folder as plain text with nosniff` |
+| `tests/state/system/apps/store-cache.test.ts` | `drops an answer a later push contradicts and fetches once more` |
+| `tests/server/edit/app-store.test.ts` | `writes the store of an app as the app-store kind` |
+| `tests/server/core/changes.test.ts` | `describe('what a store write leaves in the undo folder')`, one case: `keeps the values of a record outside its line and deletes them when the record leaves the window` |
+| `tests/routes/edit/undo/undo.test.ts` | `puts an app store back to the value before, and refuses it once the store has moved or the kept values are gone` |
+| `tests/data/sources/config/settings.test.ts` | `describe('appsSettings')`, one `it.each` |
+| `tests/data/sources/config/local.test.ts` | the `checkLocal` row `['apps_dir: 3', 'local.yml: apps_dir must be a path']` only |
+| `tests/server/machine/approvals/approvals.test.ts` | `reads a file that is not JSON as no approved app and refuses an app approval or revoke over it` |
+| `tests/checks/source/keys.test.ts` | none |
+
+## Files written outside the first round's path list, and why
+
+- `src/lib/shell/panes/` (`PaneBody.svelte`, `floats/float-geometry.ts`) and `src/lib/shell/frames/FrameLayer.svelte`, `src/lib/shell/Workbench.svelte`, `src/lib/shell/keys/workbench-keys.svelte.ts`: the widening E4-1 (c) names; `PaneBody` gives the focus request and the pointer shield the layer's frame, `float-geometry.ts` the depths, `Workbench` the store and the layer, `workbench-keys` the pane of a focused frame.
+- `src/lib/ui/tabs/tab-frames.svelte.ts`, `src/lib/ui/tabs/FrameSlot.svelte`: the store and the slot a view may import.
+- `src/lib/views/apps/frame/AppFrame.svelte`, `src/lib/views/sources/document/Document.svelte`, `src/lib/views/sources/file/File.svelte`: the three views that drew an iframe (`grep -rn "<iframe" src` prints the layer only).
+- `src/lib/state/system/apps/apps.svelte.ts`, `store-cache.ts`: the per-tab run and the question queue (items 1 and 12).
+- `src/lib/state/client/context.ts`, `src/lib/data/sources/yaml-file.ts`, `src/lib/server/machine/apps/manifest.ts`, `scan.ts`, `routes.ts`, `src/lib/views/shared/explorer/opening.ts`, `src/lib/data/helpers/files/apps.ts`, `src/lib/server/edit/writes/app-gate.ts`, `src/lib/state/client/writes.svelte.ts`: items 10 to 15.
+- `DESIGN.md` (:298, :306, :319, :321, :323, :325, :327, :339), `HELP.md:205`, `docs/diagrams/` (regenerated by `npm run diagrams`), and the tests listed above.
+
+## Verify lines
+
+- `npm run diagrams` exit 0, then `bash ~/.claude-work/skills/land/templates/checks.sh .../orchestrator-state.md` from the worktree's `tools/oculus`, last run after the last change:
+
+```
+ok      ASCII gate (0.6 s)
+ok      prettier (1.9 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.1 s)
+ok      eslint (11.3 s)
+ok      svelte-check (14.8 s): 1791239550350 COMPLETED 380 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (25.7 s): Duration  21.38s (transform 17.70s, setup 0ms, import 39.60s, tests 43.40s, environment 121ms)
+test:quick: 26.4 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+```
+
+- Full-list runs: 3 (the first failed in `svelte-check` on `settings.test.ts:600`, the second and third passed).
+- Not in that list, run once each after the last change: `npm run test:checks` (15 files passed, 1 skipped; 226 tests passed, 3 skipped), `npm run build` (exit 0), `sh utils/folder-check.sh` (exit 0), `sh utils/unused-exports.sh` against the base's `unused-exports.txt` (above), `npm ls penpal` (`penpal@8.0.1`).
+- File sizes: `context.ts` 767, `writes.ts` 620, `data/model/index.ts` 582, `+page.svelte` 236, `FrameLayer.svelte` 224, `AppFrame.svelte` 235, `apps.svelte.ts` 411, `Document.svelte` 222, `PaneBody.svelte` 348.
+- Two read-only git commands were run in this step in total: `git status 2>&1 | head -1` (finding 5 above) and `git diff --stat` in round 1; neither changed anything.
+- Scratch state: the scratch oculus on 8797, the listeners on 9443, 9444, 9445 and UDP 3478 are stopped; `lsof -nP -iTCP:8797 -iTCP:9443 -iTCP:9444 -iTCP:9445 -iUDP:3478` prints nothing (exit 1) and `pgrep -fl "scratchpad/e4"` prints nothing.
+- Not covered by these runs: the look on TEST of Axel's own server (item 15 of the brief) and a press inside a frame activating its pane (open item 2).
