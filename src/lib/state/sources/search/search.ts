@@ -12,10 +12,12 @@
 // answer, so the tab runs again rather than drawing hits that cannot be replaced. `ran` is the
 // query the answer was found by: a replace is made over what was searched, and not over what the
 // boxes hold now. The replace row, the replace text, Preserve Case and the last texts each box ran
-// are the tab's own state beside the query.
+// are the tab's own state beside the query. A hit the reader dismissed is kept as a place
+// (`Dismissed`) beside the answer, so a replace that reads the written files' hits again leaves out
+// the ones the reader had taken out.
 
 import { z } from 'zod';
-import type { ReplaceQuery } from '../../../data/file-ops.ts';
+import type { Reread, ReplaceQuery } from '../../../data/file-ops.ts';
 import {
     ALL_ROOTS,
     clampMax,
@@ -36,6 +38,9 @@ import { anyNumberShape, mapOfShape, readAs, rowsShape } from '../../../data/sha
 export { ALL_ROOTS };
 export type { ReplaceQuery, SearchAnswer, SearchFile, SearchHit };
 
+/** A hit the reader took out of the results: its file, the place it had and the length it took. */
+export type Dismissed = { root: string; path: string; line: number; at: number; length: number };
+
 /** How many texts each box of a tab remembers. */
 const HISTORY_KEPT = 20;
 
@@ -50,6 +55,8 @@ export type SearchState = SearchQuery & {
     error: string;
     /** The query the answer was found by, and null while the tab holds no answer. */
     ran: ReplaceQuery | null;
+    /** The hits of the answer the reader dismissed, which a replace's re-read leaves out. */
+    dismissed: Dismissed[];
     /** Whether the replace row is shown. */
     replacing: boolean;
     /** The replace text as typed. */
@@ -69,6 +76,7 @@ function emptySearchState(max: number): SearchState {
         answer: null,
         error: '',
         ran: null,
+        dismissed: [],
         replacing: false,
         replace: '',
         preserve: false,
@@ -95,8 +103,45 @@ const hitShape = hitFields.extend({
 const fileShape = z.object({
     root: z.string(),
     path: z.string(),
-    hits: rowsShape(hitShape).catch([])
+    hits: rowsShape(hitShape).catch([]),
+    rereadFailed: z.boolean().optional().catch(undefined)
 }) satisfies z.ZodType<SearchFile>;
+
+/** One dismissed hit out of stored data. */
+const dismissedShape = z.object({
+    root: z.string(),
+    path: z.string(),
+    line: anyNumberShape,
+    at: anyNumberShape,
+    length: anyNumberShape.catch(0)
+}) satisfies z.ZodType<Dismissed>;
+
+/** One hit of a written file read again: a hit, and the place it had before the write. */
+const rereadHitShape = hitShape.extend({
+    was: z
+        .object({
+            line: anyNumberShape,
+            at: anyNumberShape,
+            edited: z.literal(true).optional().catch(undefined)
+        })
+        .optional()
+        .catch(undefined)
+});
+
+/** The files a replace read again, out of the answer it was sent in. */
+const rereadsShape = rowsShape(
+    z.object({
+        root: z.string(),
+        path: z.string(),
+        hits: rowsShape(rereadHitShape).catch([]),
+        failed: z.boolean().optional().catch(undefined)
+    })
+);
+
+/** The files a replace answered with their hits read again, and none for anything else. */
+export function rereadsOf(value: unknown): Reread[] {
+    return readAs(rereadsShape, value) ?? [];
+}
 
 /** Whether some hit of the files holds the other fields of a hit and no `at`. */
 function hasHitWithoutAt(value: unknown): boolean {
@@ -112,6 +157,7 @@ function hasHitWithoutAt(value: unknown): boolean {
 /** One failed root out of stored or fetched data. */
 const failureShape = z.object({
     root: z.string(),
+    why: z.enum(['timed-out', 'failed']).catch('failed'),
     reason: z.string().catch('')
 }) satisfies z.ZodType<SearchFailure>;
 
@@ -153,6 +199,7 @@ const searchStateShape = z.object({
     answer: z.unknown().optional(),
     error: z.string().catch(''),
     under: z.string().catch(''),
+    dismissed: rowsShape(dismissedShape).catch([]),
     ran: z
         .object({
             q: z.string(),
@@ -185,6 +232,7 @@ export function parseSearchState(value: unknown, max: number): SearchState {
         answer: held.ran === null ? null : answerOf(held.answer),
         error: held.error,
         ran: held.ran,
+        dismissed: held.ran === null ? [] : held.dismissed,
         replacing: held.replacing,
         replace: held.replace,
         preserve: held.preserve,

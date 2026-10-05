@@ -141,3 +141,43 @@ describe('a socket that closed', () => {
         ]);
     });
 });
+
+describe('the list the pages are told of', () => {
+    /** One row of tmux's list for a task terminal whose line ended with status 0. */
+    const endedRow = (pid: number): string =>
+        [
+            SESSION,
+            '1757500000',
+            '0',
+            'latexmk',
+            String(pid),
+            '/tmp',
+            'a build',
+            '',
+            '',
+            '',
+            '',
+            '{"repo":"/tmp","name":"build"}',
+            '1',
+            '0',
+            '777'
+        ].join('\t') + '\n';
+
+    it('changes when a task terminal ends with the status it had, in a process run again', async () => {
+        const record = driver();
+        let rows = endedRow(4242);
+        record.driver.run = (args: string[]): Promise<string> =>
+            Promise.resolve(args[0] === 'list-sessions' ? rows : '');
+        const { held } = terminals(record);
+        let told = 0;
+        held.onChange(() => (told += 1));
+        held.refresh();
+        await settle();
+        expect(told).toBe(1);
+        // The build ran again and ended with the same status before the next read.
+        rows = endedRow(4243);
+        held.refresh();
+        await settle();
+        expect(told).toBe(2);
+    });
+});

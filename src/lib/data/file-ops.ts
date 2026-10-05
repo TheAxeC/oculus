@@ -15,9 +15,13 @@
 //
 // A replace names the hits it replaces by the line and the place in it where each match starts,
 // with the text matched, which is what lets the server refuse a file that has changed since the
-// search.
+// search. Its answer carries the hits of every file it wrote as they are after the write
+// (`Reread`), each with the place it had before the write when the write did not change its text,
+// so the page holds the hits the file has now and keeps what the reader dismissed.
 //
 // Nothing here runs a process or touches a file: text in, a verdict out.
+
+import type { SearchHit } from './model/model-search.ts';
 
 /** The largest text a code window draws, and the largest file a comparison reads. */
 export const TEXT_LIMIT = 2 * 1024 * 1024;
@@ -152,13 +156,25 @@ export type OpsRequest =
       };
 
 /**
+ * A hit of a written file read again: the hit, and its place before the write when it had one, with
+ * `edited` when the write changed other text on the hit's line.
+ */
+export type RereadHit = SearchHit & { was?: { line: number; at: number; edited?: true } };
+
+/**
+ * The hits one written file holds after the write, in file order, or `failed` when they could not
+ * be read (the search timed out or failed, or the file holds more than a page keeps).
+ */
+export type Reread = { root: string; path: string; hits: RereadHit[]; failed?: boolean };
+
+/**
  * What an operation answers. A list of items that stopped part way names the items done before it
  * and the one it stopped at, both by the path the request gave; a replace names a file as its root
  * and its path joined by a slash.
  */
 export type OpsAnswer =
-    | { ok: true; path?: string; paths?: string[] }
-    | { ok: false; error: OpsRefusal; done?: string[]; failed?: string };
+    | { ok: true; path?: string; paths?: string[]; rereads?: Reread[] }
+    | { ok: false; error: OpsRefusal; done?: string[]; failed?: string; rereads?: Reread[] };
 
 /**
  * What a typed name comes to: the segments it makes and whether any has whitespace at an end (a

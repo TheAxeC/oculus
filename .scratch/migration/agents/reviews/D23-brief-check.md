@@ -1,3 +1,244 @@
+# Step D23 brief check (on main at 1dee6354a)
+
+This checks `agents/briefs/D23.md` (working copy, 450 lines, pure ASCII: `LC_ALL=C grep -n '[^ -~]' D23.md` prints nothing). It was read against HEAD 1dee6354a, exported read-only with `git archive HEAD tools/oculus | tar -x -C $TMPDIR/d23bc`. `config/local.yml` is not in that export and was never opened. Main's index currently holds D37's cherry-pick, staged and uncommitted (`git diff --cached --stat`: 61 files, +1821 -881). Where that changes a premise, the finding below says so.
+
+Pages are cited by section: `agents/spec.md` (the rules file), `agents/guarded.md`, the state file and `plan.md` Rulings. Code, HELP.md and DESIGN.md are cited by `file:line`.
+
+## 1. Names
+
+- **Moved files** (`kit/colours.ts`, `kit/theme.ts` to `kit/theme/`; `views/sources/source/symbols.ts`, `latex-editor.ts` to `language/`). Command: `grep -rn "kit/theme\|kit/colours\|colours\.ts\|latex-editor\|symbols\.ts" src tests config DESIGN.md HELP.md README.md utils`. Hits outside the write list:
+  - `DESIGN.md:399` "`ui/controls/editor/kit/theme.ts` reads the body's computed tokens". False after the move.
+  - `DESIGN.md:396` "(`views/sources/source/symbols.ts`, over the same outline reader as the Outline section)". False after the move.
+  - The other hits are `load.ts:18`, `colours.ts:6`, `Source.svelte:77,80,98` and `latex-editor.ts:4`. All are inside the write list.
+  - Importers: `grep -rn ... | grep import` lists only `kit/load.ts:60` and `kit/theme.ts:26`. The same grep over the five in-flight worktrees finds no new importer.
+- **The editor options and sticky scroll** (the `format_on_save` field, semantic highlighting, clangd's symbols and folding).
+  - `DESIGN.md:396` holds "Sticky scroll takes its structure from document symbols: Monaco's language services for TypeScript ... and the brace ranges that `ui/controls/editor/kit/folding.ts` registers for C, C++ ...". It also holds "Every Monaco option outside these keys stays at Monaco's default."
+  - D23 makes both false: clangd's symbols and folding, pyright's symbols, and the semantic-highlighting option that OI-6 needs (section 4).
+  - `DESIGN.md:396` is not in the write list.
+- **The breadcrumb's symbol segments.**
+  - `HELP.md:48`: "has the file's path drawn under the strip as a breadcrumb ...: the root, each folder, the file. A press on the root or a folder shows the Files view ..., and a press on the file shows it in the Files view." False once symbol segments follow the file.
+  - `DESIGN.md:427`: "A tab showing a file draws its path as a breadcrumb (`ui/tabs/Breadcrumb.svelte`, `shell/panes/strip/tab-crumbs.ts` ...) ... a press on the root or a folder runs `showFolderInFiles` and a press on the file `showInFiles`". It does not describe the symbol segments.
+  - Neither line is in the write list (`grep -n -i "breadcrumb" HELP.md DESIGN.md`).
+- **The new `local.yml` key `lsp`** (OI-1). Command: `grep -rln "sessions_overrides" src tests config HELP.md DESIGN.md`. Two hits outside the write list:
+  - `HELP.md:282` lists every key of `local.yml` ("and `calendar_dir`, `mail_dir`, `sessions_cache`, ... and `approvals`, the places ... are kept in"). It becomes incomplete.
+  - `DESIGN.md:245` says "every key holds at once ... each object built from a changed key is closed and built again", then lists each key's rebuild. It names nothing for `lsp`, and the brief states no rebuild for a changed `lsp` (section 6).
+  - Q119 (folded into S5) writes `HELP.md` 267 and 282 and `DESIGN.md` 243, 245 and 402, so these are shared lines.
+- **New ids and keys.** Command: `grep -rn "'interpreter'\|'language_server'\|'compile_database'\|format_on_save\|oculus-file\|cpp\.yml\|'lsp'\|lsp:" src tests config`. The only hit is the MIME string `application/x-oculus-file` (`state/sources/explorer/view/place.ts:174`), which does not collide. No hit for `language server` outside the brief's list (`grep -rni "language server" src tests config HELP.md DESIGN.md README.md`). That grep matches premise 10.
+- **Write-list overlap with steps in flight.** Each path list was read with `awk '/^## Paths this step writes/...'` over `briefs/{X3f,D37,S5,H3,D42,Q119}.md` and their round files. The round files hold no path list. Q119 is folded into S5 by Z468. The orchestrator judges these:
+  - `views/sources/source/Source.svelte` and `views/sources/source/Editor.svelte`: X3f writes both whole. In X3f's worktree `Source.svelte` is 508 lines (`wc -l`), against D23's "502 now, cap 520".
+  - `HELP.md:120`: X3f and D42 both change this line (`diff <(git show <base>:HELP.md) <worktree>/HELP.md`: X3f `120c120`, D42 `120c120`). D23 changes it too, so three steps edit one line.
+  - `DESIGN.md:391` and `:395`: X3f changes both (`391c391`, `395c395`), and D23 changes both. `DESIGN.md:427`: X3f changes it, and D23 needs it.
+  - `data/sources/config/local.ts` and `data/helpers/editor.ts`: Q119 writes both whole. `server/root/context.ts`: S5 and Q119 write it whole. `config/catalogs/options.yml`: S5 writes it whole.
+  - `config/text/views/sources/files.yml`: X3f and D42. `data/model/index.ts`: D42. `state/client/context.ts`: D37 writes lines 370-377 (D37 is landing now). `docs/diagrams/`: every step.
+  - `src/lib/data/sources/config/` has 9 items and D23 adds `cpp.ts`. Q119 allows "A module split out of `settings.ts` or `local.ts` by the size rule goes beside it", so the two steps together can pass the ten-item cap.
+
+Findings:
+- N1. `DESIGN.md:396` and `:399` become false (moved paths, sticky-scroll sources, "Every Monaco option ... stays at Monaco's default"). Neither is in the write list.
+- N2. `HELP.md:48` and `DESIGN.md:427` become false or incomplete (breadcrumb symbol segments). Neither is in the write list.
+- N3. `HELP.md:282` and `DESIGN.md:245` become incomplete with the `lsp` key. Neither is in the write list, and both lines are Q119's (S5's).
+- N4. The overlaps above, for the orchestrator's `shared_paths` judgment. These are same-line edits with X3f (`DESIGN.md:391`, `:395`, `:427`) and with X3f and D42 (`HELP.md:120`). `config/sources/config/` can pass ten items with Q119's split.
+
+## 2. The step line
+
+The step line is `plan.md:522` with its widening at `:523`. The rulings it carries are Z72, Z74 (4), Z79 (4), Z80, Z92 (2), Z182, Z47 4 (a), Z88 and Z260. Z72 in full is at `orchestrator-history.md:1204` at HEAD.
+
+- "a language server client in the D13a editor": section 3 (Monaco's client).
+- "pyright for Python, clangd for C++": section 1, servers.ts. C is added beyond the line.
+- "one server per root and language": section 1, process.ts and relay.ts (per page, Z72 (3) (c)).
+- "each feature editing only the open file": the "What to build" opening, section 3 and the parity table.
+- `.oculus/cpp.yml` (Z92 (2) (a)): section 2.
+- "the Files Outline's code symbols" (Z182 (a)): section 3, "The Outline's code symbols".
+- Settings widening (servers read the repository's own settings, everything else at the server's default): section 1, first sub-bullet.
+- Z80 (a), the interpreter found, named on the status bar, picked and remembered: section 1 `interpreter.ts` and `choices.ts`, and OI-2.
+- Z79 (4) (a), `format_on_save`: section 3, "Format on save".
+- Z74 (4) (a), `--header-insertion=never`: section 1.
+- Z72 (1) (a), "run in the background ... and ended with their tab without a confirmation". The only end conditions in section 1 (`process.ts`) and in G36 are these: the page's socket closing (60 s), the root no longer served, and the oculus server's close. When the last tab of a root and language closes while the page stays open, no requirement says the server ends. Section 1's "one server per root that has an open document" implies it but gives no rule or time.
+- Z72 (2) (a), the database found, linked, picked and remembered: section 1, `databases.ts`.
+- Z72 (4) (b1), "every feature both servers offer, D23 ... the features that edit only the open file, D23b the features that edit files no tab holds ... plus workspace symbols and call and type hierarchy". The parity table (section 5) sends three features to D23b: the References view in the side bar, clangd's AST view and clangd's memory-usage view. None of the three edits a file, and none is among D23b's named features. The only authority for the move is the uncommitted `plan.md:527` ("widened (Z468, from D23's brief): ..."). That line ends with no "(the user)" and no automode ruling, and Z468 itself (`plan.md:1188`) says only that no step may be added.
+- Z47 4 (a), "symbols after D23": section 3, "The breadcrumb's symbols".
+- Z88, D34 on D23's relay: section 1, "the table is the one place a server is described".
+- Z260 (`choices.md`, "D23's clangd symbols then replace the folding for C and C++"): section 3, "Formatting" (clangd's folding used while it serves).
+- Z467, a landing look across at least ten files of different types: "The landing look", 14 items.
+
+Findings:
+- L1. Z72 (1) (a)'s "ended with their tab" has no requirement for a page that stays open after its last tab of a root and language closes. Neither section 1 nor G36 states when that server ends.
+- L2. The References side-bar view and clangd's AST and memory-usage views are inside D23's ruled scope (Z72 (4) (b1)). The parity table defers them to D23b, resting on a widening line that carries no ruling marker. This is a deferral inside the scope.
+
+## 3. Premises
+
+- The plan's line numbers (`plan.md:522-525`, `:741`, `:743`, `:753`, `:754`, `:762`, `:764`, `:795`, `:857`, `:903`, `:1185-1187`).
+  - `git show HEAD:.../plan.md | grep -n ...` prints these numbers exactly, so they match HEAD.
+  - In the working copy each line after 526 is one higher (`grep -n` prints 742, 744, ..., 1186-1188) because of the uncommitted D23b widening at 527.
+- `orchestrator-state.md:129` (the libraries rule). Working copy: 129. HEAD: 128 (`git show HEAD:... | grep -n "code is written by hand only"`). This cite matches the working copy, while the plan cites match HEAD.
+- The source tree unchanged since 3dccf6a8c (`git diff --stat 3dccf6a8c..HEAD -- tools/oculus ':!tools/oculus/.scratch'`): prints nothing, so it holds.
+- **D37's landing in the index** will move main's head before dispatch.
+  - `git diff --cached --stat -- tools/oculus/src/lib/ui/controls/editor/Editor.svelte`: +7 lines at 289. The brief's "496 lines, cap 520", `Editor.svelte:292-302` and `:385-390` become 503, 299-309 and 392-397.
+  - `data/file-ops.ts:23` `TEXT_LIMIT` becomes `:27` (`git show :tools/oculus/src/lib/data/file-ops.ts | grep -n "TEXT_LIMIT ="`).
+  - `data/model/index.ts` 511 becomes 517.
+  - D37's HELP and DESIGN hunks are one-line replacements (`git diff --cached -U0 -- HELP.md DESIGN.md`: `-131 +131`, `-33 +33` and so on), so no cited doc line moves.
+  - The brief's base ("read on main at 1dee6354a") is not the head the worktree will be made at.
+- **The Monaco client.**
+  - `index.js` 3203 lines and `index.d.ts` 263 lines (`wc -l`): matches.
+  - `createFeatures()` at 3060 with 22 features (`sed -n 3045,3090p`): matches.
+  - `_init` with `processId: null` and `rootUri: null` at 3051-3058: matches.
+  - Synchronizer 2908-2932 with `onDidCreateModel` and `getModels()` at 2926 and 2929: matches.
+  - `toMonacoLanguageSelector`: the function is at 1457 and the `if (!s || s.length === 0) return { language: "*" }` line is at 1458. That is close enough.
+  - Marker owner `"lsp"` at 2590: matches.
+  - `translateBack` lower-cases the URI and throws at 2951-2962: matches.
+  - `_bridge` private at `index.d.ts:208`: matches.
+  - `_initPromise` is assigned at 3049 and never awaited (`grep -n _initPromise`: lines 3041 and 3049 only): matches.
+  - `registerRequestHandler`: lines 485, 653 and 863 are generic, and 2390, 2724 and 2732 are inlay-hint refresh, register and unregister. Matches.
+  - Not stated in the brief: the client's own `LspDiagnosticsFeature` registers a `publishDiagnostics` handler that sets owner `"lsp"` markers (`index.js:2605`, `_handlePublishDiagnostics` 2622-2635). Section 4 picks this up.
+- `standaloneThemeService.js:149-151` `_match`: line 151, matches. Not stated in the brief: `StandaloneTheme` sets `this.semanticHighlighting = false` (`standaloneThemeService.js:40`), and `isSemanticColoringEnabled` (`contrib/semanticTokens/common/semanticTokensConfig.js:6-11`) colours semantic tokens only when the editor option `semanticHighlighting.enabled` is true or the theme says so.
+- `formatOnType` defaults to `false` (`editorOptions.js:3259`). The brief does not state this.
+- Folder counts (`git ls-tree --name-only HEAD <dir>/ | ... | sort -u | wc -l`): editor 10, kit 10, `views/sources/source` 10, `data/model` 10, `state/sources` 10, `server/machine` 7, `state/system/machine` 6, `shell/status` 8, `data/sources/config` 9, `tests/server/machine` 6. All match.
+- File sizes at HEAD (`wc -l`): `load.ts` 385, `Source.svelte` 502, `views/sources/source/Editor.svelte` 266, `symbols.ts` 105, `outline.ts` 137, `Outline.svelte` 137, `tab-crumbs.ts` 40, `Breadcrumb.svelte` 117, `socket.ts` 135, `socket.svelte.ts` 358, `data/helpers/editor.ts` 324. All match.
+- `Source.svelte:168-180` (`locked` and `editing`) and `:424-433` (the `Code` window): match.
+- `HELP.md:165`, `:169` ("Every other editor setting stays at Monaco's default."), `:177` ("... gets without a language server") and `DESIGN.md:23`, `:114`, `:116`, `:149`, `:153`, `:391`, `:395`, `:403` ("no language server and no index of oculus's own."), `:416`: all match (`sed -n`).
+- `options.yml:326` (the sticky-scroll description) and `:329-336` (`editor.languages`): match.
+- OI-1's key list "(`config/catalogs/options.yml:694-722`: `transcript_cache`, `sessions`, `workspaces`, `bookmarks`, `notes`, `changes`, `history`, `approvals`, `calendar`, `mail`)" does not match. `grep -n "^        [a-z_]*:$"` prints `sessions_cache` (693), `sessions_overrides` (695), `workspaces` (697), `bookmarks` (699), `notes` (701), `changes` (703), `history` (705), `approvals` (707), `calendar_dir` (717) and `mail_dir` (721). No `transcript_cache`, `sessions`, `calendar` or `mail` key is a path key.
+- `files.yml:137` `outline_none: No symbols for this file yet.`: matches.
+- `status-items.ts:14` `LEFT_ITEMS` ending `'server'` and `statusbar.yml:12` `item_server`: match.
+- `kit/colours.ts:53-75, 450-485` (`symbolIcon.*`, 33 keys): matches.
+- `types.ts:84-88` `EditorExtension`: matches.
+- `kit/load.ts:94` `createFormatting`: matches. `modelUri` is at `:152-159` with scheme `inmemory`, authority `oculus`: matches.
+- `socket.ts:105-122`: matches. `channel.ts:477-499` (`subscribed` and `inbound`, with the `#writable` set in `Terminals`): matches.
+- `auth.ts:29-38` `allowedOrigin`: matches.
+- `sources.yml:96-102` roots and `:106` languages (`python` at 120, `c` at 126, `cpp` at 127 including `.h`): match.
+- `behavior.yml:113-129`, `paint_limit_kb: 20480` at 119: matches. `PaneBody.svelte:7-11`: matches.
+- `keys.ts:141` (`held = context.typing || ...`): matches.
+- `chords.ts:51` and `:72`: match. The file is `src/lib/ui/controls/editor/chords.ts`; the brief gives no folder.
+- `grep -rn "F12\|'F8'" src/lib` finds only `chords.ts:51`: matches.
+- `PaneView.svelte:320` `tabCrumbs`: matches.
+- `library-audit.md:185-191` (LA16) and `:305` (`fs.watch` kept): match.
+- Probes run under `$TMPDIR`:
+  - `which pyright` / `pyright-langserver` are the global nvm install. `node_modules/pyright` is absent (`ls`: No such file).
+  - `langserver.index.js` is the package's `pyright-langserver` bin (`package.json` `bin`).
+  - `npm view`: pyright 1.1.414 MIT 2026-09-09; vscode-jsonrpc 9.0.3 MIT 2026-09-25; vscode-languageserver-protocol 3.18.4 MIT 2026-09-25, depending on vscode-jsonrpc 9.0.3 and vscode-languageserver-types 3.18.4. All match.
+  - `path.matchesGlob('a/b/pyrightconfig.json','**/pyrightconfig.json')` prints `true` on Node 24: matches.
+  - My `initialize` probe (`node cap.mjs pyright-langserver --stdio`) gives pyright `codeActionKinds: ["quickfix","source.organizeImports"]`, so organize imports exists.
+  - The same probe on clangd gives `codeActionKinds: ["quickfix","refactor","info"]`, commands `clangd.applyFix`, `clangd.applyRename` and `clangd.applyTweak`, on-type trigger `"\n"`, and a semantic-token legend with `concept`, `bracket`, `modifier`, `label`, `unknown` and duplicated types.
+- Repositories (`for r in ...; find ...`):
+  - cathedra has 13 databases under `build/*/` (22 in total) and game-engine 7. scotoma, ordo, officium and youtube-downloader have 0.
+  - No `.venv` or `venv` at any root, and no `.clangd`, `.clang-tidy`, `compile_flags.txt`, `pyrightconfig.json` or `pyproject.toml` within depth 3.
+  - All six repositories hold `.oculus/project.yml` (the brief names three; nothing depends on that).
+- Every file of the landing look exists, with the sizes the brief gives (`stat -f %z`: `_torch_docs.py` 439320, `main.cpp` 158810). `build.py:24` imports `catalog` and `deck_config.py:42` is `def catalog(root):`.
+- Line 7 of the brief: "This brief waits on the open items below; the orchestrator writes Axel's ruling on each into 'Decisions' before dispatch." This is false on the tree:
+  - The six items are ruled (Z476 to Z481, working-copy `plan.md:1196-1201`).
+  - They were ruled by the orchestrator in automode, not by Axel.
+  - The rulings are written under "Open items, ruled", not under "Decisions".
+- Line 55: "The ruled texts are kept whole at the end of this brief." The end section holds Answer 11, the plan line, Z92, Z72, Z74 (4) and Step 0 only. Z80, Z79 (4), Z182, Z47 4 (a), Z88, The queue, Z466 to Z468 and Z260 are not there.
+
+Findings:
+- P1. The brief's base will not be 1dee6354a once D37's staged landing is committed. `ui/controls/editor/Editor.svelte` becomes 503 lines, its cited ranges move by +7, and `TEXT_LIMIT` moves to `file-ops.ts:27`.
+- P2. OI-1's names of the `local.yml` path keys are wrong: they are `sessions_cache`, `sessions_overrides`, `calendar_dir` and `mail_dir`, at 693-722.
+- P3. Line 7 (brief waits on open items; "Axel's ruling"; "into Decisions") is false.
+- P4. Line 55 (ruled texts kept whole at the end) is false.
+- P5. The `orchestrator-state.md:129` cite matches the working copy while the `plan.md` cites match HEAD. Minor.
+- P6. The brief does not state two client facts the design depends on: the client's own `publishDiagnostics` handler with owner `"lsp"`, and Monaco's standalone `semanticHighlighting = false`. Both are covered in section 4.
+
+## 4. Cases and checks
+
+- Cases 1-7, 9-12, 14-20, 22-27, 29-31 and 33-38 are consistent with spec.md and guarded.md, except as noted below.
+- **Case 8** expects "the include of `scotoma.h` resolves; without the file, clangd reports it". `clangd --check=src/dlg.c` on a copy of scotoma's `src/` under `$TMPDIR` with no flags prints `[pp_file_not_found] Line 15: in included file: 'snes.h' file not found`. So `scotoma.h` resolves without any `cpp.yml`, because it sits beside `dlg.c`. What fails is `<snes.h>` from `scotoma.h:18`, found at `tools/pvsneslib/pvsneslib/include/snes.h` (`find`). The case's expected result is wrong on the tree. `-Isrc` is also not the flag that fixes it. Look item 12 rests on the same example.
+- **Case 13** ("Two pages over the hub, one closed: its pyright is still running 50 s later and ended at 65 s; a page opened at 30 s takes it over (one pyright process, `ps`)"):
+  - It conflates two runs: a server taken over at 30 s does not end at 65 s.
+  - Under one server per page (Z72 (3) (c)), with the second page still open there are two pyrights, not one.
+- **Case 32** ("The close reason of a failed server sent to the page stays under 123 bytes ...") belongs to a per-server socket. Decision 1 makes the wire the page's one `/ws` socket with `lsp:<language>` channels, where a failed server must never close the page's socket. The case contradicts the brief's own Decision 1.
+- **Cases 13, 15, 16, 28, 29 and 31 as tests of G36.**
+  - Z392 (`plan.md` Rulings, "(the user)") says "a new entry needs Axel's yes". `agents/guarded.md` opens with "A new entry needs Axel's yes", and spec.md "What every package obeys" says "A step that needs a new entry stops and asks Axel for it".
+  - G36 was added by Z479 "(the orchestrator, automode)". The state file's automode demand leaves open "a reversal of a ruling Axel gave", and Z392 is one.
+- **The G36 test** spawns a stub server process with 60 s timers. spec.md "What every package obeys" says "one that cannot (a real process, a timer, a network wait) is tagged slow", and that a check that something did not happen "advances a fake clock". The brief does not say the file is slow-tagged or on a fake clock, so the builder can write a test `npm test` never runs.
+- **The tests under G1, G2, G7, G13 and G31** need their Test lines, and G2's and G7's Code lines, written into `agents/guarded.md` (spec.md: an entry "names it there by file and title"). The builder never edits `.scratch/`. Q119's brief asks the report's "Doc text" for the new Test lines; D23's report section does not ask for G36's entry text or any of these lines.
+- **The first proof** ("pyright and clangd each serve a hover, a definition and a pushed diagnostic to a Monaco page through `monaco.lsp.MonacoLspClient`") needs a DOM. spec.md "What every package obeys" says "the unit suite renders to a string" and "there is no browser suite", and builders open no browser. The brief does not say what the builder runs for it.
+- **Verify item 5** (`ps ... with two pages open, and 70 s after both close`) needs a running oculus server and two pages. The brief names no dev-server port (spec.md "Where you work": "The oculus dev server uses the port the brief names") and no stand-in for a page.
+- **Verify item 3** uses `grep '[^ -~]'`. spec.md's closing paragraph names the perl gate, which "replaces the `grep '[^ -~]'` form wherever a brief or a check names it". The perl gate is already in `test:quick`, so this is minor.
+
+Findings:
+- C1. Case 8's expected result is wrong on the tree (`scotoma.h` resolves without flags; `snes.h` is the miss). Look item 12 inherits it.
+- C2. Case 13 is self-contradictory and its process count is wrong under one server per page.
+- C3. Case 32 contradicts Decision 1, the single socket.
+- C4. G36 and its tests rest on an automode ruling, while Z392 (the user) requires Axel's yes for a new entry. The session cannot close this by editing the brief.
+- C5. The G36 test's slow tag and fake clock are unstated.
+- C6. The report shape does not ask for the `agents/guarded.md` lines (G36's entry, and the new Test and Code lines of G1, G2, G7, G13 and G31) for the orchestrator to apply.
+- C7. The first proof and verify item 5 cannot be run by a builder as worded.
+
+## 5. The question
+
+- Case 8: yes, it can pass without the goal. The include of `scotoma.h` resolves with or without `.oculus/cpp.yml`, so the case passes whether `fallback_flags` reach clangd or not.
+- Case 13: yes. A run with two pages where neither server is taken over shows a process gone at 65 s and passes as worded.
+- The first proof: yes. Run without a page (a Node script speaking LSP to the relay), it passes while `MonacoLspClient` in the page never exercises the transport, the synchronizer drop or the URI mapping.
+- Verify item 5: yes. With no pages it prints 0, 0, 0.
+- OI-6 (a), semantic tokens "with a rule per semantic token type added to the theme": yes. Theme rules can be added and checked while nothing is coloured, because `semanticHighlighting.enabled` is left at its default and the standalone theme has `semanticHighlighting = false`. The look catches it; no requirement does.
+- Section 3, "Diagnostics" ("the transport hands each `publishDiagnostics` to the page's diagnostics store and sets markers under one owner per language client"): yes. If the transport also passes the notification on to the client, the client's own handler (`index.js:2605`, owner `"lsp"`) sets a second marker set, and one client clears another's. Premise 5 is then still true while the requirement reads as met.
+- The relay's forwarding of `workspace/semanticTokens/refresh` and `workspace/diagnostic/refresh` to the page: yes. The client has no handler for either (`grep -n registerRequestHandler`), so "forwarded" is met while nothing happens on the page.
+- The other cases and items: no. Each needs the server's answer in the editor or the file state it names.
+
+Findings: case 8, case 13, the first proof, verify item 5, OI-6's missing editor option and the diagnostics hand-off, each as above.
+
+## 6. Implied inputs
+
+This is a code step. Inputs the step implies that "Cases" leaves out, each with the result it should have:
+
+- I1. A page that stays open after its last tab of a root and language closes, under Z72 (1) (a) "ended with their tab". Expected: the server ends, at once or after a stated delay, and a tab reopened within the delay takes it back.
+- I2. A C repository's `.h` file. `sources.yml:127` maps `.h` to `cpp`, while `dlg.c` is `c`.
+  - Expected: one clangd per root serves both the `c` and the `cpp` client of a page. The brief contradicts itself here: "one clangd serves both, as one server per root" against "Per page and language it holds one client session and, below it, one server per root", with channels `lsp:c` and `lsp:cpp`.
+  - `fallback_flags` such as `-std=c99` must not break a header that clangd reads as C++.
+  - The marker owners must include `c` (the brief names only `lsp-python` and `lsp-cpp`).
+- I3. A relative path in `fallback_flags` (`-Isrc`). clangd resolves a fallback command against the file's own folder, so `-Isrc` on `src/dlg.c` names `src/src`. Expected: the base folder stated, the repository root or the file's folder, with case 33 covering the other.
+- I4. A file over a configured `editor.paint_limit_kb`. `shownLanguage` (`state/workbench/navigation/editor-text.ts:96-97`) makes the model `plaintext`. Expected: the brief says whether registration uses the file's language or the shown one.
+- I5. The `lsp` key changed while servers run (`DESIGN.md:245`: every key holds at once), and an `lsp` value that is a file or an unwritable folder. Expected: servers restarted on the new folder or kept, said in `DESIGN.md:245`. A wrong value gives a finding naming `lsp`, and the default is used (G13).
+- I6. A root key used as a folder under the `lsp` folder: a key from a hand-edited `~/.oculus/workspaces.json` that holds `/` or `..`, or one key reassigned to a different folder, which reuses a stale index. Expected: the key refused as a path part, or the folder keyed by the real path, as `choices.json` is.
+- I7. Overlapping roots, such as `~/workspace` added as a root beside `cathedra`, so one file sits under two root keys. A large root (the served `claude` root, `~/.claude`) also needs a stated result. Expected: one document per real path, and the cost stated.
+- I8. The interpreter pyright runs. `<root>/.venv/bin/python` is a repository file, and pyright executes `pythonPath`. `python3` is the pyenv shim, so "resolved to its real path" names the shim script. The interpreter item's version also needs the interpreter to be run. Expected: the rewritten `DESIGN.md:153` and `:416` cover the interpreter pyright and oculus run, not only the servers. The version and folder shown for a shim are stated.
+- I9. `node` for pyright's command. Expected: `process.execPath`, not a `node` looked up on PATH. G7 covers the arguments but not this.
+- I10. A Python-language file that is not `.py` or `.pyi` (`sources.yml:120` maps `.gyp`, `.ipython` and `.python` to `python`). Expected: served or not, stated.
+- I11. A file whose mode changes while it is open, which under OI-5 (a) switches between a writable and a read-only Monaco editor. Expected: the model is registered once and the `readOnly` option follows.
+
+Findings: I1 to I11 are missing from "Cases". I1, I2 and I5 also leave a requirement of "What to build" unknown.
+
+## 7. ADRs
+
+- `.agents/plan.yaml` has no `adr` key (`cat .agents/plan.yaml`), and `ls docs/adr tools/oculus/docs/adr` prints "No such file or directory" for both. There is no record.
+
+Findings: none.
+
+## 8. Dictated text
+
+- G36 (OI-4): "A language server oculus started ends: 60 s after the last page using it closed when no page took it over, at once when its root is no longer served, and with the oculus server; none is started twice for one page, root and language." (`grep -n "Proposed G36" D23.md`: line 36). Plain ASCII, so it holds against the prose rules. Its content leaves out Z72 (1) (a)'s end with the tab (L1). With `c` and `cpp` as two languages, "never started twice for one page, root and language" allows two clangds per root (I2).
+- Status item words: `No compile database` and `build/debug` (line 28); the right-click names "Language Server", "Python Interpreter" and "Compile Database" (line 28); the sample `3.13.4 (.venv)` (line 28). These hold.
+- Outline words: "Loading document symbols..." and "No symbols for this file yet." (line 148). Plain ASCII; "..." is the allowed form. They hold.
+- Relay codes `not_found`, `exited`, `refused`, `no_answer` (line 230). They hold as wire codes, but they sit in case 32 (C3).
+- Marker owners `lsp-python` and `lsp-cpp` (line 141). They hold as code identifiers, but the `c` client is left out (I2).
+- Palette and command labels (`grep -n "Restart Language Server\|Switch Between Source/Header" D23.md`: lines 143, 155): "Restart Language Server", "Show Language Server Output", "Select Interpreter", "Select Compile Database", "Switch Between Source/Header", "Show or Focus Hover" and "Go to Next Problem (Error, Warning, Info)". They hold, and the last two are Monaco's own.
+
+Findings: none against the prose rules. G36's content and the owner list are already findings (L1, I2, C4).
+
+## Further findings on "What to build" whose content or path is not known
+
+- W1. Palette pickers. "a press opens the palette on the interpreter list" and "the palette lists for the two pickers" need palette modes. The command vocabulary is `PaletteCommand.name` in `state/workbench/palette.ts:54-67` (`'language'` is the model), and the modes are drawn in `shell/keys/Palette.svelte`, which is 523 lines (`wc -l`) and already over the 520 line. Neither file is in the write list. The names of the new palette commands are a vocabulary the brief does not name.
+- W2. Symbol-kind icons. "a tree with VS Code's symbol kinds and icons" needs glyph names in `config/catalogs/glyphs.yml` and Lucide rows in `config/catalogs/icons.yml` (`icons.yml` head: "A value is a file name in the icon package, `<name>.svg` under lucide-static/icons"). `grep -n -i symbol glyphs.yml` prints nothing. Neither file is in the write list, and the mapping from 26 kinds to Lucide icons is a visible choice the brief does not make.
+- W3. Show Output's "read-only tab". No view, registry entry or catalog for it is named or listed.
+- W4. Source tab notices. The format-on-save failure and the refused other-file edit belong in the `source` group, which lives in `config/text/views/sources/source.yml` (`grep -rn head_locked config/text`: `views/sources/source.yml:12`). That file is not in the write list; the write list names `config/text/ui.yml` "if the words live there". OI-5 (a) also changes what the `source.readonly` line does, and the brief does not say whether the line stays above the read-only Monaco editor.
+- W5. The token gate. The set of sockets that carried the token lives inside `Terminals` (`server/machine/pty/channel.ts:482`, `#writable`). `channel.ts` is not in the write list, so the relay must write the comparison a second time, against spec.md "The principles every package is judged on" ("a parser, a fold or a rule exists once"). `socket.ts:110-112` also passes every channel not starting with `CHANNEL_PREFIX` to `hub.subscribe`, so `lsp:` needs filtering there (`socket.ts` is in the list).
+- W6. OI-6 (a) needs the editor option `semanticHighlighting.enabled: true` (`semanticTokensConfig.js:6-11`; `standaloneThemeService.js:40`). The brief names only theme rules, and "the rest of VS Code's default `semanticTokenScopes`" is not given as a table. clangd's own types (`concept`, `bracket`, `modifier`, `label`, `unknown`, from the probe) have no stated scope.
+- W7. "formatting of the document, a selection and while typing (clangd)". Format on type needs `formatOnType: true`, whose default is `false` in Monaco (`editorOptions.js:3259`) and in VS Code. Whether it is on, and the rewrite of `HELP.md:169` and `DESIGN.md:396` ("stays at Monaco's default"), are not stated.
+- W8. The diagnostics hand-off. The brief does not say that the transport withholds `publishDiagnostics` from the client (section 5). It also does not say what the page does with the forwarded `workspace/semanticTokens/refresh` and `workspace/diagnostic/refresh`.
+- W9. The ui kit's port lists only `send(text)`, `listen(fn)` and `state`. The kit also needs a file read with the file's language (peek models; `ui/` imports no state, spec.md "What every package obeys"), the opener into a source tab, the diagnostics and symbols stores, and the notices. The shape of those services is not stated.
+
+## Declined to judge
+
+- The step line's authority tag `(ruling Z182)`. The Z182 line ends "(the orchestrator, automode)", which is the plan's convention (`grep -c "automode)" plan.md`: 264; `grep -c "(self-rule)"`: 0). The spec skill's form is "(the user)" or "(self-rule)". Which form counts is the session's Step 1 call for the whole plan, not this step's.
+- Whether "The items as they were put" (OI-1 to OI-6 with For and Against), "Answer 11" (its CodeMirror wording, which Monaco replaced) and "Step 0" are history in the brief under the spec skill's anti-pattern "History in the brief". They read as record more than requirement. Whether they stay is the session's choice.
+- Whether moving `References view`, `AST` and `memory usage` to D23b (L2) is the orchestrator's to rule under automode or Axel's.
+- The memory cost of pyright over a root as large as `~/.claude` or `~`. Not measured. A probe with `ps -o rss=` over that root would settle it.
+- Whether pyright serves a `didOpen` of a `.gyp` file as Python (I10). Not probed.
+- VS Code's full default `semanticTokenScopes` table (W6). The VS Code source is not on the tree, and I did not look it up.
+
+Usage: claude-opus-5-5 (ad0ebdc1a60146409), 312,538 tokens, 124 tool uses, 16.2 min.
+
+# The first brief check, of the 173-line brief at cf880dbe
+
 Brief check of D23 (tools/oculus/.scratch/migration/agents/briefs/D23.md, working-tree version, 173 lines), read against main at cf880dbe. I changed no file in the repository. Every probe ran from /private/tmp/claude-502/.../scratchpad/D23-brief-check/ using the packed pyright 1.1.414 and /usr/bin/clangd.
 
 Summary: the brief is not ready to dispatch. Five findings would each make the builder fail or build the wrong thing:

@@ -469,13 +469,20 @@ export type {
     TerminalInput,
     TerminalJob,
     TerminalKind,
+    TerminalRefusal,
     TerminalResize,
     TerminalResume,
     Turn,
     TurnTool,
     Workspace
 } from './model-sessions.ts';
-export { BRANCH_NOT_MERGED, STEER_CONTROL, STEER_MAX, TERMINAL_COLORS } from './model-sessions.ts';
+export {
+    BRANCH_NOT_MERGED,
+    STEER_CONTROL,
+    STEER_MAX,
+    TERMINAL_COLORS,
+    TERMINAL_REFUSALS
+} from './model-sessions.ts';
 
 export type {
     AgentAccount,

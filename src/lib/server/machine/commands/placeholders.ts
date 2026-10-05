@@ -15,8 +15,7 @@
 // placeholder name is one variable across the whole chain, numbered by where it first appears.
 
 import { basename, dirname, extname } from 'node:path';
-import type { CommandContext } from '../../../data/model/index.ts';
-import { words } from '../../core/words.ts';
+import type { CommandContext, TerminalRefusal } from '../../../data/model/index.ts';
 import { TASK_ENV_PREFIX } from '../pty/sessions.ts';
 
 const NAMES = [
@@ -66,32 +65,31 @@ export type Filled = { lines: string[]; env: Record<string, string> };
 
 /**
  * The chain's lines with every placeholder replaced by its variable, and the variables' values, or
- * the sentence naming the first placeholder with no value or a value no environment can hold.
+ * the word that refuses the first placeholder with no value or a value no environment can hold,
+ * with the placeholder it is about.
  */
 export function fillPlaceholders(
     runs: readonly string[],
     context: CommandContext,
-    repo: string,
-    catalog: Record<string, string>
-): Filled | { error: string } {
+    repo: string
+): Filled | { error: TerminalRefusal; names: string[] } {
     const numbered = new Map<Name, string>();
     const env: Record<string, string> = {};
-    const refused: string[] = [];
+    const refused: { error: TerminalRefusal; names: string[] }[] = [];
     const lines = runs.map((run) =>
         run.replace(PLACEHOLDER, (text, name: Name) => {
             const known = numbered.get(name);
             if (known !== undefined) return reference(known);
             const value = valueOf(name, context, repo);
             if (value === null) {
-                refused.push(
-                    name === 'selectedText'
-                        ? words(catalog, 'server.commands.no_selection', text)
-                        : words(catalog, 'server.commands.no_file', text)
-                );
+                refused.push({
+                    error: name === 'selectedText' ? 'no-selection' : 'no-file',
+                    names: [text]
+                });
                 return text;
             }
             if (value.includes('\u0000')) {
-                refused.push(words(catalog, 'server.commands.nul', text));
+                refused.push({ error: 'nul-value', names: [text] });
                 return text;
             }
             const variable = `${TASK_ENV_PREFIX}${numbered.size + 1}`;
@@ -100,5 +98,5 @@ export function fillPlaceholders(
             return reference(variable);
         })
     );
-    return refused.length === 0 ? { lines, env } : { error: refused[0] };
+    return refused.length === 0 ? { lines, env } : refused[0];
 }

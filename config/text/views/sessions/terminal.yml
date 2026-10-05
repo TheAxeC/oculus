@@ -42,6 +42,22 @@ text:
         terminal_bar: Terminal controls
         terminal_rename_field: Terminal title
         style_default: Default
+        refused_bad_repo: That folder is not a repository the file browser serves.
+        refused_bad_terminal: The terminal request was not valid.
+        refused_command_unknown: '{0} is not a command of this repository.'
+        refused_dependency_cycle: 'The commands depend on each other in a cycle: {0}'
+        refused_dependency_self: The command {0} depends on itself.
+        refused_dependency_unknown: The command {0} depends on {1}, which is not a command.
+        refused_no_file: 'No value for {0}: open a file in a source tab first.'
+        refused_no_selection: 'No value for {0}: select text in a source tab first.'
+        refused_not_a_session: That is not a session id.
+        refused_not_a_task: Only a command run can be run again.
+        refused_not_ours: That is not a terminal oculus started.
+        refused_nul_value: The value of {0} holds a NUL character, which no environment variable can carry.
+        refused_still_running: The line is still running. Restart it to run it again.
+        refused_terminal_ended: The terminal has ended.
+        refused_terminal_failed: The terminal could not do that.
+        refused_terminal_not_started: The terminal did not start.
         stop_terminal: Stop this terminal
         terminal_glyph: terminal
         terminal_larger: Larger terminal text

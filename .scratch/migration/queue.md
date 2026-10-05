@@ -1,20 +1,19 @@
 In flight:
-- D23 (language servers): brief being written.
+- D23 (language servers): brief check in, its findings being closed in the brief.
 - X3f (opening a file row, and the tab row's actions): failures being diagnosed.
-- D37 (the Search view's replace and the LaTeX build): repair round 1 under review.
-- S5 (the Settings view's controls and headings): building.
-- H3 (the hub's data map): repair round 1 under review.
-- D42 (a file's history): repair round 1 building.
+- S5 (the Settings view's controls and headings): built, under review.
+- H3 (the hub's data map): repair round 1 reviewed, landing next.
+- D42 (a file's history): repair round 1 reviewed, lands after H3.
 
 Queued, in order (27 steps):
 - D11 (the debug client for rite): brief ready; once S5 and H3 have landed.
 - X3e (Files lists reordered by drag): brief ready; once D42 has landed.
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
-- D38 (the Literature search view): once D37 has landed.
-- D44 (Submit on a .slurm file): brief drafted; once X3f and D37 have landed.
+- D38 (the Literature search view): once a slot is free.
+- D44 (Submit on a .slurm file): brief drafted; once X3f has landed.
 - D41 (links in Markdown checked): once M7 has landed.
-- D15 (PDF reading): once D37 has landed.
+- D15 (PDF reading): once a slot is free.
 - M8 (the hub's YAML checked in the editor): once D23 and H3 have landed.
 - D43 (LaTeX navigation): once D23 has landed.
 - D20 (an agent from a task or a worktree): once a slot is free.
@@ -38,6 +37,7 @@ Queued, in order (27 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D37 (the Search view's replace and the LaTeX build), 2026-10-05, the commit that carries this line.
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.
 - T1a (the test tiers), 2026-10-04, 6c8a217be.
 - T2d (the deletion sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, 1d88f437.

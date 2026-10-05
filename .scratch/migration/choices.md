@@ -155,6 +155,60 @@ The question: X3e's brief-check closing, open item 3: D5's catalog sentences cov
 
 Booked in `plan.md` Rulings.
 
+## Z476 (2026-10-05, from D23's brief, OI-1)
+
+The question: where D23's machine-local files live (clangd's index folders and the remembered interpreter and database choices).
+
+- Chosen: (a) one `config/local.yml` key `lsp`, default `~/.oculus/lsp`, holding `<root key>/<database folder>/` and `choices.json`, as every other machine-local file of oculus has a key with its `~/.oculus/...` default.
+- Not chosen: (b) two keys, one per kind of file, which splits one concern; (c) fixed paths with no key (the lazy one), the only machine-local files no key moves.
+
+Booked in `plan.md` Rulings.
+
+## Z477 (2026-10-05, from D23's brief, OI-2)
+
+The question: the status bar items of the language servers.
+
+- Chosen: (a) three items in `RIGHT_ITEMS` before `language`: `language_server`, `interpreter` and `compile_database`, each drawn only when its language is the file's.
+- Not chosen: (b) one VS Code `{}` language status item, which hides the interpreter and the database behind a hover.
+
+Booked in `plan.md` Rulings.
+
+## Z478 (2026-10-05, from D23's brief, OI-3)
+
+The question: a library for the server side's JSON-RPC over stdio.
+
+- Chosen: (a) `vscode-jsonrpc` 9.0.3 with `vscode-languageserver-protocol` 3.18.4 (MIT, Microsoft), which carry the framing, the partial reads and every message type the relay rewrites.
+- Not chosen: (b) `vscode-jsonrpc` alone, which leaves every message untyped; (c) the framing written by hand (the lazy one under the libraries rule).
+
+Booked in `plan.md` Rulings.
+
+## Z479 (2026-10-05, from D23's brief, OI-4)
+
+The question: a new guarded entry for language server lifetimes.
+
+- Chosen: (a) G36 as the brief words it (a server ends 60 s after its last page closed, at once when its root is no longer served, and with the oculus server; never started twice for one page, root and language), tested by one table over a stub server.
+- Not chosen: (b) quoted runs only, which leave a leak of 280 MB per server unguarded (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z480 (2026-10-05, from D23's brief, OI-5)
+
+The question: a file this machine locks by its mode.
+
+- Chosen: (a) opened in Monaco as read-only with the features that change no text (hover, definition, references, the Outline), as VS Code does; truncated files and HEAD or index versions stay in the `Code` window.
+- Not chosen: (b) every locked tab kept in the `Code` window, with no language features (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z481 (2026-10-05, from D23's brief, OI-6)
+
+The question: clangd's semantic tokens.
+
+- Chosen: (a) on, with theme rules that map each token type to the TextMate scope VS Code falls back to, so a token is drawn in the theme's colour.
+- Not chosen: (b) off (the lazy one), which also leaves Z72 (4) (b1)'s feature list short.
+
+Booked in `plan.md` Rulings.
+
 ## Z474 (2026-10-05, from D42's review)
 
 The question: D42's review Spec 1: paging by `<hash>^` walks the first parent only, so the page after a merge, or after a side-branch commit at a page boundary, leaves out commits that changed the file; `--skip` under `--follow` repeats the first page on git 2.49.0 (Z434).

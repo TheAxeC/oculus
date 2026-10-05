@@ -99,17 +99,6 @@ export type TaskKind = 'litwatch' | 'scout' | 'linkedin' | 'inbox';
 /** What a LaTeX terminal does to one main file: build it, or clear what a build left beside it. */
 export type LatexStep = 'build' | 'clean';
 
-/**
- * A refused resume in words. The endpoint answers the catalog key of the two refusals the page has
- * words for, so the keys stay literal here and tests/checks/source/keys.test.ts can still see them;
- * anything else is already a sentence and is shown as it came.
- */
-export function resumeRefusal(error: string): string {
-    if (error === 'sessions.resume_live') return t('sessions.resume_live');
-    if (error === 'sessions.resume_unknown') return t('sessions.resume_unknown');
-    return error;
-}
-
 /** The terminals one client owns, and the actions it runs on them. */
 export type TerminalsStore = {
     terminals: () => Terminal[];
@@ -603,10 +592,17 @@ export function createTerminals(
     }
 
     /**
-     * Resize one terminal's tmux window, for a page whose socket is not open to carry the message.
+     * Resize one terminal's tmux window, for a page whose socket is not open to carry the message,
+     * and for the order in which a grid attaches. A refusal is said on the bar of the tab that owns
+     * the terminal, so a window that cannot be sized is not left silent.
      */
     async function resizeTerminal(id: string, cols: number, rows: number): Promise<TerminalAnswer> {
-        return post({ action: 'resize', id, cols, rows });
+        const answer = await post({ action: 'resize', id, cols, rows });
+        if (!answer.ok) {
+            const owner = ownerOf(terminalTabs(), id);
+            if (owner !== null) say(owner.id, answer.error);
+        }
+        return answer;
     }
 
     const order = createPtyOrder(resizeTerminal);
@@ -622,7 +618,7 @@ export function createTerminals(
         refused.words = Object.fromEntries(words === '' ? others : [...others, [tab, words]]);
     }
 
-    /** A refusal in words: the server's sentence, else the words for a start that got none. */
+    /** A refusal in words: the catalog's sentence for it, else the start's own words. */
     function refusalWords(error: string): string {
         return error === '' ? t('sessions.terminal_start_failed') : error;
     }

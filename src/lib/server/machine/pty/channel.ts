@@ -547,6 +547,8 @@ export class Terminals {
     #took(terminals: Terminal[]): void {
         // Everything the reader sets on a terminal is in the signature, so a rename or a new icon
         // or colour is a change the pages are told of, and so is the end of a task terminal's line.
+        // The pane's process is in it too: a task terminal run again that ends with the status it
+        // ended with before is another process, and the pages are told of it.
         const signature = JSON.stringify(
             terminals.map((one) => [
                 one.id,
@@ -555,7 +557,8 @@ export class Terminals {
                 one.icon,
                 one.color,
                 one.task,
-                one.exit
+                one.exit,
+                one.pid
             ])
         );
         // The first list is taken even when it is empty: it is what turns "not read yet" into a

@@ -9,7 +9,14 @@
 // child is expanded first, since opening a view into something invisible would look like nothing
 // happening.
 
-import { activePath, findView, isInstanceOf, newInstance, stateId } from '../instance.ts';
+import {
+    activePath,
+    findInstance,
+    findView,
+    isInstanceOf,
+    newInstance,
+    stateId
+} from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
 import { isPage, type Instance, type Pane, type ViewId } from '../model.ts';
@@ -29,7 +36,12 @@ export type OpenOptions = {
 
 export type Opening = {
     openView: (view: ViewId, state?: unknown, page?: string, options?: OpenOptions) => string;
-    openBeside: (view: ViewId, state?: unknown, page?: string) => string;
+    /**
+     * `asker` is the instance of the tool view the view is opened for: a view opened for something
+     * lands outside that instance's pane (landing.ts), so the asked view opens beside the one that
+     * asked and never over it.
+     */
+    openBeside: (view: ViewId, state?: unknown, page?: string, asker?: string) => string;
     /**
      * Open a new instance of a view as a tab of the pane at a path of a page, whatever the page
      * already holds; answers its id, or the empty string for a page or pane that is not there.
@@ -76,8 +88,8 @@ export function createOpening(
      * activates it, and a maximised pane takes the view itself, since a new pane beside it would be
      * one nobody can see.
      */
-    function openBeside(view: ViewId, state?: unknown, page?: string): string {
-        return openInto(view, state, true, page);
+    function openBeside(view: ViewId, state?: unknown, page?: string, asker?: string): string {
+        return openInto(view, state, true, page, false, asker);
     }
 
     /**
@@ -103,7 +115,8 @@ export function createOpening(
         state: unknown,
         beside: boolean,
         page?: string,
-        preview = false
+        preview = false,
+        asker?: string
     ): string {
         const held = page === undefined ? attention.touched() : access.at(page);
         if (held === null) return '';
@@ -118,7 +131,7 @@ export function createOpening(
         }
         // A float is one pane: a view opened for something lands in it as a tool view does, and a
         // view asked for beside another is a tab of it, since a float takes no split.
-        if (opened(view) && isPage(held)) return openOpened(view, state, host, preview);
+        if (opened(view) && isPage(held)) return openOpened(view, state, host, preview, asker);
         const focus = focusedPane(access.workbench(host));
         const tree = access.layout(host);
         const into = focus === null ? null : focus.path;
@@ -194,7 +207,13 @@ export function createOpening(
      * back first when what is opened is not in it, since a tab opened or activated behind it would
      * look like nothing happening, and a maximised tool pane is no place for a document either.
      */
-    function openOpened(view: ViewId, state: unknown, host: string, preview: boolean): string {
+    function openOpened(
+        view: ViewId,
+        state: unknown,
+        host: string,
+        preview: boolean,
+        asker?: string
+    ): string {
         const bench = access.workbench(host);
         const tree = bench.root;
         const focus = focusedPane(bench);
@@ -222,7 +241,8 @@ export function createOpening(
             return existing.id;
         }
         const reader = activePath(tree, attention.active(host));
-        const landing = landingFor(tree, opened, attention.received(host), reader);
+        const away = asker === undefined ? null : (findInstance(tree, asker)?.path ?? null);
+        const landing = landingFor(tree, opened, attention.received(host), reader, away);
         const base = landing.kind === 'pane' && shows(landing.path) ? bench : restore(bench);
         const replaced =
             preview && landing.kind === 'pane' ? previewIn(paneAt(tree, landing.path)) : null;

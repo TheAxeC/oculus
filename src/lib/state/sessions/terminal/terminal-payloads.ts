@@ -27,7 +27,7 @@ export const terminalShape = z.object({
         .object({
             repo: z.string(),
             name: z.string(),
-            source: z.enum(['file', 'saved', 'found']).optional(),
+            source: z.enum(['file', 'saved', 'found', 'latex']).optional(),
             token: z.string().optional(),
             chain: z.array(z.object({ name: z.string(), cwd: z.string() })).optional()
         })

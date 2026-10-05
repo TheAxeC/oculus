@@ -16,8 +16,9 @@
 // signalled: a session whose process is still running is refused until it has ended, since two
 // processes writing one transcript is what the rule against signalling exists to prevent.
 //
-// A refusal the page has words for travels as the catalog key of those words, so the endpoint holds
-// no English the page would have to show raw. The page maps the two keys back through t().
+// A refusal travels as one word of TERMINAL_REFUSALS (pty/refusal.ts), so the endpoint holds no
+// English and no text of tmux or of a validator reaches the page, which says the sentence the
+// catalog holds for the word (state/shared/answers/terminal-words.ts).
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
@@ -58,17 +59,22 @@ import {
     newId,
     resizeTerminal,
     resumeArgs,
+    respawnTerminal,
     startTerminal,
     steerTerminal,
     stopTerminal,
     type StartOptions
 } from './sessions.ts';
+import { TmuxFailed, TerminalRefused, refusal, refusalFor } from './refusal.ts';
 import { shellWord } from './shell-word.ts';
-import type { SessionRecord, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
-
-/** The catalog keys the page has words for; every other refusal is the server's own sentence. */
-const UNKNOWN = 'sessions.resume_unknown';
-const LIVE = 'sessions.resume_live';
+import { run } from './tmux.ts';
+import type {
+    SessionRecord,
+    Terminal,
+    TerminalJob,
+    TerminalKind,
+    TerminalResume
+} from '../../../data/model/index.ts';
 
 /** The four update skills the palette and tray may start. */
 const TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
@@ -141,8 +147,24 @@ export type ListOptions = StartOptions & { shell?: string };
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
 
-function reason(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
+/**
+ * The options with a runner that turns a failed tmux call into TmuxFailed, so the catch of
+ * handleTerminal can tell tmux's own failure, whose text never reaches the page, from a refusal a
+ * check made.
+ */
+function wrapped(options: TerminalOptions): TerminalOptions {
+    const inner = options.run ?? run;
+    return {
+        ...options,
+        run: async (args, tmux) => {
+            try {
+                return await inner(args, tmux);
+            } catch (error) {
+                if (error instanceof TerminalRefused) throw error;
+                throw new TmuxFailed(error instanceof Error ? error.message : String(error));
+            }
+        }
+    };
 }
 
 /**
@@ -178,8 +200,8 @@ async function resumeSession(
     options: TerminalOptions
 ): Promise<Response> {
     const record = (options.recordFor ?? (() => null))(resume.id);
-    if (record === null) return json({ error: UNKNOWN }, { status: 400, headers: NO_STORE });
-    if (record.live) return json({ error: LIVE }, { status: 400, headers: NO_STORE });
+    if (record === null) return refusal('session-unknown');
+    if (record.live) return refusal('session-live');
     const title = record.title === '' ? record.id : record.title;
     const { prefix, env } = sessionAccount(record, options);
     const terminal = await startTerminal(
@@ -230,8 +252,7 @@ async function forkSession(
     options: TerminalOptions
 ): Promise<Response> {
     const record = (options.recordFor ?? (() => null))(resume.id);
-    if (record?.tool !== resume.tool)
-        return json({ error: UNKNOWN }, { status: 400, headers: NO_STORE });
+    if (record?.tool !== resume.tool) return refusal('session-unknown');
     const title = record.title === '' ? record.id : record.title;
     const catalog = textCatalog(options.configFor());
     const { prefix, env } = sessionAccount(record, options);
@@ -296,18 +317,10 @@ async function recoverDataset(
     // every dataset), so it is refused before the snapshot is consulted; the snapshot decides the
     // rest.
     if (typeof key !== 'string' || key === '' || key.startsWith('-')) {
-        return json(
-            { error: 'key is not a valid dataset key' },
-            { status: 400, headers: NO_STORE }
-        );
+        return refusal('bad-terminal');
     }
     const known = options.datasetIdsFor?.() ?? [];
-    if (!known.includes(key)) {
-        return json(
-            { error: 'key is not a dataset in the current portfolio' },
-            { status: 400, headers: NO_STORE }
-        );
-    }
+    if (!known.includes(key)) return refusal('bad-terminal');
     const cwd = options.hubFor?.() ?? loadLocalOrDefaults(options.engine).hub;
     const terminal = await startTerminal(
         {
@@ -344,12 +357,7 @@ async function startTask(
     rows: unknown,
     options: TerminalOptions
 ): Promise<Response> {
-    if (!isTask(kind)) {
-        return json(
-            { error: `kind must be one of ${TASKS.join(', ')}` },
-            { status: 400, headers: NO_STORE }
-        );
-    }
+    if (!isTask(kind)) return refusal('bad-terminal');
     const local = options.localFor?.() ?? loadLocalOrDefaults(options.engine);
     const config = options.configFor();
     const terminal = await startTerminal(
@@ -405,7 +413,7 @@ function latexFolder(
 ): { dir: string; label: string } | Response {
     const named = latexFolderShape.safeParse(message);
     if (!named.success) {
-        return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
+        return refusal('not-an-action');
     }
     if (named.data.id === undefined) {
         const found = resolveRootPath(
@@ -413,18 +421,14 @@ function latexFolder(
             named.data.root,
             named.data.path
         );
-        if ('error' in found) {
-            return json({ error: found.error }, { status: 400, headers: NO_STORE });
-        }
+        if ('error' in found) return refusal(found.error);
         return {
             dir: found.path,
             label: named.data.path === '' ? named.data.root : named.data.path
         };
     }
     const project = (options.projectFor ?? (() => null))(named.data.id);
-    if (project === null) {
-        return json({ error: 'no-project' }, { status: 400, headers: NO_STORE });
-    }
+    if (project === null) return refusal('no-project');
     const hub =
         options.hubFor?.() ?? (options.localFor?.() ?? loadLocalOrDefaults(options.engine)).hub;
     return {
@@ -434,35 +438,64 @@ function latexFolder(
 }
 
 /**
- * Build or clean one main file, as a shell terminal in the folder of the main file: a project's
+ * The kept terminal of a build or clean of one main file, or null: the listed task terminal whose
+ * job is a LaTeX job of this folder with this name. The name holds the step, the folder's label and
+ * the main file, so a main file has one terminal per step.
+ */
+async function keptLatex(
+    folder: string,
+    name: string,
+    options: TerminalOptions
+): Promise<Terminal | null> {
+    const listed = await listTerminals(options);
+    return (
+        listed.find(
+            (one) =>
+                one.task &&
+                one.job?.source === 'latex' &&
+                one.job.repo === folder &&
+                one.job.name === name
+        ) ?? null
+    );
+}
+
+/**
+ * Build or clean one main file, as a task terminal in the folder of the main file: a project's
  * `manuscript/` folder or a folder of a served root. The file is checked against the folder's own
  * main files before a command is built from it, so the only names that can reach latexmk are the
- * ones the view offered.
+ * ones the view offered. tmux keeps the pane after latexmk ended, with its exit status, so the
+ * output stays readable. A step whose kept terminal is listed runs in that terminal: a latexmk
+ * still running is answered as it is, and an ended one is run again there with the command the
+ * request builds now, so a build on every save leaves one terminal per main file and step.
  */
 async function startLatex(
     message: Record<string, unknown>,
     options: TerminalOptions
 ): Promise<Response> {
     const asked = latexStepShape.safeParse(message.step);
-    if (!asked.success) {
-        return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
-    }
+    if (!asked.success) return refusal('not-an-action');
     const step = asked.data;
     const folder = latexFolder(message, options);
     if (folder instanceof Response) return folder;
     const main = message.main;
     if (typeof main !== 'string' || !isMainOf(folder.dir, main)) {
-        return json({ error: 'not-a-main' }, { status: 400, headers: NO_STORE });
+        return refusal('not-a-main');
     }
+    const name = latexName(options, step, folder.label, main);
+    const command = latexCommand(step, main, programOf(join(folder.dir, main)));
+    const kept = await keptLatex(folder.dir, name, options);
+    if (kept !== null) {
+        if (kept.exit !== null) {
+            await respawnTerminal(kept.id, options, command);
+            options.refresh?.();
+        }
+        const again = (await listTerminals(options)).find((one) => one.id === kept.id);
+        return json({ ok: true, terminal: again ?? kept }, { headers: NO_STORE });
+    }
+    const job: TerminalJob = { repo: folder.dir, name, source: 'latex' };
     const terminal = await startTerminal(
-        {
-            kind: 'shell',
-            cwd: folder.dir,
-            cols: message.cols,
-            rows: message.rows,
-            name: latexName(options, step, folder.label, main)
-        },
-        { ...options, command: latexCommand(step, main, programOf(join(folder.dir, main))) }
+        { kind: 'shell', cwd: folder.dir, cols: message.cols, rows: message.rows, name },
+        { ...options, command, task: job }
     );
     options.refresh?.();
     return json({ ok: true, terminal }, { headers: NO_STORE });
@@ -471,15 +504,8 @@ async function startLatex(
 /** The session a fork or a resume names, or the refusal of a tool or an id that is none. */
 function sessionOf(message: Record<string, unknown>): TerminalResume | Response {
     const tool = resumeToolShape.safeParse(message.tool);
-    if (!tool.success) {
-        return json(
-            { error: `tool must be one of ${RESUME_TOOLS.join(', ')}` },
-            { status: 400, headers: NO_STORE }
-        );
-    }
-    if (!isSessionId(message.id)) {
-        return json({ error: 'id is not a session id' }, { status: 400, headers: NO_STORE });
-    }
+    if (!tool.success) return refusal('bad-terminal');
+    if (!isSessionId(message.id)) return refusal('not-a-session');
     return { tool: tool.data, id: message.id };
 }
 
@@ -495,10 +521,10 @@ export async function handleTerminal(
     const read = await tokenedBody(request, token, { headers: NO_STORE });
     if (read instanceof Response) return read;
     const body = read.body;
-    if (!isMap(body)) {
-        return json({ error: 'the body is not an action' }, { status: 400, headers: NO_STORE });
-    }
+    if (!isMap(body)) return refusal('not-an-action');
     const message = body;
+    const plain = options;
+    options = wrapped(options);
 
     try {
         if (message.action === 'start') {
@@ -545,14 +571,12 @@ export async function handleTerminal(
             return await composeSession(message, options);
         }
         if (message.action === 'steer') {
-            if (!isTerminalId(message.id))
-                return json({ error: NOT_OURS }, { status: 400, headers: NO_STORE });
+            if (!isTerminalId(message.id)) return refusal(NOT_OURS);
             await steerTerminal(message.id, steerTextShape.parse(message.text), options);
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
         if (message.action === 'interrupt') {
-            if (!isTerminalId(message.id))
-                return json({ error: NOT_OURS }, { status: 400, headers: NO_STORE });
+            if (!isTerminalId(message.id)) return refusal(NOT_OURS);
             await interruptTerminal(message.id, options);
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
@@ -562,8 +586,7 @@ export async function handleTerminal(
             return await forkSession(session, message, options);
         }
         if (message.action === 'stop') {
-            if (!isTerminalId(message.id))
-                return json({ error: NOT_OURS }, { status: 400, headers: NO_STORE });
+            if (!isTerminalId(message.id)) return refusal(NOT_OURS);
             await stopTerminal(message.id, options);
             options.refresh?.();
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
@@ -594,18 +617,12 @@ export async function handleTerminal(
             return await resumeSession(session, message.cols, message.rows, options);
         }
         if (message.action === 'resize') {
-            if (!isTerminalId(message.id))
-                return json({ error: NOT_OURS }, { status: 400, headers: NO_STORE });
+            if (!isTerminalId(message.id)) return refusal(NOT_OURS);
             await resizeTerminal(message.id, message.cols, message.rows, options);
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
     } catch (error) {
-        return json({ error: reason(error) }, { status: 400, headers: NO_STORE });
+        return refusalFor(error, message.id, () => listTerminals(plain));
     }
-    return json(
-        {
-            error: 'action must be start, compose, steer, interrupt, fork, stop, resize, resume, rename, restyle, clear, recover, task, latex, command, rerun, restart, capture or chat'
-        },
-        { status: 400, headers: NO_STORE }
-    );
+    return refusal('not-an-action');
 }

@@ -50,7 +50,29 @@ describe('what a replace writes', () => {
                 replace: 'bar',
                 items: [{ root: 'hub', path: 'a.txt', hits: [hit(1, 4, 'foo')] }]
             });
-            expect(answer).toEqual({ status: 200, body: { ok: true, paths: ['hub/a.txt'] } });
+            expect(answer).toEqual({
+                status: 200,
+                body: {
+                    ok: true,
+                    paths: ['hub/a.txt'],
+                    rereads: [
+                        {
+                            root: 'hub',
+                            path: 'a.txt',
+                            hits: [
+                                {
+                                    line: 1,
+                                    column: 1,
+                                    length: 3,
+                                    text: 'foo bar',
+                                    at: 0,
+                                    was: { line: 1, at: 0, edited: true }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            });
             expect(text(w, 'a.txt')).toBe('foo bar\n');
         }
     );

@@ -154,11 +154,13 @@
             {/if}
         </p>
     {/if}
-    {#if answer.failed.length > 0}
+    {#each answer.failed as one (one.root)}
         <p class="count" data-search-failed>
-            {t('search.failed_roots', answer.failed.map((one) => one.root).join(', '))}
+            {one.why === 'timed-out'
+                ? t('search.root_timed_out', one.root)
+                : t('search.root_failed', one.root)}
         </p>
-    {/if}
+    {/each}
     <div class="results" bind:this={host}>
         <TreeView label={t('search.results')} {rows} {keymap} {onkey}>
             {#snippet children(nav: TreeNav)}
@@ -196,6 +198,11 @@
                                     />
                                 {/snippet}
                             </TreeItem>
+                            {#if file.rereadFailed === true}
+                                <p class="count" data-search-reread-failed>
+                                    {t('search.reread_failed')}
+                                </p>
+                            {/if}
                             <ul class="hits" role="none">
                                 {#each file.hits as hit (hitKey(file, hit))}
                                     {@const parts = hitParts(hit)}

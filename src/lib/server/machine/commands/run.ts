@@ -13,13 +13,15 @@
 // `rerun` runs the line of an ended task terminal again in the same pane, and `restart` does the
 // same for a line still running once the reader confirmed the process that would be stopped.
 // `capture` answers all the text a listed terminal's pane holds, which the page reads the
-// diagnostics of a task from when no pane shows it.
+// diagnostics of a task from when no pane shows it. Every refusal is a word of TERMINAL_REFUSALS
+// with the names its sentence is about (pty/refusal.ts).
 
 import { randomBytes } from 'node:crypto';
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
-import type { CommandContext, Terminal } from '../../../data/model/index.ts';
+import type { CommandContext, Terminal, TerminalRefusal } from '../../../data/model/index.ts';
 import { NOT_LISTED, NOT_OURS } from '../pty/edit.ts';
+import { refusal } from '../pty/refusal.ts';
 import {
     isTerminalId,
     listTerminals,
@@ -28,10 +30,8 @@ import {
     startTerminal,
     type StartOptions
 } from '../pty/sessions.ts';
-import { textCatalog } from '../../../data/sources/config.ts';
 import { resolveChain } from './resolve.ts';
 import { chainLines, chainText, defaultApprovalsPath, isApproved } from '../approvals/approvals.ts';
-import { words } from '../../core/words.ts';
 import { chainLine } from './chain.ts';
 import { listCommands } from './list.ts';
 import { fillPlaceholders } from './placeholders.ts';
@@ -39,8 +39,6 @@ import { repositoryOf } from './repo.ts';
 
 /** What a command run needs besides the tmux options: the roots it may run under, the approvals. */
 export type CommandRunOptions = StartOptions & {
-    /** The merged config, whose text catalog words a refusal. */
-    configFor: () => Record<string, unknown>;
     /** The directories the file browser serves, from which a repository is taken. */
     rootsFor?: () => string[];
     /** The approvals file. Defaults to ~/.oculus/approvals.json. */
@@ -69,29 +67,24 @@ const contextShape = z
 
 const sourceShape = z.enum(['file', 'saved', 'found']);
 
-function refuse(error: string): Response {
-    return json({ error }, { status: 400, headers: NO_STORE });
-}
-
 /** Start the command a `command` action names, or answer what stops it. */
 export async function startCommand(
     message: Record<string, unknown>,
     options: CommandRunOptions
 ): Promise<Response> {
     const found = repositoryOf(message.repo, options.rootsFor?.() ?? []);
-    if ('error' in found) return refuse(found.error);
+    if ('error' in found) return refusal('bad-repo');
     const repo = found.repo;
     const name = message.name;
-    if (typeof name !== 'string' || name === '') return refuse('name must be a command name');
-    const catalog = textCatalog(options.configFor());
+    if (typeof name !== 'string' || name === '') return refusal('bad-terminal');
     const source = sourceShape.safeParse(message.source);
-    if (!source.success) return refuse(words(catalog, 'server.commands.source'));
+    if (!source.success) return refusal('bad-terminal');
     const resolved = resolveChain(listCommands(repo).commands, name, source.data);
-    if ('error' in resolved) return refuse(resolved.error);
+    if ('error' in resolved) return refusal(resolved.error, resolved.names);
     const context = contextShape.parse(message.context);
     const runs = resolved.chain.map((command) => command.run);
-    const filled = fillPlaceholders(runs, context, repo, catalog);
-    if ('error' in filled) return refuse(filled.error);
+    const filled = fillPlaceholders(runs, context, repo);
+    if ('error' in filled) return refusal(filled.error, filled.names);
     const approvals = options.approvalsFor?.() ?? defaultApprovalsPath();
     const lines = chainLines(repo, resolved.chain);
     const asks = resolved.chain.some((command) => command.source !== 'saved');
@@ -119,12 +112,15 @@ export async function startCommand(
     return json({ ok: true, terminal }, { headers: NO_STORE });
 }
 
-/** The listed task terminal an id names, or the sentence that refuses it. */
-async function taskTerminal(id: unknown, options: CommandRunOptions): Promise<Terminal | string> {
+/** The listed task terminal an id names, or the word that refuses it. */
+async function taskTerminal(
+    id: unknown,
+    options: CommandRunOptions
+): Promise<Terminal | TerminalRefusal> {
     if (!isTerminalId(id)) return NOT_OURS;
     const found = (await listTerminals(options)).find((terminal) => terminal.id === id);
     if (found === undefined) return NOT_LISTED;
-    if (!found.task) return 'the terminal is not a task terminal: only a command run can be rerun';
+    if (!found.task) return 'not-a-task';
     return found;
 }
 
@@ -134,9 +130,8 @@ export async function rerunTask(
     options: CommandRunOptions
 ): Promise<Response> {
     const terminal = await taskTerminal(message.id, options);
-    if (typeof terminal === 'string') return refuse(terminal);
-    if (terminal.exit === null)
-        return refuse('the line is still running: restart it to run it again');
+    if (typeof terminal === 'string') return refusal(terminal);
+    if (terminal.exit === null) return refusal('still-running');
     await respawnTerminal(terminal.id, options);
     options.refresh?.();
     return json({ ok: true, id: terminal.id }, { headers: NO_STORE });
@@ -152,7 +147,7 @@ export async function restartTask(
     options: CommandRunOptions
 ): Promise<Response> {
     const terminal = await taskTerminal(message.id, options);
-    if (typeof terminal === 'string') return refuse(terminal);
+    if (typeof terminal === 'string') return refusal(terminal);
     if (terminal.exit === null && message.confirmed !== true) {
         return json({ confirm: terminal.command || terminal.name }, { headers: NO_STORE });
     }
@@ -161,17 +156,14 @@ export async function restartTask(
     return json({ ok: true, id: terminal.id }, { headers: NO_STORE });
 }
 
-/** All the text of a listed terminal's pane, or the sentence refusing an unlisted name. */
+/** All the text of a listed terminal's pane, or the word refusing an unlisted name. */
 export async function captureTask(
     message: Record<string, unknown>,
     options: CommandRunOptions
 ): Promise<Response> {
     const id = message.id;
     const listed = isTerminalId(id) && (await listTerminals(options)).some((one) => one.id === id);
-    if (!listed) {
-        const catalog = textCatalog(options.configFor());
-        return refuse(words(catalog, 'server.commands.capture_unlisted', String(id)));
-    }
+    if (!listed) return refusal(NOT_LISTED);
     const output = await paneOutput(id, options);
     return json({ ok: true, id, output }, { headers: NO_STORE });
 }

@@ -4,9 +4,10 @@
 // panes its arrangement gave them and its opened documents in a pane of their own, so a document
 // opened from a card never covers the board the card is on.
 //
-// The rule reads the tree and three facts the caller holds: which views are opened for something,
-// the tabs of that kind the page received, newest last, and the pane the reader is in. It is a pure
-// function apart from the store, so each case is checked on a tree built by hand.
+// The rule reads the tree and four facts the caller holds: which views are opened for something,
+// the tabs of that kind the page received, newest last, the pane the reader is in, and the pane of
+// the tool view that asked, which nothing lands in. It is a pure function apart from the store, so
+// each case is checked on a tree built by hand.
 
 import { findInstance, panes } from '../instance.ts';
 import { samePath, type Layout, type Pane, type ViewId } from '../model.ts';
@@ -34,16 +35,22 @@ export function holdsOpened(pane: Pane, opened: (view: ViewId) => boolean): bool
  * in, which the next one then lands in. A pane holding a tool view is taken only when the reader is
  * in it and it already holds opened tabs, so the tool panes of an arrangement never receive a
  * document unasked. A locked pane is taken by none of these steps, so with every pane locked the
- * view goes to the new pane to the right.
+ * view goes to the new pane to the right. `away` is the pane of the tool view that asked for the
+ * view (the Search view asking for its Replace Preview): it is treated as locked in every step, and
+ * the new pane is split off to the right of it, so the asked view opens beside the view and never
+ * covers it. A view that asked from a float names no pane of the tree.
  */
 export function landingFor(
     tree: Layout,
     opened: (view: ViewId) => boolean,
     received: readonly string[],
-    reader: number[]
+    reader: number[],
+    away: number[] | null = null
 ): Landing {
+    const taken = (path: number[]): boolean => away !== null && samePath(path, away);
     const allowed = (pane: Pane, path: number[]): boolean =>
         pane.locked !== true &&
+        !taken(path) &&
         (!holdsTool(pane, opened) || (samePath(path, reader) && holdsOpened(pane, opened)));
     for (const id of [...received].reverse()) {
         const found = findInstance(tree, id);
@@ -52,10 +59,10 @@ export function landingFor(
         if (pane !== null && allowed(pane, found.path)) return { kind: 'pane', path: found.path };
     }
     const here = paneAt(tree, reader);
-    if (here !== null && here.locked !== true && holdsOpened(here, opened)) {
+    if (here !== null && here.locked !== true && !taken(reader) && holdsOpened(here, opened)) {
         return { kind: 'pane', path: reader };
     }
-    const all = panes(tree).filter(({ pane }) => pane.locked !== true);
+    const all = panes(tree).filter(({ pane, path }) => pane.locked !== true && !taken(path));
     // An empty documents pane is where a document lands before an empty terminals pane, which a
     // document takes only when no other pane is empty.
     const empties = all.filter(({ pane }) => pane.tabs.length === 0);
@@ -63,5 +70,5 @@ export function landingFor(
     if (empty !== undefined) return { kind: 'pane', path: empty.path };
     const documents = all.find(({ pane }) => !holdsTool(pane, opened));
     if (documents !== undefined) return { kind: 'pane', path: documents.path };
-    return { kind: 'split', path: reader };
+    return { kind: 'split', path: away ?? reader };
 }

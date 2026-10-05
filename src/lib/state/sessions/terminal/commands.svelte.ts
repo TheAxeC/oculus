@@ -27,7 +27,9 @@
 // and the output is read by those markers: a path an error names is resolved from the folder of the
 // command that printed it, the token, the chain and its folders being the ones the terminal's mark
 // carries. A line ending in the marker counts, so a command whose last output had no line break
-// does not hide the next marker; a mark with no token is read by the bare name.
+// does not hide the next marker; a mark with no token is read by the bare name. A LaTeX build is a
+// task terminal too, and its problems are the LaTeX state's own (state/sessions/latex.svelte.ts),
+// so its output is not read here.
 
 import { untrack } from 'svelte';
 import { z } from 'zod';
@@ -522,6 +524,11 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         return terminals.terminals().find((one) => one.id === id) ?? null;
     }
 
+    /** Whether a terminal is a project command's run; a LaTeX build's diagnostics are LaTeX's. */
+    function ranCommand(one: Terminal | null): boolean {
+        return one?.task === true && one.job?.source !== 'latex';
+    }
+
     /**
      * The commands a task terminal's line runs, in order, with their folders: the chain its mark
      * carries, which is the line it was made of whatever the repository's list says now. Null for
@@ -581,7 +588,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
     }
 
     function note(id: string, text: string, scrollback: boolean): void {
-        if (record(id)?.task !== true) return;
+        if (!ranCommand(record(id))) return;
         const before = scrollback ? NOTHING : (outputs.byId[id] ?? NOTHING);
         const lines = `${before.tail}${text.replace(ESCAPES, '')}`.split(/\r\n|\r|\n/);
         const tail = (lines.pop() ?? '').slice(-TAIL_MAX);
@@ -625,7 +632,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
      */
     function readEnded(): void {
         for (const one of terminals.terminals()) {
-            if (!one.task || one.exit === null || looked.get(one.id) === one.pid) continue;
+            if (!ranCommand(one) || one.exit === null || looked.get(one.id) === one.pid) continue;
             looked.set(one.id, one.pid);
             if (!terminals.subscribed(one.id)) void capture(one.id, one.pid);
         }
@@ -655,7 +662,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         const listed = new Set(
             terminals
                 .terminals()
-                .filter((one) => one.task)
+                .filter((one) => ranCommand(one))
                 .map((one) => one.id)
         );
         return Object.entries(outputs.byId).flatMap(([id, one]) =>

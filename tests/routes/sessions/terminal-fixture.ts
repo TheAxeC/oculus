@@ -100,8 +100,32 @@ export const CHAT_CONFIG = { ...BASE_CHAT_CONFIG, chat: { model: 'claude-opus-4-
 export const CHAT_CATALOG = textCatalog(CHAT_CONFIG);
 
 /**
- * A tmux that runs nothing: it keeps every argv, remembers what set-option was told, and answers
- * list-sessions with the one line the session it was asked to create would have produced.
+ * The commands of one tmux invocation, each as its words: tmux runs the words after a lone `;`
+ * argument as the next command of the same invocation.
+ */
+export function joinedCommands(call: string[]): string[][] {
+    const commands: string[][] = [];
+    let part: string[] = [];
+    for (const word of [...call, ';']) {
+        if (word === ';') {
+            commands.push(part);
+            part = [];
+        } else {
+            part.push(word);
+        }
+    }
+    return commands;
+}
+
+/** The words a `new-session` runs: those after `--` up to the first command joined to it. */
+export function lineOf(start: string[]): string[] {
+    return (joinedCommands(start)[0] ?? []).slice(start.indexOf('--') + 1);
+}
+
+/**
+ * A tmux that runs nothing: it keeps every argv, remembers what set-option was told, in an
+ * invocation of its own and joined to a `new-session`, and answers list-sessions with the one line
+ * the session it was asked to create would have produced.
  */
 export function tmux(existingNames: string[] = []): {
     run: NonNullable<TerminalOptions['run']>;
@@ -114,13 +138,9 @@ export function tmux(existingNames: string[] = []): {
         calls,
         run: (args: string[]): Promise<string> => {
             calls.push([...args]);
-            if (args[0] === 'new-session') {
-                name = args[3] ?? '';
-                return Promise.resolve('');
-            }
-            if (args[0] === 'set-option') {
-                options[args[3] ?? ''] = args[4] ?? '';
-                return Promise.resolve('');
+            for (const words of joinedCommands(args)) {
+                if (words[0] === 'new-session') name = words[3] ?? '';
+                if (words[0] === 'set-option') options[words[3] ?? ''] = words[4] ?? '';
             }
             if (args[0] === 'list-sessions') {
                 const fields = [

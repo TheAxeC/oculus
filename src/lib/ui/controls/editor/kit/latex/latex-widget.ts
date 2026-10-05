@@ -5,11 +5,12 @@
 //
 // The preview is a Monaco content widget below the position the pointer rests on, drawn after the
 // pointer has stayed 300 ms on one span. Math is typeset by KaTeX with `trust: false`, so no
-// command can emit a link or HTML, and a formula that does not parse is drawn as its source in
-// the error colour. A picture is drawn through the address the parent gives for the file (the
-// file route), never from the path in the text; a PDF is drawn as its name. The widget is removed
-// when the pointer leaves the span or the editor, when the text changes and when the editor
-// scrolls, and an answer that arrives after that is dropped.
+// command can emit a link or HTML, and a formula that does not parse is drawn as its source in the
+// error colour. A picture is drawn through the address the parent gives for the file (the file
+// route), never from the path in the text, and only once the browser has decoded it, so the box is
+// sized around the drawn image; a picture that does not decode gives no preview. A PDF is drawn as
+// its name. The widget is removed when the pointer leaves the span or the editor, when the text
+// changes and when the editor scrolls, and an answer that arrives after that is dropped.
 
 import type * as Monaco from 'monaco-editor';
 import { mathSpanAt, pictureAt, pictureFile, type MathSpan } from './latex';
@@ -35,6 +36,12 @@ export type LatexEditorDeps = {
 
 /** The owner Monaco files the build's markers under. */
 const OWNER = 'oculus-latex';
+
+/**
+ * The widest a picture is drawn: the box's 480 px less its horizontal padding and border. A length
+ * rather than a percentage, since the box takes its width from its content.
+ */
+const PICTURE_MAX_WIDTH = 458;
 
 /** KaTeX's bounds on one formula: how far it may stretch (em) and how often macros may expand. */
 const KATEX = { trust: false, strict: 'ignore', maxSize: 50, maxExpand: 1000 } as const;
@@ -114,7 +121,12 @@ async function previewOf(
         const picture = document.createElement('img');
         picture.src = deps.address(file);
         picture.alt = file;
-        picture.style.cssText = 'display:block;max-width:100%;max-height:300px';
+        picture.style.cssText = `display:block;max-width:${PICTURE_MAX_WIDTH}px;max-height:300px`;
+        try {
+            await picture.decode();
+        } catch {
+            return null;
+        }
         node.append(picture);
     }
     return { node, start: call.start, end: call.end };

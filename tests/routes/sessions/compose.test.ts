@@ -25,6 +25,7 @@ import {
     makeTaskConfig,
     request,
     source,
+    lineOf,
     tmux
 } from './terminal-fixture.ts';
 
@@ -84,7 +85,7 @@ async function post(body: Record<string, unknown>, recordFor = source()) {
         response,
         calls: driver.calls,
         started,
-        argv: started.slice(started.indexOf('--') + 1)
+        argv: lineOf(started)
     };
 }
 

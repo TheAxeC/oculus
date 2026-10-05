@@ -49,11 +49,12 @@ const startedShape = unchangedAs<Terminal>(z.looseObject({ id: z.string() }));
 /** One line of a chain to approve: its folder, relative to the repository, and the line. */
 const chainLineShape = z.object({ folder: z.string(), run: z.string() });
 
-/** What an action answers: the terminal a start made, its id, and a refusal's sentence. */
+/** What an action answers: the terminal a start made, its id, and a refusal's word and names. */
 const actionAnswerShape = z.object({
     id: optionalTextShape,
     terminal: startedShape.optional().catch(undefined),
     error: optionalTextShape,
+    names: z.array(z.string()).optional().catch(undefined),
     approve: z.array(chainLineShape).optional().catch(undefined),
     output: z.string().optional().catch(undefined),
     confirm: z.string().optional().catch(undefined)
@@ -83,25 +84,23 @@ const busyListShape = z
 /** The body of a busy read. */
 const busyAnswerShape = z.object({ busy: busyListShape });
 
+/** A terminal of a list read: its id, and the exit status of a task line that ended, else null. */
+export type ListedTerminal = { id: string; exit: number | null };
+
 /** The body of a list read: each row that names a terminal by its id, a malformed row none. */
-const listAnswerShape = z.object({ terminals: rowsShape(z.object({ id: z.string() })) });
+const listAnswerShape = z.object({
+    terminals: rowsShape(z.object({ id: z.string(), exit: z.number().nullable().catch(null) }))
+});
 
 /** The action field of a request body, which is how `postTerminal` knows a start from the rest. */
 const actionShape = z.object({ action: z.string() });
 
 /**
- * The actions of a project command. Their refusals are sentences the server words for the reader
- * (server/machine/commands/), naming the command, the placeholder or the cycle that stops the run.
- */
-const COMMAND_ACTIONS = ['command', 'rerun', 'restart', 'capture'];
-
-/**
  * Post one action with the write token. A page rendered on the server has no fetch and posts
- * nothing. A refusal is told in the catalog's sentence for it (state/shared/answers/answers.ts),
- * never in the server's own text, except a refusal of a project command's action, which is the
- * server's sentence. An answer at 200 is ok whatever it names, except for a start: a terminal
- * started with no id is one the page cannot attach to, so a start whose answer names no terminal
- * with an id is a failed start.
+ * nothing. A refusal is told in the catalog's sentence for its word, with the names the answer
+ * carried (state/shared/answers/answers.ts), never in the server's own text. An answer at 200 is ok
+ * whatever it names, except for a start: a terminal started with no id is one the page cannot
+ * attach to, so a start whose answer names no terminal with an id is a failed start.
  */
 export async function postTerminal(body: unknown, token: string): Promise<TerminalAnswer> {
     if (typeof fetch !== 'function') return { ok: false, id: '', error: '' };
@@ -117,12 +116,11 @@ export async function postTerminal(body: unknown, token: string): Promise<Termin
         const answer = readAs(actionAnswerShape, raw);
         const action = readAs(actionShape, body)?.action ?? '';
         if (!response.ok) {
-            const said = answer?.error ?? '';
-            const error =
-                COMMAND_ACTIONS.includes(action) && said !== ''
-                    ? said
-                    : refusedAnswer(response.status, answer?.error);
-            return { ok: false, id: '', error };
+            return {
+                ok: false,
+                id: '',
+                error: refusedAnswer(response.status, answer?.error, answer?.names)
+            };
         }
         const starting = action === 'start';
         if (starting && (answer?.terminal?.id ?? '') === '') {
@@ -143,16 +141,16 @@ export async function postTerminal(body: unknown, token: string): Promise<Termin
 }
 
 /**
- * The ids of every terminal oculus owns, from a fresh read of the server, or null when there is
- * no fetch, the read failed or its answer could not be read.
+ * Every terminal oculus owns with the exit status of its task line, from a fresh read of the
+ * server, or null when there is no fetch, the read failed or its answer could not be read.
  */
-export async function readListed(): Promise<string[] | null> {
+export async function readListed(): Promise<ListedTerminal[] | null> {
     if (typeof fetch !== 'function') return null;
     try {
         const response = await fetch('/api/terminal');
         if (!response.ok) return null;
         const answer = readAs(listAnswerShape, await readJson(response));
-        return answer === null ? null : answer.terminals.map((one) => one.id);
+        return answer === null ? null : answer.terminals;
     } catch {
         return null;
     }

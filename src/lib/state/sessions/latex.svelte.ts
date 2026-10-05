@@ -12,16 +12,17 @@
 // address all take one form.
 //
 // The answer is held in the client state's query client (state/client/queries.svelte.ts). What
-// makes it stale is a build ending. A build is a terminal (state/sessions/terminals.svelte.ts), and
-// a terminal that has ended leaves the terminals list of the `sessions` payload, so watch() is told
-// the terminal one press or one save started (`run` does it) and every held folder is marked, and
-// asked for again, on every `sessions` push until that terminal is gone from the list (a tab the
-// pane hides asks once when it is shown). The push that finds it gone is the one whose answer
+// makes it stale is a build ending. A build is a task terminal (state/sessions/terminals.svelte.ts)
+// that tmux keeps after latexmk ended, with the exit status of the line, so a build has ended when
+// its terminal shows an exit status or has left the terminals list of the `sessions` payload.
+// watch() is told the terminal one press or one save started (`run` does it) and every held folder
+// is marked, and asked for again, on every `sessions` push until that terminal has ended (a tab the
+// pane hides asks once when it is shown). The push that finds it ended is the one whose answer
 // carries the new PDF, and the watch ends there, so an idle tab asks for nothing. A push that comes
-// while a request is out marks the state again once that request lands, so an answer fetched
-// before the list moved is never the last one. A folder is marked as a whole, not only the target
-// that was watched, because a build of a project's manuscript changes what a view over the same
-// folder holds as well.
+// while a request is out marks the state again once that request lands, so an answer fetched before
+// the list moved is never the last one. A folder is marked as a whole, not only the target that was
+// watched, because a build of a project's manuscript changes what a view over the same folder holds
+// as well.
 //
 // A PDF whose time moved is bumped in the fs store, which moves the address the file view draws it
 // at: an open PDF tab then fetches the new build instead of the bytes the browser cached.
@@ -31,19 +32,22 @@
 // builds through, starts the build without showing it, and watches it. The folder's state is read
 // again when that build ends, held or not, so the problems of a build nobody is looking at still
 // reach the editor as diagnostics. A main file is never built twice at once: from the moment its
-// build is asked for until the terminal that runs it has left the terminals list, a save that
-// arrives asks for one more build after it, however many saves came, and a Build press shows the
-// terminal of the build under way (once the server has named it) and asks for one more build
-// after it. A terminal the list has never named is taken as ended only when the server's own list,
-// read after a push that lacks it, does not hold it either, since a push can carry a list read
-// before the terminal started. The main file's row says `building`
-// for the same span (`LatexMain.building`), whichever folder form the row was read by, since the
-// span is kept per main file of a folder of a root and not per form.
+// build is asked for until the terminal that runs it has ended, a save that arrives asks for one
+// more build after it, however many saves came, and a Build press shows the terminal of the build
+// under way (once the server has named it) and asks for one more build after it. A start whose
+// answer already shows an exit status ends the build at once. A terminal the list has never shown
+// running is taken as ended only when the server's own list, read after the answer that named it or
+// after a push that shows it ended or lacks it, shows it ended or lacks it too, since a push can
+// carry a list read before the terminal started or before a kept terminal ran again. The main
+// file's row says `building` for the same span (`LatexMain.building`), whichever folder form the
+// row was read by, since the span is kept per main file of a folder of a root and not per form.
 
 import { z } from 'zod';
+import type { Message } from '../../data/model/index.ts';
 import { PROGRAMS, type Program } from '../../data/prose/latex.ts';
 import { joinPath } from '../../data/helpers/files/paths.ts';
 import { anyNumberShape, readAs, readJson, rowsShape } from '../../data/shapes/shapes.ts';
+import { holds } from '../system/docs.svelte.ts';
 import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
 import { failedAnswer } from '../shared/answers/answers.ts';
 import type { EntitiesStore, Queries, WritesStore } from '../shared/stores/shapes.ts';
@@ -128,15 +132,15 @@ export type LatexDiagnostic = {
 
 /**
  * One build asked for: the target it was asked through, the request that asks for it, its terminal
- * once the server named one, whether that terminal has been seen in the terminals list, whether the
- * server's own list is being read for it, and whether one more build is owed after it.
+ * once the server named one, whether that terminal has been seen running in the terminals list,
+ * whether the server's own list is being read for it, and whether one more build is owed after it.
  */
 type Build = {
     target: LatexTarget;
     main: string;
     asked: Promise<TerminalAnswer>;
     terminal: string | null;
-    listed: boolean;
+    running: boolean;
     asking: boolean;
     again: boolean;
 };
@@ -160,6 +164,12 @@ export type LatexStore = {
      */
     run: (target: LatexTarget, main: string, step: LatexStep) => Promise<TerminalAnswer>;
     invalidate: (target: LatexTarget) => void;
+    /**
+     * Read a target's state again when it is shown next: a view or a panel opening on a folder
+     * calls it, so the files that changed while nothing watched the folder are read. A target with
+     * nothing held is read for the first time anyway.
+     */
+    reread: (target: LatexTarget) => void;
     /**
      * The sections of a main file, followed through its includes. Asked for on the first read and
      * again once a build has changed the main file's log.
@@ -319,7 +329,8 @@ export function createLatex(
     /**
      * The build asked for each main file, by the main file's place (placeOf). A build is here from
      * the moment its request is sent: its terminal is null while the request is out, and it leaves
-     * when the request fails or when the terminal has been listed and has since left the list.
+     * when the request fails, when the answer shows the terminal ended, or when the terminal has
+     * been seen running and has since ended.
      */
     const building = new Map<string, Build>();
 
@@ -332,6 +343,9 @@ export function createLatex(
     /** The version of the last `sessions` message heard, or null before the first. */
     let heard: number | null = null;
 
+    /** The version of the last `files` message heard, or null before the first. */
+    let filesHeard: number | null = null;
+
     /** Moves whenever a state lands or goes, which is what makes the diagnostics redraw. */
     let landed = $state(0);
 
@@ -341,47 +355,83 @@ export function createLatex(
     }
 
     entities.afterReceive((message) => {
+        if (message.channel === 'files') {
+            filesMoved(message);
+            return;
+        }
         if (message.channel !== 'sessions' || message.version === heard) return;
         heard = message.version;
         if (waiting.size > 0) queries.mark([KIND], 'wait');
         for (const [key, one] of building) {
             if (one.terminal === null) continue;
             if (live(one.terminal)) {
-                one.listed = true;
+                one.running = true;
                 continue;
             }
-            if (one.listed) finish(key, one);
+            if (one.running) finish(key, one);
             else void confirm(key, one);
         }
     });
+
+    /**
+     * Whether a `files` message can concern a held folder: its folder, which is the directory of
+     * its root joined with its own, lies under the root the message names. A folder of a root the
+     * page has no directory for yet cannot be placed, so it is concerned.
+     */
+    function concerns(data: LatexState, root: string): boolean {
+        const base = fs.roots().find((one) => one.key === data.root);
+        if (base === undefined) return true;
+        return holds(root, joinPath(base.dir, data.dir));
+    }
+
+    /**
+     * Mark every held folder state a `files` message concerns, so a shown one is read again: a gap
+     * in the versions concerns every state, a message that names no root (the bookmarks') none.
+     */
+    function filesMoved(message: Message): void {
+        if (filesHeard === message.version) return;
+        const gap = filesHeard === null || message.version !== filesHeard + 1;
+        filesHeard = message.version;
+        const root = entities.payloadOf(message, 'files')?.root ?? '';
+        if (root === '' && !gap) return;
+        for (const one of queries.entries<LatexState>([KIND])) {
+            if (gap || one.data === undefined || concerns(one.data, root)) {
+                queries.mark(one.key, 'again');
+            }
+        }
+    }
 
     /** End one build: the mark goes, its folder is read again, and a build owed after it starts. */
     function finish(key: string, one: Build): void {
         building.delete(key);
         landed += 1;
-        void queries.fetch<LatexState>([KIND, ...targetKey(one.target)], (held) =>
-            load(one.target, held)
+        queries.refetch<LatexState>(
+            [KIND, ...targetKey(one.target)],
+            (held) => load(one.target, held),
+            'again'
         );
         if (one.again) void build(one.target, one.main);
     }
 
     /**
-     * Ask the server whether a terminal the list has never named is running, after a push that
-     * lacks it: a list without it ends the build, and a list with it, or a read that failed,
-     * leaves the build for the next push.
+     * Ask the server whether a terminal the list has never shown running is running, after a push
+     * that shows it ended or lacks it: a list that shows it ended or lacks it ends the build, and a
+     * list that shows it running, or a read that failed, leaves the build for the next push.
      */
     async function confirm(key: string, one: Build): Promise<void> {
         if (one.asking || one.terminal === null) return;
+        const terminal = one.terminal;
         one.asking = true;
         const listed = await readListed();
         one.asking = false;
-        if (building.get(key) !== one || listed === null || one.listed) return;
-        if (!listed.includes(one.terminal)) finish(key, one);
+        if (building.get(key) !== one || listed === null || one.running) return;
+        if (listed.some((held) => held.id === terminal && held.exit === null)) return;
+        finish(key, one);
     }
 
-    /** Whether one terminal is still in the list the last `sessions` payload carried. */
+    /** Whether one terminal is in the last `sessions` payload's list, its line running. */
     function live(terminal: string): boolean {
-        return terminals.terminals().some((one) => one.id === terminal);
+        return terminals.terminals().some((one) => one.id === terminal && one.exit === null);
     }
 
     /**
@@ -431,6 +481,12 @@ export function createLatex(
         if (emptyTarget(target) || terminal === '') return;
         waiting.set(targetKey(target).join('\n'), { target, terminal });
         queries.mark([KIND, ...targetKey(target)], 'wait');
+    }
+
+    function reread(target: LatexTarget): void {
+        if (emptyTarget(target)) return;
+        const key = [KIND, ...targetKey(target)];
+        if (queries.peek<LatexState>(key).data !== undefined) queries.mark(key, 'again');
     }
 
     /** Forget what is held for one target, so the next call for it fetches again. */
@@ -486,9 +542,9 @@ export function createLatex(
     }
 
     /**
-     * Stop waiting once the terminal has left the list. An answer fetched before the list moved is
-     * one build behind, and the push that moved the list marked the state again for when that
-     * answer landed, so the next read asks for the build's own.
+     * Stop waiting once the terminal has ended. An answer fetched before the list moved is one
+     * build behind, and the push that moved the list marked the state again for when that answer
+     * landed, so the next read asks for the build's own.
      */
     function settle(target: LatexTarget): void {
         const key = targetKey(target).join('\n');
@@ -633,7 +689,7 @@ export function createLatex(
             main,
             asked,
             terminal: null,
-            listed: false,
+            running: false,
             asking: false,
             again: false
         };
@@ -648,8 +704,16 @@ export function createLatex(
             return answer;
         }
         mine.terminal = answer.id;
-        mine.listed = live(answer.id);
+        mine.running = live(answer.id);
         watch(target, answer.id);
+        // The answer names the terminal as the server listed it just now. A build that already
+        // ended ends here, through the path a later push takes; any other is read once more, since
+        // a push that came while the request was out was passed over for want of the terminal.
+        if (typeof answer.terminal?.exit === 'number') {
+            if (building.get(key) === mine) finish(key, mine);
+        } else if (!mine.running) {
+            void confirm(key, mine);
+        }
         return answer;
     }
 
@@ -669,7 +733,7 @@ export function createLatex(
 
     /** Whether a build is asked for or runs: its request is out, or its terminal has not ended. */
     function underway(one: Build): boolean {
-        return one.terminal === null || !one.listed || live(one.terminal);
+        return one.terminal === null || !one.running || live(one.terminal);
     }
 
     async function onSaved(root: string, path: string): Promise<void> {
@@ -734,6 +798,7 @@ export function createLatex(
         watch,
         run,
         invalidate,
+        reread,
         outline,
         count,
         rootOf,

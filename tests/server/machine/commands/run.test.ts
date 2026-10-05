@@ -153,3 +153,15 @@ describe('Restart', () => {
         expect(tmux.respawns()).toEqual([['respawn-pane', '-k', '-t', session]]);
     });
 });
+
+describe('a command action that names no command', () => {
+    it.each([
+        { title: 'an empty name', name: '' },
+        { title: 'a name that is no text', name: 3 },
+        { title: 'no name', name: undefined }
+    ])('answers $title as bad-terminal, with no name to say', async ({ name }) => {
+        const response = await post({ ...RUN, repo, name });
+        expect(response.status).toBe(400);
+        expect(await answer(response)).toEqual({ error: 'bad-terminal' });
+    });
+});

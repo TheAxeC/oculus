@@ -57,6 +57,14 @@
     const mainPath = $derived(inFolder(dir, row.main));
 
     const total = $derived(row.errors.length + row.warnings.length);
+    const errorsSaid = $derived(
+        row.errors.length === 1 ? t('latex.error_one') : t('latex.errors_many', row.errors.length)
+    );
+    const warningsSaid = $derived(
+        row.warnings.length === 1
+            ? t('latex.warning_one')
+            : t('latex.warnings_many', row.warnings.length)
+    );
 
     const pdfLabel = $derived(
         row.pdf === null
@@ -144,13 +152,11 @@
         {#if total > 0}
             <Disclosure
                 count={total}
-                label={t('latex.problems')}
+                label={total === 1 ? t('latex.problem') : t('latex.problems')}
                 expanded={opened === 'problems'}
                 onclick={() => toggle('problems')}
             />
-            <span class="note"
-                >{t('latex.problem_counts', row.errors.length, row.warnings.length)}</span
-            >
+            <span class="note">{t('latex.problem_counts', errorsSaid, warningsSaid)}</span>
         {:else if row.log !== null}
             <span class="note">{t('latex.no_errors')}</span>
         {/if}

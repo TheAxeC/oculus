@@ -276,8 +276,40 @@ export const STEER_MAX = 100_000;
 // eslint-disable-next-line no-control-regex
 export const STEER_CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f]/;
 
+/** Where a task terminal's job came from: a project command's source, or a LaTeX build. */
+type JobSource = CommandSource | 'latex';
+
 /**
- * The command a task terminal runs: the repository it belongs to, the command's name and the source
+ * The words a request to /api/terminal is refused with. The server answers a refusal as one of
+ * them, with the names it is about in `names` where a sentence needs them, and the page says the
+ * sentence the catalog holds for it (state/shared/answers/terminal-words.ts); an engine's own text
+ * (tmux's, a validator's) never reaches the page.
+ */
+export const TERMINAL_REFUSALS = [
+    'not-ours',
+    'not-a-session',
+    'session-unknown',
+    'session-live',
+    'bad-terminal',
+    'terminal-ended',
+    'terminal-failed',
+    'terminal-not-started',
+    'not-a-task',
+    'still-running',
+    'bad-repo',
+    'command-unknown',
+    'dependency-unknown',
+    'dependency-self',
+    'dependency-cycle',
+    'no-file',
+    'no-selection',
+    'nul-value'
+] as const;
+export type TerminalRefusal = (typeof TERMINAL_REFUSALS)[number];
+
+/**
+ * The command a task terminal runs (a LaTeX build's job is the folder it builds in, the build's
+ * name and the source `latex`): the repository it belongs to, the command's name and the source
  * that name was read from, which tells apart two commands of one name, the token its line prints
  * with each command's name, and the commands of its chain in run order, each with the folder it
  * runs in, so the output is read by the chain the line was made of whatever the repository's list
@@ -286,7 +318,7 @@ export const STEER_CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f]/;
 export type TerminalJob = {
     repo: string;
     name: string;
-    source?: CommandSource;
+    source?: JobSource;
     token?: string;
     chain?: { name: string; cwd: string }[];
 };
@@ -317,8 +349,9 @@ export type Terminal = {
     /** The session this terminal continues, or null when it continues nothing. */
     resumes: TerminalResume | null;
     /**
-     * True for a terminal a project command started (tmux user option `@oculus_task`). Its session
-     * stays in the list after its line ended, with the status of that line in `exit`.
+     * True for a terminal a project command or a LaTeX build started (tmux user option
+     * `@oculus_task`). Its session stays in the list after its line ended, with the status of that
+     * line in `exit`.
      */
     task: boolean;
     /**
@@ -326,7 +359,7 @@ export type Terminal = {
      * terminal that is no task.
      */
     exit: number | null;
-    /** The repository and command name a task terminal ran, or null when it is no task. */
+    /** The repository and command or build name a task terminal ran, or null when it is no task. */
     job: TerminalJob | null;
     /**
      * True for a tmux session that carries the `oculus-` prefix but whose name oculus did not mint.

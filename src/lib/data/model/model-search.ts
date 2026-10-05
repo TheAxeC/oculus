@@ -35,11 +35,18 @@ export type SearchFile = {
     /** The file's path inside that root. */
     path: string;
     hits: SearchHit[];
+    /**
+     * Set by the page on a file it wrote, when the hits the file holds now could not be read: the
+     * file keeps its place in the list with no hits, and its row asks for a new search.
+     */
+    rereadFailed?: boolean;
 };
 
 /** A root whose search did not run, and why, so a missing directory is never silence. */
 export type SearchFailure = {
     root: string;
+    /** Whether the root's search ran out of time or ripgrep could not run it. */
+    why: 'timed-out' | 'failed';
     /** ripgrep's own one-line reason, or that the root's search ran out of time. */
     reason: string;
 };

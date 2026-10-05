@@ -19,7 +19,7 @@
 import { BRANCH_NOT_MERGED } from '../../../data/model/index.ts';
 import { diffState, plannedPath, repositoriesViewOf, type DiffSubject } from './repositories.ts';
 import { isFolderPath, withoutClosedCommits } from './change-tree.ts';
-import { headTabState, tabOfFile, type ServedRoot } from './file-git.ts';
+import { headTabState, tabOfFile, type ServedRoot, type TabFile } from './file-git.ts';
 import type { PatchMode } from './diff/diff-patch.ts';
 import type { SendOptions, WritesStore } from '../../shared/stores/shapes.ts';
 import { t } from '../../shared/words/text.ts';
@@ -118,8 +118,11 @@ export type RepositoriesStore = {
     merge: (root: string, branch: string) => Promise<void>;
     /** Open a shell in a worktree that is already there. */
     shellIn: (root: string, cwd: string, label: string) => Promise<void>;
-    /** Open one diff in a pane of its own beside the one being read. */
-    openDiff: (subject: DiffSubject, label: string) => void;
+    /**
+     * Open one diff in a pane of its own beside the one being read. `asker` is the instance of the
+     * tool view that asked for it, which the diff opens beside and never over.
+     */
+    openDiff: (subject: DiffSubject, label: string, asker?: string) => void;
     /**
      * Open what a change row stands for: the merge editor for a conflict, the file itself for an
      * untracked path, which has no diff, and the diff for the rest, as the tab of the session
@@ -135,11 +138,15 @@ export type RepositoriesStore = {
     openCompare: (root: string, from: string, to: string) => void;
     /** Open a linked worktree's file against the main worktree's in a diff pane. */
     compareWorkspace: (root: string, path: string) => void;
-    /** Open a repository's file in a source tab, at a line when one is given. */
+    /**
+     * Open a file in a source tab, at a line when one is given. `root` is a repository's folder or
+     * a served root's key, as a diff pane read through the file routes names it (a Replace
+     * Preview, a comparison of two files, a file against a copy in its local history).
+     */
     openFile: (root: string, path: string, line?: number) => boolean;
     /**
-     * Show a repository's file in the Files view, under the served root holding it most closely,
-     * answering whether one does.
+     * Show a file in the Files view, answering whether a served root holds it: `root` is read as
+     * openFile reads it.
      */
     revealFile: (root: string, path: string) => boolean;
     /** Open the three-way merge editor over one conflicted path. */
@@ -154,7 +161,7 @@ export type RepositoriesStore = {
  */
 export type ViewOpener = {
     openView: (view: string, state?: unknown) => string;
-    openBeside: (view: string, state?: unknown) => string;
+    openBeside: (view: string, state?: unknown, page?: string, asker?: string) => string;
     showInFiles: (path: string, root?: string) => string;
 };
 
@@ -256,18 +263,28 @@ export function createRepositories(
         say(root, held === '' ? refused : `${held} ${refused}`);
     }
 
-    function openDiff(subject: DiffSubject, label: string): void {
-        layout.openBeside(DIFF_VIEW, diffState(subject, label));
+    function openDiff(subject: DiffSubject, label: string, asker?: string): void {
+        layout.openBeside(DIFF_VIEW, diffState(subject, label), undefined, asker);
     }
 
     function openMerge(root: string, path: string): void {
         layout.openBeside(MERGE_VIEW, { id: `merge:${root}:${path}`, root, path, label: path });
     }
 
+    /**
+     * The tab a file opens in: a served root's key names the tab's root itself, and a repository's
+     * folder opens under the served root holding the file most closely, or nowhere when none does.
+     */
+    function tabOf(root: string, path: string): TabFile | null {
+        const served = access.served();
+        if (served.some((one) => one.key === root)) return { root, path };
+        return tabOfFile(served, { root, path });
+    }
+
     function openFile(root: string, path: string, line?: number): boolean {
         // A folder (an untracked directory) has no source tab; the Files view shows it.
         if (isFolderPath(path)) return revealFile(root, path);
-        const tab = tabOfFile(access.served(), { root, path });
+        const tab = tabOf(root, path);
         if (tab === null) {
             say(root, t('repositories.open_unserved', path));
             return false;
@@ -278,7 +295,7 @@ export function createRepositories(
     }
 
     function revealFile(root: string, path: string): boolean {
-        const tab = tabOfFile(access.served(), { root, path });
+        const tab = tabOf(root, path);
         if (tab === null) {
             say(root, t('repositories.reveal_unserved', path));
             return false;

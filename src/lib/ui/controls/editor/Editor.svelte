@@ -286,13 +286,20 @@
         }
     }
 
+    // The values that name the model, held as values: a prop handed in as a member of an object (a
+    // tab instance's id) is a read of that object, and keeping a preview tab replaces the object
+    // with a copy of the same id. The effect reads these two, so it runs again only when the name
+    // or the path changes, and not when the object they came from is replaced.
+    const named = $derived(name);
+    const filed = $derived(path);
+
     // The instance's model, made on its own URI and set on the editor, and made again when the
     // tab is pointed at another file. The one before it is disposed with it.
     $effect(() => {
         const loaded = kit;
         const made = editor;
         if (loaded === null || made === null) return;
-        const uri = modelUri(loaded.monaco, name, path);
+        const uri = modelUri(loaded.monaco, named, filed);
         const created = untrack(() => {
             loaded.monaco.editor.getModel(uri)?.dispose();
             const fresh = loaded.monaco.editor.createModel(text, shikiId(language), uri);

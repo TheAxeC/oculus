@@ -20,6 +20,12 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 - Z469 (2026-10-05, closed in automode): X3e's brief-check closing, open item 1; `choices.md`.
 - Z470 (2026-10-05, closed in automode): X3e's brief-check closing, open item 2; `choices.md`.
 - Z471 (2026-10-05, closed in automode): X3e's brief-check closing, open item 3; `choices.md`.
+- Z476 (2026-10-05, closed in automode): D23's OI-1, where D23's machine-local files live (clangd's index folders and the remembered interpreter and database choices); `choices.md`.
+- Z477 (2026-10-05, closed in automode): D23's OI-2, the status bar items of the language servers; `choices.md`.
+- Z478 (2026-10-05, closed in automode): D23's OI-3, a library for the server side's JSON-RPC over stdio; `choices.md`.
+- Z479 (2026-10-05, closed in automode): D23's OI-4, a new guarded entry for language server lifetimes; `choices.md`.
+- Z480 (2026-10-05, closed in automode): D23's OI-5, a file this machine locks by its mode; `choices.md`.
+- Z481 (2026-10-05, closed in automode): D23's OI-6, clangd's semantic tokens; `choices.md`.
 - Z474 (2026-10-05, closed in automode): D42's review Spec 1; `choices.md`.
 - Z475 (2026-10-05, closed in automode): D42's review, declined to judge; `choices.md`.
 - Z468 (2026-10-05, Axel): no step is ever added; Q118, Q119, Q121 and Q122 folded into S5 and D33.

@@ -306,7 +306,7 @@ export function lineMatches(data: MatchData): LineMatch[] {
  * One match as a hit. In regular-expression mode the replacement ripgrep reported holds the text
  * of every group, which is split back into `groups`.
  */
-function hitOf(found: LineMatch, pattern: string | undefined): SearchHit {
+export function hitOf(found: LineMatch, pattern: string | undefined): SearchHit {
     const length = found.matched === undefined ? 0 : found.matched.length;
     const cut = trimAround(found.text, found.at + 1, length);
     const hit: SearchHit = {
@@ -439,8 +439,8 @@ function scopeRefusal(roots: Root[], query: SearchQuery): 'outside' | 'missing' 
  * it was cut rather than pretending the rest held nothing.
  *
  * A root ripgrep could not read is not an error for the whole search: it is named in `failed` with
- * its own reason, and that reason is the answer only when no root answered anything, since one
- * missing directory must not take away the hits of the others.
+ * whether it ran out of time or failed, and its own reason, and that reason is the answer only when
+ * no root answered anything, since one missing directory must not take away the hits of the others.
  */
 export async function runSearch(
     roots: Root[],
@@ -480,10 +480,9 @@ export async function runSearch(
         total += folded.total;
         if (folded.truncated || outcome.stopped) truncated = true;
         if (outcome.timedOut) {
-            truncated = true;
-            failed.push({ root: root.key, reason: TIMED_OUT });
+            failed.push({ root: root.key, why: 'timed-out', reason: TIMED_OUT });
         } else if (!outcome.stopped && outcome.code >= FAILED) {
-            failed.push({ root: root.key, reason: reasonOf(outcome.stderr) });
+            failed.push({ root: root.key, why: 'failed', reason: reasonOf(outcome.stderr) });
         }
     }
     if (total === 0 && failed.length > 0) {

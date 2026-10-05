@@ -3,11 +3,12 @@
 // clear its history, and ask which of several are running a program before a close ends them.
 //
 // Every action first checks the id is one oculus minted and that the terminal is listed, so an
-// ended terminal or a session oculus did not start is refused with a sentence and no command is run
-// for it.
+// ended terminal (`terminal-ended`) or a session oculus did not start (`not-ours`) is refused with
+// that word of TERMINAL_REFUSALS and no command is run for it.
 
 import { basename } from 'node:path';
-import { TERMINAL_COLORS } from '../../../data/model/index.ts';
+import { TERMINAL_COLORS, type TerminalRefusal } from '../../../data/model/index.ts';
+import { TerminalRefused } from './refusal.ts';
 import { run } from './tmux.ts';
 import {
     COLOR_OPTION,
@@ -27,19 +28,19 @@ export const TITLE_MAX = 80;
 export const BUSY_MAX = 64;
 
 /** The refusal for an id that is not a terminal id of oculus's. */
-export const NOT_OURS = 'id is not a terminal id: this tmux session was not started by oculus';
+export const NOT_OURS: TerminalRefusal = 'not-ours';
 
 /** The refusal for a terminal the server does not list, an ended one included. */
-export const NOT_LISTED = 'the terminal is not running: it may have ended';
+export const NOT_LISTED: TerminalRefusal = 'terminal-ended';
 
 /** What a busy read answers for one terminal. */
 export type Busy = { id: string; busy: boolean; command: string };
 
-/** Refuse an id that is not oculus's, or a terminal that is not listed. Throws the sentence. */
+/** Refuse an id that is not oculus's, or a terminal that is not listed. Throws the refusal. */
 async function listedTerminal(id: unknown, options: RunOptions): Promise<string> {
-    if (!isTerminalId(id)) throw new Error(NOT_OURS);
+    if (!isTerminalId(id)) throw new TerminalRefused(NOT_OURS);
     const terminals = await listTerminals(options);
-    if (!terminals.some((terminal) => terminal.id === id)) throw new Error(NOT_LISTED);
+    if (!terminals.some((terminal) => terminal.id === id)) throw new TerminalRefused(NOT_LISTED);
     return id;
 }
 

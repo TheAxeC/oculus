@@ -24,6 +24,7 @@ import type {
     TerminalKind,
     TerminalResume
 } from '../../../data/model/index.ts';
+import { TerminalRefused } from './refusal.ts';
 import { inputChunks, run, type KeyChunk, type TmuxOptions } from './tmux.ts';
 
 /** Every tmux session oculus owns carries this prefix and nothing else does. */
@@ -121,7 +122,7 @@ export type StartRequest = {
     id?: string;
     /**
      * The kind, the directory and the geometry as the starter named them: startTerminal checks
-     * each one and refuses with a sentence of its own, so a request body hands them on as sent.
+     * each one and refuses a bad one as `bad-terminal`, so a request body hands them on as sent.
      */
     kind: unknown;
     cwd: unknown;
@@ -174,8 +175,9 @@ export type StartOptions = RunOptions & {
      */
     argv?: string[];
     /**
-     * Makes the terminal a task terminal of this command: its session is kept after its line
-     * ended, with the status of the line, and marked so the list reports it. Server-side only.
+     * Makes the terminal a task terminal of a project command or a LaTeX build: its session is kept
+     * after its line ended, with the status of the line, and marked so the list reports it.
+     * Server-side only.
      */
     task?: TerminalJob;
     /**
@@ -209,7 +211,7 @@ function jobOption(job: TerminalJob): string {
 const jobShape = z.object({
     repo: z.string(),
     name: z.string(),
-    source: z.enum(['file', 'saved', 'found']).optional().catch(undefined),
+    source: z.enum(['file', 'saved', 'found', 'latex']).optional().catch(undefined),
     token: z.string().optional().catch(undefined),
     chain: z
         .array(z.object({ name: z.string(), cwd: z.string() }))
@@ -267,7 +269,7 @@ export function resumeArgs(resume: TerminalResume): string[] {
     if (!RESUME_TOOLS.includes(resume.tool)) {
         throw new Error(`tool must be one of ${RESUME_TOOLS.join(', ')}`);
     }
-    if (!isSessionId(resume.id)) throw new Error(`not a session id: ${String(resume.id)}`);
+    if (!isSessionId(resume.id)) throw new TerminalRefused('not-a-session');
     if (resume.tool === 'claude') return ['claude', '--resume', resume.id];
     return ['codex', 'resume', resume.id];
 }
@@ -501,18 +503,30 @@ function vector(command: string[]): string[] {
 }
 
 /**
+ * What a start joins to its `new-session`: a task's mark and the environment of its placeholders,
+ * and the user options of the session (its name, the session it resumes) as name and value.
+ */
+type Joined = {
+    task?: TerminalJob;
+    taskEnv?: Record<string, string>;
+    options?: [string, string][];
+};
+
+/**
  * The arguments that start a terminal, with the command already chosen: one shell command as one
  * word, or an argument vector after `--`. tmux runs a command of one word through `sh -c` and one
  * of more words directly, so a vector of one word gets `env` in front: `env` runs the word as the
- * program it names, and no shell reads it.
+ * program it names, and no shell reads it. The commands that set the session up follow, joined by
+ * tmux's `;`, so they run in the invocation that creates the session: a session whose command ends
+ * at once is still set up, which a later call would find gone.
  */
 export function startArgs(
     id: string,
     request: CheckedStart,
     command: string | string[],
-    task?: TerminalJob,
-    taskEnv?: Record<string, string>
+    joined: Joined = {}
 ): string[] {
+    const { task, taskEnv, options = [] } = joined;
     const session = sessionName(id);
     return [
         'new-session',
@@ -529,7 +543,15 @@ export function startArgs(
         ...(task === undefined ? [] : taskEnvArgs(taskEnv)),
         '--',
         ...(typeof command === 'string' ? [command] : vector(command)),
-        ...(task === undefined ? [] : taskArgs(session, task))
+        ...(task === undefined ? [] : taskArgs(session, task)),
+        ...options.flatMap(([option, value]) => [
+            ';',
+            'set-option',
+            '-t',
+            session,
+            option,
+            tmuxValue(value)
+        ])
     ];
 }
 
@@ -537,7 +559,7 @@ export function startArgs(
  * The commands that make a session a task terminal, joined to its `new-session` by tmux's `;`
  * separator so they run in the same invocation: a session set up by a later call loses the status
  * of a line that ended before that call arrived. `remain-on-exit` keeps the pane after its line
- * ended, and the task option marks the session and names the command.
+ * ended, and the task option marks the session and names the job.
  */
 function taskArgs(session: string, task: TerminalJob): string[] {
     return [
@@ -582,42 +604,48 @@ export async function startTerminal(
         (resume === undefined ? commandFor(kind) : resumeArgs(resume));
     if (Array.isArray(command) && command.length === 0) throw new Error('argv must not be empty');
     const exec = options.run ?? run;
+    const labels: [string, string][] = [
+        ...(name === id ? [] : [[NAME_OPTION, name] as [string, string]]),
+        ...(resume === undefined
+            ? []
+            : [[RESUMES_OPTION, resumeOption(resume)] as [string, string]])
+    ];
     await exec(
-        startArgs(
-            id,
-            { kind, cwd, cols, rows, env: request.env },
-            command,
-            options.task,
-            options.taskEnv
-        ),
+        startArgs(id, { kind, cwd, cols, rows, env: request.env }, command, {
+            task: options.task,
+            taskEnv: options.taskEnv,
+            options: labels
+        }),
         options
     );
-    if (name !== id) {
-        await exec(['set-option', '-t', sessionName(id), NAME_OPTION, name], options);
-    }
-    if (resume !== undefined) {
-        await exec(
-            ['set-option', '-t', sessionName(id), RESUMES_OPTION, resumeOption(resume)],
-            options
-        );
-    }
     const terminals = await listTerminals(options);
     const found = terminals.find((terminal) => terminal.id === id);
     if (found !== undefined) return found;
-    throw new Error(`the terminal did not start: ${id}`);
+    throw new TerminalRefused('terminal-not-started');
 }
 
 /**
  * The arguments that run a task terminal's line again in the same pane. `-k` ends a line still
- * running first; without a command, tmux runs the one the pane was started with.
+ * running first; without a command, tmux runs the one the pane was started with, and with one the
+ * pane runs it and keeps it for the next run.
  */
-function respawnArgs(id: string): string[] {
-    return ['respawn-pane', '-k', '-t', sessionName(id)];
+function respawnArgs(id: string, command?: string): string[] {
+    return [
+        'respawn-pane',
+        '-k',
+        '-t',
+        sessionName(id),
+        ...(command === undefined ? [] : [command])
+    ];
 }
 
-export async function respawnTerminal(id: string, options: RunOptions = {}): Promise<void> {
-    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
-    await (options.run ?? run)(respawnArgs(id), options);
+export async function respawnTerminal(
+    id: string,
+    options: RunOptions = {},
+    command?: string
+): Promise<void> {
+    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
+    await (options.run ?? run)(respawnArgs(id, command), options);
 }
 
 /** The arguments that resize a terminal's window. */
@@ -631,7 +659,7 @@ export async function resizeTerminal(
     rows: unknown,
     options: RunOptions = {}
 ): Promise<void> {
-    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
+    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
     await (options.run ?? run)(
         resizeArgs(id, geometry(cols, 'cols'), geometry(rows, 'rows')),
         options
@@ -644,7 +672,7 @@ export function stopArgs(id: string): string[] {
 }
 
 export async function stopTerminal(id: string, options: RunOptions = {}): Promise<void> {
-    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
+    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
     await (options.run ?? run)(stopArgs(id), options);
 }
 
@@ -663,7 +691,7 @@ function outputArgs(id: string): string[] {
 
 /** All the text a terminal's pane holds, for the output of a task no grid shows. */
 export async function paneOutput(id: string, options: RunOptions = {}): Promise<string> {
-    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
+    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
     return (options.run ?? run)(outputArgs(id), options);
 }
 
@@ -673,7 +701,7 @@ export async function scrollback(
     lines: number = SCROLLBACK_LINES,
     options: RunOptions = {}
 ): Promise<string> {
-    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
+    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
     return (options.run ?? run)(captureArgs(id, lines), options);
 }
 
@@ -742,7 +770,7 @@ export function steerArgs(id: string, text: string): string[][] {
 
 /** Type one message into a terminal oculus started, then Enter. */
 export async function steerTerminal(id: string, text: string, options: RunOptions = {}) {
-    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
+    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
     if (typeof text !== 'string' || text.trim() === '') throw new Error('text must not be empty');
     if (text.length > STEER_MAX) throw new Error(`text must be at most ${STEER_MAX} chars`);
     // A control character typed literally is a key of its own, which a message must not carry.
@@ -757,6 +785,6 @@ export async function steerTerminal(id: string, text: string, options: RunOption
  * turn and keeping the session. It is not a stop: the tmux session and its process stay.
  */
 export async function interruptTerminal(id: string, options: RunOptions = {}): Promise<void> {
-    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
+    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
     await (options.run ?? run)(sendKeysArgs(id, { key: 'Escape' }), options);
 }

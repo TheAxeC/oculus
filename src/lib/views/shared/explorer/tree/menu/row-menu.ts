@@ -95,7 +95,10 @@ export type RowMenuFacts = {
     markdown: boolean;
     /** Whether the row is a file `open.program_ext` names an application for. */
     program?: boolean;
-    /** Whether the row is a `.tex` file or a folder whose held listing has one directly in it. */
+    /**
+     * Whether the row is a `.tex` file or a folder whose listing, held or read when the menu
+     * opened, has one directly in it.
+     */
     latex?: boolean;
     /** The key hint of an item by its id; none when omitted. */
     hints?: Readonly<Record<string, string>>;
@@ -164,8 +167,8 @@ export function menuHints(keymap: readonly FilesChord[], words: KeyWords): Recor
 /**
  * The facts of one row of the tree, with the root keys a removal refuses, the selection the menu
  * acts on (the row alone when it is not given), the hints of the items and the entries the fs store
- * holds, which say whether a folder has a `.tex` file in it without asking for its listing, and the
- * applications `open.program_ext` names by extension, which say whether a file opens in one.
+ * holds or the menu read, which say whether a folder has a `.tex` file in it, and the applications
+ * `open.program_ext` names by extension, which say whether a file opens in one.
  */
 export function rowFacts(
     row: TreeRow,
@@ -207,19 +210,19 @@ export function rowFacts(
 
 /**
  * The row's items, in VS Code's groups. A file: Open to the Side, with Open in Program after it on
- * a file `open.program_ext` names an application for, Reveal in Finder and Open in
- * Integrated Terminal (a shell in its folder), the compare items, Cut and Copy, Download..., the
- * two copies, Open Preview on a Markdown file, then Rename... and Delete. Open LaTeX is its own
- * group after Reveal in Finder and the terminal, on a `.tex` file and on a folder or root whose
- * held listing has one. A folder: New File... and
- * New Folder..., Reveal in Finder and its shell, Find in Folder..., Cut, Copy and Paste, Upload...,
- * the two copies, then Rename... and Delete. A folder or root that is a repository with project
- * commands also offers Run Command, a submenu of them. A root: those of a folder without Cut, Copy,
- * Rename... and Delete, and Add Folder to Workspace... with Remove Folder from Workspace on a root
- * the reader added. Compare with Selected needs a file selected for compare. With two or more rows
- * selected the menu is the one for the selection: Compare Selected for exactly two files, Cut and
- * Copy, the two copies of every path, and Delete. Each item carries the key hint its id has in
- * `hints`.
+ * a file `open.program_ext` names an application for, Reveal in Finder and Open in Integrated
+ * Terminal (a shell in its folder), the compare items, Cut and Copy, Download..., the two copies,
+ * Open Preview on a Markdown file, then Rename... and Delete. Open LaTeX is its own group after
+ * Reveal in Finder and the terminal, on a `.tex` file and on a folder or root whose listing has
+ * one: the listing the fs store holds, else the one the menu read when it opened (picks.svelte.ts).
+ * A folder: New File... and New Folder..., Reveal in Finder and its shell, Find in Folder..., Cut,
+ * Copy and Paste, Upload..., the two copies, then Rename... and Delete. A folder or root that is a
+ * repository with project commands also offers Run Command, a submenu of them. A root: those of a
+ * folder without Cut, Copy, Rename... and Delete, and Add Folder to Workspace... with Remove Folder
+ * from Workspace on a root the reader added. Compare with Selected needs a file selected for
+ * compare. With two or more rows selected the menu is the one for the selection: Compare Selected
+ * for exactly two files, Cut and Copy, the two copies of every path, and Delete. Each item carries
+ * the key hint its id has in `hints`.
  */
 export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string): MenuItem => {

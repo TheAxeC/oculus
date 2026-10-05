@@ -41,7 +41,7 @@
         toggled,
         type ListFilter
     } from '$lib/state/sessions/folds';
-    import { resumeRefusal, type Terminal } from '$lib/state/sessions/terminals.svelte';
+    import type { Terminal } from '$lib/state/sessions/terminals.svelte';
     import { TERMINAL_VIEW, emptyTab } from '$lib/state/sessions/terminal/terminal-tabs';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap } from '$lib/state/workbench/layout';
@@ -155,7 +155,7 @@
         failure = '';
         const answer = await resumeTerminal(row.tool, row.id);
         if (!answer.ok) {
-            failure = resumeRefusal(answer.error);
+            failure = answer.error;
             return;
         }
         select(answer.id);

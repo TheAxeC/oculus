@@ -64,10 +64,20 @@ const PICK_PATH = '/api/folders/pick';
 export { MAX_UPLOAD_BYTES, checkName, freeName, stemLength };
 export type { OpsPlace as Place };
 
-/** What a file operation came to. A list that stopped part way names what it did before. */
+/**
+ * What a file operation came to. A list that stopped part way names what it did before. A replace
+ * also carries `rereads`, the hits of the files it wrote as the answer sent them, which the Search
+ * store reads (state/sources/search/search.ts).
+ */
 export type Outcome =
-    | { ok: true; paths: string[] }
-    | { ok: false; error: OpsRefusal | 'network'; done?: string[]; failed?: string };
+    | { ok: true; paths: string[]; rereads?: unknown }
+    | {
+          ok: false;
+          error: OpsRefusal | 'network';
+          done?: string[];
+          failed?: string;
+          rereads?: unknown;
+      };
 
 /** The two questions an operation asks, with the name the question is about. */
 export type Question = { kind: 'replace' | 'permanent'; name: string };
@@ -192,7 +202,11 @@ function outcomeOf(posted: Posted): Outcome {
             : typeof body.path === 'string'
               ? [body.path]
               : [];
-        return { ok: true, paths };
+        return {
+            ok: true,
+            paths,
+            ...(body.rereads === undefined ? {} : { rereads: body.rereads })
+        };
     }
     const word = body.error;
     const error = OPS_REFUSALS.find((one) => one === word);
@@ -201,7 +215,13 @@ function outcomeOf(posted: Posted): Outcome {
         ? body.done.filter((one): one is string => typeof one === 'string')
         : [];
     const failed = typeof body.failed === 'string' ? body.failed : '';
-    return { ok: false, error, done, failed };
+    return {
+        ok: false,
+        error,
+        done,
+        failed,
+        ...(body.rereads === undefined ? {} : { rereads: body.rereads })
+    };
 }
 
 /** The paths an outcome did something to: all of a list on ok, and the ones before the stop. */

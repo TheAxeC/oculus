@@ -3,17 +3,18 @@
 //
 // A refusal's own text is never shown here. The server answers a refusal as a word
 // (data/file-ops.ts OPS_REFUSALS, and data/prose/latex.ts LATEX_REFUSALS for the LaTeX endpoint and
-// the LaTeX terminal action), and the page says the sentence the catalog holds for that word; any
-// other body text, a status with no body and a body that is no word all say the refusal with its
-// status. The status is in parentheses so the reader is told in words and a bug report still
-// carries it. The refusals of a project command's actions are the server's own sentences and do not
-// come here (state/sessions/terminal/pty/pty-io.ts).
+// the LaTeX terminal action, and data/model TERMINAL_REFUSALS for the terminal actions with the
+// names their sentences are about, terminal-words.ts), and the page says the sentence the catalog
+// holds for that word; any other body text, a status with no body and a body that is no word all
+// say the refusal with its status. The status is in parentheses so the reader is told in words and
+// a bug report still carries it.
 
 import { z } from 'zod';
 import { OPS_REFUSALS, type OpsRefusal } from '../../../data/file-ops.ts';
 import { LATEX_REFUSALS, type LatexRefusal } from '../../../data/prose/latex.ts';
 import { readAs } from '../../../data/shapes/shapes.ts';
 import { t as catalogText } from '../words/text.ts';
+import { terminalSentence, terminalWord } from './terminal-words.ts';
 
 /** A catalog lookup: the key and the values filled into its placeholders. */
 type Say = (key: string, ...values: (string | number)[]) => string;
@@ -111,14 +112,21 @@ export function unreadableAnswer(status: number | string): string {
 }
 
 /**
- * The sentence for a refused answer: the catalog's sentence when `error` is a refusal word, else
- * the refusal with the status it came with.
+ * The sentence for a refused answer: the catalog's sentence when `error` is a refusal word, said
+ * with the `names` the answer carried, else the refusal with the status it came with.
  */
-export function refusedAnswer(status: number | string, error?: unknown): string {
+export function refusedAnswer(
+    status: number | string,
+    error?: unknown,
+    names: readonly string[] = []
+): string {
     const word = refusalWord(error);
     if (word !== null) return refusalSentence(word);
     const latex = latexWord(error);
-    return latex === null ? catalogText('ui.answer_refused', status) : latexSentence(latex);
+    if (latex !== null) return latexSentence(latex);
+    const terminal = terminalWord(error);
+    if (terminal !== null) return terminalSentence(terminal, names);
+    return catalogText('ui.answer_refused', status);
 }
 
 /** The `error` of a refused answer's body, when the body carries one that is text. */

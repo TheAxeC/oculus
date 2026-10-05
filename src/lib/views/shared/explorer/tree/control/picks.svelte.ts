@@ -8,7 +8,7 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import type { CommandSource, ProjectCommand } from '$lib/state/sessions/terminal/commands.svelte';
-import { shownOf, type FsRoot, type TreeRow } from '$lib/state/sources/fs';
+import { shownOf, type FsEntry, type FsRoot, type TreeRow } from '$lib/state/sources/fs';
 import { rowsActed } from '$lib/state/sources/explorer/acts/selection';
 import { confirmDelete } from '$lib/state/sources/explorer/acts/confirm';
 import { absoluteOf, openComparison } from '$lib/state/workbench/navigation/pages';
@@ -134,9 +134,11 @@ export function createPicks(deps: PicksDeps) {
 
     /**
      * The menu of a row: a right-click on a row outside the selection selects it first. A row that
-     * is a repository has its list of commands read when its menu opens, not before; the menu is
-     * returned at once, as reactive items that the Run Command submenu joins when the list
-     * arrives, so a repository nobody opens a menu on is never asked for.
+     * is a repository has its list of commands read when its menu opens, not before, and a folder
+     * or root whose listing is not held has its listing read then too, which says whether Open
+     * LaTeX is offered. The menu is returned at once, as reactive items that the Run Command
+     * submenu and Open LaTeX join when their answers arrive, whichever lands first, so a folder
+     * nobody opens a menu on is never asked for. A read that fails leaves the menu as it was.
      */
     function menuOf(row: TreeRow, event: MouseEvent) {
         const here = targetOf(row, event);
@@ -144,7 +146,10 @@ export function createPicks(deps: PicksDeps) {
         if (!deps.isSelected(here)) deps.select(here);
         const group = acted(here);
         const repo = repoOf(here);
-        const built = (commands: readonly ProjectCommand[]): MenuItem[] =>
+        const shown = shownOf(view.now());
+        let commandsRead: readonly ProjectCommand[] = [];
+        let listingRead: FsEntry[] | null = null;
+        const built = (): MenuItem[] =>
             rowMenu(
                 rowFacts(
                     here,
@@ -158,16 +163,27 @@ export function createPicks(deps: PicksDeps) {
                     },
                     deps.hints,
                     (root: string, path: string) =>
-                        client.fs.heldEntries(root, path, shownOf(view.now())),
-                    commands,
+                        client.fs.heldEntries(root, path, shown) ?? listingRead,
+                    commandsRead,
                     client.selectors.programApps()
                 ),
                 t
             );
-        const items: MenuItem[] = $state(built([]));
+        const items: MenuItem[] = $state(built());
+        const rebuild = (): void => {
+            items.splice(0, items.length, ...built());
+        };
         if (repo !== null) {
             void client.commands.load(repo).then((answer) => {
-                items.splice(0, items.length, ...built(answer.commands));
+                commandsRead = answer.commands;
+                rebuild();
+            });
+        }
+        if (here.kind !== 'file' && client.fs.heldEntries(here.root, here.path, shown) === null) {
+            void client.fs.readListing(here.root, here.path, shown).then((answer) => {
+                if (answer.error !== '') return;
+                listingRead = answer.entries;
+                rebuild();
             });
         }
         return items;

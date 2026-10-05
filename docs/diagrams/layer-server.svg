@@ -266,7 +266,7 @@
 <g id="node31" class="node">
 <title>folder server/machine to folder server/core</title>
 <polygon fill="none" stroke="none" points="186.88,-392.84 173.12,-392.84 173.12,-380.36 186.88,-380.36 186.88,-392.84"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="180" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">20</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="180" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">18</text>
 </g>
 <!-- folder server/machine&#45;&gt;folder server/machine to folder server/core -->
 <g id="edge50" class="edge">

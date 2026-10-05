@@ -22,6 +22,11 @@
 // places they were made before the file is written through the same atomic write a save uses. The
 // whole request is one `files` record, with the stamps of the files as they were (each naming its
 // copy) and as they are.
+//
+// Once a file is written, ripgrep reads it again and the answer carries its hits as they are now
+// (`Reread`), the same hit a search answers. A hit whose match sits on text the write left alone
+// also carries the line and place it had before (`was`), found by moving its byte offset back over
+// the splices, so the page can tell a hit that stayed from one the write made.
 
 import { readFileSync, statSync } from 'node:fs';
 import { basename, dirname } from 'node:path';
@@ -29,6 +34,8 @@ import {
     TEXT_LIMIT,
     type OpsAnswer,
     type OpsRefusal,
+    type Reread,
+    type RereadHit,
     type ReplaceHit,
     type ReplaceQuery,
     type FileStamp
@@ -44,6 +51,7 @@ import { writeBytesAtomic } from '../../core/json.ts';
 import { resolveRootPath, type Root } from '../files.ts';
 import { isBinaryFile, isReadonly } from '../source.ts';
 import {
+    hitOf,
     ripgrepRecord,
     lineMatches,
     runRipgrep,
@@ -180,6 +188,12 @@ async function matchesIn(
     return found;
 }
 
+/**
+ * The most hits one written file is read again for. A file with more is left to a new search, and
+ * its answer says the read failed, so the page asks the reader to search again.
+ */
+const REREAD_MAX = 2000;
+
 /** The matches a replace or a preview names; a write names the text each one covered. */
 type Wanted = { line: number; at: number; match?: string };
 
@@ -194,7 +208,7 @@ async function splicesFor(
     request: Pick<ReplaceRequest, 'query' | 'replace' | 'preserveCase'>,
     hits: Wanted[],
     exact: boolean
-): Promise<Splice[] | Fail> {
+): Promise<{ splices: Splice[]; found: Map<string, LineMatch> } | Fail> {
     const found = await matchesIn(scope, file.real, request.query);
     if (refused(found)) return found;
     const crlf = endsWithCrlf(file.bytes);
@@ -219,7 +233,7 @@ async function splicesFor(
         }
         splices.push({ from, to, text: Buffer.from(text, 'utf8') });
     }
-    return splices.sort((a, b) => a.from - b.from);
+    return { splices: splices.sort((a, b) => a.from - b.from), found };
 }
 
 /** The groups of one match: those ripgrep reported in regular-expression mode, else the match. */
@@ -299,11 +313,12 @@ async function replaceFile(
     scope: ReplaceScope,
     request: ReplaceRequest,
     item: ReplaceRequest['items'][number]
-): Promise<{ before: FileStamp[]; after: FileStamp[] } | Fail> {
+): Promise<{ before: FileStamp[]; after: FileStamp[]; reread: Reread } | Fail> {
     const file = loaded(scope, item.root, item.path, SAVE_MAX_BYTES, true);
     if (refused(file)) return file;
-    const splices = await splicesFor(scope, file, request, item.hits, true);
-    if (refused(splices)) return splices;
+    const planned = await splicesFor(scope, file, request, item.hits, true);
+    if (refused(planned)) return planned;
+    const { splices, found } = planned;
     const result = spliced(file.bytes, splices);
     if (result === null || !reparsed(result, file.bytes, splices)) return fail('changed');
     if (result.length > SAVE_MAX_BYTES) return fail('too_large');
@@ -323,8 +338,93 @@ async function replaceFile(
     const now = stampOf(file.real);
     return {
         before: [kept === undefined ? was : { ...was, kept }],
-        after: now === null ? [] : [now]
+        after: now === null ? [] : [now],
+        reread: await rereadFile(scope, request.query, item, file.real, found, splices)
     };
+}
+
+/**
+ * Where the text a splice wrote sits in the file after the write, in bytes: each splice's start
+ * moved over the splices before it, and its end after its own text.
+ */
+function writtenRegions(splices: Splice[]): { from: number; to: number; shift: number }[] {
+    let shift = 0;
+    return splices.map((one) => {
+        const from = one.from + shift;
+        shift += one.text.length - (one.to - one.from);
+        return { from, to: from + one.text.length, shift };
+    });
+}
+
+/**
+ * Whether the text a write put in the file lies on a line, which spans `start` to `end` in bytes of
+ * the file as it is now, its line end included: a line the write changed reads differently than it
+ * did. A deletion leaves an empty region, which is on the line from its first byte up to its line
+ * end, and at `end` itself only when the line has no line end, as the last line of a file may not.
+ */
+function written(
+    regions: { from: number; to: number }[],
+    start: number,
+    end: number,
+    ended: boolean
+): boolean {
+    return regions.some((one) =>
+        one.from === one.to
+            ? start <= one.from && (one.from < end || (one.from === end && !ended))
+            : one.from < end && one.to > start
+    );
+}
+
+/**
+ * The hits a written file holds now. A match that sits wholly on text the write left alone gets
+ * `was`, the line and place the match at the same bytes of the old file had, and `edited` when the
+ * write changed some other text on its line; a match that touches what the write wrote has no
+ * `was`, since the write made it.
+ */
+async function rereadFile(
+    scope: ReadScope,
+    query: ReplaceQuery,
+    item: { root: string; path: string },
+    real: string,
+    before: Map<string, LineMatch>,
+    splices: Splice[]
+): Promise<Reread> {
+    const failed: Reread = { root: item.root, path: item.path, hits: [], failed: true };
+    const now = await matchesIn(scope, real, query);
+    if (refused(now) || now.size > REREAD_MAX) return failed;
+    const old = new Map<number, LineMatch>();
+    for (const one of before.values()) old.set(one.offset + one.start, one);
+    const regions = writtenRegions(splices);
+    const pattern = query.regex ? query.q : undefined;
+    const hits: RereadHit[] = [];
+    for (const match of now.values()) {
+        const hit: RereadHit = hitOf(match, pattern);
+        const from = match.offset + match.start;
+        const to = match.offset + match.end;
+        const touches = regions.some(
+            (one) =>
+                (from < one.to && to > one.from) ||
+                (one.from === one.to && from < one.from && one.from < to)
+        );
+        if (!touches) {
+            const shift = regions.filter((one) => one.to <= from).at(-1)?.shift ?? 0;
+            const was = old.get(from - shift);
+            if (
+                was !== undefined &&
+                was.matched === match.matched &&
+                was.end - was.start === to - from
+            ) {
+                const line = match.offset;
+                const ended = /[\r\n]$/.test(match.text);
+                const edited = written(regions, line, line + Buffer.byteLength(match.text), ended);
+                hit.was = edited
+                    ? { line: was.line, at: was.at, edited }
+                    : { line: was.line, at: was.at };
+            }
+        }
+        hits.push(hit);
+    }
+    return { root: item.root, path: item.path, hits };
 }
 
 /**
@@ -345,14 +445,18 @@ export async function replaceFiles(
     );
     if (refusal !== null) return refusal;
     const done: string[] = [];
+    const rereads: Reread[] = [];
     for (const item of request.items) {
         const name = `${item.root}/${item.path}`;
         const outcome = await replaceFile(scope, request, item);
-        if (refused(outcome)) return { ok: false, error: outcome.error, done, failed: name };
+        if (refused(outcome)) {
+            return { ok: false, error: outcome.error, done, failed: name, rereads };
+        }
         scope.note(outcome.before, outcome.after);
         done.push(name);
+        rereads.push(outcome.reread);
     }
-    return { ok: true, paths: done };
+    return { ok: true, paths: done, rereads };
 }
 
 /**
@@ -371,9 +475,9 @@ export async function previewReplace(
     if (refusal !== null) return refusal;
     const file = loaded(scope, place.root, place.path, TEXT_LIMIT, false);
     if (refused(file)) return file;
-    const splices = await splicesFor(scope, file, request, request.hits, false);
-    if (refused(splices)) return splices;
-    const result = spliced(file.bytes, splices);
+    const planned = await splicesFor(scope, file, request, request.hits, false);
+    if (refused(planned)) return planned;
+    const result = spliced(file.bytes, planned.splices);
     if (result === null) return fail('changed');
     return { ok: true, original: file.bytes.toString('utf8'), modified: result.toString('utf8') };
 }

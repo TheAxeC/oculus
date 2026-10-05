@@ -15,11 +15,6 @@ import type { CommandContext } from '../../../../src/lib/data/model/index.ts';
 import { fillPlaceholders } from '../../../../src/lib/server/machine/commands/placeholders.ts';
 
 const REPO = '/r';
-const CATALOG = {
-    'server.commands.no_file': 'No value for {0}: open a file in a source tab first',
-    'server.commands.no_selection': 'No value for {0}: select text in a source tab first',
-    'server.commands.nul': 'The value of {0} holds a NUL character'
-};
 const CONTEXT = { file: '/r/a b.tex', line: 7, selectedText: "'; rm -rf /'" };
 
 /** The filled lines and environment, or a failure naming the refusal. */
@@ -27,7 +22,7 @@ function filled(
     runs: string[],
     context: CommandContext = CONTEXT
 ): { lines: string[]; env: Record<string, string> } {
-    const answer = fillPlaceholders(runs, context, REPO, CATALOG);
+    const answer = fillPlaceholders(runs, context, REPO);
     if ('error' in answer) throw new Error(answer.error);
     return answer;
 }

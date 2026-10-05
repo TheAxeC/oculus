@@ -192,6 +192,7 @@ digraph channels {
     "ch feeds" -> "routes/+page" [style=dashed];
     "ch feeds" -> "state/feeds/feeds";
     "ch files" -> "routes/+page" [style=dashed];
+    "ch files" -> "state/sessions/latex";
     "ch files" -> "state/sessions/terminal/commands";
     "ch files" -> "state/system/docs";
     "ch git" -> "routes/+page" [style=dashed];

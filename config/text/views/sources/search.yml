@@ -16,7 +16,6 @@ text:
         empty: Type a pattern and press Enter.
         empty_glyph: search
         failed: The search answered something this page could not read.
-        failed_roots: No answer from {0}.
         file_glyph: paper
         file_in_root: '{0} ({1})'
         file_title: Open {0} at its first hit
@@ -72,10 +71,13 @@ text:
         replace_unsaved: '{0} has unsaved changes in an open tab and was left out.'
         replace_unsaved_all: 'Nothing was written: {0} has unsaved changes in an open tab.'
         replacing_aria: Replace row
+        reread_failed: Search again to see this file's hits.
         results: Search results
         retry: Search again
         root: Where to look
         root_all: Every root
+        root_failed: 'No answer from {0}: ripgrep could not search it.'
+        root_timed_out: '{0} ran out of time.'
         run: Search
         run_glyph: search
         run_title: Run this search over the files of the chosen root

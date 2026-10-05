@@ -186,3 +186,181 @@ Cases of the brief's "Cases":
 - The builder's counts (11 red tests on the unchanged tree against the reviewer's 10 over two of the three files; "257 entries"): no decision rests on them.
 
 Reviewer usage: ordo-high on claude-opus-5-5 (a69f261fc8c1776c5), 316,568 tokens, 89 tool uses, 18.8 min.
+
+## Repair round 1, refuted
+
+Reviewer of D37 over repair round 1, on `.agents/worktrees/D37`, base ed0e6de58. Nothing in the worktree or the ledger was changed. Probes ran on scratch copies under the session scratchpad (`rv37/tree` for the worktree with one fix taken out at a time, `rv37/base` for the base `src`). One stray copy this review made in `/tmp/x/` (`channel.ts`) was removed, and `/tmp/x/ctx-new.txt`, which was there before, was left alone.
+
+Open items of the state file (`orchestrator-state.md`, "Open items"): "- None."
+
+```
+$ sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md   (from .agents/worktrees/D37/tools/oculus; run twice, both green)
+test:quick: 62 changed file(s), from git since HEAD          (59 modified in `git diff ed0e6de58` + refusal.ts, terminal-words.ts, the report)
+ok      ASCII gate (0.4 s)
+ok      prettier (1.7 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.0 s)
+ok      vitest (35.9 s): Duration  31.27s (transform 91.97s, setup 0ms, import 107.67s, tests 15.79s, environment 183ms)
+ok      svelte-check (35.6 s): 1791157921138 COMPLETED 355 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (40.1 s)
+test:quick: 40.6 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+(second run: test:quick: 29.9 s (limit 45.0 s); every command passed / checks: 1 commands passed)
+
+Guarded test files the report lists, each alone with `npx vitest run <file>`, all green:
+file-undo 9, file 1, history 3, open 2, project-files 1, source 3, ops-replace 4, compose 4, latex 1,
+terminal-actions 13, terminal-edit 1, terminal 4, config-key 2, config-value 3, server/files/fs 1, ops-paste 5,
+ops 3, server/files/search 1, untracked/trash 2, placeholders 4, commands/run 6, pty/channel 3, pty/sessions 1,
+pty/tmux 1, tab-menu 2, terminal-close 3, form-drafts 3, manifest-draft 3, state/sessions/source 2,
+comment-draft.client 1
+
+npx vitest run tests/checks: Test Files 16 passed (16), Tests 227 passed (227)
+ASCII gate (spec.md's perl form over src tests config, local.yml excluded): prints nothing
+LC_ALL=C grep -c '[^ -~]' HELP.md DESIGN.md D37-report.md: 0, 0, 0
+sh utils/unused-exports.sh vs D37-base/unused-exports.txt: no difference ("Unused exports (257)")
+
+Builder's probes, rerun (node 24.21.0):
+probe/first.mts  case1 first replace answer {"ok":true,...,"hits":[{"line":1,...,"text":"zz x qzlook","at":5,"was":{"line":1,"at":9,"edited":true}}]}]} "zz x qzlook\n"
+                 case8/10 answer {"truncated":false,"total":1,"failed":[{"root":"claude","why":"timed-out",...},{"root":"gone","why":"failed","reason":"rg: boom"}]}
+probe/lines.mts  line 1 hit has "edited":true; line 2 {"line":2,"at":6} and line 3 {"line":3,"at":0} have none
+probe/page.mts   edited line, dismissed hit listed again [[5]] []
+                 other line, dismissed hit stays out [[[1,5]]] [{"root":"hub","path":"a.txt","line":2,"at":6,"length":6}]
+probe/words.mts  in more than one set: [] / terminal word count 18
+
+Red runs on rv37/tree, one fix taken out at a time:
+channel.ts without `one.pid` in the signature:  AssertionError: expected 1 to be 2 // Object.is equality; Tests 1 failed | 2 passed (3)
+replace.ts with `edited` forced false:          AssertionError: expected { status: 200, ...(1) } to deeply equal { status: 200, ...(1) }; Tests 1 failed | 3 passed (4)
+routes.ts:424 back to 'bad-terminal', sessions.ts:624 back to 'terminal-ended':
+  AssertionError: expected { error: 'terminal-ended' } to deeply equal { error: 'terminal-not-started' }
+  AssertionError: expected { error: 'bad-terminal' } to deeply equal { error: 'outside' }; Tests 2 failed | 11 passed (13)
+run.ts:79 back to 'command-unknown':           AssertionError: expected { error: 'command-unknown' } to deeply equal { error: 'bad-terminal' }; Tests 3 failed | 3 passed (6)
+restored: Tests 19 passed (19)
+
+Item 10, probe/cost.mts (200 files, one match each, Replace All through replaceFiles, 5 runs, ms):
+rv37/base   2109 2895 2090 2100 2112  mean 2261 sd 354
+worktree    3296 2842 2893 2462 2601  mean 2819 sd 320     (1.25 x)
+rv37/base   1816 1774 1964 1589 2024  mean 1833 sd 171
+worktree    2666 2719 2547 2714 2569  mean 2643 sd 81      (1.44 x)
+(builder: 1.58 x and 1.54 x; under twice the base in both runs)
+
+Item 11, the builder's scratch probes (scratchpad/ed/tests/probe), rerun:
+model.client.test.ts > without: AssertionError: expected { before: 1, after: 2 } to deeply equal { before: 1, after: 1 }
+model.client.test.ts > with: passes
+mount.client.test.ts: ReferenceError: window is not defined, at svelte/src/internal/client/dom/operations.js:43 ($window = window) inside svelte's own mount()
+
+My probe, rv37/empty.mts (a replace whose replace text is empty):
+first deleted  " x qzlook\n" [[1,3,{"line":1,"at":9}]]                 <- no `edited` though the line changed
+second deleted "qzlook x \n" [[1,0,{"line":1,"at":0,"edited":true}]]
+second -> zz   "qzlook x zz\n" [[1,0,{"line":1,"at":0,"edited":true}]]
+first deleted, no newline " x qzlook" [[1,3,{"line":1,"at":9}]]        <- no `edited`
+
+History-word grep (spec.md's list) over added comment lines and test titles: 27 hits, each about runtime state ("before the write", "still running", "a terminal tmux no longer has"); none is history.
+```
+
+### Verdicts
+
+Round items (`agents/briefs/D37-round1.md`):
+
+- R1: violated, finding 1. A dismissed hit comes back when a non-empty replacement or a deletion at the end of the line changes its line (probes above, `applyRereads` drops the record). A deletion at the start of the line leaves the hit without `edited`, so the dismissed hit stays out.
+- R2: holds. `run()` ends a build whose start answer carries a numeric `exit` through `finish` (`latex.svelte.ts:711-713`). A build not seen running is checked again with `confirm` (`:714-715`). `confirm` and `live` treat `exit !== null` as ended. The server half (`channel.ts` `#took` with `one.pid`) was seen red and green above. The page half is proved by reading, and the look at case 15 with a kept build terminal is still owed.
+- R3: holds. "Files outside the write list" names `refusal.ts` with its reason and no longer lists files the write list holds.
+- R4: partial, finding 2. Each row quotes a run or names a look, but the case numbers on rows 3 and 5 to 9 are off. Case 23 is named in no row and in no look list of the report.
+- R5: holds. The section covers `TERMINAL_REFUSALS`, `dismissed`, `rereads`, the `latex` source, the catalog keys and the three async paths. I read `replaceHits` (`!open(id)` after the await, the `current` generation check), `latex-widget.ts` `show` (`turn`) and `menuOf`, and they agree with it.
+- R6: holds. `DESIGN.md:151`, `HELP.md:33`, `DESIGN.md:378` and the `edit.ts:5-7` head comment now say what the code does. The stale-phrase grep I ran (server's sentence, refused with a sentence, left the terminals list, failed_roots, raw text) leaves only true hits.
+- R7: holds for the paragraphs the round names. Finding 4 is a new comment of this round that is not wrapped at 100.
+- R8: holds. `routes.ts:424` answers `refusal(found.error)`, and `sessions.ts:624` throws `terminal-not-started` with its catalog sentence (`terminal.yml:60`). The page says `outside` and `missing` through `refusedAnswer`, which checks the file words first. Red and green reproduced above, and the report gives the before and after.
+- R9: holds. `run.ts:79` answers `bad-terminal`. Red and green reproduced, and the report gives the before and after.
+- R10: holds. The cost was reproduced at 1.25 x and 1.44 x, under twice the base.
+- R11: holds by reading, and no test reaches it. With `named` and `filed` as `$derived`, an instance replaced by a copy with the same id re-runs the derived, which returns an equal string. The model effect (`Editor.svelte:298-323`) then tracks only `kit`, `editor`, `named` and `filed`, so it no longer re-runs. The builder's reproduction is red without the change and green with it.
+  - Other effects of `Editor.svelte`: `path`, `language`, `indent` and `extension` come from `$derived` values of `Source.svelte` (`:153`, `:199-210`). On the keep they re-derive to equal strings, or to an `indent` object that only re-runs `applyIndent`, which does no harm.
+  - "No test reaches it", judged against the diagnose skill's rule ("a place no test can reach the defect as it occurs ... with the reason"): the reason holds. Svelte's own `mount` reads `window` in `init_operations` (rerun above), the `client-runtime` environment provides no DOM (`tests/ui/frame/client-runtime.ts`), and the model effect runs only after `build` has a bound host element. No entry of `agents/guarded.md` covers `ui/controls/editor/`. Whether the editor keeps its input across the keep (Q120) is stated as not verified, and the look is named.
+
+Items of `agents/briefs/D37.md` "What to build", over the whole diff since the base:
+
+- 1: violated, finding 1. The re-read, `was`, focus and preview hold (probes; `replaceHits` `focusAfter` and `previewHit`).
+- 2: holds (probe `truncated:false` with `why`; `search.root_timed_out` and `search.root_failed`).
+- 3: holds by reading (`landing.ts` `away`, `opening.ts`, `repositories.svelte.ts` passes the asker from Search only). The look is owed.
+- 4: holds. Task terminal, joined options, respawn in place and the refusal words: G35 tests green and the red runs above. Change 6 is now built (R2).
+- 5: holds (`finish` calls `queries.refetch(..., 'again')`).
+- 6: holds by reading (`Rows.svelte` `reread` on mount; `filesMoved` by root, by gap and when no roots are read).
+- 7: holds by reading (`problem`/`problems`, `error_one`/`errors_many`, `warning_one`/`warnings_many`).
+- 8: holds by reading (`menuOf` reads the listing, rebuilds from both answers, and a failed read changes nothing).
+- 9: holds by reading (`decode()` before the widget is added, `max-width:458px`, a `turn` that moved drops the answer).
+- 10: holds (R6). HELP.md:181's rule on dismissed hits is the rule the brief states; the code misses it in the case of finding 1.
+
+Cases:
+
+- 1, 2: met (probe first.mts; `previewHit` after `applyRereads`).
+- 3, 4, 6, 7: met by reading (`rereadFile` gives no `was` to a match the write touched; a file with no hit leaves; every written file gets a `Reread`; a refused answer carries the `done` files' rereads).
+- 5: met (probe "other line, dismissed hit stays out").
+- 8, 10: met (probe); 9: met by reading.
+- 11 to 14: met by reading; the look is owed.
+- 15: met by reading and by test (a task terminal, the options in the `new-session` invocation, an answer whose `exit` is set ends the mark). The output after the end needs the look.
+- 16, 17: met by reading (a push or the answer with `exit` set ends the build; `confirm` reads the list again). The look is owed.
+- 18: met for the server's word `terminal-ended` (test). The bar needs the look, and no look list of the report names it (finding 2).
+- 19 to 22: met by reading.
+- 23: met by reading (`Main.svelte`). No look list of the report names it (finding 2).
+- 24 to 30: met by reading; the look is owed for 24, 27 and 28.
+- 31, 33, 35: met (terminal-actions tests).
+- 32: met by reading; the look is owed.
+- 34: met by reading (`ranCommand` is false for `source: 'latex'`).
+
+### Findings
+
+1. **Spec.** `src/lib/server/files/fs/replace.ts:363-367`.
+   - The hunk: `function written(...) { return regions.some((one) => one.from === one.to ? start < one.from && one.from < end : one.from < end && one.to > start); }`
+   - What is wrong: R1's closure holds only for writes that leave text on the line. A replace with empty replace text deletes a match at the start of a line, which is a zero-length region at `from === start`. The strict `start < one.from` takes that region off the line, so the other hit on the line gets `was` with no `edited`. The same happens for a deletion at the end of a last line that has no newline (`one.from === end`).
+   - Probe `rv37/empty.mts`: `" x qzlook\n" [[1,3,{"line":1,"at":9}]]`.
+   - Failure scenario: a file with `qzlook x qzlook`, searched for `qzlook` with an empty replace text. Dismiss the second hit, then Replace the first. The line now reads ` x qzlook`, and the dismissed hit stays out. HELP.md:181 ("comes back when the replace changed its line"), DESIGN.md:131 and the brief's item 1 say it comes back.
+   - Verdict: item 1 violated, R1 violated.
+   - The fix is small and inside the brief: count a zero-length region at the line's start, and at the end of a line without a newline, as on the line, with a probe row for an empty replacement.
+2. **Proof.** `agents/reviews/D37-report.md`, the "DONE / NOT DONE" rows 3 and 5 to 9, and the opening "NOT done, not verified" list.
+   - The hunks: "7 (L5) singular | ... look: case 24 (`1 problem`, `1 error, 1 warning`)", "8 (L6) ... looks: cases 25 to 27", "9 (L7) ... looks: cases 28 to 30", "6 (L3) ... looks: cases 19 to 22", "5 (L2) ... look: case 16", "3 (S3) ... cases 11 to 14 (... a float)", and "The look cases (11 to 17, 19 to 22, 24 to 30, 32 ...)".
+   - What is wrong: the rows name the wrong cases.
+     - The singular is case 23, and row 7 names case 24.
+     - L6 is cases 24 to 26.
+     - L7 is cases 27 to 30.
+     - L2 is cases 17 and 19.
+     - L3 is cases 20 to 22.
+     - The float is case 32.
+     - Case 23 and the bar of case 18 are in no look list of the report. The round brief's own list for R4 ("24 to 30") also leaves out 23.
+   - Failure scenario: the orchestrator builds the landing look from these rows and never checks that the problems button says "1 problem", which no test covers.
+   - Verdict: R4 partial.
+   - Disposition: the orchestrator's look list at landing adds case 23 and the bar of case 18.
+3. **Standards.** `tests/server/machine/pty/channel.test.ts:145-183` ('changes when a task terminal ends with the status it had, in a process run again'). The same holds for the other tests this step added: `tests/server/machine/commands/run.test.ts:157` ('a command action that names no command'), `tests/routes/sessions/terminal-actions.test.ts:158` ('builds again in the terminal it kept, and cleans in another') and `:202` (the 'POST /api/terminal, a refusal' table).
+   - What is wrong: spec.md "What every package obeys" says a test exists only as the test of an entry of `agents/guarded.md`, named there by file and title. `grep -n -o -e "names no command" -e "a refusal'" -e "builds again in the terminal it kept" -e "changes when a task terminal ends" agents/guarded.md` finds nothing (exit 1).
+   - Brief change 14 authorizes cases of items 4 and 9 in G35's test files, which covers the refusal table, the kept-terminal test and the empty command name. The pid-in-signature test belongs to no entry's text: G35 is "acts only on the terminal it names" and G28's channel test is the page detach. The builder named the channel test and the `ops-replace` change as needing a `guarded.md` line, and did not name the other three.
+   - Failure scenario: a later step deletes or rewrites these tests as unowned, or a reviewer cannot tell which entry each one guards.
+   - Verdict: none.
+   - Disposition: the orchestrator's booking in `guarded.md` at landing. The channel test's entry is a judgment for the orchestrator, or for Axel if it needs a new entry.
+4. **Standards.** `src/lib/ui/controls/editor/Editor.svelte:289-292`, the comment this round added ("// The values that name the model, held as values: ... (a tab instance's id) ...").
+   - What is wrong: spec.md "What every package obeys" asks for a paragraph wrapped at 100 columns. Lines 289 (96 columns), 290 (93) and 291 (96) each end before a next word that fits ("(a", "object", "the"). The comment-width check passes because it reads the maximum only.
+   - Failure scenario: the next editor of the paragraph finds it wrapped short of the rule.
+   - Verdict: none. A rewrap at landing.
+5. **Behaviour.** `src/lib/server/machine/pty/channel.ts:551-562`, `one.pid` added to the list signature.
+   - This change is outside the write list and goes beyond R2's text. It is needed for R2: without it, a kept build run again that ends before the next poll with the same status gives no push (red above).
+   - Its effect on each `sessions` push consumer, by reading:
+     - `terminals.svelte.ts`: same ids, nothing closes.
+     - `notice-sources.ts` `sessionsHeard`: posts by key, so there are no repeats.
+     - The server's `sessions` watch: one more broadcast per respawn.
+     - `commands.svelte.ts` `readEnded` (`:633-639`, keyed by `pid`): it now captures again the output of a project command whose Run Again or Restart ended between two polls with the same status. Before, its command diagnostics stayed those of the previous run until an unrelated push.
+   - What is wrong: the report states the effect for LaTeX builds only. "Host- and user-visible changes" has no line for project command diagnostics, and the look has nothing to read it against.
+   - Failure scenario: a reader sees a command's problems change after a fast rerun, and the landing report cannot say whether that was intended.
+   - Verdict: none. One line in the landing report.
+
+No finding is a check removed to close a finding. The changed `ops-replace` assertion adds `edited: true`, which makes the check stricter, not looser.
+
+### Declined to judge
+
+- Every DOM case is for the look, since no browser ran in this review: the Terminal tab after latexmk ends, the resize refusal on the bar, the preview's pane, the picture size, the menu item, "1 problem", and Format Document then Cmd+Z on a preview tab, with the caret after the keep (Q120).
+- Whether R2's page half ends the mark on Axel's machine when latexmk ends between two polls. This was read, not run. Case 15 with a kept, up-to-date build terminal at the look settles it.
+- A joined `new-session ; set-option` against a session whose command exits at once, on a private tmux socket. It was not probed; `sessions.test.ts` passed.
+- The cost figures depend on machine load (other builders were running). Both runs here and both of the builder's are under twice the base. No decision rests on the exact ratio.
+
+Reviewer usage: ordo-high on claude-opus-5-5 (a45d0e7de5d8174e5).
+### Closed
+
+- Finding 1: fixed at landing on main (small, inside the brief): `replace.ts` `written` counts a zero-length region at a line's start, and at the end of a last line with no newline, as on the line.
+- Finding 2: the landing look adds case 23 and the bar of case 18, with every case the report routes to the look.
+- Finding 3: the four tests are named under G35 in `agents/guarded.md` at landing, the channel test with them as the test of the respawned build's push.
+- Finding 4: rewrapped at landing.
+- Finding 5: the landing report states the effect on project command diagnostics.

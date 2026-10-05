@@ -14,9 +14,11 @@
 //
 // A replace is posted as POST /api/ops `replace` over the hits of the answer, named by the query
 // the answer was found by. One replace is out at a time. A file a source tab holds unsaved text of
-// is left out of it. What the replace answers leaves the answer as hits replaced, and an answer of
-// a tab that closed, or of an answer the tab has since replaced by a new run, writes nothing into
-// the tab.
+// is left out of it. The answer carries the hits of every file the replace wrote as they are after
+// the write, and they take the place of that file's hits in the tab's answer (hits.ts,
+// `applyRereads`), so the hits left in a written file are named by the lines and places they have
+// now. An answer of a tab that closed, or of an answer the tab has since replaced by a new run,
+// writes nothing into the tab.
 
 import { z } from 'zod';
 import { readAs, readJson } from '../../../data/shapes/shapes.ts';
@@ -26,6 +28,7 @@ import {
     queryOf,
     ranOf,
     remembered,
+    rereadsOf,
     type SearchFile,
     type SearchMode,
     type SearchState
@@ -46,6 +49,9 @@ import { nameOf } from '../explorer/file-type.ts';
 import type { DiffSubject } from '../repositories/repositories.ts';
 import { previewSubject } from '../repositories/replace-preview.ts';
 import {
+    applyRereads,
+    dismissedOf,
+    focusAfter,
     pickedFiles,
     replaceRequest,
     replaceScope,
@@ -83,11 +89,11 @@ type ReplaceSaid = { text: string; refused: boolean };
 type ReplaceResult = { focus: string };
 
 /**
- * What the store needs of the diff panes: to open one beside the pane being read, and whether a
- * Replace Preview is open, which is when a replace goes on to the next hit's preview.
+ * What the store needs of the diff panes: to open one beside the Search tab that asks for it, and
+ * whether a Replace Preview is open, which is when a replace goes on to the next hit's preview.
  */
 type Previews = {
-    open: (subject: DiffSubject, label: string) => void;
+    open: (subject: DiffSubject, label: string, asker: string) => void;
     shown: () => boolean;
 };
 
@@ -245,7 +251,12 @@ export function createSearch(
         const query: SearchQuery = queryOf(held);
         const refused = refusalOf(query, roots);
         if (refused !== null) {
-            setSearchState(id, { error: refusalWords(refused, ''), answer: null, ran: null });
+            setSearchState(id, {
+                error: refusalWords(refused, ''),
+                answer: null,
+                ran: null,
+                dismissed: []
+            });
             return;
         }
         runs.set(id, (runs.get(id) ?? 0) + 1);
@@ -266,11 +277,18 @@ export function createSearch(
                     answer: answer.answer,
                     error: '',
                     ran: ranOf(query),
+                    dismissed: [],
                     ...remember
                 });
                 return;
             }
-            setSearchState(id, { error: answer.error, answer: null, ran: null, ...remember });
+            setSearchState(id, {
+                error: answer.error,
+                answer: null,
+                ran: null,
+                dismissed: [],
+                ...remember
+            });
         } finally {
             if (runs.get(id) === run) {
                 state.running = state.running.filter((one) => one !== id);
@@ -310,7 +328,8 @@ export function createSearch(
                 { query: held.ran, replace: held.replace, preserve: held.preserve },
                 found.hit.line
             ),
-            t('search.preview_title', name, name)
+            t('search.preview_title', name, name),
+            id
         );
         return true;
     }
@@ -369,9 +388,22 @@ export function createSearch(
             const mine = searchState(id);
             let focus = '';
             if (current && mine.answer !== null) {
-                focus = rowAfter(mine.answer.files, written);
+                const rereads = rereadsOf(outcome.rereads);
+                const applied = applyRereads(mine.answer.files, rereads, mine.dismissed);
+                // A file the answer did not read again loses the hits it was sent, as it would if
+                // it had been written and read.
+                const unread = written.filter(
+                    (file) =>
+                        !rereads.some((one) => one.root === file.root && one.path === file.path)
+                );
+                const files = without(applied.files, unread);
+                focus =
+                    unread.length === 0
+                        ? focusAfter(mine.answer.files, written, applied)
+                        : rowAfter(mine.answer.files, written);
                 setSearchState(id, {
-                    answer: { ...mine.answer, files: without(mine.answer.files, written) },
+                    answer: { ...mine.answer, files },
+                    dismissed: applied.dismissed,
                     replaces: remembered(mine.replaces, mine.replace)
                 });
                 // A Replace Preview that is open goes on to the hit the focus moved to.
@@ -402,7 +434,8 @@ export function createSearch(
         const focus = rowAfter(held.answer.files, taken);
         unsay(id);
         setSearchState(id, {
-            answer: { ...held.answer, files: without(held.answer.files, taken) }
+            answer: { ...held.answer, files: without(held.answer.files, taken) },
+            dismissed: [...held.dismissed, ...dismissedOf(taken)]
         });
         return focus;
     }

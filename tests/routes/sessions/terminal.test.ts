@@ -19,6 +19,8 @@ import {
     makeTaskConfig,
     type TaskConfig,
     tmux,
+    joinedCommands,
+    lineOf,
     source,
     request,
     answer,
@@ -85,7 +87,7 @@ describe('POST /api/terminal, the resume action', () => {
         expect(started).toContain('-c');
         expect(started[started.indexOf('-c') + 1]).toBe(HERE);
         // The argv follows `--`, one word each, under the default account's `env -u`.
-        expect(started.slice(started.indexOf('--') + 1)).toEqual([
+        expect(lineOf(started)).toEqual([
             'env',
             '-u',
             'CLAUDE_CONFIG_DIR',
@@ -97,9 +99,12 @@ describe('POST /api/terminal, the resume action', () => {
         expect(started[started.indexOf('-x') + 1]).toBe('100');
         expect(started[started.indexOf('-y') + 1]).toBe('30');
 
-        const set = driver.calls.filter((args) => args[0] === 'set-option');
-        expect(set.map((args) => args[3])).toEqual(['@oculus_name', '@oculus_resumes']);
+        // The options ride in the invocation that creates the session, so a session that ends at
+        // once is not set up by a later call.
+        const set = joinedCommands(started).filter((words) => words[0] === 'set-option');
+        expect(set.map((words) => words[3])).toEqual(['@oculus_name', '@oculus_resumes']);
         expect(set[1][4]).toBe(`claude:${SESSION}`);
+        expect(driver.calls.filter((args) => args[0] === 'set-option')).toEqual([]);
     });
 
     it('refuses a request without the write token, before reading any record', async () => {
@@ -141,6 +146,6 @@ describe('POST /api/terminal, the recover action', () => {
         expect(started[started.indexOf('-c') + 1]).toBe(HERE);
         expect(started[started.indexOf('-x') + 1]).toBe('96');
         expect(started[started.indexOf('-y') + 1]).toBe('28');
-        expect(started[started.length - 1]).toBe("python3 tools/data/redownload.py 'mimic-iv'");
+        expect(lineOf(started)).toEqual(["python3 tools/data/redownload.py 'mimic-iv'"]);
     });
 });

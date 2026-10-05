@@ -32,7 +32,6 @@
     import { clock, compactCount, modelShort, stamp } from '$lib/state/shared/words/format';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
-    import { resumeRefusal } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -199,7 +198,7 @@
         outcome = '';
         const answer = await resumeTerminal(record.tool, record.id);
         if (!answer.ok) {
-            outcome = resumeRefusal(answer.error);
+            outcome = answer.error;
             return;
         }
         select(answer.id);
