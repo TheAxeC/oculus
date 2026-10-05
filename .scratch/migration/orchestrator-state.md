@@ -216,6 +216,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-05 17:22. queue.md rewritten whole against plan.md (M6 was listed in flight, D11 still named D20, the Q81 line contradicted Z380, three landings lacked hashes). O30's brief check started (abeb3af4ed6c02ba7, claude-opus-5-5) under Z425. Running: A3's and D44's builders, O30's brief check.
 - 2026-10-05 17:08. X3e's brief rechecked after S5 to D20 by a2266ad23131d595a (claude-opus-5-5, 270,552 tokens, 193 tool uses, 28.7 min); its three stops closed in automode (Z552 to Z554); X3e waits for D44 (Z553). D44's case 22 ruled (agents/briefs/D44-cases.md), builder resumed. Running: A3's and D44's builders.
 - 2026-10-05 16:39. A3 and D44 prepared at 6044d753c and their builders launched (claude-sonnet-5-5). D23's brief rechecked after D38 and D20 by acf24776ca8b0fa09 (claude-opus-5-5, 328,175 tokens, 151 tool uses, 18.1 min); prepared once A3 and D44 have landed (DESIGN.md:155 with A3 and Source.svelte's split with D44 do not merge simply). Running: A3's and D44's builders.
 - 2026-10-05 16:35. D20 landed in this commit: an agent from a task or a worktree, git Cancel and failure reasons, the transcript read in pieces; gate green with `npm test` and `test:checks` rerun alone; one merge fix with D38 (`Head.svelte`'s `Segment` import); look complete under Z551. Z538, Z539, Z543, Z545 and Z551 ruled. Briefs of D23, D44 and A3 rechecked against main with D20. Running: nothing. Next: /spec D23, D44 and A3.

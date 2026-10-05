@@ -1,42 +1,39 @@
-In flight (2 of 5 slots):
+In flight (2 of 5 slots building; one brief check running):
 - A3 (scheduled Update runs): building.
-- D44 (Submit on a .slurm file): building.
-- M6 (the collection forms removed): brief written (Z550 closes its choices), checked, and its findings closed in the brief; prepared once X3e and D28 have landed.
+- D44 (Submit on a .slurm file): building, round 0 after the case 22 ruling (agents/briefs/D44-cases.md).
+- O30 (the native window in Electron): brief check running; prepared at its end if its merge with A3 and D44 is simple (Z425 queues it for the next free slot).
 
-Waiting for a landing or a ruling:
-- D23 (language servers): brief rechecked after D38 and D20; prepared once A3 and D44 have landed (DESIGN.md:155 and Source.svelte's split do not merge simply).
-- D45 (LaTeX as VS Code's LaTeX Workshop): inventory look on TEST taken; prepared once D44 has landed, its premises then rechecked after X3f, D38, D20 and D44.
+Waiting for a step in flight (its merge with it is not simple):
+- D23 (language servers): brief rechecked after D38 and D20; waits for D44 (both change Source.svelte beyond a hunk) and A3 (the Processes paragraph, context.ts, model-processes.ts).
+- X3e (Files lists reordered by drag): brief rechecked after S5 to D20, stops closed (Z552 to Z554); waits for D44 (Z553) and A3 (settings.ts, context.ts close()).
+- D45 (LaTeX as VS Code's LaTeX Workshop): inventory look on TEST taken; waits for D44 (Source.svelte, BarActions.svelte), then its premises rechecked after X3f, D38, D20 and D44.
+- E4 (the apps): brief ready, no brief check yet; waits for A3 (DESIGN.md:114, HELP.md:267, settings.ts, context.ts).
 
-Queued, in order (22 steps):
-- D11 (the debug client for rite): brief rechecked after S5; prepared once D20, D44, D45 and D23 have landed.
-- X3e (Files lists reordered by drag): brief rechecked after S5 to D20, its stops closed (Z552 to Z554); prepared once D44 has landed (Z553).
+Waiting for a step not yet in flight:
+- M6 (the collection forms removed): brief written and checked, Z550 closes its choices; once X3e and D28 have landed.
 - D28 (saving a file as VS Code does): brief ready; once X3e has landed.
-- M7 (a project folder moved in Files): once M6 has landed.
-- D41 (links in Markdown checked): once M7 has landed.
-- D15 (PDF reading): no brief yet; once D45 has landed.
-- M8 (the hub's YAML checked in the editor): once D23 has landed.
-- D43 (LaTeX navigation): once D23 has landed.
-- D23b (cross-file language features): no brief yet; once D23 has landed.
-- D39 (hub keys as links): once M8 and D23b have landed.
-- D33 (the Problems view): once D23 has landed.
-- D36 (linters on save): once D33 has landed.
-- D40 (the writing rules as editor marks): once D36 has landed.
-- O30 (the native window in Electron): brief ready; once X3e has landed.
-- E4 (the apps): brief ready; once X3e has landed.
-- Q72 (the architecture re-read): paused (Axel); after every code step.
-- R2 (release readiness): paused (Axel); after Q72.
-- O29 (retiring the cockpit): paused (Axel); after R2.
-- O33 (oculus in its own repository): paused (Axel); once O29 has landed.
-- O34 (remote access): paused (Axel); once O33 has landed.
-- O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.
-- O36 (a second person in the hub): paused (Axel); once O34 has landed.
+- D11 (the debug client for rite): brief rechecked after S5; once D44, D45 and D23 have landed.
+- D15 (PDF reading): plan lines only, brief written at dispatch; once D45 has landed.
+- M7 (a project folder moved in Files): no brief; once M6 has landed.
+- D41 (links in Markdown checked): no brief; once M7 has landed.
+- M8 (the hub's YAML checked in the editor): no brief; once D23 has landed.
+- D43 (LaTeX navigation): no brief; once D23 has landed.
+- D23b (cross-file language features): plan lines only, brief written at dispatch; once D23 has landed.
+- D33 (the Problems view): no brief; once D23 has landed.
+- D39 (hub keys as links): no brief; once M8 and D23b have landed.
+- D36 (linters on save): no brief; once D33 has landed.
+- D40 (the writing rules as editor marks): no brief; once D36 has landed.
 
-Owed: Q81 (a Confirm over the update tray): waiting for Axel.
+Paused by Axel (Z369, Z425):
+- Q72 (the architecture re-read): after every code step.
+- R2 (release readiness): after Q72.
+- O29 (retiring the cockpit): after R2.
+- O33 (oculus in its own repository), O34 (remote access), O35 (macOS, Linux and Windows), O36 (a second person in the hub).
 
 Landed, newest first:
-- D20 (an agent from a task or a worktree), 2026-10-05.
-- D38 (the Literature search view), 2026-10-05.
-- X3f (a file tab's actions, file icons and the double click), 2026-10-05.
+- D20 (an agent from a task or a worktree), 2026-10-05, 0aea28449.
+- D38 (the Literature search view), 2026-10-05, b07d24766.
+- X3f (a file tab's actions, file icons and the double click), 2026-10-05, ee0407a5a.
 - S5 (the Settings view's controls and headings), 2026-10-05, 71017ce60.
 - D42 (a file's history), 2026-10-05, 8077dd55.
 - H3 (the hub's data map), 2026-10-05, 575c997c.
