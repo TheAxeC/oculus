@@ -59,6 +59,8 @@ dispatch:   # steps in flight, up to seven (Z423)
   landing: not-started
   reviewer_report: agents/reviews/D20-refuter.md, claude-opus-5-5 (a4074e57a1552c160, stopped by mistake and resumed), 167,719 tokens, 110 tool uses, 22.1 min
   round: 1 (agents/briefs/D20-round1.md: the review's findings, G38 to G41's tests, Z515 (1)'s record, Z534)
+  round1_builder_usage: 261,365 tokens, 168 tool uses, 43.3 min, the full list 3 times (items 1 to 21; item 21 sent by message)
+  round1_reviewer: a1d2b19ab1091cd56, claude-opus-5-5, running
 ```
 
 ## The standing demands (from Axel, in force)
@@ -163,6 +165,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Z543 (raised 2026-10-05, D20's repair round 1). A new guarded entry for D20's Cancel of a merge, rebase or cherry-pick needs your yes (Z392): "G44. A git write stopped by Cancel says what it left in progress: a merge, a rebase or a cherry-pick cancelled midway is named in the answer, and the view shows it with its Abort." Code: `stoppedOn`, `cherryPick`, `continueRebase` in `src/lib/server/git/git-index.ts`, `src/lib/server/git/git-routes.ts`. Test: `tests/server/git/git-write.test.ts` 'names the merge a cancelled run left in progress, and nothing once it is aborted', `tests/routes/git/git.test.ts` 'says the merge a cancelled run left in progress'. (a) Yes: a user who cancels a merge and goes on working inside it can commit half a merge; the suite keeps the answer true. (b) No: the two tests are removed at landing. Recommendation: (a). The lazy option is (b).
 
 - Z538 (raised 2026-10-05, D44's brief check 4). A new guarded entry for D44's two tests needs your yes (Z392): "G43. Submit runs only the plan the reader confirmed, equal to the plan the server computes at the press, and a job script whose code and sourced files never name `/local/$SLURM_JOB_ID` gets the warning before Submit." Code: `src/lib/server/machine/hpc/submit.ts`, `scratch.ts`. Test: `tests/server/machine/hpc/submit.test.ts`, the two tables. (a) Yes: a wrong copy or a job that writes to the shared home without warning is caught by the suite. (b) No: no tests; the look and quoted runs are D44's only check. Recommendation: (a). The lazy option is (b).
 
