@@ -42,6 +42,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   round: 3 (agents/briefs/X3f-round3.md)
   round3_builder: abb2cc439fd4f1181 resumed 2026-10-05, served claude-sonnet-5-5 (the transcript's message.model, read after the resume)
   round3_cases: agents/briefs/X3f-round3-cases.md (Open in Program only on mapped extensions, Blame only on tabs with a gutter, Open Preview as the row menu's)
+  round3_builder_usage: first run handed back (cases 1, 3, 4, 5), 310,369 tokens, 29 tool uses, 4.0 min, 0 full-list runs; resumed with the cases ruling
 - step: S5
   executor: agent
   worker: claude:sonnet at ordo-high
