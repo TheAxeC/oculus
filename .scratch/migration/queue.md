@@ -1,9 +1,9 @@
-In flight (5 of 5 slots):
+In flight (4 of 5 slots):
 - X3f (opening a file row, and the tab row's actions): round 3 built; its review is running, then the gate and the look on TEST.
 - D20 (an agent from a task or a worktree): repair round 1 building.
 - D44 (Submit on a .slurm file): brief check done, its findings being closed in the brief; its builder once X3f has landed and Z538 and Z539 are ruled.
 - D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked against main after S5.
-- D23 (language servers): brief rechecked against main after S5.
+- D23 (language servers): brief rechecked after S5; prepared once X3f has landed (both rewrite Source.svelte).
 
 Queued, in order (25 steps):
 - X3e (Files lists reordered by drag): brief ready; once D20 has landed (Z519), its premises then reread after S5.

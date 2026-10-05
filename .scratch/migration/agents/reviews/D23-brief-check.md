@@ -468,3 +468,9 @@ Missing, each with its expected result:
 3. Pyright's real-case handling of a root configured in the wrong case on case-insensitive APFS. Not probed. The fix is the decoded-path comparison of F4 plus `fs.realpathSync.native`; a probe with a mis-cased root would settle it.
 4. The memory cost of opening 142 to 200 peek files in pyright or clangd. Not measured, since F7 recommends not opening them.
 5. Whether the Vite dev server's HMR upgrade handler interferes with a second path. Not run. `socket.ts` coexists with it today on `/ws` by the same early-return pattern.
+
+## Rechecked after S5 (2026-10-05)
+
+Agent a06e5bd28d3450606, claude-opus-5-5: 372,291 tokens, 139 tool uses, 16.4 min (completion notice). The brief's premises reread on main at a21aa859d: 42 corrections marked "(corrected after S5: ...)", among them Format on save's four places after S5 moved the readers to `data/sources/config/editor-options.ts`, `DESIGN.md:85` and `HELP.md:169` added to the doc text, and the Outline following the followed tab (Z490). Shared paths: X3f shares 23 paths, `Source.svelte` and `Outline.svelte` rewritten by both, so D23 is prepared on a base after X3f lands; D20's shared files merge simply; D44's `Source.svelte` is not simple, so the second of D23 and D44 is prepared on the other's landing. The "Closed" line numbers above refer to the brief before this recheck.
+
+Closed by the orchestrator: F3 as case 58, F12 as case 59, the first check's case 19 as case 60. Show AST stays in Monaco's right-click menu opening a Files view section, as VS Code's clangd does (Z483, Z496).
