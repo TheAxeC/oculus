@@ -260,6 +260,15 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z534 (2026-10-05, from D20's review)
+
+The question: whether Cancel, a timeout and an output-limit kill end only git, or git and its descendants (a hook's processes).
+
+- Chosen: git and its descendants, as D20 built it.
+- Not chosen: git alone, the lazy option, which leaves a hook running and holding the index lock.
+
+Where it applies: D20. Booked in `plan.md` Rulings.
+
 ## Z528 (2026-10-05, from D28's brief)
 
 The question: seven designs D28's brief leaves open: how a tab hears its file changed on disk, the names of the save keys and the delay key, a file deleted under a tab, closing under autosave, a fourth autosave value, and the pane while a file is read.

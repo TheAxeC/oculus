@@ -69,7 +69,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Code: `src/lib/server/sessions/stores/transcripts.ts`, `src/lib/server/sessions/stores/turns.ts`.
   Test: `tests/server/sessions/transcripts.test.ts` with a small piece size, written by D20's repair round 1.
 - G41. A git command that fails says why: timed out, ended by a signal, an exit status with no output, or too much output.
-  Code: `shortReason` in `src/lib/server/core/git/run.ts`, `src/lib/server/core/git/parse.ts`.
+  Code: `shortReason` and the failure classifier in `src/lib/server/core/git/parse.ts`, read by `src/lib/server/core/git/run.ts`.
   Test: a table beside `shortReason`, written by D20's repair round 1.
 
 ## It starts, and configuration is checked
