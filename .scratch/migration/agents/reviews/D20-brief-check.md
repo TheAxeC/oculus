@@ -250,3 +250,100 @@ D20 has no write list. From the stub and the widenings it will write at least:
 2. Whether `commitMenu` answers an empty list while busy. Not run.
 
 Usage: ordo-high on claude-opus-5-5 (a6ba40bc4b321b9e6), 187,390 tokens, 83 tool uses, 9.7 min.
+
+### Closed
+
+Each finding by section and number, with where `agents/briefs/D20.md` closes it. "Held" means the brief leaves the part out because its cause was not found read-only; the orchestrator holds it with the ways tried.
+
+Names
+1. `startChat` and its callers are not changed: the start goes through the composer ("The plan line and the rulings", ruling 662 bullet; Decisions 1).
+2. No HELP or DESIGN line names `startChat`; the lines the step does touch are listed under "What is on the tree" (the documents bullet) and "What to build" 9.
+3. Both commit paths are in: `git-write.ts` and `deposit-git.ts` ("What is on the tree", the git bullet; "What to build" 7.1 to 7.3; cases 45 to 48).
+4. Every `config/` grep in the brief carries `--exclude=local.yml` ("Read" 16).
+
+The step line
+1. The task control: "What to build" 1.1 and 1.2.
+2. The project: 1.3, the folder rule.
+3. The terminal named after the task: 1.3, the name.
+4. A2: "What to build" 2.
+5. Step 0, the approval: 1.4 and 1.7; cases 12 to 18.
+6. Z289: "What to build" 8; cases 29 to 36.
+7. Z297: "What to build" 3 and 4; cases 37 to 41.
+8. Z307 scrollback: "What to build" 5, with its cause and probe. The Terminal tab dropping: held.
+9. Z312 pills idle: "What to build" 6, with its cause and probe. The pill while busy: held (the pure menus are quoted in case 44). Commit past 10 s and the reason: "What to build" 7.
+10. Z313: held.
+
+Premises
+1 and 2. The moved paths are used at head throughout ("What is on the tree").
+3. The mechanism is the composer (ruling 662 bullet; Decisions 1); the confirmation is "What to build" 1.5.
+4. The Focus task lines are `Tasks.svelte` and `CommandCenter.svelte` through `rows.ts` (1.1).
+5. The Tasks collection card gets a tasks-only `extra` action (1.2).
+6. The project comes from a manifest's folder or an entry's single `related` project (1.3; cases 2 and 6).
+7. Q11's Ask stays as it is (Decisions 1).
+8. `DESIGN.md:153` is cited.
+9. D17's store, item 4, on main; the approval wire is a new `approve-seed` action on `/api/terminal` (1.4).
+10. Z289 lines confirmed at head ("What is on the tree", transcripts bullet).
+11. Kill lines at :353-366 and :363; the style and the ToolButton split are "What to build" 3.1 and 3.2.
+12. The starting tab: "What to build" 4, from the store's own starting set.
+13. Z307 tab: held. The scrollback cause is written ("What to build" 5).
+14. Pills: cause confirmed by probe and the Q88 look ("What to build" 6). Busy: held.
+15. Timeout lines and cause: "What to build" 7 and its probe; `run.ts:156` left as it is.
+16. Z313: held.
+17. A2 against `Repositories.svelte` (480 lines): the new controls sit in `Worktrees.svelte` and `repo-menu.ts` ("What to build" 2).
+18. Sizes: ToolButton split (3.2), Terminal.svelte below 520 through `TerminalStart.svelte` (4.2), EntryCard at or under 520 (1.2), terminals.svelte.ts at or under 880 with a named move if needed (1.8); verify 3 names each.
+
+Cases and checks
+1. "Cases" holds 52 cases (1 to 50, with 7a and 28a) and "Verify before you report" its list.
+2. Guarded: only case 22 is a test (G13's row); the seeded-agent approval, the confirmation of a skipping mode, the transcript read in pieces and a failed git command's reason have no entry and go to Axel as four proposed entries; the builder writes no test for them and checks them by quoted runs ("Cases", the bullets after the cases).
+3. Fixtures: the 25 s and 35 s hooks in scratch repositories, a 600 MB generated transcript, a piece size parameter, the fake compose runner, tmux only with `-L` or `-S` (cases 29 to 35, 45, 48; "What it must do").
+
+The question
+1. Composer, never `startChat` (ruling 662 bullet).
+2. The folder rule and cases 2 and 6.
+3. The approval text is agent, real folder and whole seed (1.4; cases 12 to 14, 17).
+4. Case 35 asserts the offset equal to the size and a later read from it.
+5. Case 37 covers the default palette, 16 palettes, `rice` and `crt`.
+6. Z307 tab: held.
+7. Commit, merge, cherry-pick, rebase continue and the deposit commit run with no limit; both modules use the classifier (7.1, 7.3; cases 45 to 48).
+8. The checked-out branch gets its own menu (6.1; case 44).
+9. Z313: held.
+10. The composer opens in the new worktree's folder (2.1; case 24).
+
+Implied inputs
+1. The seed lines are dictated (1.3, 9).
+2. The folder rule (1.3).
+3. Only a non-terminal status carries the control (1.2; case 5).
+4. Empty text (1.3; case 7a), 80 characters (case 7), `PROMPT_MAX` (case 8), control characters (case 7).
+5. Changed text, twice, unreadable file (cases 9, 15, 16, 17).
+6. Tab closed, hub root unknown, second `composeAt` ("What it must do"; cases 40, 41).
+7. Name taken, `.gitignore`, detached HEAD, uncommitted changes, both agents, the account picker (cases 24 to 28a).
+8. Piece boundary, multi-byte, long line, growing file, offset beyond size (cases 29 to 33).
+9. Hook over 10 s, silent failure, push limit, deposit commit (cases 45, 46, 50, 48).
+10. Z307 tab: held.
+11. Pills idle and busy (case 44; the page while busy held).
+12. Z313: held.
+
+ADRs: none; stated in the brief's opening paragraph.
+
+Dictated text
+1. Holds.
+2. Every key's words are under "What to build" 9; HELP.md and DESIGN.md lines are named with what each must say, and the sentences are the builder's, read at review.
+
+User-visible choices nothing names
+1. Mechanism: settled by ruling 662 (Decisions 1).
+2. Where the control sits: choice C1 (1.1, 1.2).
+3. The approved text and wire: choice C2 (1.4).
+4. Terminal name: choice C3 ("Task: {0}").
+5. A2: choice C4 (both the new-worktree row's controls and the row menu).
+6. The commit's limit: choice C5 (none for the hook-running commands, with a reason for every failure).
+In addition the brief raises C6 (renderer variable scope), C7 (current-branch pill), C8 (which modes confirm, and the `confirm` key), C9 (libraries) and C10 (the seed read-only with the reader's words appended).
+
+Libraries
+1 and 2. "Libraries checked": each candidate with version, licence, maintainer, last publish and engines; recommendation none (C9).
+
+Shared paths
+X3f, S5 and Q119: "Paths this step writes" gives line ranges at head and judges each merge simple; `chat.ts` and `layout.svelte.ts` are not written; Q119's routes.ts lines at head are 29, 225, 324, 361, 433.
+
+Declined to judge
+1. Z307 scrollback: found and written. Z307 tab and Z313: held.
+2. `commitMenu` while busy: run; it answers four items (case 44).

@@ -260,6 +260,15 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z513 (2026-10-05, from D20's brief)
+
+The question: D20's ten shapes the plan does not name.
+
+- Chosen: as booked in `plan.md` Z513.
+- Not chosen, the lazy ones: the Focus rows only; an approval keyed by the title alone; Start Here on worktree rows alone; the 10 s constant raised; the confirmation for bypassPermissions alone.
+
+Where it applies: D20. Booked in `plan.md` Rulings.
+
 ## Z510 (2026-10-05, from A3's brief)
 
 The question: A3's shapes the plan does not name, choices 1 to 4 and 6 to 9.
