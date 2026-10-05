@@ -260,6 +260,24 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z526 (2026-10-05, from D20's second brief check, its closing)
+
+The question: four designs the closing took inside D20's brief that no ruling names exactly.
+
+- Chosen: per-mode confirmation sentences as catalog keys picked in `composer.ts`; `approvals-unwritable` naming the path only; Cancel as a `cancel` action on `/api/git` and `/api/deposit` over a registry of runs in flight; the deposit's switch and push without a time limit.
+- Not chosen: a sentence key in `agents.yml`; a reason code from `approveTexts`; the request's abort signal; the lazy options (one generic sentence, a documented server restart, only the commands Z519 names).
+
+Where it applies: D20. Booked in `plan.md` Rulings.
+
+## Z525 (2026-10-05, from X3e's diagnoses)
+
+The question: what X3e builds from its three diagnoses, and whether the on-demand git reads move off the event loop too.
+
+- Chosen: the watcher's reads through `execFile`, one per root at a time; the on-demand reads of `GET /api/git` moved to the asynchronous runner as well; the folder panel tied to its request's connection, ended on close, a -128 cancel answered as no folder.
+- Not chosen: the on-demand reads left on `spawnSync`, the lazy option, which still held the loop for 2.9 s under load.
+
+Where it applies: X3e. Booked in `plan.md` Rulings.
+
 ## Z520 (2026-10-05, from E4's brief)
 
 The question: E4's shapes 1, 2, 4, 5 and 6 that the plan does not name.

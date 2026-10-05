@@ -1,8 +1,8 @@
 In flight (5 of 5 slots):
 - X3f (opening a file row, and the tab row's actions): review over round 2 in; landing (fixes at landing, the gate, the look on TEST).
 - S5 (the Settings view's controls and headings): repair round 1 sent to its builder (its review findings, Q119, Q122, Z505, Z506, Z509); Z507 (where its look runs) open for Axel.
-- X3e (Files lists reordered by drag): brief re-based on D42; the three diagnoses Z441 asks before its builder (the hub Graph's 10 s first read, the 5 s Delete, the folder panel's server half) running; its builder starts once X3f and S5 have landed (merges not simple).
-- D20 (an agent from a task or a worktree): the second brief check is in, its findings being closed in the brief (choices Z519); then the builder, its merges with X3f and S5 simple; Z514 and Z515 open for Axel.
+- X3e (Files lists reordered by drag): its three diagnoses are in (agents/reviews/X3e-diagnosis-panel.md, -delete.md, -graph.md; causes found, Z525); the causes and fixes being folded into its brief; its builder starts once X3f and S5 have landed (merges not simple); Z524 open for Axel.
+- D20 (an agent from a task or a worktree): brief closed (choices Z519, Z526); preparation commit, worktree and sonnet builder being started; its merges with X3f and S5 simple; Z514 and Z515 open for Axel.
 - D28 (saving a file as VS Code does): brief being written (it was a stub).
 
 Queued, in order (26 steps):

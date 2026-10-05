@@ -57,6 +57,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 - Z516 (2026-10-05, closed in automode): O30's choices D4 to D15; `choices.md`.
 - Z519 (2026-10-05, closed in automode): D20's choices from its second brief check; `choices.md`.
 - Z520 (2026-10-05, closed in automode): E4's choices 1, 2, 4, 5 and 6; `choices.md`.
+- Z525 (2026-10-05, closed in automode): what X3e builds from its three diagnoses; `choices.md`.
+- Z526 (2026-10-05, closed in automode): D20's Decisions 10 to 13 from the closing of its second brief check; `choices.md`.
 - Z474 (2026-10-05, closed in automode): D42's review Spec 1; `choices.md`.
 - Z475 (2026-10-05, closed in automode): D42's review, declined to judge; `choices.md`.
 - Z468 (2026-10-05, Axel): no step is ever added; Q118, Q119, Q121 and Q122 folded into S5 and D33.
@@ -1722,6 +1724,8 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q51 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from Q50's landing to 06:42: 19 messages, 10,961 output tokens, 25,053 cache-write tokens, 11,990,259 cache-read tokens, 38 fresh input tokens, 18 minutes.
 - R14, builder claude:opus through the Agent tool: first run 761,868 tokens 118 tool uses 6,354 s; round 1 939,624 tokens 108 tool uses 3,653 s; round 2 (the exception round) in the same thread.
 - R14, reviewer runs, claude:opus read-only: first review (ad9532c3ae27a1e0e) 01:50 to 02:34; the run over round 1 (a0f9ae50704b7e127) 300,072 tokens 134 tool uses 2,727 s, twenty-two findings; the run over round 2 (ad56ae0ee60352bd7) 245,989 tokens 92 tool uses 2,064 s, ten findings.
+- 2026-10-05, agents outside a dispatch entry, claude-opus-5-5 each: E4 brief (a5a88f7819f5c449e) 110,505 tokens, 121 tool uses, 21.4 min; A3 brief (ac2e56202b8960e40) 284,295 tokens, 87 tool uses, 14.2 min; O30 brief (acf6fbab034afc2d4) 124,411 tokens, 94 tool uses, 25.5 min; D20 brief (a0026684bea84783c) 186,990 tokens, 322 tool uses, 43.5 min; D20 second brief check (aba2fdc1ad025072b) 317,222 tokens, 96 tool uses, 15.5 min; D20 closing of that check (a8fd060ce54f0ef7c) 293,050 tokens, 87 tool uses, 19.5 min; X3e re-base (aa8d7accadd8e9d3b) 205,135 tokens, 240 tool uses, 29.6 min; X3e panel diagnosis (abb9ccd51ca0b8884) 238,223 tokens, 104 tool uses, 29.6 min; X3e Delete diagnosis (a6cc8344f6841003b) 292,313 tokens, 148 tool uses, 51.7 min; X3e Graph diagnosis (a8790e3b7e3882bba) 342,576 tokens, 147 tool uses, 56.0 min.
+- 2026-10-05, the X3e Graph diagnosis's cleanup ran `rm -f` over every top-level `.mjs`, `.sh`, `.json`, `.diff`, `.py`, `.md`, `.txt` and `.keep` file of the session scratchpad, other agents' files among them; X3f's first gate run lost its output file and was run again with its output under `scratchpad/gate-runs/`; S5's builder, D20's closing agent and D28's brief writer were told to check their work against it (D20's closing agent had nothing there).
 - R14 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from Q51's landing (2026-09-18T06:48:33) to 10:44: 204 messages, 122,879 output tokens, 1,110,938 cache-write tokens, 159,125,119 cache-read tokens, 408 fresh input tokens, 234 minutes; the ten findings were closed by the orchestrator inline, since the round cap was spent.
 
 - The feature-stretch note and the ruling of 2026-09-22, kept whole before plan.md was cut to the 400-character line:

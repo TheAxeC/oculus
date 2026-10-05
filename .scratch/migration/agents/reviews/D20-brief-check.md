@@ -587,4 +587,89 @@ Findings:
 3. The memory and time cost of case 35's first read and of the export of a 600 MB transcript. Nothing was measured; the brief already asks for the quote.
 4. Whether `approve-seed` outside the write chain can race the commands route's approve. `approveTexts` is synchronous (approvals.ts:113-139), so within one process I found no interleaving. No concurrent run was made.
 
-Usage: to be filled by the orchestrator.
+Agent usage: aba2fdc1ad025072b, claude-opus-5-5, 317,222 tokens, 96 tool uses, 15.5 min.
+
+### Closed (the check over the full brief)
+
+Each finding of "The check over the full brief" by heading and number, with where `agents/briefs/D20.md` closes it.
+
+Names
+1. `startArgs`'s caller in `refresh.ts:96`: by Z519 the variable rides a `Joined` field that only `startTerminal` passes, so the usage refresh's Claude starts without it and `refresh.ts` is left as it is ("What to build" 5.1; "What is on the tree", the Claude grid bullet; case 42 checks both; Decisions 7; the Z519 bullet).
+2. `ShellStarter`: unchanged; `shell.ts` gains `WorktreeStarter` (`ShellStarter` with `composeAt`), which `createRepositories` takes, and `openShell` and `row-menu.ts` stay as they are ("What to build" 1.8; the worktrees bullet names `row-menu.ts:438`, :352-353, :372-373).
+3. `RefKind` in `compare.ts:50`: named as a different type left as it is (the graph bullet) and listed among the hits verify 7 marks 'still true' (the last bullet of "What is on the tree"; verify 7 adds `RefKind`).
+4. The `ETIMEDOUT` and "timed out" hits outside the write list (`core/git/run.ts:164-165`, `autofetch.ts:77`, `search.ts:52`, `core/git/files.ts:24`, :48): listed as staying true in the last bullet of "What is on the tree".
+5. `createWorktree`'s server hits: listed there as the unchanged server function; verify 7 greps `createWorktree`.
+6. Holds; the imports of `Composer.svelte` and `AttachPicker.svelte` now cite `Terminal.svelte:54` and `Composer.svelte:23`.
+
+The step line
+1. A2's line is quoted whole as the second bullet of "The plan line and the rulings", with Z126's `plan.md:580`.
+2. Case 23's New half is tied to Z515 (2) and stated as owed (case 23; the Z313 bullet; "The look"; "Report").
+
+Premises
+1. The approve wire is `{action:'approve', repo, chain}` (`commands/routes.ts:49-51`, :100-104, inside `chained(options.writes, ...)`, 409 on failure); `approve-seed` runs outside the write chain, since `approveTexts` is synchronous and the terminal route's options carry no `writes` (the approvals bullet; the route options in the composer bullet; "What to build" 1.4).
+2. The renderer probe loads `@xterm/xterm/lib/xterm.js` with browser shims ("What to build" 5, the cause paragraph).
+3. 30 s or more (the bullet on `writes.timeout_seconds`).
+4. Decisions 5 is reworded: the composer is the one start path where the reader picks a permission mode, and the update tasks' `--dangerously-skip-permissions` has its own confirmation in `UpdateTray.svelte`.
+5. The ruling is named "the ruling of 2026-09-16 17:32" everywhere (`grep -c "662"` over the brief prints 0).
+
+Cases and checks against spec.md and guarded.md
+1. Each page-level case is split into its Run and Look halves (cases 1, 2, 5, 9, 10, 11, 19, 20, 23, 24 to 28a, 54, 56, 63), and the look halves are listed under "The look".
+2. Case 48 calls `gh(['--version'], 2000)` of `deposit-git.ts` with a fake `gh` (`exec sleep 30`) first on PATH, and expects "The gh command did not finish within 2 seconds, so it was stopped".
+3. Case 47 gives every expected line, git's own reasons as "not a git repository" and "nothing to commit, working tree clean".
+4. G35, G6, G33 and G31 are named with their test files, each run alone and quoted ("Kept as tests, and the tests that run unchanged"; verify 6).
+5. A tmux server a case or a test starts with `-L` or `-S` is killed after it, and the report quotes that none is left (the last bullet of "Kept as tests"; "What it must do").
+6. The real-hub reads of cases 1 to 5 are read-only quoted runs and no test (the opening paragraph of "Cases").
+
+The question (could it pass without the goal being reached)
+1. Case 36's fixture holds the cross-turn blank lines, leading line feeds, blank lines inside a user turn, tool turns between said turns and first and last, and a last turn ending in white space, compared with `cmp` against the base copy's `transcriptMarkdown`; item 8.3 says the stream carries the owed line feeds into the next turn and writes the trimmed end once.
+2. See Cases and checks 2 (case 48).
+3. Case 40 is a quoted run over the store with a held `hubReady` promise; its drawing is seen at case 39's look.
+4. Holds (cases 42 and 43).
+5. The look's fallback for Z289: case 35's 600 MB file regenerated with the report's generator under the scratch server's HOME when the 634 MB log is gone ("The look", the Z289 bullet; case 35).
+6. The confirmation is checked over the resolved values, on the server and in the composer ("What to build" 1.5; cases 51 and 52).
+7. The starting mark is cleared on every return of `startInTab` through one `try`/`finally` ("What to build" 4.1; cases 41 and 53).
+8. Holds.
+
+Implied inputs the brief misses
+1. A default carrying `confirm`: case 51 (`needs-confirm`, the confirmation asked), item 1.5.
+2. A wrong `confirm` reads as true with a finding (Z519): item 1.5, cases 22 and 52.
+3. The portfolio naming no hub folder: case 53, item 4.1.
+4. Shell with a task: `task-needs-agent` and the composer offering Claude and Codex only (Z519): items 1.4 and 1.7, case 54.
+5. Seed plus typed words over `PROMPT_MAX`: `task-too-long` (item 1.4, its sentence reworded), case 55.
+6. A hook that never ends: Cancel (Z519), item 7.4, case 56.
+7. Push, pull, switch and worktree add run with no limit (Z519), with the deposit's switch and push by the same rule: item 7.3, case 57.
+8. `composeAt({ task })` for a task call, Claude by default and Codex offered: items 1.1, 1.2, 1.6, 1.7, case 58.
+9. The reference carries the subtask's `do`, so a shifted index answers `task-unknown`: items 1.1 and 1.3, case 59; the empty `do` gives "Task: 2" in case 7a.
+10. A block-style subtask resolves from the parsed list: item 1.3, case 60.
+11. A funding scheme's subtask starts in the scheme's `link:` folder (Z519): item 1.3, case 61.
+12. No split surrogate pair: item 1.3, case 62.
+13. The saved layout keeps the reference and the seed is fetched again (Z519): item 1.6, case 63.
+14. The look approves a scratch task only, removes its entry through the approvals module's own reading and writing on a copy first, never edits Axel's file by hand, ends the agent it started, and runs on a server with HOME under a scratch folder when the real file would be written ("The look", the approval bullet; case 64).
+
+ADRs: none; the brief's opening paragraph says so.
+
+Dictated text
+1. The `server.git` sentences follow X3e's D5 rule by Z519: capitalised, no full stop, the program's word from `server.git.program_git` and `program_gh` (item 7.2; the words of item 9; cases 46, 47, 48, 50).
+2. `composer.approve_detail` reads "This text comes from the hub's task. ..." (item 9).
+3. `project.action.agent_tip` reads "open the composer seeded with this task, in its folder" (item 9).
+4. Every detail sentence is called with (agent, label) (item 1.5; item 9).
+5. Per-mode sentences in Claude's and Codex's own words for `acceptEdits`, `auto`, `bypassPermissions`, `danger-full-access` and `never`, picked by a table in `composer.ts`, with `confirm_skip_detail` for any other value; `refused_needs_confirm` says the mode asks for a confirmation at each start (items 1.5 and 9; Codex's words in the composer bullet of "What is on the tree"; Decisions 10).
+6. Decisions 8 reads "drawn disabled with their reason (choice C7)".
+7. Holds.
+
+User-visible choices nothing names
+1 to 7. Settled by Z519, each written into the brief: 1, `approvals-unwritable` with the path as its name (item 1.4, case 16, Decisions 11); 2, a wrong `confirm` reads as true (item 1.5); 3, a task seeds Claude or Codex only (items 1.4, 1.7); 4, the saved layout keeps the reference (item 1.6); 5, the hook-running commands with no limit (item 7.3); 6, Cancel (item 7.4); 7, a scheme's subtask in its `link:` folder (item 1.3).
+
+Shared paths
+1. X3f's DESIGN lines :305, :324, :334, :391, :395, :417, :422, :427 and HELP lines :49-50, the line inserted after :85, :102, :120, :159, :161, :167, :247 are listed, with the one-line shift of D20's HELP lines after 85 once X3f lands.
+2. Holds; `refresh.ts` is named as S5's and left by D20.
+3. X3e is named with its overlaps; D20 lands first and X3e is re-based on its classifier, `running.ts` and `server.git` keys (Z519).
+4. D45's `server.yml:63-64` adjacency is noted, and with it D45's `routes.ts:380-520` and `:545-560`, which overlap D20's `:516-628`: whichever lands second is re-based.
+
+Declined to judge
+1. Settled by Z519: the usage refresh's Claude keeps its renderer (item 5.1).
+2. Settled by Z519: the hook-running commands run with no limit and a write offers Cancel (items 7.3, 7.4).
+3. Case 35 quotes the time and peak memory of the first read.
+4. Item 1.4 states that `approve-seed` runs outside the write chain and why.
+
+Agent usage of the closing: a8fd060ce54f0ef7c, claude-opus-5-5, 293,050 tokens, 87 tool uses, 19.5 min.

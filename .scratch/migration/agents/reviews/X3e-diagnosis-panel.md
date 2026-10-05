@@ -1063,3 +1063,5 @@ $
 ```
 
 The symbolic link `$tmp/tree/tools/oculus/node_modules` removed with `rm` (the main checkout's `tools/oculus/node_modules` still lists 306 entries), the scratch copy removed with `git worktree remove --force "$tmp/tree"` from the main checkout (exit 0, and `git worktree list | grep -c EGuQFs` printed 0), and `$tmp` with every throwaway file in it (the fake, `red.sh`, `red.mjs`, `shrink.mjs`, `sig.mjs`, the probe copies and the saved outputs) removed with `rm -rf`. No credential or `.env` file was copied. `pgrep -fl osascript` printed nothing (exit 1). The red command run again on the original case: left to the orchestrator, who carries the fix and its test into the brief; the harness and the fake are quoted whole under "Red command", so it can be rebuilt.
+
+Agent usage: abb9ccd51ca0b8884, claude-opus-5-5, 238,223 tokens, 104 tool uses, 29.6 min.
