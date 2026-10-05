@@ -1303,6 +1303,18 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z571 (2026-10-05): what can be scheduled is an Update task, a saved command or a free prompt, as recommended; project commands are not in A3. (the user)
 - Z572 (2026-10-05): the ruling of 2026-09-23 (a `schedule:` field per task in `config/behavior.yml`) is replaced ("That was a shitty ruling. I hate that one"). (the user)
 - Z573 (2026-10-05): A3 does not land as it is; its new design is built in A3's worktree by a fresh builder from a brief for the new design ("Agreed" to sending it back rather than landing it and opening a new step). The round cap does not apply: Z569 is a ruling on a part not yet landed, which rewrites A3's line and brief through /spec. The landing fixes of the review over round 2 (4.1 to 4.3) and the removal of the tests no entry names are in A3's worktree. (the user)
+- Z574 (2026-10-05): A3-1, (a): G46 reworded to cover every schedule, Code `schedules/watch.ts` and `schedules/run.ts`; the command rows of its tests written; the lazy option was (b) ("I will accept all recommendations"). (the user)
+- Z575 (2026-10-05): A3-2, (a): G31 widened to `~/.oculus/schedules.yml`, Code `schedules/file.ts`, test `tests/server/machine/schedules/file.test.ts` 'refuses a write over a schedules file it cannot read, leaving it'; the lazy option was (b) ("I will accept all recommendations"). (the user)
+- Z576 (2026-10-05): A3-3, (a): G1 names `/api/schedules`, test `tests/routes/machine/schedules.test.ts` 'refuses a request without the write token'; the lazy option was (b) ("I will accept all recommendations"). (the user)
+- Z577 (2026-10-05): A3-4, (a): Run now runs a paused or Off schedule ("I will accept all recommendations"). (the user)
+- Z578 (2026-10-05): A3-5, (a): after Run now the terminal is shown and the tray closes ("I will accept all recommendations"). (the user)
+- Z579 (2026-10-05): A3-6, (a): two schedules with one name are both held with the problem `name-twice`, and neither runs ("I will accept all recommendations"). (the user)
+- Z580 (2026-10-05): A3-7, (a): a fresh brief check of A3's new brief before the build; the lazy option was (b) ("I will accept all recommendations"). (the user)
+- Z581 (2026-10-05): A3-8, (a): `tasks.skip_permissions` removed; setting it gives a finding pointing at a schedule's Run unattended ("I will accept all recommendations"). (the user)
+- Z582 (2026-10-05): A3-9, (a): `~/.oculus/schedules.yml` is a list of `name`, `runs` (`{task}`, `{command, folder}`, `{prompt, folder}`), `when` in double quotes, `paused`, `unattended`; `folder` is `hub`, an absolute path or a `~/` path ("I will accept all recommendations"). (the user)
+- Z583 (2026-10-05): E4-1, (c): a pane's frames stay mounted when the layout changes, built in E4's repair round with `shell/panes/` added to its paths; the lazy option was (a) ("I will accept all recommendations"). (the user)
+- Z584 (2026-10-05): E4-2, (a): the app policy keeps `frame-ancestors <host>`, and the section says why ("I will accept all recommendations"). (the user)
+- Z585 (2026-10-05): E4-3, (a): `list_shape` and `file_unreadable` kept, named in the section and in findings.yml ("I will accept all recommendations"). (the user)
 
 ## Agents
 

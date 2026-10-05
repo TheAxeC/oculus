@@ -4,6 +4,18 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z585 (2026-10-05): E4-3, (a): `list_shape` and `file_unreadable` kept, named in the section and in findings.yml. (the user)
+- Z584 (2026-10-05): E4-2, (a): the app policy keeps `frame-ancestors <host>`, and the section says why. (the user)
+- Z583 (2026-10-05): E4-1, (c): a pane's frames stay mounted when the layout changes, built in E4's repair round with `shell/panes/` added to its paths. (the user)
+- Z582 (2026-10-05): A3-9, (a): `~/.oculus/schedules.yml` is a list of `name`, `runs` (`{task}`, `{command, folder}`, `{prompt, folder}`), `when` in double quotes, `paused`, `unattended`; `folder` is `hub`, an absolute path or a `~/` path. (the user)
+- Z581 (2026-10-05): A3-8, (a): `tasks.skip_permissions` removed; setting it gives a finding pointing at a schedule's Run unattended. (the user)
+- Z580 (2026-10-05): A3-7, (a): a fresh brief check of A3's new brief before the build. (the user)
+- Z579 (2026-10-05): A3-6, (a): two schedules with one name are both held with the problem `name-twice`, and neither runs. (the user)
+- Z578 (2026-10-05): A3-5, (a): after Run now the terminal is shown and the tray closes. (the user)
+- Z577 (2026-10-05): A3-4, (a): Run now runs a paused or Off schedule. (the user)
+- Z576 (2026-10-05): A3-3, (a): G1 names `/api/schedules`, test `tests/routes/machine/schedules.test.ts` 'refuses a request without the write token'. (the user)
+- Z575 (2026-10-05): A3-2, (a): G31 widened to `~/.oculus/schedules.yml`, Code `schedules/file.ts`, test `tests/server/machine/schedules/file.test.ts` 'refuses a write over a schedules file it cannot read, leaving it'. (the user)
+- Z574 (2026-10-05): A3-1, (a): G46 reworded to cover every schedule, Code `schedules/watch.ts` and `schedules/run.ts`; the command rows of its tests written. (the user)
 - Z568 (2026-10-05): A3's extra repair round for item 5 (the 29 February pattern, the due time before the first sessions payload). (the orchestrator, automode)
 - Z567 (2026-10-05): O30's app opens dark (vscode-dark-modern, background #181818, nativeTheme dark), done first. (the user)
 - Z566 (2026-10-05): (a): D44's three tests outside any entry deleted; the look checks Submit's sentences and tones. (the user)
