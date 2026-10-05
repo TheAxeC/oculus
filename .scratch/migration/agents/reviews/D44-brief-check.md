@@ -61,4 +61,53 @@ Whether Z433's automode closing stands for Axel's yes; decision 6's reading of "
 
 ## Closed
 
-Filled when the brief's closing returns.
+Each finding closed in `agents/briefs/D44.md` (line numbers of the brief after the closing), by the orchestrator's rulings 1 to 17.
+
+**1. Names**
+- `HpcTarget` and `tests/routes/machine/hpc.test.ts` (ruling 1): the file joins "Paths this step writes" at lines 7-17, `target()` gaining the new fields as inert stubs with no assertion or title changed (brief :290); the premise is stated at :65.
+- `ServerContext.hpcSubmits` and `tests/server/root/context-fixture.ts` (ruling 1): the file joins the write list at lines 12-13 and 95-96, `hpcSubmits: submitState()` and its import and nothing else (:291); the premise at :65.
+- `DESIGN.md` "Git." (ruling 2): the false sentence is quoted with the greps that show no test pins a read vector (:43); section 5 has the step rewrite it to say which read forms are held to exact vectors, the new `ls-files` vector among them, and what checks them (:202); the builder quotes the rewritten sentence in the report's "Doc text" (:399); :73 names it among the paragraphs rewritten.
+- `shell-word.ts` head comment (ruling 3): joins the re-read list, naming the ssh remote line (:75), the premise (:42), and the write list at lines 1-3 (:271).
+- `StripActions.svelte` mentions (ruling 4): every mention where Submit is meant now names `actions/BarActions.svelte`: the head comments list (:75), the queued-steps bullet (:304), Read item 8 (:355) and the flow's location (:197). The remaining mentions describe X3f's tree and Z432's words: :9 and :17 say the file is deleted in X3f's worktree under Z536, :303 lists it as deleted.
+- `projectOf` and the new names: no change needed (the finding made no claim false).
+
+**2. The step line**
+- Placement under Z536 (ruling 5): the authority paragraph quotes the step line ending `(ruling Z536)` at `plan.md:509` and Z536 at `plan.md:1252` (:7); the "What to build" opening says the `.slurm` tab's breadcrumb bar (:81); decision 10 is the breadcrumb bar, ruled (:317); premise 6 states Z488's Correction and Z536 (b) (:31); "For Axel" item 1 no longer says the step line names the title bar (:326).
+
+**3. Premises**
+- D44 brief history: premise 1 says the log prints only this brief's commits, f996b0bf0 and 02674f2b0 (:17).
+- Glassbox (ruling 6): `~/projects/glassbox-decision-pipelines/code` added with `README.md:71`, `:100`, `:111` and the scripts' `# -> code/` lines (:26); eight values and five `code` mirrors (premise 2 :18, premise 3 :28, decision 2 :309, section 4 :192, section 2's run :159, verify 4 :377, "Manifest values" :398, the write-list note :297); glassbox left the default list (:27).
+- `slurmSettings` after S5 (ruling 7): the premise says it never throws for a value and a missing or empty `slurm.resource` reads as the catalog default `utwente` (:35); section 1 item 5's throw branch is removed and replaced by that sentence (:97); case 6's second sentence is removed (:226).
+- Renumbering (ruling 8): `findings.yml:151` (:50, :190, write list :280), `context.ts:62/137/456` and `close()` at `:469-486` (:139, write list :275), `actions.ts:23/:20` (:36), `host.ts:87-99` (:35), `plan.md:509`, `:1071`, `:1156-1159`, `:1158`, `:1214`, `:1252` (:7, :17, :31); the write list's header names b0fd996a1 for the renumbered files (:264). The S5 bullet says S5 landed at 71017ce60 with nothing to compare (:301). The D20 bullet is redone against `.agents/worktrees/D20` with `git diff -U0 16b31cef0` (three hunks, mapped onto main's `:63`, `:131`, `:453`) and a `git merge-file -p` of both sides over main's `context.ts` exiting 0 in three runs; D20's doc hunks are re-listed from the same `git diff -U0` (:302).
+- `plan.md` references: corrected as above.
+- G37 (ruling 9): line 3 says G37 is written into `agents/guarded.md` at X3f's landing (Z491), before D44's base (:3).
+- Sizes (ruling 15): about 2.1 GB (`du -sk` 2156392 KB) and 389 MiB by `stat` (407994752 bytes) in premise 5 (:30), decision 1 (:308) and "For Axel" item 2 (a) (:331).
+- X3f-based source-tab premises: re-read in X3f's worktree as it stands under Z536: `actions/` holds only `BarActions.svelte` (112 lines), `Source.svelte` 508 lines with `handUp` at `:325` to `'bar'` only, the anchors renumbered, and `BarActions.svelte`'s `lead` and `tail` snippets through `FileBarActions.svelte` (:9, :17, :54-56, decision 12 :319); the orchestrator re-reads them at the base.
+
+**4. Cases and checks**
+- Case 6 (ruling 7): second sentence removed (:226).
+- Case 11 against section 4 (ruling 10): section 1 item 4 has the planner read the manifest's raw `paths.cluster` from `project.file` with `readYamlMap`, at each plan and again at the press; a value present and refused answers `bad-cluster`, never the default; the default is held to the same rule (:96); section 4 keeps `normalise.ts` and `validate.ts` as written and says the planner does not take `Project.cluster` (:189); the premise names `project.file` and `readYamlMap` (:49); case 11 reads the raw value, and its fixture puts the space in the hub folder so the default holds to the rule (:231).
+- Section 6 and Z538 (ruling 16): the heading and opening make the section conditional on Z538 (a) (:204-206); the alternative under Z538 (b) is the quoted runs of both tables with and without the behaviour, and the look (:215); the premise names Z538 and Z392 (:64); the cases' test bullet (:253), the write list (:289), verify 7 (:380) and the "Doc text" guarded entry, now G43 (:399), are conditional on it.
+- `no-resource` (ruling 11): removed from the refusal list (:366); its catalog sentence went with section 1 item 5's throw branch (:97).
+- `// section 2` (ruling 14): replaced by a doc comment saying what the field holds (:118-121); a `bytes` field added for ruling 13 (:114).
+
+**5. The question**
+- Verify 3 (ruling 12): the grep is now `grep -rlE "(from |import\()'sh-syntax'" build/server --include='*.js'`, which finds the bare import specifier only an external package leaves and an inlined copy does not; on main's `build/` the same check for `trash` prints three chunks and exits 0, and for `sh-syntax` prints nothing and exits 1; the old glob `build/server/chunks/*.js` missed the chunks under `build/server/chunks/chunks/` (:376).
+- Case 19 and the look (ruling 17): case 19 is written for Z539 (a), the orchestrator creating `code/hpc/oculus_submit_check.slurm` in engram at the look, a one-minute `main-cpu` job writing `hostname` and the date, with (b) and (c) as Axel may rule (:239-242); the look paragraph says the builder creates no job script and what the orchestrator does under each of (a), (b) and (c) (:383).
+
+**6. Implied inputs** (ruling 13)
+- A present but refused `paths.cluster`: section 1 item 4 (:96) and case 11 (:231).
+- The cluster folder or its parent missing: case 22 (:245), the last level created by rsync, a deeper missing path `copy-failed` with rsync's line.
+- A symbolic link: section 1 item 3 decides by real path (:95); case 23 (:246).
+- A large untracked, not-ignored file: section 1 item 6 sends it and sums `bytes` (:98); `SubmitPlan.bytes` (:114); the confirm's detail gains a line with the count and total size by `humanSize` (:197), "four detail lines" (:366); the opening names the size (:81); case 24 (:247).
+- The server closing during a copy or `sbatch`: the submit state holds each run's `AbortController` (:87, :130), `context.ts`'s `close()` closes it (:139), the after-close behaviour and the abort `ssh.ts` gains (:141, write list :270), the request-close sentence of section 3 corrected (:182); case 25 (:248).
+- The default `~/projects/<id>` held to the rule: section 1 item 4 (:96); case 26 (:249).
+
+**8. Dictated text**
+- `// section 2` replaced (ruling 14), above. The dictated lines added at the closing, held line by line against `agents/spec.md` (plain prose, ASCII, no history, a comment within 100 columns, rewrapped as a paragraph): `bytes: number; // the total size in bytes of the files the copy sends` (:114, 73 columns) holds; the doc comment "Whether the script or a file it sources names `/local/$SLURM_JOB_ID`, and the sources the scratch rule could not read." (:118-121, its widest line 96 columns) holds.
+
+**Also changed at the closing**
+- Decision 1 said "Pending" on the copy set; it now says "For Axel" item 2, ruled Z535 (b) (:308).
+- `LC_ALL=C grep -n '[^ -~]' agents/briefs/D44.md` prints nothing.
+
+Closed by the orchestrator after the closing agent (aac4dfaf70ae0e442, claude-opus-5-5, 276,977 tokens, 130 tool uses, 15.6 min): the second false sentence of `DESIGN.md:128` (git writes, `--force`) joins the step's rewrite of that paragraph; `Project.cluster` is dropped, since the planner reads the raw `paths.cluster`, and `normalise.ts` and `model-entities.ts` leave the write list; the cluster-folder rule is `clusterFolder` in `src/lib/data/shapes/shapes.ts`, read by `validate.ts` and the planner.
