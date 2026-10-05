@@ -47,6 +47,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 - Z500 (2026-10-05, Axel): D38's keys in `local.yml` under `literature:`, (a); Google Scholar stays a link.
 - Z501 (2026-10-05, Axel): D38's merge gets a guarded entry.
 - Z502 (2026-10-05, Axel): D38's libraries as recommended.
+- Z503 (2026-10-05, closed in automode): D45's choices 1 to 7 and 9; `choices.md`.
 - Z474 (2026-10-05, closed in automode): D42's review Spec 1; `choices.md`.
 - Z475 (2026-10-05, closed in automode): D42's review, declined to judge; `choices.md`.
 - Z468 (2026-10-05, Axel): no step is ever added; Q118, Q119, Q121 and Q122 folded into S5 and D33.

@@ -155,7 +155,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- Z504 (2026-10-05, D45's choice 8, a feature dropped): LaTeX Workshop runs its tools in a Docker image when `docker.enabled` (off by default) and shares its viewer over Live Share. `docker` is not installed on this machine (`command -v docker` prints nothing), and oculus has no shared-session layer. (a) build the Docker wrapper (`latex.docker_image`), untested here. For: no LaTeX Workshop feature dropped. Against: code no run on this machine proves. (b) leave both out. For: nothing built that cannot be tried. Against: two LaTeX Workshop features dropped. (c) Docker built, Live Share left out. Recommendation: (b) for Live Share, which has nothing in oculus to attach to, and (b) for Docker until a machine with Docker is in use. No lazy option applies: (b) is a drop, and a drop is yours to rule.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 

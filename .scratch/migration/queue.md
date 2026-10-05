@@ -1,21 +1,21 @@
-In flight (2 of 5 slots):
+In flight (5 of 5 slots):
 - X3f (opening a file row, and the tab row's actions): round-2 brief being written (the diagnosis's fixes, the Outline, the Data map's contents list, tests under G37); then repair round 2.
 - S5 (the Settings view's controls and headings): Q119's brief being closed; then repair round 1 with Q119 and Q122.
+- D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief check running; choice 8 (Docker and Live Share) open for Axel as Z504.
+- X3e (Files lists reordered by drag): brief being re-based on D42's landing; then dispatch.
+- D20 (an agent from a task or a worktree): brief check running.
 
-Queued, in order (29 steps):
-- D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief written, its choices being ruled; once a slot is free.
+Queued, in order (26 steps):
 - D23 (language servers): brief closed; once X3f and S5 have landed.
 - D38 (the Literature search view): brief written; once S5 has landed.
 - D11 (the debug client for rite): brief ready; once S5 has landed.
-- X3e (Files lists reordered by drag): brief ready; once a slot is free.
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D44 (Submit on a .slurm file, in its editor title bar): no brief yet; once X3f has landed.
 - D41 (links in Markdown checked): once M7 has landed.
-- D15 (PDF reading): brief ready; once a slot is free.
+- D15 (PDF reading): brief ready; once D45 has landed (it builds on D45's PDF viewer).
 - M8 (the hub's YAML checked in the editor): once D23 has landed.
 - D43 (LaTeX navigation): once D23 has landed.
-- D20 (an agent from a task or a worktree): brief ready; once a slot is free.
 - A3 (scheduled Update runs): once a slot is free.
 - D28 (saving a file as VS Code does): brief ready; once a slot is free.
 - D23b (cross-file language features): brief ready; once D23 has landed.
@@ -36,7 +36,7 @@ Queued, in order (29 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D42 (a file's history), 2026-10-05, the commit that carries this line.
+- D42 (a file's history), 2026-10-05, 8077dd55.
 - H3 (the hub's data map), 2026-10-05, 575c997c.
 - D37 (the Search view's replace and the LaTeX build), 2026-10-05, a5f1285b.
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.

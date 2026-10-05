@@ -260,6 +260,15 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z503 (2026-10-05, from D45's brief)
+
+The question: D45's user-visible choices 1 to 7 and 9.
+
+- Chosen: (1) `on_file_change`, LaTeX Workshop's default, with `on_save` and `never`; (2) the PDF.js viewer for every PDF, View in Web Browser opening oculus's viewer with SyncTeX through a `BroadcastChannel`; (3) LaTeX Workshop's settings under `latex:` with its defaults; (4) every unsaved tab saved before a build, as `saveAll`; (5) the TeX view in the explorer group at order 5 and in the Explorer arrangement; (6) the project tab's panel kept, drawn from the new store; (7) LaTeX Workshop's keys, each command also on the title bar, the TeX view and the palette; (9) `pdfjs-dist` 6.4.299, a newer release of LA19's library.
+- Not chosen: (1) `on_save` only, (2) two viewers for one kind of file and a raw-PDF browser tab, (3) fixed behaviour, (5) an unlisted view, (6) the old rows left, (7) other keys: each the brief's lazy option; (4) (b) saving only the root's files, which is not VS Code's behaviour.
+
+Where it applies: D45 and D15. Booked in `plan.md` Rulings.
+
 ## Z494 (2026-10-05, from Q119's brief check)
 
 The question: Q119's brief check found its line numbers moved on S5's tree, sentences outside its paths made false (DESIGN.md:395, HELP.md:261 and :282, `source.ts:85-99`, `rows.ts:10-11`, `boundaries.test.ts:62-63`, `config.test.ts:369-376`), cases that start real processes, a test placement against G13, an upward import, and no rule for which check makes a value wrong when the reader and S5's catalog control disagree.
