@@ -1,9 +1,9 @@
 In flight:
-- D23 (language servers): brief being closed.
-- X3f (opening a file row, and the tab row's actions): diagnosis in; repair round 2 next.
-- S5 (the Settings view's controls and headings): reviewed, Q119's brief checked; repair round 1 next.
-- D42 (a file's history): on main, not committed; its landing gate to run again after a fix.
-- D38 (the Literature search view): brief being written.
+- X3f (opening a file row, and the tab row's actions): diagnosis in; repair round 2 next, with the Outline, the Data map's contents list and the tests under G37.
+- S5 (the Settings view's controls and headings): reviewed; Q119's brief check in, its findings being closed; repair round 1 next, with Q119 and Q122.
+- D42 (a file's history): staged on main, not committed; its landing gate next, in the gate worktree.
+- D23 (language servers): brief closed; open items Z498 and Z499 for Axel; dispatched once X3f and S5 have landed.
+- D38 (the Literature search view): brief written; open items Z500 to Z502 for Axel; dispatched once S5 has landed.
 - D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief being written.
 
 Queued, in order (26 steps):
@@ -11,15 +11,15 @@ Queued, in order (26 steps):
 - X3e (Files lists reordered by drag): brief ready; once D42 has landed.
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
-- D44 (Submit on a .slurm file): brief drafted; once X3f has landed.
+- D44 (Submit on a .slurm file, in its editor title bar): no brief yet; once X3f has landed.
 - D41 (links in Markdown checked): once M7 has landed.
-- D15 (PDF reading): once a slot is free.
+- D15 (PDF reading): brief ready; once a slot is free.
 - M8 (the hub's YAML checked in the editor): once D23 has landed.
 - D43 (LaTeX navigation): once D23 has landed.
-- D20 (an agent from a task or a worktree): once a slot is free.
+- D20 (an agent from a task or a worktree): brief ready; once a slot is free.
 - A3 (scheduled Update runs): once a slot is free.
-- D28 (saving a file as VS Code does): once a slot is free.
-- D23b (cross-file language features): once D23 has landed.
+- D28 (saving a file as VS Code does): brief ready; once a slot is free.
+- D23b (cross-file language features): brief ready; once D23 has landed.
 - D39 (hub keys as links): once M8 and D23b have landed.
 - D33 (the Problems view): once D23 has landed.
 - D36 (linters on save): once D33 has landed.

@@ -237,6 +237,62 @@ Findings: none against the prose rules. G36's content and the owner list are alr
 
 Usage: claude-opus-5-5 (ad0ebdc1a60146409), 312,538 tokens, 124 tool uses, 16.2 min.
 
+### Closed
+
+Every finding above is closed in the brief `agents/briefs/D23.md` (754 lines, read on main at 4927e2d57), each by the brief line named.
+
+- N1. `DESIGN.md:396` and `:399` are in the write list (line 494), their new text under "Doc text this step writes" (lines 324, 325).
+- N2. `HELP.md:48` and `DESIGN.md:427` are in the write list (lines 493, 494), their new text at lines 328 and 326; the breadcrumb's symbol segments are built in section 3 (line 272).
+- N3. `HELP.md:282` and `DESIGN.md:245` are in the write list (lines 493, 494), their new text at lines 329 and 327, applied to the lines as S5 leaves them (line 322).
+- N4. "Shared paths (for the orchestrator)" (lines 500-509): D23 dispatches after X3f lands (line 504) and after S5 with Q119 lands (line 505); D42 (line 506), H3 (line 507) and the diagrams (line 508); `cpp-file.ts` sits under `server/machine/lsp/clangd/`, leaving `data/sources/config` at 9 items before Q119's split (line 509).
+- L1. Z482 is written into section 1's server lifetimes (lines 134-139), G36's text (line 415) and the doc text for DESIGN.md:153 and :416 (line 332), with cases 41 (last tab closed), 42 (reopened inside 60 s) and 43 (reopened after) at lines 384-386, and look item 14 (line 641).
+- L2. Z483: the parity table puts the References view and clangd's AST and memory-usage views in D23 (lines 295, 314); the References view (line 273, `textDocument/references` and `textDocument/implementation`), the AST view (line 274, `textDocument/ast`) and the memory-usage view (line 275, `$/memoryUsage`) each with its place, rows and actions; their glyphs (line 276); cases 53-55 (lines 396-398); their paths (lines 467, 468, 485, 487); Decision 4 (line 516); the view's place as UV-5 (line 556).
+- P1. The brief is read on main's head 4927e2d57, after H3 landed at 575c997c8 (lines 49, 51); every `file:line` was re-read there, `sources.yml` moved to `roots:` 88-94 and `languages:` 98 (lines 106, 107), and D42's staged landing and the one line it moves in `files.yml` are stated (line 51).
+- P2. OI-1 names the keys `sessions_cache`, `sessions_overrides`, `workspaces`, `bookmarks`, `notes`, `changes`, `history`, `approvals`, `calendar_dir`, `mail_dir` at `options.yml:693-722` (line 22).
+- P3. Line 7 states the six items ruled Z476 to Z481 by the orchestrator in automode under "Open items, ruled", G36 approved by Axel (Z485 (a)) and every finding closed; OI-4 says the same (line 14).
+- P4. "The scope as ruled (kept whole)" (lines 663-754) holds Answer 11, the plan line, The queue, Z92, Z72, Z74 (4), the Settings ruling, Z79 (4), Z80, Z88, Z47 4 (a), Z182 as ruled and as raised, Z260 as ruled and as chosen, Z466 to Z468 and Z476 to Z485, each compared with its ledger line at head.
+- P5. Every cite of `plan.md`, `orchestrator-state.md`, `orchestrator-history.md` and `choices.md` is at main's head, where the working copies of `plan.md` and `orchestrator-state.md` equal HEAD (lines 51, 55).
+- P6. The client's own `publishDiagnostics` handler with owner `"lsp"` (premise 4, line 64) and the standalone theme's `semanticHighlighting = false` with the `semanticHighlighting.enabled` option (premise 7, line 67) are stated, and the client's refresh capabilities (premise 3, line 63).
+- C1. Case 8 (line 347) and look item 12 (line 639) use the `#include <snes.h>` miss of `scotoma.h:18` and `fallback_flags: [-xc, -Itools/pvsneslib/pvsneslib/include]` relative to the repository root, from the probe at lines 90-94.
+- C2. Case 13 is split into 13a (two pages, one closed, line 352) and 13b (the page closed and taken over at 30 s, line 353).
+- C3. Case 32 (line 375) sends the failed state on the language's `lsp:` channel and keeps the page socket and its other channels open.
+- C4. Closed by Axel's Z485 (a): OI-4 (line 14) and G36 under "Tests" (line 415).
+- C5. G36's test runs on vitest's fake clock over an in-process stub server, not slow-tagged, with the reason (line 415; Decision 22, line 534).
+- C6. The report has a section "Lines for agents/guarded.md" (line 658) with G36's entry and the Test and Code lines of G1, G2, G7, G13 and G31.
+- C7. The first proof (lines 422-428) is a Node script over a real pyright and clangd and a client-runtime test of the transport over a fake port, the in-page proof moved to look items 1 and 8 (lines 628, 635); verify item 5 runs on a dev server of the builder's on port 8795 with `ws` stand-in pages (line 621); verify item 3 is the perl gate (line 615).
+- Section 5, case 8: the case now fails without `fallback_flags` reaching clangd (line 347).
+- Section 5, case 13 and verify item 5: both count processes with pages open and closed at stated times (lines 352, 353, 621).
+- Section 5, the first proof: its second run exercises the transport's document set and message rewriting (line 427).
+- Section 5, OI-6: `semanticHighlighting.enabled: true` on served models, the theme table covering clangd's types and the drop of the types with no scope (lines 171-205), with case 52 (line 395).
+- Section 5, the diagnostics hand-off: the transport keeps `publishDiagnostics` from the client and sets owners `lsp-python`, `lsp-c`, `lsp-cpp` (line 167), with case 51 (line 394).
+- Section 5, the refreshes: `workspace/inlayHint/refresh` goes to the client, `workspace/semanticTokens/refresh` fires the transport's provider, `workspace/diagnostic/refresh` is answered with `null` and never comes (lines 144, 168).
+- I1. Section 1 (line 135) and cases 41-43 (lines 384-386).
+- I2. One clangd per page and root serves the `c` and `cpp` channels (lines 134, 140; Decision 16, line 528), owners include `lsp-c` (line 167), a C repository names `-xc` (line 157), and case 40 (line 383).
+- I3. Relative include paths resolve against the repository root (line 157), UV-1 (line 540), cases 8 and 39 (lines 347, 382).
+- I4. A model registers under its shown language (line 238; Decision 19, line 531), case 44 (line 387).
+- I5. A changed `lsp` key restarts every server under the new folder, an unusable folder fails clangd with `lsp_folder` (line 149), a wrong value is a finding with the default used, DESIGN.md:245's clause (line 327), and case 45 (line 388).
+- I6. The lsp folder is keyed by 16 hex digits of the SHA-256 of the root's real path (line 153; OI-1, line 11; Decision 15, line 527), case 46 (line 389).
+- I7. A document belongs to its innermost served root by real path (line 147), pyright's memory over `~/.claude` and the hub measured (lines 86, 87), case 47 (line 390).
+- I8. The interpreter is found, asked for its version, passed unresolved for a venv and as `sys.executable` for the PATH `python3`, and runs only after approval (line 151; UV-3, line 548; doc text line 332), cases 12 and 48 (lines 351, 391).
+- I9. pyright runs under `process.execPath` (line 131), case 48 (line 391), G7's test (line 418).
+- I10. pyright serves `.gyp`, `.ipython` and `.python` files (probe line 88), case 49 (line 392).
+- I11. A mode change toggles `readOnly` and keeps the registration (line 165), case 50 (line 393).
+- W1. The palette's `interpreter` and `compile-database` modes, the split of `Palette.svelte` into `palette-modes.ts` and `ChoiceRows.svelte`, and the editor actions listed by `editorItems` (line 278; UV-4, line 552; paths lines 474-476).
+- W2. 26 `symbol_<kind>` glyph names with ASCII stand-ins and Lucide rows (lines 240-271), the AST and memory glyphs (line 276), the paths (lines 481, 482).
+- W3. Show Language Server Output opens the unlisted view `lsp-output` (line 279), its paths (lines 470, 488).
+- W4. The notices and action labels in `source.yml`, and `source.readonly` kept above the read-only Monaco editor (line 280; path line 486).
+- W5. `carriesToken` in `server/core/auth.ts`, the writable sinks in `socket.ts` handed to the terminals and the relay (line 146; Decision 20, line 532), paths (lines 438, 440, 491), case 57 (line 400).
+- W6. The transport's own semantic tokens provider and the table from VS Code's `tokenClassificationRegistry.ts` (lines 171-205; Decision 17, line 529), case 52 (line 395).
+- W7. `formatOnType: true` on models clangd serves (line 206; Decision 18, line 530), doc text (lines 324, 330).
+- W8. As P6: lines 141, 142, 144, 167, 168, case 51 (line 394), Decision 5 (line 517).
+- W9. The `LspServices` and `LspPort` types the view passes to the kit (lines 207-235), built by the state side (line 237).
+- Declined, the authority tag `(ruling Z182)`: the plan line carries it as the plan's convention; nothing in D23's brief depends on it.
+- Declined, the record sections: "The items as they were put" (line 18), "Answer 11" (line 667) and "Step 0" (line 752) are kept as the options and texts the rulings name.
+- Declined, who rules L2: Z483 (the orchestrator, automode) ruled it.
+- Declined, pyright's memory over a large root: probed, peak 320.0 MB over `~/.claude` and 215.6 MB over the hub (lines 86, 87).
+- Declined, `.gyp` served as Python: probed, served (line 88).
+- Declined, VS Code's `semanticTokenScopes` defaults: read from `tokenClassificationRegistry.ts:545-595` at microsoft/vscode 548a0c47, and vscode-clangd 0.6.0 adds none (line 172).
+
 # The first brief check, of the 173-line brief at cf880dbe
 
 Brief check of D23 (tools/oculus/.scratch/migration/agents/briefs/D23.md, working-tree version, 173 lines), read against main at cf880dbe. I changed no file in the repository. Every probe ran from /private/tmp/claude-502/.../scratchpad/D23-brief-check/ using the packed pyright 1.1.414 and /usr/bin/clangd.

@@ -32,6 +32,16 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 - Z486 (2026-10-05, closed in automode): S5's review Spec 1, `empty: <words>`; `choices.md`.
 - Z485 (2026-10-05, Axel): G36 for D23, (a) yes; `choices.md`.
 - Z487 (2026-10-05, Axel): new step D45, LaTeX as VS Code's LaTeX Workshop; `choices.md`.
+- Z488 (2026-10-05, Axel): a file feature works from the file opened in the editor, for every step; D44's Submit in the `.slurm` editor title bar; D11's breakpoints in the glyph margin.
+- Z489 (2026-10-05, Axel): `docs/` files keep their own Doc view.
+- Z490 (2026-10-05, Axel): the Outline fixed and `DATA-MAP.md` given a contents list, in X3f's repair round 2.
+- Z491 (2026-10-05, Axel): X3f's fixes tested under a new guarded entry G37.
+- Z492 (2026-10-05, Axel): the landing gate runs in a gate worktree, never in main's checkout.
+- Z493 (2026-10-05, closed in automode): Q122, option (b); `choices.md`.
+- Z494 (2026-10-05, closed in automode): Q119's brief check closed in its brief; one rule for a wrong value; `choices.md`.
+- Z495 (2026-10-05, closed in automode): X3f's "no tab opened" form tried at its landing look; `choices.md`.
+- Z496 (2026-10-05, closed in automode): D23's UV-1, UV-2, UV-4, UV-5 and the lsp folder name; `choices.md`.
+- Z497 (2026-10-05, closed in automode): D38's choices 2 to 13; `choices.md`.
 - Z474 (2026-10-05, closed in automode): D42's review Spec 1; `choices.md`.
 - Z475 (2026-10-05, closed in automode): D42's review, declined to judge; `choices.md`.
 - Z468 (2026-10-05, Axel): no step is ever added; Q118, Q119, Q121 and Q122 folded into S5 and D33.

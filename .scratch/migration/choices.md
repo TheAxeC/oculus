@@ -260,6 +260,51 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z494 (2026-10-05, from Q119's brief check)
+
+The question: Q119's brief check found its line numbers moved on S5's tree, sentences outside its paths made false (DESIGN.md:395, HELP.md:261 and :282, `source.ts:85-99`, `rows.ts:10-11`, `boundaries.test.ts:62-63`, `config.test.ts:369-376`), cases that start real processes, a test placement against G13, an upward import, and no rule for which check makes a value wrong when the reader and S5's catalog control disagree.
+
+- Chosen: every finding closed in Q119's brief by a session agent before S5's repair round 1; one rule for wrong, the catalog entry's control, `min`, `max` and values, read by `settings.ts`, so each bound exists once; case 1's synthetic defaults differ from the shipped ones; cases 25 and 26 on case 11's recorders; the look taken at landing.
+- Not chosen: two rules, the reader's and the catalog's, kept side by side; the round sent with the brief as it stands and its premises left for the builder to hit, the lazy option.
+
+Where it applies: S5's repair round 1. Booked in `plan.md` Rulings.
+
+## Z495 (2026-10-05, from X3f's diagnosis)
+
+The question: the diagnosis found and proved the causes of three symptoms; one form of symptom 1, no tab opened and the Files view left active (icons.yml and behavior.yml on TEST), has no cause found after 120 double clicks over a timing sweep on a scratch copy.
+
+- Chosen: repair round 2 carries the three proved fixes; at X3f's landing look that form is tried on TEST with the network requests and `document.activeElement` recorded, and a reproduction goes to `/diagnose` with that evidence.
+- Not chosen: holding the round until the form is found, which keeps three proved defects in the Files view; dropping the form, the lazy option.
+
+Where it applies: X3f. Booked in `plan.md` Rulings.
+
+## Z496 (2026-10-05, from D23's brief check closing)
+
+The question: D23's user-visible choices UV-1, UV-2, UV-4 and UV-5, and the folder name Z476 named as `<root key>`.
+
+- Chosen: UV-1 (a) a relative include path resolved against the repository root; UV-2 (a) oculus's messages on the language's own channel; UV-4 (a) two palette commands; UV-5 (a) a `references` view in the Explorer group, the AST and Memory Usage as Files sections, as VS Code's clangd draws them; the folder named by 16 hex digits of the SHA-256 of the root's real path.
+- Not chosen: UV-1 (b) paths passed as written, the lazy option; UV-2 (b) a Hub channel and routes, two paths that can arrive out of order; UV-4 (b) one command with modes; UV-5 (b) a rail button, which changes Axel's rail table, and (c) results under the file tree.
+
+Where it applies: D23. Booked in `plan.md` Rulings.
+
+## Z497 (2026-10-05, from D38's brief)
+
+The question: D38's user-visible choices 2 to 13.
+
+- Chosen: each recommendation of the brief: (2) one request per source, merged on the page as each answers; (3) the states ok, limited, timeout, refused, failed, no-key, skipped; (4) one type list mapped to each source; (5) relevance asked of each source, the merged list sorted on the page, on the probe evidence that Crossref and Europe PMC sort by date wrongly; (6) a More control; (7) one hit per DOI, PubMed id or arXiv id, a preprint joined to its published version when a source names both; (8) a small Add form with bucket, project, relevance and why preset; (9) markup stripped and banned characters folded, names kept; (10) `literature:` in `behavior.yml` with `timeout_s: 20`, `per_source: 25`, `cache_min: 30`; (11) the incoming group at order 5, glyph `book`; (12) the tab's instance state, keyless toggles disabled with their key named; (13) a DOI query looked up by DOI.
+- Not chosen: the brief's lazy options, (2) one request for all, (3) ok and failed, (4) untranslated types, (6) one page, (7) DOI alone, (8) one press, (9) text as given, (10) constants, (12) a list in `behavior.yml`, (13) a DOI sent as text.
+
+Where it applies: D38. Booked in `plan.md` Rulings.
+
+## Z493 (2026-10-05, from Q119's brief check, section 9)
+
+The question: Q122: `config/catalogs/options.yml:3` and `:9` and `catalog/options.ts:145` define an option's `default` as "the value the tracked file holds", and no check holds it; the shipped files agree today (108 leaf entries, 0 differing).
+
+- Chosen: (b) the three places say what `default` is: the value the Settings view's Reset writes and its Modified filter compares with, and for the settings `settings.ts` reads, the value used when the key is missing or wrong; Q119's case 9 holds that each shipped default reads through its reader.
+- Not chosen: (a) a test holding each default equal to the file's value, which goes red after every Settings save and forbids the Modified state S5 builds; leaving the sentence as it is, the lazy option.
+
+Where it applies: S5's repair round 1. Booked in `plan.md` Rulings.
+
 ## Z474 (2026-10-05, from D42's review)
 
 The question: D42's review Spec 1: paging by `<hash>^` walks the first parent only, so the page after a merge, or after a side-branch commit at a page boundary, leaves out commits that changed the file; `--skip` under `--follow` repeats the first page on git 2.49.0 (Z434).
