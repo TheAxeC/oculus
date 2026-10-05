@@ -1,13 +1,14 @@
 In flight (5 of 5 slots):
 - X3f (opening a file row, and the tab row's actions): repair round 2 sent to its builder (the diagnosis's fixes, Z466, the Outline, `[TOC]` in the Data map, tests under G37).
 - S5 (the Settings view's controls and headings): repair round 1 sent to its builder (its review findings, Q119, Q122, Z505, Z506, Z509); Z507 (where its look runs) open for Axel.
-- X3e (Files lists reordered by drag): brief being re-based on D42's landing; then dispatch.
+- X3e (Files lists reordered by drag): brief re-based on D42; the three diagnoses Z441 asks before its builder (the hub Graph's 10 s first read, the 5 s Delete, the folder panel's server half) running; its builder starts once X3f and S5 have landed (merges not simple).
 - D20 (an agent from a task or a worktree): brief being written (it was a stub); the brief check of the stub is in, its findings closed in the brief.
-- A3 (scheduled Update runs): brief being written.
+- O30 (the native window in Electron): brief being written.
 
 Queued, in order (26 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief check in (agents/reviews/D45-brief-check.md); its merges with X3f and S5 are not simple, so once X3f and S5 have landed, its findings then closed in the brief; choice 8 open for Axel as Z504.
 - D23 (language servers): brief closed; once X3f and S5 have landed.
+- A3 (scheduled Update runs): brief written (agents/briefs/A3.md), choices Z510; once S5 has landed (merge not simple); Z511 and Z512 open for Axel.
 - D38 (the Literature search view): brief written; once S5 has landed.
 - D11 (the debug client for rite): brief ready; once S5 has landed.
 - M6 (the collection forms removed): once S5 has landed.
@@ -27,7 +28,6 @@ Queued, in order (26 steps):
 - Q72 (the architecture re-read): paused (Axel); after every code step.
 - R2 (release readiness): paused (Axel); after Q72.
 - O29 (retiring the cockpit): paused (Axel); after R2.
-- O30 (the native window in Electron): once a slot is free; it does not wait for O29.
 - O33 (oculus in its own repository): paused (Axel); once O29 has landed.
 - O34 (remote access): paused (Axel); once O33 has landed.
 - O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.

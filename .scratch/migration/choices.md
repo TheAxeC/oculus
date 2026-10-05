@@ -260,6 +260,15 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z510 (2026-10-05, from A3's brief)
+
+The question: A3's shapes the plan does not name, choices 1 to 4 and 6 to 9.
+
+- Chosen: `tasks.<task>.schedule`; croner's five fields and nicknames, local time; `form: cron` in the value rule; going = terminal listed and its session not idle; `~/.oculus/schedule.json`; a `schedule` channel; next run and latest five runs in the tray; empty shipped patterns.
+- Not chosen, the lazy ones: one `tasks.schedule` map; every croner mode; a check in the reader alone; "terminal listed" alone, which blocks every later run; a record in memory, which loses catch-up; a polled GET route; next run only.
+
+Where it applies: A3. Booked in `plan.md` Rulings.
+
 ## Z509 (2026-10-05, from Q119's closing)
 
 The question: `latex.auto_build` is read by the page through its own rule, so a misspelt value builds with no finding.
