@@ -5,8 +5,8 @@
 // The order is VS Code's: on the left what the window is connected to (the machine, the repository
 // and how far it is from its upstream, the findings), then the extensions' items oculus keeps (the
 // HPC poll, the usage refreshers, the server connection); on the right the editor's own items for
-// the source tab on screen (the caret line's blame while it is on, then the caret and the text's
-// own items), then the live sessions and the unsaved tabs, and the bell last.
+// the source tab on screen (the caret line's blame in a file of a repository, then the caret and
+// the text's own items), then the live sessions and the unsaved tabs, and the bell last.
 
 import { t } from '$lib/state/shared/words/text';
 

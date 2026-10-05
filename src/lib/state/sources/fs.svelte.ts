@@ -169,6 +169,9 @@ const ALL = ['fs'];
 
 const NOTE = ['fs', 'note'];
 
+/** The status the file route answers for a file that is not there. */
+const NOT_FOUND = 404;
+
 /** One root of a workspace, and one workspace, answered as the endpoint sent them. */
 const fsRootShape = z.object({ key: z.string(), dir: z.string(), fixed: z.boolean() });
 
@@ -548,29 +551,36 @@ export function createFs(
     /**
      * What one file opens as. A name that names a format the browser draws is answered without a
      * request; anything else is decided by the head of the file, and a file that cannot be read at
-     * all is a download, which is what the file view draws for it.
+     * all is a download, which is what the file view draws for it. A file the route says is not
+     * there is `missing`, which the file browser opens in the source tab so the tab says it cannot
+     * be opened.
      *
      * The answer is held until it is marked, and the asks made while one read is in flight are that
      * one read: a double click opens a row three times and the tab it opens asks once more, which
-     * is one request between them and none at all on the next click.
+     * is one request between them and none at all on the next click. A `missing` answer is not
+     * held, so the next ask reads the file again and finds what it is once it is back.
      */
     async function readFileKind(root: string, path: string): Promise<FileType> {
         const named = typeOfFile(path);
         if (named.kind !== 'other') return named;
         const remembered = heldFileKind(root, path);
         if (remembered !== null) return remembered;
-        return queries.fetch(kindKey(root, path), () => readKind(root, path));
+        const key = kindKey(root, path);
+        const found = await queries.fetch(key, () => readKind(root, path));
+        if (found.kind === 'missing') queries.forget(key);
+        return found;
     }
 
     /**
-     * Read one file's head and answer what its bytes say. A head the route refuses or a read that
-     * fails is answered as what the name says, the download, so the file view stops saying it is
-     * reading and draws the link.
+     * Read one file's head and answer what its bytes say. A 404 answers `missing`; any other head
+     * the route refuses, and a read that fails, is answered as what the name says, the download, so
+     * the file view stops saying it is reading and draws the link.
      */
     async function readKind(root: string, path: string): Promise<FileType> {
         const named = typeOfFile(path);
         try {
             const response = await fetch(fileBytesUrl(root, path));
+            if (response.status === NOT_FOUND) return { kind: 'missing' };
             if (!response.ok) return named;
             const head = await readCappedBytes(response, TEXT_SNIFF_READ);
             return typeOfFile(path, head.bytes);

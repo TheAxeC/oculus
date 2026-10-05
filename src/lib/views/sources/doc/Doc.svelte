@@ -33,19 +33,35 @@
     // made the active tab of its page, so one path stays one tab. A tab matching no entry says
     // which path it asked for.
     // Before the config's first push the list is unknown and the tab's own path is read.
+    //
+    // The document is a file of the hub root, which the pane's breadcrumb reads it as and the tab's
+    // right-click menu acts on (shell/panes/strip/tab-menu.ts): the bookmark and Open in Program
+    // items. The star and, for a file whose extension `open.program_ext` maps, Open in Program also
+    // stand at the right end of the pane's breadcrumb bar (shared/links/FileBarActions.svelte). The
+    // tab hands nothing to the pane's strip. Its scroll box carries `data-tab-focus`, which is
+    // where the keyboard goes when a double click keeps the tab (PaneBody.svelte). The headings the
+    // server's answer carries are said to the Outline, and a press on an Outline row scrolls the
+    // tab to that heading (shared/prose/rendered-headings.svelte.ts).
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Pane from '$lib/ui/frame/Pane.svelte';
+    import FileBarActions from '../../shared/links/FileBarActions.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
+    import Pane from '$lib/ui/frame/Pane.svelte';
+    import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
+    import { servedFile } from '$lib/views/shared/links/file-bar';
+    import { shareHeadings } from '../../shared/prose/rendered-headings.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { docState, followDoc, readDocs } from '$lib/state/workbench/navigation/catalogue';
     import { instanceMap, instanceText, isInstanceOf, tabsOf } from '$lib/state/workbench/layout';
+    import { HUB_ROOT } from '$lib/state/sources/fs';
     import { useState } from '$lib/state/client/use';
 
     const {
         docs: { hubDocument },
         entities: { config },
+        fs: { roots },
+        headings,
         layout: { activateInstance, closeInstance, hosts, restateInstance }
     } = useState();
 
@@ -61,6 +77,15 @@
     const reading = $derived(followed === null ? path : (followed.entry?.path ?? ''));
     const title = $derived(followed?.entry?.label ?? (label === '' ? t('views.doc') : label));
     const shown = $derived(reading === '' ? null : hubDocument(reading));
+
+    let box: HTMLDivElement | undefined = $state();
+    shareHeadings({
+        store: headings,
+        id: () => instance.id,
+        headings: () =>
+            shown === null || shown.loading || shown.error !== '' ? null : shown.headings,
+        box: () => box
+    });
 
     $effect(() => {
         const entry = followed?.entry;
@@ -87,10 +112,31 @@
         }
         return null;
     }
+
+    // The bar's actions go up to the pane while the tab is mounted and one of them applies
+    // (ui/tabs/tab-actions.svelte.ts).
+    handUp(
+        useTabActions(),
+        () => instance.id,
+        barActions,
+        () => servedFile(roots(), HUB_ROOT, reading, reading !== '')
+    );
 </script>
 
+<!-- The file's actions, handed up to the right end of the pane's breadcrumb bar. -->
+{#snippet barActions()}
+    <FileBarActions root={HUB_ROOT} path={reading} onDisk={reading !== ''} />
+{/snippet}
+
 <Pane {title} tinted>
-    <div class="view" data-instance={instance.id} data-path={reading === '' ? path : reading}>
+    <div
+        class="view"
+        data-instance={instance.id}
+        data-path={reading === '' ? path : reading}
+        data-tab-focus
+        tabindex="-1"
+        bind:this={box}
+    >
         {#if path === ''}
             <Empty message={t('doc.none')} glyph={t('doc.none_glyph')} />
         {:else if shown === null}

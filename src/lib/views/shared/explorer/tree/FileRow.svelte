@@ -32,8 +32,11 @@
             event: MouseEvent,
             hit: { segment: string | null; twisty: boolean }
         ) => void;
-        /** The row opened as a tab that stays. */
-        onkeep: (row: TreeRow) => void;
+        /**
+         * The row opened as a tab that stays. A pointer press passes its time, and the tab then
+         * takes the keyboard.
+         */
+        onkeep: (row: TreeRow, pressedAt?: number) => void;
         onbookmark: (row: TreeRow) => void;
     };
 
@@ -106,7 +109,7 @@
             glyph="launch"
             compact
             tabindex={reach}
-            onclick={() => onkeep(row)}
+            onclick={(event: MouseEvent) => onkeep(row, event.timeStamp)}
         />
     {/if}
 {/snippet}
@@ -127,7 +130,9 @@
     words={row.chain !== undefined || row.hits !== undefined ? words : undefined}
     end={lettered ? end : undefined}
     onclick={(event: MouseEvent) => onpress(row, event, hitOf(event))}
-    ondblclick={row.kind === 'file' ? () => onkeep(row) : undefined}
+    onpressagain={row.kind === 'file'
+        ? (event: MouseEvent) => onkeep(row, event.timeStamp)
+        : undefined}
     {actions}
 />
 

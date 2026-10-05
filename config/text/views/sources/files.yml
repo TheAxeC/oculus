@@ -79,6 +79,7 @@ text:
         key_up: Up
         listing_failed: '{0} could not be read: {1}'
         loading: Reading...
+        menu_add_bookmark: Add Bookmark
         menu_add_root: Add Folder to Workspace...
         menu_compare_selected: Compare Selected
         menu_compare_with: Compare with Selected
@@ -93,11 +94,13 @@ text:
         menu_nesting: File Nesting
         menu_new_file: New File...
         menu_new_folder: New Folder...
+        menu_open_browser: Open in Browser Tab
         menu_open_folder: Open Folder...
         menu_open_program: Open in Program
         menu_open_side: Open to the Side
         menu_paste: Paste
         menu_preview: Open Preview
+        menu_remove_bookmark: Remove Bookmark
         menu_remove_root: Remove Folder from Workspace
         menu_rename: Rename...
         menu_reveal: Reveal in Finder
@@ -133,6 +136,7 @@ text:
         open_title: Open {0} as a tab
         outline: Outline
         outline_empty: The file has no headings.
+        outline_go_heading_title: Go to {0}
         outline_go_title: Go to {0} (line {1})
         outline_no_editor: The active editor cannot provide outline information.
         outline_none: No symbols for this file yet.
@@ -148,6 +152,7 @@ text:
         picker_network: The server could not be reached.
         picker_token: The write token was refused; reload the page.
         picker_unsupported: The folder panel is available on macOS only.
+        preview_tab: 'Preview {0}'
         read_again: read again
         read_again_bookmarks: Read the bookmarks again
         read_again_notes: Read the notes again

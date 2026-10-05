@@ -55,7 +55,7 @@ digraph channels {
         label="not placed"; style=dashed;
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
-        "? src/lib/shell/panes/PaneView.svelte:453" [label="src/lib/shell/panes/PaneView.svelte:453 message()"];
+        "? src/lib/shell/panes/PaneView.svelte:457" [label="src/lib/shell/panes/PaneView.svelte:457 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
         "? src/lib/state/system/config/editors/draft.ts:346" [label="src/lib/state/system/config/editors/draft.ts:346 message('notYaml', place.label, name)"];
@@ -149,7 +149,7 @@ digraph channels {
         label="routes"; style=solid;
         "routes/+page";
     }
-    "? src/lib/shell/panes/PaneView.svelte:453" -> "shell/panes/PaneView";
+    "? src/lib/shell/panes/PaneView.svelte:457" -> "shell/panes/PaneView";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
     "? src/lib/state/client/queries.svelte.ts:79" -> "state/client/queries";
     "? src/lib/state/system/config/editors/draft.ts:346" -> "state/system/config/editors/draft";

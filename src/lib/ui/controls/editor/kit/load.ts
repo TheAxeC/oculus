@@ -53,12 +53,12 @@
 
 import type * as Monaco from 'monaco-editor';
 import { FIRST_LANGUAGES, PLAINTEXT, SHIKI_LANGUAGES, shikiId } from './grammars';
-import { freedKeys, type KeyPress } from '../chords';
+import { freedKeys } from '../chords';
 import { RITE_GRAMMAR } from './rite/rite';
 import { registerSettings } from './rite/settings';
 import { registerFolding } from './folding';
 import { codeRules, editorTheme } from './theme';
-import type { EditorEnding } from '../types';
+import type { EditorEnding, KeyPress } from '../types';
 import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
 import type { BundledLanguage, BundledTheme, LanguageRegistration, ThemeRegistration } from 'shiki';
 

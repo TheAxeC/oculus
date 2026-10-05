@@ -300,6 +300,8 @@ Findings: D11.md:162's sentence breaks the spec's prose rule against "not X but 
 
 Agent usage: ordo-high on claude-opus-5-5 (a0e68a55e2b7c6f81), 338,752 tokens, 125 tool uses, 18.5 min.
 
+The recheck of the brief's premises after S5 and D37 landed (27 premises corrected in `agents/briefs/D11.md`): ordo-high on claude-opus-5-5 (a19c3aa50c4a82888), 163,037 tokens, 196 tool uses, 27.7 min.
+
 ## Closed (the session's change to the brief for every finding above, and each dictated line added after the check, made before the preparation commit)
 
 Names:

@@ -1,5 +1,5 @@
-// Layer 2, client state. The preview tab: which instance a preview open replaces, and the two
-// rewrites that replace it and that keep it.
+// Layer 2, client state. The preview tab: which instance a preview open replaces, the two rewrites
+// that replace it and that keep it, and whether a tab is still the preview tab a caller took.
 //
 // A pane holds at most one preview tab, so a reader walking a tree with single clicks reads one
 // file after another in one tab instead of leaving a strip of them behind. Keeping the tab is the
@@ -18,6 +18,25 @@ export function isPreview(instance: Instance): boolean {
 /** The preview tab of a pane, or null when it holds none. */
 export function previewIn(pane: Pane | null): Instance | null {
     return pane?.tabs.find(isPreview) ?? null;
+}
+
+/**
+ * The tab among `tabs` that is still the preview tab `held` was taken from, or null for none: same
+ * id, same view, same state, and still a preview tab. Keeping, retargeting or restating a tab ends
+ * its being that tab.
+ */
+export function stillPreview(held: Instance | null, tabs: readonly Instance[]): Instance | null {
+    if (held === null) return null;
+    const state = JSON.stringify(held.state);
+    return (
+        tabs.find(
+            (tab) =>
+                tab.id === held.id &&
+                tab.view === held.view &&
+                isPreview(tab) &&
+                JSON.stringify(tab.state) === state
+        ) ?? null
+    );
 }
 
 /** A fresh instance marked as the tab the next preview open replaces. */

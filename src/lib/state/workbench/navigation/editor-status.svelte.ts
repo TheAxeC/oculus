@@ -2,13 +2,13 @@
 // draw, and what the status bar asks of it, for the tab to do.
 //
 // The source view publishes its caret, its indentation, its line ending, its language, whether it
-// may be written, the file it shows and the text selected in it and, while its blame is on, the
-// caret line's blame, keyed by its instance, and takes its entry away when it unmounts. The shell
-// reads the entry of the tab on screen and draws the bar's source items from it; it never holds
-// the text, so a change it offers (a line to go to, an indentation to convert to, another line
-// ending, another language, the blamed commit to open) is asked of the instance, and the view
-// that holds the text performs it. Every ask carries a sequence number, so a view performs one
-// ask once, and a view that mounts after an ask was made does not perform it.
+// may be written, the file it shows and the text selected in it and, for a file in a repository,
+// the caret line's blame, keyed by its instance, and takes its entry away when it unmounts. The
+// shell reads the entry of the tab on screen and draws the bar's source items from it; it never
+// holds the text, so a change it offers (a line to go to, an indentation to convert to, another
+// line ending, another language, the blamed commit to open) is asked of the instance, and the view
+// that holds the text performs it. Every ask carries a sequence number, so a view performs one ask
+// once, and a view that mounts after an ask was made does not perform it.
 //
 // A tab also publishes the editor actions it offers the palette, the Cmd+K chords the editor gave
 // up so Cmd+K reaches the palette, and the palette asks the tab to run one by its id. A diff pane
@@ -37,7 +37,7 @@ export type EditorStatus = {
     language: string;
     /** Whether the tab may write its file, which is when the text can be changed from the bar. */
     writable: boolean;
-    /** The caret line's blame in the bar's words while blame is on, and the empty string else. */
+    /** The caret line's blame in the bar's words, and the empty string for a line with none. */
     blame: string;
     /** The editor actions the tab offers the palette, none for a tab drawing no editor. */
     actions: EditorAction[];
@@ -56,6 +56,9 @@ export type EditorAsk =
     | { kind: 'language'; language: string }
     | { kind: 'commit' }
     | { kind: 'action'; id: string };
+
+/** The id of the tab action Cmd+S asks of the source tab on screen. */
+export const SAVE_ACTION = 'oculus.save';
 
 /** An ask as the instance reads it, numbered so it is performed once. */
 export type EditorRequest = EditorAsk & { instance: string; seq: number };

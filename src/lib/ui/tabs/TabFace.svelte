@@ -9,6 +9,9 @@
     // strip measures: the caller binds it, and the face button too, which is what the arrow keys
     // carry the focus between.
     //
+    // A tab that shows a file draws the file's icon before its label, the one the Files tree draws
+    // for that file; any other tab draws its glyph.
+    //
     // A pinned tab draws a pin where the close control stands, and a press on it unpins the tab: a
     // pinned tab is closed from the tab menu and kept by Close All, so the control that closes
     // would be the wrong one to leave under the pointer. A pinned tab holding unsaved text draws
@@ -24,6 +27,7 @@
     // wider than the strip: its label is cut with an ellipsis and its close control keeps its room.
 
     import { type Tab } from '$lib/ui/tabs/tab-strip';
+    import FileIcon from '../display/FileIcon.svelte';
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -107,7 +111,11 @@
             {onkeydown}
             {onpointerdown}
         >
-            {#if tab.glyph !== undefined}
+            {#if tab.file !== undefined}
+                <span class="mark">
+                    <FileIcon name={tab.file} />
+                </span>
+            {:else if tab.glyph !== undefined}
                 <span
                     class="mark"
                     style={tab.tint === undefined ? undefined : `color: var(${tab.tint})`}

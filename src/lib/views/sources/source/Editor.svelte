@@ -10,7 +10,8 @@
     //
     // The word wrap and the rulers are the tab's, resolved in Source.svelte; the minimap, the
     // whitespace and sticky scroll are the configured ones, which every source editor takes alike.
-    // Alt+Z asks the tab to toggle its word wrap.
+    // The actions the tab owns (Alt+Z's toggle of word wrap among them) are handed to the editor,
+    // which binds their keys and lists them to the palette.
     //
     // The editor holds the theme and the font as values, so it is handed the theme and the text
     // size in force, and builds its look again whenever either changes. It is also handed the code
@@ -21,12 +22,13 @@
     // at most half the row (`EDITOR_LEAST`) and follows how far the editor is scrolled through its
     // text. A file of any other kind is the editor alone.
     //
-    // The controls that act on the text (Save, Revert and the rendered half) are drawn at the end
-    // of the pane's tab strip (StripActions.svelte), so the editor spends no row on them. What the
-    // status bar and the palette ask of the tab, Source.svelte hands to `perform`.
+    // The editor spends no row on controls: Save, Revert, Blame and the rendered half are palette
+    // actions of the tab, and Cmd+S saves it. The rendered half is
+    // views/shared/prose/RenderedMarkdown.svelte. What the status bar and the palette ask of the
+    // tab, Source.svelte hands to `perform`.
 
     import { untrack } from 'svelte';
-    import Preview from './Preview.svelte';
+    import RenderedMarkdown from '$lib/views/shared/prose/RenderedMarkdown.svelte';
     import Sash from '$lib/ui/frame/Sash.svelte';
     import { SASH_PX, draggedShare } from '$lib/ui/frame/sash-size';
     import MonacoEditor from '$lib/ui/controls/editor/Editor.svelte';
@@ -35,7 +37,8 @@
         EditorCaret,
         EditorCommand,
         EditorExtension,
-        EditorHandle
+        EditorHandle,
+        EditorOwnAction
     } from '$lib/ui/controls/editor/types';
     import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter/gutter';
     import type { EditorOptions } from '$lib/ui/controls/editor/options';
@@ -75,8 +78,8 @@
         /** The word wrap and the rulers the tab resolved; the editor's own when it hands none. */
         wrap?: WordWrap | null;
         rulers?: number[] | null;
-        /** Asks the tab to toggle its word wrap, which Alt+Z in the editor does. */
-        ontogglewrap?: () => void;
+        /** The actions the tab owns, such as Alt+Z's toggle of word wrap. */
+        actions?: EditorOwnAction[];
         /** Whether the reader wants the rendered half, for a file that has one. */
         rendered?: boolean;
         marks?: EditorMark[];
@@ -105,7 +108,7 @@
         ending = 'LF',
         wrap = null,
         rulers = null,
-        ontogglewrap,
+        actions = [],
         rendered = false,
         marks = [],
         blame = [],
@@ -150,12 +153,6 @@
                   stickyScroll: configured.stickyScroll
               })
     });
-    /** The Alt+Z action, offered while the tab handles the toggle. */
-    const toggling = $derived(
-        ontogglewrap === undefined
-            ? undefined
-            : { label: t('source.toggle_word_wrap'), toggle: ontogglewrap }
-    );
     /** Whether this file has a rendered half at all, which is what a Markdown file has. */
     const markdown = $derived(language === 'markdown');
     const split = $derived(markdown && rendered);
@@ -211,7 +208,7 @@
                 {path}
                 indent={indent ?? undefined}
                 {options}
-                wrap={toggling}
+                {actions}
                 {ending}
                 {look}
                 codeTheme={codeTheme()}
@@ -237,7 +234,7 @@
         {#if split}
             <Sash dir="row" {share} onresize={moved} onreset={reset} />
             <div class="rendered" style="flex: {1 - share} 1 0">
-                <Preview {path} {text} {fraction} />
+                <RenderedMarkdown {path} {text} {fraction} />
             </div>
         {/if}
     </div>

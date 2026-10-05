@@ -43,6 +43,10 @@
     } from '$lib/state/workbench/navigation/catalogue';
     import type { RailEntry, RailPage } from '$lib/state/workbench/navigation/rail';
     import {
+        SAVE_ACTION,
+        sourceOnScreen
+    } from '$lib/state/workbench/navigation/editor-status.svelte';
+    import {
         NO_GIT,
         NO_STATUS,
         type StatusGit,
@@ -178,6 +182,11 @@
         composeIn: (page) => client.terminals.composeIn(page),
         focusSearchBox: (id, box) => client.search.wantFocus(id, box),
         runDefault: (which) => void client.commands.runDefault(which),
+        saveSource: () => {
+            const tab = sourceOnScreen(activeInstance(), client.editorStatus.statusOf);
+            if (tab !== null)
+                client.editorStatus.ask(tab.instance, { kind: 'action', id: SAVE_ACTION });
+        },
         mac: onMac(),
         railPage: (index) => {
             const entry = pages.at(index - 1);

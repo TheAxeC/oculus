@@ -24,6 +24,10 @@
     // otherwise. A row given a `level` outside a tree is a treeitem at that level, with the open
     // state its `expanded` says.
     //
+    // A row given `onpressagain` reports the second press of a double click when the button goes
+    // down. The browser's dblclick never reaches a row that what its first press opened has
+    // covered.
+    //
     // Selected is the reader's cursor and is drawn with the accent tint under the ink; current is
     // what is in force (a checked-out branch, the workspace in use) and is drawn as a bold name
     // with a check, never as a selection. A strong row is drawn at weight 600 with no check, for
@@ -76,7 +80,7 @@
         id,
         nav,
         onclick,
-        ondblclick,
+        onpressagain,
         detail,
         words,
         field,
@@ -193,7 +197,9 @@
             tabindex={inTree ? -1 : undefined}
             bind:this={button}
             onclick={pressed}
-            {ondblclick}
+            onmousedown={(event: MouseEvent) => {
+                if (event.button === 0 && event.detail === 2) onpressagain?.(event);
+            }}
         >
             <!-- The words describe the element that takes the focus: the row in a tree, whose
                  button takes none, and the button outside one. -->

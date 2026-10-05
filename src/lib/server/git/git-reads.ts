@@ -17,7 +17,7 @@
 
 import { permitted } from '../core/paths.ts';
 import { json } from '@sveltejs/kit';
-import type { DiffAttributes, DiffSides } from '../../data/model/index.ts';
+import type { DiffAttributes, DiffSides, GitBlameLine } from '../../data/model/index.ts';
 import {
     attributesOf,
     blameOf,
@@ -33,12 +33,14 @@ import {
 import { fileLog } from '../core/git/files.ts';
 import type { Read } from '../core/git/run.ts';
 import {
+    blameAt,
     branchBase,
     compareFiles,
     compareSides,
     headFile,
     refNames,
-    workspaceSides
+    workspaceSides,
+    type HeadStage
 } from '../core/git/compare.ts';
 import {
     allowedRoots,
@@ -77,7 +79,7 @@ export type CoreReads = {
     graph: typeof graphPage;
     files: typeof commitFiles;
     commit: typeof commitDiff;
-    blame: typeof blameOf;
+    blame: (root: string, path: string, stage?: HeadStage) => Read<GitBlameLine[]>;
     marks: typeof lineMarks;
     sides: typeof mergeSides;
     stash: typeof stashDiff;
@@ -94,7 +96,8 @@ const REAL: CoreReads = {
     graph: graphPage,
     files: commitFiles,
     commit: commitDiff,
-    blame: blameOf,
+    blame: (root, path, stage) =>
+        stage === undefined ? blameOf(root, path) : blameAt(root, path, stage),
     marks: lineMarks,
     sides: mergeSides,
     stash: stashDiff,
@@ -111,6 +114,11 @@ const REAL: CoreReads = {
 const NO_STORE = { 'cache-control': 'no-store' };
 
 const UNKNOWN = { error: 'that directory is not a workspace oculus knows' };
+
+/** The answer to a `stage` that names neither side a file is read at. */
+function notASide(): Response {
+    return json({ error: 'that is not a side of a file' }, { status: 400, headers: NO_STORE });
+}
 
 /** A read of the read-only module, answered as the endpoint answers every read. */
 function answer<T>(read: Read<T>, key: string): Response {
@@ -159,7 +167,9 @@ export async function worktreeSides(
 /**
  * GET /api/git: one read, by the parameter it names. `diff=<root>&path=&staged=<0|1>` answers a
  * file's diff, `worktree=<path>&root=` a worktree's, `graph=<root>&skip=<n>` a page of the graph,
- * `commit=<hash>&root=[&path=]` a commit's files or its diff of one, `blame=<root>&path=`,
+ * `commit=<hash>&root=[&path=]` a commit's files or its diff of one,
+ * `blame=<root>&path=[&stage=head|index]` (who last changed each line of the worktree's file, of
+ * the last commit's version or of the staged text; any other `stage` is refused),
  * `marks=<root>&path=`, `sides=<root>&path=`, `log=<root>&path=[&before=<hash>]` (a page of the
  * commits that touched the file, newest first and across renames and copies, answered with `more`
  * for whether older commits remain; `before` names the last commit of the page read, the page being
@@ -212,12 +222,7 @@ export async function handleGitGet(request: Request, options: ReadOptions): Prom
         const root = named('head');
         if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         const stage = parameters.get('stage');
-        if (stage !== 'head' && stage !== 'index') {
-            return json(
-                { error: 'that is not a side of a file' },
-                { status: 400, headers: NO_STORE }
-            );
-        }
+        if (stage !== 'head' && stage !== 'index') return notASide();
         const read = reads.head(root, stage, path);
         if (!read.ok) return json({ error: read.error }, { status: 400, headers: NO_STORE });
         return json({ ok: true, ...read.value }, { headers: NO_STORE });
@@ -255,7 +260,11 @@ export async function handleGitGet(request: Request, options: ReadOptions): Prom
         if (!parameters.has(key)) continue;
         const root = named(key);
         if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
-        if (key === 'blame') return answer(reads.blame(root, path), 'lines');
+        if (key === 'blame') {
+            const stage = parameters.get('stage');
+            if (stage !== null && stage !== 'head' && stage !== 'index') return notASide();
+            return answer(reads.blame(root, path, stage ?? undefined), 'lines');
+        }
         if (key === 'log') {
             const before = parameters.has('before') ? (parameters.get('before') ?? '') : undefined;
             const page = reads.log(root, path, before);

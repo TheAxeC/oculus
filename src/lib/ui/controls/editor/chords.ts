@@ -10,25 +10,17 @@
 // with the rest, and the palette leaves them out since the editor has no action to run for them.
 //
 // A key is named by Monaco's `KeyCode` member and the modifiers it is pressed with, so this module
-// holds no value of Monaco's and loads nowhere near it.
+// holds no value of Monaco's and loads nowhere near it. It also names the save key, which the
+// shell resolves (shell/keys/keys.ts) and a Save control's tooltip shows, so both read one value.
 
-import type { KeyCode, editor } from 'monaco-editor';
-import type { EditorAction } from './types';
-
-/** One key press: Monaco's name for the key, and the modifiers held with it. */
-export type KeyPress = {
-    code: keyof typeof KeyCode;
-    /** Cmd on macOS and Ctrl elsewhere, Monaco's CtrlCmd. */
-    cmd?: true;
-    /** The Ctrl key on macOS, Monaco's WinCtrl. */
-    ctrl?: true;
-    shift?: true;
-    /** The Alt key, Option on macOS, Monaco's Alt. */
-    alt?: true;
-};
+import type { editor } from 'monaco-editor';
+import type { EditorAction, EditorOwnAction, KeyPress } from './types';
 
 /** A chord the editor gave up: the action or command it ran and its keys in order. */
 export type RemovedChord = { id: string; keys: KeyPress[] };
+
+/** The save key: Cmd+S, Ctrl+S off macOS. */
+export const SAVE_KEY: KeyPress = { code: 'KeyS', cmd: true };
 
 const CMD_K: KeyPress = { code: 'KeyK', cmd: true };
 const CTRL_K: KeyPress = { code: 'KeyK', ctrl: true };
@@ -112,6 +104,15 @@ function pressHint(press: KeyPress, mac: boolean): string {
 /** A chord as the palette writes it beside its action: `Cmd+K Cmd+C` on macOS. */
 export function chordHint(keys: readonly KeyPress[], mac: boolean): string {
     return keys.map((press) => pressHint(press, mac)).join(' ');
+}
+
+/** The actions a parent owns as the palette lists them, each with its key as the hint. */
+export function ownListing(actions: readonly EditorOwnAction[], mac: boolean): EditorAction[] {
+    return actions.map(({ id, label, key }) => ({
+        id,
+        label,
+        hint: key === undefined ? '' : chordHint([key], mac)
+    }));
 }
 
 /**

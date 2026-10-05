@@ -21,22 +21,20 @@ export type StripShape = {
 /**
  * The row of a pane under `show_tabs` (`bar`) and `editor_actions` (`place`). `none` keeps a title
  * row for the actions, and with the actions hidden as well it keeps the row only while the pane is
- * locked, since the mark that unlocks it is drawn in that row, or while the active tab hands up
- * actions of its own (`own`), which the pane's setting for its own actions does not hide.
+ * locked, since the mark that unlocks it is drawn in that row.
  */
 export function stripShape(
     bar: TabBar,
     place: EditorActions,
     tabs: Tab[],
     active: string,
-    locked: boolean,
-    own = false
+    locked: boolean
 ): StripShape {
     const actions = place === 'strip';
     if (bar === 'none') {
         return {
             tabs: [],
-            row: actions || locked || own ? 'title' : 'none',
+            row: actions || locked ? 'title' : 'none',
             actions,
             lock: locked
         };

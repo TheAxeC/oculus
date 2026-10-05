@@ -13,11 +13,15 @@ import { isTextBytes } from '../../../data/helpers/files/text-kind.ts';
 import { extensionOf } from '../../../data/helpers/files/opens-in-program.ts';
 import type { LanguageMap } from '../../../data/helpers/files/languages.ts';
 import { nameOf } from '../../../data/helpers/files/paths.ts';
+import { t } from '../../shared/words/text.ts';
 
 export { extensionOf, nameOf };
 
-/** How a file opens: an HTML document, a code window, an image, a PDF, or a name and a link. */
-export type FileKind = 'html' | 'text' | 'image' | 'pdf' | 'other';
+/**
+ * How a file opens: an HTML document, a code window, an image, a PDF, or a name and a link. A file
+ * the route says is not there is `missing`, which no name or bytes give.
+ */
+export type FileKind = 'html' | 'text' | 'image' | 'pdf' | 'other' | 'missing';
 
 /** A file's type: how it opens. */
 export type FileType = { kind: FileKind };
@@ -62,4 +66,20 @@ export function typeOfFile(name: string, bytes?: Uint8Array): FileType {
 /** Every language a name can resolve to: those the map names, and plain text. */
 export function languages(map: LanguageMap): string[] {
     return [...new Set([...map.values(), PLAIN])];
+}
+
+/** The id of the view that shows one Markdown file rendered, alone. */
+export const MARKDOWN_PREVIEW_VIEW = 'markdown-preview';
+
+/** The words a Markdown preview tab is labelled with: `Preview` and the file's name. */
+export function previewLabel(path: string): string {
+    return t('files.preview_tab', nameOf(path));
+}
+
+/** The state of a tab that shows one Markdown file rendered. */
+export function markdownPreviewState(
+    root: string,
+    path: string
+): { root: string; path: string; label: string } {
+    return { root, path, label: previewLabel(path) };
 }

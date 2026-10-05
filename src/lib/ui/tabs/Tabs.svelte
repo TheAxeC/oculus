@@ -358,8 +358,11 @@
 </div>
 
 <style>
+    /* The strip keeps the height its rows take in a pane's column: a body that wants more room
+       never shrinks it, so the line of buttons under narrow tabs never runs over the bar below. */
     .strip {
         display: flex;
+        flex: none;
         flex-wrap: wrap;
         align-items: stretch;
         align-content: flex-start;

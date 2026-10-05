@@ -31,8 +31,16 @@ export function jump(event: MouseEvent): void {
     if (link === null || !href.startsWith('#')) return;
     event.preventDefault();
     const box = link.closest('[data-instance]');
-    if (box === null) return;
-    const heading = named(box, href.slice(1));
+    if (box !== null) scrollToFragment(box, href.slice(1));
+}
+
+/**
+ * Scroll the heading a fragment names, inside the view's box, to the top of the box that scrolls
+ * it. A fragment naming nothing in the box, or a heading with no scrolling box around it, does
+ * nothing. The press on a link and the Outline's press on a row both come here.
+ */
+export function scrollToFragment(box: Element, fragment: string): void {
+    const heading = named(box, fragment);
     if (heading === null) return;
     const scroller = scrollerOf(heading, box);
     if (scroller === null) return;

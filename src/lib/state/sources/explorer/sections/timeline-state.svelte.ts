@@ -18,38 +18,21 @@
 import type { GitFileCommit } from '../../../../data/model/index.ts';
 import type { CommitPage } from '../../fs-history.ts';
 import type { RowRef } from '../view/place.ts';
+import { followedTab, type FollowPane, type FollowTab } from './followed-tab.ts';
 
 /**
- * A tab as the follow reads it: its id, its view and its saved state. The layout's tab fits.
+ * The file the page's editor is on: the file of the first file tab in the order `followedTab`
+ * reads the panes in, the order the Outline follows too. A tab that shows no file (the Files tab
+ * itself, a terminal) is passed over, and a tab that is closed is not in the panes, so a file whose
+ * tab is gone is not followed.
  */
-type FollowTab = { id: string; view: string; state: unknown };
-
-/** A pane as the follow reads it; the layout's pane fits. */
-type FollowPane = { tabs: readonly FollowTab[]; active: string; recent?: readonly string[] };
-
-/**
- * The file the page's editor is on: the file of the first file tab in this order. The tab shown in
- * the pane the reader used last (the pane `focused` names by its shown tab), then the tab shown in
- * each other pane, then the tabs each pane showed before, the one shown last first, the pane the
- * reader used last first. A tab that shows no file (the Files tab itself, a terminal) is passed
- * over, and a tab that is closed is not in the panes, so a file whose tab is gone is not followed.
- */
-export function followedFile(
-    panes: readonly FollowPane[],
+export function followedFile<T extends FollowTab>(
+    panes: readonly FollowPane<T>[],
     focused: string | null,
-    fileOf: (tab: FollowTab) => RowRef | null
+    fileOf: (tab: T) => RowRef | null
 ): RowRef | null {
-    const used = panes.findIndex((pane) => pane.tabs.some((tab) => tab.id === focused));
-    const ordered = used < 0 ? panes : [panes[used], ...panes.filter((_, at) => at !== used)];
-    const shown = ordered.map((pane) => pane.tabs.find((tab) => tab.id === pane.active));
-    const before = ordered.flatMap((pane) =>
-        (pane.recent ?? []).map((id) => pane.tabs.find((tab) => tab.id === id))
-    );
-    for (const tab of [...shown, ...before]) {
-        const file = tab === undefined ? null : fileOf(tab);
-        if (file !== null) return file;
-    }
-    return null;
+    const tab = followedTab(panes, focused, (one) => fileOf(one) !== null);
+    return tab === null ? null : fileOf(tab);
 }
 
 /** The pages read after the first, as far as they are read. */

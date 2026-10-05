@@ -60,7 +60,12 @@ export type TreeItemProps = {
     nav?: TreeNav;
     /** What pressing the row does; a row with none is drawn as text. */
     onclick?: (event: MouseEvent) => void;
-    ondblclick?: (event: MouseEvent) => void;
+    /**
+     * The second press of a double click, taken when it goes down: what the row opens with a
+     * first press may cover the row before that press is released, and the release and the
+     * browser's dblclick then never reach the row.
+     */
+    onpressagain?: (event: MouseEvent) => void;
     /** What the row says after its name, muted: a path, a time. */
     detail?: Snippet;
     /** The name drawn by the caller, in the place of the label's text. */

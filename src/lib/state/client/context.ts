@@ -35,6 +35,10 @@ import {
     sourceOnScreen,
     type EditorStatusStore
 } from '../workbench/navigation/editor-status.svelte.ts';
+import {
+    createHeadings,
+    type HeadingsStore
+} from '../sources/explorer/sections/headings.svelte.ts';
 import { createEntities, type EntitiesStore } from './entities.svelte.ts';
 import { createFeeds, type FeedsStore } from '../feeds/feeds.svelte.ts';
 import { createFiles, type FilesStore } from '../sources/files.svelte.ts';
@@ -167,6 +171,8 @@ export type ClientState = {
     paletteSource: PaletteSourceStore;
     /** What each source tab says of its text, for the status bar, and what the bar asks of it. */
     editorStatus: EditorStatusStore;
+    /** The headings a rendered tab shows, for the Outline, and the Outline's presses on them. */
+    headings: HeadingsStore;
     /** The notifications the status bar's bell counts and its centre lists. */
     notices: NoticesStore;
     registry: RegistryStore;
@@ -404,6 +410,7 @@ export function createClientState(): ClientState {
         ui
     });
     const editorStatus = createEditorStatus();
+    const headings = createHeadings();
     const notices = createNotices(ui);
     const commands = withQueries(
         'commands',
@@ -490,6 +497,7 @@ export function createClientState(): ClientState {
         railBadges,
         paletteSource,
         editorStatus,
+        headings,
         notices,
         registry,
         tabScope

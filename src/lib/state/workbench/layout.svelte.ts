@@ -20,6 +20,7 @@
 // arrangement can change.
 
 import { item } from '../../data/helpers/guards.ts';
+import { createArmedKeeps, type ArmedKeep } from './layout/open/armed-keep.svelte.ts';
 import type { UiStore } from './ui.svelte.ts';
 import {
     adoptFloats as adoptFloatsIn,
@@ -217,6 +218,25 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> & {
     showTimeline: ShowInFiles['showTimeline'];
     /** Show one folder as a Files tab rooted at it, found again by the folder. */
     showFolderInFiles: (path: string, root?: string) => string;
+    /**
+     * The keep armed for the preview tab a press just opened, or null
+     * (layout/open/armed-keep.svelte.ts): while it is armed the pane showing the tab takes the next
+     * press as a keep.
+     */
+    armedKeep: () => ArmedKeep | null;
+    /** Arm the keep for a preview tab a press made at `pressedAt` opened, for an owner. */
+    armKeep: (id: string, owner: string, pressedAt: number) => void;
+    /** End the armed keep, or only one an owner armed. */
+    disarmKeep: (owner?: string) => void;
+    /**
+     * The kept tab that takes the keyboard once its pane draws it
+     * (layout/open/armed-keep.svelte.ts).
+     */
+    focusAsked: () => string | null;
+    /** Ask that a tab a double click kept take the keyboard. */
+    askFocus: (id: string) => void;
+    /** End the ask for one tab: its pane gave it the keyboard. */
+    focusGiven: (id: string) => void;
 };
 
 export function createLayout(ui: UiStore): LayoutStore {
@@ -351,6 +371,10 @@ export function createLayout(ui: UiStore): LayoutStore {
         openedRule(view)
     );
     const files = createShowInFiles(access, attention, opening.openView);
+    const keeps = createArmedKeeps((id) => {
+        const host = holding(id);
+        return host === null ? null : (findInstance(host.workbench.root, id)?.instance ?? null);
+    });
     const away = createAway(
         access,
         attention,
@@ -816,6 +840,12 @@ export function createLayout(ui: UiStore): LayoutStore {
         showInFiles: files.showInFiles,
         showTimeline: files.showTimeline,
         showFolderInFiles: files.showFolderInFiles,
+        armedKeep: keeps.armed,
+        armKeep: keeps.arm,
+        disarmKeep: keeps.disarm,
+        focusAsked: keeps.focusAsked,
+        askFocus: keeps.askFocus,
+        focusGiven: keeps.focusGiven,
         registerOpened: (rule) => {
             openedRule = rule;
         },

@@ -330,8 +330,9 @@ const FROZEN = [
  * palette runs the workspace commands through `fs` (switch and save a workspace) and `explorer`
  * (the folder panel), the key that finds in files or replaces in files asks the Search box of the
  * pane in focus for the cursor through `search`, the default build and test keys in shell/keys run
- * a project command through `commands`, and CommandAsk.svelte and CommandForm.svelte in
- * shell/commands draw the question and the form `commands` holds.
+ * a project command through `commands`, CommandAsk.svelte and CommandForm.svelte in shell/commands
+ * draw the question and the form `commands` holds, and the tab menu reveals a file and opens it in
+ * a program through `writes` and offers Open in Program from the programs `selectors` reads.
  */
 const SHELL_STORES = [
     'commands',
@@ -346,7 +347,9 @@ const SHELL_STORES = [
     'paletteSource',
     'editorStatus',
     'notices',
-    'registry'
+    'registry',
+    'writes',
+    'selectors'
 ];
 
 /**
@@ -367,7 +370,7 @@ function findShellStores(libRoot: string): string[] {
             violations.push(`${fileRel} reads store ${name}`);
         };
         for (const match of text.matchAll(
-            /const\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}\s*=\s*(?:client|useState\(\))/g
+            /const\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}\s*=\s*(?:client|useState\(\)|deps\.client)/g
         )) {
             for (const part of match[1].split(/,(?![^{]*\})/)) read(part.split(':')[0].trim());
         }

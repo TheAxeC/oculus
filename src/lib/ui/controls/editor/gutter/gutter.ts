@@ -16,8 +16,8 @@
 // original side's line numbers, so a mark there would sit left of the numbers of its own line.
 
 import type { IDisposable, IMarkdownString, editor } from 'monaco-editor';
-import { chordHint, type KeyPress } from '../chords';
-import type { DiffSide, EditorAction, EditorChangeWords } from '../types';
+import { chordHint } from '../chords';
+import type { DiffSide, EditorAction, EditorChangeWords, KeyPress } from '../types';
 
 /** A quick diff mark: its kind, its first line, how many lines it spans and what it says. */
 export type EditorMark = {

@@ -1,8 +1,9 @@
 // Layer 3, shell. The right-click menu of one tab, VS Code's tab context menu in its groups and
 // words, less what oculus has no part for (Share and the moves into a new window): the closes, the
-// two copies of a file's path, Reveal in Finder, Show in Files and Open Timeline, the two compare
-// items, Keep Open and Pin or Unpin, and the splits. Apart from the component so the items, the
-// tabs each close closes and the path copies can be read without a DOM.
+// two copies of a file's path, Reveal in Finder, Show in Files and Open Timeline, the bookmark,
+// browser tab and program items, the two compare items, Keep Open and Pin or Unpin, and the splits.
+// Apart from the component so the items, the tabs each close closes and the path copies can be read
+// without a DOM.
 
 import type { Edge } from '$lib/state/workbench/layout';
 import { absoluteOf } from '$lib/state/workbench/navigation/pages';
@@ -23,6 +24,15 @@ export type TabFacts = {
     right: number;
     /** Whether another file than this tab's is selected for compare. */
     compareWith: boolean;
+    /**
+     * Whether the tab's file is bookmarked, or null for a tab whose file cannot be: one that is
+     * read at a commit or shows no served file.
+     */
+    bookmarked: boolean | null;
+    /** Whether the tab is a picture, a PDF, a download or an HTML page a browser tab shows. */
+    browser: boolean;
+    /** Whether `open.program_ext` names an application for the tab's file. */
+    program: boolean;
 };
 
 export const TAB_CLOSE = 'close';
@@ -35,6 +45,10 @@ export const TAB_COPY_RELATIVE = 'copy-relative';
 export const TAB_REVEAL = 'reveal';
 export const TAB_SHOW_IN_FILES = 'show-in-files';
 const TAB_TIMELINE = 'timeline';
+const TAB_ADD_BOOKMARK = 'add-bookmark';
+const TAB_REMOVE_BOOKMARK = 'remove-bookmark';
+const TAB_OPEN_BROWSER = 'open-browser';
+const TAB_OPEN_PROGRAM = 'open-program';
 export const TAB_SELECT_COMPARE = 'select-compare';
 export const TAB_COMPARE_WITH = 'compare-with';
 export const TAB_KEEP_OPEN = 'keep-open';
@@ -59,10 +73,10 @@ function tabEdge(id: string): Edge | null {
 
 /**
  * The menu of one tab, in VS Code's groups: the closes; the path copies; Reveal in Finder, Show in
- * Files and Open Timeline, which shows the file's history in the Files view; the compare items;
- * Keep Open and Pin or Unpin; the splits. The file groups are offered for a tab showing a file
- * only. Close Others needs a second tab and Close to the Right a tab to the right; Keep Open is
- * drawn on every tab and enabled on a preview.
+ * Files and Open Timeline, which shows the file's history in the Files view; the bookmark, Open in
+ * Browser Tab and Open in Program items; the compare items; Keep Open and Pin or Unpin; the splits.
+ * The file groups are offered for a tab showing a file only. Close Others needs a second tab and
+ * Close to the Right a tab to the right; Keep Open is drawn on every tab and enabled on a preview.
  */
 export function tabMenu(facts: TabFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string, disabled = false): MenuItem =>
@@ -89,6 +103,19 @@ export function tabMenu(facts: TabFacts, t: Words): MenuItem[] {
                   item(TAB_TIMELINE, t('files.menu_timeline'))
               ]
             : [],
+        [
+            ...(facts.bookmarked === null
+                ? []
+                : [
+                      facts.bookmarked
+                          ? item(TAB_REMOVE_BOOKMARK, t('files.menu_remove_bookmark'))
+                          : item(TAB_ADD_BOOKMARK, t('files.menu_add_bookmark'))
+                  ]),
+            ...(file && facts.browser
+                ? [item(TAB_OPEN_BROWSER, t('files.menu_open_browser'))]
+                : []),
+            ...(file && facts.program ? [item(TAB_OPEN_PROGRAM, t('files.menu_open_program'))] : [])
+        ],
         file
             ? [
                   ...(facts.compareWith
@@ -200,6 +227,9 @@ export type TabPickDeps = {
     reveal: () => void;
     showInFiles: () => void;
     timeline: () => void;
+    bookmark: (add: boolean) => void;
+    openBrowser: () => void;
+    openProgram: () => void;
     selectForCompare: () => void;
     compareWith: () => void;
     keepOpen: () => void;
@@ -219,6 +249,10 @@ export function tabPicked(id: string, deps: TabPickDeps): void {
     else if (id === TAB_REVEAL) deps.reveal();
     else if (id === TAB_SHOW_IN_FILES) deps.showInFiles();
     else if (id === TAB_TIMELINE) deps.timeline();
+    else if (id === TAB_ADD_BOOKMARK) deps.bookmark(true);
+    else if (id === TAB_REMOVE_BOOKMARK) deps.bookmark(false);
+    else if (id === TAB_OPEN_BROWSER) deps.openBrowser();
+    else if (id === TAB_OPEN_PROGRAM) deps.openProgram();
     else if (id === TAB_SELECT_COMPARE) deps.selectForCompare();
     else if (id === TAB_COMPARE_WITH) deps.compareWith();
     else if (id === TAB_KEEP_OPEN) deps.keepOpen();

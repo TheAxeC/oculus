@@ -4,12 +4,13 @@
     // name or takes that one out again. The rail's Bookmarks menu lists the bookmarks, and the
     // Files view is where one is renamed.
     //
-    // It is shared because a file is read in two tabs, the source tab for text and the file view
-    // for a picture, a PDF or a download, and a reader bookmarks the file they are looking at in
-    // either. A label another bookmark already holds is refused rather than written over, which the
+    // It is shared because a file is read in several tabs (the source tab for text, the file view
+    // for a picture, a PDF or a download, a document, a Doc), each drawing it in its breadcrumb bar
+    // (FileBarActions.svelte), and a reader bookmarks the file they are looking at in any of them.
+    // A label another bookmark already holds is refused rather than written over, which the
     // endpoint says in words: beside the control, or through `onsaid` where the caller draws a
     // message line of its own. `bare` draws the star as a header icon, its words the tooltip and
-    // the accessible name.
+    // the accessible name, and the star is filled while the bookmark is set.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { nameOf } from '$lib/state/sources/fs';
@@ -50,20 +51,32 @@
     }
 </script>
 
-<ToolButton
-    {bare}
-    label={marked === null ? t('file.bookmark') : t('file.unbookmark')}
-    glyph={t('file.bookmark_glyph')}
-    pressed={marked !== null}
-    active={marked !== null}
-    onclick={() => void mark()}
-/>
+<span class="star" class:set={marked !== null}>
+    <ToolButton
+        {bare}
+        label={marked === null ? t('file.bookmark') : t('file.unbookmark')}
+        glyph={t('file.bookmark_glyph')}
+        pressed={marked !== null}
+        active={marked !== null}
+        onclick={() => void mark()}
+    />
+</span>
 
 {#if failed !== ''}
     <span class="failed" aria-live="polite">{t('file.bookmark_failed', failed)}</span>
 {/if}
 
 <style>
+    /* The star is filled while the file is bookmarked, so a bare star in a bar, which draws no
+       active background, still says it is set. */
+    .star {
+        display: contents;
+    }
+
+    .star.set :global(svg) {
+        fill: currentColor;
+    }
+
     .failed {
         color: var(--c-red-txt);
         font-size: var(--fs-sm);

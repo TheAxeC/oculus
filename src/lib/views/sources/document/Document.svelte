@@ -31,7 +31,16 @@
     // this page, so the frame's own right-click is heard on the frame's document, each time a page
     // loads in it: what it selects and the image under the pointer are read there, and the
     // right-click is raised again on the frame element at the same point, where the menu opens.
-    // With no selection and no image the frame's right-click opens nothing.
+    // With no selection and no image the frame's right-click opens nothing. A key pressed with
+    // Cmd or Ctrl inside the frame is raised again on the frame element the same way, so the
+    // workbench's keys hear it and one they take (Cmd+S among them) is kept from the browser, whose
+    // own save dialog would otherwise open over the page.
+    //
+    // The tab draws no row of controls and hands none to the pane's strip: its path is the
+    // breadcrumb the pane draws under the strip, the star and, for a file whose extension
+    // `open.program_ext` maps, Open in Program stand at that bar's right end
+    // (shared/links/FileBarActions.svelte), and the bookmark, Open in Browser Tab and Open in
+    // Program items are also in the tab's right-click menu (shell/panes/strip/tab-menu.ts).
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -39,9 +48,10 @@
     import { proseAt, proseMenu, prosePicked } from '../../shared/prose/prose-menu';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
+    import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
+    import { servedFile } from '$lib/views/shared/links/file-bar';
     import { t } from '$lib/state/shared/words/text';
+    import FileBarActions from '../../shared/links/FileBarActions.svelte';
     import { fileUrl } from '../../shared/links/file-url';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -49,6 +59,7 @@
     let { instance }: ViewProps = $props();
 
     const {
+        fs: { roots },
         layout: { openView }
     } = useState();
 
@@ -98,34 +109,58 @@
         );
     }
 
-    /** Each page the frame loads is heard for its right-clicks; a page of its own goes with it. */
+    /**
+     * A key with Cmd or Ctrl pressed inside the frame, raised again on the frame element, where it
+     * reaches the workbench's keys; a key they take is kept from the browser. A key without them is
+     * the document's own (its search box, its links) and stays there.
+     */
+    function keyInFrame(event: KeyboardEvent): void {
+        const held = frame;
+        if (held === null || !(event.metaKey || event.ctrlKey)) return;
+        const again = new KeyboardEvent('keydown', {
+            key: event.key,
+            code: event.code,
+            metaKey: event.metaKey,
+            ctrlKey: event.ctrlKey,
+            altKey: event.altKey,
+            shiftKey: event.shiftKey,
+            repeat: event.repeat,
+            bubbles: true,
+            cancelable: true
+        });
+        held.dispatchEvent(again);
+        if (again.defaultPrevented) event.preventDefault();
+    }
+
+    /**
+     * Each page the frame loads is heard for its right-clicks and its keys; a page of its own goes
+     * with it.
+     */
     function loaded(): void {
         frame?.contentDocument?.addEventListener('contextmenu', inFrame);
+        frame?.contentDocument?.addEventListener('keydown', keyInFrame);
     }
 
     function picked(pick: string): void {
         prosePicked(pick, heard, { openView });
     }
 
-    /** The same address in a browser tab of its own, for printing it or reading it full width. */
-    function outside(): void {
-        if (src === '') return;
-        window.open(src, '_blank', 'noopener');
-    }
+    // The bar's actions go up to the pane while the tab is mounted and one of them applies
+    // (ui/tabs/tab-actions.svelte.ts).
+    handUp(
+        useTabActions(),
+        () => instance.id,
+        barActions,
+        () => servedFile(roots(), root, path, src !== '')
+    );
 </script>
 
-{#snippet tools()}
-    <Toolbar label={t('document.toolbar')} overflow>
-        <ToolButton
-            bare
-            label={t('document.open_outside')}
-            glyph={t('document.open_outside_glyph')}
-            onclick={outside}
-        />
-    </Toolbar>
+<!-- The file's actions, handed up to the right end of the pane's breadcrumb bar. -->
+{#snippet barActions()}
+    <FileBarActions {root} {path} onDisk={src !== ''} />
 {/snippet}
 
-<Pane {title} titled={false} toolbar={tools}>
+<Pane {title} titled={false}>
     <div class="document" data-instance={instance.id} data-root={root} data-path={path}>
         {#if src === ''}
             <Empty message={t('document.none')} glyph={t('document.none_glyph')} />

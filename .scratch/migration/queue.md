@@ -1,16 +1,15 @@
-In flight (3 of 5 slots):
-- X3f (opening a file row, and the tab row's actions): round 3 reviewed; landing in the gate, then the look on TEST.
-- D20 (an agent from a task or a worktree): round 1 reviewed; diagnosis of a cancelled merge running, then landing.
+In flight (2 of 5 slots):
+- D20 (an agent from a task or a worktree): round 1 reviewed, its diagnosis in; landing next, with the diagnosis fix.
 - D38 (the Literature search view): builder running.
 
 Waiting for a landing or a ruling:
 - A3 (scheduled Update runs): brief closed; prepared once Axel rules Z545 (the brief is written to (b)).
-- D44 (Submit on a .slurm file): brief closed; prepared once X3f has landed, its tests and look as Z538 and Z539 are ruled.
-- D23 (language servers): brief rechecked; prepared once X3f has landed.
-- D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked; prepared once X3f and D20 have landed, after the inventory look on TEST.
+- D44 (Submit on a .slurm file): brief closed; prepared once Z538 and Z539 are ruled.
+- D23 (language servers): brief rechecked; /spec next, X3f having landed.
+- D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked; prepared once D20 has landed, after the inventory look on TEST.
 
 Queued, in order (23 steps):
-- D11 (the debug client for rite): brief rechecked after S5; prepared once X3f, D20, D44, D45 and D23 have landed.
+- D11 (the debug client for rite): brief rechecked after S5; prepared once D20, D44, D45 and D23 have landed.
 - X3e (Files lists reordered by drag): brief ready; once D20 has landed (Z519), its premises then reread after S5.
 - D28 (saving a file as VS Code does): brief ready; once X3e has landed.
 - M6 (the collection forms removed): unblocked.
@@ -37,6 +36,7 @@ Queued, in order (23 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- X3f (a file tab's actions, file icons and the double click), 2026-10-05.
 - S5 (the Settings view's controls and headings), 2026-10-05, 71017ce60.
 - D42 (a file's history), 2026-10-05, 8077dd55.
 - H3 (the hub's data map), 2026-10-05, 575c997c.

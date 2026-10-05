@@ -2,9 +2,10 @@
     // Layer 3, primitive. A path read as its segments, each one a control that picks it, with an
     // arrow between two segments. The segments and what picking one means are the caller's; this
     // draws them in order and names the last as the current one. The row is VS Code's breadcrumb
-    // row: 22px high, the arrow in a box 16px wide, an item at most 80% of the row, the words at
-    // 12px, the step of the type scale nearest VS Code's 0.9em of 13px (themes/tokens.css,
-    // `--crumb-row` and `--crumb-icon`).
+    // row: 22px high, the arrow in a box 16px wide, the words at 12px, the step of the type scale
+    // nearest VS Code's 0.9em of 13px (themes/tokens.css, `--crumb-row` and `--crumb-icon`). Every
+    // item keeps its whole name; the row takes the room its neighbours leave, and a path longer
+    // than that room is cut from the left, so the file's name stays in view.
 
     import Glyph from '../display/Glyph.svelte';
 
@@ -42,8 +43,12 @@
 </nav>
 
 <style>
+    /* The box is read right to left so that a path wider than it overflows on its left; the list
+       inside is read left to right and sits at the left edge while it fits (the auto margin). */
     .crumbs {
         box-sizing: border-box;
+        flex: 1 1 0;
+        direction: rtl;
         height: var(--crumb-row);
         min-width: 0;
         margin-left: 0.45em;
@@ -52,11 +57,12 @@
 
     .list {
         display: flex;
+        direction: ltr;
         align-items: center;
         flex-wrap: nowrap;
+        width: max-content;
         height: 100%;
-        min-width: 0;
-        margin: 0;
+        margin: 0 auto 0 0;
         padding: 0;
         list-style: none;
     }
@@ -64,9 +70,7 @@
     .segment {
         display: flex;
         align-items: center;
-        flex: 0 1 auto;
-        max-width: 80%;
-        min-width: 0;
+        flex: none;
         height: 100%;
         white-space: nowrap;
     }
@@ -86,7 +90,6 @@
         min-width: 0;
         height: 100%;
         overflow: hidden;
-        text-overflow: ellipsis;
         padding: 0 1px;
         border: 0;
         border-radius: var(--radius-sm);

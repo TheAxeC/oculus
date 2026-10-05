@@ -24,8 +24,9 @@
     //
     // The keyboard reaches the quick diff marks through three editor actions, which the palette
     // lists while the text holds a mark (gutter/gutter.ts `changeActions`): Next, Previous, Open
-    // Change. The `wrap` prop adds the Alt+Z toggle of word wrap. A parent may also tint runs of
-    // lines (`highlights`, the merge editor's conflicts) and draw bars of its own above lines
+    // Change. The `actions` prop adds the actions the parent owns (Alt+Z's toggle of word wrap),
+    // each bound to its key when it has one and listed to the palette. A parent may also tint runs
+    // of lines (`highlights`, the merge editor's conflicts) and draw bars of its own above lines
     // (`bars`, rendered by its `bar` snippet, placed by bars/zones.ts), and add to the model what
     // it needs once the model exists (`extension`, types.ts).
     //
@@ -39,7 +40,7 @@
     import { buildWhenHosted } from './kit/built.svelte';
     import { shikiId } from './kit/grammars';
     import { font, paintCode, repaint } from './kit/look';
-    import { chordActions } from './chords';
+    import { chordActions, ownListing } from './chords';
     import {
         blameDecorations,
         blameNumbers,
@@ -54,7 +55,7 @@
     } from './gutter/gutter';
     import { tabOut } from './tab-out';
     import { runCommand } from './commands';
-    import { applyIndent, applyOptions, monacoOptions, wrapAction, wrapListing } from './options';
+    import { applyIndent, applyOptions, monacoOptions } from './options';
     import type { EditorOptions } from './options';
     import { lineBars } from './bars/zones';
     import LineBars from './bars/LineBars.svelte';
@@ -68,7 +69,8 @@
         EditorEdit,
         EditorEnding,
         EditorExtension,
-        EditorIndent
+        EditorIndent,
+        EditorOwnAction
     } from './types';
 
     /** The most characters of selected text handed to `onselect`; a longer selection hands none. */
@@ -109,8 +111,8 @@
         onglyph?: (line: number) => void;
         /** The labels of the actions over the marks; without them the editor adds none. */
         changeWords?: EditorChangeWords;
-        /** The Alt+Z action: its label, and the parent's toggle of word wrap that it runs. */
-        wrap?: { label: string; toggle: () => void };
+        /** The actions the parent owns: each is bound to its key, if it has one, and listed. */
+        actions?: EditorOwnAction[];
         /** The actions the palette lists, said once loaded and again when the labels change. */
         onactions?: (actions: EditorAction[]) => void;
         /** Markers, widgets or providers the parent adds to the model once it exists. */
@@ -144,7 +146,7 @@
         onblame,
         onglyph,
         changeWords,
-        wrap,
+        actions = [],
         onactions,
         extension,
         highlights = [],
@@ -225,8 +227,8 @@
     const marked = $derived(marks.length > 0);
 
     // The actions over the marks, added under the parent's labels while the text holds a mark, and
-    // the Alt+Z toggle of word wrap, added again when the labels, the mark state or the wrap
-    // changes, and said to the palette.
+    // the actions the parent owns, added again when the labels, the mark state or the parent's
+    // actions change, and said to the palette.
     $effect(() => {
         const loaded = kit;
         const made = editor;
@@ -238,10 +240,11 @@
             return made.addAction({ id, label, keybindings, run: () => act(made, does) });
         });
         const said = listed.map(({ id, label, hint }): EditorAction => ({ id, label, hint }));
-        if (wrap !== undefined) {
-            added.push(made.addAction(wrapAction(loaded.monaco, wrap.label, wrap.toggle)));
-            said.push(wrapListing(wrap.label));
+        for (const { id, label, key, run } of actions) {
+            const keybindings = key === undefined ? [] : [keyCode(loaded.monaco, key)];
+            added.push(made.addAction({ id, label, keybindings, run: () => run() }));
         }
+        said.push(...ownListing(actions, loaded.mac));
         untrack(() => onactions?.([...said, ...chordActions(made, loaded.mac)]));
         return () => {
             for (const action of added) action.dispose();

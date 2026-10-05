@@ -1,14 +1,17 @@
 // Layer 2, server. The read-only git forms behind the graph's compare items and the change rows'
-// Open File (HEAD) and Compare with Workspace: a file as HEAD or the index holds it, the files and
-// the two sides of a file between a ref and a commit, the refs a picker offers, and the base a
-// branch is compared against. state.ts, reads.ts and files.ts hold the state of a workspace and the
-// rest of the reads; every module of this folder reaches git through run.ts's one call site.
+// Open File (HEAD) and Compare with Workspace: a file as HEAD or the index holds it, who last
+// changed each line of it, the files and the two sides of a file between a ref and a commit, the
+// refs a picker offers, and the base a branch is compared against. state.ts, reads.ts and files.ts
+// hold the state of a workspace and the rest of the reads; every module of this folder reaches git
+// through run.ts's one call site.
 //
 // DESIGN.md, "Git": exactly these read-only commands run here, besides those run.ts lists.
 //
 //     git -C <root> cat-file -t HEAD:<path>
 //     git -C <root> ls-files --stage -z -- <path>
 //     git -C <root> show --no-textconv <HEAD|:0>:<path>
+//     git -C <root> blame --porcelain HEAD -- <path>
+//     git -C <root> blame --porcelain --contents - -- <path>      (the index's text on stdin)
 //     git -C <root> rev-parse --verify --quiet <ref>^{commit}
 //     git -C <root> diff --name-status -z -M --end-of-options <from> <to>
 //     git -C <root> diff --no-color --no-ext-diff -U0 -M --end-of-options <from> <to>
@@ -27,9 +30,9 @@
 import { isUtf8 } from 'node:buffer';
 import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
-import type { DiffSides, GitCommitFile } from '../../../data/model/index.ts';
+import type { DiffSides, GitBlameLine, GitCommitFile } from '../../../data/model/index.ts';
 import { permitted } from '../paths.ts';
-import { NO_CONTEXT, parseNameStatus } from './parse.ts';
+import { NO_CONTEXT, parseBlame, parseNameStatus } from './parse.ts';
 import { sidesOf } from './reads.ts';
 import {
     HASH,
@@ -81,6 +84,35 @@ export function headFile(
     if (!done.ok) return refused(done.text);
     if (isBinary(done.text, done.utf8)) return { ok: true, value: { binary: true } };
     return { ok: true, value: { text: done.text } };
+}
+
+/**
+ * Who last changed each line of a file as HEAD holds it, or as the index holds it. The index's text
+ * is handed to `git blame --contents -` as the file's contents, so a staged change to a line shows
+ * git's uncommitted author on that line.
+ */
+export function blameAt(
+    root: string,
+    path: string,
+    stage: HeadStage,
+    timeout: number = TIMEOUT_MS
+): Read<GitBlameLine[]> {
+    if (!pathInside(root, path)) return refused(`the path ${path} is not inside the repository`);
+    const ms = milliseconds(timeout);
+    if (stage === 'head') {
+        const done = run(root, ['blame', '--porcelain', 'HEAD', '--', path], ms);
+        return done.ok ? { ok: true, value: parseBlame(done.text) } : refused(done.text);
+    }
+    const held = headFile(root, 'index', path, ms);
+    if (!held.ok) return held;
+    if (!('text' in held.value)) return refused(`${path} has no text in the index`);
+    const done = run(
+        root,
+        ['blame', '--porcelain', '--contents', '-', '--', path],
+        ms,
+        held.value.text
+    );
+    return done.ok ? { ok: true, value: parseBlame(done.text) } : refused(done.text);
 }
 
 /** What a path is in a commit or the index: a file, a folder, something else, or not there. */

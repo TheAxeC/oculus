@@ -290,7 +290,7 @@ export function sshCommand(root: string): string | null {
     return done.ok ? done.text.trim() : null;
 }
 
-/** Who last changed each line of one file as the worktree holds it. */
+/** Who last changed each line of one file in the worktree: the working tab's blame. */
 export function blameOf(
     root: string,
     path: string,

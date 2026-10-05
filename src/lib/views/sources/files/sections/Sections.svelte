@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/files/Files.svelte. The sections under the trees: the
-    // outline and the timeline of the file in front of the reader, then the reader's own bookmarks
-    // and the scratch notes, each in the same row style and each drawn in every state its read can
-    // be in, so a head and its control are there whatever the read said.
+    // outline and the timeline of the file tab the reader looked at last, then the reader's own
+    // bookmarks and the scratch notes, each in the same row style and each drawn in every state its
+    // read can be in, so a head and its control are there whatever the read said.
     //
     // The bookmarks and the notes are read here rather than handed down, because this is what draws
     // what each one answered: the list, the one muted row of a list that is empty, or the sentence

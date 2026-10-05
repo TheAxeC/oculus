@@ -1,10 +1,18 @@
 # Oculus text owned by the source view.
 text:
     source:
+        bar_blame: Toggle Blame
+        bar_blame_title: Toggle Git Blame Editor Decoration
+        bar_revert: Revert File
+        bar_save: Save
+        bar_save_title: 'Save ({0})'
         binary: This file is not text on disk; the editor saves nothing over it.
-        blame: Blame
-        blame_title: Show who last changed each line, and when
         cannot_open: 'Cannot open: {0}'
+        cmd_blame: 'Git: Toggle Git Blame Editor Decoration'
+        cmd_preview_side: 'Markdown: Open Preview to the Side'
+        cmd_rendered: 'Markdown: Toggle Rendered Half'
+        cmd_revert: 'File: Revert File'
+        cmd_save: 'File: Save'
         code: '{0}, read only'
         failed: failed
         head_binary: This version of the file is not text, so it cannot be shown here.
@@ -16,9 +24,7 @@ text:
         locked_glyph: lock
         next_change: Go to Next Change
         open_change: Open Change
-        preview: Preview
-        preview_glyph: page
-        preview_title: Show the rendered Markdown beside the text
+        preview_side: Open Preview to the Side
         previous_change: Go to Previous Change
         readonly: This file is read-only on this machine; the editor shows it and saves nothing.
         retry: Read again
@@ -27,7 +33,6 @@ text:
         saved_without_copy: 'saved, but the local history could not keep a copy: {0}'
         saving: saving...
         toggle_word_wrap: 'View: Toggle Word Wrap'
-        toolbar: Source controls
         truncated: This file is longer than the editor reads; its first 2 MB are shown and it saves nothing.
         untitled_name: File name
         untitled_no_root: No folder is served to save the file in.

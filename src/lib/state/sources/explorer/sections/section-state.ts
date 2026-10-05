@@ -1,13 +1,13 @@
-// Layer 2, client state, pure. Which sections under the Files tree are open. Bookmarks and Notes
-// start open and the view keeps the ones the reader closed (`collapsed`); Open Editors, Outline
-// and Timeline start closed and the view keeps the ones the reader opened (`opened`), so a fresh
-// Files tab shows the tree and the two sections a reader keeps in view, and the rest are one press
+// Layer 2, client state, pure. Which sections under the Files tree are open. Bookmarks, Notes and
+// Outline start open and the view keeps the ones the reader closed (`collapsed`); Open Editors and
+// Timeline start closed and the view keeps the ones the reader opened (`opened`), so a fresh Files
+// tab shows the tree and the three sections a reader keeps in view, and the rest are one press
 // away.
 
 import { toggleExpanded } from '../view/place.ts';
 
 /** The sections that start closed. */
-export const STARTS_CLOSED: readonly string[] = ['editors', 'outline', 'timeline'];
+export const STARTS_CLOSED: readonly string[] = ['editors', 'timeline'];
 
 /** The two lists a view keeps its sections' state in. */
 export type SectionState = { collapsed: string[]; opened: string[] };

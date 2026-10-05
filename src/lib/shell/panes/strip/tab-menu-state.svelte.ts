@@ -7,8 +7,16 @@
 import type { ClientState } from '$lib/state/client/context';
 import { t } from '$lib/state/shared/words/text';
 import type { Instance } from '$lib/state/workbench/layout';
-import { fileOfTab, openComparison, type TabRoot } from '$lib/state/workbench/navigation/pages';
+import {
+    bookmarkTabFile,
+    fileOfTab,
+    openComparison,
+    openInBrowserTab,
+    tabFileFacts,
+    type TabRoot
+} from '$lib/state/workbench/navigation/pages';
 import type { MenuItem } from '$lib/ui/menu/menu-items';
+import type { TabFile } from '$lib/state/workbench/navigation/status';
 import { copyTabPath, tabMenu, tabPicked, tabsToClose, type CloseKind } from './tab-menu';
 
 /** What the menu reads of the pane it is in. */
@@ -31,7 +39,7 @@ export type TabMenuDeps = {
 
 /** The menu of the tabs of one pane. */
 export function createTabMenu(deps: TabMenuDeps) {
-    const { layout, explorer, writes, ui } = deps.client;
+    const { layout, explorer, fs, selectors, writes, ui } = deps.client;
 
     /** The tab the open right-click menu is for, or null when it is the strip's. */
     let menuTab: string | null = null;
@@ -61,17 +69,29 @@ export function createTabMenu(deps: TabMenuDeps) {
         const held = explorer.compareFile();
         const other =
             held !== null && !(held.root === file?.root && held.path === file.path) ? held : null;
+        const served = file !== null && deps.roots().some((one) => one.key === file.root);
+        const facts = tabFileFacts(found, served, {
+            bookmarks: fs.bookmarks().entries,
+            programs: selectors.programApps()
+        });
         return tabMenu(
             {
                 pinned: found.pinned === true,
                 preview: found.preview === true,
-                file: file !== null && deps.roots().some((one) => one.key === file.root),
+                file: served,
                 tabs: instances.length,
                 right: instances.length - at - 1,
-                compareWith: other !== null
+                compareWith: other !== null,
+                ...facts
             },
             t
         );
+    }
+
+    /** A bookmark made or taken out over the tab's file; a refusal is said under the strip. */
+    async function bookmark(file: TabFile, add: boolean): Promise<void> {
+        const reason = await bookmarkTabFile(fs, file, add);
+        said = reason === '' ? '' : t('files.bookmark_failed', reason);
     }
 
     /** The close items: the tabs each closes, after the guard's question. */
@@ -114,6 +134,18 @@ export function createTabMenu(deps: TabMenuDeps) {
             },
             timeline: () => {
                 if (file !== null) layout.showTimeline(file.path, file.root);
+            },
+            bookmark: (add) => {
+                if (file !== null) void bookmark(file, add);
+            },
+            openBrowser: () => {
+                if (file !== null) openInBrowserTab(file);
+            },
+            openProgram: () => {
+                if (file === null) return;
+                void writes.openFile(file.root, file.path).then((answer) => {
+                    if (!answer.ok) said = t('file.open_failed', answer.error ?? '');
+                });
             },
             selectForCompare: () => {
                 if (file !== null) explorer.selectForCompare(file);

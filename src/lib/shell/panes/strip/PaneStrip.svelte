@@ -5,12 +5,16 @@
     // (`none`), or no row at all. The actions are the Split Right button, the lock mark of a locked
     // pane, and the pane menu's `...` opener; `editor_actions: hidden` leaves out the first and the
     // last, and a locked pane keeps its mark whatever either setting says, since the mark is what
-    // unlocks the group. The active file tab's own actions (Save, Revert and the rest, handed in as
-    // `tabActions`) stand before those, and `editor_actions` does not hide them, being the tab's
-    // and not the pane's. With `wrap_tabs` and `show_tabs: multiple` the tabs wrap onto rows.
+    // unlocks the group. With `wrap_tabs` and `show_tabs: multiple` the tabs wrap onto rows.
     //
     // The path of the active file tab is a breadcrumb: under the strip, or, when the strip shows
-    // the active tab alone, in the strip's own row beside the tab. A tab naming no file draws none.
+    // the active tab alone, in the strip's own row beside the tab. The file tab's own actions
+    // (Save, Revert File, the star, Open in Program, Open Preview, Open Preview to the Side, Open
+    // Source and Toggle Blame, handed in as `barActions`) stand at the right end of that same bar,
+    // whole, while the path is cut from the left when the two do not fit. A tab naming no file
+    // draws no path, a file tab that hands up actions draws the bar for them alone, as a HEAD tab
+    // does, whose root is a repository's folder and not a served root, and a tab none of whose
+    // actions applies hands up none, so with no path it draws no bar.
     //
     // It draws and reports. Closing, selecting, the drag and every menu item are the pane's, which
     // hands them in.
@@ -38,8 +42,8 @@
         canSplit: boolean;
         /** The pane menu's items. */
         items: MenuItem[];
-        /** The active file tab's own actions, drawn at the end of the row. */
-        tabActions?: Snippet;
+        /** The active file tab's own actions, drawn at the right end of the breadcrumb bar. */
+        barActions?: Snippet;
         /** The segments of the active tab's path, or none. */
         crumbs?: Crumb[];
         oncrumb?: (crumb: Crumb) => void;
@@ -65,7 +69,7 @@
         locked,
         canSplit,
         items,
-        tabActions,
+        barActions,
         crumbs = [],
         oncrumb,
         onunpin,
@@ -81,11 +85,11 @@
         onpick
     }: Props = $props();
 
-    const shape = $derived(
-        stripShape(showTabs(), editorActions(), tabs, active, locked, tabActions !== undefined)
-    );
+    const shape = $derived(stripShape(showTabs(), editorActions(), tabs, active, locked));
     const wrap = $derived(stripWraps(wrapTabs(), showTabs()));
-    const beside = $derived(showTabs() === 'single' && crumbs.length > 0);
+    /** Whether the bar has anything to draw: a path, or the actions of the file tab. */
+    const barred = $derived(crumbs.length > 0 || barActions !== undefined);
+    const beside = $derived(showTabs() === 'single' && barred);
     const place = $derived(tabs.findIndex((tab) => tab.id === active));
     const title = $derived(tabs.find((tab) => tab.id === active)?.label ?? '');
 
@@ -133,7 +137,7 @@
         <div class="actions">{@render actions()}</div>
     </div>
 {/if}
-{#if crumbs.length > 0 && !beside}
+{#if barred && !beside}
     <div class="path">
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render path()}
@@ -141,17 +145,21 @@
 {/if}
 
 {#snippet path()}
-    <Breadcrumb
-        label={t('ui.tab_path')}
-        segments={crumbs.map((crumb, at) => ({ id: String(at), label: crumb.label }))}
-        onselect={(id: string) => oncrumb?.(crumbs[Number(id)])}
-    />
+    {#if crumbs.length > 0}
+        <Breadcrumb
+            label={t('ui.tab_path')}
+            segments={crumbs.map((crumb, at) => ({ id: String(at), label: crumb.label }))}
+            onselect={(id: string) => oncrumb?.(crumbs[Number(id)])}
+        />
+    {/if}
+    {#if barActions !== undefined}
+        <div class="bar-actions">
+            {@render barActions()}
+        </div>
+    {/if}
 {/snippet}
 
 {#snippet actions()}
-    {#if tabActions !== undefined}
-        {@render tabActions()}
-    {/if}
     {#if shape.lock}
         <ToolButton
             label={t('ui.strip_unlock')}
@@ -199,6 +207,16 @@
 
     :global(body.wall) .path {
         background: transparent;
+    }
+
+    /* The file tab's actions stand whole at the right end of the bar, in the row's height. */
+    .bar-actions {
+        display: flex;
+        align-items: center;
+        flex: none;
+        height: var(--crumb-row);
+        margin-left: auto;
+        padding: 0 var(--tab-action-gap);
     }
 
     /* The row of `show_tabs: none`: the active tab's name at the left, the actions at the right,

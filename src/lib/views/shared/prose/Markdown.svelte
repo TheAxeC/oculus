@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, shared view partial. One Markdown document drawn as prose: the answer is still being
     // read, it failed, or it is the HTML the document rule of data/prose/markdown.ts rendered. The
-    // doc, help and project views draw a fetched document with it, and the source tab's preview
-    // draws the text it renders on the page.
+    // doc, help and project views draw a fetched document with it, and RenderedMarkdown.svelte
+    // draws the text it renders on the page, for the source tab's rendered half and for the
+    // Markdown preview tab.
     //
     // The HTML is somebody's Markdown turned into markup by marked, so it is drawn through
     // ui/html.ts's sanitise and holds only what that profile allows. The words for the two states

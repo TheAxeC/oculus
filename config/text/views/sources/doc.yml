@@ -3,9 +3,16 @@ text:
     doc:
         failed: 'The document {0} could not be read: {1}'
         loading: Reading the document...
+        markdown_none: No Markdown file chosen. Open one from the Files view.
+        markdown_none_glyph: book
+        markdown_source: Open Source
+        markdown_source_glyph: open_file
+        markdown_source_title: 'Open Source: the source tab of {0}'
         none: No document chosen. Open one from a group of the Views catalogue.
         none_glyph: book
         unlisted: "{0} is not in the documents list of config/layout.yml, and no entry there carries this tab's name."
     views:
         doc: Hub document
         doc_glyph: book
+        markdown_preview: Markdown preview
+        markdown_preview_glyph: book

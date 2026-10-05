@@ -42,13 +42,19 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { decodeHTML } from 'entities';
 import type { MarkedExtension, Token, Tokens } from 'marked';
-import { renderDocument } from '../../data/prose/markdown.ts';
+import { renderDocumentParts } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
 import { isSideTier } from '../../data/sources/manifests.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
 import { HUB_ROOT } from '../files/files.ts';
-import type { Finding, ManualPart, PortfolioConfig, Project } from '../../data/model/index.ts';
+import type {
+    Finding,
+    ManualPart,
+    PortfolioConfig,
+    Project,
+    RenderedHeading
+} from '../../data/model/index.ts';
 import { inside, realPath } from '../core/paths.ts';
 
 /**
@@ -79,7 +85,8 @@ export const MARKDOWN_DOCS = [
 ];
 
 /**
- * What the endpoint answers with: the rendered document, the frontmatter block it had, and the
+ * What the endpoint answers with: the rendered document, the headings of that render in order
+ * (their level, their words and the id the HTML carries), the frontmatter block it had, and the
  * absolute path of the file read. The page holds the path to tell which `files` events concern the
  * document: an event names the watched root a write landed under, and only a root that holds this
  * file can have changed it. The manual's answer carries its runs of prose and diagrams as well,
@@ -87,13 +94,14 @@ export const MARKDOWN_DOCS = [
  */
 export type DocAnswer = {
     html: string;
+    headings: RenderedHeading[];
     frontmatter: Record<string, unknown> | null;
     file: string;
     parts?: ManualPart[];
 };
 
-/** What one render gives the answer: the HTML, and the manual's runs where it has them. */
-type Drawn = { html: string; parts?: ManualPart[] };
+/** What one render gives the answer: the HTML, its headings, and the manual's runs where it has. */
+type Drawn = { html: string; headings: RenderedHeading[]; parts?: ManualPart[] };
 
 /**
  * A document is asked for again whenever a write may have changed it, and the page itself asks
@@ -223,21 +231,18 @@ function climbs(path: string): boolean {
 }
 
 /**
- * One document's Markdown as HTML, with a figure beside it drawn through the file route: a relative
- * image source is resolved against the document's own folder and addressed under `base.root`, which
- * is the one way a `<img src="figures/one.png">` in a hub document reaches the reader. An address
- * the browser resolves on its own (a scheme, an absolute path) is left as it was written, and a
- * document with no folder to resolve against (the engine's own manual) keeps every source it
- * carries.
+ * One document's Markdown as HTML and its headings, with a figure beside it drawn through the file
+ * route: a relative image source is resolved against the document's own folder and addressed under
+ * `base.root`, which is the one way a `<img src="figures/one.png">` in a hub document reaches the
+ * reader. An address the browser resolves on its own (a scheme, an absolute path) is left as it
+ * was written, and a document with no folder to resolve against (the engine's own manual) keeps
+ * every source it carries.
  *
  * Every heading carries an id and a `[TOC]` paragraph is drawn as the document's table of
  * contents, by the document rule of data/prose/markdown.ts the page renders with too.
  */
-export function renderMarkdown(
-    text: string,
-    base: { root: string; folder: string } | null
-): string {
-    return base === null ? renderDocument(text) : renderDocument(text, figures(base));
+export function renderMarkdown(text: string, base: { root: string; folder: string } | null): Drawn {
+    return base === null ? renderDocumentParts(text) : renderDocumentParts(text, figures(base));
 }
 
 /**
@@ -313,17 +318,16 @@ export function renderManualParts(text: string): Drawn {
     };
     const parts: ManualPart[] = [];
     let html = '';
-    renderDocument(text, cut)
-        .split(mark)
-        .forEach((piece, at) => {
-            if (piece.trim() !== '') parts.push({ kind: 'html', html: piece });
-            html += piece;
-            const diagram = shown.at(at);
-            if (diagram === undefined) return;
-            parts.push({ kind: 'diagram', name: diagram.name, alt: diagram.alt });
-            html += diagram.html;
-        });
-    return { html, parts };
+    const drawn = renderDocumentParts(text, cut);
+    drawn.html.split(mark).forEach((piece, at) => {
+        if (piece.trim() !== '') parts.push({ kind: 'html', html: piece });
+        html += piece;
+        const diagram = shown.at(at);
+        if (diagram === undefined) return;
+        parts.push({ kind: 'diagram', name: diagram.name, alt: diagram.alt });
+        html += diagram.html;
+    });
+    return { html, headings: drawn.headings, parts };
 }
 
 /**
@@ -337,7 +341,7 @@ function answer(
     base: { root: string; folder: string } | null,
     catalog: Record<string, string>,
     held: string,
-    draw: (text: string) => Drawn = (text) => ({ html: renderMarkdown(text, base) })
+    draw: (text: string) => Drawn = (text) => renderMarkdown(text, base)
 ): Response {
     const file = resolve(path);
     const tag = fileTag(file);

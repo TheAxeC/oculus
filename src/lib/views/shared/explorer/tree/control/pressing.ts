@@ -15,8 +15,11 @@ export type PressDeps = {
     /** A plain press moved the cursor to a row. */
     onselect: (row: RowRef) => void;
     ontoggle: (row: TreeRow) => void;
-    /** Open one file as the pane's preview tab. */
-    onopen: (row: TreeRow, preview: boolean) => void;
+    /**
+     * Open one file as the pane's preview tab. A press passes its time, which is when the tab it
+     * opens stops taking the second press of a double click.
+     */
+    onopen: (row: TreeRow, preview: boolean, pressedAt?: number) => void;
     /** The `..` row of a rooted tab was pressed. */
     onup?: (to: RowRef) => void;
 };
@@ -25,7 +28,7 @@ export type PressDeps = {
 export type PressHit = { segment: string | null; twisty: boolean };
 
 /** The modifiers of a press. */
-export type PressEvent = Pick<MouseEvent, 'metaKey' | 'ctrlKey' | 'shiftKey'>;
+export type PressEvent = Pick<MouseEvent, 'metaKey' | 'ctrlKey' | 'shiftKey' | 'timeStamp'>;
 
 /** The press handler of the tree. */
 export function createPressed(
@@ -48,6 +51,6 @@ export function createPressed(
         deps.onselect(here);
         if (row.up === true) deps.onup?.({ root: row.root, path: row.path });
         else if (row.kind === 'dir' || (hit.twisty && row.nests === true)) deps.ontoggle(row);
-        else deps.onopen(row, true);
+        else deps.onopen(row, true, event.timeStamp);
     };
 }

@@ -31,19 +31,26 @@
     // the rest of the file off the disk.
     //
     // A tab over the file at HEAD or in the index (Open File (HEAD)) is read from the git route
-    // and is never written: it is drawn as a locked file, has no gutter marks or blame, and carries
-    // no bookmark or program control, since its root is a repository's own directory and not a
-    // served root.
+    // and is never written: it is drawn as a locked file, has no gutter marks, carries the blame
+    // of that version (Toggle Blame is the one action it offers), and offers no preview, since its
+    // root is a repository's own directory and not a served root.
     //
     // A keystroke keeps a preview tab. A file opened by a single click is the tab the next single
     // click replaces, and typing into it is a reader saying they are working in it.
     //
     // The tab draws no title row and no row of controls: its path is the breadcrumb the pane draws
-    // under the strip, and its controls (StripActions.svelte) are handed up to the pane's tab strip
-    // through ui/tabs/tab-actions.svelte.ts, which draws them at its end for the active tab. The
-    // save outcome, while the text may be written, and what a refused bookmark write or open said,
-    // whether or not it may, stay in view as a line under the editor (save/SourceNote.svelte). A
-    // file that could not be read is the message box with a control that reads it again.
+    // under the strip. It hands up to the pane through ui/tabs/tab-actions.svelte.ts its actions
+    // for the right end of the breadcrumb bar (actions/BarActions.svelte): Save, Revert File, the
+    // star, Open in Program, Open Preview, Open Preview to the Side and Toggle Blame, each where it
+    // applies, and nothing for the tab row. Word wrap and the rendered half are the palette's,
+    // which lists Save, Revert File, word wrap, the rendered half, Open Preview to the Side and
+    // Toggle Blame while each applies (status/ask-perform.ts), and Cmd+S asks the tab on screen to
+    // save. The save outcome, while the text may be written, and what a
+    // refused first Save or LaTeX action said, whether or not it may, stay in view as a line under
+    // the editor (save/SourceNote.svelte). A file that could not be read is the message box with a
+    // control that reads it again (read-again.ts), which opens what the file is when it is back as
+    // something other than text. A file the route says is gone opens here too, so this is the tab
+    // that says it cannot be opened.
     //
     // A tab over an untitled text (New Text File) holds an empty draft and no file. Its first Save
     // asks for a served root of the current workspace and a name, makes the file there, writes the
@@ -53,26 +60,25 @@
     // keyed by the instance, while the tab is mounted: the caret the editor reports, the
     // indentation in force, the line ending of the text, the language (the one chosen from the
     // bar, or the file name's), whether the file may be written, and the editor's actions the
-    // palette lists. The indentation is the first of these that gives one: the one chosen from the
-    // bar, the file's own when it indents, the record of the language in the root's
-    // `.oculus/settings.yml`, then in `editor.languages`, then the global `editor.tab_size` and
-    // `editor.insert_spaces`. The word wrap is the tab's Alt+Z choice, kept with the draft, else
-    // the root's record, else `editor.languages`, else `editor.word_wrap`; the rulers come from the
-    // records alone. All of them are resolved in views/shared/prose/source-options.ts and handed
-    // to the editor as its options. What the bar and the palette ask of the tab is performed here
-    // once per ask: an indentation, a language and a word wrap are kept with the draft and handed
-    // to the editor, and a line to go to, a conversion of the indentation, a line ending and an
-    // editor action are performed by the editor on its model (Editor.svelte's `perform`). A
-    // rewrite of the text is an edit like typing, handed back as one and unsaved until Save. The
-    // editor keeps the text in the line ending it was opened in, so typing into a CRLF file is kept
-    // in CRLF.
+    // palette lists. The indentation, the word wrap (the tab's Alt+Z choice among them) and the
+    // rulers are resolved in views/shared/prose/source-options.ts, in the order
+    // data/helpers/editor.ts's `resolveEditor` states, and handed to the editor as its options.
+    // What the bar and the palette ask of the tab is performed here once per ask: an indentation, a
+    // language and a word wrap are kept with the draft and handed to the editor, and a line to go
+    // to, a conversion of the indentation, a line ending and an editor action are performed by the
+    // editor on its model (Editor.svelte's `perform`). A rewrite of the text is an edit like
+    // typing, handed back as one and unsaved until Save. The editor keeps the text in the line
+    // ending it was opened in, so typing into a CRLF file is kept in CRLF.
     //
     // For a file in a repository the gutter carries VS Code's quick diff marks against the index,
-    // and the Blame toggle, kept with the draft, adds each line's blame to it and the caret line's
-    // blame to the status bar. They are read (source-gutter.svelte.ts) again whenever the
-    // repository's state on the `git` channel moves and after every save; a hidden tab reads again
-    // once, when it is shown. A press on a mark opens the file's diff at its change and a press on
-    // a line's blame opens its commit in the Repositories view's graph.
+    // and Git: Toggle Git Blame Editor Decoration, kept with the draft, adds each line's blame to
+    // it. The caret line's blame is in the status bar whether or not the decoration is on, as VS
+    // Code's `git.blame.statusBarItem.enabled` is on by default. A tab over the file at HEAD or in
+    // the index reads the blame of that version and no marks. They are read
+    // (source-gutter.svelte.ts) again whenever the repository's state on the `git` channel moves
+    // and after every save; a hidden tab reads again once, when it is shown. A press on a mark
+    // opens the file's diff at its change and a press on a line's blame opens its commit in the
+    // Repositories view's graph.
     //
     // A Markdown or LaTeX file adds the headings of its text as document symbols (`symbols.ts`),
     // which sticky scroll pins at the top of the editor. A LaTeX file adds to its editor the
@@ -80,27 +86,32 @@
     // and Format Document (`latex-editor.ts`); a save of it builds its main file when
     // `latex.auto_build` says so (state/sessions/latex.svelte.ts).
 
-    import { onDestroy, untrack } from 'svelte';
+    import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Prompt from '$lib/ui/forms/Prompt.svelte';
     import type { PromptRequest } from '$lib/ui/forms/prompt';
-    import { useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
+    import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
+    import { servedFile } from '$lib/views/shared/links/file-bar';
+    import { ownListing } from '$lib/ui/controls/editor/chords';
+    import { onMac } from '$lib/ui/controls/editor/kit/load';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Code from '../../shared/prose/Code.svelte';
     import Editor from './Editor.svelte';
+    import BarActions from './actions/BarActions.svelte';
     import Gutter from './Gutter.svelte';
     import SourceNote from './save/SourceNote.svelte';
-    import StripActions from './StripActions.svelte';
-    import { performAsk } from './ask-perform';
+    import { performAsk, tabActions } from './status/ask-perform';
+    import { connectSourceStatus } from './status/source-status.svelte';
+    import { readAgain } from './read-again';
     import { askUntitledName } from './save/untitled-save';
     import { latexEditor } from './latex-editor';
     import { createSourceGutter } from './source-gutter.svelte';
     import { createSourceOptions } from '$lib/views/shared/prose/source-options';
     import { symbolsExtension } from './symbols';
     import { readAs } from '$lib/data/shapes/shapes';
-    import { opensInProgram } from '$lib/state/sources/fs';
+    import { markdownPreviewState, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';
     import { markdownOutline } from '$lib/state/sources/explorer/sections/outline';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { headOf } from '$lib/state/sessions/source.svelte';
@@ -110,7 +121,6 @@
         wholePath,
         type RepoFile
     } from '$lib/state/sources/repositories/file-git';
-    import type { GitBlameLine } from '$lib/state/sources/repositories/repositories';
     import {
         START,
         lineCount,
@@ -126,20 +136,12 @@
 
     const client = useState();
     const {
-        editorStatus: { asked, focus, forget, publish },
+        editorStatus,
         explorer,
         fs: { fileText, roots: currentRoots, workspaces },
-        layout: { keepPreview, restateInstance },
+        layout: { keepPreview, openBeside, restateInstance },
         repositories,
-        selectors: {
-            editorOptions,
-            gitFor,
-            gitRoots,
-            languages,
-            paintLimit,
-            programApps,
-            repoSettings
-        },
+        selectors: { editorOptions, gitFor, gitRoots, languages, paintLimit, repoSettings },
         source: {
             revertSourceDraft,
             editSourceDraft,
@@ -169,7 +171,7 @@
     /** Whether the tab names no file: an untitled text, or a state that lost its address. */
     const blocked = $derived(root === '' || path === '');
     const untitled = $derived(readAs(untitledShape, instance.state) !== null);
-    /** What the star or the program control was refused with, or the empty string. */
+    /** What a refused LaTeX action or untitled save said, or the empty string. */
     let said = $state('');
     const error = $derived(blocked && !untitled ? t('source.cannot_open', path) : draft.error);
     /** The line a tab that may not write its file draws, and the empty string for one that may. */
@@ -184,8 +186,13 @@
                 ? t('source.truncated')
                 : ''
     );
+    /**
+     * Whether the tab holds the file's text: read, and not refused since. A draft read once keeps
+     * its text when a later read fails, so `draft.loaded` alone stays true for a file now gone.
+     */
+    const read = $derived(error === '' && draft.loaded);
     /** Whether the editor is drawn, which is when the text controls have text to act on. */
-    const editing = $derived(error === '' && draft.loaded && locked === '');
+    const editing = $derived(read && locked === '');
 
     /** The save outcome the row under the editor shows: only while the text may be written. */
     const saveMessage = $derived(editing ? draft.message : '');
@@ -227,22 +234,34 @@
         blocked || head !== undefined ? '' : (wholePath(served, { root, path }) ?? '')
     );
 
-    /** The repository holding the file and its path there, or null for a file in none. */
+    /**
+     * The repository holding the file and its path there, or null for a file in none. A version at
+     * HEAD or in the index names its repository's own folder as its root.
+     */
     const inRepo = $derived.by<RepoFile | null>(() => {
-        if (blocked || head !== undefined) return null;
+        if (blocked) return null;
+        if (head !== undefined) return { root, path };
         const repos = gitRoots().filter((one) => {
             const held = gitFor(one);
             return held !== null && held.repository && held.error === null;
         });
         return repoOfFile(served, { root, path }, repos);
     });
+    /** Whether the tab shows the working file, read, which the star and Open in Program act on. */
+    const onDisk = $derived(head === undefined && !blocked && read);
+    /** Whether the tab shows a Markdown file read from disk, which may be previewed. */
+    const previewable = $derived(markdown && onDisk);
+    /** Whether the tab's file is in a repository and read, so its blame may be drawn. */
+    const blameable = $derived(inRepo !== null && read);
     /** The repository's state, whose every move is a new read of the gutter. */
     const repoState = $derived(inRepo === null ? null : gitFor(inRepo.root));
     const gate = shownGate(useShown());
-    /** The quick diff marks and the blame, read for a file in a repository. */
+    /** The quick diff marks and the blame, read for a file in a repository once its text is. */
     const gutter = createSourceGutter({
-        file: () => inRepo,
+        file: () => (read ? inRepo : null),
+        stage: () => head,
         repoState: () => repoState,
+        repositories,
         loaded: () => draft.loaded,
         text: () => draft.text,
         saved: () => draft.saved,
@@ -260,76 +279,70 @@
     let selection = $state('');
     /** The editor, which performs the asks that act on its model. */
     let editor: EditorHandle | undefined = $state();
-    /** The editor's actions the palette lists, as the editor labelled them once it loaded. */
+    /** The editor's own actions the palette lists, as it labelled them once it loaded. */
     let actions: EditorAction[] = $state([]);
-    /** The last ask of this instance already performed, so a remount does not perform it again. */
-    let performed = untrack(() => asked(instance.id)?.seq ?? 0);
-
-    // What the status bar draws for this tab, said again whenever any of it changes. A tab with no
-    // text yet says nothing, so the bar draws no source items over a tab still reading, and a tab
-    // whose indentation is not known yet (the configuration has not arrived) says nothing either.
-    $effect(() => {
-        const id = instance.id;
-        if (error !== '' || !draft.loaded || indent === null) {
-            forget(id);
-            return;
-        }
-        publish(id, {
-            caret: editing ? caret : null,
-            lines: lineCount(draft.text),
-            indent,
-            ending,
-            language,
-            writable: editing,
-            blame: draft.blame ? blameStatus(blameMap.get(caret.line), gutter.readAt) : '',
-            actions: editing ? actions : [],
-            file: wholeFile,
-            selection: editing ? selection : ''
-        });
-    });
-
-    /** Open the file's diff at a change its gutter marks, as VS Code's gutter press peeks it. */
-    function openMark(line: number): void {
-        if (inRepo === null) return;
-        repositories.openDiff(
-            { root: inRepo.root, path: inRepo.path, staged: false, worktree: false, line },
-            inRepo.path
-        );
-    }
-
-    /** Open a blamed line's commit in the Repositories view's graph. */
-    function openBlamed(line: GitBlameLine | undefined): void {
-        if (inRepo === null || line === undefined || line.uncommitted) return;
-        repositories.openCommit(inRepo.root, line.hash);
-    }
-
-    onDestroy(() => forget(instance.id));
-
-    // The controls go to the pane's strip while the tab is mounted. They are handed over as the
-    // component starts, since a render on the server runs no effect, and taken back by the cleanup.
-    const handed = useTabActions();
-    untrack(() => handed?.set(instance.id, stripActions));
-    $effect(() => {
-        const id = instance.id;
-        return () => handed?.clear(id);
-    });
-
-    // An ask of the status bar, performed once on the draft.
-    $effect(() => {
-        const ask = asked(instance.id);
-        if (ask === null || ask.seq === performed) return;
-        performed = ask.seq;
-        untrack(() =>
+    /** The tab's actions that apply now: Save, Revert, word wrap, the rendered half, Blame. */
+    const own = $derived(
+        tabActions({
+            editing,
+            markdown,
+            previewable,
+            blameable,
+            save: () => void save(),
+            revert: () => revertSourceDraft(instance.id),
+            toggleWrap,
+            toggleRendered: () => toggleSourceRendered(instance.id),
+            previewSide: () => openBeside(MARKDOWN_PREVIEW_VIEW, markdownPreviewState(root, path)),
+            toggleBlame: () => toggleSourceBlame(instance.id)
+        })
+    );
+    /** What the palette lists: the tab's actions, then the editor's while it is drawn. */
+    const listed = $derived([
+        ...ownListing(own, onMac()),
+        ...(editing ? actions.filter((one) => !own.some((mine) => mine.id === one.id)) : [])
+    ]);
+    // What the status bar draws for this tab, said again whenever any of it changes, and the asks
+    // of the bar and the palette. A tab with no text yet says nothing, so the bar draws no source
+    // items over a tab still reading, and a tab whose indentation is not known yet (the
+    // configuration has not arrived) says nothing either.
+    connectSourceStatus({
+        store: editorStatus,
+        id: () => instance.id,
+        status: () =>
+            error !== '' || !draft.loaded || indent === null
+                ? null
+                : {
+                      caret: editing ? caret : null,
+                      lines: lineCount(draft.text),
+                      indent,
+                      ending,
+                      language,
+                      writable: editing,
+                      blame: editing ? blameStatus(blameMap.get(caret.line), gutter.readAt) : '',
+                      actions: listed,
+                      file: wholeFile,
+                      selection: editing ? selection : ''
+                  },
+        perform: (ask) =>
             performAsk(ask, {
                 editing,
                 indent,
                 editor,
-                openCommit: () => openBlamed(blameMap.get(caret.line)),
+                actions: own,
+                openCommit: () => gutter.openBlamed(blameMap.get(caret.line)),
                 setLanguage: (next) => setSourceLanguage(instance.id, next),
                 setIndent: (next) => setSourceIndent(instance.id, next)
             })
-        );
     });
+
+    // The bar's actions go up to the pane while the tab is mounted and one of them applies
+    // (ui/tabs/tab-actions.svelte.ts).
+    handUp(
+        useTabActions(),
+        () => instance.id,
+        barActions,
+        () => editing || previewable || blameable || servedFile(currentRoots(), root, path, onDisk)
+    );
 
     $effect(() => {
         const id = instance.id;
@@ -383,28 +396,22 @@
         marks={markMap}
         blame={gutter.blame}
         now={gutter.readAt}
-        onmark={openMark}
-        onblame={(line: GitBlameLine) => openBlamed(line)}
+        onmark={gutter.openMark}
+        onblame={gutter.openBlamed}
     />
 {/snippet}
 
-<!-- The tab's controls, handed up to the pane's tab strip. -->
-{#snippet stripActions()}
-    <StripActions
+<!-- The tab's actions for the right end of the breadcrumb bar. -->
+{#snippet barActions()}
+    <BarActions
+        id={instance.id}
         {root}
         {path}
+        {onDisk}
         {editing}
-        bookmarkable={head === undefined && !blocked}
-        program={!blocked && head === undefined && opensInProgram(path, programApps())}
-        previewable={editing && markdown}
-        rendered={draft.rendered}
-        blameable={inRepo !== null && draft.loaded}
-        blamed={draft.blame}
+        {previewable}
+        {blameable}
         onsave={() => void save()}
-        onrevert={() => revertSourceDraft(instance.id)}
-        onpreview={() => toggleSourceRendered(instance.id)}
-        onblame={() => toggleSourceBlame(instance.id)}
-        onsaid={(words: string) => (said = words)}
     />
 {/snippet}
 
@@ -412,7 +419,14 @@
     <ToolButton
         small
         label={t('source.retry')}
-        onclick={() => void loadSourceDraft(instance.id, root, path, head)}
+        onclick={() =>
+            void readAgain(client, {
+                id: instance.id,
+                preview: instance.preview === true,
+                root,
+                path,
+                head
+            })}
     />
 {/snippet}
 
@@ -425,10 +439,12 @@
         data-instance={instance.id}
         data-root={root}
         data-path={path}
-        onfocusin={() => focus(instance.id)}
+        onfocusin={() => editorStatus.focus(instance.id)}
     >
         {#if error !== ''}
-            <Empty error message={error} action={blocked ? undefined : again} />
+            <div data-tab-focus tabindex="-1">
+                <Empty error message={error} action={blocked ? undefined : again} />
+            </div>
         {:else if !draft.loaded}
             <Empty message={t('app.waiting')} glyph="edit" />
         {:else if locked !== ''}
@@ -453,7 +469,7 @@
                 {ending}
                 wrap={options.wrap}
                 rulers={options.rulers}
-                ontogglewrap={toggleWrap}
+                actions={own}
                 instance={instance.id}
                 text={draft.text}
                 rendered={draft.rendered}
@@ -463,8 +479,8 @@
                 oninput={typed}
                 oncaret={(at: Caret) => (caret = at)}
                 onselect={(text: string) => (selection = text)}
-                onmark={(mark: EditorMark) => openMark(mark.line)}
-                onblame={(row: EditorBlame) => openBlamed(blameMap.get(row.line))}
+                onmark={(mark: EditorMark) => gutter.openMark(mark.line)}
+                onblame={(row: EditorBlame) => gutter.openBlamed(blameMap.get(row.line))}
                 onactions={(offered: EditorAction[]) => (actions = offered)}
             />
         {/if}

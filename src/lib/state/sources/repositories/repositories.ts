@@ -73,9 +73,12 @@ export function stashUrl(root: string, ref: string): string {
     return gitUrl({ stash: ref, root });
 }
 
-/** The endpoint a file's blame is read from. */
-export function blameUrl(root: string, path: string): string {
-    return gitUrl({ blame: root, path });
+/**
+ * The endpoint a file's blame is read from: the worktree's file, or with `stage` the last commit's
+ * version (`head`) or the staged text (`index`).
+ */
+export function blameUrl(root: string, path: string, stage?: 'head' | 'index'): string {
+    return gitUrl(stage === undefined ? { blame: root, path } : { blame: root, path, stage });
 }
 
 /**

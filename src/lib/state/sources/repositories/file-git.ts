@@ -136,11 +136,11 @@ export function blameWords(line: GitBlameLine, now: number = Date.now()): BlameW
     };
 }
 
-/** What the status bar says for the caret's line while blame is on. */
+/** What the status bar says for the caret's line: who last changed it and when, as VS Code's. */
 export function blameStatus(line: GitBlameLine | undefined, now: number = Date.now()): string {
     if (line === undefined) return '';
     if (line.uncommitted) return t('repositories.blame_uncommitted');
-    return t('repositories.blame_status', line.author, ago(line.when, now), line.subject);
+    return t('repositories.blame_status', line.author, ago(line.when, now));
 }
 
 /** A blamed line as the editor's line-number column draws it: its words, hover and commit. */

@@ -218,6 +218,12 @@ export type ManualPart =
     { kind: 'html'; html: string } | { kind: 'diagram'; name: string; alt: string };
 
 /**
+ * One heading of a rendered Markdown document, in document order: its level (1 to 6), its words as
+ * the author wrote them, and the id the render gave it, which a link to the heading names.
+ */
+export type RenderedHeading = { level: number; text: string; id: string };
+
+/**
  * One standing "do this later" note, the manifest's `followup:` (manifest-schema.yml's
  * `followup.do` and `followup.after`). `after` is an ISO date the note is hidden until; a note
  * without one is always due.

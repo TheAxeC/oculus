@@ -23,6 +23,25 @@ export type EditorEdit = 'type' | 'undo' | 'redo';
  */
 export type EditorAction = { id: string; label: string; hint: string };
 
+/** One key press: Monaco's name for the key, and the modifiers held with it. */
+export type KeyPress = {
+    code: keyof typeof Monaco.KeyCode;
+    /** Cmd on macOS and Ctrl elsewhere, Monaco's CtrlCmd. */
+    cmd?: true;
+    /** The Ctrl key on macOS, Monaco's WinCtrl. */
+    ctrl?: true;
+    shift?: true;
+    /** The Alt key, Option on macOS, Monaco's Alt. */
+    alt?: true;
+};
+
+/**
+ * An action the parent owns and hands the editor: the editor binds `key` to it, when it has one,
+ * and lists it to the palette with the key as its hint. The parent lists the same actions to the
+ * palette itself while it draws no editor.
+ */
+export type EditorOwnAction = { id: string; label: string; key?: KeyPress; run: () => void };
+
 /** The labels of the editor's three actions over the quick diff marks, in the parent's words. */
 export type EditorChangeWords = { next: string; previous: string; open: string };
 

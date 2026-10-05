@@ -15,6 +15,8 @@ icons:
     icons: type
     launch: external-link
     open_program: app-window
+    open_preview: file-search
+    preview_side: panel-right-open
     copy: copy
     goto: corner-down-right
     replace: replace
@@ -40,6 +42,7 @@ icons:
     folder_add: folder-plus
     file_add: file-plus
     save: save
+    revert: undo-2
     save_all: save-all
     close_all: list-x
     branch: git-branch

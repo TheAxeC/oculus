@@ -147,8 +147,10 @@ export function createOpening(
             }, host);
             // Asking for the file the preview tab already holds is asking for it a second time,
             // which is what the second click of a double click is. It keeps the tab, and it is the
-            // path that holds when the first click has taken the tree off the screen and the second
-            // one lands on the tab the tree opened.
+            // path that holds when both clicks reach the tree before the first read returns. When
+            // the first click has already taken the tree off the screen, the second press lands on
+            // the tab the tree opened, and the keep armed for that tab (armed-keep.svelte.ts) takes
+            // it.
             if (preview && isPreview(existing)) keepPreview(existing.id);
             return existing.id;
         }

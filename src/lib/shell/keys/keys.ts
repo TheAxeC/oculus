@@ -2,6 +2,7 @@
 // guard state and performs the returned action, leaving shortcut precedence testable without a DOM.
 
 import type { RailOrder } from '$lib/state/workbench/navigation/catalogue';
+import { SAVE_KEY } from '$lib/ui/controls/editor/chords';
 
 export type { RailOrder };
 
@@ -47,6 +48,7 @@ export type KeyAction =
     | { kind: 'sheet' }
     | { kind: 'new-session' }
     | { kind: 'command-default'; which: 'build' | 'test' }
+    | { kind: 'save' }
     | { kind: 'clear-cursor' };
 
 export type KeyResult = { action: KeyAction | null; state: KeyState };
@@ -103,6 +105,20 @@ function defaultCommand(event: KeyEventLike, context: KeyContext): 'build' | 'te
     return null;
 }
 
+/**
+ * Whether the key is Cmd+S (Ctrl+S off macOS), which saves the source tab on screen. The letter is
+ * read from the physical key, since Option and S type another character on macOS. It answers with
+ * a field focused, as the editor is one, and under an overlay, where the key is still taken from
+ * the browser, whose own save dialog the page never wants.
+ */
+function savesFile(event: KeyEventLike, context: KeyContext): boolean {
+    if (event.defaultPrevented === true) return false;
+    const mac = context.mac !== false;
+    if ((mac ? event.metaKey : event.ctrlKey) !== true) return false;
+    if ((mac ? event.ctrlKey : event.metaKey) === true) return false;
+    return event.code === SAVE_KEY.code && event.shiftKey !== true && event.altKey !== true;
+}
+
 /** Resolve one workbench key, retaining only the two short-lived chord timestamps. */
 export function resolveKey(
     event: KeyEventLike,
@@ -133,6 +149,9 @@ export function resolveKey(
     ) {
         const kind = event.key.toLowerCase() === 'f' ? 'find-in-files' : 'replace-in-files';
         return { action: { kind }, state: { ...state, chord: '' } };
+    }
+    if (savesFile(event, context)) {
+        return { action: { kind: 'save' }, state: { ...state, chord: '' } };
     }
     const which = defaultCommand(event, context);
     if (which !== null) {

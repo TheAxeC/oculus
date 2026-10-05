@@ -6,9 +6,12 @@
 // each of them may read them.
 //
 // The file a tab shows is defined here too, once, for the shell and the Files view alike: which
-// file a tab shows, the segments of its path, its absolute path, its path as a reader writes it,
-// and the comparison of two files. The pane's tab strip, its breadcrumb and its right-click menu
-// name a file by these rules, and so do the Files view's outline, timeline, tree and row menu.
+// file a tab shows, the file whose icon its face draws, the segments of its path, its absolute
+// path, its path as a reader writes it, and the comparison of two files. The pane's tab strip, its
+// breadcrumb and its right-click menu name a file by these rules, and so do the Files view's
+// outline, timeline, tree and row menu. The tab menu's file items are here as well: what the menu
+// offers for a tab's file (tabFileFacts), its bookmark made or taken out (bookmarkTabFile), and the
+// file shown in a browser tab (openInBrowserTab).
 //
 // Whether an instance holds unsaved text is not decided here. The caller passes the ui store's
 // answer for an instance id, so a view that keeps unsaved text registers its rule once and none of
@@ -33,6 +36,12 @@ import { diffState } from '../../sources/repositories/repositories.ts';
 import { DIFF_VIEW } from '../../sources/repositories/repositories.svelte.ts';
 import { HUB_ROOT, type RowRef } from '../../sources/explorer/view/place.ts';
 import { nameOf } from '../../../data/helpers/files/paths.ts';
+import { opensInProgram } from '../../../data/helpers/files/opens-in-program.ts';
+import type { ProgramApps } from '../../../data/helpers/files/opens-in-program.ts';
+import type { Entry } from '../../../data/model/index.ts';
+import { headOf } from '../../sessions/source.svelte.ts';
+import { bookmarkAt, fileBytesUrl, markRefusal } from '../../sources/fs-transport.ts';
+import type { WriteAnswer } from '../../shared/stores/shapes.ts';
 
 /** The field of a tab's state that names the tab. */
 const tabLabelShape = z.object({ label: filledTextShape });
@@ -366,6 +375,21 @@ export function fileOfTab(tab: { view: string; state: unknown }): RowRef | null 
 }
 
 /**
+ * The views whose tab draws its file's icon: source, file, document and Doc. A Markdown preview
+ * keeps its view's glyph, as VS Code's preview tab carries the preview icon.
+ */
+const FILE_VIEWS: readonly string[] = ['source', 'file', 'document', 'doc'];
+
+/**
+ * The file a tab shows, which its face draws the icon of. A tab of another view keeps its view's
+ * glyph though its state names a folder or a file: a Files tab opened on a folder, a LaTeX tab, a
+ * Markdown preview.
+ */
+export function shownFileOfTab(tab: { view: string; state: unknown }): RowRef | null {
+    return FILE_VIEWS.includes(tab.view) ? fileOfTab(tab) : null;
+}
+
+/**
  * The segments of the path one row sits at: the root, then each folder down to the row itself, each
  * with the row it names.
  */
@@ -413,4 +437,71 @@ export function openComparison(
             t('files.compare_title', nameOf(against.path), nameOf(file.path))
         )
     );
+}
+
+/** What the tab menu offers over the file a tab shows. */
+export type TabFileFacts = {
+    /**
+     * Whether the file is bookmarked, or null for a tab whose file cannot be: one read at a commit
+     * (its root is a repository's own directory) or one in a root the server does not serve.
+     */
+    bookmarked: boolean | null;
+    /** Whether a browser tab draws the file itself: the file and document views. */
+    browser: boolean;
+    /** Whether `open.program_ext` names an application for the file. */
+    program: boolean;
+};
+
+/**
+ * The bookmark, browser tab and program facts of a tab. `served` says the tab's root is one the
+ * server serves; the bookmarks are the reader's own entries and `programs` the applications the
+ * configuration names by extension.
+ */
+export function tabFileFacts(
+    tab: { view: string; state: unknown },
+    served: boolean,
+    held: { bookmarks: readonly Entry[]; programs: ProgramApps }
+): TabFileFacts {
+    const file = fileOfTab(tab);
+    const bookmarkable = file !== null && served && headOf(tab.state) === undefined;
+    return {
+        bookmarked: bookmarkable
+            ? bookmarkAt([...held.bookmarks], file.root, file.path) !== null
+            : null,
+        browser: served && (tab.view === 'file' || tab.view === 'document'),
+        program: file !== null && opensInProgram(file.path, held.programs)
+    };
+}
+
+/** The store calls a bookmark write makes. */
+export type BookmarkCalls = {
+    bookmarks: () => { entries: Entry[] };
+    addBookmark: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    removeBookmark: (label: string) => Promise<WriteAnswer>;
+};
+
+/**
+ * Bookmark a tab's file, or take its bookmark out. The answer is the words of the write's refusal,
+ * and the empty string when it was written.
+ */
+export async function bookmarkTabFile(
+    calls: BookmarkCalls,
+    file: RowRef,
+    add: boolean
+): Promise<string> {
+    const held = bookmarkAt(calls.bookmarks().entries, file.root, file.path);
+    if (add) {
+        const written = await calls.addBookmark({
+            label: nameOf(file.path),
+            root: file.root,
+            path: file.path
+        });
+        return markRefusal(written);
+    }
+    return held === null ? '' : markRefusal(await calls.removeBookmark(held.id));
+}
+
+/** Show a file in a browser tab of its own, which is also how a picture or a PDF is saved. */
+export function openInBrowserTab(file: RowRef): void {
+    window.open(fileBytesUrl(file.root, file.path), '_blank', 'noopener');
 }

@@ -25,6 +25,8 @@ export {
     extensionOf,
     languageOf,
     languages,
+    markdownPreviewState,
+    MARKDOWN_PREVIEW_VIEW,
     nameOf,
     typeOfFile,
     type FileKind,

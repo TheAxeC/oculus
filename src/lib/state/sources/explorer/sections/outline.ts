@@ -1,7 +1,9 @@
 // Layer 2, client state, pure. The Outline section's reading of a file: the headings of a Markdown
 // file and the sectioning commands of a LaTeX file, each with its line and the depth it is nested
-// at. Any other language has no symbols yet, which is a different answer from a file with no
-// headings: the first says nothing is read for the language, the second that the file has none.
+// at, and the headings of a rendered document (a Doc or a Markdown preview tab), each with the id
+// the render gave it and the depth `markdownOutline` nests a heading at. Any other language has no
+// symbols yet, which is a different answer from a file with no headings: the first says nothing is
+// read for the language, the second that the file has none.
 //
 // A Markdown heading is a line of one to six `#` then a space, outside fenced code and outside a
 // leading front matter block; its closing `#` run is not part of its text. A LaTeX heading is
@@ -12,6 +14,7 @@
 // outline is one that is there. The reader that holds the loaded parser is the client state's
 // (`latexReader`, made by createLatexReader), so no parser is held at module scope.
 
+import type { RenderedHeading } from '../../../../data/model/index.ts';
 import {
     lazyReader,
     scanSections,
@@ -26,13 +29,25 @@ export type OutlineItem = { title: string; line: number; level: number; depth: n
  * The depth each heading is drawn at: one more than the nearest heading before it of a lower
  * level, so a skipped level (a `###` straight under a `#`) nests one step and not two.
  */
-function nested(found: Omit<OutlineItem, 'depth'>[]): OutlineItem[] {
+function nested<T extends { level: number }>(found: T[]): (T & { depth: number })[] {
     const open: number[] = [];
     return found.map((one) => {
         while (open.length > 0 && open[open.length - 1] >= one.level) open.pop();
         open.push(one.level);
         return { ...one, depth: open.length - 1 };
     });
+}
+
+/** One heading of a rendered document: its words, the id the render gave it and its depth. */
+export type OutlineHeading = { title: string; id: string; level: number; depth: number };
+
+/** The headings of a rendered document, nested by level as the Markdown outline nests them. */
+export function headingOutline(headings: readonly RenderedHeading[]): OutlineHeading[] {
+    return nested(
+        headings
+            .filter((one) => one.text.trim() !== '')
+            .map((one) => ({ title: one.text.trim(), id: one.id, level: one.level }))
+    );
 }
 
 /** The lines of a leading front matter block (`---` to `---`), which hold no headings. */

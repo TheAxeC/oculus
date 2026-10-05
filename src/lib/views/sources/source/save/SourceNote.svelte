@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial of Source.svelte. The row under the editor: the save outcome while the
-    // text may be written, and what a refused bookmark write, a refused Open in Program or a
-    // refused first Save said, whether or not the text may be written. Source.svelte draws the row
-    // when either has words and hands in the save outcome only while the text may be written.
+    // text may be written, and what a refused first Save or a refused LaTeX action said, whether
+    // or not the text may be written. Source.svelte draws the row when either has words and hands
+    // in the save outcome only while the text may be written.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
 
@@ -11,7 +11,7 @@
         message: string;
         /** Whether the save outcome is a refusal, which draws the cross glyph beside it. */
         failed: boolean;
-        /** What a refused write or open said, empty when nothing was refused. */
+        /** What a refused first Save or LaTeX action said, empty when nothing was refused. */
         said: string;
     };
 
@@ -48,7 +48,7 @@
         font-size: var(--fs-sm);
     }
 
-    /* What a refused bookmark write or open said: alert words at the end of the line. */
+    /* What a refused first Save or LaTeX action said: alert words at the end of the line. */
     .refused {
         color: var(--c-red-txt);
         font-size: var(--fs-sm);

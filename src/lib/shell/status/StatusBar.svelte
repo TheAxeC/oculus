@@ -208,10 +208,17 @@
         font-size: var(--status-text);
     }
 
+    /* A group narrower than its items clips them at its inner edge, so a long item never draws
+       over the other group: the left group loses its last items, the right group its first. */
     .group {
         display: flex;
         align-items: stretch;
         min-width: 0;
+        overflow: hidden;
+    }
+
+    .group[data-status-group='right'] {
+        justify-content: flex-end;
     }
 
     .group > :global(*) {

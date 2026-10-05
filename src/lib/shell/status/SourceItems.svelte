@@ -1,10 +1,12 @@
 <script lang="ts">
     // Layer 3, shell. The status bar's items for the source tab on screen, VS Code's editor items:
-    // the caret line's blame while the tab's blame is on, the caret's line and column, the
-    // indentation, the encoding, the line endings and the language mode. They are drawn from what
-    // the tab publishes to state/workbench/navigation/editor-status.svelte.ts, and every change
-    // they offer is asked of the tab through the same store, since the tab holds the text and the
-    // shell does not.
+    // the caret line's blame in a file of a repository, the caret's line and column, the
+    // indentation, the encoding, the line endings and the language mode. The blame is drawn
+    // whether or not the tab draws blame in its gutter, as VS Code's
+    // `git.blame.statusBarItem.enabled` is on by default. They are drawn from what the tab
+    // publishes to state/workbench/navigation/editor-status.svelte.ts, and every change they offer
+    // is asked of the tab through the same store, since the tab holds the text and the shell does
+    // not.
     //
     // The blame item opens the commit that last changed the caret's line in the Repositories
     // view's graph, which the tab does, since it holds the blame. The caret item and the language

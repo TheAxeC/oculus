@@ -14,9 +14,9 @@
 <script lang="ts">
     // Layer 3, view. The workspace in force as an explorer: a header row for the workspace with its
     // four actions and its menu, every root as a top-level folder row under it, and under the tree
-    // the outline and the timeline of the file in front of the reader, the bookmarks and the notes,
-    // all in the same row style. The open editors of the page are a section above the tree. The
-    // view's toolbar holds the follow toggle and the pin, and its bar the filter with the fuzzy
+    // the outline and the timeline of the file tab the reader looked at last, the bookmarks and the
+    // notes, all in the same row style. The open editors of the page are a section above the tree.
+    // The view's toolbar holds the follow toggle and the pin, and its bar the filter with the fuzzy
     // toggle. Every control is drawn in every state the view is in: a section whose file could not
     // be read keeps its head and its control and says why in its one row.
     //
@@ -35,11 +35,11 @@
     // tab has: the workspace header, follow mode, the rooted tab, the sections and the bookmark
     // form.
     //
-    // The sections are files/sections/'s: the outline reads what the active tab holds, the timeline
-    // the file pinned, else the one selected, else the one of the file tab last active, the
-    // bookmarks and the notes read their own files and answer a read of either that failed. What
-    // this view reads of them is what its tree and its bookmark form are built on: the roots of the
-    // workspace in force, and the bookmarks the tree draws its stars from. A bookmark is a
+    // The sections are files/sections/'s: the outline reads the file tab shown last on the page,
+    // the timeline the file pinned, else the one selected, else the one of the file tab shown last,
+    // the bookmarks and the notes read their own files and answer a read of either that failed.
+    // What this view reads of them is what its tree and its bookmark form are built on: the roots
+    // of the workspace in force, and the bookmarks the tree draws its stars from. A bookmark is a
     // collection entry, so it is added and edited by the form every other collection is edited by,
     // over the schema its own file carries; the one thing this view supplies is the list of roots a
     // bookmark may name, since that is what the workspace in force says and not what the file said

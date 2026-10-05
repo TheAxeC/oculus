@@ -500,3 +500,27 @@ Cases: 1 to 6, 9, 10, 12 met by reading; 7 met by reading except the staged-line
 The look cases; `git blame --contents -` on a real repository with a staged line; the cost of the blame read per gutter read; whether a HEAD tab's root always equals a `gitFor` key; round-2 items round 3 did not touch.
 
 ### Closed
+
+Each finding of the run over round 3, fixed at landing on main inside the brief unless said otherwise:
+
+- Spec 1, `blameAt` in `compare.ts`: kept, since a stage on `blameOf` would make `reads.ts` and `compare.ts` import each other; `DESIGN.md:128` names `blameAt` in the Git form list.
+- Spec 2, the Open Preview icons: closed by Z546 (automode), `choices.md`.
+- Spec 3, G37's words and the view test: G37 is written into `agents/guarded.md` with "its pane's breadcrumb bar" and "while one of them applies"; `tests/views/sources/bar-actions.test.ts` is named as the test of `handUp`'s call in each file view, which Z491's third defect (the file actions lost on a keep or a walk) covers.
+- Proof 1, the Git form list: `DESIGN.md:128` now lists `blame --porcelain HEAD -- <path>` and `blame --porcelain --contents - -- <path>`.
+- Standards 1, sentences made false: `Breadcrumb.svelte`'s head says the row is cut from the left with every item whole; PaneStrip's head names `barActions` and the bar; Source's head names the bar's actions and the palette's; DESIGN.md's tab-strip and blame sentences rewritten.
+- Standards 2, the broken comment in `MarkdownPreview.svelte`: rewrapped.
+- Standards 3 and 4, the `strip` place: removed; `handUp(handed, id, actions, applies)` hands into one store, `grep -rn "ActionsPlace\|tabActions" src/lib/shell/panes/strip` prints nothing.
+- Standards 5: the two 400 answers share one; BarActions takes `SAVE_KEY` from `ui/controls/editor/chords`, where `shell/keys/keys.ts` reads it.
+- Standards 6, the read-only `git status`: disclosed by the builder, no change.
+- Behaviour 1, the empty bar: a view hands its snippet up only while one of its actions applies (`applies` of `handUp`), and PaneStrip draws the bar only for a path or a handed snippet; rows 'a tab none of whose actions applies' and 'hands $row that names no file nothing'.
+- Behaviour 2, file icons on a folder Files tab and a LaTeX tab: `shownFileOfTab` answers a file only for the source, file, document and Doc views.
+
+Found by the look on TEST and fixed at landing on main:
+
+- A source tab whose file a later read refused (404) drew the star and Toggle Blame and asked for blame on every read: `read` in `Source.svelte` gates the bar's actions and the gutter's file; row 'hands a source tab whose file a later read refused nothing'.
+- The status bar's blame item ran over the left group and carried the commit subject: it says `${authorName} (${authorDateAgo})` as VS Code's default template, and each status group clips.
+- A set star drawn bare showed unfilled: `BookmarkStar.svelte` fills a set star.
+- A Markdown preview tab drew the file's icon: it keeps the preview view's glyph, as VS Code's preview tab carries the preview icon.
+- In a narrow pane the strip shrank and the bar of a HEAD tab covered Split and `...`: the strip keeps its height (`flex: none` in `Tabs.svelte`).
+
+The look's cases: 1, 2, 5 (Doc and preview tabs), 6 (HEAD: Toggle Blame alone, blame read with `stage=head`), 7 (index: the staged lines 48 to 50, 86, 103, 121, 160, 162, 168 and 248 uncommitted in the blame, equal to `git diff --cached -U0`), 8 (`stage=bogus` 400), 9, 10, 11 and 12 met; 3 and 4 as the cases ruling's item 2 reads them (no Toggle Blame on a picture or a PDF). Types seen: md, png, jpg, pdf, txt, tex, yml, html, py, json, a LaTeX tab, a Files tab.

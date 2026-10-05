@@ -8,7 +8,7 @@
 // is an empty tree, and a press writes nothing into a record that was cleared with its tab
 // (tab-actions.ts).
 
-import { untrack } from 'svelte';
+import { onDestroy, untrack } from 'svelte';
 import type { ClientState } from '$lib/state/client/context';
 import {
     filesViewOf,
@@ -71,13 +71,35 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
     const {
         explorer,
         fs: { bookmarks, entries, heldEntries, listing, readFileKind },
-        layout: { keepPreview, openView, showInFiles },
+        layout: { armKeep, askFocus, disarmKeep, keepPreview, openView, showInFiles },
         selectors: { configMap, gitFor, gitRoots },
         ui: { instanceState }
     } = client;
 
+    /**
+     * Whether the tab holding this tree is gone. A press whose file is still being read when the
+     * tab closes opens its tab afterwards and arms no keep, and the keep this tree armed ends with
+     * the tab.
+     */
+    let closed = false;
+    onDestroy(() => {
+        closed = true;
+        disarmKeep(input.owner());
+    });
+
     /** The store calls a file or a bookmark is opened through. */
-    const opener = { openView, keepPreview, readFileKind, showInFiles };
+    const opener = {
+        openView,
+        keepPreview,
+        readFileKind,
+        showInFiles,
+        armKeep: (id: string, pressedAt: number) => {
+            if (!closed) armKeep(id, input.owner(), pressedAt);
+        },
+        askFocus: (id: string) => {
+            if (!closed) askFocus(id);
+        }
+    };
 
     const record = $derived(instanceState(input.owner()));
     const view = $derived.by((): FilesView => {

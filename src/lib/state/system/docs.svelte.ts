@@ -26,16 +26,18 @@
 // document rebuilds no markup and reloads no figure.
 
 import { z } from 'zod';
-import type { ManualPart, Message } from '../../data/model/index.ts';
+import type { ManualPart, Message, RenderedHeading } from '../../data/model/index.ts';
 import { mapShape, readJson, rowsShape } from '../../data/shapes/shapes.ts';
 import { failedAnswer } from '../shared/answers/answers.ts';
 import type { EntitiesStore, Fetcher, Fetching, Queries } from '../shared/stores/shapes.ts';
 
-export type { ManualPart };
+export type { ManualPart, RenderedHeading };
 
 /** One document as the view reads it: the rendered HTML, its frontmatter, or what went wrong. */
 export type DocState = {
     html: string;
+    /** The headings of the render in order, which an outline of the document shows. */
+    headings: RenderedHeading[];
     frontmatter: Record<string, unknown> | null;
     /** What the request failed with, or the empty string. */
     error: string;
@@ -49,10 +51,24 @@ export type DocState = {
 };
 
 /** What a pair reads as before its answer arrives. */
-const PENDING: DocState = { html: '', frontmatter: null, error: '', loading: true, parts: [] };
+const PENDING: DocState = {
+    html: '',
+    headings: [],
+    frontmatter: null,
+    error: '',
+    loading: true,
+    parts: []
+};
 
 /** What no pair at all reads as: an empty id or name asks nothing and waits for nothing. */
-const NOTHING: DocState = { html: '', frontmatter: null, error: '', loading: false, parts: [] };
+const NOTHING: DocState = {
+    html: '',
+    headings: [],
+    frontmatter: null,
+    error: '',
+    loading: false,
+    parts: []
+};
 
 /** One rendered document per project and name, held for one client. */
 export type DocsStore = {
@@ -82,6 +98,13 @@ const manualPartShape = z.union([
     z.object({ kind: z.literal('diagram'), name: z.string(), alt: z.string() })
 ]) satisfies z.ZodType<ManualPart>;
 
+/** One heading of the render as the answer carries it. */
+const headingShape = z.object({
+    level: z.number().int().min(1).max(6),
+    text: z.string(),
+    id: z.string()
+}) satisfies z.ZodType<RenderedHeading>;
+
 /**
  * What api/docs answers in JSON, every field read as absent when it is of the wrong type, since an
  * error answer carries fewer. The runs of the manual that fail their shape are dropped, and an
@@ -89,6 +112,7 @@ const manualPartShape = z.union([
  */
 const bodyShape = z.object({
     html: z.string().catch(''),
+    headings: rowsShape(headingShape).catch([]),
     frontmatter: mapShape.nullable().catch(null),
     file: z.string().catch(''),
     parts: rowsShape(manualPartShape).catch([])
@@ -127,6 +151,7 @@ export function holds(root: string, file: string): boolean {
 function same(one: DocState, other: DocState): boolean {
     return (
         one.html === other.html &&
+        JSON.stringify(one.headings) === JSON.stringify(other.headings) &&
         one.error === other.error &&
         one.loading === other.loading &&
         JSON.stringify(one.frontmatter) === JSON.stringify(other.frontmatter) &&
@@ -241,6 +266,7 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
                 return keep(held, {
                     doc: {
                         html: body.html,
+                        headings: body.headings,
                         frontmatter: body.frontmatter,
                         parts: body.parts,
                         error: '',

@@ -22,6 +22,9 @@
 
 import { Marked, type MarkedExtension, type Tokens } from 'marked';
 import { getHeadingList, gfmHeadingId } from 'marked-gfm-heading-id';
+import type { RenderedHeading } from '../model/index.ts';
+
+export type { RenderedHeading };
 import { codeColour } from './languages.ts';
 
 /** What every heading id starts with, as GitHub renders one. */
@@ -95,16 +98,23 @@ export function tocList(headings: { level: number; text: string; id: string }[])
 }
 
 /**
- * One Markdown document as HTML, unsanitised, its fenced code painted, with the extensions a caller
- * adds (the document route's figures) after the heading ids and the table of contents.
+ * One Markdown document as its HTML, unsanitised, its fenced code painted, and the list of its
+ * headings, from one parse. A caller adds extensions (the document route's figures) after the
+ * heading ids and the table of contents. A heading is its level, its words as written (the
+ * library's `raw`, with no markup of the render) and the id in the HTML, prefixed. The list is what
+ * an outline of the rendered document shows, and the ids are the ones the HTML carries, so a press
+ * on a row reaches the heading drawn.
  *
- * The list needs every heading, and a `[TOC]` paragraph is drawn before the headings after it are,
- * so the paragraph leaves a mark that only this call can have written, and the list replaces it
- * once the whole document is drawn. The heading list is the library's own record of this parse,
- * which its preprocess hook clears as the parse starts; the parse is synchronous, so no other parse
- * runs between the two.
+ * The table of contents needs every heading, and a `[TOC]` paragraph is drawn before the headings
+ * after it are, so the paragraph leaves a mark that only this call can have written, and the list
+ * replaces it once the whole document is drawn. The heading list is the library's own record of
+ * this parse, which its preprocess hook clears as the parse starts; the parse is synchronous, so
+ * no other parse runs between the two.
  */
-export function renderDocument(text: string, ...extra: MarkedExtension[]): string {
+export function renderDocumentParts(
+    text: string,
+    ...extra: MarkedExtension[]
+): { html: string; headings: RenderedHeading[] } {
     const mark = `<!--toc-${crypto.randomUUID()}-->`;
     const contents: MarkedExtension = {
         renderer: {
@@ -120,5 +130,7 @@ export function renderDocument(text: string, ...extra: MarkedExtension[]): strin
     };
     const heads = gfmHeadingId({ prefix: HEADING_PREFIX });
     const reader = new Marked(heads, contents, codeColour, ...extra);
-    return reader.parse(text, { async: false });
+    const html = reader.parse(text, { async: false });
+    const headings = getHeadingList().map(({ level, raw, id }) => ({ level, text: raw, id }));
+    return { html, headings };
 }

@@ -26,7 +26,11 @@
 
 import DOMPurify from 'dompurify';
 import { Lexer, marked } from 'marked';
-import { HEADING_PREFIX, renderDocument } from '../data/prose/markdown.ts';
+import {
+    HEADING_PREFIX,
+    renderDocumentParts,
+    type RenderedHeading
+} from '../data/prose/markdown.ts';
 
 /**
  * What every heading id of a rendered document starts with, which a press on a link to a fragment
@@ -336,7 +340,13 @@ export function inlineMarkdown(text: string): string {
  * slide's narrative. What the file holds is somebody's text, so the result is sanitised.
  */
 export function blockMarkdown(text: string): string {
-    return sanitise(renderDocument(text));
+    return blockMarkdownParts(text).html;
+}
+
+/** A whole Markdown document as `blockMarkdown` draws it, with the list of its headings. */
+export function blockMarkdownParts(text: string): { html: string; headings: RenderedHeading[] } {
+    const { html, headings } = renderDocumentParts(text);
+    return { html: sanitise(html), headings };
 }
 
 /** One piece of a catalog line: a run of plain words, or the text of one backticked code span. */

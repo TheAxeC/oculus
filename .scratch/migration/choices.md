@@ -260,6 +260,33 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z548 (2026-10-05, from A3's brief check)
+
+The question: whether a text control may hold an empty value when its text has a form, such as a cron pattern.
+
+- Chosen: the catalog key `empty: true` on a text control lets a text with a form hold `''`; a text control with no form takes `''` as it does today.
+- Not chosen: every text control without `empty` refusing `''`, which widens the change past A3's need and turns a hand-written `''` into a finding.
+
+Where it applies: A3. Booked in `plan.md` Rulings.
+
+## Z547 (2026-10-05, from D11's recheck)
+
+The question: where D11's debug toolbar stands while a session runs.
+
+- Chosen: it floats over the top of the workbench, draggable along the top edge and hidden at the end, its position kept in `oculus.debug.v1`, as VS Code's `debug.toolBarLocation` default `floating`.
+- Not chosen: docked in the Debug view's header, the lazy option, out of sight whenever the view is closed.
+
+Where it applies: D11. Booked in `plan.md` Rulings.
+
+## Z546 (2026-10-05, from X3f's review over round 3)
+
+The question: the icons of Open Preview and Open Preview to the Side, now drawn side by side in a Markdown source tab's breadcrumb bar, where Z508 gave `file-search` to Open Preview to the Side.
+
+- Chosen: Open Preview takes lucide `file-search` and Open Preview to the Side `panel-right-open`, so the side icon shows where the tab opens.
+- Not chosen: both on `file-search`, two buttons a reader cannot tell apart.
+
+Where it applies: X3f. Booked in `plan.md` Rulings.
+
 ## Z534 (2026-10-05, from D20's review)
 
 The question: whether Cancel, a timeout and an output-limit kill end only git, or git and its descendants (a hook's processes).

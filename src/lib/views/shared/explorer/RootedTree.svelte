@@ -67,7 +67,8 @@
     {headerOpen}
     onselect={tree.tab.selectRow}
     ontoggle={tree.tab.toggle}
-    onopen={(row: TreeRow, preview: boolean) => void openRow(tree.opener, row, preview)}
+    onopen={(row: TreeRow, preview: boolean, pressedAt?: number) =>
+        void openRow(tree.opener, row, preview, pressedAt)}
     onremove={(key: string) => (removing = key)}
     onbookmark={(row: TreeRow) => void tree.marking.bookmark(row)}
     onup={onup ?? ((to: RowRef) => tree.tab.patchAt(owner, { top: to }))}

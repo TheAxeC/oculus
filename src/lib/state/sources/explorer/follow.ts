@@ -1,18 +1,18 @@
 // Layer 2, client state, pure. Where a path went when a file or folder was renamed or moved, and
-// what that does to the state of the tabs that name it: a source, file or document tab, a diff pane
-// over a file or over two files, and a Files view's open folders and selection. Nothing here
-// reads a store or posts a request; the store that holds the answer calls these and writes what
-// they return.
+// what that does to the state of the tabs that name it: a source, file, document or Markdown
+// preview tab, a diff pane over a file or over two files, and a Files view's open folders and
+// selection. Nothing here reads a store or posts a request; the store that holds the answer calls
+// these and writes what they return.
 //
 // A path moves when it is the moved item or lies under it, at any depth: `dir` becoming `dir2`
 // takes `dir/sub/a.md` to `dir2/sub/a.md` and leaves `dirx/a.md` alone, since only a whole segment
-// is a folder's name. A tab whose label is the old file name takes the new one, and a label the
-// reader or a bookmark gave stays.
+// is a folder's name. A tab whose label is the old file name, or Preview and the old file name,
+// takes the new one, and a label the reader or a bookmark gave stays.
 
 import type { OpsPlace } from '../../../data/file-ops.ts';
 import { diffState, heldDiff, type DiffState } from '../repositories/repositories.ts';
 import { filesViewOf, patchedFilesView, treeKey } from '../fs.ts';
-import { nameOf } from './file-type.ts';
+import { MARKDOWN_PREVIEW_VIEW, nameOf, previewLabel } from './file-type.ts';
 import { t } from '../../shared/words/text.ts';
 
 /** One item that went from a place to another. */
@@ -36,9 +36,13 @@ export function followedAny(place: OpsPlace, moves: Move[]): OpsPlace | null {
     return null;
 }
 
-/** The label a tab takes at a new path: the new name where the old label was the old name. */
+/**
+ * The label a tab takes at a new path: the new name where the old label was the old name, and the
+ * new Preview label where it was the old Preview label.
+ */
 function relabelled(label: string, from: OpsPlace, to: OpsPlace): string {
-    return label === nameOf(from.path) ? nameOf(to.path) : label;
+    if (label === nameOf(from.path)) return nameOf(to.path);
+    return label === previewLabel(from.path) ? previewLabel(to.path) : label;
 }
 
 /** A layout state as a map, or null for anything that is not one. */
@@ -103,11 +107,19 @@ export function followedDiffTab(state: unknown, moves: Move[]): DiffState | null
 }
 
 /**
- * The layout state a source, file or document tab takes after the moves, or null when they leave
- * it as it is. A tab over a trashed file is not followed: it stays open on its missing file.
+ * The layout state a source, file, document or Markdown preview tab takes after the moves, or null
+ * when they leave it as it is. A tab over a trashed file is not followed: it stays open on its
+ * missing file.
  */
 export function followedFileTab(view: string, state: unknown, moves: Move[]): unknown {
-    if (view !== 'source' && view !== 'file' && view !== 'document') return null;
+    if (
+        view !== 'source' &&
+        view !== 'file' &&
+        view !== 'document' &&
+        view !== MARKDOWN_PREVIEW_VIEW
+    ) {
+        return null;
+    }
     const map = mapOf(state);
     const place = map === null ? null : placeOf(map);
     if (map === null || place === null) return null;

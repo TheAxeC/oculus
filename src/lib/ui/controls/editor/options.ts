@@ -1,11 +1,11 @@
 // Layer 3, primitive. The options a parent hands the editors (word wrap, rulers, the minimap,
 // whitespace and sticky scroll) as Monaco names them, the call that applies a change to a live
-// editor, the indentation of a model, and the editor action that toggles word wrap on Alt+Z.
-// Monaco is only a type here: the editor passes in the editor, the model and the key codes it
-// holds.
+// editor, the indentation of a model, and the id of the action that toggles word wrap, which the
+// parent hands the editor with the rest of its own actions (types.ts `EditorOwnAction`). Monaco is
+// only a type here: the editor passes in the editor and the model it holds.
 
 import type * as Monaco from 'monaco-editor';
-import type { EditorAction, EditorIndent } from './types';
+import type { EditorIndent } from './types';
 
 /**
  * The options a parent hands an editor, each left to Monaco's own while absent: a diff editor is
@@ -50,32 +50,5 @@ export function applyIndent(
     });
 }
 
-/** The id of the action that toggles word wrap. */
+/** The id of the action that toggles word wrap, which a parent gives Alt+Z. */
 export const WRAP_ACTION = 'oculus.toggleWordWrap';
-
-/** The key codes Alt+Z is made of, which Monaco's `KeyMod` and `KeyCode` hold. */
-type WrapKeys = { KeyMod: { Alt: number }; KeyCode: { KeyZ: number } };
-
-/**
- * The action that toggles word wrap on Alt+Z, bound to the key's code so that macOS's Option+Z
- * character does not stop it, and running `toggle`.
- */
-export function wrapAction(
-    keys: WrapKeys,
-    label: string,
-    toggle: () => void
-): Monaco.editor.IActionDescriptor {
-    return {
-        id: WRAP_ACTION,
-        label,
-        keybindings: [keys.KeyMod.Alt | keys.KeyCode.KeyZ],
-        run: () => {
-            toggle();
-        }
-    };
-}
-
-/** The action as the palette lists it, with its key as the hint. */
-export function wrapListing(label: string): EditorAction {
-    return { id: WRAP_ACTION, label, hint: 'Alt+Z' };
-}

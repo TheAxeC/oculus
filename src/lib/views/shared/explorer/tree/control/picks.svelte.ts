@@ -33,6 +33,10 @@ export type PicksDeps = {
     addable: () => boolean;
     addRoot: () => void;
     removeRoot: (root: string) => void;
+    /** Bookmark a row, or take its bookmark out. */
+    bookmark: (row: TreeRow) => void;
+    /** Whether a row is bookmarked. */
+    isMarked: (row: TreeRow) => boolean;
     /** The key hints the menu shows at its items' right. */
     hints: Record<string, string>;
     /** Whether a row is part of what is selected, a segment of a folder chain included. */
@@ -74,6 +78,7 @@ export function createPicks(deps: PicksDeps) {
             dirOf: (root: string) => deps.roots()?.find((one) => one.key === root)?.dir ?? '',
             rootName: (root: string) => rootNameIn(deps.rows(), root),
             say,
+            bookmark: deps.bookmark,
             addRoot: deps.addRoot,
             removeRoot: deps.removeRoot,
             runCommand: (repo: string, name: string, source: CommandSource) =>
@@ -165,7 +170,8 @@ export function createPicks(deps: PicksDeps) {
                     (root: string, path: string) =>
                         client.fs.heldEntries(root, path, shown) ?? listingRead,
                     commandsRead,
-                    client.selectors.programApps()
+                    client.selectors.programApps(),
+                    deps.isMarked(here)
                 ),
                 t
             );

@@ -26,7 +26,7 @@ text:
         ago_year: 1 year ago
         ago_years: '{0} years ago'
         blame_gutter: '{0}, {1}'
-        blame_status: '{0}, {1}: {2}'
+        blame_status: '{0} ({1})'
         blame_title: '{0} {1} ({2}). Open this commit in the graph.'
         blame_uncommitted: Not Committed Yet
         change_next: Next Change

@@ -339,6 +339,7 @@ export type {
     Funding,
     Id,
     ManualPart,
+    RenderedHeading,
     Organisation,
     Person,
     PresentEli5,

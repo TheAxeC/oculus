@@ -11,7 +11,8 @@
     // diff marks and the blame, and is told every scroll of the text so its lines follow. The
     // highlighter's token classes are coloured by themes/code.css from the palette's own code hues,
     // the one stylesheet a painted Markdown block is coloured by too, so the window follows the
-    // theme the reader picked.
+    // theme the reader picked. The text box carries `data-tab-focus`, which is where the keyboard
+    // goes when a double click keeps the tab (PaneBody.svelte), so the arrow keys scroll the text.
 
     import type { Snippet } from 'svelte';
     import { codeHtml, lineNumbers } from '$lib/state/shared/words/languages';
@@ -48,9 +49,13 @@
     {/if}
     <!-- Keep pre and code on one line: a line break inside pre would enter the drawn text. -->
     <!-- eslint-disable svelte/no-at-html-tags -- highlight.js escapes the file text before it emits its own span classes -->
-    <pre class="text" role="region" aria-label={t('source.code', path)} onscroll={scrolled}><code
-            >{@html painted}</code
-        ></pre>
+    <pre
+        class="text"
+        role="region"
+        aria-label={t('source.code', path)}
+        data-tab-focus
+        tabindex="-1"
+        onscroll={scrolled}><code>{@html painted}</code></pre>
     <!-- eslint-enable svelte/no-at-html-tags -->
 </div>
 

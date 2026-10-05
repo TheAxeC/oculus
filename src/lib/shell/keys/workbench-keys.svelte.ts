@@ -49,6 +49,8 @@ type Options = {
     railPage: (index: number) => boolean;
     /** Run the default build or the default test of the repository holding the file on screen. */
     runDefault: (which: 'build' | 'test') => void;
+    /** Ask the source tab on screen to save, which does nothing when it cannot write its file. */
+    saveSource: () => void;
     /** Whether the command modifier is Cmd (macOS) and not Ctrl. */
     mac: boolean;
 };
@@ -191,6 +193,10 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return cycleTab(pane, action.by);
         } else if (action.kind === 'command-default') {
             options.runDefault(action.which);
+        } else if (action.kind === 'save') {
+            // The key is taken from the browser under an overlay too, but saves nothing then.
+            const covered = options.paletteOpen() || options.updateOpen() || dialogShown();
+            if (!covered) options.saveSource();
         } else if (action.kind === 'new-session') {
             clearCursor();
             options.composeIn(pageOf());

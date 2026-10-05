@@ -199,7 +199,7 @@
                                 id={rowKey(row)}
                                 {nav}
                                 level={several ? 3 : 2}
-                                file={row.name}
+                                file={row.file.path}
                                 selected={row.active}
                                 title={t('files.editors_open_title', row.name)}
                                 onclick={() => activateInstance(row.id, page)}

@@ -7,7 +7,8 @@
     // state/workbench/layout/ states for a ViewId the registry does not hold.
     //
     // The body under the strip is panes/PaneBody.svelte: the views of the tabs the pane has shown,
-    // the pointer's report of where a drop would land, and the line of an empty pane.
+    // the pointer's report of where a drop would land, the layer that takes a double click's second
+    // press, and the line of an empty pane.
     //
     // It is where closing is guarded. A tab holding text no save has taken is asked about before it
     // goes, whether the close came from the tab's own control or from Delete on it, and so is a
@@ -34,8 +35,8 @@
     //
     // A right-click on a tab opens that tab's menu (strip/tab-menu-state.svelte.ts), whose closes
     // go through the pane's close question (strip/close-question.svelte.ts). The pane also provides
-    // the place the active file tab hands its own actions to (ui/tabs/tab-actions.svelte.ts), which
-    // the strip draws at its end, and passes the breadcrumb of that tab's path to the strip.
+    // the store the active tab hands its own actions to (ui/tabs/tab-actions.svelte.ts): the strip
+    // draws them at the right end of the breadcrumb bar, beside the breadcrumb of that tab's path.
     //
     // A right-click on the strip's empty area or in an empty pane's body opens VS Code's editor
     // group menu (pane-view.ts's stripMenu): Open File..., New Text File, the four splits of the
@@ -60,6 +61,7 @@
     import { createCloseQuestion } from './strip/close-question.svelte';
     import { createTabMenu } from './strip/tab-menu-state.svelte';
     import { crumbPicked, tabCrumbs, type Crumb } from './strip/tab-crumbs';
+    import { shownFileOfTab } from '$lib/state/workbench/navigation/pages';
     import { provideTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
@@ -122,7 +124,7 @@
         ui: { unsaved, setPaneStrip }
     } = client;
 
-    /** The place the views of this pane hand the active tab's own actions to. */
+    /** The store the views of this pane hand the active tab's own actions to. */
     const tabActions = provideTabActions();
 
     type Props = {
@@ -179,6 +181,7 @@
     /**
      * A tab per instance: the registry's words and glyph, or the view's own id when it has none. A
      * state carrying a `label` shows that instead of the view's name, so two documents read as two.
+     * A tab showing a file carries its path, which the strip draws the file's icon for.
      */
     const tabs = $derived<Tab[]>(
         instances.map((instance) => {
@@ -193,6 +196,7 @@
                 id: instance.id,
                 label: own ?? registrationLabel(found),
                 ...stripMark(registrationGlyph(found), tabMark(instance)),
+                file: shownFileOfTab(instance)?.path,
                 preview,
                 pinned: instance.pinned === true,
                 hint: tabHint(
@@ -420,7 +424,7 @@
             canSplit={active !== '' && float === undefined}
             {items}
             {crumbs}
-            tabActions={tabActions.of(active)}
+            barActions={tabActions.of(active)}
             oncrumb={(crumb: Crumb) => crumbPicked(crumb, { showFolderInFiles, showInFiles })}
             onunpin={unpinTab}
             {dropIndex}

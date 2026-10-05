@@ -25,25 +25,6 @@ workers_at_once: 5           # Axel, 2026-10-05 (Z472): five, reached by landing
 
 ```yaml
 dispatch:   # steps in flight, up to seven (Z423)
-- step: X3f
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  worktree: .agents/worktrees/X3f
-  base: f672330af (round 3; the patch agents/reviews/X3f-backed-out.patch applied, 95 files, docs/DATA-MAP.md outside the sparse paths)
-  launched: 2026-10-05 (taken back out of main; the patch agents/reviews/X3f-backed-out.patch applied at ec4c6f577)
-  report: agents/reviews/X3f-report.md
-  diagnosis: agents/reviews/X3f-diagnosis.md, claude-opus-5-5 (aea533fdd969879a2), 182,164 tokens, 165 tool uses, 88.1 min; three causes found and proved, the "no tab opened" form of symptom 1 not found
-  round2_widened: Z490 (the Outline, the DATA-MAP contents list), Z491 (tests under G37)
-  round2_brief: agents/briefs/X3f-round2.md, claude-opus-5-5 (a91dafc2010e37e55), 209,890 tokens, 208 tool uses, 29.5 min
-  round2_builder_usage: 200,564 tokens, 261 tool uses, 45.2 min, 1 full-list run (test:quick over its time limit, 70.5 s against 45.0 s)
-  round2_reviewer: agents/reviews/X3f-refuter.md (Repair round 2, refuted), claude-opus-5-5 (a4505c32f469215eb), 136,251 tokens, 114 tool uses, 17.1 min; Spec 1, Proof 2, Standards 5, Behaviour 2, each fixed at landing or closed there
-  landing2: 5f9640b2a, taken back out by Axel (Z532)
-  round: 3 (agents/briefs/X3f-round3.md)
-  round3_builder: abb2cc439fd4f1181 resumed 2026-10-05, served claude-sonnet-5-5 (the transcript's message.model, read after the resume)
-  round3_cases: agents/briefs/X3f-round3-cases.md (Open in Program only on mapped extensions, Blame only on tabs with a gutter, Open Preview as the row menu's)
-  round3_builder_usage: first run handed back (cases 1, 3, 4, 5), 310,369 tokens, 29 tool uses, 4.0 min, 0 full-list runs; resumed with the cases ruling; build: 319,520 tokens, 250 tool uses, 39.7 min, 2 full-list runs; continued with Z536 (Open Preview to the Side to the bar) and Z537; with Z536 and Z537 (completion notice, whole run): 352,573 tokens, 271 tool uses, 48.3 min, 3 full-list runs
-  round3_reviewer: agents/reviews/X3f-refuter.md (Repair round 3, refuted), claude-opus-5-5 (a74583b625c668d96), 323,724 tokens, 102 tool uses, 18.5 min
-  landing: gate (findings fixed at landing)
 - step: D38
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -75,7 +56,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   round: 1 (agents/briefs/D20-round1.md: the review's findings, G38 to G41's tests, Z515 (1)'s record, Z534)
   round1_builder_usage: 261,365 tokens, 168 tool uses, 43.3 min, the full list 3 times (items 1 to 21; item 21 sent by message)
   round1_reviewer: agents/reviews/D20-refuter.md (Repair round 1, refuted), claude-opus-5-5 (a1d2b19ab1091cd56), 307,540 tokens, 99 tool uses, 20.1 min
-  diagnosis: round 1 Behaviour 4.1 (a cancelled merge left without MERGE_HEAD), a5f48ddcdb6f0ab3f, claude-opus-5-5, running
+  diagnosis: round 1 Behaviour 4.1 (a cancelled merge left without MERGE_HEAD), a5f48ddcdb6f0ab3f, claude-opus-5-5, 227,892 tokens, 76 tool uses, 27.8 min; three causes found and proved (a signal to git during the hook; `execFile`'s abort closing the pipes so git dies of SIGPIPE; the descendant walk reaching a pull's merging git), the fix and its test in `agents/reviews/D20-diagnosis.md`, applied at D20's landing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -247,6 +228,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-05 13:21. X3f landed in this commit (third landing): a file tab's actions in its breadcrumb bar, file icons on file tabs, blame on HEAD and index tabs and the double click's kept tab; gate green (`test:checks` rerun alone after a comment rewrap); look on TEST over twelve kinds of tab; thirteen fixes at landing, seven from the run over round 3 and six from the look; G37 written into `agents/guarded.md`. Z546 to Z548 booked in `choices.md` and the closed log. Running: D38's builder a9235d4e14cc878c9. Next: D20's landing with its diagnosis fix and its round-1 fixes at landing, then the free slots (M6's brief writer first).
+  Open for Axel: Z538, Z539, Z543, Z545.
 - 2026-10-05 12:10. S5 landed at 71017ce60 (gate green with test:slow rerun alone; look on a scratch oculus under Z507). The ruling audit saved (`agents/reviews/ruling-audit.md`), its corrections marked in plan.md, Z143's fix folded into D20's round 1 as item 21 and Open Source into X3f's round 3. Z535 booked, Z536 open. G31 widened (Z438) and G42 written (Z527) for X3e, which waits for D20 (Z519). Running: X3f round-3 builder abb2cc439fd4f1181; D20 round-1 builder a65b04c696467576e; D44 brief check ac746360f7500e074 (claude-opus-5-5); D45 premise recheck a32b5474d92306805 and D23 premise recheck a06e5bd28d3450606 (claude-opus-5-5). Next: D44's brief-check report; D45 and D23 prepared and dispatched once their rechecks close; X3f's review over round 3.
 
 - 2026-10-05 05:20. D42 landed (four fixes at landing; gate in the gate worktree; look on TEST over ten file types, two diffs and three pages). Axel ruled Z498 to Z502. Running: the X3f round-2 brief and Q119's closing for S5. Next: /spec of D45 and X3e (both waited for D42) and D20, filling the slots; then X3f's round 2 and S5's round 1.

@@ -97,8 +97,11 @@
         /** A plain press or a key moved the cursor to a row. */
         onselect: (row: RowRef) => void;
         ontoggle: (row: TreeRow) => void;
-        /** Open one file. A single click asks for a preview tab, a double click for a kept one. */
-        onopen: (row: TreeRow, preview: boolean) => void;
+        /**
+         * Open one file. A single click asks for a preview tab, a double click for a kept one. A
+         * press passes the time it was made at.
+         */
+        onopen: (row: TreeRow, preview: boolean, pressedAt?: number) => void;
         onremove: (key: string) => void;
         onbookmark: (row: TreeRow) => void;
         /** The `..` row of a rooted tab was pressed: show this folder as the top. */
@@ -168,6 +171,8 @@
         addable: () => onaddroot !== undefined,
         addRoot: () => onaddroot?.(),
         removeRoot: (root: string) => onremove(root),
+        bookmark: (row: TreeRow) => onbookmark(row),
+        isMarked: (row: TreeRow) => marked.includes(rowKey(row)),
         hints: menuHints(keymap, keyWords(t, mac)),
         isSelected,
         select: (row: TreeRow) => onselect(row)
@@ -191,7 +196,7 @@
         drawn: () => drawn,
         onselect: (row) => onselect(row),
         ontoggle: (row) => ontoggle(row),
-        onopen: (row, preview) => onopen(row, preview),
+        onopen: (row, preview, pressedAt) => onopen(row, preview, pressedAt),
         onup: (to) => onup?.(to)
     });
 
@@ -333,9 +338,9 @@
                                               row.kind
                                           )}
                                     onpress={pressed}
-                                    onkeep={(one: TreeRow) => {
+                                    onkeep={(one: TreeRow, pressedAt?: number) => {
                                         onselect(one);
-                                        onopen(one, false);
+                                        onopen(one, false, pressedAt);
                                     }}
                                     {onbookmark}
                                 />

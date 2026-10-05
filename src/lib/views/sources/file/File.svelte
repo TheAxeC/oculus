@@ -39,20 +39,20 @@
     // keeps the address it drew, and draws the new one, with the one request it makes, when it is
     // shown.
     //
-    // The header holds the icon actions: the star, opening the address in a browser tab and the
-    // program control. The star is `shared/links/BookmarkStar.svelte`, which the source tab draws
-    // too: a reader bookmarks the file in front of them, whichever of the two tabs is showing it.
-    // What a refused bookmark write or open says is at the end of the pane's bar.
+    // The tab draws no row of controls and hands none to the pane's strip: its path is the
+    // breadcrumb the pane draws under the strip, and the star and, for a file whose extension
+    // `open.program_ext` names an application for, Open in Program stand at that bar's right end
+    // (shared/links/FileBarActions.svelte, handed up while the file is served). Open in Program
+    // hands the file to that application, so a `.docx` or an `.xlsx` the page draws no view of
+    // opens in the program that edits it. The server refuses what the name cannot show (an
+    // execute bit, a Finder alias, a file it cannot read) when it is pressed, and the button says
+    // so beside it.
+    // The bookmark, Open in Browser Tab and Open in Program items are also in the tab's
+    // right-click menu (shell/panes/strip/tab-menu.ts). A file whose bytes are text is handed to
+    // the source tab.
     //
-    // "Open in its program" is `shared/links/ProgramButton.svelte`, which hands the file to the
-    // application `open.program_ext` of config/behavior.yml names for its extension, so a `.docx`
-    // or an `.xlsx` the page draws no view of opens in the program that edits it. It is offered
-    // only for a name with such an entry, in the header once this view holds the file (a file still
-    // being read, or one about to be handed to the source tab, carries none, for the same reason
-    // it carries no download) and again beside the download; a listed file whose bytes are text is
-    // handed to the source tab, which carries the same control. The server refuses what the name
-    // cannot show (an execute bit, a Finder alias, a file it cannot read) when it is pressed, and
-    // each control says so beside it.
+    // The picture and the download line carry `data-tab-focus`, which is where the keyboard goes
+    // when a double click keeps the tab (PaneBody.svelte): the arrow keys then scroll the picture.
     //
     // A picture the browser cannot load is the read failure: the message box with a control that
     // draws the picture again, which asks the server for the bytes once more.
@@ -61,13 +61,13 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import BookmarkStar from '../../shared/links/BookmarkStar.svelte';
-    import ProgramButton from '../../shared/links/ProgramButton.svelte';
+    import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
+    import { servedFile } from '$lib/views/shared/links/file-bar';
+    import FileBarActions from '../../shared/links/FileBarActions.svelte';
     import { openSourceFile } from '../../shared/links/source-file';
     import { humanSize } from '$lib/state/boards/board';
     import { fileBytesUrl } from '$lib/state/sources/fs.svelte';
-    import { extensionOf, nameOf, opensInProgram, typeOfFile } from '$lib/state/sources/fs';
+    import { extensionOf, nameOf, typeOfFile } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source.svelte';
     import { instanceNumber, instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
@@ -76,15 +76,12 @@
 
     const client = useState();
     const {
-        fs: { fileVersion, heldFileKind, readFileKind },
-        layout: { closeInstance },
-        selectors: { programApps }
+        fs: { fileVersion, heldFileKind, readFileKind, roots },
+        layout: { closeInstance }
     } = client;
 
     let { instance }: ViewProps = $props();
 
-    /** What the star or the program control was refused with, or the empty string. */
-    let said = $state('');
     /** The address of the picture that failed to load, and the empty string while none has. */
     let unreadable = $state('');
     /** How many times the picture was asked for again, which makes a new element each time. */
@@ -122,10 +119,6 @@
      * picture or a PDF, which the name says at once, or a file whose first bytes say it is no text.
      */
     const holds = $derived(src !== '' && known !== null && known.kind !== 'text');
-    /**
-     * Whether the view offers to open the file in its program: it holds it and the map names one.
-     */
-    const openable = $derived(holds && opensInProgram(drawn.path, programApps()));
     /** What the tree knew the file's size to be, which is what an undrawn type reports. */
     const size = $derived(humanSize(instanceNumber(instance.state, 'size')));
 
@@ -177,45 +170,32 @@
         untrack(() => void handOn(mine, own, fileRoot, filePath));
     });
 
-    /** The same address in a browser tab of its own, which is also how the file is saved. */
-    function outside(): void {
-        if (src === '') return;
-        window.open(src, '_blank', 'noopener');
-    }
-
     /** Ask the server for the picture again, in a new element. */
     function retry(): void {
         unreadable = '';
         attempt += 1;
     }
+
+    // The bar's actions go up to the pane while the tab is mounted and one of them applies
+    // (ui/tabs/tab-actions.svelte.ts).
+    handUp(
+        useTabActions(),
+        () => instance.id,
+        barActions,
+        () => servedFile(roots(), drawn.root, drawn.path, holds)
+    );
 </script>
 
-{#snippet tools()}
-    <Toolbar label={t('file.toolbar')} overflow>
-        <BookmarkStar bare {root} {path} onsaid={(words: string) => (said = words)} />
-        <ToolButton
-            bare
-            label={t('file.open_outside')}
-            glyph={t('file.open_outside_glyph')}
-            onclick={outside}
-        />
-        {#if openable}
-            <ProgramButton bare {root} {path} onsaid={(words: string) => (said = words)} />
-        {/if}
-    </Toolbar>
-{/snippet}
-
-{#snippet bar()}
-    {#if said !== ''}
-        <span class="said" role="alert">{said}</span>
-    {/if}
+<!-- The file's actions, handed up to the right end of the pane's breadcrumb bar. -->
+{#snippet barActions()}
+    <FileBarActions root={drawn.root} path={drawn.path} onDisk={holds} />
 {/snippet}
 
 {#snippet again()}
     <ToolButton small label={t('file.retry')} onclick={retry} />
 {/snippet}
 
-<Pane {title} titled={false} toolbar={tools} {bar}>
+<Pane {title} titled={false}>
     <div class="file" data-instance={instance.id} data-root={root} data-path={path}>
         {#if src === '' && (root === '' || path === '')}
             <Empty message={t('file.none')} glyph={t('file.none_glyph')} />
@@ -228,6 +208,8 @@
                 {#key attempt}
                     <img
                         class="picture"
+                        data-tab-focus
+                        tabindex="-1"
                         alt={t('file.image', nameOf(drawn.path))}
                         {src}
                         onerror={() => (unreadable = src)}
@@ -239,20 +221,14 @@
         {:else if known === null || known.kind === 'text'}
             <Empty message={t('file.loading')} glyph={t('file.none_glyph')} />
         {:else}
-            <div class="other">
+            <div class="other" data-tab-focus tabindex="-1">
                 <Empty
                     message={t('file.other', extensionOf(drawn.path), size)}
                     glyph={t('file.other_glyph')}
                 />
-                <div class="actions">
-                    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is the api/file endpoint rather than a route id resolve() takes -->
-                    <a class="download" href={src} download={nameOf(drawn.path)}
-                        >{t('file.download')}</a
-                    >
-                    {#if openable}
-                        <ProgramButton root={drawn.root} path={drawn.path} />
-                    {/if}
-                </div>
+                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is the api/file endpoint rather than a route id resolve() takes -->
+                <a class="download" href={src} download={nameOf(drawn.path)}>{t('file.download')}</a
+                >
             </div>
         {/if}
     </div>
@@ -298,22 +274,8 @@
         gap: 4px;
     }
 
-    .actions {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
     .download {
         color: var(--accent-txt, var(--accent));
-        font-size: var(--fs-sm);
-    }
-
-    /* What the star or the program control was refused with: alert words at the end of the bar. */
-    .said {
-        margin-left: auto;
-        color: var(--c-red-txt);
         font-size: var(--fs-sm);
     }
 </style>

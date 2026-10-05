@@ -3,12 +3,14 @@
 // paths the copy items put on the clipboard, and what each pick does. Only the items oculus can run
 // are offered, and each pick runs what the view or the stores already have: a file opened as a
 // press opens it but in a pane beside (opening.ts), a file the configuration names an application
-// for (`open.program_ext`) handed to that application through the open endpoint, a file or folder
-// revealed in Finder through the open endpoint, a shell started in the folder
-// (state/shared/stores/shell.ts, `openShell`), the file's bytes saved from api/file as the file
-// view's link saves them, the Search view opened on the folder, the view's add-root form, and its
-// removal behind its question. The items that write (New File..., Cut, Paste, Rename..., Delete,
-// Upload..., the compare items) are drawn here and picked in row-ops.ts.
+// for (`open.program_ext`) handed to that application through the open endpoint, a picture, a PDF
+// or an HTML page opened in a browser tab of its own, a file or folder bookmarked or its bookmark
+// taken out as the row's star does, a file or folder revealed in Finder through the open endpoint,
+// a shell started in the folder (state/shared/stores/shell.ts, `openShell`), the file's bytes saved
+// from api/file as the file view's link saves them, the Search view opened on the folder, the
+// view's add-root form, and its removal behind its question. The items that write (New File...,
+// Cut, Paste, Rename..., Delete, Upload..., the compare items) are drawn here and picked in
+// row-ops.ts.
 //
 // The items are a pure function of the row, so which items a row offers is asserted without a
 // DOM, and the words come in as `t` so every label is a catalog key. The picks take the stores and
@@ -18,8 +20,11 @@ import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
 import { absoluteOf } from '$lib/state/workbench/navigation/pages';
 import {
     languageOf,
+    markdownPreviewState,
+    MARKDOWN_PREVIEW_VIEW,
     nameOf,
     opensInProgram,
+    typeOfFile,
     type FsEntry,
     type LanguageMap,
     type RowRef,
@@ -32,12 +37,12 @@ import {
     type KeyPlan,
     type KeyWords
 } from '$lib/state/sources/explorer/acts/keys';
-import { sourceTabState } from '$lib/state/sessions/source.svelte';
 import type { CommandSource, ProjectCommand } from '$lib/state/sessions/terminal/commands.svelte';
 import { commandKey, commandLabel, commandTip, keyOf } from '../../../sessions/commands';
 import type { ClientState } from '$lib/state/client/context';
 import type { ExplorerStore } from '$lib/state/sources/explorer/ops.svelte';
 import { fileUrl } from '../../../links/file-url';
+import { fileBytesUrl } from '$lib/state/sources/fs-transport';
 import { openRowBeside } from '../../opening';
 import { openShell } from '$lib/state/shared/stores/shell';
 import {
@@ -58,6 +63,9 @@ type Words = (key: string, ...args: (string | number)[]) => string;
 
 export const ROW_OPEN_SIDE = 'open-side';
 export const ROW_OPEN_PROGRAM = 'open-program';
+const ROW_OPEN_BROWSER = 'open-browser';
+const ROW_ADD_BOOKMARK = 'add-bookmark';
+const ROW_REMOVE_BOOKMARK = 'remove-bookmark';
 export const ROW_REVEAL = 'reveal';
 export const ROW_TERMINAL = 'terminal';
 export const ROW_FIND = 'find';
@@ -96,6 +104,13 @@ export type RowMenuFacts = {
     markdown: boolean;
     /** Whether the row is a file `open.program_ext` names an application for. */
     program?: boolean;
+    /** Whether the row is a file a browser tab shows: a picture, a PDF or an HTML page. */
+    browser?: boolean;
+    /**
+     * Whether the row is bookmarked, or null for a row the star is not drawn on: the up row and a
+     * root's own line.
+     */
+    bookmarked?: boolean | null;
     /**
      * Whether the row is a `.tex` file or a folder whose listing, held or read when the menu
      * opened, has one directly in it.
@@ -116,6 +131,9 @@ export type HeldEntries = (root: string, path: string) => FsEntry[] | null;
 function isTex(name: string): boolean {
     return name.toLowerCase().endsWith('.tex');
 }
+
+/** The kinds of file a browser tab draws itself. */
+const BROWSER_KINDS: readonly string[] = ['html', 'image', 'pdf'];
 
 /** The size of the selection a menu acts on, and how many of its rows are files. */
 export type MenuSelection = { size: number; files: number };
@@ -168,8 +186,9 @@ export function menuHints(keymap: readonly FilesChord[], words: KeyWords): Recor
 /**
  * The facts of one row of the tree, with the root keys a removal refuses, the selection the menu
  * acts on (the row alone when it is not given), the hints of the items and the entries the fs store
- * holds or the menu read, which say whether a folder has a `.tex` file in it, and the applications
- * `open.program_ext` names by extension, which say whether a file opens in one.
+ * holds or the menu read, which say whether a folder has a `.tex` file in it, the applications
+ * `open.program_ext` names by extension, which say whether a file opens in one, and whether the
+ * row is bookmarked.
  */
 export function rowFacts(
     row: TreeRow,
@@ -181,7 +200,8 @@ export function rowFacts(
     hints: Readonly<Record<string, string>> = {},
     entriesOf: HeldEntries = () => null,
     commands: readonly ProjectCommand[] = [],
-    programs: Readonly<Record<string, string>> = {}
+    programs: Readonly<Record<string, string>> = {},
+    bookmarked = false
 ): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
@@ -198,6 +218,8 @@ export function rowFacts(
         selectedFiles: selection.files,
         markdown: kind === 'file' && languageOf(row.path, languages) === 'markdown',
         program: kind === 'file' && opensInProgram(row.path, programs),
+        browser: kind === 'file' && BROWSER_KINDS.includes(typeOfFile(row.name).kind),
+        bookmarked: row.up !== true && row.path !== '' ? bookmarked : null,
         latex:
             kind === 'file'
                 ? isTex(row.path)
@@ -238,6 +260,14 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     ];
     const cutCopy = [item(ROW_CUT, t('files.menu_cut')), item(ROW_COPY, t('files.menu_copy'))];
     const latex = facts.latex === true ? [item(ROW_LATEX, t('files.menu_latex'))] : [];
+    const bookmark =
+        facts.bookmarked === null || facts.bookmarked === undefined
+            ? []
+            : [
+                  facts.bookmarked
+                      ? item(ROW_REMOVE_BOOKMARK, t('files.menu_remove_bookmark'))
+                      : item(ROW_ADD_BOOKMARK, t('files.menu_add_bookmark'))
+              ];
     const remove = item(ROW_DELETE, t('files.menu_delete'));
     const modify = [item(ROW_RENAME, t('files.menu_rename')), remove];
     const paste = { ...item(ROW_PASTE, t('files.menu_paste')), disabled: !facts.clipboard };
@@ -254,6 +284,9 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         return grouped([
             [
                 item(ROW_OPEN_SIDE, t('files.menu_open_side')),
+                ...(facts.browser === true
+                    ? [item(ROW_OPEN_BROWSER, t('files.menu_open_browser'))]
+                    : []),
                 ...(facts.program === true
                     ? [item(ROW_OPEN_PROGRAM, t('files.menu_open_program'))]
                     : [])
@@ -270,6 +303,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
             cutCopy,
             [item(ROW_DOWNLOAD, t('files.menu_download'))],
             copies,
+            bookmark,
             facts.markdown ? [item(ROW_PREVIEW, t('files.menu_preview'))] : [],
             modify
         ]);
@@ -304,6 +338,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
             [...cutCopy, paste],
             upload,
             copies,
+            bookmark,
             modify
         ]);
     }
@@ -401,6 +436,8 @@ export type RowPickDeps = RowStores & {
     rootName: (root: string) => string;
     /** Say a refusal on the tree's refusal line. */
     say: (note: string) => void;
+    /** Bookmark the row, or take its bookmark out; the star on the row does the same. */
+    bookmark: (row: TreeRow) => void;
     addRoot: () => void;
     removeRoot: (root: string) => void;
     /** Run the project command of that name and source in the repository at an absolute folder. */
@@ -483,6 +520,9 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         const paths = rowPaths(dir, row.path);
         if (pick === ROW_OPEN_SIDE) void openRowBeside(deps, row);
         else if (pick === ROW_OPEN_PROGRAM) void program(row);
+        else if (pick === ROW_OPEN_BROWSER)
+            window.open(fileBytesUrl(row.root, row.path), '_blank', 'noopener');
+        else if (pick === ROW_ADD_BOOKMARK || pick === ROW_REMOVE_BOOKMARK) deps.bookmark(row);
         else if (pick === ROW_REVEAL) void reveal(row, paths.absolute);
         else if (pick === ROW_TERMINAL) void shell(row, dir);
         else if (pick === ROW_FIND)
@@ -498,7 +538,9 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
             const command = keyOf(pick.slice(RUN_PREFIX.length));
             if (command !== null) deps.runCommand(paths.absolute, command.name, command.source);
         } else if (pick === ROW_PREVIEW) {
-            deps.keepPreview(deps.openView('source', sourceTabState(row.root, row.path)));
+            deps.keepPreview(
+                deps.openView(MARKDOWN_PREVIEW_VIEW, markdownPreviewState(row.root, row.path))
+            );
         }
     };
 }

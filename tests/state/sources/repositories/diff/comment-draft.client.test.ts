@@ -12,7 +12,7 @@ import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/
 import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
 import { type DiffSide } from '../../../../../src/lib/state/sources/repositories/review-comment.ts';
 import { CommentDraft } from '../../../../../src/lib/views/sources/repositories/diff/comment-draft.svelte.ts';
-import { rooted } from './rooted.svelte.ts';
+import { rooted } from '../../../../ui/frame/rooted.svelte.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
