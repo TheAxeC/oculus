@@ -260,6 +260,15 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z528 (2026-10-05, from D28's brief)
+
+The question: seven designs D28's brief leaves open: how a tab hears its file changed on disk, the names of the save keys and the delay key, a file deleted under a tab, closing under autosave, a fourth autosave value, and the pane while a file is read.
+
+- Chosen: a `source:` channel per open file polled every 500 ms; `trim_trailing_whitespace` and `final_newline` as global keys a language or repository overrides; `editor.autosave_delay_ms`; a deleted file's tab kept and saved again on Save; close saves under the short autosave modes; no `on_window_change`; an empty pane while reading.
+- Not chosen: the lazy options (the `files` channel plus focus, language fields only, a deleted tab that saves nothing, the close question in every mode, the old waiting sentence), VS Code's three save keys, page polling.
+
+Where it applies: D28. Booked in `plan.md` Rulings.
+
 ## Z526 (2026-10-05, from D20's second brief check, its closing)
 
 The question: four designs the closing took inside D20's brief that no ruling names exactly.
