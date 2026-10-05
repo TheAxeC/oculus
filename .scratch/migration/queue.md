@@ -3,7 +3,7 @@ In flight (5 of 5 slots):
 - S5 (the Settings view's controls and headings): Q119's brief being closed; then repair round 1 with Q119 and Q122.
 - D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief check running; choice 8 (Docker and Live Share) open for Axel as Z504.
 - X3e (Files lists reordered by drag): brief being re-based on D42's landing; then dispatch.
-- D20 (an agent from a task or a worktree): brief check running.
+- D20 (an agent from a task or a worktree): brief being written (it was a stub); the brief check of the stub is in, its findings closed in the brief.
 
 Queued, in order (26 steps):
 - D23 (language servers): brief closed; once X3f and S5 have landed.
@@ -13,12 +13,12 @@ Queued, in order (26 steps):
 - M7 (a project folder moved in Files): once M6 has landed.
 - D44 (Submit on a .slurm file, in its editor title bar): no brief yet; once X3f has landed.
 - D41 (links in Markdown checked): once M7 has landed.
-- D15 (PDF reading): brief ready; once D45 has landed (it builds on D45's PDF viewer).
+- D15 (PDF reading): no brief yet (a stub); once D45 has landed (it builds on D45's PDF viewer).
 - M8 (the hub's YAML checked in the editor): once D23 has landed.
 - D43 (LaTeX navigation): once D23 has landed.
 - A3 (scheduled Update runs): once a slot is free.
-- D28 (saving a file as VS Code does): brief ready; once a slot is free.
-- D23b (cross-file language features): brief ready; once D23 has landed.
+- D28 (saving a file as VS Code does): no brief yet (a stub); once a slot is free.
+- D23b (cross-file language features): no brief yet (a stub); once D23 has landed.
 - D39 (hub keys as links): once M8 and D23b have landed.
 - D33 (the Problems view): once D23 has landed.
 - D36 (linters on save): once D33 has landed.
