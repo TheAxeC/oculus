@@ -1,9 +1,10 @@
 In flight:
-- D23 (language servers): brief being closed; waits for Axel on Z485.
-- X3f (opening a file row, and the tab row's actions): failures being diagnosed.
-- S5 (the Settings view's controls and headings): reviewed; Q119's brief being checked, then repair round 1.
-- D42 (a file's history): repair round 1 reviewed, landing next.
+- D23 (language servers): brief being closed.
+- X3f (opening a file row, and the tab row's actions): diagnosis in; repair round 2 next.
+- S5 (the Settings view's controls and headings): reviewed, Q119's brief checked; repair round 1 next.
+- D42 (a file's history): on main, not committed; its landing gate to run again after a fix.
 - D38 (the Literature search view): brief being written.
+- D45 (LaTeX as VS Code's LaTeX Workshop, the LaTeX view redone): brief being written.
 
 Queued, in order (26 steps):
 - D11 (the debug client for rite): brief ready; once S5 has landed.
@@ -36,7 +37,7 @@ Queued, in order (26 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- H3 (the hub's data map), 2026-10-05, the commit that carries this line.
+- H3 (the hub's data map), 2026-10-05, 575c997c.
 - D37 (the Search view's replace and the LaTeX build), 2026-10-05, a5f1285b.
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.
 - T1a (the test tiers), 2026-10-04, 6c8a217be.

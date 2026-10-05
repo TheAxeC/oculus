@@ -166,7 +166,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Z485, G36 for D23 (decision for Axel). D23's brief adds a new entry to `agents/guarded.md`: "G36. A language server oculus started ends: 60 s after the last tab of its root and language closed on a page, or the page closed, when no tab or page took it over; at once when its root is no longer served; and with the oculus server. None is started twice for one page, root and language." Z392 (yours) says a new entry needs your yes; Z479 took it in automode, which was not the orchestrator's to take, so it waits for you. Options: (a) yes, G36 as worded, its test one table over a stub server, slow-tagged, on a fake clock: a server left running eats memory (pyright over a large root runs to hundreds of MB, not measured yet) and one started twice doubles it, a failure that costs something. (b) no entry: the lifetimes are built and checked at the landing look by `ps`, with no test kept, so a later change can leave servers running unseen. Recommendation: (a), since a leaked server is a cost a person does not see until the machine slows. The lazy option is (b). D23 is not dispatched before this ruling.
+- None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -225,8 +225,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-05 03:40. H3 landed with five fixes at landing; its look passed on TEST. D23's brief is being closed (Z482 to Z484); G36 waits for Axel (Z485). S5's review is in; Q119's brief check runs against S5's worktree, then S5's repair round 1 with Q119 and Q122. X3f's diagnosis runs. Next: land D42.
-  Open for Axel: Z485.
+- 2026-10-05 03:40. H3 landed with five fixes at landing; its look passed on TEST. D23's brief is being closed (Z482 to Z484); G36 approved by Axel (Z485 (a)). S5's review is in; Q119's brief check runs against S5's worktree, then S5's repair round 1 with Q119 and Q122. X3f's diagnosis runs. Next: land D42.
+  Open for Axel: none.
 - 2026-10-05 03:10. D37 landed with three fixes at landing (the empty-region test in `replace.ts`, a comment rewrapped, Open File from a diff pane over a served root); its look passed on TEST except cases 18 and 32, not seen. D23's brief check is in (`agents/reviews/D23-brief-check.md`), its findings to close in the brief. In flight: X3f (diagnosis running), S5 (refuter running), H3 and D42 (round-1 reviews in, landing next), D23 (brief closing). Next: land H3, then D42.
   Open for Axel: none.
 - 2026-10-05 01:45. X3f landed with three fixes at landing; its look found the kept tab's editor without the keyboard after a double click, booked as Q120 (Z453), and six cases owed. Z443 closed in automode as Q119. In flight: D37 (repair round 1 next), S5, H3, D42 building; D11 brief check; Q118 brief. Next: X3f's owed looks, D37's round, Q119's brief.

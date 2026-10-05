@@ -245,6 +245,21 @@ The question: S5's review Spec 1: the catalog key `empty` takes `true` or words 
 
 Booked in `plan.md` Rulings.
 
+## Z485 (2026-10-05, Axel, from D23's brief)
+
+The question: a new entry G36 in `agents/guarded.md` for language server lifetimes, which Z392 reserves to Axel.
+
+- Chosen by Axel: (a) yes, G36 as worded, with its test.
+- Not chosen: (b) no entry, the lifetimes checked only at the landing look, the lazy option.
+
+Booked in `plan.md` Rulings.
+
+## Z487 (2026-10-05, Axel)
+
+Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the editor is all it takes, as VS Code's LaTeX Workshop. Booked as D45; D15's PDF beside the source moves into it.
+
+Booked in `plan.md` Rulings and the step list.
+
 ## Z474 (2026-10-05, from D42's review)
 
 The question: D42's review Spec 1: paging by `<hash>^` walks the first parent only, so the page after a merge, or after a side-branch commit at a page boundary, leaves out commits that changed the file; `--skip` under `--follow` repeats the first page on git 2.49.0 (Z434).
