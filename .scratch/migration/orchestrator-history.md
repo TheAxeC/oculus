@@ -4,6 +4,9 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z568 (2026-10-05): A3's extra repair round for item 5 (the 29 February pattern, the due time before the first sessions payload). (the orchestrator, automode)
+- Z567 (2026-10-05): O30's app opens dark (vscode-dark-modern, background #181818, nativeTheme dark), done first. (the user)
+- Z566 (2026-10-05): (a): D44's three tests outside any entry deleted; the look checks Submit's sentences and tones. (the user)
 - Z565 (2026-10-05, closed in automode): D44's cluster-folder test under G15; `choices.md`.
 - Z564 (2026-10-05, closed in automode): D44's submit-files test under G43, `keptFiles` in its Code line; `choices.md`.
 - Z563 (2026-10-05, closed in automode): O30's find bar in its own view; `choices.md`.

@@ -61,6 +61,7 @@ import type { Plan } from '../git/deposit.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { defaultWorkspacesPath, ignoredCache, type IgnoredCache } from '../files/fs.ts';
 import { pickerState, type PickerState } from '../files/fs/picker.ts';
+import { submitState, type SubmitState } from '../machine/hpc/submit.ts';
 import { fsWrites, type FsWrites } from '../core/json.ts';
 import { createRunningGit, type RunningGit } from '../core/git/running.ts';
 import { memoriesMemory, type MemoriesMemory } from '../content/memories.ts';
@@ -139,6 +140,8 @@ export type ServerContext = {
     folderPicker: PickerState;
     /** The log path found per HPC job id. */
     hpcLogPaths: LogPaths;
+    /** The Submit runs in flight, whose children the server's close ends. */
+    hpcSubmits: SubmitState;
     /** The calendar consents in flight, minted by the connect action and taken by the callback. */
     calendarConnects: ConnectStates;
     /**
@@ -435,6 +438,7 @@ export function createServerContext(
 
     let closed = false;
     const writes = fsWrites();
+    const hpcSubmits = submitState();
     const context: ServerContext = {
         hub,
         terminals,
@@ -461,6 +465,7 @@ export function createServerContext(
         ignoredCache: ignoredCache(),
         folderPicker: pickerState(),
         hpcLogPaths: polled.hpcLogPaths,
+        hpcSubmits,
         calendarConnects: new ConnectStates(),
         calendarDir: polled.calendarDir,
         mailConnects: new ConnectStates(),
@@ -484,6 +489,7 @@ export function createServerContext(
             polled.mail.close();
             polled.calendar.close();
             polled.hpc.close();
+            hpcSubmits.close();
             polled.processes.close();
             held.bookmarks.close();
             held.autofetch.close();

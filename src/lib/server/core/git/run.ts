@@ -26,6 +26,7 @@
 //     git -C <root> worktree list --porcelain
 //     git -C <root> check-ignore --stdin -z
 //     git -C <root> ls-files -z
+//     git -C <root> ls-files -z --cached --others --exclude-standard
 //     git -C <root> for-each-ref --format=... refs/heads refs/tags refs/stash
 //     git -C <root> remote
 //     git -C <root> blame --porcelain -- <path>
@@ -45,7 +46,9 @@
 // `check-ignore` is the file browser's: which entries of one listed folder the repository ignores,
 // the names handed on its standard input, so the tree can leave them out (ignoredIn in files.ts).
 // `ls-files` is the Status view's line counts: the paths a folder's repository tracks under it
-// (trackedFiles in files.ts), which is the set of files server/machine/lines.ts hands to cloc. The
+// (trackedFiles in files.ts), which is the set of files server/machine/lines.ts hands to cloc, and
+// Submit's file list: the paths it keeps under a code folder, tracked or untracked and not ignored
+// (keptFiles in files.ts), which server/machine/hpc/submit.ts filters and hands to rsync. The
 // status read above it is the `git` channel's; the graph, the blame, the gutter marks, the three
 // versions of a conflicted path, a commit's files and diffs and a stash's diff are read on demand
 // by GET /api/git, since each is text or a page a reader asked for rather than state every event

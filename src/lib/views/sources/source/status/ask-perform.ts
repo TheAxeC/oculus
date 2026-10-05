@@ -5,10 +5,10 @@
 // is asked only while the text may be written.
 //
 // The tab's own actions are File: Save, File: Revert File, View: Toggle Word Wrap (Alt+Z),
-// Markdown: Toggle Rendered Half, Markdown: Open Preview to the Side and Git: Toggle Git Blame
-// Editor Decoration. Each is in `tabActions` only while it applies, so the palette lists what the
-// tab on screen can do, whether or not it draws an editor, and an ask for an action that does not
-// apply does nothing.
+// Markdown: Toggle Rendered Half, Markdown: Open Preview to the Side, Slurm: Submit Job and Git:
+// Toggle Git Blame Editor Decoration. Each is in `tabActions` only while it applies, so the palette
+// lists what the tab on screen can do, whether or not it draws an editor, and an ask for an action
+// that does not apply does nothing.
 
 import { SAVE_ACTION, type EditorAsk } from '$lib/state/workbench/navigation/editor-status.svelte';
 import type { Indent } from '$lib/state/workbench/navigation/editor-text';
@@ -26,11 +26,14 @@ export type TabActionDeps = {
     previewable: boolean;
     /** Whether the file is in a repository and its text is loaded. */
     blameable: boolean;
+    /** Whether the file is a .slurm job script on disk under a served root. */
+    submittable: boolean;
     save: () => void;
     revert: () => void;
     toggleWrap: () => void;
     toggleRendered: () => void;
     previewSide: () => void;
+    submit: () => void;
     toggleBlame: () => void;
 };
 
@@ -62,6 +65,9 @@ export function tabActions(deps: TabActionDeps): EditorOwnAction[] {
             label: t('source.cmd_preview_side'),
             run: deps.previewSide
         });
+    }
+    if (deps.submittable) {
+        listed.push({ id: 'oculus.submit', label: t('source.cmd_submit'), run: deps.submit });
     }
     if (deps.blameable) {
         listed.push({ id: 'oculus.blame', label: t('source.cmd_blame'), run: deps.toggleBlame });

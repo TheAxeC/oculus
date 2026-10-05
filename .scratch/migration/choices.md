@@ -2,6 +2,15 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z568 (2026-10-05, step A3)
+
+The question: the run over A3's round 1 found item 5 unbuilt (a 29 February pattern stops the server process; a due time before the first sessions payload is dropped), and the fix is too large for landing.
+
+- Chosen: (a) the plan's one extra repair round (`repair_rounds`: "one more only when the delta leaves ... an acceptance item unbuilt and the fix is too large for landing"), `agents/briefs/A3-round2.md`.
+- Not chosen: (b) fix both at landing, which is larger than a landing fix and would land unreviewed scheduler logic; (c) raise them to Axel, though the plan's own rule settles it. The lazy one was (c).
+
+Where it is built: A3's worktree in round 2. Booked in `plan.md` Rulings.
+
 ## Z565 (2026-10-05, step D44)
 
 The question: D44's `tests/data/snapshot/cluster-folder.test.ts` falls under no entry of `agents/guarded.md`.

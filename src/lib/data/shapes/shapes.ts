@@ -273,3 +273,28 @@ export function taskRefOf(value: unknown): TaskRef | undefined {
         ...(subtask === undefined ? {} : { subtask: { key: subtask.key, do: subtask.do } })
     };
 }
+
+/** One segment of a cluster path: characters that reach the remote shell unchanged. */
+const CLUSTER_SEGMENT = /^[A-Za-z0-9._-]+$/;
+
+/**
+ * The folder on the cluster that holds a project's code, as the manifest's `paths.cluster` writes
+ * it, or null when the value is not one: a text that opens with `~/` or `/`, then one or more
+ * segments of letters, digits, `.`, `_` and `-` separated by single slashes, no segment `.` or
+ * `..` and no trailing slash. Every character it admits reaches the remote shell unchanged, so the
+ * folder is handed to `cd` and to rsync unquoted where `~/` has to be expanded there.
+ */
+export function clusterFolder(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const rest = value.startsWith('~/')
+        ? value.slice(2)
+        : value.startsWith('/')
+          ? value.slice(1)
+          : null;
+    if (rest === null) return null;
+    const segments = rest.split('/');
+    const sound = segments.every(
+        (segment) => CLUSTER_SEGMENT.test(segment) && segment !== '.' && segment !== '..'
+    );
+    return sound ? value : null;
+}

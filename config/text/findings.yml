@@ -149,6 +149,7 @@ text:
             no_pillar: 'pillar names no pillar: {0}'
             no_related: 'related names no project: {0}'
             no_resource: 'compute names no resource: {0}'
+            bad_cluster: 'paths.cluster must be ~/ or / followed by folder names of letters, digits, . _ and -, not {0}'
             related_itself: 'related names the project itself: {0}'
             folder_shared: '{0} projects share the folder name {1}, so their ids collide'
             no_collaborator: 'collaborators names no person: {0}'

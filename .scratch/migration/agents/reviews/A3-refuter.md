@@ -159,3 +159,77 @@ Cases:
 - A host with no tmux: not run.
 
 Usage from the completion notice: a8202593373720c47, claude-opus-5-5, 146,318 tokens, 117 tool uses, 28.9 min.
+
+## Repair round 1, refuted
+
+Reviewer aa2f8d687b0b0cfac, claude-opus-5-5, ordo-high: 337,571 tokens, 85 tool uses, 19.3 min (completion notice). Reruns from the worktree's `tools/oculus`, base `6044d753c`; the report read is byte-identical to the worktree copy.
+
+### Verification
+
+```
+$ sh /Users/axelfaes/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+$ npm run test:quick
+test:quick: 61 changed file(s), from git since HEAD
+test:quick: 81 test file(s), 10 essential
+ok      prettier (0.5 s): All matched files use Prettier code style!
+ok      ASCII gate (0.5 s)
+ok      svelte-kit sync (2.1 s)
+ok      eslint (2.4 s)
+ok      svelte-check (13.1 s): 1791225076930 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (27.6 s): Duration  24.02s (transform 34.48s, setup 0ms, import 61.46s, tests 28.33s, environment 147ms)
+test:quick: 28.2 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+$ npx vitest run <schedule, record, settings, value-rule, config, terminal-actions>: Test Files 6 passed (6) | Tests 105 passed (105)
+$ npx vitest run tests/checks --testTimeout 120000 --reporter=dot: Test Files 16 passed (16) | Tests 229 passed (229)
+$ npx vitest run tests/server/machine/tasks/schedule.test.ts --reporter=verbose: 6 passed; no stderr line; sixth test 1217 ms (alone 2728 ms, then 1959 ms)
+ASCII gate over src tests config: nothing printed; HELP.md, DESIGN.md, A3-report.md: 0 non-ASCII lines
+sh utils/unused-exports.sh | wc -l: 379, diff against the base empty
+greps of TASKS|isTask|TaskKind|taskCommand|processesText: 24 lines, as the report; the risk sentence 1 in HELP.md and options.yml; "so a scheduled task then" 0
+builder probes s1, s2, s5: 3 files, 20 tests passed; s3 (C17 autumn) and s4 (C36) and c1.mts and the tray probe as quoted
+reviewer probes (real modules, nothing copied or edited):
+TZ=Europe/Brussels node prev.mjs: "* 2 * * *" at 01:00:30Z: 59 of 61 due times later than now; previousRuns(2): 01:59Z, 01:58Z
+TZ=Europe/Brussels node prev3.mjs: 0 0 29 2 *, 0 7 29 2 *, 0 0 30 1-2 *: previousRuns THROWS
+TZ=Europe/Brussels node leap.mjs (real watchSchedules, litwatch "0 0 29 2 *"): process exit code 1, TypeError: Cannot read properties of undefined (reading '0') at E.previousRuns at dueAt (schedule.ts:89:16) at apply (schedule.ts:332:24)
+race.probe.ts ("* * * * *", no sessions payload until 07:02:10): record 05:02Z skipped and 05:01Z skipped, terminal null; after the payload starts []
+npx vitest run tests/routes/git/deposit.test.ts -t zzzz-no-such-case: oculus-fixture-schedule-* folders in the temp folder before 0, after 1
+```
+
+### Verdicts
+
+Rulings of the round: 1 to 9 and 11 closed; 10 closed except the probe half of its item 7 (Proof 2.2). Ruling 1: `dueAt` (schedule.ts:87-90) passes over every due time later than now with `LOOKBACK = 61`, which `prev.mjs` shows is needed (croner gives 59 of 61 due times later than now for `* 2 * * *` at 01:00:30Z); the test is titled 'starts each run of a pattern inside the hour the clocks skip once, when it is due and not before', the title to name under G46. Ruling 7 closed with the fix reaching beyond the finding (Standards 3.2).
+
+Items of A3.md over the whole diff: 1, 2, 3, 4, 6, 7, 8 hold; 5 violated (Behaviour 4.1 and 4.2), the spring early start fixed; 9 not applicable (the look at landing).
+
+Cases: C1 to C4 met; C5 partial (Behaviour 4.1); C6 to C29, C31 to C36 met as the probes and tests above show; C30 met for one due time, two due times before the payload is Behaviour 4.2.
+
+### Findings
+
+#### 1. Spec
+
+None.
+
+#### 2. Proof
+
+- 2.1. A3-report.md, ruling 1: the failing run is quoted under a title that is neither the first run's nor the final one, so no failure is quoted for the test in its final form. By reading, its first row `expect(times, pattern).toEqual([])` fails on the first run's `previousRuns(1, ask)[0]`, which answers 01:30Z at 01:00Z.
+- 2.2. A3-report.md, ruling 10 item 7: the grep `spawn|execFile|exec(|tmux|claude` is quoted over the tests only. `probes/first-run-route.mts` also starts tmux (on the stub socket), besides s4.probe.ts and c1.mts; no real `claude` is reached.
+- 2.3. A3-refuter.md, the first run's verdicts of item 2 and C24 cite mutation runs, which are breakage runs under Axel's standing rule and are not used. Those verdicts stand on reading and on the G46 and G13 runs. The builder's report quotes no such run.
+
+#### 3. Standards
+
+- 3.1. tests/server/machine/tasks/schedule.test.ts:328, the sixth test takes 1.2 to 2.7 s and is not tagged slow (agents/spec.md: a test runs well under a second, or is tagged slow). It steps the fake clock 60 s at a time over about 4 h for three patterns.
+- 3.2. tests/server/root/context-fixture.ts:93-95, `scratchDir('oculus-fixture-schedule-')` runs when `contextFixture` is called, which three modules do while they load (terminal-fixture.ts:19, deposit.test.ts:18, git.test.ts:25), against tests/fixtures/scratch.ts:9-10; a fully skipped run of those files leaves one folder in the temp folder. The fix also reaches git.test.ts and hpc.test.ts, outside the write list.
+- 3.3. DESIGN.md:139: "Croner skips a due time inside the hour the clocks skip, so a daily 02:30 starts at 03:30" credits croner with the 03:30 start, which the half-minute look gives (schedule.ts:12-15, :293-299). A maintainer could remove the half-minute check.
+- 3.4. A3-report.md opening: two read-only git commands ran, against agents/spec.md "Where you work"; disclosed, nothing written.
+
+#### 4. Behaviour
+
+- 4.1. schedule.ts:87-90, `job.previousRuns(LOOKBACK, ask)`, called uncaught from `apply` (:332, inside `void apply(...)` at :365 and :372) and from `consider` (:303). Croner 10.0.1 throws for `0 0 29 2 *`, `0 7 29 2 *` and `0 0 30 1-2 *`, which the value rule accepts (C5 names `0 0 29 2 *` a job). With that pattern the server process exits with code 1, and again at every start until behavior.yml is edited by hand. Present since the first run. Item 5 violated, C5 partial.
+- 4.2. schedule.ts:228-239 with :242 and :252-268: a due time arriving while `deciding` holds the task is claimed at once as `skipped`, moving `handled` past the waiting decision's due time; once the `sessions` payload arrives that decision's `claimDue` answers `handled` and nothing starts. The server started at 06:59:50 with yesterday's 07:00 missed and a first sessions payload later than 10 s: today's 07:00 is recorded skipped, the catch-up dropped, nothing runs that day. Item 5 violated.
+
+### Declined to judge
+
+- The croner chunk sizes (+29,838 raw, +8,545 gzip): not rebuilt; needs a second build of a base copy.
+- The report's line counts of schedule.ts and schedule.test.ts (380 and 370 against 387 and 379): no decision rests on them.
+- Look cases 1 to 11 and `npm run test:landing`: the orchestrator's at landing.
+- Whether the half-minute look starts a spring-day run up to 30 s after its due time on a live server: not run.
+- Probe side effects, outside the repository: one empty `oculus-fixture-schedule-*` folder and `a3race-*` in the temp folder, `scratchpad/probe/rec29`.

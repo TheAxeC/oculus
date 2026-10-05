@@ -448,6 +448,7 @@ export type {
     HpcQuotaItem,
     HpcRecent,
     HpcStatus,
+    SubmitPlan,
     UsageAccount,
     UsageAccountConfig,
     UsageDay,

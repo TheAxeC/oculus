@@ -70,5 +70,5 @@ manifest_schema:
     "reproduced.note": { label: "Reproduced (note)", type: textarea, section: "Deposit & compute", help: "What was run again, and anything a rerun needs, such as a GPU cluster or credentialed data." }
     outcome:       { label: "Outcome (citation / why-not)", type: textarea, section: "Archive (archive tier)" }
     doi:           { label: "DOI", type: text, section: "Archive (archive tier)" }
-    paths:         { label: "Path overrides", type: keymap, section: "Overrides (rare)", help: "Where a document is kept when it is not in its usual place. Change these only when a document has moved." }
+    paths:         { label: "Path overrides", type: keymap, section: "Overrides (rare)", help: "Where a document is kept when it is not in its usual place. Change these only when a document has moved. It also holds cluster, the folder on the cluster that holds the project's code for Submit; its default is ~/projects/<id>." }
     subtasks:      { label: "Subtasks", type: keymap, section: Dates, help: "A checklist of lines, each with what to do, a deadline, whether it is done and a snooze date. Add and tick them on the project's card; this form does not change them." }

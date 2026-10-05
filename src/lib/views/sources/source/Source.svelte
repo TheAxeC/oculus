@@ -41,16 +41,21 @@
     // The tab draws no title row and no row of controls: its path is the breadcrumb the pane draws
     // under the strip. It hands up to the pane through ui/tabs/tab-actions.svelte.ts its actions
     // for the right end of the breadcrumb bar (actions/BarActions.svelte): Save, Revert File, the
-    // star, Open in Program, Open Preview, Open Preview to the Side and Toggle Blame, each where it
-    // applies, and nothing for the tab row. Word wrap and the rendered half are the palette's,
-    // which lists Save, Revert File, word wrap, the rendered half, Open Preview to the Side and
-    // Toggle Blame while each applies (status/ask-perform.ts), and Cmd+S asks the tab on screen to
-    // save. The save outcome, while the text may be written, and what a
-    // refused first Save or LaTeX action said, whether or not it may, stay in view as a line under
-    // the editor (save/SourceNote.svelte). A file that could not be read is the message box with a
-    // control that reads it again (read-again.ts), which opens what the file is when it is back as
-    // something other than text. A file the route says is gone opens here too, so this is the tab
-    // that says it cannot be opened.
+    // star, Open in Program, Open Preview, Open Preview to the Side, Submit Job and Toggle Blame,
+    // each where it applies, and nothing for the tab row. Word wrap and the rendered half are the
+    // palette's, which lists Save, Revert File, word wrap, the rendered half, Open Preview to the
+    // Side, Submit Job and Toggle Blame while each applies (status/ask-perform.ts), and Cmd+S asks
+    // the tab on screen to save. The save outcome while the text may be written, and what the tab
+    // said, stay in view under the editor (save/SourceNote.svelte): an alert for a refused first
+    // Save, LaTeX action or Submit, a status for Submit's progress and success. A file that could
+    // not be read is the message box with a control that reads it again (read-again.ts), which
+    // opens what the file is when it is back as something other than text. A file the route says is
+    // gone opens here too, so this is the tab that says it cannot be opened.
+    //
+    // Submit Job, on a .slurm file on disk under a served root, saves the unsaved text, asks the
+    // server for the plan, puts it to the reader as one confirm and on a yes runs it; the flow is
+    // actions/submit-job.svelte.ts, its confirm is drawn by views/shared/writes/AskConfirm.svelte,
+    // and the job is then shown in the Live HPC view.
     //
     // A tab over an untitled text (New Text File) holds an empty draft and no file. Its first Save
     // asks for a served root of the current workspace and a name, makes the file there, writes the
@@ -88,24 +93,27 @@
 
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Prompt from '$lib/ui/forms/Prompt.svelte';
-    import type { PromptRequest } from '$lib/ui/forms/prompt';
     import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import { servedFile } from '$lib/views/shared/links/file-bar';
     import { ownListing } from '$lib/ui/controls/editor/chords';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Code from '../../shared/prose/Code.svelte';
     import Editor from './Editor.svelte';
     import BarActions from './actions/BarActions.svelte';
     import Gutter from './Gutter.svelte';
+    import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
+    import LockedCode from './save/LockedCode.svelte';
+    import { createSaid } from './save/tab-said.svelte';
+    import { lockedWords } from './save/locked-words';
     import SourceNote from './save/SourceNote.svelte';
     import { performAsk, tabActions } from './status/ask-perform';
     import { connectSourceStatus } from './status/source-status.svelte';
+    import { createTabFile } from './status/tab-file.svelte';
+    import { createSubmitJob, isJobScript } from './actions/submit-job.svelte';
     import { readAgain } from './read-again';
-    import { askUntitledName } from './save/untitled-save';
+    import { createTabSave } from './save/tab-save.svelte';
     import { latexEditor } from './latex-editor';
     import { createSourceGutter } from './source-gutter.svelte';
     import { createSourceOptions } from '$lib/views/shared/prose/source-options';
@@ -115,12 +123,7 @@
     import { markdownOutline } from '$lib/state/sources/explorer/sections/outline';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { headOf } from '$lib/state/sessions/source.svelte';
-    import {
-        blameStatus,
-        repoOfFile,
-        wholePath,
-        type RepoFile
-    } from '$lib/state/sources/repositories/file-git';
+    import { blameStatus } from '$lib/state/sources/repositories/file-git';
     import {
         START,
         lineCount,
@@ -139,7 +142,8 @@
         editorStatus,
         explorer,
         fs: { fileText, roots: currentRoots, workspaces },
-        layout: { keepPreview, openBeside, restateInstance },
+        hpc,
+        layout: { keepPreview, openBeside, openView, restateInstance },
         repositories,
         selectors: { editorOptions, gitFor, gitRoots, languages, paintLimit, repoSettings },
         source: {
@@ -153,6 +157,7 @@
             setSourceWrap,
             toggleSourceRendered,
             toggleSourceBlame,
+            sourceDirty,
             sourceDraft
         }
     } = client;
@@ -171,21 +176,11 @@
     /** Whether the tab names no file: an untitled text, or a state that lost its address. */
     const blocked = $derived(root === '' || path === '');
     const untitled = $derived(readAs(untitledShape, instance.state) !== null);
-    /** What a refused LaTeX action or untitled save said, or the empty string. */
-    let said = $state('');
+    /** What the tab says under the editor: a refusal or Submit's status lines. */
+    const note = createSaid();
     const error = $derived(blocked && !untitled ? t('source.cannot_open', path) : draft.error);
     /** The line a tab that may not write its file draws, and the empty string for one that may. */
-    const locked = $derived(
-        head !== undefined
-            ? head === 'head'
-                ? t('source.head_locked')
-                : t('source.index_locked')
-            : draft.readonly
-              ? t('source.readonly')
-              : draft.truncated
-                ? t('source.truncated')
-                : ''
-    );
+    const locked = $derived(lockedWords(head, draft));
     /**
      * Whether the tab holds the file's text: read, and not refused since. A draft read once keeps
      * its text when a later read fails, so `draft.loaded` alone stays true for a file now gone.
@@ -197,8 +192,8 @@
     /** The save outcome the row under the editor shows: only while the text may be written. */
     const saveMessage = $derived(editing ? draft.message : '');
 
-    /** Whether the row under the editor is drawn: a save outcome or a sentence from a refusal. */
-    const noted = $derived(saveMessage !== '' || said !== '');
+    /** Whether the row under the editor is drawn: a save outcome or a sentence the tab said. */
+    const noted = $derived(saveMessage !== '' || note.words !== '');
 
     /** The indentation, word wrap and rulers of the tab, in the order `resolveEditor` states. */
     const options = createSourceOptions({
@@ -219,7 +214,7 @@
     /** What a LaTeX file adds to the editor: its build's markers, the preview and the formatter. */
     const extension = $derived(
         language === 'latex' && head === undefined
-            ? latexEditor(client, { root, path }, (words: string) => (said = words))
+            ? latexEditor(client, { root, path }, (words: string) => note.say(words))
             : language === 'markdown'
               ? symbolsExtension(markdownOutline)
               : undefined
@@ -227,40 +222,53 @@
     /** Whether the file has a rendered half, which is what a Markdown file has. */
     const markdown = $derived(language === 'markdown');
 
-    /** The roots the file routes serve, which name a tab's file by a key and a path. */
-    const served = $derived(workspaces().workspaces.flatMap((workspace) => workspace.roots));
-    /** The absolute path of the file on disk, empty for a tab that shows no file on disk. */
-    const wholeFile = $derived(
-        blocked || head !== undefined ? '' : (wholePath(served, { root, path }) ?? '')
-    );
-
-    /**
-     * The repository holding the file and its path there, or null for a file in none. A version at
-     * HEAD or in the index names its repository's own folder as its root.
-     */
-    const inRepo = $derived.by<RepoFile | null>(() => {
-        if (blocked) return null;
-        if (head !== undefined) return { root, path };
-        const repos = gitRoots().filter((one) => {
-            const held = gitFor(one);
-            return held !== null && held.repository && held.error === null;
-        });
-        return repoOfFile(served, { root, path }, repos);
+    /** Where the file is on disk and in which repository, and what that allows the tab. */
+    const file = createTabFile({
+        workspaces,
+        gitRoots,
+        gitFor,
+        root: () => root,
+        path: () => path,
+        head: () => head,
+        blocked: () => blocked,
+        read: () => read,
+        markdown: () => markdown
     });
-    /** Whether the tab shows the working file, read, which the star and Open in Program act on. */
-    const onDisk = $derived(head === undefined && !blocked && read);
-    /** Whether the tab shows a Markdown file read from disk, which may be previewed. */
-    const previewable = $derived(markdown && onDisk);
-    /** Whether the tab's file is in a repository and read, so its blame may be drawn. */
-    const blameable = $derived(inRepo !== null && read);
-    /** The repository's state, whose every move is a new read of the gutter. */
-    const repoState = $derived(inRepo === null ? null : gitFor(inRepo.root));
+    /** The tab's Save, and the question the first Save of an untitled text asks. */
+    const tabSave = createTabSave({
+        get id() {
+            return instance.id;
+        },
+        untitled: () => untitled,
+        root: () => root,
+        path: () => path,
+        title: () => title,
+        roots: currentRoots,
+        create: explorer.create,
+        saveDraft: saveSourceDraft,
+        restate: restateInstance,
+        said: (words) => note.say(words)
+    });
+    /** Whether the tab is a .slurm job script on disk under a served root, which Submit acts on. */
+    const submittable = $derived(
+        isJobScript(path) && servedFile(currentRoots(), root, path, file.onDisk)
+    );
+    /** Submit on the job script: the press that saves, asks and runs, and the confirm it holds. */
+    const submit = createSubmitJob({
+        root: () => root,
+        path: () => path,
+        unsaved: () => sourceDirty(instance.id),
+        save: () => tabSave.save(),
+        said: note.say,
+        hpc,
+        openView
+    });
     const gate = shownGate(useShown());
     /** The quick diff marks and the blame, read for a file in a repository once its text is. */
     const gutter = createSourceGutter({
-        file: () => (read ? inRepo : null),
+        file: () => (read ? file.inRepo : null),
         stage: () => head,
-        repoState: () => repoState,
+        repoState: () => file.repoState,
         repositories,
         loaded: () => draft.loaded,
         text: () => draft.text,
@@ -286,12 +294,14 @@
         tabActions({
             editing,
             markdown,
-            previewable,
-            blameable,
-            save: () => void save(),
+            previewable: file.previewable,
+            blameable: file.blameable,
+            submittable,
+            save: () => void tabSave.save(),
             revert: () => revertSourceDraft(instance.id),
             toggleWrap,
             toggleRendered: () => toggleSourceRendered(instance.id),
+            submit: () => void submit.press(),
             previewSide: () => openBeside(MARKDOWN_PREVIEW_VIEW, markdownPreviewState(root, path)),
             toggleBlame: () => toggleSourceBlame(instance.id)
         })
@@ -320,7 +330,7 @@
                       writable: editing,
                       blame: editing ? blameStatus(blameMap.get(caret.line), gutter.readAt) : '',
                       actions: listed,
-                      file: wholeFile,
+                      file: file.wholeFile,
                       selection: editing ? selection : ''
                   },
         perform: (ask) =>
@@ -341,7 +351,11 @@
         useTabActions(),
         () => instance.id,
         barActions,
-        () => editing || previewable || blameable || servedFile(currentRoots(), root, path, onDisk)
+        () =>
+            editing ||
+            file.previewable ||
+            file.blameable ||
+            servedFile(currentRoots(), root, path, file.onDisk)
     );
 
     $effect(() => {
@@ -357,26 +371,6 @@
     /** Alt+Z in the editor: the tab's word wrap toggled, kept with the draft. */
     function toggleWrap(): void {
         setSourceWrap(instance.id, options.toggled);
-    }
-
-    /** The question an untitled text's first Save asks: the name of the file to make. */
-    let asking: PromptRequest | null = $state(null);
-
-    async function save(): Promise<void> {
-        if (!untitled) {
-            await saveSourceDraft(instance.id, root, path);
-            return;
-        }
-        askUntitledName({
-            id: instance.id,
-            title: () => title,
-            roots: currentRoots,
-            create: explorer.create,
-            saveDraft: saveSourceDraft,
-            restate: restateInstance,
-            said: (words) => (said = words),
-            ask: (request) => (asking = request)
-        });
     }
 
     /**
@@ -407,11 +401,14 @@
         id={instance.id}
         {root}
         {path}
-        {onDisk}
+        onDisk={file.onDisk}
         {editing}
-        {previewable}
-        {blameable}
-        onsave={() => void save()}
+        previewable={file.previewable}
+        blameable={file.blameable}
+        {submittable}
+        submitting={submit.busy}
+        onsave={() => void tabSave.save()}
+        onsubmit={() => void submit.press()}
     />
 {/snippet}
 
@@ -448,11 +445,8 @@
         {:else if !draft.loaded}
             <Empty message={t('app.waiting')} glyph="edit" />
         {:else if locked !== ''}
-            <p class="locked" data-source-locked={path}>
-                <Glyph name={t('source.locked_glyph')} />
+            <LockedCode
                 {locked}
-            </p>
-            <Code
                 text={draft.text}
                 {language}
                 {path}
@@ -485,14 +479,21 @@
             />
         {/if}
         {#if noted}
-            <SourceNote message={saveMessage} failed={draft.failed} {said} />
+            <SourceNote
+                message={saveMessage}
+                failed={draft.failed}
+                said={note.words}
+                tone={note.tone}
+            />
         {/if}
     </div>
 </Pane>
 
-{#if asking !== null}
-    <Prompt request={asking} cancel={t('ui.confirm_cancel')} oncancel={() => (asking = null)} />
+{#if tabSave.asking !== null}
+    <Prompt request={tabSave.asking} cancel={t('ui.confirm_cancel')} oncancel={tabSave.release} />
 {/if}
+
+<AskConfirm asking={submit.asking} onclose={submit.release} />
 
 <style>
     .source {
@@ -508,21 +509,12 @@
         gap: 6px;
     }
 
-    /* The save outcome and what a refused write said take a row of their own under the editor. */
+    /* The save outcome and what the tab said take a row of their own under the editor. */
     .source.noted {
         grid-template-rows: minmax(0, 1fr) auto;
     }
 
     .source.lined.noted {
         grid-template-rows: auto minmax(0, 1fr) auto;
-    }
-
-    .locked {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin: 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
     }
 </style>

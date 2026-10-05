@@ -13,6 +13,7 @@ text:
         cmd_rendered: 'Markdown: Toggle Rendered Half'
         cmd_revert: 'File: Revert File'
         cmd_save: 'File: Save'
+        cmd_submit: 'Slurm: Submit Job'
         code: '{0}, read only'
         failed: failed
         head_binary: This version of the file is not text, so it cannot be shown here.
@@ -32,6 +33,34 @@ text:
         saved: saved
         saved_without_copy: 'saved, but the local history could not keep a copy: {0}'
         saving: saving...
+        submit: Submit Job
+        submit_ask: 'Copy the code of {0} to {1} and submit {2}?'
+        submit_bad_cluster: 'The cluster folder of this project is not valid: {0}'
+        submit_busy: A copy of this project's code to the cluster is already running.
+        submit_changed: The files or the commands changed since the question was asked; press Submit Job again.
+        submit_confirm: Submit
+        submit_confirm_anyway: Submit Anyway
+        submit_copy_failed: 'The copy failed: {0}'
+        submit_detail_copy: 'Copies {0} to {1} with rsync {2}'
+        submit_detail_file_one: 'Sends 1 file ({0}).'
+        submit_detail_files: 'Sends {0} files ({1} in all).'
+        submit_detail_remote: 'Then runs on {0}: {1}'
+        submit_detail_view: The job then shows in Live HPC.
+        submit_done: 'Submitted batch job {0}'
+        submit_failed: Submit failed.
+        submit_no_files: 'The code folder has no files to send: {0}'
+        submit_no_host: '{0}'
+        submit_no_job_id: 'sbatch printed no job id: {0}'
+        submit_no_project: This file is in no project folder, so there is no code to send with it.
+        submit_not_sent: This job script is not among the files git keeps, so the copy would not send it.
+        submit_not_slurm: This is not a .slurm file on disk.
+        submit_outside: This script is outside the folders oculus serves.
+        submit_outside_code: This job script is not inside the code folder of its project.
+        submit_running: Copying the code and submitting the job...
+        submit_submit_failed: 'sbatch failed: {0}'
+        submit_unconfirmed: The question was not answered, so nothing was run.
+        submit_unread: 'Not read: {0}.'
+        submit_warning: 'This job script never names /local/$SLURM_JOB_ID, the per-job scratch folder of the cluster.'
         toggle_word_wrap: 'View: Toggle Word Wrap'
         truncated: This file is longer than the editor reads; its first 2 MB are shown and it saves nothing.
         untitled_name: File name

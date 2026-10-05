@@ -1,6 +1,7 @@
-// Layer 2, server. The git forms the file browser and the Status view read a folder by: which
-// entries of a listed folder the repository ignores, the paths it tracks under a folder, and the
-// commits that touched one file. Every command goes through run.ts.
+// Layer 2, server. The git forms the file browser, the Status view and Submit read a folder by:
+// which entries of a listed folder the repository ignores, the paths it tracks under a folder, the
+// paths it keeps under a folder (tracked, or untracked and not ignored), and the commits that
+// touched one file. Every command goes through run.ts.
 
 import type { GitFilePage } from '../../../data/model/index.ts';
 import { FILE_LOG_FORMAT, parseFileLog } from './parse.ts';
@@ -49,6 +50,23 @@ export function ignoredIn(
  */
 export function trackedFiles(root: string, timeout: number = TIMEOUT_MS): Read<string[]> {
     const done = run(root, ['ls-files', '-z'], milliseconds(timeout));
+    if (!done.ok) return refused(done.text);
+    return { ok: true, value: done.text.split('\0').filter((path) => path !== '') };
+}
+
+/**
+ * The paths the repository keeps under the folder, relative to it: tracked, and untracked but not
+ * ignored (`ls-files -z --cached --others --exclude-standard`), which is the set of files a code
+ * folder consists of for Submit. A tracked path deleted on disk is listed too. `-z` writes each
+ * path unquoted. A folder in no repository, a git that is missing and a run that timed out answer
+ * why instead.
+ */
+export function keptFiles(root: string, timeout: number = TIMEOUT_MS): Read<string[]> {
+    const done = run(
+        root,
+        ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],
+        milliseconds(timeout)
+    );
     if (!done.ok) return refused(done.text);
     return { ok: true, value: done.text.split('\0').filter((path) => path !== '') };
 }

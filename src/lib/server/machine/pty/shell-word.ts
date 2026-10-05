@@ -1,6 +1,7 @@
 // Layer 2, server. The one quoting of a value for a shell command line: every value a server
-// builds into a line that tmux hands to `sh -c` goes through shellWord, so no character of it is
-// read as shell syntax.
+// builds into a line that tmux hands to `sh -c`, and into the remote line that ssh hands to the
+// cluster's shell (`cd <folder> && sbatch --parsable <script>`), goes through shellWord, so no
+// character of it is read as shell syntax.
 
 /**
  * One value as one shell word: single-quoted always, with each single quote inside it closed,

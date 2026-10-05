@@ -18,6 +18,7 @@ glyphs:
   open_program: "[o]"
   open_preview: "[v]"
   preview_side: "[>]"
+  submit_job: "[>]"
   copy: "[c]"
   goto: ">>"
   replace: "[r]"

@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { isMap, byKey, str } from '../helpers/guards.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import {
+    clusterFolder,
     itemsShape,
     listOrOneShape,
     mapShape,
@@ -359,6 +360,30 @@ function checkReferences(
             });
         }
     }
+}
+
+/**
+ * `paths.cluster` names the folder on the cluster that holds the project's code, which Submit
+ * copies to and runs from. A value the folder rule refuses (`clusterFolder`) is a finding, and
+ * Submit refuses the project for it, so a mistyped folder is reported where it is written.
+ */
+function checkClusterFolder(
+    manifest: RawManifest,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
+    const paths = readAs(mapShape, manifest.paths);
+    if (paths === null || !Object.hasOwn(paths, 'cluster')) return;
+    if (clusterFolder(paths.cluster) !== null) return;
+    findings.push({
+        file: manifest.file,
+        key: 'paths.cluster',
+        message: findingText(
+            catalog,
+            'findings.validate.bad_cluster',
+            JSON.stringify(paths.cluster)
+        )
+    });
 }
 
 /** A project's `related:` names other projects; naming itself draws a card that links to itself. */
@@ -814,6 +839,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
         checkShapes(manifest, catalog, findings);
         checkReferences(manifest, ids, catalog, findings);
         checkSelfRelated(manifest, catalog, findings);
+        checkClusterFolder(manifest, catalog, findings);
         checkCollaborators(manifest, ids.people, catalog, findings);
         checkWaitingOn(manifest, ids.people, ids.projects, catalog, findings);
         checkChips(manifest, vocab.chips, catalog, findings);

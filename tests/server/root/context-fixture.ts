@@ -10,6 +10,7 @@ import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/
 import { HookStore, sessionRecord } from '../../../src/lib/server/sessions/stores/hooks.ts';
 import { ignoredCache } from '../../../src/lib/server/files/fs.ts';
 import { pickerState } from '../../../src/lib/server/files/fs/picker.ts';
+import { submitState } from '../../../src/lib/server/machine/hpc/submit.ts';
 import { createRunningGit } from '../../../src/lib/server/core/git/running.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { LiteratureDesk } from '../../../src/lib/server/content/literature/desk.ts';
@@ -97,6 +98,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         ignoredCache: overrides.ignoredCache ?? ignoredCache(),
         folderPicker: overrides.folderPicker ?? pickerState(),
         hpcLogPaths: new Map(),
+        hpcSubmits: submitState(),
         calendarConnects: new ConnectStates(),
         calendarDir: overrides.calendarDir ?? '/fixture/calendar',
         mailConnects: new ConnectStates(),

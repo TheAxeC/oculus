@@ -4,8 +4,8 @@
 // in flight. The table, the tmux panes, `lsof` and the project folders are reached through
 // ReadDeps, so a test passes fixed tables and nothing reads or signals the machine's processes.
 
-import { sep } from 'node:path';
 import type { ProcessRow } from '../../../data/model/index.ts';
+import { deepestHolding } from '../../../data/helpers/files/paths.ts';
 import { realPath } from '../../core/paths.ts';
 import type { Pane } from '../pty/sessions.ts';
 import { agentOf, matches } from './match.ts';
@@ -45,19 +45,6 @@ function tree(start: number, children: Map<number, Entry[]>, seen: Set<number>):
 /** The real path of each project folder that exists. */
 function realProjects(folders: string[]): string[] {
     return folders.flatMap((folder) => realPath(folder, true) ?? []);
-}
-
-/** The deepest project that holds `folder`, matched by whole path segments over real paths. */
-function projectOf(folder: string, projects: string[]): string | null {
-    const real = realPath(folder, true);
-    if (real === null) return null;
-    let deepest: string | null = null;
-    for (const project of projects) {
-        const holds =
-            real === project || real.startsWith(project.endsWith(sep) ? project : project + sep);
-        if (holds && (deepest === null || project.length > deepest.length)) deepest = project;
-    }
-    return deepest;
 }
 
 /** Read the machine once for the given program names. */
@@ -129,8 +116,9 @@ export async function readProcesses(
         ...own.map(({ entry }) => entry.pid),
         ...agents.map((entry) => entry.pid)
     ])) {
-        const project = projectOf(folderOf(pid), projects);
-        if (project !== null) inFlight.add(project);
+        const real = realPath(folderOf(pid), true);
+        const project = real === null ? null : deepestHolding(projects, (one) => one, real);
+        if (project !== null) inFlight.add(project.item);
     }
     return { rows, agents: agents.length, projects: inFlight.size };
 }

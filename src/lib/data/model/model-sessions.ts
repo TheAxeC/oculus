@@ -730,6 +730,23 @@ export type HpcPayload = {
     host: string;
 };
 
+/** What Submit will do with a job script, computed by the server and confirmed by the reader. */
+export type SubmitPlan = {
+    root: string;
+    path: string;
+    project: string;
+    host: string;
+    source: string; // the absolute local code folder, ending in '/'
+    target: string; // '<host>:<cluster folder>/'
+    files: number;
+    bytes: number;
+    digest: string; // sha256 of the sorted paths joined by NUL, hex
+    rsync: string[]; // the rsync arguments as run, without the program name
+    remote: string; // the one remote command, `cd <folder> && sbatch --parsable <script>`
+    /** Whether the script or a file it sources names the scratch folder, and what was unread. */
+    scratch: { named: boolean; unread: string[] };
+};
+
 // ------------------------------------------------------------------ usage
 export type UsageTool = 'claude' | 'codex';
 export type UsageAccountConfig = { tool: UsageTool; dir: string; label: string };

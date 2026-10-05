@@ -2,8 +2,7 @@
     // Layer 3, partial of Source.svelte. What the source tab hands up to the right end of the
     // pane's breadcrumb bar through ui/tabs/tab-actions.svelte.ts: Save and Revert File before the
     // star and Open in Program (shared/links/FileBarActions.svelte), and Open Preview, Open Preview
-    // to the Side and Toggle Blame after them. Each is drawn only where
-    // it applies:
+    // to the Side, Submit Job and Toggle Blame after them. Each is drawn only where it applies:
     //
     //   Save                       a tab whose text may be written; disabled while nothing is
     //                              unsaved
@@ -11,6 +10,8 @@
     //   Open Preview               a Markdown file shown as source, the file's preview tab in
     //                              this pane
     //   Open Preview to the Side   the same preview tab, in a new pane to the right
+    //   Submit Job                 a .slurm file on disk under a served root; disabled while a
+    //                              Submit of the tab is planning or running
     //   Toggle Blame               a file in a repository, including its version at HEAD and in
     //                              the index
     //
@@ -37,11 +38,29 @@
         previewable: boolean;
         /** Whether the file is in a repository and its text is loaded. */
         blameable: boolean;
+        /** Whether the file is a .slurm job script on disk under a served root. */
+        submittable: boolean;
+        /** Whether a Submit of the tab is planning or running. */
+        submitting: boolean;
         /** Save, which the tab performs since an untitled text asks for a name first. */
         onsave: () => void;
+        /** Submit Job, which the tab performs since it saves first and asks the server. */
+        onsubmit: () => void;
     };
 
-    let { id, root, path, onDisk, editing, previewable, blameable, onsave }: Props = $props();
+    let {
+        id,
+        root,
+        path,
+        onDisk,
+        editing,
+        previewable,
+        blameable,
+        submittable,
+        submitting,
+        onsave,
+        onsubmit
+    }: Props = $props();
 
     const {
         layout: { keepPreview, openBeside, openView },
@@ -94,6 +113,15 @@
             label={t('source.preview_side')}
             glyph="preview_side"
             onclick={previewSide}
+        />
+    {/if}
+    {#if submittable}
+        <ToolButton
+            bare
+            label={t('source.submit')}
+            glyph="submit_job"
+            disabled={submitting}
+            onclick={onsubmit}
         />
     {/if}
     {#if blameable}

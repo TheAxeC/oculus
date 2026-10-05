@@ -1,16 +1,15 @@
-In flight (4 of 5 slots):
-- A3 (scheduled Update runs): repair round 1.
-- D44 (Submit on a .slurm file): landing.
+In flight (3 of 5 slots):
+- A3 (scheduled Update runs): repair round 2.
 - O30 (the native window in Electron): building.
 - E4 (the apps): building.
 
 Queued, in order (23 steps):
-- D23 (language servers): once D44 and A3 have landed.
-- X3e (Files lists reordered by drag): once D44 and A3 have landed.
-- D45 (LaTeX as VS Code's LaTeX Workshop): once D44 has landed.
+- D23 (language servers): once A3 has landed.
+- X3e (Files lists reordered by drag): once A3 has landed.
+- D45 (LaTeX as VS Code's LaTeX Workshop): to prepare.
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.
-- D11 (the debug client for rite): once D44, D45 and D23 have landed.
+- D11 (the debug client for rite): once D45 and D23 have landed.
 - D15 (PDF reading): once D45 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D41 (links in Markdown checked): once M7 has landed.
@@ -32,6 +31,7 @@ Queued, in order (23 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D44 (Submit on a .slurm file), 2026-10-05, 2e139fa1f.
 - D20 (an agent from a task or a worktree), 2026-10-05, 0aea28449.
 - D38 (the Literature search view), 2026-10-05, b07d24766.
 - X3f (a file tab's actions, file icons and the double click), 2026-10-05, ee0407a5a.

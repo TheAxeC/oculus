@@ -17,6 +17,7 @@ icons:
     open_program: app-window
     open_preview: file-search
     preview_side: panel-right-open
+    submit_job: play
     copy: copy
     goto: corner-down-right
     replace: replace

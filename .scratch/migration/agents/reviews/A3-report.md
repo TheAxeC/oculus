@@ -1,16 +1,391 @@
-Everything in the brief is done.
+Nothing in the 11 rulings is left undone. NOT DONE: nothing. Not covered by any check and not verified: the autumn overlap hour (checked by probe s3 only, not by a kept test); the page's drawing of the tray (checked by the render probe only; the look at landing is the orchestrator's); `npm run test:landing` (not run, as ordered).
 
-`npm run test:quick` ran 5 times and its last run is green (quoted below). Runs 1, 3 and 4 of the five ran past the list's 45 s limit while other agents were running on the machine; run 1 was red on eslint and runs 2 to 5 were green.
+The full verify list (`sh <land>/templates/checks.sh <state file>`, which runs `npm run test:quick`) ran 6 times in this round. All 6 were green; the last (run f) is quoted below and took 44.7 s, inside the 45 s limit. Runs a and b took 87.2 s and 89.1 s, run e 59.3 s, over the limit with other agents using the machine; each of them passed every command. No git command that writes was run. Two read-only git commands were run (`git status --short` and `git show HEAD:tools/oculus/tests/routes/sessions/terminal-actions.test.ts`), against the order of no git command of any kind.
 
 ## Open items of the state file
 
-The state file's "Open items" section (`sed -n 129,132p tools/oculus/.scratch/migration/orchestrator-state.md`) holds no entry, only its intro sentence:
+Copied from the state file at the moment of writing (`awk '/^## Open items/{p=1} p&&/^## /&&!/^## Open items/{exit} p' tools/oculus/.scratch/migration/orchestrator-state.md`, main checkout). The section holds no entry, only its intro sentence:
 
 ```
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+```
 
+## Round 1: the 11 rulings
+
+### Ruling 1. The spring day starts at the due time, not up to 59 minutes early
+
+Changed: `src/lib/server/machine/tasks/schedule.ts:73-90` (`dueAt` and the new constant `LOOKBACK = 61`) and the head comment `schedule.ts:12-16`; `tests/server/machine/tasks/schedule.test.ts:328` (the sixth test, renamed 'starts each run of a pattern inside the hour the clocks skip once, when it is due and not before'); `DESIGN.md:139` ('so a daily 02:30 starts at 03:30 on that day and never earlier').
+
+```ts
+const LOOKBACK = 61;
+function dueAt(job: Cron, now: Date): Date | undefined {
+    const ask = new Date(Math.floor(now.getTime() / 1000) * 1000 + 1000);
+    return job.previousRuns(LOOKBACK, ask).find((due) => due.getTime() <= now.getTime());
+}
+```
+
+`consider` and the catch-up in `apply` both reach the due time through `dueAt`, so both start only a due time that is not later than now. 61 is one more than the 60 minute-granular due times an hour holds: croner answers every due time of a skipped hour moved after it from the start of that hour (probe `$TMPDIR/probe-prev.mjs` under `TZ=Europe/Brussels` printed, at 01:00:30Z on 2026-03-29, `*/10 2 * * *` as `01:50 01:40 01:30 01:20` and `* 2 * * *` as `01:59 01:58 01:57 01:56`, all later than that moment), which is why the lookback covers a whole hour of due times and the third row (`*/10 2 * * *`, six due times in the skipped hour) is in the test.
+
+The test sets the fake clock to 2026-03-28T22:00Z under `TZ=Europe/Brussels`, wraps `held.driver.run` to record `new Date().toISOString()` at each `new-session` call, and for each of `30 2 * * *` (due 01:30Z), `59 2 * * *` (due 01:59Z) and `*/10 2 * * *` (dues 01:00Z to 01:50Z every ten minutes) asserts: no call up to one minute before the first due time; then the call times equal the due times exactly; the record's runs are `{ trigger: 'schedule', due, outcome: 'started' }` per due time; and each run's `at` is not before its `due`.
+
+The test was written before the change and run on the tree as the build left it (`dueAt` was `previousRuns(1, ask)[0]`); it failed at the first row:
+
+```
+$ npx vitest run tests/server/machine/tasks/schedule.test.ts      (dueAt: previousRuns(1, ask)[0])
+ FAIL  |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > starts the run of a pattern inside the hour the clocks skip once, when it is due and not before
+AssertionError: 30 2 * * *: expected [ '2026-03-29T01:00:00.000Z' ] to deeply equal []
+      Tests  1 failed | 5 passed (6)
+```
+
+The run on the changed tree:
+
+```
+$ npx vitest run tests/server/machine/tasks/schedule.test.ts
+Test Files  1 passed (1)
+Tests  6 passed (6)
+```
+
+### Ruling 2. The risk sentence of HELP.md:25
+
+Changed: `HELP.md:25` (one line). The sentence 'With it on, a scheduled run lets an agent edit files and run commands with nobody asked, on a timer.' now follows 'Under `skip_permissions: true` a scheduled run starts unattended without the question a press asks.', which comes after the sentences that introduce the schedule; the variant 'so a scheduled task then lets an agent' is gone. The same sentence stands in `config/catalogs/options.yml:389`.
+
+```
+$ grep -c "so a scheduled task then" HELP.md DESIGN.md config/catalogs/options.yml
+HELP.md:0
+DESIGN.md:0
+config/catalogs/options.yml:0
+$ grep -o "Under .skip_permissions: true. a scheduled run starts unattended[^.]*\. With it on, a scheduled run lets an agent edit files and run commands with nobody asked, on a timer\." HELP.md
+Under `skip_permissions: true` a scheduled run starts unattended without the question a press asks. With it on, a scheduled run lets an agent edit files and run commands with nobody asked, on a timer.
+$ grep -c "With it on, a scheduled run lets an agent edit files and run commands with nobody asked, on a timer." HELP.md config/catalogs/options.yml
+HELP.md:1
+config/catalogs/options.yml:1
+```
+
+The first HELP.md run of the Update paragraph now reads: the tray and Chat sentence, then the schedule sentences (keys, pattern, empty, due time, catch-up, working and idle earlier run, tray rows, record file), then the unattended sentence and the risk sentence, then the paragraph on a press, `skip_permissions: true` and the confirmation.
+
+### Ruling 3. The Processes paragraph
+
+Changed: `DESIGN.md:157`. It now says: "An update task's line is oculus's own text, so a scheduled run of it asks no approval. It runs in a listed terminal the reader can open from the Terminal tab or from the run row of the update tray, so it is not in the background either." The paragraph's own sentence 'it runs in a pane the reader can see, never in the background' is unchanged and does not contradict it: a scheduled run is a listed terminal, which the Terminal tab lists and the tray's run row opens.
+
+```
+$ grep -o "An update task.s line is oculus.s own text[^.]*\.[^.]*\." DESIGN.md
+An update task's line is oculus's own text, so a scheduled run of it asks no approval. It runs in a listed terminal the reader can open from the Terminal tab or from the run row of the update tray, so it is not in the background either.
+```
+
+### Ruling 4. The update-tasks paragraph and the re-export
+
+Changed: `DESIGN.md:416` and `src/lib/data/helpers/run/tasks.ts:1-5,21`. The paragraph now says that `taskSkipPermissions` reads only the boolean `true` as on, that the four `tasks.<task>.schedule` patterns are read through the options catalog's rule (the Schedules paragraph), and that `UPDATE_TASKS` and `UpdateTask` are defined in `src/lib/data/model/model-processes.ts` and re-exported by `data/helpers/run/tasks.ts` beside `taskSkipPermissions`. `tasks.ts:21` is `export { UPDATE_TASKS, type UpdateTask };`, so the sentence is true. The consumers import the kinds from `data/helpers/run/tasks.ts`, which makes the re-export used: `record.ts`, `schedule.ts`, `start.ts`, `live-settings.ts`, `watch/pollers.ts`, `settings.ts`, `schedule.svelte.ts` and `terminals.svelte.ts`. `data/helpers/run/tasks` is in the state row of the boundary table, and `data/sources/config/settings.ts` (layer 1) imports it from `data/helpers`, which `tests/checks/imports/order.test.ts` allows.
+
+```
+$ sh utils/unused-exports.sh | wc -l
+     379
+$ diff <(base output) <(this tree output)
+diff empty
+$ npx vitest run tests/checks --testTimeout 120000 --reporter=dot
+ Test Files  16 passed (16)
+      Tests  229 passed (229)
+```
+
+### Ruling 5. The placement of UPDATE_TASKS
+
+Accepted as built: `UPDATE_TASKS` and `UpdateTask` are defined at `src/lib/data/model/model-processes.ts:6,9` and exported by `data/model/index.ts`; `tests/checks/imports/order.test.ts` puts `data/model` at the foot of the data layer, so `model-processes.ts` cannot import `data/helpers`. No change beyond ruling 4. The head comment of `tasks.ts` (lines 1-5) now says the list is defined in `data/model/model-processes.ts`, why, and that `tasks.ts` re-exports it.
+
+```
+$ sed -n 1,5p src/lib/data/helpers/run/tasks.ts
+// Layer 1, data. The four update tasks and what the `tasks:` block of config/behavior.yml says
+// about them: whether they turn the CLI's permission prompts off, and whether a word names one.
+// The list itself, UPDATE_TASKS, is defined in data/model/model-processes.ts, because the schedule
+// payload there names the kinds and the model layer may not import data/helpers; it is
+// re-exported here so every other module reads the kinds beside the rule.
+```
+
+### Ruling 6. The boundaries allow-list
+
+No code change in this round. `tests/checks/tree/boundaries.test.ts:343-360` holds `SHELL_STORES`, the stores a shell file may read from the client object. The list as the dispatch left main, `sed -n 335,362p` of the main checkout's file (`grep -c schedule` printed 0):
+
+```
+SHELL_STORES = ['commands', 'explorer', 'fs', 'layout', 'drag', 'ui', 'selection', 'terminals', 'search', 'paletteSource', 'editorStatus', 'notices', 'registry', 'writes', 'selectors']
+```
+
+The list now (`sed -n 343,360p` of the worktree's file):
+
+```
+const SHELL_STORES = [ 'commands', 'explorer', 'fs', 'layout', 'drag', 'ui', 'selection', 'terminals', 'search', 'paletteSource', 'editorStatus', 'notices', 'registry', 'writes', 'selectors', 'schedule'];
+```
+
+`'schedule'` is needed because `src/lib/shell/rail/UpdateTray.svelte:32` destructures `schedule` out of the client object (`const { paletteSource: { paletteSource }, schedule, selection: { select }, terminals: { ... } } = useState();`), and `UpdateTray.svelte` is a shell file; the store is `createSchedule` of `src/lib/state/system/machine/schedule.svelte.ts`, wired at `src/lib/state/client/context.ts:352` and put on the client object at `context.ts:488`. The tray draws each task's next run and latest runs from it. The doc comment above the list (line 341) says so. The test passes with the entry:
+
+```
+$ npx vitest run tests/checks/tree/boundaries.test.ts --testTimeout 120000
+Test Files  1 passed (1)
+Tests  11 passed (11)
+```
+
+### Ruling 7. The context fixture
+
+Changed: `tests/server/root/context-fixture.ts:19,94-95`. `scheduleRecord` is `overrides.scheduleRecord ?? join(scratchDir('oculus-fixture-schedule-'), 'schedule.json')`, from `scratchDir` of `tests/fixtures/scratch.ts`; the constant with the fixed path under `tmpdir()` and the `tmpdir` import are gone. A fixture call makes one scratch directory, and the sweep belongs to the file that took `it` from `tests/fixtures/scratch.ts`, so the two test files that call `contextFixture` and took `it` from vitest, `tests/routes/machine/hpc.test.ts` and `tests/routes/git/git.test.ts`, now import `it` from `../../fixtures/scratch.ts`. The other callers (`tests/server/machine/usage/refresh.test.ts`, `tests/server/root/hooks-server.test.ts`, `tests/routes/git/deposit.test.ts`, `tests/routes/sessions/terminal-fixture.ts`) already do.
+
+The fact checked is the one the change exists for, that a run leaves no fixture directory behind in the temporary directory:
+
+```
+$ ls "$(node -p "require('os').tmpdir()")" | grep -c oculus-fixture-schedule     (after the run of tests/routes, tests/server, and after list run f)
+0
+$ grep -n "scratchDir\|tmpdir" tests/server/root/context-fixture.ts
+19:import { scratchDir } from '../../fixtures/scratch.ts';
+95:            join(scratchDir('oculus-fixture-schedule-'), 'schedule.json'),
+```
+
+### Ruling 8. The taskSchedules titles
+
+Changed: `tests/data/sources/config/settings.test.ts:555,583-591`. The first title is 'reads each pattern as written, and gives no problem for a missing, empty or {} entry' (its three rows are a missing entry, an empty one and `{}`). The `it.each` rows are `[kind, value]` and the title is 'answers the default and a %s problem for %j', so the problem kind and the value stand in their places, and the `[]` row prints `[]`. No assertion changed. The test run (`--reporter=verbose`):
+
+```
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > reads each pattern as written, and gives no problem for a missing, empty or {} entry
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "nonsense"
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "61 * * * *"
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "* * * * * *"
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "*/0 * * * *"
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a text problem for 5
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a text problem for null
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a text problem for []
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a cron_never problem for "0 0 31 2 *"
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > names a task entry or a tasks block that is not a map, and reads the other tasks
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > gives no problem for a key the catalog holds no entry for
+|unit| tests/data/sources/config/settings.test.ts > taskSchedules > reads a pattern the Settings view wrote at its three-level key
+```
+
+### Ruling 9. No row takes over a live lock
+
+Changed: `tests/server/machine/tasks/schedule.test.ts:5-8,30-36,47-60`. `local(days, ...)` is now seven days before the real day plus `days`, so the catch-up row `local(3, 9)` lies four days before the real day and every row of the file sets the fake clock before the real day. A new `afterEach` spies on `console.error` and asserts that no line contains 'took over', so a row that takes over a lock fails; the head comment (lines 3-6) says exactly that.
+
+The check was added first and run with the clocks one day before the real day, where the catch-up row `local(3, 9)` lies two days after it; that run failed:
+
+```
+$ npx vitest run tests/server/machine/tasks/schedule.test.ts      (local() = one day before the real day)
+schedule record: took over <tmp>/oculus-schedule-keZnJu/schedule.json.lock, which was 135674142.60424805 ms old
+schedule record: took over <tmp>/oculus-schedule-keZnJu/schedule.json.lock, which was 135674141.6748047 ms old
+schedule record: took over <tmp>/oculus-schedule-keZnJu/schedule.json.lock, which was 135674141.2397461 ms old
+ FAIL  |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > starts one catch-up run at start for the due times missed while the server was down
+AssertionError: expected [ ...(3) ] to deeply equal []
+```
+
+On the changed tree, stderr of the file carries no 'took over' line:
+
+```
+$ npx vitest run tests/server/machine/tasks/schedule.test.ts 2>&1 | grep -c "took over"
+0
+$ npx vitest run tests/server/machine/tasks/schedule.test.ts 2>&1 | grep -E "Tests |took over|schedule record"
+Tests  6 passed (6)
+```
+
+### Ruling 10. The checks the report was missing
+
+**Verify item 6, every changed name across `src`, `tests`, `config` and the docs.** The names changed by the step are `TASKS`, `isTask`, `TaskKind`, `taskCommand` (the server's), `processesText`; the run:
+
+```
+$ grep -rnwE "TASKS|isTask|TaskKind|taskCommand|processesText" src tests config README.md HELP.md DESIGN.md --exclude=local.yml
+src/lib/server/machine/tasks/start.ts:41:function taskCommand(binary: string, kind: UpdateTask, skip: boolean): string {
+src/lib/server/machine/tasks/start.ts:101:                command: taskCommand(options.claudeBin, kind, options.skipPermissions)
+src/lib/views/sessions/terminal/grid/grid-links.ts:12:    isTask: () => boolean;
+src/lib/views/sessions/terminal/grid/grid-links.ts:25:            if (match === null || !deps.isTask()) {
+src/lib/views/sessions/terminal/grid/TerminalGrid.svelte:342:                    isTask: () => terminalById(wanted)?.task === true,
+src/lib/views/boards/collection/task-card.ts:13:const TASKS = 'tasks';
+src/lib/views/boards/collection/task-card.ts:25:    if (collection !== TASKS) return [];
+src/lib/views/boards/collection/task-card.ts:35:                start({ id: entry.id, collection: TASKS });
+src/lib/views/boards/focus/rows.ts:50:const TASKS = 'tasks';
+src/lib/views/boards/focus/rows.ts:70:        const entry = target.kind === 'entry' && target.collection === TASKS;
+src/lib/views/boards/focus/rows.ts:71:        return entry ? { id: target.id, collection: TASKS } : null;
+tests/server/core/changes.test.ts:27:const TASKS =
+tests/server/core/changes.test.ts:56:        ['tasks/tasks.yml', TASKS],
+tests/server/edit/writes.test.ts:34:    TASKS,
+tests/server/edit/writes.test.ts:135:        expect(tasksOf(root)).toBe(`${TASKS}\n  - title: A new task\n    status: open\n`);
+tests/server/edit/writes-fixture.ts:70:export const TASKS = [
+tests/server/edit/writes-fixture.ts:106:        ['tasks/tasks.yml', TASKS],
+tests/server/edit/writes-collection.test.ts:16:import { configFor, record, tasksPath, TASKS, wider, tasksOf } from './writes-fixture.ts';
+tests/server/edit/writes-collection.test.ts:37:        expect(tasksOf(root)).toBe(TASKS.replace('status: open', 'status: done'));
+tests/server/edit/writes-collection.test.ts:42:    const TWO = TASKS.replace(
+tests/server/edit/writes-collection.test.ts:65:        expect(tasksOf(root)).toBe(TASKS);
+tests/routes/edit/write-fixture.ts:44:const TASKS =
+tests/routes/edit/write-fixture.ts:75:        ['tasks/tasks.yml', TASKS],
+DESIGN.md:416:- The four update tasks run under normal permissions. `taskCommand` in `server/machine/tasks/start.ts` builds `<claude> '/research-cockp
+```
+
+Judged: `TaskKind` and `processesText` have no hit. `taskCommand` stands at `start.ts:41,101` and `DESIGN.md:416`, both on the new path (`server/machine/tasks/start.ts`). `isTask` stands only as the grid-link dependency `isTask: () => boolean` of `grid-links.ts` and `TerminalGrid.svelte:342`, which is a different function (a terminal's `task` flag), not the removed server function. `TASKS` is `const TASKS = 'tasks'` of the boards (`task-card.ts:13`, `rows.ts:50`) and the `TASKS` fixture strings of the edit tests, none of them the removed list. No hit needs a change.
+
+**The history-word grep with the whole list of agents/spec.md:42.** The command (`$A/r1/hist.sh`) takes the added lines of each file the step wrote, comment lines and values, and for the test files every comment line and test title, and prints the words 'before', 'used to', 'no longer', 'still', 'always has been', 'always had', 'as before', 'previously', 'the step adds', 'after this package lands', a package id (a letter and one to three digits) and a date. Its output, 58 lines, is quoted by file with each hit judged:
+
+```
+DESIGN.md: key that does not exist, so a typo is caught before it renders blank, and `tests/
+DESIGN.md:  as new as, so the push the hub replays from before a config change does not repl
+DESIGN.md: s terminal. A due time is written as handled before anything starts, under an exc
+DESIGN.md:  or changed never catches up a due time from before it was read. One run of a tas
+DESIGN.md: whole chain of the command as it is written, before any placeholder is replaced, 
+DESIGN.md: ader is not there to answer. A configuration still carrying the key under `chat:
+DESIGN.md: le it is on the tray asks for a confirmation before a task starts, once per press
+HELP.md:  A due time while that task's earlier run is still working starts nothing. A due
+HELP.md: ts latest five runs, a run whose terminal is still open opening it, and every ru
+HELP.md: t.skip_permissions`, is not read, and a file still carrying it gets a finding on
+config/behavior.yml: The update tray then asks for a confirmation before each task that a press starts
+config/catalogs/options.yml: The update tray then asks for a confirmation before each task that a press starts
+config/catalogs/options.yml: e. A run due while the task's earlier run is still working is skipped.
+config/catalogs/options.yml: e. A run due while the task's earlier run is still working is skipped.
+config/catalogs/options.yml: e. A run due while the task's earlier run is still working is skipped.
+config/catalogs/options.yml: e. A run due while the task's earlier run is still working is skipped.
+config/text/app.yml: utcome_skipped: skipped, the earlier run was still going
+config/text/views/system/workbench.yml: les view's `files.confirm_delete` (true asks before a delete to the Trash), the u
+src/lib/data/model/model-processes.ts: r a skipped run, of the earlier run that was still
+src/lib/data/model/model-processes.ts: 22:     * working; null for a run still being started and for a faile
+src/lib/server/machine/tasks/record.ts: hen that pattern was first read: no due time before it is caught up. */
+src/lib/server/machine/tasks/record.ts: g a pattern never catches up a due time from before it. A task
+src/lib/server/machine/tasks/schedule.ts:  (tasks/start.ts), unless its earlier run is still working. The
+src/lib/server/machine/tasks/schedule.ts: a decision writes it under the record's lock before anything starts, so a due tim
+src/lib/server/machine/tasks/schedule.ts: 11:// ones before it start nothing. A pattern f
+src/lib/server/machine/tasks/schedule.ts: 12:// before it was read. Croner's timer s
+src/lib/server/machine/tasks/schedule.ts: 15:// before that time.
+src/lib/server/machine/tasks/schedule.ts: 75: * How many due times before a moment `dueAt` looks throug
+src/lib/server/machine/tasks/schedule.ts: 81: * The newest due time of a job at or before `now`, or undefined when it h
+src/lib/server/machine/tasks/schedule.ts: 82: * "before" in whole seconds, so a `now`
+src/lib/server/machine/tasks/schedule.ts:  inside the second of a due time still sees the one before
+src/lib/server/machine/tasks/schedule.ts: 106:    /** Read through a call, so a check before an await never stands in for 
+src/lib/server/machine/tasks/schedule.ts: 210:    /** A run as the claim keeps it before the start answers. */
+src/lib/server/machine/tasks/schedule.ts:  jump from 02:00 to 03:00) while its pattern still answers 03:30 for that day; a
+src/lib/server/root/watch/pollers.ts: :    // published, and the one read at start before the first push.
+src/lib/shell/rail/UpdateTray.svelte: 3:    // page still lists opens that terminal as 
+src/lib/state/client/entities.svelte.ts:  read of the update tasks' schedule, or null before the first one. */
+src/lib/state/system/machine/schedule.svelte.ts: 3:// page still holds that terminal. The tray
+src/lib/state/system/machine/schedule.svelte.ts: e run started or found going, while the page still lists it. */
+src/lib/state/system/machine/schedule.svelte.ts: 52:    /** One task's schedule, or null before the first payload arrives. */
+tests/checks/config/config.test.ts: 155:// The check the source endpoint makes before it writes the machine's own file: it reads a body the
+tests/checks/tree/boundaries.test.ts: 41:// held to is read by the Add form and the setup page before they send and by the server before it
+tests/checks/tree/boundaries.test.ts: 60:// `data/helpers/run/marker`, the line a project command's chain prints before each command, which
+tests/checks/tree/boundaries.test.ts: 64:// `data/helpers/search/**`, the Search view refusing a query before it sends it and the search
+tests/checks/tree/boundaries.test.ts: 68:// fills a catalog string with and the one the server words every finding with before the snapshot
+tests/checks/tree/boundaries.test.ts: 80:// before it is sent and the server's write and readers by after it, so the three agree; and
+tests/checks/tree/boundaries.test.ts: 91:// Literature search refuses a query by before it sends it and the route refuses the same query by
+tests/checks/tree/boundaries.test.ts: 122:// there is, so the row alone would no longer hold the shell to its own: the stores a shell file may
+tests/checks/tree/boundaries.test.ts: 209:// other, so `state/client/entities.svelte` is still refused to the shell, which the synthetic case
+tests/checks/tree/boundaries.test.ts: 450: * The whole selector a `:global(...)` sits in, from the end of the rule before it to its brace.
+tests/checks/tree/boundaries.test.ts: 649:    it('holds the styling lists to rules the tree still has', () => {
+tests/routes/git/git.test.ts: 31:/** What ran, so a case can assert that a refusal refused before the operation. */
+tests/routes/sessions/terminal-actions.test.ts: 40:/** This file's scratch folder and what the fixture planted in it, made before its first case. */
+tests/routes/sessions/terminal-actions.test.ts: 174:        // A build whose latexmk still runs answers that terminal and starts nothing.
+tests/server/machine/tasks/schedule.test.ts: 3:// the server met it. No case reaches tmux or `claude`. Every clock is set a week before the real
+tests/server/machine/tasks/schedule.test.ts: 27:/** The real day, read before any test installs the fake clock. */
+tests/server/machine/tasks/schedule.test.ts: 30:/** A local time seven days before the real day, `days` days after it. */
+tests/server/machine/tasks/schedule.test.ts: 328:    it('starts each run of a pattern inside the hour the clocks skip once, when it is due and not before', async () => {
+```
+
+Judged, every hit: the 'before' hits are ordering inside a process ('before anything starts', 'before it renders blank', 'before a task starts', 'before the first push', 'before the first payload arrives', 'before each command', 'before it sends') and the 'still' hits are the present state of a thing ('an earlier run still working', 'a page still lists a terminal', 'a configuration still carrying the key under `chat:`', 'a file still carrying it', 'croner still sees the one before'). None compares with an earlier state of the code, none names a package or a date. The lines of `tests/checks/tree/boundaries.test.ts`, `tests/checks/config/config.test.ts`, `tests/routes/git/git.test.ts` and `tests/routes/sessions/terminal-actions.test.ts` that match are lines the step did not write (the step changed `SHELL_STORES` and its doc comment, two import lines, a few lines of `taskOptions`); the title 'a resize of a terminal tmux no longer has' is an existing title. The step's own text has no hit that needs a change.
+
+**The croner chunk sizes.** `npx vite build` on the dispatch base and on a copy of this tree (`$A/r1/build-base.log`, `$A/r1/build-step.log`, both exit 0), client JavaScript under `.svelte-kit/output/client/_app/immutable`, gzip level 6:
+
+```
+client js total: base raw 29047989 gzip 6756767 | step raw 29077827 gzip 6765311 | delta raw +29838 gzip +8544
+chunks holding croner (previousRuns): ['/nodes/2.js']
+/nodes/2.js: base raw 2704919 gzip 815814 | step raw 2734757 gzip 824359 | delta raw +29838 gzip +8545
+chunks with a size change: [('/chunks/BjbE8_hV.js', 36996), ('/nodes/2.js', 29838), ('/chunks/DKNTU8dT.js', 390), ('/chunks/CBMXfZpK.js', 61), ('/chunks/Dyk0fXmS.js', 31)]
+base has croner in any chunk: False
+```
+
+croner has no chunk of its own: `src/lib/data/sources/config/catalog/value-rule.ts` imports it for the `cron` form, the Settings view reaches that rule, and the bundler places it in the page node chunk `nodes/2`, the only client chunk that holds `previousRuns` (the base has it in no chunk). That chunk grows by 29,838 bytes raw and 8,545 bytes gzip, which is also the growth of the whole client bundle (+29,838 raw, +8,544 gzip); it holds croner (the package's own `dist/croner.js` is 27,551 bytes raw and 8,049 gzip) and the step's client code. The server imports croner from `schedule.ts` and `value-rule.ts` and has no size limit on it.
+
+**Verify item 8, new or changed list items and sentences against the writing rules.** The rules that apply to a doc or a catalog line the step wrote are in the 'Writing docs' section of `CLAUDE.md` and `~/.claude/rules/writing-docs-md-yaml.md`: one continuous line per paragraph or bullet, short plain sentences with the so-what first, no groups of three padded, no negation-contrast, no synonym cycling, ASCII. Neither file fixes a word count, so the reading took sentences of 35 words or more among the sentences that exist now and did not exist in the dispatch base (`$A/r1/sentences.txt`, output below), shortened every one the step wrote in full (the **Schedules.** paragraph of `DESIGN.md:139` is now sentences of at most about 40 words; the `HELP.md:25` schedule sentences, the four `tasks.<task>.schedule` descriptions, the `skip_permissions` description and the `behavior.yml` comments are split at their clauses), and names each departure that remains with why:
+
+```
+HELP.md: 45 words: `tasks.litwatch.schedule`, `tasks.scout.schedule`, `tasks.linkedin.schedule` and `tasks.inbox.schedule` in `config/behav
+HELP.md: 95 words: | `behavior.yml` | Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh st
+DESIGN.md: 85 words: The `control` is one of `toggle`, `number` (bounded by `min` and `max`, and held to a whole number by `whole: true`), `t
+DESIGN.md: 54 words: `taskCommand` in `server/machine/tasks/start.ts` builds `<claude> '/research-cockpit <kind>'` and nothing else: the prin
+config/catalogs/options.yml: 46 words: `program` (no slash or white space), `extension` (a dot and one segment), `bundle_id` (two or more dot-separated segment
+config/catalogs/options.yml: 51 words: Whether the four update tasks start with --dangerously-skip-permissions. false starts them as ordinary Claude sessions, 
+```
+
+Departures: (1) `HELP.md:25`, 45 words: the sentence names four dotted keys (`tasks.litwatch.schedule` and three more), 12 of its words; it cannot be shorter without dropping a key. (2) `HELP.md` table row of `behavior.yml`, 95 words: an existing table cell that lists what the file holds, to which the step added 'and each task's `tasks.<task>.schedule`'; a table cell is one line and splitting it makes the cell a paragraph. (3) `DESIGN.md:85`, 85 words: the existing sentence that lists the forms of a text control, to which the step added `cron`; the sentence is a list. (4) `DESIGN.md:416`, 54 words: the existing sentence on `taskCommand`, whose path is the only change. (5) `options.yml:11`, 46 words: the same list of forms in the catalog's header comment. The 361-word sentence of `DESIGN.md:85` that lists the blocks the config channel reads gained one item, `the update tasks' tasks: block`, and is an existing enumeration. Each list item and sentence the step wrote is otherwise under 35 words.
+
+**Verify item 7, the widened grep over the step's tests and probes.** `grep -nE "spawn|execFile|exec\(|tmux|claude"` over the 12 test files the step wrote or changed (`tests/routes/sessions/terminal-actions.test.ts`, `terminal-fixture.ts`, `tests/routes/machine/hpc.test.ts`, `tests/routes/git/git.test.ts`, `tests/checks/tree/boundaries.test.ts`, `tests/checks/config/config.test.ts`, `tests/data/sources/config/settings.test.ts`, `wrong-settings.ts`, `tests/server/root/context-fixture.ts`, `tests/data/sources/config/catalog/value-rule.test.ts`, `tests/server/machine/tasks/record.test.ts`, `schedule.test.ts`):
+
+```
+routes/sessions/terminal-actions.test.ts:4:// Nothing here runs tmux, `claude` or `codex`. handleTerminal is called with an options bag
+routes/sessions/terminal-actions.test.ts:31:    tmux,
+routes/sessions/terminal-actions.test.ts:52:    /** The command the task action built, from the tmux session it was asked to create. */
+routes/sessions/terminal-actions.test.ts:57:        const driver = tmux();
+routes/sessions/terminal-actions.test.ts:82:                `'/opt/Claude CLI/claude' '/research-cockpit ${kind}'`
+routes/sessions/terminal-actions.test.ts:115:    function latexOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
+routes/sessions/terminal-actions.test.ts:132:        const driver = tmux();
+routes/sessions/terminal-actions.test.ts:177:        expect(driver.respawns()).toEqual([]);
+routes/sessions/terminal-actions.test.ts:181:        expect(driver.respawns()).toEqual([
+routes/sessions/terminal-actions.test.ts:183:                'respawn-pane',
+routes/sessions/terminal-actions.test.ts:193:        // The kept build is a task terminal, so Run Again on it respawns its line.
+routes/sessions/terminal-actions.test.ts:201:        expect(driver.respawns()).toHaveLength(2);
+routes/sessions/terminal-actions.test.ts:206:    const ID = 'a1b2c3-claude';
+routes/sessions/terminal-actions.test.ts:208:    /** A tmux that holds no session and fails a resize the way tmux words a missing session. */
+routes/sessions/terminal-actions.test.ts:224:            body: { action: 'fork', tool: 'claude', id: 'nope' },
+routes/sessions/terminal-actions.test.ts:229:            body: { action: 'start', kind: 'claude', cwd: HERE, cols: 'wide', rows: 24 },
+routes/sessions/terminal-actions.test.ts:238:            title: 'a resize of a terminal tmux no longer has',
+routes/sessions/terminal-actions.test.ts:244:            body: { action: 'start', kind: 'claude', cwd: HERE, cols: 80, rows: 24 },
+routes/sessions/terminal-actions.test.ts:274:    function chatOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
+routes/sessions/terminal-actions.test.ts:285:        const driver = tmux();
+routes/sessions/terminal-actions.test.ts:325:            '/opt/Claude CLI/claude',
+routes/sessions/terminal-actions.test.ts:331:            'claude-opus-4-1',
+routes/sessions/terminal-fixture.ts:2:// suites read, the tmux double that records every argv and runs nothing, and the helpers that build
+routes/sessions/terminal-fixture.ts:3:// a request and the options bag handleTerminal is called with. Nothing here runs tmux, `claude` or
+routes/sessions/terminal-fixture.ts:85:            `hub: ${HERE}\nclaude_bin: /opt/Claude CLI/claude\n`
+routes/sessions/terminal-fixture.ts:94:            `hub: ${chatHub}\nclaude_bin: /opt/Claude CLI/claude\nsessions_overrides: ${join(chatState, 'sessio
+routes/sessions/terminal-fixture.ts:101:export const CHAT_CONFIG = { ...BASE_CHAT_CONFIG, chat: { model: 'claude-opus-4-1' } };
+routes/sessions/terminal-fixture.ts:106: * The commands of one tmux invocation, each as its words: tmux runs the words after a lone `;`
+routes/sessions/terminal-fixture.ts:129: * A tmux that runs nothing: it keeps every argv, remembers what set-option was told, in an
+routes/sessions/terminal-fixture.ts:133:export function tmux(existingNames: string[] = []): {
+routes/sessions/terminal-fixture.ts:153:                    'claude',
+routes/sessions/terminal-fixture.ts:161:                        'oculus-aabbcc-claude',
+routes/sessions/terminal-fixture.ts:164:                        'claude',
+routes/sessions/terminal-fixture.ts:186:        run: tmux().run,
+checks/tree/boundaries.test.ts:254:    const found = /<script[^>]*\bmodule\b[^>]*>([\s\S]*?)<\/script>/.exec(text);
+checks/tree/boundaries.test.ts:276:                /^(?:export )?const (\w+)(?::[^=]+)? = (?:new (?:Map|Set)\b|\{\}|\[\]|\$state)/.exec(
+checks/tree/boundaries.test.ts:278:                ) ?? /^(?:export )?let (\w+)\b/.exec(line);
+checks/tree/boundaries.test.ts:308:    'lib/server/machine/pty/tmux.ts:SINGLES',
+checks/tree/boundaries.test.ts:391:    const found = /<style[^>]*>([\s\S]*?)<\/style>/.exec(text);
+checks/config/config.test.ts:51:    { tool: 'claude', dir: join(homedir(), '.claude'), label: 'claude' },
+checks/config/config.test.ts:101:            claudeBin: 'claude',
+checks/config/config.test.ts:116:                    { tool: 'claude', dir: 'a/.claude', label: 'Work' },
+checks/config/config.test.ts:117:                    { tool: 'claude', dir: 'b/.claude', label: 'Personal' },
+checks/config/config.test.ts:139:            claudeBin: 'claude',
+checks/config/config.test.ts:147:            claudeBin: 'claude',
+data/sources/config/settings.test.ts:94:            claude: {
+server/root/context-fixture.ts:2:// opening a watcher, running tmux, reading the real hub, or writing outside a test's own fixture.
+server/root/context-fixture.ts:40:        claudeBin: 'claude',
+server/machine/tasks/schedule.test.ts:2:// recording tmux double, a scratch run record and a fake clock: a due time starts one run, however
+server/machine/tasks/schedule.test.ts:3:// the server met it. No case reaches tmux or `claude`. Every clock is set a week before the real
+server/machine/tasks/schedule.test.ts:6:// change of a repeated hour, the page's reading of the payload, and the tmux of a real machine.
+server/machine/tasks/schedule.test.ts:21:import { HERE, tmux } from '../../../routes/sessions/terminal-fixture.ts';
+server/machine/tasks/schedule.test.ts:25:const EARLIER = 'aabbcc-claude';
+server/machine/tasks/schedule.test.ts:40:    driver: ReturnType<typeof tmux>;
+server/machine/tasks/schedule.test.ts:71:/** A watcher over the real start, the recording tmux and a scratch record. */
+server/machine/tasks/schedule.test.ts:78:    const common = { run: setup.driver.run, hub: HERE, claudeBin: 'claude' };
+server/machine/tasks/schedule.test.ts:100:    return { record: join(dir, 'schedule.json'), driver: tmux(), hub: new Hub(), watchers: [] };
+```
+
+Judged: every `tmux` hit is the recording double of `terminal-fixture.ts` (`tmux()` pushes its argv onto `calls` and runs nothing; its head comment says 'Nothing here runs tmux, `claude` or ...') or a comment or name that refers to it, or the existing singletons name `lib/server/machine/pty/tmux.ts:SINGLES` in `boundaries.test.ts:308`; every `claude` hit is a string value (`claude_bin: /opt/Claude CLI/claude`, `claudeBin: 'claude'`, the account tool name `claude`, an id `aabbcc-claude`, the model `claude-opus-4-1`) that the double records and nothing runs; the `.exec(` hits of `boundaries.test.ts` are `RegExp.prototype.exec` on file text; `respawns()` and `respawn-pane` in `terminal-actions.test.ts` read the double's recorded argv. No hit spawns a process. The probes (`$A/vp/*.probe.ts`) run the same double, except `s4.probe.ts` and `probes/c1.mts`, which start a tmux server on a private socket under `/private/tmp/claude-502/a3t/` with the stub `probes/stub-claude.sh` as the binary (no real `claude`), and those two are outside the repository.
+
+### Ruling 11. The head comments
+
+Changed: `src/lib/server/root/watch/pollers.ts:1-5`, `src/lib/data/sources/config/settings.ts:1-10`, `tests/data/sources/config/settings.test.ts:1-8`, each rewrapped whole at 100 columns with no short line inside a sentence; the same rewrap for `src/lib/server/machine/tasks/schedule.ts:7-16` and `src/lib/data/helpers/run/tasks.ts:1-5`, which this round edited. The check for a short line inside a comment paragraph (a line that ends without sentence punctuation although the next word fits) printed nothing over the step's files, and the comment-width check passes:
+
+```
+$ npx vitest run tests/checks/source/comment-width.test.ts
+Test Files  1 passed (1)
+Tests  2 passed (2)
+$ for f in the three files: awk 'length>100' <head lines>
+       0
+```
+
+```
+// Layer 2, server. The wiring of the pollers the context builds: the Live HPC poller, the Processes
+// watcher, the update tasks' schedule, the calendar and mail pollers, and the two usage watchers a
+// changed key of local.yml builds again. The context composes the server's objects and hands this
+// module the settings each poller starts with, so what a poller is given is written here once and
+// the composition root stays a list of what exists.
 ```
 
 ## The cases' first run
@@ -77,7 +452,7 @@ Each case names its checker. `test` is a kept test (title, run on the changed tr
 Checked by: probe `c1.mts`.
 
 ```
-pane_pid 32821 listed pid 32821 printed $$ 32821 ppid(printed) 32820 ppid(pane) 32820
+pane_pid 52320 listed pid 52320 printed $$ 52320 ppid(printed) 52319 ppid(pane) 52319
 equal: true pane is parent of printed: false
 ```
 
@@ -87,12 +462,12 @@ Checked by: probe s1.
 
 ```
 C2 06:59:00 payload litwatch pattern=0 7 * * * next=2026-10-04T05:00:00.000Z starts=0
-C2 07:00:10 starts=[{"kind":"litwatch","trigger":"schedule","due":"2026-10-04T05:00:00.000Z"}] new-session calls=1 runs=[{"trigger":"schedule","due":"2026-10-04T05:00:00.000Z","at":"2026-10-04T05:00:00.000Z","outcome":"started","terminal":"2b9220-claude"}] next=2026-10-05T05:00:00.000Z (tomorrow 07:00 = 2026-10-05T05:00:00.000Z)
+C2 07:00:10 starts=[{"kind":"litwatch","trigger":"schedule","due":"2026-10-04T05:00:00.000Z"}] new-session calls=1 runs=[{"trigger":"schedule","due":"2026-10-04T05:00:00.000Z","at":"2026-10-04T05:00:00.000Z","outcome":"started","terminal":"bd9977-claude"}] next=2026-10-05T05:00:00.000Z (tomorrow 07:00 = 2026-10-05T05:00:00.000Z)
 ```
 
 ### C3. Absent entries, an empty schedule and an empty entry give no job
 
-Checked by: test 'reads each pattern as written, and the default with no problem for a missing or {} entry' (settings.test.ts) and probe s1.
+Checked by: test 'reads each pattern as written, and gives no problem for a missing, empty or {} entry' (settings.test.ts) and probe s1.
 
 ```
 C3 no job: starts=0 record exists=false payload=[["litwatch","",null],["scout","",null],["linkedin","",null],["inbox","",null]]
@@ -191,7 +566,7 @@ Checked by: test 'starts nothing for a due time while the task's earlier run is 
 Checked by: probe s1.
 
 ```
-C13 earlier terminal absent from the list: new-session=1 kills=[] newest run={"trigger":"schedule","due":"2026-10-04T05:00:00.000Z","at":"2026-10-04T05:00:00.000Z","outcome":"started","terminal":"7cae3c-claude"}
+C13 earlier terminal absent from the list: new-session=1 kills=[] newest run={"trigger":"schedule","due":"2026-10-04T05:00:00.000Z","at":"2026-10-04T05:00:00.000Z","outcome":"started","terminal":"c05f8d-claude"}
 ```
 
 ### C14. Two tasks due in one minute
@@ -199,7 +574,7 @@ C13 earlier terminal absent from the list: new-session=1 kills=[] newest run={"t
 Checked by: probe s1.
 
 ```
-C14 starts=["litwatch","scout"] new-session=2 litwatch=[["started","6a87a4-claude"]] scout=[["started","5149e6-claude"]]
+C14 starts=["litwatch","scout"] new-session=2 litwatch=[["started","5320ba-claude"]] scout=[["started","b08699-claude"]]
 ```
 
 ### C15. A hand press is recorded; a press beside a working scheduled run starts a second terminal
@@ -207,8 +582,8 @@ C14 starts=["litwatch","scout"] new-session=2 litwatch=[["started","6a87a4-claud
 Checked by: probe s2 (through `handleTerminal`).
 
 ```
-C15 hand press: status=200 terminal=ed292c-claude record={"pattern":"","since":"2026-10-05T16:14:24.171Z","handled":null,"runs":[{"trigger":"hand","due":null,"at":"2026-10-05T16:14:24.170Z","outcome":"started","terminal":"ed292c-claude"}]}
-C15 second press while the first terminal is busy: status=200 new terminal=529700-claude (differs=true) runs=hand,started,529700-claude | hand,started,ed292c-claude
+C15 hand press: status=200 terminal=527dac-claude record={"pattern":"","since":"2026-10-05T18:10:35.110Z","handled":null,"runs":[{"trigger":"hand","due":null,"at":"2026-10-05T18:10:35.110Z","outcome":"started","terminal":"527dac-claude"}]}
+C15 second press while the first terminal is busy: status=200 new terminal=62b31d-claude (differs=true) runs=hand,started,62b31d-claude | hand,started,527dac-claude
 ```
 
 ### C16. The scheduled argv equals the press's, with the flag only under skip_permissions
@@ -222,10 +597,10 @@ C16 skip_permissions=true: hand argv='/opt/Claude CLI/claude' '--dangerously-ski
 
 ### C17. Daylight saving changes in Europe/Brussels
 
-Checked by: probe s3 under `TZ=Europe/Brussels`, and test 'starts the run of a daily 02:30 on the day the clocks skip it, once, at 03:30'.
+Checked by: probe s3 under `TZ=Europe/Brussels`, and test 'starts each run of a pattern inside the hour the clocks skip once, when it is due and not before'.
 
 ```
-C17 TZ=Europe/Brussels offset now: Mon Oct 05 2026 18:14:30 GMT+0200 (Central European Summer Time)
+C17 TZ=Europe/Brussels offset now: Mon Oct 05 2026 20:12:09 GMT+0200 (Central European Summer Time)
 C17 "30 2 * * *" from 2026-03-28 23:00 CET for 30 h: ["2026-03-29 03:30:00 GMT+02:00","2026-03-30 02:30:00 GMT+02:00"]
 C17 "30 2 * * *" from 2026-10-24 23:00 CEST for 30 h: ["2026-10-25 02:30:00 GMT+02:00","2026-10-26 02:30:00 GMT+01:00"]
 C17 "0 * * * *" from 2026-10-24 23:30 CEST for 6 h (the repeated hour at 02:00 CEST/CET is 00:00Z and 01:00Z): ["2026-10-25 00:00:00 GMT+02:00","2026-10-25 01:00:00 GMT+02:00","2026-10-25 02:00:00 GMT+02:00","2026-10-25 03:00:00 GMT+01:00","2026-10-25 04:00:00 GMT+01:00"]
@@ -254,8 +629,8 @@ Checked by: test 'refuses a write over a schedule record it cannot read, leaving
 
 ```
 C20 missing file: exists after the first write=true mode=600 lock left=false
-C20 file="{": starts=0 new-session=0 sha 021fb596db81 -> 021fb596db81 payload.error="RECORD UNREAD SENTENCE" stderr lines=1: schedule record: /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/a3-probe-HV7LlY/schedule.json is not JSON; no schedule
-C20 file="{\"litwatch\": 5}": starts=0 new-session=0 sha 2b9f2f511ac7 -> 2b9f2f511ac7 payload.error="RECORD UNREAD SENTENCE" stderr lines=1: schedule record: /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/a3-probe-nf9aQ1/schedule.json holds a litwatch entry o
+C20 file="{": starts=0 new-session=0 sha 021fb596db81 -> 021fb596db81 payload.error="RECORD UNREAD SENTENCE" stderr lines=1: schedule record: /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/a3-probe-Uz290u/schedule.json is not JSON; no schedule
+C20 file="{\"litwatch\": 5}": starts=0 new-session=0 sha 2b9f2f511ac7 -> 2b9f2f511ac7 payload.error="RECORD UNREAD SENTENCE" stderr lines=1: schedule record: /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/a3-probe-UFGE3c/schedule.json holds a litwatch entry o
 C20 hand press with an unreadable record: status=200 new-session=1 sha 021fb596db81 -> 021fb596db81 stderr=["schedule record: a run was not recorded: is not JSON"]
 ```
 
@@ -265,7 +640,7 @@ Checked by: probe s1.
 
 ```
 C21 read-only folder: new-session=0 stderr=["schedule: litwatch 2026-10-04T05:00:00.000Z: Error: EACCES: permission denied, open '/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/a3-pro"] file exists=false
-C21 next due time after the folder is writable: new-session=1 runs=[{"trigger":"schedule","due":"2026-10-05T05:00:00.000Z","at":"2026-10-05T05:00:00.000Z","outcome":"started","terminal":"34eb48-claude"}]
+C21 next due time after the folder is writable: new-session=1 runs=[{"trigger":"schedule","due":"2026-10-05T05:00:00.000Z","at":"2026-10-05T05:00:00.000Z","outcome":"started","terminal":"2baf1a-claude"}]
 ```
 
 ### C22. Two watchers over one record start one run
@@ -280,8 +655,8 @@ Checked by: probe s1 and probe s2.
 
 ```
 C23 start refused (tmux lists no session): runs=[{"trigger":"schedule","due":"2026-10-04T05:00:00.000Z","at":"2026-10-04T05:00:00.000Z","outcome":"failed","terminal":null}] handled=2026-10-04T05:00:00.000Z
-C23 next day: runs=[["started","85d8a0-claude"],["failed",null]] new-session calls=2
-C23 route: refused start answers status=400 body={"error":"terminal-not-started"} record=[{"trigger":"hand","due":null,"at":"2026-10-05T16:14:24.228Z","outcome":"failed","terminal":null}]
+C23 next day: runs=[["started","2285ce-claude"],["failed",null]] new-session calls=2
+C23 route: refused start answers status=400 body={"error":"terminal-not-started"} record=[{"trigger":"hand","due":null,"at":"2026-10-05T18:10:35.144Z","outcome":"failed","terminal":null}]
 ```
 
 ### C24. close() with a job armed and with a start awaited
@@ -352,8 +727,8 @@ C27 TRAY AFTER A schedule MESSAGE (a listed terminal, an unlisted one, an error)
 Checked by: probe s1.
 
 ```
-C28 lock 120 s old: new-session=1 runs=1 lock left=false stderr=["schedule record: took over /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/a3-probe-ElqzlT/schedule.json.lock, which was 120000 m"]
-C28 lock 7 s old at the due time, outlasting the wait: new-session=0 runs=0 lock still there=true stderr=["schedule: litwatch 2026-10-04T05:00:00.000Z: /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/a3-probe-TUdvhN/schedule.json.lock stays taken"]
+C28 lock 120 s old: new-session=1 runs=1 lock left=false stderr=["schedule record: took over /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/a3-probe-kCvvIM/schedule.json.lock, which was 120000 m"]
+C28 lock 7 s old at the due time, outlasting the wait: new-session=0 runs=0 lock still there=true stderr=["schedule: litwatch 2026-10-04T05:00:00.000Z: /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/a3-probe-dwFhAa/schedule.json.lock stays taken"]
 C28 next due time with the lock gone: new-session=1 runs=[["started","2026-10-05T05:00:00.000Z"]]
 ```
 
@@ -371,7 +746,7 @@ Checked by: probe s1 (busy half) and test 'ends the terminal of the task's idle 
 
 ```
 C30 session busy: before the payload starts=0 new-session=0 runs=1; after: new-session=0 kills=[] newest run={"trigger":"catch-up","due":"2026-10-04T05:00:00.000Z","at":"2026-10-04T07:00:05.000Z","outcome":"skipped","terminal":"aabbcc-claude"}
-C30 session idle: before the payload starts=0 new-session=0 runs=1; after: new-session=1 kills=["oculus-aabbcc-claude"] newest run={"trigger":"catch-up","due":"2026-10-04T05:00:00.000Z","at":"2026-10-04T07:00:05.000Z","outcome":"started","terminal":"06a750-claude"}
+C30 session idle: before the payload starts=0 new-session=0 runs=1; after: new-session=1 kills=["oculus-aabbcc-claude"] newest run={"trigger":"catch-up","due":"2026-10-04T05:00:00.000Z","at":"2026-10-04T07:00:05.000Z","outcome":"started","terminal":"0637a0-claude"}
 ```
 
 ### C31. An idle earlier run's terminal is ended, then the new run starts
@@ -420,314 +795,294 @@ C35 push with the same pattern: set calls still 1
 Checked by: probe s4 (a real tmux server on its own socket, the stub claude, the real registry scan).
 
 ```
-C36 first start answer: {"terminal":{"resumes":null,"task":false,"exit":null,"job":null,"foreign":false,"id":"f5bf13-claude","name":"task litwatch","title":"","icon":"","color":"","kind":"claude","cwd":"/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/a3-builder/c36b","command":"bash","pid":25906,"created":"2026-10-05T15:25:00.000Z","attached":false}}
-C36 a press started terminal f5bf13-claude (pane pid 25906) through startUpdateTask with the real taskCommand argv
-C36 pane shows: STUB ARGS: [/research-cockpit litwatch] | STUB PID=25906 | STUB STATUS=busy
-C36 sessions payload inputs (busy): {"records":[[25906,"busy"]],"terminals":[["f5bf13-claude",25906]]}
-C36 first minute boundary, session busy: runs (newest first) = ["schedule/skipped/f5bf13-claude","hand/started/f5bf13-claude"]; terminals now = ["f5bf13-claude"]
-C36 sessions payload inputs (idle): {"records":[[25906,"idle"]],"terminals":[["f5bf13-claude",25906]]}
-C36 second minute boundary, session idle: runs (newest first) = ["schedule/started/04414d-claude","schedule/skipped/f5bf13-claude","hand/started/f5bf13-claude"]; terminals now = ["04414d-claude"]
+C36 first start answer: {"terminal":{"resumes":null,"task":false,"exit":null,"job":null,"foreign":false,"id":"7e6123-claude","name":"task litwatch","title":"","icon":"","color":"","kind":"claude","cwd":"/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/a3-builder/c36b","command":"bash","pid":3757,"created":"2026-10-05T18:10:37.000Z","attached":false}}
+C36 a press started terminal 7e6123-claude (pane pid 3757) through startUpdateTask with the real taskCommand argv
+C36 pane shows: STUB ARGS: [/research-cockpit litwatch] | STUB PID=3757 | STUB STATUS=busy
+C36 sessions payload inputs (busy): {"records":[[3757,"busy"]],"terminals":[["7e6123-claude",3757]]}
+C36 first minute boundary, session busy: runs (newest first) = ["schedule/skipped/7e6123-claude","hand/started/7e6123-claude"]; terminals now = ["7e6123-claude"]
+C36 sessions payload inputs (idle): {"records":[[3757,"idle"]],"terminals":[["7e6123-claude",3757]]}
+C36 second minute boundary, session idle: runs (newest first) = ["schedule/started/64bdb0-claude","schedule/skipped/7e6123-claude","hand/started/7e6123-claude"]; terminals now = ["64bdb0-claude"]
 ```
 
 ## DONE / NOT DONE
 
-Run from `tools/oculus` in the worktree. NOT DONE: nothing. Not covered by any check, and not verified: the autumn overlap hour is checked by probe s3 only, not by a kept test; the page's drawing of the tray is checked by the render probe only (the look at landing is the orchestrator's).
+Run from `tools/oculus` in the worktree. NOT DONE: nothing. Not covered by any check, and not verified: the autumn overlap hour is checked by probe s3 only, not by a kept test; the page's drawing of the tray is checked by the render probe only (the look at landing is the orchestrator's); `npm run test:landing` was not run.
 
 | Item | Command | Result |
 |---|---|---|
 | Items 1 to 8 built | the files listed under "The files" | DONE |
-| Quick list, last run | `sh <land>/templates/checks.sh .scratch/migration/orchestrator-state.md` (runs `npm run test:quick`) | green, quoted below |
-| The six named test files | `npx vitest run tests/server/machine/tasks/schedule.test.ts tests/server/machine/tasks/record.test.ts tests/data/sources/config/settings.test.ts tests/data/sources/config/catalog/value-rule.test.ts tests/checks/config/config.test.ts tests/routes/sessions/terminal-actions.test.ts` plus `tests/checks/tree tests/checks/imports tests/checks/diagrams` | 13 files, 218 tests passed |
-| ASCII gate | `LC_ALL=C perl -ne '...' $(find src tests config -type f ! -name local.yml)` (the command of spec.md:97, with `bin` left out: `bin` does not exist in this tree) | prints nothing, exit status 0 |
-| ASCII over HELP.md and DESIGN.md | `LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md` | prints nothing, exit status 1 (no match) |
-| Unused exports | `sh utils/unused-exports.sh` counted with `wc -l`, and `diff` against the base's output | 379 lines, diff empty (base 379) |
-| Sizes and folders | `wc -l` of each file and `ls <folder>` counted with `wc -l`, listed under "The files" | largest written source file 843 lines (terminals.svelte.ts, limit 880); UpdateTray.svelte 285 (520); machine/ 9 items, machine/tasks 3, state/system/machine 7, tests/server/machine 7, tests/server/machine/tasks 2 |
-| Diagrams | `npm run diagrams` before each list run; `npx vitest run tests/checks/diagrams` | passed |
-| Prettier | `npm run format:check` | All matched files use Prettier code style! |
-| Full-list runs | `checks.sh` over `npm run test:quick` | 5 runs: run 1 red (eslint: an unused import in schedule.test.ts, fixed, that file rerun alone), runs 2 to 5 green |
+| Rulings 1 to 11 of the round | the sections of "Round 1" above, each with its command | DONE |
+| Verify list, last run (f) | `sh <land>/templates/checks.sh <state file>` from `tools/oculus` (runs `npm run test:quick`) | green, 44.7 s, quoted below |
+| Tests of `tests/checks` | `npx vitest run tests/checks --testTimeout 120000 --reporter=dot` | 16 files, 229 tests passed |
+| The tests of the step | `npx vitest run tests/server/machine/tasks tests/data/sources/config/settings.test.ts tests/data/sources/config/catalog/value-rule.test.ts tests/checks/config/config.test.ts tests/routes/sessions/terminal-actions.test.ts --reporter=verbose` | 6 files, 105 tests passed, listed below |
+| ASCII gate | `LC_ALL=C perl -ne '...' $(find src tests config -type f ! -name local.yml)` (the command of spec.md:97, `bin` left out: it does not exist in this tree) | prints nothing |
+| ASCII over HELP.md and DESIGN.md | `LC_ALL=C grep -c '[^ -~]' HELP.md DESIGN.md` | 0 and 0 |
+| Unused exports | `sh utils/unused-exports.sh | wc -l`, and `diff` against the base's output | 379 lines, diff empty (base 379) |
+| Sizes and folders | `wc -l` of each file and `ls <folder> | wc -l` | largest written source file 845 lines (terminals.svelte.ts, limit 880); UpdateTray.svelte 285 (520); server/machine 9 items, machine/tasks 3, state/system/machine 7, tests/server/machine 7, tests/server/machine/tasks 2, data/helpers/run 2 |
+| Diagrams | `npm run diagrams` before each list run; `tests/checks/diagrams` is in the `tests/checks` row | passed |
+| Probes | `npx vitest run --config <scratchpad>/vp/vitest.config.ts <probe>` for s1 to s5 (s3 under `TZ=Europe/Brussels`), the render probe with `vitest.svelte.config.mjs`, `node probes/c6.mjs`, `node --experimental-strip-types probes/c1.mts` | s1 17, s2 2, s3 1, s4 1, s5 1, render probe 1 tests passed |
+| Full-list runs | `checks.sh` over `npm run test:quick` | 6 runs in this round, all green; run f is the last |
 
-The kept tests, verbose run on the changed tree (`npx vitest run tests/server/machine/tasks tests/data/sources/config/settings.test.ts tests/data/sources/config/catalog/value-rule.test.ts tests/checks/config/config.test.ts tests/routes/sessions/terminal-actions.test.ts --reporter=verbose`, the check mark written as ok):
+The tests of the step, verbose run on the changed tree (`--reporter=verbose`, the check mark removed):
 
 ```
- ok |unit| tests/server/machine/tasks/record.test.ts > the run record > refuses a write over a schedule record it cannot read, leaving it
- ok |unit| tests/data/sources/config/catalog/value-rule.test.ts > valueProblem > answers the kind of problem each control, bound and list gives a value, and none for a value that fits
- ok |unit| tests/data/sources/config/catalog/value-rule.test.ts > valueProblem over a list > checks each item by the entry bounds, whole and form
+ ok |unit| tests/checks/config/config.test.ts > loadLocal > reads the file inside the config folder and not one beside it
+ ok |unit| tests/checks/config/config.test.ts > loadLocal > reports an unknown key once and ignores it
+ ok |unit| tests/checks/config/config.test.ts > loadLocal > accepts distinct Claude labels on equal folder basenames and a matching Codex label
+ ok |unit| tests/checks/config/config.test.ts > loadLocal > reads the file of the engine it is given and never another engine own
+ ok |unit| tests/checks/config/config.test.ts > checkLocal > says nothing, and prints nothing, about an unknown key
+ ok |unit| tests/checks/config/config.test.ts > the config folder of an engine > is that engine own folder, so a run over a copy reads and writes the copy
+ ok |unit| tests/checks/config/config.test.ts > the config folder of an engine > is the folder the engine root serves and the file a root finding names
+ ok |unit| tests/checks/config/config.test.ts > loadConfig > merges the top-level keys of every file in name order
+ ok |unit| tests/checks/config/config.test.ts > loadConfig > reports a top-level key two files define and takes the value from the later one
+ ok |unit| tests/checks/config/config.test.ts > loadConfig > reports a catalog key two owner files define and takes the later value
+ ok |unit| tests/checks/config/config.test.ts > loadConfig > reports a file that does not parse and merges the rest
+ ok |unit| tests/checks/config/config.test.ts > loadConfig > reports a file that is not a map and treats an empty file as no keys
+ ok |unit| tests/checks/config/config.test.ts > loadConfig > leaves the machine own file out of the merge, clashing key and all
+ ok |unit| tests/checks/config/config.test.ts > loadConfig > reports a missing config directory and returns an empty map
+ ok |unit| tests/checks/config/config.test.ts > loadConfig > words a catalog block that is not a map from the catalog, naming where it stops
+ ok |unit| tests/checks/config/config.test.ts > loadConfig > reports a catalog block whose aliases loop as a finding rather than throwing
+ ok |unit| tests/checks/config/config.test.ts > loadConfig > names a sentence file that does not parse by its key and arguments, without throwing
+ ok |unit| tests/checks/config/config.test.ts > behaviorFindings > names the key that replaced a retired one, against behavior.yml
+ ok |unit| tests/checks/config/config.test.ts > behaviorFindings > says nothing about a configuration whose keys are all under their own names
  ok |unit| tests/checks/config/config.test.ts > settingFindings > words each wrong setting against behavior.yml from the catalog, and nothing for the shipped files
  ok |unit| tests/checks/config/config.test.ts > settingFindings > says nothing for a merge that dropped behavior.yml, or for a map without the catalog
- ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > reads each pattern as written, and the default with no problem for a missing or {} entry
- ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a nonsense problem for "form"
- ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a 61 * * * * problem for "form"
- ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a * * * * * * problem for "form"
- ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a */0 * * * * problem for "form"
- ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a 5 problem for "text"
- ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a null problem for "text"
- ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a  problem for "text"
- ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a 0 0 31 2 * problem for "cron_never"
+ ok |unit| tests/checks/config/config.test.ts > themeFindings > names a theme row whose glyph is empty or missing, and draws it with its words alone
+ ok |unit| tests/checks/config/config.test.ts > themeFindings > names a glyph the vocabulary does not hold, a prototype key among them
+ ok |unit| tests/checks/config/config.test.ts > themeFindings > names a second row repeating a theme, and nothing for two rows sharing a glyph
+ ok |unit| tests/checks/config/config.test.ts > themeFindings > names a code theme that is no listed id, one finding per value, case included
+ ok |unit| tests/checks/config/config.test.ts > themeFindings > names a bad code theme in a config that has no themes list
+ ok |unit| tests/checks/config/config.test.ts > themeFindings > says nothing for an absent code_theme, tokens or a listed id
+ ok |unit| tests/checks/config/config.test.ts > themeFindings > says nothing about the shipped list, a row with no name, or a config with no list
+ ok |unit| tests/checks/config/config.test.ts > vocabCatalog > carries code_theme with the other appearance keys, and only when the config holds it
+ ok |unit| tests/data/sources/config/settings.test.ts > the synthetic catalog > gives every setting a default other than the shipped one
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > answers the default for a days with a range problem
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > answers the default for a days with a whole problem
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > answers the default for a poll_min with a range problem
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > answers the default for a quota_min with a range problem
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > answers the default for a days that is no number
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > answers the default for a poll_min that is no number
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > answers the default for a quota_min that is no number
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > answers the default for an empty resource, a text that is not a program and a flag
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > reads the corrected value with no problem
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > answers every default and one problem for a block that is not a map
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > answers the defaults and no problem for a missing, null or empty block, a missing key and a misspelt key
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > names two wrong keys of one block and reads the other three
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > throws the sentence naming the key and options.yml for a catalog with no entry
+ ok |unit| tests/data/sources/config/settings.test.ts > slurmSettings > throws when an entry default is refused by its own bounds
+ ok |unit| tests/data/sources/config/settings.test.ts > calendarSettings > answers the default for a poll_min with a range problem
+ ok |unit| tests/data/sources/config/settings.test.ts > calendarSettings > answers the default for a days_back with a range problem
+ ok |unit| tests/data/sources/config/settings.test.ts > calendarSettings > answers the default for a days_back with a whole problem
+ ok |unit| tests/data/sources/config/settings.test.ts > calendarSettings > answers the default for a days_ahead with a range problem
+ ok |unit| tests/data/sources/config/settings.test.ts > calendarSettings > answers the defaults for a block that is no map, and the written value for a good one
+ ok |unit| tests/data/sources/config/settings.test.ts > searchSettings > answers the default for each value that is not above zero, and for a fraction of hits
+ ok |unit| tests/data/sources/config/settings.test.ts > literatureSettings > answers the written values, and the default with the key named for each wrong value or a block that is no map
+ ok |unit| tests/data/sources/config/settings.test.ts > mailSettings > answers the default for a wrong value and names the key
+ ok |unit| tests/data/sources/config/settings.test.ts > changesKeep > answers the default for a keep that is not a whole number above zero
+ ok |unit| tests/data/sources/config/settings.test.ts > openSettings and programApps > leaves out each member the entry refuses and names it
+ ok |unit| tests/data/sources/config/settings.test.ts > openSettings and programApps > answers an empty map and one problem for a map that is none
+ ok |unit| tests/data/sources/config/settings.test.ts > openSettings and programApps > answers an empty map for a configuration that holds no catalog yet
+ ok |unit| tests/data/sources/config/settings.test.ts > latexFormatting and latexAutoBuild > answers the default for a formatter outside the entry words
+ ok |unit| tests/data/sources/config/settings.test.ts > latexFormatting and latexAutoBuild > answers the default for a program path that is not a path
+ ok |unit| tests/data/sources/config/settings.test.ts > latexFormatting and latexAutoBuild > reads the auto build by its entry
+ ok |unit| tests/data/sources/config/settings.test.ts > usageTiers > leaves out each entry that is no text and names it
+ ok |unit| tests/data/sources/config/settings.test.ts > usageTiers > answers an empty map for a map that is none, and for none
+ ok |unit| tests/data/sources/config/settings.test.ts > processesSettings > answers the default list for ["python3","a/b"] and names the key
+ ok |unit| tests/data/sources/config/settings.test.ts > processesSettings > answers the default list for ["python3","my tool"] and names the key
+ ok |unit| tests/data/sources/config/settings.test.ts > processesSettings > reads a good list and an empty one
+ ok |unit| tests/data/sources/config/settings.test.ts > refreshSettings, autofetchMin and paintLimit > answers the default for a wrong cadence and a model outside the models
+ ok |unit| tests/data/sources/config/settings.test.ts > refreshSettings, autofetchMin and paintLimit > answers the default for a fetch period that is negative or a fraction
+ ok |unit| tests/data/sources/config/settings.test.ts > refreshSettings, autofetchMin and paintLimit > answers the default bytes for a paint limit that is wrong, and null with no catalog
+ ok |unit| tests/data/sources/config/settings.test.ts > confirmDelete > answers the default for a wrong flag, and true with no catalog
+ ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > reads each pattern as written, and gives no problem for a missing, empty or {} entry
+ ok |unit| tests/checks/config/config.test.ts > optionFindings > reads the shipped options catalog with no finding
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, the task action > starts every accepted task as an interactive session, with no skip and no print-mode flags
+ ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "nonsense"
+ ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "61 * * * *"
+ ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "* * * * * *"
+ ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "*/0 * * * *"
+ ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a text problem for 5
+ ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a text problem for null
+ ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a text problem for []
+ ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a cron_never problem for "0 0 31 2 *"
  ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > names a task entry or a tasks block that is not a map, and reads the other tasks
  ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > gives no problem for a key the catalog holds no entry for
  ok |unit| tests/data/sources/config/settings.test.ts > taskSchedules > reads a pattern the Settings view wrote at its three-level key
- ok |unit| tests/data/sources/config/settings.test.ts > the shipped files > answers the shipped default for each setting the shipped file gets wrong, and reads every shipped default
- ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, the task action > starts every accepted task as an interactive session, with no skip and no print-mode flags
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, the latex action > builds one main file with latexmk in the manuscript folder
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, the latex action > builds again in the terminal it kept, and cleans in another
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, a refusal > answers 'a body that is no map' as the word 'not-an-action'
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, a refusal > answers 'an action that is none' as the word 'not-an-action'
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, a refusal > answers 'an input to a session oculus did not ...' as the word 'not-ours'
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, a refusal > answers 'a fork of an id that is no session' as the word 'not-a-session'
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, a refusal > answers 'a start with a size that is no number' as the word 'bad-terminal'
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, a refusal > answers 'a rename of a terminal the list does ...' as the word 'terminal-ended'
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, a refusal > answers 'a resize of a terminal tmux no longer...' as the word 'terminal-ended'
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, a refusal > answers 'a start whose session was not listed ...' as the word 'terminal-not-started'
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, a refusal > answers 'a build in a folder of a root nothing...' as the word 'outside'
+ ok |unit| tests/routes/sessions/terminal-actions.test.ts > POST /api/terminal, the chat action > starts a focused interactive Claude terminal and writes its private index first
  ok |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > starts one catch-up run at start for the due times missed while the server was down
+ ok |unit| tests/data/sources/config/settings.test.ts > the shipped files > answers the shipped default for each setting the shipped file gets wrong, and reads every shipped default
  ok |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > starts nothing for a due time while the task's earlier run is working, and records it skipped
  ok |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > ends the terminal of the task's idle earlier run, and then starts the new run
  ok |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > never starts a due time the record holds as handled, after a restart or from a second watcher
+ ok |unit| tests/server/machine/tasks/record.test.ts > the run record > refuses a write over a schedule record it cannot read, leaving it
  ok |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > leaves no timer after close and starts nothing, a start already awaited included
- ok |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > starts the run of a daily 02:30 on the day the clocks skip it, once, at 03:30
+ ok |unit| tests/data/sources/config/catalog/value-rule.test.ts > valueProblem > answers the kind of problem each control, bound and list gives a value, and none for a value that fits
+ ok |unit| tests/data/sources/config/catalog/value-rule.test.ts > valueProblem over a list > checks each item by the entry bounds, whole and form
+ ok |unit| tests/data/sources/config/catalog/value-rule.test.ts > itemProblem and hasForm > checks one item of a list by the same rule
+ ok |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > starts the run of a pattern inside the hour the clocks skip once, when it is due and not before
  Test Files  6 passed (6)
       Tests  105 passed (105)
 ```
 
-Final lines of the last list run (`quick-5.log`):
+Lines of the last list run (f):
 
 ```
-test:quick: 58 changed file(s), from git since HEAD
-test:quick: 81 test file(s), 10 essential
-ok      prettier (1.5 s): All matched files use Prettier code style!
-ok      ASCII gate (1.6 s)
-ok      svelte-kit sync (3.1 s)
-ok      eslint (16.7 s)
-ok      svelte-check (20.0 s): 1791216707079 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (30.5 s): Duration  23.80s (transform 23.70s, setup 0ms, import 53.08s, tests 37.78s, environment 412ms)
-test:quick: 32.4 s (limit 45.0 s); every command passed
-checks: 1 commands passed
-```
-
-Lines of every list run:
-
-Run 1:
-
-```
-test:quick: 58 changed file(s), from git since HEAD
+test:quick: 61 changed file(s), from git since HEAD
 test:quick: 81 test file(s), 10 essential
 ok      ASCII gate (1.0 s)
-ok      prettier (1.2 s): All matched files use Prettier code style!
-ok      svelte-kit sync (2.7 s)
-FAILED  eslint (20.1 s)
-ok      svelte-check (53.9 s): 1791214788951 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (64.9 s): Duration  57.36s (transform 66.82s, setup 0ms, import 157.19s, tests 67.79s, environment 536ms)
-test:quick: 66.1 s (limit 45.0 s); failed: eslint
-test:quick: over the time limit
-checks: failed with exit 1: npm run test:quick
-checks: 1 of 1 commands failed
+ok      svelte-kit sync (3.5 s)
+ok      prettier (3.6 s): All matched files use Prettier code style!
+ok      svelte-check (36.7 s): 1791224546282 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (42.5 s)
+ok      vitest (43.3 s): Duration  37.87s (transform 100.27s, setup 0ms, import 123.27s, tests 22.39s, environment 208ms)
+test:quick: 44.7 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+checks: 1 commands passed
 ```
 
-Run 2:
+Lines of the five earlier list runs of this round:
+
+Run a:
 
 ```
-test:quick: 58 changed file(s), from git since HEAD
+test:quick: 61 changed file(s), from git since HEAD
 test:quick: 81 test file(s), 10 essential
+ok      ASCII gate (1.1 s)
+ok      svelte-kit sync (1.8 s)
+ok      prettier (2.8 s): All matched files use Prettier code style!
+ok      svelte-check (35.4 s): 1791221868745 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (51.3 s): Duration  46.23s (transform 64.54s, setup 0ms, import 140.75s, tests 19.07s, environment 285ms)
+ok      eslint (86.3 s)
+test:quick: 87.2 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+checks: 1 commands passed
+```
+
+Run b:
+
+```
+test:quick: 61 changed file(s), from git since HEAD
+test:quick: 81 test file(s), 10 essential
+ok      ASCII gate (0.8 s)
 ok      prettier (1.4 s): All matched files use Prettier code style!
-ok      ASCII gate (1.5 s)
-ok      svelte-kit sync (3.1 s)
-ok      eslint (17.6 s)
-ok      svelte-check (19.2 s): 1791214890444 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (32.1 s): Duration  26.02s (transform 31.09s, setup 0ms, import 62.37s, tests 36.78s, environment 327ms)
-test:quick: 33.7 s (limit 45.0 s); every command passed
-checks: 1 commands passed
-```
-
-Run 3:
-
-```
-test:quick: 58 changed file(s), from git since HEAD
-test:quick: 81 test file(s), 10 essential
-ok      prettier (1.9 s): All matched files use Prettier code style!
-ok      ASCII gate (2.5 s)
-ok      svelte-kit sync (2.6 s)
-ok      eslint (9.4 s)
-ok      svelte-check (33.4 s): 1791215490169 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (63.2 s): Duration  56.06s (transform 93.26s, setup 0ms, import 182.54s, tests 27.63s, environment 222ms)
-test:quick: 63.9 s (limit 45.0 s); every command passed
+ok      svelte-kit sync (2.7 s)
+ok      eslint (22.1 s)
+ok      svelte-check (28.2 s): 1791222320819 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (88.2 s): Duration  82.44s (transform 118.92s, setup 0ms, import 275.54s, tests 38.61s, environment 922ms)
+test:quick: 89.1 s (limit 45.0 s); every command passed
 test:quick: over the time limit
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
 checks: 1 commands passed
 ```
 
-Run 4:
+Run c:
 
 ```
-test:quick: 58 changed file(s), from git since HEAD
+test:quick: 61 changed file(s), from git since HEAD
 test:quick: 81 test file(s), 10 essential
-ok      prettier (2.5 s): All matched files use Prettier code style!
-ok      ASCII gate (2.5 s)
-ok      svelte-kit sync (5.1 s)
-ok      eslint (34.4 s)
-ok      svelte-check (36.5 s): 1791216220022 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (86.1 s): Duration  77.62s (transform 101.43s, setup 0ms, import 241.86s, tests 52.21s, environment 966ms)
-test:quick: 88.9 s (limit 45.0 s); every command passed
+ok      ASCII gate (1.0 s)
+ok      prettier (1.4 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.2 s)
+ok      svelte-check (17.0 s): 1791222655849 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (33.1 s): Duration  29.15s (transform 42.12s, setup 0ms, import 95.42s, tests 15.99s, environment 244ms)
+ok      eslint (37.3 s)
+test:quick: 38.2 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+checks: 1 commands passed
+```
+
+Run d:
+
+```
+test:quick: 61 changed file(s), from git since HEAD
+test:quick: 81 test file(s), 10 essential
+ok      ASCII gate (0.5 s)
+ok      svelte-kit sync (1.8 s)
+ok      prettier (2.1 s): All matched files use Prettier code style!
+ok      svelte-check (21.0 s): 1791223130081 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (38.3 s): Duration  34.10s (transform 89.58s, setup 0ms, import 113.90s, tests 18.01s, environment 114ms)
+ok      eslint (40.8 s)
+test:quick: 41.4 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+checks: 1 commands passed
+```
+
+Run e:
+
+```
+test:quick: 61 changed file(s), from git since HEAD
+test:quick: 81 test file(s), 10 essential
+ok      ASCII gate (0.7 s)
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.0 s)
+ok      eslint (11.5 s)
+ok      svelte-check (33.0 s): 1791224104373 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (58.6 s): Duration  54.26s (transform 75.63s, setup 0ms, import 180.15s, tests 30.36s, environment 278ms)
+test:quick: 59.3 s (limit 45.0 s); every command passed
 test:quick: over the time limit
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
 checks: 1 commands passed
 ```
 
-Run 5:
-
-```
-test:quick: 58 changed file(s), from git since HEAD
-test:quick: 81 test file(s), 10 essential
-ok      prettier (1.5 s): All matched files use Prettier code style!
-ok      ASCII gate (1.6 s)
-ok      svelte-kit sync (3.1 s)
-ok      eslint (16.7 s)
-ok      svelte-check (20.0 s): 1791216707079 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (30.5 s): Duration  23.80s (transform 23.70s, setup 0ms, import 53.08s, tests 37.78s, environment 412ms)
-test:quick: 32.4 s (limit 45.0 s); every command passed
-checks: 1 commands passed
-```
-
-Tests outside the list that ran: `npx vitest run tests/checks --reporter=dot` ran once with 8 failures that were 5 s timeouts of the import-order tests under load (the machine was running other agents), stale diagrams after an import change, and `tests/checks/source/comment-width.test.ts` and `tests/checks/source/keys.test.ts` findings in this step's files (four comment lines over 100 columns and the unread key `app.tasks.record_unread` read through `text[...]`, now read through `words(text, 'app.tasks.record_unread')`); after the fixes `npx vitest run tests/checks/imports tests/checks/diagrams tests/checks/source/keys.test.ts --testTimeout 120000` printed `Test Files 5 passed (5) Tests 82 passed (82)`. `tests/checks/imports/order.test.ts` rejected an import of `data/helpers/run/tasks.ts` from `data/model/model-processes.ts`; `UPDATE_TASKS` and `UpdateTask` now live in `data/model/model-processes.ts` (judgment call 1).
-
-## Kept tests: failing lines on the unchanged tree and with a named change
+## Kept tests: failing lines on the unchanged tree
 
 On the unchanged tree (the dispatch base copied to the scratchpad, the step's test files copied in, `node_modules` linked; `base.out`):
 
 ```
-== UNCHANGED TREE: tests/server/machine/tasks/schedule.test.ts
- FAIL  |unit| tests/server/machine/tasks/schedule.test.ts [ tests/server/machine/tasks/schedule.test.ts ]
-Error: Cannot find module '../../../../src/lib/server/machine/tasks/record.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/a3-builder/base/oculus/tests/server/machine/tasks/schedule.test.ts
- Test Files  1 failed (1)
-      Tests  no tests
-== UNCHANGED TREE: tests/server/machine/tasks/record.test.ts
- FAIL  |unit| tests/server/machine/tasks/record.test.ts [ tests/server/machine/tasks/record.test.ts ]
-Error: Cannot find module '../../../../src/lib/server/machine/tasks/record.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/a3-builder/base/oculus/tests/server/machine/tasks/record.test.ts
- Test Files  1 failed (1)
-      Tests  no tests
-== UNCHANGED TREE: tests/data/sources/config/catalog/value-rule.test.ts
-------- Failed Tests 1 -------
- FAIL  |unit| tests/data/sources/config/catalog/value-rule.test.ts > valueProblem > answers the kind of problem each control, bound and list gives a value, and none for a value that fits
-TypeError: Cannot read properties of undefined (reading 'test')
- Test Files  1 failed (1)
-      Tests  1 failed | 2 passed (3)
-== UNCHANGED TREE: tests/checks/config/config.test.ts
-------- Failed Tests 1 -------
- FAIL  |unit| tests/checks/config/config.test.ts > settingFindings > words each wrong setting against behavior.yml from the catalog, and nothing for the shipped files
+FAIL  |unit| tests/server/machine/tasks/record.test.ts [ tests/server/machine/tasks/record.test.ts ]
+Error: Cannot find module '../../../../src/lib/server/machine/tasks/record.ts' imported from <base>/tests/server/machine/tasks/record.test.ts
+FAIL  |unit| tests/server/machine/tasks/schedule.test.ts [ tests/server/machine/tasks/schedule.test.ts ]
+Error: Cannot find module '../../../../src/lib/server/machine/tasks/record.ts' imported from <base>/tests/server/machine/tasks/schedule.test.ts
+------ Failed Tests 15 -------
+FAIL  |unit| tests/checks/config/config.test.ts > settingFindings > words each wrong setting against behavior.yml from the catalog, and nothing for the shipped files
 AssertionError: expected [ 'calendar.days_ahead', ...(35) ] to deeply equal [ 'calendar.days_ahead', ...(38) ]
- Test Files  1 failed (1)
-      Tests  1 failed | 29 passed (30)
-== UNCHANGED TREE: tests/data/sources/config/settings.test.ts
------- Failed Tests 13 -------
- FAIL  |unit| tests/data/sources/config/settings.test.ts > the synthetic catalog > gives every setting a default other than the shipped one
+FAIL  |unit| tests/data/sources/config/settings.test.ts > the synthetic catalog > gives every setting a default other than the shipped one
 TypeError: Cannot read properties of undefined (reading 'default')
- FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > reads each pattern as written, and the default with no problem for a missing or {} entry
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > reads each pattern as written, and gives no problem for a missing, empty or {} entry
 AssertionError: expected { Object (threw) } to strictly equal { value: { ...(4) }, problems: [] }
- FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a nonsense problem for "form"
- FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a 61 * * * * problem for "form"
- FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a * * * * * * problem for "form"
-== UNCHANGED TREE: tests/routes/sessions/terminal-actions.test.ts
- Test Files  1 passed (1)
-      Tests  13 passed (13)
-== UNCHANGED TREE: tests/checks/tree/boundaries.test.ts
-------- Failed Tests 1 -------
- FAIL  |unit| tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib
-Error: Test timed out in 5000ms.
- Test Files  1 failed (1)
-      Tests  1 failed | 10 passed (11)
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "nonsense"
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "61 * * * *"
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "* * * * * *"
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a form problem for "*/0 * * * *"
+AssertionError: expected { Object (threw) } to strictly equal { value: { ...(4) }, ...(1) }
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a text problem for 5
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a text problem for null
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a text problem for []
+AssertionError: expected { Object (threw) } to strictly equal { value: { ...(4) }, ...(1) }
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a cron_never problem for "0 0 31 2 *"
+AssertionError: expected { Object (threw) } to strictly equal { value: { ...(4) }, ...(1) }
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > names a task entry or a tasks block that is not a map, and reads the other tasks
+AssertionError: expected { Object (threw) } to strictly equal { value: { ...(4) }, ...(1) }
+FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > reads a pattern the Settings view wrote at its three-level key
+AssertionError: expected [ { ...(2) } ] to strictly equal []
+FAIL  |unit| tests/data/sources/config/settings.test.ts > the shipped files > answers the shipped default for each setting the shipped file gets wrong, and reads every shipped default
+AssertionError: expected [ 'calendar.days_ahead', ...(30) ] to strictly equal [ 'calendar.days_ahead', ...(33) ]
+FAIL  |unit| tests/data/sources/config/catalog/value-rule.test.ts > valueProblem > answers the kind of problem each control, bound and list gives a value, and none for a value that fits
+TypeError: Cannot read properties of undefined (reading 'test')
+Test Files  5 failed | 1 passed (6)
+Tests  15 failed | 83 passed (98)
+Tests  11 passed (11)
 == UNCHANGED TREE boundaries (testTimeout 120000)
       Tests  11 passed (11)
 ```
-
-With one named change on the changed tree (G46 and G31; `mut/final.py`, each change restored after its run):
-
-```
-MUT catch-up never taken | schedule.ts | if (missed !== undefined && missed.getTime() > aft => if (missed === null) { | FAILED
-     FAIL  |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > starts one catch-up run at start for the due times missed while the server was down
-     AssertionError: expected [] to have a length of 1 but got +0
-MUT a working earlier run ignored | schedule.ts | const working = earlier.state === 'working' ? earl => const working = null; | FAILED
-     FAIL  |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > starts nothing for a due time while the task's earlier run is working, and records it skipped
-     AssertionError: busy: expected [ Array(1) ] to have a length of +0 but got 1
-MUT idle earlier terminal not ended | schedule.ts | if (earlier.state === 'idle') { => if (earlier.state === 'none') { | FAILED
-     FAIL  |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > ends the terminal of the task's idle earlier run, and then starts the new run
-     AssertionError: expected undefined to deeply equal [ 'kill-session', '-t', ...(1) ]
-MUT handled due time claimed again | record.ts | if (held.handled !== null && Date.parse(held.handl => if (held.handled === 'never') { | FAILED
-     FAIL  |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > never starts a due time the record holds as handled, after a restart or from a second watcher
-     AssertionError: expected [ Array(2) ] to have a length of 1 but got 2
-MUT close leaves the check timer | schedule.ts |             clearInterval(check);  =>  | FAILED
-     FAIL  |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > leaves no timer after close and starts nothing, a start already awaited included
-     AssertionError: expected 1 to be +0 // Object.is equality
-MUT start after close while sessions awaited | schedule.ts | await sessionsReady;             if (stopped()) re => await sessionsReady; | FAILED
-     FAIL  |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > leaves no timer after close and starts nothing, a start already awaited included
-     AssertionError: expected 1 to be +0 // Object.is equality
-MUT start after close while the table is awaited | schedule.ts | const earlier = await earlierRun(loaded.logs[kind] => const earlier = await earlierRun(loaded. | FAILED
-     FAIL  |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > leaves no timer after close and starts nothing, a start already awaited included
-     AssertionError: expected [ { trigger: 'schedule', ...(4) }, ...(1) ] to have a length of 1 but got 2
-MUT an unreadable record read as empty | record.ts | if (!read.ok) return { ok: false, reason: read.rea => if (!read.ok) return { ok: true, whole:  | FAILED
-     FAIL  |unit| tests/server/machine/tasks/record.test.ts > the run record > refuses a write over a schedule record it cannot read, leaving it
-     AssertionError: {: expected { ok: true, value: { ...(4) } } to match object { ok: false, why: 'unread' }
-```
-
-With one named change on the changed tree (G13 and the shipped-files rows; `mut/m3.py`):
-
-```
-MUT value-rule.ts | return job.nextRun() === null ? { kind: 'cron_never' } : null; => return null; | value-rule.test.ts ['Tests  1 failed | 2 passed (3)']
-     FAIL  |unit| tests/data/sources/config/catalog/value-rule.test.ts > valueProblem > answers the kind of problem each control, bound and list gives a value, and none for a value that fits
-     AssertionError: a cron pattern with no next run: expected null to strictly equal { kind: 'cron_never' }
-MUT value-rule.ts | return job.nextRun() === null ? { kind: 'cron_never' } : null; => return null; | settings.test.ts ['Tests  2 failed | 50 passed (52)']
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a 0 0 31 2 * problem for "cron_never"
-     AssertionError: expected { value: { ...(4) }, problems: [] } to strictly equal { value: { ...(4) }, ...(1) }
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > the shipped files > answers the shipped default for each setting the shipped file gets wrong, and reads every shipped default
-     AssertionError: expected [ 'calendar.days_ahead', ...(32) ] to strictly equal [ 'calendar.days_ahead', ...(33) ]
-MUT value-rule.ts | return job.nextRun() === null ? { kind: 'cron_never' } : null; => return null; | config.test.ts ['Tests  1 failed | 29 passed (30)']
-     FAIL  |unit| tests/checks/config/config.test.ts > settingFindings > words each wrong setting against behavior.yml from the catalog, and nothing for the shipped files
-     AssertionError: expected [ 'calendar.days_ahead', ...(37) ] to deeply equal [ 'calendar.days_ahead', ...(38) ]
-MUT value-rule.ts | if (job === null) return { kind: 'form', form: spec.form }; => if (job === null) return null; | value-rule.test.ts ['Tests  1 failed | 2 passed (3)']
-     FAIL  |unit| tests/data/sources/config/catalog/value-rule.test.ts > valueProblem > answers the kind of problem each control, bound and list gives a value, and none for a value that fits
-     AssertionError: a cron pattern that does not construct: expected null to strictly equal { kind: 'form', form: 'cron' }
-MUT value-rule.ts | if (job === null) return { kind: 'form', form: spec.form }; => if (job === null) return null; | settings.test.ts ['Tests  5 failed | 47 passed (52)']
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a nonsense problem for "form"
-     AssertionError: expected { value: { ...(4) }, problems: [] } to strictly equal { value: { ...(4) }, ...(1) }
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a 61 * * * * problem for "form"
-     AssertionError: expected { value: { ...(4) }, problems: [] } to strictly equal { value: { ...(4) }, ...(1) }
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a * * * * * * problem for "form"
-     AssertionError: expected { value: { ...(4) }, problems: [] } to strictly equal { value: { ...(4) }, ...(1) }
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a */0 * * * * problem for "form"
-     AssertionError: expected { value: { ...(4) }, problems: [] } to strictly equal { value: { ...(4) }, ...(1) }
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > the shipped files > answers the shipped default for each setting the shipped file gets wrong, and reads every shipped default
-     AssertionError: expected [ 'calendar.days_ahead', ...(32) ] to strictly equal [ 'calendar.days_ahead', ...(33) ]
-MUT value-rule.ts | if (job === null) return { kind: 'form', form: spec.form }; => if (job === null) return null; | config.test.ts ['Tests  1 failed | 29 passed (30)']
-     FAIL  |unit| tests/checks/config/config.test.ts > settingFindings > words each wrong setting against behavior.yml from the catalog, and nothing for the shipped files
-     AssertionError: expected [ 'calendar.days_ahead', ...(37) ] to deeply equal [ 'calendar.days_ahead', ...(38) ]
-MUT value-rule.ts | function textProblem(spec: CatalogEntry, text: string): ValueProblem | => function textProblem(spec: CatalogEntry, text: string): ValueProblem | | value-rule.test.ts ['Tests  1 failed | 2 passed (3)']
-     FAIL  |unit| tests/data/sources/config/catalog/value-rule.test.ts > valueProblem > answers the kind of problem each control, bound and list gives a value, and none for a value that fits
-     AssertionError: an empty cron text without empty: expected null to strictly equal { kind: 'form', form: 'cron' }
-MUT settings.ts | path = at === 0 ? name : `${path}.${name}`;         if (raw === undefi => path = at === 0 ? name : `${path}.${name}`;         if (at > 0) return | settings.test.ts ['Tests  12 failed | 40 passed (52)']
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > reads each pattern as written, and the default with no problem for a missing or {} entry
-     AssertionError: expected { value: { ...(4) }, problems: [] } to strictly equal { value: { ...(4) }, problems: [] }
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a nonsense problem for "form"
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a 61 * * * * problem for "form"
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a * * * * * * problem for "form"
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a */0 * * * * problem for "form"
-     AssertionError: expected { value: { ...(4) }, problems: [] } to strictly equal { value: { ...(4) }, ...(1) }
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a 5 problem for "text"
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a null problem for "text"
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a  problem for "text"
-     AssertionError: expected { value: { ...(4) }, problems: [] } to strictly equal { value: { ...(4) }, ...(1) }
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > answers the default and a 0 0 31 2 * problem for "cron_never"
-     AssertionError: expected { value: { ...(4) }, problems: [] } to strictly equal { value: { ...(4) }, ...(1) }
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > taskSchedules > names a task entry or a tasks block that is not a map, and reads the other tasks
-MUT settings.ts | taskSchedules ]; => ]; | settings.test.ts ['Tests  1 failed | 51 passed (52)']
-     FAIL  |unit| tests/data/sources/config/settings.test.ts > the shipped files > answers the shipped default for each setting the shipped file gets wrong, and reads every shipped default
-     AssertionError: expected [ 'calendar.days_ahead', ...(30) ] to strictly equal [ 'calendar.days_ahead', ...(33) ]
-MUT settings.ts | taskSchedules ]; => ]; | config.test.ts ['Tests  1 failed | 29 passed (30)']
-     FAIL  |unit| tests/checks/config/config.test.ts > settingFindings > words each wrong setting against behavior.yml from the catalog, and nothing for the shipped files
-     AssertionError: expected [ 'calendar.days_ahead', ...(35) ] to deeply equal [ 'calendar.days_ahead', ...(38) ]
-```
-
-The daylight saving test with the half-minute look removed (`consider(kind)` in the interval replaced by `void kind`):
-
-```
-FAIL  |unit| tests/server/machine/tasks/schedule.test.ts > watchSchedules > starts the run of a daily 02:30 on the day the clocks skip it, once, at 03:30
-AssertionError: expected [] to have a length of 1 but got +0
-```
-
-The `SHELL_STORES` entry of `tests/checks/tree/boundaries.test.ts` removed (the shell's tray reads the `schedule` store):
-
-```
-------- Failed Tests 1 -------
- FAIL  |unit| tests/checks/tree/boundaries.test.ts > layer boundaries > keeps every shell file to the stores its row names
-AssertionError: expected [ Array(1) ] to deeply equal []
-      Tests  1 failed | 10 passed (11)
-```
-
-P1 ('reads a pattern the Settings view wrote at its three-level key') fails on the unchanged tree (the 13 failures of settings.test.ts above include it: `writeConfigKey` refuses the key there) and with `heldAt` walking two segments (the `settings.ts` mutation above, 12 failures). G35's `task` row passes on both trees: `Tests 13 passed (13)` on the unchanged tree above, and in the six-file run on the changed tree.
 
 ## The stub of the look, quoted whole (`probes/stub-claude.sh`)
 
@@ -782,63 +1137,65 @@ done
 ## The files
 
 ```
-config/behavior.yml       201 ->      206
-config/catalogs/options.yml      1280 ->     1312
-config/text/app.yml        72 ->       81
-config/text/findings.yml       179 ->      181
-config/text/server.yml       106 ->      108
-config/text/views/system/workbench.yml       199 ->      201
-DESIGN.md       438 ->      440
-HELP.md       352 ->      352
-package-lock.json      7442 ->     7462
-package.json        96 ->       97
-src/lib/data/helpers/run/tasks.ts        22 ->       30
-src/lib/data/model/index.ts       546 ->      553
-src/lib/data/model/model-processes.ts        40 ->       70
-src/lib/data/sources/config/catalog/options.ts       558 ->      561
-src/lib/data/sources/config/catalog/value-rule.ts       252 ->      285
-src/lib/data/sources/config/catalog/value-words.ts       117 ->      121
-src/lib/data/sources/config/settings.ts       482 ->      510
-src/lib/server/edit/writes/config/config-fit.ts       489 ->      492
-src/lib/server/machine/pty/routes.ts       685 ->      664
-src/lib/server/machine/tasks/record.ts  new/changed ->      290
-src/lib/server/machine/tasks/schedule.ts  new/changed ->      381
-src/lib/server/machine/tasks/start.ts  new/changed ->      115
-src/lib/server/root/context.ts       737 ->      756
-src/lib/server/root/live-settings.ts       275 ->      289
-src/lib/server/root/watch/pollers.ts       172 ->      222
-src/lib/shell/rail/UpdateTray.svelte       248 ->      285
-src/lib/state/client/context.ts       505 ->      509
-src/lib/state/client/entities.svelte.ts       108 ->      110
-src/lib/state/client/payloads.ts       129 ->      134
-src/lib/state/sessions/terminals.svelte.ts       839 ->      843
-src/lib/state/shared/stores/shapes.ts       322 ->      325
-src/lib/state/system/config/editors/fields.ts       653 ->      664
-src/lib/state/system/config/messages.ts        58 ->       60
-src/lib/state/system/machine/schedule.svelte.ts  new/changed ->       94
-src/routes/+page.svelte       221 ->      222
-src/routes/api/(sessions)/terminal/+server.ts        43 ->       44
-tests/checks/config/config.test.ts  new/changed ->      603
-tests/checks/tree/boundaries.test.ts       657 ->      657
-tests/data/sources/config/catalog/value-rule.test.ts  new/changed ->      237
-tests/data/sources/config/settings.test.ts  new/changed ->      685
-tests/data/sources/config/wrong-settings.ts  new/changed ->       40
-tests/routes/sessions/terminal-actions.test.ts       342 ->      342
-tests/routes/sessions/terminal-fixture.ts       213 ->      213
-tests/server/machine/tasks/record.test.ts        42 ->       42
-tests/server/machine/tasks/schedule.test.ts       341 ->      341
-tests/server/root/context-fixture.ts       124 ->      130
+DESIGN.md   438 ->   440
+HELP.md   352 ->   352
+config/behavior.yml   201 ->   206
+config/catalogs/options.yml  1280 ->  1312
+config/text/app.yml    72 ->    81
+config/text/findings.yml   179 ->   181
+config/text/server.yml   106 ->   108
+config/text/views/system/workbench.yml   199 ->   201
+package-lock.json  7442 ->  7462
+package.json    96 ->    97
+src/lib/data/helpers/run/tasks.ts    22 ->    34
+src/lib/data/model/index.ts   546 ->   553
+src/lib/data/model/model-processes.ts    40 ->    70
+src/lib/data/sources/config/catalog/options.ts   558 ->   561
+src/lib/data/sources/config/catalog/value-rule.ts   252 ->   285
+src/lib/data/sources/config/catalog/value-words.ts   117 ->   121
+src/lib/data/sources/config/settings.ts   482 ->   509
+src/lib/server/edit/writes/config/config-fit.ts   489 ->   492
+src/lib/server/machine/pty/routes.ts   685 ->   664
+src/lib/server/machine/tasks/record.ts new/changed ->   291
+src/lib/server/machine/tasks/schedule.ts new/changed ->   380
+src/lib/server/machine/tasks/start.ts new/changed ->   111
+src/lib/server/root/context.ts   737 ->   756
+src/lib/server/root/live-settings.ts   275 ->   290
+src/lib/server/root/watch/pollers.ts   172 ->   220
+src/lib/shell/rail/UpdateTray.svelte   248 ->   285
+src/lib/state/client/context.ts   505 ->   509
+src/lib/state/client/entities.svelte.ts   108 ->   110
+src/lib/state/client/payloads.ts   129 ->   134
+src/lib/state/sessions/terminals.svelte.ts   839 ->   845
+src/lib/state/shared/stores/shapes.ts   322 ->   325
+src/lib/state/system/config/editors/fields.ts   653 ->   664
+src/lib/state/system/config/messages.ts    58 ->    60
+src/lib/state/system/machine/schedule.svelte.ts new/changed ->    95
+src/routes/+page.svelte   221 ->   222
+src/routes/api/(sessions)/terminal/+server.ts    43 ->    44
+tests/checks/config/config.test.ts new/changed ->   603
+tests/checks/tree/boundaries.test.ts   657 ->   657
+tests/data/sources/config/catalog/value-rule.test.ts new/changed ->   237
+tests/data/sources/config/settings.test.ts new/changed ->   684
+tests/data/sources/config/wrong-settings.ts new/changed ->    40
+tests/routes/git/git.test.ts changed -> 213
+tests/routes/machine/hpc.test.ts changed -> 38
+tests/routes/sessions/terminal-actions.test.ts   342 ->   342
+tests/routes/sessions/terminal-fixture.ts   213 ->   213
+tests/server/machine/tasks/record.test.ts    42 ->    42
+tests/server/machine/tasks/schedule.test.ts   341 ->   370
+tests/server/root/context-fixture.ts   124 ->   129
 ```
 
 `docs/diagrams/` holds 12 regenerated files (`npm run diagrams`); the brief's paths list names them.
 
 ## Every judgment call the brief left open
 
-1. Where `UPDATE_TASKS` and `UpdateTask` live. The brief puts them in `data/helpers/run/tasks.ts`, and `SchedulePayload` in `data/model/model-processes.ts` names `UpdateTask`. `tests/checks/imports/order.test.ts` ('holds the data folders') refuses `data/model/model-processes.ts:5 imports data/helpers/run/tasks.ts (data/helpers, above data/model)`. They live in `model-processes.ts` and are exported by `data/model/index.ts`; `tasks.ts` imports them for `isUpdateTask`, and every other module imports them from `data/model`. The boundary table is unchanged: `data/helpers/run/tasks` stays in the state row for `taskSkipPermissions`.
-2. The croner call that gives the fired due time. `dueAt(job, now)` in `server/machine/tasks/schedule.ts:82` is `job.previousRuns(1, <the start of the second after now>)[0]`, because `previousRuns` is exclusive and second-granular. Probe `probes/cron-boundary.mjs` (`final/cron-boundary.out`): `previousRuns(now)` at 0 ms after the due time answers the day before, `dueAt` answers the day of the due time from 0 ms on; and a machine asleep 06:00 to 09:00 over an hourly pattern gets the newest due time (09:00 local).
-3. A look for a due time every 30 s (`CHECK_MS`, `consider` in `schedule.ts`) beside croner's timer. Evidence: raw croner callbacks over 30 h from 2026-03-28 22:00Z under `TZ=Europe/Brussels` fire only at 2026-03-30 02:30 (probe `vp/s3b.probe.ts`: `C17b raw croner callbacks (fake clock, 30 h): ["2026-03-30 02:30:00 GMT+02:00"]`), so a daily 02:30 never runs on the day the clocks skip it, while C17 expects 03:30. `consider` decides the newest due time that no decision has seen (`seen[kind]`), so the timer and the look never start one due time twice; `claimDue` stays the guard across servers. A test keeps it (the sixth test of `schedule.test.ts`).
+1. Where `UPDATE_TASKS` and `UpdateTask` live. The brief puts them in `data/helpers/run/tasks.ts`, and `SchedulePayload` in `data/model/model-processes.ts` names `UpdateTask`. `tests/checks/imports/order.test.ts` ('holds the data folders') refuses `data/model/model-processes.ts` importing `data/helpers/run/tasks.ts` (data/helpers is above data/model). They are defined in `model-processes.ts`, exported by `data/model/index.ts`, and re-exported by `data/helpers/run/tasks.ts:21`, from which the consumers import them. The boundary table is unchanged: `data/helpers/run/tasks` is in the state row.
+2. The croner call that gives the fired due time. `dueAt(job, now)` in `server/machine/tasks/schedule.ts:87` is `job.previousRuns(LOOKBACK, <the start of the second after now>).find((due) => due.getTime() <= now.getTime())` with `LOOKBACK = 61`, because `previousRuns` is exclusive and second-granular, and because croner answers the due times of a skipped hour, moved after it, from the start of that hour. Probe `probes/cron-boundary.mjs` (`final/cron-boundary.out`) shows the second-granular part: `previousRuns(now)` at 0 ms after the due time answers the day before.
+3. A look for a due time every 30 s (`CHECK_MS`, `consider` in `schedule.ts`) beside croner's timer. Evidence: raw croner callbacks over 30 h from 2026-03-28 22:00Z under `TZ=Europe/Brussels` fire only at 2026-03-30 02:30 (probe `vp/s3b.probe.ts`: `C17b raw croner callbacks (fake clock, 30 h): ["2026-03-30 02:30:00 GMT+02:00"]`), so a daily 02:30 never runs on the day the clocks skip it by the timer alone, while C17 expects 03:30. `consider` decides the newest due time not later than now that no decision has seen (`seen[kind]`), so the timer and the look never start one due time twice; `claimDue` stays the guard across servers. The sixth test of `schedule.test.ts` keeps it.
 4. The lock: `schedule.json.lock` opened `wx`, retry every 50 ms for up to 2 s, a lock older than 60 s taken over with one stderr line (`record.ts`, `LOCK_RETRY_MS`, `LOCK_WAIT_MS`, `STALE_LOCK_MS`). A folder the lock cannot be made in (permission) answers `unwritable`, not `locked`.
-5. The store's name is `schedule` (`state/system/machine/schedule.svelte.ts`, `createSchedule`, `ScheduleStore { task(kind), error() }`, five runs shown). The shell reads it, so `'schedule'` is added to `SHELL_STORES` in `tests/checks/tree/boundaries.test.ts`, a file outside the paths list; the test fails without the entry (line quoted above).
+5. The store's name is `schedule` (`state/system/machine/schedule.svelte.ts`, `createSchedule`, `ScheduleStore { task(kind), error() }`, five runs shown). The shell reads it, so `'schedule'` is added to `SHELL_STORES` in `tests/checks/tree/boundaries.test.ts`, a file outside the paths list (ruling 6).
 6. The tray is not split: `UpdateTray.svelte` is 285 lines (limit 520), so no `TaskRow` component.
 7. The stub of the look (`probes/stub-claude.sh`, quoted whole above): prints its arguments and pid, writes the registry entry `<account>/sessions/<pid>.json` and a transcript, is busy for `STUB_BUSY_SECONDS` (default 8) and then idle, or follows a file `<account>/stub-status` holding `busy` or `idle`, and ends on the input line `quit`.
 8. The grid of a scheduled run is 80 x 24 (`SCHEDULED_SIZE` in `start.ts`): no page is sized for it.
@@ -849,6 +1206,7 @@ tests/server/root/context-fixture.ts       124 ->      130
 13. A run skipped because the task's own start is awaited is recorded with `terminal` null; one skipped for a working earlier run carries that terminal's id.
 14. The earlier run's session is matched by the registry record whose pid equals the terminal's pane pid (C1 shows they are equal for a command tmux runs directly), and by a walk of the process table (`under`) only when no record has that pid.
 15. The record folder is watched with `fs.watch` (non-persistent) so a press, a settled run and a second server reach the page.
+16. `contextFixture` makes one scratch directory per call (ruling 7), so `hpc.test.ts` and `git.test.ts` take `it` from `tests/fixtures/scratch.ts`, which sweeps it.
 
 ## Every host- or user-visible change, before and after, for the look of item 9
 
@@ -905,10 +1263,10 @@ C27 TRAY AFTER A schedule MESSAGE (a listed terminal, an unlisted one, an error)
 
 1. `writeConfigKey(engine, file, key, value)` without the fifth argument checks no value: `config-key.ts:113` builds `sources` as null and `config-fit.ts:284` returns null for a null `sources`. The refusals of C4 and C5 are shown by passing the inputs `config-write.ts` passes (`{ hub, projects: () => [] }`), as probe s5 does. The server's endpoint always passes them.
 2. The folder order: the brief's placement of `UPDATE_TASKS` in `data/helpers/run/tasks.ts` conflicts with `tests/checks/imports/order.test.ts` once `model-processes.ts` names `UpdateTask` (judgment call 1).
-3. C17: croner alone does not run a daily 02:30 on the day the clocks skip it (judgment call 3), so the expectation holds only with the half-minute look.
+3. C17: croner's timer alone does not run a daily 02:30 on the day the clocks skip it (judgment call 3), so the expectation holds only with the half-minute look.
 4. Item 9 case 1 expects the finding for `inbox: nonsense` "on the Findings view"; the render of that view is not part of this step's probes. The finding text is shown by `tests/checks/config/config.test.ts` (the three `toContain` lines) and not by a drawn view.
-5. The quick list's 45 s limit: runs 1, 3 and 4 took 66.1 s, 63.9 s and 88.9 s with other agents running on the machine; runs 2 and 5 took 33.7 s and 32.4 s.
+5. The quick list's 45 s limit: runs a, b and e took 87.2 s, 89.1 s and 59.3 s, over it; runs c, d and f took 38.2 s, 41.4 s and 44.7 s. Every command passed in all six.
 
 ## Head comments and documents read against the change
 
-Rewritten: `DESIGN.md` line 85 (forms, empty, the `tasks:` block), the channels list (adds `schedule`), the new **Schedules.** paragraph (line 139), the **Processes.** paragraph (the exception for a scheduled run's own idle terminal), the update-tasks paragraph (line 416); `HELP.md` lines 25 and 269; head comments of `tasks.ts`, `model-processes.ts`, `value-rule.ts`, `options.ts` (the forms), `settings.ts` (`heldAt`, `taskSchedules`), `routes.ts`, `pollers.ts`, `live-settings.ts`, `UpdateTray.svelte`, `terminal-fixture.ts`, `context-fixture.ts`, `terminals.svelte.ts` (the re-export note). Still true: the head comment of `data/accounts/chat.ts` (names `data/helpers/run/tasks.ts` for the `tasks:` block), `config/behavior.yml`'s `tasks:` comment (carries the scheduled-run sentence), `options.yml`'s `tasks.skip_permissions` description (same sentence).
+Rewritten: `DESIGN.md` line 85 (forms, empty, the `tasks:` block), the channels list (adds `schedule`), the **Schedules.** paragraph (line 139, in shorter sentences, and 'never earlier'), the **Processes.** paragraph (line 157: the exception for a scheduled run's own idle terminal, and an update task's line needing no approval), the update-tasks paragraph (line 416: `taskSkipPermissions`, the catalog rule for the schedules, the location of `UPDATE_TASKS`); `HELP.md` lines 25 and 269; head comments of `tasks.ts`, `model-processes.ts`, `value-rule.ts`, `options.ts` (the forms), `settings.ts` (`heldAt`, `taskSchedules`, rewrapped), `routes.ts`, `pollers.ts` (rewrapped), `live-settings.ts`, `schedule.ts` (the look and the due time), `UpdateTray.svelte`, `terminal-fixture.ts`, `context-fixture.ts`, `terminals.svelte.ts` (the re-export note), `schedule.test.ts`, `settings.test.ts` (rewrapped); the descriptions of the four `tasks.<task>.schedule` options and of `tasks.skip_permissions` in `options.yml`, and the `tasks:` comment of `behavior.yml`. Still true: the head comment of `data/accounts/chat.ts` (names `data/helpers/run/tasks.ts` for the `tasks:` block).

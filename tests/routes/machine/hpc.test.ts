@@ -3,6 +3,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { handleHpc, type HpcTarget } from '../../../src/lib/server/machine/hpc/routes.ts';
+import { submitState } from '../../../src/lib/server/machine/hpc/submit.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 const target = (over: Partial<HpcTarget> = {}): HpcTarget => {
     const server = contextFixture({ token: 'token' });
@@ -12,6 +13,15 @@ const target = (over: Partial<HpcTarget> = {}): HpcTarget => {
         refresh: vi.fn(() => server.hpc.refresh()),
         cancel: vi.fn(() => Promise.resolve({ status: 'ok' })),
         log: vi.fn(() => Promise.resolve({ status: 'ok', log: 'x', path: '/x' })),
+        roots: () => [],
+        projects: () => [],
+        hub: '/fixture/hub',
+        catalog: () => ({}),
+        kept: vi.fn(() => ({ ok: false as const, error: 'unused' })),
+        copy: vi.fn(() => Promise.resolve({ stdout: '', stderr: '', code: 0 })),
+        ssh: vi.fn(() => Promise.resolve({ stdout: '', stderr: '', code: 0 })),
+        submits: submitState(),
+        say: vi.fn(),
         ...over
     };
 };
