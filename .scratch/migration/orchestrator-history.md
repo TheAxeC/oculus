@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z536 (raised 2026-10-05, closed 2026-10-05 by Axel: "(b)"): VS Code's title actions on a file tab go in its breadcrumb bar.
+
 - Z534 (2026-10-05, closed in automode): D20's descendant kill kept; `choices.md`.
 
 - Z511 (2026-10-05, A3's choice 5, unattended runs and permissions): with `tasks.skip_permissions: true`, a scheduled Update run starts a Claude session with no person present. (a) it starts with `--dangerously-skip-permissions`, the written schedule standing as the yes. For: VS Code's Automations run with the agent's configured permissions; a scheduled run actually runs. Against: an agent edits and runs commands with nobody asked, on a timer. (b) a scheduled run is held in the tray until a press starts it. For: nothing runs unasked. Against: no unattended run, which is what A3 is for. (c) scheduled runs always start with prompts on, whatever `skip_permissions` says. For: nothing skips a prompt unasked. Against: the run stops at its first prompt with nobody there, so it rarely finishes. Recommendation: (a), the risk stated in HELP.md and the option's description. Yours, since it decides what runs on your machine without you. Closed 2026-10-05 by Axel: (a): a scheduled Update run starts with `--dangerously-skip-permissions` when `tasks.skip_permissions` is true, the risk stated in HELP.md and the option's description.

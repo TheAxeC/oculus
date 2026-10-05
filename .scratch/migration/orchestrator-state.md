@@ -42,7 +42,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   round: 3 (agents/briefs/X3f-round3.md)
   round3_builder: abb2cc439fd4f1181 resumed 2026-10-05, served claude-sonnet-5-5 (the transcript's message.model, read after the resume)
   round3_cases: agents/briefs/X3f-round3-cases.md (Open in Program only on mapped extensions, Blame only on tabs with a gutter, Open Preview as the row menu's)
-  round3_builder_usage: first run handed back (cases 1, 3, 4, 5), 310,369 tokens, 29 tool uses, 4.0 min, 0 full-list runs; resumed with the cases ruling
+  round3_builder_usage: first run handed back (cases 1, 3, 4, 5), 310,369 tokens, 29 tool uses, 4.0 min, 0 full-list runs; resumed with the cases ruling; build: 319,520 tokens, 250 tool uses, 39.7 min, 2 full-list runs; continued with Z536 (Open Preview to the Side to the bar) and Z537
 - step: D20
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -124,7 +124,7 @@ dispatch:   # steps in flight, up to seven (Z423)
 
 - queue.md is only ever rewritten whole (Z473): every change writes the full file from the state of the plan, each section read and checked line by line, never a replacement of one line in place.
 - No new steps, ever (Z468): the orchestrator never adds a step to the plan. Whatever a finding needs is folded whole into an existing step (its line widened, its brief or its next round), and nothing it would have done is dropped.
-- A file feature works from the file opened in the editor (Z488, Axel, 2026-10-05, "This goes for literally everything"): every step that gives a file a feature puts it in the open file's editor (its title bar, its gutter, its marks, a tab beside it), as VS Code does, never in a separate view opened by a right-click; every brief is read against this before dispatch. `docs/` files keep their Doc view (Z489).
+- A file feature works from the file opened in the editor (Z488, Axel, 2026-10-05, "This goes for literally everything"): every step that gives a file a feature puts it in the open file's editor (its breadcrumb bar (Z536), its gutter, its marks, a tab beside it), as VS Code does, never in a separate view opened by a right-click; every brief is read against this before dispatch. `docs/` files keep their Doc view (Z489).
 - The landing gate never runs in main's checkout (Z492, Axel, 2026-10-05): `npm run diagrams && npm run test:landing` runs in the gate worktree `.agents/worktrees/gate`, brought to main's head and given the step's range by cherry-pick, its `node_modules` a `cp -c` clone of main's renewed when `package.json` or the lockfile changes; fixes at landing are made there and the gate rerun; once green the same range is cherry-picked onto main, the landing fixes and diagrams copied, `git diff --cached` on main compared with the gate's, then the look on TEST and the commit.
 - Make sure it works, every step (Z467): the landing look exercises the step's feature itself on TEST across real cases, for a file feature at least ten files of different types, each case recorded with what was seen; nothing is committed to main before that look passes.
 - The night run (Axel, 2026-09-15 21:32, "Back to the night run, you have 9h40m available (and no hpc access). Please resume"): the window ends at 07:12 on 2026-09-16; no package that cannot land inside it is dispatched, no HPC command; the pause of 20:15 is lifted, the reviewers for D1 and O28b dispatched at 21:33, D3 dispatched under the rolling window.
@@ -162,8 +162,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
-
-- Z536 (raised 2026-10-05, step D44's brief and the ruling audit). Where VS Code's title actions go on a file tab: Submit on an open `.slurm` file (D44), and Open Preview to the Side on a Markdown file (X3f keeps it on the tab row). Your Z532 put a file tab's actions "off the tab into the breadcrumb"; VS Code draws Run as a title action at the end of the tab row, where X3f keeps Open Preview to the Side. (a) The tab row's end, beside Open Preview to the Side: where VS Code puts Run, but one more control on the row Z532 cleared. (b) The breadcrumb bar with Save, Revert, the star, Open in Program and Blame: every file action in one place as Z532 says, but not where VS Code puts Run. Recommendation: (b), since it follows your words in Z532. Neither is the lazy option. D44 waits for X3f's landing either way.
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
