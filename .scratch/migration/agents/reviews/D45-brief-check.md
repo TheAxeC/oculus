@@ -187,3 +187,7 @@ What changes under each option:
 5. Visual parity with VS Code's LaTeX Workshop.
 
 Usage: ordo-high on claude-opus-5-5 (a57c2197995fd04d5), 276,990 tokens, 109 tool uses, 14.5 min.
+
+## Closed
+
+Rechecked after S5 by agent a32b5474d92306805 (claude-opus-5-5, 324,219 tokens, 91 tool uses, 17.2 min). Every finding is closed in `agents/briefs/D45.md`, each marked inline "(closes brief check, <section> <n>)" (28 markers): Names 1 to 7; the step line's Z488 points 1 to 3; Premises 1 to 7; Cases and checks 1 and 3 to 7; The question 1, 2, 4, 5 and 6; Implied inputs 1 to 5 and 8 to 16; Dictated text 3; choice 8 (Z504). The step line 7 (the build log) is closed by Z540, Implied inputs 6 and 7 by Z542 and Z541. The step line 12 (the inventory on TEST) and The question 3 (whether Chrome hands Cmd+Alt+B, J, C and Cmd+L to the page) are the orchestrator's look on TEST before dispatch. D45 is prepared after X3f and D20 land, since it does not merge simply with either.
