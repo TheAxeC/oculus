@@ -1,6 +1,6 @@
 In flight (5 of 5 slots):
 - A3 (scheduled Update runs): brief check running.
-- D38 (the Literature search view): brief check running.
+- D38 (the Literature search view): brief closed; builder starting.
 - D11 (the debug client for rite): brief rechecked against main after S5.
 - X3f (opening a file row, and the tab row's actions): round 3 built; its review is running, then the gate and the look on TEST.
 - D20 (an agent from a task or a worktree): repair round 1 built; its review is running.
