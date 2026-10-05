@@ -196,3 +196,90 @@ Findings: none.
 5. Whether options.yml's added "is refused" sentences (:343-602) are false. Under G13's own words ("refused with a finding ... default used") I read them as true. Q119 item 4 rewrites only the six named sentences.
 
 Usage: ordo-high on claude-opus-5-5 (a5b40ed74302680f1), 280,042 tokens, 91 tool uses, 15.1 min.
+
+### Closed
+
+Every finding below is closed in `agents/briefs/Q119.md`, rewritten whole for S5's repair round 1 (Z468) and re-read against S5's worktree. "What is on the tree" is the brief's section of that name.
+
+Section 1, Names:
+- 1 (DESIGN.md:395, `requirePaintLimit`): item 5.3 gives the new last sentence; DESIGN.md 395-395 is in the write list; verify 7 greps `requirePaintLimit` in DESIGN.md and HELP.md.
+- 2 (boundaries.test.ts:62-63): item 5.6 gives the new text for :62-63 and :74-76 and the sentence of the new `value-rule` row; the file is in the write list, marked outside S5's list.
+- 3 (HELP.md:261): item 5.4 gives the new last sentence; verify 7 greps 'keeps the one in force'.
+- 4 (source.ts:85-99): item 5.5 gives the new text of :87-92; the range is in the write list.
+- 5 (rows.ts:10-11): item 5.5 gives the new text of :9-12; the range is in the write list.
+- 6 (HELP.md:282 last sentence): item 5.4 gives it new; verify 7 greps 'could not read back'.
+- 7 (config.test.ts SOUND :369-376): item 5.7, `SOUND` and its comment go, the case at :389-404 goes, its behaviour asserted by case 31.
+- 8 (`loadLocal`'s return and the toEqual cases): item 3.3 and Decision 8, `loadLocal` keeps `LocalConfig` and never throws, so config.test.ts :90, :96-104, :120, :134-150, :289 hold; `readLocal` is the second reader and `localFindings` reads it (item 3.4).
+
+Section 2, The step line:
+- 1 (plan.md:257 gone): "What the round must make true" quotes Z443, Z454, Z463, Z493 and Z494 with their grep commands in place of the step line.
+- 3 (Z463, the HELP move): item 5.4 adds the port sentences to HELP.md:282 with the before (8791) and after (8790); Decision 10; case 29 runs it.
+- 4 (Z468): "Where this brief sits" names S5's report path, the merged write list with each path outside S5's list marked, S5's base copy for `diff -rq`, and the unchanged tree as S5's worktree before the round (copied to `<scratchpad>/round-start/`); "Report" and "Verify before you report" follow it.
+
+Section 3, Premises:
+- 1 (line numbers on S5's tree): every line in "What is on the tree", the items, the write list and the read list was read in S5's worktree with the command beside it.
+- 2 (options.yml lines): "What is on the tree", first bullet, gives each entry at its S5 line.
+- 3 (options-catalog.test.ts): no longer cited; item 5.1 gives the new head text (Q122).
+- 4 (S5's controls `choice`, `values_from`, `min`, `max`): item 1's intro reads each key through the one rule with `configItems` lists; case 1 rows `usage_refresh_model: gpt` and `slurm.resource: ''`.
+- 5 (`catalogOf` :360): "What is on the tree".
+- 6 (context.ts lines): "What is on the tree", callers bullet, and items 2.1, 3.6.
+- 7 (portfolio.ts, config-checks.ts lines): "What is on the tree" and the write list.
+- 8 (images.ts, writes.ts, config.test.ts lines): "What is on the tree", the write list and item 5.7.
+- 9 (Z454 at :1176, D11 at :268): "What the round must make true".
+- 10 (unused exports, 380 lines and four missing lines): "Tests and base facts" lists all lines over the round's files, the four included.
+- 11 (pty/routes.ts beside main's hunks): "The local.yml readers", last bullet: main is brought into the worktree before the cherry-pick, and the builder writes the five one-word replacements and nothing else there.
+
+Section 4, Cases and checks:
+- 1 (cases 25, 26 with real dependencies): cases 25 and 26 run on case 11's recorders with only `readLocal` real, no tmux, Claude or ssh; case 29 likewise.
+- 2 (case 15's opener): case 15 hands the fixture's recorder and asserts it is not called for the bad extension.
+- 3 (tests outside G13's units): item 1.6 moves `paintLimit` and `programApps` into `settings.ts`, so cases 7 and 10 test units of `settings.ts`; `settingFindings` (catalogs.ts) is case 31 in config.test.ts; the new `value-rule.ts` gets case 32 in its own test file under G13.
+- 4 (`paintLimit` and G17): item 1.6 and Decision 15 put the page's readers in `settings.ts`; item 0.1 puts the rule in `data/sources/config/catalog/value-rule.ts` with a `state:` row in boundaries.test.ts (item 0.2, item 5.6); `data/helpers` imports nothing of `data/sources`.
+- 5 (quoted runs inside the worktree): the Cases preamble puts every probe and scratch test under the builder's scratchpad, never the worktree, logs never in `/tmp`.
+- 6 (the look owed): item 4 and Decision 11, the look taken at landing before the commit across about fifteen real cases, never owed; C2 is raised for the scratch oculus it needs.
+- 7 (finding words of the repeat rows): item 3.4 gives the repeated-label form with no value; item 3.5 and Decision 5 keep `checkLocal`'s present sentences for its two callers.
+- 8 (port assertion): case 25 asserts the context's `local.port`.
+
+Section 5, The question:
+- 1 (case 1 defaults): the Cases preamble for settings.test.ts requires every synthetic `default` to differ from the shipped one, with examples.
+- 3 (verify 4 too narrow): verify 7 greps DESIGN.md and HELP.md as well, and the report marks every sentence of "Sentences outside the code" 'still true' or 'rewritten'; item 5 gives each its new text.
+- 4 (the Findings view key): cases 11, 27, 31 and 33 assert the finding with its key on the start list and the payload, and the look (item 4) shows it.
+
+Section 6, Implied inputs:
+- 1 (every row failing): item 3.1, the empty list; case 19.
+- 2 (undo of a wrong value): item 2.6 and Decision 13, the put-back checks no value; case 30 under G9.
+- 3 (a value that reads, default broken): item 1.1, third and fourth bullets; case 8.
+- 4 (start with options.yml dropped): case 28, Decision 2.
+- 5 (misspelt key): item 1.1 first bullet, Decision 3; case 3.
+- 6 (local.yml unreadable): item 3.2; case 21.
+- 7 (wrong port while running): item 3.6, Decision 10; case 29.
+- 8 (unknown key warnings): items 3.2 to 3.4, one read at start; cases 23 and 25.
+- 9 (block `{}`): item 1.1 first bullet; case 3.
+- 10 (reader and catalog disagree): Z494 rules the catalog's rule; item 0 makes it one module read by the readers, `config-fit.ts` and `fields.ts`; item 0.4 adds the missing `min` and `max`; case 1 rows `latex.latexindent_path: foo`, `usage_refresh_model: gpt`, `slurm.resource: ''`, `editor.paint_limit_kb: 0`, `git.autofetch_minutes: -1`; the whole-number and form rules are C1, held for a ruling before dispatch.
+
+Section 9, Q122: item 5.1 writes option (b) of Z493 at options.yml :3, :9 and options.ts :6-7, :145; case 9's title is given.
+
+Section 10, overlaps:
+- 1: items 5.1 and 5.2 (:3, :9, :13); :10 stays S5's own repair item.
+- 2: item 0.4, item 5.2, Decision 14.
+- 3: item 5.1 rewraps :145's paragraph with :163.
+- 4: DESIGN.md:85 is on the 'still true' list.
+- 5: items 2.1 and 3.4, Decision 9; cases 11 and 27 also show S5's `optionFindings` at start and on the push.
+- 6: Decisions 6 and 13, items 2.5 and 2.6.
+- 7: the Cases preamble.
+- 8: verify 4 runs every G3, G8 and G9 test file.
+- 9: verify 3 runs comment-width, duplication, order, history, size, boundaries and cycles.
+- 10: the write list marks each path outside S5's list; the report's file table marks them.
+- 11: the grep form is in the brief's preamble and Conventions.
+- 12: item 5.4.
+- 13: item 5.7.
+- 14: the findings.yml line of the write list.
+- 15: `data/sources/config.ts` is in the write list whole.
+- 16: the images.ts and writes.ts lines of the write list.
+- 17: "Where this brief sits" and "Verify before you report", one run for the round.
+
+Declined to judge: 1 is Decision 6 (a); 2 is ruled by Z494 and written as items 0 and 1; 3 is the routes.ts bullet of "The local.yml readers".
+
+Rulings written in after the close:
+- C1 (Z505 (a), `whole` and `form`): the brief's "Rulings on this brief's choices"; item 0.3 (each entry and field with its options.yml line, `FORMS` and `readSpec` in options.ts, the findings.options lines, the four server.yml lines config-fit words them by, fields.ts and workbench.yml, the text for options.yml:10, the FieldSpec doc and DESIGN.md:85); item 0.4 (`rulers` gains `min: 1`); Decision 16; case rows marked C1 in cases 1, 7, 14 and 32, and new cases 34 (options.test.ts) and 35 (the Settings view's `commitValue`); the write list (server.yml, workbench.yml, options.test.ts, DESIGN.md:85, open.ts).
+- C3 (Z506 (a), the editor's options): item 1.8 (the new module `data/sources/config/editor-options.ts`, its place in the import order and its `state:` row, the six keys and the record fields read by the rule, `parseRepoSettings(text, config)`, Monaco's types for `WordWrap` and `Whitespace`, the tab draft check, every caller by file and line, the findings); item 5.2 (the editor descriptions :458 to :492); item 5.6 (the boundaries text); Decision 17; case 31's C3 rows, new cases 36 to 38 (editor-options.test.ts) and 39 (`resolveEditor` and the draft shape); the write list under "Outside S5's list, for the editor's options".
+- C2: Z507, Axel's; "Rulings on this brief's choices", item 4 and Decision 11 say the landing waits for it.

@@ -49,12 +49,12 @@ dispatch:   # steps in flight, up to seven (Z423)
   builder_usage: first run handed back, 105,563 tokens, 75 tool uses, 10.0 min, 0 full-list runs
   brief_check: agents/reviews/S5-brief-check.md, claude-opus-5-5, 273,684 tokens, 104 tool uses, 12.6 min
   q119_brief_check: agents/reviews/Q119-brief-check.md, claude-opus-5-5 (a5b40ed74302680f1), 280,042 tokens, 91 tool uses, 15.1 min
-  q119_closing: ad7f5c6d3c49f4f40 (claude-opus-5-5), 218,136 tokens, 128 tool uses, 28.8 min; C1 and C3 ruled Z505 and Z506 and sent back to it; C2 open as Z507
   widened: Z468 folds Q119 (agents/briefs/Q119.md, its brief check running) and Q122 into this step; they go to the builder as repair round 1 with its review findings
   reviewer_report: agents/reviews/S5-refuter.md, claude-opus-5-5 (ab608db77fb2265cd), 365,219 tokens, 97 tool uses, 22.0 min
   landing: not-started
   builder_usage: 289,845 tokens, 407 tool uses, 82.1 min, checks.sh twice and test:quick four times
-  round: 0
+  q119_closing_round2: ad7f5c6d3c49f4f40, 298,145 tokens in all, 160 tool uses, 36.9 min (C1 and C3 written in)
+  round: 1 (agents/briefs/Q119.md: S5's review findings, Q119, Q122, Z505, Z506, Z509; Z507 open before landing)
 ```
 
 ## The standing demands (from Axel, in force)

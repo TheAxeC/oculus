@@ -260,6 +260,15 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z509 (2026-10-05, from Q119's closing)
+
+The question: `latex.auto_build` is read by the page through its own rule, so a misspelt value builds with no finding.
+
+- Chosen: (a) read in `settings.ts` against its catalog entry in S5's round 1, the same concern as Z494.
+- Not chosen: (b) a step of its own, which Z468 rules out; (c) left as it is, the lazy option.
+
+Where it applies: S5's repair round 1, then D45. Booked in `plan.md` Rulings.
+
 ## Z508 (2026-10-05, from X3f's round-2 brief)
 
 The question: eight choices the round-2 brief of X3f leaves to the orchestrator.

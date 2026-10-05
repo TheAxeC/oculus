@@ -51,6 +51,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 - Z505 (2026-10-05, closed in automode): Q119's C1, two catalog words; `choices.md`.
 - Z506 (2026-10-05, closed in automode): Q119's C3, the editor's reader on the catalog rule; `choices.md`.
 - Z508 (2026-10-05, closed in automode): X3f's round-2 choices; `choices.md`.
+- Z509 (2026-10-05, closed in automode): `latex.auto_build` read through the catalog in S5's round 1; `choices.md`.
 - Z474 (2026-10-05, closed in automode): D42's review Spec 1; `choices.md`.
 - Z475 (2026-10-05, closed in automode): D42's review, declined to judge; `choices.md`.
 - Z468 (2026-10-05, Axel): no step is ever added; Q118, Q119, Q121 and Q122 folded into S5 and D33.

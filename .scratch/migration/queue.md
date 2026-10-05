@@ -1,6 +1,6 @@
 In flight (5 of 5 slots):
 - X3f (opening a file row, and the tab row's actions): repair round 2 sent to its builder (the diagnosis's fixes, Z466, the Outline, `[TOC]` in the Data map, tests under G37).
-- S5 (the Settings view's controls and headings): Z505 and Z506 being written into Q119's brief; then repair round 1 with Q119 and Q122.
+- S5 (the Settings view's controls and headings): repair round 1 sent to its builder (its review findings, Q119, Q122, Z505, Z506, Z509); Z507 (where its look runs) open for Axel.
 - X3e (Files lists reordered by drag): brief being re-based on D42's landing; then dispatch.
 - D20 (an agent from a task or a worktree): brief being written (it was a stub); the brief check of the stub is in, its findings closed in the brief.
 - A3 (scheduled Update runs): brief being written.
