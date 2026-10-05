@@ -55,6 +55,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 - Z510 (2026-10-05, closed in automode): A3's choices 1 to 4 and 6 to 9; `choices.md`.
 - Z513 (2026-10-05, closed in automode): D20's ten choices; `choices.md`.
 - Z516 (2026-10-05, closed in automode): O30's choices D4 to D15; `choices.md`.
+- Z519 (2026-10-05, closed in automode): D20's choices from its second brief check; `choices.md`.
 - Z474 (2026-10-05, closed in automode): D42's review Spec 1; `choices.md`.
 - Z475 (2026-10-05, closed in automode): D42's review, declined to judge; `choices.md`.
 - Z468 (2026-10-05, Axel): no step is ever added; Q118, Q119, Q121 and Q122 folded into S5 and D33.

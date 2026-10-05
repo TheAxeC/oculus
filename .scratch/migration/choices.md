@@ -260,6 +260,15 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z519 (2026-10-05, from D20's second brief check)
+
+The question: seven shapes the brief took without a ruling, the renderer variable's reach, and two rules for one catalog group.
+
+- Chosen: as booked in `plan.md` Z519.
+- Not chosen, the lazy ones: English from the server on `approve-seed`; a wrong `confirm` read as false, which drops the confirmation silently; a hung hook with no way out; the variable on every start without checking the usage refresh; two capitalisation rules for one group.
+
+Where it applies: D20, then X3e's re-base. Booked in `plan.md` Rulings.
+
 ## Z516 (2026-10-05, from O30's brief)
 
 The question: O30's shapes D4 to D15 that the plan does not name.
