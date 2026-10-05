@@ -7,7 +7,8 @@ export {
     deleteEntry,
     reorderEntries,
     setEntryFields,
-    startEntries
+    startEntries,
+    takeOutAppended
 } from './entries.ts';
 export { addSubtask, deleteSubtask, setSubtask, subtaskLines, subtaskValues } from './subtasks.ts';
 export { setHostStatus } from './host-status.ts';

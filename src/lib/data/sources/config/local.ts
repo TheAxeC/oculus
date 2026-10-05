@@ -23,6 +23,20 @@ import { configDir } from './folder.ts';
 /** A port: a whole number. */
 const portShape = z.number().refine(Number.isInteger);
 
+/**
+ * The keys under `literature:` of the file: the API keys of the sources that take one and the
+ * contact address three of them ask callers to send. Each is absent unless the machine sets it.
+ */
+type LiteratureKeys = {
+    wosKey?: string;
+    scopusKey?: string;
+    scopusInsttoken?: string;
+    openalexKey?: string;
+    semanticScholarKey?: string;
+    ncbiKey?: string;
+    mailto?: string;
+};
+
 export type LocalConfig = {
     /** Absolute path of the research hub whose YAML the portfolio is built from. */
     hub: string;
@@ -97,6 +111,11 @@ export type LocalConfig = {
      * file. Absent unless the machine sets it, and the mail connector then uses ~/.oculus/mail.
      */
     mailDir?: string;
+    /**
+     * The literature sources' keys and contact address, `literature` in the file. Absent unless
+     * the machine sets at least one of them. A value is never served to a page or written to a log.
+     */
+    literature?: LiteratureKeys;
 };
 
 /** The default development port; the reserved port 8787 is never used. */
@@ -126,8 +145,20 @@ export const LOCAL_KEYS = [
     'calendars',
     'calendar_dir',
     'mail',
-    'mail_dir'
+    'mail_dir',
+    'literature'
 ];
+
+/** The keys under `literature:`, with the field of LiteratureKeys each sets. */
+const LITERATURE_KEYS = [
+    ['wos_key', 'wosKey'],
+    ['scopus_key', 'scopusKey'],
+    ['scopus_insttoken', 'scopusInsttoken'],
+    ['openalex_key', 'openalexKey'],
+    ['semantic_scholar_key', 'semanticScholarKey'],
+    ['ncbi_key', 'ncbiKey'],
+    ['mailto', 'mailto']
+] as const;
 
 /**
  * The defaults: the hub is two directories above tools/oculus, the port is 8790, and Claude is
@@ -300,6 +331,34 @@ function connectAccounts<P extends AccountProvider>(
 }
 
 /**
+ * The keys under `literature:` that read. A value that is no map is a problem and gives none; a key
+ * that is not text with something in it is a problem and is absent; a key oculus does not read is
+ * added to `unknown` as `literature.<key>` and ignored.
+ */
+function literatureKeys(
+    value: unknown,
+    problems: LocalProblem[],
+    unknown: string[]
+): LiteratureKeys | null {
+    const record = readAs(mapShape, value);
+    if (record === null) {
+        problems.push(wrong('literature', 'a map'));
+        return null;
+    }
+    const keys: LiteratureKeys = {};
+    for (const key of Object.keys(record)) {
+        if (!LITERATURE_KEYS.some(([name]) => name === key)) unknown.push(`literature.${key}`);
+    }
+    for (const [name, field] of LITERATURE_KEYS) {
+        if (record[name] === undefined) continue;
+        const text = filledAt(record, name);
+        if (text === undefined) problems.push(wrong(`literature.${name}`, 'a non-empty string'));
+        else keys[field] = text;
+    }
+    return Object.keys(keys).length === 0 ? null : keys;
+}
+
+/**
  * Which file readLocal reads: local.yml of the engine's config directory, which is the whole of
  * what the machine's own configuration is. A relative path inside it resolves against the engine
  * rather than the file's own folder, so a relative `hub` is read from the engine directory.
@@ -401,6 +460,10 @@ export function readLocalText(text: string, engine: string): LocalRead {
                 { accepts: isProvider, named: 'google or microsoft' },
                 problems
             ) ?? config.mail;
+    }
+    if (record.literature !== undefined) {
+        const literature = literatureKeys(record.literature, problems, unknown);
+        if (literature !== null) config.literature = literature;
     }
     // The machine-local state paths are absent unless the machine names them, so a config that says
     // nothing about them leaves the defaults to the modules that own them.

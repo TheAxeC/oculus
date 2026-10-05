@@ -1,11 +1,11 @@
 // Layer 1, data tests. The typed readers of single settings out of the merged map (slurm, calendar,
-// search, open, mail, the change log's length, the usage tiers, the Processes view's program names,
-// the LaTeX formatter and its auto build, the usage refresh, the automatic fetch, the editor's
-// paint limit and the Files view's delete prompt). Each reader is run over a map that carries its
-// own options catalog, whose every default differs from the shipped one, so a default written in
-// code instead of read from the entry fails a row. A wrong value answers the entry's default and a
-// problem naming the key; a missing key answers the default and no problem; a catalog with no entry
-// for a key throws.
+// search, literature search, open, mail, the change log's length, the usage tiers, the Processes
+// view's program names, the LaTeX formatter and its auto build, the usage refresh, the automatic
+// fetch, the editor's paint limit and the Files view's delete prompt). Each reader is run over a
+// map that carries its own options catalog, whose every default differs from the shipped one, so a
+// default written in code instead of read from the entry fails a row. A wrong value answers the
+// entry's default and a problem naming the key; a missing key answers the default and no problem; a
+// catalog with no entry for a key throws.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -15,6 +15,7 @@ import {
     confirmDelete,
     engineDir,
     latexFormatting,
+    literatureSettings,
     loadConfig,
     mailSettings,
     openSettings,
@@ -52,6 +53,9 @@ const DEFAULTS: Record<string, unknown> = {
     'calendar.days_ahead': 20,
     'search.max_hits': 300,
     'search.timeout_s': 15,
+    'literature.timeout_s': 40,
+    'literature.per_source': 12,
+    'literature.cache_min': 5,
     'mail.poll_min': 12,
     'mail.per_signal': 30,
     'changes.keep': 400,
@@ -285,6 +289,50 @@ describe('searchSettings', () => {
     });
 });
 
+describe('literatureSettings', () => {
+    const BLOCK = { timeout_s: 9, per_source: 8, cache_min: 0 };
+    const DEFAULT = { timeoutS: 40, perSource: 12, cacheMin: 5 };
+    const FIELD: Record<string, string> = {
+        timeout_s: 'timeoutS',
+        per_source: 'perSource',
+        cache_min: 'cacheMin'
+    };
+    const read = (literature: unknown) =>
+        outcome((p) => literatureSettings(mapWith({ literature }), p));
+
+    it('answers the written values, and the default with the key named for each wrong value or a block that is no map', () => {
+        expect(read(BLOCK)).toStrictEqual({
+            value: { timeoutS: 9, perSource: 8, cacheMin: 0 },
+            problems: []
+        });
+        expect(read(undefined)).toStrictEqual({ value: DEFAULT, problems: [] });
+        const wrong: [string, string, number[]][] = [
+            ['timeout_s', 'range', [0, 121, -1]],
+            ['timeout_s', 'whole', [1.5]],
+            ['per_source', 'range', [0, 500, 101]],
+            ['per_source', 'whole', [2.5]],
+            ['cache_min', 'range', [-1, 1441]],
+            ['cache_min', 'whole', [0.5]]
+        ];
+        for (const [key, kind, bad] of wrong) {
+            for (const value of [...bad, ...NOT_FINITE]) {
+                const answered = read({ ...BLOCK, [key]: value }) as {
+                    value: Record<string, number>;
+                    problems: string[];
+                };
+                expect(answered.value[FIELD[key]], `${key} ${String(value)}`).toBe(
+                    DEFAULT[FIELD[key] as keyof typeof DEFAULT]
+                );
+                expect(answered.problems, `${key} ${String(value)}`).toHaveLength(1);
+                expect(answered.problems[0]).toMatch(new RegExp(`^literature\\.${key}: `));
+                if (bad.includes(value as number))
+                    expect(answered.problems[0]).toBe(`literature.${key}: ${kind}`);
+            }
+        }
+        expect(read(5)).toStrictEqual({ value: DEFAULT, problems: ['literature: block'] });
+    });
+});
+
 describe('mailSettings', () => {
     const read = (mail: unknown) => outcome((p) => mailSettings(mapWith({ mail }), p));
 
@@ -507,6 +555,9 @@ describe('the shipped files', () => {
                 'calendar.days_ahead',
                 'search.max_hits',
                 'search.timeout_s',
+                'literature.timeout_s',
+                'literature.per_source',
+                'literature.cache_min',
                 'mail.poll_min',
                 'mail.per_signal',
                 'changes.keep',

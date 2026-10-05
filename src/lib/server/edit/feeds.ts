@@ -8,10 +8,13 @@
 
 import { existsSync, readFileSync, readdirSync, renameSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { z } from 'zod';
 import { localDate } from '../../data/helpers/dates.ts';
 import { isMap, scalar } from '../../data/helpers/guards.ts';
+import { addressKey, radarText, sameTitle } from '../../data/prose/literature.ts';
+import { loadConfig } from '../../data/sources/config.ts';
 import { collectionSchema } from '../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../data/snapshot/validate.ts';
 import { plain } from '../core/changes.ts';
@@ -22,8 +25,10 @@ import {
     deleteEntry,
     renderEntry,
     setEntryFields,
-    startEntries
+    startEntries,
+    takeOutAppended
 } from './entry-edit/index.ts';
+import { replacedText } from './writes/config/config-checks.ts';
 import { saved } from './writes/entries.ts';
 import { NOT_A_FIELD_VALUE, asFieldValue } from './yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../core/changes.ts';
@@ -390,6 +395,200 @@ export function addLead(
                   }
               ];
     return { ...out, refused: [...refused, ...out.refused], records };
+}
+
+/** The fields of a Lit Watch entry in the order the file writes them. */
+const RADAR_ORDER = [
+    'title',
+    'authors',
+    'venue',
+    'year',
+    'url',
+    'bucket',
+    'project',
+    'relevance',
+    'why',
+    'found'
+];
+
+/** The relevance words the file holds. */
+const RELEVANCE = ['high', 'med', 'low'];
+
+const PAPER_IN_FILE = 'this paper is in Lit Watch already';
+const FILE_UNREAD = "Lit Watch's file does not read";
+
+/** The keys of the radar buckets in the vocabulary the engine's configuration holds. */
+const bucketKeysShape = z.array(z.looseObject({ key: z.string() })).catch([]);
+
+export function radarBucketKeys(engine: string): string[] {
+    const held = loadConfig(engine).config.radar_buckets;
+    return bucketKeysShape.parse(held).map((one) => one.key);
+}
+
+/** The text a field of a Lit Watch entry is written as: plain text on one line. */
+function radarField(raw: unknown): string {
+    if (Array.isArray(raw))
+        return raw
+            .map((one) => radarField(one))
+            .filter(Boolean)
+            .join(', ');
+    return typeof raw === 'string' ? radarText(raw) : '';
+}
+
+/**
+ * Append one paper to the Lit Watch radar, in the order of RADAR_ORDER with the empty fields left
+ * out and `found` today's date. A title or address the file holds already is refused. A file that
+ * does not parse is refused and left as it is; an `entries:` holding nothing, written `entries: []`
+ * or with nothing under it, takes the paper as its first entry. The result is parsed again and
+ * kept only when it is the file as it was with this one entry added.
+ *
+ * `buckets` are the keys of the bucket vocabulary a bucket must be one of. The record carries the
+ * text the append added, which the undo takes out again byte for byte.
+ */
+export function addRadarEntry(
+    hub: string,
+    config: PortfolioConfig,
+    fields: Record<string, unknown>,
+    buckets: string[]
+): WriteOutcome {
+    const full = feedFile(hub, config, 'radar');
+    if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
+    const source = readFileSync(full, 'utf8');
+    let parsed: FeedRead | null;
+    try {
+        parsed = readFeedFile(hub, config, 'radar');
+    } catch {
+        return outcome([], [{ field: 'entries', reason: FILE_UNREAD }]);
+    }
+    if (parsed === null) return { found: false, changed: [], refused: [] };
+
+    const text = (field: string): string => radarField(fields[field]);
+    const title = text('title');
+    if (title === '') return outcome([], [{ field: 'title', reason: 'a paper needs a title' }]);
+    const bucket = text('bucket');
+    if (!buckets.includes(bucket)) {
+        return outcome(
+            [],
+            [{ field: 'bucket', reason: 'the bucket is not one of the radar buckets' }]
+        );
+    }
+    const relevance = text('relevance');
+    if (relevance !== '' && !RELEVANCE.includes(relevance)) {
+        return outcome([], [{ field: 'relevance', reason: 'the relevance is high, med or low' }]);
+    }
+    const url = text('url');
+    const known = (field: string, same: (held: string) => boolean): boolean =>
+        parsed.entries.some((one) => same(scalar(one[field])));
+    if (known('title', (held) => sameTitle(held, title))) {
+        return outcome([], [{ field: 'title', reason: PAPER_IN_FILE }]);
+    }
+    if (url !== '' && known('url', (held) => addressKey(held) === addressKey(url))) {
+        return outcome([], [{ field: 'url', reason: PAPER_IN_FILE }]);
+    }
+
+    const year = typeof fields.year === 'number' ? fields.year : Number(text('year'));
+    const given: Record<string, unknown> = {
+        title,
+        authors: text('authors'),
+        venue: text('venue'),
+        year: Number.isInteger(year) && year > 0 ? year : '',
+        url,
+        bucket,
+        project: text('project'),
+        relevance,
+        why: text('why'),
+        found: localDate(Date.now())
+    };
+    const values: Record<string, FieldValue> = {};
+    for (const name of RADAR_ORDER) {
+        const held = asFieldValue(given[name]);
+        if (held !== undefined && held !== '') values[name] = held;
+    }
+    const block = renderEntry(RADAR_ORDER, 'title', values);
+    const edit = appendEntry(source, 'entries', block);
+    if (edit.changed.length === 0) return { found: true, changed: [], refused: edit.refused };
+    let reread: { entries: Record<string, unknown>[] } | null;
+    try {
+        reread = readFeedFileText(edit.text);
+    } catch {
+        reread = null;
+    }
+    const wanted = [...parsed.entries, values];
+    if (reread === null || !isDeepStrictEqual(reread.entries, wanted)) {
+        return outcome(
+            [],
+            [{ field: 'entries', reason: 'the edit did not verify; nothing was written' }]
+        );
+    }
+    const out = saved(full, source, edit);
+    const replaced = replacedText(source, edit.text);
+    return {
+        ...out,
+        records: [
+            {
+                file: full,
+                key: title,
+                field: 'entries',
+                before: null,
+                after: values,
+                undo: 'create',
+                ...(replaced === null ? {} : { replaced })
+            }
+        ]
+    };
+}
+
+/** A radar file's entries as a text holds them, or null when it is no map with a list of maps. */
+function readFeedFileText(text: string): { entries: Record<string, unknown>[] } | null {
+    const held: unknown = parse(text);
+    if (!isMap(held)) return null;
+    const entries = feedEntriesShape.safeParse(held.entries);
+    return entries.success ? { entries: entries.data } : null;
+}
+
+/** A record's replaced text as the log holds it: a whole offset and two texts, else none. */
+const replacedShape = z.object({ offset: z.int().min(0), before: z.string(), after: z.string() });
+
+/**
+ * Take one Lit Watch entry out again, the way an undo of its append does, by its title. The text
+ * the append added goes back over what the append left when the file still holds it there, so the
+ * file is what it was byte for byte; a file edited since has the entry's lines and the blank line
+ * the append put over them taken out. The reader's own Delete never reaches this.
+ */
+export function removeRadarEntry(
+    hub: string,
+    config: PortfolioConfig,
+    title: string,
+    replaced: unknown
+): WriteOutcome {
+    const full = feedFile(hub, config, 'radar');
+    if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
+    const source = readFileSync(full, 'utf8');
+    let parsed: FeedRead | null;
+    try {
+        parsed = readFeedFile(hub, config, 'radar');
+    } catch {
+        return outcome([], [{ field: 'entries', reason: FILE_UNREAD }]);
+    }
+    const at = parsed?.entries.findIndex((one) => scalar(one.title) === title) ?? -1;
+    if (parsed === null || at < 0) return { found: false, changed: [], refused: [] };
+
+    const put = replacedShape.safeParse(replaced);
+    if (put.success && source.startsWith(put.data.after, put.data.offset)) {
+        const { offset, before, after } = put.data;
+        const text = `${source.slice(0, offset)}${before}${source.slice(offset + after.length)}`;
+        let reread: { entries: Record<string, unknown>[] } | null;
+        try {
+            reread = readFeedFileText(text);
+        } catch {
+            reread = null;
+        }
+        const wanted = parsed.entries.filter((_one, index) => index !== at);
+        if (reread !== null && isDeepStrictEqual(reread.entries, wanted)) {
+            return saved(full, source, { text, changed: ['entries'], refused: [] });
+        }
+    }
+    return saved(full, source, takeOutAppended(source, 'title', title));
 }
 
 /**

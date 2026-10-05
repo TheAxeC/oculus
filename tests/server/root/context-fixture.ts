@@ -11,6 +11,7 @@ import { HookStore, sessionRecord } from '../../../src/lib/server/sessions/store
 import { ignoredCache } from '../../../src/lib/server/files/fs.ts';
 import { pickerState } from '../../../src/lib/server/files/fs/picker.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
+import { LiteratureDesk } from '../../../src/lib/server/content/literature/desk.ts';
 import { wallpaperMemory } from '../../../src/lib/server/content/wallpaper.ts';
 import { noop } from '../../fixtures/doubles.ts';
 
@@ -97,6 +98,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         calendarConnects: new ConnectStates(),
         calendarDir: overrides.calendarDir ?? '/fixture/calendar',
         mailConnects: new ConnectStates(),
+        literature: new LiteratureDesk(),
         mailDir: overrides.mailDir ?? '/fixture/mail',
         providerDir: overrides.providerDir ?? '/fixture/connect',
         accounts: overrides.accounts ?? {

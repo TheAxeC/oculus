@@ -89,6 +89,9 @@ export type FeedDeleteWrite = { kind: 'feed-delete'; feed: string; id: string };
 /** One position lead appended from the feed file's own form schema. */
 export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> };
 
+/** One paper appended to the Lit Watch radar from the literature search. */
+export type RadarAddWrite = { kind: 'radar-add'; fields: Record<string, unknown> };
+
 /**
  * The public deck's saved lists: which slides it shows, and where every slide of the catalog sits.
  * `order` carries the whole catalog, shown or not, so a slide unchecked and checked again comes
@@ -237,6 +240,11 @@ const leadAddShape = z.object({
     fields: mapShape
 }) satisfies z.ZodType<LeadAddWrite>;
 
+const radarAddShape = z.object({
+    kind: z.literal('radar-add'),
+    fields: mapShape
+}) satisfies z.ZodType<RadarAddWrite>;
+
 /** A missing `category` is the empty category; a `category` that is not text refuses the body. */
 const linkedinIdeaShape = z.object({
     kind: z.literal('linkedin-idea'),
@@ -365,6 +373,11 @@ export function feedDeleteWrite(body: unknown): FeedDeleteWrite | null {
 /** The body as one new position lead. */
 export function leadAddWrite(body: unknown): LeadAddWrite | null {
     return readAs(leadAddShape, body);
+}
+
+/** The body as one new Lit Watch entry. */
+export function radarAddWrite(body: unknown): RadarAddWrite | null {
+    return readAs(radarAddShape, body);
 }
 
 /** The body as one new LinkedIn idea. Empty titles reach the writer and become field refusals. */

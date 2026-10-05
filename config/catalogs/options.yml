@@ -620,6 +620,33 @@ options:
             default: 10
             control: number
             min: 1
+        literature.timeout_s:
+            heading: editor
+            section: Literature search
+            description: Seconds one source of the Literature search is given to answer a request. A source that has not answered by then shows that it gave no answer in time.
+            default: 20
+            control: number
+            min: 1
+            max: 120
+            whole: true
+        literature.per_source:
+            heading: editor
+            section: Literature search
+            description: How many hits one page of the Literature search asks of each source. Semantic Scholar takes at most 100 and Web of Science at most 50, so a larger page is cut to what the source takes.
+            default: 25
+            control: number
+            min: 1
+            max: 100
+            whole: true
+        literature.cache_min:
+            heading: editor
+            section: Literature search
+            description: Minutes the server keeps a source's answer for the same request, so a search run again, or a source switched off and on, is not asked a second time. 0 keeps nothing.
+            default: 30
+            control: number
+            min: 0
+            max: 1440
+            whole: true
         open.program_ext:
             heading: editor
             section: Opening in programs
@@ -1230,3 +1257,24 @@ options:
         mail_dir:
             section: Mail accounts
             description: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+        literature.wos_key:
+            section: Literature search
+            description: Under `literature:`, the Web of Science Starter API key. Without it the Web of Science toggle of the Literature search is switched off. The Settings view never shows the value. A change is read again at the next search.
+        literature.scopus_key:
+            section: Literature search
+            description: Under `literature:`, the Elsevier API key for Scopus. Without it the Scopus toggle of the Literature search is switched off. The Settings view never shows the value. A change is read again at the next search.
+        literature.scopus_insttoken:
+            section: Literature search
+            description: Under `literature:`, the Elsevier institutional token that goes with the Scopus key, sent when the key needs one. The Settings view never shows the value. A change is read again at the next search.
+        literature.openalex_key:
+            section: Literature search
+            description: Under `literature:`, an OpenAlex API key. Without it OpenAlex allows about 100 searches a day. The Settings view never shows the value. A change is read again at the next search.
+        literature.semantic_scholar_key:
+            section: Literature search
+            description: Under `literature:`, a Semantic Scholar API key. Without it Semantic Scholar often answers that too many requests were made. The Settings view never shows the value. A change is read again at the next search.
+        literature.ncbi_key:
+            section: Literature search
+            description: Under `literature:`, an NCBI API key, which lets PubMed answer more requests a second. The Settings view never shows the value. A change is read again at the next search.
+        literature.mailto:
+            section: Literature search
+            description: Under `literature:`, the contact address that OpenAlex, Crossref and NCBI ask callers to send with a request. The Settings view never shows the value. A change is read again at the next search.

@@ -506,7 +506,30 @@ export type {
     SizedAgent
 } from './model-agents.ts';
 
-export type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from './model-search.ts';
+export type {
+    DocType,
+    HitType,
+    LiteratureHit,
+    LiteratureRefusal,
+    LiteratureSource,
+    SearchAnswer,
+    SearchFailure,
+    SearchFile,
+    SearchHit,
+    SourceAnswer,
+    SourceHits,
+    SourceInfo,
+    SourceNotOk,
+    SourceState
+} from './model-search.ts';
+export {
+    DOC_TYPES,
+    FIELD_MAX,
+    LITERATURE_REFUSALS,
+    LITERATURE_SOURCES,
+    QUERY_MAX,
+    SOURCE_STATES
+} from './model-search.ts';
 export type { ProcessesPayload, ProcessRow } from './model-processes.ts';
 export type {
     ChainLine,

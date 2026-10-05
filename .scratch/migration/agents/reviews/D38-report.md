@@ -3,12 +3,10 @@
 ## 0. NOT done
 
 1. **The look on TEST is not done.** No browser, server or tmux ran here (the task forbids them). Nothing of the view was drawn in a browser. The view was only rendered to a string by a scratch test (Head, LiteratureCard, AddForm and the whole Literature component through `render` from `svelte/server`), whose output shows the markup and the words of the catalog. Cases 1, 5, 6, 7, 10, 13 to 17, 19, 20 against the live sources and every "drawn" sentence of a case are the orchestrator's look; what is checked here for each is in section 4.
-2. **DESIGN.md `How it writes` (line 326) is unchanged.** Its list of open write kinds for apps names `lead-add`, `linkedin-idea`, `linkedin-post` and the others, and does not name `radar-add`. No code classifies kinds into open and closed (`grep -rn "lead-add" src` lists only `writes.ts`, `writes/undo.ts`, `writes/bodies.ts`, `state/client/writes.svelte.ts`, no table), so the list is prose only and the classification of a kind a sandboxed app may send is a user-visible rule nothing names. It is the open item raised in section 1.
-3. **Scopus hits whose record link is `http:` carry no `url`.** The documented Scopus sample gives `http://www.scopus.com/inward/record.url?...` as the record link, and case 37 drops an `http:` address. A Scopus hit with neither a DOI nor an `https:` record link has no link on its title. Section 6 has the judgment call.
-4. **Semantic Scholar was not run over a recorded answer.** Keyless it answers 429 (recorded in `fixtures/s2-search.json`), so its adapter was run over a hand-written answer in the documented Graph API shape (section 4, case 6 row), not over a real one. WoS and Scopus ran over the documented samples (case 58).
-5. **One run of `npx vitest run tests/checks` showed `tests/checks/tree/size.test.ts > is on the list with a count it has not passed` failing (1 of 229); its output was not kept.** The same command passed 229 of 229 in each of the six runs after it, and `size.test.ts` alone passes. The cause is not known; not verified.
+2. **Semantic Scholar was not run over a recorded answer.** Keyless it answers 429 (recorded in `fixtures/s2-search.json`), so its adapter was run over a hand-written answer in the documented Graph API shape (section 4, case 6 row), not over a real one. WoS and Scopus ran over the documented samples (case 58).
+3. **One run of `npx vitest run tests/checks` showed `tests/checks/tree/size.test.ts > is on the list with a count it has not passed` failing (1 of 229); its output was not kept.** The same command passed 229 of 229 in each of the six runs after it, and `size.test.ts` alone passes. The cause is not known; not verified.
 
-Full-list runs (`npm run test:quick`): **8 executions** with their logs kept (`$S/D38-quick1.log` to `D38-quick5.log` direct, `$S/D38-checks3.log` to `D38-checks5.log` inside `checks.sh`). The last two (direct run 5 and the `checks.sh` after it) are on the final tree: `test:quick: 29.9 s (limit 45.0 s); every command passed` and `checks: 1 commands passed`.
+Full-list runs (`npm run test:quick`) of the first build: **8 executions** with their logs kept (`$S/D38-quick1.log` to `D38-quick5.log` direct, `$S/D38-checks3.log` to `D38-checks5.log` inside `checks.sh`). The last two (direct run 5 and the `checks.sh` after it) are on the final tree: `test:quick: 29.9 s (limit 45.0 s); every command passed` and `checks: 1 commands passed`.
 
 ## 1. Open items of the state file (verbatim from `orchestrator-state.md`, "Open items", read from the main checkout)
 
@@ -22,7 +20,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 - Z539 (raised 2026-10-05, D44's brief check 5). D44's look can prove the copy and `sbatch` end to end only with one real job on your cluster account. (a) At the look I submit a one-minute job that only writes `hostname` and the date to its log, a new script `code/hpc/oculus_submit_check.slurm` in engram (its `code/` is 82 files, 569 KB), on the `main-cpu` partition (`docs/HPC-UTwente-howto.md:221`), and read its log. (b) You name an existing script and I submit that. (c) No real submit: the look stops at the confirm, and the rsync over ssh and the remote `sbatch` are never run before D44 lands. Recommendation: (a). The lazy option is (c).
 
-- **New, raised by D38 (DESIGN.md `How it writes`, line 326).** Does the new write kind `radar-add` join the prose list of open kinds that an app may send, next to `lead-add`? (a) Yes, add `radar-add` to the open list: it is recorded and undoable like `lead-add` and `feed-field`, and sends without asking; an app can then add Lit Watch entries. (b) No, leave it out: the kind is then in neither set, as `app-store` is, and the sentence needs a clause saying which. Recommendation: (a), because it has the shape of the kinds already in the list (recorded, undoable, a fixed field set, refused when the file is missing or does not parse). The lazy option is leaving the list as it is.
+- D38 raises no open item of its own: `radar-add` joins the open kinds of DESIGN.md `How it writes` (section 13, row 3).
 
 ## 2. The coordinator's round 0 ruling, as carried out
 
@@ -134,7 +132,7 @@ Evidence names its command. `$S` is the session scratchpad, `/private/tmp/claude
 | 22, 53 | Second identical request: `cached: true`, 1 fetch for 2 requests. A change of `from` is a new request (fetches 1 to 2), of `page` another (3), and of `type`, `oa`, `venue`, `author` and `min_cites` one each (8); the first request again is cached (still 8); with `cache_min: 0` two requests make 2 fetches. A change of the sort asks nothing (the sort is not a request parameter: `searchParams` in `form.ts` does not carry it). | `$S/cases.log` lines `22`, `53`. |
 | 23 | A new search aborts the first (`first aborted true`), and only the second's hits are drawn; `stop()` (tab closed) aborts the third and leaves 0 hits and `asking false`. A sources listing that lands after the tab closed starts no search (`closed` in `Literature.svelte`). | `$S/client-cases.out` lines `23`. |
 | 24, 38 | Copy BibTeX: a DOI hit takes doi.org's `@article`, an arXiv-only hit the DataCite `@misc`, a hit with neither the citation-js entry (key `Goh2016Multiway`, text below); when doi.org has none the next source is asked (`asked order doi,s2`, result `semantic_scholar`); when the route answers nothing, citation-js. No file is written (the route and the page hold no file write for it). | `$S/client-cases.out` lines `24`, `38`. |
-| 25, 26, 27, 28, 40, 41, 54, 55 | `radar-add`: entry appended under `entries:` in the radar order with `found` today; the same title or address refused; undo puts the file back byte for byte; a title with `"`, `:`, `#` and a newline is one line and reparses; no radar file is 404 and none is made; the write reads the file at the write (`feeds.ts:455-456`); curly quote, en dash and ellipsis become `'`, `-`, `...` and the accented author letter stays; `entries: []` takes its first entry; a file that does not parse is refused and left as it was. | T3 `tests/server/edit/feeds.test.ts` and T4 `tests/routes/edit/undo/undo.test.ts`, with the other four files of the six-file command: 6 files, 99 tests passed. |
+| 25, 26, 27, 28, 40, 41, 54, 55 | `radar-add`: entry appended under `entries:` in the radar order with `found` today; the same title or address refused; undo puts the file back byte for byte; a title with `"`, `:`, `#` and a newline is one line and reparses; no radar file is 404 and none is made; the write reads the file at the write (`feeds.ts:455-456`); curly quote, en dash and ellipsis become `'`, `-`, `...` and the accented author letter stays; `entries: []` takes its first entry; a file that does not parse is refused and left as it was. | T3 `tests/server/edit/feeds.test.ts` and T4 `tests/routes/edit/undo/undo.test.ts`, with the other four files of the six-file command: 6 files, 88 tests passed. |
 | 29, 50 | `https://scholar.google.com/scholar?q=tensor%20regression%20author%3A%22Faes%22&as_ylo=2024&as_yhi=2026`; `from=2020` alone gives `as_ylo=2020`, `to=2020` alone `as_yhi=2020`. The route sends `publication_year:2020-2027` (current year plus one) and `1000-2020` to OpenAlex. | `$S/client-cases.out` lines `29`, `50`; `$S/cases.log` line `50`. |
 | 30, 32, 48, 49 | Without a token 403 `{error:"token"}`, 0 requests; `gscholar`, repeated `source`, `from=abc`, `from=2025&to=2020`, `min_cites=-1`, `type=thesis` give `source`, `source`, `year`, `year`, `cites`, `type`, 0 requests; `page=abc`, `page=-1`, a non-ASCII or 201-character cursor give `page`; `oa=1` and `oa=0` read, `oa=true`, `yes`, empty, `2` give `oa`. | `$S/cases.log`; T1. |
 | 31 | A layout state missing or of the wrong types parses to the defaults (`q ""`, `type any`, `oa false`, `sort relevance`, `toggled {}`), no refusal. | `$S/client-cases.out` lines `31`. |
@@ -201,7 +199,7 @@ failed https://export.arxiv.org/api/query?id_list=1403.4462&start=0&max_results=
 9 wos 403: {"http":200,"ok":true,"source":"wos","state":"refused","status":403} key in answer: false
 39 openalex daily: {"http":200,"ok":true,"source":"openalex","state":"limited","status":429,"wait_s":3600}
 6 retry-after: {"http":200,"ok":true,"source":"semantic_scholar","state":"limited","status":429,"wait_s":12} calls 1
-7 timeout: {"http":200,"ok":true,"source":"arxiv","state":"timeout"} ms 302
+7 timeout: {"http":200,"ok":true,"source":"arxiv","state":"timeout"} ms 303
 57 5MB+1: {"http":200,"ok":true,"source":"openalex","state":"failed","status":200}
 57 exactly 5MB (spaces, not JSON): {"http":200,"ok":true,"source":"openalex","state":"failed","status":200}
 22 first cached false second cached true calls 1
@@ -211,7 +209,7 @@ failed https://export.arxiv.org/api/query?id_list=1403.4462&start=0&max_results=
 53 back to first cached, calls 8
 53 cache_min 0: calls 0
 53 cache_min 0 two requests -> calls 2
-35/36/37 openalex hits: [{"id":"https://openalex.org/W1","title":"Deep & learning"},{"id":"https://openalex.org/W4","title":"ok","url":"https://openalex.org/W4","pdf":"https://x.org/a.pdf"}]
+35/36/37 openalex hits: [{"id":"https://openalex.org/W1","title":"Deep & learning","url":"https://openalex.org/W1"},{"id":"https://openalex.org/W4","title":"ok","url":"https://openalex.org/W4","pdf":"https://x.org/a.pdf"}]
 37 arxiv url/pdf: [{"id":"2510.16965","url":"https://arxiv.org/abs/2510.16965","pdf":"https://arxiv.org/pdf/2510.16965"},{"id":"2408.00746","url":"https://arxiv.org/abs/2408.00746","pdf":"https://arxiv.org/pdf/2408.00746"}]
 13 arxiv clause: https://export.arxiv.org/api/query?search_query=all:ecg+AND+submittedDate:[202401010000+TO+202612312359]&start=0&max_results=25&sortBy=relevance&sortOrder=descending
 14 arxiv type review: {"http":200,"ok":true,"source":"arxiv","state":"skipped"} | min_cites {"http":200,"ok":true,"source":"arxiv","state":"skipped"} | venue {"http":200,"ok":true,"source":"arxiv","state":"skipped"} calls 0
@@ -220,7 +218,7 @@ failed https://export.arxiv.org/api/query?id_list=1403.4462&start=0&max_results=
 ```
 57 valid JSON of 5242880 bytes: ok 0
 57 valid JSON of 5242881 bytes: failed undefined
-35/37 hits: [{"id":"https://openalex.org/W3","title":"","doi":"10.1234/bb","url":"https://openalex.org/W3"},{"id":"https://openalex.org/W5","title":"Landing","doi":"10.1234/cc"}]
+35/37 hits: [{"id":"https://openalex.org/W3","title":"","doi":"10.1234/bb","url":"https://openalex.org/W3"},{"id":"https://openalex.org/W5","title":"Landing","doi":"10.1234/cc","url":"https://openalex.org/W5"}]
 ```
 
 ### Client state and merge filters (`npx vitest run tests/scratch` in a copy of the worktree)
@@ -278,31 +276,31 @@ Fixture sources: WoS Starter, the `/documents` response example of `https://deve
 == scopus: request https://api.elsevier.com/content/search/scopus?query=TITLE-ABS-KEY%28heart%29+AND+PUBYEAR+%3E+1999+AND+PUBYEAR+%3C+2021+AND+DOCTYPE%28ar%29+AND+OPENACCESS%281%29+AND+SRCTITLE%28Food%29+AND+AUTH%28Jurankova%29&count=25&start=0&sort=relevancy
    header names X-ELS-APIKey,accept,X-ELS-Insttoken
    state ok total 2624604 more true cursor 5 hits 5
-   {"id":"SCOPUS_ID:84884919538","title":"Brain is the predilection site of Toxoplasma gondii in exper","authors":["Juránková, J.","Basso, W.","Neumayerová, H.","Balá, V.","Jánová, E.","Sidler, X.","Deplazes, P.","Koudela, B."],"venue":"Food Microbiology","year":2014,"date":"2014-04-01","type":"article","cites":0,"doi":"10.1016/j.fm.2013.08.011","oa":true,"rank":1}
-   {"id":"SCOPUS_ID:84888056396","title":"Recent developments in biased agonism","authors":["Wisler, J.W.","Xiao, K.","Thomsen, A.R.B.","Lefkowitz, R.J."],"venue":"Current Opinion in Cell Biology","year":2014,"date":"2014-04-01","type":"review","cites":0,"doi":"10.1016/j.ceb.2013.10.008","rank":2}
-   {"id":"SCOPUS_ID:84884272794","title":"Symptoms as Solutions: Hypnosis and Biofeedback for Autonomi","authors":["Sugarman, L.I.","Garrison, B.L.","Williford, K.L."],"venue":"American Journal of Clinical Hypnosis","year":2014,"date":"2014-04-01","type":"article","cites":0,"doi":"10.1080/00029157.2013.768197","oa":true,"rank":3}
-   {"id":"SCOPUS_ID:84884527646","title":"Investigating the effects of job demands and job resources o","authors":["Chen, C.-F.","Chen, S.-C."],"venue":"Tourism Management","year":2014,"date":"2014-04-01","type":"article","cites":0,"doi":"10.1016/j.tourman.2013.08.009","rank":4}
-   {"id":"SCOPUS_ID:84886423686","title":"Antidiarrheal activities of isovanillin, iso-acetovanillon a","authors":["Sadraei, H.","Ghanadian, M.","Asghari, G.","Azali, N."],"venue":"Research in Pharmaceutical Sciences","year":2014,"date":"2014-04-01","type":"article","cites":0,"oa":true,"rank":5}
+   {"id":"SCOPUS_ID:84884919538","title":"Brain is the predilection site of Toxoplasma gondii in exper","authors":["Juránková, J.","Basso, W.","Neumayerová, H.","Balá, V.","Jánová, E.","Sidler, X.","Deplazes, P.","Koudela, B."],"venue":"Food Microbiology","year":2014,"date":"2014-04-01","type":"article","cites":0,"doi":"10.1016/j.fm.2013.08.011","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84884919538","oa":true,"rank":1}
+   {"id":"SCOPUS_ID:84888056396","title":"Recent developments in biased agonism","authors":["Wisler, J.W.","Xiao, K.","Thomsen, A.R.B.","Lefkowitz, R.J."],"venue":"Current Opinion in Cell Biology","year":2014,"date":"2014-04-01","type":"review","cites":0,"doi":"10.1016/j.ceb.2013.10.008","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84888056396","rank":2}
+   {"id":"SCOPUS_ID:84884272794","title":"Symptoms as Solutions: Hypnosis and Biofeedback for Autonomi","authors":["Sugarman, L.I.","Garrison, B.L.","Williford, K.L."],"venue":"American Journal of Clinical Hypnosis","year":2014,"date":"2014-04-01","type":"article","cites":0,"doi":"10.1080/00029157.2013.768197","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84884272794","oa":true,"rank":3}
+   {"id":"SCOPUS_ID:84884527646","title":"Investigating the effects of job demands and job resources o","authors":["Chen, C.-F.","Chen, S.-C."],"venue":"Tourism Management","year":2014,"date":"2014-04-01","type":"article","cites":0,"doi":"10.1016/j.tourman.2013.08.009","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84884527646","rank":4}
+   {"id":"SCOPUS_ID:84886423686","title":"Antidiarrheal activities of isovanillin, iso-acetovanillon a","authors":["Sadraei, H.","Ghanadian, M.","Asghari, G.","Azali, N."],"venue":"Research in Pharmaceutical Sciences","year":2014,"date":"2014-04-01","type":"article","cites":0,"url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84886423686","oa":true,"rank":5}
 == hand-edited variant wos [{"id":"WOS:000222526200005","pmid":"15000001","url":"https://www.webofscience.com/api/gateway?GWVersion=2&SrcApp=&SrcAuth=WosAPI&KeyUT=WOS:000222526200005&DestLinkType=FullRecord&DestApp=WOS"}]
-== hand-edited variant scopus [{"id":"SCOPUS_ID:84884919538","pmid":"24180911","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84884919538"}]
+== hand-edited variant scopus [{"id":"SCOPUS_ID:84884919538","pmid":"24180911","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84884919538"},{"id":"SCOPUS_ID:84888056396","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84888056396"},{"id":"SCOPUS_ID:84884272794","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84884272794"},{"id":"SCOPUS_ID:84884527646","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84884527646"},{"id":"SCOPUS_ID:84886423686","url":"https://www.sc
 ```
 
-Read from the run: WoS `title`, `authors` (`displayName`), `venue` (`sourceTitle`), `year` (`publishYear`), `type` (`Article` to `article`, `Poetry` to `other`), `cites` (the `WOS` count), `doi`, `url` (`links.record`) are read, request `X-ApiKey` header only, the query `TS=(heart) AND PY=2000-2020 AND DT=(Article) AND SO=(Food) AND AU=(Jurankova)`. Scopus `title`, `authors` (`dc:creator` split from `author[].authname` when present), `venue`, `year` and `date` (`coverDate`), `type` (`ar`, `re`), `cites`, `doi`, `oa` are read; the first record's `url` is absent because the sample's `link[@ref=scopus]` is `http:` (case 37 drops it) and present in the variant. Headers `X-ELS-APIKey`, `accept` and `X-ELS-Insttoken`.
+Read from the run: WoS `title`, `authors` (`displayName`), `venue` (`sourceTitle`), `year` (`publishYear`), `type` (`Article` to `article`, `Poetry` to `other`), `cites` (the `WOS` count), `doi`, `url` (`links.record`) are read, request `X-ApiKey` header only, the query `TS=(heart) AND PY=2000-2020 AND DT=(Article) AND SO=(Food) AND AU=(Jurankova)`. Scopus `title`, `authors` (`dc:creator` split from `author[].authname` when present), `venue`, `year` and `date` (`coverDate`), `type` (`ar`, `re`), `cites`, `doi`, `oa` are read; every record's `url` is the sample's `link[@ref=scopus]` address read over `https:` (the sample gives `http://www.scopus.com/inward/record.url?...`, and the host `www.scopus.com` is read as the same address with `https:`). Headers `X-ELS-APIKey`, `accept` and `X-ELS-Insttoken`.
 
 ### Case 59: pacing and the cache cap (`node $S/case59.mts`, stub `fetch` answering after 30 ms)
 ```
-== keyless elapsed ms 9053 requests 20 statuses all 200: true
-export.arxiv.org           calls 4 peak in flight 1 starts [13,3015,6018,9020] min gap 3002
+== keyless elapsed ms 9051 requests 20 statuses all 200: true
+export.arxiv.org           calls 4 peak in flight 1 starts [13,3016,6018,9019] min gap 3001
 api.crossref.org           calls 4 peak in flight 1 starts [13,1015,2017,3017] min gap 1000
 api.semanticscholar.org    calls 4 peak in flight 1 starts [13,1015,2017,3017] min gap 1000
-eutils.ncbi.nlm.nih.gov    calls 8 peak in flight 1 starts [13,354,696,1039,1381,1723,2065,2407] min gap 341
-api.openalex.org           calls 4 peak in flight 1 starts [13,51,83,116] min gap 32
-== pubmed with a key elapsed ms 9039 requests 20 statuses all 200: true
-export.arxiv.org           calls 4 peak in flight 1 starts [9054,12055,15057,18059] min gap 3001
-api.crossref.org           calls 4 peak in flight 1 starts [9054,10057,11059,12060] min gap 1001
-api.semanticscholar.org    calls 4 peak in flight 1 starts [9054,10057,11059,12060] min gap 1001
-eutils.ncbi.nlm.nih.gov    calls 8 peak in flight 1 starts [9054,9155,9257,9359,9461,9562,9663,9765] min gap 101
-api.openalex.org           calls 4 peak in flight 1 starts [9054,9087,9119,9151] min gap 32
+eutils.ncbi.nlm.nih.gov    calls 8 peak in flight 1 starts [13,355,697,1039,1381,1723,2065,2407] min gap 342
+api.openalex.org           calls 4 peak in flight 1 starts [13,54,85,115] min gap 30
+== pubmed with a key elapsed ms 9035 requests 20 statuses all 200: true
+export.arxiv.org           calls 4 peak in flight 1 starts [9052,12052,15052,18054] min gap 3000
+api.crossref.org           calls 4 peak in flight 1 starts [9052,10052,11053,12054] min gap 1000
+api.semanticscholar.org    calls 4 peak in flight 1 starts [9052,10052,11053,12054] min gap 1000
+eutils.ncbi.nlm.nih.gov    calls 8 peak in flight 1 starts [9052,9152,9255,9358,9460,9562,9665,9768] min gap 100
+api.openalex.org           calls 4 peak in flight 1 starts [9052,9085,9118,9150] min gap 32
 == cache cap: fetches after 201 different answers 201 answers kept 200
 q1 (second) cached: true fetches 201 | q0 (first) cached: false fetches 202
 ```
@@ -320,9 +318,9 @@ q1 (second) cached: true fetches 201 | q0 (first) cached: false fetches 202
 | Add to Lit Watch: `radar-add` write, refusals, `entries: []`, undo, history label | DONE | `npx vitest run tests/server/edit/feeds.test.ts tests/routes/edit/undo/undo.test.ts`: passed |
 | `local.yml` keys, `behavior.yml` settings, options catalog | DONE | `npx vitest run tests/data/sources/config/settings.test.ts tests/data/sources/config/local.test.ts tests/checks/config`: passed |
 | View: registration in the Incoming group, bar, head, cards, add form, 99 catalog keys (97 `literature.*`, `views.literature` and `views.literature_glyph`), `e1-e6` | DONE; not seen in a browser | `npm run test:quick`: `ok svelte-check ... 0 ERRORS`, `ok eslint`; `npx vitest run tests/checks/source/keys.test.ts`: passed (inside `tests/checks`) |
-| DESIGN.md and HELP.md | DONE except the open-kinds list of DESIGN.md `How it writes` (item 2 of section 0) | `grep -rn "e1-e5" src config HELP.md DESIGN.md tests --exclude=local.yml` prints nothing |
+| DESIGN.md and HELP.md | DONE, `radar-add` in the open kinds list of `How it writes` | `grep -rn "e1-e5" src config HELP.md DESIGN.md tests --exclude=local.yml` prints nothing |
 | Look on TEST | NOT DONE (the orchestrator's) | no browser here |
-| Six-file T1 to T6 command | DONE | `npx vitest run tests/routes/docs/literature.test.ts tests/state/feeds/literature-merge.test.ts tests/server/edit/feeds.test.ts tests/routes/edit/undo/undo.test.ts tests/data/sources/config/settings.test.ts tests/data/sources/config/local.test.ts`: Test Files 6 passed (6), Tests 99 passed (99) |
+| Six-file T1 to T6 command | DONE | `npx vitest run tests/routes/docs/literature.test.ts tests/state/feeds/literature-merge.test.ts tests/server/edit/feeds.test.ts tests/routes/edit/undo/undo.test.ts tests/data/sources/config/settings.test.ts tests/data/sources/config/local.test.ts`: Test Files 6 passed (6), Tests 88 passed (88) |
 | boundaries, size, duplication, config, keys, history, comment-width | DONE | `npx vitest run tests/checks`: Test Files 16 passed (16), Tests 229 passed (229) |
 | ASCII gate of `agents/spec.md:97` | DONE | `LC_ALL=C perl -ne ... $(find src tests config -type f ! -name local.yml)` printed nothing (the spec's `bin` directory does not exist in this tree and is left out of the `find`) |
 | `npm run diagrams`, `checks.sh`, `sh utils/folder-check.sh` | DONE | `npm run diagrams` exit 0; `checks: 1 commands passed`; `sh utils/folder-check.sh` exit 0 |
@@ -338,7 +336,7 @@ q1 (second) cached: true fetches 201 | q0 (first) cached: false fetches 202
 2. A toggled-off source drops its hits at once; toggling one on asks it with the last search's form. The filters applied to the list on screen are those of the search as asked (`run.asked()`), the sort is the live form's.
 3. With no radar file the card shows the radar feed's `missing` state, and a 404 of the write is worded by `answerWords`.
 4. OpenAlex: a wait is read only from `x-ratelimit-reset` with `x-ratelimit-remaining: 0`, so a wait of that source means the daily credits and is worded so; a 429 with only `Retry-After` is `rate limited` with no wait (`ask.ts` `waitOf`).
-5. Scopus `url` is the `link[@ref=scopus]` address, and `http:` is dropped by case 37 (item 3 of section 0). Building a link from the `eid` would be a second URL pattern of Elsevier's that no document in the brief gives, so it is not done.
+5. Scopus `url` is the `link[@ref=scopus]` address. For the host `www.scopus.com` given as `http:` it is read as the same address over `https:`, and an `http:` link to any other host (or with a port) is dropped by case 37 (`sources/scopus.ts:87-109`).
 6. Files touched beyond the listed paths: `tests/server/root/context-fixture.ts` (the context's new `literature` member), `src/lib/data/prose/literature.ts` (the rules both sides read, so the page refuses a query by the rule the route uses), `src/lib/server/edit/feeds.ts` (imports `addressKey`, `sameTitle` from it), `tests/checks/tree/boundaries.test.ts` (the state row lists `data/prose/literature`), `tests/checks/config/config-folder.test.ts` and `tests/checks/config/config.test.ts` (the new key, the new catalog file), `tests/data/sources/config/wrong-settings.ts`.
 7. Sources that answer `ok` with a changed `total` keep the page's count at the merged list's length; the source's own total is not shown.
 
@@ -505,7 +503,7 @@ The citation-js option line (`node_modules/@citation-js/plugin-bibtex/README.md:
 
 | File | Kind | Lines (diff -rq against the base copy) |
 | --- | --- | --- |
-| DESIGN.md | changed | +5 -2 |
+| DESIGN.md | changed | +6 -3 |
 | HELP.md | changed | +8 -5 |
 | config/behavior.yml | changed | +7 -0 |
 | config/catalogs/options.yml | changed | +48 -0 |
@@ -523,7 +521,7 @@ The citation-js option line (`node_modules/@citation-js/plugin-bibtex/README.md:
 | src/lib/data/sources/config/settings.ts | changed | +33 -8 |
 | src/lib/server/content/literature/ask.ts | new | 138 lines |
 | src/lib/server/content/literature/bibtex.ts | new | 98 lines |
-| src/lib/server/content/literature/desk.ts | new | 113 lines |
+| src/lib/server/content/literature/desk.ts | new | 138 lines |
 | src/lib/server/content/literature/handler.ts | new | 179 lines |
 | src/lib/server/content/literature/request.ts | new | 125 lines |
 | src/lib/server/content/literature/sources/arxiv.ts | new | 143 lines |
@@ -531,9 +529,9 @@ The citation-js option line (`node_modules/@citation-js/plugin-bibtex/README.md:
 | src/lib/server/content/literature/sources/crossref.ts | new | 164 lines |
 | src/lib/server/content/literature/sources/europe-pmc.ts | new | 160 lines |
 | src/lib/server/content/literature/sources/index.ts | new | 23 lines |
-| src/lib/server/content/literature/sources/openalex.ts | new | 168 lines |
+| src/lib/server/content/literature/sources/openalex.ts | new | 169 lines |
 | src/lib/server/content/literature/sources/pubmed.ts | new | 253 lines |
-| src/lib/server/content/literature/sources/scopus.ts | new | 161 lines |
+| src/lib/server/content/literature/sources/scopus.ts | new | 185 lines |
 | src/lib/server/content/literature/sources/semantic-scholar.ts | new | 161 lines |
 | src/lib/server/content/literature/sources/wos.ts | new | 133 lines |
 | src/lib/server/edit/entry-edit/entries.ts | changed | +63 -11 |
@@ -563,12 +561,12 @@ The citation-js option line (`node_modules/@citation-js/plugin-bibtex/README.md:
 | tests/checks/config/config-folder.test.ts | changed | +2 -0 |
 | tests/checks/config/config.test.ts | changed | +3 -0 |
 | tests/checks/tree/boundaries.test.ts | changed | +7 -2 |
-| tests/data/sources/config/local.test.ts | changed | +35 -1 |
-| tests/data/sources/config/settings.test.ts | changed | +61 -7 |
+| tests/data/sources/config/local.test.ts | changed | +34 -2 |
+| tests/data/sources/config/settings.test.ts | changed | +58 -7 |
 | tests/data/sources/config/wrong-settings.ts | changed | +1 -0 |
-| tests/routes/docs/literature.test.ts | new | 218 lines |
+| tests/routes/docs/literature.test.ts | new | 234 lines |
 | tests/routes/edit/undo/undo.test.ts | changed | +51 -1 |
-| tests/server/edit/feeds.test.ts | changed | +146 -1 |
+| tests/server/edit/feeds.test.ts | changed | +145 -1 |
 | tests/server/root/context-fixture.ts | changed | +2 -0 |
 | tests/state/feeds/literature-merge.test.ts | new | 135 lines |
 
@@ -689,4 +687,99 @@ After: The Literature search sends the query and its filters from the server to 
 
 ## 12. What is next
 
-The orchestrator rules the open item of section 1, reads the diff of the 66 files outside `docs/diagrams`, adds the titles of T1 to T5 to their guarded entries, lands the package, and runs the look on TEST (cases 1, 5, 6, 7, 10, 13 to 17, 19, 20 on the live sources, a Copy BibTeX and an Add to Lit Watch with its undo from the History view).
+The orchestrator reads the diff of the 66 files outside `docs/diagrams`, adds the titles of T1 to T5 to their guarded entries, lands the package, and runs the look on TEST (cases 1, 5, 6, 7, 10, 13 to 17, 19, 20 on the live sources, a Copy BibTeX and an Add to Lit Watch with its undo from the History view).
+
+## 13. Repair round 1
+
+Items 1 to 8 of `agents/briefs/D38-round1.md`, all done. Not done in this round: P1 and P2, which the brief assigns elsewhere (P2 stays on the look's list: Semantic Scholar over a real answer).
+
+Full-list runs (`sh /Users/axelfaes/.claude-work/skills/land/templates/checks.sh <main checkout>/tools/oculus/.scratch/migration/orchestrator-state.md`, which runs `npm run test:quick`): **3 in this round**. The first (`$S/D38-r1-checks-run1.log`) ended `test:quick: 33.9 s (limit 45.0 s); failed: eslint` on `desk.ts:46:36 no-confusing-void-expression` in the new `turnOrAbort`; the second (`D38-r1-checks-run2.log`) passed; `npm run diagrams` then changed `docs/diagrams/layer-server.dot` and `.svg` (the edge `server/content` to `server/accounts` went from 2 to 3 imports, from the `httpsLink` import of item 1), so the third run (`D38-r1-checks.log`) is on the final tree: `test:quick: 12.5 s (limit 45.0 s); every command passed` and `checks: 1 commands passed`. Over the whole task that is 8 + 3 = 11 full-list runs.
+
+Other commands on the final tree: `npx vitest run tests/checks` gives `Test Files  16 passed (16)` / `Tests  229 passed (229)`; the six-file command gives `Test Files  6 passed (6)` / `Tests  88 passed (88)` (99 before item 7 folded 11 tests into their named tests, none of their assertions deleted: below); `sh utils/folder-check.sh` exit 0; `npm run format:check` clean; the ASCII gate over src, tests and config prints nothing.
+
+"Before" below is a copy of the tree with only this round's edit of that item put back (`$S/r1before` for items 1, 2 and 6; `$S/m13` for items 3, 4 and 5, the working copy of the first build, which differs from the round's start only in `sources/common.ts:152-153`). "After" is the worktree. The stub script is `ROOT=<tree> node $S/round1.mts` (stub `fetch`, no request leaves).
+
+| Item | Change (file:line) | Run that shows it | Before the change |
+| --- | --- | --- | --- |
+| 1. B1, OpenAlex `http:` landing page | `sources/openalex.ts:153` is `url: httpsLink(one.primary_location?.landing_page_url ?? undefined) ?? one.id`; the import is at `:7` | `ROOT=$PWD node $S/round1.mts`: `item 1 openalex {"title":"Landing http","url":"https://openalex.org/W5"}` (landing page `http://x.org/p`); the `https:` landing page keeps its address and a hit with none takes `https://openalex.org/W7`. `cases.log` line 48 and `cases2.log` line 3 now print `url` = the OpenAlex id for the same stub | `ROOT=$S/r1before node $S/round1.mts`: `item 1 openalex {"title":"Landing http","url":null}` |
+| 2. B2, Scopus record link | `sources/scopus.ts:87-109` adds `recordLink`, which reads `http://www.scopus.com/...` as the same address over `https:` when the host is exactly `www.scopus.com` and no port is written, and leaves every other link as given; `:165` is `url: recordLink(one.link)` | same script: `item 2 scopus {"rank":5,"doi":null,"url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84886423686"}` (the documented sample's fifth hit, the one with no DOI) and ranks 1 to 4 print theirs; `item 2 other host [null,null,null,null,null]` for `evil.example.com` and `item 2 other port [null,null,null,null,null]` for `www.scopus.com:8080` (case 37 holds). `case58.log` now prints `url` on all five hits | before: `item 2 scopus {"rank":5,"doi":null,"url":null}` and `url":null` on ranks 1 to 4 |
+| 3. S1, open kinds | `DESIGN.md:326`: `lead-add`, `radar-add`, `linkedin-idea` in the list of open kinds; the sentence that `app-store` is the kind in neither set is true again | `grep -c "radar-add" DESIGN.md` prints 2 (lines 326 and 406); `grep -o "feed-delete\`, \`lead-add\`, \`radar-add\`" DESIGN.md` matches | `grep -c "radar-add" $S/m13/DESIGN.md` printed 0, so the sentence named `app-store` as the one kind in neither set while `radar-add` was in neither |
+| 4. T1, Calendar head | `views/personal/calendar/Calendar.svelte:2`: "the fifth of the Incoming page's group" | `grep -rn "order: [0-9]" src/lib/views` for the group: Inbox 0, Radar 1, Leads 2, LinkedIn 3, `Calendar.svelte:12` 4, `Literature.svelte:10` 5; the calendar is the fifth of six | `$S/m13` line 2: "The calendar is the fourth of the Incoming page's group" |
+| 5. T2, comments in `sources/common.ts` | `:179-183` is one doc comment whose sentence runs "A record that does not read is left out; a page none of whose records read is a source whose answer changed shape, and it is `failed`." wrapped at the comment width; `:198-199` has the doc comment of `looseText` directly above `export const looseText` | `npx prettier --check src/lib/server/content/literature/sources/common.ts` clean; `sed -n 179,183p` and `sed -n 197,200p` of the file | `$S/m13` lines 180-181: " * record that does not read is left out;" then " * a page none of whose records read is a source whose answer changed shape, and it is `failed`." and a blank line between the doc comment and `export const looseText` |
+| 6. T3, abort while waiting | `server/content/literature/desk.ts:36-52` adds `reasonOf` and `turnOrAbort`, which resolves with the request before it or rejects with the signal's reason the moment the signal aborts; `:68-76` is the doc comment, now true; `:89-109` waits with `turnOrAbort`, and a waiter that never took its turn releases the lane only after the request before it ended (`void turn.then(release)`), so the next request still follows that request in order and measures its gap from it | `node $S/round1.mts` (3 requests on one lane, gap 2400 ms, the first takes 2000 ms; the second is aborted 100 ms in): `item 6 first starts 0 \| second rejected 'page gone' 1 ms after the abort \| first ends 2003 \| third starts 2402`; an abort during the gap wait: `item 6 gap wait a 0 \| b rejected 'page gone' 0 ms after the abort \| c starts 1502` | `ROOT=$S/r1before`: `item 6 first starts 0 \| first ends 2003 \| third starts 2402 \| second rejected 'page gone' 2277 ms after the abort` (the aborted request waited for the one in flight; the gap-wait row is unchanged, 0 ms) |
+| 7. T4, tests folded into the named tests | below: 11 test cases folded into their named tests (99 to 88 cases) with every assertion kept: `feeds.test.ts` (1 case), `literature.test.ts` (1), `local.test.ts` (2), `settings.test.ts` (7 into 1, three groups of one case each) | `npx vitest run` on the six files: 88 passed; each folded assertion fails with its behaviour removed (mutation table below) | the review's list: `literature.test.ts:189`, `feeds.test.ts:327`, `local.test.ts:201` and `:218`, the `literatureSettings` describe with 3 cases (`it`, `it.each` of 6 rows, `it`) |
+| 8. S2, departures | stay as built; named in the next section | n/a | n/a |
+
+### Item 6 and items 1 and 2: the stub runs
+After:
+```
+item 1 openalex {"title":"Landing http","url":"https://openalex.org/W5"}
+item 1 openalex {"title":"Landing https","url":"https://x.org/q"}
+item 1 openalex {"title":"No landing","url":"https://openalex.org/W7"}
+item 2 scopus {"rank":1,"doi":"10.1016/j.fm.2013.08.011","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84884919538"}
+item 2 scopus {"rank":2,"doi":"10.1016/j.ceb.2013.10.008","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84888056396"}
+item 2 scopus {"rank":3,"doi":"10.1080/00029157.2013.768197","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84884272794"}
+item 2 scopus {"rank":4,"doi":"10.1016/j.tourman.2013.08.009","url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84884527646"}
+item 2 scopus {"rank":5,"doi":null,"url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84886423686"}
+item 2 other host [null,null,null,null,null]
+item 2 other port [null,null,null,null,null]
+item 6 first starts 0 | second rejected 'page gone' 1 ms after the abort | first ends 2003 | third starts 2402
+item 6 gap wait a 0 | b rejected 'page gone' 0 ms after the abort | c starts 1502
+```
+Before:
+```
+item 1 openalex {"title":"Landing http","url":null}
+item 1 openalex {"title":"Landing https","url":"https://x.org/q"}
+item 1 openalex {"title":"No landing","url":"https://openalex.org/W7"}
+item 2 scopus {"rank":1,"doi":"10.1016/j.fm.2013.08.011","url":null}
+item 2 scopus {"rank":2,"doi":"10.1016/j.ceb.2013.10.008","url":null}
+item 2 scopus {"rank":3,"doi":"10.1080/00029157.2013.768197","url":null}
+item 2 scopus {"rank":4,"doi":"10.1016/j.tourman.2013.08.009","url":null}
+item 2 scopus {"rank":5,"doi":null,"url":null}
+item 2 other host [null,null,null,null,null]
+item 2 other port [null,null,null,null,null]
+item 6 first starts 0 | first ends 2003 | third starts 2402 | second rejected 'page gone' 2277 ms after the abort
+item 6 gap wait a 0 | b rejected 'page gone' 0 ms after the abort | c starts 1502
+```
+
+### Item 7: every changed assertion, before and after
+
+| File | Before | After |
+| --- | --- | --- |
+| `tests/routes/docs/literature.test.ts` (T2) | `it('names the key a keyed source needs and never its value')` at `:189`: the eight ids in the route's order; `wos` is `{ id: 'wos', keyed: true, available: true, key: 'wos_key' }` with the keys held; with `keys: {}` the unavailable sources are `wos` and `scopus` | the `?sources` rows of the table of `never answers a key, in a hit, a failure line or the source list`: `{ name: 'the source list', ..., check: namesKeys(true) }` and a new row `the source list with no key held` with `keys: {}` and `check: namesKeys(false)`; `namesKeys` (`:105`) asserts the same eight ids in order, `wos` as `{ id, keyed: true, available: held, key: 'wos_key' }`, and the unavailable ids `[]` or `['wos', 'scopus']`. The row type gains `keys?` and `check?`; the loop passes `keys: row.keys ?? KEYS` and calls `row.check?.(body)` (`:199`, `:209`) |
+| `tests/server/edit/feeds.test.ts` (T3) | `it('refuses a bucket outside the vocabulary, a relevance outside the three words and a missing title')` at `:327`: three `add` calls on a fresh file with `bucket: 'nonsense'`, `relevance: 'huge'` and `title: '  '`, `refused[0].field` equal to `bucket`, `relevance`, `title`, and the file unchanged | the same three calls inside `adds a Lit Watch entry in the order given and ...` after the duplicate title and address rows (`:262-269`), on `{ ...ADD, title: 'A fresh title', url: 'https://example.org/fresh' }` so the duplicate rule is not the one that refuses, with `readFileSync(into.file)` equal to `source` after them |
+| `tests/data/sources/config/local.test.ts` (local table and cases) | `it('warns once of an unknown key under literature ...')` at `:201` (problems `[]`, `unknown` `['literature.foo']`, `config.literature` `{ wosKey: 'k' }`, one warning containing `ignoring unknown key(s) literature.foo`) and `it('keeps the rest of the file when literature is wrong ...')` at `:218` (a wrong map: `port` 9001, `literature` undefined, problem key `literature`; a wrong key: `port` 9001, `literature` `{ mailto: 'a@b.c' }`, problem key `literature.wos_key`) | the first moved to the end of `warns of an unknown key only when asked, and loadLocal asks every call` (`:212-224`), the same five assertions on a second engine file; the second moved to the end of `keeps the good keys when one is wrong` (`:104-114`), the same assertions on `readLocalText`; both texts are also two entries of the `texts` list of `localFindings words each problem ...` (`:243-244`), which asserts a finding per problem naming the same key. The `checkLocal` rows for `literature: abc`, `{ wos_key: 3 }` and `{ mailto: '' }` (`:85-87`) were already in the table |
+| `tests/data/sources/config/settings.test.ts` (T5) | the `literatureSettings` describe with `it` (the written values and 0 minutes; the default for undefined), `it.each` of 6 rows (`timeout_s`, `per_source`, `cache_min`, each `range` and `whole`, each with the `NOT_FINITE` values) and `it` (`read(5)` answers the defaults and `literature: block`) | one `it('answers the written values, and the default with the key named for each wrong value or a block that is no map')` (`:292-325`) holding the same three groups of assertions, the six rows as the array `wrong` (`:309`), like `searchSettings`'s single case |
+
+Each folded assertion fails with its behaviour removed (`$S/r1mut`, a copy of the final tree, one edit at a time, the named file run alone; `$S/round1-mutations.out`):
+```
+feeds.ts bucket check off: exit 1 | 1 failed | 5 passed (6) | ['FAIL  |unit| tests/server/edit/feeds.test.ts > Lit Watch writes > adds a Lit Watch entry in the order given and refuses one whose title or address is in the file']
+feeds.ts relevance check off: exit 1 | 1 failed | 5 passed (6) | ['FAIL  |unit| tests/server/edit/feeds.test.ts > Lit Watch writes > adds a Lit Watch entry in the order given and refuses one whose title or address is in the file']
+feeds.ts missing-title check off: exit 1 | 1 failed | 5 passed (6) | ['FAIL  |unit| tests/server/edit/feeds.test.ts > Lit Watch writes > adds a Lit Watch entry in the order given and refuses one whose title or address is in the file']
+handler.ts key name dropped: exit 1 | 1 failed | 1 passed (2) | ['FAIL  |unit| tests/routes/docs/literature.test.ts > the literature route > never answers a key, in a hit, a failure line or the source list', "AssertionError: expected { id: 'wos', keyed: true, …(2) } to strictly equal { id: 'wos', keyed: true, …(2) }"]
+handler.ts availability always true: exit 1 | 1 failed | 1 passed (2) | ['FAIL  |unit| tests/routes/docs/literature.test.ts > the literature route > never answers a key, in a hit, a failure line or the source list', "AssertionError: expected { id: 'wos', keyed: true, …(2) } to strictly equal { id: 'wos', keyed: true, …(2) }"]
+local.ts unknown literature key not reported: exit 1 | 1 failed | 28 passed (29) | ['FAIL  |unit| tests/data/sources/config/local.test.ts > readLocal and loadLocal > warns of an unknown key only when asked, and loadLocal asks every call', "AssertionError: expected [] to strictly equal [ 'literature.foo' ]"]
+local.ts wrong literature map not a problem: exit 1 | 3 failed | 26 passed (29) | ['FAIL  |unit| tests/data/sources/config/local.test.ts > checkLocal > answers "literature: abc" with the sentence it would throw', "AssertionError: expected null to be 'local.yml: literature must be a map' // Object.is equality"]
+local.ts wrong literature key not a problem: exit 1 | 4 failed | 25 passed (29) | ['FAIL  |unit| tests/data/sources/config/local.test.ts > checkLocal > answers "literature: { wos_key: 3 }" with the sentence it would throw', "AssertionError: expected null to be 'local.yml: literature.wos_key must be…' // Object.is equality"]
+settings.ts timeout_s ignores the file: exit 1 | 2 failed | 38 passed (40) | ['FAIL  |unit| tests/data/sources/config/settings.test.ts > literatureSettings > answers the written values, and the default with the key named for each wrong value or a block that is no map', 'AssertionError: expected { value: { timeoutS: 40, …(2) }, …
+settings.ts per_source ignores the file: exit 1 | 2 failed | 38 passed (40) | ['FAIL  |unit| tests/data/sources/config/settings.test.ts > literatureSettings > answers the written values, and the default with the key named for each wrong value or a block that is no map', 'AssertionError: expected { value: { timeoutS: 9, …(2) }, …
+settings.ts cache_min ignores the file: exit 1 | 2 failed | 38 passed (40) | ['FAIL  |unit| tests/data/sources/config/settings.test.ts > literatureSettings > answers the written values, and the default with the key named for each wrong value or a block that is no map', 'AssertionError: expected { value: { timeoutS: 9, …(2) }, …(
+```
+
+### Item 8: the three departures from the brief, each with its reason
+
+1. **OpenAlex `conference` maps to `conference-paper`** (`sources/openalex.ts:31` in the request's type filter and `:41` in the answer's type table). OpenAlex names a conference paper `conference-paper` in its answers (`fixtures/openalex-search.json` carries `"type": "conference-paper"` twice); without the mapping a filter on type `conference` would drop every OpenAlex conference paper.
+2. **Semantic Scholar is sent the `venue` filter** (`sources/semantic-scholar.ts:109`). The brief sends a filter to a source that has a parameter for it and keeps it for the after-fetch filter otherwise; Semantic Scholar's search has a `venue` parameter, so it narrows the source's own ranking.
+3. **Europe PMC's cursor is `<hits so far>|<cursorMark>`** (`sources/europe-pmc.ts:104-108`). The source pages by `cursorMark` alone, and a hit's rank is its place in the source's order (`offset + at + 1`, `:142`) and the end of the list is `offset + got < total` (`:151`), so the count of hits so far is carried in the cursor. The cursor is printable ASCII of at most 200 characters, so the route's `page` rule (`request.ts:51-54`) holds, and a bare `cursorMark` is read as a page that starts at 0.
+
+### Head comments and paragraphs touched in this round
+
+| Item | Result |
+| --- | --- |
+| `views/personal/calendar/Calendar.svelte` head | rewritten ("fifth") |
+| `server/content/literature/desk.ts` head and the doc comment of `run` | still true for the head (a waiting request leaves the lane when its page aborts); the doc comment of `run` rewritten for the abort during the wait for the request before it |
+| `sources/common.ts` doc comments of `readRows` and `looseText` | rewritten (wrap and position) |
+| `sources/scopus.ts` `recordLink` | new |
+| `sources/openalex.ts` head | still true (it names the fields and the filter, not the landing page) |
+| DESIGN.md `How it writes` | rewritten: `radar-add` in the open kinds |
+

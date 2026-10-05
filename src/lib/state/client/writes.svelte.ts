@@ -323,6 +323,11 @@ export function createWrites(
         return send({ kind: 'lead-add', fields });
     }
 
+    /** Add one paper to the Lit Watch radar. */
+    async function addRadarEntry(fields: Record<string, unknown>): Promise<WriteAnswer> {
+        return send({ kind: 'radar-add', fields });
+    }
+
     /** Add one LinkedIn idea stub through the configured folder. */
     async function addLinkedinIdea(fields: Record<string, unknown>): Promise<WriteAnswer> {
         return send({
@@ -566,6 +571,7 @@ export function createWrites(
         writeFeedField,
         deleteFeedEntry,
         addLead,
+        addRadarEntry,
         addLinkedinIdea,
         markPosted,
         newEntry,

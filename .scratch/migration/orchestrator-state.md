@@ -25,21 +25,6 @@ workers_at_once: 5           # Axel, 2026-10-05 (Z472): five, reached by landing
 
 ```yaml
 dispatch:   # steps in flight, up to seven (Z423)
-- step: D38
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a9235d4e14cc878c9 (builder, launched 2026-10-05)
-  worktree: .agents/worktrees/D38
-  base: b9cb4b3a2
-  launched: 2026-10-05
-  report: agents/reviews/D38-report.md
-  brief_check: agents/reviews/D38-brief-check.md, claude-opus-5-5 (a2a467a6aab8994d0), 294,737 tokens, 97 tool uses, 12.6 min; closed by a4558e3331a0b5998, claude-opus-5-5, 250,737 tokens, 61 tool uses, 12.6 min
-  shared_paths: HELP.md and DESIGN.md with X3f and D20 (separate lines; D38's DESIGN.md paragraph between :131 and :132), writes.svelte.ts and context.ts with D20 (separate hunks), docs/diagrams regenerated
-  landing: not-started
-  builder_usage: first run handed back (cases 18 and 21), 277,221 tokens, 56 tool uses, 10.3 min, 0 full-list runs; after the cases ruling, 128,713 tokens, 379 tool uses, 110.6 min, the full list 8 times (5 direct, 3 in checks.sh)
-  reviewer_report: agents/reviews/D38-refuter.md (a556243e326d2c316, claude-opus-5-5, 156,924 tokens, 109 tool uses, 16.8 min)
-  round: 1 (agents/briefs/D38-round1.md: the review's findings B1, B2, S1, T1 to T4, S2)
 - step: D20
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -229,6 +214,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-05 15:58. D38 landed in this commit: the Literature search view; gate green with the landing fixes; look on TEST over the brief's cases (filters, sorts, cache, a second search in flight, the toggles, More, Copy BibTeX, Open PDF, Google Scholar, Add to Lit Watch with its undo, `e6`); six fixes at landing, three at the gate and three from the look. Running: nothing. Next: /spec D23, then D20's landing once Z543 is ruled.
 - 2026-10-05 13:21. X3f landed in this commit (third landing): a file tab's actions in its breadcrumb bar, file icons on file tabs, blame on HEAD and index tabs and the double click's kept tab; gate green (`test:checks` rerun alone after a comment rewrap); look on TEST over twelve kinds of tab; thirteen fixes at landing, seven from the run over round 3 and six from the look; G37 written into `agents/guarded.md`. Z546 to Z548 booked in `choices.md` and the closed log. Running: D38's builder a9235d4e14cc878c9. Next: D20's landing with its diagnosis fix and its round-1 fixes at landing, then the free slots (M6's brief writer first).
   Open for Axel: Z538, Z539, Z543, Z545.
 - 2026-10-05 12:10. S5 landed at 71017ce60 (gate green with test:slow rerun alone; look on a scratch oculus under Z507). The ruling audit saved (`agents/reviews/ruling-audit.md`), its corrections marked in plan.md, Z143's fix folded into D20's round 1 as item 21 and Open Source into X3f's round 3. Z535 booked, Z536 open. G31 widened (Z438) and G42 written (Z527) for X3e, which waits for D20 (Z519). Running: X3f round-3 builder abb2cc439fd4f1181; D20 round-1 builder a65b04c696467576e; D44 brief check ac746360f7500e074 (claude-opus-5-5); D45 premise recheck a32b5474d92306805 and D23 premise recheck a06e5bd28d3450606 (claude-opus-5-5). Next: D44's brief-check report; D45 and D23 prepared and dispatched once their rechecks close; X3f's review over round 3.

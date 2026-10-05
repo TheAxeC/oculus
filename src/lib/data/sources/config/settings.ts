@@ -1,12 +1,13 @@
 // Layer 1, data. The typed readers of single settings out of the merged map: the cluster, the
-// calendar, the search, the open list, the mail, the change log's length, the usage tiers and the
-// refresh, the Processes view's program names, the LaTeX formatter and its auto build, the
-// automatic fetch, the Trash confirmation and the editor's paint limit. Each reads a key by the
-// rule of its entry in the options catalog (catalog/value-rule.ts), the same rule the Settings view
-// and the server's write refuse a value by: a key that is missing is the entry's `default`, and a
-// key whose value the rule refuses is the `default` too and comes back as a problem naming the key,
-// so a typo costs one setting and the server starts. A reader throws only when the catalog holds no
-// rule for a key it reads, or no default that reads, since without one no value can be read.
+// calendar, the search, the Literature search, the open list, the mail, the change log's length,
+// the usage tiers and the refresh, the Processes view's program names, the LaTeX formatter and its
+// auto build, the automatic fetch, the Trash confirmation and the editor's paint limit. Each reads
+// a key by the rule of its entry in the options catalog (catalog/value-rule.ts), the same rule the
+// Settings view and the server's write refuse a value by: a key that is missing is the entry's
+// `default`, and a key whose value the rule refuses is the `default` too and comes back as a
+// problem naming the key, so a typo costs one setting and the server starts. A reader throws only
+// when the catalog holds no rule for a key it reads, or no default that reads, since without one no
+// value can be read.
 
 import type { ProgramApps } from '../../helpers/files/opens-in-program.ts';
 import { byKey } from '../../helpers/guards.ts';
@@ -235,6 +236,29 @@ export function searchSettings(
     return { maxHits: read.number('search.max_hits'), timeoutS: read.number('search.timeout_s') };
 }
 
+/** The Literature search settings of config/behavior.yml. */
+export type LiteratureSettings = {
+    /** How long one source is given to answer a request, in seconds. */
+    timeoutS: number;
+    /** How many hits one page asks of each source. */
+    perSource: number;
+    /** How long an answer is kept for the same request, in minutes; 0 keeps none. */
+    cacheMin: number;
+};
+
+/** Read `literature:`'s three keys, each its default when it is missing or wrong. */
+export function literatureSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): LiteratureSettings {
+    const read = settingReader(config, problems);
+    return {
+        timeoutS: read.number('literature.timeout_s'),
+        perSource: read.number('literature.per_source'),
+        cacheMin: read.number('literature.cache_min')
+    };
+}
+
 /** The open action's settings of config/behavior.yml. */
 export type OpenSettings = {
     /** Each extension that may open, lowercased with its dot, to the bundle id it opens in. */
@@ -427,6 +451,7 @@ const PROBLEM_READERS: ((
     slurmSettings,
     calendarSettings,
     searchSettings,
+    literatureSettings,
     openSettings,
     confirmDelete,
     mailSettings,

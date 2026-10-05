@@ -81,7 +81,10 @@ describe('checkLocal', () => {
         [
             'mail: [{ provider: ics, label: a }]',
             'local.yml: mail[0].provider must be google or microsoft'
-        ]
+        ],
+        ['literature: abc', 'local.yml: literature must be a map'],
+        ['literature: { wos_key: 3 }', 'local.yml: literature.wos_key must be a non-empty string'],
+        ["literature: { mailto: '' }", 'local.yml: literature.mailto must be a non-empty string']
     ])('answers %j with the sentence it would throw', (text, expected) => {
         expect(sentence(text)).toBe(expected);
     });
@@ -97,6 +100,18 @@ describe('readLocalText', () => {
         expect(read.config.hpcHost).toBe('a');
         expect(named(engine, 'hub: /h\nport: x\nhpc_host: a')).toStrictEqual(['port: value']);
         expect(read.unread).toBe(false);
+
+        const wrongMap = readLocalText('port: 9001\nliterature: abc', engine);
+        expect(wrongMap.config.port).toBe(9001);
+        expect(wrongMap.config.literature).toBeUndefined();
+        expect(wrongMap.problems.map((one) => one.key)).toStrictEqual(['literature']);
+        const wrongKey = readLocalText(
+            'port: 9001\nliterature: { wos_key: 3, mailto: a@b.c }',
+            engine
+        );
+        expect(wrongKey.config.port).toBe(9001);
+        expect(wrongKey.config.literature).toStrictEqual({ mailto: 'a@b.c' });
+        expect(wrongKey.problems.map((one) => one.key)).toStrictEqual(['literature.wos_key']);
     });
 
     it('names two wrong keys and answers both defaults', () => {
@@ -193,6 +208,21 @@ describe('readLocal and loadLocal', () => {
         } finally {
             warn.mockRestore();
         }
+
+        const literature = engineWith('literature: { wos_key: k, foo: x }');
+        const again = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        try {
+            const read = readLocal(literature, true);
+            expect(read.problems).toStrictEqual([]);
+            expect(read.unknown).toStrictEqual(['literature.foo']);
+            expect(read.config.literature).toStrictEqual({ wosKey: 'k' });
+            expect(again).toHaveBeenCalledTimes(1);
+            expect(String(again.mock.calls[0][0])).toContain(
+                'ignoring unknown key(s) literature.foo'
+            );
+        } finally {
+            again.mockRestore();
+        }
     });
 
     it('reads a wrong port as the default port', () => {
@@ -209,7 +239,9 @@ describe('localFindings', () => {
         const texts = [
             'hub: /h\nport: x\nhpc_host: a',
             'accounts: [{ tool: claude, dir: d, label: A b }, { tool: gemini, dir: e, label: a-b }, { tool: claude, dir: f, label: a-b }]',
-            'a: ['
+            'a: [',
+            'port: 9001\nliterature: abc',
+            'port: 9001\nliterature: { wos_key: 3, mailto: a@b.c }'
         ];
         for (const text of texts) {
             const { problems } = readLocalText(text, engine);

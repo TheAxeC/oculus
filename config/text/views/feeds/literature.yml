@@ -1,0 +1,105 @@
+# Oculus text owned by the literature search view.
+text:
+    literature:
+        abstract: Abstract
+        add: Add to Lit Watch
+        add_bucket: Bucket
+        add_cancel: Cancel
+        add_project: Project
+        add_relevance: Relevance
+        add_save: Add
+        add_tip: Add this paper to the Lit Watch radar
+        add_why: Why (optional)
+        author: Author
+        bibtex: Copy BibTeX
+        cites: '{0} citations'
+        cites_one: 1 citation
+        copied_arxiv: BibTeX copied, from the arXiv DOI at doi.org
+        copied_citation_js: BibTeX copied, built by citation-js because no source served one
+        copied_doi: BibTeX copied, from doi.org
+        copied_semantic_scholar: BibTeX copied, from Semantic Scholar
+        copy_failed: Could not copy the BibTeX entry
+        count: '{0} papers'
+        count_one: 1 paper
+        filters: Filters
+        from: From year
+        idle: Type a query and press Search.
+        in_radar: In Lit Watch
+        in_radar_tip: Lit Watch holds this paper already
+        key_tip: 'Needs the {0} key under literature: in local.yml'
+        more: More
+        min_cites: Minimum citations
+        no_abstract: None of the sources sent an abstract.
+        no_hits: No papers found.
+        no_radar: Lit Watch has no file on this hub.
+        none_on: No source is on. Turn one on to search.
+        oa: Open access only
+        open: open access
+        pdf: Open PDF
+        query: Search the literature | title | abstract | DOI ...
+        refused_author_long: The author is over 200 characters.
+        refused_cites: The minimum citations must be a whole number.
+        refused_doi: That is not a DOI.
+        refused_id: That is not an identifier.
+        refused_oa: The open access setting is not one of 1 or 0.
+        refused_page: That page cursor is not one this source gave.
+        refused_query_empty: Type a query.
+        refused_query_long: The query is over 1000 characters.
+        refused_source: That is not a source.
+        refused_token: The page has no token for this request. Reload the page.
+        refused_type: That is not a document type.
+        refused_venue_long: The venue is over 200 characters.
+        refused_year: Years must be whole years from 1000 to next year, and the first not after the last.
+        relevance_high: high
+        relevance_low: low
+        relevance_med: med
+        scholar: Google Scholar
+        scholar_tip: Opens this query on Google Scholar. Only the query, the author and the years are carried over.
+        search: Search
+        searching: Searching ...
+        sep: ' | '
+        sort: Sort
+        sort_citations: Citations
+        sort_date: Date
+        sort_relevance: Relevance
+        source_arxiv: arXiv
+        source_crossref: Crossref
+        source_europe_pmc: Europe PMC
+        source_openalex: OpenAlex
+        source_pubmed: PubMed
+        source_scopus: Scopus
+        source_semantic_scholar: Semantic Scholar
+        source_wos: Web of Science
+        sources: Sources
+        state_asking: asking ...
+        state_daily: daily limit reached, resets in {0}
+        state_failed: failed ({0})
+        state_failed_plain: failed
+        state_limited: rate limited
+        state_limited_wait: rate limited, try again in {0}
+        state_no_key: no key
+        state_ok: '{0}'
+        state_ok_cached: '{0} (cached)'
+        state_refused: key refused ({0})
+        state_skipped: skipped, it cannot hold these filters
+        state_timeout: no answer within {0} s
+        state_timeout_plain: no answer in time
+        to: To year
+        toolbar: Literature search actions
+        type: Type
+        type_any: Any type
+        type_article: Article
+        type_book: Book
+        type_chapter: Chapter
+        type_conference: Conference paper
+        type_other: Other
+        type_preprint: Preprint
+        type_review: Review
+        untitled: (untitled)
+        venue: Venue
+        wait_h: '{0} h'
+        wait_min: '{0} min'
+        wait_s: '{0} s'
+    views:
+        literature: Literature search
+        literature_glyph: book

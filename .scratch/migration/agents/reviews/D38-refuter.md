@@ -220,3 +220,166 @@ Deleting them is the lazy option, because they cover real outcomes.
 ## Usage
 
 Agent a556243e326d2c316, served model claude-opus-5-5. Tokens, tool uses and minutes were not counted here (not verified).
+
+## Repair round 1, refuted
+
+D38 is the Literature search view. Worktree `.agents/worktrees/D38`, base b9cb4b3a2.
+
+**What the round changed.** The round's delta is the files the round brief names. A modification-time scan shows exactly those files changed after 14:40 (`find . -type f -newermt "2026-10-05 14:40:00"` inside the worktree's `tools/oculus`), plus the regenerated diagrams and the report:
+- `sources/openalex.ts`
+- `sources/scopus.ts`
+- `desk.ts`
+- `sources/common.ts`
+- `Calendar.svelte`
+- `DESIGN.md`
+- the four test files
+
+**The copies I compared against.** For items 1, 2, 6 and 7, the "before" is the builder's copy `$S/r1before`. That copy already holds items 3 to 5. For items 3 to 5, the "before" is the first review's quotes.
+
+**What I changed.** Nothing in the worktree or the ledger: `git status --short | wc -l` still prints 57.
+
+My vitest runs on scratch copies wrote vitest's result cache through a symlink into the worktree's gitignored `node_modules/.vite/vitest/`.
+
+**Commands outside the allowed set.** I ran `git diff -- tools/oculus/.scratch/migration/agents/guarded.md` and `git diff --stat` once in the main checkout, read-only, to see the pending P1 edit.
+
+```
+$ (worktree root) sh /Users/axelfaes/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/Users/axelfaes/workspace/research-hub/.agents/worktrees/D38/package.json'
+checks: failed with exit 254: npm run test:quick
+checks: 1 of 1 commands failed
+  (the worktree root has no package.json; the state file's verify block runs from tools/oculus, rerun there:)
+$ (tools/oculus) sh .../checks.sh .../orchestrator-state.md
+test:quick: 81 changed file(s), from git since HEAD
+ok      ASCII gate (0.5 s)
+ok      prettier (0.9 s): All matched files use Prettier code style!
+ok      svelte-kit sync (13.5 s)
+ok      eslint (25.0 s)
+ok      svelte-check (19.3 s): 1791206317139 COMPLETED 365 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (34.8 s): Duration  20.59s (transform 54.89s, setup 0ms, import 70.04s, tests 8.85s, environment 70ms)
+test:quick: 35.4 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+checks: 1 commands passed
+$ npx vitest run tests/checks
+ Test Files  16 passed (16)
+      Tests  229 passed (229)
+$ npx vitest run <the brief's six files>          worktree: Test Files 6 passed (6) / Tests 88 passed (88)
+                                                   $S/r1before: Test Files 6 passed (6) / Tests 99 passed (99)
+$ ROOT=<worktree tools/oculus> node round1.mts   (stub fetch; items 1, 2, 6)
+item 1 openalex {"title":"Landing http","url":"https://openalex.org/W5"}
+item 1 openalex {"title":"Landing https","url":"https://x.org/q"}
+item 1 openalex {"title":"No landing","url":"https://openalex.org/W7"}
+item 2 scopus {"rank":1..4, ... "url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=..."}
+item 2 scopus {"rank":5,"doi":null,"url":"https://www.scopus.com/inward/record.url?partnerID=HzOxMe3b&scp=84886423686"}
+item 2 other host [null,null,null,null,null]
+item 2 other port [null,null,null,null,null]
+item 6 first starts 0 | second rejected 'page gone' 0 ms after the abort | first ends 2001 | third starts 2401
+item 6 gap wait a 0 | b rejected 'page gone' 0 ms after the abort | c starts 1503
+$ ROOT=$S/r1before node round1.mts
+item 1 openalex {"title":"Landing http","url":null}
+item 2 scopus {"rank":5,"doi":null,"url":null}   (and url null on ranks 1 to 4)
+item 6 first starts 0 | first ends 2001 | third starts 2402 | second rejected 'page gone' 2279 ms after the abort
+item 6 gap wait a 0 | b rejected 'page gone' 1 ms after the abort | c starts 1502
+$ item 7, the eleven removals on a scratch copy (D38-review-r1/mut, restored after each; diff -rq against the worktree prints nothing):
+feeds bucket check off / relevance check off / missing-title check off -> FAIL feeds.test.ts > Lit Watch writes > adds a Lit Watch entry in the order given and refuses one whose title or address is in the file
+handler key name dropped / availability always true -> FAIL literature.test.ts > the literature route > never answers a key, in a hit, a failure line or the source list
+local unknown literature key not reported -> FAIL local.test.ts > readLocal and loadLocal > warns of an unknown key only when asked, and loadLocal asks every call
+local wrong map not a problem -> 3 failed: checkLocal "literature: abc"; readLocalText > keeps the good keys when one is wrong; localFindings > words each problem ...
+local wrong key not a problem -> 4 failed: checkLocal wos_key and mailto rows; readLocalText > keeps the good keys ...; localFindings > words each problem ...
+settings timeout_s / per_source / cache_min ignore the file -> 2 failed each: literatureSettings > answers the written values, and the default with the key named ...; the shipped files > answers the shipped default ...
+(two more, mine, against the folded it.each rows) options.yml literature.timeout_s `max` dropped; literature.cache_min `whole` dropped -> FAIL literatureSettings > answers the written values, and the default with the key named ...
+$ the round's changed tests on a copy of the unchanged tree ($S/pristine; its file list matches git diff b9cb4b3a2 plus the untracked files):
+Tests  10 failed | 65 passed (75); literature.test.ts: Cannot find module '.../content/literature/ask.ts'; feeds.test.ts: addRadarEntry is not a function; settings literatureSettings case and two shipped-files cases fail; the three checkLocal literature rows, readLocalText 'keeps the good keys when one is wrong', readLocal 'warns of an unknown key ...' and localFindings fail
+$ node case59.mts   (pacing after the desk change)
+export.arxiv.org calls 4 peak in flight 1 min gap 3001 | api.crossref.org 1000 | api.semanticscholar.org 1000 | eutils keyless 341, keyed 101 | api.openalex.org 32
+== cache cap: fetches after 201 different answers 201 answers kept 200
+$ node case58.mts   Scopus url on all five sample hits (https://www.scopus.com/inward/record.url?...), WoS as before
+$ node cases2.mts   "35/37 hits: [... {"id":"https://openalex.org/W5","title":"Landing","doi":"10.1234/cc","url":"https://openalex.org/W5"}]"
+$ node cases.mts    the same as the first review's run (D38-review/cases.out) except line 48, where W1 now carries "url":"https://openalex.org/W1"
+$ sh utils/unused-exports.sh   identical to the first review's unused-now.txt
+$ sh utils/folder-check.sh     exit 0;   the spec's perl ASCII gate over src tests config prints nothing; LC_ALL=C grep '[^ -~]' HELP.md DESIGN.md prints nothing
+```
+
+### Verdicts
+
+The round's files (`desk.ts`, `common.ts`, the `openalex.ts` and `scopus.ts` changes, the four test diffs, `Calendar.svelte`, DESIGN.md:326) were read whole. The verdicts on files the round did not touch are the first review's reading, held by the reruns above. Under the modification-time scan, no client, view, route or handler file changed after 14:40.
+
+Items of the brief's "What to build":
+
+- **1, route:** holds. T1 and T2 pass, and `cases.mts` matches the first run.
+- **2, adapters:** holds. Behaviour B1 and B2 are closed (`round1.mts`, `case58.mts`, `cases2.mts`). S2's three departures stay by ruling 8 and are named in section 13. P2 (Semantic Scholar over a real answer) is still the look's.
+- **3, pacing, timeouts and cache:** holds. T3 is closed: an abort during an in-flight request is answered in 0 ms, and the next request still starts 2401 ms after the first (gap 2400). `case59.mts` still holds.
+- **4, merge, filters, sort:** holds. T6 passes.
+- **5, view:** holds in code. The drawn result is the look's.
+- **6, hit card:** holds in code. The B1 and B2 hits now carry a `url`, so the title is a link (`LiteratureCard.svelte:53,101`).
+- **7, Copy BibTeX:** holds. This is the first review's run; the round changed no file of it.
+- **8, Add to Lit Watch:** holds. T3 and T4 pass.
+- **9, Google Scholar:** holds. This is the first review's run.
+- **10, settings and keys:** holds. T5 is folded into one case and still fails with each behaviour removed.
+- **11, docs:** holds. S1 is closed (DESIGN.md:326 lists `radar-add` beside `lead-add`). T1 is closed ("the fifth", `Calendar.svelte:2`). T2 is closed (`common.ts:179-183` is one paragraph, and `:198` sits directly above `looseText`).
+
+Cases:
+
+- **4:** met in code. An OpenAlex hit with an `http:` landing page and no identifier gets `https://openalex.org/W5`, and the merge falls back to the first source's own `url` (`merge.ts:223-230`).
+- **37:** met. `http:` and `javascript:` addresses are still dropped: a host other than `www.scopus.com`, or a port, prints null. arXiv's ids are as before. An OpenAlex `javascript:` landing page now falls back to the OpenAlex page (`cases.mts` line 48).
+- **58:** met. Scopus `url` is read on all five sample hits.
+- **59:** met. Rerun quoted above.
+- **7, 22, 23, 53:** met. The desk change shortens only an aborted waiter's wait; `cases.mts` and `case59.mts` are unchanged.
+- **25 to 28, 40, 41, 42, 43, 54, 55, 56:** met. T3, T4 and T5 pass after the folding.
+- **30, 34:** met. T1 and T2 pass.
+- **51:** met. T6 passes.
+- **Every other case:** as the first review gave it, since the round changed no file they rest on.
+- **1, 5, 6, 7, 10, 13 to 17, 19, 20, 21:** the live and drawn part is not verifiable here. The look on TEST settles it.
+
+### Findings
+
+- **Proof:** report section 13, "Before" paragraph. Quote: "`$S/m13` for items 3, 4 and 5, the working copy of the first build, which differs from the round's start only in `sources/common.ts:152-153`".
+  - What is wrong: `diff` of m13 against the worktree also differs in DESIGN.md, HELP.md and package.json. m13 holds none of D38's docs or dependencies: `grep -c "Literature search"` on its DESIGN.md and HELP.md prints 0, and `grep -c fast-xml-parser` on its package.json prints 0.
+  - Item 3's "before" (`grep -c "radar-add" $S/m13/DESIGN.md printed 0`) was therefore taken on a tree without D38's DESIGN.md changes. At the round's start, the decision bullet (now :406) already named `radar-add`. Item 3's substance still holds: the first review quoted :326 without `radar-add`.
+  - The decision that rests on it: the orchestrator's read of the round's delta at landing.
+  - Failure scenario: a delta read against m13 shows D38's round-0 DESIGN.md, HELP.md and package.json changes as round 1's.
+  - Verdict: none. Correct it in the landing note; no code change.
+- **Proof:** report section 13, item 7. The tests the round changed (T2's table, T3's case, T5's `literatureSettings` case, and the three local cases that now hold the folded assertions) have no failure on the unchanged tree quoted in their after-round form, as the spec's test rule asks.
+  - My run on `$S/pristine` with the after-round test files gives it: 10 failed of 75, every one of these cases among them (quoted above).
+  - Failure scenario: none left. Closed by this run.
+  - Verdict: none.
+- **Spec:** `tests/data/sources/config/local.test.ts:104-114` and `:243-244`. Round brief item 7 put "the wrong map into ... the `checkLocal` table".
+  - What the builder did: the `readLocalText` assertions went into 'keeps the good keys when one is wrong'. Two texts were also added to the `localFindings` case 'words each problem against local.yml with no value of the file in it', which the round did not ask for. The unknown key went, as ruled, into 'warns of an unknown key only when asked, and loadLocal asks every call'. Section 13 says all this openly.
+  - None of these three cases is named in `agents/guarded.md`. G13's local.ts Test line reads "describe of `checkLocal`", and the pending P1 edit on main adds only the settings title. Those three cases now carry the part of cases 42 and 56 that the `checkLocal` sentence table cannot hold: the rest of `local.yml` is read, every literature key is absent, and the finding names `literature.wos_key`.
+  - Failure scenario: a later sweep that deletes tests no entry names, under spec.md's "A test exists only as the test of one entry", removes these assertions. A wrong `literature:` block that drops the rest of `local.yml` would then go uncaught.
+  - Verdict: none. Fix at landing in the P1 edit: name the three cases on G13's local.ts Test line. Leaving them unnamed is the lazy option.
+- **Standards:** report section 13. spec.md's "What every package obeys" asks the report to quote a grep for history words over the comment lines and test titles the round added or changed, with each hit judged. Section 13 quotes none.
+  - My grep over the round's added lines finds `desk.ts:72` "before it" and `:74` "still wait". Both describe order in the lane, not an earlier state of the code.
+  - Failure scenario: none in the code; only the report misses the quote.
+  - Verdict: none.
+
+None of the closures was made by removing a check:
+- Each of the eleven folded tests' removals still fails in its new place.
+- My two extra removals against the folded rows (`max` of `literature.timeout_s`, `whole` of `literature.cache_min`) also fail.
+- Test count 99 to 88; only T1 to T6 are added since the base (`git diff b9cb4b3a2 -- tools/oculus/tests`).
+
+No fix reaches beyond its finding, except the two `localFindings` texts above. `recordLink`'s port rule leaves a ported link dropped, as case 37 asks. `reasonOf` is shared by the two waits.
+
+### Declined to judge
+
+- The live and drawn parts of cases 1, 5 to 7, 10, 13 to 21 and P2. They need the look or outside requests, which this review forbids.
+- Whether `https://www.scopus.com/inward/record.url?...` serves the same page as its `http:` form (the `scopus.ts:87-90` comment). It needs a request to Elsevier.
+- `npm run diagrams` was not run, since it writes into the worktree. The one diagram change (`layer-server.dot:41`, label 2 to 3 for `server/content` to `server/accounts`) matches the new `httpsLink` import in `openalex.ts:7`.
+- Whether files outside the round's delta are byte-identical to what the first reviewer read. There is no snapshot of the round's start, so this rests on the modification-time scan.
+- The client scratch tests (`m13/tests/scratch`) were not rerun. The round changed no client file.
+
+Reviewer usage: agent id not known to me, served model claude-opus-5-5 per my system context; tokens, tool uses and minutes not counted (not verified).
+
+## Closed
+
+First run:
+- S1, B1, B2, T1, T2, T3, T4: closed by the builder in repair round 1 (`agents/briefs/D38-round1.md` items 1 to 7); the run over the round reproduces each closure.
+- S2: the three departures stay (round item 8), named in the report's section 13 and in the landing note.
+- P1: the titles of T1 to T5 are on the Test lines of G1, G3, G8, G9 and G13 in `agents/guarded.md`, and G1's Code line names `literature`.
+- P2: Semantic Scholar over a real answer is checked at the look on TEST.
+
+Run over round 1:
+- Proof, section 13's "before" copy: noted in the landing note (the copy lacked D38's docs and dependencies); no code change.
+- Proof, the changed tests' failure on the unchanged tree: closed by the reviewer's own run (10 failed of 75 on the base with the after-round tests).
+- Spec, the three `local.test.ts` cases holding the folded assertions: named on G13's local.ts Test line at landing.
+- Standards, section 13's missing history-word grep: the reviewer's grep finds two hits, both about order in the lane; no change.

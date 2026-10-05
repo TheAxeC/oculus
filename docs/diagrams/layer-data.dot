@@ -25,6 +25,7 @@ digraph layer_data {
         "folder data/accounts to folder data/helpers" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/shapes to folder data/helpers" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/helpers to folder data/prose" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data/prose to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "folder data" -> "folder data/sources" [style=invis, weight=10, minlen=2];
     "folder data/sources" -> "folder data/snapshot" [style=invis, weight=10, minlen=2];
@@ -59,4 +60,6 @@ digraph layer_data {
     "folder data/shapes to folder data/helpers" -> "folder data/helpers" [];
     "folder data/helpers" -> "folder data/helpers to folder data/prose" [arrowhead=none, minlen=1, weight=10];
     "folder data/helpers to folder data/prose" -> "folder data/prose" [];
+    "folder data/prose" -> "folder data/prose to folder data/model" [arrowhead=none, minlen=1, weight=10];
+    "folder data/prose to folder data/model" -> "folder data/model" [];
 }

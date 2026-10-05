@@ -52,6 +52,7 @@ import {
     type PathOpener
 } from '../files/open.ts';
 import { docFindings, layoutFile } from '../content/docs.ts';
+import { LiteratureDesk } from '../content/literature/desk.ts';
 import { Hub } from '../core/channels.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
@@ -146,6 +147,8 @@ export type ServerContext = {
     mailConnects: ConnectStates;
     /** The folder the mail credential files and the triage notes live in, resolved once. */
     mailDir: string;
+    /** The pacing of the literature sources and the answers kept for a repeated search. */
+    literature: LiteratureDesk;
     /** The folder the one client half per provider lives in, resolved once. */
     providerDir: string;
     /**
@@ -458,6 +461,7 @@ export function createServerContext(
         calendarDir: polled.calendarDir,
         mailConnects: new ConnectStates(),
         mailDir: polled.mailDir,
+        literature: new LiteratureDesk(),
         providerDir: polled.providerDir,
         accounts: { file: localFile(engine), writes, reload: () => reloadLocal() },
         opener: openerOf(local),

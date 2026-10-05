@@ -86,7 +86,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // (server/edit/writes/config/config-key.ts) read one description of what an option is; and
 // `data/hub-address`, the rule telling a path of the hub from a web address, which the collection
 // card reads to decide what a click opens and the Audit reads to decide which links to look for on
-// disk. `data/helpers/files/paths` holds the `/` path rules (a path's last name, the path under a
+// disk; and `data/prose/literature`, the rules of the literature search that both sides read: how
+// a DOI, a PubMed id and an arXiv id are written the one way and the bounds of a request, which the
+// Literature search refuses a query by before it sends it and the route refuses the same query by
+// when it arrives, and the rule by which Lit Watch holds a paper already.
+// `data/helpers/files/paths` holds the `/` path rules (a path's last name, the path under a
 // folder, the deepest folder holding a target) that the file browser, the source tab and the status
 // bar read a root or a repository by, so the three agree on which one holds a file.
 // `data/shapes/shapes` holds the zod helpers (a schema that answers its input, the map and number
@@ -174,7 +178,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/sources/config/catalog/options',
         'data/sources/config/catalog/value-rule',
         'data/hub-address',
-        'data/prose/languages'
+        'data/prose/languages',
+        'data/prose/literature'
     ],
     data: ['data/**'],
     server: ['server/**', 'data/**'],

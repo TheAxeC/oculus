@@ -190,6 +190,7 @@ export type WritesStore = {
     ) => Promise<WriteAnswer>;
     deleteFeedEntry: (feed: string, id: string) => Promise<WriteAnswer>;
     addLead: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    addRadarEntry: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     addLinkedinIdea: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     markPosted: (file: string) => Promise<WriteAnswer>;
     newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;

@@ -24,7 +24,8 @@ import {
     refuseAll,
     verified,
     type Change,
-    type LineRange
+    type LineRange,
+    type Located
 } from './lines.ts';
 
 /**
@@ -94,13 +95,20 @@ export function setEntryFields(
     return { text, changed, refused };
 }
 
+/** True for a list key holding nothing: absent, null (`entries:`), or an empty list. */
+function isEmptyList(held: unknown): boolean {
+    return held === undefined || held === null || (Array.isArray(held) && held.length === 0);
+}
+
 /**
  * Write a collection's entry list with one rendered entry under it, for a file whose list holds
- * nothing. YAML has no empty block list, so such a file is in one of two states: it carries no list
- * key at all, which is a file nothing has ever been written to, or it carries the key with nothing
- * under it, which is what deleting the last entry leaves. The first gets the key at the end of the
- * file, the second gets the block under the key it already has, and a file whose list holds an
- * entry is left alone, since appendEntry is what grows one.
+ * nothing. Such a file is in one of three states: it carries no list key at all, which is a file
+ * nothing has ever been written to, it carries the key with nothing under it, which is what
+ * deleting the last entry leaves, or it carries the key with an empty flow list (`entries: []`).
+ * The first gets the key at the end of the file, the second gets the block under the key it
+ * already has, the third has its `[]` taken out of the key's line, a trailing comment kept, and
+ * gets the block under it. A file whose list holds an entry is left alone, since appendEntry is
+ * what grows one.
  *
  * The result is verified the way an append is: the file parses, the key is a list of exactly the
  * one entry, and every other key is what it was.
@@ -114,7 +122,12 @@ export function startEntries(source: string, listKey: string, block: string): Ed
     const dangling =
         pair !== undefined &&
         (pair.value === null || (isScalar(pair.value) && pair.value.value === null));
-    if (pair !== undefined && !dangling) {
+    const emptyFlow =
+        pair !== undefined &&
+        isSeq(pair.value) &&
+        pair.value.flow === true &&
+        pair.value.items.length === 0;
+    if (pair !== undefined && !dangling && !emptyFlow) {
         return refuseAll(source, [listKey], `the file already has a ${listKey} key`);
     }
     let text: string;
@@ -124,7 +137,19 @@ export function startEntries(source: string, listKey: string, block: string): Ed
         const key = rangeOf(pair.key);
         if (key === null) return refuseAll(source, [listKey], 'the key has no place in the file');
         const lines = source.split('\n');
-        lines.splice(lineAt(source, key[0]) + 1, 0, ...block.split('\n'));
+        const at = lineAt(source, key[0]);
+        if (emptyFlow) {
+            const flow = rangeOf(pair.value);
+            if (flow === null || lineAt(source, flow[1] - 1) !== at) {
+                return refuseAll(source, [listKey], 'the key has no place in the file');
+            }
+            const from = flow[0];
+            const to = flow[1];
+            const lineStart = source.lastIndexOf('\n', key[0] - 1) + 1;
+            lines[at] =
+                `${source.slice(lineStart, from).trimEnd()}${source.slice(to, lineStart + lines[at].length)}`;
+        }
+        lines.splice(at + 1, 0, ...block.split('\n'));
         text = lines.join('\n');
     }
 
@@ -139,7 +164,7 @@ export function startEntries(source: string, listKey: string, block: string): Ed
     if (
         !Array.isArray(has) ||
         has.length !== 1 ||
-        (before[listKey] ?? null) !== null ||
+        !isEmptyList(before[listKey]) ||
         !isDeepStrictEqual(without(after), without(before))
     ) {
         return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
@@ -157,7 +182,14 @@ export function appendEntry(source: string, listKey: string, block: string): Edi
     const pair = pairOf(doc.contents as YAMLMap, listKey);
     if (pair === undefined) return refuseAll(source, [listKey], `the file has no ${listKey} key`);
     const seq = pair.value;
-    if (seq === null || !isSeq(seq) || seq.flow === true) {
+    // A list holding nothing is the first entry's to start, whether it is written as `entries:` or
+    // as `entries: []`.
+    const none =
+        seq === null ||
+        (isScalar(seq) && seq.value === null) ||
+        (isSeq(seq) && seq.flow === true && seq.items.length === 0);
+    if (none) return startEntries(source, listKey, block);
+    if (!isSeq(seq) || seq.flow === true) {
         return refuseAll(source, [listKey], `${listKey} is not a block list`);
     }
     const key = rangeOf(pair.key);
@@ -289,7 +321,27 @@ export function deleteEntry(source: string, ident: string, value: string): EditR
     let to = found.range.end;
     if ((lines[to] ?? 'x').trim() === '') to += 1;
     else if (from > 0 && lines[from - 1].trim() === '') from -= 1;
-    const text = [...lines.slice(0, from), ...lines.slice(to)].join('\n');
+    return withoutLines(source, found, from, to);
+}
+
+/**
+ * Take out an entry that appendEntry wrote: its lines and the one blank line appendEntry put over
+ * them, and nothing under it, so the text around it is what it was before the append.
+ */
+export function takeOutAppended(source: string, ident: string, value: string): EditResult {
+    const found = locate(source, ident, value);
+    if (found === null) return refuseAll(source, [LIST], 'the entry is not in the file');
+    const lines = source.split('\n');
+    const from =
+        found.range.start > 0 && lines[found.range.start - 1].trim() === ''
+            ? found.range.start - 1
+            : found.range.start;
+    return withoutLines(source, found, from, found.range.end);
+}
+
+/** The source without lines `from` to `to`, kept only when it parses as the list without them. */
+function withoutLines(source: string, found: Located, from: number, to: number): EditResult {
+    const text = [...source.split('\n').slice(0, from), ...source.split('\n').slice(to)].join('\n');
 
     const before = asJs(source);
     const after = asJs(text);

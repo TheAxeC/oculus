@@ -69,7 +69,7 @@ arrangements:
       dir: row
       sizes: [0.6, 0.4]
       children:
-        - { kind: pane, view: [inbox, radar, leads, linkedin] }
+        - { kind: pane, view: [inbox, radar, leads, linkedin, literature] }
         - { kind: pane, view: calendar }
   explorer:
     root:

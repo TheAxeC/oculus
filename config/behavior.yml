@@ -178,6 +178,13 @@ search:
   max_hits: 500
   timeout_s: 10
 
+# === Literature search ======================================================
+# The Literature search view asks every source toggled on for one page of hits. `timeout_s` is how many seconds one source is given; `per_source` is how many hits one page asks of each source; `cache_min` is how many minutes an answer is kept for the same request, 0 for none.
+literature:
+  timeout_s: 20
+  per_source: 25
+  cache_min: 30
+
 # === Open in its program ====================================================
 # Each extension a file may carry to be handed to a program on this machine, with the bundle id of the one application it opens in. A file of any other extension, and a listed file with an execute bit or marked as a Finder alias, is refused; a folder is shown in Finder rather than opened. Read again at every request.
 open:

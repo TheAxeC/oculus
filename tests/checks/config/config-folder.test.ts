@@ -149,6 +149,7 @@ describe("oculus's own config directory", () => {
             'files',
             'git',
             'search',
+            'literature',
             'open'
         ],
         'catalogs/agents.yml': ['agents'],
@@ -241,6 +242,7 @@ describe("oculus's own config directory", () => {
         'views/feeds/inbox.yml',
         'views/feeds/leads.yml',
         'views/feeds/linkedin.yml',
+        'views/feeds/literature.yml',
         'views/feeds/radar.yml',
         'views/personal/account-setup.yml',
         'views/personal/calendar.yml',

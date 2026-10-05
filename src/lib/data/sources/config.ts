@@ -67,6 +67,7 @@ export {
 export {
     type CalendarSettings,
     type MailSettings,
+    type LiteratureSettings,
     type OpenSettings,
     type LatexFormatting,
     type ProcessesSettings,
@@ -77,6 +78,7 @@ export {
     changesKeep,
     confirmDelete,
     latexFormatting,
+    literatureSettings,
     mailSettings,
     openSettings,
     processesSettings,

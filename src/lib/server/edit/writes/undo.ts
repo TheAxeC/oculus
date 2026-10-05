@@ -27,6 +27,7 @@ import {
     deleteFeedEntry,
     isFeedKind,
     readFeedFile,
+    removeRadarEntry,
     restoreFeedEntry,
     writeFeedField
 } from '../feeds.ts';
@@ -153,7 +154,8 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
     if (
         change.kind === 'feed-field' ||
         change.kind === 'feed-delete' ||
-        change.kind === 'lead-add'
+        change.kind === 'lead-add' ||
+        change.kind === 'radar-add'
     ) {
         const feed = feedOf(into, change);
         if (feed === null) return { found: false, value: null };
@@ -326,14 +328,15 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     if (
         change.kind === 'feed-field' ||
         change.kind === 'feed-delete' ||
-        change.kind === 'lead-add'
+        change.kind === 'lead-add' ||
+        change.kind === 'radar-add'
     ) {
         return feedUndo(into, change);
     }
     return collectionUndo(into, change);
 }
 
-/** The three feed writes, taken back through the writers they came from. */
+/** The four feed writes, taken back through the writers they came from. */
 function feedUndo(into: WriteTarget, change: Change): WriteOutcome | null {
     const feed = feedOf(into, change);
     if (feed === null) return null;
@@ -343,6 +346,9 @@ function feedUndo(into: WriteTarget, change: Change): WriteOutcome | null {
     }
     if (change.kind === 'feed-delete') {
         return restoreFeedEntry(into.hub, into.config, feed, mapBeforeShape.parse(change.before));
+    }
+    if (change.kind === 'radar-add') {
+        return removeRadarEntry(into.hub, into.config, change.key, change.replaced);
     }
     return deleteFeedEntry(into.hub, into.config, feed, change.key);
 }

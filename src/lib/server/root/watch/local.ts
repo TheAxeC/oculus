@@ -93,7 +93,8 @@ const FIELDS: (keyof LocalConfig)[] = [
     'calendars',
     'calendarDir',
     'mail',
-    'mailDir'
+    'mailDir',
+    'literature'
 ];
 
 /** The keys whose value in `next` differs from the one in `held`. */

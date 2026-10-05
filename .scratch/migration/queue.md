@@ -1,12 +1,11 @@
-In flight (2 of 5 slots):
+In flight (1 of 5 slots):
 - D20 (an agent from a task or a worktree): landing prepared in the gate with its diagnosis fix and round-1 fixes; its commit waits for Axel's ruling on G44 (Z543).
-- D38 (the Literature search view): reviewed; repair round 1 sent to its builder.
-- M6 (the collection forms removed): brief written (Z550 closes its choices), checked, and its findings closed in the brief; prepared once D20, D38, X3e and D28 have landed.
+- M6 (the collection forms removed): brief written (Z550 closes its choices), checked, and its findings closed in the brief; prepared once D20, X3e and D28 have landed.
 
 Waiting for a landing or a ruling:
 - A3 (scheduled Update runs): brief closed; prepared once Axel rules Z545 (the brief is written to (b)).
 - D44 (Submit on a .slurm file): brief closed; prepared once Z538 and Z539 are ruled.
-- D23 (language servers): brief rechecked after X3f; prepared once D38 has landed (HELP.md, DESIGN.md and app.yml merge not simply).
+- D23 (language servers): brief rechecked after X3f; next to prepare, D38 having landed.
 - D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked; prepared once D20 has landed, after the inventory look on TEST.
 
 Queued, in order (22 steps):
@@ -36,6 +35,7 @@ Queued, in order (22 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D38 (the Literature search view), 2026-10-05.
 - X3f (a file tab's actions, file icons and the double click), 2026-10-05.
 - S5 (the Settings view's controls and headings), 2026-10-05, 71017ce60.
 - D42 (a file's history), 2026-10-05, 8077dd55.

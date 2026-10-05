@@ -49,7 +49,9 @@ import { createEntry, removeEntry, reorderCollection, writeEntry } from './write
 import { careerRules, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 import {
     addLead,
+    addRadarEntry,
     addLinkedinIdea,
+    radarBucketKeys,
     deleteFeedEntry,
     isFeedKind,
     markLinkedinPosted,
@@ -63,6 +65,7 @@ import {
     hostWrite,
     manifestWrite,
     leadAddWrite,
+    radarAddWrite,
     linkedinIdeaWrite,
     linkedinPostWrite,
     newEntry,
@@ -195,6 +198,7 @@ export {
     hostWrite,
     manifestWrite,
     leadAddWrite,
+    radarAddWrite,
     linkedinIdeaWrite,
     linkedinPostWrite,
     newEntry,
@@ -449,6 +453,20 @@ export async function handleWrite(
         if (!outcome.found)
             return json({ error: 'the leads feed is not on this hub' }, { status: 404 });
         return answer(outcome, 'lead-add', into);
+    }
+
+    const radar = radarAddWrite(body);
+    if (radar !== null) {
+        const outcome = addRadarEntry(
+            into.hub,
+            into.config,
+            radar.fields,
+            radarBucketKeys(into.engine)
+        );
+        if (!outcome.found) {
+            return json({ error: 'Lit Watch has no file on this hub' }, { status: 404 });
+        }
+        return answer(outcome, 'radar-add', into);
     }
 
     const linkedinIdea = linkedinIdeaWrite(body);

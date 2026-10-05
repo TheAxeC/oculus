@@ -7,7 +7,7 @@
 // The cases tagged slow take 100 ms or more; every other case runs in npm test. A hook loads the
 // configuration once, since the first load costs more than a later one, so no case pays for it.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, describe } from 'vitest';
 import { parse } from 'yaml';
@@ -235,5 +235,55 @@ describe('taking a change back', () => {
         // What comes back is what the record holds and nothing derived: no date, no fit.
         const back = parse(leads()) as { entries: Record<string, unknown>[] };
         expect(back.entries).toEqual([{ title: 'Lead', status: 'open' }]);
+    });
+
+    it('takes an added Lit Watch entry out again', async () => {
+        const into = target();
+        const radarFile = join(into.hub, 'feeds', 'literature-radar.yml');
+        const radar = (): string => readFileSync(radarFile, 'utf8');
+        const fields = {
+            title: 'A paper found by the search',
+            authors: 'Ada Lovelace',
+            year: 2025,
+            url: 'https://doi.org/10.1000/abc',
+            bucket: 'adjacent',
+            relevance: 'med'
+        };
+        const addRadar = (): Promise<Change> => made(into, { kind: 'radar-add', fields });
+        const undo = async (change: Change): Promise<void> => {
+            expect(
+                (await handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into)).status
+            ).toBe(200);
+        };
+
+        // The file as it is, then added to and taken back: the same bytes.
+        const before = radar();
+        const added = await addRadar();
+        expect(added.undo).toBe('create');
+        expect(radar()).toContain('A paper found by the search');
+        await undo(added);
+        expect(radar()).toBe(before);
+
+        // The same through a file whose list is written `entries: []`, which the add rewrites.
+        writeFileSync(radarFile, 'meta:\n  last_run: 2026-09-27\nentries: []\n');
+        const empty = radar();
+        const first = await addRadar();
+        expect(radar()).not.toBe(empty);
+        await undo(first);
+        expect(radar()).toBe(empty);
+
+        // A file changed after the add: a line the scout appended below the entry stays, and so
+        // does a line put at the head, which moves the entry from where the record says it is.
+        writeFileSync(radarFile, before);
+        const appended = await addRadar();
+        writeFileSync(radarFile, `${radar()}  - title: "Scout paper"\n    bucket: adjacent\n`);
+        await undo(appended);
+        expect(radar()).toBe(`${before}  - title: "Scout paper"\n    bucket: adjacent\n`);
+
+        writeFileSync(radarFile, before);
+        const moved = await addRadar();
+        writeFileSync(radarFile, `# a new head line\n${radar()}`);
+        await undo(moved);
+        expect(radar()).toBe(`# a new head line\n${before}`);
     });
 });
