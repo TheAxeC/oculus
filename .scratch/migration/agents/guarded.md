@@ -28,6 +28,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G42. A folder panel lives no longer than the request that opened it, and a cancel adds no folder and says no failure.
   Code: `src/lib/server/files/fs/picker.ts`, `src/routes/api/(files)/folders/pick/+server.ts`.
   Test: `tests/server/files/picker.test.ts`, 'ends the panel when the connection the request came on closes, and a new press opens one', 'never opens the panel when the connection closed before it would open', 'ends the open panel when its server closes', 'answers a panel the reader cancelled, which osascript reports as error -128, as no folders', 'answers any other non-zero exit as failed', written by X3e.
+- G47. An app window shows only its own server's page: a navigation or a window opened to any other address goes to the default browser when it is an http, https or mailto address and is refused otherwise, and never opens in an app window; the bridge answers only the top frame of the server's page, and every app window keeps Node integration off and context isolation and the sandbox on, subframes included.
+  Code: `src/desktop/`, the link decision, the window options and the sender check.
+  Test: written by O30, its file and titles named in `agents/briefs/O30.md` (Z518, Z556).
 
 ## Your work is not lost or misplaced
 
@@ -110,6 +113,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G32. What the hub shows is what its files say: each parser of the hub's files reads a well-formed file into the values the file holds (manifests, registries, collections, career, feeds, docs, present, the snapshot built from them).
   Code: `src/lib/data/sources/`, `src/lib/data/snapshot/`, `src/lib/data/model/`.
   Test: manifests: `tests/data/sources/manifests.test.ts`, 'carries the provenance of a flat project'; registries: `tests/data/sources/registries.test.ts`, 'reads entries with their provenance and returns the other keys as meta'; collections: `tests/data/sources/collections.test.ts`, 'reads a title-keyed collection with its entries in file order'; career: `tests/data/sources/career.test.ts`, 'parses it as the map it is, with no key renamed', 'reads the title, the milestone and the situation strip'; feeds: `tests/data/sources/feeds.test.ts`, 'keeps the live leads with the ISO date inside their deadline text, dismissed ones out'; docs: `tests/data/sources/docs.test.ts`, 'splits a leading frontmatter block from the body', 'finds the documents that are there and no others'; present: `tests/data/sources/present.test.ts`, 'reads the front matter into one slide under the project id'; personal: `tests/data/sources/personal.test.ts`, 'is read as one raw record per folder, in the folder's own place', 'reads the five fields'; snapshot: `tests/data/snapshot/normalise.test.ts`, 'fills a project from the manifest keys of the same meaning'.
+- G48. The app runs one server and ends it: a second start brings the first forward and starts nothing, a port in use starts no second server and says so with the port, and Quit stops the server process and leaves every tmux session running.
+  Code: `src/desktop/`, the start and the server process; `src/server.ts`.
+  Test: written by O30, its file and titles named in `agents/briefs/O30.md` (Z518).
 
 ## The repository's rules, checked by a machine
 

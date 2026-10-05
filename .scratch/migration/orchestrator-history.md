@@ -4,6 +4,9 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z557 (raised 2026-10-05, closed 2026-10-05 by Axel: "(a)"): O30's brief check; plan.md Rulings.
+- Z556 (raised 2026-10-05, closed 2026-10-05 by Axel: "(a)"): O30's brief check; plan.md Rulings.
+- Z555 (raised 2026-10-05, closed 2026-10-05 by Axel: "(a)"): O30's brief check; plan.md Rulings.
 - Z554 (2026-10-05, closed in automode): X3e's recheck stop 3; `choices.md`.
 - Z553 (2026-10-05, closed in automode): X3e's recheck stop 2; `choices.md`.
 - Z552 (2026-10-05, closed in automode): X3e's recheck stop 1; `choices.md`.
