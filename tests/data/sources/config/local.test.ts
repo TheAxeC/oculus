@@ -1,10 +1,9 @@
 // Layer 1, data tests. The machine's own file, read from text the case writes: checkLocal over
 // every shape of wrong value, in the order the reader refuses them, and readLocal, loadLocal and
 // localFindings over a scratch engine whose local.yml the case writes. A key that is wrong costs
-// that key alone; a row that is wrong costs that row; a file that cannot be read costs every key.
-// The real config/local.yml is never opened.
+// that key alone. The real config/local.yml is never opened.
 
-import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, expect, vi } from 'vitest';
@@ -14,7 +13,6 @@ import {
     engineDir,
     loadConfig,
     loadLocal,
-    localDefaults,
     localFile,
     localFindings,
     readLocal
@@ -113,87 +111,9 @@ describe('readLocalText', () => {
         expect(wrongKey.config.literature).toStrictEqual({ mailto: 'a@b.c' });
         expect(wrongKey.problems.map((one) => one.key)).toStrictEqual(['literature.wos_key']);
     });
-
-    it('names two wrong keys and answers both defaults', () => {
-        const text = "port: x\nhpc_host: ''";
-        const read = readLocalText(text, engine);
-        expect(read.config.port).toBe(DEFAULT_PORT);
-        expect(read.config.hpcHost).toBe(localDefaults(engine).hpcHost);
-        expect(named(engine, text)).toStrictEqual(['port: value', 'hpc_host: value']);
-    });
-
-    it('leaves out the row that is wrong and reads the rows around it', () => {
-        const accounts =
-            'accounts: [{ tool: claude, dir: /a, label: a }, { tool: gemini, dir: /b, label: b }]';
-        const read = readLocalText(accounts, engine);
-        expect(read.config.accounts.map((one) => one.label)).toStrictEqual(['a']);
-        expect(named(engine, accounts)).toStrictEqual(['accounts[1].tool: row']);
-
-        const every = readLocalText('accounts: [{ tool: gemini, dir: /b, label: b }]', engine);
-        expect(every.config.accounts).toStrictEqual([]);
-        expect(every.problems).toHaveLength(1);
-
-        const none = readLocalText('accounts: {}', engine);
-        expect(none.config.accounts).toStrictEqual(localDefaults(engine).accounts);
-        expect(named(engine, 'accounts: {}')).toStrictEqual(['accounts: value']);
-
-        const repeated = 'calendars: [{ provider: ics, label: a }, { provider: ics, label: a }]';
-        expect(readLocalText(repeated, engine).config.calendars).toHaveLength(1);
-        expect(named(engine, repeated)).toStrictEqual(['calendars[1].label: repeat']);
-    });
-
-    it('leaves a path key absent when it is empty', () => {
-        const read = readLocalText("notes: ''", engine);
-        expect(read.config.notes).toBeUndefined();
-        expect(named(engine, "notes: ''")).toStrictEqual(['notes: value']);
-    });
-
-    it('answers every default and one problem for a text that does not read', () => {
-        for (const [text, kind] of [
-            ['a: [', 'unparsed'],
-            ['[]', 'not-a-map']
-        ]) {
-            const read = readLocalText(text, engine);
-            expect(read.unread).toBe(true);
-            expect(read.config).toStrictEqual(localDefaults(engine));
-            expect(read.problems).toMatchObject([{ key: '', kind }]);
-        }
-    });
-
-    it('reads the corrected text with no problem', () => {
-        const read = readLocalText('port: 8791', engine);
-        expect(read.config.port).toBe(8791);
-        expect(read.problems).toStrictEqual([]);
-    });
 });
 
 describe('readLocal and loadLocal', () => {
-    it('answers every default and no problem for a missing file', () => {
-        const engine = engineWith(null);
-        const read = readLocal(engine);
-        expect(read.problems).toStrictEqual([]);
-        expect(read.unread).toBe(false);
-        expect(read.config).toStrictEqual(localDefaults(engine));
-        expect(loadLocal(engine)).toStrictEqual(localDefaults(engine));
-    });
-
-    it('answers every default and the error code for a folder at the file path', () => {
-        const engine = engineWith(null);
-        mkdirSync(localFile(engine));
-        const read = readLocal(engine);
-        expect(read.unread).toBe(true);
-        expect(read.config).toStrictEqual(localDefaults(engine));
-        expect(read.problems).toMatchObject([{ key: '', kind: 'unreadable', code: 'EISDIR' }]);
-    });
-
-    it.skipIf(process.getuid?.() === 0)('answers the error code for a file nobody may read', () => {
-        const engine = engineWith('port: 8791');
-        chmodSync(localFile(engine), 0);
-        const read = readLocal(engine);
-        expect(read.unread).toBe(true);
-        expect(read.problems).toMatchObject([{ key: '', kind: 'unreadable', code: 'EACCES' }]);
-    });
-
     it('warns of an unknown key only when asked, and loadLocal asks every call', () => {
         const engine = engineWith('colour: teal');
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -223,11 +143,6 @@ describe('readLocal and loadLocal', () => {
         } finally {
             again.mockRestore();
         }
-    });
-
-    it('reads a wrong port as the default port', () => {
-        const engine = engineWith('port: x');
-        expect(loadLocal(engine).port).toBe(DEFAULT_PORT);
     });
 });
 

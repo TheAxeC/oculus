@@ -40,12 +40,13 @@ const LEAD_SCHEMA = `schema:
   - { field: url, type: text }
 `;
 
+/** The checkout's configuration, read once: every case builds its own copy over it. */
+let base: PortfolioConfig | undefined;
+
 function fixture(): { hub: string; config: PortfolioConfig } {
     const hub = scratchDir('oculus-feeds-');
-    const config = {
-        ...portfolioConfigFrom(loadConfig(engineDir()).config, engineDir()),
-        feeds: { ...FILES, linkedin: 'fixture/linkedin' }
-    };
+    base ??= portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+    const config = { ...base, feeds: { ...FILES, linkedin: 'fixture/linkedin' } };
     for (const [kind, id] of [
         ['radar', 'Paper'],
         ['leads', 'Job']
@@ -78,29 +79,33 @@ function fixture(): { hub: string; config: PortfolioConfig } {
 }
 
 describe('feed writes', () => {
-    it('adds a dated LinkedIn idea with a safe slug and numbered collision suffix', () => {
-        const into = fixture();
-        const made = join(into.hub, FILES.linkedin, 'xx-easy-problems-2.md');
-        expect(addLinkedinIdea(into.hub, into.config, 'Easy problems', 'research')).toEqual({
-            found: true,
-            changed: ['file'],
-            refused: [],
-            records: [
-                {
-                    file: made,
-                    key: 'xx-easy-problems-2.md',
-                    field: 'entries',
-                    before: null,
-                    after: { title: 'Easy problems', category: 'research' },
-                    undo: 'none'
-                }
-            ]
-        });
-        const file = made;
-        expect(readFileSync(file, 'utf8')).toBe(
-            `---\nlayout: post\ntitle: "Easy problems"\ncategory: "research"\npublish: True\ndate: ${localDate(Date.now())}\n---\n\n`
-        );
-    });
+    it(
+        'adds a dated LinkedIn idea with a safe slug and numbered collision suffix',
+        { tags: ['slow'] },
+        () => {
+            const into = fixture();
+            const made = join(into.hub, FILES.linkedin, 'xx-easy-problems-2.md');
+            expect(addLinkedinIdea(into.hub, into.config, 'Easy problems', 'research')).toEqual({
+                found: true,
+                changed: ['file'],
+                refused: [],
+                records: [
+                    {
+                        file: made,
+                        key: 'xx-easy-problems-2.md',
+                        field: 'entries',
+                        before: null,
+                        after: { title: 'Easy problems', category: 'research' },
+                        undo: 'none'
+                    }
+                ]
+            });
+            const file = made;
+            expect(readFileSync(file, 'utf8')).toBe(
+                `---\nlayout: post\ntitle: "Easy problems"\ncategory: "research"\npublish: True\ndate: ${localDate(Date.now())}\n---\n\n`
+            );
+        }
+    );
 
     it('promotes an idea past 01-A and moves its same-basename sidecar', () => {
         const into = fixture();
@@ -183,7 +188,7 @@ describe('feed writes', () => {
         ).toBe(false);
     });
 
-    it('deletes leads and refuses deletion from the other feeds', () => {
+    it('deletes leads and refuses deletion from the other feeds', { tags: ['slow'] }, () => {
         const into = fixture();
         expect(deleteFeedEntry(into.hub, into.config, 'leads', 'Job').changed).toEqual(['entries']);
         expect(readFileSync(join(into.hub, FILES.leads), 'utf8')).not.toContain('Job');
@@ -217,118 +222,122 @@ describe('Lit Watch writes', () => {
     const add = (into: { hub: string; config: PortfolioConfig }, fields: Record<string, unknown>) =>
         addRadarEntry(into.hub, into.config, fields, BUCKETS);
 
-    it('adds a Lit Watch entry in the order given and refuses one whose title or address is in the file', () => {
-        // A new entry, in the order given, after the entry the file holds.
-        const into = radarWith(`${HEAD}entries:\n${OLD}`);
-        const answer = add(into, ADD);
-        expect(answer.found).toBe(true);
-        expect(answer.changed).toStrictEqual(['entries']);
-        expect(answer.refused).toStrictEqual([]);
-        const source = readFileSync(into.file, 'utf8');
-        expect(source).toBe(
-            `${HEAD}entries:\n${OLD}\n` +
-                `  - title: Block term decomposition\n    authors: Ada Lovelace, Alan Turing\n    venue: Journal of Tests\n    year: 2024\n` +
-                `    url: https://doi.org/10.1000/xyz\n    bucket: adjacent\n    project: bttd-source-eeg\n    relevance: med\n` +
-                `    why: The nearest baseline.\n    found: ${localDate(Date.now())}\n`
-        );
-        expect(answer.records).toHaveLength(1);
-        expect(answer.records?.[0]).toMatchObject({
-            file: into.file,
-            key: 'Block term decomposition',
-            field: 'entries',
-            before: null,
-            undo: 'create'
-        });
-        expect(answer.records?.[0].replaced?.after).toContain(
-            '  - title: Block term decomposition'
-        );
+    it(
+        'adds a Lit Watch entry in the order given and refuses one whose title or address is in the file',
+        { tags: ['slow'] },
+        () => {
+            // A new entry, in the order given, after the entry the file holds.
+            const into = radarWith(`${HEAD}entries:\n${OLD}`);
+            const answer = add(into, ADD);
+            expect(answer.found).toBe(true);
+            expect(answer.changed).toStrictEqual(['entries']);
+            expect(answer.refused).toStrictEqual([]);
+            const source = readFileSync(into.file, 'utf8');
+            expect(source).toBe(
+                `${HEAD}entries:\n${OLD}\n` +
+                    `  - title: Block term decomposition\n    authors: Ada Lovelace, Alan Turing\n    venue: Journal of Tests\n    year: 2024\n` +
+                    `    url: https://doi.org/10.1000/xyz\n    bucket: adjacent\n    project: bttd-source-eeg\n    relevance: med\n` +
+                    `    why: The nearest baseline.\n    found: ${localDate(Date.now())}\n`
+            );
+            expect(answer.records).toHaveLength(1);
+            expect(answer.records?.[0]).toMatchObject({
+                file: into.file,
+                key: 'Block term decomposition',
+                field: 'entries',
+                before: null,
+                undo: 'create'
+            });
+            expect(answer.records?.[0].replaced?.after).toContain(
+                '  - title: Block term decomposition'
+            );
 
-        // A title that is there, whatever its case and spacing, and an address that is there,
-        // whatever its case and trailing slash: refused, the file as it was.
-        const again = add(into, { ...ADD, title: ' BLOCK TERM decomposition ', url: '' });
-        expect(again.refused).toStrictEqual([
-            { field: 'title', reason: 'this paper is in Lit Watch already' }
-        ]);
-        const byAddress = add(into, {
-            ...ADD,
-            title: 'Another title',
-            url: 'HTTPS://arxiv.org/abs/2601.00001/'
-        });
-        expect(byAddress.refused).toStrictEqual([
-            { field: 'url', reason: 'this paper is in Lit Watch already' }
-        ]);
-        expect(readFileSync(into.file, 'utf8')).toBe(source);
+            // A title that is there, whatever its case and spacing, and an address that is there,
+            // whatever its case and trailing slash: refused, the file as it was.
+            const again = add(into, { ...ADD, title: ' BLOCK TERM decomposition ', url: '' });
+            expect(again.refused).toStrictEqual([
+                { field: 'title', reason: 'this paper is in Lit Watch already' }
+            ]);
+            const byAddress = add(into, {
+                ...ADD,
+                title: 'Another title',
+                url: 'HTTPS://arxiv.org/abs/2601.00001/'
+            });
+            expect(byAddress.refused).toStrictEqual([
+                { field: 'url', reason: 'this paper is in Lit Watch already' }
+            ]);
+            expect(readFileSync(into.file, 'utf8')).toBe(source);
 
-        // A bucket outside the vocabulary, a relevance outside the three words and a missing
-        // title: refused by that field, the file as it was.
-        const fresh = { ...ADD, title: 'A fresh title', url: 'https://example.org/fresh' };
-        expect(add(into, { ...fresh, bucket: 'nonsense' }).refused[0].field).toBe('bucket');
-        expect(add(into, { ...fresh, relevance: 'huge' }).refused[0].field).toBe('relevance');
-        expect(add(into, { ...fresh, title: '  ' }).refused[0].field).toBe('title');
-        expect(readFileSync(into.file, 'utf8')).toBe(source);
+            // A bucket outside the vocabulary, a relevance outside the three words and a missing
+            // title: refused by that field, the file as it was.
+            const fresh = { ...ADD, title: 'A fresh title', url: 'https://example.org/fresh' };
+            expect(add(into, { ...fresh, bucket: 'nonsense' }).refused[0].field).toBe('bucket');
+            expect(add(into, { ...fresh, relevance: 'huge' }).refused[0].field).toBe('relevance');
+            expect(add(into, { ...fresh, title: '  ' }).refused[0].field).toBe('title');
+            expect(readFileSync(into.file, 'utf8')).toBe(source);
 
-        // A missing file: not found, and none made.
-        const missing = radarWith(`${HEAD}entries:\n${OLD}`);
-        rmSync(missing.file);
-        expect(add(missing, ADD)).toStrictEqual({ found: false, changed: [], refused: [] });
-        expect(existsSync(missing.file)).toBe(false);
+            // A missing file: not found, and none made.
+            const missing = radarWith(`${HEAD}entries:\n${OLD}`);
+            rmSync(missing.file);
+            expect(add(missing, ADD)).toStrictEqual({ found: false, changed: [], refused: [] });
+            expect(existsSync(missing.file)).toBe(false);
 
-        // An empty list in each of its forms takes the entry as its first.
-        for (const empty of [
-            `${HEAD}entries: []\n`,
-            `${HEAD}entries: [] # none yet\nother: 1\n`,
-            `${HEAD}entries:\n`
-        ]) {
-            const held = radarWith(empty);
-            const first = add(held, ADD);
-            expect(first.refused, empty).toStrictEqual([]);
-            expect(first.changed, empty).toStrictEqual(['entries']);
-            const read = parse(readFileSync(held.file, 'utf8')) as {
+            // An empty list in each of its forms takes the entry as its first.
+            for (const empty of [
+                `${HEAD}entries: []\n`,
+                `${HEAD}entries: [] # none yet\nother: 1\n`,
+                `${HEAD}entries:\n`
+            ]) {
+                const held = radarWith(empty);
+                const first = add(held, ADD);
+                expect(first.refused, empty).toStrictEqual([]);
+                expect(first.changed, empty).toStrictEqual(['entries']);
+                const read = parse(readFileSync(held.file, 'utf8')) as {
+                    entries: Record<string, unknown>[];
+                };
+                expect(read.entries, empty).toStrictEqual([
+                    {
+                        title: 'Block term decomposition',
+                        authors: 'Ada Lovelace, Alan Turing',
+                        venue: 'Journal of Tests',
+                        year: 2024,
+                        url: 'https://doi.org/10.1000/xyz',
+                        bucket: 'adjacent',
+                        project: 'bttd-source-eeg',
+                        relevance: 'med',
+                        why: 'The nearest baseline.',
+                        found: localDate(Date.now())
+                    }
+                ]);
+            }
+
+            // A file that does not parse: refused, the bytes as they were.
+            const broken = `${HEAD}entries:\n  - title: "open\n    broken: [\n`;
+            const unread = radarWith(broken);
+            expect(add(unread, ADD)).toStrictEqual({
+                found: true,
+                changed: [],
+                refused: [{ field: 'entries', reason: "Lit Watch's file does not read" }]
+            });
+            expect(readFileSync(unread.file, 'utf8')).toBe(broken);
+
+            // A title with a quote, a colon, a hash and a newline, and curly characters: one line,
+            // plain characters, the accented and Greek letters kept.
+            const odd = radarWith(`${HEAD}entries:\n${OLD}`);
+            const written = add(odd, {
+                ...ADD,
+                title: 'A "quoted": title # with\na newline',
+                authors: 'Jos\u00e9 \u0391\u03b2',
+                venue: '\u201cCurly\u201d \u2013 dash \u2014 dash\u2026 and\u00a0space \u2018single\u2019'
+            });
+            expect(written.refused).toStrictEqual([]);
+            const read = parse(readFileSync(odd.file, 'utf8')) as {
                 entries: Record<string, unknown>[];
             };
-            expect(read.entries, empty).toStrictEqual([
-                {
-                    title: 'Block term decomposition',
-                    authors: 'Ada Lovelace, Alan Turing',
-                    venue: 'Journal of Tests',
-                    year: 2024,
-                    url: 'https://doi.org/10.1000/xyz',
-                    bucket: 'adjacent',
-                    project: 'bttd-source-eeg',
-                    relevance: 'med',
-                    why: 'The nearest baseline.',
-                    found: localDate(Date.now())
-                }
-            ]);
+            const added = read.entries.at(-1);
+            expect(added?.title).toBe('A "quoted": title # with a newline');
+            expect(added?.authors).toBe('Jos\u00e9 \u0391\u03b2');
+            expect(added?.venue).toBe('"Curly" - dash - dash... and space \'single\'');
+            expect(read.entries).toHaveLength(2);
         }
-
-        // A file that does not parse: refused, the bytes as they were.
-        const broken = `${HEAD}entries:\n  - title: "open\n    broken: [\n`;
-        const unread = radarWith(broken);
-        expect(add(unread, ADD)).toStrictEqual({
-            found: true,
-            changed: [],
-            refused: [{ field: 'entries', reason: "Lit Watch's file does not read" }]
-        });
-        expect(readFileSync(unread.file, 'utf8')).toBe(broken);
-
-        // A title with a quote, a colon, a hash and a newline, and curly characters: one line,
-        // plain characters, the accented and Greek letters kept.
-        const odd = radarWith(`${HEAD}entries:\n${OLD}`);
-        const written = add(odd, {
-            ...ADD,
-            title: 'A "quoted": title # with\na newline',
-            authors: 'Jos\u00e9 \u0391\u03b2',
-            venue: '\u201cCurly\u201d \u2013 dash \u2014 dash\u2026 and\u00a0space \u2018single\u2019'
-        });
-        expect(written.refused).toStrictEqual([]);
-        const read = parse(readFileSync(odd.file, 'utf8')) as {
-            entries: Record<string, unknown>[];
-        };
-        const added = read.entries.at(-1);
-        expect(added?.title).toBe('A "quoted": title # with a newline');
-        expect(added?.authors).toBe('Jos\u00e9 \u0391\u03b2');
-        expect(added?.venue).toBe('"Curly" - dash - dash... and space \'single\'');
-        expect(read.entries).toHaveLength(2);
-    });
+    );
 });

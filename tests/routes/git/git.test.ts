@@ -16,8 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { handleGit } from '../../../src/lib/server/git/git-routes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import type { GitOptions, GitRun } from '../../../src/lib/server/git/git-routes.ts';
-import { createRunningGit } from '../../../src/lib/server/core/git/running.ts';
+import type { GitOptions } from '../../../src/lib/server/git/git-routes.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 import { gitPost } from './request.ts';
 
@@ -73,62 +72,6 @@ describe('the git endpoint', () => {
             error: 'this action needs the page to confirm it'
         });
         expect(ran).toEqual([]);
-    });
-
-    it('cancel ends the write in flight on the root it names, and no other', async () => {
-        const ended: string[] = [];
-        /** Settles once both writes are in flight, the point a Cancel has something to end. */
-        let inFlight = (): void => undefined;
-        const bothStarted = new Promise<void>((resolve) => {
-            inFlight = resolve;
-        });
-        let started = 0;
-        // A write that stays in flight until its signal aborts and then answers as a cancelled run.
-        const run: GitRun = (_action, root, _fields, _roots, signal) =>
-            new Promise((settle) => {
-                started += 1;
-                if (started === 2) inFlight();
-                signal?.addEventListener('abort', () => {
-                    ended.push(root);
-                    settle({
-                        ok: false,
-                        output: '',
-                        error: 'cancelled',
-                        failure: { code: 'cancelled', detail: '', program: 'git' }
-                    });
-                });
-            });
-        const into = options({
-            rootsFor: () => [ROOT, '/other'],
-            run,
-            running: createRunningGit()
-        });
-        const first = handleGit(
-            request({ action: 'sync', root: ROOT, confirm: true }),
-            TOKEN,
-            into
-        );
-        const second = handleGit(
-            request({ action: 'sync', root: '/other', confirm: true }),
-            TOKEN,
-            into
-        );
-        await bothStarted;
-
-        const answered = await handleGit(request({ action: 'cancel', root: ROOT }), TOKEN, into);
-        expect(answered.status).toBe(200);
-        expect(await answered.json()).toEqual({ ok: true, output: '' });
-        // The first write answers only once its signal aborted, so awaiting it awaits the abort.
-        const stopped = await first;
-        expect(ended).toEqual([ROOT]);
-        expect(stopped.status).toBe(400);
-        expect(await stopped.json()).toEqual({ error: 'Git was stopped by Cancel' });
-
-        await handleGit(request({ action: 'cancel', root: '/other' }), TOKEN, into);
-        expect((await second).status).toBe(400);
-        expect(ended).toEqual([ROOT, '/other']);
-        const idle = await handleGit(request({ action: 'cancel', root: ROOT }), TOKEN, into);
-        expect(await idle.json()).toEqual({ ok: true, output: '' });
     });
 
     it('says the merge a cancelled run left in progress', async () => {

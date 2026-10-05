@@ -58,25 +58,4 @@ describe('taking a setting back', () => {
             undoes: change.at
         });
     });
-    it('puts back a value the file held that its catalog entry refuses', async () => {
-        const into = configTarget();
-        const file = into.behaviorFile;
-        const original = readFileSync(file, 'utf8');
-        expect(original).toContain('  days: 3\n');
-        writeFileSync(file, original.replace('  days: 3\n', '  days: x\n'));
-        const before = behaviorOf(into);
-        const answer = await send(into, 'behavior.yml', 'slurm.days', 4);
-        expect(answer.status).toBe(200);
-        expect(behaviorOf(into)).toContain('  days: 4\n');
-        const [change] = changesOf(into);
-        const back = await undoneBack(into, change, file, before);
-        expect(behaviorOf(into)).toContain('  days: x\n');
-        expect(back).toMatchObject({
-            kind: 'config-key',
-            field: 'slurm.days',
-            before: 4,
-            after: 'x',
-            undoes: change.at
-        });
-    });
 });

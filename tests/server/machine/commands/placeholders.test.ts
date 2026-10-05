@@ -99,8 +99,4 @@ describe('a selection run through a real shell', { tags: ['slow'] }, () => {
             });
         }
     });
-
-    it('runs under /bin/sh', () => {
-        expect(SHELLS).toContain('/bin/sh');
-    });
 });

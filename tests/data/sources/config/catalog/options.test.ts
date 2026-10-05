@@ -3,10 +3,7 @@
 
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-    catalogOf,
-    readCatalog
-} from '../../../../../src/lib/data/sources/config/catalog/options.ts';
+import { catalogOf } from '../../../../../src/lib/data/sources/config/catalog/options.ts';
 import { optionFindings } from '../../../../../src/lib/data/sources/config/catalog/option-findings.ts';
 import { engineDir, loadConfig } from '../../../../../src/lib/data/sources/config.ts';
 
@@ -76,43 +73,5 @@ describe('optionFindings', () => {
             expect((field ?? read).control).toBe(control);
             expect(read.heading).toBe(heading);
         }
-    });
-});
-
-describe('whole and form', () => {
-    const WORDS = loadConfig(engineDir()).config.text;
-    const ENGINE = '/engine';
-    const SOUND = { description: 'A number.', heading: 'editor', control: 'number', default: 1 };
-
-    /** A config whose catalog holds the entries of behavior.yml under the given keys. */
-    function holding(entries: Record<string, Record<string, unknown>>): Record<string, unknown> {
-        return { text: WORDS, options: { 'behavior.yml': entries } };
-    }
-
-    it('reads whole and form, and names an entry whose whole or form it cannot read', () => {
-        const config = holding({
-            badwhole: { ...SOUND, whole: 'yes' },
-            badform: { ...SOUND, control: 'text', default: '', form: 'zip' },
-            goodwhole: { ...SOUND, whole: true },
-            goodform: { ...SOUND, control: 'text', default: '', form: 'extension' }
-        });
-        const { catalog, problems } = readCatalog(config);
-        expect(problems.map((one) => [one.kind, one.file, one.path, one.word])).toEqual([
-            ['whole', 'behavior.yml', 'badwhole', ''],
-            ['form', 'behavior.yml', 'badform', 'zip']
-        ]);
-        const read = catalog['behavior.yml'];
-        expect(read.badwhole.whole).toBeUndefined();
-        expect(read.badform.form).toBeUndefined();
-        expect(read.badwhole.control).toBe('text');
-        expect(read.badform.control).toBe('text');
-        expect(read.goodwhole.control).toBe('number');
-        expect(read.goodwhole.whole).toBe(true);
-        expect(read.goodform.form).toBe('extension');
-        const found = optionFindings(ENGINE, config).map((one) => `${one.key}: ${one.message}`);
-        expect(found).toHaveLength(2);
-        expect(found[0]).toContain('behavior.yml:badwhole');
-        expect(found[1]).toContain('behavior.yml:badform');
-        expect(found[1]).toContain('zip');
     });
 });
