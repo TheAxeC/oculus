@@ -1,18 +1,18 @@
-In flight (2 of 5 slots):
-- D20 (an agent from a task or a worktree): round 1 reviewed, its diagnosis in; landing next, with the diagnosis fix.
+In flight (2 of 5 slots, and two agents preparing steps):
+- D20 (an agent from a task or a worktree): landing prepared in the gate with its diagnosis fix and round-1 fixes; its commit waits for Axel's ruling on G44 (Z543).
 - D38 (the Literature search view): builder running.
+- D23 (language servers): brief rechecked after X3f by an agent; then /spec.
+- M6 (the collection forms removed): brief written (Z550 closes its choices); brief check running; prepared once D20, D38 and D28 have landed.
 
 Waiting for a landing or a ruling:
 - A3 (scheduled Update runs): brief closed; prepared once Axel rules Z545 (the brief is written to (b)).
 - D44 (Submit on a .slurm file): brief closed; prepared once Z538 and Z539 are ruled.
-- D23 (language servers): brief rechecked; /spec next, X3f having landed.
 - D45 (LaTeX as VS Code's LaTeX Workshop): brief rechecked; prepared once D20 has landed, after the inventory look on TEST.
 
-Queued, in order (23 steps):
+Queued, in order (22 steps):
 - D11 (the debug client for rite): brief rechecked after S5; prepared once D20, D44, D45 and D23 have landed.
 - X3e (Files lists reordered by drag): brief ready; once D20 has landed (Z519), its premises then reread after S5.
 - D28 (saving a file as VS Code does): brief ready; once X3e has landed.
-- M6 (the collection forms removed): unblocked.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D41 (links in Markdown checked): once M7 has landed.
 - D15 (PDF reading): no brief yet; once D45 has landed.

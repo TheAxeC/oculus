@@ -260,6 +260,24 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z550 (2026-10-05, from M6's brief)
+
+The questions: what Add writes into a new entry; what `applied` on a lead does; what becomes of the bookmark form, whose file is under no served root; what an entry with an empty or shared identity gets.
+
+- Chosen: (1) the first field, the registry key, the required fields and `status`; (2) the lead set to applied and Applications opened filled from it; (3) the form goes, each bookmark row gets Rename Bookmark... and Remove Bookmark, adding is the star; (4) a finding per such entry.
+- Not chosen: (1) every field, or the others as comment lines; (2) only opening Applications, the lazy option; (3) serving `~/.oculus` as a root, which exposes the change log and `connect/`, or keeping the form, the lazy option; (4) only disabled controls, the lazy option.
+
+Where it applies: M6's brief. Booked in `plan.md` Rulings.
+
+## Z549 (2026-10-05, from D20's review over round 1, Behaviour 4.2)
+
+The question: every move of a sash drag writes the layout and appends a record entry, so a few seconds of drag push out the 500 entries the record keeps.
+
+- Chosen: a write equal to the newest entry in all but its time is counted on that entry (`n`, `last`), so every write is still recorded and a drag keeps the older entries.
+- Not chosen: recording only writes that change the tab set, which drops writes your ruling on the record says are recorded; leaving it as built, the lazy option.
+
+Where it applies: D20, fixed at its landing (`state/workbench/layout/saved/storage.ts`, DESIGN.md's layout paragraph). Booked in `plan.md` Rulings.
+
 ## Z548 (2026-10-05, from A3's brief check)
 
 The question: whether a text control may hold an empty value when its text has a form, such as a cron pattern.

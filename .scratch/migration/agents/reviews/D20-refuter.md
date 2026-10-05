@@ -66,3 +66,16 @@ Items: 1, 2, 5, 6, 7, 9 to 16, 18, 19, 21 hold; 3 violated (Proof 2.1); 4 violat
 Item 20; the item-17 tests (Z543); `tree-keep.test.ts` (Z544); the look; cases 34, 35, 45, 48, 57 and 36's export.
 
 ### Closed
+
+Each finding of the run over round 1, fixed at landing in `.agents/worktrees/gate` inside the brief:
+
+- Proof 2.1: `foldFrom` takes `limit` beside `piece` (default `buffer.constants.MAX_STRING_LENGTH`); two rows added to `tests/server/sessions/transcripts.test.ts`: 'skips a line longer than the limit and folds the lines on either side of it' and, tagged slow, 'reads a transcript longer than Node's longest string whole' (a sparse file of 1 MB zero lines past the limit). On the base's reader both fail (`Tests 2 failed`: `expected [ 'before', ...(2) ]`, `expected []`); on D20's both pass. G40's Test line names them.
+- Proof 2.2: a `failureText` table in `tests/server/core/git-failure.test.ts`, one row per code, the gh program and each operation left in progress; with `timed_out` swapped for `too_much_output` in `sentenceOf`, `Tests 2 failed | 21 passed`; restored, `23 passed`.
+- Proof 2.3: `D20-report.md`'s line on the worktree question says No makes no worktree, since the question comes before the worktree is made.
+- Proof 2.4: the landing runs `npm run test:checks` whole in the gate.
+- Standards 3.1: `leftWord` in `git-routes.ts` reads each `server.git.kind_*` key by a literal; `npx vitest run tests/checks/source/keys.test.ts`: `Tests 8 passed (8)`.
+- Standards 3.2: G41's Code line names `classifyFailure` read by `git-write.ts` and `deposit-git.ts`, and `failureText`; its Test line names the two describes.
+- Behaviour 4.1: the diagnosis's fix (`endWith` in `server/core/git/running.ts`; `run` of `git-write.ts` and `execute` of `deposit-git.ts` no longer hand Cancel's signal to `execFile`) and its test, from `agents/reviews/D20-diagnosis.md`; DESIGN.md's Git writes paragraph, `running.ts`'s head and HELP.md's Cancel sentence say what Cancel does now. The test rows are G44's and stand or go with Axel's ruling on Z543.
+- Behaviour 4.2: Z549 (automode): a write equal to the newest record entry in all but its time is counted on it (`n`, `last`); a probe of 700 repeated writes, a `closeInstance` and a `resize` left 3 entries. No test: the record is a diagnostic, and its loss costs no work.
+
+The cherry-pick into the gate conflicted in `src/lib/server/machine/pty/compose.ts` (S5 replaced `loadLocalOrDefaults` with a `loadLocal` that never throws); `compose.ts` and `routes.ts:336` read `loadLocal`, and `grep -rn loadLocalOrDefaults src tests` prints nothing. The diagram files are regenerated.

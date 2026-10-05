@@ -8,6 +8,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 - Z536 (raised 2026-10-05, closed 2026-10-05 by Axel: "(b)"): VS Code's title actions on a file tab go in its breadcrumb bar.
 
+- Z550 (2026-10-05, closed in automode): M6's four choices, each its brief's recommendation; `choices.md`.
+- Z549 (2026-10-05, closed in automode): D20's layout record counts a repeated write on the newest entry; `choices.md`.
 - Z548 (2026-10-05, closed in automode): A3's `empty: true` on a text control with a form; `choices.md`.
 - Z547 (2026-10-05, closed in automode): D11's debug toolbar floats; `choices.md`.
 - Z546 (2026-10-05, closed in automode): X3f's Open Preview `file-search` and Open Preview to the Side `panel-right-open`; `choices.md`.

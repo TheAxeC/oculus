@@ -51,7 +51,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   report: agents/reviews/D20-report.md
   brief_check: agents/reviews/D20-brief-check.md, claude-opus-5-5, first check (in the file), second check aba2fdc1ad025072b 317,222 tokens 96 tool uses 15.5 min, closing a8fd060ce54f0ef7c 293,050 tokens 87 tool uses 19.5 min
   shared_paths: tools/oculus/DESIGN.md and HELP.md with X3f (different paragraphs, the one-line shift after HELP.md:85 once X3f lands) and S5 (config/text/server.yml, S5 at :19-49, D20 at :61-64); each a separate hunk, so the merge is simple
-  landing: not-started
+  landing: gate green (npm run diagrams && npm run test:landing, every command passed); the staged diff saved as agents/reviews/D20-landing.patch; the commit on main waits for Z543
   reviewer_report: agents/reviews/D20-refuter.md, claude-opus-5-5 (a4074e57a1552c160, stopped by mistake and resumed), 167,719 tokens, 110 tool uses, 22.1 min
   round: 1 (agents/briefs/D20-round1.md: the review's findings, G38 to G41's tests, Z515 (1)'s record, Z534)
   round1_builder_usage: 261,365 tokens, 168 tool uses, 43.3 min, the full list 3 times (items 1 to 21; item 21 sent by message)
