@@ -93,8 +93,7 @@ arrangements:
       dir: row
       sizes: [0.6, 0.4]
       children:
-        - { kind: pane, view: [help, { view: doc, state: { id: docs/HPC-UTwente-howto.md, path: docs/HPC-UTwente-howto.md, label: "HPC how-to" } }, { view: doc, state: { id: docs/DATA-MAP.md, path: docs/DATA-MAP.md, label: "Data map" } }] }
-        - { kind: pane, view: [{ view: doc, state: { id: docs/RESEARCH-APPROACH.md, path: docs/RESEARCH-APPROACH.md, label: "Research approach" } }, { view: doc, state: { id: docs/AGENT-APPROACH.md, path: docs/AGENT-APPROACH.md, label: "Agent approach" } }, memories] }
+        - { kind: pane, view: [help, { view: doc, state: { id: docs/HPC-UTwente-howto.md, path: docs/HPC-UTwente-howto.md, label: "HPC how-to" } }, { view: doc, state: { id: docs/DATA-MAP.md, path: docs/DATA-MAP.md, label: "Data map" } }, { view: doc, state: { id: docs/RESEARCH-APPROACH.md, path: docs/RESEARCH-APPROACH.md, label: "Research approach" } }, { view: doc, state: { id: docs/AGENT-APPROACH.md, path: docs/AGENT-APPROACH.md, label: "Agent approach" } }, memories] }
   views:
     root:
       kind: split
