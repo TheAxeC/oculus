@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- The ruling audit (`agents/reviews/ruling-audit.md`), closed 2026-10-05 by Axel: "None of those are open. 3. is booked, and 1 and 2 are fine". The 84 rulings without a quote and Z367 stand as booked; no transcript search.
+
 - Z536 (raised 2026-10-05, closed 2026-10-05 by Axel: "(b)"): VS Code's title actions on a file tab go in its breadcrumb bar.
 
 - Z534 (2026-10-05, closed in automode): D20's descendant kill kept; `choices.md`.
