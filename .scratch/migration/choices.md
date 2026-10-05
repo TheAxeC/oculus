@@ -2,6 +2,33 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z608 (2026-10-06, step O30)
+
+The question: O30 put `install.ts` directly in `state/shared`, which the import order check does not place.
+
+- Chosen: (a) its own folder `state/shared/page`, registered in `INNER`.
+- Not chosen: (b) merge it into `words/appearance.ts`, a poor fit of concern. Neither was the lazy one; (b) blurs a folder.
+
+Where it is built: O30's extra round 2. Booked in `plan.md` Rulings.
+
+## Z607 (2026-10-06, step O30)
+
+The question: G48's rewritten `start.test.ts` shows windows and takes focus when the landing list runs it, its cleanup can hang, and one Quit check cannot fail.
+
+- Chosen: (a) rows read from main-process recorders, no window shown, a cleanup with a fallback, the Quit row checks the server pid.
+- Not chosen: (b) leave the test out of the landing run, which loosens a check. The lazy one was (b).
+
+Where it is built: O30's extra round 2. Booked in `plan.md` Rulings.
+
+## Z606 (2026-10-06, step O30)
+
+The question: Restart reloaded every window to hand over the new write token, losing undo history, open dialogs and scroll, and reloading at the old port after a port move.
+
+- Chosen: (a) the page recovers on its own: socket reconnect and a 403 re-run the load and retry; no reload.
+- Not chosen: (b) keep the reload and point it at the new address; (c) a bridge event from the main. The lazy one was (b).
+
+Where it is built: O30's extra round 2. Booked in `plan.md` Rulings.
+
 ## Z604 (2026-10-06, step E4)
 
 The question: `color-scheme: dark` on the dark themes leaves an app with no scheme of its own on a white backdrop, and a light theme lets an app follow the system's dark mode.
