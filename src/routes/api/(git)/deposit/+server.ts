@@ -13,6 +13,7 @@ const options = (locals: App.Locals) => {
     const config = locals.config().config;
     return {
         idsFor: () => knownIds(projectIds(server.hub), server.engine, config),
+        running: server.gitRunning,
         deposit: { plans: server.depositPlans, engine: server.engine, config }
     };
 };

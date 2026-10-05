@@ -51,5 +51,17 @@ export function terminalSentence(word: TerminalRefusal, names: readonly string[]
             return catalogText('sessions.refused_no_selection', first);
         case 'nul-value':
             return catalogText('sessions.refused_nul_value', first);
+        case 'task-unknown':
+            return catalogText('sessions.refused_task_unknown');
+        case 'task-changed':
+            return catalogText('sessions.refused_task_changed');
+        case 'task-too-long':
+            return catalogText('sessions.refused_task_too_long');
+        case 'task-needs-agent':
+            return catalogText('sessions.refused_task_needs_agent');
+        case 'needs-confirm':
+            return catalogText('sessions.refused_needs_confirm', first);
+        case 'approvals-unwritable':
+            return catalogText('sessions.refused_approvals_unwritable', first);
     }
 }

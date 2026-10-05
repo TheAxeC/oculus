@@ -5,6 +5,8 @@ text:
             add_subtask: Add Subtask
             add_subtask_glyph: tasks
             add_subtask_tip: add a subtask
+            agent: agent
+            agent_tip: open the composer seeded with this task, in its folder
             box_off_glyph: checkbox_off
             box_on_glyph: checkbox_on
             del: del

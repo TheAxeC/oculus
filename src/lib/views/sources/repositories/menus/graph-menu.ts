@@ -8,7 +8,8 @@
 // items: Compare with Remote when the checked-out branch has an upstream, Compare with Merge Base
 // when git names a base for it, and Compare with... for any ref. A branch checked out already is
 // left out of Checkout, as the Branches section offers no switch on it. A name on a commit has its
-// own menu: a local branch not checked out offers Checkout and Delete Branch, a remote branch
+// own menu: a local branch not checked out offers Checkout and Delete Branch, the branch checked
+// out offers the same two drawn disabled, each with the reason in its hover words, a remote branch
 // Checkout (Detached), a tag Delete Tag. Every write goes through the question the matching
 // section asks, and none is offered while a write is in flight on the repository; the compare
 // items are reads and stay.
@@ -52,15 +53,19 @@ export type BranchFacts = {
 /** The refs the compare items name: the upstream of the checked-out branch and its merge base. */
 export type CompareFacts = { upstream: string; base: string };
 
-/** What a name on a commit offers: a checkout, a detached checkout, a tag's removal, or nothing. */
-export type RefKind = 'branch' | 'remote' | 'tag' | 'none';
+/**
+ * What a name on a commit offers: a checkout and a removal, the same two for the branch checked out
+ * (drawn disabled), a detached checkout, a tag's removal, or nothing.
+ */
+export type RefKind = 'branch' | 'current' | 'remote' | 'tag' | 'none';
 
 /**
  * What a branch name on a commit offers: a local branch not checked out is checked out or deleted,
- * a name beginning with a remote's is checked out detached.
+ * the branch checked out is shown both disabled, a name beginning with a remote's is checked out
+ * detached.
  */
 export function refKind(name: string, branches: BranchFacts): RefKind {
-    if (branches.local.includes(name)) return name === branches.current ? 'none' : 'branch';
+    if (branches.local.includes(name)) return name === branches.current ? 'current' : 'branch';
     return branches.remotes.some((remote) => name.startsWith(`${remote}/`)) ? 'remote' : 'none';
 }
 
@@ -124,11 +129,28 @@ export function commitMenu(
 }
 
 /**
- * The menu of one name on a commit: Checkout and Delete Branch on a local branch, Checkout
- * (Detached) on a remote branch, Delete Tag on a tag.
+ * The menu of one name on a commit: Checkout and Delete Branch on a local branch (both disabled,
+ * with the reason, on the branch checked out), Checkout (Detached) on a remote branch, Delete Tag
+ * on a tag. A write in flight offers none.
  */
 export function refMenu(name: string, kind: RefKind, busy: boolean, t: Words): MenuItem[] {
     if (busy || kind === 'none') return [];
+    if (kind === 'current') {
+        return [
+            {
+                id: `${CHECKOUT}${name}`,
+                label: t('repositories.menu_checkout'),
+                title: t('repositories.ref_current_checkout'),
+                disabled: true
+            },
+            {
+                id: `${DELETE_BRANCH}${name}`,
+                label: t('repositories.menu_delete_branch'),
+                title: t('repositories.ref_current_delete'),
+                disabled: true
+            }
+        ];
+    }
     if (kind === 'tag')
         return [{ id: `${DELETE_TAG}${name}`, label: t('repositories.tag_delete') }];
     if (kind === 'remote') {

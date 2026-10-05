@@ -169,9 +169,10 @@ export type KeepRule = (view: ViewId) => 'documents' | Keeps | null;
 
 /**
  * The empty pane to leave where a pane's last tab was, or null when the pane goes. The pane stays
- * when the rule names its tab's view and the tree holds no other empty pane of that kind, so a page
- * keeps at most one empty documents pane and one empty terminals pane. A locked empty pane is not
- * counted, since nothing lands in it, and a locked pane stays whatever the rule says.
+ * when the rule names its tab's view and the tree holds no other empty pane of any kind, so a page
+ * keeps never more than one empty pane, whether it is a documents pane or a terminals pane. A
+ * locked empty pane is not counted, since nothing lands in it, and a locked pane stays whatever
+ * the rule says.
  */
 function keptPane(layout: Layout, path: number[], view: ViewId, keep?: KeepRule): Pane | null {
     const kind = keep?.(view) ?? null;
@@ -182,10 +183,7 @@ function keptPane(layout: Layout, path: number[], view: ViewId, keep?: KeepRule)
     if (kind === null) return null;
     const taken = panes(layout).some(
         ({ path: where, pane }) =>
-            !samePath(where, path) &&
-            pane.tabs.length === 0 &&
-            pane.locked !== true &&
-            (pane.keeps ?? 'documents') === kind
+            !samePath(where, path) && pane.tabs.length === 0 && pane.locked !== true
     );
     if (taken) return null;
     return kind === 'terminals' ? emptiedTerminals() : emptyPane();

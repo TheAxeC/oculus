@@ -40,10 +40,8 @@ import { rootsNow, writeRoots } from './config/roots.ts';
 import { railRows } from '../../../data/sources/config/rail.ts';
 import {
     createEntry,
-    entryOf,
     identityOrder,
     idOfIdentity,
-    readCollection,
     removeEntry,
     reorderCollection,
     writeEntry
@@ -57,7 +55,7 @@ import {
     writeSubtask,
     writeSubtaskAdd
 } from './subtasks.ts';
-import type { Collection } from './entries.ts';
+import { entryOf, readCollection, type Collection } from '../../files/fs/collections.ts';
 import type { FeedKind } from '../../../data/model/index.ts';
 import type { Change, ChangeRecord } from '../../core/changes.ts';
 import type { SubtaskTarget } from './subtasks.ts';

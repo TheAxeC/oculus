@@ -43,6 +43,7 @@
     import CommitBox from '$lib/views/shared/changes/CommitBox.svelte';
     import { repoShape, type RepoShape } from '$lib/state/sources/repositories/repositories';
     import { repositoryKeyRows } from '$lib/state/sources/repositories/change-tree';
+    import type { WorktreeStart } from '$lib/state/sources/repositories/repositories.svelte';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { branchState } from '$lib/views/shared/changes/branch-state';
@@ -67,10 +68,11 @@
         ask: (message: string, detail: string, act: () => void, confirm?: string) => void;
         onswitch: (name: string) => void;
         onbranch: (name: string) => void;
-        onworktree: (name: string) => void;
+        onworktree: (name: string, start: WorktreeStart) => void;
         onremove: (path: string, label: string) => void;
         onmerge: (branch: string, onto: string) => void;
         onterminal: (path: string, label: string) => void;
+        onagent: (path: string, agent: 'claude' | 'codex') => void;
     };
 
     let {
@@ -89,7 +91,8 @@
         onworktree,
         onremove,
         onmerge,
-        onterminal
+        onterminal,
+        onagent
     }: Props = $props();
 
     const { repositories } = useState();
@@ -173,7 +176,17 @@
         <p class="path" title={root}>{root}</p>
     {/if}
     {#if busy}
-        <p class="none">{t('git.busy')}</p>
+        <div class="busy">
+            <p class="none">{t('git.busy')}</p>
+            {#if !repositories.suggesting(root)}
+                <ToolButton
+                    small
+                    label={t('git.cancel')}
+                    title={t('git.cancel_title')}
+                    onclick={() => void repositories.cancel(root)}
+                />
+            {/if}
+        </div>
     {/if}
     {#if outcome !== ''}
         <p class="outcome">{outcome}</p>
@@ -278,6 +291,7 @@
                     {onremove}
                     {onmerge}
                     {onterminal}
+                    {onagent}
                     oncreate={onworktree}
                 />
             {/snippet}
@@ -330,6 +344,12 @@
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-mono);
         font-size: var(--fs-sm);
+    }
+
+    .busy {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .none {

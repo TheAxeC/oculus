@@ -1,6 +1,12 @@
 # Oculus text owned by the composer of a new session and the prompt box that steers a running one.
 text:
     composer:
+        approve_agent: 'Agent: {0}'
+        approve_detail: "This text comes from the hub's task. It runs only once you approve it, for this folder and this agent; a changed text asks again."
+        approve_folder: 'Folder: {0}'
+        approve_no: Cancel
+        approve_title: Approve this task for the agent
+        approve_yes: Approve and Start
         attach: Attach a file
         attach_close: Close the file list
         attach_empty: This folder is empty.
@@ -11,6 +17,15 @@ text:
         attach_up: Up one folder
         branch_title: The branch checked out in this workspace, which a new session starts on
         command: The first command
+        confirm_claude_accept_edits: 'With {1}, {0} approves file edits and common file commands on its own. This is asked at every start.'
+        confirm_claude_auto: 'With {1}, {0} asks no routine questions, and a reviewer model screens its actions. This is asked at every start.'
+        confirm_claude_bypass: 'With {1}, {0} asks no further permission for anything it does. This is asked at every start.'
+        confirm_codex_full_access: 'With {1}, {0} can edit files outside this workspace and access the internet without asking for approval. This is asked at every start.'
+        confirm_codex_never: 'With approvals set to {1}, {0} never asks for your approval, and a failed command goes back to the model. This is asked at every start.'
+        confirm_skip: 'Start {0} with {1}?'
+        confirm_skip_detail: '{1} changes what {0} may do without asking you first. This is asked at every start.'
+        confirm_skip_no: Cancel
+        confirm_skip_yes: Start
         elsewhere: This session runs in a terminal of its own, so it cannot be typed into from here.
         failed: The session did not start.
         hub: hub
@@ -18,11 +33,15 @@ text:
         interrupt_title: Interrupt the turn with Escape; the session goes on
         outside: '{0} is not inside the workspace the session starts in.'
         prompt: The first message
+        prompt_more: Anything to add to the task
         send: Send
         send_title: Type the message into the session and press Enter
         start: Start
         start_title: Start the session (Enter); Shift+Enter adds a line
         steer: A message to the session
+        task_label: Task
+        task_remove: Remove the task
+        task_remove_title: Start without the task; what you type is the whole prompt
         title: New session
         why_default_missing: 'config/catalogs/agents.yml line {0}: the default {1} is not one of its values'
         why_flag: 'config/catalogs/agents.yml line {0}: {1} is not a flag this agent takes'

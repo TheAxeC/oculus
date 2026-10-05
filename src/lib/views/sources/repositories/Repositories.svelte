@@ -91,7 +91,10 @@
         visibleRoots,
         type RepositoriesView
     } from '$lib/state/sources/repositories/repositories';
-    import type { StashMode } from '$lib/state/sources/repositories/repositories.svelte';
+    import type {
+        StashMode,
+        WorktreeStart
+    } from '$lib/state/sources/repositories/repositories.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap } from '$lib/state/workbench/layout';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -313,12 +316,15 @@
         });
     }
 
-    function createWorktree(root: string, name: string): void {
+    function createWorktree(root: string, name: string, start: WorktreeStart): void {
+        const agent = start === 'claude' ? t('sessions.kind_claude') : t('sessions.kind_codex');
         ask(
             t('repositories.worktree_new_confirm', name),
-            t('repositories.worktree_new_detail', plannedPath(root, name)),
+            start === 'shell'
+                ? t('repositories.worktree_new_detail', plannedPath(root, name))
+                : t('repositories.worktree_new_agent_detail', plannedPath(root, name), agent),
             () => {
-                void repositories.createWorktree(root, name);
+                void repositories.createWorktree(root, name, start);
             }
         );
     }
@@ -432,12 +438,15 @@
                         {ask}
                         onswitch={(name: string) => switchTo(shown, name)}
                         onbranch={(name: string) => createBranch(shown, name)}
-                        onworktree={(name: string) => createWorktree(shown, name)}
+                        onworktree={(name: string, start: WorktreeStart) =>
+                            createWorktree(shown, name, start)}
                         onremove={(path: string, label: string) =>
                             removeWorktree(shown, path, label)}
                         onmerge={(branch: string, onto: string) => mergeBack(shown, branch, onto)}
                         onterminal={(path: string, label: string) =>
                             void repositories.shellIn(shown, path, label)}
+                        onagent={(path: string, agent: 'claude' | 'codex') =>
+                            void repositories.agentIn(shown, path, agent)}
                     />
                 {/key}
             {/if}

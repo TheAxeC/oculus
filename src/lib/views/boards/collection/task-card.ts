@@ -1,0 +1,39 @@
+// Layer 3, view helper of views/boards/collection/Collection.svelte. The one control the tasks
+// collection's cards carry besides the shared ones: Start Agent, which opens the composer seeded
+// with the task. It is offered on an entry the focus board's ticker would list, so a task whose
+// status is terminal or whose deadline is met has none, and on no other collection's card.
+
+import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
+import { entryStatus, type Entry } from '$lib/state/boards/collection';
+import { deadlineMet, terminal } from '$lib/state/boards/focus';
+import { t } from '$lib/state/shared/words/text';
+import type { CardAction } from '../../shared/card/CardActions.svelte';
+
+/** The collection whose entries are tasks. */
+const TASKS = 'tasks';
+
+/**
+ * The extra controls of one entry's card: Start Agent for a task the ticker lists, calling `start`
+ * with the task's reference, and none for any other entry or collection.
+ */
+export function taskCardActions(
+    collection: string,
+    entry: Entry,
+    config: Record<string, unknown>,
+    start: (task: TaskRef) => void
+): CardAction[] {
+    if (collection !== TASKS) return [];
+    const status = entryStatus(entry) ?? '';
+    if (terminal(config, status) || deadlineMet(config, status)) return [];
+    return [
+        {
+            id: 'agent',
+            label: t('collection.start_agent'),
+            title: t('collection.start_agent_tip'),
+            glyph: 'terminal_claude',
+            onclick: () => {
+                start({ id: entry.id, collection: TASKS });
+            }
+        }
+    ];
+}

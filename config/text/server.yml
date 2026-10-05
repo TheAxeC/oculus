@@ -82,5 +82,25 @@ text:
             user: You
         fork:
             name: fork of {0}
+        git:
+            cancelled: '{0} was stopped by Cancel'
+            exit_status: '{0} stopped with exit status {1} and gave no reason'
+            kind_cherry_pick: cherry-pick
+            kind_merge: merge
+            kind_rebase: rebase
+            left_in_progress: '{0}; the {1} is left in progress'
+            program_gh: The gh command
+            program_git: Git
+            signal: '{0} was ended by the signal {1}'
+            timed_out: '{0} did not finish within {1} seconds, so it was stopped'
+            too_much_output: '{0} wrote more than {1} MB of output, so it was stopped'
         latex:
             name: latex {0} {1}/{2}
+        task:
+            name: 'Task: {0}'
+            seed_deadline: 'Deadline: {0}'
+            seed_file: 'Written in {0}; read that file for its context.'
+            seed_note: 'Note: {0}'
+            seed_part_of: 'Part of: {0}'
+            seed_subtasks: 'Open subtasks: {0}'
+            seed_title: 'Task: {0}'

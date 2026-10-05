@@ -6,9 +6,10 @@
     //
     // Nothing here knows what a scheme or an event is. Which fields are drawn and in what order is
     // drawnFields() over the file's `schema:`, which projects cross-link is crossLinks() over the
-    // collection key, and every control is one call of the write path. A field the schema draws its
-    // choices from the people registry for is the one exception in kind rather than in name: it
-    // holds a person's key, so the card draws the control that opens that person by their name.
+    // collection key, and every control is one call of the write path, except the `extra` ones the
+    // collection passes in (Start Agent on a task's card). A field the schema draws its choices
+    // from the people registry for is the one exception in kind rather than in name: it holds a
+    // person's key, so the card draws the control that opens that person by their name.
     //
     // A link is one of three things: a local HTML file opens in the document view, a path inside
     // the hub whose extension `open.program_ext` of config/behavior.yml names an application for (a
@@ -88,6 +89,8 @@
         more: boolean;
         /** Open or cut the long body fields. */
         onmore: () => void;
+        /** Controls the collection adds to the card's own, after them. */
+        extra?: CardAction[];
     };
 
     let {
@@ -103,7 +106,8 @@
         ondropon,
         onsaid,
         more,
-        onmore
+        onmore,
+        extra = []
     }: Props = $props();
 
     const status = $derived(entryStatus(entry));
@@ -139,8 +143,9 @@
 
     /**
      * The card's controls: the pin, the edit form, while the entry has no subtask adding its first,
-     * and the Show in Files controls. A file with no schema has no identity to write by, so its
-     * cards carry the file's other lifecycle statuses instead of the first three.
+     * and the Show in Files controls, then the controls the collection passes in `extra`. A file
+     * with no schema has no identity to write by, so its cards carry the file's other lifecycle
+     * statuses instead of the first three.
      */
     const actions = $derived.by((): CardAction[] => {
         if (!addressable) {
@@ -151,7 +156,7 @@
                     label: one,
                     onclick: () => setStatus(one)
                 }));
-            return buttons.concat(shows);
+            return buttons.concat(shows, extra);
         }
         const rows: CardAction[] = [
             {
@@ -181,7 +186,7 @@
                 }
             });
         }
-        return rows.concat(shows);
+        return rows.concat(shows, extra);
     });
 
     function said(answer: { ok: boolean; changed: string[]; error?: string }): void {

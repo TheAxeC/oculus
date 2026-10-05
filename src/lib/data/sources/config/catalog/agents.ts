@@ -51,7 +51,7 @@ const CONFIG_KEYS = ['model_reasoning_effort'];
 const TOP_KEYS = ['agents'];
 const AGENT_KEYS = ['label', 'lists'];
 const LIST_KEYS = ['label', 'flag', 'default', 'values', 'cache'];
-const VALUE_KEYS = ['id', 'label', 'pass'];
+const VALUE_KEYS = ['id', 'label', 'pass', 'confirm'];
 
 /** What a read of the file gives: the agents it offers, and every line it refused. */
 export type AgentsRead = { agents: AgentChoices[]; findings: AgentChoicesFinding[] };
@@ -232,14 +232,28 @@ function readValue(flag: string, node: Node, held: AgentChoice[], say: Say): Age
         say(node, 'repeated', id);
         return null;
     }
+    const confirm = confirmOf(node, say);
     const passNode = node.get('pass', true);
-    if (passNode === undefined) return { id, label, pass: null };
+    if (passNode === undefined) return { id, label, pass: null, ...confirm };
     const pass = isScalar(passNode) ? String(passNode.value) : '';
     if (!allowed(flag, pass)) {
         say(passNode, 'value', pass);
         return null;
     }
-    return { id, label, pass };
+    return { id, label, pass, ...confirm };
+}
+
+/**
+ * Whether a start with a value is asked about first: `confirm: true`. An absent key reads as
+ * false, and a value that is neither true nor false is a finding on the key that reads as true, so
+ * the question is asked rather than lost to a misspelling.
+ */
+function confirmOf(node: YAMLMap, say: Say): { confirm?: true } {
+    const held = node.get('confirm', true);
+    if (held === undefined) return {};
+    if (isScalar(held) && held.value === false) return {};
+    if (!isScalar(held) || held.value !== true) say(held, 'shape', 'confirm');
+    return { confirm: true };
 }
 
 /**

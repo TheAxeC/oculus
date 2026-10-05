@@ -8,16 +8,15 @@
 // @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import {
     allowedRoots,
     commit,
     createBranch,
     createWorktree,
     discard,
-    merge,
     push,
     removeWorktree,
     stage,
@@ -25,7 +24,8 @@ import {
     unstage
 } from '../../../src/lib/server/git/git-write.ts';
 import { worktreePath } from '../../../src/lib/data/helpers/worktrees.ts';
-import { abortMerge } from '../../../src/lib/server/git/git-index.ts';
+import { abortMerge, merge, stoppedOn } from '../../../src/lib/server/git/git-index.ts';
+import { pull } from '../../../src/lib/server/git/git-remote.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 let dir = '';
@@ -189,6 +189,67 @@ describe('the merge back', () => {
         expect(existsSync(join(repo, '.git', 'MERGE_HEAD'))).toBe(false);
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toBe('from main\n');
     });
+
+    // A Cancel while the merge's pre-merge-commit hook runs: git has the merge's result in the
+    // index by then and writes MERGE_HEAD only once the hook has failed, so the answer must come
+    // from a git that ran that path to its end. One row merges directly, one through a pull,
+    // whose own git starts the merging git.
+    it.each(['merge', 'pull'] as const)(
+        'names the merge a cancelled %s left in progress, and Abort Merge takes it back',
+        async (how) => {
+            const at = scratchDir('oculus-git-cancel-');
+            const up = join(at, 'up');
+            const here = join(at, 'here');
+            execFileSync('git', ['init', '-q', '-b', 'main', up]);
+            git(up, 'config', 'user.email', 'nobody@example.invalid');
+            git(up, 'config', 'user.name', 'Nobody');
+            write(up, 'kept.txt', 'one\n');
+            git(up, 'add', 'kept.txt');
+            git(up, 'commit', '-q', '-m', 'First');
+            execFileSync('git', ['clone', '-q', up, here]);
+            git(here, 'config', 'user.email', 'nobody@example.invalid');
+            git(here, 'config', 'user.name', 'Nobody');
+            git(here, 'config', 'commit.gpgsign', 'false');
+            git(here, 'config', 'pull.rebase', 'false');
+            write(up, 'theirs.txt', 'theirs\n');
+            git(up, 'add', 'theirs.txt');
+            git(up, 'commit', '-q', '-m', 'Theirs');
+            git(here, 'fetch', '-q');
+            git(here, 'branch', 'other', 'origin/main');
+            write(here, 'ours.txt', 'ours\n');
+            git(here, 'add', 'ours.txt');
+            git(here, 'commit', '-q', '-m', 'Ours');
+            const before = git(here, 'rev-parse', 'HEAD');
+            const started = join(at, 'hook-started');
+            const hook = join(here, '.git', 'hooks', 'pre-merge-commit');
+            writeFileSync(hook, `#!/bin/sh\ntouch '${started}'\nexec sleep 600\n`);
+            chmodSync(hook, 0o755);
+            const roots = allowedRoots([], here);
+
+            const run = new AbortController();
+            const answer =
+                how === 'merge'
+                    ? merge(here, 'other', roots, run.signal)
+                    : pull(here, roots, run.signal);
+            await vi.waitUntil(() => existsSync(started), { timeout: 10000, interval: 20 });
+            run.abort();
+            const done = await answer;
+
+            expect(done.failure?.code).toBe('cancelled');
+            expect(done.failure?.left).toBe('merge');
+            expect(git(here, 'rev-parse', '--verify', '--quiet', 'MERGE_HEAD').trim()).toBe(
+                git(here, 'rev-parse', 'other').trim()
+            );
+            expect((await abortMerge(here, roots)).ok).toBe(true);
+            const stopped = {
+                ...done,
+                failure: { code: 'cancelled' as const, detail: '', program: 'git' }
+            };
+            expect((await stoppedOn(here, stopped, 'the merge')).failure?.left).toBeUndefined();
+            expect(git(here, 'rev-parse', 'HEAD')).toBe(before);
+            expect(git(here, 'status', '--porcelain', '--untracked-files=no')).toBe('');
+        }
+    );
 
     it('removes a worktree that is clean, and its branch with it', async () => {
         const path = worktreePath(repo, name);

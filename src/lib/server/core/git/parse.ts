@@ -630,3 +630,101 @@ export function shortReason(value: unknown, width: number): string {
     if (line.toLowerCase().startsWith('fatal: ')) line = line.slice('fatal: '.length);
     return line.slice(0, width);
 }
+
+/**
+ * The time limit of a command that runs the repository's hooks (a commit, a merge, a push, a pull,
+ * a switch, a worktree add, a cherry-pick, a rebase continued): none, since a hook may take as long
+ * as it needs and Cancel ends the run. `execFile` reads 0 as no timeout.
+ */
+export const NO_TIME_LIMIT = 0;
+
+/**
+ * The reason git's own text gives. On the error stream it is the last line that begins `fatal: `
+ * (git's closing message, which follows any progress lines such as `Preparing worktree (new branch
+ * 'x')`), else the stream's first line. Where git wrote nothing to the error stream it wrote its
+ * reason to the output stream (`nothing to commit, working tree clean`, `Automatic merge failed;
+ * fix conflicts and then commit the result.`), and that is the last non-empty line of it. Each goes
+ * through shortReason.
+ */
+function gitsReason(stderr: unknown, stdout: unknown, width: number): string {
+    const errors = scalar(stderr).trim();
+    if (errors !== '') {
+        const fatal = errors
+            .split('\n')
+            .findLast((line) => line.trim().toLowerCase().startsWith('fatal: '));
+        return shortReason(fatal ?? errors, width);
+    }
+    return shortReason(scalar(stdout).trim().split('\n').at(-1), width);
+}
+
+/**
+ * Why a command that failed was not one with a reason of git's own: the run was ended by Cancel
+ * (`cancelled`), by its time limit (`timed-out`), for writing more than the output limit
+ * (`too-much-output`), by a signal that nothing here sent (`signal`), or it stopped with a status
+ * and wrote neither stream (`exit-status`).
+ */
+type FailureCode = 'cancelled' | 'timed-out' | 'too-much-output' | 'signal' | 'exit-status';
+
+/**
+ * A failed command that gave no reason of its own: the code, the detail its sentence needs (the
+ * limit in seconds, the limit in MB, the signal's name, the status), the program that ran, `git` or
+ * `gh`, which the route words from the catalog, and what the run left unfinished.
+ */
+export type CommandFailure = {
+    code: FailureCode;
+    detail: string;
+    program: string;
+    /** The operation the run left unfinished, once the repository has been read for it. */
+    left?: Unfinished;
+};
+
+/** What a repository can be in the middle of when a command is ended: a merge, a rebase, a pick. */
+export type Unfinished = 'merge' | 'rebase' | 'cherry-pick';
+
+/**
+ * What a failed command says: git's own reason, or for a failure with none the code's name, which
+ * only code that reads an `Outcome` further reads; the routes word the code from the catalog.
+ */
+export type Classified = { reason: string; failure?: CommandFailure };
+
+/** The limits a command ran under, which the codes of a timeout and of too much output name. */
+export type CommandLimits = { timeoutMs: number; maxBytes: number };
+
+/** The parts of a failed `execFile` the classifier reads. */
+type ExecFailure = Error & { code?: unknown; killed?: boolean; signal?: unknown };
+
+/**
+ * The reason a failed command gives, read in this order: Cancel (`ABORT_ERR`), the time limit
+ * (`killed`, which Node sets only for its own timeout), the output limit
+ * (`ERR_CHILD_PROCESS_STDIO_MAXBUFFER`), a signal nothing here sent, then git's own text (see
+ * gitsReason), then an exit status with both streams empty. A run ended by a limit carries partial
+ * streams, which are never shown as its reason.
+ */
+export function classifyFailure(
+    error: unknown,
+    stdout: unknown,
+    stderr: unknown,
+    limits: CommandLimits,
+    width: number,
+    program: string
+): Classified {
+    const failure: ExecFailure = error instanceof Error ? error : new Error(scalar(error));
+    const coded = (code: FailureCode, detail: string): Classified => {
+        return { reason: code, failure: { code, detail, program } };
+    };
+    if (failure.code === 'ABORT_ERR' || failure.name === 'AbortError')
+        return coded('cancelled', '');
+    if (failure.killed === true) {
+        return coded('timed-out', String(Math.round(limits.timeoutMs / 1000)));
+    }
+    if (failure.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER') {
+        return coded('too-much-output', String(Math.round(limits.maxBytes / (1024 * 1024))));
+    }
+    if (typeof failure.signal === 'string' && failure.signal !== '') {
+        return coded('signal', failure.signal);
+    }
+    const text = gitsReason(stderr, stdout, width);
+    if (text !== '') return { reason: text };
+    if (typeof failure.code === 'number') return coded('exit-status', String(failure.code));
+    return { reason: shortReason(failure.message, width) || `${program} failed` };
+}

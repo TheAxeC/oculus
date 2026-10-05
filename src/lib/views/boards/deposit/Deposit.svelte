@@ -345,7 +345,15 @@
             <p class="none">{why}</p>
         {/if}
         {#if busy}
-            <p class="none">{t('deposit.busy')}</p>
+            <div class="busy">
+                <p class="none">{t('deposit.busy')}</p>
+                <ToolButton
+                    small
+                    label={t('deposit.cancel')}
+                    title={t('deposit.cancel_title')}
+                    onclick={() => void writeDeposit('cancel', id)}
+                />
+            </div>
         {/if}
         {#if outcome !== ''}
             <p class="outcome">{outcome}</p>
@@ -449,6 +457,12 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .busy {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .none {

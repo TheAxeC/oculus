@@ -11,6 +11,7 @@
 
 import { z } from 'zod';
 import { strings } from '../helpers/guards.ts';
+import type { TaskRef } from '../model/index.ts';
 
 /**
  * A schema that accepts what `shape` accepts and answers the value it was given, not the copy zod
@@ -243,3 +244,32 @@ export const itemsShape = z.array(z.unknown());
 
 /** A list as it is, and any other value as a list of that one value. */
 export const listOrOneShape = z.union([itemsShape, z.unknown().transform((one) => [one])]);
+
+// A task reference (data/model/model-agents.ts `TaskRef`) read from an untyped value: the body of a
+// terminal request, and the record a Terminal tab keeps in the saved layout. A value that is no
+// reference reads as none, so a malformed record never reaches a request as a task.
+
+/** The line of a task's checklist a reference names: its key and the `do` text the page showed. */
+const subtaskShape = z.object({ key: z.string(), do: z.string() });
+
+/**
+ * A task reference: the host's id, the collection when the host is an entry, and the subtask line
+ * when the task is one. An empty `id` passes the shape; the server answers it `task-unknown`.
+ */
+const taskRefShape: z.ZodType<TaskRef> = z.object({
+    id: z.string(),
+    collection: z.string().optional(),
+    subtask: subtaskShape.optional()
+});
+
+/** The reference a value is, or undefined for any value that is not one. */
+export function taskRefOf(value: unknown): TaskRef | undefined {
+    const read = taskRefShape.safeParse(value);
+    if (!read.success) return undefined;
+    const { id, collection, subtask } = read.data;
+    return {
+        id,
+        ...(collection === undefined ? {} : { collection }),
+        ...(subtask === undefined ? {} : { subtask: { key: subtask.key, do: subtask.do } })
+    };
+}

@@ -46,6 +46,8 @@ text:
         software_glyph: code
         software_none: No software projects yet. A project.yml under projects/software makes one.
         software_papers: Papers
+        start_agent: Start Agent
+        start_agent_tip: Open the composer in this task's folder, seeded with the task
         status_facet: Status
         tags_hint: comma separated
         toolbar: Collection controls

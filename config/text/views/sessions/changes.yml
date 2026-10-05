@@ -12,6 +12,8 @@ text:
         amend_keep: What is staged joins the last commit, which keeps its message.
         amend_none: This repository has no commit to amend yet.
         busy: Working
+        cancel: Cancel
+        cancel_title: Stop the git command running for this repository
         commit: Commit
         commit_amend: Commit (Amend)
         commit_confirm: Commit {0} staged paths on {1}?

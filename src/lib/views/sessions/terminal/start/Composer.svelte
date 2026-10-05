@@ -6,21 +6,30 @@
     // row of terminals while the tab is composing (New With a Prompt, or the `n` key).
     //
     // What each picker last chose is kept in the tab's instance state
-    // (state/sessions/terminal/composer.ts), so the tab's next composer opens on the same accounts
-    // and picks; the prompt being typed is this component's own. A Shell takes none of the agent
-    // pickers, and its prompt is the first command it runs. A composer shown for a tab that
+    // (state/sessions/terminal/composer/composer.ts), so the tab's next composer opens on the same
+    // accounts and picks; the prompt being typed is this component's own. A Shell takes none of the
+    // agent pickers, and its prompt is the first command it runs. A composer shown for a tab that
     // has a folder starts in it, which the workspace picker offers first when none of its places
     // holds it; one shown for a tab with none starts in a new composer's own folder and kind.
     //
     // The prompt goes to the server as one field and reaches the agent as one argument; nothing on
     // this side quotes, splits or escapes it, since nothing on either side hands it to a shell.
+    //
+    // A composer opened on a hub task shows the seed the server built for it above the prompt box,
+    // read-only, and offers Claude and Codex; what is typed is added to the seed. A start whose
+    // permission mode skips what the agent asks is confirmed first, and a task's seed that was
+    // never approved for the folder and agent is shown for approval first.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import AgentFindings from './AgentFindings.svelte';
+    import Confirm from '$lib/ui/controls/Confirm.svelte';
     import AttachPicker from './AttachPicker.svelte';
+    import SeedApproval from './SeedApproval.svelte';
+    import TaskBlock from './TaskBlock.svelte';
     import WorkspacePicker from '$lib/views/shared/sessions/WorkspacePicker.svelte';
     import {
         accountFor,
@@ -36,11 +45,14 @@
         promptKey,
         picksFor,
         relativeIn,
+        skipQuestion,
         withComposer,
+        type SkipQuestion,
         type ComposerAgent,
         type ComposerRecord
-    } from '$lib/state/sessions/terminal/composer';
-    import type { AgentChoices, AgentChoicesFinding } from '$lib/state/sessions/agents.svelte';
+    } from '$lib/state/sessions/terminal/composer/composer';
+    import type { AgentChoices } from '$lib/state/sessions/agents.svelte';
+    import type { SeedApproval as Approval } from '$lib/state/sessions/terminals.svelte';
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -59,7 +71,7 @@
         entities: { git },
         fs: { workspaces },
         selectors: { hubRoot, sessionsByWorkspace },
-        terminals: { composeTerminal },
+        terminals: { approveSeed, composeTerminal, dropTask, loadTask, taskOf },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -74,6 +86,12 @@
     let picking = $state(false);
     let failure = $state('');
     let starting = $state(false);
+
+    /** The confirmation a start waits on, and the approval of a task's seed it waits on. */
+    let asking: SkipQuestion | null = $state(null);
+    let approving: Approval | null = $state(null);
+    let approvingNow = $state(false);
+    let loadingTask = false;
 
     const record = $derived(composerOf(instanceState(owner)));
     const hub = $derived(hubRoot());
@@ -103,8 +121,29 @@
     });
     const picks = $derived(agent === 'shell' ? {} : picksFor(choices, record.picks[agent]));
     const findings = $derived(base?.findings ?? []);
+    const promptWords = $derived(
+        agent === 'shell'
+            ? t('composer.command')
+            : record.task === undefined
+              ? t('composer.prompt')
+              : t('composer.prompt_more')
+    );
 
-    const AGENTS: ComposerAgent[] = ['claude', 'codex', 'shell'];
+    const task = $derived(taskOf(owner));
+    const AGENTS: ComposerAgent[] = $derived(
+        record.task === undefined ? ['claude', 'codex', 'shell'] : ['claude', 'codex']
+    );
+
+    // A composer restored with a task reference and no seed asks the server for the seed again; a
+    // refusal is said here and the task is dropped from the record.
+    $effect(() => {
+        if (record.task === undefined || task !== null || loadingTask) return;
+        loadingTask = true;
+        void loadTask(owner).then((words) => {
+            loadingTask = false;
+            if (words !== '') failure = words;
+        });
+    });
 
     function agentLabel(one: ComposerAgent): string {
         if (one === 'claude') return t('sessions.kind_claude');
@@ -183,19 +222,43 @@
         if (field instanceof HTMLTextAreaElement) caret = field.selectionStart;
     }
 
-    async function start(): Promise<void> {
+    /** Start, asking first when a value the start resolves to skips what the agent asks. */
+    async function start(confirmed = false): Promise<void> {
         if (starting) return;
+        const question =
+            agent === 'shell' ? null : skipQuestion(agent, agentLabel(agent), choices, picks);
+        if (question !== null && !confirmed) {
+            asking = question;
+            return;
+        }
         starting = true;
         failure = '';
-        const shape = composeStart(agent, workspace, account, picks, prompt, attached);
+        const shape = composeStart(
+            agent,
+            workspace,
+            account,
+            picks,
+            prompt,
+            attached,
+            record.task === undefined || task === null
+                ? undefined
+                : { ref: record.task, seed: task.seed },
+            question !== null
+        );
         // The folder and kind the start used stay with this composer, whether or not it lands.
         keep({ workspace, agent });
         const answer = await composeTerminal(shape, owner);
         starting = false;
         // A start whose tab closed meanwhile was ended by the store, and there is nothing to say.
         if (!answer.ok && answer.id === '' && answer.error === '') return;
+        if (answer.seedApproval !== undefined) {
+            approving = answer.seedApproval;
+            return;
+        }
         if (!answer.ok || answer.id === '') {
             failure = answer.error === '' ? t('composer.failed') : answer.error;
+            // The server's seed differs from the one shown: show the current one.
+            if (answer.refused === 'task-changed') void loadTask(owner, true);
             return;
         }
         prompt = '';
@@ -203,19 +266,20 @@
         onstarted(answer.id, agentLabel(agent));
     }
 
-    /** One refusal of config/catalogs/agents.yml in words, with its line and what it names. */
-    function findingWords(finding: AgentChoicesFinding): string {
-        const line = String(finding.line);
-        const what = finding.what;
-        if (finding.why === 'parse') return t('composer.why_parse', line, what);
-        if (finding.why === 'shape') return t('composer.why_shape', line, what);
-        if (finding.why === 'unknown_key') return t('composer.why_unknown_key', line, what);
-        if (finding.why === 'unknown_agent') return t('composer.why_unknown_agent', line, what);
-        if (finding.why === 'no_default') return t('composer.why_no_default', line, what);
-        if (finding.why === 'default_missing') return t('composer.why_default_missing', line, what);
-        if (finding.why === 'flag') return t('composer.why_flag', line, what);
-        if (finding.why === 'value') return t('composer.why_value', line, what);
-        return t('composer.why_repeated', line, what);
+    /** Approve the seed shown in the approval panel, then make the same start again. */
+    async function approve(): Promise<void> {
+        const asked = approving;
+        if (asked === null || record.task === undefined || approvingNow) return;
+        approvingNow = true;
+        const answer = await approveSeed(record.task, asked.seed, asked.cwd, asked.agent);
+        approvingNow = false;
+        approving = null;
+        if (!answer.ok) {
+            failure = answer.error === '' ? t('composer.failed') : answer.error;
+            if (answer.refused === 'task-changed') void loadTask(owner, true);
+            return;
+        }
+        await start(true);
     }
 
     /** The words of the value a list has picked. */
@@ -226,122 +290,145 @@
 </script>
 
 <div class="composer" data-composer>
-    {#if findings.length > 0}
-        <ul class="findings" data-agents-findings>
-            {#each findings as finding (`${finding.line}:${finding.why}:${finding.what}`)}
-                <li>{findingWords(finding)}</li>
-            {/each}
-        </ul>
-    {/if}
-    <div
-        class="box"
-        role="group"
-        aria-label={t('composer.title')}
-        ondrop={dropped}
-        ondragover={dragOver}
-        onfocusout={left}
-    >
-        <div class="prompt" data-composer-prompt>
-            <TextArea
-                value={prompt}
-                label={agent === 'shell' ? t('composer.command') : t('composer.prompt')}
-                placeholder={agent === 'shell' ? t('composer.command') : t('composer.prompt')}
-                rows={4}
-                bare
-                oninput={typed}
-                onkeydown={keyed}
+    <AgentFindings {findings} />
+    {#if approving !== null}
+        <div class="box">
+            <SeedApproval
+                seed={approving.seed}
+                folder={approving.cwd}
+                agent={agentLabel(agent)}
+                busy={approvingNow}
+                onapprove={() => void approve()}
+                oncancel={() => (approving = null)}
             />
         </div>
-        {#if picking}
-            <AttachPicker {workspace} onpick={attach} onclose={() => (picking = false)} />
-        {/if}
-        <div class="foot" data-composer-foot>
-            <ToolButton
-                label={t('composer.attach')}
-                title={t('composer.attach_title')}
-                glyph="expand"
-                compact
-                bare
-                pressed={picking}
-                onclick={() => (picking = !picking)}
-            />
-            <WorkspacePicker
-                {workspace}
-                {places}
-                {hub}
-                placement="down"
-                onpick={(dir: string) => keep({ workspace: dir })}
-            />
-            {#if branch !== ''}
-                <span class="branch" data-composer-branch title={t('composer.branch_title')}>
-                    <Glyph name="branch" />
-                    <span class="branch-name">{branch}</span>
-                </span>
+    {:else}
+        <div
+            class="box"
+            role="group"
+            aria-label={t('composer.title')}
+            ondrop={dropped}
+            ondragover={dragOver}
+            onfocusout={left}
+        >
+            {#if task !== null}
+                <TaskBlock seed={task.seed} onremove={() => dropTask(owner)} />
             {/if}
-            <span class="picker" data-picker="agent">
-                <Menu
-                    label={agentLabel(agent)}
-                    glyph={agentGlyph(agent)}
-                    placement="down"
-                    items={AGENTS.map((one) => ({
-                        id: one,
-                        label: agentLabel(one),
-                        glyph: agentGlyph(one),
-                        active: one === agent
-                    }))}
-                    onpick={(id) => keep({ agent: id as ComposerAgent })}
+            <div class="prompt" data-composer-prompt>
+                <TextArea
+                    value={prompt}
+                    label={agent === 'shell' ? t('composer.command') : t('composer.prompt')}
+                    placeholder={promptWords}
+                    rows={4}
+                    bare
+                    oninput={typed}
+                    onkeydown={keyed}
                 />
-            </span>
-            {#if accounts.length > 1}
-                <span class="picker" data-picker="account">
-                    <Menu
-                        label={account}
-                        placement="down"
-                        items={accounts.map((one) => ({
-                            id: one.label,
-                            label: one.label,
-                            title: one.dir,
-                            active: one.label === account
-                        }))}
-                        onpick={pickAccount}
-                    />
-                </span>
+            </div>
+            {#if picking}
+                <AttachPicker {workspace} onpick={attach} onclose={() => (picking = false)} />
             {/if}
-            {#each choices?.lists ?? [] as list (list.key)}
-                <span class="picker" data-picker={list.key}>
+            <div class="foot" data-composer-foot>
+                <ToolButton
+                    label={t('composer.attach')}
+                    title={t('composer.attach_title')}
+                    glyph="expand"
+                    compact
+                    bare
+                    pressed={picking}
+                    onclick={() => (picking = !picking)}
+                />
+                <WorkspacePicker
+                    {workspace}
+                    {places}
+                    {hub}
+                    placement="down"
+                    onpick={(dir: string) => keep({ workspace: dir })}
+                />
+                {#if branch !== ''}
+                    <span class="branch" data-composer-branch title={t('composer.branch_title')}>
+                        <Glyph name="branch" />
+                        <span class="branch-name">{branch}</span>
+                    </span>
+                {/if}
+                <span class="picker" data-picker="agent">
                     <Menu
-                        label={pickedLabel(list.key)}
+                        label={agentLabel(agent)}
+                        glyph={agentGlyph(agent)}
                         placement="down"
-                        groups={[
-                            {
-                                id: list.key,
-                                heading: list.label,
-                                items: list.values.map((one) => ({
-                                    id: one.id,
-                                    label: one.label,
-                                    active: one.id === picks[list.key]
-                                }))
-                            }
-                        ]}
-                        items={[]}
-                        onpick={(id: string) => pickList(list.key, id)}
+                        items={AGENTS.map((one) => ({
+                            id: one,
+                            label: agentLabel(one),
+                            glyph: agentGlyph(one),
+                            active: one === agent
+                        }))}
+                        onpick={(id) => keep({ agent: id as ComposerAgent })}
                     />
                 </span>
-            {/each}
-            <span class="grow"></span>
-            <ToolButton
-                label={t('composer.start')}
-                title={t('composer.start_title')}
-                glyph="launch"
-                disabled={starting}
-                onclick={() => void start()}
-            />
+                {#if accounts.length > 1}
+                    <span class="picker" data-picker="account">
+                        <Menu
+                            label={account}
+                            placement="down"
+                            items={accounts.map((one) => ({
+                                id: one.label,
+                                label: one.label,
+                                title: one.dir,
+                                active: one.label === account
+                            }))}
+                            onpick={pickAccount}
+                        />
+                    </span>
+                {/if}
+                {#each choices?.lists ?? [] as list (list.key)}
+                    <span class="picker" data-picker={list.key}>
+                        <Menu
+                            label={pickedLabel(list.key)}
+                            placement="down"
+                            groups={[
+                                {
+                                    id: list.key,
+                                    heading: list.label,
+                                    items: list.values.map((one) => ({
+                                        id: one.id,
+                                        label: one.label,
+                                        active: one.id === picks[list.key]
+                                    }))
+                                }
+                            ]}
+                            items={[]}
+                            onpick={(id: string) => pickList(list.key, id)}
+                        />
+                    </span>
+                {/each}
+                <span class="grow"></span>
+                <ToolButton
+                    label={t('composer.start')}
+                    title={t('composer.start_title')}
+                    glyph="launch"
+                    disabled={starting}
+                    onclick={() => void start()}
+                />
+            </div>
         </div>
-    </div>
+    {/if}
     {#if failure !== ''}
         <div class="failure" data-composer-failure>
             <Empty error message={failure} />
         </div>
+    {/if}
+    {#if asking !== null}
+        <Confirm
+            message={asking.message}
+            detail={asking.detail}
+            confirm={t('composer.confirm_skip_yes')}
+            cancel={t('composer.confirm_skip_no')}
+            onconfirm={() => {
+                asking = null;
+                void start(true);
+            }}
+            oncancel={() => (asking = null)}
+        />
     {/if}
 </div>
 
@@ -403,13 +490,6 @@
     .picker {
         display: inline-flex;
         min-width: 0;
-    }
-
-    .findings {
-        margin: 0;
-        padding: 0 0 0 16px;
-        color: var(--c-amber-txt, var(--ink));
-        font-size: var(--fs-md);
     }
 
     /* Over the wallpaper the box sits on the tinted box of the view, which is its surface there. */

@@ -23,7 +23,7 @@ import { headTabState, tabOfFile, type ServedRoot, type TabFile } from './file-g
 import type { PatchMode } from './diff/diff-patch.ts';
 import type { SendOptions, WritesStore } from '../../shared/stores/shapes.ts';
 import { t } from '../../shared/words/text.ts';
-import { openShell, type ShellStarter } from '../../shared/stores/shell.ts';
+import { openShell, type WorktreeStarter } from '../../shared/stores/shell.ts';
 
 /** The view id of the pane one diff opens in. */
 export const DIFF_VIEW = 'repositories-diff';
@@ -40,6 +40,9 @@ export type StashMode = 'tracked' | 'untracked' | 'staged';
 /** A group of changes a section head acts on as a whole. */
 export type ChangeGroup = 'changed' | 'untracked';
 
+/** What a new worktree is started with: a shell, or the composer for Claude or Codex. */
+export type WorktreeStart = 'shell' | 'claude' | 'codex';
+
 /** What a Delete Branch came to: deleted, kept as git calls it not fully merged, or refused. */
 export type BranchDeletion = 'deleted' | 'not-merged' | 'refused';
 
@@ -48,6 +51,8 @@ export type RepositoriesStore = {
     busy: (root: string) => boolean;
     /** What the last write on this root answered, or the empty string. */
     outcome: (root: string) => string;
+    /** End the write in flight on this root; nothing is posted when none is. */
+    cancel: (root: string) => Promise<void>;
     /** The commit message being written for this root. */
     message: (root: string) => string;
     setMessage: (root: string, text: string) => void;
@@ -112,12 +117,17 @@ export type RepositoriesStore = {
     createTag: (root: string, name: string, message: string, start?: string) => Promise<void>;
     deleteTag: (root: string, name: string) => Promise<void>;
     pushTags: (root: string) => Promise<void>;
-    /** Make the worktree and open a shell in it; the path is the view's own rule. */
-    createWorktree: (root: string, name: string) => Promise<void>;
+    /**
+     * Make the worktree and open a shell in it, or the composer there for Claude or Codex; the
+     * path is the view's own rule.
+     */
+    createWorktree: (root: string, name: string, start: WorktreeStart) => Promise<void>;
     removeWorktree: (root: string, path: string) => Promise<void>;
     merge: (root: string, branch: string) => Promise<void>;
     /** Open a shell in a worktree that is already there. */
     shellIn: (root: string, cwd: string, label: string) => Promise<void>;
+    /** Open the composer for Claude or Codex in an existing worktree. */
+    agentIn: (root: string, cwd: string, agent: 'claude' | 'codex') => Promise<void>;
     /**
      * Open one diff in a pane of its own beside the one being read. `asker` is the instance of the
      * tool view that asked for it, which the diff opens beside and never over.
@@ -182,7 +192,7 @@ function nameOf(path: string): string {
 
 export function createRepositories(
     writes: WritesStore,
-    terminals: ShellStarter,
+    terminals: WorktreeStarter,
     layout: ViewOpener,
     access: OpenAccess
 ): RepositoriesStore {
@@ -263,6 +273,17 @@ export function createRepositories(
         say(root, held === '' ? refused : `${held} ${refused}`);
     }
 
+    /**
+     * Open the composer for Claude or Codex where the reader is looking. A composer that will not
+     * open is said after the write's own sentence, as `shellIn` says a shell that will not start.
+     */
+    async function agentIn(root: string, cwd: string, agent: 'claude' | 'codex'): Promise<void> {
+        const refused = await terminals.composeAt({ cwd, agent });
+        if (refused === '') return;
+        const held = outcome(root);
+        say(root, held === '' ? refused : `${held} ${refused}`);
+    }
+
     function openDiff(subject: DiffSubject, label: string, asker?: string): void {
         layout.openBeside(DIFF_VIEW, diffState(subject, label), undefined, asker);
     }
@@ -313,6 +334,16 @@ export function createRepositories(
         return true;
     }
 
+    /**
+     * Cancel is not a write on the root, so the busy check of `send` does not apply to it: it is
+     * posted exactly while a git write is in flight, and the write it ends answers for itself. A
+     * message being suggested runs `claude`, not git, and has nothing here to end.
+     */
+    async function cancel(root: string): Promise<void> {
+        if (root === '' || !busy(root) || state.suggesting.includes(root)) return;
+        await writes.writeGit('cancel', root);
+    }
+
     async function suggest(root: string): Promise<void> {
         if (busy(root) || state.suggesting.includes(root)) return;
         state.suggesting = [...state.suggesting, root];
@@ -339,6 +370,7 @@ export function createRepositories(
     return {
         busy,
         outcome,
+        cancel,
         message: (root) => state.messages[root] ?? '',
         setMessage,
         suggesting: (root) => state.suggesting.includes(root),
@@ -425,9 +457,11 @@ export function createRepositories(
         async pushTags(root) {
             await act(root, 'pushTags', {}, true);
         },
-        async createWorktree(root, name) {
+        async createWorktree(root, name, start) {
             const path = plannedPath(root, name);
-            if (await act(root, 'createWorktree', { name }, true)) await shellIn(root, path, name);
+            if (!(await act(root, 'createWorktree', { name }, true))) return;
+            if (start === 'shell') await shellIn(root, path, name);
+            else await agentIn(root, path, start);
         },
         async removeWorktree(root, path) {
             await act(root, 'removeWorktree', { path }, true);
@@ -436,6 +470,7 @@ export function createRepositories(
             await act(root, 'merge', { branch }, true);
         },
         shellIn,
+        agentIn,
         openDiff,
         openChange(root, group, path, session) {
             if (group === 'merge') openMerge(root, path);

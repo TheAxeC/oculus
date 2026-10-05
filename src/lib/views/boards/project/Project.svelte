@@ -39,8 +39,8 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Segment from '$lib/ui/controls/Segment.svelte';
-    import type { SegmentItem } from '$lib/ui/controls/segment-items';
+    import Segment from '$lib/ui/controls/segment/Segment.svelte';
+    import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import Latex from './Latex.svelte';
     import ProjectCard from '../../shared/card/ProjectCard.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';

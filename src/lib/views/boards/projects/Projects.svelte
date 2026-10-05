@@ -41,8 +41,8 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import Segment from '$lib/ui/controls/Segment.svelte';
-    import type { SegmentItem } from '$lib/ui/controls/segment-items';
+    import Segment from '$lib/ui/controls/segment/Segment.svelte';
+    import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import Table from '$lib/ui/display/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table-rows';
     import Chip from '$lib/ui/controls/Chip.svelte';

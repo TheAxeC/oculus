@@ -3,8 +3,8 @@
     // two. It holds nothing; the chosen id comes in as a prop and a click goes out as a call, so
     // the choice lives wherever the caller keeps its state.
 
-    import type { SegmentItem } from '$lib/ui/controls/segment-items';
-    import ToolButton from './ToolButton.svelte';
+    import type { SegmentItem } from './segment-items';
+    import ToolButton from '../ToolButton.svelte';
 
     type Props = {
         items: SegmentItem[];

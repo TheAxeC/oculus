@@ -12,6 +12,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ChangeGroups from '$lib/views/shared/changes/ChangeGroups.svelte';
     import CommitBox from '$lib/views/shared/changes/CommitBox.svelte';
+    import type { ChangeActions } from '$lib/views/shared/changes/change-actions';
     import { branchState } from '$lib/views/shared/changes/branch-state';
     import type { GitEntry, GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -27,13 +28,9 @@
         onswitch: (name: string) => void;
         onbranch: () => void;
         onbranchname: (name: string) => void;
-        onstage: (path: string) => void;
-        onunstage: (path: string) => void;
-        ondiscard: (path: string) => void;
-        onresolve: (path: string) => void;
-        ongroup: (act: 'stage-changed' | 'stage-untracked' | 'unstage' | 'discard') => void;
-        onopen: (path: string, kind: string) => void;
-    };
+        /** Ends the git write in flight; absent while the busy work is not a git write. */
+        oncancel?: () => void;
+    } & ChangeActions;
 
     let {
         root,
@@ -51,7 +48,8 @@
         ondiscard,
         onresolve,
         ongroup,
-        onopen
+        onopen,
+        oncancel
     }: Props = $props();
 </script>
 
@@ -96,7 +94,17 @@
         marked={(entry: GitEntry) => shared(entry.path).length > 0}
     />
     {#if busy}
-        <p class="none">{t('git.busy')}</p>
+        <div class="busy">
+            <p class="none">{t('git.busy')}</p>
+            {#if oncancel !== undefined}
+                <ToolButton
+                    small
+                    label={t('git.cancel')}
+                    title={t('git.cancel_title')}
+                    onclick={oncancel}
+                />
+            {/if}
+        </div>
     {/if}
     {#if outcome !== ''}
         <p class="outcome">{outcome}</p>
@@ -122,6 +130,11 @@
         flex: 0 0 auto;
         font-size: var(--fs-xs);
         color: var(--c-amber-txt, var(--muted));
+    }
+    .busy {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     .none {
         color: var(--muted-txt, var(--muted));

@@ -8,24 +8,28 @@
 // composer opens on the accounts and picks its last start used. Its folder and kind are what the
 // last start used until New sets them back to a new composer's own (`freshComposer`) or a New with
 // a prompt in a tab sets them to the tab's folder and the kind chosen (`splitState`). A value the
-// catalog no longer offers is dropped when it is read, so a pick never reaches a start the server
+// catalog does not offer is dropped when it is read, so a pick never reaches a start the server
 // would refuse.
 
-import type {
-    AgentAccount,
-    AgentChoices,
-    AgentId,
-    ComposeStart,
-    Workspace
-} from '../../../data/model/index.ts';
+import {
+    confirmValues,
+    type AgentAccount,
+    type AgentChoices,
+    type AgentId,
+    type ComposeStart,
+    type TaskRef,
+    type Workspace
+} from '../../../../data/model/index.ts';
 import { z } from 'zod';
-import { isMap } from '../../../data/helpers/guards.ts';
+import { isMap } from '../../../../data/helpers/guards.ts';
 import {
     filledTextShape,
     mapOfShape,
     readAs,
-    stringItemsShape
-} from '../../../data/shapes/shapes.ts';
+    stringItemsShape,
+    taskRefOf
+} from '../../../../data/shapes/shapes.ts';
+import { t } from '../../../shared/words/text.ts';
 
 /** What the composer starts: one of the two agents, or the reader's shell. */
 export type ComposerAgent = AgentId | 'shell';
@@ -43,6 +47,11 @@ export type ComposerRecord = {
      * whether or not a place holds it; absent on a composer opened without one.
      */
     split?: string;
+    /**
+     * The hub task the composer is seeded with, its reference only. The seed text the server
+     * answered for it is held by the terminals store per tab and never saved with the layout.
+     */
+    task?: TaskRef;
 };
 
 /** The instance-state field the record is kept under. */
@@ -71,11 +80,14 @@ const composerShape = z
         agent: z.enum(['claude', 'codex', 'shell']).catch('claude'),
         accounts: wordsShape.transform((words) => ({ claude: words.claude, codex: words.codex })),
         picks: picksShape,
-        split: filledTextShape
+        split: filledTextShape,
+        task: z.unknown().optional().transform(taskRefOf)
     })
-    .transform(({ split, ...record }) =>
-        split === undefined ? record : { ...record, split }
-    ) satisfies z.ZodType<ComposerRecord>;
+    .transform(({ split, task, ...record }) => ({
+        ...record,
+        ...(split === undefined ? {} : { split }),
+        ...(task === undefined ? {} : { task })
+    })) satisfies z.ZodType<ComposerRecord>;
 
 /** A tab's instance state as far as its composer: the record under `composer`, which is a map. */
 const composerHolderShape = z.object({ [COMPOSER_FIELD]: composerShape });
@@ -131,6 +143,25 @@ export function splitState(
         ...splitRecord(folder, agent),
         accounts: kept.accounts,
         picks: kept.picks
+    });
+}
+
+/**
+ * The instance state of a tab once a start from a place or a task shows its composer: the folder
+ * the start names, offered as a place of its own, the agent, that agent's lists back at the
+ * catalog's defaults (its picks cleared; the other agent's kept), the account the tab held, and
+ * the task when there is one.
+ */
+export function startedAt(
+    held: unknown,
+    at: { cwd: string; agent: AgentId; task?: TaskRef }
+): Record<string, unknown> {
+    const kept = composerOf(held);
+    return withComposer(held, {
+        ...splitRecord(at.cwd, at.agent),
+        accounts: kept.accounts,
+        picks: { ...kept.picks, [at.agent]: {} },
+        ...(at.task === undefined ? {} : { task: at.task })
     });
 }
 
@@ -243,7 +274,10 @@ export function insertMention(
 
 /**
  * The start the composer sends. A shell takes no picks, account or images; an image is attached
- * only for Codex, which is the one agent whose CLI takes one on its command line.
+ * only for Codex, which is the one agent whose CLI takes one on its command line. `task` is the
+ * hub task the start is seeded with and the seed text the page showed for it, and `confirm` is
+ * true once the reader answered the question a permission mode that skips what the agent asks
+ * raises.
  */
 export function composeStart(
     agent: ComposerAgent,
@@ -251,13 +285,72 @@ export function composeStart(
     account: string,
     picks: Record<string, string>,
     prompt: string,
-    attached: string[]
+    attached: string[],
+    task?: { ref: TaskRef; seed: string },
+    confirm = false
 ): ComposeStart {
     if (agent === 'shell') {
-        return { agent, cwd, account: '', picks: {}, prompt, images: [] };
+        return { agent, cwd, account: '', picks: {}, prompt, images: [], seed: '', confirm: false };
     }
     const images = agent === 'codex' ? [...new Set(attached.filter(isImage))] : [];
-    return { agent, cwd, account, picks, prompt, images };
+    return {
+        agent,
+        cwd,
+        account,
+        picks,
+        prompt,
+        images,
+        seed: task?.seed ?? '',
+        confirm,
+        ...(task === undefined ? {} : { task: task.ref })
+    };
+}
+
+/** The question a start asks before it runs, and the values it is about. */
+export type SkipQuestion = { message: string; detail: string };
+
+/**
+ * The sentence of one value that skips what the agent asks, picked by the agent, the list and the
+ * value; a value this table does not name has the generic sentence.
+ */
+function skipSentence(agent: AgentId, list: string, value: string, who: string, label: string) {
+    if (agent === 'claude' && list === 'mode') {
+        if (value === 'acceptEdits') return t('composer.confirm_claude_accept_edits', who, label);
+        if (value === 'auto') return t('composer.confirm_claude_auto', who, label);
+        if (value === 'bypassPermissions') return t('composer.confirm_claude_bypass', who, label);
+    }
+    if (agent === 'codex' && list === 'sandbox' && value === 'danger-full-access') {
+        return t('composer.confirm_codex_full_access', who, label);
+    }
+    if (agent === 'codex' && list === 'approval' && value === 'never') {
+        return t('composer.confirm_codex_never', who, label);
+    }
+    return t('composer.confirm_skip_detail', who, label);
+}
+
+/**
+ * The question a start asks first, or null when none of the values it resolves to carries
+ * `confirm`: the message names the agent and the values' labels, and the detail is each value's
+ * sentence joined by a space.
+ */
+export function skipQuestion(
+    agent: AgentId,
+    agentLabel: string,
+    choices: AgentChoices | null,
+    picks: Record<string, string>
+): SkipQuestion | null {
+    if (choices === null) return null;
+    const asked = confirmValues(choices, picks);
+    if (asked.length === 0) return null;
+    const labels = asked.map((one) => one.value.label).join(', ');
+    return {
+        message: t('composer.confirm_skip', agentLabel, labels),
+        detail: asked
+            .map((one) =>
+                skipSentence(agent, one.list.key, one.value.id, agentLabel, one.value.label)
+            )
+            .join(' ')
+    };
 }
 
 /** What a key pressed in the prompt box does: start on Enter, a new line with Shift. */

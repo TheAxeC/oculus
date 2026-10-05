@@ -13,6 +13,8 @@ text:
         branch_switch_confirm: Check out {0} in the mirror?
         branch_switch_detail: code/ is overwritten with the files of that branch, and results/, figures/ and attic/ are left alone. The mirror must be clean.
         busy: Working
+        cancel: Cancel
+        cancel_title: Stop the git command running for this deposit
         changes: Changed ({0})
         changes_none: Nothing changed since the mirror's last commit.
         commit: commit

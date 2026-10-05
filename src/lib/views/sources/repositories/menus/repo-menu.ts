@@ -1,9 +1,10 @@
 // Layer 3, view partial. The right-click menus of a repository row and of a worktree row of the
 // Repositories view, as VS Code's Source Control builds them: a shell in the folder, Reveal in
-// Finder, Close Repository and Close Other Repositories for a repository; a shell, Open Worktree,
-// Open Worktree in New Window and Delete Worktree for a worktree. Each pick runs what the view
-// already has: the Source Control store's shell, the open endpoint's reveal, the repositories the
-// view draws, the workspace's add-root write, and the removal of a worktree behind its question.
+// Finder, Close Repository and Close Other Repositories for a repository; a shell, Claude and Codex
+// started there, Open Worktree, Open Worktree in New Window and Delete Worktree for a worktree.
+// Each pick runs what the view already has: the Source Control store's shell, the open endpoint's
+// reveal, the repositories the view draws, the workspace's add-root write, and the removal of a
+// worktree behind its question.
 //
 // A repository whose folder is gone offers no shell and no reveal, since they need the folder, but
 // it can still be closed. Close Other Repositories is offered only while more than one repository
@@ -21,12 +22,14 @@ export const REPO_CLOSE_OTHERS = 'close-others';
 export const WORKTREE_OPEN = 'open';
 export const WORKTREE_OPEN_WINDOW = 'open-window';
 export const WORKTREE_DELETE = 'delete-worktree';
+export const WORKTREE_CLAUDE = 'start-claude';
+export const WORKTREE_CODEX = 'start-codex';
 
 /** What a pick from a repository row's menu asks for. */
 export type RepoPick = 'terminal' | 'reveal' | 'close' | 'close-others';
 
 /** What a pick from a worktree row's menu asks for. */
-export type WorktreePick = 'terminal' | 'open' | 'open-window' | 'delete';
+export type WorktreePick = 'terminal' | 'claude' | 'codex' | 'open' | 'open-window' | 'delete';
 
 /** A repository row's items; `listed` is how many repositories the view lists. */
 export function repoRowMenu(present: boolean, listed: number, t: Words): MenuItem[] {
@@ -55,13 +58,15 @@ export function repoPick(id: string): RepoPick | null {
 }
 
 /**
- * A worktree row's items: its shell, Open Worktree and Open Worktree in New Window, and its
- * removal while no write is in flight.
+ * A worktree row's items: its shell, Claude and Codex started there, Open Worktree and Open
+ * Worktree in New Window, and its removal while no write is in flight.
  */
 export function worktreeMenu(busy: boolean, t: Words): MenuItem[] {
     return grouped([
         [
             { id: REPO_TERMINAL, label: t('repositories.menu_terminal') },
+            { id: WORKTREE_CLAUDE, label: t('repositories.menu_start_claude') },
+            { id: WORKTREE_CODEX, label: t('repositories.menu_start_codex') },
             { id: WORKTREE_OPEN, label: t('repositories.menu_open_worktree') },
             { id: WORKTREE_OPEN_WINDOW, label: t('repositories.menu_open_worktree_window') }
         ],
@@ -72,6 +77,8 @@ export function worktreeMenu(busy: boolean, t: Words): MenuItem[] {
 /** The pick a worktree row's item stands for, or null for an id it never gives. */
 export function worktreePick(id: string): WorktreePick | null {
     if (id === REPO_TERMINAL) return 'terminal';
+    if (id === WORKTREE_CLAUDE) return 'claude';
+    if (id === WORKTREE_CODEX) return 'codex';
     if (id === WORKTREE_OPEN) return 'open';
     if (id === WORKTREE_OPEN_WINDOW) return 'open-window';
     return id === WORKTREE_DELETE ? 'delete' : null;

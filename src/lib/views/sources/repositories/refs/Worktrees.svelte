@@ -15,17 +15,21 @@
     // diff of. The merge back is offered only while the repository has a branch checked out, since
     // a detached HEAD has nothing to merge into.
     //
-    // A worktree row opens a right-click menu (menus/repo-menu.ts) of its shell, Open Worktree,
-    // Open Worktree in New Window and Delete Worktree. The shell and the removal run the row's own
-    // terminal and removal controls, the removal behind its question. Open Worktree adds the
-    // worktree's folder as a root of the workspace and shows it in the Files view
-    // (state/sources/repositories/repositories.ts's openWorktree), and the new-window form opens
-    // this page's address again as well; a folder the workspace refuses is said in one muted row
-    // under the section's rows until the next open.
+    // The new-worktree row makes the worktree and opens a shell in it (Create), or opens the
+    // composer there for Claude or Codex (Create with Claude, Create with Codex). A worktree row
+    // opens a right-click menu (menus/repo-menu.ts) of its shell, Start Claude Here, Start Codex
+    // Here, Open Worktree, Open Worktree in New Window and Delete Worktree. The shell and the
+    // removal run the row's own terminal and removal controls, the removal behind its question.
+    // Open Worktree adds the worktree's folder as a root of the workspace and shows it in the Files
+    // view (state/sources/repositories/repositories.ts's openWorktree), and the new-window form
+    // opens this page's address again as well; a folder the workspace refuses is said in one muted
+    // row under the section's rows until the next open.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import {
+        WORKTREE_CLAUDE,
+        WORKTREE_CODEX,
         WORKTREE_DELETE,
         WORKTREE_OPEN,
         WORKTREE_OPEN_WINDOW,
@@ -43,6 +47,7 @@
         worktreeLabel,
         type DiffSubject
     } from '$lib/state/sources/repositories/repositories';
+    import type { WorktreeStart } from '$lib/state/sources/repositories/repositories.svelte';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -58,7 +63,9 @@
         onremove: (path: string, label: string) => void;
         onmerge: (branch: string, onto: string) => void;
         onterminal: (path: string, label: string) => void;
-        oncreate: (name: string) => void;
+        /** Start Claude or Codex in an existing worktree. */
+        onagent: (path: string, agent: 'claude' | 'codex') => void;
+        oncreate: (name: string, start: WorktreeStart) => void;
     };
 
     let {
@@ -72,6 +79,7 @@
         onremove,
         onmerge,
         onterminal,
+        onagent,
         oncreate
     }: Props = $props();
 
@@ -87,16 +95,18 @@
     const planned = $derived(name.trim() === '' ? '' : plannedPath(root, name));
     const others = $derived(linkedWorktrees(git));
 
-    function made(): void {
+    function made(start: WorktreeStart): void {
         const wanted = name.trim();
         if (wanted === '') return;
         name = '';
-        oncreate(wanted);
+        oncreate(wanted, start);
     }
 
     /** A pick from a worktree row's menu: what the row's own control of that name does. */
     function picked(path: string, label: string, pick: string): void {
         if (pick === REPO_TERMINAL) onterminal(path, label);
+        else if (pick === WORKTREE_CLAUDE) onagent(path, 'claude');
+        else if (pick === WORKTREE_CODEX) onagent(path, 'codex');
         else if (pick === WORKTREE_DELETE) onremove(path, label);
         else if (pick === WORKTREE_OPEN) void opened(path, false);
         else if (pick === WORKTREE_OPEN_WINDOW) void opened(path, true);
@@ -219,7 +229,26 @@
                         glyph="check"
                         compact
                         disabled={busy}
-                        onclick={made}
+                        onclick={() => made('shell')}
+                    />
+                    <ToolButton
+                        label={t('repositories.worktree_new_claude')}
+                        title={t(
+                            'repositories.worktree_new_agent_title',
+                            t('sessions.kind_claude')
+                        )}
+                        glyph="terminal_claude"
+                        compact
+                        disabled={busy || name.trim() === ''}
+                        onclick={() => made('claude')}
+                    />
+                    <ToolButton
+                        label={t('repositories.worktree_new_codex')}
+                        title={t('repositories.worktree_new_agent_title', t('sessions.kind_codex'))}
+                        glyph="terminal_codex"
+                        compact
+                        disabled={busy || name.trim() === ''}
+                        onclick={() => made('codex')}
                     />
                 {/snippet}
             </TreeItem>

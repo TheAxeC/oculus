@@ -317,7 +317,7 @@
 <g id="node35" class="node">
 <title>folder state/sessions to folder state/shared</title>
 <polygon fill="none" stroke="none" points="68.88,-298.24 55.12,-298.24 55.12,-285.76 68.88,-285.76 68.88,-298.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="62" y="-289.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">13</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="62" y="-289.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">15</text>
 </g>
 <!-- folder state/sessions&#45;&gt;folder state/sessions to folder state/shared -->
 <g id="edge58" class="edge">
@@ -350,7 +350,7 @@
 <g id="node38" class="node">
 <title>folder state/sessions to layer data</title>
 <polygon fill="none" stroke="none" points="162.88,-563.44 149.12,-563.44 149.12,-550.96 162.88,-550.96 162.88,-563.44"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="156" y="-554.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">22</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="156" y="-554.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">23</text>
 </g>
 <!-- folder state/sessions&#45;&gt;folder state/sessions to layer data -->
 <g id="edge64" class="edge">

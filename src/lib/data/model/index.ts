@@ -487,6 +487,7 @@ export {
     TERMINAL_REFUSALS
 } from './model-sessions.ts';
 
+export { confirmValues } from './model-agents.ts';
 export type {
     AgentAccount,
     AgentChoice,
@@ -503,7 +504,8 @@ export type {
     CustomizationRow,
     CustomizationsAnswer,
     ListedSession,
-    SizedAgent
+    SizedAgent,
+    TaskRef
 } from './model-agents.ts';
 
 export type {

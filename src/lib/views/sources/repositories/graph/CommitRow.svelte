@@ -10,8 +10,10 @@
     // detaches, branches, tags, cherry-picks and compares from it (menus/graph-menu.ts). The
     // checkout and the tag's removal go through the question the Branches or Tags section asks, and
     // every other pick is handed to the graph with the commit it was made on. A right-click on a
-    // local branch, a remote branch or a tag pill opens that name's own menu; a name offering none
-    // (a write in flight) has no menu of its own, so its right-click reaches the commit's.
+    // local branch, a remote branch or a tag pill opens that name's own menu, and the pill of the
+    // branch checked out opens Checkout and Delete Branch drawn disabled with their reason; a name
+    // offering none (a write in flight) has no menu of its own, so its right-click reaches the
+    // commit's.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';

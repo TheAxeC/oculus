@@ -28,6 +28,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ChangeCounts from './ChangeCounts.svelte';
+    import type { ChangeActions } from './change-actions';
     import { statusStyle } from '$lib/state/sources/repositories/repositories';
     import type { GitEntry } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -41,20 +42,11 @@
         held: { merge: number; staged: number; changes: number; untracked: number };
         /** Whether a write is in flight, which disables every control that writes. */
         busy: boolean;
-        onstage: (path: string) => void;
-        onunstage: (path: string) => void;
-        ondiscard: (path: string) => void;
-        /** Mark a conflicted path resolved, staging it as it stands or its deletion. */
-        onresolve: (path: string) => void;
-        /** A group head's action: stage the changed or untracked, unstage all, discard all. */
-        ongroup: (act: 'stage-changed' | 'stage-untracked' | 'unstage' | 'discard') => void;
-        /** Open what a row stands for, by the group it is in. */
-        onopen: (path: string, kind: string) => void;
         /** Drawn after the path of every row: the caller's own mark or controls. */
         beside?: Snippet<[GitEntry, string]>;
         /** Whether a row is drawn as one another session is holding open. */
         marked?: (entry: GitEntry) => boolean;
-    };
+    } & ChangeActions;
 
     let {
         conflicted,

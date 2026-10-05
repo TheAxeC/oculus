@@ -18,6 +18,13 @@
 // A shell takes no picks and no argv: it is the reader's own shell, and its prompt is the first
 // command, typed into it as keys once it has started.
 //
+// A value of agents.yml that carries `confirm: true` (a permission mode or sandbox that lets the
+// agent act without asking) is passed only when the request carries `confirm: true` too, which the
+// composer sets after the reader answered its question; otherwise the start is refused ahead of any
+// run. The check reads the values as the argv does, a pick or else the list's default. A request
+// may also carry a hub task and the seed the page showed for it; routes.ts builds the seed again
+// from the hub and starts only when the two agree.
+//
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
 import { json } from '@sveltejs/kit';
@@ -32,15 +39,19 @@ import {
     withCacheModels
 } from '../../../data/sources/config/catalog/agents.ts';
 import { configDir, loadLocal, type LocalConfig } from '../../../data/sources/config.ts';
-import type {
-    AgentAccount,
-    AgentChoices,
-    AgentId,
-    AgentsAnswer,
-    ComposeStart
+import {
+    confirmValues,
+    type AgentAccount,
+    type AgentChoices,
+    type AgentId,
+    type AgentsAnswer,
+    type ComposeStart,
+    type TaskRef
 } from '../../../data/model/index.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
+import { taskRefOf } from '../../../data/shapes/shapes.ts';
 import { below } from '../../core/paths.ts';
+import { TerminalRefused } from './refusal.ts';
 
 /** The catalog's path under the engine's config folder. */
 export const AGENTS_FILE = join('catalogs', 'agents.yml');
@@ -166,7 +177,14 @@ export function compose(
     const own = choices.find((one) => one.agent === agent);
     if (own === undefined) throw new Error(`agents.yml offers no ${agent}`);
     const account = accountFor(agent, request.account, accounts);
-    const flags = choiceArgs(accountChoices(own, account), request.picks);
+    const offered = accountChoices(own, account);
+    const flags = choiceArgs(offered, request.picks);
+    const asked = confirmValues(offered, request.picks);
+    if (asked.length > 0 && !request.confirm) {
+        throw new TerminalRefused('needs-confirm', [
+            asked.map((one) => one.value.label).join(', ')
+        ]);
+    }
     const { prefix, env } = accountEnv(agent, account);
     const argv: string[] = [...prefix, agent === 'claude' ? claudeBin : 'codex', ...flags];
     const images = request.images;
@@ -199,8 +217,19 @@ function picksOf(held: unknown): Record<string, string> {
 }
 
 /**
+ * The task a request names: none when the field is absent, and a reference with no id, which the
+ * seed refuses as unknown, when the field is present and is no reference, so a malformed task is
+ * never started as a plain prompt.
+ */
+function taskOf(held: unknown): TaskRef | undefined {
+    if (held === undefined || held === null) return undefined;
+    return taskRefOf(held) ?? { id: '' };
+}
+
+/**
  * The start a request body asks for. A field of the wrong type is read as missing, an agent that
- * is neither `claude` nor `codex` is a shell, and a list of images keeps the items that are text.
+ * is neither `claude` nor `codex` is a shell, a list of images keeps the items that are text, and
+ * `confirm` is true only when it is the boolean true.
  */
 const composeRequestShape = z.object({
     agent: z.enum(['claude', 'codex', 'shell']).catch('shell'),
@@ -208,6 +237,12 @@ const composeRequestShape = z.object({
     account: z.string().catch(''),
     picks: z.unknown().optional().transform(picksOf),
     prompt: z.string().catch(''),
+    task: z.unknown().optional().transform(taskOf),
+    seed: z.string().catch(''),
+    confirm: z
+        .unknown()
+        .optional()
+        .transform((held) => held === true),
     images: z
         .array(z.unknown())
         .transform((all) => all.filter((one): one is string => typeof one === 'string'))

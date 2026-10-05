@@ -27,15 +27,27 @@ export type TerminalAnswer = {
     id: string;
     /** What went wrong in the catalog's words, or the empty string. */
     error: string;
+    /** The word the server refused with, when it refused with one. */
+    refused?: string;
     /** The terminal a start answered, when it did. */
     terminal?: Terminal;
     /** The lines of the chain a project command run asked to have approved before it starts. */
     approve?: ChainLine[];
+    /** The seed, folder and agent a composer start with a task asked to have approved first. */
+    seedApproval?: SeedApproval;
+    /** The seed, folder and terminal name the server built for a task. */
+    seeded?: SeededTask;
     /** All the text of the pane a capture read. */
     output?: string;
     /** The process a Restart asked to have confirmed before it stops it. */
     confirm?: string;
 };
+
+/** What a start with a task asks the reader to approve: the seed, the folder and the agent. */
+export type SeedApproval = { seed: string; cwd: string; agent: string };
+
+/** What the server built for a task: the seed to show, the folder to start in, the name. */
+type SeededTask = { seed: string; cwd: string; name: string };
 
 /** A terminal running a program other than its shell, and the program; empty when unread. */
 export type BusyTerminal = { id: string; name: string; command: string };
@@ -49,13 +61,22 @@ const startedShape = unchangedAs<Terminal>(z.looseObject({ id: z.string() }));
 /** One line of a chain to approve: its folder, relative to the repository, and the line. */
 const chainLineShape = z.object({ folder: z.string(), run: z.string() });
 
+/** The approval a composer start with a task asks for, as the server answers it under `approve`. */
+const seedApprovalShape = z.object({ seed: z.string(), cwd: z.string(), agent: z.string() });
+
 /** What an action answers: the terminal a start made, its id, and a refusal's word and names. */
 const actionAnswerShape = z.object({
     id: optionalTextShape,
     terminal: startedShape.optional().catch(undefined),
     error: optionalTextShape,
     names: z.array(z.string()).optional().catch(undefined),
-    approve: z.array(chainLineShape).optional().catch(undefined),
+    approve: z
+        .union([z.array(chainLineShape), seedApprovalShape])
+        .optional()
+        .catch(undefined),
+    seed: z.string().optional().catch(undefined),
+    cwd: z.string().optional().catch(undefined),
+    name: z.string().optional().catch(undefined),
     output: z.string().optional().catch(undefined),
     confirm: z.string().optional().catch(undefined)
 });
@@ -119,19 +140,27 @@ export async function postTerminal(body: unknown, token: string): Promise<Termin
             return {
                 ok: false,
                 id: '',
-                error: refusedAnswer(response.status, answer?.error, answer?.names)
+                error: refusedAnswer(response.status, answer?.error, answer?.names),
+                ...(answer?.error === undefined ? {} : { refused: answer.error })
             };
         }
         const starting = action === 'start';
         if (starting && (answer?.terminal?.id ?? '') === '') {
             return { ok: false, id: '', error: unreadableAnswer(response.status) };
         }
+        const approve = answer?.approve;
+        const seeded =
+            answer?.seed === undefined || answer.cwd === undefined || answer.name === undefined
+                ? undefined
+                : { seed: answer.seed, cwd: answer.cwd, name: answer.name };
         return {
             ok: true,
             id: answer?.terminal?.id ?? answer?.id ?? '',
             error: '',
             terminal: answer?.terminal,
-            ...(answer?.approve === undefined ? {} : { approve: answer.approve }),
+            ...(approve === undefined || !Array.isArray(approve) ? {} : { approve }),
+            ...(approve === undefined || Array.isArray(approve) ? {} : { seedApproval: approve }),
+            ...(seeded === undefined ? {} : { seeded }),
             ...(answer?.confirm === undefined ? {} : { confirm: answer.confirm }),
             ...(answer?.output === undefined ? {} : { output: answer.output })
         };

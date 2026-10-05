@@ -113,6 +113,11 @@ export type TickerItem = {
     /** The status the entry of an `entry` target carries now, so the view can drop that button. */
     status?: string;
     /**
+     * The `do` text of a subtask line, which its label joins to the parent's name. A reference to
+     * the line carries it, so a list whose items shifted names no task.
+     */
+    subtaskDo?: string;
+    /**
      * The conference a paper's deadline is aimed at, folded into the paper's own line so the call
      * is not listed twice. It is a name, and the view joins it to the label with the arrow glyph;
      * building that sentence here would put words in a module that holds none.
@@ -530,6 +535,7 @@ function subtaskLines(
         const days = daysUntil(row.deadline ?? '', now);
         const line = item(kind, GLYPHS.subtask, `${parent}: ${row.do}`, days, {
             ...over,
+            subtaskDo: row.do,
             target: { ...target, subtask: row.key }
         });
         out.push(snoozed(row.snooze, now) ? { ...line, snoozed: true } : line);

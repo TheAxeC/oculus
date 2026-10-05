@@ -16,7 +16,11 @@
 // once in the tab's folder and shows it, `newTerminalIn` does the same in a Terminal tab of one
 // pane, and `splitTerminal` starts one of the split terminal's kind and folder right of it in the
 // tab's row; `composeIn` puts the composer of a start with a prompt in the page's Terminal tab, in
-// the tab's folder. A start the server refuses is said on the tab (`refusal`) and changes nothing.
+// the tab's folder; `composeAt` does the same for a folder and an agent a worktree names, or for a
+// hub task, whose seed it asks the server for (state/sessions/terminal/composer/opening.svelte.ts
+// holds the three composers and the held seeds); `approveSeed` posts the approval a task's seed
+// asked for, and `startingIn` says that a tab's start is in flight. A start the server refuses is
+// said on the tab (`refusal`) and changes nothing.
 // The store keeps what each start answered until the payload lists it, so a terminal started a
 // moment ago can be split. A terminal that ends leaves the `sessions` payload's list, and the store
 // takes it out of every tab that owned it, closes a tab left owning none, on any page, unless the
@@ -36,6 +40,7 @@ import { t } from '../shared/words/text.ts';
 import type {
     ComposeStart,
     SessionRecord,
+    TaskRef,
     Terminal,
     TerminalKind,
     TerminalResume
@@ -44,7 +49,6 @@ import { tabMarkOf } from './terminal/terminal-marks.ts';
 import { targetFields, type LatexTarget } from './terminal/latex-target.ts';
 import {
     TERMINAL_VIEW,
-    composingIn,
     emptyTab,
     isTerminalId,
     ownerOf,
@@ -56,7 +60,11 @@ import {
     withTerminal,
     type TerminalTabState
 } from './terminal/terminal-tabs.ts';
-import { freshComposer, splitState } from './terminal/composer.ts';
+import {
+    createComposerOpening,
+    type ComposeAt,
+    type HeldTask
+} from './terminal/composer/opening.svelte.ts';
 import {
     closeEnded,
     endedTerminals,
@@ -76,10 +84,11 @@ import {
     postTerminal,
     readBusy,
     type BusyTerminal,
+    type SeedApproval,
     type TerminalAnswer
 } from './terminal/pty/pty-io.ts';
 
-export type { BusyTerminal, TerminalAnswer };
+export type { BusyTerminal, SeedApproval, TerminalAnswer };
 
 export { endedTerminals, terminalLabel, unownedTerminals } from './terminal/terminal-lists.ts';
 export type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
@@ -91,7 +100,7 @@ export { RESIZE_WAIT } from './terminal/pty/pty-subscribe.ts';
 // The three model types a view needs of a terminal. The boundary table lets `state/` import
 // `data/model` and lets a view import `state/`, so they reach a view from here, the way
 // state/client/selectors.svelte.ts re-exports the ones the session views read.
-export type { Terminal, TerminalKind, TerminalResume } from '../../data/model/index.ts';
+export type { TaskRef, Terminal, TerminalKind, TerminalResume } from '../../data/model/index.ts';
 
 /** The four update skills accepted by the server's task action. */
 export type TaskKind = 'litwatch' | 'scout' | 'linkedin' | 'inbox';
@@ -186,10 +195,35 @@ export type TerminalsStore = {
     /** New in one Terminal tab, the bar's New: the composer there, as `composeIn` shows it. */
     composeInTab: (tab: string, agent?: TerminalKind) => void;
     /**
+     * Open the composer at a folder (a worktree start) or on a hub task, in the Terminal tab of
+     * the page on screen or a new one, with the agent's lists at the catalog's defaults. A task
+     * first asks the server for its seed; a refusal is answered as its sentence and opens
+     * nothing, and the empty string is a composer opened.
+     */
+    composeAt: (at: ComposeAt) => Promise<string>;
+    /** The seed the composer of a tab shows for its task, or null when it has none. */
+    taskOf: (tab: string) => HeldTask | null;
+    /**
+     * Ask the server for the seed of a tab's task when the tab holds none, or again with `fresh`.
+     * A refusal drops the task from the tab and is answered as its sentence.
+     */
+    loadTask: (tab: string, fresh?: boolean) => Promise<string>;
+    /** Take the task off a tab's composer. */
+    dropTask: (tab: string) => void;
+    /** Approve the seed, folder and agent a composer start with a task asked about. */
+    approveSeed: (
+        task: TaskRef,
+        seed: string,
+        cwd: string,
+        agent: string
+    ) => Promise<TerminalAnswer>;
+    /**
      * Start a terminal of a kind at once in a Terminal tab's folder (the shown terminal's, else the
      * first one's, else the hub root, waited for while it is not known yet) and show it there.
      */
     startInTab: (tab: string, kind: TerminalKind) => Promise<TerminalAnswer>;
+    /** The kind a tab's New Terminal is starting now, or null when it is starting none. */
+    startingIn: (tab: string) => TerminalKind | null;
     /**
      * New Terminal from a pane: the start goes into the active Terminal tab of the pane at `path`
      * of the page, or into a new Terminal tab opened in that pane.
@@ -248,6 +282,9 @@ export function createTerminals(
     const started = new Map<string, Terminal>();
     /** Where each terminal's viewport sat when its grid went, for the grid drawn next. */
     const viewports = createViewports();
+
+    /** The kind each tab's New Terminal is starting while its start is in flight, by tab id. */
+    const starting: { kinds: Record<string, TerminalKind> } = $state({ kinds: {} });
 
     /** What a tab's last refused action said, by tab id. */
     const refused: { words: Record<string, string> } = $state({ words: {} });
@@ -367,56 +404,6 @@ export function createTerminals(
         workbench.activate(target.id, target.page);
     }
 
-    /**
-     * New with a prompt (the `n` key, the Sessions view's New): the composer in the Terminal tab of
-     * a page, which keeps the terminals it owns, or in a new Terminal tab there; the tab is
-     * activated. The page is the one on screen unless named. The composer starts in the tab's
-     * folder.
-     */
-    function composeIn(page?: string): void {
-        if (workbench === undefined) return;
-        const on = page ?? workbench.currentPage();
-        const target = pageTab(terminalTabs(), on);
-        if (target === null) {
-            workbench.open(on, emptyTab(crypto.randomUUID()));
-            return;
-        }
-        showComposer(target);
-        workbench.activate(target.id, on);
-    }
-
-    /**
-     * The composer in the Terminal tab of this id, of the given kind (the shown terminal's for the
-     * dropdown's With a Prompt); an id no page holds shows nothing.
-     */
-    function composeInTab(id: string, agent?: TerminalKind): void {
-        const target = terminalTabs().find((tab) => tab.id === id);
-        if (target !== undefined) showComposer(target, agent);
-    }
-
-    /**
-     * The composer shown in a tab, which keeps the terminals it owns. It starts in the tab's folder
-     * and in the kind given, Claude when none is, with the accounts and picks the tab held.
-     */
-    function showComposer(target: TerminalTab, agent: TerminalKind = 'claude'): void {
-        if (workbench === undefined) return;
-        const held = readTab(target.state);
-        const folder = tabFolder(held, (one) => terminalRecord(one)?.cwd ?? null);
-        const now = workbench.instanceState(target.id);
-        workbench.setInstanceState(
-            target.id,
-            folder === null ? freshComposerOf(now, agent) : splitState(folder, agent, now)
-        );
-        workbench.restate(target.id, target.page, composingIn(held));
-    }
-
-    /** A new composer's state in the kind given, with the accounts and picks the tab held. */
-    function freshComposerOf(held: unknown, agent: TerminalKind): Record<string, unknown> {
-        const fresh = freshComposer(held);
-        const record = fresh.composer as Record<string, unknown>;
-        return { ...fresh, composer: { ...record, agent } };
-    }
-
     /** A terminal's record: the payload's, else what its start answered. */
     function terminalRecord(id: string | null): Terminal | null {
         return terminalById(id) ?? (id === null ? null : (started.get(id) ?? null));
@@ -435,6 +422,24 @@ export function createTerminals(
 
     function post(body: unknown): Promise<TerminalAnswer> {
         return postTerminal(body, writes.writeToken());
+    }
+
+    const opening = createComposerOpening({
+        workbench,
+        terminalTabs,
+        pageTab,
+        folderOf: (tab) => tabFolder(readTab(tab.state), (one) => terminalRecord(one)?.cwd ?? null),
+        seedTask: (task) => post({ action: 'seed', task })
+    });
+
+    /** Approve the seed, folder and agent a composer start with a task asked about. */
+    function approveSeed(
+        task: TaskRef,
+        seed: string,
+        cwd: string,
+        agent: string
+    ): Promise<TerminalAnswer> {
+        return post({ action: 'approve-seed', task, seed, cwd, agent });
     }
 
     /**
@@ -657,19 +662,37 @@ export function createTerminals(
         return answer;
     }
 
-    /** New Terminal in a tab: a terminal of a kind at once, in the tab's folder, shown. */
+    /**
+     * New Terminal in a tab: a terminal of a kind at once, in the tab's folder, shown. The tab is
+     * marked as starting that kind from the call until it answers, whichever way it answers, so a
+     * tab with no row says that a shell is starting rather than drawing the composer meanwhile.
+     */
     async function startInTab(tab: string, kind: TerminalKind): Promise<TerminalAnswer> {
-        const target = tabById(tab);
-        if (target === null) return { ok: false, id: '', error: '' };
-        const known = tabFolder(readTab(target.state), (one) => terminalRecord(one)?.cwd ?? null);
-        const folder = known ?? (await hubReady());
-        if (folder === '') {
-            say(tab, t('sessions.terminal_no_folder'));
-            return { ok: false, id: '', error: '' };
+        starting.kinds[tab] = kind;
+        try {
+            const target = tabById(tab);
+            if (target === null) return { ok: false, id: '', error: '' };
+            const known = tabFolder(
+                readTab(target.state),
+                (one) => terminalRecord(one)?.cwd ?? null
+            );
+            const folder = known ?? (await hubReady());
+            if (folder === '') {
+                say(tab, t('sessions.terminal_no_folder'));
+                return { ok: false, id: '', error: '' };
+            }
+            return await startFor(tab, kind, folder, (held, id) =>
+                withTerminal(held, id, held.terminals.length)
+            );
+        } finally {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- the record is keyed by tab id, and a Map would not be reactive through $state
+            delete starting.kinds[tab];
         }
-        return startFor(tab, kind, folder, (held, id) =>
-            withTerminal(held, id, held.terminals.length)
-        );
+    }
+
+    /** The kind a tab's New Terminal is starting, or null when the tab is not starting one. */
+    function startingIn(tab: string): TerminalKind | null {
+        return starting.kinds[tab] ?? null;
     }
 
     /**
@@ -796,9 +819,10 @@ export function createTerminals(
         moveTerminal,
         attachable,
         attachTerminal,
-        composeIn,
-        composeInTab,
+        ...opening,
+        approveSeed,
         startInTab,
+        startingIn,
         newTerminalIn,
         splitTerminal,
         refusal,

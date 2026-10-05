@@ -7,6 +7,11 @@
 // actions that can lose work or move a branch (CONFIRMED below), a `confirm: true` the page sets
 // only from the confirm dialog.
 //
+// A write is registered with server/core/git/running.ts under its root while it runs, and the
+// action `cancel` (behind the token, with no confirm) aborts the write in flight on the root it
+// names. A write that ended without a reason of git's own is worded from the `server.git` group of
+// the catalog (`failureText`).
+//
 // The roots a write may name come from the last published `git` payload, which is every root the
 // file browser serves and every workspace a session names, plus the hub itself;
 // server/git/git-write.ts checks the same thing again for itself, since a refusal that lives only
@@ -22,6 +27,9 @@ import { z } from 'zod';
 import { textCatalog } from '../../data/sources/config.ts';
 import { byKey, isMap } from '../../data/helpers/guards.ts';
 import { tokenedBody } from '../core/auth.ts';
+import type { CommandFailure, Unfinished } from '../core/git/parse.ts';
+import { createRunningGit, type RunningGit } from '../core/git/running.ts';
+import { words } from '../core/words.ts';
 import { chained, type FsWrites } from '../core/json.ts';
 import type { Guard } from '../files/fs/ops.ts';
 import {
@@ -31,7 +39,6 @@ import {
     createWorktree,
     discard,
     failed,
-    merge,
     push,
     removeWorktree,
     stage,
@@ -50,6 +57,7 @@ import {
     continueRebase,
     discardAll,
     markResolved,
+    merge,
     resolveMerge,
     stageAll,
     trashUntracked,
@@ -109,7 +117,8 @@ export const ACTIONS = [
     'checkoutDetached',
     'deleteBranch',
     'deleteBranchAnyway',
-    'suggest'
+    'suggest',
+    'cancel'
 ] as const;
 
 /**
@@ -163,12 +172,16 @@ const CONFIRMED = [
     'deleteBranchAnyway'
 ];
 
-/** One action, its root and whatever fields it takes. */
+/**
+ * One action, its root and whatever fields it takes. The last argument is the signal Cancel aborts
+ * to end the run.
+ */
 export type GitRun = (
     action: string,
     root: string,
     fields: Record<string, unknown>,
-    roots: string[]
+    roots: string[],
+    signal?: AbortSignal
 ) => Promise<Outcome>;
 
 export type GitOptions = {
@@ -193,6 +206,10 @@ export type GitOptions = {
     guard?: () => Guard;
     /** The chain the Files view's writes wait on, so a discard and a Files write are ordered. */
     writes?: FsWrites;
+    /**
+     * The writes in flight, so Cancel ends the one a root is running; one of its own when absent.
+     */
+    running?: RunningGit;
 } & ReadOptions;
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -266,12 +283,16 @@ async function suggestFor(
     );
 }
 
-/** One real operation: the root, the parsed body and the roots a request may name. */
+/**
+ * One real operation: the root, the parsed body, the roots a request may name and the signal that
+ * ends the run when Cancel aborts it.
+ */
 type GitOperation = (
     root: string,
     fields: GitBody,
     roots: string[],
-    options: GitOptions
+    options: GitOptions,
+    signal: AbortSignal
 ) => Promise<Outcome>;
 
 /** Run a write that changes files the Files view also writes behind that view's write chain. */
@@ -290,19 +311,23 @@ export const OPERATIONS: Record<string, GitOperation> = {
     stageAll: (root, fields, roots) => stageAll(root, fields.group, roots),
     unstageAll: (root, _fields, roots) => unstageAll(root, roots),
     discardAll: (root, _fields, roots) => discardAll(root, roots),
-    commit: (root, fields, roots) => commit(root, fields.message, roots, fields.amend),
-    push: (root, _fields, roots) => push(root, roots),
-    pull: (root, _fields, roots) => pull(root, roots),
+    commit: (root, fields, roots, _options, signal) =>
+        commit(root, fields.message, roots, fields.amend, signal),
+    push: (root, _fields, roots, _options, signal) => push(root, roots, signal),
+    pull: (root, _fields, roots, _options, signal) => pull(root, roots, signal),
     fetch: (root, _fields, roots) => fetchAll(root, roots),
-    sync: (root, _fields, roots) => sync(root, roots),
-    publish: (root, fields, roots) => publish(root, fields.remote, roots),
-    createBranch: (root, fields, roots) => createBranch(root, fields.name, roots, fields.start),
-    switchBranch: (root, fields, roots) => switchBranch(root, fields.name, roots),
-    createWorktree: (root, fields, roots) => createWorktree(root, fields.name, roots),
+    sync: (root, _fields, roots, _options, signal) => sync(root, roots, signal),
+    publish: (root, fields, roots, _options, signal) => publish(root, fields.remote, roots, signal),
+    createBranch: (root, fields, roots, _options, signal) =>
+        createBranch(root, fields.name, roots, fields.start, signal),
+    switchBranch: (root, fields, roots, _options, signal) =>
+        switchBranch(root, fields.name, roots, signal),
+    createWorktree: (root, fields, roots, _options, signal) =>
+        createWorktree(root, fields.name, roots, signal),
     removeWorktree: (root, fields, roots) => removeWorktree(root, fields.path, roots),
-    merge: (root, fields, roots) => merge(root, fields.branch, roots),
+    merge: (root, fields, roots, _options, signal) => merge(root, fields.branch, roots, signal),
     abortMerge: (root, _fields, roots) => abortMerge(root, roots),
-    continueRebase: (root, _fields, roots) => continueRebase(root, roots),
+    continueRebase: (root, _fields, roots, _options, signal) => continueRebase(root, roots, signal),
     resolve: (root, fields, roots) => resolveMerge(root, fields.path, fields.content, roots),
     markResolved: (root, fields, roots) => markResolved(root, fields.path, roots),
     acceptDeletion: (root, fields, roots) => acceptDeletion(root, fields.path, roots),
@@ -313,9 +338,11 @@ export const OPERATIONS: Record<string, GitOperation> = {
     createTag: (root, fields, roots) =>
         createTag(root, fields.name, fields.message, roots, fields.start),
     deleteTag: (root, fields, roots) => deleteTag(root, fields.name, roots),
-    pushTags: (root, _fields, roots) => pushTags(root, roots),
-    cherryPick: (root, fields, roots) => cherryPick(root, fields.ref, roots),
-    checkoutDetached: (root, fields, roots) => switchDetached(root, fields.ref, roots),
+    pushTags: (root, _fields, roots, _options, signal) => pushTags(root, roots, signal),
+    cherryPick: (root, fields, roots, _options, signal) =>
+        cherryPick(root, fields.ref, roots, signal),
+    checkoutDetached: (root, fields, roots, _options, signal) =>
+        switchDetached(root, fields.ref, roots, signal),
     deleteBranch: (root, fields, roots) => deleteBranch(root, fields.name, roots),
     deleteBranchAnyway: (root, fields, roots) => deleteBranchAnyway(root, fields.name, roots),
     ignore: (root, fields, roots, options) =>
@@ -334,13 +361,52 @@ async function operate(
     root: string,
     fields: GitBody,
     roots: string[],
-    options: GitOptions
+    options: GitOptions,
+    signal: AbortSignal
 ): Promise<Outcome> {
     const operation = byKey(OPERATIONS, fields.action);
     if (operation === undefined) {
         return { ok: false, output: '', error: `no git action named ${fields.action}` };
     }
-    return operation(root, fields, roots, options);
+    return operation(root, fields, roots, options, signal);
+}
+
+/** The catalog's word for an operation a command can leave unfinished. */
+function leftWord(left: Unfinished, catalog: ReturnType<typeof textCatalog>): string {
+    if (left === 'merge') return words(catalog, 'server.git.kind_merge');
+    if (left === 'rebase') return words(catalog, 'server.git.kind_rebase');
+    return words(catalog, 'server.git.kind_cherry_pick');
+}
+
+/**
+ * The sentence of a command that ended with no reason of git's own, from the catalog: the program's
+ * word first, then the detail (the limit in seconds, the limit in MB, the signal, the status), and
+ * after it the operation the run left unfinished, when there is one.
+ */
+export function failureText(failure: CommandFailure, config: Record<string, unknown>): string {
+    const catalog = textCatalog(config);
+    const said = sentenceOf(failure, catalog);
+    if (failure.left === undefined) return said;
+    return words(catalog, 'server.git.left_in_progress', said, leftWord(failure.left, catalog));
+}
+
+/** The catalog's sentence for a failure's code, without what it left unfinished. */
+function sentenceOf(failure: CommandFailure, catalog: Record<string, string>): string {
+    const program =
+        failure.program === 'gh'
+            ? words(catalog, 'server.git.program_gh')
+            : words(catalog, 'server.git.program_git');
+    if (failure.code === 'cancelled') return words(catalog, 'server.git.cancelled', program);
+    if (failure.code === 'timed-out') {
+        return words(catalog, 'server.git.timed_out', program, failure.detail);
+    }
+    if (failure.code === 'too-much-output') {
+        return words(catalog, 'server.git.too_much_output', program, failure.detail);
+    }
+    if (failure.code === 'signal') {
+        return words(catalog, 'server.git.signal', program, failure.detail);
+    }
+    return words(catalog, 'server.git.exit_status', program, failure.detail);
 }
 
 /**
@@ -360,6 +426,7 @@ export async function handleGit(
     if (!parsed.success) return notAnAction();
     const { action, root } = parsed.data;
     const roots = (options.rootsFor ?? allowedRoots)();
+    const running = options.running ?? createRunningGit();
     if (!permitted(root, roots)) {
         return json(
             { error: 'that directory is not a workspace oculus knows' },
@@ -378,10 +445,22 @@ export async function handleGit(
         return json({ ok: true, output: answer.output }, { headers: NO_STORE });
     }
 
-    const outcome = await (
-        options.run ??
-        ((_action, selected, _body, allowed) => operate(selected, parsed.data, allowed, options))
-    )(action, root, body, roots);
+    if (action === 'cancel') {
+        running.cancel(root);
+        return json({ ok: true, output: '' }, { headers: NO_STORE });
+    }
+
+    const signal = running.begin(root);
+    let outcome: Outcome;
+    try {
+        outcome = await (
+            options.run ??
+            ((_action, selected, _body, allowed, held) =>
+                operate(selected, parsed.data, allowed, options, held ?? signal))
+        )(action, root, body, roots, signal);
+    } finally {
+        running.end(root, signal);
+    }
     // The watcher would find this at its next event, up to two seconds later and only if the write
     // touched a path it watches; re-reading here is what makes the panel answer the click. A write
     // git refused may still have moved the repository (a merge that stopped on conflicts leaves
@@ -389,7 +468,11 @@ export async function handleGit(
     options.refresh?.(root);
     if (!outcome.ok) {
         const refusal = outcome.code === undefined ? {} : { code: outcome.code };
-        return json({ error: outcome.error, ...refusal }, { status: 400, headers: NO_STORE });
+        const error =
+            outcome.failure === undefined
+                ? outcome.error
+                : failureText(outcome.failure, options.config);
+        return json({ error, ...refusal }, { status: 400, headers: NO_STORE });
     }
     return json({ ok: true, output: outcome.output }, { headers: NO_STORE });
 }

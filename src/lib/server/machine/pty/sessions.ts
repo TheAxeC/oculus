@@ -6,12 +6,13 @@
 // name.
 //
 // Nothing the page sends is read by a shell on its way to tmux. A cwd is checked to be an absolute
-// existing directory, the geometry a small positive integer, and the id the shape start() gives
-// it. A composer's start is an argument vector of at least two words, which tmux runs directly,
-// with the prompt as one word of it and the account as one `-e NAME=folder` pair, or, for the
-// default account, `env -u NAME` leading the argument vector. What the page types into a running
-// terminal and the text of a steer go out as their bytes, through `send-keys -H` in pieces
-// (inputArgs), a steer then Enter, and an interrupt is the one Escape key.
+// existing directory, the geometry a small positive integer, and the id the shape start() gives it.
+// A composer's start is an argument vector of at least two words, which tmux runs directly, with
+// the prompt as one word of it and the account as one `-e NAME=folder` pair, or, for the default
+// account, `env -u NAME` leading the argument vector; every start also carries `GRID_ENV` as a `-e`
+// pair. What the page types into a running terminal and the text of a steer go out as their bytes,
+// through `send-keys -H` in pieces (inputArgs), a steer then Enter, and an interrupt is the one
+// Escape key.
 
 import { randomBytes } from 'node:crypto';
 import { statSync } from 'node:fs';
@@ -190,6 +191,14 @@ export type StartOptions = RunOptions & {
 
 /** The environment names a start may set: the two agents' account folders. */
 export const ENV_NAMES = ['CLAUDE_CONFIG_DIR', 'CODEX_HOME'];
+
+/**
+ * The variable every terminal oculus starts carries: Claude Code draws in the classic renderer when
+ * it is set, which scrolls in the terminal's normal buffer, where the fullscreen renderer draws in
+ * the alternate screen that keeps no scrollback in the grid or in tmux. A Claude that is running
+ * keeps the renderer it started with.
+ */
+const GRID_ENV = 'CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1';
 
 /** The prefix of the environment names a task's placeholder values are set under. */
 export const TASK_ENV_PREFIX = 'OCULUS_ARG_';
@@ -504,11 +513,13 @@ function vector(command: string[]): string[] {
 
 /**
  * What a start joins to its `new-session`: a task's mark and the environment of its placeholders,
- * and the user options of the session (its name, the session it resumes) as name and value.
+ * the fixed `NAME=value` pairs the process starts with, and the user options of the session (its
+ * name, the session it resumes) as name and value.
  */
 type Joined = {
     task?: TerminalJob;
     taskEnv?: Record<string, string>;
+    fixedEnv?: string[];
     options?: [string, string][];
 };
 
@@ -518,7 +529,9 @@ type Joined = {
  * of more words directly, so a vector of one word gets `env` in front: `env` runs the word as the
  * program it names, and no shell reads it. The commands that set the session up follow, joined by
  * tmux's `;`, so they run in the invocation that creates the session: a session whose command ends
- * at once is still set up, which a later call would find gone.
+ * at once is set up too, which a later call would find gone. The environment of the process is the
+ * account folder pairs of the request, then the fixed pairs of `joined`, then a task's placeholder
+ * values, each as a `-e` pair ahead of the `--`.
  */
 export function startArgs(
     id: string,
@@ -526,7 +539,7 @@ export function startArgs(
     command: string | string[],
     joined: Joined = {}
 ): string[] {
-    const { task, taskEnv, options = [] } = joined;
+    const { task, taskEnv, fixedEnv = [], options = [] } = joined;
     const session = sessionName(id);
     return [
         'new-session',
@@ -540,6 +553,7 @@ export function startArgs(
         '-y',
         String(request.rows),
         ...envArgs(request.env),
+        ...fixedEnv.flatMap((pair) => ['-e', pair]),
         ...(task === undefined ? [] : taskEnvArgs(taskEnv)),
         '--',
         ...(typeof command === 'string' ? [command] : vector(command)),
@@ -578,7 +592,12 @@ function taskArgs(session: string, task: TerminalJob): string[] {
     ];
 }
 
-/** Start a terminal and answer with the record the list then reports for it. */
+/**
+ * Start a terminal and answer with the record the list then reports for it. Every terminal it
+ * starts carries the account folder of the request, `CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1` (so a
+ * Claude the terminal runs, or a shell runs later, draws in a grid that keeps its scrollback), and
+ * a task's placeholder values.
+ */
 export async function startTerminal(
     request: StartRequest,
     options: StartOptions = {}
@@ -614,6 +633,7 @@ export async function startTerminal(
         startArgs(id, { kind, cwd, cols, rows, env: request.env }, command, {
             task: options.task,
             taskEnv: options.taskEnv,
+            fixedEnv: [GRID_ENV],
             options: labels
         }),
         options

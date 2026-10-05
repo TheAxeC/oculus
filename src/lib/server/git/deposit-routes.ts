@@ -8,6 +8,10 @@
 // switchBranch), a `confirm: true` the page sets only from the confirm dialog. DESIGN.md's decision
 // on git writes and the deposit is that shape: every write behind the token and a confirm.
 //
+// The action `cancel` (behind the token, with no confirm) aborts the write in flight on the
+// project it names, through the registry of server/core/git/running.ts, and the write answers in
+// the words of `failureText` of git-routes.ts.
+//
 // The ids a deposit may name are the hub's own project manifests and the projects the last
 // published `portfolio` payload holds; anything else is a 404, before any command is run.
 //
@@ -17,7 +21,8 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { tokenedBody } from '../core/auth.ts';
-import { unconfirmed } from './git-routes.ts';
+import { createRunningGit, type RunningGit } from '../core/git/running.ts';
+import { failureText, unconfirmed } from './git-routes.ts';
 import { byKey, isMap } from '../../data/helpers/guards.ts';
 import {
     adopt,
@@ -45,7 +50,8 @@ export const ACTIONS = [
     'snapshot',
     'branches',
     'createBranch',
-    'switchBranch'
+    'switchBranch',
+    'cancel'
 ] as const;
 
 /** The actions that write outside this machine or over `code/`, and therefore need the confirm. */
@@ -60,7 +66,8 @@ export type DepositAnswer = Outcome & { plan?: Plan | null; branches?: Branch[] 
 export type DepositRun = (
     action: string,
     id: string,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    signal?: AbortSignal
 ) => Promise<DepositAnswer>;
 
 export type DepositOptions = {
@@ -74,6 +81,8 @@ export type DepositOptions = {
      * What the real operations run with: the context's plan memory, the mirrors folder, the hub.
      */
     deposit?: ServerDepositOptions;
+    /** The writes in flight, so Cancel ends the one a deposit runs; one of its own when absent. */
+    running?: RunningGit;
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -113,7 +122,7 @@ const OPERATIONS: Record<
 };
 
 function operate(with_: ServerDepositOptions, parsed: DepositBody): DepositRun {
-    return (action, id) => {
+    return (action, id, _fields, signal) => {
         const operation = byKey(OPERATIONS, action);
         if (operation === undefined) {
             return Promise.resolve({
@@ -122,7 +131,7 @@ function operate(with_: ServerDepositOptions, parsed: DepositBody): DepositRun {
                 error: `no deposit action named ${action}`
             });
         }
-        return operation(id, parsed, with_);
+        return operation(id, parsed, signal === undefined ? with_ : { ...with_, signal });
     };
 }
 
@@ -195,16 +204,32 @@ export async function handleDeposit(
     const refused = unconfirmed(CONFIRMED, action, body);
     if (refused !== null) return refused;
 
-    const outcome = await (options.run ?? operate(options.deposit ?? {}, parsed.data))(
-        action,
-        id,
-        body
-    );
-    if (!outcome.ok) {
-        return json(
-            { error: outcome.error, plan: outcome.plan ?? null },
-            { status: 400, headers: NO_STORE }
+    // A deposit is keyed apart from a root, so one registry holds both.
+    const key = `deposit:${id}`;
+    const running = options.running ?? createRunningGit();
+    if (action === 'cancel') {
+        running.cancel(key);
+        return json({ ok: true, output: '', plan: null, branches: [] }, { headers: NO_STORE });
+    }
+    const signal = running.begin(key);
+    let outcome: DepositAnswer;
+    try {
+        outcome = await (options.run ?? operate(options.deposit ?? {}, parsed.data))(
+            action,
+            id,
+            body,
+            signal
         );
+    } finally {
+        running.end(key, signal);
+    }
+    if (!outcome.ok) {
+        const config = options.deposit?.config;
+        const error =
+            outcome.failure === undefined || config === undefined
+                ? outcome.error
+                : failureText(outcome.failure, config);
+        return json({ error, plan: outcome.plan ?? null }, { status: 400, headers: NO_STORE });
     }
     return json(
         {

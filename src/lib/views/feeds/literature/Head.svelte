@@ -8,7 +8,7 @@
 
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import NumberInput from '$lib/ui/forms/NumberInput.svelte';
-    import Segment from '$lib/ui/controls/Segment.svelte';
+    import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

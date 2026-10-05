@@ -31,7 +31,7 @@ import {
     type TerminalTabState
 } from '$lib/state/sessions/terminal/terminal-tabs';
 import { COLOR_NAMES } from '$lib/state/sessions/terminal/terminal-marks';
-import type { ComposerAgent } from '$lib/state/sessions/terminal/composer';
+import type { ComposerAgent } from '$lib/state/sessions/terminal/composer/composer';
 import { stamp } from '$lib/state/shared/words/format';
 import { t } from '$lib/state/shared/words/text';
 import { terminalFontPx } from '$lib/state/shared/words/appearance';

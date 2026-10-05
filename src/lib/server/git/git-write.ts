@@ -30,6 +30,11 @@
 //         pop | drop] [stash@{<n>}]
 //     git -C <root> tag [-a <name> -F <file> [<hash>] | <name> [<hash>] | -d <name>]
 //
+// A command that runs the repository's hooks (commit, merge, cherry-pick, rebase --continue, push,
+// pull, switch and worktree add) has no time limit, as `NO_TIME_LIMIT` of server/core/git/parse.ts
+// says, and takes the signal of the run it belongs to: Cancel (server/core/git/running.ts) aborts
+// it and the write answers `cancelled`. Every other command keeps its limit.
+//
 // A commit is made with `user.useConfigOnly` set through the environment (`GIT_CONFIG_COUNT`,
 // `GIT_CONFIG_KEY_0`, `GIT_CONFIG_VALUE_0`), so a repository with no configured name and email is
 // refused with git's own message instead of committing as a name guessed from the machine; the
@@ -75,11 +80,14 @@ import { isWorktreePath, validName, worktreePath } from '../../data/helpers/work
 import { defaultMirrorsDir } from './deposit-git.ts';
 import {
     NO_CONTEXT,
+    NO_TIME_LIMIT,
     REFS_FORMAT,
+    classifyFailure,
     parseBranches,
-    shortReason,
-    statusRecords
+    statusRecords,
+    type CommandFailure
 } from '../core/git/parse.ts';
+import { endWith } from '../core/git/running.ts';
 import { GIT, pathInside } from '../core/git/run.ts';
 import { permitted, realPath } from '../core/paths.ts';
 
@@ -90,7 +98,7 @@ export const TIMEOUT_MS = 10000;
 /** How many characters of a failed command's reason the page is given. */
 const REASON_WIDTH = 200;
 
-/** A push, a pull or a fetch crosses the network, so it is given a minute, not ten seconds. */
+/** A fetch crosses the network, so it is given a minute, not ten seconds. */
 export const PUSH_TIMEOUT_MS = 60000;
 
 /** How much output one command may produce. A staged diff is the big one. */
@@ -98,9 +106,17 @@ export const MAX_OUTPUT = 8 * 1024 * 1024;
 
 /**
  * What every operation answers. `ok` false always carries a reason in `error`, and a refusal the
- * page acts on carries a `code` that names it.
+ * page acts on carries a `code` that names it. A command that ended with no reason of git's own
+ * (cancelled, out of time, out of room, ended by a signal, an exit status with nothing written)
+ * carries it as `failure`, which the route words from the catalog in place of `error`.
  */
-export type Outcome = { ok: boolean; output: string; error: string; code?: string };
+export type Outcome = {
+    ok: boolean;
+    output: string;
+    error: string;
+    code?: string;
+    failure?: CommandFailure;
+};
 
 /** One row of `git branch --format`, as the branch menu draws it. */
 export type Branch = GitBranch;
@@ -110,16 +126,24 @@ export function failed(error: string): Outcome {
 }
 
 /**
- * What one command may carry beside its arguments: text on its standard input, variables, and the
- * codes of refusals the page acts on, each named by a phrase of git's whole error stream.
+ * What one command may carry beside its arguments: text on its standard input, variables, the
+ * codes of refusals the page acts on, each named by a phrase of git's whole error stream, and the
+ * signal that ends the run when Cancel aborts it.
  */
-type Extra = { input?: string; env?: Record<string, string>; codes?: Record<string, string> };
+type Extra = {
+    input?: string;
+    env?: Record<string, string>;
+    codes?: Record<string, string>;
+    signal?: AbortSignal;
+};
 
 /**
- * One git command, as a list, with a timeout. This is the module's one subprocess call site, and
- * every refusal above it has already run by the time it is reached. A failure says git's own
- * reason, the error stream's first line or, where git wrote its reason to the output stream (a
- * merge that stopped on conflicts), that stream's.
+ * One git command, as a list, with a timeout (`NO_TIME_LIMIT` for none). This is the module's one
+ * subprocess call site, and every refusal above it has run when it is reached. A failure says git's
+ * own reason as `classifyFailure` (server/core/git/parse.ts) reads it: the last `fatal: ` line of
+ * the error stream, else its first line, and where that stream is empty the last non-empty line of
+ * the output stream (a merge that stopped on conflicts, a commit with nothing to commit); a command
+ * that gave none is answered with its code.
  */
 function run(root: string, args: string[], timeout: number, extra: Extra = {}): Promise<Outcome> {
     const argv = ['-C', root, ...args];
@@ -137,24 +161,31 @@ function run(root: string, args: string[], timeout: number, extra: Extra = {}): 
             },
             (error, stdout, stderr) => {
                 if (error !== null) {
-                    const failure = error as NodeJS.ErrnoException;
-                    const reason =
-                        failure.code === 'ETIMEDOUT'
-                            ? 'git timed out'
-                            : short(stderr) ||
-                              short(stdout) ||
-                              short(failure.message) ||
-                              'git failed';
+                    const said = classifyFailure(
+                        ended(error),
+                        stdout,
+                        stderr,
+                        { timeoutMs: timeout, maxBytes: MAX_OUTPUT },
+                        REASON_WIDTH,
+                        'git'
+                    );
+                    if (said.failure !== undefined) {
+                        settle({ ...failed(said.reason), failure: said.failure });
+                        return;
+                    }
                     const whole = typeof stderr === 'string' ? stderr : '';
                     const code = Object.entries(extra.codes ?? {}).find(([phrase]) =>
                         whole.includes(phrase)
                     )?.[1];
-                    settle(code === undefined ? failed(reason) : { ...failed(reason), code });
+                    settle(
+                        code === undefined ? failed(said.reason) : { ...failed(said.reason), code }
+                    );
                     return;
                 }
                 settle({ ok: true, output: typeof stdout === 'string' ? stdout : '', error: '' });
             }
         );
+        const ended = endWith(child, extra.signal);
         child.stdin?.end(extra.input ?? '');
     });
 }
@@ -244,7 +275,8 @@ export async function commit(
     root: string,
     message: string,
     roots: string[] = allowedRoots(),
-    amend = false
+    amend = false,
+    signal?: AbortSignal
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
     const text = typeof message === 'string' ? message : '';
@@ -256,10 +288,10 @@ export async function commit(
                 'the upstream already holds this commit, so amending it would need a forced push'
             );
         }
-        if (text.trim() === '') return commitWith(root, ['--amend', '--no-edit']);
+        if (text.trim() === '') return commitWith(root, ['--amend', '--no-edit'], signal);
     }
     return withFile('oculus-commit-', text, (file) =>
-        commitWith(root, [...(amend ? ['--amend'] : []), '-F', file])
+        commitWith(root, [...(amend ? ['--amend'] : []), '-F', file], signal)
     );
 }
 
@@ -302,11 +334,15 @@ async function pushedAlready(root: string): Promise<boolean> {
  * reason, before anything is sent: `--set-upstream` decides where a branch lives, and that decision
  * is Axel's at a terminal rather than a side effect of a button. This push never forces.
  */
-export async function push(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
+export async function push(
+    root: string,
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
+): Promise<Outcome> {
     if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
     const up = await upstream(root);
     if (!up.ok) return failed('this branch has no upstream, so there is nowhere to push it');
-    return pushTo(root, []);
+    return pushTo(root, [], signal);
 }
 
 /** Every branch, with its upstream and which one is checked out. A read, and the only one here. */
@@ -336,14 +372,15 @@ export async function createBranch(
     root: string,
     name: string,
     roots: string[] = allowedRoots(),
-    start?: string
+    start?: string,
+    signal?: AbortSignal
 ): Promise<Outcome> {
     const wrong = await checkName(root, name, roots);
     if (wrong !== '') return failed(wrong);
-    if (start === undefined) return switchTo(root, ['-c', name]);
+    if (start === undefined) return switchTo(root, ['-c', name], signal);
     const refusal = checkStart(start);
     if (refusal !== '') return failed(refusal);
-    return switchTo(root, ['-c', name, start]);
+    return switchTo(root, ['-c', name, start], signal);
 }
 
 /**
@@ -353,7 +390,8 @@ export async function createBranch(
 export async function switchBranch(
     root: string,
     name: string,
-    roots: string[] = allowedRoots()
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
 ): Promise<Outcome> {
     const wrong = await checkName(root, name, roots);
     if (wrong !== '') return failed(wrong);
@@ -362,7 +400,7 @@ export async function switchBranch(
     if (state.output.trim() !== '') {
         return failed('the working tree is dirty, so switching would carry the changes across');
     }
-    return switchTo(root, [name]);
+    return switchTo(root, [name], signal);
 }
 
 /**
@@ -372,7 +410,8 @@ export async function switchBranch(
 export async function switchDetached(
     root: string,
     ref: string,
-    roots: string[] = allowedRoots()
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
 ): Promise<Outcome> {
     const wrong = await checkName(root, ref, roots);
     if (wrong !== '') return failed(wrong);
@@ -381,7 +420,7 @@ export async function switchDetached(
     if (state.output.trim() !== '') {
         return failed('the working tree is dirty, so switching would carry the changes across');
     }
-    return switchTo(root, ['--detach', ref]);
+    return switchTo(root, ['--detach', ref], signal);
 }
 
 /** What is staged right now, which is what the suggested message is written from. */
@@ -480,14 +519,15 @@ function worktreeUnder(root: string, path: string): boolean {
 export async function createWorktree(
     root: string,
     name: string,
-    roots: string[] = allowedRoots()
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
 ): Promise<Outcome> {
     const wrong = await checkName(root, name, roots);
     if (wrong !== '') return failed(wrong);
     if (!validName(name)) return failed(`${name} is not a name one worktree folder can carry`);
     const path = worktreePath(root, name);
     if (existsSync(path)) return failed(`there is already something at ${path}`);
-    return worktree(root, ['add', '-b', name, path, 'HEAD']);
+    return worktree(root, ['add', '-b', name, path, 'HEAD'], signal);
 }
 
 /**
@@ -527,67 +567,6 @@ export async function removeWorktree(
     };
 }
 
-/**
- * Merge a branch into the root's checked-out branch, which is git's own default: a fast-forward
- * where it can be one and a merge commit otherwise. A dirty root and the checked-out branch itself
- * are refused before anything runs. A merge that stops on conflicts is left in progress, as VS
- * Code leaves it, and reported by the paths that conflicted: the view draws them under Merge
- * Changes, where each is resolved in the merge editor, and Abort Merge takes the whole merge back.
- */
-export async function merge(
-    root: string,
-    name: string,
-    roots: string[] = allowedRoots()
-): Promise<Outcome> {
-    const wrong = await checkName(root, name, roots);
-    if (wrong !== '') return failed(wrong);
-    const head = await revParse(root, ['--abbrev-ref', 'HEAD']);
-    if (!head.ok) return head;
-    const onto = head.output.trim();
-    if (onto === 'HEAD' || onto === '') {
-        return failed(
-            'this repository has no branch checked out, so there is nothing to merge into'
-        );
-    }
-    if (onto === name) {
-        return failed(`${name} is the branch that is checked out, so there is nothing to merge`);
-    }
-    // A name git accepts as a reference is not a branch: a tag or a commit id would be merged just
-    // as happily, and what this control offers is the branch of a worktree.
-    const listed = await branch(root, [REFS_FORMAT]);
-    if (!listed.ok) return listed;
-    if (!parseBranches(listed.output).some((one) => one.name === name)) {
-        return failed(`${name} is not a branch of this repository`);
-    }
-    const state = await porcelain(root);
-    if (!state.ok) return state;
-    if (tracked(state.output)) {
-        return failed('the repository has changes of its own, so the merge would carry them in');
-    }
-    const done = await mergeIn(root, [name]);
-    if (done.ok) return done;
-    return stoppedOn(root, done, 'the merge');
-}
-
-/**
- * What a write that stopped answers: the paths git left unmerged, when there are any, and git's
- * own reason otherwise. A merge, a pull, a stash applied or popped all leave their conflicts in
- * the index for the merge editor, so the sentence says where they are.
- */
-export async function stoppedOn(root: string, done: Outcome, what: string): Promise<Outcome> {
-    const paths = await unmergedPaths(root);
-    if (paths.length === 0) return done;
-    return failed(
-        `${what} stopped on conflicts in ${paths.join(', ')}; they are under Merge Changes`
-    );
-}
-
-/** The paths the index holds unmerged, which is where a stopped write left its conflicts. */
-export async function unmergedPaths(root: string): Promise<string[]> {
-    const conflicted = await diff(root, ['--name-only', '--diff-filter=U']);
-    return conflicted.ok ? conflicted.output.trim().split('\n').filter(Boolean) : [];
-}
-
 // ---------------------------------------------------------------- the shared call sites
 
 /** The one `restore` call site: staged is the unstage, unstaged is the discard. */
@@ -618,9 +597,12 @@ export function applyPatch(root: string, flags: string[], patch: string): Promis
     return run(root, ['apply', ...flags, '--recount', '-'], TIMEOUT_MS, { input: patch });
 }
 
-/** The one `commit` call site: a message from a file, an amend, and a merge's commit. */
-function commitWith(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['commit', ...args], TIMEOUT_MS, { env: CONFIG_ONLY });
+/**
+ * The one `commit` call site: a message from a file, an amend, and a merge's commit. It runs the
+ * repository's commit hooks, so it has no time limit.
+ */
+function commitWith(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    return run(root, ['commit', ...args], NO_TIME_LIMIT, { env: CONFIG_ONLY, signal });
 }
 
 /**
@@ -633,19 +615,33 @@ const CONFIG_ONLY = {
     GIT_CONFIG_VALUE_0: 'true'
 };
 
-/** The one `cherry-pick` call site: a commit picked onto the checked-out branch, and the abort. */
-export function cherryPickIn(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['cherry-pick', ...args], TIMEOUT_MS);
+/**
+ * The one `cherry-pick` call site: a commit picked onto the checked-out branch, which runs the
+ * repository's hooks and has no time limit, and the abort, which runs none and keeps the limit.
+ */
+export function cherryPickIn(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    return run(root, ['cherry-pick', ...args], limitOf(args), { signal });
 }
 
-/** The one `push` call site: the branch to its upstream, a branch published, and the tags. */
-export function pushTo(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['push', ...args], PUSH_TIMEOUT_MS);
+/** The time limit of a command whose `--abort` form runs no hook: it keeps the local limit. */
+function limitOf(args: string[]): number {
+    return args.includes('--abort') ? TIMEOUT_MS : NO_TIME_LIMIT;
 }
 
-/** The one `pull` call site, with the repository's own configuration and nothing imposed. */
-export function pullIn(root: string): Promise<Outcome> {
-    return run(root, ['pull'], PUSH_TIMEOUT_MS);
+/**
+ * The one `push` call site: the branch to its upstream, a branch published, and the tags. It runs
+ * the pre-push hook, so it has no time limit.
+ */
+export function pushTo(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    return run(root, ['push', ...args], NO_TIME_LIMIT, { signal });
+}
+
+/**
+ * The one `pull` call site, with the repository's own configuration and nothing imposed. A pull
+ * merges and runs the post-merge hook, so it has no time limit.
+ */
+export function pullIn(root: string, signal?: AbortSignal): Promise<Outcome> {
+    return run(root, ['pull'], NO_TIME_LIMIT, { signal });
 }
 
 /** How a fetch nobody pressed is told never to wait for a person. */
@@ -679,11 +675,19 @@ export function remoteNames(root: string): Promise<Outcome> {
 }
 
 /**
- * The one `rebase` call site: the abort, and the continue once every conflict is resolved, whose
- * editor is told to take the message as it stands, since no one is at a terminal to write it.
+ * The one `rebase` call site: the abort, which keeps the local time limit, and the continue once
+ * every conflict is resolved, which runs the hooks and has none. Its editor is told to take the
+ * message as it stands, since no one is at a terminal to write it.
  */
-export function rebaseIn(root: string, step: '--abort' | '--continue'): Promise<Outcome> {
-    return run(root, ['rebase', step], TIMEOUT_MS, { env: { GIT_EDITOR: 'true' } });
+export function rebaseIn(
+    root: string,
+    step: '--abort' | '--continue',
+    signal?: AbortSignal
+): Promise<Outcome> {
+    return run(root, ['rebase', step], limitOf([step]), {
+        env: { GIT_EDITOR: 'true' },
+        signal
+    });
 }
 
 /** The one `stash` call site: every form of it, the push, the apply, the pop and the drop. */
@@ -696,9 +700,12 @@ export function tagIn(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['tag', ...args], TIMEOUT_MS);
 }
 
-/** The one `switch` call site, for both the branch that exists and the one being made. */
-function switchTo(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['switch', ...args], TIMEOUT_MS);
+/**
+ * The one `switch` call site, for both the branch that exists and the one being made. A switch
+ * runs the post-checkout hook, so it has no time limit.
+ */
+function switchTo(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    return run(root, ['switch', ...args], NO_TIME_LIMIT, { signal });
 }
 
 /** The one `status` call site: the dirty check and the untracked list read the same output. */
@@ -733,16 +740,20 @@ export function branch(root: string, args: string[], extra: Extra = {}): Promise
 }
 
 /**
- * The one `worktree` call site: the add and the remove. The list is server/core/git/state.ts's
- * read.
+ * The one `worktree` call site: the add, which runs the post-checkout hook and has no time limit,
+ * and the remove, which keeps the local limit. The list is server/core/git/state.ts's read.
  */
-function worktree(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['worktree', ...args], TIMEOUT_MS);
+function worktree(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    const limit = args[0] === 'add' ? NO_TIME_LIMIT : TIMEOUT_MS;
+    return run(root, ['worktree', ...args], limit, { signal });
 }
 
-/** The one `merge` call site: the merge itself and the abort that takes a conflicted one back. */
-export function mergeIn(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['merge', ...args], TIMEOUT_MS);
+/**
+ * The one `merge` call site: the merge itself, which runs the hooks and has no time limit, and the
+ * abort that takes a conflicted one back, which keeps the local limit.
+ */
+export function mergeIn(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    return run(root, ['merge', ...args], limitOf(args), { signal });
 }
 
 /** Whether a name is a branch name git accepts, judged by git, or the empty string when it is. */
@@ -760,15 +771,6 @@ export function refFormat(root: string, args: string[]): Promise<Outcome> {
 }
 
 // ---------------------------------------------------------------- small stuff
-
-/**
- * Whether the porcelain reports a change of the repository's own content. An untracked file is not
- * one: git carries it across a merge and never overwrites it, so refusing a merge over one would
- * refuse every repository with a build folder in it.
- */
-function tracked(output: string): boolean {
-    return statusRecords(output).some((record) => record.code !== '??');
-}
 
 /** The paths `status --porcelain=v1 -z` reported as untracked. */
 export function untrackedIn(output: string): Set<string> {
@@ -792,9 +794,4 @@ export async function untrackedAmong(
     if (wrong !== '') return failed(wrong);
     const state = await porcelain(root);
     return state.ok ? untrackedIn(state.output) : state;
-}
-
-/** A one-line reason for the page, git's first line of it. */
-function short(value: unknown): string {
-    return shortReason(value, REASON_WIDTH);
 }

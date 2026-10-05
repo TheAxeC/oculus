@@ -24,7 +24,7 @@ function picker(flag: string, fallback: string, values: string[]): string[] {
 }
 
 describe('a refusal in the agents catalog', () => {
-    it('refuses a value that would read as an option, or holds whitespace or a control character', () => {
+    it('refuses a value that would read as an option, or holds whitespace or a control character, or a confirm that is neither true nor false', () => {
         const text = one(
             'claude',
             picker('--model', 'a', [
@@ -32,7 +32,10 @@ describe('a refusal in the agents catalog', () => {
                 '{ id: b, label: B, pass: --yolo }',
                 "{ id: c, label: C, pass: 'two words' }",
                 '{ id: d, label: D, pass: "tab\\there" }',
-                "{ id: e, label: E, pass: '' }"
+                "{ id: e, label: E, pass: '' }",
+                "{ id: f, label: F, pass: sonnet, confirm: 'yes' }",
+                '{ id: g, label: G, pass: haiku, confirm: true }',
+                '{ id: h, label: H, pass: fable, confirm: false }'
             ])
         );
         const read = parseAgents(text);
@@ -40,9 +43,16 @@ describe('a refusal in the agents catalog', () => {
             [11, 'value'],
             [12, 'value'],
             [13, 'value'],
-            [14, 'value']
+            [14, 'value'],
+            [15, 'shape']
         ]);
-        expect(read.agents[0].lists[0].values.map((value) => value.id)).toEqual(['a']);
+        expect(read.findings[4].what).toBe('confirm');
+        expect(read.agents[0].lists[0].values.map((value) => [value.id, value.confirm])).toEqual([
+            ['a', undefined],
+            ['f', true],
+            ['g', true],
+            ['h', undefined]
+        ]);
         expect(passable('opus')).toBe(true);
         expect(passable('-x')).toBe(false);
         expect(passable('a\u0000b')).toBe(false);

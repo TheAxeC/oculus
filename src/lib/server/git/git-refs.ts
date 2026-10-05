@@ -25,11 +25,11 @@ import {
     porcelain,
     refFormat,
     stashIn,
-    stoppedOn,
     tagIn,
     withFile,
     type Outcome
 } from './git-write.ts';
+import { stoppedOn } from './git-index.ts';
 
 const UNKNOWN = 'that directory is not a workspace oculus knows';
 

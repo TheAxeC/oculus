@@ -22,6 +22,7 @@ const options = (locals: App.Locals) => {
         rootsFor: () => allowedRoots(gitRoots(server.hub), server.local.hub),
         refresh: (root: string) => server.git.refresh(root),
         writes: server.opsWrites,
+        running: server.gitRunning,
         guard: () =>
             protectedFiles({
                 roots: browserRoots({

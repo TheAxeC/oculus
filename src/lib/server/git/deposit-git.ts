@@ -17,6 +17,9 @@
 // that file, and the snapshot mode of DESIGN.md's step 6 needs it exactly once. Here it appears at
 // one call site, `forcePushSnapshot`.
 //
+// A command that runs the mirror's hooks (the commit, the switch and the push) has no time limit,
+// and every command takes the signal `Where` carries, which ends it when Cancel aborts the run.
+//
 // Every operation answers `{ ok, output, error }` and never throws. Nothing here is reachable from
 // a watcher, a timer or the socket: the one caller is server/git/deposit.ts, itself reached only
 // from POST /api/deposit with the write token and the page's confirm.
@@ -26,9 +29,15 @@
 import { execFile } from 'node:child_process';
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
+import { endWith } from '../core/git/running.ts';
 import { GIT } from '../core/git/run.ts';
 import { inside } from '../core/paths.ts';
-import { parseBranches, shortReason } from '../core/git/parse.ts';
+import {
+    NO_TIME_LIMIT,
+    classifyFailure,
+    parseBranches,
+    type CommandFailure
+} from '../core/git/parse.ts';
 
 export { parseBranches };
 
@@ -37,7 +46,7 @@ export const TIMEOUT_MS = 10000;
 /** How many characters of a failed command's reason the page is given. */
 const REASON_WIDTH = 200;
 
-/** A clone, a push and every `gh` call cross the network, so they are given two minutes. */
+/** A clone and every `gh` call cross the network, so they are given two minutes. */
 export const NETWORK_TIMEOUT_MS = 120000;
 
 /** How much output one command may produce. */
@@ -46,26 +55,31 @@ export const MAX_OUTPUT = 8 * 1024 * 1024;
 /** The `gh` executable, named once so a test can see what would be run. */
 export const GH = 'gh';
 
-/** What every operation answers. `ok` false always carries a reason in `error`. */
-export type Outcome = { ok: boolean; output: string; error: string };
+/**
+ * What every operation answers. `ok` false always carries a reason in `error`; a command that gave
+ * none of git's own (cancelled, out of time, out of room, ended by a signal, an exit status with
+ * nothing written) carries it as `failure`, which the route words from the catalog.
+ */
+export type Outcome = { ok: boolean; output: string; error: string; failure?: CommandFailure };
 
 /** One row of `git branch --format`, as the branch menu draws it. */
 export type Branch = { name: string; upstream: string; current: boolean };
 
 /**
- * Where a command runs: the directory git is pointed at, the mirrors root it must stay under, and
- * how git itself is run. server/git/deposit.ts puts its own runner here so a test can fail one
- * command without a repository in that state; without one the real git below is used.
+ * Where a command runs: the directory git is pointed at, the mirrors root it must stay under, how
+ * git itself is run, and the signal that ends a run when Cancel aborts it. server/git/deposit.ts
+ * puts its own runner here so a test can fail one command without a repository in that state;
+ * without one the real git below is used.
  */
-export type Where = { dir: string; mirrors: string; git?: GitRunner };
+export type Where = { dir: string; mirrors: string; git?: GitRunner; signal?: AbortSignal };
 
 /**
  * How `gh` is run. server/git/deposit.ts takes it as an option so a test never runs the real one.
  */
-export type GhRun = (args: string[], timeout: number) => Promise<Outcome>;
+export type GhRun = (args: string[], timeout: number, signal?: AbortSignal) => Promise<Outcome>;
 
 /** How git is run: one argument vector, the `-C` of the mirror already at its head. */
-export type GitRunner = (args: string[], timeout: number) => Promise<Outcome>;
+export type GitRunner = (args: string[], timeout: number, signal?: AbortSignal) => Promise<Outcome>;
 
 /**
  * Every git subcommand this module may run.
@@ -108,8 +122,8 @@ export function underMirrors(dir: string, mirrors: string): boolean {
 }
 
 /** The real git, private to this module so the refusal below is the only way to it. */
-function git(args: string[], timeout: number): Promise<Outcome> {
-    return execute(GIT, args, timeout);
+function git(args: string[], timeout: number, signal?: AbortSignal): Promise<Outcome> {
+    return execute(GIT, args, timeout, signal);
 }
 
 /**
@@ -122,7 +136,7 @@ function run(at: Where, args: string[], timeout: number = TIMEOUT_MS): Promise<O
         return Promise.resolve(failed('that directory is not a deposit mirror'));
     }
     const argv = ['-C', at.dir, ...args];
-    return (at.git ?? git)(argv, timeout);
+    return (at.git ?? git)(argv, timeout, at.signal);
 }
 
 /**
@@ -130,31 +144,57 @@ function run(at: Where, args: string[], timeout: number = TIMEOUT_MS): Promise<O
  * so nothing in the suite ever talks to GitHub. The create shape names the mirror in `--source`, so
  * no call here needs a working directory of its own.
  */
-export function gh(args: string[], timeout: number = NETWORK_TIMEOUT_MS): Promise<Outcome> {
-    return execute(GH, args, timeout);
+export function gh(
+    args: string[],
+    timeout: number = NETWORK_TIMEOUT_MS,
+    signal?: AbortSignal
+): Promise<Outcome> {
+    return execute(GH, args, timeout, signal);
 }
 
-function execute(command: string, argv: string[], timeout: number): Promise<Outcome> {
+/**
+ * One command, as a list. A failure says the program's own reason, as `classifyFailure`
+ * (server/core/git/parse.ts) reads it from the error stream or the output stream; a command that
+ * gave none is answered with its code and the program that ran.
+ */
+function execute(
+    command: string,
+    argv: string[],
+    timeout: number,
+    signal?: AbortSignal
+): Promise<Outcome> {
     return new Promise((settle) => {
         // A list, never a shell. A path, a branch name or a topic from the page is an argument and
         // can therefore never be read as syntax.
-        execFile(
+        const child = execFile(
             command,
             argv,
-            { encoding: 'utf8', timeout, maxBuffer: MAX_OUTPUT },
+            {
+                encoding: 'utf8',
+                timeout,
+                maxBuffer: MAX_OUTPUT
+            },
             (error, stdout, stderr) => {
                 if (error !== null) {
-                    const failure = error as NodeJS.ErrnoException;
-                    const reason =
-                        failure.code === 'ETIMEDOUT'
-                            ? `${command} timed out`
-                            : short(stderr) || short(failure.message) || `${command} failed`;
-                    settle(failed(reason));
+                    const said = classifyFailure(
+                        ended(error),
+                        stdout,
+                        stderr,
+                        { timeoutMs: timeout, maxBytes: MAX_OUTPUT },
+                        REASON_WIDTH,
+                        command
+                    );
+                    settle(
+                        said.failure === undefined
+                            ? failed(said.reason)
+                            : { ...failed(said.reason), failure: said.failure }
+                    );
                     return;
                 }
                 settle({ ok: true, output: typeof stdout === 'string' ? stdout : '', error: '' });
             }
         );
+        const ended = endWith(child, signal);
     });
 }
 
@@ -201,9 +241,12 @@ export function porcelain(at: Where): Promise<Outcome> {
     return run(at, ['status', '--porcelain=v1', '-z']);
 }
 
-/** Commit what is staged, the message through a file as git-write.ts's commit does. */
+/**
+ * Commit what is staged, the message through a file as git-write.ts's commit does. The mirror's
+ * commit hooks run, so it has no time limit.
+ */
 export function commitFile(at: Where, file: string): Promise<Outcome> {
-    return run(at, ['commit', '-F', file]);
+    return run(at, ['commit', '-F', file], NO_TIME_LIMIT);
 }
 
 /** The one `remote` call site: reading origin's URL and adding it. */
@@ -216,9 +259,12 @@ export function branchCmd(at: Where, args: string[]): Promise<Outcome> {
     return run(at, ['branch', ...args]);
 }
 
-/** The one `switch` call site: an existing branch, a new one, and the orphan of the snapshot. */
+/**
+ * The one `switch` call site: an existing branch, a new one, and the orphan of the snapshot. The
+ * mirror's post-checkout hook runs, so it has no time limit.
+ */
 export function switchCmd(at: Where, args: string[]): Promise<Outcome> {
-    return run(at, ['switch', ...args]);
+    return run(at, ['switch', ...args], NO_TIME_LIMIT);
 }
 
 /** The one `rev-parse` call site: the current branch and whether it has an upstream. */
@@ -236,9 +282,12 @@ export function checkRefFormat(at: Where, name: string): Promise<Outcome> {
     return run(at, ['check-ref-format', '--branch', name]);
 }
 
-/** The one `push` call site, for both the ordinary push and the snapshot below it. */
+/**
+ * The one `push` call site, for both the ordinary push and the snapshot below it. The mirror's
+ * pre-push hook runs, so it has no time limit.
+ */
 function pushCmd(at: Where, args: string[]): Promise<Outcome> {
-    return run(at, ['push', ...args], NETWORK_TIMEOUT_MS);
+    return run(at, ['push', ...args], NO_TIME_LIMIT);
 }
 
 /** Push the mirror's current branch to its upstream. Nothing is forced here. */
@@ -307,9 +356,4 @@ export function slugOf(url: string): string {
     const bare = url.replace(/\/+$/, '').replace(/\.git$/, '');
     const at = bare.indexOf('github.com/');
     return at === -1 ? bare : bare.slice(at + 'github.com/'.length);
-}
-
-/** A one-line reason for the page, git's first line of it. */
-function short(value: unknown): string {
-    return shortReason(value, REASON_WIDTH);
 }

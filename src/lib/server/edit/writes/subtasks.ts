@@ -27,7 +27,8 @@ import {
 import { plain } from '../../core/changes.ts';
 import { mapShape } from '../../../data/shapes/shapes.ts';
 import { insideHub } from './manifest.ts';
-import { identityOf, readCollection, saved } from './entries.ts';
+import { identityOf, readCollection } from '../../files/fs/collections.ts';
+import { saved } from './entries.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 import type { EditResult } from '../yaml/yaml-edit.ts';
 import type { LineRange } from '../entry-edit/index.ts';

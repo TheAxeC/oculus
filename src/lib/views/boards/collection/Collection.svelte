@@ -71,6 +71,7 @@
     import Coverage from './Coverage.svelte';
     import Software from './Software.svelte';
     import EntryCard from './EntryCard.svelte';
+    import { taskCardActions } from './task-card';
     import AddButton from '../../shared/forms/AddButton.svelte';
     import EntryForm from '../../shared/forms/EntryForm.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
@@ -102,9 +103,11 @@
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
 
     const {
         layout: { openView },
+        terminals: { composeAt },
         selectors: { archiveDead, collectionOf, configMap, projects },
         formDrafts: { clearFormDraft, formEdits, setFormField, toggleAdd, toggleEdit },
         ui: { cardMoveRequested, instanceState, setInstanceState },
@@ -135,6 +138,12 @@
     const unfunded = $derived(key === FUNDING ? unfundedBy(all, collection?.entries ?? []) : []);
 
     let said = $state('');
+
+    /** Open the composer on a task; a refusal is said on the line every write answers on. */
+    async function startAgent(task: TaskRef): Promise<void> {
+        const refused = await composeAt({ task });
+        if (refused !== '') said = refused;
+    }
 
     /** The identity value of the card the reader picked up, while a drag is in flight. */
     let dragged = $state('');
@@ -326,6 +335,7 @@
                             onsaid={(words: string) => (said = words)}
                             more={held.more.includes(entry.id)}
                             onmore={() => toggleMore(entry.id)}
+                            extra={taskCardActions(key, entry, configMap(), startAgent)}
                         />
                     </Reveal>
                 {/each}

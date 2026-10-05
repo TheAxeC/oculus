@@ -303,7 +303,13 @@ export const TERMINAL_REFUSALS = [
     'dependency-cycle',
     'no-file',
     'no-selection',
-    'nul-value'
+    'nul-value',
+    'task-unknown',
+    'task-changed',
+    'task-too-long',
+    'task-needs-agent',
+    'needs-confirm',
+    'approvals-unwritable'
 ] as const;
 export type TerminalRefusal = (typeof TERMINAL_REFUSALS)[number];
 

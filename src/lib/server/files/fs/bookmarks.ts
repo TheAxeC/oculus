@@ -4,7 +4,7 @@
 // It is a collection file and not a JSON store so that the write path that edits every other
 // collection edits this one too: the same schema, the same entry form, the same field-by-field
 // surgery that keeps the reader's own comments and spacing. The write path reaches it by the key
-// `bookmarks`, which server/edit/writes/entries.ts resolves to this file instead of asking
+// `bookmarks`, which server/files/fs/collections.ts resolves to this file instead of asking
 // sources.yml for one inside the hub.
 //
 // A file this machine has not got yet carries its title and its schema and no `entries:` key at

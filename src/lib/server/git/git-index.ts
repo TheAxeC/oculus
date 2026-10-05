@@ -19,15 +19,18 @@ import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { byKey } from '../../data/helpers/guards.ts';
 import { writeBytesAtomic, writeTextAtomic } from '../core/json.ts';
 import { HASH, pathInside } from '../core/git/run.ts';
-import { statusRecords } from '../core/git/parse.ts';
+import { REFS_FORMAT, parseBranches, statusRecords, type Unfinished } from '../core/git/parse.ts';
 import { inside, permitted, realPath } from '../core/paths.ts';
 import { guarded, type Guard } from '../files/fs/ops.ts';
 import {
     addTo,
     allowedRoots,
     applyPatch,
+    branch,
+    checkName,
     checkPaths,
     cherryPickIn,
+    diff,
     failed,
     porcelain,
     rebaseIn,
@@ -35,8 +38,6 @@ import {
     restore,
     mergeIn,
     revParse,
-    stoppedOn,
-    unmergedPaths,
     untrackedAmong,
     untrackedIn,
     type Outcome
@@ -219,8 +220,93 @@ export async function markResolved(
     return addTo(root, ['--', path]);
 }
 
+/**
+ * Whether the porcelain reports a change of the repository's own content. An untracked file is not
+ * one: git carries it across a merge and never overwrites it, so refusing a merge over one would
+ * refuse every repository with a build folder in it.
+ */
+function tracked(output: string): boolean {
+    return statusRecords(output).some((record) => record.code !== '??');
+}
+
+/**
+ * Merge a branch into the root's checked-out branch, which is git's own default: a fast-forward
+ * where it can be one and a merge commit otherwise. A dirty root and the checked-out branch itself
+ * are refused before anything runs. A merge that stops on conflicts is left in progress, as VS
+ * Code leaves it, and reported by the paths that conflicted: the view draws them under Merge
+ * Changes, where each is resolved in the merge editor, and Abort Merge takes the whole merge back.
+ */
+export async function merge(
+    root: string,
+    other: string,
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
+): Promise<Outcome> {
+    const wrong = await checkName(root, other, roots);
+    if (wrong !== '') return failed(wrong);
+    const head = await revParse(root, ['--abbrev-ref', 'HEAD']);
+    if (!head.ok) return head;
+    const onto = head.output.trim();
+    if (onto === 'HEAD' || onto === '') {
+        return failed(
+            'this repository has no branch checked out, so there is nothing to merge into'
+        );
+    }
+    if (onto === other) {
+        return failed(`${other} is the branch that is checked out, so there is nothing to merge`);
+    }
+    // A name git accepts as a reference is not a branch: a tag or a commit id would be merged just
+    // as happily, and what this control offers is the branch of a worktree.
+    const listed = await branch(root, [REFS_FORMAT]);
+    if (!listed.ok) return listed;
+    if (!parseBranches(listed.output).some((one) => one.name === other)) {
+        return failed(`${other} is not a branch of this repository`);
+    }
+    const state = await porcelain(root);
+    if (!state.ok) return state;
+    if (tracked(state.output)) {
+        return failed('the repository has changes of its own, so the merge would carry them in');
+    }
+    const done = await mergeIn(root, [other], signal);
+    if (done.ok) return done;
+    return stoppedOn(root, done, 'the merge');
+}
+
+/**
+ * What a write that stopped answers. A command that ended with a code of its own (Cancel, a signal)
+ * says so, with the operation it left unfinished named by `leftInProgress`. Otherwise it is the
+ * paths git left unmerged, when there are any, and git's own reason when there are none: a merge, a
+ * pull, a stash applied or popped all leave their conflicts in the index for the merge editor, so
+ * the sentence says where they are.
+ */
+export async function stoppedOn(root: string, done: Outcome, what: string): Promise<Outcome> {
+    if (done.failure !== undefined) return leftInProgress(root, done);
+    const paths = await unmergedPaths(root);
+    if (paths.length === 0) return done;
+    return failed(
+        `${what} stopped on conflicts in ${paths.join(', ')}; they are under Merge Changes`
+    );
+}
+
+/**
+ * A command that ended with a code of its own, with the merge, cherry-pick or rebase it left
+ * unfinished named in `failure.left`, so the answer says it is in progress and the view draws its
+ * state and Abort Merge. A repository in none of the three answers as it was.
+ */
+async function leftInProgress(root: string, done: Outcome): Promise<Outcome> {
+    if (done.failure === undefined) return done;
+    const left = await inProgress(root);
+    return left === '' ? done : { ...done, failure: { ...done.failure, left } };
+}
+
+/** The paths the index holds unmerged, which is where a stopped write left its conflicts. */
+async function unmergedPaths(root: string): Promise<string[]> {
+    const conflicted = await diff(root, ['--name-only', '--diff-filter=U']);
+    return conflicted.ok ? conflicted.output.trim().split('\n').filter(Boolean) : [];
+}
+
 /** Which of the three the repository is in the middle of, read as git itself would. */
-async function inProgress(root: string): Promise<'merge' | 'rebase' | 'cherry-pick' | ''> {
+async function inProgress(root: string): Promise<Unfinished | ''> {
     const merging = await revParse(root, ['--verify', '--quiet', 'MERGE_HEAD']);
     if (merging.ok) return 'merge';
     for (const name of ['rebase-merge', 'rebase-apply']) {
@@ -257,12 +343,14 @@ const ALREADY_PRESENT = 'The changes are already present in the current branch.'
 export async function cherryPick(
     root: string,
     hash: string,
-    roots: string[] = allowedRoots()
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
     if (typeof hash !== 'string' || !HASH.test(hash)) return failed(`${hash} is not a commit`);
-    const done = await cherryPickIn(root, [hash]);
+    const done = await cherryPickIn(root, [hash], signal);
     if (done.ok) return done;
+    if (done.failure !== undefined) return leftInProgress(root, done);
     if ((await inProgress(root)) !== 'cherry-pick') return done;
     if ((await unmergedPaths(root)).length > 0) return stoppedOn(root, done, 'the cherry-pick');
     const taken = await cherryPickIn(root, ['--abort']);
@@ -395,7 +483,8 @@ function appendIgnored(root: string, paths: string[], roots: string[]): Outcome 
  */
 export async function continueRebase(
     root: string,
-    roots: string[] = allowedRoots()
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
     if ((await inProgress(root)) !== 'rebase') {
@@ -403,5 +492,5 @@ export async function continueRebase(
     }
     const left = await unmergedPaths(root);
     if (left.length > 0) return failed(`${left.join(', ')} still conflicted`);
-    return rebaseIn(root, '--continue');
+    return leftInProgress(root, await rebaseIn(root, '--continue', signal));
 }

@@ -20,12 +20,14 @@
     // Closing the tab, its pane or its page ends the terminals it owns (the layout asks the ui
     // store, which asks the terminals store); moving the tab ends none.
     //
-    // The body draws the composer alone while the tab shows no terminal, and otherwise the tab's
-    // row: one grid (grid/TerminalGrid.svelte) per terminal of `row`, left to right in one keyed
-    // list so a grid is not torn down when another joins, each as wide as the shares give it with
-    // at least ROW_MIN pixels (terminal-tabs.ts, `rowWidths`), a handle between two neighbours
+    // The body draws start/TerminalStart.svelte alone while the tab shows no terminal (the
+    // composer, or the line saying which kind New Terminal is starting there), and otherwise the
+    // tab's row: one grid (grid/TerminalGrid.svelte) per terminal of `row`, left to right in one
+    // keyed list so a grid is not torn down when another joins, each as wide as the shares give it
+    // with at least ROW_MIN pixels (terminal-tabs.ts, `rowWidths`), a handle between two neighbours
     // moving their boundary, and the row scrolling sideways when it is wider than the pane. The
-    // composer of a start with a prompt shows right of the row while `composing`.
+    // composer of a start with a prompt shows right of the row while `composing`, drawn the same
+    // way.
     //
     // The header holds the icon actions (bar/TerminalActions.svelte): New terminal starts a shell
     // at once in the tab's folder, the kinds dropdown beside it starts Shell, Claude or Codex the
@@ -51,7 +53,7 @@
     // (terminal-list.ts, `pressKill`), the arm taken off when a terminal joins or leaves the tab,
     // and Join Terminals is offered the terminals the other Terminal tabs own, each by its name.
 
-    import Composer from './Composer.svelte';
+    import TerminalStart from './start/TerminalStart.svelte';
     import TerminalActions from './bar/TerminalActions.svelte';
     import { SvelteMap } from 'svelte/reactivity';
     import GlyphDialog from '$lib/ui/forms/choice/GlyphDialog.svelte';
@@ -402,9 +404,7 @@
     >
         <div class="main" bind:clientWidth={bodyWidth}>
             {#if tab.row.length === 0}
-                <div class="start">
-                    <Composer owner={instance.id} onstarted={started} />
-                </div>
+                <TerminalStart owner={instance.id} onstarted={started} />
             {:else}
                 {#each tab.row as id, at (id)}
                     <div
@@ -428,9 +428,7 @@
                 {/each}
                 {#if tab.composing}
                     <div class="side composer">
-                        <div class="start">
-                            <Composer owner={instance.id} onstarted={started} />
-                        </div>
+                        <TerminalStart owner={instance.id} onstarted={started} />
                     </div>
                 {/if}
             {/if}
@@ -512,13 +510,5 @@
 
     .failure ~ .failure {
         margin-left: 0;
-    }
-
-    .start {
-        display: flex;
-        flex-direction: column;
-        flex: 1 1 auto;
-        gap: 8px;
-        min-width: 0;
     }
 </style>

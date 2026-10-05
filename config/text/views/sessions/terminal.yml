@@ -42,6 +42,7 @@ text:
         terminal_bar: Terminal controls
         terminal_rename_field: Terminal title
         style_default: Default
+        refused_approvals_unwritable: 'The approvals file {0} does not read as approvals or cannot be written, so nothing was approved and the file is left as it was.'
         refused_bad_repo: That folder is not a repository the file browser serves.
         refused_bad_terminal: The terminal request was not valid.
         refused_command_unknown: '{0} is not a command of this repository.'
@@ -50,10 +51,15 @@ text:
         refused_dependency_unknown: The command {0} depends on {1}, which is not a command.
         refused_no_file: 'No value for {0}: open a file in a source tab first.'
         refused_no_selection: 'No value for {0}: select text in a source tab first.'
+        refused_needs_confirm: '{0} asks for a confirmation at each start, so nothing was started.'
         refused_not_a_session: That is not a session id.
         refused_not_a_task: Only a command run can be run again.
         refused_not_ours: That is not a terminal oculus started.
         refused_nul_value: The value of {0} holds a NUL character, which no environment variable can carry.
+        refused_task_changed: The task changed since it was shown; the composer shows its text now.
+        refused_task_needs_agent: A task starts Claude or Codex, so nothing was started.
+        refused_task_too_long: The task's text, with the words added to it, is longer than a prompt may be, so nothing was started.
+        refused_task_unknown: That task is no longer in the hub, so nothing was started.
         refused_still_running: The line is still running. Restart it to run it again.
         refused_terminal_ended: The terminal has ended.
         refused_terminal_failed: The terminal could not do that.
@@ -68,6 +74,7 @@ text:
         terminal_row_tip: "{0}\nCommand: {1}\nFolder: {2}\nStarted: {3}"
         terminal_split: Split
         terminal_split_unknown: This terminal is not known to the page yet, so it cannot be split
+        terminal_starting: 'Starting {0}...'
         terminal_start_failed: The terminal did not start
         terminal_no_folder: No folder to start the terminal in
         terminal_split_tip: 'Split this terminal: a new terminal of its kind starts right of it, in its folder (Shift+Enter on the row)'

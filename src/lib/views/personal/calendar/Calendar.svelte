@@ -40,7 +40,7 @@
 
     import { Calendar as EventCalendar, DayGrid, List, TimeGrid } from '@event-calendar/core';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Segment from '$lib/ui/controls/Segment.svelte';
+    import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { HUES } from '$lib/ui/display/hues';

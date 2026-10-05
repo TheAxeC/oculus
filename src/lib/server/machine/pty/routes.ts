@@ -32,6 +32,14 @@ import type { Program } from '../../../data/prose/latex.ts';
 import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
 import { captureTask, restartTask, rerunTask, startCommand } from '../commands/run.ts';
 import { startChat, type ChatOptions } from './chat.ts';
+import { defaultApprovalsPath } from '../approvals/approvals.ts';
+import {
+    approveSeed,
+    seedApproval,
+    seedFacts,
+    taskPrompt,
+    type SeedSource
+} from '../seeds/task-start.ts';
 import { words } from '../../core/words.ts';
 import {
     accountEnv,
@@ -75,6 +83,7 @@ import type {
     TerminalKind,
     TerminalResume
 } from '../../../data/model/index.ts';
+import { taskRefOf } from '../../../data/shapes/shapes.ts';
 
 /** The four update skills the palette and tray may start. */
 const TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
@@ -282,12 +291,26 @@ async function composeSession(
 ): Promise<Response> {
     const request = composeRequest(message);
     const local = localOf(options);
+    let prompt = request.prompt;
+    let name: string | undefined;
+    let seed = '';
+    if (request.task !== undefined) {
+        ({ prompt, name, seed } = taskPrompt(request, request.task, seedSource(options)));
+    }
     const composed = compose(
-        request,
+        { ...request, prompt },
         readAgentsFile(options.engine).agents,
         agentAccounts(local),
         local.claudeBin
     );
+    if (request.task !== undefined) {
+        const approve = seedApproval(
+            request,
+            seed,
+            options.approvalsFor?.() ?? defaultApprovalsPath()
+        );
+        if (approve !== null) return json({ approve }, { headers: NO_STORE });
+    }
     const kind: TerminalKind = request.agent;
     const id = newId(kind);
     const terminal = await startTerminal(
@@ -297,6 +320,7 @@ async function composeSession(
             cwd: request.cwd,
             cols: message.cols,
             rows: message.rows,
+            name,
             env: composed.env
         },
         composed.argv === null ? options : { ...options, argv: composed.argv }
@@ -304,6 +328,38 @@ async function composeSession(
     if (composed.keys.trim() !== '') await steerTerminal(id, composed.keys, options);
     options.refresh?.();
     return json({ ok: true, terminal }, { headers: NO_STORE });
+}
+
+/** What the task steps read: the hub, the merged config and the engine of this request. */
+function seedSource(options: TerminalOptions): SeedSource {
+    const hub = options.hubFor?.() ?? (options.localFor?.() ?? loadLocal(options.engine)).hub;
+    return { hub, merged: options.configFor(), engine: options.engine };
+}
+
+/** The task reference of a seed or approve-seed request, or the refusal for a missing one. */
+function taskOfMessage(message: Record<string, unknown>) {
+    return taskRefOf(message.task) ?? { id: '' };
+}
+
+/** The seed, folder and name the page shows for a task. */
+function seedTask(message: Record<string, unknown>, options: TerminalOptions): Response {
+    const facts = seedFacts(taskOfMessage(message), seedSource(options));
+    return json({ ok: true, ...facts }, { headers: NO_STORE });
+}
+
+/** Approve a seed for a folder and an agent, after building the seed again. */
+function approveSeedTask(message: Record<string, unknown>, options: TerminalOptions): Response {
+    approveSeed(
+        taskOfMessage(message),
+        {
+            seed: scalar(message.seed),
+            cwd: scalar(message.cwd),
+            agent: scalar(message.agent)
+        },
+        seedSource(options),
+        options.approvalsFor?.() ?? defaultApprovalsPath()
+    );
+    return json({ ok: true }, { headers: NO_STORE });
 }
 
 /** Start the registry's recovery script for one dataset the current snapshot holds. */
@@ -569,6 +625,8 @@ export async function handleTerminal(
         if (message.action === 'compose') {
             return await composeSession(message, options);
         }
+        if (message.action === 'seed') return seedTask(message, options);
+        if (message.action === 'approve-seed') return approveSeedTask(message, options);
         if (message.action === 'steer') {
             if (!isTerminalId(message.id)) return refusal(NOT_OURS);
             await steerTerminal(message.id, steerTextShape.parse(message.text), options);

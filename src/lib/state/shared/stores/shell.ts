@@ -4,9 +4,10 @@
 // (views/shared/explorer/tree/menu/row-menu.ts). The terminals store starts the shell and shows it
 // in the Terminal tab that owns it, or the page's Terminal tab, or a new one, which the label names
 // until the shell's own name arrives. A refusal is handed back as the server's words, and each
-// caller says it on its own line. It sits with the shapes of the shared stores, below both
-// state/sessions and state/sources, since the repositories store may import neither the terminals
-// store nor anything beside it.
+// caller says it on its own line. The same file holds what a worktree start needs of the terminals
+// store, a shell or the composer opened in the worktree for Claude or Codex. It sits with the
+// shapes of the shared stores, below both state/sessions and state/sources, since the repositories
+// store may import neither the terminals store nor anything beside it.
 
 /**
  * What a shell needs of the terminals store (state/sessions/terminals.svelte.ts), which satisfies
@@ -18,6 +19,15 @@ export type ShellStarter = {
         cwd: string
     ) => Promise<{ ok: boolean; id: string; error: string }>;
     showTerminal: (id: string, label?: string) => void;
+};
+
+/**
+ * What a worktree start needs of the terminals store: a shell, as `ShellStarter`, and the composer
+ * opened in a folder for Claude or Codex, which answers the sentence of a refusal or the empty
+ * string once the composer is open.
+ */
+export type WorktreeStarter = ShellStarter & {
+    composeAt: (at: { cwd: string; agent: 'claude' | 'codex' }) => Promise<string>;
 };
 
 /** Start a shell in `cwd` and show it; the refusal's words, or null once it is shown. */

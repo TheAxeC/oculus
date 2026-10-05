@@ -6,12 +6,15 @@
 // terminal-fixture.ts, which records every argv. The engine is a scratch folder holding a copy of
 // the shipped config/catalogs/agents.yml, and every account is a scratch folder.
 
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
-import { handleTerminal } from '../../../src/lib/server/machine/pty/routes.ts';
+import {
+    handleTerminal,
+    type TerminalOptions
+} from '../../../src/lib/server/machine/pty/routes.ts';
 import { engineDir, localDefaults } from '../../../src/lib/data/sources/config.ts';
 import { record } from '../../fixtures/sessions-fixture.ts';
 import {
@@ -71,14 +74,19 @@ test.beforeAll(() => {
 });
 
 /** The route with the recording tmux, this suite's engine and its accounts. */
-async function post(body: Record<string, unknown>, recordFor = source()) {
+async function post(
+    body: Record<string, unknown>,
+    recordFor = source(),
+    over: Partial<TerminalOptions> = {}
+) {
     const driver = tmux();
     const response = await handleTerminal(request({ cols: 80, rows: 24, ...body }), TOKEN, {
         engine: ENGINE,
         run: driver.run,
         localFor: () => LOCAL,
         configFor: () => BASE_CHAT_CONFIG,
-        recordFor
+        recordFor,
+        ...over
     });
     const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
     return {
@@ -169,5 +177,152 @@ describe('POST /api/terminal, the fork action', () => {
         expect(started[started.indexOf('-c') + 1]).toBe(HERE);
         const terminal = (await answer(response)).terminal as { name: string };
         expect(terminal.name).toBe('fork of A run');
+    });
+});
+
+describe('POST /api/terminal, a start in a mode the catalog marks confirm: true', () => {
+    const CASES: [string, string, number, Record<string, string>][] = [
+        ['claude', 'Bypass permissions', 400, { mode: 'bypassPermissions' }],
+        ['claude', 'Accept edits', 400, { mode: 'acceptEdits' }],
+        ['claude', 'Auto', 400, { mode: 'auto' }],
+        ['codex', 'Full access', 400, { sandbox: 'danger-full-access' }],
+        ['codex', 'Never', 400, { approval: 'never' }],
+        ['claude', 'Plan', 200, { mode: 'plan' }],
+        ['codex', 'Workspace write', 200, { sandbox: 'workspace-write' }]
+    ];
+
+    it.each(CASES)(
+        'a %s start with %s and no confirm flag answers %s',
+        async (agent, label, status, picks) => {
+            const asked = await post({ action: 'compose', agent, cwd: HERE, picks, prompt: 'hi' });
+            expect(asked.response.status).toBe(status);
+            if (status === 400) {
+                expect(await answer(asked.response)).toEqual({
+                    error: 'needs-confirm',
+                    names: [label]
+                });
+                expect(asked.calls).toEqual([]);
+                const confirmed = await post({
+                    action: 'compose',
+                    agent,
+                    cwd: HERE,
+                    picks,
+                    prompt: 'hi',
+                    confirm: true
+                });
+                expect(confirmed.response.status).toBe(200);
+                expect(confirmed.started.length).toBeGreaterThan(0);
+            } else {
+                expect(asked.started.length).toBeGreaterThan(0);
+            }
+        }
+    );
+});
+
+describe('POST /api/terminal, a start with a task', () => {
+    let hub = '';
+    let approvals = '';
+    const REF = { id: 'Submission', collection: 'tasks' };
+
+    /** The tasks file with one entry whose note is `note`. */
+    function plant(note: string): void {
+        writeFileSync(
+            join(hub, 'tasks', 'tasks.yml'),
+            `title: Tasks\nschema:\n  - { field: title, type: text }\nentries:\n  - title: Submission\n    status: todo\n    note: "${note}"\n`
+        );
+    }
+
+    /** The route over the task hub and this case's approvals file. */
+    function postTask(body: Record<string, unknown>) {
+        return post(body, source(), { hubFor: () => hub, approvalsFor: () => approvals });
+    }
+
+    /** The seed the page is shown for the task, as the `seed` action answers it. */
+    async function seedOf(): Promise<{ seed: string; cwd: string }> {
+        const shown = await postTask({ action: 'seed', task: REF });
+        return (await answer(shown.response)) as { seed: string; cwd: string };
+    }
+
+    test.beforeAll(() => {
+        hub = scratchDir('oculus-task-hub-');
+        mkdirSync(join(hub, 'tasks'), { recursive: true });
+    });
+
+    test.beforeEach(() => {
+        approvals = join(scratchDir('oculus-task-approvals-'), 'approvals.json');
+        plant('first note');
+    });
+
+    const start = (shown: { seed: string; cwd: string }, over: Record<string, unknown> = {}) => ({
+        action: 'compose',
+        agent: 'claude',
+        cwd: shown.cwd,
+        task: REF,
+        seed: shown.seed,
+        prompt: '',
+        ...over
+    });
+
+    it('asks for the approval of an unapproved seed and starts nothing', async () => {
+        const shown = await seedOf();
+        const asked = await postTask(start(shown));
+        expect(asked.response.status).toBe(200);
+        expect(await answer(asked.response)).toEqual({
+            approve: { seed: shown.seed, cwd: realpathSync(shown.cwd), agent: 'claude' }
+        });
+        expect(asked.started).toEqual([]);
+    });
+
+    it('starts the seed once its exact seed, folder and agent are approved', async () => {
+        const shown = await seedOf();
+        const approved = await postTask({
+            action: 'approve-seed',
+            task: REF,
+            cwd: shown.cwd,
+            agent: 'claude',
+            seed: shown.seed
+        });
+        expect(await answer(approved.response)).toEqual({ ok: true });
+        const started = await postTask(start(shown));
+        expect(started.response.status).toBe(200);
+        expect(started.argv.at(-1)).toBe(shown.seed);
+    });
+
+    /** Approve the seed shown now for Claude in its own folder. */
+    async function approveShown(shown: { seed: string; cwd: string }): Promise<void> {
+        await postTask({
+            action: 'approve-seed',
+            task: REF,
+            cwd: shown.cwd,
+            agent: 'claude',
+            seed: shown.seed
+        });
+    }
+
+    it('asks again when the seed changed', async () => {
+        const shown = await seedOf();
+        await approveShown(shown);
+        plant('second note');
+        const changed = await seedOf();
+        expect(changed.seed).not.toBe(shown.seed);
+        const again = await postTask(start(changed));
+        expect(Object.keys(await answer(again.response))).toEqual(['approve']);
+        expect(again.started).toEqual([]);
+    });
+
+    it('asks again when the agent is another', async () => {
+        const shown = await seedOf();
+        await approveShown(shown);
+        const codex = await postTask(start(shown, { agent: 'codex' }));
+        expect(Object.keys(await answer(codex.response))).toEqual(['approve']);
+        expect(codex.started).toEqual([]);
+    });
+
+    it('asks again when the folder is another', async () => {
+        const shown = await seedOf();
+        await approveShown(shown);
+        const elsewhere = await postTask(start(shown, { cwd: HERE }));
+        expect(Object.keys(await answer(elsewhere.response))).toEqual(['approve']);
+        expect(elsewhere.started).toEqual([]);
     });
 });

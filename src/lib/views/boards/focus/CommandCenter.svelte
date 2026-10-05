@@ -243,7 +243,7 @@
 
     /** One button on one line, and the one sentence the board says about what it wrote. */
     async function run(id: string, action: string): Promise<void> {
-        const said = await act(client.writes, view.index[id], action, now);
+        const said = await act(client, view.index[id], action, now);
         if (said !== null) onsaid(said);
     }
 </script>

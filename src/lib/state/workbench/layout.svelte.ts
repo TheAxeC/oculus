@@ -268,6 +268,13 @@ export function createLayout(ui: UiStore): LayoutStore {
     /** Where apply() saves, once loadLayout has named it. Nothing is saved before that. */
     const storage = createStorage();
 
+    /**
+     * The name of the store operation being run, which the record of layout writes names as the
+     * call that wrote. Every operation is synchronous, so this is the operation a caller invoked
+     * for as long as a save inside it runs.
+     */
+    let writing = '';
+
     // Everything below stays in the factory, which owns the arrangement as a whole: the page list
     // and what is on screen, the write path every change goes through, and the operations that
     // rearrange a page's panes. The rune is declared here, and these are the readers and writers of
@@ -597,7 +604,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         // A reader who made a float on a layout still waiting for the shipped floats keeps their
         // own.
         if (next.floats.length > 0) pendingFloats = false;
-        storage.write(next, pendingFloats);
+        storage.write(next, pendingFloats, writing);
     }
 
     /** Apply an operation to a page's tree, which is how every tree edit reaches the store. */
@@ -772,7 +779,31 @@ export function createLayout(ui: UiStore): LayoutStore {
         return instances.activeInstance(attention.touched().id);
     }
 
-    return {
+    /**
+     * Run every operation under its own name, so a save inside it is recorded as written by that
+     * operation. An operation that calls another keeps the name of the one the caller invoked.
+     */
+    function named<T extends Record<string, unknown>>(operations: T): T {
+        const wrapped = Object.entries(operations).map(([name, operation]) => {
+            if (typeof operation !== 'function') return [name, operation];
+            const run = operation as (...args: unknown[]) => unknown;
+            return [
+                name,
+                (...args: unknown[]): unknown => {
+                    if (writing !== '') return run(...args);
+                    writing = name;
+                    try {
+                        return run(...args);
+                    } finally {
+                        writing = '';
+                    }
+                }
+            ];
+        });
+        return Object.fromEntries(wrapped) as T;
+    }
+
+    return named({
         currentPage,
         pages,
         pageOf,
@@ -851,5 +882,5 @@ export function createLayout(ui: UiStore): LayoutStore {
         },
         resetPage,
         resetPages
-    };
+    });
 }

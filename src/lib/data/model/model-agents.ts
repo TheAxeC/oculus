@@ -12,7 +12,16 @@ export type AgentId = 'claude' | 'codex';
  * One value of one picker: the words it shows and what it passes after the list's flag. `pass` is
  * null for the CLI's own default, which passes neither the flag nor a value.
  */
-export type AgentChoice = { id: string; label: string; pass: string | null };
+export type AgentChoice = {
+    id: string;
+    label: string;
+    pass: string | null;
+    /**
+     * True when a start with this value is asked about first, because it skips what the agent
+     * would ask the reader.
+     */
+    confirm?: boolean;
+};
 
 /** One picker of one agent: its words, the flag every value passes, its values and its default. */
 export type AgentChoiceList = {
@@ -57,9 +66,23 @@ export type AgentsAnswer = {
 };
 
 /**
+ * A task of the hub that seeds an agent: a manifest's subtask (`id` the project, `subtask` the
+ * line), an entry of a collection (`id` and `collection`), or an entry's subtask (all three).
+ * `subtask` carries the line's key and its `do` text, so a list whose items shifted since the page
+ * drew it names no task.
+ */
+export type TaskRef = {
+    id: string;
+    collection?: string;
+    subtask?: { key: string; do: string };
+};
+
+/**
  * What the composer sends to start a session. `picks` names a value id per list key; a list it
  * leaves out takes the list's default. `prompt` is the first message, or for a shell the first
- * command, and `images` are the files a Codex start attaches with `-i`.
+ * command, and `images` are the files a Codex start attaches with `-i`. `task` is the hub task the
+ * start is seeded with, `seed` the text the page showed for it, and `confirm` true only once the
+ * reader answered the question a permission mode that skips what the agent asks raises.
  */
 export type ComposeStart = {
     agent: AgentId | 'shell';
@@ -68,6 +91,9 @@ export type ComposeStart = {
     picks: Record<string, string>;
     prompt: string;
     images: string[];
+    task?: TaskRef;
+    seed: string;
+    confirm: boolean;
 };
 
 /** The seven kinds of thing an agent reads before its first turn, as the section lists them. */
@@ -113,3 +139,25 @@ export type ListedSession = GroupedSession & { top?: boolean };
  * Claude Code writes `totalTokens` on the result of an Agent call.
  */
 export type SizedAgent = SessionAgent & { tokens?: number };
+
+// Which values of a start ask the reader first are the ones that carry `confirm: true` in
+// config/catalogs/agents.yml. The server refuses a start that skips the question, and the composer
+// asks it, so both read the one rule below.
+
+/**
+ * The values a start would pass that carry `confirm`, as `choiceArgs` resolves them: each list's
+ * pick, or its default where the picks name none. A pick naming a value the list does not hold is
+ * left to `choiceArgs`, which refuses it.
+ */
+export function confirmValues(
+    choices: AgentChoices,
+    picks: Record<string, string>
+): { list: AgentChoiceList; value: AgentChoice }[] {
+    const found: { list: AgentChoiceList; value: AgentChoice }[] = [];
+    for (const list of choices.lists) {
+        const id = Object.hasOwn(picks, list.key) ? picks[list.key] : list.default;
+        const value = list.values.find((one) => one.id === id);
+        if (value?.confirm === true) found.push({ list, value });
+    }
+    return found;
+}

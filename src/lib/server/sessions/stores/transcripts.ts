@@ -10,6 +10,7 @@
 //
 // Nothing here throws. A file that cannot be read is left out and the rest come back.
 
+import { constants } from 'node:buffer';
 import { closeSync, fstatSync, openSync, readSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
@@ -71,15 +72,25 @@ export type ScanOptions = {
     now?: number;
 };
 
+/** The bytes `foldFrom` reads at a time. */
+const PIECE_BYTES = 8 * 1024 * 1024;
+
 /**
- * Fold every complete line from `offset` and return the bytes consumed. The offset is in bytes,
- * and only the part of the file up to its last newline is decoded, so a multi-byte character
- * split across the end of a read is never cut in half.
+ * Fold every complete line from `offset` and return the bytes consumed, up to the last line feed
+ * read. The offset is in bytes. The file is read in pieces of `piece` bytes (`PIECE_BYTES`; a
+ * caller passes a smaller size to read a short file in several), and each complete line is decoded
+ * alone, so a multi-byte character split across the end of a piece is never cut in half and no
+ * decode is larger than one line. A line longer than `limit` bytes (Node's longest string,
+ * `buffer.constants.MAX_STRING_LENGTH`; a caller passes a smaller one to test the skip) cannot be
+ * decoded: it is skipped and its bytes count as consumed, so the read goes past it. A failure
+ * after some lines answers the bytes consumed up to it.
  */
 export function foldFrom(
     path: string,
     offset: number,
-    apply: (record: Record<string, unknown>) => void
+    apply: (record: Record<string, unknown>) => void,
+    piece: number = PIECE_BYTES,
+    limit: number = constants.MAX_STRING_LENGTH
 ): number {
     let handle: number;
     try {
@@ -87,38 +98,72 @@ export function foldFrom(
     } catch {
         return 0;
     }
+    let consumed = 0;
     try {
         const size = fstatSync(handle).size;
         if (size <= offset) return 0;
-        const length = size - offset;
-        const buffer = Buffer.allocUnsafe(length);
-        let read = 0;
-        while (read < length) {
-            const got = readSync(handle, buffer, read, length - read, offset + read);
+        const buffer = Buffer.allocUnsafe(Math.min(piece, size - offset));
+        /** The start of the line being read, copied out of the earlier pieces. */
+        let carry: Buffer[] = [];
+        let carried = 0;
+        /** Set once the line being read passes the longest decodable line; its bytes drop. */
+        let skipping = false;
+        let position = offset;
+        while (position < size) {
+            const got = readSync(
+                handle,
+                buffer,
+                0,
+                Math.min(buffer.length, size - position),
+                position
+            );
             if (got <= 0) break;
-            read += got;
-        }
-        const end = buffer.subarray(0, read).lastIndexOf(0x0a);
-        if (end < 0) return 0;
-        const complete = buffer.subarray(0, end + 1);
-        for (const line of complete.toString('utf8').split('\n')) {
-            if (line.trim() === '') continue;
-            let parsed: unknown;
-            try {
-                parsed = JSON.parse(line) as unknown;
-            } catch {
-                continue;
+            const chunk = buffer.subarray(0, got);
+            let start = 0;
+            for (;;) {
+                const end = chunk.indexOf(0x0a, start);
+                if (end < 0) {
+                    const rest = chunk.subarray(start);
+                    carried += rest.length;
+                    if (carried > limit) {
+                        skipping = true;
+                        carry = [];
+                    } else if (!skipping) {
+                        carry.push(Buffer.from(rest));
+                    }
+                    break;
+                }
+                const tail = chunk.subarray(start, end);
+                if (!skipping && carried + tail.length <= limit) {
+                    foldLine(carry.length === 0 ? tail : Buffer.concat([...carry, tail]), apply);
+                }
+                carry = [];
+                carried = 0;
+                skipping = false;
+                consumed = position + end + 1 - offset;
+                start = end + 1;
             }
-            if (isMap(parsed)) {
-                apply(parsed);
-            }
+            position += got;
         }
-        return complete.length;
+        return consumed;
     } catch {
-        return 0;
+        return consumed;
     } finally {
         closeSync(handle);
     }
+}
+
+/** Parse one line as JSON and hand it on when it is a map; a blank or broken line is skipped. */
+function foldLine(bytes: Buffer, apply: (record: Record<string, unknown>) => void): void {
+    const line = bytes.toString('utf8');
+    if (line.trim() === '') return;
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(line) as unknown;
+    } catch {
+        return;
+    }
+    if (isMap(parsed)) apply(parsed);
 }
 
 /**

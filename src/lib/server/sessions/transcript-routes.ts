@@ -69,18 +69,20 @@ export function exportName(record: SessionRecord): string {
 }
 
 /**
- * One session's whole conversation as Markdown: a heading with the session's facts, then each turn
- * under who said it and when, an assistant turn as the Markdown it was written in, a user turn as
- * a quoted block so its own line breaks stand, and a tool call as one line naming the tool. Every
- * heading is worded by the server's one `words` of server/core/words.ts, which throws on a key the
- * catalog lacks.
+ * One session's whole conversation as Markdown, in pieces: a heading with the session's facts, then
+ * each turn under who said it and when, an assistant turn as the Markdown it was written in, a user
+ * turn as a quoted block so its own line breaks stand, and a tool call as one line naming the tool.
+ * Every heading is worded by the server's one `words` of server/core/words.ts, which throws on a
+ * key the catalog lacks. The pieces joined are the text `lines.join('\n')` of the whole file, and
+ * the file is those pieces with every run of three or more line feeds cut to two and the end
+ * trimmed: `markdownStream` applies both one piece at a time, so no string holds the file.
  */
-export function transcriptMarkdown(
+function* transcriptPieces(
     record: SessionRecord,
-    turns: Turn[],
+    turns: Iterable<Turn>,
     catalog: Record<string, string>
-): string {
-    const lines: string[] = [
+): Generator<string> {
+    yield [
         `# ${record.title === '' ? record.id : record.title}`,
         '',
         `- ${words(catalog, 'server.export.session', record.id)}`,
@@ -88,7 +90,7 @@ export function transcriptMarkdown(
         `- ${words(catalog, 'server.export.folder', record.cwd ?? '')}`,
         `- ${words(catalog, 'server.export.started', record.started ?? '')}`,
         ''
-    ];
+    ].join('\n');
     for (const turn of turns) {
         if (turn.role === 'tool' && turn.tool !== null) {
             const state =
@@ -104,29 +106,50 @@ export function transcriptMarkdown(
                 turn.tool.summary,
                 state
             );
-            lines.push(`- ${line}`);
+            yield `\n- ${line}`;
             continue;
         }
         const who =
             turn.role === 'user'
                 ? words(catalog, 'server.export.user')
                 : words(catalog, 'server.export.assistant');
-        lines.push('', `## ${who} ${turn.at ?? ''}`.trimEnd(), '');
-        if (turn.role === 'user') {
-            lines.push(...turn.text.split('\n').map((line) => `> ${line}`.trimEnd()));
-        } else lines.push(turn.text);
-        lines.push('');
+        const body =
+            turn.role === 'user'
+                ? turn.text.split('\n').map((line) => `> ${line}`.trimEnd())
+                : [turn.text];
+        yield ['', '', `## ${who} ${turn.at ?? ''}`.trimEnd(), '', ...body, ''].join('\n');
     }
-    return `${lines
-        .join('\n')
-        .replace(/\n{3,}/g, '\n\n')
-        .trimEnd()}\n`;
 }
 
-/** The export's answer: the Markdown as a file the browser saves. */
+/**
+ * The file's text from its pieces, a piece at a time. The whitespace at the end of each piece is
+ * held back and joined to the next, because a run of line feeds that a piece ends with goes on into
+ * the next piece, and the end of the file is trimmed.
+ */
+function* markdownStream(pieces: Iterable<string>): Generator<string> {
+    let held = '';
+    for (const piece of pieces) {
+        const text = (held + piece).replace(/\n{3,}/g, '\n\n');
+        const kept = text.trimEnd().length;
+        held = text.slice(kept);
+        if (kept > 0) yield text.slice(0, kept);
+    }
+    yield '\n';
+}
+
+/** The export's answer: the Markdown as a file the browser saves, streamed. */
 function exported(record: SessionRecord, catalog: Record<string, string>): Response {
     const read = readTurns(record.path, record.tool, 0, Number.POSITIVE_INFINITY);
-    return new Response(transcriptMarkdown(record, read.turns, catalog), {
+    const pieces = markdownStream(transcriptPieces(record, read.turns, catalog));
+    const encoder = new TextEncoder();
+    const body = new ReadableStream<Uint8Array>({
+        pull(controller) {
+            const next = pieces.next();
+            if (next.done === true) controller.close();
+            else controller.enqueue(encoder.encode(next.value));
+        }
+    });
+    return new Response(body, {
         status: 200,
         headers: {
             'content-type': 'text/markdown; charset=utf-8',

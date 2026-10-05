@@ -171,14 +171,8 @@ export type WriteOutcome = {
 // The writers and the parsers, re-exported under their own names.
 export { coerce, createIdea, fieldTypes, insideHub, writeManifest } from './writes/manifest.ts';
 export { writeDeck } from './writes/config/deck.ts';
-export {
-    collectionFile,
-    createEntry,
-    identityField,
-    removeEntry,
-    reorderCollection,
-    writeEntry
-} from './writes/entries.ts';
+export { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
+export { collectionFile, identityField } from '../files/fs/collections.ts';
 export { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
 export { writeMute } from './writes/config/audit-mute.ts';

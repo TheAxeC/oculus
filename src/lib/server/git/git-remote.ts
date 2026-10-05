@@ -19,19 +19,23 @@ import {
     refFormat,
     remoteNames,
     revParse,
-    stoppedOn,
     upstream,
     type Outcome
 } from './git-write.ts';
+import { stoppedOn } from './git-index.ts';
 
 const UNKNOWN = 'that directory is not a workspace oculus knows';
 
 /** Bring the upstream's commits into the checked-out branch, the repository's own way. */
-export async function pull(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
+export async function pull(
+    root: string,
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
+): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
     const up = await upstream(root);
     if (!up.ok) return failed('this branch has no upstream, so there is nothing to pull from');
-    const done = await pullIn(root);
+    const done = await pullIn(root, signal);
     if (done.ok) return done;
     return stoppedOn(root, done, 'the pull');
 }
@@ -46,10 +50,14 @@ export async function fetchAll(root: string, roots: string[] = allowedRoots()): 
  * VS Code's Sync Changes: pull, then push what the branch holds that the upstream does not. A
  * pull that stops leaves the push unmade, since what would be pushed is not settled yet.
  */
-export async function sync(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
-    const pulled = await pull(root, roots);
+export async function sync(
+    root: string,
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
+): Promise<Outcome> {
+    const pulled = await pull(root, roots, signal);
     if (!pulled.ok) return pulled;
-    const pushed = await pushTo(root, []);
+    const pushed = await pushTo(root, [], signal);
     if (!pushed.ok) return pushed;
     return { ok: true, output: `${pulled.output}${pushed.output}`, error: '' };
 }
@@ -62,7 +70,8 @@ export async function sync(root: string, roots: string[] = allowedRoots()): Prom
 export async function publish(
     root: string,
     remote: string,
-    roots: string[] = allowedRoots()
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
     const known = await remoteNames(root);
@@ -83,14 +92,18 @@ export async function publish(
     // name that reads as an option never reaches the push.
     const judged = await refFormat(root, ['--branch', branch]);
     if (!judged.ok || branch.startsWith('-')) return failed(`${branch} is not a branch to publish`);
-    return pushTo(root, ['--set-upstream', remote, branch]);
+    return pushTo(root, ['--set-upstream', remote, branch], signal);
 }
 
 /** Push every tag to the upstream's remote, git's own `push --tags`. */
-export async function pushTags(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
+export async function pushTags(
+    root: string,
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
+): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
     const known = await remoteNames(root);
     if (!known.ok) return known;
     if (known.output.trim() === '') return failed('this repository has no remote to push tags to');
-    return pushTo(root, ['--tags']);
+    return pushTo(root, ['--tags'], signal);
 }

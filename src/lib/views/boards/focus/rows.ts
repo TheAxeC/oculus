@@ -15,12 +15,16 @@
 
 import type { TickerAction, TickerRow } from '$lib/ui/display/ticker-rows';
 import { daysTone, type TickerItem, type TickerTarget } from '$lib/state/boards/ticker';
+import type { TaskRef, TerminalsStore } from '$lib/state/sessions/terminals.svelte';
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
 import { t } from '$lib/state/shared/words/text';
 import type { WriteAnswer, WritesStore } from '$lib/state/client/writes.svelte';
 
 /** How a status button's id starts, the status following it. */
 const STATUS = 'status:';
+
+/** The id of the button that starts an agent on a task line. */
+const AGENT = 'agent';
 
 /** The lines one partial drew, by the row id each was given. */
 export type RowIndex = Record<string, TickerItem | undefined>;
@@ -40,6 +44,40 @@ export type Rows = {
 export function keptAction(actions: TickerAction[] | undefined): string | undefined {
     if (actions === undefined) return undefined;
     return actions.find((action) => action.id === 'done' || action.id === `${STATUS}done`)?.id;
+}
+
+/** The collection of the entries a task start is offered on. */
+const TASKS = 'tasks';
+
+/** The `agent` button of a task line: it opens the composer seeded with the task. */
+function agentAction(): TickerAction {
+    return {
+        id: AGENT,
+        label: t('project.action.agent'),
+        title: t('project.action.agent_tip')
+    };
+}
+
+/**
+ * The reference of the task a line is: an entry of the tasks collection, or a subtask of a project,
+ * a funding scheme or an entry with the key and the `do` text the line shows. Any other line is
+ * no task.
+ */
+function taskRef(line: TickerItem): TaskRef | null {
+    const target = line.target;
+    if (target === undefined) return null;
+    if (target.subtask === undefined) {
+        const entry = target.kind === 'entry' && target.collection === TASKS;
+        return entry ? { id: target.id, collection: TASKS } : null;
+    }
+    if (line.subtaskDo === undefined) return null;
+    const subtask = { key: target.subtask, do: line.subtaskDo };
+    if (target.kind === 'manifest') return { id: target.id, subtask };
+    if (target.kind === 'funding') return { id: target.id, collection: 'funding', subtask };
+    if (target.kind === 'entry' && target.collection !== undefined) {
+        return { id: target.id, collection: target.collection, subtask };
+    }
+    return null;
 }
 
 /** An ISO date a snooze button pushes an item out to. */
@@ -98,7 +136,7 @@ export function actionsFor(line: TickerItem): TickerAction[] | undefined {
             label: t('project.action.done'),
             title: t('project.action.mark_done')
         };
-        return [done, ...snoozeActions(), remove];
+        return [done, ...agentActions(line), ...snoozeActions(), remove];
     }
     if (line.snoozed) return [unsnooze()];
     if (target.kind === 'followup') {
@@ -120,7 +158,12 @@ export function actionsFor(line: TickerItem): TickerAction[] | undefined {
             title: t('project.action.set_status', status)
         });
     }
-    return [...statuses, ...snoozeActions()];
+    return [...statuses, ...agentActions(line), ...snoozeActions()];
+}
+
+/** The `agent` button, on a line that is a task. */
+function agentActions(line: TickerItem): TickerAction[] {
+    return taskRef(line) === null ? [] : [agentAction()];
 }
 
 /** Whether a line names something the board can open, which decides if its name is a button. */
@@ -233,19 +276,26 @@ async function write(
 }
 
 /**
- * Press one button on one line, and the sentence the board says about it. A write refused whole
- * answers ok with nothing changed and the refusals filled, which is reported as not saved rather
- * than as saved over an untouched file. A line with no target says nothing at all.
+ * Press one button on one line, and the sentence the board says about it. The `agent` button
+ * writes nothing: it opens the composer on the task through the terminals store and answers the
+ * sentence of a refusal, or nothing. A write refused whole answers ok with nothing changed and the
+ * refusals filled, which is reported as not saved rather than as saved over an untouched file. A
+ * line with no target says nothing at all.
  */
 export async function act(
-    writes: WritesStore,
+    client: { writes: WritesStore; terminals: Pick<TerminalsStore, 'composeAt'> },
     line: TickerItem | undefined,
     action: string,
     now: number
 ): Promise<string | null> {
     const target = line?.target;
-    if (target === undefined) return null;
-    const answer = await write(writes, target, action, now);
+    if (line === undefined || target === undefined) return null;
+    if (action === AGENT) {
+        const task = taskRef(line);
+        const refused = task === null ? '' : await client.terminals.composeAt({ task });
+        return refused === '' ? null : refused;
+    }
+    const answer = await write(client.writes, target, action, now);
     if (answer === null) return null;
     const refused = answer.refused.map((one) => one.reason).join(', ');
     if (!answer.ok) return t('editor.failed', answer.error ?? '');

@@ -1,4 +1,4 @@
-# The composer's choices for a new agent session: per agent, its pickers in the order the composer draws them. A picker has the words it is labelled with, the one flag every value of it passes, its default, and its values; a value has an id, the words it shows and what it passes after the flag, or no `pass:` for the CLI's own default, which passes nothing. A CLI release that adds a value is one line here. src/lib/data/sources/config/catalog/agents.ts reads this file and refuses a line it cannot use.
+# The composer's choices for a new agent session: per agent, its pickers in the order the composer draws them. A picker has the words it is labelled with, the one flag every value of it passes, its default, and its values; a value has an id, the words it shows and what it passes after the flag, or no `pass:` for the CLI's own default, which passes nothing, and `confirm: true` when a start with it is asked about first because the agent then asks the reader less. A CLI release that adds a value is one line here. src/lib/data/sources/config/catalog/agents.ts reads this file and refuses a line it cannot use.
 
 agents:
     claude:
@@ -31,14 +31,15 @@ agents:
                 default: manual
                 values:
                     - { id: manual, label: 'Manual permissions', pass: manual }
-                    - { id: acceptEdits, label: 'Accept edits', pass: acceptEdits }
-                    - { id: auto, label: Auto, pass: auto }
+                    - { id: acceptEdits, label: 'Accept edits', pass: acceptEdits, confirm: true }
+                    - { id: auto, label: Auto, pass: auto, confirm: true }
                     - { id: plan, label: Plan, pass: plan }
                     - { id: dontAsk, label: "Don't ask", pass: dontAsk }
                     - {
                           id: bypassPermissions,
                           label: 'Bypass permissions',
-                          pass: bypassPermissions
+                          pass: bypassPermissions,
+                          confirm: true
                       }
     codex:
         label: Codex
@@ -69,7 +70,12 @@ agents:
                 values:
                     - { id: read-only, label: 'Read only', pass: read-only }
                     - { id: workspace-write, label: 'Workspace write', pass: workspace-write }
-                    - { id: danger-full-access, label: 'Full access', pass: danger-full-access }
+                    - {
+                          id: danger-full-access,
+                          label: 'Full access',
+                          pass: danger-full-access,
+                          confirm: true
+                      }
             approval:
                 label: Approvals
                 flag: -a
@@ -77,4 +83,4 @@ agents:
                 values:
                     - { id: cli, label: 'CLI default' }
                     - { id: on-request, label: 'On request', pass: on-request }
-                    - { id: never, label: Never, pass: never }
+                    - { id: never, label: Never, pass: never, confirm: true }

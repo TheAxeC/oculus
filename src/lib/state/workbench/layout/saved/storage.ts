@@ -12,7 +12,8 @@
 // the arrangement was saved elsewhere and reads it (layout.svelte.ts, `takeSaved`).
 
 import { followKey } from '../../../shared/stores/storage-events.ts';
-import type { Pages } from '../model.ts';
+import { tabsOf } from '../instance.ts';
+import { hostsOf, type Pages } from '../model.ts';
 import { serialiseFloatless, serialiseLayout } from './saved.ts';
 
 /** The key the arrangement is saved under. The envelope inside it carries the version. */
@@ -34,6 +35,51 @@ export const PREVIOUS_KEY = 'oculus.layout.previous';
  */
 export const UNREAD_KEY = 'oculus.layout.unread';
 
+/**
+ * The key the record of layout writes is kept under: a JSON list of the last `WRITES_KEPT` entries,
+ * newest last, each a `LayoutWrite`. One browser tab's writes and another's are interleaved in it,
+ * told apart by `tab`.
+ */
+const WRITES_KEY = 'oculus.layout.writes.v1';
+
+/** How many entries the record of layout writes keeps. */
+const WRITES_KEPT = 500;
+
+/**
+ * The key a browser tab's id is kept under in `sessionStorage`, which lives and dies with the
+ * browser tab and survives its reloads.
+ */
+const TAB_KEY = 'oculus.layout.tab';
+
+/**
+ * One write of the saved layout: `at` the time in milliseconds, `tab` the id of the browser tab
+ * that wrote it, `call` the name of the layout store operation that asked for it, `page` the id of
+ * the page on screen, and `tabs` every tab then in the arrangement as `<tab id>:<view id>`, so a
+ * tab that disappears between two entries, and the browser tab that wrote the entry it
+ * disappeared in, can be read off the list. A write equal to the newest entry in all but its time
+ * (a sash dragged, a scroll) is counted on that entry: `n` the writes it stands for, `last` the
+ * time of the latest, so a drag does not push the older entries out of the list.
+ */
+type LayoutWrite = {
+    at: number;
+    tab: string;
+    call: string;
+    page: string;
+    tabs: string[];
+    n?: number;
+    last?: number;
+};
+
+/** Whether two entries are one write repeated: the same browser tab, call, page and tabs. */
+function repeated(one: LayoutWrite, other: LayoutWrite): boolean {
+    return (
+        one.tab === other.tab &&
+        one.call === other.call &&
+        one.page === other.page &&
+        one.tabs.join(' ') === other.tabs.join(' ')
+    );
+}
+
 /** What the store needs of a Storage, so a test can hand it a plain object. */
 export type Storable = Pick<Storage, 'getItem' | 'setItem'>;
 
@@ -48,9 +94,10 @@ export type LayoutStorage = {
     /**
      * Write a set of pages under LAYOUT_KEY, which is what every change to them ends in. A layout
      * read from an envelope written before floats is written in that envelope's form while it holds
-     * no float, so the shipped floats are still to be taken in at the next load.
+     * no float, so the shipped floats are still to be taken in at the next load. `call` names the
+     * layout store operation asking, and the write is then added to the record under WRITES_KEY.
      */
-    write: (next: Pages, floatless?: boolean) => void;
+    write: (next: Pages, floatless?: boolean, call?: string) => void;
     /**
      * Call `changed` whenever another browser tab saved the arrangement, as `source` (the window)
      * reports it; answers how to stop. The browser fires the event in every tab but the writer's,
@@ -86,7 +133,7 @@ export function createStorage(): LayoutStorage {
         }
     }
 
-    function write(next: Pages, floatless = false): void {
+    function write(next: Pages, floatless = false, call = ''): void {
         if (backing === null) return;
         try {
             const held = floatless && next.floats.length === 0;
@@ -94,6 +141,51 @@ export function createStorage(): LayoutStorage {
         } catch {
             // A full or refused storage loses the arrangement at the next load and nothing else:
             // the arrangement in memory is what the shell renders and it is already current.
+        }
+        record(next, call);
+    }
+
+    /** The id of this browser tab, made on first use and kept for the tab's life. */
+    function tabId(): string {
+        try {
+            const held = sessionStorage.getItem(TAB_KEY);
+            if (held !== null && held !== '') return held;
+            const made = Math.random().toString(36).slice(2, 8);
+            sessionStorage.setItem(TAB_KEY, made);
+            return made;
+        } catch {
+            return 'no-session-storage';
+        }
+    }
+
+    /**
+     * Add one entry to the record of layout writes, dropping the oldest past WRITES_KEPT, or count
+     * the write on the newest entry when it repeats it. It reads and writes nothing but WRITES_KEY
+     * and TAB_KEY, and a refusal of either is swallowed: the layout write it follows has already
+     * happened and is never held up by the record.
+     */
+    function record(next: Pages, call: string): void {
+        if (backing === null) return;
+        try {
+            const entry: LayoutWrite = {
+                at: Date.now(),
+                tab: tabId(),
+                call,
+                page: next.current,
+                tabs: hostsOf(next).flatMap((host) =>
+                    tabsOf(host.workbench.root).map((tab) => `${tab.id}:${tab.view}`)
+                )
+            };
+            const held: unknown = JSON.parse(backing.getItem(WRITES_KEY) ?? '[]');
+            const kept = Array.isArray(held) ? (held as LayoutWrite[]) : [];
+            const newest = kept.at(-1);
+            const list =
+                newest !== undefined && repeated(newest, entry)
+                    ? [...kept.slice(0, -1), { ...newest, n: (newest.n ?? 1) + 1, last: entry.at }]
+                    : [...kept, entry];
+            backing.setItem(WRITES_KEY, JSON.stringify(list.slice(-WRITES_KEPT)));
+        } catch {
+            // A full or refused storage, or a record that does not parse, loses the record only.
         }
     }
 

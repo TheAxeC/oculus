@@ -439,7 +439,8 @@ export function createWrites(
      * message. The endpoint is /api/git rather than /api/write, and the answer's `output` is what
      * git said or the message that was suggested; everything else, the token and the one retry
      * above all, is the same. An action that can lose work carries `confirm: true`, which the panel
-     * sets only from its dialog.
+     * sets only from its dialog. The answer is waited for with no limit of the page's, since the
+     * server's limits and Cancel govern a git command; `cancel` itself keeps the configured wait.
      */
     async function writeGit(
         action: string,
@@ -447,7 +448,7 @@ export function createWrites(
         fields: Record<string, unknown> = {},
         options: SendOptions = {}
     ): Promise<WriteAnswer> {
-        return send({ action, root, ...fields }, GIT_PATH, options);
+        return send({ action, root, ...fields }, GIT_PATH, options, action === 'cancel');
     }
 
     /**
@@ -455,23 +456,25 @@ export function createWrites(
      * endpoint is /api/deposit, and what the action did to the mirror is read back by
      * state/system/deposit.svelte.ts, whose query is asked again by the panel, rather than carried
      * here. An action that can lose work carries `confirm: true`, which the panel sets only from
-     * its dialog.
+     * its dialog. The answer is waited for with no limit of the page's, as `writeGit` does, and
+     * `cancel` keeps the configured wait.
      */
     async function writeDeposit(
         action: string,
         id: string,
         fields: Record<string, unknown> = {}
     ): Promise<WriteAnswer> {
-        return send({ action, id, ...fields }, DEPOSIT_PATH);
+        return send({ action, id, ...fields }, DEPOSIT_PATH, {}, action === 'cancel');
     }
 
     /** One write, said to the listeners when it does not land. */
     async function send(
         request: unknown,
         path = '/api/write',
-        options: SendOptions = {}
+        options: SendOptions = {},
+        limited = true
     ): Promise<WriteAnswer> {
-        return tell(await exchange(request, path), options);
+        return tell(await exchange(request, path, limited), options);
     }
 
     /** A write whose request failed or whose answer could not be read, said as a failed read. */
@@ -484,13 +487,14 @@ export function createWrites(
     /**
      * One write, with the one retry a stale token gets. The whole of it, the retry and the reading
      * of each answer included, is given up once the configured time has passed with no answer, so a
-     * request that never answers leaves no form waiting on it.
+     * request that never answers leaves no form waiting on it. A git write passes `limited` false
+     * and waits for the server's answer, which its own limits and Cancel bound.
      */
-    async function exchange(request: unknown, path: string): Promise<Exchange> {
+    async function exchange(request: unknown, path: string, limited = true): Promise<Exchange> {
         state.pending += 1;
         state.error = null;
         const gate = new AbortController();
-        const wait = writeTimeout(settings());
+        const wait = limited ? writeTimeout(settings()) : null;
         const timer = wait === null ? null : setTimeout(() => gate.abort(), wait);
         try {
             let response = await post(request, path, gate.signal);

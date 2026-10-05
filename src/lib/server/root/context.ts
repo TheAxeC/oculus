@@ -62,6 +62,7 @@ import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { defaultWorkspacesPath, ignoredCache, type IgnoredCache } from '../files/fs.ts';
 import { pickerState, type PickerState } from '../files/fs/picker.ts';
 import { fsWrites, type FsWrites } from '../core/json.ts';
+import { createRunningGit, type RunningGit } from '../core/git/running.ts';
 import { memoriesMemory, type MemoriesMemory } from '../content/memories.ts';
 import { browserRoots, repositoryRoots } from '../files/roots.ts';
 import { wallpaperMemory, type WallpaperMemory } from '../content/wallpaper.ts';
@@ -130,6 +131,8 @@ export type ServerContext = {
      * long copy holds up another file operation and not the workspace, bookmark and note writes.
      */
     opsWrites: FsWrites;
+    /** The git and deposit writes in flight, so Cancel ends the one a root or a deposit runs. */
+    gitRunning: RunningGit;
     /** The ignored names the file browser's listings asked git for lately. */
     ignoredCache: IgnoredCache;
     /** Whether the folder panel is open, so a second request while it is open is answered busy. */
@@ -454,6 +457,7 @@ export function createServerContext(
         engine,
         fsWrites: writes,
         opsWrites: fsWrites(),
+        gitRunning: createRunningGit(),
         ignoredCache: ignoredCache(),
         folderPicker: pickerState(),
         hpcLogPaths: polled.hpcLogPaths,

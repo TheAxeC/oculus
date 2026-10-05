@@ -147,6 +147,8 @@ export type DepositOptions = {
     gh?: GhRun;
     /** How git is run; the real one when absent. A test fails one command through it. */
     git?: GitRunner;
+    /** The signal that ends the commands of this run when Cancel aborts it. */
+    signal?: AbortSignal;
     /** The last plan per project, kept by the owning server context for the GET. */
     plans?: Map<string, Plan>;
 };
@@ -195,13 +197,18 @@ function settings(options: DepositOptions): {
     run: GhRun;
     where: (dir: string, mirrors: string) => Where;
 } {
-    const runner = options.git;
+    const { git: runner, signal } = options;
+    const ghRun = options.gh ?? gh;
     return {
         mirrors: options.mirrors ?? defaultMirrorsDir(),
         into: hubTarget(options),
-        run: options.gh ?? gh,
-        where: (dir, mirrors) =>
-            runner === undefined ? { dir, mirrors } : { dir, mirrors, git: runner }
+        run: (args, timeout) => ghRun(args, timeout, signal),
+        where: (dir, mirrors) => ({
+            dir,
+            mirrors,
+            ...(runner === undefined ? {} : { git: runner }),
+            ...(signal === undefined ? {} : { signal })
+        })
     };
 }
 
