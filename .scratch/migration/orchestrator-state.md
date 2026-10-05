@@ -163,6 +163,10 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Z538 (raised 2026-10-05, D44's brief check 4). A new guarded entry for D44's two tests needs your yes (Z392): "G43. Submit runs only the plan the reader confirmed, equal to the plan the server computes at the press, and a job script whose code and sourced files never name `/local/$SLURM_JOB_ID` gets the warning before Submit." Code: `src/lib/server/machine/hpc/submit.ts`, `scratch.ts`. Test: `tests/server/machine/hpc/submit.test.ts`, the two tables. (a) Yes: a wrong copy or a job that writes to the shared home without warning is caught by the suite. (b) No: no tests; the look and quoted runs are D44's only check. Recommendation: (a). The lazy option is (b).
+
+- Z539 (raised 2026-10-05, D44's brief check 5). D44's look can prove the copy and `sbatch` end to end only with one real job on your cluster account. (a) At the look I submit a one-minute job that only writes `hostname` and the date to its log, a new script `code/hpc/oculus_submit_check.slurm` in engram (its `code/` is 82 files, 569 KB), on the `main-cpu` partition (`docs/HPC-UTwente-howto.md:221`), and read its log. (b) You name an existing script and I submit that. (c) No real submit: the look stops at the confirm, and the rsync over ssh and the remote `sbatch` are never run before D44 lands. Recommendation: (a). The lazy option is (c).
+
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
