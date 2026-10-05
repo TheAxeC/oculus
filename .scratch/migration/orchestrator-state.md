@@ -62,6 +62,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   round1_builder_usage: 136,854 tokens, 679 tool uses, 112.8 min, the verify list 4 times; look and cases 62 (second half) and 63 not done (need a drawn view)
   q119_closing_round2: ad7f5c6d3c49f4f40, 298,145 tokens in all, 160 tool uses, 36.9 min (C1 and C3 written in)
   round: 1 (agents/briefs/Q119.md: S5's review findings, Q119, Q122, Z505, Z506, Z509; Z507 open before landing)
+  round1_reviewer: agents/reviews/S5-refuter.md (Repair round 1, refuted), claude-opus-5-5 (a78d8970b3fff491c, stopped by mistake and resumed), 191,100 tokens, 114 tool uses, 20.1 min; no item or case violated, Spec 3, Proof 3, Standards 3, Behaviour 1, each small; S5 lands after X3f (Axel)
 - step: D20
   executor: agent
   worker: claude:sonnet at ordo-high

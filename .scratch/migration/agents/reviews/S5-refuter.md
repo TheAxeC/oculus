@@ -174,3 +174,46 @@ Cases of the brief's "Cases":
 - The reviewer ran `git -C . diff 6005baee6 -- <paths>` once: the allowed `git diff <base>`, with a no-op `-C .`. All scratch work ran in scratchpad/s5-refute (a copy of the worktree and the base without config/local.yml). Nothing in the worktree or the ledger was written.
 
 Reviewer usage: ordo-high on claude-opus-5-5 (ab608db77fb2265cd), 365,219 tokens, 97 tool uses, 22.0 min.
+
+## Repair round 1, refuted
+
+Reviewer a78d8970b3fff491c, claude-opus-5-5, ordo-high (stopped by the orchestrator by mistake and resumed): 191,100 tokens, 114 tool uses, 20.1 min (completion notice of the resumed run). Base 6005baee6; no round-start tree recorded, so the whole diff since the base was read.
+
+### Verification
+
+`checks.sh` from the worktree root fails (`npm error enoent Could not read package.json`); run from `tools/oculus`, where the state file runs the list: prettier, ASCII gate, svelte-kit sync, eslint, vitest, svelte-check (0 errors, 0 warnings) all ok; `test:quick: 113.1 s (limit 45.0 s); every command passed`, `test:quick: over the time limit`, `checks: 1 commands passed` (other agents were running; the builder's run took 26.4 s). Item 2: 8 files, 138 tests passed. Item 3: 7 files, 64 tests passed. Item 4: 21 files each pass alone. Item 5: 4 files, 5 tests passed. Item 6 grep and awk print nothing (the awk range 455-494 is stale; the entries sit at `options.yml:461-502`). Item 7 greps print nothing. `folder-check.sh` exit 0. ASCII gate: one line, `config/present.yml:252` "Linkoping" with its accent, a name. `unused-exports.sh`: 257 to 255, removed `codeThemeIds`, `WHITESPACE_WORDS`, `LanguageRecord`, `FilesSettings`, added `local.ts: readLocalText`. The builder's probes for cases 11 to 16, 25 to 29, 35, 39, the rust findings and `cmp.py` (`differences: 0`) reproduce the report. S5's own case probes on a copy of the final tree: server 29 PASS, state 138 PASS (S5 cases 1-62 and 65). T1 and T2 pass.
+
+### Verdicts
+
+Q119 items 0.1-0.4, 1.1-1.8, 2.1-2.6, 3.1-3.6, 5.1-5.9 hold (1.5, 1.6 and 1.8 with the departures in Spec 1 and 2); item 4 not verifiable here (the look, Z507). Q119 cases 1-39 met. S5 items 1-9 hold, T1 and T2 met. S5 cases 1-61 and 65 met; 62 first half met, second half not verifiable here; 63 not verifiable here; 64 met.
+
+### Findings
+
+Spec
+1. `src/lib/data/helpers/editor.ts:40-42`: `EditorOptions` carries `fitsTabSize` and `fitsWrap` predicates where Q119 1.8 names `min`, `max` and `values`; the better form, not marked as a departure. Verdict none.
+2. `settings.ts`, `opens-in-program.ts`: `filesSettings`/`FilesSettings` deleted (Q119 1.5 keeps the readers' names) and `isBundleId` left `opens-in-program.ts` (1.6 keeps it); both right on the merits, neither marked as a departure. Verdict none.
+3. `config/text/findings.yml`, `catalog/value-words.ts` (new): the group `findings.words` added outside the write list's two groups; named in the report's judgment calls. Verdict none.
+
+Proof
+1. `tests/data/sources/config/settings.test.ts:241-246`: the title's second `%s` takes `field`, not `kind`, so two rows print the same title "answers the default for a days_back with a daysBack problem". Verdict none.
+2. `S5-report.md:905`: the diagrams row lists 10 files; `git diff 6005baee6 --stat -- docs/diagrams` shows 14 (`layer-ui.dot/.svg`, `layer-views.dot/.svg` missing). Verdict none.
+3. `S5-report.md:496`: S5's cases are not rerun on the round's final tree though the round changes code they run through; the reviewer's rerun passes. Verdict none.
+
+Standards
+1. `S5-report.md:1057`: the builder ran two read-only git commands, which spec.md forbids; disclosed; changed nothing.
+2. The worktree's index holds a staged deletion `D  src/lib/server/core/fetch-period.ts` that no report discloses; the deletion itself is item 1.5.
+3. `src/lib/ui/controls/editor/options.ts:15,18`: hand-written unions of Monaco's `wordWrap` and `renderWhitespace` words remain (present at the base), against Q119 1.8's "no list of their words is written in code".
+4. `readLocalText` export: judged acceptable, not a finding.
+
+Behaviour
+1. `src/lib/state/sessions/latex.svelte.ts:598-603`: with no config yet, or a config whose catalog was dropped, a `.tex` save now builds nothing where at the base it built; stated in the doc comment, absent from the report's before-and-after and unruled by Z509. Verdict none.
+
+No closure the builder claims fails to reproduce; none was closed by removing a check.
+
+### Declined to judge
+
+The look and S5 cases 62 (second half) and 63 (Z507); case 64's reverted-line copy; who staged the deletion of `fetch-period.ts`.
+
+### The reviewer's own conventions
+
+One read-only `git rev-parse --short HEAD`; no file written in the worktree beyond vitest's cache; a scratch copy without `config/local.yml`; no server, no port.

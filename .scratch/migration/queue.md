@@ -1,6 +1,6 @@
 In flight (4 of 5 slots):
 - X3f (opening a file row, and the tab row's actions): round 3, the actions in the breadcrumb bar; its builder is building.
-- S5 (the Settings view's controls and headings): round 1 built; its review over the round is running.
+- S5 (the Settings view's controls and headings): round 1 reviewed, no item or case violated; lands after X3f.
 - D20 (an agent from a task or a worktree): built; its review is running.
 - D44 (Submit on a .slurm file): its brief is being written; its builder once X3f has landed.
 
