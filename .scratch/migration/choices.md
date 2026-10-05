@@ -260,6 +260,15 @@ Axel asked for a new step: the LaTeX view redone so a `.tex` file opened in the 
 
 Booked in `plan.md` Rulings and the step list.
 
+## Z520 (2026-10-05, from E4's brief)
+
+The question: E4's shapes 1, 2, 4, 5 and 6 that the plan does not name.
+
+- Chosen: as booked in `plan.md` Z520.
+- Not chosen, the lazy ones: no rail button; an existing glyph such as `page`; no catalog entries for the limits; the download leak stated and kept; one refusal word for two causes.
+
+Where it applies: E4. Booked in `plan.md` Rulings.
+
 ## Z519 (2026-10-05, from D20's second brief check)
 
 The question: seven shapes the brief took without a ruling, the renderer variable's reach, and two rules for one catalog group.

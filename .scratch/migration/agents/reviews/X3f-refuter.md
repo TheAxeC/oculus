@@ -306,3 +306,162 @@ Closures of the round's nine items: 1 closed (comment-width green); 2 closed (du
 - Whether `file-type.ts` should hold a view id and a tab label: a cohesion judgment; the boundary and import checks pass.
 
 Reviewer usage: ordo-high on claude-opus-5-5 (a2e13fa0838de52ab), 190,712 tokens, 56 tool uses, 7.9 min.
+
+## Repair round 2, refuted
+
+Step X3f, on `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3f`, base ec4c6f577. The round-2 diff was read against a round-1 tree, which I rebuilt in my scratchpad by applying `X3f-backed-out.patch` to a copy of `X3f-base`. The behaviour-removed runs were made on a second scratch copy of the worktree's `tools/oculus`, with `node_modules` symlinked. Each source file was put back and confirmed with `cmp`. Both copies are under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/` (`r1/` and `mut/`). The worktree itself is unchanged: `git status --short` showed only the builder's files.
+
+```
+# from tools/oculus in the worktree
+npm run diagrams                      -> exit 0; shasum of docs/diagrams/* identical before and after
+checks.sh                             -> ok ASCII gate (0.4 s); ok prettier (0.8 s); ok svelte-kit sync (7.1 s); ok eslint (35.1 s); ok svelte-check (29.5 s): ... 355 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS; ok vitest (38.9 s): Duration 31.38s ...; test:quick: 39.2 s (limit 45.0 s); every command passed; ... checks: 1 commands passed
+npm run test:quick -- --base ec4c6f577 -> 95 changed file(s); 67 test file(s), 10 essential; ...; test:quick: 12.0 s (limit 45.0 s); every command passed
+
+Verify 1: npx vitest run armed-keep.client, opening.client, tab-actions.client, comment-draft.client
+  -> Test Files 4 passed (4) / Tests 33 passed (33)
+  describe titles: 'the armed keep and the ask for the keyboard' (17 rows), 'opening a file of the file browser' (10 rows), 'the actions a tab hands up' (5 rows)
+G28's seven files (tab-menu, form-drafts, manifest-draft, source.test, comment-draft, terminal-close, channel)
+  -> Test Files 7 passed (7) / Tests 16 passed (16)
+  (the report's subset of five: 5 passed (5) / 11 passed (11))
+Verify 2: the eight tree checks of the brief      -> Test Files 8 passed (8) / Tests 93 passed (93)
+  the other tree checks (cycles, augments, diagrams, html-sites, config-folder, contrast, integrity, claude-usage)
+                                                  -> Test Files 8 passed (8) / Tests 134 passed (134); folder-check exit 0
+Verify 3: sh utils/unused-exports.sh vs X3f-base/unused-exports.txt
+  -> 1c1 < Unused exports (257) --- > Unused exports (256); 235d234 < src/lib/ui/controls/editor/options.ts: WRAP_ACTION
+Verify 4 greps (src tests config HELP.md DESIGN.md README.md, --exclude=local.yml):
+  FileTab, SaidLine, BookmarkStar, wrapAction, ontogglewrap, wrapListing, document.open_outside, document.toolbar,
+  file.bookmark_failed, file.bookmark_glyph, file.open_outside, file.toolbar, file.unbookmark, source.blame_title,
+  source.preview_glyph, source.preview_title, 'source.preview', links/StripActions, diff/rooted -> nothing
+  focusKept      -> DESIGN.md:395 (one hit)
+  STARTS_CLOSED  -> section-state.ts:10,17,22 only
+  StripActions   -> Source.svelte:42,98,396; DESIGN.md:427
+Verify 5: ASCII gate (perl form of spec.md) over src, tests, config (local.yml excluded), HELP.md, DESIGN.md -> prints nothing, exit 0
+G5 test and the docs route test: tests/ui/html.test.ts tests/data/sources/docs.test.ts -> 2 passed / 3 passed
+grep -rln "content/docs|api/docs" tests -> config.test.ts only (no test reads the headings field)
+renderDocumentParts probe (the builder's): headings [{"level":1,"text":"Title","id":"user-content-title"},...,{"level":2,"text":"Folders","id":"user-content-folders-1"}]; ids match the hrefs; text with no heading gives []
+
+G37 tests on the round-1 tree (scratch r1/, the three test files and rooted.svelte.ts copied in):
+  -> Test Files 3 failed (3) / Tests 10 failed | 22 passed (32); red rows: the two same-id copy rows and the newer-snippet row of tab-actions,
+     the six ask rows of armed-keep, and 'a double click from a pointer press' of opening
+G37 tests with a behaviour removed (scratch mut/, each file restored, cmp clean):
+  askFocus sets nothing                  -> 4 ask rows fail
+  openRow's askFocus call removed        -> 'a double click from a pointer press' fails, 1 failed | 9 passed (10)
+  handUp effect hands nothing up         -> both same-id copy rows fail, 2 failed | 3 passed (5)
+  TabActions.clear without the identity  -> 'leaves a newer snippet ...' fails, 1 failed | 4 passed (5)
+  TabActions on one $state.raw map       -> 'leaves a newer snippet ...' fails (expected undefined to be [Function])
+  arm without the preview guard          -> 'arms for a kept tab' fails, 1 failed | 16 passed (17)
+  unchanged scratch copy                 -> Test Files 3 passed (3) / Tests 32 passed (32)
+```
+
+### Verdicts
+
+Items of the round-2 brief:
+
+- 1: holds. `item-props.ts` has `onpressagain`, `TreeItem.svelte` calls it from `onmousedown` on `button === 0 && detail === 2`, `FileRow.svelte` passes `onkeep(row, event.timeStamp)` from the launch button and from `onpressagain`, and `Tree.svelte` forwards `pressedAt`. The press-time order in Chrome is a look case.
+- 2: violated, Standards 1. The code holds: the ask and its answer are in `armed-keep.svelte.ts`, `openRow` ends as the brief writes it, `rooted-tree.svelte.ts` passes the ask through `closed`, and `PaneBody.svelte`'s `inputOf` tries `native-edit-context`, `textarea.inputarea`, `iframe` and `[data-tab-focus]` in that order, with the watch and `focusGiven`. The tests are green and they fail with the behaviour removed. What is violated: `DESIGN.md:395` still names `focusKept` and describes only the layer path.
+- 2a: holds. `data-tab-focus` and `tabindex="-1"` are on the picture, on the download box (`File.svelte`), on Doc's `.view`, on the preview's scroll box through `RenderedMarkdown`'s `tabFocus`, and on the cannot-open box (`Source.svelte:429`). The source editor carries no mark.
+- 3: holds. `handUp` re-sets the snippet with `untrack` on every run, and `clear` checks identity. The two tables are red on the round-1 tree and red with each behaviour removed.
+- 4: violated, Standards 2 and Standards 3. Spec 1 and Behaviour 1 also apply to its cases. The strip, palette, key and menu parts are built: `StripActions.svelte` in `views/sources/source/`, `ask-perform.ts` `tabActions`, the `save` KeyAction, and the TabFacts group with `pages.ts` helpers. The removals are confirmed by the verify-4 greps. The bookmark, browser and program calls moved into `state/workbench/navigation/pages.ts` sit inside the boundaries: the shell may import `state/workbench/navigation/**`, and the eight tree checks pass. The faults are in how the tab menu reads its stores and shows a refusal, not in the move.
+- 4a: holds by reading. The star, Open in Program, Open in Browser Tab, the rendered half (palette row `oculus.toggleRendered`), the Doc view, the keep layer and the gutter blame are all present.
+- 5: holds by reading.
+  - 5a: `followedTab` in `sections/followed-tab.ts`, in the brief's order.
+  - 5b: `renderDocumentParts` and the server `headings` field (the probe output is above), the store with `seq` in `headings.svelte.ts`, `shareHeadings` from Doc and the preview, and the nesting through `headingOutline`.
+  - 5c: `STARTS_CLOSED = ['editors', 'timeline']` (`section-state.ts:10`). `HELP.md:121` and `DESIGN.md:422` are rewritten.
+  - Behaviour 2 applies to case 30.
+- 6: not applicable in the worktree. Ruling Z508 replaces the 24-link list with a `[TOC]` line, which the orchestrator inserts at landing. The `[TOC]` rendering in `markdown.ts` exists at the base (`grep -c TOC` gives 6 in both trees).
+- 7: holds. There are three `*.client.test.ts` files with no DOM and no new dependency. The helper moved to `tests/ui/frame/rooted.svelte.ts`, with `cell` added, and the one import changed. There is one table per unit, and no title carries history wording (the grep over the added titles is clean). The G37 runs are above.
+- 8: holds.
+  - The `position` disposition reproduces: `grep -rnE "position:\s*(absolute|fixed)" src/lib/views` finds the seven rules the report names, each with a positioned ancestor in its own view (Memories `:339`/`:417`, Settings `:266`, Item `:218`, Graph `:419`) or fixed to the viewport (Memories `:397`).
+  - The other dispositions are look items or need no change.
+
+Cases (these replace cases 12 to 19, 25, 28, 29 and the strip half of 30 of X3f.md; the other X3f.md cases stand as look cases, which item 8 lists):
+
+- 1 to 9: not verifiable, look cases. By reading, case 3 and case 5 put the focus in the frame; see Behaviour 1.
+- 10: met. The opening table row 'a double click from a key' gives `['open source preview=false', 'keep tab-1']`, with no ask.
+- 11: not verifiable, look.
+- 12: met by reading. `StripActions` draws only when `markdown && head === undefined && !blocked` (`Source.svelte:397`).
+- 13, 14, 15: not verifiable, look. For case 15, the handUp tables are green and red without the fix.
+- 16: partial, Behaviour 1. By reading, these hold: the save key is performed whatever the focus (`workbench-keys.svelte.ts`, `save` branch, with `perform` returning true so `preventDefault` runs); a commit read lists no Save (`ask-perform.ts:40`); and no tab means nothing is saved. Not met: a PDF or HTML tab whose frame holds the keyboard, which item 2 now gives it after a double click.
+- 17: partial, Spec 1. A read-at-commit Markdown tab lists no Blame row. The other rows hold by reading `ask-perform.ts:40-67`. Toggling the gutter and the status-bar blame is a look item.
+- 18, 19, 20: not verifiable, look. For case 18's refusal words, see Standards 3.
+- 21: met by reading. `Outline.svelte:111-112` gives `files.outline_no_editor` when `file === null`.
+- 22 to 28: not verifiable, look.
+- 29: met by reading. `outlineOf` answers null for any language but markdown (`outline.ts:149-152`), so `files.outline_none`; LaTeX is unchanged.
+- 30: partial, Behaviour 2.
+- 31: met by reading. `followedTab` reads only tabs in panes, and a closed Doc tab's `shareHeadings` cleanup forgets its list.
+- 32: met by reading. `askHeading` numbers each ask (`headings.svelte.ts:50`), and `shareHeadings` performs a `seq` it has not performed (`rendered-headings.svelte.ts:37-38`).
+- 33: not verifiable, landing. It is now `[TOC]` under Z508.
+
+### Findings
+
+#### Spec
+
+- `src/lib/views/sources/source/Source.svelte:229-230`: `if (blocked || head !== undefined) return null;` (inRepo), so `blameable: inRepo !== null && draft.loaded` (`:269`) is false at a commit.
+  - What is wrong: case 17 expects "a read-only Markdown file in a repository read at a commit lists only the Blame row". The code lists no row at all. The report's case-17 row says "a read-only tab lists only the rows that apply" and does not raise the gap under the brief's faults.
+  - Failure scenario: the palette over `CLAUDE.md` read at HEAD~1 shows no Git: Toggle Git Blame row, and the look marks case 17 against an expectation the code was never built to meet.
+  - What would settle it: either the case is wrong (the orchestrator rules), or blame is offered for a commit read.
+  - Verdict: case 17 partial.
+
+#### Proof
+
+- `X3f-report.md:50`, verify 4: "`focusKept` ... print nothing".
+  - What is wrong: my grep finds `DESIGN.md:395` "... once the tab has drawn again (`focusKept` in `PaneBody.svelte`)". The report also lists `DESIGN.md:395` among the sentences it rewrote.
+  - Failure scenario: the orchestrator accepts the grep as clean and lands a DESIGN.md that names a function the tree no longer has.
+  - Verdict: item 2 (with Standards 1).
+- `X3f-report.md`, verify 1: G28's run quotes five of its seven files and leaves out `terminal-close.test.ts` and `channel.test.ts`. G5's `tests/ui/html.test.ts` is not quoted, though `ui/html.ts` changed. All of these pass in my runs (7/16 and 2/3), so no verdict changes.
+
+#### Standards
+
+1. `DESIGN.md:395`: "and then puts the keyboard in the kept tab's editor or frame once the tab has drawn again (`focusKept` in `PaneBody.svelte`)".
+   - What is wrong: a sentence the diff made false (spec.md, the rule that every sentence a change makes false is rewritten). `focusKept` is gone. The sentence also leaves out three things: the ask raised from the row path (`openRow`'s `askFocus`), the second press taken on `mousedown`, and the `data-tab-focus` box.
+   - `HELP.md:168` "leaves the keyboard in the kept tab's editor or frame" is incomplete for the same reason: a picture, a download, a Doc tab and a preview take the keyboard on their box.
+   - Failure scenario: a maintainer looks for `focusKept` to change the focus rule, finds nothing, and does not learn that `inputOf` and the ask in `armed-keep.svelte.ts` hold it.
+   - Verdict: item 2 violated.
+2. `src/lib/shell/panes/strip/tab-menu-state.svelte.ts:42`: `const { layout, explorer, fs, selectors, writes, ui } = deps.client;` and `:75` `programs: selectors.programApps()`.
+   - What is wrong: the shell reads the `selectors` store. `SHELL_STORES` (`tests/checks/tree/boundaries.test.ts:327-341`) does not list it. The check stays green only because its destructuring regex matches `= client` or `= useState()` and does not follow `= deps.client`. `writes` was read the same way at the base. `selectors` and `fs` are new in this diff, and `fs` is listed.
+   - The check was not loosened; it does not see this path.
+   - Fix: pass `programApps` in through `TabMenuDeps` from the component that owns the menu, or extend the check to `deps.client` and list the store with a reason.
+   - Failure scenario: the next shell file that reads any store through `deps.client` passes the boundary check unseen.
+   - Verdict: item 4 violated.
+3. `src/lib/state/workbench/navigation/pages.ts:481-483`: `return markRefusal(written);` / `return held === null ? '' : markRefusal(await calls.removeBookmark(held.id));`, shown raw by `tab-menu-state.svelte.ts:93` `said = await bookmarkTabFile(fs, file, add);`.
+   - What is wrong: `markRefusal` (`fs-transport.ts:141-143`) returns the endpoint's reason or error text unmapped. That breaks spec.md's rule that an error from the engine is mapped to a catalog line before it is shown. The row path wraps the same reason as `t('files.bookmark_failed', reason)` (`bookmark-actions.ts:49`), and the deleted `BookmarkStar.svelte` wrapped it as `file.bookmark_failed`.
+   - Failure scenario: Add Bookmark from the tab menu on a file whose label clashes, or with the server down, shows the bare server reason under the strip. The row menu shows "The bookmark was not written: ..." for the same refusal.
+   - Verdict: item 4 violated; it bears on case 18's refusal line.
+4. `src/lib/views/shared/explorer/tree/menu/row-menu.ts:8`: "// taken out as the row's star does, a file or folder" (53 columns, then the sentence goes on at `:9`).
+   - What is wrong: a head comment the round edited is left with a short line mid-paragraph. Spec.md says an edited comment is rewrapped as a paragraph at 100 columns. The comment-width check passes because it tests only the upper bound.
+   - Failure scenario: the next reader of the head comment sees a broken paragraph.
+   - Verdict: none (standards only).
+5. `src/lib/state/workbench/navigation/pages.ts:1-15`, the head comment.
+   - What is wrong: the comment does not name the three helpers this diff adds there: `tabFileFacts`, `bookmarkTabFile` and `openInBrowserTab`. The report's list of head comments re-read omits `pages.ts`.
+   - Failure scenario: a reader looking for where the tab menu's bookmark and browser calls live is not pointed to this 489-line file.
+   - Verdict: none (standards only).
+
+#### Behaviour
+
+1. `src/lib/shell/panes/PaneBody.svelte`, `inputOf`, which answers `iframe` for a file tab of a PDF and for a document tab of HTML; with `Workbench.svelte:186` `saveSource` and the window `keydown` listener in `workbench-keys.svelte.ts`.
+   - What is wrong: after item 2 a double click on a PDF or an HTML file puts the keyboard in the frame. A keydown inside a frame is never dispatched to the parent window, which is the same premise the brief gives for the keep layer. So Cmd+S pressed there never reaches the `save` action, and the frame's page or Chrome's PDF viewer answers it with its own save dialog.
+   - The report's Cmd+S rows do not state the frame case.
+   - Failure scenario: double-click `main.pdf`, press Cmd+S, and Chrome's download/save dialog opens. Case 16 and ruling Z508 ("Cmd+S always takes the browser's save dialog away") both say no dialog opens.
+   - This is by reading; the look settles it.
+   - Verdict: case 16 partial.
+2. `src/lib/views/sources/files/sections/Outline.svelte:113-116`: `rendered ? drawn !== null && drawn.length === 0 ? t('files.outline_empty') : ''`, with `Doc.svelte:79` `headings: () => shown?.headings ?? []` and `docs.svelte.ts:56,66` (`headings: []` in the loading and failed states).
+   - What is wrong: while a Doc tab loads, and after its read fails, it publishes an empty list, so the Outline says "The file has no headings." The source-tab branch waits (`items.length === 0 && !waiting`); the rendered branch has no such wait.
+   - Failure scenario: open `DATA-MAP.md` in the Doc view on a slow read. The Outline first says the file has no headings, then lists 24.
+   - Case 30 asks for "no rows and no error of its own". The rows part holds. Whether this line counts as such an error is read by the orchestrator.
+   - Verdict: case 30 partial.
+
+### Declined to judge
+
+- Every (look) case: 1 to 9, 11, 13 to 15, 18 to 20 and 22 to 28, and case 33 at landing. These are the orchestrator's look on TEST.
+- Behaviour 1 is by reading. Whether Chrome's PDF viewer or a same-origin HTML frame opens a save dialog on Cmd+S is settled at the look.
+- Whether Chrome raises `mousedown` with `detail === 2` before the first press's read returns, in the race of case 2.
+- The window capture `pointerdown`/`keydown` listeners in `PaneBody.svelte`'s focus effect, which end a pending ask. The builder made this call; whether they end an ask the reader still wants (a key pressed while Monaco is mounting) is a look item.
+- The added `.body { position: relative }` against the views' overlays, beyond the grep above.
+- The form of Step 0 (Z495, "a double click opens no tab"), which needs network and `activeElement` records.
+- Whether the `file-search` icon reads like VS Code's Open Preview to the Side glyph.
+- Whether `Source.svelte`'s `own` `$derived` re-adds the Monaco actions on each git state move (`blameable` reads `inRepo`). This would need a runtime trace in the browser.
+- `markdown.ts` places `export type { RenderedHeading };` between its imports. The import-order check passes, and I leave the style to the orchestrator.
+- The `headings` field of `api/docs` has no test. `data/prose/markdown.ts` and `server/content/docs.ts` sit under no guarded entry's Code line (G32 names `data/sources`, `data/snapshot` and `data/model`, where only a type was added), so under spec.md's guarded-entry rule no test is required. The probe above shows the field matching its hrefs.
+- `followedTab` has no test of its own. It is not under G37's Code line. It is to be reconciled with D42's `followedFile` at landing (brief item 5a).
+
+Usage: ordo-high on claude-opus-5-5 (a4505c32f469215eb), 136,251 tokens, 114 tool uses, 17.1 min.
