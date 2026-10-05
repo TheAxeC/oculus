@@ -51,8 +51,10 @@ dispatch:   # steps in flight, up to seven (Z423)
   base: 995e6dfad
   launched: 2026-10-06
   report: agents/reviews/A3-report.md
+  builder_usage: 271,977 tokens, 452 tool uses, 109.7 min (verify item 8 not met: the modules were written before their tests, so no run with the module present and the behaviour missing exists, and none is made by removing code)
   brief_check: agents/reviews/A3-brief-check.md (a48d9494f333f3e40, claude-opus-5-5, 268,096 tokens, 87 tool uses, 13.9 min), closed in the brief by a42ad450094192df4 (claude-opus-5-5; 213,493 tokens, 44 tool uses, 10.9 min)
   shared_paths: with E4: +page.svelte's connect list, DESIGN.md:114, HELP.md:269 (one line, each step's clause), server context.ts's close() list (both-add, both kept), catalogs.ts (A3's behaviorFindings beside E4's closed_paths_shape), local.ts, local.test.ts, options.yml, behavior.yml, findings.yml, workbench.yml, boundaries.test.ts, context-fixture.ts, client payloads, entities and context, model index (separate hunks); with O30: +page.svelte and client context.ts (separate hunks), package.json (one dependency each, the lockfile regenerated at landing); the second of A3 and E4 adds schedule to the closed channels in A3's item 14 wording; so the merge is simple
+  reviewer_report: agents/reviews/A3-refuter.md (a239b2d8b039c975e, claude-opus-5-5, running since 2026-10-06)
   landing: not-started
   round: 0
 - step: E4
