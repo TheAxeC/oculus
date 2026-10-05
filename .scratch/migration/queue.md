@@ -1,10 +1,10 @@
-In flight (3 of 5 slots):
-- X3f (opening a file row, and the tab row's actions): round 3, the actions in the breadcrumb bar; builder starting.
-- S5 (the Settings view's controls and headings): round 1 built; its review next.
-- D20 (an agent from a task or a worktree): built; its review next.
+In flight (4 of 5 slots):
+- X3f (opening a file row, and the tab row's actions): round 3, the actions in the breadcrumb bar; its builder is building.
+- S5 (the Settings view's controls and headings): round 1 built; its review over the round is running.
+- D20 (an agent from a task or a worktree): built; its review is running.
+- D44 (Submit on a .slurm file): its brief is being written; its builder once X3f has landed.
 
-Queued, in order (28 steps):
-- D44 (Submit on a .slurm file): brief next; once X3f has landed.
+Queued, in order (27 steps):
 - X3e (Files lists reordered by drag): brief ready; once S5 has landed.
 - D28 (saving a file as VS Code does): brief ready; once S5 and X3e have landed.
 - D45 (LaTeX as VS Code's LaTeX Workshop): brief checked; once S5 has landed.
