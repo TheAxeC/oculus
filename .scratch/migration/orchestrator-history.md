@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z561 (2026-10-05, closed in automode): the apps entries' Settings sections; `choices.md`.
+- Z560 (2026-10-05, closed in automode): G49's Code line names every unit its sentence covers; `choices.md`.
 - Z559 (2026-10-05, closed in automode): the icon of `app_view`; `choices.md`.
 - Z558 (2026-10-05, closed in automode): the Settings heading of the apps limits; `choices.md`.
 - Z557 (raised 2026-10-05, closed 2026-10-05 by Axel: "(a)"): O30's brief check; plan.md Rulings.

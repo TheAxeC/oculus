@@ -2,6 +2,24 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z561 (2026-10-05, step E4)
+
+The question: the Settings section words of the nine `apps.*` entries under the Apps heading (Z558).
+
+- Chosen: (a) two sections: "App limits" for the eight limits and "Closed folders" for `closed_paths`, in the plain words the other sections use.
+- Not chosen: (b) one section for all nine, which puts the closed folders among numbers. The lazy one was (b).
+
+Where it is built: E4's brief. Booked in `plan.md` Rulings.
+
+## Z560 (2026-10-05, step E4)
+
+The question: G49's Code line, which I wrote, left out units its approved sentence covers: the page's `open`, the write's target and rate checks, and the apps-folder file's tab choice and file-route answer (E4's closing, C63, C72, C81).
+
+- Chosen: (a) the Code line names them, so spec.md's test rule gives each a G49 test table; the sentence Axel approved under Z523 is unchanged.
+- Not chosen: (b) keep C63, C72 and C81 as quoted runs, which breaks spec.md's rule of one test per unit an entry covers. The lazy one was (b).
+
+Where it is built: E4's brief. Booked in `plan.md` Rulings.
+
 ## Z559 (2026-10-05, step E4)
 
 The question: the icon of `app_view` (E4's brief check: Z520 gave it lucide `app-window`, which `open_program` already draws, `icons.yml:17`).

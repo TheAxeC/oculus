@@ -32,7 +32,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Code: `src/desktop/`, the link decision, the window options and the sender check.
   Test: written by O30, its file and titles named in `agents/briefs/O30.md` (Z518, Z556).
 - G49. An app reaches only what its approval names: its files are served only while it is approved, under its current address key, and only from its recorded list inside its real folder; `open` never reaches the engine root, oculus's own config folder, a dot path or a `closed_paths` folder by any root key or link; a write it sends is refused unless the kind its body matched is the open kind its header names; an approval is taken only for the hash the reader was shown; a manifest asking for a closed channel or write is refused before approval.
-  Code: the manifest reader, `src/routes/apps/`, the `(apps)` routes, the write route's app gate.
+  Code: the manifest reader, `src/routes/apps/`, the `(apps)` routes, the write route's app gate, the page's app methods (`open` and the write's target and rate checks), the tab choice for an apps-folder file (`tabForKind`) and the file route's answer for one.
   Test: written by E4, its files and titles named in `agents/briefs/E4.md` (Z523).
 
 ## Your work is not lost or misplaced
