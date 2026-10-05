@@ -7,12 +7,11 @@
 // Each sentence is one catalog entry. It is cut at the root's place in it into `lead`, `label` and
 // `tail`, so the view draws the root as a link inside the sentence.
 
-import {
-    parseRepoSettings,
-    REPO_SETTINGS,
-    type EditorProblem,
-    type ProblemReason
-} from '../../../../data/helpers/editor.ts';
+import { REPO_SETTINGS } from '../../../../data/helpers/editor.ts';
+import type {
+    EditorProblem,
+    RepoSettings
+} from '../../../../data/sources/config/editor-options.ts';
 import { refusedAnswer } from '../../../shared/answers/answers.ts';
 import { t } from '../../../shared/words/text.ts';
 import type { FileText } from '../../../sources/fs-transport.ts';
@@ -37,10 +36,14 @@ function cutAtRoot(root: string, filled: string): Pick<Origin, 'lead' | 'label' 
     return { lead: filled.slice(0, at), label: root, tail: filled.slice(at + ROOT.length) };
 }
 
-/** The words for why an entry was skipped. */
-function skippedReason(reason: ProblemReason): string {
-    switch (reason) {
+/** The words for why an entry was skipped: a value outside what the field takes, or a name. */
+function skippedReason(where: EditorProblem['where']): string {
+    switch (where) {
         case 'value':
+        case 'entry':
+        case 'field':
+        case 'block':
+        case 'family':
             return t('workbench.settings_origin_value');
         case 'unknown-language':
             return t('workbench.settings_origin_language');
@@ -57,7 +60,7 @@ function entryName(problem: EditorProblem): string {
 }
 
 /** The lines about one root, none for a root with nothing to say. */
-function originsOf(root: string, file: FileText): Origin[] {
+function originsOf(root: string, file: FileText, parse: (text: string) => RepoSettings): Origin[] {
     if (file.loading) return [];
     const unread = (reason: string): Origin[] => [
         {
@@ -71,7 +74,7 @@ function originsOf(root: string, file: FileText): Origin[] {
         return file.error === refusedAnswer(404) ? [] : unread(file.error);
     }
     if (file.truncated) return unread(t('workbench.settings_origin_cut'));
-    const parsed = parseRepoSettings(file.text);
+    const parsed = parse(file.text);
     if (parsed.kind === 'unparsed') return unread(parsed.line);
     if (parsed.kind === 'not-a-map') return unread(t('workbench.settings_origin_not_a_map'));
     const names = Object.keys(parsed.languages).sort();
@@ -93,7 +96,7 @@ function originsOf(root: string, file: FileText): Origin[] {
                     'workbench.settings_origin_skipped',
                     ROOT,
                     entryName(problem),
-                    skippedReason(problem.reason)
+                    skippedReason(problem.where)
                 )
             )
         });
@@ -103,12 +106,14 @@ function originsOf(root: string, file: FileText): Origin[] {
 
 /**
  * The lines under the `editor.languages` row: for each root once, in the order given, what its
- * settings file sets or why it was not read. `fileText` is the file store's read.
+ * settings file sets or why it was not read. `fileText` is the file store's read, and `parse` reads
+ * a file's text by the rule of the catalog the page holds (`repoSettings` of the selectors).
  */
 export function repoOrigins(
     roots: { key: string }[],
-    fileText: (root: string, path: string) => FileText
+    fileText: (root: string, path: string) => FileText,
+    parse: (text: string) => RepoSettings
 ): Origin[] {
     const keys = [...new Set(roots.map((one) => one.key))];
-    return keys.flatMap((key) => originsOf(key, fileText(key, REPO_SETTINGS)));
+    return keys.flatMap((key) => originsOf(key, fileText(key, REPO_SETTINGS), parse));
 }

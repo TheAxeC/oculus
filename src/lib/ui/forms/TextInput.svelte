@@ -13,6 +13,9 @@
     // of its own in the box hands `onkey`, which is asked first and answers true for a press it
     // took.
     //
+    // A caller that refuses the text hands the words as `invalid`: the box carries `aria-invalid`
+    // and the words as its title.
+    //
     // A right-click on the box opens its editing menu (TextBoxMenu.svelte), read from the box as
     // the right-click arrives; the menu is the box's own, so a menu of a row or a view around it
     // does not open over it.
@@ -36,6 +39,8 @@
         secret?: boolean;
         /** The keypad a touch screen offers, for a box holding a number. */
         inputmode?: 'decimal';
+        /** Why the text is refused, already translated; marks the box and is its title. */
+        invalid?: string;
         /** The input element, for a caller that puts the cursor in it. */
         input?: HTMLInputElement | null;
         /** A key press the caller takes for itself; true when it did. */
@@ -52,6 +57,7 @@
         placeholder,
         secret = false,
         inputmode,
+        invalid,
         input = $bindable(null),
         onkey
     }: Props = $props();
@@ -82,6 +88,8 @@
         {placeholder}
         {inputmode}
         aria-label={label}
+        aria-invalid={invalid === undefined ? undefined : 'true'}
+        title={invalid}
         aria-readonly={readonly ? 'true' : undefined}
         oninput={(event) => typedInto(event, oninput)}
         onkeydown={keyed}

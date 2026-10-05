@@ -31,7 +31,7 @@ import {
     parseAgents,
     withCacheModels
 } from '../../../data/sources/config/catalog/agents.ts';
-import { configDir, loadLocalOrDefaults, type LocalConfig } from '../../../data/sources/config.ts';
+import { configDir, loadLocal, type LocalConfig } from '../../../data/sources/config.ts';
 import type {
     AgentAccount,
     AgentChoices,
@@ -230,7 +230,7 @@ const NO_STORE = { 'cache-control': 'no-store' };
 export function handleAgents(
     request: Request,
     engine: string,
-    local: LocalConfig = loadLocalOrDefaults(engine)
+    local: LocalConfig = loadLocal(engine)
 ): Response {
     const read = readAgentsFile(engine);
     const accounts = agentAccounts(local);

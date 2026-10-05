@@ -13,24 +13,29 @@
 <script lang="ts">
     // Layer 3, view. The Settings editor over the options catalog (config/catalogs/options.yml),
     // drawn as VS Code's: a search with the count of the settings found, a table of contents on
-    // the left, and a list of groups, one for this browser's own values, one for each config file
-    // and one each for the catalog files and the text files, each setting an item with its control,
-    // its default and the file and line of its key. A text, number, choice or toggle is written to
-    // its file as it is changed, through the same write the History view records and can undo; a
-    // list or a family is edited in its item (editors/) and written whole on Save.
+    // the left, and a list of groups. The groups are this browser's own values, a subject heading
+    // for each part of the configuration (Appearance, Editor, Terminal and the rest, each with a
+    // line per file it draws from), the machine's own file, and one each for the catalog files
+    // and the text files. Each setting is an item with its control, its default and the file and
+    // line of its key. A text, number, choice, toggle or picker is written to its file as it is
+    // changed or left, through the same write the History view records and can undo; a list, a
+    // multi or a family is edited in its item (editors/) and written whole on Save.
     //
     // The files are read through the file browser's `engine` root, and handed the version of the
     // config channel, so a write that the watcher pushes back redraws the value. Only the five
     // tracked files are asked for; the machine's own file is listed from the catalog alone and its
     // text is never read. The Catalogs and Texts groups are made from the listings of the two
-    // folders, which the same version re-reads.
+    // folders, which the same version re-reads. The lists the controls offer (the domains, the
+    // clusters, the views, the usage tiers, the theme classes, the hub's folders) are built here
+    // from the stores the page holds (editors/sources.ts); one that is not there yet is drawn as
+    // loading.
     //
-    // The query, the text being typed in a field, the drafts of the list and family editors and the
-    // rail list being edited are the tab's instance state, so they are there again after a tab
-    // switch or a reload. The rail's Settings choice opens the tab with `reveal: 'rail'`: while
-    // that ask stands the rail row is drawn whatever the query, and once it is drawn the view
-    // clears a query that would have hidden it, waits for the list to be redrawn, scrolls the row
-    // into view and takes the ask out.
+    // The query, the text being typed in a box, the drafts of the list, multi and family editors
+    // and the rail list being edited are the tab's instance state, so they are there again after
+    // a tab switch or a reload. The rail's Settings choice opens the tab with `reveal: 'rail'`:
+    // while that ask stands the rail row is drawn whatever the query, and once it is drawn the
+    // view clears a query that would have hidden it, waits for the list to be redrawn, scrolls the
+    // row into view and takes the ask out.
     //
     // The table of contents is beside the list from 700 px and over. Under that the header offers a
     // toggle that shows it over the list; a press on one of its entries or Escape hides it again
@@ -40,16 +45,18 @@
     // The partials are in settings/: Header (search, count, filter, the table's toggle), Contents
     // (table of contents), List (groups and sections), Item (one setting), Control (one option's
     // control), BrowserControl (the controls of this browser's values), Gear (the item's menu); the
-    // editors of lists and families are in editors/.
+    // controls themselves and the editors of lists, multis and families are in editors/.
 
     import { tick, untrack } from 'svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import { ENGINE_ROOT } from '$lib/state/sources/fs';
+    import { ENGINE_ROOT, HUB_ROOT } from '$lib/state/sources/fs';
+    import { themeClasses } from '$lib/ui/theme';
     import { t } from '$lib/state/shared/words/text';
     import { wallpaperOnTheme } from '$lib/state/shared/words/appearance';
     import { thisBrowserRows } from '$lib/state/system/config/browser';
     import { CATALOGS } from '$lib/state/system/config/config-files';
-    import { savedDraft, withSavedDraft } from '$lib/state/system/config/editors/slots';
+    import { hasSavedDraft, withSavedDraft } from '$lib/state/system/config/editors/slots';
+    import { listsOf, type Folder } from '$lib/state/system/config/editors/sources';
     import {
         RAIL_ROW,
         catalogOf,
@@ -75,8 +82,9 @@
     import { reactiveEditors } from './editors/writer.svelte';
 
     const {
-        entities: { config, message },
+        entities: { config, message, portfolio, usage },
         fs: { fileText, listing, refresh },
+        registry,
         layout: { instanceLayoutState, restateInstance },
         ui,
         writes: { writeConfigKey, writeConfigValue }
@@ -94,7 +102,7 @@
         refresh(ENGINE_ROOT, pushed);
     });
 
-    const writer = reactiveWriter(writeConfigKey);
+    const writer = reactiveWriter(writeConfigKey, () => lists);
     $effect(() => () => writer.close());
 
     // A draft ends when the file holds what it sent, another value, or a form the editor does not
@@ -106,9 +114,40 @@
                 instance.id,
                 withSavedDraft(ui.instanceState(instance.id), row.file, row.key, null)
             ),
-        (row) => savedDraft(ui.instanceState(instance.id), row.file, row.key) !== undefined
+        (row) => hasSavedDraft(ui.instanceState(instance.id), row.file, row.key),
+        () => lists
     );
     $effect(() => () => editors.close());
+
+    /** One hub folder as the file browser holds it, with the hidden and ignored entries too. */
+    function folder(path: string): Folder {
+        const held = listing(HUB_ROOT, path, { hidden: true, ignored: true });
+        if (held.error !== '') return { state: 'failed', error: held.error };
+        if (held.loading) return { state: 'loading' };
+        return { state: 'ready', entries: held.entries };
+    }
+
+    /** The body classes the theme sheets hold a block for, read once from the sheets. */
+    const classes = themeClasses();
+
+    const lists = $derived.by(() => {
+        const snapshot = portfolio();
+        return listsOf({
+            config: config()?.config ?? {},
+            portfolio:
+                snapshot === null
+                    ? null
+                    : {
+                          domains: snapshot.entities.domains,
+                          resources: snapshot.entities.resources,
+                          projects: Object.values(snapshot.entities.projects)
+                      },
+            views: registry.views().map((one) => one.id),
+            tiers: usage()?.accounts.map((account) => account.tier) ?? null,
+            themeClasses: classes,
+            folder
+        });
+    });
 
     const query = $derived(settingsQuery(ui.instanceState(instance.id)));
     const revealing = $derived(settingsReveal(instanceLayoutState(instance.id)) === 'rail');
@@ -248,7 +287,7 @@
                 <Contents entries={toc} current={top} onpick={scrollTo} />
             </nav>
             <div class="list" bind:this={list} onscroll={follow}>
-                <List groups={found.groups} id={instance.id} {writer} {editors} />
+                <List groups={found.groups} id={instance.id} {writer} {editors} {lists} />
             </div>
         </div>
     </div>

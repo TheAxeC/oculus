@@ -5,20 +5,29 @@
 // that is not a draft is taken as none.
 
 import { z } from 'zod';
-import { draftOf, type Draft } from './draft.ts';
+import { draftOf, typedDraft, type Draft, type TextDraft } from './draft.ts';
+import type { Card, FieldValue } from './fields.ts';
 import type { ConfigRow } from '../rows.ts';
 
-/** One field set of an editor: its text and what the record keeps beside it. */
-const cardShape = z.object({
-    fields: z.record(z.string(), z.string()),
-    kept: z.record(z.string(), z.unknown()),
-    order: z.array(z.string()).default([])
-});
+/** One entry of an editor: what its fields hold, what the record keeps beside them, their order. */
+const cardShape: z.ZodType<Card> = z.lazy(() =>
+    z.object({
+        fields: z.record(z.string(), fieldShape),
+        kept: z.record(z.string(), z.unknown()),
+        order: z.array(z.string()).default([]),
+        unread: z.record(z.string(), z.string()).optional()
+    })
+);
+
+/** What a field holds: a boolean, a text, a list of words or a list of entries of its own. */
+const fieldShape: z.ZodType<FieldValue> = z.lazy(() =>
+    z.union([z.boolean(), z.string(), z.array(z.string()), z.array(cardShape)])
+);
 
 /** A draft as the state holds it. */
 const draftShape = z.union([
     z.object({
-        form: z.enum(['items', 'pairs', 'records']),
+        form: z.enum(['items', 'pairs', 'records', 'multi']),
         keyed: z.boolean(),
         fields: z.array(z.string()),
         cards: z.array(cardShape)
@@ -30,16 +39,40 @@ const draftShape = z.union([
     })
 ]) satisfies z.ZodType<Draft>;
 
+/** One field set of a draft held as text. */
+const textCardShape = z.object({
+    fields: z.record(z.string(), z.string()),
+    kept: z.record(z.string(), z.unknown()),
+    order: z.array(z.string()).default([])
+});
+
+/** A draft held as text, which a page that kept every field as one line of YAML wrote. */
+const textDraftShape = z.union([
+    z.object({
+        form: z.enum(['items', 'pairs', 'records']),
+        keyed: z.boolean(),
+        fields: z.array(z.string()),
+        cards: z.array(textCardShape)
+    }),
+    z.object({
+        form: z.literal('rollup'),
+        fields: z.array(z.string()),
+        groups: z.array(z.object({ key: z.string(), cards: z.array(textCardShape) }))
+    })
+]) satisfies z.ZodType<TextDraft>;
+
 /**
- * One held draft: the file and key it is for, and the value the file held when the draft was
- * started, which tells a draft over a file that has since changed.
+ * One held draft: the file and key it is for, the draft itself, whether its fields are typed
+ * values (a draft without the mark is read from text), and the value the file held when the draft
+ * was started, which tells a draft over a file that has since changed.
  */
-type Held = { file: string; key: string; draft: Draft; base?: unknown };
+type Held = { file: string; key: string; draft: unknown; typed?: boolean; base?: unknown };
 
 const heldShape = z.object({
     file: z.string(),
     key: z.string(),
-    draft: draftShape,
+    draft: z.unknown(),
+    typed: z.boolean().optional(),
     base: z.unknown().optional()
 }) satisfies z.ZodType<Held>;
 
@@ -54,7 +87,7 @@ export function mapOf(state: unknown): Record<string, unknown> {
     return stateShape.safeParse(state).success ? (state as Record<string, unknown>) : {};
 }
 
-/** The drafts a state holds: the records that are one are kept and the others are dropped. */
+/** The drafts a state holds: the records that name a file and key are kept, the others dropped. */
 function heldList(state: unknown): Held[] {
     const list = mapOf(state).editors;
     if (!Array.isArray(list)) return [];
@@ -64,9 +97,21 @@ function heldList(state: unknown): Held[] {
     });
 }
 
-/** The draft a tab holds for a file and key, or undefined. */
-export function savedDraft(state: unknown, file: string, key: string): Draft | undefined {
-    return heldList(state).find((one) => one.file === file && one.key === key)?.draft;
+/**
+ * The draft a tab holds for a row, or undefined. A draft the tab held as text is read into typed
+ * fields by the row's own catalog entry; a held record that is no draft of either form is none.
+ */
+export function savedDraft(state: unknown, row: ConfigRow): Draft | undefined {
+    const one = heldList(state).find((held) => held.file === row.file && held.key === row.key);
+    if (one === undefined) return undefined;
+    if (one.typed === true) return draftShape.safeParse(one.draft).data;
+    const text = textDraftShape.safeParse(one.draft).data;
+    return text === undefined ? undefined : typedDraft(text, row);
+}
+
+/** Whether a tab holds a draft for a file and key, of whatever form. */
+export function hasSavedDraft(state: unknown, file: string, key: string): boolean {
+    return heldList(state).some((one) => one.file === file && one.key === key);
 }
 
 /** The value the file held when the draft of a file and key was started, or undefined. */
@@ -88,7 +133,7 @@ export function withSavedDraft(
 ): Record<string, unknown> {
     const next = { ...mapOf(state) };
     const others = heldList(state).filter((one) => one.file !== file || one.key !== key);
-    const all = draft === null ? others : [...others, { file, key, draft, base }];
+    const all = draft === null ? others : [...others, { file, key, draft, typed: true, base }];
     if (all.length === 0) delete next.editors;
     else next.editors = all;
     return next;

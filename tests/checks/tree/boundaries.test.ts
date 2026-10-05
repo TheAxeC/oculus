@@ -59,23 +59,30 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // the update tray asking that block whether the task it is about to start runs unattended;
 // `data/helpers/run/marker`, the line a project command's chain prints before each command, which
 // the server writes into the chain's line and the page reads the task's output by;
-// `data/helpers/editor`, the server requiring `editor.paint_limit_kb` at start and the source
-// editor reading the same cap out of the configuration it was sent; and `data/helpers/search/**`,
-// the Search view refusing a query before it sends it and the search route refusing the same query
-// when it arrives, from one rule and one argument list (`query`), and the Search view drawing the
-// replacement of each hit with the rules the server writes it by (`replace`); and
-// `data/helpers/finding-text`, whose placeholder rule is the one the client's t() fills a catalog
-// string with and the one the server words every finding with before the snapshot carries it;
-// `data/helpers/code-themes`, the list of Shiki's bundled themes (ids, display names, dark or
-// light), which the server words the finding for a bad `code_theme:` from, the appearance store
-// checks a saved pick against and the Settings view draws as the Code theme menu; and
+// `data/helpers/editor`, the order that resolves a tab's editor options (`resolveEditor`) and their
+// types, which the source tab and the diff view resolve a tab's options through; and
+// `data/helpers/search/**`, the Search view refusing a query before it sends it and the search
+// route refusing the same query when it arrives, from one rule and one argument list (`query`), and
+// the Search view drawing the replacement of each hit with the rules the server writes it by
+// (`replace`); and `data/helpers/finding-text`, whose placeholder rule is the one the client's t()
+// fills a catalog string with and the one the server words every finding with before the snapshot
+// carries it; `data/helpers/code-themes`, the list of Shiki's bundled themes (ids, display names,
+// dark or light), which the server words the finding for a bad `code_theme:` from, the appearance
+// store checks a saved pick against and the Settings view draws as the Code theme menu; and
 // `data/sources/config/rail`, the rule over the `rail:` list of config/layout.yml, which the page
 // drawing the rail, the Settings view editing it and the server writing it and wording its findings
 // all read, so the three agree on which entries are pages; and `data/sources/config/settings`, the
-// typed readers of single settings, of which the Files view reads `files.confirm_delete` so a
-// delete asks only while the setting says so; and `data/sources/config/catalog/options`, the
-// options catalog's types and the reader of it from the merged config, which the Settings view's
-// rows are made from, so the rows and the server's write of one option
+// typed readers of single settings, which the page reads by the rule the server reads by: the Files
+// view `files.confirm_delete`, so a delete asks only while the setting says so, the source editor
+// the paint limit, the cards and the file view the `open.program_ext` map, and the Usage view the
+// refresh cadence; and `data/sources/config/catalog/value-rule`, the rule a value of an option is
+// wrong by (its control, `min`, `max` and values), which the Settings view refuses a value by
+// before it is sent and the server's write and readers by after it, so the three agree; and
+// `data/sources/config/editor-options`, the reader of the editor's options and of a repository's
+// `.oculus/settings.yml` by that rule, which the source tab, the diff view and the Settings view's
+// lines under `editor.languages` read; and `data/sources/config/catalog/options`, the options
+// catalog's types and the reader of it from the merged config, which the Settings view's rows are
+// made from, so the rows and the server's write of one option
 // (server/edit/writes/config/config-key.ts) read one description of what an option is; and
 // `data/hub-address`, the rule telling a path of the hub from a web address, which the collection
 // card reads to decide what a click opens and the Audit reads to decide which links to look for on
@@ -163,7 +170,9 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/finding-text',
         'data/sources/config/rail',
         'data/sources/config/settings',
+        'data/sources/config/editor-options',
         'data/sources/config/catalog/options',
+        'data/sources/config/catalog/value-rule',
         'data/hub-address',
         'data/prose/languages'
     ],

@@ -10,7 +10,7 @@
 
 import { z } from 'zod';
 import { optionalTextShape, readAs, readJson } from '../../data/shapes/shapes.ts';
-import { WRAP_WORDS, type WordWrap } from '../../data/helpers/editor.ts';
+import type { WordWrap } from '../../data/helpers/editor.ts';
 import { TEXT_LIMIT } from '../sources/fs.ts';
 import { headUrl } from '../sources/repositories/repositories.ts';
 import type { HeadStage } from '../sources/repositories/file-git.ts';
@@ -83,15 +83,20 @@ export type SourceDraft = {
      */
     indent: Indent | null;
     /**
-     * The word wrap the reader set with Alt+Z for the tab, or null for the configured one.
+     * The word wrap the reader set with Alt+Z for the tab, or null for the configured one. It is
+     * kept as the reader set it and taken only when the options catalog's `editor.word_wrap` takes
+     * it (`resolveEditor`).
      */
-    wrap: WordWrap | null;
+    wrap: string | null;
 };
 
-/** An indentation kept in storage: tabs or spaces, and a width of one to eight whole steps. */
+/**
+ * An indentation kept in storage: tabs or spaces and a whole width. Whether the width is one the
+ * catalog's `editor.tab_size` takes is decided where it is used (`resolveEditor`).
+ */
 const indentShape = z.object({
     tabs: z.boolean(),
-    size: z.int().min(1).max(8)
+    size: z.int()
 }) satisfies z.ZodType<Indent>;
 
 /**
@@ -115,7 +120,7 @@ const draftShape = z
         file: z.string().catch(''),
         language: z.string().catch(''),
         indent: indentShape.nullable().catch(null),
-        wrap: z.enum(WRAP_WORDS).nullable().catch(null)
+        wrap: z.string().nullable().catch(null)
         // A draft always carries `readIn`, with undefined when the state names none.
     })
     .transform((draft) => ({ readIn: undefined, ...draft })) satisfies z.ZodType<SourceDraft>;

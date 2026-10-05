@@ -131,7 +131,15 @@
         fs: { fileText, roots: currentRoots, workspaces },
         layout: { keepPreview, restateInstance },
         repositories,
-        selectors: { editorOptions, gitFor, gitRoots, languages, paintLimit, programApps },
+        selectors: {
+            editorOptions,
+            gitFor,
+            gitRoots,
+            languages,
+            paintLimit,
+            programApps,
+            repoSettings
+        },
         source: {
             revertSourceDraft,
             editSourceDraft,
@@ -192,6 +200,7 @@
         draft: () => draft,
         languages,
         options: editorOptions,
+        repoSettings,
         paintLimit,
         fileText
     });
@@ -257,10 +266,11 @@
     let performed = untrack(() => asked(instance.id)?.seq ?? 0);
 
     // What the status bar draws for this tab, said again whenever any of it changes. A tab with no
-    // text yet says nothing, so the bar draws no source items over a tab still reading.
+    // text yet says nothing, so the bar draws no source items over a tab still reading, and a tab
+    // whose indentation is not known yet (the configuration has not arrived) says nothing either.
     $effect(() => {
         const id = instance.id;
-        if (error !== '' || !draft.loaded) {
+        if (error !== '' || !draft.loaded || indent === null) {
             forget(id);
             return;
         }

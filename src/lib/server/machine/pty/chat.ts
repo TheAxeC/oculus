@@ -5,11 +5,7 @@
 import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { chatModel } from '../../../data/accounts/chat.ts';
-import {
-    loadLocalOrDefaults,
-    textCatalog,
-    type LocalConfig
-} from '../../../data/sources/config.ts';
+import { loadLocal, textCatalog, type LocalConfig } from '../../../data/sources/config.ts';
 import type { Project } from '../../../data/model/index.ts';
 import { defaultOverridesPath } from '../../sessions/overrides.ts';
 import { writeTextAtomic } from '../../core/json.ts';
@@ -76,7 +72,7 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
         throw new Error('id must be a project id or null');
     }
     const engine = options.engine;
-    const local = options.localFor?.() ?? loadLocalOrDefaults(engine);
+    const local = options.localFor?.() ?? loadLocal(engine);
     const config = options.configFor();
     const catalog = textCatalog(config);
     const project = typeof id === 'string' ? (options.projectFor ?? (() => null))(id) : null;

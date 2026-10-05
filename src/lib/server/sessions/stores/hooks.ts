@@ -149,6 +149,17 @@ function entityMap(hub: HubLike, kind: string): Record<string, unknown> | null {
 }
 
 /**
+ * One entity map of the last published `portfolio` payload (the domains, the resources), for a
+ * config write that checks a value against them; null while the process has published none.
+ */
+export function entities(
+    hub: HubLike,
+    kind: 'domains' | 'resources'
+): Record<string, unknown> | null {
+    return entityMap(hub, kind);
+}
+
+/**
  * The project ids the last published `portfolio` payload names. POST /api/deposit takes them as one
  * half of what a deposit may address, the hub's own manifests being the other; a process that has
  * published nothing yet names none, and the manifests answer alone.

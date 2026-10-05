@@ -1,8 +1,9 @@
 // Layer 2, client state. The rows of the Settings view for one config file: what the file's text
-// says about each option the options catalog describes, in catalog order. The text is parsed once
-// with `yaml`, so a row's value and the line of its key come from one parse, and each key path is
-// walked through the parsed map's own keys, so a segment named like an object member (`__proto__`,
-// `constructor`) reads the file's key or nothing.
+// says about each option the options catalog describes, in catalog order, each with its catalog
+// entry, so the control a row is drawn with is the entry's. The text is parsed once with `yaml`, so
+// a row's value and the line of its key come from one parse, and each key path is walked through
+// the parsed map's own keys, so a segment named like an object member (`__proto__`, `constructor`)
+// reads the file's key or nothing.
 //
 // A row is `set` when the file holds a plain, quoted or collection value at its key path, and
 // `missing` when the key is absent or holds a null or empty value, an alias, an anchored or tagged
@@ -11,7 +12,9 @@
 // value differs from the catalog's default by deep equality, a list item by item; a family, which
 // has no default, a `local.yml` row and a missing row are never Modified. A value its control
 // cannot show (a toggle holding "yes", a number holding "20" as text) is kept as the file has it
-// and flagged `mismatch`, for the view to word.
+// and flagged `mismatch`, for the view to word. A word outside the list a choice offers is not a
+// mismatch: the lists come from the portfolio and the page, so the view marks it where the list is
+// known (editors/fields.ts).
 //
 // The machine-local file's rows are made from the catalog alone, and its text is never a parameter.
 // Every sentence is a message (messages.ts) for the view to word; nothing here holds one.
@@ -31,9 +34,14 @@ import {
     type YAMLSeq
 } from 'yaml';
 import { z } from 'zod';
-import type { CatalogEntry, Control } from '../../../data/sources/config/catalog/options.ts';
+import type {
+    CatalogEntry,
+    Control,
+    FieldSpec
+} from '../../../data/sources/config/catalog/options.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
 import { LOCAL_NAME } from './config-files.ts';
+import { readField } from './editors/fields.ts';
 import { message, type Message } from './messages.ts';
 
 /** What every row carries, whichever kind it is, which is what a search reads. */
@@ -55,10 +63,10 @@ export type ConfigRow = RowBase & {
     file: string;
     key: string;
     control: Control | 'family';
-    /** The words a choice accepts. */
-    values: string[];
-    /** A family's fields, each with what it holds. */
-    fields: Record<string, string>;
+    /** The catalog entry the row is drawn from: its control and the keys that shape it. */
+    entry: CatalogEntry;
+    /** A family's fields, each with its description and control. */
+    fields: Record<string, FieldSpec>;
     /** `lists` when each key of a family that is a map holds a list of records. */
     holds: 'lists' | undefined;
     default: unknown;
@@ -135,26 +143,18 @@ function usable(node: unknown): node is Scalar | YAMLMap | YAMLSeq {
     return false;
 }
 
-/** What each control can show of a value the file holds, read as plain JS from the parsed node. */
-const toggleShape = z.boolean() satisfies z.ZodType<boolean>;
-export const choiceShape = z.string() satisfies z.ZodType<string>;
-const numberShape = z.number() satisfies z.ZodType<number>;
+/** What a text, a word and a list read as when a row shows or words a value the file holds. */
+const choiceShape = z.string() satisfies z.ZodType<string>;
 export const listShape = z.array(z.unknown()) satisfies z.ZodType<unknown[]>;
 export const textShape = z.union([z.string(), z.number(), z.boolean()]) satisfies z.ZodType<
     string | number | boolean
 >;
 
 /** Whether a value is one the option's control cannot show. */
-function cannotShow(control: Control | 'family', values: string[], value: unknown): boolean {
-    if (control === 'toggle') return !toggleShape.safeParse(value).success;
-    if (control === 'number') return !numberShape.safeParse(value).success;
-    if (control === 'choice') {
-        const word = choiceShape.safeParse(value);
-        return !word.success || !values.includes(word.data);
-    }
-    if (control === 'list') return !listShape.safeParse(value).success;
-    if (control === 'text') return !textShape.safeParse(value).success;
-    return false;
+function cannotShow(control: Control | 'family', entry: CatalogEntry, value: unknown): boolean {
+    if (control === 'family') return false;
+    if (control === 'text' || control === 'long') return !textShape.safeParse(value).success;
+    return readField(entry, value).kind !== 'value';
 }
 
 /** The row of one catalog entry over a parsed file. */
@@ -167,7 +167,6 @@ function rowOf(
 ): ConfigRow {
     const control: ConfigRow['control'] =
         entry.fields === undefined ? (entry.control ?? 'text') : 'family';
-    const values = entry.values ?? [];
     const base = {
         kind: 'config' as const,
         id: `${file}:${key}`,
@@ -178,7 +177,7 @@ function rowOf(
         description: entry.description,
         section: sectionOf(key, entry.section),
         control,
-        values,
+        entry,
         fields: entry.fields ?? {},
         holds: entry.holds,
         default: entry.default
@@ -202,7 +201,7 @@ function rowOf(
         value,
         line,
         state: 'set',
-        mismatch: cannotShow(control, values, value),
+        mismatch: cannotShow(control, entry, value),
         modified: control !== 'family' && !isEqual(value, entry.default)
     };
 }
@@ -259,7 +258,9 @@ export function mismatchMessage(row: ConfigRow): Message | null {
     const text = shown(row.value);
     if (row.control === 'toggle') return message('mismatchToggle', text);
     if (row.control === 'number') return message('mismatchNumber', text);
-    if (row.control === 'choice') return message('mismatchChoice', text);
-    if (row.control === 'list') return message('mismatchList', text);
+    const lists = row.control === 'list' || row.control === 'parked';
+    if (lists || (row.control === 'multi' && row.entry.joined !== true)) {
+        return message('mismatchList', text);
+    }
     return message('mismatchText', text);
 }

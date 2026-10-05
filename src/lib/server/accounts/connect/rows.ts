@@ -8,8 +8,9 @@
 //
 // The result is verified before a caller writes it: the new text must parse, parsed it must equal
 // the old document with exactly that row added or taken away, and it must read as a machine file
-// (checkLocal, the rule the start and the source tab apply). A text that fails any of the three is
-// a refusal with the reason, never a damaged file.
+// with no key taking its default (checkLocal, the rule every reader of the file reads it by, which
+// the source tab's save applies too). A text that fails any of the three is a refusal with the
+// reason, never a damaged file.
 //
 // A parsed value is taken for a map by data/helpers/guards.ts's `isMap`, and the yaml library's own
 // node test is imported as `isYamlMap`.

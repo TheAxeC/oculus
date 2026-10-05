@@ -1,0 +1,34 @@
+// Layer 4, test helper. A wrong value for every setting of config/behavior.yml the readers read by
+// the options catalog's rule, as a hand edit would leave them, laid over the shipped merged map by
+// the tests of the setting readers and of their findings.
+
+/** The blocks and keys outside the editor's block, each holding a value its entry refuses. */
+export const WRONG_SETTINGS: Record<string, unknown> = {
+    slurm: { resource: '', days: -1, poll_min: 0, quota_min: 'x', prewarm: 'yes' },
+    calendar: { poll_min: 0, days_back: -1, days_ahead: 3651 },
+    search: { max_hits: 0, timeout_s: 0 },
+    mail: { poll_min: 0, per_signal: 0 },
+    changes: { keep: 0 },
+    latex: {
+        formatter: 'prettier',
+        latexindent_path: 'foo',
+        tex_fmt_path: 'foo',
+        badness_path: 'foo',
+        auto_build: 'x'
+    },
+    git: { autofetch_minutes: -1 },
+    files: { confirm_delete: 'no' },
+    processes: { patterns: ['a/b'] },
+    usage_refresh_min: 'x',
+    usage_refresh_model: 'gpt',
+    usage_tiers: { a: 'A', b: 5 },
+    open: { program_ext: { pdf: 'com.apple.Preview', '.txt': 'com.apple TextEdit', '.x': 3 } }
+};
+
+/** The editor block holding a value its entry refuses at each of its keys and records. */
+export const WRONG_EDITOR: Record<string, unknown> = {
+    paint_limit_kb: 0,
+    tab_size: 9,
+    word_wrap: 'wrap',
+    languages: { cobolx: { tab_size: 2 }, python: { tab_size: 99 }, markdown: 5 }
+};

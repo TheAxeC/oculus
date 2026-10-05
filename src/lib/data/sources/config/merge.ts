@@ -114,6 +114,24 @@ function configNames(dir: string): string[] {
 export type ReplacedFile = { name: string; text: string };
 
 /**
+ * Whether the merge dropped a config file (`behavior.yml`): it raised a finding about the whole
+ * file, key `''`, which leaves the merged map without any of the file's keys. A finding is read as
+ * its file and key, so a reader holding only the config channel's findings can ask.
+ */
+export function droppedFile(
+    findings: readonly Pick<Finding, 'file' | 'key'>[],
+    name: string
+): boolean {
+    return findings.some(
+        (finding) =>
+            finding.key === '' &&
+            (finding.file === name ||
+                finding.file.endsWith(`/${name}`) ||
+                finding.file.endsWith(`\\${name}`))
+    );
+}
+
+/**
  * Merge root config files and catalog fragments into one map. Files are read in name order and
  * local.yml is not one of them. A duplicate top-level key or catalog leaf is a finding and the
  * later file wins. Invalid files are findings and contribute nothing; a missing config directory is

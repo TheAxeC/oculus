@@ -27,18 +27,18 @@
 // A PDF whose time moved is bumped in the fs store, which moves the address the file view draws it
 // at: an open PDF tab then fetches the new build instead of the bytes the browser cached.
 //
-// A saved `.tex` file builds its main file when `latex.auto_build` of config/behavior.yml is
-// `on_save`, which is also what any value but `never` counts as: `onSaved` asks which main the file
-// builds through, starts the build without showing it, and watches it. The folder's state is read
-// again when that build ends, held or not, so the problems of a build nobody is looking at still
-// reach the editor as diagnostics. A main file is never built twice at once: from the moment its
-// build is asked for until the terminal that runs it has ended, a save that arrives asks for one
-// more build after it, however many saves came, and a Build press shows the terminal of the build
-// under way (once the server has named it) and asks for one more build after it. A start whose
-// answer already shows an exit status ends the build at once. A terminal the list has never shown
-// running is taken as ended only when the server's own list, read after the answer that named it or
-// after a push that shows it ended or lacks it, shows it ended or lacks it too, since a push can
-// carry a list read before the terminal started or before a kept terminal ran again. The main
+// A saved `.tex` file builds its main file when `latex.auto_build` of config/behavior.yml reads as
+// `on_save`, which is the catalog's default for a missing or wrong value: `onSaved` asks which main
+// the file builds through, starts the build without showing it, and watches it. The folder's state
+// is read again when that build ends, held or not, so the problems of a build nobody is looking at
+// still reach the editor as diagnostics. A main file is never built twice at once: from the moment
+// its build is asked for until the terminal that runs it has ended, a save that arrives asks for
+// one more build after it, however many saves came, and a Build press shows the terminal of the
+// build under way (once the server has named it) and asks for one more build after it. A start
+// whose answer already shows an exit status ends the build at once. A terminal the list has never
+// shown running is taken as ended only when the server's own list, read after the answer that named
+// it or after a push that shows it ended or lacks it, shows it ended or lacks it too, since a push
+// can carry a list read before the terminal started or before a kept terminal ran again. The main
 // file's row says `building` for the same span (`LatexMain.building`), whichever folder form the
 // row was read by, since the span is kept per main file of a folder of a root and not per form.
 
@@ -46,6 +46,7 @@ import { z } from 'zod';
 import type { Message } from '../../data/model/index.ts';
 import { PROGRAMS, type Program } from '../../data/prose/latex.ts';
 import { joinPath } from '../../data/helpers/files/paths.ts';
+import { latexAutoBuild } from '../../data/sources/config/settings.ts';
 import { anyNumberShape, readAs, readJson, rowsShape } from '../../data/shapes/shapes.ts';
 import { holds } from '../system/docs.svelte.ts';
 import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
@@ -206,7 +207,7 @@ const OUTLINE_PENDING: LatexOutline = {
 };
 const OUTLINE_NOTHING: LatexOutline = { ...OUTLINE_PENDING, loading: false };
 
-/** The `latex.auto_build` value that stops a save from building; every other value builds. */
+/** The `latex.auto_build` value that stops a save from building. */
 const NEVER = 'never';
 
 /** One issue of a build: a number is a number, and a row without a message draws nothing. */
@@ -268,9 +269,6 @@ const rootBodyShape = z.object({
 
 /** The body of a format answer. */
 const formatBodyShape = z.object({ text: z.string().nullable().catch(null) });
-
-/** The configured behaviour of a save: only the word `never` stops the build. */
-const autoBuildShape = z.object({ latex: z.object({ auto_build: z.unknown() }) });
 
 /** A path joined onto a base, resolved; an empty name and an absolute one stay as they are. */
 function against(base: string, name: string): string {
@@ -649,10 +647,16 @@ export function createLatex(
         }
     }
 
-    /** Whether a save builds: every configured value but `never` does, an absent one included. */
+    /**
+     * Whether a save builds: the value `latex.auto_build` reads as, by the options catalog's rule,
+     * is not `never`. A page that holds no catalog yet builds nothing.
+     */
     function buildsOnSave(): boolean {
-        const config = entities.config()?.config ?? {};
-        return readAs(autoBuildShape, config)?.latex.auto_build !== NEVER;
+        try {
+            return latexAutoBuild(entities.config()?.config ?? {}) !== NEVER;
+        } catch {
+            return false;
+        }
     }
 
     /**

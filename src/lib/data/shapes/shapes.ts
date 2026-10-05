@@ -1,13 +1,13 @@
 // Layer 1, data. The zod helpers every reader of an untyped value shares, in the data folder, the
 // server, the state layer, the shell, the views and the routes: a schema that answers the value it
-// was given, the map, number and filled-text schemas (`mapShape`, `keysOfShape`, `valuesOfShape`,
-// `filledTextShape`, `optionalTextShape`, `textOrNumberOnlyShape`), the whole-number schema
-// `wholeShape`, the list schemas (`itemsShape`, a list of anything, and `optionalItemsShape`, an
-// optional list of strings), the quick path `quickly` builds over a schema full of `.catch`
-// repairs, and the plain readers `readAs`, `readOr`, `filledText`, `optionalText`, `text` and
-// `textOrNumber`. They sit in a folder of their own so every data folder above data/helpers can
-// import them, and apart from the server's json.ts, which can reach the disk: the write diagram
-// draws a module as a writer when anything it imports can write, and a schema helper never does.
+// was given, the map, number and filled-text schemas (`mapShape`, `keysOfShape`, `filledTextShape`,
+// `optionalTextShape`, `textOrNumberOnlyShape`), the whole-number schema `wholeShape`, the list
+// schemas (`itemsShape`, a list of anything, and `optionalItemsShape`, an optional list of
+// strings), the quick path `quickly` builds over a schema full of `.catch` repairs, and the plain
+// readers `readAs`, `readOr`, `filledText`, `optionalText`, `text` and `textOrNumber`. They sit in
+// a folder of their own so every data folder above data/helpers can import them, and apart from the
+// server's json.ts, which can reach the disk: the write diagram draws a module as a writer when
+// anything it imports can write, and a schema helper never does.
 
 import { z } from 'zod';
 import { strings } from '../helpers/guards.ts';
@@ -39,14 +39,6 @@ export const mapShape = unchangedAs<Record<string, unknown>>(z.object({}));
 
 /** The own keys of a map in their order, an own `__proto__` key included. */
 export const keysOfShape = mapShape.transform((map) => Object.keys(map));
-
-/**
- * The own values of a map in the order of their keys, an own `__proto__` key included, each read by
- * `value`. A value that is no map fails, and so does a map with one value `value` refuses.
- */
-export function valuesOfShape<T>(value: z.ZodType<T>): z.ZodType<T[]> {
-    return mapShape.transform((map) => Object.values(map)).pipe(z.array(value));
-}
 
 /** A text field that carries something: absent unless it is a non-empty string. */
 export const filledTextShape = z.string().min(1).optional().catch(undefined);

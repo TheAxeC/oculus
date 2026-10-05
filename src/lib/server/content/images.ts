@@ -1,7 +1,8 @@
 // Layer 2, server. The rules every route that serves a picture out of a configured folder obeys:
-// which extensions are pictures, what each is sent as, how long a browser may hold one, whether a
-// path is inside its folder, and the response that streams one file. Where the request came from is
-// answered before any of them, by the origin guard in src/hooks.server.ts.
+// which extensions are pictures (PICTURE_EXTENSIONS of data/file-ops.ts, which the Settings view's
+// list of wallpaper files reads as well), what each is sent as, how long a browser may hold one,
+// whether a path is inside its folder, and the response that streams one file. Where the request
+// came from is answered before any of them, by the origin guard in src/hooks.server.ts.
 //
 // It is one module rather than a copy per route because the rules are the security of those routes:
 // the folder is resolved under the hub and refused if it is not inside it, the chosen file is
@@ -36,11 +37,9 @@ import { Readable } from 'node:stream';
 import { imageSize } from 'image-size';
 import mime from 'mime';
 import { z } from 'zod';
-import { loadLocalOrDefaults } from '../../data/sources/config.ts';
+import { PICTURE_EXTENSIONS } from '../../data/file-ops.ts';
+import { loadLocal } from '../../data/sources/config.ts';
 import { inside } from '../core/paths.ts';
-
-/** The extensions a picture folder is filtered to, and the only ones a folder's route serves. */
-const PICTURES: readonly string[] = ['.jpg', '.jpeg', '.png', '.webp'];
 
 /** An hour: long enough that a reload does not re-read the file, short enough to swap a picture. */
 const CACHE = 'private, max-age=3600';
@@ -54,7 +53,10 @@ export function images(dir: string): string[] {
         return [];
     }
     return names
-        .filter((name) => !name.startsWith('.') && PICTURES.includes(extname(name).toLowerCase()))
+        .filter(
+            (name) =>
+                !name.startsWith('.') && PICTURE_EXTENSIONS.includes(extname(name).toLowerCase())
+        )
         .sort();
 }
 
@@ -292,7 +294,7 @@ export function isName(name: string): boolean {
 export function stream(dir: string, name: string | null): Response {
     if (name === null || !isName(name)) return new Response(null, { status: 404 });
     const extension = extname(name).toLowerCase();
-    const type = PICTURES.includes(extension) ? mime.getType(extension) : null;
+    const type = PICTURE_EXTENSIONS.includes(extension) ? mime.getType(extension) : null;
     if (type === null) return new Response(null, { status: 404 });
     const path = join(dir, name);
     if (!inside(path, dir)) return new Response(null, { status: 404 });
@@ -325,7 +327,7 @@ export function folderOf(
 ): string | null {
     const held = dirBlockShape.safeParse(block);
     if (!held.success) return null;
-    const hub = loadLocalOrDefaults(engine).hub;
+    const hub = loadLocal(engine).hub;
     const dir = resolve(hub, held.data.dir);
     if (!inside(dir, hub)) {
         const key = `directory:${dir}`;

@@ -1,213 +1,311 @@
 # ===========================================================================
 # catalogs/options.yml
-# Every option of every config file, described once: what it does and what changing it changes, the value the tracked file holds (`default`), and the control it is set with. Merged with the other catalogs by loadConfig(), so its one top-level key, `options:`, is read through catalogOf() in src/lib/data/sources/config/catalog/options.ts. tests/checks/config/options-catalog.test.ts holds it to the tracked files.
+# Every option of every config file, described once: what it does and what changing it changes, its `default` (the value the Settings view's Reset writes and its Modified filter compares with, and, for a setting src/lib/data/sources/config/settings.ts reads, the value used when the key is missing or wrong), the heading and section the Settings view lists it under, and the control it is set with. Merged with the other catalogs by loadConfig(), so its one top-level key, `options:`, is read through catalogOf() in src/lib/data/sources/config/catalog/options.ts, and optionFindings() in option-findings.ts reports an entry it cannot read. tests/checks/config/config.test.ts reads the shipped catalog with no finding, and tests/data/sources/config/settings.test.ts reads every shipped default of a setting through its reader (case 'answers the shipped default for each setting the shipped file gets wrong, and reads every shipped default').
 # ===========================================================================
 
 # Shape. `options:` maps a config file name (appearance.yml, behavior.yml, layout.yml, present.yml, sources.yml, and local.yml for the machine's own keys) to a map of dotted key path to an entry.
 # An option is a leaf of its file: a scalar, a null or a list. A map is walked into, so `slurm.poll_min` is the key path of `poll_min` under `slurm`, and a list is one option, set as a whole.
 # A family is a list of records, or a map whose keys are names the data or the reader chooses (page names, tier names, field names, project types, tag names, file extensions, theme names) rather than names oculus reads. A family is one entry whose `fields` describe the record once; every other leaf is an option.
-# An option's entry holds `description`, `default` (the value the tracked file holds), `control` (toggle, number, text, choice or list), `values` (the words a `choice` accepts) and an optional `section`, the heading the option is shown under (the first segment of the key path when absent). A family's entry holds `description` and `fields`, and `holds: lists` when it is a map whose every key holds a list: a list of records (`tab_rollup`), or for a key/value family (fields `key` and `value`) a list of values (`languages`); a family without it is refused a key that holds a list, whatever the file holds at the time. A local.yml entry holds `description` alone.
-# A reader clamps or refuses a value it cannot use, so a description gives the range where the reader applies one.
+# Every entry outside local.yml holds `description`, `heading` (the subject it is listed under: appearance, editor, terminal, sessions, cluster, boards, rail, presentation, sources or calendar; HEADINGS in options.ts), `section` (the group inside the heading) and, for a leaf, `default` (the value Reset writes and Modified compares with, and, for a setting src/lib/data/sources/config/settings.ts reads, the value used when the key is missing or wrong) and `control`. A local.yml entry holds `description` and `section` alone, and is listed under This machine with no value.
+# The controls are toggle, number, text, long (a text area), choice, multi (several words of a list), list (one text box per item), glyph (a name of catalogs/glyphs.yml), hue (a palette hue name), colour (a palette hex, drawn as its hue), folder and file (a path inside the hub, offered from the files there), path (an absolute or ~/ path), parked (a list whose items can only be removed) and, in a family field, records (a nested list of records described by its own `fields`).
+# A choice or multi names its words in `values`, or the list they come from in `values_from` (one source, or several offered together; SOURCES in options.ts), or for a field in `values_by: { field, sources }` the source another field of the record names. `suggest_from` names the source a text box suggests from; `empty: true` adds the empty value to a choice or path, and `empty: <words>` does the same and gives the words the choice draws for its empty item; `min` and `max` bound a number; `slots` names the fixed items of a list; `items: number` makes a list's items numbers; `whole: true` holds a number, or each item of a list of numbers, to a whole number; `form` holds a text, or each item of a list, to one of the forms of FORMS in options.ts: `program` (no slash or white space), `extension` (a dot and one segment) or `bundle_id` (two or more dot-separated segments of letters, digits and dashes); `joined: true` writes a multi as one text separated by spaces; `allow_missing` lets a folder or file be absent, always (true) or while the named toggle field of the record is true.
+# A family's entry holds `description` and `fields`, and `holds: lists` when it is a map whose every key holds a list: a list of records (`tab_rollup`), or for a key/value family (fields `key` and `value`) a list of values (`languages`); a family without it is refused a key that holds a list, whatever the file holds at the time. A field is its description alone (a text box) or a map of `description`, `control` and the keys above.
+# A value outside its control, `min`, `max` or `values` is wrong by one rule, src/lib/data/sources/config/catalog/value-rule.ts: the Settings view refuses it before the write, the server's write refuses it, and one written by hand is a finding naming the file and the key while the reader uses the `default`.
 options:
     appearance.yml:
         themes:
+            heading: appearance
+            section: Themes
             description: The UI themes of the theme picker, in picker order. A row with no name, or repeating a name an earlier row gave, is dropped.
             fields:
                 name: the name the viewer's choice is saved under
-                class: the classes put on the page body, empty for the light theme
-                glyph: the glyph name drawn before the label
+                class:
+                    description: the classes put on the page body, empty for the light theme
+                    control: multi
+                    values_from: theme_classes
+                    joined: true
+                glyph:
+                    description: the glyph name drawn before the label
+                    control: glyph
                 label: the words the picker shows, the name when the row has none
         terminal.font_px:
+            heading: terminal
+            section: Display and keys
             description: Text size of the terminal grid in CSS pixels. The grid paints its own text and cannot inherit the page's size; a value is clamped to 6 to 40. Leaving the key out makes the terminal follow the theme's --fs-md token.
             default: 12.5
             control: number
+            min: 6
+            max: 40
         terminal.mac_option_is_meta:
+            heading: terminal
+            section: Display and keys
             description: Whether the Option key sends Meta on macOS, so Option+B and Option+F move by word in a shell. false types the characters Option makes, such as the accented letters of the US-International layout. A value that is not true or false counts as false.
             default: false
             control: toggle
         terminal.copy_on_selection:
+            heading: terminal
+            section: Display and keys
             description: 'Whether a selection in the terminal grid is copied to the clipboard as soon as it is made, which includes Select All. false copies only when asked: Copy, Copy as HTML or the copy key. A value that is not true or false counts as false.'
             default: false
             control: toggle
         terminal.cursor_style:
+            heading: terminal
+            section: Display and keys
             description: The shape of the terminal grid's cursor. block fills the cell, line draws a thin bar, underline draws a line under the cell. Any other value counts as block.
             default: block
             control: choice
             values: [block, line, underline]
         terminal.cursor_blinking:
+            heading: terminal
+            section: Display and keys
             description: Whether the terminal grid's cursor blinks. false keeps it steady. A value that is not true or false counts as false.
             default: false
             control: toggle
         wallpaper.dir:
+            heading: appearance
+            section: Wallpaper
             description: Folder holding the wallpaper images, relative to the hub and inside it. A missing folder, or one outside the hub, serves no image, which means no backdrop.
             default: tools/oculus/assets/wallpaper
-            control: text
+            control: folder
         wallpaper.file:
+            heading: appearance
+            section: Wallpaper
             description: Name of the image to use, the whole file name or any part of it, matched without regard to case. Empty leaves the choice to pick. A name matching no image uses the first image of the folder, and a name holding a path separator or .. names no image.
             default: wallhaven-83
             control: text
+            suggest_from: wallpapers
         wallpaper.pick:
+            heading: appearance
+            section: Wallpaper
             description: Which image is used when file is empty. first is the first image in the folder, random is one image chosen at random and kept until the server restarts. Any other value serves no image.
             default: first
             control: choice
             values: [first, random]
         wallpaper.dim:
+            heading: appearance
+            section: Wallpaper
             description: How far the image is darkened, from 0 (the raw image) to 1 (fully hidden); a value is clamped to that range. Busy images want 0.7 to 0.85.
             default: 0.72
             control: number
+            min: 0
+            max: 1
         wallpaper.blur:
+            heading: appearance
+            section: Wallpaper
             description: Blur of the image itself in pixels, from 0 (sharp) to 64. Raise it only for a busy picture.
             default: 0
             control: number
+            min: 0
+            max: 64
         wallpaper.themes:
+            heading: appearance
+            section: Wallpaper
             description: Which UI themes show the wallpaper. rice shows it on the terminal-style themes only, all shows it on the light and dark themes too. Any other value counts as rice.
             default: rice
             control: choice
             values: [rice, all]
         wallpaper.panel_opacity:
+            heading: appearance
+            section: Wallpaper
             description: How solid the panels stay over the image, from 0 to 1 (1 is opaque); a value is clamped to that range. The value is applied as a whole percentage.
             default: 0.76
             control: number
+            min: 0
+            max: 1
         wallpaper.popover_opacity:
+            heading: appearance
+            section: Wallpaper
             description: How solid dropdowns and popovers are, from 0 to 1. They float over a panel, so at the panel's own opacity they would be read through two translucent layers. Leaving the key out sets it three quarters of the way from panel_opacity to solid.
             default: 0.97
             control: number
+            min: 0
+            max: 1
         wallpaper.panel_blur:
+            heading: appearance
+            section: Wallpaper
             description: Backdrop blur behind each panel in pixels, from 0 to 64. It keeps text crisp without smearing the image.
             default: 2
             control: number
+            min: 0
+            max: 64
         memories.dir:
+            heading: appearance
+            section: Photo wall
             description: Folder of the photo wall, relative to the hub and inside it. Every .jpg, .jpeg, .png and .webp in it is a tile, and the wall's add control puts new pictures here.
             default: tools/oculus/assets/memories
-            control: text
+            control: folder
         crt.default:
+            heading: appearance
+            section: CRT overlay
             description: Whether the CRT overlay (scanlines and vignette, cosmetic only) is on in a browser that has never been told otherwise. The CRT row under This browser in the Settings view saves the viewer's own choice, which takes over.
             default: false
             control: toggle
         code_theme:
+            heading: appearance
             section: Code theme
             description: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens, and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours while the editor's background and chrome stay on the UI theme. An id Shiki does not bundle is reported as a finding and read as tokens. The Code theme row under This browser in the Settings view saves the viewer's own choice, which takes over.
             default: tokens
-            control: text
+            control: choice
+            values_from: code_themes
         show_tabs:
-            section: Appearance
+            heading: appearance
+            section: Pane tabs
             description: How many tabs the top row of a pane draws. multiple draws every tab, single draws the active tab alone, none draws no tab and keeps a title row that holds the pane's actions. Any other value counts as multiple. The Tab Bar submenu of a pane strip's right-click menu writes this key.
             default: multiple
             control: choice
             values: [multiple, single, none]
         editor_actions:
-            section: Appearance
+            heading: appearance
+            section: Pane tabs
             description: Where a pane draws its Split Right button and its pane menu. strip draws them at the right end of the top row, hidden draws neither; the pane menu stays reachable by a right click on the strip or on an empty pane. Any other value counts as strip. The Editor Actions Position submenu of a pane strip's right-click menu writes this key.
             default: strip
             control: choice
             values: [strip, hidden]
         wrap_tabs:
-            section: Appearance
+            heading: appearance
+            section: Pane tabs
             description: Whether the tabs of a pane wrap onto more rows when they do not fit, instead of scrolling along one row. It applies only while show_tabs is multiple. Any value that is not true counts as false.
             default: false
             control: toggle
     behavior.yml:
         read_limits:
-            section: Audit
+            heading: boards
+            section: Audit checks
             description: Soft limits, in characters, for the audit's readability warnings. A manifest field longer than its limit earns a finding, and a field with no limit here is not checked.
             fields:
-                key: the manifest field, status.line, next, latest or eli5, or results for each entry of the results list
-                value: the most characters the field may hold before it earns a finding
+                key:
+                    description: the manifest field, status.line, next, latest or eli5, or results for each entry of the results list
+                    control: choice
+                    values: [status.line, next, latest, eli5, results]
+                value:
+                    description: the most characters the field may hold before it earns a finding
+                    control: number
         data_domains:
-            section: Audit
+            heading: boards
+            section: Audit checks
             description: Domains expected to have a dataset. The audit reports an active or manuscript project in one of these domains that has no datasets entry.
             default: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
-            control: list
+            control: multi
+            values_from: domains
         waiting_status:
-            section: Audit
+            heading: boards
+            section: Audit checks
             description: Collection-entry statuses that wait on someone else, compared without regard to case. The audit asks for a date on an entry in one of them, so that it can be tracked.
             default: [submitted, pending, under review, under-review]
-            control: list
+            control: multi
+            values_from: entry_statuses
         audit_ignore:
-            section: Audit
+            heading: boards
+            section: Audit checks
             description: The finding signatures the reader has parked, each the twelve hex characters the Audit view's mute control writes here. A parked finding stays true and is drawn in the muted section.
             default: []
-            control: list
+            control: parked
         stale_lag_days:
-            section: Audit
+            heading: boards
+            section: Audit checks
             description: How many days a project's manifest `updated` date may trail the newest content of the project before the audit and the Focus board call the manifest behind.
             default: 1
             control: number
         context_window:
-            section: Usage and sessions
+            heading: sessions
+            section: Session meter
             description: The token window the session detail meter measures the last turn against, unless the transcript names its own window. A value that is not above zero leaves the meter without a window.
             default: 1000000
             control: number
         usage_tiers:
-            section: Usage and sessions
-            description: The words shown for the subscription tier ids that the supported command-line agents report. The server refuses to start when the map holds a value that is not text. A change the server refuses while it runs keeps the value in force and is logged.
+            heading: sessions
+            section: Usage figures
+            description: The words shown for the subscription tier ids that the supported command-line agents report.
             fields:
-                key: a tier id as the agent reports it
+                key:
+                    description: a tier id as the agent reports it
+                    control: text
+                    suggest_from: usage_tiers
                 value: the words shown for that tier
         usage_refresh_min:
-            section: Usage and sessions
-            description: Minutes between refreshes of each account's cached usage figures, which hidden usage sessions make. The server refuses to start unless it is a number from 1 to 35791, and the Usage view reads the same number as its cadence. A value outside 1 to 35791 is refused. A change the server refuses while it runs keeps the value in force and is logged.
+            heading: sessions
+            section: Usage figures
+            description: Minutes between refreshes of each account's cached usage figures, which hidden usage sessions make. The Usage view reads the same number as its cadence.
             default: 10
             control: number
+            min: 1
+            max: 35791
         usage_refresh_model:
-            section: Usage and sessions
-            description: The model the hidden usage sessions are started with, passed to the Claude command line as --model. The server refuses to start when it is empty. A change the server refuses while it runs keeps the value in force and is logged.
+            heading: sessions
+            section: Usage figures
+            description: The model the hidden usage sessions are started with, passed to the Claude command line as --model.
             default: haiku
-            control: text
+            control: choice
+            values_from: models
         refresh_stale_days.litwatch:
+            heading: boards
             section: Thresholds and horizons
             description: Days after which the Focus refresh strip prompts to refresh the literature radar, counted from meta.last_run of the radar file. A radar that has never run is prompted for while this key is present. Removing the key stops the prompt for this feed.
             default: 14
             control: number
         refresh_stale_days.inbox:
+            heading: boards
             section: Thresholds and horizons
             description: Days after which the Focus refresh strip prompts to triage the inbox again, counted from the run date the triage skill writes at the top of triage.json under mail_dir. A note that the page's triage action writes keeps that date, so it does not reset the count, and with no run date there is no prompt. Removing the key stops the prompt for this feed.
             default: 2
             control: number
         refresh_stale_days.scout:
+            heading: boards
             section: Thresholds and horizons
             description: Days after which the Focus refresh strip prompts to run the position scout again, counted from the newest meta.log date of the position-leads file. A scout that has never run gives no prompt. Removing the key stops the prompt for this feed.
             default: 7
             control: number
         deadline_horizon_days:
+            heading: boards
             section: Thresholds and horizons
             description: How many days ahead the week's ticker lists a dated item, among them a project's submission deadline, a funding scheme's deadline, a conference call with an exact date, and the dated entries of talks, teaching, tasks, positions and joint work.
             default: 90
             control: number
         leads_horizon_days:
+            heading: boards
             section: Thresholds and horizons
             description: How many days ahead the week's ticker lists the deadline of an open position lead from the position-leads file.
             default: 21
             control: number
         conf_horizon_months:
+            heading: boards
             section: Thresholds and horizons
             description: How many whole months ahead the week's ticker lists a conference call that has a usual month but no exact date. 1 lists this month and the next.
             default: 1
             control: number
         leads_badge_days:
+            heading: boards
             section: Thresholds and horizons
             description: Position Leads counts an open lead whose deadline falls from today through this many days ahead in the count badge of its rail entry.
             default: 14
             control: number
         venue_conc_warn:
+            heading: boards
             section: Thresholds and horizons
             description: The number of in-flight papers aimed at one venue at which the Focus board raises its venue load line and the board statistics flag the venue.
             default: 4
             control: number
         linkedin_cadence_days:
+            heading: boards
             section: Thresholds and horizons
             description: Days since the newest LinkedIn post beyond which the Focus board raises its LinkedIn line and the LinkedIn rail entry shows its red mark.
             default: 30
             control: number
         file_index.enabled:
+            heading: boards
+            section: File finder
             description: Whether project cards list the project's files. false turns the file finder off.
             default: true
             control: toggle
         file_index.max_per_project:
+            heading: boards
+            section: File finder
             description: How many files the finder lists for one project, the newest first. A value that is not a number above zero means 400.
             default: 400
             control: number
         file_index.ext:
+            heading: boards
+            section: File finder
             description: The extensions, each with its dot, of the files the finder lists, compared in lower case. An empty list means the built-in list of common document and code extensions.
             default:
                 [
@@ -233,273 +331,538 @@ options:
                 ]
             control: list
         slurm.resource:
-            description: "The cluster the Live HPC poller queries: the key of a cluster entry of registries/resources.yml, whose host is the ssh alias. The machine's own hpc_host in local.yml takes precedence. A key that names no cluster with a host shows why in the HPC view. A change the server refuses while it runs keeps the value in force and is logged."
+            heading: cluster
+            section: Slurm
+            description: "The cluster the Live HPC poller queries: the key of a cluster entry of registries/resources.yml, whose host is the ssh alias. The machine's own hpc_host in local.yml takes precedence. A key that names no cluster with a host shows why in the HPC view."
             default: utwente
-            control: text
+            control: choice
+            values_from: clusters
         slurm.days:
-            description: How many days back the Live HPC poll asks the scheduler's accounting for finished jobs, and for the job working directories of the log prewarm. A value that is not a whole number from 0 to 3650 is refused.
+            heading: cluster
+            section: Slurm
+            description: How many days back the Live HPC poll asks the scheduler's accounting for finished jobs, and for the job working directories of the log prewarm.
             default: 3
             control: number
+            min: 0
+            max: 3650
+            whole: true
         slurm.poll_min:
-            description: Minutes between two Live HPC polls of the job queue. A value outside 1 to 35791 is refused.
+            heading: cluster
+            section: Slurm
+            description: Minutes between two Live HPC polls of the job queue.
             default: 20
             control: number
+            min: 1
+            max: 35791
         slurm.quota_min:
-            description: Minutes between two reads of the cluster's disk quota. A value outside 1 to 35791 is refused.
+            heading: cluster
+            section: Slurm
+            description: Minutes between two reads of the cluster's disk quota.
             default: 60
             control: number
+            min: 1
+            max: 35791
         slurm.prewarm:
+            heading: cluster
+            section: Slurm
             description: Whether the poller resolves the log paths of finished jobs behind the page, so that opening a log is quick. false defers that resolution.
             default: true
             control: toggle
         processes.patterns:
-            description: The program names the Processes view lists beside oculus's own terminals. A name matches a process whose program, or whose first argument, has that file name. A list that is not names is refused. A change the server refuses while it runs keeps the list in force and is logged.
+            heading: terminal
+            section: Processes
+            description: The program names the Processes view lists beside oculus's own terminals. A name matches a process whose program, or whose first argument, has that file name.
             default: [python3, codex, claude, node, latexmk]
             control: list
+            form: program
         chat.model:
+            heading: sessions
+            section: In-page chat
             description: The model an in-page chat session is started with, passed to the Claude command line. Empty leaves the choice to the command line.
             default: opus
-            control: text
+            control: choice
+            values_from: models
+            empty: the command line chooses the model
         tasks.skip_permissions:
+            heading: terminal
+            section: Update tasks
             description: Whether the four update tasks start with --dangerously-skip-permissions. false starts them as ordinary Claude sessions, whose permission prompts the reader answers in the terminal pane. true runs them unattended, and the update tray then asks for a confirmation before each task.
             default: false
             control: toggle
         calendar.poll_min:
-            description: Minutes between two reads of the calendar accounts. A value outside 1 to 35791 is refused.
+            heading: calendar
+            section: Calendar reads
+            description: Minutes between two reads of the calendar accounts.
             default: 15
             control: number
+            min: 1
+            max: 35791
         calendar.days_back:
-            description: How many days before now the calendar window opens. A value that is not a whole number from 0 to 3650 is refused.
+            heading: calendar
+            section: Calendar reads
+            description: How many days before now the calendar window opens.
             default: 31
             control: number
+            min: 0
+            max: 3650
+            whole: true
         calendar.days_ahead:
-            description: How many days after now the calendar window closes. A value that is not a whole number from 0 to 3650 is refused.
+            heading: calendar
+            section: Calendar reads
+            description: How many days after now the calendar window closes.
             default: 62
             control: number
+            min: 0
+            max: 3650
+            whole: true
         mail.poll_min:
-            description: Minutes between two reads of the inbox plate. A value outside 1 to 35791 is refused.
+            heading: calendar
+            section: Mail reads
+            description: Minutes between two reads of the inbox plate.
             default: 10
             control: number
+            min: 1
+            max: 35791
         mail.per_signal:
-            description: How many threads each of the plate's three signals is read at most. A value that is not a whole number from 1 to 500 is refused.
+            heading: calendar
+            section: Mail reads
+            description: How many threads each of the plate's three signals is read at most.
             default: 25
             control: number
+            min: 1
+            max: 500
+            whole: true
         notify.enabled:
+            heading: sessions
+            section: Notifications
             description: Whether a hook event of a Claude session pushes a macOS notification.
             default: true
             control: toggle
         notify.events:
+            heading: sessions
+            section: Notifications
             description: The hook events that push a notification. A name is the notification type of a Notification event, or stop for a Stop event. An entry that is not text is dropped.
             default: [permission_prompt, idle_prompt, stop]
-            control: list
+            control: multi
+            values: [permission_prompt, idle_prompt, stop]
         notify.quiet_seconds:
+            heading: sessions
+            section: Notifications
             description: Seconds during which a session's repeat of a notification is suppressed after one was pushed.
             default: 3
             control: number
         editor.paint_limit_kb:
-            description: Size in kilobytes above which the source editor opens a file as plaintext. The editor colours a file by running its grammar over the text in the page as it is typed, and the read-only code window, painted once, colours every size. The server refuses to start unless it is above zero.
+            heading: editor
+            section: Source editor
+            description: Size in kilobytes above which the source editor opens a file as plaintext. The editor colours a file by running its grammar over the text in the page as it is typed, and the read-only code window, painted once, colours every size.
             default: 20480
             control: number
+            min: 1
         editor.tab_size:
-            description: The width of one step of indentation, from 1 to 8, VS Code's editor.tabSize. A file that indents with spaces keeps the step it is written with; this is the width for a file with no indented line and for a file indented with tabs. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it. A value outside 1 to 8, or not a whole number, counts as 4.
+            heading: editor
+            section: Source editor
+            description: The width of one step of indentation, from 1 to 8, VS Code's editor.tabSize. A file that indents with spaces keeps the step it is written with; this is the width for a file with no indented line and for a file indented with tabs. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it.
             default: 4
             control: number
+            min: 1
+            max: 8
+            whole: true
         editor.insert_spaces:
-            description: Whether a file with no indented line is indented with spaces (true) or a tab (false), VS Code's editor.insertSpaces. A file that already indents keeps its own. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it. A value that is not true or false counts as true.
+            heading: editor
+            section: Source editor
+            description: Whether a file with no indented line is indented with spaces (true) or a tab (false), VS Code's editor.insertSpaces. A file that already indents keeps its own. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it.
             default: true
             control: toggle
         editor.word_wrap:
-            description: How the editor wraps a long line, VS Code's editor.wordWrap. off never wraps, on wraps at the width of the editor, wordWrapColumn wraps at column 80, and bounded wraps at the smaller of the editor's width and column 80. Alt+Z in a source tab switches the wrap of that tab. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it. Any other value counts as off.
+            heading: editor
+            section: Source editor
+            description: How the editor wraps a long line, VS Code's editor.wordWrap. off never wraps, on wraps at the width of the editor, wordWrapColumn wraps at column 80, and bounded wraps at the smaller of the editor's width and column 80. Alt+Z in a source tab switches the wrap of that tab. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it.
             default: 'off'
             control: choice
             values: ['off', 'on', wordWrapColumn, bounded]
         editor.minimap:
-            description: Whether the source editor draws the minimap, the overview of the file at its right edge, VS Code's editor.minimap.enabled. The diff editor draws its minimap as Monaco does. A value that is not true or false counts as true.
+            heading: editor
+            section: Source editor
+            description: Whether the source editor draws the minimap, the overview of the file at its right edge, VS Code's editor.minimap.enabled. The diff editor draws its minimap as Monaco does.
             default: true
             control: toggle
         editor.render_whitespace:
-            description: Which spaces and tabs the editor draws as marks, VS Code's editor.renderWhitespace. none draws none, boundary draws all but single spaces between words, selection draws them inside a selection, trailing draws the ones at the end of a line, and all draws every one. Any other value counts as selection.
+            heading: editor
+            section: Source editor
+            description: Which spaces and tabs the editor draws as marks, VS Code's editor.renderWhitespace. none draws none, boundary draws all but single spaces between words, selection draws them inside a selection, trailing draws the ones at the end of a line, and all draws every one.
             default: selection
             control: choice
             values: [none, boundary, selection, trailing, all]
         editor.sticky_scroll:
-            description: Whether the editor keeps the headings and blocks that contain the first visible line at the top of the view, VS Code's editor.stickyScroll.enabled. The structure comes from the headings of a Markdown or LaTeX file, from the language service of TypeScript, JavaScript, JSON, CSS, SCSS, Less and HTML, and from the braces of C, C++, Java, Dart, R and Rite. A value that is not true or false counts as true.
+            heading: editor
+            section: Source editor
+            description: Whether the editor keeps the headings and blocks that contain the first visible line at the top of the view, VS Code's editor.stickyScroll.enabled. The structure comes from the headings of a Markdown or LaTeX file, from the language service of TypeScript, JavaScript, JSON, CSS, SCSS, Less and HTML, and from the braces of C, C++, Java, Dart, R and Rite.
             default: true
             control: toggle
         editor.languages:
+            heading: editor
+            section: Source editor
             description: The editor options of a language, by the editor's language name, as VS Code's per-language settings give them. A record sets any of the fields below for the files of that language and overrides the global key of the same name; a repository's .oculus/settings.yml has a languages key of the same records that overrides these for the files of that repository. A language the editor does not colour, a field not listed and a value outside its words or range are not read and are listed in the Findings view.
             fields:
-                key: the language's name as the editor and the status bar show it
-                tab_size: the width of one step of indentation, a whole number from 1 to 8
-                insert_spaces: true indents a file with no indented line with spaces, false with a tab
-                word_wrap: off, on, wordWrapColumn or bounded
-                rulers: the columns that draw a vertical line, a list of whole numbers
+                key:
+                    description: the language's name as the editor and the status bar show it
+                    control: choice
+                    values_from: languages
+                tab_size:
+                    description: the width of one step of indentation, a whole number from 1 to 8
+                    control: number
+                    min: 1
+                    max: 8
+                    whole: true
+                insert_spaces:
+                    description: true indents a file with no indented line with spaces, false with a tab
+                    control: toggle
+                word_wrap:
+                    description: off, on, wordWrapColumn or bounded
+                    control: choice
+                    values: ['off', 'on', wordWrapColumn, bounded]
+                rulers:
+                    description: the columns that draw a vertical line, a list of whole numbers
+                    control: list
+                    items: number
+                    min: 1
+                    whole: true
         latex.auto_build:
-            description: What saving a .tex file does. on_save builds the main file the saved file belongs to with latexmk, in the background and without showing the terminal, and the build's errors and warnings reach the editor as markers when it ends. never builds nothing. Any other value, or no value, counts as on_save.
+            heading: editor
+            section: LaTeX
+            description: What saving a .tex file does. on_save builds the main file the saved file belongs to with latexmk, in the background and without showing the terminal, and the build's errors and warnings reach the editor as markers when it ends. never builds nothing.
             default: on_save
             control: choice
             values: [on_save, never]
         latex.formatter:
+            heading: editor
+            section: LaTeX
             description: The program Format Document runs on a .tex file, as LaTeX Workshop's latex-workshop.formatting.latex offers them. latexindent comes with TeX Live and MacTeX, tex-fmt and badness are installed on their own. none formats nothing and says so. The program reads the text and writes the formatted text back, with no shell and a 20 second limit.
             default: none
             control: choice
             values: [none, latexindent, tex-fmt, badness]
         latex.latexindent_path:
+            heading: editor
+            section: LaTeX
             description: Where latexindent is, when latex.formatter is latexindent. Empty finds it on PATH.
             default: ''
-            control: text
+            control: path
+            empty: true
         latex.tex_fmt_path:
+            heading: editor
+            section: LaTeX
             description: Where tex-fmt is, when latex.formatter is tex-fmt. Empty finds it on PATH.
             default: ''
-            control: text
+            control: path
+            empty: true
         latex.badness_path:
+            heading: editor
+            section: LaTeX
             description: Where badness is, when latex.formatter is badness. Empty finds it on PATH.
             default: ''
-            control: text
+            control: path
+            empty: true
         writes.timeout_seconds:
+            heading: editor
+            section: Saving
             description: Seconds a save waits for the server's answer before it is given up and its form says so. A value that is not above zero makes a save wait as long as the request does.
             default: 30
             control: number
         notes.autosave_ms:
+            heading: editor
+            section: Notes
             description: Milliseconds a scratch note waits after the last keystroke before it is written.
             default: 800
             control: number
         changes.keep:
-            description: How many changes the change log holds. Every write that changed something is recorded in ~/.oculus/changes.jsonl, or where the changes key of local.yml puts it, and the file is rewritten down to this number once it has grown past twice it. A value that is not a whole number above zero is refused.
+            heading: editor
+            section: Change log
+            description: How many changes the change log holds. Every write that changed something is recorded in ~/.oculus/changes.jsonl, or where the changes key of local.yml puts it, and the file is rewritten down to this number once it has grown past twice it.
             default: 500
             control: number
+            min: 1
+            whole: true
         files.confirm_delete:
+            heading: editor
+            section: Files
             description: Whether moving a file or folder to the Trash in the Files view asks first, as VS Code's explorer.confirmDelete. A permanent delete always asks. The question's "Do not ask me again" box writes false here.
             default: true
             control: toggle
         git.message_model:
+            heading: editor
+            section: Git
             description: The model the Changes view asks for a suggested commit message. Empty uses the command line's own default model.
             default: ''
-            control: text
+            control: choice
+            values_from: models
+            empty: the command line's own default model
         git.autofetch_minutes:
-            description: Minutes between two automatic git fetch --prune of every repository oculus shows that has a remote, as VS Code's auto fetch. 0, the default, fetches only when Fetch is pressed; nothing else reaches a remote unasked. It is read again within a minute of a change. A value that is not a whole number of 0 or more is refused.
+            heading: editor
+            section: Git
+            description: Minutes between two automatic git fetch --prune of every repository oculus shows that has a remote, as VS Code's auto fetch. 0, the default, fetches only when Fetch is pressed; nothing else reaches a remote unasked. It is read again within a minute of a change.
             default: 0
             control: number
+            min: 0
+            max: 35791
+            whole: true
         search.max_hits:
-            description: How many hits one answer of the Search view carries before it says it was cut. Must be above zero.
+            heading: editor
+            section: Search
+            description: How many hits one answer of the Search view carries before it says it was cut.
             default: 500
             control: number
+            min: 1
+            whole: true
         search.timeout_s:
-            description: Seconds one root's ripgrep search is given. Must be above zero.
+            heading: editor
+            section: Search
+            description: Seconds one root's ripgrep search is given.
             default: 10
             control: number
+            min: 1
         open.program_ext:
+            heading: editor
+            section: Opening in programs
             description: The extensions a file may carry to be handed to a program on this machine, each with the bundle id of the one application it opens in. A file of any other extension, and a listed file with an execute bit or marked as a Finder alias, is refused, and a folder is shown in Finder rather than opened. Read again at every request.
             fields:
-                key: an extension with its dot, compared in lower case
-                value: the bundle id of the application that opens it
+                key:
+                    description: an extension with its dot, compared in lower case
+                    control: text
+                    form: extension
+                value:
+                    description: the bundle id of the application that opens it
+                    control: text
+                    form: bundle_id
+                    suggest_from: bundle_ids
     layout.yml:
         rail:
-            section: Rail and pages
+            heading: rail
+            section: Rail buttons
             description: The rail's pages, one button per page, drawn in this order with the digits 1 to 9 showing the first nine. A page key named twice, or naming no arrangement, draws no second button and is a finding. The Settings view edits this list.
             fields:
                 label: the words of the button
-                glyph: a glyph name of catalogs/glyphs.yml
-                page: a key of arrangements, which is what the page is first made from and what the saved page stays tied to
+                glyph:
+                    description: a glyph name of catalogs/glyphs.yml
+                    control: glyph
+                page:
+                    description: a key of arrangements, which is what the page is first made from and what the saved page stays tied to
+                    control: choice
+                    values_from: arrangements
         nav_groups:
-            section: Rail and pages
+            heading: rail
+            section: View catalogue
             description: The view catalogue's groups, in the order the Views view lists them. A group with no registered views is not listed.
             fields:
-                key: the page key of a rail entry, which is the key of the group
+                key:
+                    description: the page key of a rail entry, which is the key of the group
+                    control: choice
+                    values_from: rail_pages
                 label: the words of the group heading
-                glyph: the heading's glyph name, one that no view of the group carries
-                chord: the one-letter keyboard prefix of the group, then a digit for the entry's place in the group
+                glyph:
+                    description: the heading's glyph name, one that no view of the group carries
+                    control: glyph
+                chord:
+                    description: the one-letter keyboard prefix of the group, then a digit for the entry's place in the group
+                    control: choice
+                    values:
+                        [
+                            a,
+                            b,
+                            c,
+                            d,
+                            e,
+                            f,
+                            g,
+                            h,
+                            i,
+                            j,
+                            k,
+                            l,
+                            m,
+                            n,
+                            o,
+                            p,
+                            q,
+                            r,
+                            s,
+                            t,
+                            u,
+                            v,
+                            w,
+                            x,
+                            y,
+                            z
+                        ]
         direct_chord:
-            section: Rail and pages
+            heading: rail
+            section: View catalogue
             description: The one lowercase letter that reaches, with a digit after it, the views of groups that name no chord and the views no group holds. A value that is not one lowercase letter means no such prefix.
             default: v
-            control: text
+            control: choice
+            values: [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z]
+            empty: no prefix
         arrangements:
-            section: Rail and pages
+            heading: rail
+            section: Page layouts
             description: What each rail page is first made from, and what Reset gives it back. After the first press the page is the one the reader arranged, kept in the saved layout. An arrangement that does not add up makes no page.
             fields:
                 key: a page key that a rail entry names
                 root: the page's one layout tree, a split of dir, sizes and children or a pane of view, where view is one view id or a list of tabs and a tab may be a view id or a view with its own state
         floats:
-            section: Rail and pages
+            heading: rail
+            section: Floats
             description: The floats a browser with no saved layout starts with, and what Reset all pages gives back. A float is a pane over every page, docked on an edge of the window or free. After the first load the floats are the reader's own, kept in the saved layout. An entry that does not add up is left out and the rest kept, and of two entries docked on one edge the first stays.
             fields:
-                view: one view id or a list of tabs, as an arrangement's pane takes it
-                dock: left, right or bottom, for a float docked on that edge of the window
-                size: for a docked float, its share of the window's width, or of its height for bottom, from 0.1 to 0.6
-                x: for a free float, its left edge as a fraction of the window's width
-                y: for a free float, its top edge as a fraction of the window's height
-                w: for a free float, its width as a fraction of the window's width, at least 0.1
-                h: for a free float, its height as a fraction of the window's height, at least 0.1
+                view:
+                    description: one view id or a list of tabs, as an arrangement's pane takes it
+                    control: multi
+                    values_from: views
+                dock:
+                    description: left, right or bottom, for a float docked on that edge of the window
+                    control: choice
+                    values: [left, right, bottom]
+                size:
+                    description: for a docked float, its share of the window's width, or of its height for bottom, from 0.1 to 0.6
+                    control: number
+                    min: 0.1
+                    max: 0.6
+                x:
+                    description: for a free float, its left edge as a fraction of the window's width
+                    control: number
+                    min: 0
+                    max: 1
+                y:
+                    description: for a free float, its top edge as a fraction of the window's height
+                    control: number
+                    min: 0
+                    max: 1
+                w:
+                    description: for a free float, its width as a fraction of the window's width, at least 0.1
+                    control: number
+                    min: 0.1
+                    max: 1
+                h:
+                    description: for a free float, its height as a fraction of the window's height, at least 0.1
+                    control: number
+                    min: 0.1
+                    max: 1
         docs:
-            section: Rail and pages
+            heading: rail
+            section: View catalogue
             description: Hub documents listed in the view catalogue. Each is one entry inside its group, listed after the group's views, and opens the doc view. An entry that is not three non-empty strings is dropped, and a path with no file there draws the view's own missing line.
             fields:
                 label: the words of the tab
-                path: the document's path relative to the research hub
-                group: a key of nav_groups
+                path:
+                    description: the document's path relative to the research hub
+                    control: file
+                    allow_missing: true
+                group:
+                    description: a key of nav_groups
+                    control: choice
+                    values_from: nav_groups
         board.cols_project:
+            heading: boards
+            section: Board columns and search
             description: The list-view column headings of the Projects board, written in the order of the fixed columns title, authors, venue, status, focus and next. A column with no heading here shows its cell name.
             default: [Project, Authors, Venue, Status, Focus, Next]
             control: list
+            slots: [title, authors, venue, status, focus, next]
         board.cols_archive:
+            heading: boards
+            section: Board columns and search
             description: The list-view column headings of the Archive and Coauthor boards, written in the order of the fixed columns title, authors, venue, domain, pillar and funding. A column with no heading here shows its cell name.
             default: [Paper, Authors, Venue, Domain, Pillar, Funding]
             control: list
+            slots: [title, authors, venue, domain, pillar, funding]
         board.search.projects:
+            heading: boards
+            section: Board columns and search
             description: The placeholder of the Projects board's search box.
             default: Search title | eli5 | results | ideas | doc text ...
             control: text
         board.search.archive:
+            heading: boards
+            section: Board columns and search
             description: The placeholder of the Archive board's search box.
             default: Search archive | title | eli5 | outcome | doc text ...
             control: text
         board.search.coauthor:
+            heading: boards
+            section: Board columns and search
             description: The placeholder of the Coauthor board's search box.
             default: Search coauthor | title | eli5 | outcome | doc text ...
             control: text
         tab_split:
+            heading: boards
             section: Tab badges
             description: The colours of the count split on the Projects tab button, one cell per project type. A type with no colour here, or one that is not a lowercase hue name, draws in the unknown tone.
             fields:
-                key: a project type, active, manuscript or idea
-                value: the palette hue name the type's count wears
+                key:
+                    description: a project type, active, manuscript or idea
+                    control: choice
+                    values: [active, manuscript, idea]
+                value:
+                    description: the palette hue name the type's count wears
+                    control: hue
         tab_rollup:
+            heading: boards
             section: Tab badges
-            holds: lists
             description: The count buckets of each board. The Archive and Coauthor tab buttons draw their counts split by bucket, and the category facet of a board's filter takes the bucket's colour. Buckets are mutually exclusive, and a card lands in the first bucket whose keys its type or one of its status chips matches.
+            holds: lists
             fields:
-                key: a board id, projects, archive or coauthor
+                key:
+                    description: a board id, projects, archive or coauthor
+                    control: choice
+                    values: [projects, archive, coauthor]
                 label: the words of the bucket, which also give its id
-                keys: the project types and status chips the bucket counts
-                color: the colour of the bucket's count
+                keys:
+                    description: the project types and status chips the bucket counts
+                    control: multi
+                    values_from: [status_chips, project_types]
+                color:
+                    description: the colour of the bucket's count
+                    control: colour
         nav_live:
+            heading: boards
             section: Tab badges
             description: The live count badges on collection tabs. The badge counts the entries whose status matches, in the colour of that status unless a tone forces an urgency class.
             fields:
-                key: a collection key
-                match: the entry statuses that count, compared without regard to case
+                key:
+                    description: a collection key
+                    control: choice
+                    values_from: collections
+                match:
+                    description: the entry statuses that count, compared without regard to case
+                    control: multi
+                    values_from: entry_statuses
                 label: the tooltip word for the count
-                tone: an urgency class, red, amber or green, used where a count means act
+                tone:
+                    description: an urgency class, red, amber or green, used where a count means act
+                    control: choice
+                    values: [red, amber, green]
         focus_label_mode:
+            heading: boards
             section: Project labels
             description: How the Focus board's lane cards and the week's ticker lines name a project. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The project tab opened from a card and the quick-add picker keep the short name. A lane card shows the full title on hover; a ticker line has no hover title.
             default: short
             control: choice
             values: [short, full]
         project_label_mode:
+            heading: boards
             section: Project labels
             description: How the Projects board names a project when it opens. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The board's Aa toggle overrides it for the viewer.
             default: short
             control: choice
             values: [short, full]
         archive_label_mode:
+            heading: boards
             section: Project labels
             description: How the Archive and Coauthor boards name a project when they open. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The board's Aa toggle overrides it for the viewer.
             default: short
             control: choice
             values: [short, full]
         map_label_mode:
+            heading: boards
             section: Project labels
             description: How the Map names a project node. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short.
             default: short
@@ -507,216 +870,363 @@ options:
             values: [short, full]
     present.yml:
         deck.tag_tones:
+            heading: presentation
+            section: Status chips
             description: The hue a slide's status chip wears, by the chip's class.
             fields:
-                key: a slide tag class
-                value: a palette hue name
+                key:
+                    description: a slide tag class
+                    control: choice
+                    values_from: slide_tags
+                value:
+                    description: a palette hue name
+                    control: hue
         deck.meta.kicker:
+            heading: presentation
+            section: Title slide
             description: The small line above the headline of the title slide.
             default: Research portfolio | technical briefing | June 2026
             control: text
         deck.meta.title_html:
+            heading: presentation
+            section: Title slide
             description: The headline of the title slide. It may use a line break tag, as the tracked value does.
             default: Structured models,<br>everywhere they hide
             control: text
         deck.meta.lede:
+            heading: presentation
+            section: Title slide
             description: The paragraph under the headline of the title slide.
             default: 'A dozen active projects spanning brain, heart, liver and immunity. A shared thesis: clinical data is intrinsically <b>multi-way</b> (modality x time x space x leads), and <b>block-term tensor structure</b>, interpolating CP and Tucker, buys interpretability and parameter efficiency that flattening throws away.'
-            control: text
+            control: long
         deck.meta.legend:
+            heading: presentation
+            section: Title slide
             description: The colour legend of the title slide, one chip per research line.
             fields:
                 label: the words of the chip
-                color: the chip's colour, read as the palette hue it stands for
+                color:
+                    description: the chip's colour, read as the palette hue it stands for
+                    control: colour
         deck.meta.hint:
+            heading: presentation
+            section: Title slide
             description: The line of keyboard hints at the foot of the title slide.
             default: 'left / right to move | <b>O</b> for the overview | each project slide: equation | specs | method | results'
             control: text
         deck.meta.closing_kicker:
+            heading: presentation
+            section: Closing slide
             description: The small line above the headline of the closing slide.
             default: Thank you
             control: text
         deck.meta.closing_title_html:
+            heading: presentation
+            section: Closing slide
             description: The headline of the closing slide. It may use a line break tag, as the tracked value does.
             default: Questions &amp;<br>collaborations welcome
             control: text
         deck.meta.closing_lede:
+            heading: presentation
+            section: Closing slide
             description: The paragraph under the headline of the closing slide.
             default: 'Happy to go deeper on any one: the clinical motivation, the optimization and theory, or the data pipeline. Several are open to collaborators across computer science, psychology, and medicine.'
-            control: text
+            control: long
         deck.meta.contact:
+            heading: presentation
+            section: Closing slide
             description: The contact line of the closing slide.
             default: axel.faes@gmail.com
             control: text
         deck.themes:
+            heading: presentation
+            section: Domain themes
             description: A research domain's colour and the words its project slides wear. A project's slide is themed by the first of its domains that the deck names.
             fields:
-                key: a research domain id, the domain value of a project.yml
-                color: the domain's colour, read as the palette hue it stands for
+                key:
+                    description: a research domain id, the domain value of a project.yml
+                    control: choice
+                    values_from: domains
+                color:
+                    description: the domain's colour, read as the palette hue it stands for
+                    control: colour
                 label: the words the slide shows for the domain
         deck.order:
+            heading: presentation
+            section: Slide order
             description: The deck's table of contents. A project slide that the list does not name is placed before the closing slide, and a project line the mounted hub does not declare places nothing.
             fields:
-                slide: what the line places, title, framing, project, summary, ideas or closing
-                ref: for a framing or summary line the key it names in deck.framing or deck.summaries, for a project line a slide id, which is a project id or project/slug
+                slide:
+                    description: what the line places, title, framing, project, summary, ideas or closing
+                    control: choice
+                    values: [title, framing, project, summary, ideas, closing]
+                ref:
+                    description: for a framing or summary line the key it names in deck.framing or deck.summaries, for a project line a slide id, which is a project id or project/slug
+                    control: choice
+                    values_by:
+                        field: slide
+                        sources: { framing: deck_framing, summary: deck_summaries, project: slides }
         deck.framing:
+            heading: presentation
+            section: Section slides
             description: Section slides, each a heading and a lede with up to three cards, a legend and a hint.
             fields:
                 key: the framing key that a framing line of deck.order names
                 title: the heading of the slide
-                lede: the paragraph under the heading
+                lede:
+                    description: the paragraph under the heading
+                    control: long
                 hint: the line at the foot of the slide
-                cards: a list of cards, each with n (its number), title and body
-                legend: a list of chips, each with label and color
+                cards:
+                    description: a list of cards, each with n (its number), title and body
+                    control: records
+                    fields:
+                        n: the number written on the card, as text
+                        title: the heading of the card
+                        body:
+                            description: the paragraph of the card
+                            control: long
+                legend:
+                    description: a list of chips, each with label and color
+                    control: records
+                    fields:
+                        label: the words of the chip
+                        color:
+                            description: the chip's colour, read as the palette hue it stands for
+                            control: colour
         deck.summaries:
+            heading: presentation
+            section: Summary tables
             description: Cross-project tables written by hand. When a project's headline number changes, its row here changes with it.
             fields:
                 key: the summary key that a summary line of deck.order names
                 title: the heading of the slide
                 foot: the line at the foot of the slide
-                rows: a list of rows, each with field, color, project, mechanism and headline
+                rows:
+                    description: a list of rows, each with field, color, project, mechanism and headline
+                    control: records
+                    fields:
+                        field: the research field the row names
+                        color:
+                            description: the field's colour, read as the palette hue it stands for
+                            control: colour
+                        project: the project the row sums up, in words
+                        mechanism: the project's method, in words
+                        headline: the project's headline result, in words
         deck.ideas.title:
+            heading: presentation
+            section: Idea grid
             description: The heading of the idea grid slide.
             default: The idea pipeline, what is next
             control: text
         deck.ideas.lede:
+            heading: presentation
+            section: Idea grid
             description: The paragraph under the heading of the idea grid slide.
             default: Early-stage directions seeding the next wave. Most reuse the federated, block-term and longitudinal machinery above, plus meta-science and methods bets.
-            control: text
+            control: long
         deck.ideas.hint:
+            heading: presentation
+            section: Idea grid
             description: The line at the foot of the idea grid slide.
             default: 'Maturity: nascent (concept) | scoping (lit-check and framing) | de-risking (feasibility experiment). Each gated on a novelty check before committing.'
             control: text
         deck.ideas.items:
+            heading: presentation
+            section: Idea grid
             description: The ideas of the idea grid, one card each.
             fields:
                 title: the heading of the card
-                desc: the sentence under the heading
-                color: the card's colour, read as the palette hue it stands for
-                maturity: nascent, scoping or de-risking, which drives the chip colour
+                desc:
+                    description: the sentence under the heading
+                    control: long
+                color:
+                    description: the card's colour, read as the palette hue it stands for
+                    control: colour
+                maturity:
+                    description: nascent, scoping or de-risking, which drives the chip colour
+                    control: choice
+                    values: [nascent, scoping, de-risking]
     sources.yml:
         scan:
+            heading: sources
             section: Project scan
             description: Where to find projects, with paths relative to the hub. A project is any subfolder that holds a project.yml, and its tier is the last segment of the rule's dir (projects/active gives active). The side-projects tier is the exception. Its folders feed the Personal board only, and no research reader (the boards, the Focus lanes, the audit, the chat context, the writes and the deposit) finds them. A rule with no dir is dropped, and a folder that is not there is a finding unless the rule is optional.
             fields:
-                dir: the folder scanned, relative to the hub
-                type: the type every project of the folder takes, absent when a nested rule reads it from each manifest
-                nested: true when the folder holds category folders of projects, so that the type comes from each manifest
-                optional: true when a hub without the folder reports nothing
-                tier: the board whose tab splits its count by this rule's type; projects puts the rule's type in the split of the Projects tab, and any other word adds no type to it
+                dir:
+                    description: the folder scanned, relative to the hub
+                    control: folder
+                    allow_missing: optional
+                type:
+                    description: the type every project of the folder takes, absent when a nested rule reads it from each manifest
+                    control: choice
+                    values_from: project_types
+                nested:
+                    description: true when the folder holds category folders of projects, so that the type comes from each manifest
+                    control: toggle
+                optional:
+                    description: true when a hub without the folder reports nothing
+                    control: toggle
+                tier:
+                    description: the board whose tab splits its count by this rule's type; projects puts the rule's type in the split of the Projects tab, and any other word adds no type to it
+                    control: choice
+                    values: [projects, personal, software, coauthor, archive]
         languages:
-            section: Files
-            holds: lists
+            heading: editor
+            section: File languages
             description: The language each file opens in, for its colours, its comment keys and the status bar. A file's language is the first match of its whole name lowercased, then of its extension lowercased, so a file called CMakeLists.txt is CMake before its .txt is read; a file no entry matches opens as plain text, a dotfile such as .bashrc included, since it has no extension. A language the editor does not colour is refused, and so is an entry that is not an extension with its dot or a file name without a slash; two languages that claim one ending keep the first in the file.
+            holds: lists
             fields:
-                key: the language's name as the editor and the status bar show it
-                value: the extensions (with their dot) and whole file names of that language
+                key:
+                    description: the language's name as the editor and the status bar show it
+                    control: choice
+                    values_from: languages
+                value:
+                    description: the extensions (with their dot) and whole file names of that language
+                    control: list
         venues_file:
+            heading: sources
             section: Registry and feed files
             description: The venue catalogue, journals and conferences, that the Venues tab and the venue audit read.
             default: registries/venues.yml
-            control: text
+            control: file
         datasets_file:
+            heading: sources
             section: Registry and feed files
             description: The dataset registry that the Data tab reads, with the provenance and recovery recipe of each dataset.
             default: registries/data.yml
-            control: text
+            control: file
         pillars_file:
+            heading: sources
             section: Registry and feed files
             description: The pillars registry that the Pillars tab reads. A project's pillar is matched to its keys.
             default: registries/pillars.yml
-            control: text
+            control: file
         domains_file:
+            heading: sources
             section: Registry and feed files
             description: The domains registry that the Domains tab reads. A project's domain is matched to its keys.
             default: registries/domains.yml
-            control: text
+            control: file
         people_file:
+            heading: sources
             section: Registry and feed files
             description: The people registry, one entry per human the hub names, that a project's collaborators and waiting-on, a joint-work entry's person and the Person view read. Exactly one entry carries self, the hub's owner.
             default: registries/people.yml
-            control: text
+            control: file
         organisations_file:
+            heading: sources
             section: Registry and feed files
             description: The organisations registry, the universities, hospitals, funders and companies that a person's affiliations and a funding scheme's funder point at.
             default: registries/organisations.yml
-            control: text
+            control: file
         resources_file:
+            heading: sources
             section: Registry and feed files
             description: "The resources registry, the clusters, machines and storage a project's compute: and slurm.resource name."
             default: registries/resources.yml
-            control: text
+            control: file
         collections:
+            heading: sources
             section: Collections
             description: The collection tabs, each a generic card list from one YAML file. An entry needs a key and a file, and two entries with one key are a finding, the later file winning. Each key except venues, datasets, pillars, domains and data also becomes a collection view.
             fields:
                 key: the collection's key, which the view and the entries' cross-links use
-                file: the YAML file of the collection, relative to the hub
+                file:
+                    description: the YAML file of the collection, relative to the hub
+                    control: file
         leads_file:
+            heading: sources
             section: Registry and feed files
             description: The position scout's YAML that the Position Leads view reads as cards. Its search specification belongs to the research-cockpit skill.
             default: feeds/position-leads.yml
-            control: text
+            control: file
         radar_file:
+            heading: sources
             section: Registry and feed files
             description: The literature scout's accumulated radar that the Lit Watch view reads. The refresh workflow deduplicates by URL and appends entries.
             default: feeds/literature-radar.yml
-            control: text
+            control: file
         publications_file:
+            heading: sources
             section: Registry and feed files
             description: The public website's publications feed, cross-checked in the Audit view for missing, leaked, wrong-section and untracked entries. The check is skipped when the file is not checked out.
             default: theaxec.github.io/_data/publications.yml
-            control: text
+            control: file
+            allow_missing: true
         linkedin_dir:
+            heading: sources
             section: Registry and feed files
             description: The folder of the LinkedIn posts pipeline on the website, where a numbered file is posted and an xx- file is an idea.
             default: theaxec.github.io/_linkedin
-            control: text
+            control: folder
         career_file:
+            heading: sources
             section: Registry and feed files
             description: The career strategy file, whose order of work, hosts, eligibility and dropped routes surface on the Focus board's Career strategy panel. The per-scheme statements surface on the Funding tab.
             default: registries/career.yml
-            control: text
+            control: file
         roots:
+            heading: sources
             section: Roots
             description: The roots the server may serve local files from, one directory per key. A relative dir is a finding, and a dir that is not on this machine is a finding and its root serves nothing. Nothing outside a root is served, since both ends are resolved through realpath. These are the folders of the default workspace. The Files view's Add Folder to Workspace appends an entry here and Remove Folder from Workspace removes one, and a saved workspace keeps its own folders in its file.
             fields:
                 key: the root's key, which the file address api/file/key/path and a bookmark use
-                dir: the directory, absolute or starting with ~/
+                dir:
+                    description: the directory, absolute or starting with ~/
+                    control: path
     local.yml:
         hub:
+            section: Server
             description: Absolute path of the research hub whose YAML the portfolio is built from. A relative path is resolved against the engine directory. Without it the hub is two directories above tools/oculus. A change is read again at once.
         port:
+            section: Server
             description: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it the port is 8790. A change moves the server to the new port at once, and the page follows it with its layout and settings.
         hpc_host:
+            section: HPC host
             description: This machine's ssh alias for the Live HPC view. It takes precedence over the host of the cluster that slurm.resource of behavior.yml names. A change is read again at once.
         sessions_cache:
+            section: Sessions
             description: Where the session layer keeps its byte-offset cache. Without it the file is ~/.oculus/transcript-cache.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         sessions_overrides:
+            section: Sessions
             description: Where the per-session overrides live. Without it the file is ~/.oculus/sessions.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         workspaces:
+            section: Saved files
             description: Where the file browser's saved workspaces live. Without it the file is ~/.oculus/workspaces.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         bookmarks:
+            section: Saved files
             description: Where the reader's own bookmarks live. Without it the file is ~/.oculus/bookmarks.yml. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         notes:
+            section: Saved files
             description: Where the scratch notes live. Without it the folder is ~/.oculus/notes. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         changes:
+            section: Saved files
             description: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         history:
+            section: Saved files
             description: Where the local history lives, one folder per file with a copy of the file as it was before each save and before each delete. Up to 50 copies of a save are kept per file, none of a file over 256 KB, and a delete keeps the content of a file up to 5 MB, the newest 50 such copies over all files. Without it the folder is ~/.oculus/history. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         approvals:
+            section: Saved files
             description: Where the approvals live, the texts of the project commands a reader approved to run, each under a key made from its text. Without it the file is ~/.oculus/approvals.json, mode 0600, in ~/.oculus, which each write makes mode 0700 when it is looser; a file named here leaves the mode of its folder as it is. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         claude_bin:
+            section: Programs
             description: The Claude command line that the update tasks and the chat terminal are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
         open_bin:
+            section: Programs
             description: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to macOS's /usr/bin/open. A change is read again at once.
         accounts:
+            section: Usage accounts
             description: The Claude and Codex configuration folders that the Usage view reads, a list of tool (claude or codex), dir and label. Without it the two default folders, ~/.claude and ~/.codex, are read. A Claude label must stay unique once reduced to lowercase letters, digits and dashes. A change is read again at once.
         calendars:
+            section: Calendar accounts
             description: The calendar accounts that the Calendar view reads, a list of provider (google, microsoft or ics) and label. The label is lowercase letters, digits and dashes and is unique per provider. Without it no calendar is read. A change is read again at once.
         calendar_dir:
+            section: Calendar accounts
             description: Where the per-account calendar credential files live. Without it the folder is ~/.oculus/calendar. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         mail:
+            section: Mail accounts
             description: The mail accounts that the Inbox view reads, a list of provider (google or microsoft) and label. The label is lowercase letters, digits and dashes and is unique per provider. Without it no mail is read. A change is read again at once.
         mail_dir:
+            section: Mail accounts
             description: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.

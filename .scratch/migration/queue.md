@@ -1,18 +1,17 @@
-In flight (4 of 5 slots):
+In flight (3 of 5 slots):
 - X3f (opening a file row, and the tab row's actions): round 3, the actions in the breadcrumb bar; its builder is building.
-- S5 (the Settings view's controls and headings): round 1 reviewed, no item or case violated; lands after X3f.
-- D20 (an agent from a task or a worktree): built; its review is running.
-- D44 (Submit on a .slurm file): its brief is being written; its builder once X3f has landed.
+- D20 (an agent from a task or a worktree): repair round 1 building.
+- D44 (Submit on a .slurm file): brief written; its brief check, then its builder once X3f has landed.
 
 Queued, in order (27 steps):
-- X3e (Files lists reordered by drag): brief ready; once S5 has landed.
-- D28 (saving a file as VS Code does): brief ready; once S5 and X3e have landed.
-- D45 (LaTeX as VS Code's LaTeX Workshop): brief checked; once S5 has landed.
-- D23 (language servers): brief ready; once S5 has landed.
-- A3 (scheduled Update runs): brief ready; once S5 has landed.
-- D38 (the Literature search view): brief ready; once S5 has landed.
-- D11 (the debug client for rite): brief ready; once S5 has landed.
-- M6 (the collection forms removed): once S5 has landed.
+- X3e (Files lists reordered by drag): brief ready; unblocked.
+- D28 (saving a file as VS Code does): brief ready; once X3e has landed.
+- D45 (LaTeX as VS Code's LaTeX Workshop): brief checked; unblocked.
+- D23 (language servers): brief ready; unblocked.
+- A3 (scheduled Update runs): brief ready; unblocked.
+- D38 (the Literature search view): brief ready; unblocked.
+- D11 (the debug client for rite): brief ready; unblocked.
+- M6 (the collection forms removed): unblocked.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D41 (links in Markdown checked): once M7 has landed.
 - D15 (PDF reading): no brief yet; once D45 has landed.
@@ -24,7 +23,7 @@ Queued, in order (27 steps):
 - D36 (linters on save): once D33 has landed.
 - D40 (the writing rules as editor marks): once D36 has landed.
 - O30 (the native window in Electron): brief ready; once X3e has landed.
-- E4 (the apps): brief ready; once S5 and X3e have landed.
+- E4 (the apps): brief ready; once X3e has landed.
 - Q72 (the architecture re-read): paused (Axel); after every code step.
 - R2 (release readiness): paused (Axel); after Q72.
 - O29 (retiring the cockpit): paused (Axel); after R2.

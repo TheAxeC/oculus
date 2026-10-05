@@ -19,7 +19,7 @@ import { z } from 'zod';
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { portfolioConfigFrom } from '../../data/index.ts';
-import { loadLocalOrDefaults } from '../../data/sources/config.ts';
+import { loadLocal } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import type { PortfolioConfig } from '../../data/model/index.ts';
 import { inside } from '../core/paths.ts';
@@ -200,11 +200,11 @@ export function listFiles(into: FilesTarget, id: string): Response {
 /**
  * What the route reads: the hub every write lands in, and the request's merged config beside it.
  * The hub and the scan rules come from the readers target() in lib/server/edit/writes.ts takes them
- * from, loadLocalOrDefaults and portfolioConfigFrom, rather than from a second reader of local.yml.
+ * from, loadLocal and portfolioConfigFrom, rather than from a second reader of local.yml.
  */
 export function filesTarget(engine: string, settings: Record<string, unknown>): FilesTarget {
     return {
-        hub: loadLocalOrDefaults(engine).hub,
+        hub: loadLocal(engine).hub,
         config: portfolioConfigFrom(settings, engine),
         settings
     };

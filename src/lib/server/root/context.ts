@@ -15,20 +15,24 @@ import {
     type IconMemory,
     languageFindings,
     nestingFindings,
+    optionFindings,
     loadConfig,
-    loadLocal,
     localFile,
+    localFindings,
+    localSentence,
     mailSettings,
     openSettings,
     processesSettings,
     latexFormatting,
+    readLocal,
+    refreshSettings,
+    settingFindings,
     slurmSettings,
     textCatalog,
     themeFindings,
     usageTiers,
     type LocalConfig
 } from '../../data/sources/config.ts';
-import { requirePaintLimit } from '../../data/helpers/editor.ts';
 import type { Finding, HostInfo, Snapshot } from '../../data/model/index.ts';
 import { mintToken } from '../core/auth.ts';
 import { defaultConnectDir } from '../accounts/connect/store.ts';
@@ -49,7 +53,6 @@ import {
 } from '../files/open.ts';
 import { docFindings, layoutFile } from '../content/docs.ts';
 import { Hub } from '../core/channels.ts';
-import { requireAutofetch } from '../core/fetch-period.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
 import type { LogPaths } from '../machine/hpc/actions.ts';
@@ -73,11 +76,7 @@ import { projectFolders } from '../sessions/index.ts';
 import { HookStore, sessionRecord } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
 import { sessionFolders } from '../sessions/folders.ts';
-import {
-    requireRefreshSettings,
-    watchUsageRefresh,
-    type UsageRefreshWatcher
-} from '../machine/usage/refresh.ts';
+import { watchUsageRefresh, type UsageRefreshWatcher } from '../machine/usage/refresh.ts';
 import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
 import { LISTEN_HOST, type PortMove } from './mover.ts';
@@ -191,7 +190,7 @@ export function reportFindings(findings: Finding[]): void {
 export type OculusRequest = IncomingMessage & { oculus?: ServerContext };
 
 export type ContextDependencies = {
-    loadLocal: typeof loadLocal;
+    readLocal: typeof readLocal;
     loadConfig: typeof loadConfig;
     mintToken: typeof mintToken;
     createHub: () => Hub;
@@ -211,7 +210,7 @@ export type ContextDependencies = {
 };
 
 const dependencies: ContextDependencies = {
-    loadLocal,
+    readLocal,
     loadConfig,
     mintToken,
     createHub: () => new Hub(),
@@ -263,26 +262,26 @@ export function createServerContext(
     portMove?: PortMove
 ): ServerContext {
     const make = { ...dependencies, ...replacements };
-    const local = make.loadLocal(engine);
+    const initial = make.readLocal(engine, true);
+    const local = initial.config;
     // The read at start: the watchers and the pollers are built from it before any request
     // arrives, every config push hands the pollers the settings read again through
     // live-settings.ts, and every write of local.yml is read again by `reloadLocal` below. A
     // request reads the disk again through `locals.config`, so a route never answers from this
-    // copy.
-    const { config, findings } = make.loadConfig(engine);
+    // copy. A value the options catalog's rule refuses is the entry's default and a finding, so a
+    // typo costs one setting and the server starts; only a catalog with no rule for a key stops
+    // it here, naming the key.
+    const { config } = make.loadConfig(engine);
     const slurm = slurmSettings(config);
     const calendarConfig = calendarSettings(config);
     const mailConfig = mailSettings(config);
     const tiers = usageTiers(config);
-    // Read for their check alone: each value is in the merged configuration the page is sent, and
-    // the open and LaTeX endpoints read `open.program_ext` and the `latex:` formatter keys again at
-    // every request, so a missing or mistyped key stops the server here with the key named rather
-    // than reaching a tab.
-    requirePaintLimit(config);
-    requireAutofetch(config);
+    const refresh = refreshSettings(config);
+    // The open and LaTeX endpoints read their keys again at every request, so a key the catalog
+    // holds no rule for stops the server here rather than reaching a tab.
     openSettings(config);
     latexFormatting(config);
-    const processesConfig = processesSettings(config, findings);
+    const processesConfig = processesSettings(config);
     const hub = make.createHub();
     registerFilesChannel(hub);
     const terminals = make.createTerminals(hub);
@@ -303,9 +302,12 @@ export function createServerContext(
     reportFindings([
         ...iconFindings(engine, config),
         ...behaviorFindings(engine, config),
+        ...settingFindings(engine, config),
         ...languageFindings(engine, config),
         ...nestingFindings(engine, config),
+        ...optionFindings(engine, config),
         ...themeFindings(engine, config),
+        ...localFindings(engine, config, initial.problems),
         ...docFindings(config, local.hub, layoutFile(engine))
     ]);
     // The watchers `reloadLocal` builds again. Each start function reads the machine's values and
@@ -368,10 +370,6 @@ export function createServerContext(
 
     const portfolio = startPortfolio();
     const sessions = startSessions();
-    const refresh = requireRefreshSettings({
-        refreshMin: config.usage_refresh_min,
-        model: config.usage_refresh_model
-    });
     const { startUsageRefresh, startUsage } = usageStarters(
         make,
         hub,
@@ -647,16 +645,15 @@ export function createServerContext(
      * Read the machine's own file again and hold every key at once: the values of the context's
      * `local` are replaced in place, so a route that reads them follows with its next request, and
      * each object made from a key that changed is handed the new value or built again. A file that
-     * does not read keeps every value in force and says why once, as a start over it would; a key
-     * whose value equals the one in force hands nothing on.
+     * does not read keeps every value in force and says why once; a file that reads hands on the
+     * values it read, the default of a key whose value is wrong included, so a wrong key costs that
+     * key alone; a key whose value equals the one in force hands nothing on.
      */
     function reloadLocal(): void {
         if (closed) return;
-        let next: LocalConfig;
-        try {
-            next = make.loadLocal(engine);
-        } catch (error) {
-            const reason = error instanceof Error ? error.message : String(error);
+        const read = make.readLocal(engine, true);
+        if (read.unread) {
+            const reason = localSentence(read.problems[0], localFile(engine));
             if (reason !== unread) {
                 console.error(`the machine's own configuration is not read again: ${reason}`);
             }
@@ -665,7 +662,7 @@ export function createServerContext(
         }
         unread = undefined;
         try {
-            apply(next);
+            apply(read.config);
         } catch (error) {
             console.error(`local.yml: a change could not be applied (${reasonOf(error)})`);
         }

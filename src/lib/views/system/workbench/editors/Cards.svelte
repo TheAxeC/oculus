@@ -1,98 +1,233 @@
 <script lang="ts">
     // Layer 3, view partial. The entries of one list of an editor, as the form of the draft draws
-    // them: one text field per item for a list, a key field and a value field per entry for a key/
-    // value table, and a card with a field per catalog field for a record. Each entry has Move up,
-    // Move down and Remove, and the list ends with Add. A field a record holds that the catalog
-    // does not name is drawn as read-only text after the card's fields, since it is sent back
-    // unchanged.
+    // them: one box per item for a list, a key and a value per entry for a key/value table, a card
+    // with a control per catalog field for a record (FieldControl.svelte), and for a field that is
+    // a nested list of records the same cards again inside the card. Each entry has Move up, Move
+    // down and Remove, and the list ends with Add. A list that names its items (`slots`) draws one
+    // box per name with no Add, Remove or Move; a parked list draws its items with Remove alone; a
+    // multi is one card holding its picker.
+    //
+    // A value a record holds that its control cannot show is drawn after the card's fields as the
+    // file has it, with the sentence that the control cannot show it, and so is a field the catalog
+    // does not name; both are sent back unchanged. The text of a field of a draft saved in flow
+    // text that did not read as YAML is drawn too, and Save names it.
     //
     // The partial holds nothing: every keystroke and press goes out as an edit (state/system/
     // config/editors/draft.ts), and the entries come in as they are. A roll-up draws one of these
-    // per key, with `group` naming the key's place.
+    // per key, with `group` naming the key's place, and a nested list draws one with `path` naming
+    // the cards above it.
 
-    import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import type { Card, Draft, Edit } from '$lib/state/system/config/editors/draft';
+    import type { Draft, Edit, Step } from '$lib/state/system/config/editors/draft';
+    import {
+        cardsOf,
+        controlOf,
+        fromText,
+        textOf,
+        type Card,
+        type FieldSpec,
+        type FieldValue
+    } from '$lib/state/system/config/editors/fields';
     import { flowText } from '$lib/state/system/config/editors/flow';
+    import type { Lists } from '$lib/state/system/config/editors/sources';
+    import FieldControl from './FieldControl.svelte';
+    import Cards from './Cards.svelte';
 
     type Props = {
         cards: Card[];
         fields: string[];
-        form: Draft['form'];
+        specs: Record<string, FieldSpec>;
+        form: Draft['form'] | 'nested';
+        lists: Lists;
         /** The place of the key of a roll-up these entries are under. */
         group?: number;
+        /** The cards above a nested list: each one's place in its list and the field holding it. */
+        path?: Step[];
+        /** The words that name the nested list in the label of a control. */
+        scope?: string;
+        /** The row's title, which names the boxes of a list of items and a multi. */
+        title?: string;
+        /** The names of the fixed items of a list. */
+        slots?: string[];
+        /** A list whose items can only be removed. */
+        removeOnly?: boolean;
         onedit: (edit: Edit) => void;
     };
 
-    let { cards, fields, form, group, onedit }: Props = $props();
+    let {
+        cards,
+        fields,
+        specs,
+        form,
+        lists,
+        group,
+        path = [],
+        scope = '',
+        title = '',
+        slots,
+        removeOnly = false,
+        onedit
+    }: Props = $props();
 
     /** The edits that address one entry of a list. */
     type Aimed = Extract<Edit, { do: 'add' | 'remove' | 'move' | 'set' }>;
 
-    /** An edit addressed to this list's entries: with the group's place when it has one. */
+    /** An edit addressed to this list's entries: with the group's place and the cards above. */
     function aimed(edit: Aimed): Edit {
-        return group === undefined ? edit : { ...edit, group };
+        const where = group === undefined ? { path } : { group, path };
+        return { ...edit, ...where };
     }
 
     const inline = $derived(form === 'items' || form === 'pairs');
+    const fixed = $derived(slots !== undefined || form === 'multi');
+    const movable = $derived(!fixed && !removeOnly);
+
+    /** The name of a field in a control's label, with the nested list it is in. */
+    function nameOf(name: string, at: number): string {
+        if (form === 'items' && slots !== undefined) return slots[at] ?? name;
+        return `${scope}${name}`;
+    }
+
+    /** The accessible name of the control of a field of an entry. */
+    function labelOf(name: string, at: number): string {
+        if (slots !== undefined) return nameOf(name, at);
+        if (form === 'multi') return title;
+        if (form === 'items') return t('settings.editor_item', at + 1, title);
+        return t('settings.editor_field', at + 1, nameOf(name, at));
+    }
+
+    /** The spec of a field, or nothing for a name the catalog does not give. */
+    function specOf(name: string): FieldSpec | undefined {
+        return Object.hasOwn(specs, name) ? specs[name] : undefined;
+    }
+
+    /** The fields of a card its controls draw: not those it keeps as the file has them. */
+    function drawnOf(card: Card): string[] {
+        return fields.filter((name) => !Object.hasOwn(card.kept, name));
+    }
+
+    /** The catalog fields of a card the card kept because their control cannot show them. */
+    function stuckOf(card: Card): [string, unknown][] {
+        return Object.entries(card.kept).filter(([name]) => specOf(name) !== undefined);
+    }
+
+    /** The fields of a card the catalog does not name. */
+    function unnamedOf(card: Card): [string, unknown][] {
+        return Object.entries(card.kept).filter(([name]) => specOf(name) === undefined);
+    }
 </script>
 
 <div class="cards" data-cards={form}>
     {#each cards as card, at (at)}
         <div class="card" class:inline data-card={at}>
             <div class="fields">
-                {#each fields as name (name)}
-                    <span class="field">
-                        {#if !inline}
-                            <span class="word" aria-hidden="true">{name}</span>
-                        {/if}
-                        <TextInput
-                            value={card.fields[name] ?? ''}
-                            label={t('settings.editor_field', at + 1, name)}
-                            oninput={(text: string) =>
-                                onedit(aimed({ do: 'set', index: at, field: name, text }))}
-                        />
-                    </span>
+                {#each drawnOf(card) as name (name)}
+                    {@const spec = specOf(name)}
+                    {#if spec !== undefined && controlOf(spec) === 'records'}
+                        <div class="nested" data-field={name}>
+                            <span class="word">{name}</span>
+                            <Cards
+                                cards={cardsOf(card.fields[name])}
+                                fields={Object.keys(spec.fields ?? {})}
+                                specs={spec.fields ?? {}}
+                                form="nested"
+                                {lists}
+                                {group}
+                                path={[...path, { index: at, field: name }]}
+                                scope={`${scope}${name} ${at + 1}, `}
+                                {onedit}
+                            />
+                        </div>
+                    {:else if spec !== undefined && removeOnly}
+                        <code>{textOf(card.fields[name])}</code>
+                    {:else if spec !== undefined}
+                        <span class="field">
+                            {#if !inline || slots !== undefined}
+                                <span class="word" aria-hidden="true">{nameOf(name, at)}</span>
+                            {/if}
+                            <FieldControl
+                                {spec}
+                                value={card.fields[name]}
+                                label={labelOf(name, at)}
+                                {lists}
+                                record={card.fields}
+                                optional={form !== 'items' && form !== 'multi' && name !== 'key'}
+                                ontext={(text: string) =>
+                                    onedit(
+                                        aimed({
+                                            do: 'set',
+                                            index: at,
+                                            field: name,
+                                            value: fromText(spec, text)
+                                        })
+                                    )}
+                                onpick={(value: FieldValue | undefined) =>
+                                    onedit(aimed({ do: 'set', index: at, field: name, value }))}
+                            />
+                        </span>
+                    {/if}
                 {/each}
             </div>
-            <span class="controls">
-                <ToolButton
-                    label={t('settings.editor_up', at + 1)}
-                    glyph="collapse"
-                    compact
-                    disabled={at === 0}
-                    onclick={() => onedit(aimed({ do: 'move', index: at, by: -1 }))}
-                />
-                <ToolButton
-                    label={t('settings.editor_down', at + 1)}
-                    glyph="expand"
-                    compact
-                    disabled={at === cards.length - 1}
-                    onclick={() => onedit(aimed({ do: 'move', index: at, by: 1 }))}
-                />
-                <ToolButton
-                    label={t('settings.editor_remove', at + 1)}
-                    glyph="trash"
-                    compact
-                    onclick={() => onedit(aimed({ do: 'remove', index: at }))}
-                />
-            </span>
-            {#if Object.keys(card.kept).length > 0}
+            {#if movable || removeOnly}
+                <span class="controls">
+                    {#if movable}
+                        <ToolButton
+                            label={t('settings.editor_up', at + 1)}
+                            glyph="collapse"
+                            compact
+                            disabled={at === 0}
+                            onclick={() => onedit(aimed({ do: 'move', index: at, by: -1 }))}
+                        />
+                        <ToolButton
+                            label={t('settings.editor_down', at + 1)}
+                            glyph="expand"
+                            compact
+                            disabled={at === cards.length - 1}
+                            onclick={() => onedit(aimed({ do: 'move', index: at, by: 1 }))}
+                        />
+                    {/if}
+                    <ToolButton
+                        label={t('settings.editor_remove', at + 1)}
+                        glyph="trash"
+                        compact
+                        onclick={() => onedit(aimed({ do: 'remove', index: at }))}
+                    />
+                </span>
+            {/if}
+            {#if stuckOf(card).length > 0}
+                <p class="kept">
+                    {t('settings.editor_stuck')}
+                    {#each stuckOf(card) as [name, held] (name)}
+                        <code>{name}</code> <code>{flowText(held)}</code>
+                    {/each}
+                </p>
+            {/if}
+            {#if unnamedOf(card).length > 0}
                 <p class="kept">
                     {t('settings.editor_kept')}
-                    {#each Object.entries(card.kept) as [name, held] (name)}
+                    {#each unnamedOf(card) as [name, held] (name)}
                         <code>{name}</code> <code>{flowText(held)}</code>
+                    {/each}
+                </p>
+            {/if}
+            {#if Object.keys(card.unread ?? {}).length > 0}
+                <p class="kept">
+                    {t('settings.editor_unread')}
+                    {#each Object.entries(card.unread ?? {}) as [name, text] (name)}
+                        <code>{name}</code> <code>{text}</code>
                     {/each}
                 </p>
             {/if}
         </div>
     {/each}
-    <ToolButton
-        label={t('settings.editor_add')}
-        glyph="add"
-        onclick={() => onedit(aimed({ do: 'add' }))}
-    />
+    {#if !fixed && !removeOnly}
+        <ToolButton
+            label={t('settings.editor_add')}
+            glyph="add"
+            onclick={() => onedit(aimed({ do: 'add' }))}
+        />
+    {/if}
 </div>
 
 <style>
@@ -146,6 +281,13 @@
 
     .card:not(.inline) .field {
         flex: 0 0 auto;
+    }
+
+    .nested {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
     }
 
     .word {

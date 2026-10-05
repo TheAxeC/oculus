@@ -7,21 +7,26 @@
 // portfolio rebuild.
 //
 // Each group is read on its own, so one a hand edit made unreadable keeps the settings in force
-// while the others take theirs. A refusal is said once on stderr: the same message on a later push
-// says nothing, a different one says its own line, and a push that reads the group again clears
-// what was said, so a later refusal is said again.
+// while the others take theirs. A value the options catalog's rule refuses is read as the entry's
+// default and is a finding (settingFindings), so it never reaches this module as a refusal; a
+// setter that throws, or a group whose key the catalog holds no entry for, is a refusal. A refusal
+// is said once on stderr: the same message on a later push says nothing, a different one says its
+// own line, and a push that reads the group again clears what was said, so a later refusal is said
+// again. A push whose merge dropped behavior.yml (a finding on the whole file) leaves every group
+// read from it as it is, since the merged map holds none of the file's keys.
 
 import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
 import {
     calendarSettings,
+    droppedFile,
     mailSettings,
     processesSettings,
+    refreshSettings,
     slurmSettings,
     textCatalog,
     usageTiers,
     type CalendarSettings,
-    type FindingAt,
     type MailSettings,
     type ProcessesSettings,
     type SlurmSettings
@@ -33,7 +38,6 @@ import type { MailWords } from '../accounts/mail/poll.ts';
 import type { Hub, Sink } from '../core/channels.ts';
 import { hostWordsOf, hpcSettingsOf, type HostWords } from '../machine/hpc/host.ts';
 import type { HpcSettings } from '../machine/hpc/poll.ts';
-import { requireRefreshSettings } from '../machine/usage/refresh.ts';
 
 /** The settings the pollers were built with, which a push is compared with. */
 export type LiveStart = {
@@ -143,13 +147,8 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
         current.hpc = next;
     };
 
-    /**
-     * Each group is read, compared with the settings in force and handed to its setter inside its
-     * own attempt, so a refusal and a setter that throws are logged the same way and the sink stays
-     * subscribed. The settings in force change only after the setter took them, so a push that
-     * follows a throw offers them again.
-     */
-    const take = (config: Record<string, unknown>, findings: readonly FindingAt[]): void => {
+    /** The groups read from behavior.yml, each in its own attempt. */
+    const takeBehavior = (config: Record<string, unknown>): void => {
         attempt('slurm', () => {
             pushed = slurmSettings(config);
             handHpc();
@@ -167,10 +166,7 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
             current.mail = mail;
         });
         attempt('refresh', () => {
-            const refresh = requireRefreshSettings({
-                refreshMin: config.usage_refresh_min,
-                model: config.usage_refresh_model
-            });
+            const refresh = refreshSettings(config);
             if (isDeepStrictEqual(refresh, current.refresh)) return;
             targets.usageRefresh.set(refresh);
             current.refresh = refresh;
@@ -182,11 +178,21 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
             current.tiers = tiers;
         });
         attempt('processes', () => {
-            const processes = processesSettings(config, findings);
+            const processes = processesSettings(config);
             if (isDeepStrictEqual(processes, current.processes)) return;
             targets.processes.set(processes);
             current.processes = processes;
         });
+    };
+
+    /**
+     * Each group is read, compared with the settings in force and handed to its setter inside its
+     * own attempt, so a refusal and a setter that throws are logged the same way and the sink stays
+     * subscribed. The settings in force change only after the setter took them, so a push that
+     * follows a throw offers them again.
+     */
+    const take = (config: Record<string, unknown>, behaviorDropped: boolean): void => {
+        if (!behaviorDropped) takeBehavior(config);
         if (attempt('text', () => textCatalog(config)) === undefined) return;
         attempt('hpc.words', () => {
             const next = hostWordsOf(config);
@@ -242,7 +248,7 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
             return;
         }
         said.delete('map');
-        take(config, message.data.payload.findings);
+        take(config, droppedFile(message.data.payload.findings, 'behavior.yml'));
     };
 
     const sink: Sink = {

@@ -5,8 +5,10 @@
 //
 // The key is read from the `config` channel at every look and again before each repository, so a
 // change saved in the Settings view takes effect within a minute with no restart, and a key turned
-// to 0 stops a round between two repositories. A value that is not a whole number of minutes stops
-// the fetching and is said once on standard error until a readable value is seen again.
+// to 0 stops a round between two repositories. A value the options catalog's rule refuses is read
+// as the entry's default, 0, and is a finding (settingFindings); a catalog with no rule for the key
+// stops the fetching and is said once on standard error until the key reads again. A configuration
+// whose merge dropped behavior.yml keeps the minutes last read.
 //
 // Each look arms the next one before it works, so looks go on while a round runs; a look that finds
 // a round running does nothing. A round starts when the period has passed since the last one
@@ -27,9 +29,10 @@
 // git-write.ts states for a write's root.
 
 import { z } from 'zod';
+import { autofetchMin, droppedFile } from '../../../data/sources/config.ts';
+import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import type { Hub } from '../../core/channels.ts';
 import { systemClock, type Clock, type Timer } from '../../core/file-poll.ts';
-import { autofetchMinutes } from '../../core/fetch-period.ts';
 import { sshCommand } from '../../core/git/reads.ts';
 import { fetchIn, remoteNames } from '../../git/git-write.ts';
 
@@ -61,7 +64,10 @@ export type AutofetchOptions = {
 export type AutofetchWatcher = { close(): void };
 
 /** The part of a `config` payload this module reads. */
-const configShape = z.object({ config: z.unknown() });
+const configShape = z.object({
+    config: z.unknown(),
+    findings: z.array(z.object({ file: z.string(), key: z.string() })).catch([])
+});
 
 /** The `git` payload as a map from root to state, and the part of a state this module reads. */
 const payloadShape = z.record(z.string(), z.unknown());
@@ -69,9 +75,6 @@ const stateShape = z.object({
     repository: z.boolean(),
     worktrees: z.array(z.object({ path: z.string() })).optional()
 });
-
-const BAD_KEY =
-    'autofetch: config/behavior.yml git.autofetch_minutes is not a whole number of minutes, 0 or more; nothing is fetched';
 
 /** Why a failed `core.sshCommand` read says no more: the read answers only that it failed. */
 const UNREADABLE = 'git timed out, did not run or exited with an error';
@@ -129,21 +132,41 @@ export function watchAutofetch(hub: Hub, options: AutofetchOptions): AutofetchWa
     let running = false;
     let lastStart: number | null = null;
     let said = false;
+    /** The minutes last read, which a message whose merge dropped behavior.yml leaves in force. */
+    let lastMinutes: number | undefined;
 
     /**
-     * The minutes the newest `config` message holds: undefined before any message, null for a
-     * value that is not a whole number of 0 or more (said once until a readable one is seen).
+     * The minutes the newest `config` message holds, the key's default when its value is refused:
+     * undefined before any message, null for a catalog with no rule for the key (said once until
+     * the key reads again).
      */
     function minutes(): number | null | undefined {
         const message = hub.latest('config');
         if (message === undefined) return undefined;
         const shaped = configShape.safeParse(message.payload);
-        const held = shaped.success ? autofetchMinutes(shaped.data.config) : null;
+        const config = shaped.success ? readAs(mapShape, shaped.data.config) : null;
+        if (
+            shaped.success &&
+            lastMinutes !== undefined &&
+            droppedFile(shaped.data.findings, 'behavior.yml')
+        ) {
+            return lastMinutes;
+        }
+        let held: number | null = null;
+        let why = 'the configuration is not a map';
+        if (config !== null) {
+            try {
+                held = autofetchMin(config);
+            } catch (error) {
+                why = reason(error);
+            }
+        }
         if (held === null) {
-            if (!said) log(BAD_KEY);
+            if (!said) log(`autofetch: ${why}; nothing is fetched`);
             said = true;
         } else {
             said = false;
+            lastMinutes = held;
         }
         return held;
     }

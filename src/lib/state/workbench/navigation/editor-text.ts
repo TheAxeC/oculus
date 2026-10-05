@@ -12,12 +12,8 @@ export type { Indent };
 
 // The configured options and the order that resolves them for a tab, which data/helpers/editor.ts
 // holds, as the views read them.
-export {
-    parseRepoSettings,
-    REPO_SETTINGS,
-    resolveEditor,
-    toggleWrap
-} from '../../../data/helpers/editor.ts';
+export { REPO_SETTINGS, resolveEditor, toggleWrap } from '../../../data/helpers/editor.ts';
+export type { RepoSettings } from '../../../data/sources/config/editor-options.ts';
 export type {
     EditorOptions as ConfiguredEditor,
     LanguageRecords,

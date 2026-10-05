@@ -3,6 +3,7 @@
 // and the token counts of the day rows summed.
 
 import type { UsageDay, UsageWindow } from '../../../data/model/index.ts';
+import { refreshSettings } from '../../../data/sources/config/settings.ts';
 
 export type { UsageAccount, UsageDay, UsageWindow } from '../../../data/model/index.ts';
 
@@ -14,6 +15,19 @@ const WINDOW_ORDER: Record<UsageWindow['name'], number> = {
     primary: 0,
     secondary: 1
 };
+
+/**
+ * Minutes between two refreshes: `usage_refresh_min` of the configuration the page holds, read by
+ * the same reader the server uses, and 0 until the config channel has delivered the catalog.
+ */
+export function refreshCadence(config: Record<string, unknown> | undefined): number {
+    if (config === undefined) return 0;
+    try {
+        return refreshSettings(config).refreshMin;
+    } catch {
+        return 0;
+    }
+}
 
 /** An account's rate windows, the shortest first. */
 export function orderedWindows(windows: UsageWindow[]): UsageWindow[] {

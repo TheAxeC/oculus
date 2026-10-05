@@ -28,9 +28,15 @@ import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
 import { readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
-import { editorOptions, paintLimit, type EditorOptions } from '../../data/helpers/editor.ts';
+import type { EditorOptions } from '../../data/helpers/editor.ts';
+import {
+    editorOptions,
+    parseRepoSettings,
+    type RepoSettings
+} from '../../data/sources/config/editor-options.ts';
+import { paintLimit, programApps } from '../../data/sources/config/settings.ts';
 import { languageMap, type LanguageMap } from '../../data/helpers/files/languages.ts';
-import { programApps, type ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
+import type { ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
 import { pinnedSession } from '../workbench/selection.svelte.ts';
@@ -96,7 +102,8 @@ const contextWindowShape = z.number().gt(0);
 export type SelectorsStore = {
     configMap: () => Record<string, unknown>;
     paintLimit: () => number | null;
-    editorOptions: () => EditorOptions;
+    editorOptions: () => EditorOptions | null;
+    repoSettings: (text: string) => RepoSettings;
     programApps: () => ProgramApps;
     languages: () => LanguageMap;
     boardPreset: (view: string) => BoardPreset;
@@ -153,7 +160,7 @@ export function createSelectors(
 
     /**
      * The editor's options out of the merged config (`editor:` of config/behavior.yml), each
-     * missing or bad value its default and everything default until the config channel has spoken.
+     * missing or bad value the catalog's default, and null until the config channel has spoken.
      */
     const editorOptionsNow = $derived(editorOptions(configMap()));
 
@@ -163,7 +170,12 @@ export function createSelectors(
      * spoken.
      */
     function programAppsOf(): ProgramApps {
-        return programApps(configMap()) ?? {};
+        return programApps(configMap());
+    }
+
+    /** A repository's settings file read by the rule of the merged config's catalog. */
+    function repoSettingsOf(text: string): RepoSettings {
+        return parseRepoSettings(text, configMap());
     }
 
     /**
@@ -507,6 +519,7 @@ export function createSelectors(
         configMap,
         paintLimit: editorPaintLimit,
         editorOptions: () => editorOptionsNow,
+        repoSettings: repoSettingsOf,
         programApps: programAppsOf,
         languages: () => languageMapNow,
         boardPreset,

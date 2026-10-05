@@ -1,8 +1,8 @@
 // Layer 4, tree check. The readers of the config folder (loadLocal, loadConfig, behaviorFindings,
-// themeFindings, vocabCatalog) over synthetic files in a temporary directory, and the one real
-// config they are run over for no finding. The sentences checkLocal and loadLocal throw are rows of
-// tests/data/sources/config/local.test.ts. The config folder oculus ships is read by
-// tests/checks/config/config-folder.test.ts.
+// settingFindings, themeFindings, vocabCatalog, optionFindings) over synthetic files in a temporary
+// directory, and the one real config they are run over for no finding. The sentences checkLocal
+// answers, and readLocal's problems, are rows of tests/data/sources/config/local.test.ts. The
+// config folder oculus ships is read by tests/checks/config/config-folder.test.ts.
 
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -17,6 +17,8 @@ import {
     engineDir,
     loadConfig,
     loadLocal,
+    optionFindings,
+    settingFindings,
     textCatalog,
     themeFindings,
     vocabCatalog
@@ -27,6 +29,7 @@ import { layoutFile } from '../../../src/lib/server/content/docs.ts';
 import { parse } from 'yaml';
 import { noop } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { WRONG_EDITOR, WRONG_SETTINGS } from '../../data/sources/config/wrong-settings.ts';
 
 function scratch(): string {
     const dir = scratchDir('oculus-config-');
@@ -369,14 +372,9 @@ describe('behaviorFindings', () => {
      */
     const WORDS = { text: loadConfig(engineDir()).config.text };
 
-    /**
-     * The keys a configuration needs to draw no finding of its own, beside whatever a case adds.
-     */
-    const SOUND = { ...WORDS, editor: { paint_limit_kb: 64 } };
-
     it('names the key that replaced a retired one, against behavior.yml', () => {
         const engine = scratch();
-        expect(behaviorFindings(engine, { ...SOUND, chat: { skip_permissions: true } })).toEqual([
+        expect(behaviorFindings(engine, { ...WORDS, chat: { skip_permissions: true } })).toEqual([
             {
                 file: join(engine, 'config', 'behavior.yml'),
                 key: 'chat.skip_permissions',
@@ -385,30 +383,92 @@ describe('behaviorFindings', () => {
         ]);
     });
 
-    // A throw at start is what a bad key gets, but the watcher republishes a saved edit into a
-    // running server, and the editor then paints without colour; the finding is what says why.
-    it('names a paint limit that is missing or is not a size, and says what it costs', () => {
-        const engine = scratch();
-        const said = (config: Record<string, unknown>): string[] =>
-            behaviorFindings(engine, config).map((one) => `${one.key}: ${one.message}`);
-        const named = [
-            'editor.paint_limit_kb: editor.paint_limit_kb must be a number above zero; the editor paints without colour until it is'
-        ];
-        expect(said({ ...WORDS })).toEqual(named);
-        expect(said({ ...WORDS, editor: {} })).toEqual(named);
-        expect(said({ ...WORDS, editor: { paint_limit_kb: '64' } })).toEqual(named);
-        expect(said({ ...WORDS, editor: { paint_limit_kb: 0 } })).toEqual(named);
-        expect(behaviorFindings(engine, {})[0].file).toBe(join(engine, 'config', 'behavior.yml'));
-    });
-
     it('says nothing about a configuration whose keys are all under their own names', () => {
         const engine = scratch();
-        expect(behaviorFindings(engine, { ...SOUND, tasks: { skip_permissions: true } })).toEqual(
+        expect(behaviorFindings(engine, { ...WORDS, tasks: { skip_permissions: true } })).toEqual(
             []
         );
-        expect(behaviorFindings(engine, { ...SOUND, chat: { model: 'opus' } })).toEqual([]);
-        expect(behaviorFindings(engine, { ...SOUND, chat: 'opus' })).toEqual([]);
+        expect(behaviorFindings(engine, { ...WORDS, chat: { model: 'opus' } })).toEqual([]);
+        expect(behaviorFindings(engine, { ...WORDS, chat: 'opus' })).toEqual([]);
         expect(behaviorFindings(engine, loadConfig(engineDir()).config)).toEqual([]);
+    });
+});
+
+describe('settingFindings', () => {
+    const engine = engineDir();
+    const shipped = loadConfig(engine).config;
+    const WRONG: Record<string, unknown> = { ...WRONG_SETTINGS, editor: WRONG_EDITOR };
+    const file = join(engine, 'config', 'behavior.yml');
+    const said = (config: Record<string, unknown>) =>
+        settingFindings(engine, config).map((one) => `${one.key}: ${one.message}`);
+
+    it('words each wrong setting against behavior.yml from the catalog, and nothing for the shipped files', () => {
+        const findings = settingFindings(engine, { ...shipped, ...WRONG });
+        expect(new Set(findings.map((one) => one.file))).toEqual(new Set([file]));
+        const keys = findings.map((one) => one.key);
+        expect(new Set(keys).size).toBe(keys.length);
+        expect([...keys].sort()).toEqual(
+            [
+                'calendar.days_ahead',
+                'calendar.days_back',
+                'calendar.poll_min',
+                'changes.keep',
+                'editor.languages.cobolx',
+                'editor.languages.markdown',
+                'editor.languages.python.tab_size',
+                'editor.paint_limit_kb',
+                'editor.tab_size',
+                'editor.word_wrap',
+                'files.confirm_delete',
+                'git.autofetch_minutes',
+                'latex.auto_build',
+                'latex.badness_path',
+                'latex.formatter',
+                'latex.latexindent_path',
+                'latex.tex_fmt_path',
+                'mail.per_signal',
+                'mail.poll_min',
+                'open.program_ext..txt',
+                'open.program_ext..x',
+                'open.program_ext.pdf',
+                'processes.patterns',
+                'search.max_hits',
+                'search.timeout_s',
+                'slurm.days',
+                'slurm.poll_min',
+                'slurm.prewarm',
+                'slurm.quota_min',
+                'slurm.resource',
+                'usage_refresh_min',
+                'usage_refresh_model',
+                'usage_tiers.b'
+            ].sort()
+        );
+        const lines = said({ ...shipped, ...WRONG });
+        expect(lines).toContain(
+            'slurm.days: slurm.days must be a whole number from 0 to 3650; the default is used'
+        );
+        expect(lines).toContain(
+            'editor.tab_size: editor.tab_size must be a whole number from 1 to 8; the default is used'
+        );
+        expect(lines).toContain(
+            'editor.languages.cobolx: editor.languages.cobolx is not a language the editor colours; its record is not read'
+        );
+        expect(lines).toContain(
+            'open.program_ext.pdf: open.program_ext.pdf must be an extension with its dot; the entry is not read'
+        );
+        expect(lines).toContain(
+            'slurm.resource: slurm.resource must not be empty; the default is used'
+        );
+        expect(settingFindings(engine, shipped)).toEqual([]);
+    });
+
+    it('says nothing for a merge that dropped behavior.yml, or for a map without the catalog', () => {
+        const dropped = Object.fromEntries(
+            Object.entries({ ...shipped, ...WRONG }).filter(([key]) => !(key in WRONG))
+        );
+        expect(settingFindings(engine, dropped)).toEqual([]);
+        expect(settingFindings(engine, { text: shipped.text, ...WRONG })).toEqual([]);
     });
 });
 
@@ -518,5 +578,11 @@ describe('vocabCatalog', () => {
         const bare = { ...config };
         delete bare.code_theme;
         expect('code_theme' in vocabCatalog(bare)).toBe(false);
+    });
+});
+
+describe('optionFindings', () => {
+    it('reads the shipped options catalog with no finding', () => {
+        expect(optionFindings(engineDir(), loadConfig(engineDir()).config)).toEqual([]);
     });
 });

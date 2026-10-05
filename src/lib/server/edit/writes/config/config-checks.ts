@@ -6,34 +6,30 @@
 // exactly the written key changed. The merged configuration built with the edited file in place of
 // the old one must give `loadConfig` no finding it did not give before. And every reader in READERS
 // and FINDERS below, the readers of the merged configuration that a config value can make refuse,
-// must accept it: a reader that throws refuses the write whether or not it threw before, so a block
-// that is already wrong takes the write that repairs it and refuses a write that leaves it wrong,
-// and a finding is refused only when it is new. The reason a refusal carries is the reader's own
-// sentence or the finding's words, so the Settings view shows what to repair.
+// must accept it: a reader that throws refuses the write whether or not it threw before, and a
+// finding is refused only when it is new. The reason a refusal carries is the reader's own sentence
+// or the finding's words, so the Settings view shows what to repair.
+//
+// The setting readers of behavior.yml are in neither list. A wrong value of a setting is read as
+// the entry's default and is a finding of its own (`settingFindings`), and a write is refused for a
+// wrong value by the rule at the key it writes (config-fit.ts), so a write of one key is taken
+// while another setting is wrong, and an undo puts back a value the file held.
 
 import { readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { requirePaintLimit } from '../../../../data/helpers/editor.ts';
 import {
     LOCAL_NAME,
     behaviorFindings,
-    calendarSettings,
-    changesKeep,
     configDir,
-    filesSettings,
     iconFindings,
     languageFindings,
     loadConfig,
-    loadLocalOrDefaults,
-    mailSettings,
+    loadLocal,
     nestingFindings,
-    openSettings,
-    searchSettings,
-    slurmSettings,
+    optionFindings,
     textCatalog,
-    themeFindings,
-    usageTiers
+    themeFindings
 } from '../../../../data/sources/config.ts';
 import {
     catalogOf,
@@ -43,8 +39,6 @@ import {
 import { railFindings } from '../../../../data/sources/config/rail.ts';
 import type { Finding } from '../../../../data/model/index.ts';
 import { docFindings, layoutFile } from '../../../content/docs.ts';
-import { requireRefreshSettings } from '../../../machine/usage/refresh.ts';
-import { requireAutofetch } from '../../../core/fetch-period.ts';
 import type { ChangeRecord, ReplacedText } from '../../../core/changes.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
 import type { Refusal } from '../../yaml/yaml-edit.ts';
@@ -97,28 +91,11 @@ type Merged = Record<string, unknown>;
  */
 
 /**
- * The readers that throw on a value of the merged configuration: the settings readers, the checks
- * the server makes when it starts, and the text catalog. A reader that throws on the merged
- * configuration holding the edited value refuses the write, whether or not it threw before.
+ * The readers that throw on a value of the merged configuration: the text catalog. A reader that
+ * throws on the merged configuration holding the edited value refuses the write, whether or not it
+ * threw before.
  */
-const READERS: ((config: Merged) => unknown)[] = [
-    slurmSettings,
-    calendarSettings,
-    mailSettings,
-    searchSettings,
-    openSettings,
-    filesSettings,
-    changesKeep,
-    usageTiers,
-    requirePaintLimit,
-    requireAutofetch,
-    (config) =>
-        requireRefreshSettings({
-            refreshMin: config.usage_refresh_min,
-            model: config.usage_refresh_model
-        }),
-    textCatalog
-];
+const READERS: ((config: Merged) => unknown)[] = [textCatalog];
 
 /**
  * The readers that return findings. A finding one gives after the edit that it did not give before,
@@ -130,6 +107,7 @@ const FINDERS: ((config: Merged, engine: string, hub: string) => Finding[])[] = 
     (config, engine) => behaviorFindings(engine, config),
     (config, engine) => languageFindings(engine, config),
     (config, engine) => nestingFindings(engine, config),
+    (config, engine) => optionFindings(engine, config),
     (config, engine) => themeFindings(engine, config),
     (config, engine, hub) => docFindings(config, hub, layoutFile(engine)),
     (config, engine) => railFindings(config, layoutFile(engine), textCatalog(config))
@@ -216,7 +194,7 @@ export function refusedBy(
             return sentenceOf(error);
         }
     }
-    const hub = loadLocalOrDefaults(engine).hub;
+    const hub = loadLocal(engine).hub;
     for (const find of FINDERS) {
         let seen: Set<string> | null = null;
         try {

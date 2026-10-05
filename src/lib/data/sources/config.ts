@@ -37,13 +37,21 @@ export {
     LOCAL_NAME,
     checkLocal,
     loadLocal,
-    loadLocalOrDefaults,
     localDefaults,
     localFile,
+    localSentence,
+    readLocal,
     usageAccountLabel
 } from './config/local.ts';
 export { configDir } from './config/folder.ts';
-export { CATALOGS_DIR, TEXT_KEY, flattenText, loadConfig, textCatalog } from './config/merge.ts';
+export {
+    CATALOGS_DIR,
+    TEXT_KEY,
+    droppedFile,
+    flattenText,
+    loadConfig,
+    textCatalog
+} from './config/merge.ts';
 export {
     type IconMemory,
     VOCAB_KEYS,
@@ -52,32 +60,32 @@ export {
     iconCatalog,
     iconFindings,
     iconSet,
+    localFindings,
+    settingFindings,
     vocabCatalog
 } from './config/catalogs.ts';
 export {
     type CalendarSettings,
-    type FilesSettings,
     type MailSettings,
     type OpenSettings,
-    type FindingAt,
     type LatexFormatting,
     type ProcessesSettings,
     type SearchSettings,
     type SlurmSettings,
-    CADENCE_WORDS,
-    cadenceShape,
+    autofetchMin,
     calendarSettings,
     changesKeep,
     confirmDelete,
-    filesSettings,
     latexFormatting,
     mailSettings,
     openSettings,
     processesSettings,
+    refreshSettings,
     searchSettings,
     slurmSettings,
     usageTiers
 } from './config/settings.ts';
 export { languageFindings } from './config/languages.ts';
 export { nestingFindings } from './config/catalog/nesting.ts';
+export { optionFindings } from './config/catalog/option-findings.ts';
 export { themeFindings } from './config/themes.ts';

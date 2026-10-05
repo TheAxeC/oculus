@@ -3,6 +3,7 @@
 // so a `$derived` or a template that asks what a row shows or says is drawn again when a write is
 // sent or answered.
 
+import type { Lists } from '$lib/state/system/config/editors/sources';
 import {
     createRowWriter,
     type RowWriter,
@@ -10,11 +11,15 @@ import {
 } from '$lib/state/system/config/write';
 
 /** A write sequence whose `shown` and `said` redraw whatever read them when a write moves. */
-export function reactiveWriter(write: WriteConfigKey): RowWriter {
+export function reactiveWriter(write: WriteConfigKey, lists: () => Lists): RowWriter {
     let version = $state(0);
-    const inner = createRowWriter(write, () => {
-        version += 1;
-    });
+    const inner = createRowWriter(
+        write,
+        () => {
+            version += 1;
+        },
+        lists
+    );
     return {
         ...inner,
         shown: (row) => (version < 0 ? undefined : inner.shown(row)),

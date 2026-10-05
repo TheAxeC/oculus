@@ -1,16 +1,17 @@
 // Layer 2, client state. The Settings view's search over its groups: the query split on white
 // space, where `@modified` (in any case) keeps only the Modified rows, `@id:<text>` keeps the rows
 // whose key path holds the text and `@id:` alone keeps every row, and every other word, an unknown
-// `@word` included, must occur in the row's title, key path, section or description, whatever the
-// case. An empty query keeps every row. The result carries the count of the rows kept and the
-// groups and sections that still hold one.
+// `@word` included, must occur in the row's title, key path, section or description or in the
+// words of the heading it is listed under, whatever the case. An empty query keeps every row. The
+// result carries the count of the rows kept and the groups and sections that still hold one.
 //
-// Under an empty query a group that says why it holds no row (its file is loading, unreadable, cut
-// or unparsed) is kept, so the reader sees why. Under a typed query a group that holds no row is
-// dropped, as the table of contents drops it. A row named in `keep` is kept whatever the query:
-// the view keeps the rail's row while the tab was opened to show it.
+// Under an empty query a group that says why it holds no row (its files are loading, unreadable,
+// cut or unparsed, or its folder is not listed) is kept, so the reader sees why. Under a typed
+// query a group that holds no row is dropped, as the table of contents drops it. A row named in
+// `keep` is kept whatever the query: the view keeps the rail's row while the tab was opened to show
+// it.
 
-import type { Group, Row, Section } from './groups.ts';
+import { saysWhyEmpty, type Group, type Row, type Section } from './groups.ts';
 
 /** The prefix of the filter that looks at the key path alone. */
 const ID_FILTER = '@id:';
@@ -35,12 +36,12 @@ function readQuery(query: string): Query {
     return read;
 }
 
-/** Whether a row answers a query. */
-function answers(row: Row, query: Query): boolean {
+/** Whether a row answers a query; `heading` is the title of the group the row is listed under. */
+function answers(row: Row, query: Query, heading: string): boolean {
     if (query.modified && !row.modified) return false;
     const path = row.path.toLowerCase();
     if (!query.ids.every((text) => path.includes(text))) return false;
-    const fields = [row.title, row.path, row.section, row.description].map((field) =>
+    const fields = [row.title, row.path, row.section, row.description, heading].map((field) =>
         field.toLowerCase()
     );
     return query.words.every((word) => fields.some((field) => field.includes(word)));
@@ -73,11 +74,13 @@ export function searchGroups(groups: Group[], query: string, keep: readonly stri
     for (const group of groups) {
         const sections: Section[] = [];
         for (const section of group.sections) {
-            const rows = section.rows.filter((row) => keep.includes(row.id) || answers(row, read));
+            const rows = section.rows.filter(
+                (row) => keep.includes(row.id) || answers(row, read, group.title)
+            );
             if (rows.length > 0) sections.push({ ...section, rows });
             count += rows.length;
         }
-        if (sections.length > 0 || (!typed && group.status !== 'rows')) {
+        if (sections.length > 0 || (!typed && saysWhyEmpty(group))) {
             kept.push({ ...group, sections });
         }
     }

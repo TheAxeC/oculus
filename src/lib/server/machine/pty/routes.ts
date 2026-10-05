@@ -26,7 +26,7 @@ import { join } from 'node:path';
 import { taskSkipPermissions } from '../../../data/helpers/run/tasks.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
-import { glyphCatalog, loadLocalOrDefaults, textCatalog } from '../../../data/sources/config.ts';
+import { glyphCatalog, loadLocal, textCatalog } from '../../../data/sources/config.ts';
 import { MANUSCRIPT, isMainOf, programOf } from '../../content/latex.ts';
 import type { Program } from '../../../data/prose/latex.ts';
 import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
@@ -222,7 +222,7 @@ async function resumeSession(
 
 /** The local config a request reads, the route's own when it hands one. */
 function localOf(options: TerminalOptions) {
-    return options.localFor?.() ?? loadLocalOrDefaults(options.engine);
+    return options.localFor?.() ?? loadLocal(options.engine);
 }
 
 /**
@@ -321,7 +321,7 @@ async function recoverDataset(
     }
     const known = options.datasetIdsFor?.() ?? [];
     if (!known.includes(key)) return refusal('bad-terminal');
-    const cwd = options.hubFor?.() ?? loadLocalOrDefaults(options.engine).hub;
+    const cwd = options.hubFor?.() ?? loadLocal(options.engine).hub;
     const terminal = await startTerminal(
         {
             kind: 'shell',
@@ -358,7 +358,7 @@ async function startTask(
     options: TerminalOptions
 ): Promise<Response> {
     if (!isTask(kind)) return refusal('bad-terminal');
-    const local = options.localFor?.() ?? loadLocalOrDefaults(options.engine);
+    const local = options.localFor?.() ?? loadLocal(options.engine);
     const config = options.configFor();
     const terminal = await startTerminal(
         {
@@ -429,8 +429,7 @@ function latexFolder(
     }
     const project = (options.projectFor ?? (() => null))(named.data.id);
     if (project === null) return refusal('no-project');
-    const hub =
-        options.hubFor?.() ?? (options.localFor?.() ?? loadLocalOrDefaults(options.engine)).hub;
+    const hub = options.hubFor?.() ?? (options.localFor?.() ?? loadLocal(options.engine)).hub;
     return {
         dir: join(projectDirectory(hub, project.folder), MANUSCRIPT),
         label: named.data.id

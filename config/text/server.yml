@@ -22,8 +22,28 @@ text:
             not_single: This option is a list or a family, so it is not set one key at a time
             not_boolean: This option takes true or false
             not_number: This option takes a finite number
+            not_whole: This option takes a whole number
+            not_program: This option takes a program name, with no slash and no white space
+            not_extension: This option takes an extension with its dot, such as .pdf
+            not_bundle_id: This option takes the bundle id of an application, such as com.apple.Preview
             not_text: This option takes text
             not_choice: 'This option takes one of: {0}'
+            not_in_source: 'This option takes one of the items of the list {0}'
+            no_list_for: 'The field {0} of this record names no list for {1}, so this field is left out'
+            not_words: This option takes a list of words
+            not_numbers: This option takes a list of numbers
+            wrong_slots: 'This option takes exactly {0} items: {1}'
+            parked_added: This list only drops items; an item is added from the Audit view
+            number_range: 'This option takes a number from {0} to {1}'
+            number_min: 'This option takes a number of at least {0}'
+            number_max: 'This option takes a number of at most {0}'
+            not_glyph: This option takes a glyph name of config/catalogs/glyphs.yml
+            not_hue: This option takes a hue name of the palette
+            not_colour: This option takes a colour of the palette that is a hue
+            not_hub_path: This option takes a path inside the hub, written relative to it, with no .. and no backslash
+            no_folder: 'This option takes a folder of the hub, and {0} is not one'
+            no_file: 'This option takes a file of the hub, and {0} is not one'
+            not_a_path: This option takes an absolute path or one that starts with ~/
             not_parsed: The file does not parse
             not_in_file: The file does not hold this key as a plain or quoted value
             not_kept: The edit would change more than this one value, so the file is left as it is
@@ -45,6 +65,8 @@ text:
             wants_record: 'Entry {0} must be one record, not a list'
             wants_scalar: 'Entry {0} must be one value or a list of values, not a record'
             wants_value: 'Entry {0} must be one value, not a list or a record'
+            wants_records: This field takes a list of records
+            field_problem: 'Entry {0}, field {1}: {2}'
             unsupported: The way this value is written in the file cannot be edited in place, so the file is left as it is
             not_kept: The edit would change more than this value, so the file is left as it is
         export:

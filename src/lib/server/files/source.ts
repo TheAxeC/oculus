@@ -86,11 +86,11 @@ export function sourceBody(value: unknown): SourceBody | null {
 
 /**
  * The sentence a save of the machine's own file is refused with, or null for any other file and for
- * a body that reads. That one file of the config folder is read by its own rules rather than
- * merged, and a malformed value in it throws: saved, it would take the source route down with it,
- * this endpoint included, so the file could not be put back from the page it was broken on. The
- * path is resolved through the same resolver the request went through, so the two strings are
- * comparable.
+ * a body whose every key reads. That one file of the config folder is read by its own rules rather
+ * than merged, and a key it gets wrong is read as its default: saved, the wrong value would cost
+ * the machine that key without a word at the save, so the save is refused with the sentence naming
+ * it. The path is resolved through the same resolver the request went through, so the two strings
+ * are comparable.
  */
 function localRefusal(list: Root[], path: string, content: string): string | null {
     const own = resolveRootPath(list, ENGINE_ROOT, LOCAL_NAME);

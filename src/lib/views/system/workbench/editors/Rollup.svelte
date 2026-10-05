@@ -1,30 +1,47 @@
 <script lang="ts">
     // Layer 3, view partial. The draft of a map of lists of records, which is the board tabs'
     // roll-up buckets: one group per key, each with its key field, the controls that move it and
-    // take it away, and the list of its records (Cards.svelte); and Add a key at the end.
+    // take it away, and the list of its records (Cards.svelte); and Add a key at the end. The key
+    // is drawn by the control of the catalog's `key` field.
 
-    import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { Draft, Edit } from '$lib/state/system/config/editors/draft';
+    import {
+        textOf,
+        type CatalogEntry,
+        type FieldSpec,
+        type FieldValue
+    } from '$lib/state/system/config/editors/fields';
+    import type { Lists } from '$lib/state/system/config/editors/sources';
     import Cards from './Cards.svelte';
+    import FieldControl from './FieldControl.svelte';
 
     type Props = {
         draft: Extract<Draft, { form: 'rollup' }>;
+        /** The specs of the fields of a record, without the key. */
+        specs: Record<string, FieldSpec>;
+        /** The spec of the key of a group: a choice of the names the catalog lists, else a text. */
+        keySpec: CatalogEntry;
+        lists: Lists;
         onedit: (edit: Edit) => void;
     };
 
-    let { draft, onedit }: Props = $props();
+    let { draft, specs, keySpec, lists, onedit }: Props = $props();
 </script>
 
 <div class="groups">
     {#each draft.groups as group, at (at)}
         <section class="group" data-group={at}>
             <div class="head">
-                <TextInput
+                <FieldControl
+                    spec={keySpec}
                     value={group.key}
                     label={t('settings.editor_group_key', at + 1)}
-                    oninput={(key: string) => onedit({ do: 'setGroup', group: at, key })}
+                    {lists}
+                    ontext={(key: string) => onedit({ do: 'setGroup', group: at, key })}
+                    onpick={(key: FieldValue | undefined) =>
+                        onedit({ do: 'setGroup', group: at, key: textOf(key) })}
                 />
                 <ToolButton
                     label={t('settings.editor_group_up', at + 1)}
@@ -47,7 +64,15 @@
                     onclick={() => onedit({ do: 'removeGroup', group: at })}
                 />
             </div>
-            <Cards cards={group.cards} fields={draft.fields} form="rollup" group={at} {onedit} />
+            <Cards
+                cards={group.cards}
+                fields={draft.fields}
+                {specs}
+                form="rollup"
+                {lists}
+                group={at}
+                {onedit}
+            />
         </section>
     {/each}
     <ToolButton

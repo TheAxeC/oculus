@@ -1,17 +1,21 @@
 // Layer 1, data. The vocabulary, glyph and icon catalogs read out of the merged map, and the
-// findings over them: an icon name no installed set holds, and a behavior block the editor needs
-// and the file does not carry.
+// findings over them: an icon name no installed set holds, a retired behavior key, a setting of
+// behavior.yml whose value the options catalog's rule refuses, and a key or row of local.yml that
+// fails to read.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { z } from 'zod';
-import { paintLimit, readEditorOptions, type EditorProblem } from '../../helpers/editor.ts';
-import { findingText } from '../../helpers/finding-text.ts';
+import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import type { Finding } from '../../model/index.ts';
 import { mapOfShape, mapShape, readAs, readOr } from '../../shapes/shapes.ts';
+import { mustBe } from './catalog/value-words.ts';
+import { readEditorOptions, type EditorProblem } from './editor-options.ts';
 import { configDir } from './folder.ts';
+import { localFile, type LocalProblem } from './local.ts';
 import { CATALOGS_DIR, textCatalog } from './merge.ts';
+import { settingProblems } from './settings.ts';
 
 /**
  * The keys of the merged config the client state installs before the page renders: the colours and
@@ -150,28 +154,11 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
     return findings;
 }
 
-/** The finding sentence that words a reason an editor option was not read, filled with its key. */
-function editorFinding(catalog: Record<string, string>, problem: EditorProblem): string {
-    switch (problem.reason) {
-        case 'value':
-            return findingText(catalog, 'findings.config.editor_value', problem.key);
-        case 'unknown-language':
-            return findingText(catalog, 'findings.config.editor_unknown_language', problem.key);
-        case 'unknown-field':
-            return findingText(catalog, 'findings.config.editor_unknown_field', problem.key);
-        case 'not-a-map':
-            return findingText(catalog, 'findings.config.editor_not_a_map', problem.key);
-    }
-}
-
 /**
- * What is wrong with `behavior.yml` that only the reader can put right, as findings on the config
- * channel. The first two are things a saved edit can introduce while the server runs, where a
- * throw would take the page down with it: a key still written under a name the tree no longer
- * reads, which is ignored where it stands so the block runs on its default, and a key the editor
- * needs that no longer names a size, which leaves the editor painting without colour and says
- * nothing about why. The editor's options add one finding for each value read as its default or
- * not read, naming its key. They are worded from the merged catalog, as iconFindings' are.
+ * What is wrong with `behavior.yml` that only the reader can put right and that the options
+ * catalog does not describe, as findings on the config channel: a key written under a name the tree
+ * does not read, which is ignored where it stands. It is worded from the merged catalog, as
+ * iconFindings' are.
  */
 export function behaviorFindings(engine: string, config: Record<string, unknown>): Finding[] {
     const file = join(configDir(engine), 'behavior.yml');
@@ -185,21 +172,106 @@ export function behaviorFindings(engine: string, config: Record<string, unknown>
             message: findingText(catalog, 'findings.config.skip_permissions_retired')
         });
     }
-    if (paintLimit(config) === null) {
-        findings.push({
-            file,
-            key: 'editor.paint_limit_kb',
-            message: findingText(catalog, 'findings.config.paint_limit')
-        });
-    }
-    for (const problem of readEditorOptions(config).problems) {
-        findings.push({
-            file,
-            key: problem.key,
-            message: editorFinding(catalog, problem)
-        });
-    }
     return findings;
+}
+
+/** The sentence for one thing the readers of behavior.yml found wrong. */
+function settingText(catalog: TextCatalog, problem: EditorProblem): string {
+    switch (problem.where) {
+        case 'block':
+            return findingText(catalog, 'findings.config.setting_block', problem.key);
+        case 'family':
+            return findingText(catalog, 'findings.config.setting_family', problem.key);
+        case 'unknown-language':
+            return findingText(catalog, 'findings.config.editor_unknown_language', problem.key);
+        case 'unknown-field':
+            return findingText(catalog, 'findings.config.editor_unknown_field', problem.key);
+        case 'not-a-map':
+            return findingText(catalog, 'findings.config.editor_not_a_map', problem.key);
+        case 'value':
+        case 'entry':
+        case 'field':
+            break;
+    }
+    if (problem.problem.kind === 'empty') {
+        return findingText(catalog, 'findings.config.setting_empty', problem.key);
+    }
+    const words = mustBe(catalog, problem.spec, problem.problem);
+    switch (problem.where) {
+        case 'value':
+            return findingText(catalog, 'findings.config.setting_default', problem.key, words);
+        case 'entry':
+            return findingText(catalog, 'findings.config.setting_entry', problem.key, words);
+        case 'field':
+            return findingText(catalog, 'findings.config.setting_field', problem.key, words);
+    }
+}
+
+/**
+ * One finding for each setting of `behavior.yml`, and each option of the editor, whose value the
+ * options catalog's rule refuses: it names the file and the key, and the reader uses the entry's
+ * default. A key the catalog holds no entry for gives none (options.yml's own findings name that
+ * file), and neither does a configuration whose merge dropped behavior.yml, which holds no key to
+ * be wrong. They are worded from the merged catalog, as iconFindings' are.
+ */
+export function settingFindings(engine: string, config: Record<string, unknown>): Finding[] {
+    const file = join(configDir(engine), 'behavior.yml');
+    const catalog = textCatalog(config);
+    const problems: EditorProblem[] = settingProblems(config);
+    try {
+        problems.push(...readEditorOptions(config).problems);
+    } catch {
+        // A key the catalog holds no rule for is options.yml's finding, not a setting's.
+    }
+    const named = new Set<string>();
+    return problems.flatMap((problem) => {
+        const once = `${problem.where}:${problem.key}`;
+        if (named.has(once)) return [];
+        named.add(once);
+        return [{ file, key: problem.key, message: settingText(catalog, problem) }];
+    });
+}
+
+/** The sentence for one thing wrong with local.yml, with no value the file holds in it. */
+function localText(catalog: TextCatalog, problem: LocalProblem): string {
+    switch (problem.kind) {
+        case 'value':
+            return findingText(
+                catalog,
+                'findings.config.setting_default',
+                problem.key,
+                problem.words
+            );
+        case 'row':
+            return findingText(catalog, 'findings.config.local_row', problem.key, problem.words);
+        case 'repeat':
+            return findingText(catalog, 'findings.config.local_repeat', problem.key);
+        case 'unparsed':
+            return findingText(catalog, 'findings.config.local_unparsed');
+        case 'not-a-map':
+            return findingText(catalog, 'findings.config.local_not_a_map');
+        case 'unreadable':
+            return findingText(catalog, 'findings.config.local_unreadable', problem.code);
+    }
+}
+
+/**
+ * One finding for each key or row of the machine's own file that does not read, or for the file
+ * as a whole, against local.yml and the key. The config payload reaches every page, so a finding
+ * never holds a value the file holds, a label or the parser's text.
+ */
+export function localFindings(
+    engine: string,
+    config: Record<string, unknown>,
+    problems: readonly LocalProblem[]
+): Finding[] {
+    const file = localFile(engine);
+    const catalog = textCatalog(config);
+    return problems.map((problem) => ({
+        file,
+        key: problem.key,
+        message: localText(catalog, problem)
+    }));
 }
 
 /** The icon drawings in force, in a holder whose contents the config watcher replaces. */

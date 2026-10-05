@@ -10,8 +10,9 @@
 // push. A push that leaves the row in a form the editor does not draw ends the draft the tab holds
 // of it, with the sentence that it was dropped, since a draft with no editor cannot be saved or
 // discarded. A closed sequence sends nothing, says nothing and moves no state. It is a plain
-// closure with no runes; the view hands it a callback that redraws, one that drops a draft and one
-// that says whether the tab holds a draft of a row.
+// closure with no runes; the view hands it a callback that redraws, one that drops a draft, one
+// that says whether the tab holds a draft of a row, and the lists the draft's fields are checked
+// against before it is sent.
 
 import { sameInOrder } from '../../../../data/helpers/guards.ts';
 import type { WriteAnswer } from '../../../shared/stores/shapes.ts';
@@ -19,6 +20,7 @@ import { message, type Message } from '../messages.ts';
 import type { ConfigRow } from '../rows.ts';
 import { answered } from '../write.ts';
 import { draftValue, type Draft } from './draft.ts';
+import type { Lists } from './sources.ts';
 import { drawsEditor } from './slots.ts';
 
 /** The write of one list or family: the client writes store's `writeConfigValue`. */
@@ -29,18 +31,22 @@ export type WriteConfigValue = (
     base: unknown
 ) => Promise<WriteAnswer>;
 
-/** What the view gives the sequence: a redraw, the end of a row's draft and whether one is held. */
+/**
+ * What the view gives the sequence: a redraw, the end of a row's draft, whether one is held and the
+ * lists the controls draw from.
+ */
 export type EditorHooks = {
     changed: () => void;
     ended: (row: ConfigRow) => void;
     held: (row: ConfigRow) => boolean;
+    lists: () => Lists;
 };
 
 /** The write sequence of the editors of a view. */
 export type EditorWriter = {
     /** Send the draft of a row, unless it is equal to the file, does not read back or is out. */
     save: (row: ConfigRow, draft: Draft) => Promise<void>;
-    /** Write the catalog default of a Modified list. */
+    /** Write the catalog default of a Modified list, multi or parked list. */
     reset: (row: ConfigRow) => Promise<void>;
     /** The row as the file holds it now: ends the draft the file has taken, overtaken or left. */
     pushed: (row: ConfigRow) => void;
@@ -87,13 +93,14 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
     }
 
     async function save(row: ConfigRow, draft: Draft): Promise<void> {
-        const made = draftValue(draft);
+        const made = draftValue(draft, row, hooks.lists());
         if (!made.ok || sameInOrder(made.value, row.value)) return;
         return send(row, made.value);
     }
 
     async function reset(row: ConfigRow): Promise<void> {
-        if (row.control !== 'list' || row.state !== 'set' || !row.modified) return;
+        const collection = ['list', 'multi', 'parked'].includes(row.control);
+        if (!collection || row.state !== 'set' || !row.modified) return;
         return send(row, row.default);
     }
 

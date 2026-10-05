@@ -1,8 +1,11 @@
-// Layer 1, data. This machine's own values: local.yml in the config folder, read by loadLocal alone
+// Layer 1, data. This machine's own values: local.yml in the config folder, read by readLocal alone
 // and never merged into the shared map, so a machine's paths, port and accounts stay its own. Every
-// key has a default, and a value the file gets wrong is refused with the reason.
+// key has a default. A key whose value the file gets wrong takes its default and is a problem
+// naming the key, a row of a list that fails is left out and is a problem naming the row, and a
+// file that does not read at all is every default and one problem: no read throws, so the server
+// starts and every other key is applied.
 
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { z } from 'zod';
@@ -104,7 +107,7 @@ export const DEFAULT_PORT = 8790;
  */
 export const LOCAL_NAME = 'local.yml';
 
-/** The keys local.yml may carry, which loadLocal reads and the options catalog describes. */
+/** The keys local.yml may carry, which readLocal reads and the options catalog describes. */
 export const LOCAL_KEYS = [
     'hub',
     'port',
@@ -159,89 +162,145 @@ export function usageAccountLabel(label: string): string {
     return label.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
 }
 
-/** The text at `key` of `record`, which must carry something, or a throw saying what it must be. */
-function filledAt(
-    record: Record<string, unknown>,
-    key: string,
-    file: string,
-    words: string
-): string {
-    const value = filledText(record[key]);
-    if (value === undefined) throw new Error(`${file}: ${key} must be ${words}`);
-    return value;
+/** The text at `key` of `record`, which must carry something, or undefined. */
+function filledAt(record: Record<string, unknown>, key: string): string | undefined {
+    return filledText(record[key]);
 }
 
-function usageAccounts(value: unknown, file: string, base: string): UsageAccountConfig[] {
+/** What is wrong with a key of the file, or with a row of a list, or with the file as a whole. */
+export type LocalProblem =
+    | { key: string; kind: 'value' | 'row'; words: string; sentence: string }
+    | { key: string; kind: 'repeat'; sentence: string }
+    | { key: ''; kind: 'unparsed' | 'not-a-map'; sentence: string }
+    | { key: ''; kind: 'unreadable'; code: string; sentence: string };
+
+/**
+ * What a read of the file answers: the values with a default in place of each key that is wrong,
+ * the problems in the order the keys are read, the keys the file carries that oculus does not read,
+ * and whether the file read at all. `sentence` of a problem is the sentence the source tab's save
+ * is refused with; it may hold a label of the file, so a finding never uses it.
+ */
+export type LocalRead = {
+    config: LocalConfig;
+    problems: LocalProblem[];
+    unknown: string[];
+    unread: boolean;
+};
+
+/** The problems of a key that must be `words`; `sentence` names the key. */
+function wrong(
+    key: string,
+    words: string,
+    kind: 'value' | 'row' = 'value'
+): Extract<LocalProblem, { kind: 'value' | 'row' }> {
+    return { key, kind, words, sentence: `${key} must be ${words}` };
+}
+
+/** The rows of `accounts:` that read: a Claude or Codex folder and a label each. */
+function usageAccounts(
+    value: unknown,
+    base: string,
+    problems: LocalProblem[]
+): UsageAccountConfig[] | null {
     const list = readAs(itemsShape, value);
-    if (list === null) throw new Error(`${file}: accounts must be a list`);
+    if (list === null) {
+        problems.push(wrong('accounts', 'a list'));
+        return null;
+    }
     const claudeLabels = new Set<string>();
-    return list.map((item, index) => {
+    const rows: UsageAccountConfig[] = [];
+    list.forEach((item, index) => {
+        const at = `accounts[${index}]`;
         const row = readAs(mapShape, item);
-        if (row === null) throw new Error(`${file}: accounts[${index}] must be a map`);
+        if (row === null) {
+            problems.push(wrong(at, 'a map', 'row'));
+            return;
+        }
         const tool = row.tool;
         if (tool !== 'claude' && tool !== 'codex') {
-            throw new Error(`${file}: accounts[${index}].tool must be claude or codex`);
+            problems.push(wrong(`${at}.tool`, 'claude or codex', 'row'));
+            return;
         }
         const dir = filledText(row.dir);
-        if (dir === undefined) throw new Error(`${file}: accounts[${index}].dir must be a path`);
+        if (dir === undefined) {
+            problems.push(wrong(`${at}.dir`, 'a path', 'row'));
+            return;
+        }
         const label = filledText(row.label);
         if (label === undefined) {
-            throw new Error(`${file}: accounts[${index}].label must be words`);
+            problems.push(wrong(`${at}.label`, 'words', 'row'));
+            return;
         }
         if (tool === 'claude') {
             const reduced = usageAccountLabel(label);
             if (claudeLabels.has(reduced)) {
-                throw new Error(
-                    `${file}: accounts[${index}].label duplicates a Claude label or reduced label: ${reduced}`
-                );
+                problems.push({
+                    key: `${at}.label`,
+                    kind: 'repeat',
+                    sentence: `${at}.label duplicates a Claude label or reduced label: ${reduced}`
+                });
+                return;
             }
             claudeLabels.add(reduced);
         }
-        return { tool, dir: localPath(dir, base), label };
+        rows.push({ tool, dir: localPath(dir, base), label });
     });
+    return rows;
 }
 
 /**
  * The rows of `calendars:` or `mail:`: one provider the list takes and one label each, the label
  * unique per provider inside its own list. `calendars:` takes the two providers that sign in and a
- * published link, `ics`; `mail:` takes the two alone. A bad row throws the sentence naming the
- * file, the list, the row and the providers the list takes, as the accounts above do, so a machine
- * whose own file is wrong is told at the start rather than served an empty view.
+ * published link, `ics`; `mail:` takes the two alone. A row that fails is left out with a problem
+ * naming the list, the row and what it must be, and the rows around it are read; a list that is
+ * not a list is null.
  */
 function connectAccounts<P extends AccountProvider>(
     value: unknown,
-    file: string,
     list: string,
-    takes: { accepts: (value: unknown) => value is P; named: string }
-): { provider: P; label: string }[] {
+    takes: { accepts: (value: unknown) => value is P; named: string },
+    problems: LocalProblem[]
+): { provider: P; label: string }[] | null {
     const rows = readAs(itemsShape, value);
-    if (rows === null) throw new Error(`${file}: ${list} must be a list`);
+    if (rows === null) {
+        problems.push(wrong(list, 'a list'));
+        return null;
+    }
     const seen = new Set<string>();
-    return rows.map((item, index) => {
+    const read: { provider: P; label: string }[] = [];
+    rows.forEach((item, index) => {
+        const at = `${list}[${index}]`;
         const row = readAs(mapShape, item);
-        if (row === null) throw new Error(`${file}: ${list}[${index}] must be a map`);
+        if (row === null) {
+            problems.push(wrong(at, 'a map', 'row'));
+            return;
+        }
         const provider = row.provider;
         if (!takes.accepts(provider)) {
-            throw new Error(`${file}: ${list}[${index}].provider must be ${takes.named}`);
+            problems.push(wrong(`${at}.provider`, takes.named, 'row'));
+            return;
         }
         if (!isAccountLabel(row.label)) {
-            throw new Error(
-                `${file}: ${list}[${index}].label must be lowercase letters, digits and dashes`
-            );
+            problems.push(wrong(`${at}.label`, 'lowercase letters, digits and dashes', 'row'));
+            return;
         }
         const key = `${provider}-${row.label}`;
         if (seen.has(key)) {
-            throw new Error(
-                `${file}: ${list}[${index}].label repeats ${row.label} for ${provider}`
-            );
+            problems.push({
+                key: `${at}.label`,
+                kind: 'repeat',
+                sentence: `${at}.label repeats ${row.label} for ${provider}`
+            });
+            return;
         }
         seen.add(key);
-        return { provider, label: row.label };
+        read.push({ provider, label: row.label });
     });
+    return read;
 }
 
 /**
- * Which file loadLocal reads: local.yml of the engine's config directory, which is the whole of
+ * Which file readLocal reads: local.yml of the engine's config directory, which is the whole of
  * what the machine's own configuration is. A relative path inside it resolves against the engine
  * rather than the file's own folder, so a relative `hub` is read from the engine directory.
  */
@@ -249,128 +308,165 @@ export function localFile(engine: string): string {
     return join(configDir(engine), LOCAL_NAME);
 }
 
-/**
- * Apply one machine-local file's text onto the defaults, throwing the sentence a caller shows. The
- * reader and the check the source endpoint makes before it writes that file run this one function,
- * so a body the check accepts is a body the next read accepts.
- */
-function applyLocal(
-    text: string,
-    file: string,
-    base: string,
-    config: LocalConfig,
-    onUnknown?: (keys: string[]) => void
-): LocalConfig {
-    const record = readAs(mapShape, parse(text) ?? {});
-    if (record === null) throw new Error(`${file}: expected a map of keys`);
+/** The keys of the file that name a folder or file of this machine, with the field each sets. */
+const STATE_PATHS = [
+    ['sessions_cache', 'sessionsCache'],
+    ['sessions_overrides', 'sessionsOverrides'],
+    ['workspaces', 'workspaces'],
+    ['bookmarks', 'bookmarks'],
+    ['notes', 'notes'],
+    ['changes', 'changes'],
+    ['history', 'history'],
+    ['approvals', 'approvals'],
+    ['calendar_dir', 'calendarDir'],
+    ['mail_dir', 'mailDir']
+] as const;
 
+/** Every default, and one problem saying the file did not read. */
+function unreadFile(engine: string, problem: LocalProblem): LocalRead {
+    return { config: localDefaults(engine), problems: [problem], unknown: [], unread: true };
+}
+
+/**
+ * Read one machine-local file's text over the defaults. Every key is read on its own: a scalar
+ * whose value is wrong keeps its default (or stays absent where the key is optional), a list that
+ * is not a list keeps its default list, and a row of a list that fails is left out while the rows
+ * around it are read, so a list whose every row fails is the empty list. A text that does not
+ * parse, or is not a map, is every default and one problem with the key `''`. The reader and the
+ * check the source endpoint makes before it writes that file run this one function, so a body the
+ * check accepts is a body the next read takes whole.
+ */
+export function readLocalText(text: string, engine: string): LocalRead {
+    let parsed: unknown;
+    try {
+        parsed = parse(text);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return unreadFile(engine, {
+            key: '',
+            kind: 'unparsed',
+            sentence: message.split('\n')[0]
+        });
+    }
+    const record = readAs(mapShape, parsed ?? {});
+    if (record === null) {
+        return unreadFile(engine, {
+            key: '',
+            kind: 'not-a-map',
+            sentence: 'expected a map of keys'
+        });
+    }
+
+    const config = localDefaults(engine);
+    const problems: LocalProblem[] = [];
     const unknown = Object.keys(record).filter((key) => !LOCAL_KEYS.includes(key));
-    if (unknown.length > 0) onUnknown?.(unknown);
 
     if (record.hub !== undefined) {
-        const hub = filledAt(record, 'hub', file, 'a path');
-        config.hub = isAbsolute(hub) ? hub : resolve(base, hub);
+        const hub = filledAt(record, 'hub');
+        if (hub === undefined) problems.push(wrong('hub', 'a path'));
+        else config.hub = isAbsolute(hub) ? hub : resolve(engine, hub);
     }
     if (record.port !== undefined) {
         const port = readAs(portShape, record.port);
-        if (port === null) throw new Error(`${file}: port must be an integer`);
-        config.port = port;
+        if (port === null) problems.push(wrong('port', 'an integer'));
+        else config.port = port;
     }
-    if (record.hpc_host !== undefined) {
-        config.hpcHost = filledAt(record, 'hpc_host', file, 'a non-empty string');
+    for (const [key, field] of [
+        ['hpc_host', 'hpcHost'],
+        ['claude_bin', 'claudeBin'],
+        ['open_bin', 'openBin']
+    ] as const) {
+        if (record[key] === undefined) continue;
+        const value = filledAt(record, key);
+        if (value === undefined) problems.push(wrong(key, 'a non-empty string'));
+        else config[field] = value;
     }
-    if (record.claude_bin !== undefined) {
-        config.claudeBin = filledAt(record, 'claude_bin', file, 'a non-empty string');
+    if (record.accounts !== undefined) {
+        config.accounts = usageAccounts(record.accounts, engine, problems) ?? config.accounts;
     }
-    if (record.open_bin !== undefined) {
-        config.openBin = filledAt(record, 'open_bin', file, 'a non-empty string');
-    }
-    if (record.accounts !== undefined) config.accounts = usageAccounts(record.accounts, file, base);
     if (record.calendars !== undefined) {
-        config.calendars = connectAccounts(record.calendars, file, 'calendars', {
-            accepts: isCalendarProvider,
-            named: 'google, microsoft or ics'
-        });
+        config.calendars =
+            connectAccounts(
+                record.calendars,
+                'calendars',
+                { accepts: isCalendarProvider, named: 'google, microsoft or ics' },
+                problems
+            ) ?? config.calendars;
     }
     if (record.mail !== undefined) {
-        config.mail = connectAccounts(record.mail, file, 'mail', {
-            accepts: isProvider,
-            named: 'google or microsoft'
-        });
+        config.mail =
+            connectAccounts(
+                record.mail,
+                'mail',
+                { accepts: isProvider, named: 'google or microsoft' },
+                problems
+            ) ?? config.mail;
     }
     // The machine-local state paths are absent unless the machine names them, so a config that says
     // nothing about them leaves the defaults to the modules that own them.
-    for (const [key, field] of [
-        ['sessions_cache', 'sessionsCache'],
-        ['sessions_overrides', 'sessionsOverrides'],
-        ['workspaces', 'workspaces'],
-        ['bookmarks', 'bookmarks'],
-        ['notes', 'notes'],
-        ['changes', 'changes'],
-        ['history', 'history'],
-        ['approvals', 'approvals'],
-        ['calendar_dir', 'calendarDir'],
-        ['mail_dir', 'mailDir']
-    ] as const) {
+    for (const [key, field] of STATE_PATHS) {
         if (record[key] === undefined) continue;
-        const value = filledAt(record, key, file, 'a path');
-        config[field] = localPath(value, base);
+        const value = filledAt(record, key);
+        if (value === undefined) problems.push(wrong(key, 'a path'));
+        else config[field] = localPath(value, engine);
     }
-    return config;
+    return { config, problems, unknown, unread: false };
 }
 
 /**
- * Read local.yml of the engine's config directory. A missing file means the defaults, since every
- * key has one. An unknown key is reported on stderr and ignored. A key of the wrong type is an
- * error naming the file and the key, which is what a start reads: a machine whose own file is
- * malformed is told at once rather than served wrongly.
+ * Read local.yml of the engine's config directory, and never throw. A missing file is every default
+ * and no problem, since every key has one. A file that cannot be read (a folder at its path, no
+ * permission) is every default and one problem with the error's code. An unknown key is warned of
+ * on stderr when `warn` is true, and ignored.
+ */
+export function readLocal(engine: string, warn = false): LocalRead {
+    const file = localFile(engine);
+    let text: string;
+    try {
+        text = readFileSync(file, 'utf8');
+    } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code ?? 'unknown';
+        if (code === 'ENOENT' || code === 'ENOTDIR') {
+            return { config: localDefaults(engine), problems: [], unknown: [], unread: false };
+        }
+        return unreadFile(engine, {
+            key: '',
+            kind: 'unreadable',
+            code,
+            sentence: `could not be read (${code})`
+        });
+    }
+    const read = readLocalText(text, engine);
+    if (warn && read.unknown.length > 0) {
+        console.warn(`${file}: ignoring unknown key(s) ${read.unknown.join(', ')}`);
+    }
+    return read;
+}
+
+/**
+ * The machine's own values, with the default of each key the file gets wrong. An unknown key is
+ * warned of at each call. It never throws, so a reader that runs on a request is served whatever
+ * the file holds.
  */
 export function loadLocal(engine: string): LocalConfig {
-    const file = localFile(engine);
-    const config = localDefaults(engine);
-    if (!existsSync(file)) return config;
-    return applyLocal(readFileSync(file, 'utf8'), file, engine, config, (keys) =>
-        console.warn(`${file}: ignoring unknown key(s) ${keys.join(', ')}`)
-    );
+    return readLocal(engine, true).config;
 }
 
 /**
- * Sentences already printed by loadLocalOrDefaults, so a bad file is named once and not per call.
+ * The sentence for a problem as a caller shows it: the file, a colon and the sentence, and for a
+ * text that does not parse the parser's first line alone.
  */
-const reportedLocal = new Set<string>();
-
-/**
- * The machine's own values for a reader that runs on a request, with the defaults in place of a
- * file that does not read. The file is the one of the config folder whose bad content would
- * otherwise be fatal: a request would answer 500 rather than a page, and the request that saves the
- * file back would be one of them. The sentence is printed once and the start keeps throwing, so a
- * malformed file is still seen and is still repairable from the source tab.
- */
-export function loadLocalOrDefaults(engine: string): LocalConfig {
-    try {
-        return loadLocal(engine);
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (!reportedLocal.has(message)) {
-            reportedLocal.add(message);
-            console.error(`the machine's own configuration is not read: ${message}`);
-        }
-        return localDefaults(engine);
-    }
+export function localSentence(problem: LocalProblem, file: string): string {
+    return problem.kind === 'unparsed' ? problem.sentence : `${file}: ${problem.sentence}`;
 }
 
 /**
- * The sentence loadLocal would throw over this text, or null when it would read it. The source
- * endpoint checks a save of the machine's own file with it, so a body that would stop the next
- * start is refused with that sentence rather than written. A file name makes the sentence the
+ * The sentence the first problem of this text gives, or null when every key reads. The source
+ * endpoint checks a save of the machine's own file with it, so a body that would cost a key its
+ * value is refused with that sentence rather than written. A file name makes the sentence the
  * reader's own ("local.yml: port must be an integer"); a parse error is given by its first line.
  */
 export function checkLocal(text: string, file: string = LOCAL_NAME): string | null {
-    try {
-        applyLocal(text, file, dirname(file), localDefaults(dirname(file)));
-        return null;
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return message.split('\n')[0];
-    }
+    const first = readLocalText(text, dirname(file)).problems.at(0);
+    return first === undefined ? null : localSentence(first, file);
 }

@@ -80,6 +80,7 @@
         language: string;
         /** Whether the reader may change the text. */
         writable?: boolean;
+        /** What one step of Tab inserts; Monaco's own while the parent hands none. */
         indent?: EditorIndent;
         /** Word wrap, rulers, minimap, whitespace and sticky scroll; Monaco's own when absent. */
         options?: EditorOptions;
@@ -125,7 +126,7 @@
         text,
         language,
         writable = true,
-        indent = { tabs: false, size: 4 },
+        indent,
         options,
         ending = 'LF',
         model: name,
@@ -304,7 +305,7 @@
             loaded.monaco.editor.getModel(uri)?.dispose();
             const fresh = loaded.monaco.editor.createModel(text, shikiId(language), uri);
             fresh.setEOL(eolOf(loaded.monaco, ending));
-            applyIndent(fresh, indent);
+            if (indent !== undefined) applyIndent(fresh, indent);
             return fresh;
         });
         const changes = created.onDidChangeContent((event) => {
@@ -356,6 +357,7 @@
     });
 
     $effect(() => {
+        if (indent === undefined) return;
         const { tabs, size } = indent;
         if (model !== null) applyIndent(model, { tabs, size });
     });

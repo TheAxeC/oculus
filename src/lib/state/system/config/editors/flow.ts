@@ -1,7 +1,9 @@
 // Layer 2, client state. One value of a list or family as one line of YAML flow text, and one line
-// of text back as a value. An editor shows a field's value this way (`220`, `Max 20x`,
-// `[.sh, .bash]`) and reads what was typed with `yaml`'s parser on Save, so a number stays a
-// number, a list a list, and a string that would read back as another type is shown quoted.
+// of text back as a value. An editor shows a value its card keeps as the file has it (a field its
+// control cannot show, a field the catalog does not name) this way (`220`, `Max 20x`,
+// `[.sh, .bash]`), and a draft that was held as one line of flow text per field is read back with
+// `yaml`'s parser into the typed fields (draft.ts, `typedDraft`), so a number stays a number, a
+// list a list, and a string that would read back as another type is shown quoted.
 
 import { parseDocument, stringify } from 'yaml';
 

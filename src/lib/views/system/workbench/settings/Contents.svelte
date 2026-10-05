@@ -1,9 +1,10 @@
 <script lang="ts">
-    // Layer 3, view partial. The table of contents of the Settings view, on the left: each group
-    // and, under it while it is open, its headed sections. A press on a group scrolls the list to
-    // that group's heading and closes the group when it was open, opens it when it was closed (a
-    // group with no section stays as it is); a press on a section scrolls to its heading; Left and
-    // Right close and open a group. The heading at the top of the list is drawn as the selected
+    // Layer 3, view partial. The table of contents of the Settings view, on the left: each heading
+    // and, under it while it is open, its titled sections. A press on a heading scrolls the list to
+    // it and closes it when it was open, opens it when it was closed (a heading with no section
+    // stays as it is); a press on a section scrolls to its title; Left and Right close and open a
+    // heading. Every heading is open when the view is drawn, since the closed ones are this
+    // partial's own state. The heading or section at the top of the list is drawn as the selected
     // row.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
@@ -66,7 +67,7 @@
                         {#each entry.sections as one (one.id)}
                             <li role="none">
                                 <TreeItem
-                                    label={one.heading}
+                                    label={one.title}
                                     id={one.id}
                                     {nav}
                                     level={2}

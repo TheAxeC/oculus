@@ -13,12 +13,13 @@
 
     const {
         fs: { fileText, workspaces },
-        layout: { openView }
+        layout: { openView },
+        selectors: { repoSettings }
     } = useState();
 
     /** The root of every saved workspace, each once, in the order the workspaces give them. */
     const roots = $derived(workspaces().workspaces.flatMap((one) => one.roots));
-    const origins = $derived(repoOrigins(roots, fileText));
+    const origins = $derived(repoOrigins(roots, fileText, repoSettings));
 </script>
 
 {#each origins as origin (`${origin.kind}:${origin.root}:${origin.tail}`)}

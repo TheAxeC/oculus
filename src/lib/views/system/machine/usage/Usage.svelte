@@ -1,12 +1,8 @@
 <script module lang="ts">
     // Layer 3, view registration. Usage is a tab beside Live HPC in the float docked at the right
     // edge that config/layout.yml ships.
-    import { z } from 'zod';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
-
-    /** The refresh cadence of the configuration: a finite number above zero, and 0 otherwise. */
-    const cadenceShape = z.number().positive().catch(0);
 
     export const registration: ViewRegistration = {
         id: 'usage',
@@ -22,8 +18,9 @@
     // Claude sessions and seven-day token totals.
     //
     // A healthy refresher's line names its last refresh and its next one. The next is the last plus
-    // `usage_refresh_min` of config/behavior.yml, read off the config channel the page already
-    // holds, so the refresher's payload carries no time it can be computed from.
+    // `usage_refresh_min` of config/behavior.yml (its default when the file's value is refused),
+    // read off the config channel the page already holds, so the refresher's payload carries no
+    // time it can be computed from.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -41,6 +38,7 @@
         hasUsageStatus,
         nextRefresh,
         orderedWindows,
+        refreshCadence,
         usageRows,
         type UsageAccount,
         type UsageWindow
@@ -56,7 +54,7 @@
     const data = $derived(usage());
     const cursor = $derived(cardCursor(instance.state));
     /** Minutes between two refreshes, and 0 until the config channel has delivered the cadence. */
-    const cadence = $derived(cadenceShape.parse(config()?.config.usage_refresh_min));
+    const cadence = $derived(refreshCadence(config()?.config));
 
     const columns: Column[] = [
         { key: 'day', label: t('usage.col_day') },

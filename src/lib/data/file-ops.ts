@@ -30,6 +30,13 @@ export const TEXT_LIMIT = 2 * 1024 * 1024;
 export const MAX_UPLOAD_BYTES = 32 * 1024 * 1024;
 
 /**
+ * The extensions a picture folder is filtered to, and the only ones a folder's route serves: the
+ * server's reader of a wallpaper or Memories folder and the Settings view's list of wallpaper files
+ * read the one list.
+ */
+export const PICTURE_EXTENSIONS: readonly string[] = ['.jpg', '.jpeg', '.png', '.webp'];
+
+/**
  * The longest name of one file or folder, in UTF-16 units, as VS Code's `isValidBasename` counts.
  */
 export const MAX_NAME_LENGTH = 255;

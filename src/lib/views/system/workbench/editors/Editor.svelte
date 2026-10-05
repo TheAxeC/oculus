@@ -1,8 +1,9 @@
 <script lang="ts">
-    // Layer 3, view partial. The editor of a list or a family of a config file, drawn in the item
-    // of its row: the entries as the draft's form draws them (Cards.svelte, Rollup.svelte), the
-    // problems of the draft named under them, the sentence of a refusal, and Save and Discard while
-    // a draft is held.
+    // Layer 3, view partial. The editor of a list, a multi or a family of a config file, drawn in
+    // the item of its row: the entries as the draft's form draws them (Cards.svelte,
+    // Rollup.svelte), each field with the control its catalog spec gives it, the problems of the
+    // draft named under them, the sentence of a refusal, and Save and Discard while a draft is
+    // held.
     //
     // The draft is the tab's instance state under the file and key (state/system/config/editors/
     // slots.ts), so it is there again after a tab switch or a reload. An edit that leaves the
@@ -20,9 +21,11 @@
         draftValue,
         isEdited,
         movedFrom,
+        specsOf,
         type Draft,
         type Edit
     } from '$lib/state/system/config/editors/draft';
+    import type { Lists } from '$lib/state/system/config/editors/sources';
     import { savedBase, savedDraft, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import { message } from '$lib/state/system/config/messages';
@@ -36,17 +39,22 @@
         ui: { instanceState, setInstanceState }
     } = useState();
 
-    let { row, id, editors }: { row: ConfigRow; id: string; editors: EditorWriter } = $props();
+    let {
+        row,
+        id,
+        editors,
+        lists
+    }: { row: ConfigRow; id: string; editors: EditorWriter; lists: Lists } = $props();
 
     /** The draft the tab holds, if it holds one. */
-    const held = $derived(savedDraft(instanceState(id), row.file, row.key));
+    const held = $derived(savedDraft(instanceState(id), row));
 
     /** The draft drawn: the tab's, or the file's value read into one. */
     const draft = $derived<Draft | null>(held ?? draftOf(row));
 
     const problems = $derived.by(() => {
         if (draft === null) return [];
-        const made = draftValue(draft);
+        const made = draftValue(draft, row, lists);
         return made.ok ? [] : made.problems;
     });
 
@@ -58,13 +66,22 @@
     const sending = $derived(editors.sending(row));
     const refusal = $derived(editors.said(row));
 
+    /** The specs the draft's fields are drawn by, and the one the keys of a roll-up are. */
+    const specs = $derived(draft === null ? {} : specsOf(row, draft.form));
+    const keySpec = $derived(
+        (Object.hasOwn(row.fields, 'key') ? row.fields.key : undefined) ?? {
+            description: '',
+            control: 'text' as const
+        }
+    );
+
     /** Put an edited draft in the tab's state; one equal to the file's is no draft. */
     function edit(next: Edit): void {
         if (draft === null || sending) return;
         editors.clear(row);
         const changed = applyEdit(draft, next);
         const state = instanceState(id);
-        if (!isEdited(changed, row)) {
+        if (!isEdited(changed, row, lists)) {
             setInstanceState(id, withSavedDraft(state, row.file, row.key, null));
             return;
         }
@@ -86,14 +103,28 @@
 {#if draft !== null}
     <div class="editor" data-editor={draft.form}>
         {#if draft.form === 'rollup'}
-            <Rollup {draft} onedit={edit} />
+            <Rollup {draft} {specs} {keySpec} {lists} onedit={edit} />
         {:else}
-            <Cards cards={draft.cards} fields={draft.fields} form={draft.form} onedit={edit} />
+            <Cards
+                cards={draft.cards}
+                fields={draft.fields}
+                {specs}
+                form={draft.form}
+                {lists}
+                title={row.title}
+                slots={row.entry.slots}
+                removeOnly={row.control === 'parked'}
+                onedit={edit}
+            />
         {/if}
         {#if problems.length > 0}
             <ul class="problems">
                 {#each problems as problem, at (at)}
-                    <li role="status">{said(problem.said)}</li>
+                    <li role="status">
+                        {problem.where === undefined ? '' : `${said(problem.where)} `}{said(
+                            problem.said
+                        )}
+                    </li>
                 {/each}
             </ul>
         {/if}

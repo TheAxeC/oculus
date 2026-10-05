@@ -41,7 +41,6 @@
     import type { EditorOptions } from '$lib/ui/controls/editor/options';
     import { languageOf } from '$lib/state/sources/fs';
     import {
-        DEFAULT_INDENT,
         shownLanguage,
         type Indent,
         type LineEnding,
@@ -70,12 +69,12 @@
          * tab hands none.
          */
         language?: string;
-        /** What one step of Tab inserts, VS Code's default when the tab hands none. */
-        indent?: Indent;
+        /** What one step of Tab inserts; the editor's own while the tab hands none. */
+        indent?: Indent | null;
         ending?: LineEnding;
-        /** The word wrap and the rulers the tab resolved; no wrap and none when it hands none. */
-        wrap?: WordWrap;
-        rulers?: number[];
+        /** The word wrap and the rulers the tab resolved; the editor's own when it hands none. */
+        wrap?: WordWrap | null;
+        rulers?: number[] | null;
         /** Asks the tab to toggle its word wrap, which Alt+Z in the editor does. */
         ontogglewrap?: () => void;
         /** Whether the reader wants the rendered half, for a file that has one. */
@@ -102,10 +101,10 @@
         instance = 'tab',
         line = 0,
         language: chosen,
-        indent = DEFAULT_INDENT,
+        indent = null,
         ending = 'LF',
-        wrap = 'off',
-        rulers = [],
+        wrap = null,
+        rulers = null,
         ontogglewrap,
         rendered = false,
         marks = [],
@@ -135,13 +134,21 @@
     const language = $derived(chosen ?? languageOf(path, languages()));
     /** The language the editor opens the text under, plaintext past the paint limit. */
     const shown = $derived(shownLanguage(language, text, paintLimit()));
-    /** The options the editor takes: the tab's word wrap and rulers, the configured rest. */
+    /**
+     * The options the editor takes: the tab's word wrap and rulers, the configured rest, and none
+     * of them until the configuration has arrived.
+     */
+    const configured = $derived(editorOptions());
     const options = $derived<EditorOptions>({
-        wordWrap: wrap,
-        rulers,
-        minimap: editorOptions().minimap,
-        renderWhitespace: editorOptions().renderWhitespace,
-        stickyScroll: editorOptions().stickyScroll
+        ...(wrap === null ? {} : { wordWrap: wrap }),
+        ...(rulers === null ? {} : { rulers }),
+        ...(configured === null
+            ? {}
+            : {
+                  minimap: configured.minimap,
+                  renderWhitespace: configured.renderWhitespace,
+                  stickyScroll: configured.stickyScroll
+              })
     });
     /** The Alt+Z action, offered while the tab handles the toggle. */
     const toggling = $derived(
@@ -202,7 +209,7 @@
                 bind:this={editor}
                 {text}
                 {path}
-                {indent}
+                indent={indent ?? undefined}
                 {options}
                 wrap={toggling}
                 {ending}

@@ -30,19 +30,14 @@
 import { json } from '@sveltejs/kit';
 import { join } from 'node:path';
 import { portfolioConfigFrom } from '../../data/index.ts';
-import {
-    changesKeep,
-    configDir,
-    loadLocalOrDefaults,
-    localFile
-} from '../../data/sources/config.ts';
+import { changesKeep, configDir, loadLocal, localFile } from '../../data/sources/config.ts';
 import { FILES_KIND } from '../../data/file-ops.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges, pathOf } from '../core/changes.ts';
 import { undoChange } from './writes/undo.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { rootsFile } from '../files/files.ts';
-import { projects as projectsOf } from '../sessions/stores/hooks.ts';
+import { entities as entitiesOf, projects as projectsOf } from '../sessions/stores/hooks.ts';
 import type { HubLike } from '../sessions/stores/hooks.ts';
 import { setFlag, setOverride } from '../sessions/overrides.ts';
 import { glyphNames } from '../../data/sources/config/rail.ts';
@@ -108,6 +103,12 @@ export type WriteTarget = {
      * has published no portfolio yet names no projects, and the write refuses with a reason.
      */
     projects: () => Project[];
+    /**
+     * One entity map (the domains, the resources) of the portfolio this server last published, or
+     * null while it has published none, which the config writes check a choice against. A target
+     * built without it checks those choices for their type alone.
+     */
+    entities?: (kind: 'domains' | 'resources') => Record<string, unknown> | null;
     bookmarks: string;
     /**
      * Where this machine's change log is, how much of it is kept, and the chain an append waits
@@ -228,7 +229,7 @@ export function target(
     merged: Record<string, unknown>,
     server?: { hub: HubLike; fsWrites: FsWrites; opsWrites?: FsWrites }
 ): WriteTarget {
-    const local = loadLocalOrDefaults(engine);
+    const local = loadLocal(engine);
     return {
         hub: local.hub,
         config: portfolioConfigFrom(merged, engine),
@@ -236,6 +237,7 @@ export function target(
         career: careerRules(merged),
         overrides: local.sessionsOverrides,
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
+        entities: server === undefined ? undefined : (kind) => entitiesOf(server.hub, kind),
         bookmarks: local.bookmarks ?? defaultBookmarksPath(),
         behaviorFile: join(configDir(engine), BEHAVIOR),
         layoutFile: join(configDir(engine), LAYOUT),

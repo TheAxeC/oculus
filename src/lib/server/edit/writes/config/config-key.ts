@@ -1,13 +1,14 @@
 // Layer 2, server. One option of a tracked config file set to a value, in place: the Settings
-// view's write for a toggle, a number, a text or a choice.
+// view's write for a toggle, a number, a text, a choice, a glyph, a hue, a colour, a folder, a file
+// or a path.
 //
 // The edit is over the bytes through yaml-edit.ts's `replaceValue`, so the key's own line keeps its
 // comment, its quote style, its line end and every other byte of the file; the file is never
 // written whole from a parse. The options catalog (config/catalogs/options.yml) decides what may be
 // written: the file must be one of its tracked files, the key one of its entries, the entry a
-// single value with a control, and the value one that control takes. The machine's own file,
-// local.yml, is refused before anything is read. The checks that stand between the edited text and
-// the file are config-checks.ts's, which config-value.ts runs as well.
+// single value with a control, and the value one that control takes (config-fit.ts). The machine's
+// own file, local.yml, is refused before anything is read. The checks that stand between the edited
+// text and the file are config-checks.ts's, which config-value.ts runs as well.
 //
 // The function is synchronous from the read of the file to its write, which is what lets two
 // writes made at once both land: each reads the file the other has already written.
@@ -21,6 +22,8 @@ import { LOCAL_NAME, configDir, loadConfig, textCatalog } from '../../../../data
 import { catalogOf, type CatalogEntry } from '../../../../data/sources/config/catalog/options.ts';
 import { words } from '../../../core/words.ts';
 import { replaceValue } from '../../yaml/yaml-edit.ts';
+import { isCollection, leafProblem } from './config-fit.ts';
+import { sourcesFor, type SourceInputs } from './config-sources.ts';
 import {
     kept,
     optionNow,
@@ -63,26 +66,7 @@ function locate(source: string, key: string): Found {
 
 /** Whether an entry is one value with a control, which is what is set one key at a time. */
 function single(entry: CatalogEntry): boolean {
-    return (
-        !Object.hasOwn(entry, 'fields') && entry.control !== undefined && entry.control !== 'list'
-    );
-}
-
-/** The reason a value does not fit the entry's control, or null when it does. */
-function misfit(entry: CatalogEntry, value: unknown, text: Record<string, string>): string | null {
-    if (entry.control === 'toggle') {
-        return typeof value === 'boolean' ? null : words(text, 'server.config_key.not_boolean');
-    }
-    if (entry.control === 'number') {
-        const ok = typeof value === 'number' && Number.isFinite(value);
-        return ok ? null : words(text, 'server.config_key.not_number');
-    }
-    if (entry.control === 'text') {
-        return typeof value === 'string' ? null : words(text, 'server.config_key.not_text');
-    }
-    const values = entry.values ?? [];
-    if (typeof value === 'string' && values.includes(value)) return null;
-    return words(text, 'server.config_key.not_choice', values.join(', '));
+    return entry.control !== undefined && !isCollection(entry);
 }
 
 /**
@@ -99,14 +83,17 @@ export function configKeyNow(engine: string, file: string, key: string): OptionN
 
 /**
  * Set one option of a tracked config file. A refusal answers the one reason and writes nothing; a
- * value equal to the one held writes nothing and answers with nothing changed. A file that cannot
- * be read or written throws, which the route answers as `unwritable`.
+ * value equal to the one held writes nothing and answers with nothing changed. Given `inputs`, the
+ * value is checked against the entry and the lists the server holds (config-fit.ts); without them,
+ * as in an undo, no value is checked and the file is put back as it was. A file that cannot be read
+ * or written throws, which the route answers as `unwritable`.
  */
 export function writeConfigKey(
     engine: string,
     file: string,
     key: string,
-    value: unknown
+    value: unknown,
+    inputs?: SourceInputs
 ): ConfigKeyOutcome {
     const before = loadConfig(engine);
     const text = textCatalog(before.config);
@@ -116,8 +103,6 @@ export function writeConfigKey(
     if (entry === null) return refuse(words(text, 'server.config_key.no_entry'));
     if (!single(entry)) return refuse(words(text, 'server.config_key.not_single'));
     const wanted = Object.is(value, -0) ? 0 : value;
-    const unfit = misfit(entry, wanted, text);
-    if (unfit !== null) return refuse(unfit);
 
     const path = join(configDir(engine), file);
     const source = readFileSync(path, 'utf8');
@@ -125,6 +110,9 @@ export function writeConfigKey(
     if (found.kind === 'unparsed') return refuse(words(text, 'server.config_key.not_parsed'));
     if (found.kind === 'missing') return refuse(words(text, 'server.config_key.not_in_file'));
     const held = found.node.value;
+    const sources = inputs === undefined ? null : sourcesFor(inputs, before.config);
+    const unfit = leafProblem(entry, held, wanted, { text, sources });
+    if (unfit !== null) return refuse(unfit);
     if (isDeepStrictEqual(held, wanted)) return { changed: [], refused: [] };
 
     const scalar = wanted as string | number | boolean;

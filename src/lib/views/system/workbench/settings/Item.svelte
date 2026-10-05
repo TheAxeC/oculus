@@ -5,20 +5,22 @@
     // the file and line of the key.
     //
     // The kinds of row differ in what they put under the description. A config option has its
-    // control (Control.svelte) and a default line; the rail row and the arrangements row have the
-    // editors of the rail list and of the page reset; a "This browser" row has the control of the
-    // value the ui store keeps; a row of the machine's own file has its key path alone, since its
-    // values are the machine's and are never read here. A config row whose key is not in the file
-    // says so and has the way to edit the file.
+    // control (Control.svelte, which draws the control its catalog entry names) and a default
+    // line; the rail row and the arrangements row have the editors of the rail list and of the
+    // page reset; a "This browser" row has the control of the value the ui store keeps; a row of
+    // the machine's own file has its description and key path alone, since its values are the
+    // machine's and are never read here. A config row whose key is not in the file says so and has
+    // the way to edit the file.
     //
     // Each item is a stop the search's Down key can move the focus to, and the gear is drawn only
     // while the pointer is over the item or the focus is inside it, and only on a row whose menu
     // holds something (state/system/config/view/gear.ts): a "This browser" row has no setting ID in
     // a file to copy, so its menu is Reset Setting alone and exists once the row is Modified. A
-    // list is reset by writing its default through the editors' write; a family has no default.
+    // list, multi or parked list is reset by writing its default through the editors' write; a
+    // family has no default.
     //
-    // A list or a family the file holds in a shape the editor draws (editors/Editor.svelte) is set
-    // there; one it does not draw keeps the way to edit the file.
+    // A list, a multi or a family the file holds in a shape the editor draws
+    // (editors/Editor.svelte) is set there; one it does not draw keeps the way to edit the file.
 
     import CodeText from '$lib/ui/display/CodeText.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -27,6 +29,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { resetBrowserRow } from '$lib/state/system/config/browser';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
+    import type { Lists } from '$lib/state/system/config/editors/sources';
     import { drawsEditor, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import { PAGES_ROW, RAIL_ROW, type Row } from '$lib/state/system/config/groups';
     import { message, type Message } from '$lib/state/system/config/messages';
@@ -53,9 +56,10 @@
         id: string;
         writer: RowWriter;
         editors: EditorWriter;
+        lists: Lists;
     };
 
-    let { row, id, writer, editors }: Props = $props();
+    let { row, id, writer, editors, lists }: Props = $props();
 
     /** Whether the clipboard refused the last copy of this setting's id. */
     let copyRefused = $state(false);
@@ -85,8 +89,12 @@
     const canReset = $derived(entries.includes('reset'));
     const canCopy = $derived(entries.includes('copy'));
 
-    /** A family's fields, each with what it holds. */
-    const fields = $derived(row.kind === 'config' ? Object.entries(row.fields) : []);
+    /** A family's fields, each with its description. */
+    const fields = $derived(
+        row.kind === 'config'
+            ? Object.entries(row.fields).map(([name, spec]) => [name, spec.description] as const)
+            : []
+    );
 
     /** The sentences under the control, in the order they are drawn. */
     const lines = $derived.by(() => {
@@ -111,7 +119,7 @@
     function reset(): void {
         if (row.kind === 'browser') {
             resetBrowserRow(ui, row);
-        } else if (row.kind === 'config' && row.control === 'list') {
+        } else if (row.kind === 'config' && ['list', 'multi', 'parked'].includes(row.control)) {
             editors.clear(row);
             ui.setInstanceState(id, withSavedDraft(ui.instanceState(id), row.file, row.key, null));
             void editors.reset(row);
@@ -187,7 +195,7 @@
         {:else if control === 'arrangements'}
             <PagesReset />
         {:else}
-            <Control {row} {id} {writer} {editors} />
+            <Control {row} {id} {writer} {editors} {lists} />
         {/if}
         {#if row.kind === 'config' && row.key === 'editor.languages'}
             <Origins />

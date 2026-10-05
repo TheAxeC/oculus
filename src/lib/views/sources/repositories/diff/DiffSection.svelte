@@ -174,7 +174,7 @@
 
     const {
         fs: { fileText },
-        selectors: { editorOptions, languages, paintLimit, sessionById },
+        selectors: { editorOptions, languages, paintLimit, repoSettings, sessionById },
         terminals: { steerTerminal, terminalOfSession }
     } = useState();
 
@@ -212,15 +212,24 @@
         draft: () => ({ text: file.modified, language: '', indent: null, wrap: null }),
         languages,
         options: editorOptions,
+        repoSettings,
         paintLimit,
         fileText
     });
-    /** The options the editor takes: the configured ones, with no minimap in a diff. */
+    /**
+     * The options the editor takes: the configured ones, with no minimap in a diff, and none of
+     * them until the configuration has arrived.
+     */
+    const configured = $derived(editorOptions());
     const options = $derived<EditorOptions>({
-        wordWrap: resolved.wrap,
-        rulers: resolved.rulers,
-        renderWhitespace: editorOptions().renderWhitespace,
-        stickyScroll: editorOptions().stickyScroll
+        ...(resolved.wrap === null ? {} : { wordWrap: resolved.wrap }),
+        ...(resolved.rulers === null ? {} : { rulers: resolved.rulers }),
+        ...(configured === null
+            ? {}
+            : {
+                  renderWhitespace: configured.renderWhitespace,
+                  stickyScroll: configured.stickyScroll
+              })
     });
     /** Whether the header offers Open File: the file is on disk, which a deleted file is not. */
     const present = $derived(openable && !fileDeleted(file));

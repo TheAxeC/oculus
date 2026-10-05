@@ -5,9 +5,8 @@
 
 import { setTimeout as delay } from 'node:timers/promises';
 import { stripVTControlCharacters } from 'node:util';
-import { z } from 'zod';
 import type { UsageAccountConfig, UsageRefresher } from '../../../data/model/index.ts';
-import { CADENCE_WORDS, cadenceShape, usageAccountLabel } from '../../../data/sources/config.ts';
+import { usageAccountLabel } from '../../../data/sources/config.ts';
 import { sendKeysArgs, startArgs, USAGE_PREFIX, type Runner } from '../pty/sessions.ts';
 import { shellWord } from '../pty/shell-word.ts';
 import { run } from '../pty/tmux.ts';
@@ -50,9 +49,10 @@ export type UsageRefreshWatcher = {
     refresh(label: string): Promise<boolean>;
     refreshAll(): Promise<void>;
     /**
-     * Take a new period and model, checked as the start checks them. A new period moves the next
-     * refresh to the sooner of the one waiting and the new period from now; a new model is used
-     * from the next session started, and a session already started keeps its own.
+     * Take a new period and model, which the caller has read through `refreshSettings`. A new
+     * period moves the next refresh to the sooner of the one waiting and the new period from now;
+     * a new model is used from the next session started, and a session already started keeps its
+     * own.
      */
     set(settings: { refreshMin: number; model: string }): void;
     state: (account: UsageAccountConfig) => UsageRefresher;
@@ -136,38 +136,11 @@ export function paneReason(screen: string): UsageRefreshReason {
 }
 
 /**
- * The two settings the refresher cannot run without: a cadence of 1 to 35791 minutes and a model
- * with a name, taken as unknown values from the merged configuration.
- */
-const refreshSettingsShape = z.object({
-    refreshMin: cadenceShape,
-    model: z.string().refine((name) => name.trim() !== '')
-}) satisfies z.ZodType<{ refreshMin: number; model: string }>;
-
-/**
- * The two settings, typed, or the throw naming the first that is wrong. It is the one place the
- * two checks are made: the config-key writer hands it what the merged configuration holds, and the
- * server context hands it the configuration it starts the refresher with.
- */
-export function requireRefreshSettings(settings: { refreshMin: unknown; model: unknown }): {
-    refreshMin: number;
-    model: string;
-} {
-    const refreshMin = refreshSettingsShape.shape.refreshMin.safeParse(settings.refreshMin);
-    if (!refreshMin.success) {
-        throw new Error(`config/behavior.yml: usage_refresh_min must be ${CADENCE_WORDS}`);
-    }
-    const model = refreshSettingsShape.shape.model.safeParse(settings.model);
-    if (!model.success) throw new Error('usage_refresh_model must not be empty');
-    return { refreshMin: refreshMin.data, model: model.data };
-}
-
-/**
  * Start the per-account queues and the configured cadence. Every tick starts and kills its own
  * session.
  */
 export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWatcher {
-    let settings = requireRefreshSettings(options);
+    let settings = { refreshMin: options.refreshMin, model: options.model };
     const accounts = options.accounts.filter((account) => account.tool === 'claude');
     const exec = options.run ?? run;
     const now = options.now ?? Date.now;
@@ -357,10 +330,9 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
         refreshAll,
         set(next): void {
             if (closed) return;
-            const checked = requireRefreshSettings(next);
-            const changed = checked.refreshMin !== settings.refreshMin;
-            settings = checked;
-            if (changed) arm(Math.min(clockAt, Date.now() + checked.refreshMin * 60_000));
+            const changed = next.refreshMin !== settings.refreshMin;
+            settings = { refreshMin: next.refreshMin, model: next.model };
+            if (changed) arm(Math.min(clockAt, Date.now() + next.refreshMin * 60_000));
         },
         state(account: UsageAccountConfig): UsageRefresher {
             const state = held.get(account.dir);

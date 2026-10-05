@@ -36,7 +36,7 @@ describe('taking a list back', () => {
     it('puts the file back byte for byte and logs the undo above the write', async () => {
         const into = configTarget();
         const before = behaviorOf(into);
-        const next = ['pending', 'submitted', 'under-review', 'queued'];
+        const next = ['pending', 'submitted', 'under-review', 'revision'];
         await send(into, 'waiting_status', next, ORIGINAL);
         const [change] = changesOf(into);
         const back = await undoneBack(into, change, into.behaviorFile, before);

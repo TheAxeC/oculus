@@ -1,88 +1,177 @@
 // Layer 1, data. The typed readers of single settings out of the merged map: the cluster, the
-// calendar, the search, the open list, the mail, the change log's length, the usage tiers, the
-// Processes view's program names and the LaTeX formatter. Each reads its block and falls back to
-// the default the config file carries.
+// calendar, the search, the open list, the mail, the change log's length, the usage tiers and the
+// refresh, the Processes view's program names, the LaTeX formatter and its auto build, the
+// automatic fetch, the Trash confirmation and the editor's paint limit. Each reads a key by the
+// rule of its entry in the options catalog (catalog/value-rule.ts), the same rule the Settings view
+// and the server's write refuse a value by: a key that is missing is the entry's `default`, and a
+// key whose value the rule refuses is the `default` too and comes back as a problem naming the key,
+// so a typo costs one setting and the server starts. A reader throws only when the catalog holds no
+// rule for a key it reads, or no default that reads, since without one no value can be read.
 
-import { z } from 'zod';
-import { programApps, type ProgramApps } from '../../helpers/files/opens-in-program.ts';
-import { FORMATTERS, type Formatter } from '../../prose/latex.ts';
+import type { ProgramApps } from '../../helpers/files/opens-in-program.ts';
 import { byKey } from '../../helpers/guards.ts';
-import type { Finding } from '../../model/index.ts';
-import { mapShape, readAs, unchangedAs, valuesOfShape } from '../../shapes/shapes.ts';
-import { catalogOf } from './catalog/options.ts';
-
-/** A text, empty or not. */
-const labelShape = z.string();
-
-/** The longest period, in minutes, a timer can wait: 2^31-1 ms, past which it fires at once. */
-const MAX_CADENCE_MIN = 35791;
-
-/** The longest day window a setting can name. */
-const MAX_DAYS = 3650;
-
-/** The most threads a mail signal can ask a provider for. */
-const MAX_PER_SIGNAL = 500;
-
-/** A number of minutes a timer can wait, from 1 to 35791. */
-export const cadenceShape = z.number().min(1).max(MAX_CADENCE_MIN);
-
-/** A whole number of days, from 0 to 3650. */
-const dayWindowShape = z.number().refine(Number.isInteger).min(0).max(MAX_DAYS);
-
-/** A whole number of threads, from 1 to 500. */
-const perSignalShape = z.number().refine(Number.isInteger).min(1).max(MAX_PER_SIGNAL);
-
-/** The words a cadence is refused with. */
-export const CADENCE_WORDS = `a number from 1 to ${MAX_CADENCE_MIN}`;
-
-/** The words a day window is refused with. */
-const DAY_WORDS = `a whole number from 0 to ${MAX_DAYS}`;
-
-/** The words a mail count is refused with. */
-const PER_SIGNAL_WORDS = `a whole number from 1 to ${MAX_PER_SIGNAL}`;
-
-/** A finite number above zero. */
-const positiveShape = z.number().positive();
-
-/** A whole number above zero. */
-const wholePositiveShape = z.number().refine(Number.isInteger).positive();
-
-/** A text with something in it. */
-const nonEmptyShape = z.string().min(1);
-
-/** True or false. */
-const flagShape = z.boolean();
+import { FORMATTERS, type Formatter } from '../../prose/latex.ts';
+import { mapShape, readAs } from '../../shapes/shapes.ts';
+import { catalogOf, configItems, type CatalogEntry } from './catalog/options.ts';
+import { valueProblem, type RuleLists, type ValueProblem } from './catalog/value-rule.ts';
 
 /**
- * A map whose every own value is a text, an own `__proto__` key's included, answered as the map it
- * was given.
+ * A setting the rule refuses, by the dotted key it was written at. `value` is a key whose default
+ * is used, `entry` a member of a family that is not read, `field` a field of a record that is not
+ * read; `spec` is the entry or field that holds the rule. `block` is a block that is not a map,
+ * whose keys all take their defaults, and `family` a family that is not a map, none of whose
+ * entries is read.
  */
-const tiersShape = unchangedAs<Record<string, string>>(valuesOfShape(labelShape));
+export type SettingProblem =
+    | { key: string; where: 'block' | 'family' }
+    | {
+          key: string;
+          where: 'value' | 'entry' | 'field';
+          problem: ValueProblem;
+          spec: CatalogEntry;
+      };
 
-/** A program name: a text with something in it and no slash and no white space. */
-const programNameShape = z.string().regex(/^[^/\s]+$/);
+/** The value at a key of the merged map, if the file holds one. */
+type Held = { present: false } | { present: true; value: unknown };
 
-/** The block `name` of the merged map, or a throw saying it must be a map. */
-function blockOf(config: Record<string, unknown>, name: string): Record<string, unknown> {
-    const block = readAs(mapShape, config[name]);
-    if (block === null) throw new Error(`config/behavior.yml: ${name} must be a map`);
-    return block;
+/** What a setting reader asks of the catalog and the map. */
+export type SettingReader = {
+    number: (key: string) => number;
+    flag: (key: string) => boolean;
+    text: (key: string) => string;
+    /** The items of a list option, as the file holds them or the entry's default. */
+    strings: (key: string) => string[];
+    /** The members of a family that the entry's fields accept, as key and value. */
+    family: (key: string) => [string, unknown][];
+};
+
+/** The throw for a key the catalog gives no rule for, or no default that reads. */
+export function noRule(key: string): Error {
+    return new Error(
+        `config/catalogs/options.yml holds no entry, or no default that reads, for ${key}, so ${key} cannot be read`
+    );
 }
 
-/** The setting `name.key` of `block` read through `shape`, or a throw saying it must be `words`. */
-function settingOf<T>(
-    shape: z.ZodType<T>,
-    block: Record<string, unknown>,
-    name: string,
-    key: string,
-    words: string
-): T {
-    const parsed = shape.safeParse(block[key]);
-    if (!parsed.success) throw new Error(`config/behavior.yml: ${name}.${key} must be ${words}`);
-    return parsed.data;
+/** The items of the sources the entry names, together; null while one is not held. */
+function listsOf(entry: CatalogEntry, config: Record<string, unknown>): RuleLists {
+    let sourced: string[] | null = [];
+    for (const source of entry.values_from ?? []) {
+        const items = configItems(source, config);
+        sourced = items === null || sourced === null ? null : [...sourced, ...items];
+    }
+    return { sourced };
 }
 
-/** The Live HPC settings of config/behavior.yml, every key required. */
+/**
+ * The value a dotted key holds in the merged map. A block that is null or missing holds nothing; a
+ * block that is not a map holds nothing and is a problem of its own, named once.
+ */
+function heldAt(config: Record<string, unknown>, key: string, problems: SettingProblem[]): Held {
+    const dot = key.indexOf('.');
+    const name = dot < 0 ? key : key.slice(0, dot);
+    const raw = Object.hasOwn(config, name) ? config[name] : undefined;
+    if (dot < 0) return raw === undefined ? { present: false } : { present: true, value: raw };
+    if (raw === undefined || raw === null) return { present: false };
+    const block = readAs(mapShape, raw);
+    if (block === null) {
+        if (!problems.some((one) => one.key === name && one.where === 'block')) {
+            problems.push({ key: name, where: 'block' });
+        }
+        return { present: false };
+    }
+    const rest = key.slice(dot + 1);
+    const value = Object.hasOwn(block, rest) ? block[rest] : undefined;
+    return value === undefined ? { present: false } : { present: true, value };
+}
+
+/** The entry of a key of config/behavior.yml in the merged map's catalog; throws without one. */
+export function settingEntry(config: Record<string, unknown>, key: string): CatalogEntry {
+    const entries = byKey(catalogOf(config), 'behavior.yml');
+    const entry = entries === undefined ? undefined : byKey(entries, key);
+    if (entry === undefined) throw noRule(key);
+    return entry;
+}
+
+/** A reader over the merged map, pushing what it finds wrong to `problems`. */
+export function settingReader(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): SettingReader {
+    const entries = byKey(catalogOf(config), 'behavior.yml');
+    const entryOf = (key: string): CatalogEntry => {
+        const entry = entries === undefined ? undefined : byKey(entries, key);
+        if (entry === undefined) throw noRule(key);
+        return entry;
+    };
+    /** The entry's default, which must read by the entry's own rule. */
+    const defaultOf = (entry: CatalogEntry, key: string): unknown => {
+        if (!Object.hasOwn(entry, 'default')) throw noRule(key);
+        if (valueProblem(entry, entry.default, listsOf(entry, config)) !== null) throw noRule(key);
+        return entry.default;
+    };
+    const leaf = (key: string): unknown => {
+        const entry = entryOf(key);
+        const held = heldAt(config, key, problems);
+        if (!held.present) return defaultOf(entry, key);
+        const problem = valueProblem(entry, held.value, listsOf(entry, config));
+        if (problem === null) return held.value;
+        problems.push({ key, where: 'value', problem, spec: entry });
+        return defaultOf(entry, key);
+    };
+    const family = (key: string): [string, unknown][] => {
+        const entry = entryOf(key);
+        const keySpec = entry.fields === undefined ? undefined : byKey(entry.fields, 'key');
+        const valueSpec = entry.fields === undefined ? undefined : byKey(entry.fields, 'value');
+        if (keySpec === undefined || valueSpec === undefined) throw noRule(key);
+        const held = heldAt(config, key, problems);
+        if (!held.present || held.value === null) return [];
+        const map = readAs(mapShape, held.value);
+        if (map === null) {
+            problems.push({ key, where: 'family' });
+            return [];
+        }
+        const members: [string, unknown][] = [];
+        for (const [name, value] of Object.entries(map)) {
+            const wrongKey = valueProblem(keySpec, name);
+            const wrongValue = wrongKey === null ? valueProblem(valueSpec, value) : null;
+            const problem = wrongKey ?? wrongValue;
+            if (problem === null) {
+                members.push([name, value]);
+                continue;
+            }
+            const spec = wrongKey === null ? valueSpec : keySpec;
+            problems.push({ key: `${key}.${name}`, where: 'entry', problem, spec });
+        }
+        return members;
+    };
+    return {
+        number: (key) => {
+            const value = leaf(key);
+            if (typeof value !== 'number') throw noRule(key);
+            return value;
+        },
+        flag: (key) => {
+            const value = leaf(key);
+            if (typeof value !== 'boolean') throw noRule(key);
+            return value;
+        },
+        text: (key) => {
+            const value = leaf(key);
+            if (typeof value !== 'string') throw noRule(key);
+            return value;
+        },
+        strings: (key) => {
+            const value = leaf(key);
+            if (!Array.isArray(value) || !value.every((one) => typeof one === 'string')) {
+                throw noRule(key);
+            }
+            return value;
+        },
+        family
+    };
+}
+
+/** The Live HPC settings of config/behavior.yml. */
 export type SlurmSettings = {
     /** The key of the cluster entry of registries/resources.yml the poller queries. */
     resource: string;
@@ -92,21 +181,22 @@ export type SlurmSettings = {
     prewarm: boolean;
 };
 
-/** Read `slurm:` with its five keys, or throw naming the key that is missing or mistyped. */
-export function slurmSettings(config: Record<string, unknown>): SlurmSettings {
-    const slurm = blockOf(config, 'slurm');
-    const resource = settingOf(nonEmptyShape, slurm, 'slurm', 'resource', 'a non-empty string');
-    const prewarm = settingOf(flagShape, slurm, 'slurm', 'prewarm', 'true or false');
+/** Read `slurm:`'s five keys, each its default when it is missing or wrong. */
+export function slurmSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): SlurmSettings {
+    const read = settingReader(config, problems);
     return {
-        resource,
-        days: settingOf(dayWindowShape, slurm, 'slurm', 'days', DAY_WORDS),
-        pollMin: settingOf(cadenceShape, slurm, 'slurm', 'poll_min', CADENCE_WORDS),
-        quotaMin: settingOf(cadenceShape, slurm, 'slurm', 'quota_min', CADENCE_WORDS),
-        prewarm
+        resource: read.text('slurm.resource'),
+        days: read.number('slurm.days'),
+        pollMin: read.number('slurm.poll_min'),
+        quotaMin: read.number('slurm.quota_min'),
+        prewarm: read.flag('slurm.prewarm')
     };
 }
 
-/** The calendar connector's settings of config/behavior.yml, every key required. */
+/** The calendar connector's settings of config/behavior.yml. */
 export type CalendarSettings = {
     pollMin: number;
     /** Days before now the calendar window opens. */
@@ -115,17 +205,20 @@ export type CalendarSettings = {
     daysAhead: number;
 };
 
-/** Read `calendar:` with its three keys, or throw naming the key that is missing or mistyped. */
-export function calendarSettings(config: Record<string, unknown>): CalendarSettings {
-    const calendar = blockOf(config, 'calendar');
+/** Read `calendar:`'s three keys, each its default when it is missing or wrong. */
+export function calendarSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): CalendarSettings {
+    const read = settingReader(config, problems);
     return {
-        pollMin: settingOf(cadenceShape, calendar, 'calendar', 'poll_min', CADENCE_WORDS),
-        daysBack: settingOf(dayWindowShape, calendar, 'calendar', 'days_back', DAY_WORDS),
-        daysAhead: settingOf(dayWindowShape, calendar, 'calendar', 'days_ahead', DAY_WORDS)
+        pollMin: read.number('calendar.poll_min'),
+        daysBack: read.number('calendar.days_back'),
+        daysAhead: read.number('calendar.days_ahead')
     };
 }
 
-/** The search settings of config/behavior.yml, every key required. */
+/** The search settings of config/behavior.yml. */
 export type SearchSettings = {
     /** How many hits one answer carries before it says it was cut. */
     maxHits: number;
@@ -133,86 +226,145 @@ export type SearchSettings = {
     timeoutS: number;
 };
 
-/** Read `search:` with its two keys, or throw naming the key that is missing or mistyped. */
-export function searchSettings(config: Record<string, unknown>): SearchSettings {
-    const search = blockOf(config, 'search');
-    return {
-        maxHits: settingOf(positiveShape, search, 'search', 'max_hits', 'a number above zero'),
-        timeoutS: settingOf(positiveShape, search, 'search', 'timeout_s', 'a number above zero')
-    };
+/** Read `search:`'s two keys, each its default when it is missing or wrong. */
+export function searchSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): SearchSettings {
+    const read = settingReader(config, problems);
+    return { maxHits: read.number('search.max_hits'), timeoutS: read.number('search.timeout_s') };
 }
 
-/** The open action's settings of config/behavior.yml, every key required. */
+/** The open action's settings of config/behavior.yml. */
 export type OpenSettings = {
     /** Each extension that may open, lowercased with its dot, to the bundle id it opens in. */
     programApps: ProgramApps;
 };
 
-/** Read `open:` with its one key, or throw naming the key that is missing or mistyped. */
-export function openSettings(config: Record<string, unknown>): OpenSettings {
-    const apps = programApps(config);
-    if (apps === null) {
-        throw new Error(
-            'config/behavior.yml: open.program_ext must map extensions, each with its dot, to bundle ids'
-        );
+/** The members of `open.program_ext` that the entry accepts, each extension lowercased. */
+function appsOf(read: SettingReader): ProgramApps {
+    const apps: ProgramApps = {};
+    for (const [extension, app] of read.family('open.program_ext')) {
+        if (typeof app !== 'string') throw noRule('open.program_ext');
+        apps[extension.toLowerCase()] = app;
     }
-    return { programApps: apps };
+    return apps;
 }
 
-/** The Files view's settings of config/behavior.yml. */
-export type FilesSettings = {
-    /** Whether moving a file or folder to the Trash asks first. */
-    confirmDelete: boolean;
-};
-
-/** Read `files:` with its one key, or throw naming the key that is missing or mistyped. */
-export function filesSettings(config: Record<string, unknown>): FilesSettings {
-    const files = blockOf(config, 'files');
-    return {
-        confirmDelete: settingOf(flagShape, files, 'files', 'confirm_delete', 'true or false')
-    };
+/** Read `open.program_ext`, leaving out each extension or bundle id the entry refuses. */
+export function openSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): OpenSettings {
+    return { programApps: appsOf(settingReader(config, problems)) };
 }
 
 /**
- * Whether a move to the Trash asks first, for the page: `files.confirm_delete`, and true for a
- * configuration that does not carry a usable value, which is what the page holds until the config
- * channel's first message lands, so a delete asks until the setting says it need not.
+ * The extensions a file may carry to be handed to a program, for the page: the same map the server
+ * reads, and none for a configuration that holds no catalog yet, which is what the page holds until
+ * the config channel's first message lands.
  */
-export function confirmDelete(config: Record<string, unknown>): boolean {
-    const files = readAs(mapShape, config.files);
-    return files?.confirm_delete !== false;
+export function programApps(config: Record<string, unknown>): ProgramApps {
+    try {
+        return openSettings(config).programApps;
+    } catch {
+        return {};
+    }
 }
 
-/** The mail connector's settings of config/behavior.yml, every key required. */
+/**
+ * Whether a move to the Trash asks first: `files.confirm_delete`, its default when it is missing
+ * or wrong, and true for a configuration that holds no catalog yet, so a delete asks until the
+ * setting says it need not.
+ */
+export function confirmDelete(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): boolean {
+    try {
+        return settingReader(config, problems).flag('files.confirm_delete');
+    } catch {
+        return true;
+    }
+}
+
+/** The mail connector's settings of config/behavior.yml. */
 export type MailSettings = {
     pollMin: number;
     /** How many threads each of the plate's three signals is read at most. */
     perSignal: number;
 };
 
-/** Read `mail:` with its two keys, or throw naming the key that is missing or mistyped. */
-export function mailSettings(config: Record<string, unknown>): MailSettings {
-    const mail = blockOf(config, 'mail');
+/** Read `mail:`'s two keys, each its default when it is missing or wrong. */
+export function mailSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): MailSettings {
+    const read = settingReader(config, problems);
+    return { pollMin: read.number('mail.poll_min'), perSignal: read.number('mail.per_signal') };
+}
+
+/** Read `changes.keep`, how many change-log lines are kept. */
+export function changesKeep(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): number {
+    return settingReader(config, problems).number('changes.keep');
+}
+
+/**
+ * Read `usage_tiers:`, a map of plan id to label, leaving out each entry the catalog's fields
+ * refuse. The map keeps an own `__proto__` key as the file holds it.
+ */
+export function usageTiers(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): Record<string, string> {
+    const members = settingReader(config, problems).family('usage_tiers');
+    const labels = members.map(([name, label]): [string, string] => {
+        if (typeof label !== 'string') throw noRule('usage_tiers');
+        return [name, label];
+    });
+    return Object.fromEntries(labels);
+}
+
+/** The usage refresher's settings of config/behavior.yml. */
+export type RefreshSettings = { refreshMin: number; model: string };
+
+/** Read `usage_refresh_min` and `usage_refresh_model`, each its default when missing or wrong. */
+export function refreshSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): RefreshSettings {
+    const read = settingReader(config, problems);
     return {
-        pollMin: settingOf(cadenceShape, mail, 'mail', 'poll_min', CADENCE_WORDS),
-        perSignal: settingOf(perSignalShape, mail, 'mail', 'per_signal', PER_SIGNAL_WORDS)
+        refreshMin: read.number('usage_refresh_min'),
+        model: read.text('usage_refresh_model')
     };
 }
 
-/** Read `changes.keep`, how many change-log lines are kept, or throw naming what is wrong. */
-export function changesKeep(config: Record<string, unknown>): number {
-    const changes = blockOf(config, 'changes');
-    return settingOf(wholePositiveShape, changes, 'changes', 'keep', 'a whole number above zero');
+/** Read `git.autofetch_minutes`, the minutes between two automatic fetches, 0 for none. */
+export function autofetchMin(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): number {
+    return settingReader(config, problems).number('git.autofetch_minutes');
 }
 
-/** Read `usage_tiers:`, a map of plan id to label, or throw. */
-export function usageTiers(config: Record<string, unknown>): Record<string, string> {
-    const held = blockOf(config, 'usage_tiers');
-    const refused = Object.entries(held).find(([, value]) => !labelShape.safeParse(value).success);
-    if (refused !== undefined) {
-        throw new Error(`config/behavior.yml: usage_tiers.${refused[0]} must be a string`);
+/**
+ * The size in bytes above which the source editor opens a file as plaintext, and null for a
+ * configuration that holds no catalog yet, which is what the page holds until the config channel's
+ * first message lands; the editor paints plain over that.
+ */
+export function paintLimit(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): number | null {
+    try {
+        return settingReader(config, problems).number('editor.paint_limit_kb') * 1024;
+    } catch {
+        return null;
     }
-    return tiersShape.parse(held);
 }
 
 /** The Processes view's settings of config/behavior.yml. */
@@ -222,49 +374,14 @@ export type ProcessesSettings = {
 };
 
 /**
- * The list of program names the options catalog holds as the default of `processes.patterns`, or
- * undefined when the merged map carries no such default.
- */
-function defaultPatterns(config: Record<string, unknown>): unknown {
-    const entries = byKey(catalogOf(config), 'behavior.yml');
-    return entries === undefined ? undefined : byKey(entries, 'processes.patterns')?.default;
-}
-
-/** The part of a finding that says which file and key it is about. */
-export type FindingAt = Pick<Finding, 'file' | 'key'>;
-
-/**
- * Whether the merge dropped config/behavior.yml: it raised a finding about the whole file, which
- * leaves the merged map without any of the file's keys.
- */
-function behaviorDropped(findings: readonly FindingAt[]): boolean {
-    return findings.some(
-        (finding) => finding.key === '' && /(^|[\\/])behavior\.yml$/.test(finding.file)
-    );
-}
-
-/**
- * Read `processes:` with its one key, or throw naming what is wrong. Without a `processes:` block
- * in a behavior.yml the merge read, the list is the default the options catalog holds; when the
- * merge dropped the file the block is missing for that reason, and the read refuses so the list in
- * force is kept. An empty list is accepted and lists oculus's own processes only.
+ * Read `processes.patterns`; a list holding a name the entry refuses is the default list. An empty
+ * list is accepted and lists oculus's own processes only.
  */
 export function processesSettings(
     config: Record<string, unknown>,
-    findings: readonly FindingAt[]
+    problems: SettingProblem[] = []
 ): ProcessesSettings {
-    const fallback =
-        config.processes === undefined && !behaviorDropped(findings)
-            ? defaultPatterns(config)
-            : undefined;
-    const block = fallback === undefined ? blockOf(config, 'processes') : { patterns: fallback };
-    const names = settingOf(
-        z.array(programNameShape),
-        block,
-        'processes',
-        'patterns',
-        'a list of program names, each without a slash or a space'
-    );
+    const names = settingReader(config, problems).strings('processes.patterns');
     return { patterns: [...new Set(names)] };
 }
 
@@ -275,23 +392,66 @@ export type LatexFormatting = {
     paths: Record<Exclude<Formatter, 'none'>, string>;
 };
 
-/** Read `latex:`'s four formatter keys, or throw naming the key that is missing or mistyped. */
-export function latexFormatting(config: Record<string, unknown>): LatexFormatting {
-    const latex = blockOf(config, 'latex');
-    const path = (key: string): string =>
-        settingOf(labelShape, latex, 'latex', key, 'text, empty for the program on PATH');
+/** Read `latex:`'s four formatter keys, each its default when it is missing or wrong. */
+export function latexFormatting(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): LatexFormatting {
+    const read = settingReader(config, problems);
+    const word = read.text('latex.formatter');
+    const formatter = FORMATTERS.find((one) => one === word);
+    if (formatter === undefined) throw noRule('latex.formatter');
     return {
-        formatter: settingOf(
-            z.enum(FORMATTERS),
-            latex,
-            'latex',
-            'formatter',
-            `one of ${FORMATTERS.join(', ')}`
-        ),
+        formatter,
         paths: {
-            latexindent: path('latexindent_path'),
-            'tex-fmt': path('tex_fmt_path'),
-            badness: path('badness_path')
+            latexindent: read.text('latex.latexindent_path'),
+            'tex-fmt': read.text('latex.tex_fmt_path'),
+            badness: read.text('latex.badness_path')
         }
     };
+}
+
+/** Read `latex.auto_build`, what saving a .tex file does, its default when missing or wrong. */
+export function latexAutoBuild(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): string {
+    return settingReader(config, problems).text('latex.auto_build');
+}
+
+/** Every reader above that takes the problems it finds, in the order of their blocks. */
+const PROBLEM_READERS: ((
+    config: Record<string, unknown>,
+    problems: SettingProblem[]
+) => unknown)[] = [
+    slurmSettings,
+    calendarSettings,
+    searchSettings,
+    openSettings,
+    confirmDelete,
+    mailSettings,
+    changesKeep,
+    usageTiers,
+    refreshSettings,
+    autofetchMin,
+    paintLimit,
+    processesSettings,
+    latexFormatting,
+    latexAutoBuild
+];
+
+/**
+ * What is wrong with every setting above in a merged map. A reader that finds no rule for a key
+ * adds nothing: options.yml's own finding names that file.
+ */
+export function settingProblems(config: Record<string, unknown>): SettingProblem[] {
+    const problems: SettingProblem[] = [];
+    for (const read of PROBLEM_READERS) {
+        try {
+            read(config, problems);
+        } catch {
+            // A key the catalog holds no rule for is options.yml's finding, not a setting's.
+        }
+    }
+    return problems;
 }

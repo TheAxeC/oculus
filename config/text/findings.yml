@@ -64,8 +64,17 @@ text:
             icon_not_glyph: '{0} is not a name in config/catalogs/glyphs.yml'
             icon_not_shipped: the icon package ships no {0}.svg
             skip_permissions_retired: 'chat.skip_permissions is not read; the key is tasks.skip_permissions'
-            paint_limit: editor.paint_limit_kb must be a number above zero; the editor paints without colour until it is
-            editor_value: '{0} is outside the values the editor takes; the default is used'
+            setting_default: '{0} must be {1}; the default is used'
+            setting_empty: '{0} must not be empty; the default is used'
+            setting_block: '{0} must be a map; each of its keys takes its default'
+            setting_family: '{0} must be a map; none of its entries is read'
+            setting_entry: '{0} must be {1}; the entry is not read'
+            setting_field: '{0} must be {1}; the field is not read'
+            local_row: '{0} must be {1}; the row is not read'
+            local_repeat: '{0} repeats the label of an earlier row; the row is not read'
+            local_unparsed: does not parse; every key takes its default
+            local_not_a_map: is not a map of keys; every key takes its default
+            local_unreadable: 'could not be read ({0}); every key takes its default'
             editor_unknown_language: '{0} is not a language the editor colours; its record is not read'
             editor_unknown_field: '{0} is not a field of a language record; it is not read'
             editor_not_a_map: '{0} is not a map; it is not read'
@@ -78,6 +87,47 @@ text:
             nesting_not_a_map: patterns is not a map of parent name to the names nested under it; no file is nested
             nesting_key: pattern {0} has no usable parent name (empty, or holding a slash); the pattern is not read
             nesting_value: pattern {0} does not name its nested files as a list of non-empty texts; the pattern is not read
+        options:
+            control: control {0} is not one of the controls; the option is drawn as a text box
+            control_missing: the option names no control; it is drawn as a text box
+            source: the list {0} is not one the Settings view can draw; the option is drawn as a text box
+            no_values: a choice or multi with no values, values_from or values_by; the option is drawn as a text box
+            no_description: the entry or field has no description; a field is drawn as a text box
+            no_fields: a records field names no fields; it is drawn as a text box
+            range: min is above max; the option is drawn as a text box
+            slots: slots is not a list of words; the option is drawn as a text box
+            heading_missing: the option names no heading; it is listed under Without a heading
+            heading_unknown: the heading {0} is not one the Settings view lists; the option is listed under Without a heading
+            whole: whole is not true; the option is drawn as a text box
+            form: 'the form {0} is not one of program, extension, bundle_id; the option is drawn as a text box'
+        words:
+            boolean: true or false
+            number: a number
+            whole: a whole number
+            whole_range: 'a whole number from {0} to {1}'
+            whole_min: 'a whole number of at least {0}'
+            whole_max: 'a whole number of at most {0}'
+            range: 'a number from {0} to {1}'
+            range_min: 'a number of at least {0}'
+            range_max: 'a number of at most {0}'
+            list_items: 'a list in which each item is {0}'
+            text: text
+            form_program: a program name with no slash or white space
+            form_program_list: a list of program names with no slash or white space
+            form_extension: an extension with its dot
+            form_bundle_id: the bundle id of an application
+            words: a list of words
+            numbers: a list of numbers
+            strings: a list of texts
+            records: a list of maps
+            choice: 'one of {0}'
+            source: 'one of the items of the list {0}'
+            glyph: a glyph name of config/catalogs/glyphs.yml
+            hue: a hue name of the palette
+            colour: a colour of the palette that is a hue
+            path: an absolute path or one that starts with ~/
+            hub_path: a path inside the hub, written relative to it
+            slots: 'a list of exactly {0} items'
         shape:
             is_null: 'null'
             is_list: a list

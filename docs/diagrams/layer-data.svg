@@ -76,7 +76,7 @@
 <g id="node13" class="node">
 <title>folder data/sources to folder data/helpers</title>
 <polygon fill="none" stroke="none" points="167.88,-498.92 154.12,-498.92 154.12,-486.44 167.88,-486.44 167.88,-498.92"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="161" y="-490.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">25</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="161" y="-490.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">26</text>
 </g>
 <!-- folder data/sources&#45;&gt;folder data/sources to folder data/helpers -->
 <g id="edge16" class="edge">
@@ -87,7 +87,7 @@
 <g id="node14" class="node">
 <title>folder data/sources to folder data/prose</title>
 <polygon fill="none" stroke="none" points="183.88,-392.84 174.12,-392.84 174.12,-380.36 183.88,-380.36 183.88,-392.84"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="179" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="179" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
 </g>
 <!-- folder data/sources&#45;&gt;folder data/sources to folder data/prose -->
 <g id="edge18" class="edge">
@@ -192,7 +192,7 @@
 <g id="node21" class="node">
 <title>folder data/helpers to folder data/prose</title>
 <polygon fill="none" stroke="none" points="120.88,-180.68 111.12,-180.68 111.12,-168.2 120.88,-168.2 120.88,-180.68"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="116" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="116" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
 </g>
 <!-- folder data/helpers&#45;&gt;folder data/helpers to folder data/prose -->
 <g id="edge32" class="edge">

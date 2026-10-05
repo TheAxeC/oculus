@@ -43,26 +43,6 @@ dispatch:   # steps in flight, up to seven (Z423)
   round3_builder: abb2cc439fd4f1181 resumed 2026-10-05, served claude-sonnet-5-5 (the transcript's message.model, read after the resume)
   round3_cases: agents/briefs/X3f-round3-cases.md (Open in Program only on mapped extensions, Blame only on tabs with a gutter, Open Preview as the row menu's)
   round3_builder_usage: first run handed back (cases 1, 3, 4, 5), 310,369 tokens, 29 tool uses, 4.0 min, 0 full-list runs; resumed with the cases ruling
-- step: S5
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a6db7168e2d955eea (builder, launched 2026-10-05)
-  worktree: .agents/worktrees/S5
-  base: 6005baee6
-  launched: 2026-10-05
-  report: agents/reviews/S5-report.md
-  builder_usage: first run handed back, 105,563 tokens, 75 tool uses, 10.0 min, 0 full-list runs
-  brief_check: agents/reviews/S5-brief-check.md, claude-opus-5-5, 273,684 tokens, 104 tool uses, 12.6 min
-  q119_brief_check: agents/reviews/Q119-brief-check.md, claude-opus-5-5 (a5b40ed74302680f1), 280,042 tokens, 91 tool uses, 15.1 min
-  widened: Z468 folds Q119 (agents/briefs/Q119.md, its brief check running) and Q122 into this step; they go to the builder as repair round 1 with its review findings
-  reviewer_report: agents/reviews/S5-refuter.md, claude-opus-5-5 (ab608db77fb2265cd), 365,219 tokens, 97 tool uses, 22.0 min
-  landing: not-started
-  builder_usage: 289,845 tokens, 407 tool uses, 82.1 min, checks.sh twice and test:quick four times
-  round1_builder_usage: 136,854 tokens, 679 tool uses, 112.8 min, the verify list 4 times; look and cases 62 (second half) and 63 not done (need a drawn view)
-  q119_closing_round2: ad7f5c6d3c49f4f40, 298,145 tokens in all, 160 tool uses, 36.9 min (C1 and C3 written in)
-  round: 1 (agents/briefs/Q119.md: S5's review findings, Q119, Q122, Z505, Z506, Z509; Z507 open before landing)
-  round1_reviewer: agents/reviews/S5-refuter.md (Repair round 1, refuted), claude-opus-5-5 (a78d8970b3fff491c, stopped by mistake and resumed), 191,100 tokens, 114 tool uses, 20.1 min; no item or case violated, Spec 3, Proof 3, Standards 3, Behaviour 1, each small; S5 lands after X3f (Axel)
 - step: D20
   executor: agent
   worker: claude:sonnet at ordo-high

@@ -7,27 +7,30 @@
 import type * as Monaco from 'monaco-editor';
 import type { EditorAction, EditorIndent } from './types';
 
-/** The options a parent hands an editor; a diff editor is handed no minimap. */
+/**
+ * The options a parent hands an editor, each left to Monaco's own while absent: a diff editor is
+ * handed no minimap, and a parent that has not yet read the configuration hands no option at all.
+ */
 export type EditorOptions = {
-    wordWrap: 'off' | 'on' | 'wordWrapColumn' | 'bounded';
-    rulers: number[];
+    wordWrap?: Monaco.editor.IEditorOptions['wordWrap'];
+    rulers?: number[];
     minimap?: boolean;
-    renderWhitespace: 'none' | 'boundary' | 'selection' | 'trailing' | 'all';
-    stickyScroll: boolean;
+    renderWhitespace?: Monaco.editor.IEditorOptions['renderWhitespace'];
+    stickyScroll?: boolean;
 };
 
 /** An editor that takes options: the code editor and the diff editor both do. */
 type Updatable = { updateOptions(options: Monaco.editor.IEditorOptions): void };
 
-/** The options as Monaco's option names, leaving out the minimap when none is handed. */
+/** The options as Monaco's option names, leaving out each one that is not handed. */
 export function monacoOptions(options: EditorOptions): Monaco.editor.IEditorOptions {
-    return {
-        wordWrap: options.wordWrap,
-        rulers: options.rulers,
-        ...(options.minimap === undefined ? {} : { minimap: { enabled: options.minimap } }),
-        renderWhitespace: options.renderWhitespace,
-        stickyScroll: { enabled: options.stickyScroll }
-    };
+    const named: Monaco.editor.IEditorOptions = {};
+    if (options.wordWrap !== undefined) named.wordWrap = options.wordWrap;
+    if (options.rulers !== undefined) named.rulers = options.rulers;
+    if (options.minimap !== undefined) named.minimap = { enabled: options.minimap };
+    if (options.renderWhitespace !== undefined) named.renderWhitespace = options.renderWhitespace;
+    if (options.stickyScroll !== undefined) named.stickyScroll = { enabled: options.stickyScroll };
+    return named;
 }
 
 /** Put the options on a live editor in one update. */

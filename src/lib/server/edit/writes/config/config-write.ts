@@ -19,6 +19,7 @@ import {
 import type { WriteOutcome, WriteTarget } from '../../writes.ts';
 import { writeMute } from './audit-mute.ts';
 import { writeConfigKey } from './config-key.ts';
+import type { SourceInputs } from './config-sources.ts';
 import { writeConfigValue } from './config-value.ts';
 import { writeDeck } from './deck.ts';
 import { writeRail } from './rail.ts';
@@ -47,6 +48,11 @@ function settled(kind: string, run: () => Written | { error: string }): ConfigAn
     return { kind, outcome: { found: true, ...outcome } };
 }
 
+/** What the target holds that the lists of a choice, a multi or a suggestion are built from. */
+function sourcesOf(into: WriteTarget): SourceInputs {
+    return { hub: into.hub, projects: into.projects, entities: into.entities };
+}
+
 /** The answer to a body that is a write of a configuration file, or null for any other body. */
 export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | null {
     const deck = deckWrite(body);
@@ -68,13 +74,20 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
     const setting = configKeyWrite(body);
     if (setting !== null) {
         return settled('config-key', () =>
-            writeConfigKey(into.engine, setting.file, setting.key, setting.value)
+            writeConfigKey(into.engine, setting.file, setting.key, setting.value, sourcesOf(into))
         );
     }
     const family = configValueWrite(body);
     if (family !== null) {
         return settled('config-value', () =>
-            writeConfigValue(into.engine, family.file, family.key, family.value, family.base)
+            writeConfigValue(
+                into.engine,
+                family.file,
+                family.key,
+                family.value,
+                family.base,
+                sourcesOf(into)
+            )
         );
     }
     const roots = rootsWrite(body);

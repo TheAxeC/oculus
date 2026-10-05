@@ -10,28 +10,14 @@
 // leaving it to the machine's default for the type, is what keeps a per-file Open With choice or a
 // changed default from handing a document to a program that runs it.
 //
-// The page reads the map out of the configuration it was sent, which is empty until the config
+// The map is read out of the configuration by `programApps` of data/sources/config/settings.ts, the
+// reader the page and the server both use, so an extension the cards offer is one the open endpoint
+// takes. The page reads it out of the configuration it was sent, which is empty until the config
 // channel's first message lands, so no control is drawn before then; the server reads the map from
 // the configuration on disk at every request, so an edit reaches both.
 
-import { z } from 'zod';
-import { fields, isMap } from '../guards.ts';
-
 /** An extension with its dot, lowercased, to the bundle id of the application that opens it. */
 export type ProgramApps = Record<string, string>;
-
-/**
- * What an extension key of the map looks like: a dot and one segment with no dot, slash or space.
- */
-const EXTENSION = /^\.[^./\s]+$/;
-
-/**
- * What a bundle id looks like: two or more dot-separated segments of letters, digits and dashes.
- */
-const BUNDLE_ID = /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
-
-/** A bundle id as the map holds it: a string of that shape. */
-const bundleIdShape = z.string().regex(BUNDLE_ID);
 
 /**
  * The extension of the last segment of a path, lowercased and with its dot, or the empty string for
@@ -45,28 +31,6 @@ export function extensionOf(name: string): string {
             .at(-1) ?? name;
     const at = base.lastIndexOf('.');
     return at <= 0 ? '' : base.slice(at).toLowerCase();
-}
-
-/** Whether a string has the shape of an application's bundle id. */
-export function isBundleId(value: string): boolean {
-    return bundleIdShape.safeParse(value).success;
-}
-
-/**
- * The map `open.program_ext` holds, its extensions lowercased, and null for a configuration
- * carrying no usable map: a missing block, a value that is not a map, a key that is not an
- * extension with its dot, or a value that is not a bundle id.
- */
-export function programApps(config: Record<string, unknown>): ProgramApps | null {
-    const held = fields(config.open).program_ext;
-    if (!isMap(held)) return null;
-    const apps: ProgramApps = {};
-    for (const [key, value] of Object.entries(held)) {
-        const app = bundleIdShape.safeParse(value);
-        if (!EXTENSION.test(key) || !app.success) return null;
-        apps[key.toLowerCase()] = app.data;
-    }
-    return apps;
 }
 
 /** The bundle id of the application a file of this name opens in, or null when none is named. */

@@ -12,8 +12,10 @@ import type { EditorHandle } from '$lib/ui/controls/editor/types';
 export type AskDeps = {
     /** Whether the text may be written, which is when the editor is asked anything. */
     editing: boolean;
-    /** The indentation the text is shown in, whose size a conversion keeps. */
-    indent: Indent;
+    /**
+     * The indentation the text is shown in, whose size a conversion keeps; null before it is known.
+     */
+    indent: Indent | null;
     editor: EditorHandle | undefined;
     openCommit: () => void;
     setLanguage: (language: string) => void;
@@ -31,6 +33,7 @@ export function performAsk(ask: EditorAsk, deps: AskDeps): void {
     } else if (!deps.editing) {
         return;
     } else if (ask.kind === 'convert') {
+        if (deps.indent === null) return;
         deps.setIndent({ tabs: ask.tabs, size: deps.indent.size });
         deps.editor?.perform(ask);
     } else {

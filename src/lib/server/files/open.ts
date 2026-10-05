@@ -30,11 +30,8 @@ import { isMap, scalar } from '../../data/helpers/guards.ts';
 import { execFile } from 'node:child_process';
 import { closeSync, openSync, readSync, realpathSync, statSync } from 'node:fs';
 import { basename, isAbsolute, resolve } from 'node:path';
-import {
-    isBundleId,
-    programFor,
-    type ProgramApps
-} from '../../data/helpers/files/opens-in-program.ts';
+import { programFor, type ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
+import { hasForm } from '../../data/sources/config/catalog/value-rule.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { HUB_ROOT, resolveRootPath, type Root } from './files.ts';
 
@@ -240,7 +237,7 @@ export async function openable(
         if (realpathSync(path) !== path) return false;
         if (target.kind === 'folder') return statSync(path).isDirectory();
         if (target.kind === 'reveal') return fileOrFolder(path);
-        return isBundleId(target.app) && (await safeFile(path, reader));
+        return hasForm('bundle_id', target.app) && (await safeFile(path, reader));
     } catch {
         return false;
     }

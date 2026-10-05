@@ -34,14 +34,24 @@ text:
         editor_group_down: 'Move key {0} down'
         editor_group_key: 'Key {0}'
         editor_group_up: 'Move key {0} up'
+        editor_item: 'Item {0} of {1}'
+        editor_item_down: 'Move item {0} of {1} down'
+        editor_item_remove: 'Remove item {0} of {1}'
+        editor_item_up: 'Move item {0} of {1} up'
         editor_kept: 'Kept as the file has it:'
         editor_remove: 'Remove entry {0}'
         editor_remove_group: 'Remove key {0}'
         editor_save: Save
+        editor_stuck: 'The control cannot show these values, so they are kept as the file has them:'
+        editor_unread: 'These fields hold text that is not valid YAML, so Save will refuse until they are mended:'
         editor_up: 'Move entry {0} up'
+        list_failed: 'The list could not be read: {0}'
+        list_loading: The list is still being read.
         local_tag: This machine
+        not_in_list: not in the list
         texts_about: The words the views draw, one file per view, in config/text/ and the folders under it.
         texts_title: Texts
+        unset: Not set
     workbench:
         catalogue_hint: A click opens the view on the page you came from and shows that page; a shift-click opens it in a pane beside, on that page. Drag a view onto a pane, or right-click it, to open it on this page.
         catalogue_key: '{0}, key {1}'
@@ -109,7 +119,6 @@ text:
         settings_browser_wallpaper_about: The wallpaper behind the panels and the slight transparency that goes with it. Offered under the themes that show one.
         settings_changed_since: 'The file changed since this edit was started, so it was not saved.'
         settings_draft_dropped: 'The file now holds this setting in a form the editor does not draw, so the unsaved edit was dropped.'
-        settings_choice_empty: Not chosen
         settings_clear: Clear search
         settings_contents: Settings contents
         settings_copy_id: Copy Setting ID
@@ -133,17 +142,38 @@ text:
         settings_found_none: No Settings Found
         settings_found_one: 1 Setting Found
         settings_gear: More actions
+        settings_heading_appearance: Appearance
+        settings_heading_boards: Boards and audit
+        settings_heading_calendar: Calendar and mail
+        settings_heading_cluster: Cluster
+        settings_heading_editor: Editor
+        settings_heading_machine: This machine
+        settings_heading_presentation: Presentation
+        settings_heading_rail: Rail and pages
+        settings_heading_sessions: Sessions and usage
+        settings_heading_sources: Project sources
+        settings_heading_terminal: Terminal
+        settings_heading_unheaded: Without a heading
         settings_list_failed: 'The folder {0} could not be listed: {1}'
         settings_list_loading: 'Reading the folder {0}...'
         settings_loading: 'Reading {0}...'
-        settings_mismatch_choice: 'The file holds {0}, which is not one of the choices.'
         settings_mismatch_list: 'The file holds {0}, which is not a list.'
         settings_mismatch_number: 'The file holds {0}, which is not a number.'
         settings_mismatch_text: 'The file holds {0}, which is not text.'
         settings_mismatch_toggle: 'The file holds {0}, which is not true or false.'
         settings_missing: 'This key is not set in {0}.'
         settings_network: 'Not written: the server could not be reached.'
+        settings_blank: 'It must not be blank.'
+        settings_no_file: 'The file {0} is not in the hub.'
+        settings_no_folder: 'The folder {0} is not in the hub.'
+        settings_not_a_path: 'It must be an absolute path or one that starts with ~/.'
+        settings_not_hub_path: 'It must be a path inside the hub: not absolute, with no .. and no backslash.'
         settings_not_number: 'That is not a decimal number, so nothing was written.'
+        settings_not_whole: 'It must be a whole number.'
+        settings_not_program: 'It must be a program name, with no slash and no white space.'
+        settings_not_extension: 'It must be an extension with its dot, such as .pdf.'
+        settings_not_bundle_id: 'It must be the bundle id of an application, such as com.apple.Preview.'
+        settings_not_this_kind: 'The value is not of the kind this setting takes.'
         settings_not_yaml: 'Entry {0}, {1}: the text is not valid YAML.'
         settings_origin_also: 'Also set in {0}: {1}'
         settings_origin_cut: 'longer than the file window reads'
@@ -155,6 +185,9 @@ text:
         settings_origin_unread: 'Not read: {0}/{1}: {2}'
         settings_origin_value: 'outside the values the field takes'
         settings_refused: 'Not written: {0}'
+        settings_range: 'It must be a number from {0} to {1}.'
+        settings_range_max: 'It must be a number of at most {0}.'
+        settings_range_min: 'It must be a number of at least {0}.'
         settings_reset: Reset Setting
         settings_search: Search settings
         settings_text_size_value: '{0}%'
@@ -163,3 +196,4 @@ text:
         settings_unparsed: '{0} is not valid YAML, so its settings are not listed: {1}'
         settings_unreadable: '{0} could not be read: {1}'
         settings_unwritable: 'Not written: {0} could not be written.'
+        settings_where: 'Entry {0}, {1}:'
