@@ -1087,3 +1087,400 @@ All of the following are gone:
 - The status list and the copy of the fix diff in the session's scratchpad.
 
 No credential or `.env` file was copied. O30's worktree reads the same as before: the shasum and status are under "Where the probes run". The main checkout was not changed: `git status --short` there printed nothing after the cleanup. The red command, run on O30's tree with the restart, is the check for whoever lands the fix.
+
+# Diagnosis: O30's landing red line, a dialog in place of the window in start.test.ts
+
+Every quoted command output carries `<REDACTED>` in place of the value of a secret in it, as the rules file's rule on secrets in quoted command output says. A diagnosis of the same step later is appended below under its own heading at the level of the title above, `# Diagnosis: <the symptom in a few words>`, which names its finding or quotes its part.
+
+Diagnosis agent: adb7a3d3f5225357b, claude-opus-5-5, 270,792 tokens, 87 tool uses, 64.1 min
+
+**Summary for the session.**
+- **Cause, found.** The landing ran two `vite build`s in one checkout at the same time.
+  - `tests/tiers/landing.mjs` runs `npm run test:slow` in its own lane, beside the lane `npm run check; npm run build`.
+  - Since O30, `test:slow` builds the server into that same checkout: every start of the app from the checkout runs `vite build` (`src/desktop/app.ts:284-294`, `src/desktop/server/build.ts`).
+  - The lane's build empties `.svelte-kit/output` at its start (`@sveltejs/kit` `src/exports/vite/index.js:1218-1224`, `rimraf(out)` in `buildStart`). The app's build was still reading that folder, so it failed.
+  - The app then showed the dialog `build_failed`. The harness's recorder never answers a dialog, and `printed()` in `start.test.ts` fails only when the process closes, so case 1 waited the full 600000 ms.
+- **Fix of the red line, two changes, for `/spec` to carry into O30's new brief:**
+  - (A) `landing.mjs` runs `test:slow` in the lane after the type check and the build.
+  - (B) `printed()` in `start.test.ts` fails as soon as the app records a dialog that came before the text the row waits for.
+- **The open item, for Axel.** The app's build from the checkout shares its output folders with any build in the same checkout, so a `npm run build` during `npm run app`'s start still fails it. With fixes A and B in the tree, the shrunk red command is still red. Ending that needs output folders of the app's own, which is a folder and flag shape nothing names yet. It is raised below with options.
+- **Two further findings:**
+  - Both dialogs name a useless line as the reason: `}` and `Node.js v24.21.0`. This is in O30's own code.
+  - The diagrams case has a 60 s limit of its own, against the documented no-limit rule for tree checks. This is on main and is not O30's.
+
+## Symptom
+
+From `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/plan.md`, under "- O30 native window (I)", word for word:
+
+```
+  - Step 0, landing 2026-10-06 backed out before main was touched: in the landing worktree `.agents/worktrees/gate-O30` (main 9ca2cf195 with O30's range b5299f4e5..815ac40cd and the fixes at landing for S2-1, P2-3, St2-1, St2-2, B2-1 to B2-4, Z612 and Z619, saved whole as `agents/reviews/O30-gate.patch`), `npm run test:landing` failed one case: `tests/server/desktop/start.test.ts` 'brings the running app forward on a second start and starts no server' timed out at 600000 ms, with the recorder's line `recorded, nothing shown: [screen] dialog`. `npm run test:checks` failed in the same run on a 60 s timeout of `diagrams.test.ts` and passed when run alone (226 passed, 3 skipped). Cause not known; diagnosed with `/diagnose oculus/migration O30 red line`.
+```
+
+These are the lines of the landing log that carry the symptom (`.../scratchpad/o30-gate.log`). The test's own `afterEach` prints one `recorded` line per case that started the app; the first one belongs to case 1:
+
+```
+recorded, nothing shown: [screen] dialog
+recorded, nothing shown: [screen] dialog
+recorded, nothing shown: none
+recorded, nothing shown: [screen] dialog
+ > |unit| tests/server/desktop/start.test.ts (5 tests | 1 failed) 686491ms
+     x brings the running app forward on a second start and starts no server 600211ms
+ FAIL  |unit| tests/server/desktop/start.test.ts > the desktop app starting and stopping > brings the running app forward on a second start and starts no server
+Error: Test timed out in 600000ms.
+```
+
+The same log shows that the lane `npm run check, then npm run build` passed (122.6 s) while `npm run test:slow` ran beside it (703.2 s).
+
+The state file's dispatch entry for O30 reads `landing: backed-out (the landing check failed in .agents/worktrees/gate-O30, main untouched; ...)` (`orchestrator-state.md:44`).
+
+## Where the probes run
+
+The probes ran in a scratch copy, `$TMPDIR/diagnose.b8PoTY/tree`:
+- It is a detached worktree of the main checkout at HEAD `c8432ed9f` ("Start the diagnosis of O30's landing red line"). It differs from 9ca2cf195 only under `tools/oculus/.scratch`.
+- `agents/reviews/O30-gate.patch` was applied to it with `git apply --3way --allow-empty`, which changed 123 paths.
+
+The gate patch was applied in place of Steps 3's red-line diff because it is the landing worktree's whole state relative to main. It already holds O30's range. Comparing each of the 118 files of `git diff --name-only b5299f4e5 O30` with the copy gave:
+- 94 files identical to the O30 branch;
+- 24 files differing, which are the landing fixes and main's own changes since b5299f4e5 (DESIGN.md, HELP.md, the diagrams, package.json and the lockfile, `src/desktop/windows/bridge.ts` and `windows.ts`, and eleven client files).
+
+Applying the step diff first and then the gate patch would have applied the step twice.
+
+`diff -rq` of `src`, `tests` and `package.json` between the copy and `.agents/worktrees/gate-O30/tools/oculus` printed nothing.
+
+`node_modules` is a `cp -c` clone of the gate worktree's. Node is `$HOME/.nvm/versions/node/v24.21.0/bin`.
+
+Paths redirected under `$TMPDIR`:
+- `HOME` and `TMUX_TMPDIR` for every load lane;
+- for the app, a scratch HOME, hub, engine and tmux folder per run.
+
+The app's port is 18917, not 8787, 8790 or 8817 to 8819.
+
+**The Electron app was never started.** The app's main-process code ran under plain Node with Electron's modules replaced by a stub, through a module hook that resolves `electron` to the stub. The stub stands in as follows:
+- `app` holds its event loop open, as Electron's main loop does, and `whenReady()` resolves at once.
+- `BrowserWindow`'s page load fetches the URL and then emits `ready-to-show`.
+- `utilityProcess.fork` is Node's `fork` with a `process.parentPort` over the IPC channel.
+- `dialog`, `Menu`, `session`, `screen` and `ipcMain` are no-ops.
+
+The app ran through the unchanged `tests/server/desktop/app-harness.ts`, so its recorder printed the `[screen]` lines as in the test. The build (`vite build`), the server (`src/server.ts`) and `src/desktop/*` are the real code.
+
+`start.test.ts` was not run. No window was opened, no focus was taken, and `osascript` was not run.
+
+## Red command
+
+The red command is case 1's first start through the stubbed app, with the scratch world the test builds. It is joined by a second `npm run build` in the same checkout, started 12 s after the app's build prints its first line. That second build stands in for the landing lane's build.
+
+```
+cd $TMPDIR/diagnose.b8PoTY/diag && HOME=$D/home TMUX_TMPDIR=$D/tmuxdir CHECKOUT=$D/tree/tools/oculus COMPETE_AFTER_MS=12000 LIMIT_MS=200000 node first-start.mjs
+```
+
+`first-start.mjs` reproduces `start.test.ts`'s `scratch(PORT)` and `app()`: an engine copied without `local.yml`, then a `local.yml` naming the hub and the port; the env `HOME`, `TMUX_TMPDIR`, `USER`, `PATH` and `OCULUS_TEST_DEFAULT_PORT`; and spawning `app-harness.ts --engine <engine>`. It waits for `oculus on http://127.0.0.1:<port>` and `[screen] window.show`, as case 1 does, and prints three parts:
+- part 1, whether `oculus on` was printed;
+- part 2, the `[screen]` lines, which are what the test's `recorded, nothing shown:` line prints;
+- part 3, whether the app is still running 10 s after a dialog, which is what keeps `printed()` waiting.
+
+It exits 1 on red: a dialog recorded, no `window.show`, and the app still running.
+
+Runs, with the output of each quoted:
+
+```
+=== run 1
+exit 1
+the second build started at 14.2s, ended at 37.7s, exit 0
+part 1, the first start printed "oculus on http://127.0.0.1:18917": no
+part 2, recorded, nothing shown: [screen] dialog
+part 3, the app still running 10 s after the dialog: true
+the dialog's message: 22.9s dialog: The build of the oculus server failed: }
+RED: a dialog in place of window.show, the app left waiting
+22.7s [build] error during build:
+22.7s [build] Error: Could not load .../tree/tools/oculus/.svelte-kit/output/server/manifest.js: ENOENT: no such file or directory, open '.../tree/tools/oculus/.svelte-kit/output/server/manifest.js'
+=== run 2
+exit 1
+the second build started at 14.6s, ended at 38.2s, exit 0
+part 1, the first start printed "oculus on http://127.0.0.1:18917": no
+part 2, recorded, nothing shown: [screen] dialog
+part 3, the app still running 10 s after the dialog: true
+the dialog's message: 23.4s dialog: The build of the oculus server failed: }
+RED: a dialog in place of window.show, the app left waiting
+23.2s [build] Error: Could not load .../.svelte-kit/output/server/manifest.js: ENOENT: no such file or directory, ...
+=== run 3
+exit 1
+the second build started at 14.8s, ended at 38.7s, exit 0
+part 1, the first start printed "oculus on http://127.0.0.1:18917": no
+part 2, recorded, nothing shown: [screen] dialog
+part 3, the app still running 10 s after the dialog: true
+the dialog's message: 24.8s dialog: The build of the oculus server failed: }
+RED: a dialog in place of window.show, the app left waiting
+24.6s [build] Error: Could not load .../.svelte-kit/output/server/manifest.js: ENOENT: no such file or directory, ...
+```
+
+In every run the second build exits 0, as the landing's check-then-build lane passed.
+
+**How the red command was reached, and the failure rate.** The symptom was seen only sometimes: the same suite passed in an earlier gate run.
+
+1. The stubbed first start alone, with no load, was green: `part 2, recorded, nothing shown: [screen] window.show`, `oculus on` at 43.8 s.
+2. With the landing's six other lanes running beside it in the copy (`load.mjs`: `npm test`, `npm run test:checks`, `npm run check; npm run build`, `format:check`, `lint`, the ASCII gate), started together, 2 runs gave 1 red:
+   - The red run: `part 2, recorded, nothing shown: [screen] dialog`, `the dialog's message: 63.2s dialog: The build of the oculus server failed: }`, with the lane's `@@ build starts at 54s; @@ build ends at 94s`.
+   - The green run: lane build `starts at 29s`, `window.show` at 48.0 s.
+3. With the lane's build started a set time after the app's build printed its first line (`COMPETE_AFTER_MS`), a first pass at 0, 8, 16 and 24 s gave red, red, red, green. At 0 s the dialog was a different one: `dialog: The oculus server ended (exit code 1): Node.js v24.21.0`. The app's build had passed, and the server it started from `build/` died while the second build rewrote that folder.
+4. A sweep, 2 runs per offset:
+
+```
+offset 4s run a: RED ... | dialog: The build of the oculus server failed: }
+offset 4s run b: RED ... | dialog: The build of the oculus server failed: }
+offset 8s run a: GREEN: window.show recorded, no dialog |
+offset 8s run b: GREEN: window.show recorded, no dialog |
+offset 12s run a: RED ... | dialog: The build of the oculus server failed: }
+offset 12s run b: RED ... | dialog: The build of the oculus server failed: }
+offset 16s run a: RED ... | dialog: The build of the oculus server failed: }
+offset 16s run b: RED ... | dialog: The build of the oculus server failed: }
+offset 20s run a: GREEN: window.show recorded, no dialog |
+offset 20s run b: GREEN: window.show recorded, no dialog |
+```
+
+Over the sweep, 6 of 10 runs were red. At 12 s it was 2 of 2, and then 3 of 3 in the runs above, so 5 of 5. Earlier, 3 runs at 8 s were all green, and one at 8 s in the first pass was red. The window between the two builds is a few seconds wide, and 12 s sits inside it.
+
+The record cannot say which dialog the gate's case 1 showed. Its message is printed only on the app's output, and the test prints that output only when the process closes. The `[screen] dialog` line and the 600 s wait match both `build_failed` and `server_exited`, and both come from the same two builds in one checkout.
+
+Runs after the tightening: the red command already runs unattended in about 38 s. The network is cut to the app's own scratch port. Time and seeds play no part. The checkout's own `.svelte-kit` and `build/` cannot be isolated, since they are the symptom. The three runs above are the runs after the tightening.
+
+## No red command
+
+Not applicable.
+
+## Shrunk case
+
+| Cut | Result of the red command after it | Kept or put back |
+|---|---|---|
+| The landing's other lanes (`npm test`, `test:checks`, `format:check`, `lint`, the ASCII gate) | red: the red command above runs without them, 3 of 3 | cut |
+| The `npm run check` half of the check-then-build lane (as the second command, in place of the build) | green at offsets 0, 4, 8, 12 and 16 s: `check-only-0: GREEN` ... `check-only-16: GREEN` | cut (the build half is the part needed) |
+| The `port:` line of the scratch `local.yml` (port from `--default-port`) | red: `cut-port-line: RED ... dialog: The build of the oculus server failed: }` | cut |
+| The second build | green: `cut-second-build: GREEN: window.show recorded, no dialog` | put back |
+| The rest of `start.test.ts` (the second start, cases 2 to 5) | red without them; the red command is the first start alone | cut |
+
+The shrunk case, as it stands, has two parts, each needed for the red:
+- the app's first start from the checkout, whose `vite build` writes into the checkout;
+- one `npm run build` in the same checkout that starts while the app's build runs.
+
+## Hypotheses
+
+1. If the two builds share `.svelte-kit/output` (each build's `buildStart` runs `rimraf('.svelte-kit/output')`, kit `vite/index.js:1218-1224`, and the adapter step of the app's build then reads `.svelte-kit/output/server/*`), then giving the second build a `kit.outDir` of its own turns the red command green. Falsified by: red with the change, on the same ENOENT under the app's `.svelte-kit/output`.
+2. If the shared `build/` folder is what fails the start (adapter-node runs `builder.rimraf(out)` with `out = 'build'`, `adapter-node/index.js:24,30-33`), then giving the second build an adapter `out` of its own, with `.svelte-kit` still shared, turns the red command green. Falsified by: red with the change.
+3. If CPU load from a second build fails the app's build or start, and not shared files, then the same second build at the same moment run in a clone of the oculus folder, sharing no output, leaves the red command red. Falsified by: green with the build in the clone.
+
+A fourth candidate was falsified by the shrink and is not listed: that `svelte-kit sync` rewriting `.svelte-kit/generated` breaks the app's build. `npm run check` (sync plus svelte-check) as the second command was green at five offsets.
+
+The reply to the hypotheses, or "none, no person present": none, no person present.
+
+The second list, when every hypothesis was falsified, in the same form: not needed.
+
+## Probes
+
+| Hypothesis rank | The one change, as a diff | The run | Result |
+|---|---|---|---|
+| 1 | `vite.config.ts`: `-            adapter: development.adapter` `+            adapter: development.adapter,` `+            outDir: process.env.DIAG_7C1E_OUT ?? '.svelte-kit' // DIAG-7c1e`, the red command with `COMPETE_CMD='DIAG_7C1E_OUT=.svelte-kit-diag7c1e npm run build'` (the app's build unchanged, on `.svelte-kit`) | 3 runs: `the second build started at 14.5s, ended at 38.1s, exit 0` / `part 2, recorded, nothing shown: [screen] window.show` / `GREEN`; run 2 `window.show`, `oculus on` at 25.7 s, GREEN; run 3 `oculus on` at 25.1 s, GREEN | still standing: green 3 of 3 with the change, red 5 of 5 at the same offset without it |
+| 2 | `src/lib/server/root/vite-plugin.ts:48`: `-    const node = adapter();` `+    const node = adapter({ out: process.env.DIAG_7C1E_BUILD ?? 'build' }); // DIAG-7c1e`, the red command with `COMPETE_CMD='DIAG_7C1E_BUILD=build-diag7c1e npm run build'` | 3 runs, each `RED: a dialog in place of window.show, the app left waiting`, `dialog: The build of the oculus server failed: }`, `Error: Could not load .../.svelte-kit/output/server/manifest.js: ENOENT` | falsified |
+| 3 | No tree change: the second command is `cd $D/copy/oculus && npm run build`, an APFS clone of the oculus folder with no `.svelte-kit` or `build` | 3 runs, each `GREEN: window.show recorded, no dialog` (second build started at 13.9, 23.7 and 14.8 s) | falsified |
+
+Each change was undone after its runs: `git diff -- vite.config.ts src/lib/server/root/vite-plugin.ts | wc -l` printed `0` both times, and `.svelte-kit-diag7c1e` and `build-diag7c1e` were removed.
+
+## Cause
+
+Hypothesis 1, together with the trigger in the landing. Two `vite build`s ran in one checkout at the same time, and the build that started second emptied `.svelte-kit/output` while the app's build was reading it.
+
+- Since O30, `npm run test:slow` builds the server into the checkout: `start.test.ts`'s `beforeAll` builds when `build/handler.js` is missing, and every app start from the checkout runs `buildServer` (`src/desktop/app.ts:284-294`).
+- `tests/tiers/landing.mjs` runs `test:slow` in a lane of its own, beside the lane `npm run check; npm run build` (main 9ca2cf195, `landing.mjs:22-33`).
+- The lane's build runs `rimraf('.svelte-kit/output')` in its `buildStart`, while the app's build is in its adapter step reading `.svelte-kit/output/server/manifest.js`. The app's build fails with ENOENT.
+- The app shows `desktop.dialog.build_failed`. The harness's `dialog.showMessageBox` records `[screen] dialog` and never resolves. The app stays alive.
+- `printed(first, 'oculus on ...')` settles only on the text or on the process's `close`, so case 1 waits until vitest's 600000 ms limit. Its timeout error does not print the app's output, so the log holds no dialog message.
+
+When the lane's build lands earlier in the app's start (offset 0 s), the app's build passes, but the server it starts dies while `build/` is rewritten. That gives `desktop.dialog.server_exited` and the same recorded line.
+
+The probe that shows it: with only the second build's `kit.outDir` its own, the red command is green 3 of 3. Without that change it is red 5 of 5 at the same offset, and 3 of 3 with only `build/` separate. The same build at the same moment in a clone gives green 3 of 3, so the CPU load alone does not cause it.
+
+**Was this on main before O30?** No. At 9ca2cf195, b5299f4e5 and c8432ed9f, main has no `tools/oculus/src/desktop` and no `tests/server/desktop`: `git ls-tree -r --name-only <c> -- tools/oculus/src/desktop | wc -l` printed 0 for each, and so did the count of `"app"` in `package.json`. The O30 branch has 25 files under `src/desktop` and the `app` script. On main, nothing under `tests` runs a build: `git grep` over `tests` for `vite.js`, `vite build` and `handler.js` finds only a fixture string in `diagrams.test.ts:175`. Main's runner already ran `test:slow` in its own lane, but before O30 nothing in `test:slow` wrote into `.svelte-kit` or `build/`. O30's `start.test.ts` and the app's build from the checkout make `test:slow` such a writer. The runner's own head comment already states the rule that writers of `.svelte-kit` share one lane.
+
+## Fix and test
+
+Test, run on the tree without the fix: no test is written. The record holds the reason under "No test reaches it" below, and Steps 17 has no failing test output to quote. The record gives the as-landed runs as "before". They come from the landing stand-in, `landing-standin.mjs MODE=landed`: the six lanes plus the first start in a lane of its own, all at once, with the lane's build started after `npm run check` and no sooner than 12 s after the app's build begins:
+
+```
+=== landed, run 1   lane 3 @@ build starts at 42s; @@ build ends at 83s   first start: GREEN (window.show, oculus on at 46.6s)
+=== landed, run 2   lane 3 @@ build starts at 57s; @@ build ends at 84s   first start: GREEN (oculus on at 55.3s)
+=== landed, run 3   lane 3 @@ build starts at 39s; @@ build ends at 68s
+FAILED  first start (53.9 s, ended at 53.9s)
+    part 1, the first start printed "oculus on http://127.0.0.1:18917": no
+    part 2, recorded, nothing shown: [screen] dialog
+    the dialog's message: 42.1s dialog: The build of the oculus server failed: }
+    RED: a dialog in place of window.show, the app left waiting
+```
+
+As landed, this gives 1 red in 3 runs, and with the two earlier full-load runs, 2 red in 5. The gate itself passed this suite once and failed it once.
+
+Fix, two changes. Both were applied in the scratch copy and checked there, and both are handed over by Step 0, since the step is out of main.
+
+(A) `tools/oculus/tests/tiers/landing.mjs`: the slow tests run in the lane after the type check and the build.
+
+```diff
+-// The type check and the build run one after the other in one lane, since both write the generated
+-// files under .svelte-kit. The lint keeps its cache in node_modules/.cache/eslint/, the one
+-// npm run test:quick keeps.
++// The type check, the build and the slow tests run one after the other in one lane, since each
++// writes under .svelte-kit: the slow tests start the app, and every start of the app from the
++// checkout builds the server into .svelte-kit/output and build/, which a build running beside it
++// empties. The lint keeps its cache in node_modules/.cache/eslint/, the one npm run test:quick
++// keeps.
+@@
+     [
+-        'npm run check, then npm run build',
++        'npm run check, then npm run build, then npm run test:slow',
+         'sh',
+-        ['-c', 'npm run check; c=$?; npm run build; b=$?; [ $c -eq 0 ] && [ $b -eq 0 ]']
++        [
++            '-c',
++            'npm run check; c=$?; npm run build; b=$?; npm run test:slow; s=$?; ' +
++                '[ $c -eq 0 ] && [ $b -eq 0 ] && [ $s -eq 0 ]'
++        ]
+     ],
+@@
+-    ['ASCII gate', 'sh', ['-c', ASCII_GATE], judgeAscii],
+-    ['npm run test:slow', NPM, ['run', 'test:slow']]
++    ['ASCII gate', 'sh', ['-c', ASCII_GATE], judgeAscii]
+ ];
+```
+
+The cost of (A), added from the gate log's figures and not measured: the lane becomes about 122.6 s + 703.2 s = 826 s, where the landing's longest lane was 703.2 s.
+
+(B) `tools/oculus/tests/server/desktop/start.test.ts`, `printed()`: a recorded dialog before the awaited text fails the wait at once and prints the app's output, the dialog's message included.
+
+```diff
+ /**
+- * Settle when a line the process printed contains `text`, read from its output streams, and fail
+- * when the process has closed without printing one.
++ * Settle when a line the process printed contains `text`, read from its output streams. Fail when
++ * the process has closed without printing one, and when the app asked for a dialog before `text`
++ * came: the recorder leaves every dialog unanswered, so the app would wait on it to the row's
++ * limit. The app prints a dialog's message before the recorder's line, so a row that waits for
++ * the message of the dialog it expects is settled by it first.
+  */
+ function printed(running: Running, text: string): Promise<void> {
+     const { child, lines } = running;
+     const seen = (): boolean => lines.some((line) => line.includes(text));
++    const asked = (): boolean => lines.some((line) => line.startsWith('[screen] dialog'));
+     return new Promise<void>((done, fail) => {
++        const refused = (): Error =>
++            new Error(`a dialog before "${text}"; the output was:\n${lines.join('\n')}`);
+         if (seen()) {
+             done();
+             return;
+         }
++        if (asked()) {
++            fail(refused());
++            return;
++        }
+         const streams = [child.stdout, child.stderr];
+         const heard = (): void => {
+-            if (!seen()) return;
+-            stop();
+-            done();
++            if (seen()) {
++                stop();
++                done();
++            } else if (asked()) {
++                stop();
++                fail(refused());
++            }
+         };
+```
+
+Runs after the fix:
+
+```
+# (A), the landing stand-in with the first start in the lane after the build (MODE=fixed), 3 runs
+=== fixed, run 1   lane 3 (80.1 s) @@ build starts at 21s; @@ build ends at 53s
+    part 1 ... "oculus on http://127.0.0.1:18917": yes at 25.2s
+    part 2, recorded, nothing shown: [screen] window.show
+    GREEN: window.show recorded, no dialog
+=== fixed, run 2   lane 3 (102.2 s) @@ build starts at 22s; @@ build ends at 68s
+    part 2, recorded, nothing shown: [screen] window.show    GREEN
+=== fixed, run 3   lane 3 (96.2 s) @@ build starts at 38s; @@ build ends at 70s
+    part 2, recorded, nothing shown: [screen] window.show    GREEN
+
+# (B), the fixed printed() copied verbatim from the fixed start.test.ts into a scratch module,
+# driven on the stubbed first start
+path red: printed(running, "oculus on http://127.0.0.1:18917") rejected: a dialog before "oculus on http://127.0.0.1:18917"; the output was: after 23.4 s
+the recorder's dialog line arrived at: 23.4 s
+path red: ... rejected: a dialog before "oculus on http://127.0.0.1:18917"; the output was: after 23.2 s
+the recorder's dialog line arrived at: 23.2 s
+path green: printed(running, "oculus on http://127.0.0.1:18917") settled after 23.8 s
+path expected: printed(running, "Port 18917 is held by another program, so oculus did not start.") settled after 24.7 s
+the dialog lines: dialog: Port 18917 is held by another program, so oculus did not start.
+
+# the checks over the two changed files, in the copy
+npx prettier --check ...      All matched files use Prettier code style!   (exit 0)
+npx eslint ...                (exit 0, no output)
+npm run check                 COMPLETED 2966 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npx vitest run tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts   Test Files 2 passed (2), Tests 5 passed (5)
+LC_ALL=C grep -n '[^ -~]' <both files>   (exit 1, no output)
+
+# the shrunk red command with (A) and (B) in the tree
+part 1, the first start printed "oculus on http://127.0.0.1:18917": no
+part 2, recorded, nothing shown: [screen] dialog
+part 3, the app still running 10 s after the dialog: true
+the dialog's message: 23.1s dialog: The build of the oculus server failed: }
+RED: a dialog in place of window.show, the app left waiting
+```
+
+The red path rejects at the moment the recorder's line arrives, not at 600000 ms. The "expected" path is case 2's shape: a port held by another program, and the row waiting for that dialog's own message. It still settles, so the ordering that (B) relies on holds.
+
+What the fix does not cover:
+- **The shrunk red command stays red with (A) and (B).** It forces a second build into the checkout during the app's start, and neither change touches the app's build. (A) ends the red line because the landing then never runs a build beside `test:slow`. The red command still describes the product: `npm run app` from a checkout fails with the `build_failed` dialog whenever a `npm run build` runs in that checkout during its start. That is the open item below.
+- **What was not verified.** (B) was not run inside `start.test.ts`, which this diagnosis may not run. It was run as a verbatim copy of the function. The fixed `landing.mjs` itself was not run, since its slow lane starts Electron. The stand-in runs its lanes in the same arrangement.
+
+No test reaches it: the defect as it occurs is the arrangement of lanes in `tests/tiers/landing.mjs` together with `test:slow` starting the app. The only run that reaches it starts the Electron app, which this diagnosis may not start. A test of the runner's lanes would need a new entry in `agents/guarded.md`, which only Axel adds (`agents/spec.md:57`). No test is written: the failure costs nothing in the rules' sense. A false red at landing loses no work, breaks no installation and accepts no wrong configuration. (B) changes a test, and a test is judged by reading it.
+
+## Findings for the session beside the cause
+
+1. **Open item for Axel: the app's build from the checkout shares `.svelte-kit/output` and `build/` with every other build of that checkout.** Shown by the shrunk red command, still red with (A) and (B). Neither (A) nor (B) changes the app, and ending this needs a folder convention and a way to tell the server where the app's build is, which is a user-visible shape nothing names. Options:
+   - (a) The app's build from the checkout writes into folders of its own: a `kit.outDir` and adapter `out` that the app passes to `vite build`, with `src/server.ts` and `app.ts:295` told where the handler is. A start then never meets another build. It costs a new folder pair in the checkout, `.gitignore` and DESIGN.md's tree, and a flag or variable between the app and the server. Recommended.
+   - (b) Leave it, and rely on (A) for the landing. The app from the checkout keeps failing with `build_failed` when anyone builds in that checkout during its start. This is the lazy option.
+2. **Defect in O30's own code: the reason a dialog names is the last line of the error output, which is not the error.**
+   - Evidence: the app's build failed and the dialog said `The build of the oculus server failed: }`. The last stderr line is the `}` that closes vite's error object, while the error is the line `Error: Could not load .../manifest.js: ENOENT ...`. When the server died the dialog said `The oculus server ended (exit code 1): Node.js v24.21.0`.
+   - The code: `src/desktop/server/build.ts:32` (`if (error) last = line;`) and `src/desktop/server/process.ts:65` (`if (error) remember(line);`).
+   - Fix for O30's new brief: take the last line that names an error (a line opening with an error name such as `Error`, `SyntaxError` or `Error [CODE]`), and fall back to the last line when none does.
+   - This is a defect in delivered work and needs no ruling.
+3. **The 60 s timeout of `tests/checks/diagrams/diagrams.test.ts`.** It comes from the same parallel run's CPU load, which O30's slow tests add to, and not from the shared-folder race. The diagrams tool names `../build/` only to read an import of the built app in the source text (`utils/diagrams/graphs.mjs:83-87`). A grep of `utils/diagrams` and `tests/checks/diagrams` for `svelte-kit` and `build` finds nothing else.
+   - The case 'are named stale, every one at once, when an import and a publish are added' measured:
+     - alone, twice: 20482 ms and 19424 ms;
+     - beside the landing's lanes without the slow tests: 25715 ms;
+     - with five back-to-back builds in the clone added, standing in for the slow suite's builds: 43782 ms;
+     - in the gate: 62442 ms.
+   - It is a defect, on main and not O30's. The case carries its own `60_000` limit (`diagrams.test.ts:85, 111, 826`), while `npm run test:checks` runs with `--testTimeout 0`. The documented rule for the tree checks is "run by npm run test:checks with no time limit, since a finding of theirs is a defect in the tree" (`vite.config.ts:34-36`, README.md:17). So a tree check fails on machine load, not on a finding. The limits came in with R18 (`git log -S'60_000'`: db400be37, 2026-09-23).
+   - Removing a limit is loosening a threshold, which `agents/spec.md:16,59` forbids as an edit made to pass a check, so this is raised and not edited. Options:
+     - (a) drop the three per-case limits so the tree checks follow their documented rule, recommended;
+     - (b) keep them and rerun the tree checks alone after a load red, the lazy option.
+   - With (A), `test:slow` starts after the type check and the build, about 120 s into the run, when `test:checks` (124.9 s in the gate) is nearly done, so less of the two would overlap. That is not measured.
+
+## Cleanup
+
+```
+$ grep -rn --exclude-dir=node_modules --exclude-dir=.scratch --exclude=local.yml -i "DIAG-7c1e\|DIAG_7C1E\|diag7c1e" $TMPDIR/diagnose.b8PoTY/tree/tools/oculus
+(no output; exit 1)
+```
+
+The same grep without `--exclude-dir=.scratch` prints only lines of `tools/oculus/.scratch/migration/agents/reviews/Q106-diagnosis.md`, an earlier diagnosis record committed on main that used the same four hex digits. None is a line of this diagnosis.
+
+Before removal, `ps -ax` showed no process holding `diagnose.b8PoTY`, no tmux socket existed under the scratch folders, and `lsof -iTCP:18917 -sTCP:LISTEN` printed nothing.
+
+The removal:
+- `git worktree remove --force "$TMPDIR/diagnose.b8PoTY/tree"` from the main checkout: exit 0.
+- `rm -rf` of the clone, the probe scripts and their outputs, the scratch HOME and the tmux folder, the step diff and the patch copy, then `rmdir` of the folder: exit 0.
+- `ls -d $TMPDIR/diagnose.b8PoTY`: No such file.
+- `git worktree list | grep -c diagnose`: 0.
+
+No credential or `.env` file was copied.
+
+Nothing was changed in the main checkout, `.agents/worktrees/O30` (HEAD 815ac40cd) or `.agents/worktrees/gate-O30` (`git status --short | wc -l` 123, as at the start).
+
+The red command run again on the original case: carried by `/spec` into O30's new brief as its check. The fixed landing runs `npm run test:landing` in the gate worktree with (A) and (B) applied, and on a red `start.test.ts` the row prints the dialog's message.
+
+Record path for the booking: `agents/reviews/O30-diagnosis.md`, under its own heading below the two earlier diagnoses of O30. The cause, (A), (B), the record's path and the three findings above are what Steps 20 writes into O30's Step 0.
