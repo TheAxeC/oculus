@@ -427,3 +427,208 @@ Closures, checked:
 - The `npx tsc --noEmit -p .` claim (only two `CardAction` lines): not rerun, since it is not in the verify list and no decision rests on it.
 
 Reviewer usage: a1226d68c43be5990, claude-opus-5-5, 328,871 tokens, 61 tool uses, 11.7 min.
+
+## Repair round 2, refuted
+
+```
+$ bash ~/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (worktree tools/oculus, node v24.21.0 on PATH)
+$ npm run test:quick
+ok      prettier (4.7 s): All matched files use Prettier code style!
+ok      ASCII gate (5.0 s)
+ok      svelte-kit sync (12.4 s)
+ok      eslint (28.2 s)
+ok      svelte-check (26.5 s): 1791255268889 COMPLETED 376 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (35.6 s): Duration  26.70s (transform 67.08s, setup 0ms, import 86.91s, tests 12.58s, environment 173ms)
+test:quick: 40.4 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+exit 0
+
+$ npm run test:checks
+ Test Files  15 passed | 1 skipped (16)
+      Tests  227 passed | 3 skipped (230)
+exit 0
+
+$ npx vitest run tests/server/machine/schedules tests/routes/machine/schedules.test.ts --reporter=verbose
+ ok |unit| tests/server/machine/schedules/record.test.ts > the run record > refuses a write over a schedule record it cannot read, leaving it 23ms
+ ok |unit| tests/server/machine/schedules/file.test.ts > the schedules file > refuses a write over a schedules file it cannot read, leaving it 46ms
+ ok |unit| tests/routes/machine/schedules.test.ts > POST /api/schedules > refuses a request without the write token 17ms
+ ok |unit| tests/server/machine/schedules/run.test.ts > runEntry > starts what a schedule runs, or refuses it with its word 297ms
+ ok |unit| tests/server/machine/schedules/watch.test.ts > watchSchedules > starts a schedule once per due time 655ms
+ ok |unit| tests/server/machine/schedules/record.test.ts > the run record > refuses a rename or a drop while the lock is held, committing nothing 4228ms
+ Test Files  5 passed (5)
+      Tests  6 passed (6)
+exit 0
+
+The builder's probes (records.probe.ts, unchosen.svelte-probe.ts with lib.ts and both configs), copied to
+$SP/a3-rv2-refute with only their output paths moved, run with HOME=$SP/a3-rv2-refute/home TZ=Europe/Brussels:
+  records.out: identical to the report's after masking `since` (S19, the held lock, alias, CRLF lines)
+  unchosen.out: identical to the report's (diff exit 0)
+
+My probe $SP/a3-rv2-refute/mine.probe.ts (scratch files, scratch HOME, input states only, no code changed):
+  runnow  close() called while Run now waits for the record lock; starts asked so far=0
+  runnow  answer={"terminal":"0136e5-claude"}; starts asked after close()=1; new-session calls=1; runs={hand due=null started terminal=0136e5-claude}
+  stale   (lock file held; rename-save posted; reader appends "- name: Hand added ..." during the wait; lock released)
+          save answered 200 {"ok":true}; file after: only "- name: Daily radar ..." (the hand-added entry is gone)
+  late    new entry under a reused name, record mode 0400: 500 {"error":"record-unwritten","names":[]}; schedules.yml holds it=true; record unchanged=true; starts=0
+  late    the reader does what the sentence says and saves again: 400 {"error":"name-twice","names":["Stale name"]}
+  late    the record's mode put back, the server started again at 07:31: starts=1; runs of Stale name={catch-up due=07:00 started terminal=cfd497-claude}
+  anchor  Pause of A (holds &r): writes, &r kept | Save of A changing when: writes | Save of A renaming it: writes | Save of A changing runs to scout: refused 409 entry-unwritable ["A"]
+  merge   rows: A readable; B (`<<: *base`) key-unknown ["<<"], not readable
+          Pause of A: refused 409 entry-unwritable | Pause of B: refused 400 key-unknown | Delete of B: writes | Delete of A: refused 409 entry-unwritable
+  two     rows: Two {update-task-unknown, unchosen [task, unattended]}; Cmd {flag-wrong, unchosen [unattended]}
+  two     a save of Cmd changing only when: 200; the `unattended: 1` line of Cmd is gone; lock left=false
+
+Other checks:
+  sh utils/unused-exports.sh | wc -l      378 (base 378); no schedule module in it
+  grep -rn "renameRecord\|dropRecord" src tests DESIGN.md HELP.md README.md     nothing
+  grep -rn --exclude=local.yml outcome_failed_unknown src config      schedule.svelte.ts:251, :270, app.yml:62
+  grep -n "it('refuses" tests/server/machine/schedules/*.test.ts      record.test.ts:29, file.test.ts:41 (G31's ruled title)
+  grep -n "'record-unread'" routes.ts      :75 (CONFLICTS), :161 (RECORD_WORDS), :195 (before the plan)
+  ASCII: perl gate of spec.md over src tests config prints nothing; LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md README.md A3-report.md exit 1
+  Breakage grep (mutat, mutant, stryker, revert, breakage, inject, sabotage) over every added diff line, every untracked file and the builder's a3r2 probes: no hit
+  History grep over added comment lines and new test titles: every "before"/"still" hit describes run-time order
+  wc -l: terminals.svelte.ts 830, context.ts 813, watch.ts 734, file.ts 682, schedule.svelte.ts 562; components 252/221/262
+  ls | wc -l: state/system/machine 10, server/machine/schedules 6, shell/rail 8, tests/server/machine/schedules 5, tests/server/machine 7, api/(machine) 4, data/helpers/run 4
+  restored files (settings.ts, catalog/*, config-fit.ts, live-settings.ts, pollers.ts, state/system/config, server.yml, terminal-actions.test.ts, terminal-fixture.ts, wrong-settings.ts): git diff 995e6dfad --stat prints nothing for them
+```
+
+### Verdicts
+
+Round 2 items (`A3-round2.md`):
+
+- 1: holds for the window it names. `watch.ts:412-421` checks `stopped()` after the stop of the idle earlier terminal. The new row of watch.test.ts closes during a pending stop, and its red run on the round 1 tree is quoted. The Run now window next to it is still open: Behaviour 1.
+- 2: holds.
+  - Probe rerun: Pause and Save of B write, and the anchor stays.
+  - My anchor probes: a Save of the anchor holder that would change B through the alias is refused 409 `entry-unwritable`, and no other entry is changed.
+  - With a merge key, the `&base` holder cannot be paused or deleted until B is gone (refused `entry-unwritable`). This is safe.
+- 3: holds.
+  - Probe rerun identical. An entry with two problems carries both keys in `unchosen`, while `problem` names only the first.
+  - On a command entry, an untouched `unattended: 1` is rewritten: Spec 1.
+- 4: violated.
+  - What holds: the lock is held across the commit, and `record-locked` and `record-unread` refuse before any write (probe rerun).
+  - What does not: Behaviour 2, Behaviour 3 and Proof 1.
+- 5: holds.
+- 6: holds (probe rerun; no bare `\n`).
+- 7: holds.
+- 8: holds. `commands.svelte.ts:317`, `:389` read `unreachableAnswer()`, and the `unreachable` key is gone from `commands.yml`.
+- 9: holds. Report :1280-1372 gives a reason for each path outside the list.
+- 10: violated in one clause: Standards 2.
+
+A3.md items, for the whole diff:
+
+- 0: holds.
+- 1: violated, Behaviour 3: a write can drop lines the reader added while the route waits. See also Spec 1.
+- 2: holds.
+- 3: violated on one path, Behaviour 2: a reused name inherits `handled` when the record write fails after the commit.
+- 4: violated, Behaviour 1.
+- 5: holds.
+- 6: holds.
+- 7: holds. Behaviour 2 is the 500 path.
+- 8: holds.
+- 9: holds.
+- 10: holds. See Standards 3.
+- 11: holds by store and server render. The DOM is declined.
+- 12: holds.
+- 13: violated, Standards 2.
+- 14: not applicable (E4 is not in this worktree).
+
+Cases, for the whole diff: as the first refuter report and the run over round 1 give them, with these changes:
+
+- C24: partial, Behaviour 1 (Run now).
+- S19: partial, Behaviour 2 (a record write that fails after the commit).
+- S25: partial, Behaviour 3 (a file edited between the route's read and its write is overwritten with 200).
+- S43: met (record-unread before anything is written).
+- S5 and S23: met.
+- Verify item 8: unmet for record.test.ts's new test (Proof 1).
+
+### Findings
+
+**Spec**
+
+1. `src/lib/server/machine/schedules/file.ts:396`: `if (unchosen.includes('unattended') || held.unattended !== entry.unattended) {`
+   - What is wrong: for a `command` entry, the dialog draws no Run unattended box (`ScheduleDialog.svelte:167`, and `check` skips commands at `schedule.svelte.ts:485`). The page still sends `unattended: false` (`schedule.svelte.ts:458`), so the server writes a key the reader never saw. Z609 keeps an untouched key's bytes, and Z613 writes only a value the dialog asked for.
+   - Failure scenario: a command entry with `unattended: 1` is held with `flag-wrong`. The reader edits only `when` and saves. The `unattended: 1` line is removed (probe "two"), and the command starts running at its due times. No dialog line said this would happen.
+   - Fix at landing, a decision under automode:
+     - (a) Keep the behaviour (off is the only value a command takes) and state it in one clause each of HELP.md:25 and DESIGN.md:138. Recommended.
+     - (b) Skip the key for a command at file.ts:396, leaving the row held with its sentence. This brings back round 1's "Save closes and the problem stays".
+     - The lazy option: leave it unstated.
+2. Builder decisions on shapes the brief did not name, judged for automode:
+   - `record-unwritten`: user-visible (a word on the wire of `/api/schedules` and a dialog sentence). Keep the word. Its sentence is wrong on the late path: see Behaviour 2.
+   - `ScheduleRow.unchosen` (`model-processes.ts`): a field of the `schedule` channel's payload, which brief item 6 named. It is needed: the "two" probe shows `problem` holds only the first problem while `unchosen` holds both. Recommend keep.
+   - The empty task choice ("Choose a task.") and the Run unattended box's third state ("not chosen"): user-visible words (`refused_task`, `refused_unattended`, `unattended_unset`). They use props that `Select.svelte` (`empty`) and `Checkbox.svelte` (`unset`, `onunset`) already have on main (git diff 995e6dfad shows neither file changed). Recommend keep.
+   - `moveRecord` replacing `renameRecord` and `dropRecord`: internal, and required by Z614's commit-inside-the-lock. No other caller (grep finds none). It is not a user-visible shape and needs no ruling.
+
+**Proof**
+
+1. `tests/server/machine/schedules/record.test.ts:55-81`, 'refuses a rename or a drop while the lock is held, committing nothing':
+   - What is wrong:
+     - It calls `moveRecord` directly. By reading, it stays green if `routes.ts` commits `schedules.yml` outside the lock or before it (for example `commit()` at `routes.ts:207` for every move). It never involves `schedules.yml`, while round item 4 asked for "a held lock leaves `schedules.yml` and the record byte-equal". The route-level claim rests only on the probe's "lock" line.
+     - It is a second test for `record.ts` beside G31's table. G31's sentence covers "a record file that does not read", not a lock that stays taken. No Test line names this title.
+     - No failing run is quoted (verify item 8).
+   - Failure scenario: a later change moves the commit out of the lock. Both record tests stay green, and S19's window comes back unseen.
+   - Fix at landing, small (record.test.ts:29-81 and the G31 Test line in agents/guarded.md):
+     - Fold the case into the G31 table at :29-53 as rows under `vi.useFakeTimers()`. `takeLock` waits on `setTimeout` and `Date.now`, both faked.
+     - Add one row through `handleSchedules` with the lock file held, asserting 409 `record-locked` and `schedules.yml` and the record byte-equal.
+     - Drop the `slow` tag.
+     - G31's sentence gains "or whose lock stays taken": a guarded-entry wording, so automode.
+
+**Standards**
+
+1. `record.test.ts:55-81`, `{ tags: ['slow'] }` with two real `LOCK_WAIT_MS` waits (4228 ms in my run).
+   - What is wrong: spec.md, "What every package obeys": "A test waits on a signal (an event, a promise, a fake clock), never on a fixed sleep or a wall-clock margin; a check that something did not happen advances a fake clock past the deadline."
+   - Failure scenario: the case leaves `npm test` and `test:checks`, so the G31 guard of the lock never runs in the suite builders and landings run.
+   - Fix: the same as Proof 1.
+2. `HELP.md:25`: "A save, Delete, Pause or Resume the tray cannot make is refused with its sentence, and nothing is written: ... "The run record could not be written; check ~/.oculus/schedule.json and try again." ..."
+   - What is wrong: when `record-unwritten` comes after the commit, `schedules.yml` is written (probe "late": `schedules.yml holds it=true`).
+   - What is also wrong: `DESIGN.md:138` names `record-unwritten` only "after the commit". `record.ts:121-126` and `:178-182` answer the same word before the commit too, so the word does not tell a reader whether the save landed.
+   - Failure scenario: the reader believes nothing was saved, saves again and gets "Two schedules are named Stale name".
+   - Fix at landing: with Behaviour 2. If option (a) there is taken, both sentences become true as written, with DESIGN.md:138's "after the commit" widened to "before or after the commit".
+3. Smaller sentence issues:
+   - `src/lib/state/system/machine/schedule-words.ts:4-6`: "a word of neither is said as a refusal without a reason". The store's `wordOf` (`schedule.svelte.ts:250-252`) now says `outcome_failed_unknown` for a row's problem and for `check`. A row problem of an unknown word would read "failed for a reason this version of oculus does not name.", which is a run line. Round item 5 named this line.
+   - `DESIGN.md:138` quotes the `entry-unwritable` sentence with `{name}`, where the catalog (`app.yml:71`) has `{0}`.
+   - Failure scenario: a reader of the comment or of DESIGN expects a different sentence than the page shows.
+   - Fix at landing, tiny: reword schedule-words.ts:5-6, and write the DESIGN.md:138 sentence with the placeholder in words.
+
+No history in comments, no non-ASCII, no file over its limit, no breakage code in the diff, the untracked files or the probes. No check was removed in place of a fix: the round's test edits add assertions (`commit` spy at record.test.ts:52) or rename a title (file.test.ts:41).
+
+**Behaviour**
+
+1. `src/lib/server/machine/schedules/watch.ts:705-708` (`runNow`): `if (!(await keep(run))) return { refused: 'record-unread', names: [] }; const answer = await launch(name, entry, earlier, run);`. `launch` checks `stopped()` only inside `if (earlier.state === 'idle')` (`:412-421`).
+   - What is wrong: a `close()` while `appendRun` waits on the record's lock is followed by a start when the earlier run is gone. My probe: "starts asked after close()=1; new-session calls=1". The `await` in `decide` is guarded at `:513`, and `apply` and `decide` check after each await. This is the one remaining await that leads to a start.
+   - Failure scenario: Axel presses Run now while a second oculus holds the record lock, and the server stops or is rebuilt after a `local.yml` change. A Claude session starts after the watcher has closed, unattended when the schedule says so. This breaks G46 ("close() ... starts nothing"), A3.md item 4 and C24.
+   - Fix at landing, small (watch.ts:412-421):
+     - Move `if (stopped()) { await settleStopped(name, run); return { refused: 'server-stopped', names: [] }; }` after the idle block, so it runs on every path into `options.run`. The run that `keep` appended is then settled `failed` with `server-stopped`.
+     - Optionally add a Run now row to G46's table in watch.test.ts.
+2. `src/lib/server/machine/schedules/routes.ts:209-216` with `record.ts:185-200`: `const moved = await moveRecord(files.record, move, commit); if (!moved.ok) { ... if (result.commit === null) return answer; late = answer; }`.
+   - What is wrong: when the record write fails after the commit (ENOSPC, or a record made read-only, which `refuseReadonly` refuses), `schedules.yml` stays committed and the record unchanged. The route reloads, logs the change and answers 500 `record-unwritten`. For a new entry under a reused name, the old record entry stays, so the name inherits `handled` and `since`.
+   - Probe "late": the 500, then "try again" answers 400 `name-twice`. After the record's mode is put back and the server restarts, a catch-up runs the 07:00 due time for an entry saved at 07:30. S19 and C10 are violated on this path. The report names the path ("no run") but not this consequence.
+   - Failure scenario: as above. The reader sees "could not be written; try again", the row is there, and the retry says the name is taken. Later an unexpected catch-up run starts.
+   - Fix at landing or raised:
+     - (a) When the record change fails after the commit, write back the text `planEdit` read (routes.ts:209-216, with `Planned` carrying that text: file.ts:268-280, :653-659), so the 500 means nothing was saved and HELP.md:25 holds. Recommended. About 15 lines, and it shares `Planned.from` with Behaviour 3.
+     - (b) For a `drop` (a new entry), drop the record key before the commit. That key belongs to no readable entry, by the name-twice check in `checkSave`.
+     - The lazy option: keep it and state the window.
+3. `src/lib/server/machine/schedules/routes.ts:196-209`: `const planned = planEdit(files.schedules, edit); ... const moved = await moveRecord(files.record, move, commit);` where `commit` writes `planned.text`.
+   - What is wrong: Z614 put an await of up to `LOCK_WAIT_MS` (2 s) between the read of `schedules.yml` and the commit. Round 1 committed synchronously after planning. A change to the file during the wait (the reader's editor, or a second oculus's route) is overwritten, and the answer is 200.
+   - Probe "stale": the hand-added entry "Hand added" is gone and the answer is `200 {"ok":true}`. This breaks item 1 ("every other line of the file, a hand-written one included, keeps its bytes").
+   - Failure scenario: Axel adds an entry in his editor while the tray's rename waits on another server's claim. His entry disappears with no message.
+   - Fix at landing, small (routes.ts:202-205, file.ts:268-280 and :653-659):
+     - Inside the `commit` callback, read the file again and refuse 409 `entry-changed` when its text differs from the text `planEdit` read.
+     - Or call `planEdit` inside the callback, under the lock.
+
+Points asked about, checked and holding:
+- **Deadlock or ordering against the watcher's claims.** None found.
+  - `change` holds the lock only across synchronous code: `record.ts:183-203` has no await between `takeLock` succeeding and `dropLock`, and `work` and `commitText` are synchronous.
+  - The watcher does not use the write chain (`grep -n "chained\|writes" watch.ts record.ts` finds no use).
+  - A route waiting on another process's lock gives up after 2 s with `record-locked`.
+- **A lock that goes stale during a save.** It cannot happen within one process, since the lock lives for a synchronous span. A lock left by a crashed process and younger than 60 s answers `record-locked` until it ages out, which is the ruled design (Z614).
+
+### Declined to judge
+
+- What needs a DOM: the empty task option and the three-state box as drawn, the 409 and 500 sentences in the open dialog, the Escape order and z-order. These belong to the look; I started no app.
+- A record write that fails after the commit through ENOSPC or a failed read-back. I reached the path through a read-only record file, which `refuseReadonly` refuses. The disk-full case was judged by reading only.
+- Whether a merge-keyed or anchored entry that cannot be edited from the tray is acceptable. My probes show only safe refusals with the `entry-unwritable` sentence. Whether that limit is wanted is the user's call.
+- The round's own delta, isolated. No snapshot of the tree as round 1 left it exists (the scratchpad's a3r1 holds probes only), so I read the whole diff since 995e6dfad with the round's items as the focus.
+
+My probe and logs are in /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/a3-rv2-refute/ (mine.probe.ts, mine.out, records.out, unchosen.out, the three verification logs). I first copied the builder's probes into an existing folder `scratchpad/rv2` that another review owns, then moved my five files out of it to `a3-rv2-refute`. I could not tell whether that folder held files of those names before. Its other files are older (01:37 to 01:48) than mine and were not touched.
+
+Reviewer usage: ac84998d95f8fb970, claude-opus-5-5, 358,200 tokens, 80 tool uses, 15.1 min.

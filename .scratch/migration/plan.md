@@ -631,6 +631,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ Q3b the terminal pane (landed 2026-09-12; brief `agents/briefs/Q3b.md`; review `agents/reviews/Q3b.md`)
 - ✅ O31 the session stores read the accounts `local.yml` names, and a shell-launched builder shows under its launcher from `~/.oculus/dispatches.json` (Axel 2026-09-23; brief `agents/briefs/O31.md`, the full line there; landing `agents/reviews/O31-landing.md`); landed 2026-09-23
 - O30 native window (I): Electron, running the oculus server inside the app, the page in Electron's own Chromium (1 commit) (Axel 2026-09-26, Z3: a floating pane pops out into its own window, and sub-windows can be opened) (ruling The queue) (ruling O30)
+  - Step 0, landing 2026-10-06 backed out before main was touched: in the landing worktree `.agents/worktrees/gate-O30` (main 9ca2cf195 with O30's range b5299f4e5..815ac40cd and the fixes at landing for S2-1, P2-3, St2-1, St2-2, B2-1 to B2-4, Z612 and Z619, saved whole as `agents/reviews/O30-gate.patch`), `npm run test:landing` failed one case: `tests/server/desktop/start.test.ts` 'brings the running app forward on a second start and starts no server' timed out at 600000 ms, with the recorder's line `recorded, nothing shown: [screen] dialog`. `npm run test:checks` failed in the same run on a 60 s timeout of `diagrams.test.ts` and passed when run alone (226 passed, 3 skipped). Cause not known; diagnosed with `/diagnose oculus/migration O30 red line`.
 
 ## Could run in parallel
 
@@ -1348,6 +1349,10 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z617 (2026-10-06): A3, the builder's words stand: `schedules-unwritten` for a schedules file that could not be written, and the sentence of `server-stopped`; `ui.answer_unreachable` becomes the one key for "The server did not answer.", read by the command bar too. (the orchestrator, automode)
 - Z618 (2026-10-06): A3 gets the plan's extra repair round: A3.md item 4 (G46, close() starts nothing) is violated in `launch` and item 3's S19 window stays open through Z614, both too large for landing; the review's other findings go in the same round. (the orchestrator, automode)
 - Z619 (2026-10-06): O30, the terminal modes a pane's program set (bracketed paste, cursor and keypad keys, mouse reports, insert, wrap, a hidden cursor) are sent after the scrollback on every attach (`modesAt` and `cursorArgs` of `sessions.ts`, `channel.ts` `#attach`, DESIGN.md:374, HELP.md:138), as the second diagnosis of O30 wrote it; fixed at O30's landing, since O30's HELP.md:13 says open windows keep their running terminals after a Restart and a paste into one would otherwise run as typed keys. (the orchestrator, automode)
+- Z622 (2026-10-06): A3, a command entry whose `unattended` value does not read takes off on any save, since the dialog draws no Run unattended box for a command and off is the one value a command takes; HELP.md:25 and DESIGN.md:138 say so in one clause each. Fixed at A3's landing. (the orchestrator, automode)
+- Z623 (2026-10-06): A3, the builder's shapes stand: the word `record-unwritten`, the `schedule` payload's `ScheduleRow.unchosen`, and the dialog's empty task choice and Run unattended box's third state with their words. Fixed at A3's landing. (the orchestrator, automode)
+- Z625 (2026-10-06): A3, a record change that fails after `schedules.yml` was committed writes back the text the save read, so a 500 `record-unwritten` means nothing was saved and HELP.md:25 holds. Fixed at A3's landing. (the orchestrator, automode)
+- Z626 (2026-10-06): A3, the commit inside the record's lock reads `schedules.yml` again and refuses 409 `entry-changed` when its text differs from the text the save planned from, so a hand edit made during the lock wait is never overwritten. Fixed at A3's landing. (the orchestrator, automode)
 
 ## Agents
 
@@ -1399,6 +1404,11 @@ Independent of each other; two may run side by side under R9's rule when their b
 - a6b4415611d2a417e: reviewer of step D42, claude-opus-5-5
 - a98bacc4b6be077d1: reviewer of step D42 over round 1, claude-opus-5-5
 
+- abeb3af4ed6c02ba7: brief check of step O30, claude-opus-5-5
+- a2a980c5ef0d5bddb: brief check of step O30 (the brief closed), claude-opus-5-5
+- a566f8df9598698f1: reviewer of step O30, claude-opus-5-5
+- a73f7225903b3e5ad: reviewer of step O30 over round 1, claude-opus-5-5
+- a2b8e6b2948c401a3: reviewer of step O30 over round 2, claude-opus-5-5
 Agents in no role the cost script prices:
 
 1. acb1bb1231865e0e6: diagnosis of step A3, claude-opus-5-5

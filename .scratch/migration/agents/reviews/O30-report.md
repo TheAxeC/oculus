@@ -643,10 +643,10 @@ History-word grep over the comment lines and test titles this step added or chan
 ## Anything in the brief that was wrong or impossible
 
 - The ASCII gate's `bin` path does not exist (printed above); case 37's "no line changed" is wrong for `config-folder.test.ts`; the cases ruling's seven items (above).
-- A real folder sheet, a Cmd+Q, edit keys and typing into an editor need the OS to focus the window, which the coordinator rule forbids; the cases that need them are marked not verified (14, 17, 21, 41) or answered by a stub (20, 39). `osascript` has no assistive access: `osascript is not allowed assistive access. (-1719)`.
+- A real folder sheet, a Cmd+Q, edit keys and typing into an editor need the OS to focus the window, which the coordinator rule forbids; cases 14, 17 and 41 were run in repair rounds 1 and 2 with the editor's text set over the debugging port, case 21 in part (the terminal's Cmd+A, Cmd+C, Cmd+X and Cmd+Z), and cases 20 and 39 are answered by a stub. `osascript` has no assistive access: `osascript is not allowed assistive access. (-1719)`.
 - Case 1's "status bar says connected": the status bar has no such word, only the served address.
 - Case 28's "dialog after 10 s": the shell's own limit is 10 s and the dialog appeared at 13 s with one-second polling.
-- Case 12's scroll clause cannot be met by the present saved tab state (open decision, first line).
+- Case 12's scroll clause is met since repair round 1: the saved tab state carries the first line shown (Z592).
 - Brief item 12's bridge listed `replaceMisspelling` and a main `spelling` message; the cases ruling dropped both.
 
 ## Standing-rule notes

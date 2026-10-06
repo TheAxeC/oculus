@@ -2,6 +2,42 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z626 (2026-10-06, step A3)
+
+The question: A3, the commit inside the record's lock reads `schedules.yml` again and refuses 409 `entry-changed` when its text differs from the text the save planned from, so a hand edit made during the lock wait is never overwritten.
+
+- Chosen: read again inside the lock and refuse on a change.
+- Not chosen: (b) plan the edit inside the lock, which reworks `planEdit`'s callers for the same effect; (c) keep it, the lazy one.
+
+Where it is built: A3's landing. Booked in `plan.md` Rulings.
+
+## Z625 (2026-10-06, step A3)
+
+The question: A3, a record change that fails after `schedules.yml` was committed writes back the text the save read, so a 500 `record-unwritten` means nothing was saved and HELP.md:25 holds.
+
+- Chosen: (a) write the read text back.
+- Not chosen: (b) drop the record key of a new entry before the commit, which covers only the new-entry path; (c) keep it and state the window, the lazy one.
+
+Where it is built: A3's landing. Booked in `plan.md` Rulings.
+
+## Z623 (2026-10-06, step A3)
+
+The question: A3, the builder's shapes stand: the word `record-unwritten`, the `schedule` payload's `ScheduleRow.unchosen`, and the dialog's empty task choice and Run unattended box's third state with their words.
+
+- Chosen: keep them.
+- Not chosen: (b) drop `unchosen` and name only the first problem, which leaves an entry's second problem unfixable from the dialog, the lazy one.
+
+Where it is built: A3's landing. Booked in `plan.md` Rulings.
+
+## Z622 (2026-10-06, step A3)
+
+The question: A3, a command entry whose `unattended` value does not read takes off on any save, since the dialog draws no Run unattended box for a command and off is the one value a command takes; HELP.md:25 and DESIGN.md:138 say so in one clause each.
+
+- Chosen: (a) keep the behaviour and state it.
+- Not chosen: (b) skip the key for a command, which brings back a Save that closes with the problem still there; (c) leave it unstated, the lazy one.
+
+Where it is built: A3's landing. Booked in `plan.md` Rulings.
+
 ## Z619 (2026-10-06, step O30)
 
 The question: the paste mode, and every other mode a program sets, is lost on each new attach of a terminal grid (a reconnect after a Restart, or a page switch), a defect on main before O30. Where is it fixed?
