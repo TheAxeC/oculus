@@ -121,3 +121,9 @@ E4g review. Verdict: the step is not ready to land as it stands. Brief item 1 (t
 - My scratch run: `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/rv-e4g/`
 
 Usage: agent id unknown; model claude-opus-5-5; tokens not known to me; about 75 tool uses; about 40 minutes (not measured).
+## Closed
+
+- Spec 1 (a) to (d): sent to the builder in repair round 1 as code fixes inside the widened path list: `getState` through `$state.snapshot`, the `apps.write` words and the question text, the asking app's tab selected when its question is drawn, DESIGN.md's `terminal` sentence matched to the code; the guide describes the fixed behaviour.
+- Spec 2, Proof 1 to 4, Standards 1 and 2, Behaviour 1 to 9, items 1.6 and 1.11, case 3: sent in repair round 1.
+- The Help arrangement as one pane: kept (the orchestrator's ruling on the reviewer's recommendation); a check that parses every shipped arrangement needs a guarded entry, raised to Axel as open item Z645.
+- Declined, `DESIGN.md:83`: folded into Q125's item 10.

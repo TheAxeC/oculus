@@ -4,8 +4,8 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { portfolioConfigFrom } from '../../../data/index.ts';
-import { readManifests } from '../../../data/sources/manifests.ts';
+import { portfolioConfigFrom } from '../../../../data/index.ts';
+import { readManifests } from '../../../../data/sources/manifests.ts';
 
 const COLLECTION_ORDER = [
     'funding',

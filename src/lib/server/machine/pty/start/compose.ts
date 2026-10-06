@@ -37,9 +37,9 @@ import {
     choiceArgs,
     parseAgents,
     withCacheModels
-} from '../../../data/sources/config/catalog/agents.ts';
-import { PROMPT_MAX } from '../../../data/helpers/run/schedules.ts';
-import { configDir, loadLocal, type LocalConfig } from '../../../data/sources/config.ts';
+} from '../../../../data/sources/config/catalog/agents.ts';
+import { PROMPT_MAX } from '../../../../data/helpers/run/schedules.ts';
+import { configDir, loadLocal, type LocalConfig } from '../../../../data/sources/config.ts';
 import {
     confirmValues,
     type AgentAccount,
@@ -48,11 +48,11 @@ import {
     type AgentsAnswer,
     type ComposeStart,
     type TaskRef
-} from '../../../data/model/index.ts';
-import { isMap } from '../../../data/helpers/guards.ts';
-import { taskRefOf } from '../../../data/shapes/shapes.ts';
-import { below } from '../../core/paths.ts';
-import { TerminalRefused } from './refusal.ts';
+} from '../../../../data/model/index.ts';
+import { isMap } from '../../../../data/helpers/guards.ts';
+import { taskRefOf } from '../../../../data/shapes/shapes.ts';
+import { below } from '../../../core/paths.ts';
+import { TerminalRefused } from '../refusal.ts';
 
 /** The catalog's path under the engine's config folder. */
 export const AGENTS_FILE = join('catalogs', 'agents.yml');

@@ -37,7 +37,7 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/E4g-brief-check.md (a0be667a081a9ab33, claude-opus-5-5, 205,592 tokens, 78 tool uses, 8.8 min)
   shared_paths: with O30b: DESIGN.md's file tree (E4g adds docs/apps.md under docs/ at :79-80, O30b adds its build folders higher in the same block; both lines kept) and HELP.md (E4g :21, :82 and :210-221, O30b :186, :365 and :367, disjoint); so the merge is simple
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-10-06 to a0af7bce29bac6fa9 over the worktree as the reviewer left it; widened to apps.svelte.ts getState, the apps.write words, the question's tab selected, DESIGN.md's terminal sentence)
   builder_usage: 154,994 tokens, 322 tool uses, 82.4 min
   reviewer_report: agents/reviews/E4g-refuter.md (a1387d637f72b6115, claude-opus-5-5, 338,187 tokens, 107 tool uses, 19.9 min)
 - step: D23
@@ -51,6 +51,19 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D23-report.md
   brief_check: agents/reviews/D23-brief-check.md (its agent id and usage are not in the ledger); the brief corrected to main at a564e4e29 by a3954c49b6f0bf078 (claude-opus-5-5; usage not recorded: no completion notice was read)
   shared_paths: with E4g: config/text/app.yml:12 (the key sheet line, the second landing writes both changes), HELP.md and DESIGN.md (disjoint lines); with O30b: DESIGN.md (D23's decision after O30b's :436, the second puts its item after the other's), HELP.md (disjoint); with Q123: pty/channel.ts (disjoint hunks), pty/routes.ts (adjacent imports), tests/routes/sessions/terminal-actions.test.ts (adjacent imports), tests/server/machine/pty/channel.test.ts (the second to land rewrites the other's subscribed() calls to its form), DESIGN.md:375 (one line, both edits kept); with Q124: package.json (disjoint lines); docs/diagrams regenerated at landing; so the merge is simple
+  landing: not-started
+  round: 0
+- step: PR1
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a9144e12c4f81cb07 (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/PR1
+  base: 628ac4b01
+  launched: 2026-10-06
+  report: agents/reviews/PR1-report.md
+  brief_check: agents/reviews/PR1-brief-check.md (a6a8c0abc5e9e3d71, claude-opus-5-5, 176,558 tokens, 48 tool uses, 9.3 min)
+  shared_paths: with E4g, O30b, Q124 and D23: HELP.md and DESIGN.md (PR1 writes HELP.md:139 and DESIGN.md:382 and :436, disjoint from E4g's, Q124's and D23's lines; O30b also writes :436, so the second to land adds its sentence to that item); with Q125 (queued): HELP.md and DESIGN.md under Z642; docs/diagrams regenerated at landing; so the merge is simple
   landing: not-started
   round: 0
 - step: O30b
@@ -68,21 +81,6 @@ dispatch:   # steps in flight, up to six (Z632)
   round: 0 (cases ruling agents/briefs/O30b-cases.md, rulings A1 and B1 on the hand-back; builder resumed)
   builder_usage: hand-back 279,639 tokens, 76 tool uses, 35.7 min; final run 208,577 tokens, 129 tool uses, 87.1 min
   reviewer_report: agents/reviews/O30b-refuter.md (a1d5134e2f2e837cf, claude-opus-5-5, running)
-- step: Q123
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: aaad76d3aba1c8ed9 (builder, launched 2026-10-06)
-  worktree: .agents/worktrees/Q123
-  base: a686df2ad
-  launched: 2026-10-06
-  report: agents/reviews/Q123-report.md
-  brief_check: agents/reviews/Q123-brief-check.md (aa96e2257854c7ff2, claude-opus-5-5, 181,338 tokens, 47 tool uses, 9.0 min), closed in the brief by a8ea7076e2eefc9f5 (claude-opus-5-5; 146,933 tokens, 29 tool uses, 6.8 min)
-  shared_paths: with E4g and O30b: DESIGN.md (Q123 :375, E4g :79-80 and :83, O30b's tree and :436, disjoint) and HELP.md (Q123 :147, E4g :21, :82, :210-221, O30b :186, :365, :367, Q124 :371-373, disjoint); docs/diagrams regenerated at landing; so the merge is simple. D23's channel.ts and channel.test.ts are judged at D23's /spec. G52 ruled (Z634 (a)).
-  landing: cherry-picking
-  round: 0 (cases ruling agents/briefs/Q123-cases.md, rulings A and B on the hand-back; builder resumed)
-  builder_usage: hand-back 165,442 tokens, 30 tool uses, 9.0 min; final run after the cases ruling: no completion notice arrived, so not recorded
-  reviewer_report: agents/reviews/Q123-refuter.md (a4d132c79107eead5, claude-opus-5-5, 210,694 tokens, 59 tool uses, 18.6 min)
 - step: Q124
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -206,6 +204,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 - Z644 (2026-10-06, raised from PR1's brief check): does the desktop app's window-file rule get a guarded entry and a test? PR1 makes the main window never keep a page's full screen as its own, so `~/.oculus/window.json` is written with the window's state from before a deck went full screen. If that rule is wrong, the window reopens in full screen at every start, or loses the full screen the reader set. PR1 writes the rule as a pure function in `src/desktop/decide/window-file.ts` (the event order to the recorded state), which a unit table can test for both macOS event orders. (a) A new entry G53 in `agents/guarded.md`: "The desktop app's window file keeps the window's own state: a full screen a page asked for is never written as the window's full screen, and a full screen the reader set before is kept." PR1 writes its test, a table over the event orders of cases 15, 16 and 21. Pros: the rule is checked on every run, and its failure is seen at every start of the app. Cons: one more test file. (b) No entry: the rule is checked by reading and at the landing look only. Pros: nothing added. Cons: a later change to `keepState` can break it unseen until a start opens the window wrong. (b) is the lazy option. Recommendation: (a). PR1 is dispatched with (b)'s scope and gains the test on a ruling of (a), at its landing or in a repair round.
 
+- Z645 (2026-10-06, raised from E4g's review): does every page arrangement shipped in `config/layout.yml` get a guarded entry and a test that parses it? On main the Help page's arrangement is a split with one child, which `parseArrangement` refuses, so the Help page opens nothing, and no check saw it (`grep -rn parseArrangement tests` prints nothing); E4g makes it one pane. (a) A new entry G54: "Every page arrangement in config/layout.yml parses, so every rail page opens what its arrangement names." Q125, which edits that file next, writes its test: one row per page, each parsed by `parseArrangement`. Pros: a broken arrangement fails the checks the day it is written. Cons: one more test. (b) No entry: arrangements are seen only at a look. Cons: a page that opens nothing ships unseen, as this one did. (b) is the lazy option. Recommendation: (a).
+
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -264,6 +264,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-06 12:55. Q123 landed (a terminal pane attached as its program left it; booking in plan.md; `agents/reviews/Q123-landing.md`) with five fixes at landing, B1 the top row's shift among them. In flight: E4g (repair round 1), Q124 (under review), O30b (under review), D23 and PR1 (building). Open items Z644 and Z645 raised. Next: Q125 into the free slot, then each landing as its review closes.
 - 2026-10-06 09:30. E4 landed (apps added while oculus runs; booking in plan.md; `agents/reviews/E4-landing.md`) after its look on TEST, which Axel's dev-server restart (Z631) made possible. Axel ruled Z630 (G51's words, written into guarded.md), Z632 (`workers_at_once` 6 in both files) and Z633 (step E4g, the apps guide in `tools/oculus/docs/apps.md`, first in the queue). Nothing in flight. Next: /spec for E4g, O30b, Q123, Q124, D23 and X3e, the six slots.
 - 2026-10-06 08:35. E4 staged on main, not committed: gate-E4 passed `npm run test:landing` (6 of 6), main's staged diff `cmp`-equal to the gate's, penpal and the Electron binary installed in main's node_modules, guarded.md names E4's tests (G1, G8, G9, G31, G49, G50). The look waits on Z631 (Axel's dev server needs a restart to resolve penpal); `~/.oculus/approvals.json` and `workspaces.json` back at their shasums, the scratch apps kept in the session scratchpad. Next: the look, the booking, the commit, then O30b, Q123, Q124 prepared.
 - 2026-10-06 08:00. A3 landed (scheduled runs; booking in plan.md; `agents/reviews/A3-landing.md`) with six fixes at landing and G31 widened under Z624. Z605 ruled (a) by Axel. G51's words raised as Z630. Next: E4's landing in a fresh gate with the shipped-files block removed, then O30b, Q123 and Q124 prepared.

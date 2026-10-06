@@ -18,7 +18,7 @@ import {
 } from '../../../src/lib/server/machine/pty/routes.ts';
 import { engineDir } from '../../../src/lib/data/sources/config.ts';
 import { taskTmux } from '../../server/machine/commands/commands-fixture.ts';
-import { chatIndexPath } from '../../../src/lib/server/machine/pty/chat.ts';
+import { chatIndexPath } from '../../../src/lib/server/machine/pty/start/chat.ts';
 import {
     SERVER,
     TOKEN,

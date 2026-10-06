@@ -4,16 +4,16 @@
 
 import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { chatModel } from '../../../data/accounts/chat.ts';
-import { loadLocal, textCatalog, type LocalConfig } from '../../../data/sources/config.ts';
-import type { Project } from '../../../data/model/index.ts';
-import { defaultOverridesPath } from '../../sessions/overrides.ts';
-import { writeTextAtomic } from '../../core/json.ts';
-import { words } from '../../core/words.ts';
-import { projectDirectory } from '../../files/files.ts';
+import { chatModel } from '../../../../data/accounts/chat.ts';
+import { loadLocal, textCatalog, type LocalConfig } from '../../../../data/sources/config.ts';
+import type { Project } from '../../../../data/model/index.ts';
+import { defaultOverridesPath } from '../../../sessions/overrides.ts';
+import { writeTextAtomic } from '../../../core/json.ts';
+import { words } from '../../../core/words.ts';
+import { projectDirectory } from '../../../files/files.ts';
 import { portfolioContext } from './context.ts';
-import { listTerminals, newId, startTerminal, type StartOptions } from './sessions.ts';
-import { shellWord } from './shell-word.ts';
+import { listTerminals, newId, startTerminal, type StartOptions } from '../sessions.ts';
+import { shellWord } from '../shell-word.ts';
 
 type ChatProject = Pick<Project, 'title' | 'folder'>;
 

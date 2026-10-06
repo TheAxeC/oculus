@@ -1,15 +1,14 @@
 In flight (5 of 6 slots):
-- E4g (the apps guide in docs/apps.md): built, under review, base 31068a9de.
+- E4g (the apps guide in docs/apps.md): refuted (`agents/reviews/E4g-refuter.md`), findings to close, base 31068a9de.
 - Q124 (every tree check with no limit, and the landing's vitest cache race): built, under review, base ba6a995f2.
-- Q123 (a terminal pane attached as its program left it): built, under review, base a686df2ad; resumed with the cases ruling (the pty folder split, and the read of a program that left); G52 ruled (Z634 (a)).
 - O30b (the app's own build folders): built, under review, base dff7539f4.
 - D23 (language servers): building.
+- PR1 (Present full screen): building, base 628ac4b01; open item Z644 (a guarded entry for the window file) may add its test.
 
-Queued, in order (27 steps):
-- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): at the next free slot, beside the steps writing HELP.md or DESIGN.md (ruling Z642); the second to land carries the other's text.
+Queued, in order (26 steps):
+- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): brief checked and corrected; at the next free slot, beside the steps writing HELP.md or DESIGN.md (ruling Z642); the second to land carries the other's text.
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
 - X3e (Files lists reordered by drag): prepared again under Z635 (a); once D23 has landed (both split Palette.svelte).
-- PR1 (Present full screen): its brief is under check; launched into the sixth slot.
 - PR2 (Present decks from any folder): once PR1 has landed.
 - PR3 (Present decks edited and generated, PDF export): once PR2 has landed.
 - PR4 (Present's presenter screen): once PR3 has landed.

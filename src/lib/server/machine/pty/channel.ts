@@ -34,16 +34,28 @@ import type {
 import type { Hub, Sink } from '../../core/channels.ts';
 import { anyNumberShape } from '../../../data/shapes/shapes.ts';
 import {
+    alternateAt,
+    alternateOnArgs,
+    alternateScreenArgs,
+    alternateScreenAt,
     captureArgs,
     cursorArgs,
+    historyArgs,
+    holdsSavedScreen,
+    inAlternateScreen,
+    modesAt,
+    savedScreenArgs,
+    screenAt,
+    type AlternateCaptures,
+    type AlternateScreen
+} from './capture.ts';
+import {
     isTerminalId,
     listArgs,
-    modesAt,
     parseTerminals,
     serverPid,
     resizeArgs,
     inputArgs,
-    screenAt,
     sessionName,
     SCROLLBACK_LINES
 } from './sessions.ts';
@@ -80,6 +92,9 @@ export const IDLE_POLL_MS = 60000;
  */
 export const NO_SERVER_CONFIRMS = 2;
 export const NO_SERVER_CONFIRM_MS = 300;
+
+/** What reading the alternate screen gives when the program left while it was read. */
+const LEFT = 'left';
 
 /** The tmux notifications that mean the terminal list or the pane map moved. */
 const CHANGE_EVENTS = new Set([
@@ -575,6 +590,10 @@ export class Terminals {
      * Attach one sink to one terminal. The sink is subscribed without the channel's latest message,
      * since that is the previous chunk and the scrollback below already holds it; the scrollback is
      * then sent to this sink alone, so a second page attaching does not repaint the first page's.
+     * A pane whose program is in its alternate screen is sent as the shell's text in the grid's
+     * normal buffer and the program's screen in its alternate buffer (alternateScreenAt). Every
+     * other pane is sent as the whole capture; so is a pane whose reads for the alternate screen
+     * failed, and a pane whose program left while they ran is read again and sent as it stands.
      */
     async #attach(sink: Sink, id: string): Promise<void> {
         const sinks = this.#attached.get(id) ?? new Set<Sink>();
@@ -589,19 +608,15 @@ export class Terminals {
             this.#driver.attached([...this.#attached.keys()]);
             this.#arm();
         }
-        let text = '';
-        try {
-            text = await this.#driver.run(captureArgs(id, this.#lines));
-        } catch (error) {
-            console.error(`pty: no scrollback for ${id}: ${reason(error)}`);
-        }
-        // The cursor is read after the capture, so output that lands between the two moves the
-        // cursor down over rows the capture already holds rather than past rows it lacks.
-        let cursor = '';
-        try {
-            cursor = await this.#driver.run(cursorArgs(id));
-        } catch (error) {
-            console.error(`pty: no cursor for ${id}, the whole capture is sent: ${reason(error)}`);
+        let { text, cursor } = await this.#readPane(id);
+        let alternate = alternateAt(cursor);
+        let captured: AlternateCaptures | null = null;
+        if (alternate !== null) {
+            const read = await this.#alternateCaptures(id, alternate);
+            if (read === LEFT) {
+                ({ text, cursor } = await this.#readPane(id));
+                alternate = null;
+            } else captured = read;
         }
         if (!this.#attached.get(id)?.has(sink)) return;
         const placed = screenAt(text, cursor);
@@ -613,7 +628,10 @@ export class Terminals {
         // grid (seen in Chrome as a staircase). Every line break goes out as CR LF.
         // The modes the pane's program set go after the screen, since the page resets its grid
         // before writing it.
-        const screen = placed.replace(/\r?\n/g, '\r\n') + modesAt(cursor);
+        const screen =
+            alternate !== null && captured !== null
+                ? alternateScreenAt(alternate, captured, cursor)
+                : placed.replace(/\r?\n/g, '\r\n') + modesAt(cursor);
         const message = {
             channel: ptyChannel(id),
             // The scrollback is not a chunk, so it carries no chunk number; the chunks count from
@@ -625,6 +643,58 @@ export class Terminals {
             await sink.send(JSON.stringify(message));
         } catch (error) {
             console.error(`pty: the scrollback of ${id} could not be sent: ${reason(error)}`);
+        }
+    }
+
+    /**
+     * What the pane shows now and where tmux has its cursor and modes. The cursor is read after the
+     * capture, so output that lands between the two moves the cursor down over rows the capture
+     * already holds rather than past rows it lacks. A read that fails gives an empty text or
+     * cursor, which sends the capture as it is.
+     */
+    async #readPane(id: string): Promise<{ text: string; cursor: string }> {
+        const session = sessionName(id);
+        let text = '';
+        try {
+            text = await this.#driver.run(captureArgs(session, this.#lines));
+        } catch (error) {
+            console.error(`pty: no scrollback for ${id}: ${reason(error)}`);
+        }
+        let cursor = '';
+        try {
+            cursor = await this.#driver.run(cursorArgs(session));
+        } catch (error) {
+            console.error(`pty: no cursor for ${id}, the whole capture is sent: ${reason(error)}`);
+        }
+        return { text, cursor };
+    }
+
+    /**
+     * The history, the saved normal screen and the screen of a pane whose program is in its
+     * alternate screen, read after the `display-message` answer that says the program is in it. The
+     * history is read only when the pane holds some, since with none tmux answers that range with
+     * the screen's top row. `LEFT` when the program left while these were read: the saved normal
+     * screen is then a single blank line (holdsSavedScreen), or `#{alternate_on}` read after the
+     * screen is no longer 1. Null when a read fails.
+     */
+    async #alternateCaptures(
+        id: string,
+        state: AlternateScreen
+    ): Promise<AlternateCaptures | typeof LEFT | null> {
+        const session = sessionName(id);
+        try {
+            const history =
+                state.history > 0 ? await this.#driver.run(historyArgs(session, this.#lines)) : '';
+            const saved = await this.#driver.run(savedScreenArgs(session));
+            if (!holdsSavedScreen(saved, state)) return LEFT;
+            const alternate = await this.#driver.run(alternateScreenArgs(session));
+            if (!inAlternateScreen(await this.#driver.run(alternateOnArgs(session)))) return LEFT;
+            return { history, saved, alternate };
+        } catch (error) {
+            console.error(
+                `pty: no alternate screen for ${id}, the whole capture is sent: ${reason(error)}`
+            );
+            return null;
         }
     }
 

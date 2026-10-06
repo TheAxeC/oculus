@@ -31,7 +31,7 @@ import { MANUSCRIPT, isMainOf, programOf } from '../../content/latex.ts';
 import type { Program } from '../../../data/prose/latex.ts';
 import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
 import { captureTask, restartTask, rerunTask, startCommand } from '../commands/run.ts';
-import { startChat, type ChatOptions } from './chat.ts';
+import { startChat, type ChatOptions } from './start/chat.ts';
 import { defaultApprovalsPath } from '../approvals/approvals.ts';
 import {
     approveSeed,
@@ -48,7 +48,7 @@ import {
     compose,
     composeRequest,
     readAgentsFile
-} from './compose.ts';
+} from './start/compose.ts';
 import {
     NOT_OURS,
     busyIds,

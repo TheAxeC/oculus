@@ -168,3 +168,11 @@ None other found.
 ## Usage
 
 claude-opus-5-5, about 205,000 tokens, 57 tool uses. Minutes: not measured.
+
+## Closed
+
+- B1: fixed at landing, `ESC[H` after `ESC[?1049h` in `alternateScreenAt` (`capture.ts`), G52's three alternate rows expect it, `DESIGN.md:375` says it; checked on a tmux stand-in grid with vim started at saved column 8, the grid equal to the pane.
+- P1: closed by B1's fix (the rows assert the fixed bytes).
+- P2: the report's first line is wrong as the reviewer says; booked in plan.md's booking, no decision rests on it.
+- S1, S2, S3: fixed at landing.
+- The `-q` flag not covered by a row: no input has shown a cost; noted, no test.

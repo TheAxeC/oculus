@@ -2,8 +2,8 @@
 // the readers under sources/, the rules of validate.ts and the audit scan of
 // server/content/audit.ts call it alike, and client-safe, because state/shared/words/text.ts's t()
 // fills a catalog string with the same fillPlaceholders rather than a copy of it. `words` of
-// server/machine/pty/chat.ts fills the terminal text (the chat instruction, its notes, the chat and
-// LaTeX terminal names) with it too.
+// server/machine/pty/start/chat.ts fills the terminal text (the chat instruction, its notes, the
+// chat and LaTeX terminal names) with it too.
 //
 // A finding's sentence is config/text/findings.yml's, never a literal of the module that raises it,
 // so a sentence is reworded in that file alone. The catalog is always an argument: nothing here
