@@ -8,7 +8,12 @@
    the shape they share (square corners, no shadow, monospace chrome, one step down the type scale).
    `crt` is an independent overlay that goes on any of them.
    The theme names and the class string each one puts on the body are the `themes:` list of
-   config/appearance.yml; light is :root alone and carries no class. */
+   config/appearance.yml; light is :root alone and carries no class.
+   The tab colours of the two VS Code Modern blocks are the ten tab keys of the installed VS Code's
+   dark_modern.json and light_modern.json: seven are surfaces the blocks already set (`--panel`,
+   `--bg`, `--line`, `--accent`), and the keys the surfaces do not give are the tokens
+   `--tab-active-txt` (dark), `--tab-inactive-txt` and `--tab-active-border` (light). The other
+   themes keep their own tab colours. */
 
 body.dark {
     color-scheme: dark;

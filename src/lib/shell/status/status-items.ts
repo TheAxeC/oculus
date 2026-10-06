@@ -7,6 +7,19 @@
 // HPC poll, the usage refreshers, the server connection); on the right the editor's own items for
 // the source tab on screen (the caret line's blame in a file of a repository, then the caret and
 // the text's own items), then the live sessions and the unsaved tabs, and the bell last.
+//
+// The host item is the server's `os.hostname()` on the `config` channel's `ConfigPayload.host`,
+// with its address. Branch and sync are the repository holding the active tab's file
+// (`repoStatus`), or the hub's: the branch picker switches through `switchBranch`, and the sync
+// item pushes through `push` when the branch is only ahead and otherwise pulls and then pushes
+// through `sync`, each asking a confirm that names the upstream or the remote before git runs, and
+// a write git refuses opens the Repositories view on the repository, whose line says why. A branch
+// with no upstream draws Publish Branch in the sync item's place. The blame item shows for a source
+// tab over a file of a repository whether or not the tab draws blame in its gutter, worded as VS
+// Code's `git.blame.statusBarItem.template` default `${authorName} (${authorDateAgo})`, or Not
+// Committed Yet, and a tab over a file at HEAD or in the index shows its blame in the gutter alone.
+// The findings item counts the Findings view's list, the snapshot's findings and the config
+// channel's, and opens that view.
 
 import { t } from '$lib/state/shared/words/text';
 

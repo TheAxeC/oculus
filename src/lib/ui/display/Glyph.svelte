@@ -13,6 +13,10 @@
     // than any text. The drawing comes from a file rather than from this tree, so it passes the
     // icon filter of ui/html.ts before it is put into the page. The box carries the name it draws,
     // so what a surface draws is read by name in either mode rather than off the drawing.
+    //
+    // It is drawn at `--icon-box`, 16 px times the text scale, whatever the text beside it is; the
+    // activity rail's 24 px and the status bar's 14 px are set as `--glyph-size` on those two
+    // surfaces.
 
     import { glyph, glyphMode, iconSvg } from '$lib/state/shared/words/text';
     import { sanitiseSvg } from '../html.ts';

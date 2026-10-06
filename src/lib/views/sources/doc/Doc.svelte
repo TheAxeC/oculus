@@ -21,7 +21,12 @@
     // The document is fetched rather than selected, as a project's README is: the wire model keeps
     // documents out of the snapshot, so state/system/docs.svelte.ts asks api/docs for this path and
     // the shared Markdown partial draws what comes back. A figure beside the document is addressed
-    // under the hub root by the server, so it is drawn through the file route. The prose is drawn
+    // under the hub root by the server, so it is drawn through the file route. A document of
+    // oculus's own (DESIGN.md, a guide) comes back with its diagrams cut out as parts of their own,
+    // and the view draws each from the diagram route in the page's text colour between the runs of
+    // prose. A press on a relative link to another Markdown file opens that document as a tab
+    // (shared/prose/jump.ts), and the heading a link names is in the tab's state as `fragment`,
+    // scrolled to once the document is drawn and then removed from the state. The prose is drawn
     // straight into the box, so over a wallpaper the box asks for the tint and is the one surface
     // the document is read off.
     //
@@ -45,7 +50,10 @@
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import FileBarActions from '../../shared/links/FileBarActions.svelte';
+    import Diagram from '../../shared/prose/diagram/Diagram.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
+    import { withoutFragment } from '../../shared/prose/doc-link';
+    import { scrollToFragment } from '../../shared/prose/jump';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import { servedFile } from '$lib/views/shared/links/file-bar';
@@ -53,6 +61,7 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { docState, followDoc, readDocs } from '$lib/state/workbench/navigation/catalogue';
+    import type { DocPart, DocState } from '$lib/state/system/docs.svelte';
     import { instanceMap, instanceText, isInstanceOf, tabsOf } from '$lib/state/workbench/layout';
     import { HUB_ROOT } from '$lib/state/sources/fs';
     import { useState } from '$lib/state/client/use';
@@ -69,6 +78,7 @@
 
     const path = $derived(instanceText(instance.state, 'path'));
     const label = $derived(instanceText(instance.state, 'label'));
+    const fragment = $derived(instanceText(instance.state, 'fragment'));
     const pushed = $derived(config());
     const followed = $derived(
         pushed === null || path === '' ? null : followDoc(readDocs(pushed.config.docs), path, label)
@@ -85,6 +95,23 @@
         headings: () =>
             shown === null || shown.loading || shown.error !== '' ? null : shown.headings,
         box: () => box
+    });
+
+    /** One run of prose as the document the Markdown partial draws, the answer's state kept. */
+    function run(part: DocPart, whole: DocState): DocState {
+        return { ...whole, html: part.kind === 'html' ? part.html : '' };
+    }
+
+    // The heading a link named: scrolled to once the document is drawn and then taken out of the
+    // tab's state, so a change of the file or a restored layout does not scroll to it again, and
+    // a second press on the same link, which sets it again, scrolls once more.
+    $effect(() => {
+        const held = shown;
+        if (instance.state === undefined || fragment === '' || box === undefined || held === null)
+            return;
+        if (held.loading || held.error !== '') return;
+        scrollToFragment(box, fragment);
+        restateInstance(instance.id, withoutFragment(instanceMap(instance.state)));
     });
 
     $effect(() => {
@@ -141,12 +168,27 @@
             <Empty message={t('doc.none')} glyph={t('doc.none_glyph')} />
         {:else if shown === null}
             <Empty message={t('doc.unlisted', path)} glyph={t('doc.none_glyph')} />
+        {:else if shown.parts.length > 0}
+            {#each shown.parts as part, at (at)}
+                {#if part.kind === 'diagram'}
+                    <Diagram name={part.name} alt={part.alt} />
+                {:else}
+                    <Markdown
+                        doc={run(part, shown)}
+                        loading={t('doc.loading')}
+                        failed={t('doc.failed', reading, shown.error)}
+                        surface={false}
+                        follow
+                    />
+                {/if}
+            {/each}
         {:else}
             <Markdown
                 doc={shown}
                 loading={t('doc.loading')}
                 failed={t('doc.failed', reading, shown.error)}
                 surface={false}
+                follow
             />
         {/if}
     </div>

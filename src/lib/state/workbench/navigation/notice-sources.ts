@@ -12,6 +12,11 @@
 // The rules are pure functions over one payload, so each is held by a test with no socket; the
 // store keeps what each channel has shown and hears every message the entities store keeps, wired
 // in state/client/context.ts, as it hears every write that did not land from the writes store.
+//
+// Five sources post: a refused rail write, a session that starts waiting on a permission prompt or
+// goes idle after its turn (`permission_prompt`, `idle_prompt`), each worded as what it waits for,
+// an update task whose run date moved, a Live HPC job newly in `recent`, and any write refused or
+// unanswered (`writes.onUnwritten`).
 
 import { z } from 'zod';
 import type { HookEvent, Message } from '../../../data/model/index.ts';

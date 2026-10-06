@@ -13,6 +13,9 @@
 // pair. What the page types into a running terminal and the text of a steer go out as their bytes,
 // through `send-keys -H` in pieces (inputArgs), a steer then Enter, and an interrupt is the one
 // Escape key.
+//
+// A start sets the session's name, its resume mark and a task's mark in the `new-session`
+// invocation itself, so a command that ends at once leaves a named, marked session.
 
 import { randomBytes } from 'node:crypto';
 import { statSync } from 'node:fs';

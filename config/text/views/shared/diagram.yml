@@ -1,0 +1,5 @@
+# Oculus text owned by the diagram partial: the diagrams of oculus's own documents.
+text:
+    diagram:
+        failed: 'The diagram {0} could not be drawn ({1}): npm run diagrams writes it.'
+        loading: Drawing the diagram {0}...

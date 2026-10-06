@@ -1,6 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. Help opens the Help page's group, and is drawn in the Help
-    // page's left pane beside the HPC how-to.
+    // Layer 3, view registration. Help opens the Help page's group, and is the first tab of that
+    // page's one pane, beside the hub's documents and the guides.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -20,58 +20,54 @@
     // api/docs, the one route that turns Markdown into HTML, which serves that one path of the
     // engine directory and nothing else around it.
     //
-    // The manual shows the diagrams utils/diagrams/diagrams.mjs draws from the source. Each is an
-    // image of docs/diagrams/ in HELP.md, which the server cuts out of the manual's answer as a
-    // part of its own (server/content/docs.ts, renderManualParts) so Diagram.svelte can draw it in
-    // the page's text colour; the prose between them is drawn by the Markdown partial, one run at a
-    // time. The prose is drawn straight into the box, so over a wallpaper the
-    // box asks for the tint and is the one surface the manual is read off.
+    // The manual holds no diagram: the diagrams of docs/diagrams/ are drawn by the doc view over
+    // DESIGN.md and the guides. A press on a relative link to another Markdown file opens that
+    // document in a doc tab (shared/prose/jump.ts), and a press on a link into the manual from a
+    // guide opens this view with the heading the link names in its state, which the view scrolls to
+    // once the manual is drawn and then removes from the state. The prose is drawn straight into
+    // the box, so over a wallpaper the box asks for the tint and is the one surface the manual is
+    // read off.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import { withoutFragment } from '../../shared/prose/doc-link';
     import Markdown from '../../shared/prose/Markdown.svelte';
-    import Diagram from './Diagram.svelte';
-    import type { DocState, ManualPart } from '$lib/state/system/docs.svelte';
+    import { scrollToFragment } from '../../shared/prose/jump';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import { instanceMap, instanceText } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
     const {
-        docs: { manual }
+        docs: { manual },
+        layout: { restateInstance }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
     const shown = $derived(manual());
+    const fragment = $derived(instanceText(instance.state, 'fragment'));
+    let box: HTMLDivElement | undefined = $state();
 
-    /** One run of prose as the document the Markdown partial draws, the manual's state kept. */
-    function prose(part: ManualPart): DocState {
-        return { ...shown, html: part.kind === 'html' ? part.html : '' };
-    }
+    // The heading a link into the manual named: scrolled to once the manual is drawn and then
+    // taken out of the view's state, so a change of the file or a restored layout does not scroll
+    // to it again, and a second press on the same link, which sets it again, scrolls once more.
+    $effect(() => {
+        if (instance.state === undefined || fragment === '' || box === undefined) return;
+        if (shown.loading || shown.error !== '') return;
+        scrollToFragment(box, fragment);
+        restateInstance(instance.id, withoutFragment(instanceMap(instance.state)));
+    });
 </script>
 
 <Pane title={t('views.help')} tinted>
-    <div class="view" data-instance={instance.id}>
-        {#if shown.loading || shown.error !== ''}
-            <Markdown
-                doc={shown}
-                loading={t('help.loading')}
-                failed={t('help.failed', shown.error)}
-                surface={false}
-            />
-        {:else}
-            {#each shown.parts as part, at (at)}
-                {#if part.kind === 'diagram'}
-                    <Diagram name={part.name} alt={part.alt} />
-                {:else}
-                    <Markdown
-                        doc={prose(part)}
-                        loading={t('help.loading')}
-                        failed={t('help.failed', shown.error)}
-                        surface={false}
-                    />
-                {/if}
-            {/each}
-        {/if}
+    <div class="view" data-instance={instance.id} bind:this={box}>
+        <Markdown
+            doc={shown}
+            loading={t('help.loading')}
+            failed={t('help.failed', shown.error)}
+            surface={false}
+            follow
+        />
     </div>
 </Pane>
 

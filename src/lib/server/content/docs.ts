@@ -27,6 +27,12 @@
 // again after every write that may concern a document, which on a busy hub is every few seconds,
 // so the stat is what keeps a re-read of an unchanged file from rendering it again.
 //
+// A document of oculus's own (HELP.md, DESIGN.md, a guide under docs/: a file whose real path lies
+// inside the engine's real folder) draws a diagram of `docs/diagrams/` as a part of its own beside
+// its runs of prose, so the page can draw it in the page's text colour; the answer carries those
+// parts only when the document holds a diagram. A document's answer names its own path and the
+// manual's, relative to the hub, which the page resolves a relative link to another document from.
+//
 // The HTML is rendered here and filtered on the page: ui/html.ts's sanitise runs over every body
 // this route answers with, before views/shared/prose/Markdown.svelte draws it. One filter, at the
 // one place the markup becomes a document, so this route stays the reader of a file and nothing
@@ -38,7 +44,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { existsSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { decodeHTML } from 'entities';
 import type { MarkedExtension, Token, Tokens } from 'marked';
@@ -49,7 +55,7 @@ import { isSideTier } from '../../data/sources/manifests.ts';
 import { HUB_ROOT } from '../files/files.ts';
 import type {
     Finding,
-    ManualPart,
+    DocPart,
     PortfolioConfig,
     Project,
     RenderedHeading
@@ -84,19 +90,31 @@ export const MARKDOWN_DOCS = PROJECT_DOCS.map((doc) => doc.name).filter((name) =
  * (their level, their words and the id the HTML carries), the frontmatter block it had, and the
  * absolute path of the file read. The page holds the path to tell which `files` events concern the
  * document: an event names the watched root a write landed under, and only a root that holds this
- * file can have changed it. The manual's answer carries its runs of prose and diagrams as well,
- * cut from the same parse as its HTML; no other document's does.
+ * file can have changed it. `path` is the file's path relative to the hub and `manual` the
+ * manual's, each null when the file lies outside the hub; a relative link in the document is
+ * resolved from `path`, and one that resolves to `manual` opens the Help view. A document of
+ * oculus's own that holds a diagram also carries its runs of prose and diagrams as `parts`, cut
+ * from the same parse as its HTML; no other answer does.
  */
 export type DocAnswer = {
     html: string;
     headings: RenderedHeading[];
     frontmatter: Record<string, unknown> | null;
     file: string;
-    parts?: ManualPart[];
+    path: string | null;
+    manual: string | null;
+    parts?: DocPart[];
 };
 
-/** What one render gives the answer: the HTML, its headings, and the manual's runs where it has. */
-type Drawn = { html: string; headings: RenderedHeading[]; parts?: ManualPart[] };
+/** What one render gives the answer: the HTML, its headings, and the runs where it has diagrams. */
+type Drawn = { html: string; headings: RenderedHeading[]; parts?: DocPart[] };
+
+/**
+ * Where a document of oculus's own sits: the real folder holding it and the engine's real folder,
+ * which is what an image address is resolved against to tell a diagram of `docs/diagrams/` from
+ * any other picture.
+ */
+type OwnScope = { folder: string; engine: string };
 
 /**
  * A document is asked for again whenever a write may have changed it, and the page itself asks
@@ -230,14 +248,24 @@ function climbs(path: string): boolean {
  * route: a relative image source is resolved against the document's own folder and addressed under
  * `base.root`, which is the one way a `<img src="figures/one.png">` in a hub document reaches the
  * reader. An address the browser resolves on its own (a scheme, an absolute path) is left as it
- * was written, and a document with no folder to resolve against (the engine's own manual) keeps
- * every source it carries.
+ * was written, and a document with no folder to resolve against keeps every source it carries.
+ *
+ * A document of oculus's own (`own`) is also cut at its diagrams: see cutDiagrams.
  *
  * Every heading carries an id and a `[TOC]` paragraph is drawn as the document's table of
  * contents, by the document rule of data/prose/markdown.ts the page renders with too.
  */
-export function renderMarkdown(text: string, base: { root: string; folder: string } | null): Drawn {
-    return base === null ? renderDocumentParts(text) : renderDocumentParts(text, figures(base));
+export function renderMarkdown(
+    text: string,
+    base: { root: string; folder: string } | null,
+    own: OwnScope | null = null
+): Drawn {
+    const cut = own === null ? null : cutDiagrams(own);
+    const extensions: MarkedExtension[] = [];
+    if (cut !== null) extensions.push(cut.extension);
+    if (base !== null) extensions.push(figures(base));
+    const drawn = renderDocumentParts(text, ...extensions);
+    return cut === null ? drawn : cut.finish(drawn);
 }
 
 /**
@@ -260,69 +288,110 @@ function figures(base: { root: string; folder: string }): MarkedExtension {
     };
 }
 
-/** The address HELP.md gives a diagram, relative to the manual, and the name it carries. */
-const DIAGRAM = /^docs\/diagrams\/([a-z0-9][a-z0-9-]*)\.svg$/;
+/** The name a diagram's file carries, as the diagram route reads it: letters, digits, hyphens. */
+const DIAGRAM_FILE = /^([a-z0-9][a-z0-9-]*)\.svg$/;
 
 /**
- * The diagram a paragraph shows when one image of `docs/diagrams/` is all it holds, read from the
- * image token: the name from its address and the alternative text as the author wrote it, its
- * entities decoded, since the token keeps an `&amp;` as written. Null for any other paragraph, an
- * image of another address or an image inside a sentence among them.
+ * The diagram a paragraph shows when one image is all it holds and the image's address, resolved
+ * from the document's own folder, is a file of the engine's `docs/diagrams/` folder: the name from
+ * the file and the alternative text as the author wrote it, its entities decoded, since the token
+ * keeps an `&amp;` as written. `docs/diagrams/x.svg` in a document of the engine's folder and
+ * `diagrams/x.svg` in one of its `docs/` folder both name the diagram `x`. Null for any other
+ * paragraph: an image of another address (a name that climbs out of the folder or has an upper-case
+ * letter among them), or an image inside a sentence.
  */
-function diagramOf(paragraph: Tokens.Paragraph): { name: string; alt: string } | null {
+function diagramOf(
+    paragraph: Tokens.Paragraph,
+    own: OwnScope
+): { name: string; alt: string } | null {
     const held = paragraph.tokens.filter((one) => one.type !== 'text' || one.raw.trim() !== '');
     const only = held.length === 1 ? held[0] : null;
     if (only?.type !== 'image') return null;
     const image = only as Tokens.Image;
-    const name = DIAGRAM.exec(image.href)?.[1];
+    if (ABSOLUTE.test(image.href)) return null;
+    const target = resolve(own.folder, image.href);
+    if (dirname(target) !== join(own.engine, 'docs', 'diagrams')) return null;
+    const name = DIAGRAM_FILE.exec(basename(target))?.[1];
     return name === undefined ? null : { name, alt: decodeHTML(image.text) };
 }
 
 /**
- * The manual as HTML and as runs of prose and diagrams, from one parse. HELP.md shows a diagram as
- * an image of its file, `docs/diagrams/<name>.svg`, which is the address a Markdown reader opening
- * the file in place resolves; the Help view draws each one from the diagram route instead, in the
- * page's text colour, which an `img` cannot do.
+ * The cut of a document of oculus's own at its diagrams: a marked extension that notes each
+ * top-level paragraph holding one diagram image, and `finish`, which splits the render's HTML at
+ * the marks into runs of prose and diagrams. The diagrams are noted from the tokens as they are
+ * lexed, before the figures pass has addressed the image through the file route, so the address
+ * that is read is the one the author wrote. A page draws each diagram from the diagram route
+ * instead, in its text colour, which an `img` cannot do; the paragraph's own HTML stays in the
+ * answer's `html` for a reader that draws the whole.
  *
- * The cut is made in the render, the way the table of contents is: a paragraph at the top of the
- * document whose one image is a diagram leaves a mark only this call can write, the diagram is
- * noted in order, and the HTML is split at the marks. The heading ids and the table of contents are
- * therefore those of the one parse the answer's HTML comes from. A paragraph inside a list or a
- * quote is never cut, since a run cut there would close markup it did not open.
+ * The cut is made in the render, the way the table of contents is, so the heading ids and the
+ * table of contents are those of the one parse the answer's HTML comes from. A paragraph inside a
+ * list or a quote is never cut, since a run cut there would close markup it did not open. A
+ * document with no diagram gets no parts.
  */
-export function renderManualParts(text: string): Drawn {
+function cutDiagrams(own: OwnScope): {
+    extension: MarkedExtension;
+    finish: (drawn: { html: string; headings: RenderedHeading[] }) => Drawn;
+} {
     const mark = `<!--diagram-${randomUUID()}-->`;
-    const top = new Set<Token>();
+    const found = new Map<Token, { name: string; alt: string }>();
     const shown: { name: string; alt: string; html: string }[] = [];
-    const cut: MarkedExtension = {
+    const extension: MarkedExtension = {
         hooks: {
             processAllTokens(tokens) {
-                for (const one of tokens) top.add(one);
+                for (const one of tokens) {
+                    if (one.type !== 'paragraph') continue;
+                    const diagram = diagramOf(one as Tokens.Paragraph, own);
+                    if (diagram !== null) found.set(one, diagram);
+                }
                 return tokens;
             }
         },
         renderer: {
             paragraph(paragraph: Tokens.Paragraph) {
-                const diagram = top.has(paragraph) ? diagramOf(paragraph) : null;
-                if (diagram === null) return false;
+                const diagram = found.get(paragraph);
+                if (diagram === undefined) return false;
                 const html = `<p>${this.parser.parseInline(paragraph.tokens)}</p>\n`;
                 shown.push({ ...diagram, html });
                 return mark;
             }
         }
     };
-    const parts: ManualPart[] = [];
-    let html = '';
-    const drawn = renderDocumentParts(text, cut);
-    drawn.html.split(mark).forEach((piece, at) => {
-        if (piece.trim() !== '') parts.push({ kind: 'html', html: piece });
-        html += piece;
-        const diagram = shown.at(at);
-        if (diagram === undefined) return;
-        parts.push({ kind: 'diagram', name: diagram.name, alt: diagram.alt });
-        html += diagram.html;
-    });
-    return { html, headings: drawn.headings, parts };
+    function finish(drawn: { html: string; headings: RenderedHeading[] }): Drawn {
+        if (shown.length === 0) return drawn;
+        const parts: DocPart[] = [];
+        let html = '';
+        drawn.html.split(mark).forEach((piece, at) => {
+            if (piece.trim() !== '') parts.push({ kind: 'html', html: piece });
+            html += piece;
+            const diagram = shown.at(at);
+            if (diagram === undefined) return;
+            parts.push({ kind: 'diagram', name: diagram.name, alt: diagram.alt });
+            html += diagram.html;
+        });
+        return { html, headings: drawn.headings, parts };
+    }
+    return { extension, finish };
+}
+
+/**
+ * The scope of a document of oculus's own: set when the file's real path lies inside the engine's
+ * real folder, so a symbolic link to the checkout counts and an engine outside the hub is read as
+ * it is. Null for any other document, and for a file or engine that cannot be resolved.
+ */
+function ownScope(engine: string, file: string): OwnScope | null {
+    const root = realPath(engine);
+    const real = realPath(file);
+    if (root === null || real === null || !inside(real, root)) return null;
+    return { folder: dirname(real), engine: root };
+}
+
+/** A file's path relative to the hub with `/` separators, or null for one outside the hub. */
+function hubPath(hub: string, file: string): string | null {
+    const base = realPath(hub) ?? resolve(hub);
+    const real = realPath(file) ?? resolve(file);
+    if (!inside(real, base)) return null;
+    return relative(base, real).split(sep).join('/');
 }
 
 /**
@@ -332,24 +401,25 @@ export function renderManualParts(text: string): Drawn {
  * tell a later write to it from a write elsewhere whether the file was there or not.
  */
 function answer(
+    into: DocTarget,
     path: string,
-    base: { root: string; folder: string } | null,
-    catalog: Record<string, string>,
     held: string,
-    draw: (text: string) => Drawn = (text) => renderMarkdown(text, base)
+    draw: (text: string) => Drawn
 ): Response {
     const file = resolve(path);
     const tag = fileTag(file);
     if (tag !== '' && tag === held) {
         return new Response(null, { status: 304, headers: { etag: tag, 'cache-control': CACHE } });
     }
-    const read = readDoc(file, catalog);
+    const read = readDoc(file, into.config.text);
     if (isFinding(read))
         return json({ error: read.message, file }, { status: 404, headers: NO_STORE });
     const body: DocAnswer = {
         ...draw(read.text),
         frontmatter: read.frontmatter,
-        file
+        file,
+        path: hubPath(into.hub, file),
+        manual: hubPath(into.hub, join(into.engine, MANUAL))
     };
     return json(body, { headers: tag === '' ? NO_STORE : { ...NO_STORE, etag: tag } });
 }
@@ -377,12 +447,8 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
             { status: 404, headers: NO_STORE }
         );
 
-    return answer(
-        path,
-        { root: HUB_ROOT, folder: dirname(join(folder, name)) },
-        into.config.text,
-        held
-    );
+    const base = { root: HUB_ROOT, folder: dirname(join(folder, name)) };
+    return answer(into, path, held, (text) => renderMarkdown(text, base));
 }
 
 /**
@@ -405,7 +471,9 @@ export function renderHubDoc(into: DocTarget, path: string, held = ''): Response
             { error: 'the document is not inside the hub' },
             { status: 404, headers: NO_STORE }
         );
-    return answer(full, { root: HUB_ROOT, folder: dirname(path) }, into.config.text, held);
+    const base = { root: HUB_ROOT, folder: dirname(path) };
+    const own = ownScope(into.engine, full);
+    return answer(into, full, held, (text) => renderMarkdown(text, base, own));
 }
 
 /**
@@ -531,11 +599,10 @@ export const MANUAL = 'HELP.md';
 /**
  * The manual, read from the engine directory. It is the one path outside the hub this route opens,
  * and it is a constant rather than anything the request names: the `engine` root of api/file is the
- * config folder alone, so the manual has no other way to the page. Its answer carries the runs
- * renderManualParts cut beside the HTML.
+ * config folder alone, so the manual has no other way to the page. It is drawn as prose alone.
  */
 export function renderManual(into: DocTarget, held = ''): Response {
-    return answer(join(into.engine, MANUAL), null, into.config.text, held, renderManualParts);
+    return answer(into, join(into.engine, MANUAL), held, (text) => renderMarkdown(text, null));
 }
 
 /**

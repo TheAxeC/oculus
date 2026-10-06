@@ -40,21 +40,6 @@ dispatch:   # steps in flight, up to six (Z632)
   reviewer_report: agents/reviews/D23-refuter.md (a0a498ede0a9659bb, claude-opus-5-5, 238,723 tokens, 126 tool uses, 22.5 min)
   landing: not-started
   round: 1 (sent 2026-10-06 to a4832e8f1d3fc04a3: agents/briefs/D23-round1.md, 17 items, rulings Z657 to Z661)
-- step: Q125
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a53eac68600a643ef (builder, launched 2026-10-06)
-  worktree: .agents/worktrees/Q125
-  base: 02ac124ec
-  launched: 2026-10-06
-  report: agents/reviews/Q125-report.md
-  brief_check: agents/reviews/Q125-brief-check.md (a401d3fdf1183fba1, claude-opus-5-5, 223,091 tokens, 83 tool uses, 12.3 min)
-  shared_paths: HELP.md, DESIGN.md and README.md with E4g, O30b, Q124, D23 and PR1, and config/layout.yml with E4g and D23, under Z642: the second to land carries the other's text; docs/diagrams regenerated at landing
-  builder_usage: hand-back 286,831 tokens, 65 tool uses, 16.5 min; final run 268,409 tokens, 689 tool uses, 122.6 min (it started twelve general-purpose agents against spec.md:36, all stopped, their output not used, their usage not in this figure); round 1: 222,683 tokens, 431 tool uses, 70.4 min; round 2: 138,205 tokens, 417 tool uses, 72.0 min
-  reviewer_report: agents/reviews/Q125-refuter.md (a592538c261dc0fa4, claude-opus-5-5, 282,071 tokens, 92 tool uses, 14.4 min); over round 1: a87f63d952b088f27, claude-opus-5-5, 335,705 tokens, 104 tool uses, 18.4 min; over round 2: a1e3ba3e91c587de9, claude-opus-5-5, 141,356 tokens, 84 tool uses, 14.7 min
-  landing: not-started
-  round: 2 (sent 2026-10-06 to a53eac68600a643ef under the round cap's exception, item 5 still unbuilt and too large for landing: Spec 1 to 4, Standards 1 to 5, Proof 1 to 3 of the review over round 1; DESIGN.md cites files, never lines); before it, round: 1 (sent 2026-10-06 to a53eac68600a643ef: item 5 done whole, Spec 1 to 3, Proof 1 to 3, Standards 1 to 5, Behaviour 1 and 2 of the review); before it, round 0 (cases ruling agents/briefs/Q125-cases.md, rulings A to E (Z646) on the hand-back; builder resumed; G54's test, Z645 (a), added to the brief by message to the builder: tests/checks/config/arrangements.test.ts)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -163,9 +148,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Q125 waits for Axel's read of the new HELP.md and DESIGN.md before it lands (the brief's "What to build"): `.agents/worktrees/Q125/tools/oculus/HELP.md`, `DESIGN.md` and the six new guides under `docs/`. His word lands it; anything he wants changed is fixed at landing or goes to Q126.
-- PR2 carried 38 lines in 8 project decks that use a spaced hyphen where the prose rule wants a comma, colon or parentheses: raw-pls 10, fed-multicellular-immune 6, dries-bttr-ecg 6, hccnet-fl 5, hccnet-revision 5, ecg-readable-substrate 3, ward-bttr-crosssubject 2, bttd-source-eeg 1 (each `present/main.md`; e.g. "Dries - supervised block-term tensor regression"). The brief carried every word byte for byte, which clashes with the prose rule for these lines. Options: (a) reword each line to the prose rule, keeping every number and name; (b) keep them as carried. Recommendation (a): the slides are public text; (b) is the lazy option.
-- PR3's PDF export needs a library choice (the library rule: the orchestrator checks, Axel decides). Oculus has no PDF writer today (`grep -rn "printToPDF\|jspdf\|pdf-lib\|window.print" src` prints nothing). Options: (a) no new dependency: a page route draws every slide of the deck in its 1280 by 720 frame, one per printed page (`@page` sized 16:9), and Export to PDF prints it; the desktop app writes the PDF straight into the deck's folder through Electron's own `webContents.printToPDF` (Electron 44.5.1 is already a dependency), a browser tab opens the browser's print dialog with Save as PDF. For: text and KaTeX stay vector and selectable, the slides are drawn by the same components as on screen, nothing to install. Against: in a browser tab the reader passes the print dialog and picks where the file goes. (b) playwright-core 1.63.0 (Apache-2.0, Microsoft, released 2026-10-06) or puppeteer-core 25.12.0 (Apache-2.0, Google, 2026-09-23): the server drives a Chromium to print that route to `<deck>/<name>.pdf`. For: one press writes the file in a browser tab too. Against: needs a Chrome binary found on the machine (or Electron's), a process the server starts under the processes rule, and a large dependency for one control. (c) modern-screenshot 4.7.0 (MIT, 2026-04-16) with jsPDF 4.2.1 (MIT, 2026-03-17) in the page: each slide rasterised and placed on a page. For: one press, no process. Against: text is pictures (not selectable, not searchable), KaTeX and fonts must be embedded right, and the file is large. Recommendation (a): vector output from the slides as drawn, no dependency; (c) is the lazy option for quality.
 
 
 
@@ -229,6 +211,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-06 20:20. Q125 landed (the user's guide, the design document and six guides; booking in plan.md; `agents/reviews/Q125-landing.md`) on Axel's acceptance, with the doc changes of PR1, PR2, O30b, Q124 and E4g carried into its guides and nine fixes at landing. PR3 ruled (Z664, Z665) and being prepared. In flight: D23 (repair round 1).
 - 2026-10-06 19:45. PR2 landed (Present decks from any folder; booking in plan.md; `agents/reviews/PR2-landing.md`) with Z655 and Z656 fixed at landing; its look on a scratch oculus (Z662). D23's review saved and repair round 1 sent (Z657 to Z661). In flight: D23 (repair round 1), Q125 (waits for Axel's read). Next: /spec for PR3 and the queued steps that waited for PR2.
 - 2026-10-06. Q124 landed (tree checks with no limit, the vitest races), after O30b and E4g; PR2 and Q125 had their last repair rounds (Z653 for PR2); D23 built. In flight: PR2 (round 2 returned, under review), D23 (built, under review), Q125 (rounds done; waits for Axel's read, then lands; Q126 after it, Z654).
 - 2026-10-06 12:55. Q123 landed (a terminal pane attached as its program left it; booking in plan.md; `agents/reviews/Q123-landing.md`) with five fixes at landing, B1 the top row's shift among them. In flight: E4g (repair round 1), Q124 (under review), O30b (under review), D23 and PR1 (building). Open items Z644 and Z645 raised. Next: Q125 into the free slot, then each landing as its review closes.

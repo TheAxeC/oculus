@@ -18,6 +18,12 @@
     //
     // It draws and reports. Closing, selecting, the drag and every menu item are the pane's, which
     // hands them in.
+    //
+    // The strip's scroll controls, the split-right button and its `...` opener on
+    // `ui.pane_more_glyph` are `bare` ToolButton and Menu boxes of `--tab-action`, the same in a
+    // terminal palette; `ui.pane_menu_glyph` stays the glyph of the Sessions view's row menus. The
+    // Tab Bar and Editor Actions Position submenus of the strip menu write `show_tabs` and
+    // `editor_actions`.
 
     import type { Snippet } from 'svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';

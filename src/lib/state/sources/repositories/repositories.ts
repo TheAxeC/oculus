@@ -9,6 +9,11 @@
 // The worktree rule comes from data/helpers/worktrees.ts, the one place it lives, so the path the
 // view shows before a worktree is made is the path the write makes. Nothing here fetches: the view
 // owns its own requests, and these are the strings they are made from.
+//
+// `repoShape` answers which of six shapes a root is (`unplaced`, `reading`, `missing`, `none`,
+// `failed`, `readable`) for the Changes panel and the Repositories view alike. The Repositories
+// list is over every root the `git` channel carries a state for (`pickerRoots`), the file browser's
+// roots and every session's workspace, not the repositories among them.
 
 import type {
     DiffAttributes,

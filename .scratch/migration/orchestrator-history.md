@@ -1869,3 +1869,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z661 (2026-10-06): automode, sent in D23's repair round 1.
 - Z662 (2026-10-06): automode, PR2's look on a scratch oculus.
 - Z663 (2026-10-06): automode, the default-port start test red on main: cause found read-only, fix at D23's landing or in the next desktop step's brief.
+- Z664 (2026-10-06): Axel, (a): the carried spaced hyphens reworded in PR3.
+- Z665 (2026-10-06): Axel, (a): PDF export through print and Electron's printToPDF.

@@ -1,6 +1,10 @@
 // Layer 3, shell. The breadcrumb over a file tab: the segments of the path its tab names (the root,
 // each folder, the file), and what a press on one opens. Apart from the component so both can be
 // read without a DOM.
+//
+// A press on the root or a folder runs `showFolderInFiles` and a press on the file runs
+// `showInFiles`; the home folder is written `~` in the tab's tooltip once the server's roots answer
+// has come. The Files tree draws no breadcrumb.
 
 import type { Instance } from '$lib/state/workbench/layout';
 import { crumbsOf, fileOfTab } from '$lib/state/workbench/navigation/pages';

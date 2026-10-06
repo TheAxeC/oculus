@@ -21,7 +21,7 @@
 //
 // The render is @viz-js/viz, Graphviz compiled to WebAssembly, so no system install is needed and
 // one input gives the same bytes on every machine. The drawing has no background and every line
-// and letter is `currentColor`, which is what lets the Help view draw it in the page's own text
+// and letter is `currentColor`, which is what lets the doc view draw it in the page's own text
 // colour under any theme; a `<style>` in the file gives it a grey of its own when it is opened
 // outside oculus. tests/checks/diagrams/diagrams.test.ts runs staleFiles() in memory and fails,
 // naming every file, when a committed file differs from what the source gives now. Usage:
@@ -53,7 +53,7 @@ export { WRITE_ROUTE, declarations, writesDot, writesDrawn } from './writes.mjs'
 /** The layers the folder order names, each drawn as its own diagram after the overview. */
 export const LAYER_NAMES = ['data', 'server', 'state', 'ui', 'shell', 'views'];
 
-/** Every diagram, in the order the Help view and DESIGN.md name them. */
+/** Every diagram, in the order DESIGN.md names them. */
 export const NAMES = [
     'layers',
     ...LAYER_NAMES.map((layer) => `layer-${layer}`),
@@ -85,12 +85,12 @@ const STANDALONE =
  * Two things are added for a reader who meets the file outside oculus or points at an edge:
  *
  * - An edge's tooltip is written by Graphviz as a link wrapper, `<a xlink:title=...>`, which the
- *   Help view's graph filter drops. Its words are moved into the edge's own `<title>`, after the
- *   names of the two ends, and the wrapper is removed, so the words show on hover in the Help view
- *   and in a browser alike.
+ *   graph filter of the doc view drops. Its words are moved into the edge's own `<title>`, after
+ *   the names of the two ends, and the wrapper is removed, so the words show on hover in the doc
+ *   view and in a browser alike.
  * - A `<style>` gives the drawing a grey of its own, dark on a light viewer and light on a dark
  *   one, which `currentColor` takes when the file is opened on its own or drawn as an image. The
- *   Help view's filter drops the style, so there the drawing takes the page's text colour.
+ *   doc view's filter drops the style, so there the drawing takes the page's text colour.
  *
  * @param {string} dot
  * @returns {Promise<string>}

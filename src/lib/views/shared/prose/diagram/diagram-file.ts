@@ -1,10 +1,11 @@
-// Layer 3, view helper. The address the Help view fetches one of the manual's diagrams at, and the
-// fetch itself.
+// Layer 3, shared view helper. The address a view fetches one diagram of oculus's own documents at,
+// and the fetch itself.
 //
-// HELP.md shows a diagram as an image of its file beside it, `docs/diagrams/<name>.svg`, which is
-// the address a Markdown reader opening the file in place resolves. The server cuts each such image
-// out of the manual's answer as a diagram part (server/content/docs.ts, renderManualParts), and
-// Diagram.svelte draws it from the diagram route instead, in the page's own text colour.
+// A document shows a diagram as an image of its file, `docs/diagrams/<name>.svg` from the engine's
+// folder, which is the address a Markdown reader opening the file in place resolves. The server
+// cuts each such image out of the document's answer as a diagram part (server/content/docs.ts,
+// cutDiagrams), and Diagram.svelte draws it from the diagram route instead, in the page's own text
+// colour.
 
 import { refusedAnswer } from '$lib/state/shared/answers/answers';
 

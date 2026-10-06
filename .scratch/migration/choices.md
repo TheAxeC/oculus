@@ -11,6 +11,14 @@ The question: the transition slide's hint belongs in the foot with no lede (brie
 - Chosen: (d) a section slide may carry `foot:` in its front matter, the key the summary and grid entries of `order:` already use; the transition carries its hint there with no cards, which draws the old slide exactly.
 - Not chosen: (a) four numbered cards the builder wrote (words the deck never had, repeating the foot); (b) the hint as the lede (the foot unmet); (c) a text slide (the legend lost).
 
+## Z665 (2026-10-06, step PR3, Axel)
+
+PDF export with no new dependency: the slides printed through the browser, the desktop app writing the file with Electron's `printToPDF`. Not chosen: a driven Chromium (playwright-core, puppeteer-core); rasterised pages (modern-screenshot with jsPDF, the lazy option).
+
+## Z664 (2026-10-06, step PR3, Axel)
+
+The 38 carried slide lines with a spaced hyphen are reworded to the prose rule in PR3. Not chosen: keeping them (the lazy option).
+
 ## Z663 (2026-10-06, step PR2)
 
 `start.test.ts` 'asks the default port ... starts no second server', red on main's head without PR2: the orchestrator finds the cause read-only and its fix goes into D23's landing as a fix at landing when small, otherwise into the brief of the next step that changes `src/desktop/`. Not chosen: leaving the red test (the lazy option).

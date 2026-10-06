@@ -5,6 +5,19 @@
 // gives names the part that failed first. A parsed value is taken for a map by
 // data/helpers/guards.ts's `isMap`; what the schemas leave to the checks below is how the parts
 // add up: sizes that sum to one, a minimum size, a folded index inside the children.
+//
+// The envelope is `{ version, pages, current, floats }`, each float `{ id, pane, place }`; a
+// version 4 or 3 envelope is read with no floats. The shipped floats of config/layout.yml reach the
+// page with the configuration, after the saved layout is read, so a layout read from a version 4
+// envelope is written back at version 4 by `serialiseFloatless` until the shipped floats have been
+// taken in (`needsFloats`, and the store's `pendingFloats`), and at the current version from then
+// on; a float-less layout written at a version with floats would read as a reader who has no
+// floats, and the shipped ones would never arrive. A float that does not add up (no tab, a place
+// past the window, an id a page or another float already uses, a tab id held twice, a second float
+// docked on one edge, a window place with a size that is not finite or is under 200) is dropped on
+// reading and the rest kept. A pane carries `locked` (a pane without the field reads as unlocked)
+// and `recent`, the ids of the other tabs it showed (a version 5 envelope holds none), and a saved
+// pane whose pinned tabs are not first is put in that order on reading.
 
 import { z } from 'zod';
 import { tabsOf } from '../instance.ts';

@@ -1,8 +1,8 @@
 // Layer 4, tree check. The config folder oculus ships, read the way the server reads it: which
 // keys sit in which file, that no key is defined in two, that every file carries the one line the
-// Settings view and the manual show, and that the glyphs, the icons and the catalogue groups the
-// files name resolve. The machine's own local.yml is left out of every list here, since a checkout
-// has one or it has none and neither may change a result.
+// Settings view and the Configuration guide show, and that the glyphs, the icons and the catalogue
+// groups the files name resolve. The machine's own local.yml is left out of every list here, since
+// a checkout has one or it has none and neither may change a result.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -260,6 +260,7 @@ describe("oculus's own config directory", () => {
         'views/sessions/timeline.yml',
         'views/sessions/transcript.yml',
         'views/shared/commands.yml',
+        'views/shared/diagram.yml',
         'views/sources/data.yml',
         'views/sources/doc.yml',
         'views/sources/document.yml',

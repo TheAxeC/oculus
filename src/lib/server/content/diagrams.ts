@@ -1,5 +1,5 @@
 // Layer 2, server. The diagrams utils/diagrams/diagrams.mjs draws from the source, served
-// read-only to the Help view: one `.svg` file of the engine's docs/diagrams/ folder, by its file
+// read-only to the doc view: one `.svg` file of the engine's docs/diagrams/ folder, by its file
 // name, and nothing else of that folder or around it.
 //
 // routes/api/(docs)/diagrams/[name]/+server.ts is the endpoint and holds nothing but its GET, since
@@ -11,7 +11,7 @@
 // of the engine directory or out of the folder serves nothing. Every refusal is a 404 that says
 // nothing about what is on disk.
 //
-// The Help view passes what this answers through ui/html.ts's graph filter before it draws it. The
+// The doc view passes what this answers through ui/html.ts's graph filter before it draws it. The
 // headers keep the file an image when its address is opened on its own: `nosniff` holds the type,
 // and the content security policy lets the file carry its own styles and nothing that loads or
 // runs.

@@ -3,6 +3,10 @@
 // and the rest carry -1, so a reader tabs past the whole strip in one press and moves inside it
 // with the arrow keys. The arithmetic is here rather than in each strip so the wrap is written once
 // and asserted without a DOM.
+//
+// The rail's controls sit in a `role="toolbar"` inside the `<nav>`, so the landmark stays a
+// landmark, and no container takes a tabindex or a focus of its own. The stop moves with the focus
+// and passes to the control that took its place when its own control leaves the ring.
 
 /**
  * Which pair of arrow keys a strip answers: the row keys for a tab strip, the column keys for the

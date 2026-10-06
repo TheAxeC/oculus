@@ -3,6 +3,11 @@
 // prose partial (Markdown.svelte) and a slide's narrative (present/parts/Words.svelte) both hand
 // their clicks to `jump`, so every drawn document answers such a link the same way.
 //
+// A view that follows links between documents (the Help and doc views) also hands `jump` a
+// follower: a press on a relative link to a `.md` file is resolved from the linking document
+// (doc-link.ts) and opened by the follower, and the page's address stays as it was. Any other
+// link, a relative one to another kind of file included, is left to the browser.
+//
 // The heading a link names is looked up inside the box of the view the link is drawn in, the
 // element carrying `data-instance`: a manual drawn as several runs of prose reaches a heading in
 // another run, and two tabs holding the same ids each reach their own. A fragment is tried as
@@ -19,16 +24,34 @@
 // scale.
 
 import { HEADING_ID_PREFIX } from '$lib/ui/html';
+import { docLinkOf, type DocLink } from './doc-link';
+
+/** What opens a link between documents: the linking document's path and the opener. */
+export type LinkFollower = {
+    /** The linking document's path relative to the hub, the empty string when it has none. */
+    from: string;
+    /** Opens the document a link names; told the empty path when the link leaves the hub. */
+    open: (link: DocLink) => void;
+};
 
 /**
  * A press on a fragment link: the page's address is left as it is and the heading the fragment
  * names, inside the link's own view, is scrolled to the top of the box that scrolls it. A fragment
- * naming nothing in the view does nothing else. Any other press is left to the browser.
+ * naming nothing in the view does nothing else. With a follower, a press on a relative link to a
+ * Markdown file is handed to it and the address is left as it is too. Any other press is left to
+ * the browser.
  */
-export function jump(event: MouseEvent): void {
+export function jump(event: MouseEvent, follower?: LinkFollower): void {
     const link = event.target instanceof Element ? event.target.closest('a') : null;
     const href = link?.getAttribute('href') ?? '';
-    if (link === null || !href.startsWith('#')) return;
+    if (link === null) return;
+    if (!href.startsWith('#')) {
+        const target = follower === undefined ? null : docLinkOf(href, follower.from);
+        if (target === null || follower === undefined) return;
+        event.preventDefault();
+        follower.open(target);
+        return;
+    }
     event.preventDefault();
     const box = link.closest('[data-instance]');
     if (box !== null) scrollToFragment(box, href.slice(1));

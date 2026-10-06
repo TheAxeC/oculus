@@ -25,6 +25,9 @@
     // screen reader. On a strip that does not hold the focus the labels and the control are drawn
     // at half strength, as VS Code draws an editor group that is not the active one. A tab is never
     // wider than the strip: its label is cut with an ellipsis and its close control keeps its room.
+    //
+    // A tab holding text no save has taken (`Tab.dirty`, set from `ui.unsaved` for a pane tab)
+    // shows the `bullet` glyph in the close control's place and is named `ui.tab_unsaved`.
 
     import { type Tab } from '$lib/ui/tabs/tab-strip';
     import FileIcon from '../display/FileIcon.svelte';

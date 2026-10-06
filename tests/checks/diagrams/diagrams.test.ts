@@ -12,7 +12,7 @@
 // The last cases hold the rendered file to its colours and its edge titles.
 //
 // The copy of the tree is made under the system temporary directory and removed after the run;
-// nothing else is written. What this does not cover is the Help view drawing a diagram.
+// nothing else is written. What this does not cover is the doc view drawing a diagram.
 
 import { appendFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

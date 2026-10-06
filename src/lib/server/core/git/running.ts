@@ -10,6 +10,11 @@
 // its time limit or by its output limit ends the processes it started below git (a hook, the ssh
 // of a fetch) and leaves git to end on its own (`endWith`), so a hook does not outlive the command
 // and a merge cancelled during its hook is left in progress with its MERGE_HEAD.
+//
+// The process table is read at the kill and again every two seconds until nothing is left below
+// git, and a process that detached itself with `setsid` has left the parent chain the read follows,
+// so it is not reached. Cancel is listened for by `endWith` rather than handed to `execFile`, which
+// closes the command's pipes on an abort and answers before git has exited.
 
 import { execFileSync, type ChildProcess } from 'node:child_process';
 import { basename } from 'node:path';

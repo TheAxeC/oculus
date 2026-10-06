@@ -18,6 +18,9 @@
     // on its way. A form drawn outside any pane keeps them in a target of its own and registers
     // nothing. How an entry's value is held by a control, and what a control's value is saved as,
     // are state/forms/form-values.ts.
+    //
+    // An add form's second save is addressed by the id the first one answered with, and a bookmark
+    // form is carried onto the id a rename wrote (`onrenamed`), draft and all.
 
     import { addFromForm } from './entry-form';
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';

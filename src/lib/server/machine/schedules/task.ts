@@ -8,6 +8,10 @@
 // `--dangerously-skip-permissions` in front of it, which runs the task with nobody asked; a press
 // never does. The start keeps no record: a press belongs to no schedule, and a schedule's run is
 // recorded by the watcher (schedules/watch.ts).
+//
+// No print-mode flag is passed (`-p`, `--output-format stream-json`, `--verbose`, `--include-
+// partial-messages`), so a task is the interactive session the chat terminal already is, and a
+// press adds no flag.
 
 import type { Terminal, TerminalRefusal } from '../../../data/model/index.ts';
 import type { UpdateTask } from '../../../data/helpers/run/tasks.ts';

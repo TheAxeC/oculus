@@ -1,8 +1,6 @@
 # Oculus text owned by the help view: the tool's own manual, tools/oculus/HELP.md.
 text:
     help:
-        diagram_failed: 'The diagram {0} could not be drawn ({1}): npm run diagrams writes it.'
-        diagram_loading: Drawing the diagram {0}...
         failed: 'The manual could not be read: {0}'
         loading: Reading the manual...
     views:

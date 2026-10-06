@@ -13,6 +13,11 @@
 // field of the entry in one call, so one bad value holds back itself and nothing else.
 //
 // server/edit/writes.ts is the route and re-exports the public half of this file.
+//
+// A write answers with the id the file gives the entry after the write (`WriteOutcome.id`, set by
+// `writeEntry` and `createEntry` from their own `entryId`, carried in the endpoint's JSON and read
+// into `WriteAnswer`), so a page holding a form over that entry is told where the entry now is
+// rather than reading the file's id rule a second time.
 
 import { z } from 'zod';
 import { byKey, scalar } from '../../../data/helpers/guards.ts';

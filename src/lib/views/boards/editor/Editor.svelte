@@ -12,10 +12,10 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The project.yml edit form of DESIGN.md's step 4: the sections of
-    // config/catalogs/manifest-schema.yml in order, one widget per field, and a Save that posts
-    // only what was changed. The form is data: this file names no field, no section and no list of
-    // choices.
+    // Layer 3, view. The project.yml edit form (DESIGN.md, "Configuration": the edit form is data
+    // in config/catalogs/manifest-schema.yml; "Decisions taken": "Unsaved form input is instance
+    // state"): the sections of the schema in order, one widget per field, and a Save that posts
+    // only what was changed. This file names no field, no section and no list of choices.
     //
     // What it holds is the edits, not the values. A field reads the project's current value until
     // it is edited, and the edit sits over it until it is saved or reverted; so nothing has to be

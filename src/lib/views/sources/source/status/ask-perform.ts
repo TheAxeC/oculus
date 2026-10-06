@@ -9,6 +9,9 @@
 // Toggle Git Blame Editor Decoration. Each is in `tabActions` only while it applies, so the palette
 // lists what the tab on screen can do, whether or not it draws an editor, and an ask for an action
 // that does not apply does nothing.
+//
+// Cmd+S is the shell key action `save` (shell/keys/keys.ts), performed in workbench-keys.svelte.ts
+// by an ask to the source tab on screen, and Alt+Z is the key of word wrap in the editor.
 
 import { SAVE_ACTION, type EditorAsk } from '$lib/state/workbench/navigation/editor-status.svelte';
 import type { Indent } from '$lib/state/workbench/navigation/editor-text';

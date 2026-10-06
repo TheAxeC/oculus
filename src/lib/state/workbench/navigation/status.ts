@@ -8,6 +8,11 @@
 // repository holding a tab's file is the deepest one holding it, read through deepestHolding of
 // data/helpers/files/paths.ts, the rule the source tab's gutter reads a repository by too, on the
 // file's whole path built by the same file's joinPath.
+//
+// The language picker's entries are `languageActions`, and Configure File Association
+// (`associateEnding`) writes `sources.yml`'s `languages:` as a `config-value` write recorded in
+// History. Language and indent choices are kept in the tab's instance state, and the hidden set of
+// items and Do Not Disturb are kept in the ui store.
 
 import { z } from 'zod';
 import type {

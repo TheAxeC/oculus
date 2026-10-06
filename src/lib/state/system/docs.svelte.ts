@@ -26,12 +26,12 @@
 // document rebuilds no markup and reloads no figure.
 
 import { z } from 'zod';
-import type { ManualPart, Message, RenderedHeading } from '../../data/model/index.ts';
+import type { DocPart, Message, RenderedHeading } from '../../data/model/index.ts';
 import { mapShape, readJson, rowsShape } from '../../data/shapes/shapes.ts';
 import { failedAnswer } from '../shared/answers/answers.ts';
 import type { EntitiesStore, Fetcher, Fetching, Queries } from '../shared/stores/shapes.ts';
 
-export type { ManualPart, RenderedHeading };
+export type { DocPart, RenderedHeading };
 
 /** One document as the view reads it: the rendered HTML, its frontmatter, or what went wrong. */
 export type DocState = {
@@ -44,10 +44,14 @@ export type DocState = {
     /** True while the first answer for the pair is still to come. */
     loading: boolean;
     /**
-     * The manual's runs of prose and diagrams as the server cut them, in order; empty for every
-     * other document.
+     * The runs of prose and diagrams as the server cut them, in order, for a document of oculus's
+     * own that holds a diagram; empty for every other document.
      */
-    parts: ManualPart[];
+    parts: DocPart[];
+    /** The document's path relative to the hub, or the empty string outside it. */
+    path: string;
+    /** The manual's path relative to the hub, or the empty string outside it. */
+    manual: string;
 };
 
 /** What a pair reads as before its answer arrives. */
@@ -57,7 +61,9 @@ const PENDING: DocState = {
     frontmatter: null,
     error: '',
     loading: true,
-    parts: []
+    parts: [],
+    path: '',
+    manual: ''
 };
 
 /** What no pair at all reads as: an empty id or name asks nothing and waits for nothing. */
@@ -67,7 +73,9 @@ const NOTHING: DocState = {
     frontmatter: null,
     error: '',
     loading: false,
-    parts: []
+    parts: [],
+    path: '',
+    manual: ''
 };
 
 /** One rendered document per project and name, held for one client. */
@@ -90,13 +98,13 @@ const HUB = 'hub';
 const MANUAL = 'manual';
 
 /**
- * One run of the manual as the answer carries it: a string of HTML, or a diagram with a name and
+ * One run of a document as the answer carries it: a string of HTML, or a diagram with a name and
  * its words. Any other run is left out by `bodyShape`.
  */
-const manualPartShape = z.union([
+const docPartShape = z.union([
     z.object({ kind: z.literal('html'), html: z.string() }),
     z.object({ kind: z.literal('diagram'), name: z.string(), alt: z.string() })
-]) satisfies z.ZodType<ManualPart>;
+]) satisfies z.ZodType<DocPart>;
 
 /** One heading of the render as the answer carries it. */
 const headingShape = z.object({
@@ -107,15 +115,17 @@ const headingShape = z.object({
 
 /**
  * What api/docs answers in JSON, every field read as absent when it is of the wrong type, since an
- * error answer carries fewer. The runs of the manual that fail their shape are dropped, and an
- * answer without runs reads as none.
+ * error answer carries fewer. The runs that fail their shape are dropped, and an answer without
+ * runs reads as none. A path the server names as outside the hub reads as the empty string.
  */
 const bodyShape = z.object({
     html: z.string().catch(''),
     headings: rowsShape(headingShape).catch([]),
     frontmatter: mapShape.nullable().catch(null),
     file: z.string().catch(''),
-    parts: rowsShape(manualPartShape).catch([])
+    parts: rowsShape(docPartShape).catch([]),
+    path: z.string().catch(''),
+    manual: z.string().catch('')
 });
 
 /** What an answer that is no map of fields reads as. */
@@ -155,7 +165,9 @@ function same(one: DocState, other: DocState): boolean {
         one.error === other.error &&
         one.loading === other.loading &&
         JSON.stringify(one.frontmatter) === JSON.stringify(other.frontmatter) &&
-        JSON.stringify(one.parts) === JSON.stringify(other.parts)
+        JSON.stringify(one.parts) === JSON.stringify(other.parts) &&
+        one.path === other.path &&
+        one.manual === other.manual
     );
 }
 
@@ -269,6 +281,8 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
                         headings: body.headings,
                         frontmatter: body.frontmatter,
                         parts: body.parts,
+                        path: body.path,
+                        manual: body.manual,
                         error: '',
                         loading: false
                     },

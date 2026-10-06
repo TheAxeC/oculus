@@ -71,7 +71,9 @@
         frontmatter: null,
         error,
         loading,
-        parts: []
+        parts: [],
+        path: '',
+        manual: ''
     });
 
     $effect(() => {

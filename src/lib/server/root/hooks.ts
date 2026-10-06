@@ -1,5 +1,6 @@
-// Layer 2, server. DESIGN.md's step 5: "the Notification and Stop hooks posting to the server and
-// the server firing a macOS notification through osascript the moment a session wants you."
+// Layer 2, server. The Notification and Stop hooks of Claude Code, posting to the server
+// (DESIGN.md, "Auth": the hook is the one request that carries neither header), and the macOS
+// notification the server fires through osascript the moment a session wants you.
 //
 // routes/api/(sessions)/hook/+server.ts holds nothing but its POST, since a route module may export
 // only its verbs (docs.ts's own comment names the pattern); everything the request does is here.

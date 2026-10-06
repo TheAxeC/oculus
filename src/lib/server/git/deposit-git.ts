@@ -14,8 +14,9 @@
 //     gh repo edit <owner/repo> --default-branch main
 //
 // This module exists rather than growing git-write.ts because the force option appears nowhere in
-// that file, and the snapshot mode of DESIGN.md's step 6 needs it exactly once. Here it appears at
-// one call site, `forcePushSnapshot`.
+// that file, and the snapshot mode of the deposit needs it exactly once (DESIGN.md, "Git",
+// "Fixed git choices": the one forced push in oculus). Here it appears at one call site,
+// `forcePushSnapshot`.
 //
 // A command that runs the mirror's hooks (the commit, the switch and the push) has no time limit,
 // and every command takes the signal `Where` carries, which ends it when Cancel aborts the run.
@@ -296,9 +297,9 @@ export function push(at: Where): Promise<Outcome> {
 }
 
 /**
- * The snapshot of DESIGN.md's step 6, kept as a second button: the orphan commit replaces the
- * remote's `main` outright, so the history that was there is gone. This is the one call in oculus
- * that forces a push.
+ * The snapshot of the deposit (DESIGN.md, "Fixed git choices"), kept as a second button: the
+ * orphan commit replaces the remote's `main` outright, so the history that was there is gone. This
+ * is the one call in oculus that forces a push.
  */
 export function forcePushSnapshot(at: Where): Promise<Outcome> {
     return pushCmd(at, ['--force', 'origin', 'HEAD:main']);

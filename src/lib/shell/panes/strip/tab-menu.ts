@@ -5,6 +5,9 @@
 // New Window and Copy into New Window.
 // Apart from the component so the items, the tabs each close closes and the path copies can be read
 // without a DOM.
+//
+// Every close goes through `askAndClose`, so a tab holding unsaved text is asked about, and a
+// pinned tab is closed by Close alone.
 
 import type { Edge } from '$lib/state/workbench/layout';
 import { absoluteOf } from '$lib/state/workbench/navigation/pages';

@@ -5,6 +5,9 @@
 // state/sessions/terminals.svelte.ts calls them with what it holds and the tests call them with
 // what a case builds. The file holds two functions that write to the workbench they are handed,
 // closeEnded and moveInto; the others are pure.
+//
+// A Terminal tab is titled by `terminalTabTitle`, which only the tab uses; the Sessions view's rows
+// and the Processes view keep `terminalLabel` (title, else name).
 
 import type { Terminal } from '../../../data/model/index.ts';
 import { t } from '../../shared/words/text.ts';

@@ -11,7 +11,12 @@
     // what it is reading; the pending line is an Empty state and the failure its error box.
     //
     // A press on a link to a fragment is handled inside the view by jump.ts, never through the
-    // address.
+    // address. A view that says `follow` also has a press on a relative link to a Markdown file
+    // opened as a tab: the target is resolved from this document's own path (the answer's `path`),
+    // the manual opens the Help view at the heading the link names, and any other document opens
+    // as a doc tab, which says so when the `docs:` list of config/layout.yml does not name it. A
+    // link that leaves the hub, and any link of a document outside the hub (the answer's `path`
+    // is then the empty path), opens nothing and the page stays where it is.
     //
     // A right-click on the document opens the prose menu (prose-menu.ts), read as the right-click
     // arrives: Copy over a selection, Copy Image over an image, and Open Image over an image the
@@ -27,7 +32,9 @@
     import type { ClientState } from '$lib/state/client/context';
     import { proseAt, proseMenu, prosePicked } from './prose-menu';
     import type { DocState } from '$lib/state/system/docs.svelte';
-    import { jump } from './jump';
+    import { jump, type LinkFollower } from './jump';
+    import type { DocLink } from './doc-link';
+    import { docState, readDocs } from '$lib/state/workbench/navigation/catalogue';
 
     type Props = {
         /** What state/system/docs.svelte.ts holds for this document. */
@@ -43,9 +50,11 @@
          * false, since a second layer reads as a nearly solid one.
          */
         surface?: boolean;
+        /** Whether a relative link to a Markdown file opens that document in a tab. */
+        follow?: boolean;
     };
 
-    let { doc, loading, failed, surface = true }: Props = $props();
+    let { doc, loading, failed, surface = true, follow = false }: Props = $props();
 
     /**
      * The client's stores, which Open Image opens the file view through. A document drawn outside
@@ -68,6 +77,31 @@
         return proseMenu({ selection: heard.text !== '', image: heard.image, origin }, t);
     }
 
+    /** Open the document a link between documents names, as the view's tab. */
+    function open(link: DocLink): void {
+        if (client === undefined || link.path === '') return;
+        const state = fragmentState(link);
+        if (link.path === doc.manual) {
+            client.layout.openView('help', state);
+            return;
+        }
+        const listed = readDocs(client.entities.config()?.config.docs).find(
+            (one) => one.path === link.path
+        );
+        const entry = listed ?? { label: '', path: link.path, group: '' };
+        client.layout.openView('doc', { ...docState(entry), ...state });
+    }
+
+    /** The state that carries the heading a link names, none for a link to the document alone. */
+    function fragmentState(link: DocLink): { fragment?: string } {
+        return link.fragment === '' ? {} : { fragment: link.fragment };
+    }
+
+    /** What a press on a link between documents is handed to, for a view that follows them. */
+    const follower: LinkFollower | undefined = $derived(
+        follow ? { from: doc.path, open } : undefined
+    );
+
     function picked(pick: string): void {
         prosePicked(pick, heard, {
             openView: (view: string, state: unknown) => client?.layout.openView(view, state)
@@ -84,7 +118,12 @@
          box only hears it bubble up, so the box itself takes no key and no focus. -->
     <ContextMenu label={t('ui.prose_menu')} read={pointed} onpick={picked}>
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <div class="doc" class:surfaced={surface} onclick={jump} bind:this={box}>
+        <div
+            class="doc"
+            class:surfaced={surface}
+            onclick={(event) => jump(event, follower)}
+            bind:this={box}
+        >
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
             {@html sanitise(doc.html)}
         </div>

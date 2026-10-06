@@ -10,6 +10,9 @@
     // rules below name only tokens: the tinted form paints `--c-<tone>-txt` on `--chip` and the
     // filled form paints `--on-c-<tone>` on `--c-<tone>`, which are the pairs
     // tests/checks/look/contrast.test.ts measures under every theme.
+    //
+    // Given an `onclick` it is a toggle with `aria-pressed`, toned or untoned (the Joint-work and
+    // disclosure pills are untoned).
 
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';

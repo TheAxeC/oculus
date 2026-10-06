@@ -1,5 +1,6 @@
 <script lang="ts">
-    // Layer 3, view partial. One diagram of the manual, drawn in the page's own text colour.
+    // Layer 3, shared view partial. One diagram of a document of oculus's own, drawn in the page's
+    // own text colour.
     //
     // The drawing is the diagram route's SVG, which utils/diagrams/diagrams.mjs writes with no
     // background and every line and letter in `currentColor`. Drawn by an `img` it would keep black
@@ -7,20 +8,20 @@
     // passed through ui/html.ts's graph filter and put into the page, where `currentColor` is the
     // colour of the figure around it: the prose colour of the theme in force.
     //
-    // A later name supersedes a fetch still on its way, and a closed view stops one: newest.ts
+    // A later name supersedes a fetch in flight, and a closed view stops one: newest.ts
     // aborts the fetch its stop is called for and hands on an answer only while its fetch is the
     // current one. A file the route refuses, or a fetch that fails, draws a line saying which
     // diagram and why, instead of an empty box.
 
     import { t } from '$lib/state/shared/words/text';
     import { sanitiseGraph } from '$lib/ui/html';
-    import { loadDiagram, type DiagramFile } from './manual';
+    import { loadDiagram, type DiagramFile } from './diagram-file';
     import { newestAnswer } from './newest';
 
     type Props = {
-        /** The diagram's file name without `.svg`, as HELP.md names it. */
+        /** The diagram's file name without `.svg`, as the document names it. */
         name: string;
-        /** The alternative text HELP.md gives it, read out in place of the drawing. */
+        /** The alternative text the document gives it, read out in place of the drawing. */
         alt: string;
     };
 
@@ -31,7 +32,7 @@
     /** The answer for the name shown now; one for an earlier name is not drawn. */
     const shown = $derived(drawn !== null && drawn.name === name ? drawn : null);
 
-    /** Takes the answer of the newest fetch and drops one for a name no longer shown. */
+    /** Takes the answer of the newest fetch and drops one for a name that is not the one shown. */
     const ask = newestAnswer<DiagramFile>((answer) => {
         drawn = answer;
     });
@@ -46,9 +47,9 @@
 
 <figure class="diagram" data-diagram={name} role="img" aria-label={alt}>
     {#if shown === null}
-        <p class="note">{t('help.diagram_loading', name)}</p>
+        <p class="note">{t('diagram.loading', name)}</p>
     {:else if shown.error !== ''}
-        <p class="note">{t('help.diagram_failed', name, shown.error)}</p>
+        <p class="note">{t('diagram.failed', name, shown.error)}</p>
     {:else}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- the graph filter writes this -->
         {@html sanitiseGraph(shown.svg)}

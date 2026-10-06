@@ -378,7 +378,7 @@ export type {
     Followup,
     Funding,
     Id,
-    ManualPart,
+    DocPart,
     RenderedHeading,
     Organisation,
     Person,

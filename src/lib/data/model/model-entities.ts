@@ -211,10 +211,11 @@ export type DocFlag = {
 };
 
 /**
- * One run of oculus's manual as api/docs answers it: HTML to draw as prose, or one diagram of
- * `docs/diagrams/` by its file name without `.svg`, with the alternative text HELP.md gives it.
+ * One run of a document of oculus's own as api/docs answers it: HTML to draw as prose, or one
+ * diagram of `docs/diagrams/` by its file name without `.svg`, with the alternative text the
+ * document gives it.
  */
-export type ManualPart =
+export type DocPart =
     { kind: 'html'; html: string } | { kind: 'diagram'; name: string; alt: string };
 
 /**

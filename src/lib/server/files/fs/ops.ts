@@ -33,6 +33,14 @@
 // Each operation runs behind the write chain `opsWrites`, apart from the workspace chain, so a long
 // copy holds up another file operation and nothing else. The Trash is a parameter of the entry
 // point, so a test hands in a spy and moves nothing to the real Trash.
+//
+// What the system answers is mapped to a word: `EACCES`, `EPERM` and `EROFS` are `denied` and
+// `ENAMETOOLONG` is `invalid_name`. An upload is one file's bytes as base64 under one name that
+// holds no `/`. A copy onto a taken name takes the next free name (`report copy.md`, then
+// `report copy 2.md`), and a move onto a taken name is `exists` until the page sends
+// `replace: true`, which sends the taken item to the Trash first. The GET answers the two sides of
+// a comparison as a `DiffSides`, `with*` being the left side; a folder on a side is `not_a_folder`
+// and a file over `TEXT_LIMIT` is `too_large`.
 
 import { json } from '@sveltejs/kit';
 import { constants, lstatSync, readFileSync, statSync } from 'node:fs';

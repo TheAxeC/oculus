@@ -131,7 +131,11 @@ const humanShape = z
 /**
  * The turns of one transcript from byte `from`, each said turn cut at `cap` characters. An
  * unreadable file, or one with nothing appended, answers with no turns and the offset it was asked
- * from. The export asks with no cap, since a file handed to the reader is the whole conversation.
+ * from. The export asks with no cap, since a file handed to the reader is the whole conversation. A
+ * read holds every turn of the file while it reads, which cost about 460 MiB more for a 629 MB
+ * transcript when measured, so the Markdown export is streamed a turn at a time (`markdownStream`
+ * of server/sessions/transcript-routes.ts) and a transcript whose text passes the longest string is
+ * one download as well.
  */
 export function readTurns(
     path: string,

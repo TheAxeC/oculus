@@ -1,14 +1,15 @@
 // Source audit. A comment says what the code does and why, never when it was written, which package
 // or session wrote it, what bug came before it or what was reverted, and a document says what the
 // tool is and does. Every comment line under src, tests, utils and config, every line of a text
-// file there, and every line of the three documents, is read and matched against the migration
-// plan's id vocabulary, a date and the session phrases below; every hit is printed with its file
-// and line, so a failure names the lines to rewrite rather than only the count of them.
+// file there, and every line of the documents (HELP.md, DESIGN.md, README.md and each guide under
+// docs/) is read and matched against the migration plan's id vocabulary, a date and the session
+// phrases below; every hit is printed with its file and line, so a failure names the lines to
+// rewrite rather than only the count of them.
 //
 // This file holds the vocabulary it searches for, so it excludes itself by the marker below rather
 // than by its name: a rename keeps the audit working and keeps it from reporting its own data.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
@@ -19,6 +20,9 @@ const ROOTS = ['src', 'tests', 'utils', 'config'];
 
 /** The documents, read whole: every line of one is prose a reader takes as the tool's present. */
 const DOCS = ['HELP.md', 'DESIGN.md', 'README.md'];
+
+/** The folder holding the guides, each a document read whole as well. */
+const GUIDES = 'docs';
 
 /** The one file the vocabulary may appear in is the one carrying this word. */
 const MARKER = 'oculus-plan-id-audit';
@@ -110,10 +114,22 @@ function commentHits(base = '.'): string[] {
     return found;
 }
 
-/** Every line of the three documents naming a package id, a date or a session. */
+/** The documents of a tree: the three at its root and every Markdown guide under its `docs/`. */
+function documentsOf(base: string): string[] {
+    const folder = join(base, GUIDES);
+    const guides = existsSync(folder)
+        ? readdirSync(folder)
+              .filter((name) => name.endsWith('.md'))
+              .sort()
+              .map((name) => join(GUIDES, name))
+        : [];
+    return [...DOCS, ...guides];
+}
+
+/** Every line of the documents naming a package id, a date or a session. */
 function documentHits(base = '.'): string[] {
     const found: string[] = [];
-    for (const doc of DOCS) {
+    for (const doc of documentsOf(base)) {
         if (!existsSync(join(base, doc))) continue;
         readFileSync(join(base, doc), 'utf8')
             .split('\n')
@@ -133,11 +149,11 @@ describe('no history in code', () => {
         expect(documentHits().join('\n')).toBe('');
     });
 
-    // Revert: in proseLines of tests/checks/source/history.test.ts, read a code line only when it
-    // opens with its comment (commentLines), and the trailing comments of src/trail.ts and
-    // utils/trail.sh go unread; read a code line whole, and src/url.ts and
-    // src/quartile.ts are hits.
-    it('reads every line of a text file and every comment of code, trailing ones included', () => {
+    // The planted tree tells apart a code line read whole from one read only for its comment: the
+    // trailing comments of src/trail.ts and utils/trail.sh are hits, while the url of src/url.ts
+    // and the code `const Q1` of src/quartile.ts are not (its block comment is a hit). A guide
+    // under docs/ holding an id is a hit of the documents.
+    it('reads every line of a text file, every guide and every comment of code', () => {
         const dir = scratchDir('oculus-history-');
         const plant = (rel: string, body: string): void => {
             const full = join(dir, rel);
@@ -154,6 +170,7 @@ describe('no history in code', () => {
         plant('src/Page.svelte', '<!-- drawn for O17 -->\n<p>{x /* since Q3 */}</p>\n');
         plant('src/app.html', '<html>\n<!-- the page of D19c -->\n</html>\n');
         plant('utils/trail.sh', 'x=1 # Q12\n');
+        plant('docs/x.md', 'the guide kept for Q51\n');
         expect(commentHits(dir)).toEqual([
             'src/Page.svelte:1: <!-- drawn for O17 -->',
             'src/Page.svelte:2: <p>{x /* since Q3 */}</p>',
@@ -165,5 +182,6 @@ describe('no history in code', () => {
             'utils/trail.sh:1: x=1 # Q12',
             'config/keys.yml:1: key: 1 # kept since 2026-09-10'
         ]);
+        expect(documentHits(dir)).toEqual(['docs/x.md:1: the guide kept for Q51']);
     });
 });
