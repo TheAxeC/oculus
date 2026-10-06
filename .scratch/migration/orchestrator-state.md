@@ -25,21 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: E4g
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a0af7bce29bac6fa9 (builder, launched 2026-10-06)
-  worktree: .agents/worktrees/E4g
-  base: 31068a9de
-  launched: 2026-10-06
-  report: agents/reviews/E4g-report.md
-  brief_check: agents/reviews/E4g-brief-check.md (a0be667a081a9ab33, claude-opus-5-5, 205,592 tokens, 78 tool uses, 8.8 min)
-  shared_paths: with O30b: DESIGN.md's file tree (E4g adds docs/apps.md under docs/ at :79-80, O30b adds its build folders higher in the same block; both lines kept) and HELP.md (E4g :21, :82 and :210-221, O30b :186, :365 and :367, disjoint); so the merge is simple
-  builder_usage: 154,994 tokens, 322 tool uses, 82.4 min; repair round 1 204,902 tokens, 167 tool uses, 60.1 min
-  landing: not-started
-  round: 1 (sent 2026-10-06 to a0af7bce29bac6fa9 over the worktree as the reviewer left it; widened to apps.svelte.ts getState, the apps.write words, the question's tab selected, DESIGN.md's terminal sentence)
-  reviewer_report: agents/reviews/E4g-refuter.md (a1387d637f72b6115, claude-opus-5-5, 338,187 tokens, 107 tool uses, 19.9 min); over round 1: adaf5386f9cdce4b8, claude-opus-5-5, 241,066 tokens, 62 tool uses, 11.1 min
 - step: D23
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -81,7 +66,7 @@ dispatch:   # steps in flight, up to six (Z632)
   landing: not-started
   round: 0 (cases ruling agents/briefs/O30b-cases.md, rulings A1 and B1 on the hand-back; builder resumed)
   builder_usage: hand-back 279,639 tokens, 76 tool uses, 35.7 min; final run 218,857 tokens, 129 tool uses, 138.8 min (its last notice came when its stuck shell, pid 80452, ended)
-  reviewer_report: agents/reviews/O30b-refuter.md (a1d5134e2f2e837cf, claude-opus-5-5, running)
+  reviewer_report: agents/reviews/O30b-refuter.md (a1d5134e2f2e837cf, claude-opus-5-5, 238,618 tokens, 85 tool uses, 38.7 min)
 - step: Q124
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -265,7 +250,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-06. PR1 landed (Present full screen); E4g lands next (its round-1 review saved, Behaviour 1 under Z647); then PR2 is prepared. In flight: Q124 (round 1), O30b (review), D23 (building), Q125 (building).
+- 2026-10-06. E4g landed (the apps guide); O30b lands next (its review saved, eight small findings fixed at landing); PR2 is being prepared. In flight: Q124 (round 1), D23 (building), Q125 (building).
 - 2026-10-06 12:55. Q123 landed (a terminal pane attached as its program left it; booking in plan.md; `agents/reviews/Q123-landing.md`) with five fixes at landing, B1 the top row's shift among them. In flight: E4g (repair round 1), Q124 (under review), O30b (under review), D23 and PR1 (building). Open items Z644 and Z645 raised. Next: Q125 into the free slot, then each landing as its review closes.
 - 2026-10-06 09:30. E4 landed (apps added while oculus runs; booking in plan.md; `agents/reviews/E4-landing.md`) after its look on TEST, which Axel's dev-server restart (Z631) made possible. Axel ruled Z630 (G51's words, written into guarded.md), Z632 (`workers_at_once` 6 in both files) and Z633 (step E4g, the apps guide in `tools/oculus/docs/apps.md`, first in the queue). Nothing in flight. Next: /spec for E4g, O30b, Q123, Q124, D23 and X3e, the six slots.
 - 2026-10-06 08:35. E4 staged on main, not committed: gate-E4 passed `npm run test:landing` (6 of 6), main's staged diff `cmp`-equal to the gate's, penpal and the Electron binary installed in main's node_modules, guarded.md names E4's tests (G1, G8, G9, G31, G49, G50). The look waits on Z631 (Axel's dev server needs a restart to resolve penpal); `~/.oculus/approvals.json` and `workspaces.json` back at their shasums, the scratch apps kept in the session scratchpad. Next: the look, the booking, the commit, then O30b, Q123, Q124 prepared.

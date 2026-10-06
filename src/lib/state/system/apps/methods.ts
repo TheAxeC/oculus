@@ -29,7 +29,7 @@ import {
     refusedWith,
     rejectWith
 } from './rules.ts';
-import { writeWords } from './words.ts';
+import { askWords } from './words.ts';
 
 /** The theme as the frame is told it. */
 export type Theme = { name: string; tokens: Record<string, string>; wall: boolean };
@@ -264,7 +264,7 @@ export function createMethods(context: MethodsContext): Methods {
             if (!writes.take()) return rateRefused();
             if (CONFIRMED_WRITES.includes(kind)) {
                 const yes = await context.confirm({
-                    message: t('apps.confirm_write', row.title, writeWords(kind), targetOf(body)),
+                    message: t('apps.confirm_write', row.title, askWords(kind), targetOf(body)),
                     detail: ''
                 });
                 if (!context.alive()) return never();

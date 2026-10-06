@@ -1,6 +1,7 @@
 // Layer 2, client state. The words the approval panel and the write question say a channel or a
-// write kind in. The catalog holds one key per channel (`apps.read.<channel>`) and per kind
-// (`apps.write.<kind>`), and each is read by a closure with its key written whole, so a key that no
+// write kind in. The catalog holds one key per channel (`apps.read.<channel>`), one per kind for
+// the panel (`apps.write.<kind>`) and one per kind that asks first for the question
+// (`apps.ask.<kind>`). Each is read by a closure with its key written whole, so a key that no
 // closure reads, or a closure naming a key the catalog lacks, is found by the key check.
 
 import { t } from '../../shared/words/text.ts';
@@ -45,6 +46,15 @@ const WRITE: Record<string, (() => string) | undefined> = {
     'new-idea': () => t('apps.write.new-idea')
 };
 
+/** The verb phrase of the question for a write kind that asks first, by kind. */
+const ASK: Record<string, (() => string) | undefined> = {
+    'delete-entry': () => t('apps.ask.delete-entry'),
+    'feed-delete': () => t('apps.ask.feed-delete'),
+    'new-idea': () => t('apps.ask.new-idea'),
+    'linkedin-idea': () => t('apps.ask.linkedin-idea'),
+    'linkedin-post': () => t('apps.ask.linkedin-post')
+};
+
 /** The sentence for a channel an app reads: the root's own part for a root app of `git` or `files`.
  * */
 export function readWords(channel: string, root: boolean): string {
@@ -55,5 +65,11 @@ export function readWords(channel: string, root: boolean): string {
 /** The sentence for a write kind, or the kind itself for one the catalog has no sentence for. */
 export function writeWords(kind: string): string {
     const held = WRITE[kind];
+    return held === undefined ? kind : held();
+}
+
+/** The verb phrase of the question for a write kind that asks first, or the kind itself. */
+export function askWords(kind: string): string {
+    const held = ASK[kind];
     return held === undefined ? kind : held();
 }

@@ -46,6 +46,12 @@ export type AppsDeps = {
     registry: { viewFor: (view: string) => { listed?: boolean } | undefined };
     layout: {
         openView: (view: string, state?: unknown) => string;
+        /** Select a tab in its pane. */
+        activateInstance: (id: string) => void;
+        /** The page or float whose tree holds a tab, or null. */
+        holding: (id: string) => { id: string } | null;
+        /** Show a page; an id naming no page, a float's, changes nothing. */
+        switchPage: (id: string) => void;
         showFolderInFiles: (path: string, root?: string) => string;
     };
     notices: { post: (message: string) => unknown };
@@ -152,7 +158,11 @@ export function createApps(deps: AppsDeps): AppsStore {
         runs.set(instance, { ...run(instance), ...change });
     };
 
-    /** Show the question at the head of the tab's line, or none when the line is empty. */
+    /**
+     * Show the question at the head of the tab's line, or none when the line is empty. The page
+     * that holds the tab is shown and the tab selected in its pane, since a question drawn in a tab
+     * that is not on screen is not seen and the app's call waits on it.
+     */
     function showFirst(instance: string): void {
         const first = waiting.get(instance)?.[0];
         if (first === undefined) {
@@ -160,6 +170,11 @@ export function createApps(deps: AppsDeps): AppsStore {
             return;
         }
         let settled = false;
+        // The question is drawn inside the tab, so its page is shown and the tab selected for the
+        // reader to see it.
+        const host = deps.layout.holding(instance);
+        if (host !== null) deps.layout.switchPage(host.id);
+        deps.layout.activateInstance(instance);
         setRun(instance, {
             question: {
                 message: first.message,
@@ -283,7 +298,7 @@ export function createApps(deps: AppsDeps): AppsStore {
             },
             dir,
             shown: (root) => deps.served().some((one) => one.key === root),
-            getState: () => appTab(deps.ui.instanceState(options.instance)).value,
+            getState: () => $state.snapshot(appTab(deps.ui.instanceState(options.instance)).value),
             setState: (value) => {
                 const tab = appTab(deps.ui.instanceState(options.instance));
                 deps.ui.setInstanceState(options.instance, appTabState({ ...tab, value }));

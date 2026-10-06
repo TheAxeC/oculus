@@ -209,7 +209,7 @@ text:
                 apps: the address key of every approved app
                 pty: whatever a terminal printed, secrets included
                 processes: "the machine's process table: program names, arguments and folders"
-                inbox: mail subjects and senders
-                calendar: event titles and attendees
-                sessions: titles, prompts and paths taken from session transcripts
+                inbox: mail subjects, senders and previews of the message text
+                calendar: event titles, times, places and links
+                sessions: titles, prompts, paths and events taken from session transcripts
                 usage: account labels and limits

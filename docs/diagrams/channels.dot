@@ -63,7 +63,7 @@ digraph channels {
         "? src/lib/shell/panes/PaneView.svelte:439" [label="src/lib/shell/panes/PaneView.svelte:439 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
-        "? src/lib/state/system/apps/apps.svelte.ts:278" [label="src/lib/state/system/apps/apps.svelte.ts:278 message(channel)"];
+        "? src/lib/state/system/apps/apps.svelte.ts:293" [label="src/lib/state/system/apps/apps.svelte.ts:293 message(channel)"];
         "? src/lib/state/system/config/editors/draft.ts:346" [label="src/lib/state/system/config/editors/draft.ts:346 message('notYaml', place.label, name)"];
         "? src/lib/state/system/config/editors/draft.ts:351" [label="src/lib/state/system/config/editors/draft.ts:351 message('where', place.label, name)"];
         "? src/lib/state/system/config/editors/draft.ts:459" [label="src/lib/state/system/config/editors/draft.ts:459 message('emptyKey', index + 1)"];
@@ -162,7 +162,7 @@ digraph channels {
     "? src/lib/shell/panes/PaneView.svelte:439" -> "shell/panes/PaneView";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
     "? src/lib/state/client/queries.svelte.ts:79" -> "state/client/queries";
-    "? src/lib/state/system/apps/apps.svelte.ts:278" -> "state/system/apps/apps";
+    "? src/lib/state/system/apps/apps.svelte.ts:293" -> "state/system/apps/apps";
     "? src/lib/state/system/config/editors/draft.ts:346" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:351" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:459" -> "state/system/config/editors/draft";

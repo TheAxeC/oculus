@@ -32,9 +32,9 @@ text:
             audit: Read the audit findings.
             config: Read the configuration, with this machine's name and address.
             files: Be told when a file under a root or the bookmarks changed.
-            inbox: Read the subjects and senders of your mail.
-            calendar: Read the titles and attendees of your calendar events.
-            sessions: Read the titles, prompts and paths of your Claude sessions.
+            inbox: Read the subjects, senders and message previews of your mail.
+            calendar: Read the titles, times, places and links of your calendar events.
+            sessions: Read the titles, prompts, paths and events of your Claude sessions.
             usage: Read the labels and limits of your accounts.
         read_root:
             git: Read the state of the repository of its own root.
@@ -55,6 +55,12 @@ text:
             linkedin-idea: Move a LinkedIn idea, asking you first.
             linkedin-post: Move a LinkedIn post, asking you first.
             new-idea: Create an idea project, asking you first.
+        ask:
+            delete-entry: delete an entry of a collection
+            feed-delete: delete a feed item
+            new-idea: create an idea project
+            linkedin-idea: move a LinkedIn idea
+            linkedin-post: move a LinkedIn post
         changed: This app changed since you approved it. Read what it asks for again and approve it to run it.
         load_failed: The app did not answer in time.
         approve_failed: 'The approval was not saved: {0}'
