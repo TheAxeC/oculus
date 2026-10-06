@@ -1857,3 +1857,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z649 (2026-10-06, the orchestrator, automode): PR2's slide format details and converted words.
 - Z650 (2026-10-06): PR2 against the paused cockpit's public deck, raised to Axel (a clash of rulings); ruled (b) by Axel: the cockpit is not updated.
 - Z651 (2026-10-06, the orchestrator, automode): PR2's brief check closed in the brief.
+- Z652 (2026-10-06): Axel: new idea decks go to the idea grid (`more` without ideas, `ideas` discovers); sent to PR2's builder.
