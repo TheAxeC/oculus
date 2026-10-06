@@ -50,7 +50,8 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O30b-brief-check.md (a4fbb5ab96ae037e3, claude-opus-5-5, 225,807 tokens, 65 tool uses, 9.4 min), closed in the brief by a85fbf1484fff6900 (claude-opus-5-5; 179,741 tokens, 41 tool uses, 8.9 min)
   shared_paths: with Q124: vite.config.ts (O30b's function form, Q124's few-line cache setting carried by hand at the second landing), tests/tiers/landing.mjs (head comment, both), tests/checks/diagrams/diagrams.test.ts (O30b :170-184, Q124 the per-case limits, disjoint), .gitignore (both add lines), README.md and HELP.md (disjoint lines); with E4g: DESIGN.md's tree (both lines kept) and HELP.md (disjoint); with Q123: DESIGN.md (:375 against the tree and :436) and HELP.md (disjoint); docs/diagrams regenerated at landing; so the merge is simple
   landing: not-started
-  round: 0
+  round: 0 (cases ruling agents/briefs/O30b-cases.md, rulings A1 and B1 on the hand-back; builder resumed)
+  builder_usage: hand-back 279,639 tokens, 76 tool uses, 35.7 min
 - step: Q123
   executor: agent
   worker: claude:sonnet at ordo-high
