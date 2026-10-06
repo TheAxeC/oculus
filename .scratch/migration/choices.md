@@ -2,6 +2,15 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z611 (2026-10-06, step A3)
+
+The question: the diagnosis found A3's one red run was a tree check timing out at vitest's default 5000 ms under machine load, because the brief ran it through a direct `npx vitest run`; it offered a `checks` project in `vite.config.ts` with no time limit, or a change to the brief's command.
+
+- Chosen: (a) briefs run tree checks inside `npm run test:checks`, the project's own way with no limit; A3's verify item 2 split so.
+- Not chosen: (b) remove the per-test limit for `tests/checks` in `vite.config.ts`, which widens a limit to make a check pass, against the hub rule on loosening a threshold, so it was filtered out; (c) rerun item 2 until green, the lazy one.
+
+Where it is built: A3's repair round 1 item 10; every later brief. Booked in `plan.md` Rulings.
+
 ## Z610 (2026-10-06, step A3)
 
 The question: a server stop between a schedule's claim and its launch leaves the run `started` with no terminal, and that due time never runs.

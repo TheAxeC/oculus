@@ -15,10 +15,11 @@ Never use breakage testing of any kind: no mutation, no revert or removal of cod
 7. **Behaviour 2 (Z610).** A `close()` between `claimDue` and the launch (`watch.ts:484-491`) records that run `failed` with `why: { word: 'server-stopped' }` instead of leaving it `started` with no terminal; the row then shows the due time did not run. Its run quoted.
 8. **Proof 4.** S51 run again so the due-time refusal path is reached (the record of the run `failed` with `why: { word: 'folder-not-served' }`), with the watcher's reload held off as the case needs; quote it. If the case cannot reach it, say so.
 9. **Proof 5.** The report's sentence on file modes says what holds: a file oculus creates is 0600; a file the reader made keeps its mode.
+10. **Proof 3, diagnosed** (`agents/reviews/A3-diagnosis.md`, Z611). The one red run was `tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib` timing out at vitest's default 5000 ms under machine load: verify item 2 ran two tree checks through a direct `npx vitest run`, while the project runs tree checks only through `npm run test:checks`, which sets no time limit (`package.json:13`, `vite.config.ts:30-36`). The base tree goes red the same way under load, and the step adds about 57 ms. Nothing in the code changes for it. Verify item 2 is run from now on as `npx vitest run tests/server/machine/schedules tests/routes/machine/schedules.test.ts tests/routes/sessions/terminal-actions.test.ts tests/server/machine/commands/run.test.ts tests/data/sources/config/local.test.ts`, and the two tree checks run inside `npm run test:checks`.
 
 ## Verify before you report
 
-The brief's list, once, after the last change: from the worktree's `tools/oculus`, `bash ~/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`, the lines quoted; then `npm run test:checks` and the brief's verify item 2 (the seven test files). While working, run only the test files you changed.
+The brief's list, once, after the last change: from the worktree's `tools/oculus`, `bash ~/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`, the lines quoted; then `npm run test:checks` and verify item 2 as item 10 words it. While working, run only the test files you changed.
 
 ## Report
 

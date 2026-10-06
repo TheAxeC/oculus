@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z611 (2026-10-06): A3, Proof 3 diagnosed as a tree check timing out at vitest's default 5000 ms under load when started by a direct `npx vitest run`; a brief runs tree checks inside `npm run test:checks`, which sets no time limit, and never names a file of `tests/checks` in a direct `vitest run`. A3's verify item 2 is split so. No time limit is changed in `vite.config.ts`. (the orchestrator, automode)
 - Z610 (2026-10-06): A3, a server stop between a schedule's claim and its launch records that run `failed` with `why: { word: 'server-stopped' }`, so the row shows the due time did not run; the due time stays handled. (the orchestrator, automode)
 - Z609 (2026-10-06): A3, a Pause, a Resume and a Save edit the entry's node in the YAML document in place, setting or removing only the keys they change, so the reader's other keys, their order, comments and values `readEntry` would normalise stay; the re-parse compares raw lists. A pause or resume refuses only on `schedules-unread`, since it writes no record; DESIGN.md:138 says so. (the orchestrator, automode)
 - Z608 (2026-10-06): O30, `installPageConfig` moves to its own folder `state/shared/page/install.ts`, registered in the import order check's `INNER` list above `words`. (the orchestrator, automode)
