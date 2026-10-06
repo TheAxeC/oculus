@@ -4,6 +4,49 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z674 (1) (2026-10-07, step PR3, the orchestrator, automode): the tests PR3 added that nothing asked for
+
+The question: PR3's builder wrote four tests the plan's test rule does not allow (a test exists only for an entry of the guarded list): the print window's guard rows, the PDF export's address and file name, the palette's offered commands, and the source read that asks the server each time.
+
+- Chosen: keep the print window's guard rows, since they test the safety rule that the print window may call nothing (G47), and book them on that entry; delete the other three, since a failure of any of them is seen at once and loses nothing.
+- Not chosen: keeping all four (the lazy option, and it breaks the test rule).
+
+## Z674 (2) (2026-10-07, step PR3, the orchestrator, automode): no test that the print window stays out of the saved window state
+
+- Chosen: no test. The hidden window that prints a deck is built in `print.ts` and never passes through the code that saves window sizes and full screen, so it cannot be saved.
+- Not chosen: a test over every window, whose failure would cost nothing lasting.
+
+## Z674 (3) (2026-10-07, step PR3, the orchestrator, automode): an image dropped on a slide whose name holds #, % or ?
+
+The question: an image named `fig#1.png` is copied beside the slide, but the link written into the slide reads `fig#1.png`, which the browser reads as `fig` plus a page anchor, so the image does not show.
+
+- Chosen: write those three characters percent-encoded in the link (`fig%231.png`), so the file keeps its name and the image shows.
+- Not chosen: refusing such names (the lazy option: a legal file the reader dropped is refused).
+
+## Z674 (4) (2026-10-07, step PR3, the orchestrator, automode): undo of a slide action after the change log is trimmed
+
+The question: one slide action (New Slide, Delete, an image drop) writes several records to the change log, and its undo takes them all back together. The log is trimmed to its last 500 records, and the trim can cut through one action, after which its undo takes back only part of it (a slide file trashed while the deck still lists it).
+
+- Chosen: the trim keeps whole actions, moving its cut back to the first record of the action it falls inside.
+- Not chosen: refusing the undo of an action that lost records (the action can then never be undone); leaving it (the lazy option).
+
+## Z674 (5) (2026-10-07, step PR3, the orchestrator, automode): the History row of a slide reorder
+
+- Chosen: the row reads "order" beside the kind "deck order", in place of "order / order".
+- Not chosen: naming it by the deck's file, which the kind column already says.
+
+## Z674 (6) (2026-10-07, step PR3, the orchestrator, automode): the desktop start test that fails now and then
+
+The question: two rows of `tests/server/desktop/start.test.ts`, which count the server processes the desktop window started, fail now and then on main as on PR3. PR3 did not cause it, but an earlier ruling puts such a fix in the next step that changes the desktop code, which is PR3.
+
+- Chosen: its cause is found with the diagnose skill while PR3's repair round runs, and the fix lands with PR3 when it is small.
+- Not chosen: rerunning the test at every landing until it passes (the lazy option).
+
+## Z674 (7) (2026-10-07, step PR3, the orchestrator, automode): three fields PR3 added to the deck data the page receives
+
+- Chosen: keep them as built. A slide's source carries the entry and the line it comes from, and a deck carries its `order:` list; only the Present view reads them, for Edit Slide and the order rows.
+- Not chosen: removing them, which removes Edit Slide's jump to the line.
+
 ## Z673 (1) (2026-10-07, step D23c, the orchestrator, automode): the test case for a library opened read-only
 
 The question: D23c opens a library file outside every folder oculus serves as a read-only tab. Its first test case, F12 on `os.path.join`, lands on the copy of Python's type descriptions pyright ships inside oculus's own folder, which is inside the hub, so it opens as an ordinary tab and tests nothing of D23c.

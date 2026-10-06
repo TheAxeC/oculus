@@ -39,7 +39,8 @@ dispatch:   # steps in flight, up to six (Z632)
   builder_usage: a348cc74b67ed634e, 200,916 tokens, 54 tool uses, 30.0 min (report agents/reviews/PR3-report.md)
   reviewer_report: agents/reviews/PR3-refuter.md (aa378ab34c21e2821, claude-opus-5-5, 126,998 tokens, 108 tool uses, 15.8 min)
   landing: not-started
-  round: 0
+  round: 1
+  round_sent: 2026-10-07, agents/briefs/PR3-round1.md (Z674); the tree at sending: `git diff --binary 272f60b4 | shasum` d692b4109f37, 26 untracked files
 - step: D23c
   executor: agent
   worker: claude:sonnet at ordo-high

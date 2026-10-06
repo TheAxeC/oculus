@@ -1,6 +1,6 @@
 In flight (2 of 6 slots; every queued step waits on PR3 or D23c landing, or on a step after them):
-- PR3 (Present decks edited and generated, PDF export): built; review running, base 272f60b4.
-- D23c (library definitions read-only, the symbol selected on open): builder building after its handed-back cases were ruled, base 951b61e3.
+- PR3 (Present decks edited and generated, PDF export): repair round 1 running (`agents/briefs/PR3-round1.md`), base 272f60b4; the diagnosis of `start.test.ts`'s intermittent server-count rows runs beside it, its fix to land with PR3.
+- D23c (library definitions read-only, the symbol selected on open): builder restarted on the worktree's partial changes, base 951b61e3.
 
 Queued, in order (23 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): ruled; waits for D23c to land (both move code out of `Source.svelte`, at its 520-line limit), then /spec again.
