@@ -1,4 +1,4 @@
-# Step Q100 refuter report (reviewer a4d8e215a755b412b, on .agents/worktrees/Q100, base 4f22e78e)
+# Step Q100 refuter report (reviewer a4d8e215a755b412b, on .agents/worktrees/Q100, base 590e4d9f)
 
 Nothing in the worktree was changed (`git status --short` at the end showed the same four M lines and one ?? line). Every revert and probe ran on a scratch copy made with rsync of tools/oculus and a symlink to node_modules.
 
@@ -22,7 +22,7 @@ uptime after: 22:11 load averages: 10.46 10.65 9.19
 The `Rebasing ... could not apply` lines in the test output come from a deposit test's scratch repositories under /var/folders. No test timed out.
 
 - Brief verify 2, `npx vitest run tests/views/whole/tinted.test.ts tests/ui/colours.test.ts tests/views/personal/calendar.test.ts`: 3 files, 44 tests passed, in the worktree and in the scratch copy.
-- ASCII gate (the spec's perl form over src tests bin config): nothing, rc 0. `git diff 4f22e78e -U0 | grep '^+' | LC_ALL=C grep '[^ -~]'`: nothing.
+- ASCII gate (the spec's perl form over src tests bin config): nothing, rc 0. `git diff 590e4d9f -U0 | grep '^+' | LC_ALL=C grep '[^ -~]'`: nothing.
 
 ## 1. Spec
 

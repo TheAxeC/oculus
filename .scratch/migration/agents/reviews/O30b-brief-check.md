@@ -1,6 +1,6 @@
 # Brief check: O30b
 
-The brief `agents/briefs/O30b.md`, on main at a564e4e29. The checker changed nothing and ran no build, server, app or test. Every grep over `config/` excluded `local.yml`.
+The brief `agents/briefs/O30b.md`, on main at 10ac00c69. The checker changed nothing and ran no build, server, app or test. Every grep over `config/` excluded `local.yml`.
 
 The two findings with the most weight:
 
@@ -104,7 +104,7 @@ Usage: a4fbb5ab96ae037e3, claude-opus-5-5, 225,807 tokens, 65 tool uses, 9.4 min
 
 ## Closed
 
-Each finding above is closed by a change to `agents/briefs/O30b.md` under the orchestrator's rulings; line numbers below are the brief's after the change. Every line number written into the brief was read on main at 5896cf9b1 with grep or sed, and `git diff --stat a564e4e29 5896cf9b1 -- tools/oculus ':!tools/oculus/.scratch'` prints nothing, so they hold at the brief's a564e4e29 too.
+Each finding above is closed by a change to `agents/briefs/O30b.md` under the orchestrator's rulings; line numbers below are the brief's after the change. Every line number written into the brief was read on main at 7813074e8 with grep or sed, and `git diff --stat 10ac00c69 7813074e8 -- tools/oculus ':!tools/oculus/.scratch'` prints nothing, so they hold at the brief's 10ac00c69 too.
 
 ### Names
 

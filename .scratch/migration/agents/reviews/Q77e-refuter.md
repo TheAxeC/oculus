@@ -1,4 +1,4 @@
-# Step Q77e refuter report (on .agents/worktrees/Q77e, base 15a88e95)
+# Step Q77e refuter report (on .agents/worktrees/Q77e, base 0ec6659f)
 
 ## Verification (rerun by the reviewer)
 
@@ -75,7 +75,7 @@ All commands were run from `.agents/worktrees/Q77e/tools/oculus`.
 
 ## Not checked
 
-- Most line citations in the brief's "What is on the tree" section (for example diagrams.mjs:132 and graphs.mjs:103/163/226/432/452) were not re-verified at the base. My brief allowed only `git diff 15a88e95` and `git status --short`. Outside that allowance I ran `git ls-tree` once (the 8-file count above) and one `git show` loop, which failed on a shell quoting error and printed nothing.
+- Most line citations in the brief's "What is on the tree" section (for example diagrams.mjs:132 and graphs.mjs:103/163/226/432/452) were not re-verified at the base. My brief allowed only `git diff 0ec6659f` and `git status --short`. Outside that allowance I ran `git ls-tree` once (the 8-file count above) and one `git show` loop, which failed on a shell quoting error and printed nothing.
 - The report's stage breakdown and its comparison timings against main (`diag-stages.mjs`, `diag-prof.mjs`) were not reproduced, because those scripts are not in the worktree.
 - The report's 628-parse and generation-count logs cannot be re-run, since they were removed.
 - The browser suite and the whole unit suite were not run, per the brief.
@@ -121,7 +121,7 @@ I found no revert of generate's reader sharing, and no revert of the test's cach
 - The round adds `tests/checks/diagrams/tree.ts` (new file, 52 lines). That path is on neither the brief's path list nor the round's four fixes.
   - It holds `ENGINE` and `copyOfTree`, which moved out of diagrams.test.ts, plus the two counting helpers `CountedCache` (tree.ts:33) and `parsedSince` (tree.ts:43).
   - It is needed. Without it diagrams.test.ts (897 lines) would pass the 900-line limit.
-  - The size is kept honestly. `git diff 15a88e95 c5f85652` adds and removes no `it(` or `describe(` in diagrams.test.ts or readable.test.ts. No revert directive was dropped: the four `-` directives each come back with the renamed call (`read.imports`, `read.code`, `load(target.path)`).
+  - The size is kept honestly. `git diff 0ec6659f c5f85652` adds and removes no `it(` or `describe(` in diagrams.test.ts or readable.test.ts. No revert directive was dropped: the four `-` directives each come back with the renamed call (`read.imports`, `read.code`, `load(target.path)`).
   - A helper `.ts` beside a folder's tests is the tree's form (tests/checks/imports/order.ts, augments.ts, graph.ts). `tests/fixtures` already holds 10 items.
   - Its only importer is diagrams.test.ts:44.
 - The `vi.mock` wrappers of `importsOf` and `codeOf` (diagrams.test.ts:49-56) cover every case of the file, because vitest mocks per file. They are needed for fix 1: reverts D2, A, B, C, E and G are caught only by the parser counts, since a set count of the shared Map stays at 626 under them.

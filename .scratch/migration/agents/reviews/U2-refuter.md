@@ -1,6 +1,6 @@
 # Refuter report: U2, the look of every view against VS Code
 
-Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2`, base 86e6d8bb. The outputs are under `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2/tools/oculus/.scratch/migration/agents/reviews/`: `U2-vscode.css`, `U2-audit.md`, `U2-shots/` and `U2-report.md`.
+Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2`, base 26272633. The outputs are under `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2/tools/oculus/.scratch/migration/agents/reviews/`: `U2-vscode.css`, `U2-audit.md`, `U2-shots/` and `U2-report.md`.
 
 ## Verification lines (re-run this turn, from `tools/oculus` in the worktree)
 
@@ -15,7 +15,7 @@ Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2`, base 86e
 6. V6 (History lists no write) was not re-run by me; see case 10.
 7. Worktree state:
    - `git status --short` prints only the 4 untracked outputs: `U2-audit.md`, `U2-report.md`, `U2-shots/` and `U2-vscode.css`.
-   - `git diff 86e6d8bb --stat | wc -l` prints `0`, so no source file changed.
+   - `git diff 26272633 --stat | wc -l` prints `0`, so no source file changed.
    - `wc -l` prints 1139 for the audit, 1105 for the css and 77 for the report. These match the report.
 
 ## Verdicts on "What to build"
@@ -192,13 +192,13 @@ Usage (the completion notice): claude-opus-5-5, 89,273 tokens, 212 tool uses, 18
 
 ## Repair round 1, refuted
 
-Reviewer of `refute` over U2's repair round 1. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2`, base 86e6d8bb. Outputs read under `.../U2/tools/oculus/.scratch/migration/agents/reviews/`: `U2-audit.md` (1139 lines), `U2-vscode.css` (1105), `U2-report.md` (112, written 09:39:06), `U2-shots/` (100 PNGs). I changed no file. On TEST I only switched tabs, opened two views and closed them again, and cleared one filter and typed it back (listed under Behaviour).
+Reviewer of `refute` over U2's repair round 1. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2`, base 26272633. Outputs read under `.../U2/tools/oculus/.scratch/migration/agents/reviews/`: `U2-audit.md` (1139 lines), `U2-vscode.css` (1105), `U2-report.md` (112, written 09:39:06), `U2-shots/` (100 PNGs). I changed no file. On TEST I only switched tabs, opened two views and closed them again, and cleared one filter and typed it back (listed under Behaviour).
 
 ### Verification (rerun from `tools/oculus` in the worktree)
 
 ```
 git status --short        -> ?? .../U2-audit.md, ?? .../U2-report.md, ?? .../U2-shots/, ?? .../U2-vscode.css
-git diff 86e6d8bb --stat | wc -l   -> 0
+git diff 26272633 --stat | wc -l   -> 0
 V1 grep -c '^## ' U2-audit.md      -> 58
    grep '^## ' ... | head -56 | cut -c4- | diff - ids.txt  (ids.txt: HELP.md 98-146 ids minus files, repositories, then the 11; 56 lines) -> no output, exit 0
    tail -2 -> "## Common differences", "## Proposed grouping"
@@ -330,13 +330,13 @@ Reviewer usage: tokens not counted; about 130 tool uses; about 15 minutes (09:38
 
 ## Repair round 2, refuted
 
-Reviewer of `refute` over U2's repair round 2. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2`, base 86e6d8bb. I changed no file. On TEST I ran read-only `javascript_tool` reads in tab 812136282 and clicked and typed nothing. I did not switch the theme.
+Reviewer of `refute` over U2's repair round 2. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2`, base 26272633. I changed no file. On TEST I ran read-only `javascript_tool` reads in tab 812136282 and clicked and typed nothing. I did not switch the theme.
 
 ### Verification (rerun from `tools/oculus/.scratch/migration/agents/reviews` in the worktree)
 
 ```
 git status --short                      -> ?? U2-audit.md, ?? U2-report.md, ?? U2-shots/, ?? U2-vscode.css
-git diff 86e6d8bb --stat | wc -l        -> 0
+git diff 26272633 --stat | wc -l        -> 0
 wc -l                                   -> U2-audit.md 1138, U2-report.md 118, U2-vscode.css 1106
 ls U2-shots | wc -l                     -> 88
 V1 grep -c '^## ' U2-audit.md           -> 58

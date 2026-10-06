@@ -1,4 +1,4 @@
-# Step Q125 refuter report (on .agents/worktrees/Q125, base cfc9e60d9)
+# Step Q125 refuter report (on .agents/worktrees/Q125, base 02ac124ec)
 
 A page this report cites is named with its section; a finding in code keeps its `file:line`. All commands were run from `tools/oculus` in the worktree unless stated. I changed no file. One scratch copy of my link checker went into the worktree by mistake and was deleted at once; `git status --short` afterwards lists the same 41 entries the builder left (30 modified or deleted, 11 untracked).
 

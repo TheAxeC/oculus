@@ -27,7 +27,7 @@ Read from the base copy (`.agents/worktrees/D42-base/tools/oculus`) and the git 
 | 1 | Fails: the commit row's detail is how long ago, no author, no email; the tooltip is `files.timeline_row_title` ("Compare {0} with the file now"). |
 | 2 | Fails: `show` hands `inRepo.path` (today's path) to `openDiff`, so the commit that created the file at the old path prints 0 lines and the diff says "Nothing to show for this one." |
 | 3 | Fails: the rename commit opens at the new path alone, so the old side is not paired; not the old-to-new change. |
-| 4 | Fails: `c8d890799` at `atlas/` is empty (brief: 0 lines, 2158 at `analysis/`); `bd20762ec` opens at the current path, not as the rename alone. |
+| 4 | Fails: `159c94ca1` at `atlas/` is empty (brief: 0 lines, 2158 at `analysis/`); `7cd5e1cf1` opens at the current path, not as the rename alone. |
 | 5 | Holds for the row and the binary note (`repositories.diff_binary`); the row has no author. |
 | 6 | Holds: the path is passed as on disk under `GIT_LITERAL_PATHSPECS=1`; the header names it. |
 | 7 | Fails: `FILE_LOG_ENTRIES = 50`, `-50`, no `more`, no Load more; 115 commits, 65 unreachable. |
@@ -73,7 +73,7 @@ Read from the base copy (`.agents/worktrees/D42-base/tools/oculus`) and the git 
 | 47 | Holds only because any Files press already loses the file (case 19). |
 | 48 | Fails: the `files` message marks no copies read; only `invalidate()` does. |
 | 49 | Fails: `.whole` is `flex: none` and nowrap and runs under the scrollbar. |
-| 50 | Partly: `6b135ce55` opens at the current path and shows the file created; the three older rows open at the current path and print nothing. |
+| 50 | Partly: `5e4fbc794` opens at the current path and shows the file created; the three older rows open at the current path and print nothing. |
 | 51 | Fails: no paging. |
 
 ## Round 1, item by item

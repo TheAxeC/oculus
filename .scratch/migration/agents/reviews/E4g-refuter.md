@@ -190,7 +190,7 @@ Open items: the state file's open-items list is empty on main (`orchestrator-sta
   - The `failed:<status>` row (`:495`) names `setStore`.
 - **Item 1.11:** closed. Part 11 has a five-step console section (`:848-861`).
 
-No closure was made by removing or loosening a check. `diff` of `tests` is empty: `git diff 31068a9de --stat` lists no test file.
+No closure was made by removing or loosening a check. `diff` of `tests` is empty: `git diff 9265d82cb --stat` lists no test file.
 
 ### 3. The judgment calls and the stated not-done parts
 

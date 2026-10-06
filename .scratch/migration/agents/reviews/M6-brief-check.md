@@ -1,6 +1,6 @@
-# Step M6 brief check (on main at b1aedbfc6)
+# Step M6 brief check (on main at 273196959)
 
-This is the report of the fresh agent run as the `spec` skill's "Steps / The brief check", on `agents/briefs/M6.md`. Main's head is b1aedbfc6. `git diff ee0407a5a b1aedbfc6 --stat -- tools/oculus/src tools/oculus/tests tools/oculus/config tools/oculus/HELP.md tools/oculus/DESIGN.md docs` prints nothing, so the code is X3f's tree at ee0407a5a. b1aedbfc6 added M6.md and four lines to `plan.md`, which moved every Rulings line by 2: Z340 is now `plan.md:1067`, not `:1065`; Z343 is `:1072`, not `:1070`; Z436 is `:1165`, not `:1163`. The Z343 context is `orchestrator-history.md:175`, not `:173`. Nothing was changed anywhere. My probes ran only in my scratchpad and only read hub files.
+This is the report of the fresh agent run as the `spec` skill's "Steps / The brief check", on `agents/briefs/M6.md`. Main's head is 273196959. `git diff e6d00fb0f 273196959 --stat -- tools/oculus/src tools/oculus/tests tools/oculus/config tools/oculus/HELP.md tools/oculus/DESIGN.md docs` prints nothing, so the code is X3f's tree at e6d00fb0f. 273196959 added M6.md and four lines to `plan.md`, which moved every Rulings line by 2: Z340 is now `plan.md:1067`, not `:1065`; Z343 is `:1072`, not `:1070`; Z436 is `:1165`, not `:1163`. The Z343 context is `orchestrator-history.md:175`, not `:173`. Nothing was changed anywhere. My probes ran only in my scratchpad and only read hub files.
 
 Premises that depend on steps landing first are marked **(D20)**, **(D38)**, **(D28)** or **(X3e)**. X3e is listed because the brief leaves it out: D28 waits for X3e (`queue.md:13-14`), so M6's base contains X3e too.
 
@@ -237,7 +237,7 @@ Usage of the brief check: ordo-high on claude-opus-5-5 (a0ebc241025bf8a8f), 338,
 
 ## Closed
 
-Each finding is closed in `agents/briefs/M6.md`, by the section named; each check was run on main at 198a6bdb8, whose code is ee0407a5a's.
+Each finding is closed in `agents/briefs/M6.md`, by the section named; each check was run on main at 88431d114, whose code is e6d00fb0f's.
 
 **1. Names**
 

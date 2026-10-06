@@ -1,4 +1,4 @@
-# Q79b repair round 1 (sent 2026-09-29 from the worktree as handed back, `(git diff 89a83e3b; git status --short) | md5` = 064681beba26eb562ba40e2ff10902cf)
+# Q79b repair round 1 (sent 2026-09-29 from the worktree as handed back, `(git diff f4c1a365; git status --short) | md5` = 064681beba26eb562ba40e2ff10902cf)
 
 Read `agents/reviews/Q79b-refuter.md` in the main checkout in full, then do each item below. Every rule of the brief, the cases ruling and the spec still holds: work only in your worktree, no git command, no browser test, no tmux on the default server, no `// revert:` lines, logs only in your own scratch folder. Run only the test files you change while working, then the verify list once at the end through `checks.sh`, and rewrite the report at the brief's path in full, each ruling below carried in it. `tests/server/git/git-ops.test.ts` timing out in the full run under load is known and not this step's; if it fails that way, run it alone and quote both.
 

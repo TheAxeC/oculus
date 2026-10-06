@@ -1,8 +1,8 @@
-# Step E2 brief check (on main at 68220421)
+# Step E2 brief check (on main at 077a0ba9)
 
 # Brief check, step E2 of `oculus/migration`
 
-Nothing was written, no git state changed. Main is at `68220421` (`git rev-parse --short=8 HEAD`), the brief is untracked (`git status --short -- tools/oculus` prints `?? tools/oculus/.scratch/migration/agents/briefs/E2.md`). All commands ran from `/Users/axelfaes/workspace/research-hub/tools/oculus`. `config/local.yml` was excluded from every grep and never opened.
+Nothing was written, no git state changed. Main is at `077a0ba9` (`git rev-parse --short=8 HEAD`), the brief is untracked (`git status --short -- tools/oculus` prints `?? tools/oculus/.scratch/migration/agents/briefs/E2.md`). All commands ran from `/Users/axelfaes/workspace/research-hub/tools/oculus`. `config/local.yml` was excluded from every grep and never opened.
 
 ## Names
 
@@ -62,7 +62,7 @@ No part of the line is without an item.
 
 | Claim in "What is on the tree" | Command | Result |
 |---|---|---|
-| main at 68220421 | `git rev-parse --short=8 HEAD` | `68220421`, holds |
+| main at 077a0ba9 | `git rev-parse --short=8 HEAD` | `077a0ba9`, holds |
 | section is lines 234 to 312, ending before `## Relationship to the cockpit` | `grep -n "^## " DESIGN.md` | `234:## Apps added while oculus runs`, `313:## Relationship to the cockpit`, holds |
 | second paragraph says unbuilt proposal awaiting a ruling | line 236 read | holds |
 | `grep -rn "apps_dir\|appRegistration\|AppFrame" src` prints nothing | run | nothing, exit 1, holds |

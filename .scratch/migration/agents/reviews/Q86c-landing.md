@@ -17,7 +17,7 @@ The builder and both reviewers had finished; the agent listing showed no subagen
 
 ## What landed
 
-From base 194792bc (18 files, 802 insertions, 729 deletions, then the fixes at landing). One d3-force simulation over every node of the Map (`state/boards/structure/forces.ts`): links at each edge's neato length, a many-body charge, collision and a pull toward the centre, started from neato's placement and settled once before the first draw. A press moves nothing; a drag holds the node at the pointer while every other node is pushed and pulled; a release frees it; every node stays in the box. The hand-written drag physics are gone from `graph.ts`. `d3-force` 3.0.0 and `@types/d3-force` 3.0.10 are dependencies.
+From base de977c87 (18 files, 802 insertions, 729 deletions, then the fixes at landing). One d3-force simulation over every node of the Map (`state/boards/structure/forces.ts`): links at each edge's neato length, a many-body charge, collision and a pull toward the centre, started from neato's placement and settled once before the first draw. A press moves nothing; a drag holds the node at the pointer while every other node is pushed and pulled; a release frees it; every node stays in the box. The hand-written drag physics are gone from `graph.ts`. `d3-force` 3.0.0 and `@types/d3-force` 3.0.10 are dependencies.
 
 Before and after, for the look: before Q86c a link written from link mode left the drawn positions as they were; after it the new edge changes the placement key, so the whole Map is placed again from neato and settled, which replaces a dragged picture.
 

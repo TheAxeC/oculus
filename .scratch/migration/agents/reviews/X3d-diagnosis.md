@@ -12,9 +12,9 @@ The state file's dispatch entry for X3d reads `landing: backed-out (2026-09-30 2
 
 ## Where the probes run
 
-A scratch copy made from the main checkout: `git worktree add --detach "$tmp/tree" HEAD` (HEAD was `0abcf515`), then from inside `$tmp/tree` `git apply --3way --allow-empty tools/oculus/.scratch/migration/agents/reviews/X3d-landing-attempt.patch` (the patch's `shasum` is `97fb66661a6a064692851e80f9cc731305d378d6`; 76 paths staged, `git status --short | wc -l`). This is the tree that hung: main with the step and the landing fixes. `$tmp` is `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.EZg3cw`. The step's worktree `.agents/worktrees/X3d` was not touched.
+A scratch copy made from the main checkout: `git worktree add --detach "$tmp/tree" HEAD` (HEAD was `87bcdbe4`), then from inside `$tmp/tree` `git apply --3way --allow-empty tools/oculus/.scratch/migration/agents/reviews/X3d-landing-attempt.patch` (the patch's `shasum` is `97fb66661a6a064692851e80f9cc731305d378d6`; 76 paths staged, `git status --short | wc -l`). This is the tree that hung: main with the step and the landing fixes. `$tmp` is `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.EZg3cw`. The step's worktree `.agents/worktrees/X3d` was not touched.
 
-A second scratch copy for the comparison the symptom names ("gone with the step off main"): `git worktree add --detach "$tmp/base" 0abcf515`, nothing applied.
+A second scratch copy for the comparison the symptom names ("gone with the step off main"): `git worktree add --detach "$tmp/base" 87bcdbe4`, nothing applied.
 
 The servers: `vite dev` from each copy's `tools/oculus`, the step on port 8799 and the base on 8798, each started as `env -i HOME=$tmp/home TMUX_TMPDIR=$tmp/tmux PATH=$tmp/bin:<node 24>:/usr/bin:/bin:/usr/sbin:/sbin npx vite dev --port <port> --strictPort`. `$tmp/bin/ssh` is a stub that prints "ssh disabled in the diagnosis scratch server" and exits 255, so the server's HPC poll reaches no host. `node_modules` in each copy is a folder of symbolic links to each entry of the main checkout's `tools/oculus/node_modules` except `.vite`, so Vite's dependency cache is the copy's own (svelte 5.57.1 and @zag-js/tree-view 1.44.0, as `package-lock.json` pins them). The copies have no `config/local.yml`, so the hub is the copy itself and the configured roots resolve under `$tmp/home`; `~/workspace/cathedra` is a scratch repository made for the probes (the Shrunk case section says which).
 
@@ -58,10 +58,10 @@ part 1 HUNG; part 2 HUNG
 RED
 ```
 
-The same command on the base, main at `0abcf515` without the step (`runs-base.txt`):
+The same command on the base, main at `87bcdbe4` without the step (`runs-base.txt`):
 
 ```
-$ APP=8798 NTH=2 node red.mjs   (run 1, main at 0abcf515 without the step)
+$ APP=8798 NTH=2 node red.mjs   (run 1, main at 87bcdbe4 without the step)
   pressed "commit 3 TheAxeC de524d0" at y 530
 part 1 openmid: HUNG, no answer within 5000 ms
 part 1 the busiest renderer of this profile: 101.9% then 0.0% of a core
@@ -76,7 +76,7 @@ With a bound of 60 s (`BOUND=60000`), the step's renderer answered after 51,292 
 How the red command relates to the symptom, which the reader of this record needs before anything below:
 
 - It reproduces three parts of the symptom: the page stops answering with the Repositories view on screen, the renderer at 100% of a core, and again on reload (the open commit is kept in the view's instance state, so the reloaded page opens it again and hangs while it loads).
-- It does not reproduce "gone with the step off main": main at `0abcf515` without the step hangs the same way on the same press. Main's head now (`9fb3c582`) carries the same code: `git diff --stat 0abcf515 HEAD -- tools/oculus/src/lib/ui/tree/ tools/oculus/src/lib/views/sources/repositories/` prints nothing.
+- It does not reproduce "gone with the step off main": main at `87bcdbe4` without the step hangs the same way on the same press. Main's head now (`eb553cde`) carries the same code: `git diff --stat 87bcdbe4 HEAD -- tools/oculus/src/lib/ui/tree/ tools/oculus/src/lib/views/sources/repositories/` prints nothing.
 - It does not reproduce a hang on hovering. On the step's tree, with the scratch repository built to the TEST hub's shape (75 outgoing commits, the 76 staged paths of the step, the local branches `origin`, `Q111` and `U2`, three stashes, two worktrees), no hover hung the page: `sweep.mjs` moved the pointer over every row of the Graph in 11 px steps, and down six pages of scrolling, at 1600x1000, 1512x860 and 1280x800 and 1920x1080 at two device pixels per CSS pixel, and 1000x800 (5 runs, each "no hang"); `sweep2.mjs` moved it across every part of each row (lanes, name, author, pills, actions) with a 0.8 s rest on each row, on `cathedra` and on the hub (2 runs, "no hang"); the red command with `STEPS=outgoing,hover`, `outgoing,outgoing,hover`, `tree,hover` and `tree,outgoing,hover` (each GREEN). `grep -rn "pointerenter\|mouseenter\|pointerover\|mouseover\|onhover"` over `views/sources/repositories` and `ui/tree` prints nothing, so no hover in this code opens a commit. Pressing the Outgoing row changes nothing on screen (it is a row with no press of its own, `graph/GraphHead.svelte`).
 - What the look on TEST did between "collapsing Outgoing" and the hang is not in the ledger, and the TEST page's saved view state (in that browser's localStorage) was not read. A press on a commit row of the Graph, or a commit held open in the TEST page's saved Repositories state, would give exactly the hang and the hang on reload; that this is what happened on TEST is not verified.
 
@@ -86,7 +86,7 @@ Not applicable.
 
 ## Shrunk case
 
-The first red was on the scratch repository built to the TEST hub's shape (a clone of the hub at `0abcf515`, `refs/remotes/origin/main` set to `fdd56f69` so 75 commits are outgoing, the step's patch applied and staged, local branches `origin`, `Q111`, `U2`, three stashes, two worktrees), with the actions `outgoing` then a press on the 28th commit row, scrolled to the pane's bottom edge.
+The first red was on the scratch repository built to the TEST hub's shape (a clone of the hub at `87bcdbe4`, `refs/remotes/origin/main` set to `d43564c4` so 75 commits are outgoing, the step's patch applied and staged, local branches `origin`, `Q111`, `U2`, three stashes, two worktrees), with the actions `outgoing` then a press on the 28th commit row, scrolled to the pane's bottom edge.
 
 | Cut | Result of the red command after it | Kept or put back |
 |---|---|---|
@@ -136,7 +136,7 @@ No link ever sees an equal value, since each writes a new array or object, so th
 
 A commit under Outgoing or Incoming is drawn outside `VirtualRows`, so opening it runs steps 1 to 3 once and stops at 4: that is why pressing an outgoing commit did not hang.
 
-What the cause does not explain, stated again for whoever rules: the symptom's "gone with the step off main" (main without the step hangs the same way; the look off main presumably did not open a commit) and "hovering" (no hover in this code opens a commit, and no hover hung the page here). The file history points at `2349e0fb Land Q82: the explorer tree on zag's tree-view, the long lists virtualized` (2026-09-29, the last change to `graph/Graph.svelte` before `88e6a1c3`, and the commit that put the Graph's list into `VirtualRows`) as where the cycle began; that is not verified by a bisect.
+What the cause does not explain, stated again for whoever rules: the symptom's "gone with the step off main" (main without the step hangs the same way; the look off main presumably did not open a commit) and "hovering" (no hover in this code opens a commit, and no hover hung the page here). The file history points at `d8c3689e Land Q82: the explorer tree on zag's tree-view, the long lists virtualized` (2026-09-29, the last change to `graph/Graph.svelte` before `40c555c2`, and the commit that put the Graph's list into `VirtualRows`) as where the cycle began; that is not verified by a bisect.
 
 ## Fix and test
 
@@ -157,7 +157,7 @@ Received: serializes to the same string
 
 That failure is step 3 of the cause: the window read again for rows that did not move is a new object equal to the one held.
 
-Fix (against the tree that hung, main at `0abcf515` with `X3d-landing-attempt.patch` applied; neither file is changed by the patch, so it applies to main as it is and to the step's worktree alike), formatted with Prettier:
+Fix (against the tree that hung, main at `87bcdbe4` with `X3d-landing-attempt.patch` applied; neither file is changed by the patch, so it applies to main as it is and to the step's worktree alike), formatted with Prettier:
 
 ```diff
 diff --git a/tools/oculus/src/lib/ui/tree/VirtualRows.svelte b/tools/oculus/src/lib/ui/tree/VirtualRows.svelte

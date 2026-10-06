@@ -1,6 +1,6 @@
 # D44 brief check
 
-Agent ac746360f7500e074, claude-opus-5-5, ordo-high: 222,221 tokens, 94 tool uses, 10.7 min (completion notice). Read on main at 4815a3f1f, the brief from disk after Z536 (b).
+Agent ac746360f7500e074, claude-opus-5-5, ordo-high: 222,221 tokens, 94 tool uses, 10.7 min (completion notice). Read on main at f18159e95, the brief from disk after Z536 (b).
 
 ## 1. Names
 
@@ -18,7 +18,7 @@ Every part is served. The placement is built under Z536 (b), but the step line h
 ## 3. Premises
 
 Matches except:
-- `git log --all -- '.../briefs/D44*'` now prints 02674f2b0.
+- `git log --all -- '.../briefs/D44*'` now prints 266796722.
 - Glassbox's cluster folder is `~/projects/glassbox-decision-pipelines/code` (`README.md:71,100,111`, every script's `cd ... # -> code/`): eight values, not seven (premise 2, decision 2, section 4, verify 4, "Manifest values"). Totals unchanged: 99 named, 78 warned.
 - After S5, `slurmSettings` (`settings.ts:185-197`, `settingReader`) never throws: a missing or empty `slurm.resource` reads as `utwente` (`settings.ts:5-9`, `options.yml:333-339`). Section 1 item 5's throw branch and case 6's second sentence describe behaviour that is gone.
 - `no_resource` is at `config/text/findings.yml:151` (was 101).
@@ -75,10 +75,10 @@ Each finding closed in `agents/briefs/D44.md` (line numbers of the brief after t
 - Placement under Z536 (ruling 5): the authority paragraph quotes the step line ending `(ruling Z536)` at `plan.md:509` and Z536 at `plan.md:1252` (:7); the "What to build" opening says the `.slurm` tab's breadcrumb bar (:81); decision 10 is the breadcrumb bar, ruled (:317); premise 6 states Z488's Correction and Z536 (b) (:31); "For Axel" item 1 no longer says the step line names the title bar (:326).
 
 **3. Premises**
-- D44 brief history: premise 1 says the log prints only this brief's commits, f996b0bf0 and 02674f2b0 (:17).
+- D44 brief history: premise 1 says the log prints only this brief's commits, e457702bc and 266796722 (:17).
 - Glassbox (ruling 6): `~/projects/glassbox-decision-pipelines/code` added with `README.md:71`, `:100`, `:111` and the scripts' `# -> code/` lines (:26); eight values and five `code` mirrors (premise 2 :18, premise 3 :28, decision 2 :309, section 4 :192, section 2's run :159, verify 4 :377, "Manifest values" :398, the write-list note :297); glassbox left the default list (:27).
 - `slurmSettings` after S5 (ruling 7): the premise says it never throws for a value and a missing or empty `slurm.resource` reads as the catalog default `utwente` (:35); section 1 item 5's throw branch is removed and replaced by that sentence (:97); case 6's second sentence is removed (:226).
-- Renumbering (ruling 8): `findings.yml:151` (:50, :190, write list :280), `context.ts:62/137/456` and `close()` at `:469-486` (:139, write list :275), `actions.ts:23/:20` (:36), `host.ts:87-99` (:35), `plan.md:509`, `:1071`, `:1156-1159`, `:1158`, `:1214`, `:1252` (:7, :17, :31); the write list's header names b0fd996a1 for the renumbered files (:264). The S5 bullet says S5 landed at 71017ce60 with nothing to compare (:301). The D20 bullet is redone against `.agents/worktrees/D20` with `git diff -U0 16b31cef0` (three hunks, mapped onto main's `:63`, `:131`, `:453`) and a `git merge-file -p` of both sides over main's `context.ts` exiting 0 in three runs; D20's doc hunks are re-listed from the same `git diff -U0` (:302).
+- Renumbering (ruling 8): `findings.yml:151` (:50, :190, write list :280), `context.ts:62/137/456` and `close()` at `:469-486` (:139, write list :275), `actions.ts:23/:20` (:36), `host.ts:87-99` (:35), `plan.md:509`, `:1071`, `:1156-1159`, `:1158`, `:1214`, `:1252` (:7, :17, :31); the write list's header names 678c5117c for the renumbered files (:264). The S5 bullet says S5 landed at 30b4ddced with nothing to compare (:301). The D20 bullet is redone against `.agents/worktrees/D20` with `git diff -U0 87c0a7a81` (three hunks, mapped onto main's `:63`, `:131`, `:453`) and a `git merge-file -p` of both sides over main's `context.ts` exiting 0 in three runs; D20's doc hunks are re-listed from the same `git diff -U0` (:302).
 - `plan.md` references: corrected as above.
 - G37 (ruling 9): line 3 says G37 is written into `agents/guarded.md` at X3f's landing (Z491), before D44's base (:3).
 - Sizes (ruling 15): about 2.1 GB (`du -sk` 2156392 KB) and 389 MiB by `stat` (407994752 bytes) in premise 5 (:30), decision 1 (:308) and "For Axel" item 2 (a) (:331).
@@ -114,7 +114,7 @@ Closed by the orchestrator after the closing agent (aac4dfaf70ae0e442, claude-op
 
 ## Rechecked after X3f, D38 and D20 (2026-10-05)
 
-The tree read: main at f0f311964 with D20 applied and staged in the working tree (`git status --short` lists 97 paths, all under `tools/oculus`), X3f landed at ee0407a5a and D38 at b07d24766 (`git merge-base --is-ancestor` succeeds for both). Every premise naming a file, line, count, symbol, folder count, component size, quoted line or ruling line was read again there, one grep or read each; one grep over `src tests config` for the new names ran without `--exclude=local.yml`, its output filtered by file name so no line of `local.yml` was printed, and was run again with the exclude; every other grep over `config/` named its files or carried the exclude.
+The tree read: main at d67982033 with D20 applied and staged in the working tree (`git status --short` lists 97 paths, all under `tools/oculus`), X3f landed at e6d00fb0f and D38 at 5b4e737a8 (`git merge-base --is-ancestor` succeeds for both). Every premise naming a file, line, count, symbol, folder count, component size, quoted line or ruling line was read again there, one grep or read each; one grep over `src tests config` for the new names ran without `--exclude=local.yml`, its output filtered by file name so no line of `local.yml` was printed, and was run again with the exclude; every other grep over `config/` named its files or carried the exclude.
 
 The counts: 25 places marked "corrected after X3f, D38 and D20" and 10 marked "added after X3f, D38 and D20" (`grep -c` over the brief); 8 lines carry "ruled Z538 (a)" and 2 "ruled Z539 (a)"; `git diff --stat` of the brief prints 53 insertions and 56 deletions; `LC_ALL=C grep -n '[^ -~]' agents/briefs/D44.md` prints nothing.
 
@@ -123,7 +123,7 @@ The rulings written:
 - Z539 (a): case 19 and the look paragraph keep only (a), the (b) and (c) alternatives removed.
 
 The main corrections:
-- X3f's landing: premise 1, the paragraph on waiting for X3f and the whole source-tab section were read in X3f's worktree; they now describe main. `handUp` has no `'bar'` place on main (`grep -rn "ActionsPlace" src/lib` prints nothing; `handUp(handed, id, actions, applies)` at `tab-actions.svelte.ts:74-79`), so premise 1, section 5's placement sentence and decision 10 drop the place. `Source.svelte` is 528 lines (`wc -l`, and 528 at ee0407a5a), over the 520 of `agents/spec.md`, so section 5 and decision 12 make its split by concern part of the step (the brief already said a file past 520 is split), and the write list gains `actions/`, `save/` and `status/` for the split's files, the folder being at ten items. Its anchors moved: `handUp` `:340-345`, `tabActions` `:286`, `said` `:175`, `save()` `:365`, `SourceNote` `:488`, the head comment `:41-49`; `ask-perform.ts` is 108 lines.
+- X3f's landing: premise 1, the paragraph on waiting for X3f and the whole source-tab section were read in X3f's worktree; they now describe main. `handUp` has no `'bar'` place on main (`grep -rn "ActionsPlace" src/lib` prints nothing; `handUp(handed, id, actions, applies)` at `tab-actions.svelte.ts:74-79`), so premise 1, section 5's placement sentence and decision 10 drop the place. `Source.svelte` is 528 lines (`wc -l`, and 528 at e6d00fb0f), over the 520 of `agents/spec.md`, so section 5 and decision 12 make its split by concern part of the step (the brief already said a file past 520 is split), and the write list gains `actions/`, `save/` and `status/` for the split's files, the folder being at ten items. Its anchors moved: `handUp` `:340-345`, `tabActions` `:286`, `said` `:175`, `save()` `:365`, `SourceNote` `:488`, the head comment `:41-49`; `ask-perform.ts` is 108 lines.
 - Plan lines moved by four: D44 `:513`, Z347 `:1075`, Z392 `:1122`, Z430-Z433 `:1160-1163`, Z488 `:1218`, Z536 `:1256`; Z538 `:1269` and Z539 `:1270` added.
 - `context.ts` after D38 (4 lines) and D20 (4 lines): the step's insertions after `:63`, `:141` and `:463`, `close()` at `:477-495`. `context-fixture.ts`: `:12-13` and `:98-99`. `DESIGN.md` Live HPC at `:135`, `HELP.md` hpc row at `:146`, `HELP.md:49` titled "A file tab's actions". `model-entities.ts` `:490-491` and `:519-521`; `settings.ts` `:185-198`, `:97`, `:6-7`, `:8-10`; `validId` at `actions.ts:25`; `run.ts` list `:10-43`.
 - D20 is in the base, so the D20 bullet of "the steps in flight" is rewritten as base facts (its `context.ts`, `context-fixture.ts`, `shapes.ts`, `HELP.md`, `DESIGN.md` and `ToolButton` changes), and the X3f bullet as landed; a new bullet names D23, D45, M6, D28 and D11, which also write `Source.svelte`, for the orchestrator's judgement at preparation.

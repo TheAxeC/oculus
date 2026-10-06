@@ -1,6 +1,6 @@
-# Step O30 brief check (on main at ac44f68ba)
+# Step O30 brief check (on main at d44bfc7e4)
 
-The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/O30.md` (header "read on main at 94bb9b3a8"; booked at 53908af5c; `git log --oneline 94bb9b3a8..53908af5c -- tools/oculus ':!tools/oculus/.scratch'` printed nothing, so the code base is the same). Code landed since: `git log --oneline 53908af5c..HEAD -- tools/oculus ':!tools/oculus/.scratch'` printed `0aea28449 Land D20`, `b07d24766 Land D38`, `ee0407a5a Land X3f`, `71017ce60 Land S5`. The four findings with the most weight are 3.3 (S5 has landed), 4.2 (item 10 and case 23 conflict with Z53 and the text-box menus), 5.1 (the pgrep checks) and 6.1 (a second `npm run app` rebuilds `build/` under the running app).
+The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/O30.md` (header "read on main at 06979a5cd"; booked at 748e88ac7; `git log --oneline 06979a5cd..748e88ac7 -- tools/oculus ':!tools/oculus/.scratch'` printed nothing, so the code base is the same). Code landed since: `git log --oneline 748e88ac7..HEAD -- tools/oculus ':!tools/oculus/.scratch'` printed `722a287a7 Land D20`, `5b4e737a8 Land D38`, `e6d00fb0f Land X3f`, `30b4ddced Land S5`. The four findings with the most weight are 3.3 (S5 has landed), 4.2 (item 10 and case 23 conflict with Z53 and the text-box menus), 5.1 (the pgrep checks) and 6.1 (a second `npm run app` rebuilds `build/` under the running app).
 
 ## 1. Names
 
@@ -50,8 +50,8 @@ Moved lines and counts:
   - `grep -n "^- O30 \|^- O31 \|^- O33 \|^- O34 \|^- O35 \|^- O36 " plan.md` printed O30 :632 (brief 625), O31 :631 (624), O33 :465 (460), O34 :468 (463), O35 :470 (465), O36 :472 (467).
   - The O32 removal is at :446 (441). Ruling O30 is at :800 (793). The queue is at :807 (800). Z187 is at :929 (922). Z369 is at :1100 (1093). Z425 is at :1156 (1149).
   - In `orchestrator-history.md`, Z187 is at :328 (283) and Z3 at :669 (624).
-- `vite.config.ts`: `grep -n "oculusViteServer\|adapter\|host: '127\|port: loadLocal\|strictPort" vite.config.ts` printed `11: const development = oculusViteServer(engineDir());` and `21: adapter: development.adapter`. The brief's `vite.config.ts:16` is wrong at the base too (the same grep on 94bb9b3a8 printed the same lines). :26-28 matches.
-- `local.ts`: `grep -n "export function loadLocal\|function localDefaults\|DEFAULT_PORT\|must be an integer\|must be a list\|throw" src/lib/data/sources/config/local.ts` printed `122: DEFAULT_PORT = 8790`, `167: localDefaults`, `514: loadLocal`, and comments saying "never throw" (:480, :511). There is no throw, no `:276` and no `:176 accounts must be a list`. The head comment (:2-6) reads: "A key whose value the file gets wrong takes its default and is a problem naming the key ... no read throws". S5 with Q119 landed at 71017ce60, so "S5's round with Q119 (in flight)" is stale and case 8's first branch cannot occur.
+- `vite.config.ts`: `grep -n "oculusViteServer\|adapter\|host: '127\|port: loadLocal\|strictPort" vite.config.ts` printed `11: const development = oculusViteServer(engineDir());` and `21: adapter: development.adapter`. The brief's `vite.config.ts:16` is wrong at the base too (the same grep on 06979a5cd printed the same lines). :26-28 matches.
+- `local.ts`: `grep -n "export function loadLocal\|function localDefaults\|DEFAULT_PORT\|must be an integer\|must be a list\|throw" src/lib/data/sources/config/local.ts` printed `122: DEFAULT_PORT = 8790`, `167: localDefaults`, `514: loadLocal`, and comments saying "never throw" (:480, :511). There is no throw, no `:276` and no `:176 accounts must be a list`. The head comment (:2-6) reads: "A key whose value the file gets wrong takes its default and is a problem naming the key ... no read throws". S5 with Q119 landed at 30b4ddced, so "S5's round with Q119 (in flight)" is stale and case 8's first branch cannot occur.
 - `src/lib/state/client/context.ts`: `createClientState` is at :210 (brief :204).
 - Layout:
   - `storage.ts` `LAYOUT_KEY` is at :20 (19).
@@ -230,7 +230,7 @@ Agent usage: abeb3af4ed6c02ba7, claude-opus-5-5, 284,824 tokens, 94 tool uses, 1
 
 ## Closed (the session's change to the brief for every finding above, and each dictated line added after the check, made before the preparation commit)
 
-Every line number of the brief was read again on main at b372801e3 (the brief's header says so); each change below names the command that checked it.
+Every line number of the brief was read again on main at 43297ef82 (the brief's header says so); each change below names the command that checked it.
 
 - 1.1: item 12 says the parameter is optional (`createClientState(desktop?: { bridge, float })`), so the page in Chrome and the eleven test callers run unchanged; the eleven are listed in "What is on the tree" and checked by the new case 37 (`git grep -n "createClientState(" -- tools/oculus ':!tools/oculus/.scratch'`).
 - 1.2: DESIGN.md:408 joins the doc lines and the write list, rewritten to say Ctrl and Tab is bound in the app and unbound in the browser (item 16); DESIGN.md:378 (the record's `tab`) joins beside it (`sed -n 378p DESIGN.md`, `sed -n 408p DESIGN.md`).

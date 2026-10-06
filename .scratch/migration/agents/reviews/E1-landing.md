@@ -17,7 +17,7 @@ Position: oculus/migration (the migration plan), E1 the design section for apps 
 
 ## What landed
 
-Base 9023d17d, `DESIGN.md` only, 79 lines inserted before the fixes at landing: the section "Apps added while oculus runs", between "Hot reload" and "Relationship to the cockpit", marked as an unbuilt proposal awaiting a ruling. "Decisions taken" and "Still undecided" are unchanged.
+Base aae8f7b7, `DESIGN.md` only, 79 lines inserted before the fixes at landing: the section "Apps added while oculus runs", between "Hot reload" and "Relationship to the cockpit", marked as an unbuilt proposal awaiting a ruling. "Decisions taken" and "Still undecided" are unchanged.
 
 ## Fixes at landing (fifteen, all text of the section)
 
@@ -36,7 +36,7 @@ Base 9023d17d, `DESIGN.md` only, 79 lines inserted before the fixes at landing: 
 13. F14: the `config` channel is said to carry the machine's name and address.
 14. and 15. The two negation-contrasts.
 
-F8: the report's "DESIGN.md:402" for the native-window sentence is the new file's line; the base line is 323 (`git show 9023d17d:tools/oculus/DESIGN.md | sed -n 323p`).
+F8: the report's "DESIGN.md:402" for the native-window sentence is the new file's line; the base line is 323 (`git show aae8f7b7:tools/oculus/DESIGN.md | sed -n 323p`).
 
 ## Verification on main, after the last fix
 

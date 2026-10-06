@@ -1,6 +1,6 @@
-# Step X3f brief check (on main at e6ef64e28)
+# Step X3f brief check (on main at ad51b1fdd)
 
-`git rev-parse HEAD` printed `e6ef64e2801ab0d7eac27cbc4f397f270ce941b3`. `git status --short tools/oculus/src tools/oculus/HELP.md tools/oculus/DESIGN.md tools/oculus/config` printed nothing, so main's tree under these paths matches the head. `.agents/worktrees/` is empty, so the base copy `X3f-base` does not exist yet; every read below was taken from the main checkout.
+`git rev-parse HEAD` printed `ad51b1fddf7a506d67d36519bf2af25e97a6baa4`. `git status --short tools/oculus/src tools/oculus/HELP.md tools/oculus/DESIGN.md tools/oculus/config` printed nothing, so main's tree under these paths matches the head. `.agents/worktrees/` is empty, so the base copy `X3f-base` does not exist yet; every read below was taken from the main checkout.
 
 ## 1. Names
 

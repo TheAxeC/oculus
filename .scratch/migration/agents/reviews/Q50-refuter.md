@@ -1,6 +1,6 @@
 # Review: Q50, a web address written without a scheme is not a hub path
 
-Reviewer aae362464a67b5703, claude:opus, read-only, 04:18 to 05:10. Worktree `.agents/worktrees/q50`, base `84fd99e1`. Nothing was edited anywhere; every revert ran on a copy under the reviewer's scratch folder, and `git status --short` with `git diff 84fd99e1 --stat` was identical at the start and at the end.
+Reviewer aae362464a67b5703, claude:opus, read-only, 04:18 to 05:10. Worktree `.agents/worktrees/q50`, base `dacfc4bb`. Nothing was edited anywhere; every revert ran on a copy under the reviewer's scratch folder, and `git status --short` with `git diff dacfc4bb --stat` was identical at the start and at the end.
 
 ## Verification, rerun
 
@@ -34,7 +34,7 @@ the demo fixture                             10 values, read differently: 0
 ## Spec
 
 1. **The brief's fix text 1 is not delivered for a bare host, and the reason is a contradiction inside the brief.** `src/lib/state/collection.ts:254` requires a path behind the host, so `isHubPath('github.com')` is true and `hrefOf('github.com')` is `/api/file/hub/github.com`. Item 1's "a first segment carrying a dot and ending in a letters-only suffix" and its "a path whose first segment merely holds a dot (`README.md`) stays a hub path" cannot both hold for a single dotted segment: `github.com` and `README.md` are the same shape. The builder kept paths and wrote the other side up as a limitation rather than naming the clash.
-2. A premise off by one: the brief says `ADDRESSED` is at line 241; `git show daa7129b:...` gives 242. Every other premise reproduces.
+2. A premise off by one: the brief says `ADDRESSED` is at line 241; `git show c3cc1304:...` gives 242. Every other premise reproduces.
 
 ## Proof
 
@@ -42,7 +42,7 @@ the demo fixture                             10 values, read differently: 0
 4. **The report's decision 3 is false as written.** `isHubPath('my_host.com:8080/x')` is false and `hrefOf` gives `https://my_host.com:8080/x`; dropping the `(:[0-9]+)?` group makes it a hub path again. The group is unreachable only for a host whose characters all fit `ADDRESSED`'s scheme class. `github.com:8080/x` is taken by `ADDRESSED` first and returned unchanged, an unopenable href; that is base behaviour.
 5. The probe's 257 and 135 could not be reproduced because the probe is not in the tree; the reviewer's own counts agree on the central claim (0 read differently, 0 with a dot in the first segment).
 6. **The two ambiguities are not unclosable without a list.** A rule that closes both: ask whether the first segment is a name the hub root actually holds, which the file browser already reads through `readListing(HUB_ROOT, '')`. Over the real hub: 19 top-level folders, exactly one host-shaped (`theaxec.github.io`), and 12 top-level files, none read as an address. It would make `isHubPath` take the root's names, which touches the three view call sites.
-7. Files-changed numbers: `git diff 84fd99e1 --numstat` gives `20 3`, `33 0`, `9 0`; the report says 18/3, 31, 8. The totals reproduce.
+7. Files-changed numbers: `git diff dacfc4bb --numstat` gives `20 3`, `33 0`, `9 0`; the report says 18/3, 31, 8. The totals reproduce.
 8. Within test 1's eight values only three change answer; the rest are guards, which is legitimate, and no test in the tree stays green while claiming the change.
 
 ## Standards
@@ -79,7 +79,7 @@ npx playwright test               253 passed (9.2m), exit 0
 npx vitest run tests/integrity.test.ts --reporter=verbose
                                   integrity: 256 link/url/folder values, 0 read as a web address,
                                   0 dotted first segment
-git diff --stat 84fd99e1          10 files changed, 193 insertions(+), 11 deletions(-)
+git diff --stat dacfc4bb          10 files changed, 193 insertions(+), 11 deletions(-)
 ```
 
 The reviewer's own walk over the built snapshot, written independently: 328 occurrences at a `link`, `url` or `folder` key, 256 distinct, deepest at depth 5 of the case's cap of 12, 135 still read as a hub path, 0 read as a web address, 0 with a dotted first segment. A differential probe running every real value through all four changed surfaces: 67 venue `link`/`call`, 146 collection `link`/`url`, 5 people `folder`, and not one changes href, Show in Files, `isDocument` or the listing path.
@@ -89,7 +89,7 @@ All seven reverts were rerun; no test stays green under its own revert. The port
 ## Spec
 
 1. **Ruling 3 is not met.** `src/lib/state/collection.ts:243-244` still claims to state the whole rule: "an address is a value carrying a scheme, a leading slash, or a host with a path behind it". `www.example.org` has none of the three and is an address (`isHubPath` false, `hrefOf` `https://www.example.org`, which the step's own case at `tests/state/collection.test.ts:337` asserts). The first review's finding 9 was the same sentence false for `github.com`; it is now false for the `www.` branch.
-2. **Ruling 5b is marked DONE and still does not reproduce.** `git diff 84fd99e1 --numstat` against the round's table: `collection.ts` 22/3 vs 20/3, `tests/state/collection.test.ts` 41 vs 38, `show-in-files.test.ts` 9 vs 8, `views/collection.test.ts` 15 vs 14, `views/venues.test.ts` 22 vs 20, `views/person.test.ts` 16 vs 15, `integrity.test.ts` 49 vs 46. Seven of ten rows are short by the blank lines between the added blocks.
+2. **Ruling 5b is marked DONE and still does not reproduce.** `git diff dacfc4bb --numstat` against the round's table: `collection.ts` 22/3 vs 20/3, `tests/state/collection.test.ts` 41 vs 38, `show-in-files.test.ts` 9 vs 8, `views/collection.test.ts` 15 vs 14, `views/venues.test.ts` 22 vs 20, `views/person.test.ts` 16 vs 15, `integrity.test.ts` 49 vs 46. Seven of ten rows are short by the blank lines between the added blocks.
 3. **Ruling 2 is complete for the three functions and short for the field.** The sweep over `hrefOf`, `isHubPath` and `hubPathsOf` is whole. Two other surfaces draw a `url` and decide address-or-not with their own rule, neither named: `src/lib/views/leads/LeadCard.svelte:177` and `src/lib/views/radar/RadarCard.svelte:151`, both `url.startsWith('http')`. A `url` of `github.com/x` now opens `https://github.com/x` from a collection card and draws no link at all on a lead or a radar card.
 4. **The same question got two answers inside the round.** `EntryCard.svelte:211` uses `isHubPath`, which excludes an address but not a path climbing above the hub; `Person.svelte:59` uses `hubPathsOf`, which excludes both. A collection `link` of `../x.html` still passes `isDocument` and opens a document tab asking api/file for `hub/../x.html`, which `src/lib/server/files.ts:112` refuses. Base behaviour; the report lists `isDocument` as fixed without saying which half.
 

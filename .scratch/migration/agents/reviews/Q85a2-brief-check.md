@@ -1,6 +1,6 @@
 # Brief check: Q85a2 (oculus/migration)
 
-Everything below was read on main at ae1e8024. The brief and `plan.md` were read from the working tree, and both are uncommitted. Nothing was changed. Every probe ran in my scratchpad against the tree's own modules and its `node_modules/zod` 4.6.5, using node v24.21.0.
+Everything below was read on main at 6c19f6ec. The brief and `plan.md` were read from the working tree, and both are uncommitted. Nothing was changed. Every probe ran in my scratchpad against the tree's own modules and its `node_modules/zod` 4.6.5, using node v24.21.0.
 
 ## 1. Names
 

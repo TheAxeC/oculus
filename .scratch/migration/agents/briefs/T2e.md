@@ -4,7 +4,7 @@ Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern th
 
 A design ruling decides what is built. It never exempts the code: every line is written to the standards pages, so that people can read, use and maintain it.
 
-## What is on the tree (read on main at 1d88f4376)
+## What is on the tree (read on main at 7db4c1ad7)
 
 - `tests/` holds 113 test files and 18,887 lines (from `tools/oculus`: `find tests -name '*.test.ts' | wc -l`; `find tests -type f -exec cat {} + | wc -l`).
 - Every entry of `agents/guarded.md` names its tests under `Test:` (`grep -c 'none named yet' agents/guarded.md` prints 0). Four sweeps each kept tests for the entries in their own folders, so several units now hold two kept tests, one from `tests/server/` and one from `tests/routes/` (or one from `tests/state/` and one from `tests/shell/` or `tests/checks/`). The pairs are listed under "What to build" 1, each test checked to exist at its file and title.

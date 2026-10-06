@@ -1,4 +1,4 @@
-Brief check of U2 (`tools/oculus/.scratch/migration/agents/briefs/U2.md`), read on main at 4714293a. main's checkout has uncommitted changes to plan.md, the state file, queue.md and the brief (`git status --short`). I changed no file.
+Brief check of U2 (`tools/oculus/.scratch/migration/agents/briefs/U2.md`), read on main at 16ade60f. main's checkout has uncommitted changes to plan.md, the state file, queue.md and the brief (`git status --short`). I changed no file.
 
 ## 1. Names
 

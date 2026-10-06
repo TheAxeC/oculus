@@ -16,7 +16,7 @@ The runner's agent listing (ListAgents, 06:19) showed one subagent running, Q109
 
 ## What landed
 
-From base 41177dcf, 30 paths staged by the cherry-pick (2201 insertions, 570 deletions; `git diff --cached --shortstat`), plus the fixes at landing below. `DESIGN.md`, `HELP.md` and two diagram files auto-merged; `npm run diagrams` on main changed nothing.
+From base 8ea443a0, 30 paths staged by the cherry-pick (2201 insertions, 570 deletions; `git diff --cached --shortstat`), plus the fixes at landing below. `DESIGN.md`, `HELP.md` and two diagram files auto-merged; `npm run diagrams` on main changed nothing.
 
 - `src/lib/server/edit/writes/config-key.ts`: one key of a tracked config file set in place with its comments kept, refused for `local.yml`, a key with no catalog entry, a family, a list or a map, a value of the wrong type, and a value a reader of the configuration refuses.
 - The write route's `config-key` body (`bodies.ts`), the write answers and the undo (`undo.ts`), the client's `writeConfigKey` and the History view's word "setting".

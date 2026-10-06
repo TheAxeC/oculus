@@ -1,4 +1,4 @@
-# Step H3 refuter report (on .agents/worktrees/H3, base e9822c082)
+# Step H3 refuter report (on .agents/worktrees/H3, base 926489d80)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
 
@@ -19,7 +19,7 @@ ok      svelte-check (31.4 s): 1791156753535 COMPLETED 355 FILES 0 ERRORS 0 WARN
 test:quick: 42.3 s (limit 45.0 s); every command passed
 checks: 1 commands passed
 
-$ npm run test:quick -- --base e9822c082
+$ npm run test:quick -- --base 926489d80
 test:quick: 8.8 s (limit 45.0 s); every command passed
 
 Brief Verify 2: npx vitest run tests/checks/config/config.test.ts tests/checks/config/config-folder.test.ts
@@ -225,8 +225,8 @@ test:quick: 46.3 s (limit 45.0 s); every command passed
 test:quick: over the time limit
 checks: 1 commands passed          (exit 0)
 
-$ npm run test:quick -- --base e9822c082
-test:quick: 7 changed file(s), from git since e9822c082
+$ npm run test:quick -- --base 926489d80
+test:quick: 7 changed file(s), from git since 926489d80
 test:quick: 8.1 s (limit 45.0 s); every command passed
 
 Verify 2: npx vitest run tests/checks/config/config.test.ts tests/checks/config/config-folder.test.ts
@@ -379,7 +379,7 @@ Case 19, the builder's clash (11 lines, `missing: secrets/`):
 - The diff changes `registries/domains.yml` lines 1 and 3, while the round names only `:2`. The report says `:2-3`, and the diff shows 1-3. The text changed on lines 1 and 3 carries the same false fact as the named line (the cockpit `themes:` colour). I judge it inside round item 12 and not a fix beyond the finding. Whether the write list's line set stretches to those lines is the orchestrator's call.
 - The checks.sh run took 46.3 s, against the 45.0 s limit, and printed "over the time limit". Every command passed and it exited 0. Several worktrees were building at once, and the same list against the base ran in 8.1 s, so I do not count it against the step.
 - The builder's count of full-list runs (1), and whether it ran any git command this round: neither can be reproduced from the tree.
-- The parsed-content comparison for item 12 was against the main checkout's working files, not against commit e9822c082. `git diff e9822c082 --stat` shows the same ten files changed with only those lines.
+- The parsed-content comparison for item 12 was against the main checkout's working files, not against commit 926489d80. `git diff 926489d80 --stat` shows the same ten files changed with only those lines.
 - Report line 8: whether `.claude/settings.local.json` is "ignored machine-wide" and `.agents/tmp/` is "empty". The worktree holds neither, so I did not check them.
 
 Reviewer usage: ordo-high on claude-opus-5-5 (a663c6bd5d684da0a), 248,564 tokens, 71 tool uses, 10.3 min.

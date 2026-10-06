@@ -1,8 +1,8 @@
-# Step D17 brief check (on main at 11013a2b)
+# Step D17 brief check (on main at f39fc8ed)
 
 Report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/D17.md` (uncommitted, read from disk).
 
-Method notes. HEAD is 11013a2b. The main working tree and index also carry a staged landing (D35: `DESIGN.md`, `HELP.md`, `pty/routes.ts`, `pty/chat.ts`, `usage/refresh.ts`, `config/...` among 67 files; `git status --short`, `git diff --cached --stat | tail -3` printed "67 files changed"). To read "main at its head" I extracted HEAD with `git archive HEAD tools/oculus/{src,tests,config,utils,DESIGN.md,HELP.md,package.json}` into `$TMPDIR/head` and ran every tree command there (called `$H` below). `config/local.yml` was never opened, printed or grepped; every grep over `config` used a tree that has no `local.yml` or carried `--exclude=local.yml`. `.vscode` and the real `~/.oculus/` were not read.
+Method notes. HEAD is f39fc8ed. The main working tree and index also carry a staged landing (D35: `DESIGN.md`, `HELP.md`, `pty/routes.ts`, `pty/chat.ts`, `usage/refresh.ts`, `config/...` among 67 files; `git status --short`, `git diff --cached --stat | tail -3` printed "67 files changed"). To read "main at its head" I extracted HEAD with `git archive HEAD tools/oculus/{src,tests,config,utils,DESIGN.md,HELP.md,package.json}` into `$TMPDIR/head` and ran every tree command there (called `$H` below). `config/local.yml` was never opened, printed or grepped; every grep over `config` used a tree that has no `local.yml` or carried `--exclude=local.yml`. `.vscode` and the real `~/.oculus/` were not read.
 
 ## 1. Names
 
@@ -155,7 +155,7 @@ Agent usage: claude-sonnet-5-5 (served model as named in my system prompt; the r
 
 Usage (from the completion notice): claude-sonnet-5-5, 232,904 tokens, 79 tool uses, 11.6 min.
 
-## Closed (2026-10-02, /spec D17 on main after 8ef3abbe)
+## Closed (2026-10-02, /spec D17 on main after 125203b5)
 
 - N1, C3: approvals follow `DESIGN.md:326` (item 4, Z194 (3)), in a shared `server/machine/approvals/` module, the path from the `approvals` key of `local.yml`. N2: the two fields go before `#{pid}`, `terminal-edit.test.ts` in the paths (item 7, case 9). N3, N3b: `terminal-payloads.ts`, the nine fixtures and `terminals.svelte.ts` in the paths; Rerun and Restart calls in the store (item 11). N4: the DESIGN.md sentence and `channel.ts` comments in item 12. N5: one exported `shellWord` (item 2).
 - S1: Z281, items 8 and 9, cases 13 and 14. S2: the plan line quoted as `plan.md:435-437` holds it.

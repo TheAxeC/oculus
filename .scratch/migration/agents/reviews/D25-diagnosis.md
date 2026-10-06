@@ -10,7 +10,7 @@ From `agents/reviews/owed-looks.md:104`, A1-1, built in D25 by Z289 and held out
 
 ## Where the probes run
 
-The defect is A1's, landed on main, so the probes ran on main's checkout (`780125bf`), which the dev server on 8790 serves to the TEST page (tab 812136282), each probe one edit undone after its run, and the page reloaded before each run. No path redirected under `$TMPDIR`: no probe touches the home folder, the installed skills or the pinned checkout.
+The defect is A1's, landed on main, so the probes ran on main's checkout (`ec78edc2`), which the dev server on 8790 serves to the TEST page (tab 812136282), each probe one edit undone after its run, and the page reloaded before each run. No path redirected under `$TMPDIR`: no probe touches the home folder, the installed skills or the pinned checkout.
 
 The state: a tracked file with a change is needed for a diff, so one line `DIAG-a11c probe line for the inline diff look` was inserted at `tools/oculus/HELP.md:4` (backup and `shasum` `1dfdd236f9b2cd8ffc3ef0de2d9d2f926981edeb` first). In the Changes view, session "S2 status" (this orchestrating session, `be0ac0d7-...`) was picked, and the row `tools/oculus/HELP.md` of "The repository" opened with its Open Changes control: a diff tab whose id carries the session, so the comment is offered. More Actions, Inline View set the inline layout.
 

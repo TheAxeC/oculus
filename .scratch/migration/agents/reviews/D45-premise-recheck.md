@@ -1,20 +1,20 @@
 ## D45 brief recheck against main
 
-Main moved while I was checking. `b23de6e7c` was followed by `1b0098a2a` (Q123's hand-back ruling) and `92063ed58` (Z634, Z635 and Q125 booked). `git diff --stat b23de6e7c HEAD` lists only `.scratch/migration` files. `git diff --stat a564e4e29 HEAD -- tools/oculus ':!tools/oculus/.scratch'` prints nothing, so the source tree at HEAD is E4's landing, and it is the same tree every in-flight step started from.
+Main moved while I was checking. `f4baa9345` was followed by `32a5fa568` (Q123's hand-back ruling) and `0d316064c` (Z634, Z635 and Q125 booked). `git diff --stat f4baa9345 HEAD` lists only `.scratch/migration` files. `git diff --stat 10ac00c69 HEAD -- tools/oculus ':!tools/oculus/.scratch'` prints nothing, so the source tree at HEAD is E4's landing, and it is the same tree every in-flight step started from.
 
-The plan.md numbers below are taken at `92063ed58`. Q125's new line at `plan.md:643` moved every later line down by one compared with `b23de6e7c`.
+The plan.md numbers below are taken at `0d316064c`. Q125's new line at `plan.md:643` moved every later line down by one compared with `f4baa9345`.
 
-The brief's tree section was read at `a21aa859d`. Since then these commits have changed source under `tools/oculus` (`git log --oneline a21aa859d..HEAD -- tools/oculus/src tools/oculus/config tools/oculus/tests ...`):
-- X3f (`ee0407a5a`)
-- D38 (`b07d24766`)
-- D20 (`0aea28449`)
-- `eba29a18e` (layout.yml)
-- D44 (`297349683`)
-- `a37aaa5de` (tests removed)
-- `ebb6861c1` (help pane)
-- O30 (`8ed2d1f5a`)
-- A3 (`af7d8df07`)
-- E4 (`a564e4e29`)
+The brief's tree section was read at `f073b0494`. Since then these commits have changed source under `tools/oculus` (`git log --oneline f073b0494..HEAD -- tools/oculus/src tools/oculus/config tools/oculus/tests ...`):
+- X3f (`e6d00fb0f`)
+- D38 (`5b4e737a8`)
+- D20 (`722a287a7`)
+- `8aa491caa` (layout.yml)
+- D44 (`d7ff5fd3d`)
+- `57c6ba7e6` (tests removed)
+- `61f253977` (help pane)
+- O30 (`3cb170eae`)
+- A3 (`09509b5b6`)
+- E4 (`10ac00c69`)
 
 All paths below are under `tools/oculus/`.
 
@@ -36,7 +36,7 @@ What is on the tree:
 
 | Brief line | Claim | Now (command) | Corrected text |
 |---|---|---|---|
-| 27-29 | read at `a21aa859d`; only D42 and S5 changed source | the ten commits listed above | "read on main at 92063ed58 (source = a564e4e29)" |
+| 27-29 | read at `f073b0494`; only D42 and S5 changed source | the ten commits listed above | "read on main at 0d316064c (source = 10ac00c69)" |
 | 37 | `routes.ts` 627 lines; LATEX_STEPS :89, latexStepShape :93, latexFolderShape :99-102, latexCommand :393, latexFolder :410, keptLatex :444, startLatex :470, job :494, dispatch :549, hub read :432 | `wc -l` 656; `grep -n` prints 90, 94, 100-103, 420, 437, 471, 497, 521, 576, 459 | those numbers |
 | 38 | `settings.ts:414-420` (latexAutoBuild) | 496-502 | `settings.ts:496-502` |
 | 38 | `context.ts:325-331` | `grep -n "createLatex\|onSaved" state/client/context.ts`: 352, 358 | `context.ts:352-359` |
@@ -125,7 +125,7 @@ Items, paths and read list:
    - `server/content` is full (10), but D45 adds nothing at that level.
    - No user choice.
 
-5. **Q123's ruling A** (`agents/briefs/Q123-cases.md`, committed in `1b0098a2a`) widens Q123's write list:
+5. **Q123's ruling A** (`agents/briefs/Q123-cases.md`, committed in `32a5fa568`) widens Q123's write list:
    - `pty/routes.ts:34` and `:51` (imports);
    - `tests/routes/sessions/terminal-actions.test.ts:21`;
    - `chat.ts`, `compose.ts` and `context.ts` move into `pty/start/`, and a new `pty/capture.ts`.
@@ -140,13 +140,13 @@ Items, paths and read list:
    - D23 adds a `references` view to the Explorer group at order 3 (D23.md:293). After both steps the keys sheet reads `s1-s5`. D11's planned `debug` at order 3 collides with `references`; that is D11's concern.
    - D23's brief cites `D45.md:321` and `:189`; the lines it means are now `:330` and `:198`.
 
-8. **A second keys sheet the brief omits.** HELP.md's "## The keys" table carries `s1-s3` at :77 and Cmd+Shift+B and Cmd+Alt+T at :95-96. It was already there at `a21aa859d`, so this is a gap in the brief, not a landing. D45's new keys and its `s` range belong there too. D23 already writes that row.
+8. **A second keys sheet the brief omits.** HELP.md's "## The keys" table carries `s1-s3` at :77 and Cmd+Shift+B and Cmd+Alt+T at :95-96. It was already there at `f073b0494`, so this is a gap in the brief, not a landing. D45's new keys and its `s` range belong there too. D23 already writes that row.
 
 9. **X3e** (queued, launched after Q125) shares these files with D45: `options.yml`, `glyphs.yml`, `icons.yml`, `server.yml`, `app.yml` and `files.yml`. It is not in flight.
 
 ### 3. Paths D45 writes that the other steps also write
 
-Line numbers are at HEAD. D23's were numbered at `f0f311964` with D20 staged; I mapped them to HEAD with `git diff -U0 0aea28449 HEAD`.
+Line numbers are at HEAD. D23's were numbered at `d67982033` with D20 staged; I mapped them to HEAD with `git diff -U0 722a287a7 HEAD`.
 
 | Step | Shared file | That step's lines | D45's lines | Merge |
 |---|---|---|---|---|

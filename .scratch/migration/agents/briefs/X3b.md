@@ -4,7 +4,7 @@ Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern th
 
 Work in `.agents/worktrees/X3b/tools/oculus` and nowhere else. Run no git command on the worktree's own repository; the git commands your code and tests run go to scratch repositories under a temporary directory. Never write into `tools/oculus/.scratch/`, the main checkout, any hub data folder, or the real `~/.oculus`. Another step (Q67, the Calendar and Inbox account setup) may run beside this one: `DESIGN.md`, `HELP.md`, `config/catalogs/` are in this step's paths, and Q67 hands its lines for them to the orchestrator.
 
-## What is on the tree (read on main at 72d4f2e5)
+## What is on the tree (read on main at 1c012055)
 
 Each fact with the command or file that shows it, from `tools/oculus`.
 

@@ -1,6 +1,6 @@
-# Step A3 brief check (on main at 89f35ff83)
+# Step A3 brief check (on main at 17f581151)
 
-The brief is the working-tree copy of `agents/briefs/A3.md` (621 lines, modified and uncommitted). The brief was written against a37aaa5de. `git diff --stat a37aaa5de HEAD` lists only files under `tools/oculus/.scratch/`, so every fact about the tree outside the ledger is the same at 89f35ff83.
+The brief is the working-tree copy of `agents/briefs/A3.md` (621 lines, modified and uncommitted). The brief was written against 57c6ba7e6. `git diff --stat 57c6ba7e6 HEAD` lists only files under `tools/oculus/.scratch/`, so every fact about the tree outside the ledger is the same at 17f581151.
 
 ## 1. Names
 
@@ -39,7 +39,7 @@ Findings: none.
 
 ## 3. Premises
 
-- The patch: `git apply --stat` prints "57 files changed, 2895 insertions(+), 1028 deletions(-)". `git apply --check` prints "error: patch failed: tools/oculus/tests/data/sources/config/settings.test.ts:1 ... patch does not apply". With `--exclude=` that file, the check passes (exit 0). `git diff --stat 37178c05d a37aaa5de` lists `settings.test.ts | 190 +---` and `value-rule.test.ts | 217 ----` among 10 files. Matches.
+- The patch: `git apply --stat` prints "57 files changed, 2895 insertions(+), 1028 deletions(-)". `git apply --check` prints "error: patch failed: tools/oculus/tests/data/sources/config/settings.test.ts:1 ... patch does not apply". With `--exclude=` that file, the check passes (exit 0). `git diff --stat cda24e76b 57c6ba7e6` lists `settings.test.ts | 190 +---` and `value-rule.test.ts | 217 ----` among 10 files. Matches.
 - `pty/routes.ts` (`sed -n '85,100p;392,436p;598,606p'`): `TASKS` :89, `TaskKind` :90, `isTask` :93, `taskCommand` :402, `startTask` :410-434, the dispatch at :602-604. Matches. The patch's `start.ts` exports `SCHEDULED_SIZE = { cols: 80, rows: 24 }`.
 - The users of `skip_permissions`: the grep printed exactly the brief's list (README.md has no hit). `config/behavior.yml:89-92` is `tasks:`, the comment, `skip_permissions: false` and the blank line. `options.yml:386-391` is the entry. Matches.
 - `behaviorFindings` is `catalogs.ts:163-175`, and its two tests are `config.test.ts:369-395`. guarded.md:143 holds `config.test.ts` under G12 and G13. Matches.
@@ -67,14 +67,14 @@ Findings: none.
 - The `yaml` probe (my `yprobe.mjs` and `yprobe2.mjs`): `*/5 * * * *` written as a plain scalar fails to parse, and a double-quoted node and a flow `runs` map read back equal. Matches, with two differences:
   - **(a)** `- name: [` gives one `BAD_INDENT`, but the line depends on the file's last byte. The text without a newline reports line 1. `'- name: [\n'`, which is what an editor or `echo` writes, reports line 2. S3 expects `{ file: 'schedules', line: 1 }`, and look step 12 overwrites the file with `- name: [` (with a newline, so line 2).
   - **(b)** "keep every comment and the other entries byte for byte" holds only for a file already in the library's own style. After `deleteIn([0])`, a hand-written `- name: Weekly radar    # mine` became `- name: Weekly radar # mine`, `runs: {task: litwatch}` became `runs: { task: litwatch }`, and a 4-space indented entry was reindented to 2 spaces. The comments were kept.
-- "Where this step sits", first bullet: it says plan.md:590 "still reads 'the schedule is a cron-style `schedule:` field on each Update task entry'". `grep -n "^- A3 " plan.md` now shows line 590 rewritten to "...a schedule is an entry of `~/.oculus/schedules.yml` that runs an Update task, a saved command or a prompt ... (ruling Z569)". `grep -n cron-style plan.md` finds only :800, the old ruling. At a37aaa5de the line held the cron-style text and no "(ruling Z569)", so the bullet mixes the two states.
+- "Where this step sits", first bullet: it says plan.md:590 "still reads 'the schedule is a cron-style `schedule:` field on each Update task entry'". `grep -n "^- A3 " plan.md` now shows line 590 rewritten to "...a schedule is an entry of `~/.oculus/schedules.yml` that runs an Update task, a saved command or a prompt ... (ruling Z569)". `grep -n cron-style plan.md` finds only :800, the old ruling. At 57c6ba7e6 the line held the cron-style text and no "(ruling Z569)", so the bullet mixes the two states.
 - The ADR premise: the brief checks `ls tools/oculus/docs`. Neither `docs/adr` nor `tools/oculus/docs/adr` exists (`ls` errors on both), and `.agents/plan.yaml` has no `adr` key. The conclusion holds; the path checked is not the default one.
 
 Findings:
-- The plan line premise is stale. :590 no longer reads "cron-style"; it was rewritten in 89f35ff83.
+- The plan line premise is stale. :590 no longer reads "cron-style"; it was rewritten in 17f581151.
 - S3 and look step 12 expect line 1. A file ending in a newline gives line 2.
 - The `yaml` premise "byte for byte" holds only for files in the serializer's style, so S20 cannot hold for hand-written files (see check 5).
-- The brief names its base as a37aaa5de. The head is 89f35ff83, with only ledger files changed.
+- The brief names its base as 57c6ba7e6. The head is 17f581151, with only ledger files changed.
 
 ## 4. Cases and checks
 
@@ -218,7 +218,7 @@ Usage: a48d9494f333f3e40, claude-opus-5-5, 268,096 tokens, 87 tool uses, 13.9 mi
 Each finding is closed by a change to `agents/briefs/A3.md`, made by the brief writer (a42ad450094192df4) on the orchestrator's numbered list, and the three choices it raised closed by rulings:
 
 - Names, HELP.md:294: item 13 dictates the sentence, and the two files take `local.yml` keys (Z587), so "or wherever `local.yml` puts each of them" holds for them.
-- Premises: the base is 89f35ff83; the plan-line sentence is removed; S3 and look step 12 expect line 2 for a file ending in a newline; the ADR premise checks `docs/adr` and `tools/oculus/docs/adr`.
+- Premises: the base is 17f581151; the plan-line sentence is removed; S3 and look step 12 expect line 2 for a file ending in a newline; the ADR premise checks `docs/adr` and `tools/oculus/docs/adr`.
 - Cases: G46 is one table for `schedules/watch.ts` and one for `schedules/run.ts`; a name that is a prototype key keeps its record entry in a `Map` (S35, Z591 rewords DESIGN.md:153); C1 uses its own `TMUX_TMPDIR`.
 - The question: S20 and item 1 splice only the changed entry's bytes, over a hand-written fixture; C26 is checked by reading each test; verify item 8 asks for the behaviour's own failing row.
 - Implied inputs: S36 to S48 and S52, with `entry-wrong` for an entry that is not a map (Z589).

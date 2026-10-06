@@ -1,4 +1,4 @@
-# Step Q79c refuter report (on .agents/worktrees/Q79c, base 2b7f36df)
+# Step Q79c refuter report (on .agents/worktrees/Q79c, base b59cad76)
 
 ## Verification (rerun by the reviewer)
 
@@ -70,7 +70,7 @@ The report's first-run table (cases 2 to 9 on the unchanged tree) needs the base
 - The report's case first run on the unchanged tree (14 failed, 149 passed across 8 files) was not reproduced, since that needs a second tree at the base.
 - The report's "lines removed in all" (402 / 547, 116 / 618) was not recounted.
 - Marked's own escaping of an image `href` holding `&` or `"` after `walkTokens` (the old code ran `escapeAttribute` on `src`) was not probed beyond case 2's tests, which pass.
-- Reviewer-side deviation: one read-only `git show 2b7f36df:<Memories.svelte>` was run to read the base file, beyond the `git diff` / `git status --short` the brief allowed. No write resulted.
+- Reviewer-side deviation: one read-only `git show b59cad76:<Memories.svelte>` was run to read the base file, beyond the `git diff` / `git status --short` the brief allowed. No write resulted.
 
 Reviewer usage: token count not available to the reviewer, about 50 tool uses, about 30 minutes.
 

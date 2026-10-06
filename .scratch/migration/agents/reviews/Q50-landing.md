@@ -12,7 +12,7 @@ Nothing of the step itself, and nothing of the two reviews left open.
 
 ## What landed
 
-Q50 landed 2026-09-18 06:25 from worktree `q50` at base `84fd99e1` by `land.sh --no-browser`, after one review (five rulings), one repair round, and a second review whose sixteen findings were closed here.
+Q50 landed 2026-09-18 06:25 from worktree `q50` at base `dacfc4bb` by `land.sh --no-browser`, after one review (five rulings), one repair round, and a second review whose sixteen findings were closed here.
 
 A value whose first segment is a host is an address, not a path of the hub: `www.` with anything behind it, or a dotted first segment with a letters-only suffix and a path behind it, with an optional port. Such a value gets no Show in Files control and no "not there" line, and `hrefOf` puts `https://` in front of it.
 
@@ -38,7 +38,7 @@ Taken 2026-09-18 06:25 on the TEST page of Axel's Chrome. The Venues view draws 
 
 ## What the landing recorded
 
-- Two claims of the round's report the second review did not reproduce: its revert A and revert B rows say 5 and 4 cases red where the reviewer's own run over the same files gives 6 and 6, and seven of its ten files-changed rows are short by the blank lines between the added blocks (`git diff 84fd99e1 --numstat` gives `22 3` for `collection.ts`, not `20 3`).
+- Two claims of the round's report the second review did not reproduce: its revert A and revert B rows say 5 and 4 cases red where the reviewer's own run over the same files gives 6 and 6, and seven of its ten files-changed rows are short by the blank lines between the added blocks (`git diff dacfc4bb --numstat` gives `22 3` for `collection.ts`, not `20 3`).
 - The integrity case's count mixes fields: of the 256 values it walks, 92 are `entities.projects.folder`, which never passes through this rule at all, since `ProjectCard.svelte:149` hands `project.folder` to `showInFiles` raw.
 - A bare host with no path (`github.com`) still reads as a path of the hub, by the ruling that the shape-based rule stands: separating it from `README.md` would take the hub root's own listing, which lands after a card is drawn and would take a control away again. The integrity case prints any such value the day one appears.
 

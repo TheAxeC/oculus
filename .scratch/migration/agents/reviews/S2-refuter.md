@@ -1,4 +1,4 @@
-# Step S2 refuter report (on .agents/worktrees/S2, base 0249f8f9)
+# Step S2 refuter report (on .agents/worktrees/S2, base 5fbc3627)
 
 ## Verification (rerun by the reviewer)
 All commands were run from the worktree's tools/oculus.
@@ -159,7 +159,7 @@ Findings:
   - Its Collapse-all collapses the whole enclosing root.
   - Its Remove-root, drawn for any root that is not fixed, removes the whole enclosing root rather than anything named by the row it sits on. The control's title names the root key.
   - This case is not reported and not tested.
-- **Proof: round report "Correction to the first report (item 12)".** It says "Files.svelte is 540 lines, the .svelte limit, which is the same count as the base". `git show 0249f8f9:tools/oculus/src/lib/views/sources/files/Files.svelte | wc -l` prints 531. The file now sits exactly at the 540 limit that `bin/size-check.sh:29` enforces.
+- **Proof: round report "Correction to the first report (item 12)".** It says "Files.svelte is 540 lines, the .svelte limit, which is the same count as the base". `git show 5fbc3627:tools/oculus/src/lib/views/sources/files/Files.svelte | wc -l` prints 531. The file now sits exactly at the 540 limit that `bin/size-check.sh:29` enforces.
 - **Standards: pty/sessions.ts:8-9, head comment (item 14).**
   - It says a composer start carries "the account as one `-e NAME=folder` pair".
   - For the default account no `-e` pair is passed. Instead `env -u CLAUDE_CONFIG_DIR` or `env -u CODEX_HOME` leads the argv (compose.ts:128-131).

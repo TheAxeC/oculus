@@ -8,7 +8,7 @@ From `agents/reviews/owed-looks.md`, the Q78 look (2026-10-02, TEST, the rice pa
 
 ## Where the probes run
 
-TEST at localhost:8790, tab 812136282, which serves main at 4bc8983b8 (X3c is not served). The probes are page scripts only: no source file is changed, so the step's worktree and main are untouched. The paths redirected under `$TMPDIR`: none. From 2026-10-03 23:00 the TEST window was in front (Z371 (a)): `document.visibilityState` `visible`, 121 frames in one second; it went `hidden` whenever Axel worked in the terminal. By Axel's ruling Z371 (b) the probes then ran headless: a detached worktree of main at 4e8d04297 under the session scratchpad (sparse to `tools/oculus`), a standalone page that mounts `ui/tabs/Tabs.svelte` alone (served by Vite on 127.0.0.1:8797 from that copy), driven by Playwright with its headless Chromium, both installed in the scratch folder only.
+TEST at localhost:8790, tab 812136282, which serves main at bba8b9a5a (X3c is not served). The probes are page scripts only: no source file is changed, so the step's worktree and main are untouched. The paths redirected under `$TMPDIR`: none. From 2026-10-03 23:00 the TEST window was in front (Z371 (a)): `document.visibilityState` `visible`, 121 frames in one second; it went `hidden` whenever Axel worked in the terminal. By Axel's ruling Z371 (b) the probes then ran headless: a detached worktree of main at 547ff731f under the session scratchpad (sparse to `tools/oculus`), a standalone page that mounts `ui/tabs/Tabs.svelte` alone (served by Vite on 127.0.0.1:8797 from that copy), driven by Playwright with its headless Chromium, both installed in the scratch folder only.
 
 ## Red command
 

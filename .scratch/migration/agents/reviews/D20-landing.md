@@ -16,7 +16,7 @@ Nothing inside the brief. The look cases that pick a permission mode or start an
 
 ## What landed
 
-From base 16b31cef0, 108 files (+4426 -1446, `git diff --cached --stat`): the task agent (the Focus line's `agent`, the Tasks card's Start Agent, the seed built on the server with its approval, the composer with a task), Claude or Codex in a new worktree, the armed Kill and every pressed bare button, the Terminal tab while its shell starts, Claude's scrollback kept (`CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1`), the checked-out branch's pill menu, git commands that run hooks with no time limit and a Cancel for them, a failed git command saying why (G41), Cancel naming the merge, rebase or cherry-pick it left in progress (G44), and a transcript above the string limit read in pieces with a streamed export.
+From base 87c0a7a81, 108 files (+4426 -1446, `git diff --cached --stat`): the task agent (the Focus line's `agent`, the Tasks card's Start Agent, the seed built on the server with its approval, the composer with a task), Claude or Codex in a new worktree, the armed Kill and every pressed bare button, the Terminal tab while its shell starts, Claude's scrollback kept (`CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1`), the checked-out branch's pill menu, git commands that run hooks with no time limit and a Cancel for them, a failed git command saying why (G41), Cancel naming the merge, rebase or cherry-pick it left in progress (G44), and a transcript above the string limit read in pieces with a streamed export.
 
 Fixes at landing:
 - The eight findings of the run over round 1, as `agents/reviews/D20-refuter.md` "Closed" lists them, the diagnosis's fix among them (`endWith` in `server/core/git/running.ts`, `agents/reviews/D20-diagnosis.md`).
@@ -24,7 +24,7 @@ Fixes at landing:
 
 ## Verification
 
-In `.agents/worktrees/gate` at f0f311964 with D20's landing patch applied (`git apply --3way --index`; only the six diagram files conflicted, taken from main and regenerated), after `npm run diagrams && npm run test:landing`:
+In `.agents/worktrees/gate` at d67982033 with D20's landing patch applied (`git apply --3way --index`; only the six diagram files conflicted, taken from main and regenerated), after `npm run diagrams && npm run test:landing`:
 
 ```
 ok      ASCII gate (5.2 s)

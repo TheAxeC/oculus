@@ -1,6 +1,6 @@
 # Brief check: Q124
 
-The brief `agents/briefs/Q124.md`, on main at a564e4e29. The checker changed no file, ran no git command that changes state, no vitest and no npm script.
+The brief `agents/briefs/Q124.md`, on main at 10ac00c69. The checker changed no file, ran no git command that changes state, no vitest and no npm script.
 
 ## Names
 
@@ -21,7 +21,7 @@ The brief `agents/briefs/Q124.md`, on main at a564e4e29. The checker changed no 
 2. "corrected at /spec": Decision 1.
 3. "(ruling Z628)": quoted at line 13; matches `plan.md:1367` apart from its tail.
 4. "the vitest runs ... no longer race on the shared deps cache": item 2.
-5. "(ENOTEMPTY at startup in two landing runs, Z468)": half-sourced. The second run is `agents/reviews/D44-landing.md:32`: "`test:slow` failed on vite's dependency-cache rename race (`ENOENT ... rename .../deps___vitest__`)", an ENOENT, from when `test:slow` ran beside the other lanes (`git show 6c8a217be:tools/oculus/tests/tiers/landing.mjs`). The brief should cite it and both error forms.
+5. "(ENOTEMPTY at startup in two landing runs, Z468)": half-sourced. The second run is `agents/reviews/D44-landing.md:32`: "`test:slow` failed on vite's dependency-cache rename race (`ENOENT ... rename .../deps___vitest__`)", an ENOENT, from when `test:slow` ran beside the other lanes (`git show 97e03827c:tools/oculus/tests/tiers/landing.mjs`). The brief should cite it and both error forms.
 6. Item 3 has no part of the step line behind it; `spec.md:66` requires it.
 
 ## Premises
@@ -83,7 +83,7 @@ Usage: a637e9ef56264db07, claude-opus-5-5, 202,225 tokens, 63 tool uses, 9.0 min
 
 ## Closed
 
-Every finding is closed by a change to `agents/briefs/Q124.md`, under the orchestrator's rulings. Line numbers in the brief were checked on main at 5896cf9b1 with `grep -n` and `sed -n`; `git diff --stat a564e4e29 5896cf9b1 -- tools/oculus ':!tools/oculus/.scratch' ':!tools/oculus/config/local.yml'` prints nothing.
+Every finding is closed by a change to `agents/briefs/Q124.md`, under the orchestrator's rulings. Line numbers in the brief were checked on main at 7813074e8 with `grep -n` and `sed -n`; `git diff --stat 10ac00c69 7813074e8 -- tools/oculus ':!tools/oculus/.scratch' ':!tools/oculus/config/local.yml'` prints nothing.
 
 ### Names
 

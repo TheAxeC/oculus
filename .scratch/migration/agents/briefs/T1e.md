@@ -4,7 +4,7 @@ Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern th
 
 A design ruling decides what is built. It never exempts the code: every line is written to the standards pages, so that people can read, use and maintain it.
 
-## What is on the tree (read on main at 1e14d279)
+## What is on the tree (read on main at cf91445b)
 
 - The step line, `plan.md:228`, rests on the rulings Z350, Z351, Z354, Z363, Z365 and Z367, each a line of `plan.md`'s Rulings ending "(the user).". Z363: the sweep may cut harder than one test per behaviour. Z367: four sweeps run side by side; T1a (the tiers) follows all four.
 - The four folders hold 120 test files and 36,967 lines in all `.ts` files (`find tests/routes tests/data tests/checks tests/fixtures -name '*.test.ts' | wc -l`; the same with `-name '*.ts' -exec cat {} + | wc -l`); the step line's 36,934 lines is corrected in `plan.md` at this /spec. By folder (test files / lines): routes 45 / 14,435; data 42 / 10,613; checks 33 / 11,188; fixtures 0 / 731. Subfolders: routes/docs 5 / 1,227, edit 10 / 3,721, files 9 / 3,371, git 5 / 1,495, machine 3 / 535, replace 3 / 827, sessions 7 / 2,964; data/accounts 1 / 57, helpers 12 / 2,011, prose 2 / 607, snapshot 5 / 2,620, sources 19 / 4,761; checks/config 5 / 2,768, diagrams 3 / 1,426, imports 3 / 797, look 2 / 591, source 8 / 1,599, tree 6 / 3,057, utils 5 / 910. Files directly in a top folder: `routes/config-seed.test.ts`, `routes/page.test.ts`, `routes/shape.test.ts`, `data/demo-hub.test.ts`, `data/file-ops.test.ts`, `data/portfolio-config.test.ts`, `data/real-hub.probe.ts`, `checks/walk.test.ts`, `checks/walk.ts`, and the ten helpers of `tests/fixtures/`.

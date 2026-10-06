@@ -22,7 +22,7 @@ The runner's agent listing shows three agents, X3a's builder (acf8c525dec67af39)
 
 The 16 behaviour keys are read again at every config push, and every `local.yml` key is read again when the file changes; no key takes a restart. A hand edit the server refuses while it runs keeps the values in force and is logged once, and the Settings view's descriptions name each key's bounds. A changed `port` moves the server: it closes the old port, listens on the new one, and only then tells the pages. A page follows when its own port is the old one and the new address answers a probe; it carries its arrangement and "This browser" settings in `window.name`, marked with the origin it goes to and the time, and the arriving page takes them only at that origin within a minute (`src/lib/state/workbench/layout/saved/carry.ts`). The built entry and Vite's development and preview servers share one wiring, `wireServer` in `src/lib/server/root/process/serve.ts`.
 
-Base bca2c6b3, cherry-picked by `land.sh` (wip 5d477987 on D35-land), 57 files staged by the cherry-pick plus the fixes below. A conflict in `docs/diagrams/layers.dot` and `layers.svg` was resolved on D35's side and the diagrams regenerated.
+Base c0cbe960, cherry-picked by `land.sh` (wip 5d477987 on D35-land), 57 files staged by the cherry-pick plus the fixes below. A conflict in `docs/diagrams/layers.dot` and `layers.svg` was resolved on D35's side and the diagrams regenerated.
 
 ## What was found, and the fixes at landing
 

@@ -37,7 +37,7 @@ Findings:
 
 ## 3. Premises
 
-I read the tree on main at `f81a671e` (`git log --oneline -1` printed `f81a671e Launch Q108's builder`).
+I read the tree on main at `fbfb6ee7` (`git log --oneline -1` printed `fbfb6ee7 Launch Q108's builder`).
 
 These hold:
 - `plan.md:279` is the step line and `:580` is the ruling (grep).

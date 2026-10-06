@@ -1,6 +1,6 @@
 # Q123 refutation report
 
-Reviewer of step Q123 (oculus/migration). Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q123`, base a686df2ad. No file in the worktree or the ledger was changed. Scratch files (probe scripts, a scratch copy of the base) are only in my session scratchpad. Every tmux server I started was my own `tmux -L q123...` server, and each was killed: each probe printed `no server running on /private/tmp/tmux-502/q123...`.
+Reviewer of step Q123 (oculus/migration). Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q123`, base 2765d9358. No file in the worktree or the ledger was changed. Scratch files (probe scripts, a scratch copy of the base) are only in my session scratchpad. Every tmux server I started was my own `tmux -L q123...` server, and each was killed: each probe printed `no server running on /private/tmp/tmux-502/q123...`.
 
 **Main finding: B1, a behaviour defect that is visible on screen.** When a page attaches to a pane in its alternate screen, the editor's top row is drawn shifted right by the column of the shell's saved cursor. If the shifted row no longer fits the pane width, it wraps and the whole editor screen moves up one row. The code does what the brief's item 3 specified. The defect is in that specification. The fix is small and can be made at landing (details under Behaviour).
 
@@ -80,7 +80,7 @@ So Z621's behaviour holds when the saved column is 0.
 
 All from the worktree's `tools/oculus`.
 
-- `npm run test:quick -- --base a686df2ad`:
+- `npm run test:quick -- --base 2765d9358`:
   - `ok prettier`, `ok ASCII gate`, `ok svelte-kit sync`, `ok eslint (69.3 s)`, `ok svelte-check (67.0 s): ... 0 ERRORS 0 WARNINGS`, `ok vitest (84.5 s)`.
   - `test:quick: 87.8 s (limit 45.0 s); every command passed`, `test:quick: over the time limit`. The load average was 18, and exit status is 0 when only the time limit is exceeded (`quick.mjs:282-285`).
 - `npx vitest run tests/server/machine/pty tests/routes/sessions`: `Test Files  8 passed (8)`, `Tests  49 passed (49)`.

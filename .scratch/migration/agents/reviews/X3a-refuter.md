@@ -3,9 +3,9 @@
 Reviewer a6e768689ba25b71d, claude-sonnet-5-5, ordo-high, launched 2026-10-02 07:55; 297,143 tokens, 170 tool uses, 26.1 min, from its completion notice.
 
 
-Reviewer: refuter. Worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/X3a (tool at tools/oculus), base fab398d6. I changed no file in the worktree. `git status --short` printed the same output (md5 dc08c66d911e7ab610f5a682ff0a94b0) before and after `npm run diagrams`.
+Reviewer: refuter. Worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/X3a (tool at tools/oculus), base f10d8369. I changed no file in the worktree. `git status --short` printed the same output (md5 dc08c66d911e7ab610f5a682ff0a94b0) before and after `npm run diagrams`.
 
-Commands outside my allowance: besides `git diff fab398d6` and `git status --short` I ran read-only `git show fab398d6:<path>`, `git ls-tree -r --name-only fab398d6` and `git grep -c ... fab398d6`, to read base text. None wrote anything. I also wrote scratch outputs under the session scratchpad and one list file under $TMPDIR.
+Commands outside my allowance: besides `git diff f10d8369` and `git status --short` I ran read-only `git show f10d8369:<path>`, `git ls-tree -r --name-only f10d8369` and `git grep -c ... f10d8369`, to read base text. None wrote anything. I also wrote scratch outputs under the session scratchpad and one list file under $TMPDIR.
 
 ## Verification lines
 
@@ -32,7 +32,7 @@ EXIT 0
 This matches the report's claim (446 / 11514 / 631; 29 / 443 / 9; 3036 files).
 3. Brief verify 2: `python3 -c "import yaml; d=yaml.safe_load(open('config/catalogs/file-nesting.yml')); assert list(d)==['patterns']"` exit 0. Verify 3: `grep -rn "Each entry is a file under one of the roots" src` prints nothing (exit 1).
 4. Report groups, from the builder's `groups.sh` run by me into `rv-groups.txt`, same form `npx vitest run --tagsFilter '!slow' <files>`. All 20 groups reproduce the report's numbers: G01 22, G02 8, G03 55, G04 71, G05 41, G06 39, G07 77, G08 37, G09 83, G12 27, G13 30, G14 `2 passed | 1 skipped; 49 passed | 10 skipped`, G15 48, G16 64, G17 6, G18 313, G21 44, G22 80, G27 85, G28 `3 passed | 2 skipped; 908 passed | 90 skipped`.
-5. First run on the unchanged tree: `npx vitest run --tagsFilter '!slow' $(cat base-run-files.txt)` in scratchpad/x3a/base prints `Test Files  51 failed | 9 passed | 2 skipped (62)` and `Tests  179 failed | 1404 passed | 106 skipped (1689)`, as the report says. The copy has the same 832 files under src and config as `git ls-tree fab398d6`, and four sampled files are byte-equal to the base commit.
+5. First run on the unchanged tree: `npx vitest run --tagsFilter '!slow' $(cat base-run-files.txt)` in scratchpad/x3a/base prints `Test Files  51 failed | 9 passed | 2 skipped (62)` and `Tests  179 failed | 1404 passed | 106 skipped (1689)`, as the report says. The copy has the same 832 files under src and config as `git ls-tree f10d8369`, and four sampled files are byte-equal to the base commit.
 6. Slow run, NOT reproduced as the report states it. The report says `Test Files 6 passed | 21 skipped (27)`, `Tests 206 passed | 405 skipped (611)`. `npx vitest run --tagsFilter slow tests/server/files/ops.test.ts tests/server/core/git tests/server/git tests/routes/files tests/server/files` printed, first run, `Test Files  2 failed | 4 passed | 21 skipped (27)`, `Tests  3 failed | 203 passed | 405 skipped (611)`; second run `Tests  2 failed | 204 passed | 405 skipped (611)`. The failures are `Error: Test timed out in 5000ms` in `tests/server/git/git-ops.test.ts > ... routes each action to its own operation with its own fields` and `tests/server/core/git/git.test.ts > ... cuts every list it publishes at the cap` (plus one cascade failure in git-ops in the first run). Load average was 14.6 to 16.9 with other vitest processes running. `npx vitest run --tagsFilter slow tests/server/git/git-ops.test.ts tests/server/core/git/git.test.ts` alone printed `Test Files  2 passed (2)`, `Tests  82 passed (82)`. git-ops.test.ts is not touched by the step; git.test.ts was moved by it. spec.md says a timeout in git.test.ts is not the step's; I attribute nothing to the diff.
 
 ## Item verdicts (build items 1 to 22)
@@ -189,12 +189,12 @@ The file's other banners are a rule line plus a title on its own line; this one 
 No reserved name exists (the builder's own finding, report line 170). spec.md: "A sentence in a document ... that the change makes false is a defect of the change." Failure scenario: a reader looks for the reserved-name refusal. Also, the same HELP paragraph for `local.yml` says `history` is re-read like `hub`, `bookmarks` and `changes` (see B1).
 
 Checks that came back clean (commands run by me):
-- ASCII over the added lines of config, DESIGN.md and HELP.md: `git diff fab398d6 -U0 -- config DESIGN.md HELP.md | grep '^+' | LC_ALL=C grep -n '[^ -~]'` prints nothing; src and tests by checks.sh; the new `file-nesting.yml` has no non-ASCII.
+- ASCII over the added lines of config, DESIGN.md and HELP.md: `git diff f10d8369 -U0 -- config DESIGN.md HELP.md | grep '^+' | LC_ALL=C grep -n '[^ -~]'` prints nothing; src and tests by checks.sh; the new `file-nesting.yml` has no non-ASCII.
 - Every new src and config .ts and .svelte file has a "Layer" head comment (PaletteRow.svelte has it at line 22, after its module script); no raw `<button>`, `<input>`, `<select>` or `<textarea>`, no literal `aria-label`, `title` or `placeholder` strings, no `globalThis` and no module-level `let` or `var` in the new svelte and ts files.
 - Comment lines over 100 columns added by the diff: none. History words in new comments ("no longer", "previously", package ids): only present-state uses.
 - Boundary allow-list widening in tests/checks/tree/boundaries.test.ts (`data/helpers/files/nesting`, `data/sources/config/settings`, `data/sources/config/catalog/options`, shell stores `explorer` and `fs`): each has a stated reason in the file, the shell stores are what brief item 3 asks for, and `state/.../acts/confirm.ts:7` re-exports `confirmDelete` from the data reader. I judge them justified. The comment blocks around them were reflowed by the formatter, which makes the diff larger than the change.
 - allow-duplication.txt and allow-styling.ts: the entries were re-keyed to moved paths and lines with the same hashes; nothing was added.
-- Case 28 list: every modified existing test file in `git diff fab398d6 --name-status -M -- tests` is named in the report's tables (checked file by file, including the brace forms `options-{findings,walk}` and `settings/{fixture,rows,search}`).
+- Case 28 list: every modified existing test file in `git diff f10d8369 --name-status -M -- tests` is named in the report's tables (checked file by file, including the brace forms `options-{findings,walk}` and `settings/{fixture,rows,search}`).
 
 ## 4. Behaviour
 
@@ -225,10 +225,10 @@ Tokens, tool uses and minutes: not measured. The session was continued after a c
 
 ## Repair round 1, refuted
 
-Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3a`, base `fab398d6`. I edited nothing in the worktree or the ledger.
+Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3a`, base `f10d8369`. I edited nothing in the worktree or the ledger.
 
 Two departures from my allowance, both read-only:
-- Besides `git diff fab398d6` and `git status --short`, I ran `git grep -c "// Revert:" fab398d6`, `git show fab398d6:...layout.svelte.ts | grep`, and `git log --oneline -3` (once in the main checkout, once in the worktree).
+- Besides `git diff f10d8369` and `git status --short`, I ran `git grep -c "// Revert:" f10d8369`, `git show f10d8369:...layout.svelte.ts | grep`, and `git log --oneline -3` (once in the main checkout, once in the worktree).
 - I redirected the two `checks.sh` outputs to files in the session scratchpad (`checks.out`, `checks2.out`).
 
 ### Verification lines
@@ -316,7 +316,7 @@ Unit-level means: the handler or pure function is tested, and the DOM press or e
 ### Spec
 
 **S1. Ruling 2's table is not "the review's list in full" or complete.**
-Place: `X3a-report.md:214-228`. The table omits source files that `git diff fab398d6 --name-status -M -- src` shows modified outside the brief's path list:
+Place: `X3a-report.md:214-228`. The table omits source files that `git diff f10d8369 --name-status -M -- src` shows modified outside the brief's path list:
 - `src/lib/server/root/context.ts` (adds `folderPicker: pickerState()` and `...nestingFindings(engine, config)`)
 - `src/lib/server/root/watch/portfolio.ts` (`nestingFindings`)
 - `src/lib/server/edit/writes/bodies.ts` (`RootsWrite`, `rootsWrite`)
@@ -375,12 +375,12 @@ Verdict: unfixed; a defect of the round, not an excusable timeout.
 The report's "Not done" (line 199) states `git log -1 --format=%h` and `git status --short`. Read-only, no effect on the tree. Ruling 10 said "Run none in this round". Verdict: violated, harmless; the ruling stands as not honoured.
 
 **ST2. `fetch-period.ts` row left "Not verified" (report line 228).**
-`grep -n "config-key" src/lib/server/core/fetch-period.ts` settles it. `git diff fab398d6 -- src/lib/server/core/fetch-period.ts` shows a comment-only path edit (`config-key.ts` to `config/config-key.ts`). It is verified now: comment only. The builder left it unverified where one grep closes it.
+`grep -n "config-key" src/lib/server/core/fetch-period.ts` settles it. `git diff f10d8369 -- src/lib/server/core/fetch-period.ts` shows a comment-only path edit (`config-key.ts` to `config/config-key.ts`). It is verified now: comment only. The builder left it unverified where one grep closes it.
 
 **ST3. Files outside the path list reported after the change (report lines 206).**
 `undo-said.ts` and `findings.yml` are the places rulings 13 and 1 require. `data/helpers/files/nesting.ts` is named by ruling 1 itself. `model-sessions.ts` is named by ruling 9. I judge these acceptable; the omitted ones are in S1.
 
-No history words, em dashes or comment lines over 100 columns in the round's added lines (greps over `git diff fab398d6 -U0`). The `// Revert:` comments follow the existing convention (113 files at the base).
+No history words, em dashes or comment lines over 100 columns in the round's added lines (greps over `git diff f10d8369 -U0`). The `// Revert:` comments follow the existing convention (113 files at the base).
 
 ### Behaviour
 

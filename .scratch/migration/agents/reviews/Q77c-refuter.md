@@ -21,7 +21,7 @@ None. Every item of "What to build" is in the diff:
 - Both test files hold the cases the brief lists.
 
 Brief premises I reproduced:
-- 1743 directive lines in 235 files at the base, from `git grep -hE "// revert: " aac420c6 -- tests | wc -l` and the `-l` form. One of the 1743 is the template string at tests/checks/source/comment-width.test.ts:80, which is not a directive.
+- 1743 directive lines in 235 files at the base, from `git grep -hE "// revert: " b1770828 -- tests | wc -l` and the `-l` form. One of the 1743 is the template string at tests/checks/source/comment-width.test.ts:80, which is not a directive.
 - The base bin/revert-check.mjs is 545 lines.
 
 The five brief cases are byte-identical to the brief. I read each one with `sed -n` at loop.test.ts:99, rail.spec.ts:463, primitives.test.ts:165, rail.test.ts:78 and duplication.test.ts:330.
@@ -68,12 +68,12 @@ Two edits reach past the directive lines, and the report states both:
 
 ## Sample for item 2 (sweep faithfulness)
 
-I checked all 1742 converted directives, not a sample. A script in the scratchpad (`faith.mjs`, `rc.mjs`) did this for each test file in `git diff aac420c6 --name-only -- tests`:
-1. Read the old directive lines from `git show aac420c6:<file>` and the new ones from the worktree.
+I checked all 1742 converted directives, not a sample. A script in the scratchpad (`faith.mjs`, `rc.mjs`) did this for each test file in `git diff b1770828 --name-only -- tests`:
+1. Read the old directive lines from `git show b1770828:<file>` and the new ones from the worktree.
 2. Paired them in order. For revert-check.test.ts it skipped the 7 new cases that precede the old ones.
 3. Parsed each new line with the worktree's `parseDirective` and checked that target and replacement are unchanged, and that the text before `revert:` is unchanged.
 4. Resolved the anchors with the worktree's `resolveAnchor` against the target as it stands now.
-5. Compared the trimmed text of the resolved line or range with the trimmed text of the old numbered line or range in `git show aac420c6:<target>`.
+5. Compared the trimmed text of the resolved line or range with the trimmed text of the old numbered line or range in `git show b1770828:<target>`.
 
 Results:
 - **1720 of 1720 match** in the 234 swept files. Those include 85 directives with an offset and 15 ranges.
@@ -83,7 +83,7 @@ Results:
   - `:289->398`, `:294->403`, `:300->409`
 - **0 mismatches.**
 
-`git diff aac420c6 -U0` over the 234 swept files changes no line other than `// revert:` lines, and the removed count equals the added count (1720). The numstat shows no file with unequal counts.
+`git diff b1770828 -U0` over the 234 swept files changes no line other than `// revert:` lines, and the removed count equals the added count (1720). The numstat shows no file with unequal counts.
 
 Named sample, all OK:
 - the five brief cases (loop.test.ts:99, rail.spec.ts:463, primitives.test.ts:165 `+2`, rail.test.ts:78 `+1`, duplication.test.ts:330 range)

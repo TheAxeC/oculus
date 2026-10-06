@@ -1,6 +1,6 @@
 # Brief check: E4g
 
-The brief `agents/briefs/E4g.md`, read on main at a564e4e29. The checker changed nothing.
+The brief `agents/briefs/E4g.md`, read on main at 10ac00c69. The checker changed nothing.
 
 ## Names
 

@@ -12,7 +12,7 @@ Nothing of Q71's brief. The last review's findings that were too large for a fix
 
 ## What landed
 
-Q71, cherry-picked from `.agents/worktrees/Q71` at base `28a63283` by `tools/oculus/.scratch/migration/land.sh Q71 28a63283 <runs> --no-browser` (+7,898 -7,205 over 588 files), then fixed at landing (+28 -24 over 13 files), the browser suite run by hand. The commit follows this report.
+Q71, cherry-picked from `.agents/worktrees/Q71` at base `08dee04b` by `tools/oculus/.scratch/migration/land.sh Q71 08dee04b <runs> --no-browser` (+7,898 -7,205 over 588 files), then fixed at landing (+28 -24 over 13 files), the browser suite run by hand. The commit follows this report.
 
 - No runtime import cycle under `src`; `tests/checks/imports/cycles.test.ts` names any new one in order.
 - Each layer's folders in a declared order (`tests/checks/imports/order.ts`), checked over runtime imports, type-only imports and `declare module` blocks, with no exception rows. The composition roots head their layers (`server/root`, `state/client`, the shell's `Workbench.svelte`, `data` itself); the shared modules sit at the foot (`server/core`, `state/stores/shapes.ts`, `state/words`, `data/model/index.ts`). `file-poll.ts` is in `server/core`.

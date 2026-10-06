@@ -1150,7 +1150,7 @@ Where it is built: S5's brief, Decision 25, and `agents/guarded.md` G13. Booked 
 
 The question: How D42 pages a file's history, since `--skip` under `--follow` counts the whole walk and repeats page one.
 
-- Chosen: a cursor `before=<hash>` with the path at that commit, which pages correctly (probe: `git log --follow -51 8b9cbc3db^ -- tools/oculus/HELP.md`).
+- Chosen: a cursor `before=<hash>` with the path at that commit, which pages correctly (probe: `git log --follow -51 e6ef04947^ -- tools/oculus/HELP.md`).
 - Not chosen: (b) read the whole history once and page on the client, which reads every commit of a 1,000-commit file to show 50; (c) keep the cap of 50 with no paging (the lazy one), which hides history.
 
 Where it is built: D42's brief. Booked in `plan.md` Rulings.
@@ -2130,7 +2130,7 @@ Where it is built: A1's repair round 1. Booked in the state file's closed log an
 
 ## Z258 (2026-10-02, D32's /spec): how the unused-exports script finds its exports
 
-- Chosen (a): `knip` 6.39.0 (ISC, Lars Kappert, released 2026-09-30, supports SvelteKit and Svelte files) in production mode with `--include exports,types`, which leaves every test file out of the reading; an export imported only by test files is reported. A module's tests are read as the test files that import it, so this computes the approved rule. Run on main at 3a308a8f it reported 241 unused exports and 110 unused types; five checked by grep: `FILE_FIELDS` (`data/file-ops.ts`, imported nowhere else), `searchArgs` (own file and `tests/data/helpers/search.test.ts`), `codeThemeIds` (own file and `appearance.test.ts`), `languageNamed` (re-exported by `state/shared/words/languages.ts`, imported by one test), `hostZone` (own file and one test).
+- Chosen (a): `knip` 6.39.0 (ISC, Lars Kappert, released 2026-09-30, supports SvelteKit and Svelte files) in production mode with `--include exports,types`, which leaves every test file out of the reading; an export imported only by test files is reported. A module's tests are read as the test files that import it, so this computes the approved rule. Run on main at 9e8b0cfa it reported 241 unused exports and 110 unused types; five checked by grep: `FILE_FIELDS` (`data/file-ops.ts`, imported nowhere else), `searchArgs` (own file and `tests/data/helpers/search.test.ts`), `codeThemeIds` (own file and `appearance.test.ts`), `languageNamed` (re-exported by `state/shared/words/languages.ts`, imported by one test), `hostZone` (own file and one test).
 - Not chosen: (b) a hand-written import resolver over `$lib`, relative paths, re-exports and Svelte module scripts, which repeats what knip does and is the larger job to keep right.
 - Not chosen: (c) reading a module's tests as only the test file that mirrors its path, which this repository does not name tests by.
 

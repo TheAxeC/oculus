@@ -1,6 +1,6 @@
-# Step D18 refuter report (on .agents/worktrees/D18, base 47a41fa4)
+# Step D18 refuter report (on .agents/worktrees/D18, base 57986be1)
 
-A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number. A finding in code keeps its `file:line`. The rules file judged is the base copy (`spec-at-47a41fa4.md`); the sentences the ledger's `agents/spec.md` gained since are listed separately at the end.
+A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number. A finding in code keeps its `file:line`. The rules file judged is the base copy (`spec-at-57986be1.md`); the sentences the ledger's `agents/spec.md` gained since are listed separately at the end.
 
 ## Verification (rerun by the reviewer)
 
@@ -36,7 +36,7 @@ npx vitest run tests/server/machine/pty/sessions.test.ts (slow-tagged, private t
                                                                      -> Test Files 4 passed (4), Tests 134 passed (134); "lists the pane process of a terminal and of a hidden usage session" passes
 wc -l tests/fixtures/client.ts context.ts ...                        -> 100, 896, matching the report's table
 ```
-Unchanged-tree run, reproduced on a sample: a scratch copy of the worktree's `tools/oculus` (no `config/local.yml`, node_modules linked) with `git diff 47a41fa4 -- src config package.json` reversed and the deleted base files restored, the final tests laid over it; `npx vitest run` on channels, settings, context, context-reload, `tests/server/machine/processes`, the state and view processes tests, config-folder and page tests printed `Tests 51 failed | 153 passed (204)`, every new `processesSettings`, `Hub.hasSubscriber`, `Hub.onFirstSubscriber`, `parsePanes`/`listPanes`, page-channel, config-folder and context-push case failing, as the report's table says. Moved files compared with their base text from the diff: only import paths, the three `readFileSync` path strings in `hpc.test.ts` and one comment path changed (`Jobs.svelte` and `usage.test.ts` imports re-wrapped by Prettier).
+Unchanged-tree run, reproduced on a sample: a scratch copy of the worktree's `tools/oculus` (no `config/local.yml`, node_modules linked) with `git diff 57986be1 -- src config package.json` reversed and the deleted base files restored, the final tests laid over it; `npx vitest run` on channels, settings, context, context-reload, `tests/server/machine/processes`, the state and view processes tests, config-folder and page tests printed `Tests 51 failed | 153 passed (204)`, every new `processesSettings`, `Hub.hasSubscriber`, `Hub.onFirstSubscriber`, `parsePanes`/`listPanes`, page-channel, config-folder and context-push case failing, as the report's table says. Moved files compared with their base text from the diff: only import paths, the three `readFileSync` path strings in `hpc.test.ts` and one comment path changed (`Jobs.svelte` and `usage.test.ts` imports re-wrapped by Prettier).
 
 ## Verdicts
 
@@ -125,7 +125,7 @@ Reviewer usage: about 300,000 tokens (from the context counter, approximate), ab
 
 ## Repair round 1, refuted
 
-Reviewer: a fresh session at ordo-high, reviewing `.agents/worktrees/D18` against base 47a41fa4. The only git commands run were `git diff 47a41fa4` and `git status --short`, both from inside the worktree. No file in the worktree or the ledger was changed. Mutation runs were made on a scratch copy at `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d18mut`, which has no `config/local.yml`, and that copy was restored after each run (`cmp` against the backups printed "same"). `config/local.yml` was not opened, printed, grepped or hashed.
+Reviewer: a fresh session at ordo-high, reviewing `.agents/worktrees/D18` against base 57986be1. The only git commands run were `git diff 57986be1` and `git status --short`, both from inside the worktree. No file in the worktree or the ledger was changed. Mutation runs were made on a scratch copy at `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d18mut`, which has no `config/local.yml`, and that copy was restored after each run (`cmp` against the backups printed "same"). `config/local.yml` was not opened, printed, grepped or hashed.
 
 Overall: the verify list is green, and all seven rulings are closed except for four small points. One is a behaviour gap left in ruling 1; the other three are text and export fixes. All four can be fixed at landing.
 
@@ -228,7 +228,7 @@ Not rerun:
    - On this machine's real table, all 403 lines read with the column present.
 2. **The builder's read-only git command: nothing in the tree depends on it.**
    - The only hash-shaped strings on added lines of the diff are the clone ids `8ead1c0cdafe` and `f86fb737d860`. These are existing `allow-duplication.txt` rows, re-keyed to the moved paths.
-   - The command's only effect is on the report: its "unchanged tree" runs were made against the main checkout's current `tools/oculus`, not the base 47a41fa4. The report says so (lines 8, 139).
+   - The command's only effect is on the report: its "unchanged tree" runs were made against the main checkout's current `tools/oculus`, not the base 57986be1. The report says so (lines 8, 139).
    - The breach of `agents/spec.md`'s no-git rule is for the orchestrator's record. It is not a defect of the diff.
 3. **`lsofFolders` bounds time and abort but not output size: not a defect the brief covers.**
    - Item 2 asks for "a 5 s timeout that kills the child", and ruling 1 asks for an output bound on `ps` only.
@@ -319,9 +319,9 @@ Over the delta, nothing else was found:
 
 ### Declined to judge
 
-- **How the delta was taken.** No tree state was recorded when the round was sent at 12:15, so the delta is the 59 files modified after the round's rulings file, listed in `d18-round1-files.txt`. Each was read through `git diff 47a41fa4 -- <file>` against the whole diff since the base. A change made in the round to a file not in that list would not have been read as delta.
+- **How the delta was taken.** No tree state was recorded when the round was sent at 12:15, so the delta is the 59 files modified after the round's rulings file, listed in `d18-round1-files.txt`. Each was read through `git diff 57986be1 -- <file>` against the whole diff since the base. A change made in the round to a file not in that list would not have been read as delta.
 - **The merge with M3.** The HPC `watchHpc` call, including `host: local.hpcHost ?? slurm.host`, now lives in `src/lib/server/root/pollers.ts:79-86`, not in `context.ts`. M3's ruled change to the HPC host resolution has to be carried into `pollers.ts` at the second landing, while M3's `shared_paths` names `context.ts` only. This is the orchestrator's merge judgement.
-- **Unchanged-tree runs.** The report's runs on the unchanged tree were taken on main's current `tools/oculus`, not on base 47a41fa4. I did not rerun them on the base. The mutation runs above stand in for the round's behaviours.
+- **Unchanged-tree runs.** The report's runs on the unchanged tree were taken on main's current `tools/oculus`, not on base 57986be1. I did not rerun them on the base. The mutation runs above stand in for the round's behaviours.
 - **Real `Stop` and `lsof`.** A real `Stop` against a live oculus session and a real `lsof` read were not run: the rules forbid signalling or attaching to real processes. Only a read of `ps` was run.
 - **The look on TEST.** It is the orchestrator's at landing.
 - **Remaining mutation runs.** F3, F7, F8 and G2 to G11 were not rerun. F1, F2, F4, F5, F6 and G1 were reproduced.

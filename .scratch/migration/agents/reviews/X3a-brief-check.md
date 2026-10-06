@@ -1,6 +1,6 @@
-# Brief check of X3a (on main at 896417ee; the brief's premises were read at 538461c1)
+# Brief check of X3a (on main at 6de69700; the brief's premises were read at 3fd7a402)
 
-Read-only throughout. No git command that changes state, no test run, no `config/local.yml` access (greps over `config/` carried `--exclude=local.yml`). `git diff --stat 538461c1 HEAD -- .` lists only `.scratch/` files (D35 round 1, U4 report, the CSS extract, ledger files), so `src/`, `config/`, `tests/` are as the brief read them. Usage is left to the orchestrator.
+Read-only throughout. No git command that changes state, no test run, no `config/local.yml` access (greps over `config/` carried `--exclude=local.yml`). `git diff --stat 3fd7a402 HEAD -- .` lists only `.scratch/` files (D35 round 1, U4 report, the CSS extract, ledger files), so `src/`, `config/`, `tests/` are as the brief read them. Usage is left to the orchestrator.
 
 Stops (findings the brief cannot absorb by a change of its own wording): 1.1, 3.1, 3.2, 3.3, 6.1 and 6.2 below. Each makes a choice Axel would see, or rests on a premise that is false and needs a new write path.
 
@@ -56,7 +56,7 @@ Every command and claim of "What is on the tree", rerun:
 - D27: the brief says D27 writes "`Tree.svelte`'s file-type reads" and `files-menu.test.ts`. D27.md line 17 says `Tree.svelte:246` reads only `.kind` and is unchanged, and `grep -c "files-menu" D27.md` prints 0. D27 does write `row-menu.ts:93` (one line), `file-type.ts`, `fs.ts` re-export lines 15 and 18. The statement is inaccurate in both directions.
 - U4: "writes `ui/menu/MenuOpener.svelte`, `Menu.svelte`, `DESIGN.md:369,404,408`, `HELP.md:100`": match U4's paths, which also include `tests/views/whole/type-scale.test.ts` (not mentioned in the brief; X3a needs that file too, 1.1).
 - L4: the brief says L4 "writes the layout and shell files". L4.md's paths also include `src/lib/themes/tokens.css`, `config/text/ui.yml`, `state/workbench/layout/open/landing.ts`, `open/opening.ts`, `open/attention.ts`; X3a's paths also write `tokens.css`, `config/text/ui.yml`, and `show-in-files.ts` (same folder, imports from `attention.ts`).
-- Base: the brief says read at 538461c1; head is 896417ee with no source change since (above).
+- Base: the brief says read at 3fd7a402; head is 6de69700 with no source change since (above).
 
 Findings:
 - 3.1 The Q85d premise is false; the "no shared file" judgment rests on it. The shared set is `state/sources/fs.ts` (Q85d, D27, X3a), `views/sources/files/opening.ts`, `sections/Bookmarks.svelte`, `routes/+page.svelte`, `tests/views/sources/files/`. The orchestrator must redo the shared-path judgment; X3a's item 16 changes functions Q85d is creating (`bookmarkRows`).
@@ -152,12 +152,12 @@ Findings: none.
 
 ## Closed
 
-Closed at /spec 2026-10-02 01:50 in the brief written on main at 698dc1e0, after Axel's Z187 (f) and with Z188 redone as Z199 to Z214 (`choices.md`), one decision each.
+Closed at /spec 2026-10-02 01:50 in the brief written on main at 153be384, after Axel's Z187 (f) and with Z188 redone as Z199 to Z214 (`choices.md`), one decision each.
 
 - 1.1 Hits outside the paths: every file named is in "Paths this step writes" (`type-scale.test.ts`, `instance-state-files.test.ts`, `show-in-files.test.ts`, `config-folder.test.ts`, `routes/+page.svelte`, `bookmarks.ts`, `DESIGN.md:44` and `:128`, `server/core/git.ts`, `git.test.ts`) except `layout.svelte.ts`, which the step no longer writes ("What is on the tree", Show in Files; item 15 keeps `showInFiles`'s type) and `rail-config.test.ts`, covered by `tests/shell/`.
 - 2.1 Duplicate: Z206, Decision 8 and case 27's paste; VS Code 1.137.0 has no Duplicate command.
 - 2.2 Z182 on X3a's line: `plan.md` already carries it under X3a ("Z182 (a), automode"); the brief quotes it.
-- 3.1 Q85d premise: Q85d has landed (e77103dc); the brief reads `bookmarkRows` and `opening.ts` as they stand on main.
+- 3.1 Q85d premise: Q85d has landed (999c2544); the brief reads `bookmarkRows` and `opening.ts` as they stand on main.
 - 3.2 D27 and L4 premises: D27 has landed; "What is on the tree" lists L4's, D35's and Q66's files this step shares, and the step writes none of L4's files but `routes/+page.svelte` if item 16 needs it, and no `tokens.css` or `ui.yml`.
 - 3.3 Folder limits: "What is on the tree" lists every folder at ten and the files near their size limits, and each item splits first.
 - 4.1 Roots write: Z199, item 4 (a new `roots` write on `list-edit.ts`; a configured root has no Remove in a named workspace).

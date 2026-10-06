@@ -4,7 +4,7 @@ NOT DONE: Q56 has five findings. The browser and revert gates were not independe
 
 ## Verification
 
-- `git diff 521c938c`: read in full, including every new file.
+- `git diff 32939877`: read in full, including every new file.
 - `npx vitest run tests/state/fs.test.ts tests/views/files.test.ts tests/server/watch/bookmarks.test.ts tests/server/context.test.ts --reporter=dot`: 4 files, 107 tests passed.
 - `npx vitest run tests/server/watch/bookmarks.test.ts --reporter=dot`: 1 file, 4 tests passed.
 - `npx vitest run tests/size.test.ts tests/duplication.test.ts --reporter=dot`: 2 files, 15 tests passed; finding 1 explains why this is not sufficient evidence for the size change.

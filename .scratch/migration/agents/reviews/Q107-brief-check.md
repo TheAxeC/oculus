@@ -1,6 +1,6 @@
-# Step Q107 brief check (on main at 751de88f)
+# Step Q107 brief check (on main at a256e808)
 
-This is the report of the fresh agent from the `spec` skill's "Steps / The brief check", on `agents/briefs/Q107.md` (`/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/briefs/Q107.md`). I read the brief, the Goal paragraph and Q107's line in `plan.md` (line 277), the Rulings Z99 (line 584) and Z111 (line 590), the closed log's Z99 (state file line 213) and Z111 (lines 179-183), the rules file `agents/spec.md`, and the tree on main at `751de88f` (`git log --oneline -1`). I changed nothing. I ran no server, no browser and no tmux command.
+This is the report of the fresh agent from the `spec` skill's "Steps / The brief check", on `agents/briefs/Q107.md` (`/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/briefs/Q107.md`). I read the brief, the Goal paragraph and Q107's line in `plan.md` (line 277), the Rulings Z99 (line 584) and Z111 (line 590), the closed log's Z99 (state file line 213) and Z111 (lines 179-183), the rules file `agents/spec.md`, and the tree on main at `a256e808` (`git log --oneline -1`). I changed nothing. I ran no server, no browser and no tmux command.
 
 ## 1. Names
 

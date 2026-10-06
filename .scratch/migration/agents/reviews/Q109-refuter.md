@@ -1,4 +1,4 @@
-# Step Q109 refuter report (on .agents/worktrees/Q109, base f5b3290b)
+# Step Q109 refuter report (on .agents/worktrees/Q109, base 626450a8)
 
 A page this report cites is named with its section. A finding in code keeps its `file:line`. Every path below is under `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q109/tools/oculus/`.
 
@@ -35,7 +35,7 @@ $ npx vitest run tests/server/root/watch tests/server/machine/usage tests/state/
  Test Files  34 passed (34)
       Tests  665 passed (665)
 
-Verify 5 and the report's first-run claims, reproduced on a scratch copy of the unchanged tree under $TMPDIR (made by reversing the src/config diff with `git diff f5b3290b | patch -R`, with constant-only shims for MAX_WAIT, USAGE_MAX_WAIT and RESIZE_WAIT, and main's node_modules, which holds perfect-debounce; removed afterwards):
+Verify 5 and the report's first-run claims, reproduced on a scratch copy of the unchanged tree under $TMPDIR (made by reversing the src/config diff with `git diff 626450a8 | patch -R`, with constant-only shims for MAX_WAIT, USAGE_MAX_WAIT and RESIZE_WAIT, and main's node_modules, which holds perfect-debounce; removed afterwards):
  five watcher test files:  Test Files 5 failed (5); Tests 15 failed | 83 passed (98)
    (usage 2, bookmarks 2, local 2, portfolio 2, sessions 7; every failure is a "within the maximum wait" or "while a session store is written" case)
  terminal-menu, terminal, theme, tones, terminals: Tests 36 failed | 139 passed (175)
@@ -219,7 +219,7 @@ Reviewer usage: about 270,000 tokens, about 60 tool uses, about 35 minutes. None
 
 ## Repair round 1, refuted
 
-# Step Q109 refuter report, repair round 1 (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q109, base f5b3290b)
+# Step Q109 refuter report, repair round 1 (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q109, base 626450a8)
 
 Every path is under `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q109/tools/oculus/` unless it says otherwise.
 
@@ -265,7 +265,7 @@ $ npx vitest run tests/server/root/watch tests/server/machine/usage tests/state/
  Test Files  34 passed (34)
       Tests  667 passed (667)
 
-Round delta: the round-1 tree was rebuilt in $TMPDIR (the base, from `git diff f5b3290b` reversed, plus Q109-round1-base.patch) and compared with `diff -ru` against the current files. Changed in the round: DESIGN.md (116, 361), config/catalogs/options.yml, src/lib/server/machine/usage/watch.ts, src/lib/state/shared/words/appearance.ts, tests/checks/tree/boundaries.test.ts, tests/server/machine/usage/watch.test.ts, tests/server/root/watch/probe.ts. Nothing else.
+Round delta: the round-1 tree was rebuilt in $TMPDIR (the base, from `git diff 626450a8` reversed, plus Q109-round1-base.patch) and compared with `diff -ru` against the current files. Changed in the round: DESIGN.md (116, 361), config/catalogs/options.yml, src/lib/server/machine/usage/watch.ts, src/lib/state/shared/words/appearance.ts, tests/checks/tree/boundaries.test.ts, tests/server/machine/usage/watch.test.ts, tests/server/root/watch/probe.ts. Nothing else.
 
 Verify 5, on a scratch copy of the unchanged tree: the src/config files of the diff were put back to the base, pty-subscribe.ts was removed, constants-only shims were added for MAX_WAIT, USAGE_MAX_WAIT, RESIZE_WAIT and the exported DEBOUNCE, and main's node_modules (which has perfect-debounce) was used:
  Test Files  10 failed | 4 passed (14);  Tests  52 failed | 263 passed (315)
@@ -304,7 +304,7 @@ Bar wiring and copy guard, each alone, `npx vitest run tests/views/sessions test
  TerminalTitle.svelte read={() => []}:                          Tests 438 passed (438)
  TerminalTitle.svelte `own` removed:                            Tests 438 passed (438)
 
-$ git diff f5b3290b -- tests | grep -E "^\+.*it\(['\"\`]audits that" | wc -l   -> 16  (and 0 removed), as the report says
+$ git diff 626450a8 -- tests | grep -E "^\+.*it\(['\"\`]audits that" | wc -l   -> 16  (and 0 removed), as the report says
 $ grep -rn "keeps the maximum wait\|quiet of 0" tests src DESIGN.md HELP.md README.md
  tests/server/root/watch/probe.ts:245:/** An injected quiet of 0 runs a rebuild for each of three events 100 ms apart. */
  tests/server/root/watch/probe.ts:262: * writes runs nothing more, an injected quiet of 0 keeps the maximum wait, and one longer than the
@@ -398,7 +398,7 @@ Cases of the brief's "Cases":
 4. **Ruling 8's coalescing** (`src/lib/server/machine/usage/watch.ts:80-126`).
    - **At most one rebuild waits behind a running one.** True. `refresh` creates `waiting` only when it is null, and every later call returns the same promise. When the running promise settles, `ended` runs before `after`: both are reactions on the same promise, registered in that order and queued together. So `running` is cleared and then set to the new run with no code in between.
    - **The data published last is the latest.** True. `build` reads `now()` and the fold when it starts, and a waiting rebuild starts only after the running one ends, so after every refresh it absorbed. A refresh that comes after the waiting rebuild has started creates a new waiting one. The test covers one waiting cycle only (Proof 1).
-   - **A closed watcher stops.** A waiting rebuild that starts after close returns at `if (closed) return;` (`:84`). No test covers that path (Proof 2). A fold already running at close still publishes once after close. Base f5b3290b had the same `build`, so this is not this step's.
+   - **A closed watcher stops.** A waiting rebuild that starts after close returns at `if (closed) return;` (`:84`). No test covers that path (Proof 2). A fold already running at close still publishes once after close. Base 626450a8 had the same `build`, so this is not this step's.
    - **No rejection is left unhandled.** Not met. The waiting path leaves one, and the direct path drops a failure without a log (Behaviour 1).
 
 ## 1. Spec
@@ -462,7 +462,7 @@ None. In the round's files, the only lines over 100 columns are test-name string
 - **Whether a throw in the usage `build` is reachable in practice.** Settling it needs a probe of `usageAccounts` and `refresherFor` against a malformed account store, or a timed run on the real store. Neither is a read or a rerun of the step's checks.
 - **The type error from removing the `copySelection` guard.** I inferred it from `"strict": true` and did not run `npm run check` on that mutation.
 - **Pre-existing behaviour, outside this step**:
-  - a fold in flight at close publishes once after close (`build` checks `closed` only before its `await`; the same in base f5b3290b);
+  - a fold in flight at close publishes once after close (`build` checks `closed` only before its `await`; the same in base 626450a8);
   - `void mine.finally(...)` in `pty-subscribe.ts` would leave an unhandled rejection if `size()` or `subscribe()` threw. The first review accepted it, and the round does not touch it.
 
 Reviewer usage: about 226,000 tokens (from the context counter, not exact), about 45 tool uses, minutes not measured.

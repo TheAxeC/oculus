@@ -1,6 +1,6 @@
 # Review: Q51, state/layout.svelte.ts split by concern
 
-Reviewer a2cd905622b557c86, claude:opus, read-only. Worktree `.agents/worktrees/q51`, base `aa6a918b`. Nothing in the worktree was edited; every revert ran in a copy, and `git status --short` with `git diff --stat aa6a918b` was byte-identical before and after.
+Reviewer a2cd905622b557c86, claude:opus, read-only. Worktree `.agents/worktrees/q51`, base `6dcd7ca3`. Nothing in the worktree was edited; every revert ran in a copy, and `git status --short` with `git diff --stat 6dcd7ca3` was byte-identical before and after.
 
 ## Verification, rerun
 
@@ -14,7 +14,7 @@ the ASCII gate                    no output, exit 0
 npx playwright test <six specs>   73 passed (1.9m)
 wc -l                             layout.svelte.ts 440; access 40, attention 149, index 100,
                                   instances 333, opening 162, show-in-files 50, storage 78
-git diff --stat aa6a918b          6 files changed, 90 insertions(+), 581 deletions(-)
+git diff --stat 6dcd7ca3          6 files changed, 90 insertions(+), 581 deletions(-)
 ```
 
 Every before number checks out against the base (942, 89, 157, 234, 60, 400, 434, 73). Import counts: 21 at base to 14 now over `state/layout.svelte`, and 12 to 12 over real specifiers, with the importer file set identical.

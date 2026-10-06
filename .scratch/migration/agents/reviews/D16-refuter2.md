@@ -1,4 +1,4 @@
-# Step D16 refuter report, second review (on .agents/worktrees/d16, base 8601f148)
+# Step D16 refuter report, second review (on .agents/worktrees/d16, base 76c3b390)
 
 ## First review's findings
 - Executable files reach `open`: closed for the cases named. `src/lib/data/runs-when-opened.ts` holds the name rule. `server/open.ts:154-163` `runs()` checks both the asked name and the real name, the execute bit, and bundle folder names. The cards (`CardDocs.svelte:114`, `EntryCard.svelte:144`) and the File view (`File.svelte` `openable = holds && !runsWhenOpened(path)`) draw no control for a marked name. Gaps are new findings under Proof.
@@ -24,7 +24,7 @@ All from `tools/oculus` in the worktree, with node v24.21.0.
 - ASCII perl gate: printed nothing.
 - `find src tests bin -type f | xargs wc -l | sort -n | tail -3`: 970 layout.test.ts, 979 board.test.ts, 154437 total.
 - `npx playwright test tests/browser/open-file.spec.ts tests/browser/board.spec.ts tests/browser/collection.spec.ts`: the first try got "127.0.0.1:8792 is already used". The retry gave `16 passed (20.6s)`: 6 open-file, 5 board, 5 collection.
-- `git diff 8601f148 --numstat`: matches round 1's file list. File.svelte is +71/-4 (272 lines) and open-file.spec.ts is 249 lines, as round 2 says.
+- `git diff 76c3b390 --numstat`: matches round 1's file list. File.svelte is +71/-4 (272 lines) and open-file.spec.ts is 249 lines, as round 2 says.
 - Cited lines checked: CardDocs.svelte:114, EntryCard.svelte:144, File.svelte:52, ProjectCard.svelte:218. All match.
 - Node reverts on a copy (`scratchpad/d16-review2/oculus`), each run with `npx vitest run <file>`:
 

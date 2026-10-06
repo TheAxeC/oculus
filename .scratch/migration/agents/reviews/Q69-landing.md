@@ -12,7 +12,7 @@ Booked list: 4, carried for O32 (its skill half, waiting on the Ordo release tha
 
 ## What landed
 
-Q69, cherry-picked from `.agents/worktrees/Q69` at base `695861af` by `tools/oculus/.scratch/migration/land.sh Q69 695861af <runs> --no-browser` (+2,751 -1,143 over 50 files), then fixed at landing (+290 -107 over 15 files), the browser suite run by hand.
+Q69, cherry-picked from `.agents/worktrees/Q69` at base `12f542f5` by `tools/oculus/.scratch/migration/land.sh Q69 12f542f5 <runs> --no-browser` (+2,751 -1,143 over 50 files), then fixed at landing (+290 -107 over 15 files), the browser suite run by hand.
 
 - The Views catalogue is never covered: a view moved out of the catalogue's pane leaves that pane showing the catalogue.
 - A diagram's fetch is aborted when its Help view closes.

@@ -1,6 +1,6 @@
 # Brief check of Q85d (zod at the untyped inputs of the views, `ui/`, `shell/` and the routes)
 
-Read on main at d210e4b4 (`git log -1 --format=%h` prints d210e4b4). Nothing was changed. No test was run. `config/local.yml` was not touched, and no grep went over `config/`. I read zod's source in `node_modules/zod/v4/core/` instead of running it.
+Read on main at 6ca41c43 (`git log -1 --format=%h` prints 6ca41c43). Nothing was changed. No test was run. `config/local.yml` was not touched, and no grep went over `config/`. I read zod's source in `node_modules/zod/v4/core/` instead of running it.
 
 `plan.md` has no `## Goal` heading. Its headings are Packages, Could run in parallel, Rulings and Blocked. I used the Q85d step line (`plan.md:346`), Z73 (`:609`), Z96 (`:635`), Z154 (`:736`), Z163 (`:745`), Z173 (`:756`), and LA7 as quoted in `agents/reviews/library-audit.md:73-81`.
 
@@ -265,7 +265,7 @@ claude-sonnet-5-5 (served, checked in the subagent record), 311,875 tokens, 104 
 
 ## Closed
 
-Each finding is closed by a change to `agents/briefs/Q85d.md`, re-read on main at 459bb908.
+Each finding is closed by a change to `agents/briefs/Q85d.md`, re-read on main at 7937afaa.
 
 Names
 - 1 (`filterOf`): "What is on the tree" names `History.svelte:45,58`, `history.test.ts:12,71-74` and `allow-audits.txt:58`; item 3 moves the four asserts into the `instanceText` table, removes the case, its import and the allowlist line, each named in the report; the paths name the three files.

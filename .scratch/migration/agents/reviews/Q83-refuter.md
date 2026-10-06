@@ -1,4 +1,4 @@
-# Q83 refuter report (worktree at base c56819b6)
+# Q83 refuter report (worktree at base 34ae93f8)
 
 Every brief item is built as the brief words it. The verify list is green except for one timeout in a file this step does not touch. The findings that matter:
 - **Proof:** two picture-size tests are written to pass on answers a browser does not draw (P1, P2).
@@ -113,7 +113,7 @@ No violation of a brief item. One clash for the orchestrator: brief item 8 and D
   - The same root cause produces B2's wrong answer on valid files.
 - **P3: the report's listing cost leaves out the parse.**
   - The report's "149.2 ms warm vs 97.4" came from "a temporary script mirroring sizeOf's reads", so image-size's parse is not in it.
-  - I timed the real `sizeOf` over 300 synthetic 3 MB JPEGs, each with JFIF, a 30 KB EXIF block, a 3 KB ICC profile, tables and a frame (`node $S/bench.mts`, the old images.ts rebuilt by reversing `git diff c56819b6`).
+  - I timed the real `sizeOf` over 300 synthetic 3 MB JPEGs, each with JFIF, a 30 KB EXIF block, a 3 KB ICC profile, tables and a frame (`node $S/bench.mts`, the old images.ts rebuilt by reversing `git diff 34ae93f8`).
     - Old: 291.3, 213.6 and 120.7 ms over three runs.
     - New: 456.4, 423.7 and 386.5 ms.
   - Warm, the new code is about 3.2 times the old, where the report shows 1.5 times.
@@ -201,7 +201,7 @@ No violation of a brief item. One clash for the orchestrator: brief item 8 and D
 
 320046 tokens, 86 tool uses, 24 min (from its completion notice).
 
-## Repair round 1, refuted (worktree at base c56819b6)
+## Repair round 1, refuted (worktree at base 34ae93f8)
 
 All nine rulings of the round hold, and the verify list is green on its single run. Nothing in the round's scope is left undone. There are four findings, all low:
 - **B-a (point a).** The JPEG walk now stops at the 512 KB head. A JPEG whose frame sits past 512 KB gets no size, where the base parser gave one. I measured this. It follows from the READ_CAP that the brief and the Z61 ruling both keep, so it is for the orchestrator to rule on, not a builder defect.
@@ -362,7 +362,7 @@ The round's JPEG walk is the same code as the base walk, with reads by position 
 ### Behaviour
 
 - **B-a (point a): a JPEG whose frame lies past 512 KB gets no size; the base gave one.**
-  - Probe `node probe-a.mts`: JPEGs with n full 64 KB APP2 segments before a 640x480 frame, current `sizeOf` against the base file rebuilt from `git diff c56819b6`:
+  - Probe `node probe-a.mts`: JPEGs with n full 64 KB APP2 segments before a 640x480 frame, current `sizeOf` against the base file rebuilt from `git diff 34ae93f8`:
     ```
     7 APP2 segments, frame at 458761 (448 KB): base {"width":640,"height":480}, now {"width":640,"height":480}
     8 APP2 segments, frame at 524298 (512 KB): base {"width":640,"height":480}, now null

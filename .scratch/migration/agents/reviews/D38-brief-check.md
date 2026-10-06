@@ -1,6 +1,6 @@
-# Step D38 brief check (on main at db68c2cf3)
+# Step D38 brief check (on main at f9f6059d2)
 
-Agent a2a467a6aab8994d0, claude-opus-5-5: 294,737 tokens, 97 tool uses, 12.6 min (completion notice). The brief was written on main at 575c997c8; since then D42 (8077dd556) and S5 (71017ce60) landed and Z497, Z500, Z501 and Z502 were ruled. No literature API was called and `config/local.yml` was not opened.
+Agent a2a467a6aab8994d0, claude-opus-5-5: 294,737 tokens, 97 tool uses, 12.6 min (completion notice). The brief was written on main at fc2905d77; since then D42 (863cdc7d0) and S5 (30b4ddced) landed and Z497, Z500, Z501 and Z502 were ruled. No literature API was called and `config/local.yml` was not opened.
 
 ## 1. Names
 
@@ -18,7 +18,7 @@ Every part of the plan line maps to an item of "What to build". Findings: none.
 
 - P1. D38's lines in `plan.md` are `:502`, `:1061`, `:1223`, `:1226-1228` and `choices.md:416`, `:418`, `:423`; the brief says `:500` and `:1056` "and nothing else", and D39 is at `:503`.
 - P2. Z497 (choices 2 to 13), Z500 (choice 1 (a)), Z501 (choice 14 (a), a guarded entry with one table test) and Z502 (`fast-xml-parser`, `@citation-js/core` with `@citation-js/plugin-bibtex`, no API client, pacing and cache by hand) are in force; the brief still says it is not ready until the orchestrator rules, presents choices 1 to 14 and Libraries 1 to 4 as open, writes "(option (a) assumed)", "Until he rules, the builder writes no merge test", and lists `package.json` "only for a library the orchestrator rules". Z497's paraphrase "keyless toggles disabled with their key named" differs from choice 12, which draws the keyed sources without a key disabled; the brief states choice 12 as written.
-- P3. S5 has landed (71017ce60); the brief says it is in flight.
+- P3. S5 has landed (30b4ddced); the brief says it is in flight.
 - P4. `local.ts` is 472 lines (brief 376); `LocalConfig` `:26-100`, `LOCAL_KEYS` `:111-130`, `loadLocal` `:451`, `checkLocal` `:469`. Choice 1's "an unknown key is refused (`local.ts:267`)" is false: `:362` collects unknown keys and `:419-421`, `:440-442` warn and ignore them.
 - P5. `options.yml`: the `local.yml` section is `:1178-1232` (brief `:686-722`), `search.max_hits` `:608`, `search.timeout_s` `:616-622`; `:9` now reads "A local.yml entry holds `description` and `section` alone"; every `behavior.yml` entry carries `heading`, `section`, `default`, `control` and, for a number, `min`, `max`, `whole` (`:9-13`).
 - P6. `settings.ts` is 457 lines (brief 297), `searchSettings` `:230-236`; readers go through `settingReader`, and a reader that reports problems is listed in `PROBLEM_READERS` (`:425-440`); the brief names neither.
@@ -76,12 +76,12 @@ Closing agent a4558e3331a0b5998, claude-opus-5-5: 250,737 tokens, 61 tool uses, 
 - N3: `tests/data/sources/config/wrong-settings.ts` lines 6-26 and `tests/checks/config/config.test.ts` lines 410-446 (the `settingFindings` sorted list) are in the write list (`:275`, `:277`); the tree facts are at `:60-62`.
 - P1: the plan line is `plan.md:502` (`:7`), the rulings carry their current lines (`:11`), and the D38 grep prints `plan.md:502`, `:1061`, `:1223`, `:1226-1228` and `choices.md:416`, `:418`, `:423`, marked corrected (`:11`); D39 is `:503` (`:38`).
 - P2: Z497, Z500, Z501 and Z502 are stated as ruled (`:11`, `:13`); "not ready for dispatch", "(option (a) assumed)", "(option (b) assumed)", "Until he rules, the builder writes no merge test" and the conditional on `package.json` are gone; choices 1 to 14 are "Decisions ruled" with each ruling named (`:15-30`); Libraries 1 to 4 are "Libraries ruled (Z502)" (`:310-319`) and `package.json`/`package-lock.json` are written for Z502's three packages (`:278`); choice 12 is stated as written, keyed sources without a key drawn disabled with their key named, with Z497's differing summary noted (`:28`).
-- P3: S5 is stated as landed in `71017ce60`, marked corrected (`:39`); the shared-path text about S5 in flight is gone.
+- P3: S5 is stated as landed in `30b4ddced`, marked corrected (`:39`); the shared-path text about S5 in flight is gone.
 - P4: `local.ts` 472 lines, `LocalConfig` `:26-100`, `LOCAL_KEYS` `:111-130`, `loadLocal` `:451`, `checkLocal` `:469`, marked corrected (`:39`, `:55`, `:67`); choice 1 now says an unknown key is collected at `:362`, warned of at `:440-442` and ignored (`:17`).
 - P5: the `options.yml` local.yml section `:1178-1232`, `:9`'s current words, the entry keys of `:9-11`, `search.*` at `:608-622` with `heading: editor` and `section: Search`, marked corrected (`:55`, `:58`); the write list names `:616-622` and `:1178-1232` (`:266`).
 - P6: `settings.ts` 457 lines, `searchSettings` `:230-236`, `settingReader` `:96`, `PROBLEM_READERS` `:423-445`, marked corrected (`:39`, `:58`); item 10 has `literatureSettings` read through `settingReader` and listed in `PROBLEM_READERS` (`:121`).
 - P7: `writes.ts` 544 lines with `lead-add` `:446-452` (`:45`), `addLead` `:325-393` (`:44`), `context.ts` 729 lines with `ServerContext` `:104` and `mailConnects` `:146`/`:459` (`:67`, `:110`), `FIELDS` `:78-97` (`:55`), `getJson` `api.ts:67-81` (`:54`), the search token check `:43-45` (`:56`), each marked corrected.
-- P8: the guarded entries carry their lines on the ledger at c710c0c47, which holds G45 and G46 (G1 `:7-9`, G3 `:13-15`, G8 `:34-36`, G9 `:37-39`, G45 `:77-79`, G12 `:89-91`, G13 `:92-94`, G24 `:117`), marked corrected (`:71`); the read list's ranges are `:5-15`, `:34-39`, `:77-79`, `:89-94` (`:338`).
+- P8: the guarded entries carry their lines on the ledger at cd79fc23f, which holds G45 and G46 (G1 `:7-9`, G3 `:13-15`, G8 `:34-36`, G9 `:37-39`, G45 `:77-79`, G12 `:89-91`, G13 `:92-94`, G24 `:117`), marked corrected (`:71`); the read list's ranges are `:5-15`, `:34-39`, `:77-79`, `:89-94` (`:338`).
 - P9: the literature-key grep's hits are named as the venue `scopus` lines alone, marked corrected (`:55`).
 - C1: case 42 is rewritten so an unknown key under `literature:` is in `unknown`, warned of and ignored with no finding (`:174`), and item 10 states the reader that way (`:121`).
 - C2: item 10 gives each `behavior.yml` entry `heading: editor`, `section: Literature search`, `default`, `control: number`, `whole: true` and the bounds 1-120, 1-100, 0-1440 that make case 43's values wrong, and each of the seven `local.yml` entries `section: Literature search` (`:121`); case 43 names the keys and defaults (`:175`); decision taken 12 (`:304`).

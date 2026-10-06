@@ -1,6 +1,6 @@
-# Step H3 brief check (on main at 3e3574ef9)
+# Step H3 brief check (on main at ea41aa96c)
 
-This is the report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/H3.md`, read on disk (uncommitted). The brief was written at ed0e6de58. `git diff --stat ed0e6de58 3e3574ef9` lists only `agents/reviews/S5-brief-check.md`, `orchestrator-state.md` and `queue.md`, so every premise is still read against the same tree. Rules file and standards: `agents/spec.md`, which is the configuration block's only `standards:` entry and `.agents/plan.yaml`'s `rules:`. `plan.md` has no "Goal" heading. The goal used below is the ledger's opening paragraph plus H3's line (`plan.md:225`) and ruling Z346 (`plan.md:1053`).
+This is the report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/H3.md`, read on disk (uncommitted). The brief was written at 48841862f. `git diff --stat 48841862f ea41aa96c` lists only `agents/reviews/S5-brief-check.md`, `orchestrator-state.md` and `queue.md`, so every premise is still read against the same tree. Rules file and standards: `agents/spec.md`, which is the configuration block's only `standards:` entry and `.agents/plan.yaml`'s `rules:`. `plan.md` has no "Goal" heading. The goal used below is the ledger's opening paragraph plus H3's line (`plan.md:225`) and ruling Z346 (`plan.md:1053`).
 
 ## 1. Names
 

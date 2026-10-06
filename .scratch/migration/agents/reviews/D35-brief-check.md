@@ -1,6 +1,6 @@
 # D35 brief check
 
-BRIEF CHECK REPORT, step D35 (brief `tools/oculus/.scratch/migration/agents/briefs/D35.md`, main at 99988ef2, `git log --oneline -1` printed `99988ef2 Book Z172 into Q88c and raise workers_at_once to five`). Nothing was changed. `config/local.yml` was never opened. For the one run that needed a config folder I used `rsync -a --exclude=local.yml` into the scratchpad.
+BRIEF CHECK REPORT, step D35 (brief `tools/oculus/.scratch/migration/agents/briefs/D35.md`, main at 04b39b45, `git log --oneline -1` printed `04b39b45 Book Z172 into Q88c and raise workers_at_once to five`). Nothing was changed. `config/local.yml` was never opened. For the one run that needed a config folder I used `rsync -a --exclude=local.yml` into the scratchpad.
 
 Headline: three findings change what the builder must build, and the brief needs to be corrected before dispatch. (1) The 3 `notify.*` keys are already live in production, so item 6 and case 9 build dead code. (2) Case 18 and the premise behind it are false. (3) Q85c rewrites the same `settings.ts` lines that item 7 edits, so the merge is not simple.
 
@@ -264,4 +264,4 @@ How each finding is closed. The step waits for D31 and Q85c to land (M1, M2), so
 - C5: cases 13 and 17 stated as audits, case 17 checking the sink count returns to its start value.
 - C7, section 5, section 6: a case per uncovered key and per group's refusal, a bound case per key, and the implied inputs 1 to 13 as cases with the expected results the report proposes, input 2 decided as: a host change clears the rows, `lastOk`, the quota and the resolved log paths; input 5 decided as: a `pollMin` change republishes.
 - C10: new test files allowed in `tests/server/accounts/calendar` and `mail`.
-- Applied in `agents/briefs/D35.md` as written on main at 483fcef9, the cases renumbered: the audits of C5 are cases 18 and 24, the log line of C4 is case 16, the parse-error case of P1/C1 is case 20, the account rule of C2 is item 3 and cases 9 and 11, the bounds of S1 are item 8 and case 22, the implied inputs of C7 are cases 1 to 15, 21, 23 and 26.
+- Applied in `agents/briefs/D35.md` as written on main at 48e29272, the cases renumbered: the audits of C5 are cases 18 and 24, the log line of C4 is case 16, the parse-error case of P1/C1 is case 20, the account rule of C2 is item 3 and cases 9 and 11, the bounds of S1 are item 8 and case 22, the implied inputs of C7 are cases 1 to 15, 21, 23 and 26.

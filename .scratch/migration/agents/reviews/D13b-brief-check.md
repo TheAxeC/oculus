@@ -1,4 +1,4 @@
-# Step D13b brief check (on main at 1b906f3d)
+# Step D13b brief check (on main at 9bfa4070)
 
 Read on the committed tree (`git show HEAD:...`). The main checkout's working tree also held Q88's landing staged, which moves several D13b premises; see section 3, finding 3.
 
@@ -107,7 +107,7 @@ Agent usage: 64 tool uses, 230k tokens, 13 min (from the completion notice).
 
 # Closed
 
-Each finding is closed in `agents/briefs/D13b.md` on main at 88e6a1c3 (Q88 landed); the brief's premises, cases and paths were re-anchored there.
+Each finding is closed in `agents/briefs/D13b.md` on main at 40c555c2 (Q88 landed); the brief's premises, cases and paths were re-anchored there.
 
 - Names 1: `tests/server/core/paths.test.ts` line 99 added to the paths; item 7 says it loses the `MergeSide.svelte` `inside()` line.
 - Names 2: `tests/state/sources/repositories/repositories.test.ts` lines 130-150 added (the assertions now sit at 138-144); item 7 says they read the view state; a case covers `diffViewOf` dropping a stored `opened`.
@@ -118,7 +118,7 @@ Each finding is closed in `agents/briefs/D13b.md` on main at 88e6a1c3 (Q88 lande
 - Step line 2: item 3 steps over hunks, as today.
 - Premises 1: `diff-patch.ts:11` added to the importers.
 - Premises 2: the one-sided deletion and the stable regions' missing lengths added to the node-diff3 premise, with how item 6 derives the spans.
-- Premises 3: HELP rows re-read at 84, 179, 181, 189 on 88e6a1c3 and written into the premise, item 8, the paths and the documents check.
+- Premises 3: HELP rows re-read at 84, 179, 181, 189 on 40c555c2 and written into the premise, item 8, the paths and the documents check.
 - Cases 1: item 1 has the commit read find the old path from `show --name-status -M` and diff `-- <old> <path>` (decision 12).
 - Cases 2: item 3 takes a pure deletion after line N for a selection holding N or N+1; a case covers 20, 21 and 22.
 - Cases 3: a three-empty case and a one-sided deletion case added to the merge cases.

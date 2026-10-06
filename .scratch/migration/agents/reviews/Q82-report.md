@@ -95,7 +95,7 @@ The two case 8 tests are audits of the markup, named so: a server rendering has 
 
 ## Files, with line counts before and after
 
-Before is the brief's count on main at 8a98ede3, or new; after is `wc -l` at finish.
+Before is the brief's count on main at f5160a42, or new; after is `wc -l` at finish.
 
 | File | Before | After |
 |---|---|---|

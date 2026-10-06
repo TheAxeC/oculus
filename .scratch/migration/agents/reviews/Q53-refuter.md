@@ -1,6 +1,6 @@
 # Q53 review, read-only
 
-The worktree is untouched. `git status --short` in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/q53` prints the same twelve ` M ` rows it printed before I started, and `git diff --stat 99ea1b96` still ends `12 files changed, 453 insertions(+), 33 deletions(-)`. Everything below that needed a file changed was done on a copy in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/536c7cbc-bb5a-4968-922a-974ba41d1544/scratchpad/q53-review/tree` (and a second copy `tree2` for the boundaries plant).
+The worktree is untouched. `git status --short` in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/q53` prints the same twelve ` M ` rows it printed before I started, and `git diff --stat 8c336e6f` still ends `12 files changed, 453 insertions(+), 33 deletions(-)`. Everything below that needed a file changed was done on a copy in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/536c7cbc-bb5a-4968-922a-974ba41d1544/scratchpad/q53-review/tree` (and a second copy `tree2` for the boundaries plant).
 
 ## The verification lines, verbatim
 
@@ -130,7 +130,7 @@ const where = `${paint}, wallpaper ${wall === 1 ? 'on' : 'off'}`;
 ## STANDARDS
 
 - `src/lib/ui/Tabs.svelte` is 605 lines against the 600 guide (`wc -l`). The report flags it and the plan already carries Q54 as the split (`plan.md:205`). No action here.
-- No history in any added comment: `git diff 99ea1b96 | grep "^+" | grep -E "\b(Q|D|R|O|M)[0-9]+\b|20[0-9]{2}-[0-9]{2}|reverted|previously|no longer"` printed nothing.
+- No history in any added comment: `git diff 8c336e6f | grep "^+" | grep -E "\b(Q|D|R|O|M)[0-9]+\b|20[0-9]{2}-[0-9]{2}|reverted|previously|no longer"` printed nothing.
 - Non-ASCII: the gate printed nothing.
 - Four-space indentation, Prettier clean, eslint silent.
 - **Two document sentences the diff makes false are still in the tree**, correctly deferred by the brief's decision 2 but not yet applied:

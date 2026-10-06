@@ -17,7 +17,7 @@ The builder and every reviewer of D13b had finished: their completion notices ha
 
 ## What landed
 
-The diffs and the merge on Monaco, from base 444b9601 (71 files, 4201 insertions, 1832 deletions, then the fixes at landing, 21 files). `GET /api/git` answers a file's diff as its two versions with git's head lines, the git attributes that decide whether a partial patch applies, and whether the path is in conflict. The diff pane draws one Monaco diff editor per file, side by side or inline, the unchanged runs hidden, its view state kept per file; blocks and selected lines are staged, unstaged or reverted by a patch cut from the two texts. The merge editor draws node-diff3's regions as Incoming, Current and Result Monaco editors. X3b's hand diff is removed; the editor's shared files are under `ui/controls/editor/kit/`.
+The diffs and the merge on Monaco, from base 0d2eb64a (71 files, 4201 insertions, 1832 deletions, then the fixes at landing, 21 files). `GET /api/git` answers a file's diff as its two versions with git's head lines, the git attributes that decide whether a partial patch applies, and whether the path is in conflict. The diff pane draws one Monaco diff editor per file, side by side or inline, the unchanged runs hidden, its view state kept per file; blocks and selected lines are staged, unstaged or reverted by a patch cut from the two texts. The merge editor draws node-diff3's regions as Incoming, Current and Result Monaco editors. X3b's hand diff is removed; the editor's shared files are under `ui/controls/editor/kit/`.
 
 The replay onto main conflicted in DESIGN.md, HELP.md, package.json, package-lock.json, the diagrams and the two `languages.ts` files, resolved by keeping both sides, `npm install` and `npm run diagrams`.
 

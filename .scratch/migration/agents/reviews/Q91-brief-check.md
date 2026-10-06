@@ -1,4 +1,4 @@
-# Step Q91 brief check (on main at a9c0d38d)
+# Step Q91 brief check (on main at e1d7de25)
 
 The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/Q91.md` (read from main's working copy, where the brief is uncommitted). A page this report cites (the rules file, a standard, a skill's text) is named by its section. A line of code or a grep hit keeps its `file:line`. Commands ran from `/Users/axelfaes/workspace/research-hub/tools/oculus` unless they say otherwise. I wrote one probe, `scratchpad/probe-followup.mts`. I changed no file in the repository.
 

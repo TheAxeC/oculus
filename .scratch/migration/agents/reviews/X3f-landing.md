@@ -16,7 +16,7 @@ Case 7's staged-line attribution was checked through the route's answer and `git
 
 ## What landed
 
-From base f672330af, 120 files (+3126 -995, `git diff --cached --stat`): a double click on a file in the Files tree opens one kept tab with the keyboard in it; each file tab's actions (Save, Revert File, the star, Open in Program, Open Preview, Open Preview to the Side, Open Source, Toggle Blame), each where it applies, at the right end of the pane's breadcrumb bar, the tab row carrying only Split and `...`; a file tab draws its file's icon; blame on HEAD and index tabs (`stage=head` and `stage=index` of `GET /api/git?blame=`); the status bar's caret-line blame as VS Code's; the Files view's Outline and `docs/DATA-MAP.md`'s contents list (Z490).
+From base b249c7e49, 120 files (+3126 -995, `git diff --cached --stat`): a double click on a file in the Files tree opens one kept tab with the keyboard in it; each file tab's actions (Save, Revert File, the star, Open in Program, Open Preview, Open Preview to the Side, Open Source, Toggle Blame), each where it applies, at the right end of the pane's breadcrumb bar, the tab row carrying only Split and `...`; a file tab draws its file's icon; blame on HEAD and index tabs (`stage=head` and `stage=index` of `GET /api/git?blame=`); the status bar's caret-line blame as VS Code's; the Files view's Outline and `docs/DATA-MAP.md`'s contents list (Z490).
 
 Fixes at landing, from the run over round 3:
 - Proof 1: `DESIGN.md:128` lists `blame --porcelain HEAD -- <path>` and `blame --porcelain --contents - -- <path>` (`blameAt`).

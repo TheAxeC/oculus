@@ -152,7 +152,7 @@ Verification lines (run from .agents/worktrees/L5/tools/oculus, Node v24.21.0)
 - `node bin/revert-check.mjs` over the boot, shell-defects, layout, pages and tabs specs: `21 reverts, 0 unproven, 39 unchecked`.
 - Total: 137 reverts, 0 unproven.
 - The flaky case, run alone five times with `npx vitest run tests/checks/bin/revert-check.test.ts -t 'removes its copy of the tree when it is stopped by a signal'`: `1 passed | 18 skipped` five times out of five.
-  - This step cannot cause it. `git diff 4b0a7ad5 --stat -- bin tests/checks/bin` prints nothing, and the case copies a synthetic `fixture()` tree, not oculus's.
+  - This step cannot cause it. `git diff 5d8c1136 --stat -- bin tests/checks/bin` prints nothing, and the case copies a synthetic `fixture()` tree, not oculus's.
   - The race is in `bin/revert-check.mjs` itself. `copyTree` makes the folder at `:256` (`mkdtempSync`) and then runs a synchronous `cpSync`. The signal handlers are installed only at `:420`, after `copyTree` returns.
   - The test sends SIGTERM as soon as the folder appears (`:551-552`). A SIGTERM that lands during `cpSync` kills the process before any handler exists, so the copy stays behind. Under load the copy takes longer, which widens that window.
 
@@ -165,7 +165,7 @@ Verification lines (run from .agents/worktrees/L5/tools/oculus, Node v24.21.0)
    const grounds = [chip, card, panel, page, rail].filter((ground) => Boolean(ground));
    ```
    Adding the rail to `grounds` makes `everywhere()` nudge every `-txt` colour until it reads on the rail as well, and those colours are used throughout the app.
-   - I compared base `deriveTokens` (4b0a7ad5) with the current one theme by theme, using a node probe in my scratchpad over `tokens.css` and `themes.css`. Text tokens changed per theme: light 58, vscode-light-modern 52, latte 50, tokyoneon 27. Among them are `--muted-txt: #5f6f85 -> #566579` and `--accent-txt: #ad5533 -> #9d4d2e` under light, and `--muted-txt: #7c85b4 -> #828bb7` under tokyoneon, plus every hue's `-txt`.
+   - I compared base `deriveTokens` (5d8c1136) with the current one theme by theme, using a node probe in my scratchpad over `tokens.css` and `themes.css`. Text tokens changed per theme: light 58, vscode-light-modern 52, latte 50, tokyoneon 27. Among them are `--muted-txt: #5f6f85 -> #566579` and `--accent-txt: #ad5533 -> #9d4d2e` under light, and `--muted-txt: #7c85b4 -> #828bb7` under tokyoneon, plus every hue's `-txt`.
    - The served page confirms it: a muted rail item under light computes to `rgb(86, 101, 121)`, which is `#566579`.
    - So under four themes every muted, accent and hue text in every view changed. The report does not say so.
    - This also goes against the pattern DESIGN.md:191 describes and that this round's Doc text deletes. `--accent-bg-txt` and `--c-<hue>-lane-txt` each derive a text colour for one surface "so no other accent text changes" / "so no other hue text changes".

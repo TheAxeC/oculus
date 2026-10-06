@@ -1,4 +1,4 @@
-# Step Q39 refuter report (on .agents/worktrees/q39, base d5f1ce02)
+# Step Q39 refuter report (on .agents/worktrees/q39, base 41b22aad)
 
 No finding blocks landing. The two points under Proof are about gaps in the builder's report, not defects in the tests.
 
@@ -65,7 +65,7 @@ none.
 - History in comments: none. Non-ASCII: none (gate clean).
 
 ## 4. Behaviour
-none. `git diff d5f1ce02` touches only the two spec files, and no file under `src/` or `config/` changed. My copy with no revert passed all 9 cases.
+none. `git diff 41b22aad` touches only the two spec files, and no file under `src/` or `config/` changed. My copy with no revert passed all 9 cases.
 
 ## Not checked
 - The wheel-settle-now and wheel-settle-later reverts were not rerun. The report's reds at 488/490 and 497 for them are not reproduced.

@@ -1,6 +1,6 @@
 # Q80 refuter report
 
-Reviewer a59a84cb98d926c8b, a fresh agent, over `git diff 740ebd5e` in `.agents/worktrees/Q80`.
+Reviewer a59a84cb98d926c8b, a fresh agent, over `git diff 01271d4b` in `.agents/worktrees/Q80`.
 
 Q80 review (line counts on the Status view). Reviewer changed nothing.
 
@@ -108,7 +108,7 @@ Other reproductions:
 
 ## Repair round 1, refuted
 
-Reviewer aa0e2181b19c92109, a fresh agent, over `git diff 56f1749d` read against `git diff 740ebd5e`.
+Reviewer aa0e2181b19c92109, a fresh agent, over `git diff 56f1749d` read against `git diff 01271d4b`.
 
 Q80 repair round 1 review. I changed nothing in the worktree or the ledger. Every revert ran in a scratch copy at scratchpad/q80copy, with node_modules symlinked.
 
@@ -227,7 +227,7 @@ Behaviour
 - The first-round claims the report carries forward (first run, 2900 ms timing).
 - package-lock.json and the diagrams, since this round does not touch them.
 - The report's ENOBUFS sentence ("would fail with a sentence naming git") was not exercised.
-- Git: beyond `git status --short` and `git diff 56f1749d` / `git diff 740ebd5e`, I ran their `--stat` and `--name-only` forms, which are the same diffs.
+- Git: beyond `git status --short` and `git diff 56f1749d` / `git diff 01271d4b`, I ran their `--stat` and `--name-only` forms, which are the same diffs.
 
 6. Usage: about 38 tool calls and about 20 minutes. The verify run took about 2 minutes, and the scratch-copy reverts about 45 s in all.
 

@@ -1,4 +1,4 @@
-# Step D22 refuter report (on .agents/worktrees/d22, base 91fb46cb)
+# Step D22 refuter report (on .agents/worktrees/d22, base 87361a12)
 
 ## Verification (rerun by the reviewer)
 All commands were run from `tools/oculus` in the worktree. The worktree's diff is still 17 files, 476 insertions and 58 deletions, plus 4 untracked files. The builder's report quotes 469/52, taken before its last comment rewraps.

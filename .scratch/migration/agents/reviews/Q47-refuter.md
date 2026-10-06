@@ -1,4 +1,4 @@
-# Step Q47 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/q47, base 8d90177f)
+# Step Q47 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/q47, base b03f22d0)
 
 ## Verification (rerun by the reviewer)
 
@@ -128,8 +128,8 @@ run 2: 16 passed (24.3s)
 run 3: 16 passed (24.1s)
 $ npx playwright test tests/browser/changes.spec.ts        (x3, alone)   2 passed each
 
-Delta read: round-1 tree rebuilt in the scratch folder from 8d90177f + tracked.patch + untracked.tar,
-`diff -ru round1 now` = 444 lines over 9 files; whole diff read as `git diff 8d90177f` + the 4 untracked files.
+Delta read: round-1 tree rebuilt in the scratch folder from b03f22d0 + tracked.patch + untracked.tar,
+`diff -ru round1 now` = 444 lines over 9 files; whole diff read as `git diff b03f22d0` + the 4 untracked files.
 
 Reverts and forced failures, in my own clone of tools/oculus under the scratch folder:
 1. repo-shape.ts `workspace === ''` -> 'none'            -> changes.test.ts 1 failed | 15 passed

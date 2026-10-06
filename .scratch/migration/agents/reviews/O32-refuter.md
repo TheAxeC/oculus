@@ -9,7 +9,7 @@ Verification (run from .agents/worktrees/O32/tools/oculus, Node v24.21.0)
 7. `sh bin/size-check.sh`: exit 0. `sh bin/folder-check.sh`: exit 0.
 8. `node bin/revert-check.mjs tests/server/sessions/registry.test.ts tests/server/sessions/stores/dispatches.test.ts tests/checks/bin/dispatch-note.test.ts`: `33 reverts, 0 unproven, 1 unchecked`. The unchecked one is the existing audit case `audits that a builder older than the window is not listed and its row opens nothing`. Every new case was red. I then ran `node bin/revert-check.mjs tests/checks/bin/dispatch-note.test.ts` 6 more times (14:00 to 14:13). All 6 printed `16 reverts, 0 unproven, 0 unchecked`. The 150-round race case was red in 7 of my 7 runs; the report says it was green in 1 of 7 of the builder's runs.
 9. `ls -d $TMPDIR/oculus-* | wc -l`: `7060` before and `7015` after the suite. L3 was running beside this at the same time, so the count proves nothing about this step either way; it did not grow.
-`git status --short` was the same before and after every run: the 6 modified files plus `?? tests/server/sessions/registry.test.ts`. The new test file is untracked, so `git diff 138afb83 --stat` does not list it.
+`git status --short` was the same before and after every run: the 6 modified files plus `?? tests/server/sessions/registry.test.ts`. The new test file is untracked, so `git diff 6d87499f --stat` does not list it.
 
 ## Spec
 

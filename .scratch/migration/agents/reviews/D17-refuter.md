@@ -110,7 +110,7 @@ The report's own evidence, rerun in the same form:
 
 8. **Paths outside the write list, all disclosed.** `data/model/model-commands.ts` and `index.ts`, `state/sessions/folds.ts`, `terminal-marks.ts`, `pty-io.ts`, `state/sources/repositories/file-git.ts`, `ui/controls/editor/Editor.svelte`, `views/sources/source/Editor.svelte`, `repositories/diff/Diff.svelte`, `files/tree/control/picks.svelte.ts`, `server/root/watch/local.ts`, `pty/edit.ts`, `shell/Workbench.svelte`, `ProjectCard.svelte`, `boundaries.test.ts`, `type-scale.test.ts`, `client-state.test.ts`, and the new test helpers. Each is listed in the report's "wrong or impossible" section. No verdict on its own.
 
-9. **Premises.** The brief says "the project card's actions are `views/shared/card/CardActions.svelte`". The action list is built in ProjectCard.svelte; CardActions only draws it (`CardActions.svelte:152`). The report states this. The other premises reproduce from the diff's context lines and the base counts: `terminals.svelte.ts` at the base has 887 lines, read with `git show 201a8fcb:...`.
+9. **Premises.** The brief says "the project card's actions are `views/shared/card/CardActions.svelte`". The action list is built in ProjectCard.svelte; CardActions only draws it (`CardActions.svelte:152`). The report states this. The other premises reproduce from the diff's context lines and the base counts: `terminals.svelte.ts` at the base has 887 lines, read with `git show a238de92:...`.
 
 10. **ADRs.** There is no `docs/adr` folder, so none applies. The DESIGN.md passages (Processes `:151`, Approval `:326`) are taken up in Spec 6, Standards 2 and Behaviour 4.
 
@@ -200,7 +200,7 @@ The builder's disclosures:
 - The browser look at TEST is the orchestrator's: the form's fields, Save and Escape; the approval and Restart dialogs; the xterm link drawn and clicked; the check and cross in colour on the strip, row and bar; the bar's placement in Repositories; Cmd+Shift+B and Cmd+Alt+T in Chrome on macOS. Behaviour 1 is best confirmed there by saving a command whose name `.oculus/commands.yml` already holds.
 - I did not rerun the 84 mutation runs or the first runs on the unchanged tree. No verdict rests on their counts.
 - Whether the form's placement in `shell/keys/` (Spec 3) and the card's mixed controls (Spec 2) should stand is the orchestrator's call. I report the departure from the brief's named shape.
-- Disclosure: besides `git diff 201a8fcb` and `git status --short`, I ran `git show 201a8fcb:<path>` twice, both read-only: the base line count of `terminals.svelte.ts` and the base copy of `tests/routes/sessions/terminal-fixture.ts`. I also ran two `sh -c` probes in my scratchpad, and `stat` on `~/.oculus` for its mode only. I did not read `local.yml`, did not touch ports 8787 or 8790, and started or killed no process.
+- Disclosure: besides `git diff a238de92` and `git status --short`, I ran `git show a238de92:<path>` twice, both read-only: the base line count of `terminals.svelte.ts` and the base copy of `tests/routes/sessions/terminal-fixture.ts`. I also ran two `sh -c` probes in my scratchpad, and `stat` on `~/.oculus` for its mode only. I did not read `local.yml`, did not touch ports 8787 or 8790, and started or killed no process.
 
 ## Usage
 
@@ -263,7 +263,7 @@ The report's other evidence, rerun in the same form:
 - The `untrack` in `watch` is needed. Removing it on the scratch copy made `commands-keys.client.test.ts` and `card-commands.client.test.ts` fail: `Tests  6 failed | 1 passed (7)`, with every mounting case failing. This reproduces the report's `effect_update_depth_exceeded` claim.
 - Not rerun: the report's quotes of each test failing on the pre-round base copy (that copy is in the builder's scratchpad), and the 84 mutation runs of round 0. No verdict below rests on them.
 
-## Item verdicts (whole diff since 201a8fcb)
+## Item verdicts (whole diff since a238de92)
 
 1. **Command sources: holds.** The found preset names `cmake: <n>`, `cmake build: <n>` and `ctest: <n>` are now a stated decision (Z301 (2)), and HELP.md says the three names.
 2. **One shell quoting: holds.** There is one `shellWord`, in `pty/shell-word.ts`.
@@ -453,7 +453,7 @@ The report's other evidence, rerun in the same form:
 - I did not rerun the report's quotes of each test failing on the pre-round base copy, or round 0's mutation table.
 - Whether ruling 13's substitution (moving pre-existing functions) and the JSON approval text stand is the orchestrator's call.
 
-What I ran: `git diff 201a8fcb` and `git status --short` only, both read-only. Scratch probes ran in my scratchpad copy only; I made no edits in the worktree (no file under its `src` or `tests` is newer than my checks log). I did not read `local.yml`, did not touch ports 8787 or 8790, did not run tmux myself (the fixture's tests use their own `-S` socket), and started or killed no process outside the vitest runs.
+What I ran: `git diff a238de92` and `git status --short` only, both read-only. Scratch probes ran in my scratchpad copy only; I made no edits in the worktree (no file under its `src` or `tests` is newer than my checks log). I did not read `local.yml`, did not touch ports 8787 or 8790, did not run tmux myself (the fixture's tests use their own `-S` socket), and started or killed no process outside the vitest runs.
 
 ## Usage
 
@@ -520,7 +520,7 @@ Command 2, `npx vitest run tests/server/machine/pty/task.test.ts tests/server/ma
 | r4: `privateFolder` not limited to the default path | 1 failed (`leaves the folder of a file the approvals key names elsewhere`) |
 | r4: owner check removed | 1 failed (`leaves a default folder another user owns`) |
 
-## Item verdicts (whole diff since 201a8fcb)
+## Item verdicts (whole diff since a238de92)
 
 1. **Command sources: holds.** Unchanged in the round; suite green.
 2. **One shell quoting: holds.**
@@ -741,7 +741,7 @@ Every doc or comment the round's change made false (spec.md:65):
 - The report's base-run quotes. I did not rerun them from the builder's `d17r2-base` copy; my own mutations (table above) stand in for them.
 - Whether the tokenizer design stands, or values move to environment variables, is the orchestrator's ruling, since the cap is spent.
 
-**What I ran.** Git: `git diff 201a8fcb` and `git status --short` only. Scratch copies and probes live only under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d17-r2-review/`. I made no edit in the worktree or on main. I did not read `local.yml`, touched neither port, ran tmux only through the fixture's private `-S` socket, and started or killed no process outside the vitest runs.
+**What I ran.** Git: `git diff a238de92` and `git status --short` only. Scratch copies and probes live only under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d17-r2-review/`. I made no edit in the worktree or on main. I did not read `local.yml`, touched neither port, ran tmux only through the fixture's private `-S` socket, and started or killed no process outside the vitest runs.
 
 ## Usage
 

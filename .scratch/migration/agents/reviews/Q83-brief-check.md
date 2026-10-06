@@ -1,4 +1,4 @@
-# Step Q83 brief check (on main at 6b23c357)
+# Step Q83 brief check (on main at 4850ee36)
 
 The brief was read from the working tree. Probes ran in the scratchpad `q83-check/`: culori 4.0.2, marked 18.0.14 with marked-highlight 2.2.4, nodemailer 10.0.12, write-file-atomic 8.0.0, image-size 2.0.4, mime 4.1.0, smol-toml 1.9.0, perfect-debounce 2.1.0, and the xterm addons, each installed with `npm install` in that folder. Nothing in the repository was changed.
 

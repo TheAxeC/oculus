@@ -1,4 +1,4 @@
-# Step D13b refuter report (on .agents/worktrees/D13b, base 444b9601)
+# Step D13b refuter report (on .agents/worktrees/D13b, base 0d2eb64a)
 
 ## Verification (rerun by the reviewer)
 
@@ -209,7 +209,7 @@ checks: failed with exit 1: npm test
 
 Each of the three files run alone with `npx vitest run <file> --reporter=dot` (load 13.67):
 - `tests/shell/workbench.test.ts`: 53 passed. The step does not change this file.
-- `tests/server/git/git-ops.test.ts`: 37 passed. The step does not change this file (`git diff 444b9601 --stat` of both files prints nothing).
+- `tests/server/git/git-ops.test.ts`: 37 passed. The step does not change this file (`git diff 0d2eb64a --stat` of both files prints nothing).
 - `tests/state/sources/repositories/hunks-git.test.ts`: 5 passed. This is a file the step adds, so the load exemption does not cover it. See Proof 1.
 
 The rest of the list, run by hand in its order:

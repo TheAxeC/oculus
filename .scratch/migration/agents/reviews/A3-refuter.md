@@ -1,4 +1,4 @@
-# Step A3 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/A3, base 995e6dfad)
+# Step A3 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/A3, base 81daf48b1)
 
 Not met: verify item 8 (unmet, as instructed). Findings that need a repair round: Spec 1 (Pause and Resume rewrite an entry from its normalised form, so `task: radar` becomes `task: litwatch`), Proof 2 (the G31 test of the schedules file cannot see a write) and Proof 3 (one unexplained red run of verify item 2 in 46). The DOM cases are declined to judge.
 
@@ -58,7 +58,7 @@ Greps:
 
 Items of the brief's "What to build":
 
-- 0: holds. The two `tasks` folders are gone, and the file table agrees with `git diff 995e6dfad --name-only`. `.agents/worktrees/A3-base` does not exist (it is the orchestrator's to make), so the builder diffed against its own copy `$SP/a3/base`.
+- 0: holds. The two `tasks` folders are gone, and the file table agrees with `git diff 81daf48b1 --name-only`. `.agents/worktrees/A3-base` does not exist (it is the orchestrator's to make), so the builder diffed against its own copy `$SP/a3/base`.
 - 1: violated, Spec 1.
 - 2: holds (entries.out S5 to S14, S36 to S40, S48; engine.out C4 to C6, all rerun).
 - 3: holds (C7 to C10, C20 to C22, C28, C34 rerun; record.test.ts read). See Behaviour 1 for the order of the record move and the commit.
@@ -212,7 +212,7 @@ The tray, the rows and the dialog against the mock-up and Z569 to Z588 match by 
 ## Declined to judge
 
 - What needs a DOM: S16's run line and Run now closing the tray, S30 to S33 in a browser, the delete Confirm's z-order over the tray, the Escape order, and the tray's scrolling. I ran no scratch oculus with headless Chrome. They belong to the look.
-- The builder's base copy `$SP/a3/base` against main at 995e6dfad: not compared byte for byte, since the git commands that would show it are outside what this review may run. The changed-file lists agree.
+- The builder's base copy `$SP/a3/base` against main at 81daf48b1: not compared byte for byte, since the git commands that would show it are outside what this review may run. The changed-file lists agree.
 - The cause of the one red run (Proof 3): not found.
 
 Reviewer usage: agent id not visible to the reviewer, served model claude-opus-5-5, tokens, tool uses and minutes not measured by the reviewer.
@@ -423,7 +423,7 @@ Closures, checked:
 ### Declined to judge
 
 - What needs a DOM: the dialog's behaviour after a no-change save, the 409 sentence shown in the open dialog, the tray's Escape order and z-order. They belong to the look; I started no app.
-- Whether the base copy the builder diffed against equals 995e6dfad byte for byte. The git commands that would show it are outside what this review may run.
+- Whether the base copy the builder diffed against equals 81daf48b1 byte for byte. The git commands that would show it are outside what this review may run.
 - The `npx tsc --noEmit -p .` claim (only two `CardAction` lines): not rerun, since it is not in the verify list and no decision rests on it.
 
 Reviewer usage: a1226d68c43be5990, claude-opus-5-5, 328,871 tokens, 61 tool uses, 11.7 min.
@@ -489,7 +489,7 @@ Other checks:
   History grep over added comment lines and new test titles: every "before"/"still" hit describes run-time order
   wc -l: terminals.svelte.ts 830, context.ts 813, watch.ts 734, file.ts 682, schedule.svelte.ts 562; components 252/221/262
   ls | wc -l: state/system/machine 10, server/machine/schedules 6, shell/rail 8, tests/server/machine/schedules 5, tests/server/machine 7, api/(machine) 4, data/helpers/run 4
-  restored files (settings.ts, catalog/*, config-fit.ts, live-settings.ts, pollers.ts, state/system/config, server.yml, terminal-actions.test.ts, terminal-fixture.ts, wrong-settings.ts): git diff 995e6dfad --stat prints nothing for them
+  restored files (settings.ts, catalog/*, config-fit.ts, live-settings.ts, pollers.ts, state/system/config, server.yml, terminal-actions.test.ts, terminal-fixture.ts, wrong-settings.ts): git diff 81daf48b1 --stat prints nothing for them
 ```
 
 ### Verdicts
@@ -555,7 +555,7 @@ Cases, for the whole diff: as the first refuter report and the run over round 1 
 2. Builder decisions on shapes the brief did not name, judged for automode:
    - `record-unwritten`: user-visible (a word on the wire of `/api/schedules` and a dialog sentence). Keep the word. Its sentence is wrong on the late path: see Behaviour 2.
    - `ScheduleRow.unchosen` (`model-processes.ts`): a field of the `schedule` channel's payload, which brief item 6 named. It is needed: the "two" probe shows `problem` holds only the first problem while `unchosen` holds both. Recommend keep.
-   - The empty task choice ("Choose a task.") and the Run unattended box's third state ("not chosen"): user-visible words (`refused_task`, `refused_unattended`, `unattended_unset`). They use props that `Select.svelte` (`empty`) and `Checkbox.svelte` (`unset`, `onunset`) already have on main (git diff 995e6dfad shows neither file changed). Recommend keep.
+   - The empty task choice ("Choose a task.") and the Run unattended box's third state ("not chosen"): user-visible words (`refused_task`, `refused_unattended`, `unattended_unset`). They use props that `Select.svelte` (`empty`) and `Checkbox.svelte` (`unset`, `onunset`) already have on main (git diff 81daf48b1 shows neither file changed). Recommend keep.
    - `moveRecord` replacing `renameRecord` and `dropRecord`: internal, and required by Z614's commit-inside-the-lock. No other caller (grep finds none). It is not a user-visible shape and needs no ruling.
 
 **Proof**
@@ -627,7 +627,7 @@ Points asked about, checked and holding:
 - What needs a DOM: the empty task option and the three-state box as drawn, the 409 and 500 sentences in the open dialog, the Escape order and z-order. These belong to the look; I started no app.
 - A record write that fails after the commit through ENOSPC or a failed read-back. I reached the path through a read-only record file, which `refuseReadonly` refuses. The disk-full case was judged by reading only.
 - Whether a merge-keyed or anchored entry that cannot be edited from the tray is acceptable. My probes show only safe refusals with the `entry-unwritable` sentence. Whether that limit is wanted is the user's call.
-- The round's own delta, isolated. No snapshot of the tree as round 1 left it exists (the scratchpad's a3r1 holds probes only), so I read the whole diff since 995e6dfad with the round's items as the focus.
+- The round's own delta, isolated. No snapshot of the tree as round 1 left it exists (the scratchpad's a3r1 holds probes only), so I read the whole diff since 81daf48b1 with the round's items as the focus.
 
 My probe and logs are in /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/a3-rv2-refute/ (mine.probe.ts, mine.out, records.out, unchosen.out, the three verification logs). I first copied the builder's probes into an existing folder `scratchpad/rv2` that another review owns, then moved my five files out of it to `a3-rv2-refute`. I could not tell whether that folder held files of those names before. Its other files are older (01:37 to 01:48) than mine and were not touched.
 

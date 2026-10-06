@@ -18,7 +18,7 @@ Position: oculus/migration (the migration plan). Plan step 238 of 293 landed: E2
 
 ## What landed
 
-Base d7af9cac, `tools/oculus/DESIGN.md` only, lines 234 to 326, 41 insertions and 27 deletions before the fixes at landing: the section "Apps added while oculus runs" rewritten to Axel's rulings of 2026-09-30 (`agents/reviews/E1-rulings.md`): apps in the machine's folder and in each root's `.oculus/apps/`, what a root app reaches, the channels, the store, outside addresses, downloads, the `open` method and approval while an app is edited. It is still marked as an unbuilt proposal.
+Base d42e4648, `tools/oculus/DESIGN.md` only, lines 234 to 326, 41 insertions and 27 deletions before the fixes at landing: the section "Apps added while oculus runs" rewritten to Axel's rulings of 2026-09-30 (`agents/reviews/E1-rulings.md`): apps in the machine's folder and in each root's `.oculus/apps/`, what a root app reaches, the channels, the store, outside addresses, downloads, the `open` method and approval while an app is edited. It is still marked as an unbuilt proposal.
 
 ## Fixes at landing
 

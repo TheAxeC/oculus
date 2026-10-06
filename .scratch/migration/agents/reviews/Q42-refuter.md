@@ -1,4 +1,4 @@
-# Step Q42 refuter report (on .agents/worktrees/q42, base 8986cc4a)
+# Step Q42 refuter report (on .agents/worktrees/q42, base d6d99e27)
 
 ## Verification (rerun by the reviewer)
 All commands ran from `tools/oculus` in the worktree.
@@ -106,7 +106,7 @@ find src tests bin -type f | xargs wc -l | sort -n | tail -3: 970 tests/state/la
 npm run build, then npx playwright test tests/browser/unsaved-forms.spec.ts tests/browser/pages.spec.ts tests/browser/tabs.spec.ts tests/browser/layout.spec.ts: 23 passed (33.3s); all four files exist, the lock was free
 git status --short after every run: the same 10 M and 1 ?? paths as before
 
-Round delta: the base and round-1 trees were rebuilt in scratchpad/q42-review2 (patch -R of git diff 8986cc4a, then q42-round1/tracked.patch plus untracked.tar), then diff -ru against the worktree.
+Round delta: the base and round-1 trees were rebuilt in scratchpad/q42-review2 (patch -R of git diff d6d99e27, then q42-round1/tracked.patch plus untracked.tar), then diff -ru against the worktree.
 
 Reverts, in an APFS clone at scratchpad/q42-review2/oculus. Each ran source, layout-close, instance, layout-saved and layout.test.ts, and each file was restored and cmp-checked:
 V1 drop `ui.instanceState(id) === undefined ||`: 1 failed (never-read closed tab case)

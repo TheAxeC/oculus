@@ -13,7 +13,7 @@ Booked list: 1, carried for O32: O32's launch recipes in the Ordo plan skills, w
 
 ## What landed
 
-U1, cherry-picked from `.agents/worktrees/U1` at base `a7769781` onto main by `tools/oculus/.scratch/migration/land.sh U1 a7769781 --no-browser` (+1,552 -817 over 86 files before the landing fixes; the browser suite run by hand afterwards).
+U1, cherry-picked from `.agents/worktrees/U1` at base `075a336c` onto main by `tools/oculus/.scratch/migration/land.sh U1 075a336c --no-browser` (+1,552 -817 over 86 files before the landing fixes; the browser suite run by hand afterwards).
 
 - Every glyph is drawn as its line icon; in the ASCII mode of the terminal themes, as its stand-in. `config/catalogs/glyphs.yml` is one ASCII map of name to stand-in, each one to three characters; the unicode column is gone, and a check fails on a stand-in over three characters.
 - The 28 text tokens are gone: the theme menu, the Focus columns, the Lit Watch intro, the HPC pill, the Update tray note and the refused-save line draw icons beside their words.

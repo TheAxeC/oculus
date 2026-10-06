@@ -14,7 +14,7 @@ Booked list: 1, carried for O32: O32's launch recipes in the Ordo plan skills, w
 
 ## What landed
 
-L3, cherry-picked from `.agents/worktrees/L3` at base `138afb83` onto main by `tools/oculus/.scratch/migration/land.sh L3 138afb83 --no-browser` (+7,985 -5,659 over 174 files before the landing fixes; the browser suite was run by hand afterwards).
+L3, cherry-picked from `.agents/worktrees/L3` at base `6d87499f` onto main by `tools/oculus/.scratch/migration/land.sh L3 6d87499f --no-browser` (+7,985 -5,659 over 174 files before the landing fixes; the browser suite was run by hand afterwards).
 
 - The rail is the thirteen buttons of `rail:` in `config/layout.yml`, each `{ label, glyph, page }` naming an arrangement, each showing its page, made the first time from its arrangement and kept as left. Each button draws the badges of its page's views in tab order, on a row under it. The page strip is gone. The digits 1 to 9 show the rail pages; the move keys are gone.
 - The Views and Settings page holds the Views catalogue (every view and hub document under its `nav_groups` group, with the chords), the Settings view (theme, text size, CRT, wallpaper, glyphs, and the rail list saved to `layout.yml` through the write chain, with undo and a History kind) and the Pages view (show, rename, close, New page). A catalogue press opens on the page the reader came from; one moved onto another page opens there.

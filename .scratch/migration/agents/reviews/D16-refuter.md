@@ -1,4 +1,4 @@
-# Step D16 refuter report (on .agents/worktrees/d16, base 8601f148)
+# Step D16 refuter report (on .agents/worktrees/d16, base 76c3b390)
 
 ## Verification (rerun by the reviewer)
 All from `tools/oculus` in the worktree, PATH with node v24.21.0.

@@ -12,4 +12,4 @@ The review over round 1 is the section "Repair round 1, refuted" of `agents/revi
 
 3. **The report's first line (Standards 1).** The first line of `Q107-report.md` names anything not done after this round, or says "Everything in the brief is done" only when the probe's default run and `noserverhidden` are both green.
 
-The round's base: `git diff dcef00c9 | shasum` in the worktree prints e3cbf0efca9a246778e4924855ef432c8499ac17 (38 paths in `git status --short`).
+The round's base: `git diff b7a5618a | shasum` in the worktree prints e3cbf0efca9a246778e4924855ef432c8499ac17 (38 paths in `git status --short`).

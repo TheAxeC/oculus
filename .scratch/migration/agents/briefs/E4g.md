@@ -14,10 +14,10 @@ A design ruling decides what is built. It never exempts the code: every line is 
 
 Z633, Axel's words: "We also need a docs/ md that decribes exactly how to use and build apps. Kind of like how a README would work. Something, I can read, and use as a guide, to build apps. Without needing outside help."
 
-## What is on the tree (read on main at a564e4e29)
+## What is on the tree (read on main at 10ac00c69)
 
 - `tools/oculus/docs/` holds only `diagrams/` (`ls tools/oculus/docs`), so `apps.md` is a new file and the folder's first Markdown page.
-- E4 landed the apps at a564e4e29 (`git log --oneline -1`).
+- E4 landed the apps at 10ac00c69 (`git log --oneline -1`).
 - DESIGN.md's section "Apps added while oculus runs" starts at line 252 and runs 91 lines, to 342, with `## Relationship to the cockpit` at 343 (`grep -n '^## Apps added' DESIGN.md`). It is the design record and the source of truth for behaviour.
 - HELP.md's section "## Apps" is lines 210 to 221, with "## Source Control" at 222 (`grep -n "^## Apps$\|^## Source Control" HELP.md`).
 - The manifest keys are `name`, `title`, `description`, `glyph`, `bridge`, `entry`, `reads`, `writes` and `connects` (`KEYS` in `src/lib/server/machine/apps/manifest.ts`). `bridge` takes only `1` (`BRIDGE`). The title is at most 40 characters (`TITLE_MAX`) and the description at most 200 (`DESCRIPTION_MAX`). The entry defaults to `index.html` (`DEFAULT_ENTRY`). The glyph defaults to `app_view`, and `app` is reserved.

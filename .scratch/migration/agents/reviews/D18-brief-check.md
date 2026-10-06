@@ -1,8 +1,8 @@
 # D18 brief check
 
-Agent af145655a83599a5a, claude-sonnet-5-5, ordo-high; 264,980 tokens, 82 tool uses, 12.3 min, from its completion notice. Run on main at 15824705 while D24 was staged.
+Agent af145655a83599a5a, claude-sonnet-5-5, ordo-high; 264,980 tokens, 82 tool uses, 12.3 min, from its completion notice. Run on main at f8e6555d while D24 was staged.
 
-BRIEF CHECK OF D18 (the Processes view). Read-only. Main HEAD is 15824705. Right now the main checkout also has a staged landing in its index (`git diff --cached --stat`: about 60 files, the personal/side-projects package, i.e. D24). It touches files D18 shares: context.ts (872 lines at HEAD, 878 in the working tree), registry.ts, rail-badges.svelte.ts, data/model/index.ts, options.yml, layout.yml, DESIGN.md, HELP.md, config-folder.test.ts, allow-duplication.txt, app.yml. Every line number below is from `git show HEAD:...` / `git grep ... HEAD` unless said otherwise. The brief's D24 shared-file list is shorter than that diff, and the worktree for D18 should be cut only after that landing commits.
+BRIEF CHECK OF D18 (the Processes view). Read-only. Main HEAD is f8e6555d. Right now the main checkout also has a staged landing in its index (`git diff --cached --stat`: about 60 files, the personal/side-projects package, i.e. D24). It touches files D18 shares: context.ts (872 lines at HEAD, 878 in the working tree), registry.ts, rail-badges.svelte.ts, data/model/index.ts, options.yml, layout.yml, DESIGN.md, HELP.md, config-folder.test.ts, allow-duplication.txt, app.yml. Every line number below is from `git show HEAD:...` / `git grep ... HEAD` unless said otherwise. The brief's D24 shared-file list is shorter than that diff, and the worktree for D18 should be cut only after that landing commits.
 
 Summary of what must be fixed before dispatch (details under each number):
 - A. The wire has no unsubscribe, so "reads nothing while no page subscribes" cannot hold as written (check 5, finding 5.1; check 6, finding 6.1). This is a wire-format decision for Axel.
@@ -165,7 +165,7 @@ About 70 tool calls and about 250k tokens read into context; minutes not measure
 
 # Closed
 
-Each point closed in `agents/briefs/D18.md`, the tree re-read on main at 8a343fa6 after D24 landed:
+Each point closed in `agents/briefs/D18.md`, the tree re-read on main at ea9c564e after D24 landed:
 
 - A (5.1, 6.1, 5.2): Z244 (b), the reads run every ten seconds while the hub has a `processes` subscriber, every page subscribing with its other channels in `+page.svelte`; the wire is unchanged; item 3 and case 11 rewritten.
 - B (3.4, 6.9, 6.17, 6.18): Z245, every pane of every terminal session through `tmux list-panes -a`; the usage and foreign sessions are not own and not counted; item 2, Decision 1, cases 1 and 2b.

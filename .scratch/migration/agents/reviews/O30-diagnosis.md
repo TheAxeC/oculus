@@ -4,7 +4,7 @@ Every quoted command output carries `<REDACTED>` in place of the value of a secr
 
 Diagnosis agent: ae831f63ce80bd34e, claude-opus-5-5, 281,869 tokens, 108 tool uses, 53.1 min
 
-**What it found.** The line in run r27 was never sent by the page, and the Restart is not the reason. r27 pasted `echo after-restart\n`, and that text ends in a line break. The terminal grid's paste hold (`holdPastes`, `terminal-list.ts:220-233`, wired at `TerminalGrid.svelte:330`) stops any paste that holds a line break and asks "Paste 1 lines into the terminal?". Nobody answered the question, so nothing reached the pane and no `pty: input on` line was logged. New Terminal still worked because it is an HTTP POST. The hold was added by a99e184d8, which is already in base b5299f4e5.
+**What it found.** The line in run r27 was never sent by the page, and the Restart is not the reason. r27 pasted `echo after-restart\n`, and that text ends in a line break. The terminal grid's paste hold (`holdPastes`, `terminal-list.ts:220-233`, wired at `TerminalGrid.svelte:330`) stops any paste that holds a line break and asks "Paste 1 lines into the terminal?". Nobody answered the question, so nothing reached the pane and no `pty: input on` line was logged. New Terminal still worked because it is an HTTP POST. The hold was added by c347facbf, which is already in base 9a5f38a5b.
 
 **Typing after a Restart.** A line typed into the open terminal after the restart reaches the pane in 3 of 3 runs. This was checked in headless Chrome; the desktop app was not started.
 
@@ -63,8 +63,8 @@ $ grep -n -i "pty\|token\|input on" o30-look/app.log
 ## Where the probes run
 
 The probes ran in the scratch copy `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.yilYbS/tree`. It was built as follows:
-- `git worktree add --detach "$tmp/tree" b5299f4e5`, run from the main checkout.
-- The step's diff `git diff --binary b5299f4e5`, taken inside `.agents/worktrees/O30` and applied with `git apply --allow-empty`, which printed "applied".
+- `git worktree add --detach "$tmp/tree" 9a5f38a5b`, run from the main checkout.
+- The step's diff `git diff --binary 9a5f38a5b`, taken inside `.agents/worktrees/O30` and applied with `git apply --allow-empty`, which printed "applied".
 - The 52 files that `git status --porcelain --untracked-files=all` lists with `??` in the worktree, each copied to the same path.
 - `tools/oculus/node_modules` cloned from the worktree with `cp -cR`.
 - The server build made in the copy with `npx vite build` (exit 0).
@@ -177,14 +177,14 @@ $ git status --short
 ?? tools/oculus/src/routes/api/health/
 ?? tools/oculus/src/routes/find/
 ?? tools/oculus/tests/server/desktop/
-$ git diff --binary b5299f4e5 | shasum
+$ git diff --binary 9a5f38a5b | shasum
 66606744f9692c588f9e9542a04ca9f0dfcf93fa  -
 ```
 
 After the run, from the same worktree:
 
 ```
-$ git diff --binary b5299f4e5 | shasum
+$ git diff --binary 9a5f38a5b | shasum
 66606744f9692c588f9e9542a04ca9f0dfcf93fa  -
 $ git status --short | wc -l
       94
@@ -412,7 +412,7 @@ Hypothesis 1 stands, shown by the two probes: the red command is green with the 
 
 The round 1 control in r12 pasted `hello world` with no line break, so it went through.
 
-The hold came with a99e184d8 ("Draw the terminal as VS Code's terminal panel"). `git merge-base --is-ancestor a99e184d8 b5299f4e5` prints "in base", and `terminal-list.ts` is not in the step's diff. So the hold was there before O30, and P2-1 is not a defect of the Restart.
+The hold came with c347facbf ("Draw the terminal as VS Code's terminal panel"). `git merge-base --is-ancestor c347facbf 9a5f38a5b` prints "in base", and `terminal-list.ts` is not in the step's diff. So the hold was there before O30, and P2-1 is not a defect of the Restart.
 
 The behaviour P2-1 doubted does hold in the browser: a line typed into an open terminal after the server restarts reaches the pane, 3 runs of 3 (under "Fix and test"). This was not run in the desktop app. The page code that recovers is the same in both, and r27's own output shows the app's windows were not reloaded (`timeOrigin at the end: main 1791245532098 (before 1791245532098)`).
 
@@ -482,7 +482,7 @@ The red command itself stays red, since nothing in the product changed: runs 1 t
    - In the three typed runs, the subscription after the reconnect carried a token the server admitted.
    - These runs do not exercise B2-1's window (two renewals overlapping) or B2-2's window (keys typed between the socket opening and the subscription). In the three typed runs the gap from `socket created` to the subscription frame was 0.1, 0.3 and 0.1 s. In one earlier run of this session, under load with the new server taking about 32 s to listen, the frames read `63.7 Created` and `66.4 FrameSent {"type":"subscribe"...`, a gap of 2.7 s, which is B2-2's window.
    - B2-1 and B2-2 stand as the reviewer wrote them. This diagnosis neither confirms nor falsifies them.
-2. **A one-line paste closed by a line break is asked about, and the docs say otherwise.** This was there before the step (a99e184d8) and is outside its brief.
+2. **A one-line paste closed by a line break is asked about, and the docs say otherwise.** This was there before the step (c347facbf) and is outside its brief.
    - HELP.md says "A paste of several lines asks before it is sent, from the menu as from the keyboard" (main `HELP.md:138`, worktree `:147`).
    - The question reads "Paste 1 lines into the terminal?".
    - This is a user-visible behaviour, so the choice is Axel's. The options:
@@ -499,7 +499,7 @@ The red command itself stays red, since nothing in the product changed: runs 1 t
    The terminal's mode is likely not carried through the re-attach, but this is not verified. Whether a fresh grid after a page switch loses the mode too, and whether the answered multi-line paste is bracketed without a restart, were not measured. In both runs the pasted line stayed in zsh's line editor (pane: `hub % echo line-$((40+3))`).
 4. **Files disappeared from the scratch copy's `node_modules` during this diagnosis.** No command of this diagnosis touched them.
    - `find .../diagnose.yilYbS/tree/tools/oculus/node_modules -type f | wc -l` printed 7827, against 32770 in the step's worktree. The emptied directories carry the time of about 03:41.
-   - `git worktree list` showed another diagnosis copy live at the time (`diagnose.M9CEDn`, at 995e6dfad, A3's commit).
+   - `git worktree list` showed another diagnosis copy live at the time (`diagnose.M9CEDn`, at 81daf48b1, A3's commit).
    - The copy's `node_modules` was cloned again, and 32770 files were counted before the runs quoted here. `diff -rq` of `src`, `config`, `tests` and `utils` against the worktree printed nothing.
    - The cause is not verified. A broad delete under `$TMPDIR` by another session could damage other scratch copies.
 
@@ -535,7 +535,7 @@ Every quoted command output carries `<REDACTED>` in place of the value of a secr
 Diagnosis agent: adfea7fe3bb4905aa, claude-opus-5-5, 219,885 tokens, 66 tool uses, 33.9 min
 
 **What it found.**
-- The defect is on main's head (baa27e9bb) with no O30 change: red 3 of 3 runs. It was there before O30, and it is red on O30's tree too (3 of 3).
+- The defect is on main's head (67623000e) with no O30 change: red 3 of 3 runs. It was there before O30, and it is red on O30's tree too (3 of 3).
 - The restart is not needed for it. A page switch away from the terminal and back, with no restart, is red too.
 - Where the mode is lost: every time a grid attaches (a reconnect after a restart, or a new grid after a page switch), the page resets the grid before it writes the scrollback (`TerminalGrid.svelte:358`, `term.reset()`). The scrollback the server sends (`channel.ts:578-623` `#attach`: `capture-pane -p -e` plus the cursor move of `screenAt`, `sessions.ts:700`, `:729`, `:746`) holds text and colours but no terminal mode. zsh writes `ESC[?2004h` only when it draws its prompt, so nothing turns bracketed paste back on until the next prompt, while tmux still holds the pane's flag at 1.
 - The candidate fix: the server reads the pane's mode flags in the same `display-message` it already runs for the cursor, and sends the matching sequences after the scrollback. With it, both cases are green on main and on O30's tree. The pty tests, the repository checks, svelte-check, eslint and prettier pass on both copies.
@@ -558,9 +558,9 @@ The two questions it was given:
 ## Where the probes run
 
 Two scratch copies, each a detached worktree made from the main checkout under `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.2CAKjq`:
-- `main`: `git worktree add --detach "$tmp/main" HEAD`, at baa27e9bb, with nothing applied.
-- `o30`: `git worktree add --detach "$tmp/o30" b5299f4e5`. Applied to it:
-  - The step's diff `git diff --binary b5299f4e5`, taken inside `.agents/worktrees/O30` and applied with `git apply --allow-empty`, which printed "applied".
+- `main`: `git worktree add --detach "$tmp/main" HEAD`, at 67623000e, with nothing applied.
+- `o30`: `git worktree add --detach "$tmp/o30" 9a5f38a5b`. Applied to it:
+  - The step's diff `git diff --binary 9a5f38a5b`, taken inside `.agents/worktrees/O30` and applied with `git apply --allow-empty`, which printed "applied".
   - The 52 `??` files of `git status --porcelain --untracked-files=all`, each copied to the same path.
   - `diff -rq` of `src`, `config`, `tests` and `utils` between the worktree and the copy printed nothing.
 - In each copy:
@@ -580,14 +580,14 @@ Taken before the copy was made, from inside O30's worktree:
 ```
 $ git status --short | wc -l
       94
-$ git diff --binary b5299f4e5 | shasum
+$ git diff --binary 9a5f38a5b | shasum
 66606744f9692c588f9e9542a04ca9f0dfcf93fa  -
 ```
 
 The 94 lines are the same list the O30 record quotes under its "Where the probes run" (`M` rows from `.scratch/migration/agents/briefs/O30.md` to `utils/diagrams/graphs.mjs`, `D tools/oculus/src/lib/state/workbench/layout/open/floats.ts`, and the `??` rows from `O30-cases.md` to `tests/server/desktop/`). After the run, from the same worktree:
 
 ```
-$ git diff --binary b5299f4e5 | shasum
+$ git diff --binary 9a5f38a5b | shasum
 66606744f9692c588f9e9542a04ca9f0dfcf93fa  -
 $ git status --short | diff - <the list saved before>; echo "status same"
 status same
@@ -872,7 +872,7 @@ Hypothesis 1 stands, shown by probe 2: the red command is green with the change 
 - zsh writes `ESC[?2004h` only when it draws a prompt, and a tmux control client streams only what the program writes. So after an attach that does not make the shell redraw, nothing sets the mode again until the next prompt, while tmux still holds `bracket_paste_flag` 1. Two such attaches were measured: the reconnect after a server restart, and the new grid after a page switch.
 - The tmux re-attach is not where it is lost: the grid reads mode true right up to its reset.
 
-The defect is on main before O30: red on main at baa27e9bb with nothing applied (main runs 1 to 3), and red on O30's tree the same way. O30's diff touches none of `TerminalGrid.svelte`, `channel.ts` or `sessions.ts`.
+The defect is on main before O30: red on main at 67623000e with nothing applied (main runs 1 to 3), and red on O30's tree the same way. O30's diff touches none of `TerminalGrid.svelte`, `channel.ts` or `sessions.ts`.
 
 The same reset loses the other modes a program sets, by reading of xterm's `reset()`. Those are application cursor keys, the keypad, mouse reporting and its encoding, insert, wrap and a hidden cursor. That loss was not run in a browser. On a private tmux server, `tmux display -p` was measured to answer each flag the fix reads, after the sequence that sets it:
 - `ESC[?2004h ESC[?1h ESC=` gave `bp=1 kc=1 kp=1`.
@@ -1113,7 +1113,7 @@ Diagnosis agent: adb7a3d3f5225357b, claude-opus-5-5, 270,792 tokens, 87 tool use
 From `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/plan.md`, under "- O30 native window (I)", word for word:
 
 ```
-  - Step 0, landing 2026-10-06 backed out before main was touched: in the landing worktree `.agents/worktrees/gate-O30` (main 9ca2cf195 with O30's range b5299f4e5..815ac40cd and the fixes at landing for S2-1, P2-3, St2-1, St2-2, B2-1 to B2-4, Z612 and Z619, saved whole as `agents/reviews/O30-gate.patch`), `npm run test:landing` failed one case: `tests/server/desktop/start.test.ts` 'brings the running app forward on a second start and starts no server' timed out at 600000 ms, with the recorder's line `recorded, nothing shown: [screen] dialog`. `npm run test:checks` failed in the same run on a 60 s timeout of `diagrams.test.ts` and passed when run alone (226 passed, 3 skipped). Cause not known; diagnosed with `/diagnose oculus/migration O30 red line`.
+  - Step 0, landing 2026-10-06 backed out before main was touched: in the landing worktree `.agents/worktrees/gate-O30` (main daf935a66 with O30's range 9a5f38a5b..815ac40cd and the fixes at landing for S2-1, P2-3, St2-1, St2-2, B2-1 to B2-4, Z612 and Z619, saved whole as `agents/reviews/O30-gate.patch`), `npm run test:landing` failed one case: `tests/server/desktop/start.test.ts` 'brings the running app forward on a second start and starts no server' timed out at 600000 ms, with the recorder's line `recorded, nothing shown: [screen] dialog`. `npm run test:checks` failed in the same run on a 60 s timeout of `diagrams.test.ts` and passed when run alone (226 passed, 3 skipped). Cause not known; diagnosed with `/diagnose oculus/migration O30 red line`.
 ```
 
 These are the lines of the landing log that carry the symptom (`.../scratchpad/o30-gate.log`). The test's own `afterEach` prints one `recorded` line per case that started the app; the first one belongs to case 1:
@@ -1136,12 +1136,12 @@ The state file's dispatch entry for O30 reads `landing: backed-out (the landing 
 ## Where the probes run
 
 The probes ran in a scratch copy, `$TMPDIR/diagnose.b8PoTY/tree`:
-- It is a detached worktree of the main checkout at HEAD `c8432ed9f` ("Start the diagnosis of O30's landing red line"). It differs from 9ca2cf195 only under `tools/oculus/.scratch`.
+- It is a detached worktree of the main checkout at HEAD `d4bd8a503` ("Start the diagnosis of O30's landing red line"). It differs from daf935a66 only under `tools/oculus/.scratch`.
 - `agents/reviews/O30-gate.patch` was applied to it with `git apply --3way --allow-empty`, which changed 123 paths.
 
-The gate patch was applied in place of Steps 3's red-line diff because it is the landing worktree's whole state relative to main. It already holds O30's range. Comparing each of the 118 files of `git diff --name-only b5299f4e5 O30` with the copy gave:
+The gate patch was applied in place of Steps 3's red-line diff because it is the landing worktree's whole state relative to main. It already holds O30's range. Comparing each of the 118 files of `git diff --name-only 9a5f38a5b O30` with the copy gave:
 - 94 files identical to the O30 branch;
-- 24 files differing, which are the landing fixes and main's own changes since b5299f4e5 (DESIGN.md, HELP.md, the diagrams, package.json and the lockfile, `src/desktop/windows/bridge.ts` and `windows.ts`, and eleven client files).
+- 24 files differing, which are the landing fixes and main's own changes since 9a5f38a5b (DESIGN.md, HELP.md, the diagrams, package.json and the lockfile, `src/desktop/windows/bridge.ts` and `windows.ts`, and eleven client files).
 
 Applying the step diff first and then the gate patch would have applied the step twice.
 
@@ -1288,7 +1288,7 @@ Each change was undone after its runs: `git diff -- vite.config.ts src/lib/serve
 Hypothesis 1, together with the trigger in the landing. Two `vite build`s ran in one checkout at the same time, and the build that started second emptied `.svelte-kit/output` while the app's build was reading it.
 
 - Since O30, `npm run test:slow` builds the server into the checkout: `start.test.ts`'s `beforeAll` builds when `build/handler.js` is missing, and every app start from the checkout runs `buildServer` (`src/desktop/app.ts:284-294`).
-- `tests/tiers/landing.mjs` runs `test:slow` in a lane of its own, beside the lane `npm run check; npm run build` (main 9ca2cf195, `landing.mjs:22-33`).
+- `tests/tiers/landing.mjs` runs `test:slow` in a lane of its own, beside the lane `npm run check; npm run build` (main daf935a66, `landing.mjs:22-33`).
 - The lane's build runs `rimraf('.svelte-kit/output')` in its `buildStart`, while the app's build is in its adapter step reading `.svelte-kit/output/server/manifest.js`. The app's build fails with ENOENT.
 - The app shows `desktop.dialog.build_failed`. The harness's `dialog.showMessageBox` records `[screen] dialog` and never resolves. The app stays alive.
 - `printed(first, 'oculus on ...')` settles only on the text or on the process's `close`, so case 1 waits until vitest's 600000 ms limit. Its timeout error does not print the app's output, so the log holds no dialog message.
@@ -1297,7 +1297,7 @@ When the lane's build lands earlier in the app's start (offset 0 s), the app's b
 
 The probe that shows it: with only the second build's `kit.outDir` its own, the red command is green 3 of 3. Without that change it is red 5 of 5 at the same offset, and 3 of 3 with only `build/` separate. The same build at the same moment in a clone gives green 3 of 3, so the CPU load alone does not cause it.
 
-**Was this on main before O30?** No. At 9ca2cf195, b5299f4e5 and c8432ed9f, main has no `tools/oculus/src/desktop` and no `tests/server/desktop`: `git ls-tree -r --name-only <c> -- tools/oculus/src/desktop | wc -l` printed 0 for each, and so did the count of `"app"` in `package.json`. The O30 branch has 25 files under `src/desktop` and the `app` script. On main, nothing under `tests` runs a build: `git grep` over `tests` for `vite.js`, `vite build` and `handler.js` finds only a fixture string in `diagrams.test.ts:175`. Main's runner already ran `test:slow` in its own lane, but before O30 nothing in `test:slow` wrote into `.svelte-kit` or `build/`. O30's `start.test.ts` and the app's build from the checkout make `test:slow` such a writer. The runner's own head comment already states the rule that writers of `.svelte-kit` share one lane.
+**Was this on main before O30?** No. At daf935a66, 9a5f38a5b and d4bd8a503, main has no `tools/oculus/src/desktop` and no `tests/server/desktop`: `git ls-tree -r --name-only <c> -- tools/oculus/src/desktop | wc -l` printed 0 for each, and so did the count of `"app"` in `package.json`. The O30 branch has 25 files under `src/desktop` and the `app` script. On main, nothing under `tests` runs a build: `git grep` over `tests` for `vite.js`, `vite build` and `handler.js` finds only a fixture string in `diagrams.test.ts:175`. Main's runner already ran `test:slow` in its own lane, but before O30 nothing in `test:slow` wrote into `.svelte-kit` or `build/`. O30's `start.test.ts` and the app's build from the checkout make `test:slow` such a writer. The runner's own head comment already states the rule that writers of `.svelte-kit` share one lane.
 
 ## Fix and test
 
@@ -1454,7 +1454,7 @@ No test reaches it: the defect as it occurs is the arrangement of lanes in `test
      - beside the landing's lanes without the slow tests: 25715 ms;
      - with five back-to-back builds in the clone added, standing in for the slow suite's builds: 43782 ms;
      - in the gate: 62442 ms.
-   - It is a defect, on main and not O30's. The case carries its own `60_000` limit (`diagrams.test.ts:85, 111, 826`), while `npm run test:checks` runs with `--testTimeout 0`. The documented rule for the tree checks is "run by npm run test:checks with no time limit, since a finding of theirs is a defect in the tree" (`vite.config.ts:34-36`, README.md:17). So a tree check fails on machine load, not on a finding. The limits came in with R18 (`git log -S'60_000'`: db400be37, 2026-09-23).
+   - It is a defect, on main and not O30's. The case carries its own `60_000` limit (`diagrams.test.ts:85, 111, 826`), while `npm run test:checks` runs with `--testTimeout 0`. The documented rule for the tree checks is "run by npm run test:checks with no time limit, since a finding of theirs is a defect in the tree" (`vite.config.ts:34-36`, README.md:17). So a tree check fails on machine load, not on a finding. The limits came in with R18 (`git log -S'60_000'`: 8d6c3a976, 2026-09-23).
    - Removing a limit is loosening a threshold, which `agents/spec.md:16,59` forbids as an edit made to pass a check, so this is raised and not edited. Options:
      - (a) drop the three per-case limits so the tree checks follow their documented rule, recommended;
      - (b) keep them and rerun the tree checks alone after a load red, the lazy option.

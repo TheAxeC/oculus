@@ -1,4 +1,4 @@
-# Step L7 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/L7, base 1712f075)
+# Step L7 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/L7, base 6b07631b)
 
 I changed no file in the tree. The only files I wrote are under the session scratchpad: `vitest-full.txt`, `verify-runner.txt`, `state-no-test.md`, `cov-out.txt`, `L7.diff`, `diag1/`, `diag2/` and `l7-tests.txt`.
 
@@ -101,7 +101,7 @@ The runner exits 1 on the last entry because grep exits 1 when it finds nothing:
 
 - **A test asserts a known defect as the expected result.** `tests/views/system/workbench/catalogue.test.ts:63-71`, quoted under Spec, asserts that the last two System entries carry no key. This is the defect of item 3, fixed as the expected result, so the case fails on the day the defect is fixed.
 - **The landing case count is wrong.** "`landing.test.ts` (13 cases)" (row 4) does not reproduce: `grep -nE "^\s*(it|test)\(" tests/state/workbench/layout/open/landing.test.ts` lists 14 `it(` cases, at lines 45, 53, 58, 63, 76, 81, 118, 129, 145, 154, 161, 169, 179 and 189.
-- **The directive count is wrong.** "227 directive lines were deleted from 20 test files" (row 11) does not reproduce: `git diff 1712f075 -- tools/oculus/tests | grep -E '^-[[:space:]]*// revert:' | wc -l` prints `159`, over 15 files (catalogue 29, arrangement 21, shell rail 19, navigation rail 17, config-folder 13, and 10 more files).
+- **The directive count is wrong.** "227 directive lines were deleted from 20 test files" (row 11) does not reproduce: `git diff 6b07631b -- tools/oculus/tests | grep -E '^-[[:space:]]*// revert:' | wc -l` prints `159`, over 15 files (catalogue 29, arrangement 21, shell rail 19, navigation rail 17, config-folder 13, and 10 more files).
 - **The red full suite does not reproduce.** The report's row V1 ("Test Files 2 failed | 343 passed") did not recur in my one full run: `Test Files 345 passed (345)`, `Tests 5422 passed (5422)`, with load 6.08 before and 11.48 after. The report quotes no failure message, so I have nothing to compare it with. What I can state is that the failure did not reproduce under a similar load.
 - **The core of the leads-to-Applications flow has no case.**
   - Row 7 cites `tests/views/feeds/leads.test.ts` as proof. Its new cases test `applicationFromLead` (a pure map, named "audits") and that the tooltip text `leads.action.applied_tip` appears in the rendered body, which is an assertion over a label alone.
@@ -171,7 +171,7 @@ I changed no file in the tree. `git status --short` in the worktree printed 39 l
 - **`npx vitest run tests/state/feeds/lead-application.test.ts tests/views/feeds/leads.test.ts`:** `Test Files 2 passed (2)`, `Tests 25 passed (25)`. Matches.
 - **The other seven changed test files** (views catalogue, state catalogue, help, type-scale, registry, memories, rail): `Test Files 7 passed (7)`, `Tests 354 passed (354)`.
 - **`grep -c "it(" tests/state/workbench/layout/open/landing.test.ts`:** 14. Matches the correction.
-- **The `// revert:` grep** over every file changed or added since 1712f075 (101 files: `git diff --name-only --diff-filter=AMR 1712f075` plus the untracked files): nothing printed, exit 1. Matches "101 files".
+- **The `// revert:` grep** over every file changed or added since 6b07631b (101 files: `git diff --name-only --diff-filter=AMR 6b07631b` plus the untracked files): nothing printed, exit 1. Matches "101 files".
 - **The 8 directive lines deleted this round in `tests/views/system/help.test.ts`:** counted in the round diff, 8. Matches.
 - **`diff -r .../L7-base/tools/oculus/tests/browser tests/browser`:** nothing printed, exit 0.
 - **`sh bin/size-check.sh`:** exit 0. **`sh bin/folder-check.sh`:** exit 0. `ls src/lib/ui/controls | wc -l` is 10, the folder limit.

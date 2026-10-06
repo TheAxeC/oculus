@@ -20,7 +20,7 @@ ListAgents at 03:38 listed no subagent, only two idle peer sessions (ordo-01, re
 
 ## What landed
 
-From base bdc0ac53, 142 paths staged on main (9445 insertions, 2017 deletions; `git diff --cached --shortstat`), no ledger path among them, the landing fixes included.
+From base 8ee38daf, 142 paths staged on main (9445 insertions, 2017 deletions; `git diff --cached --shortstat`), no ledger path among them, the landing fixes included.
 
 - Replace in the Search view: Toggle Replace and the replace row with Preserve Case and Replace All; per hit and per file Replace and Dismiss under the pointer and on focus; Cmd+Shift+1, Cmd+Shift+Enter, Delete off macOS and Cmd+Backspace on macOS; Replace All over the whole answer after the view's question; Up and Down in the query and replace boxes walk the texts run; Cmd+Shift+F and Cmd+Shift+H from the shell.
 - The write: `POST /api/ops` `replace` (`server/files/fs/replace.ts`), refused whole or file by file with the new words `bad-query`, `binary`, `marker`, `search-failed` and `changed`; a copy kept per file (`HistoryKind` `replace`); one `files` record with the field `replace`, its undo and redo.

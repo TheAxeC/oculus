@@ -1,4 +1,4 @@
-# Step Q44 refuter report (on .agents/worktrees/q44, base a05037a9)
+# Step Q44 refuter report (on .agents/worktrees/q44, base 01881da3)
 
 ## Verification (rerun by the reviewer)
 All commands were run from `tools/oculus` in the worktree.
@@ -115,7 +115,7 @@ npm run format:check: All matched files use Prettier code style!
 ASCII gate (the perl command): 0 lines
 npm run build: build-exit=0
 npx playwright test tests/browser/repositories.spec.ts: first try "http://127.0.0.1:8792/ is already used" (another run held the port); after it was free, 7 passed (13.6s). $TMPDIR/oculus-repositories-fresh-* count was 6 before and 6 after.
-git status --short: 14 files. The git diff a05037a9 output is byte-identical at the start and at the end of this review.
+git status --short: 14 files. The git diff 01881da3 output is byte-identical at the start and at the end of this review.
 The round's delta was computed in a scratch repository (scratchpad/q44-review2/d) as round1 (base + tracked.patch) against the current tree: 13 files, +376 -178.
 
 Reverts, in my copy scratchpad/q44-review2/oc. Each one was run over git.test.ts, state/repositories.test.ts and views/repositories.test.ts; RV1 to RV7 also over watch/git.test.ts and views/sessions.test.ts. Each file was restored and cmp'd against the worktree.

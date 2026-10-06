@@ -1155,7 +1155,7 @@ Cases and the item 15 list, each with the view, the state and what should differ
 - Item 5 of the verify list asks for a run of each test against removed behaviour; the standing rule forbids breaking code to watch a test fail, so the run on the unchanged tree and a reading of each test stand in its place.
 - The brief's expectation that `open({ file })` answers `ok` to the app that asked does not hold when the call adds a pane (finding 1).
 - The brief's M4 trigger in item 14 and Decision 11 differ (finding 2).
-- Line numbers of the section and of the brief's "What is on the tree" are from main at b732308e9; the build's tree is renumbered (the Files section lists every changed file; DESIGN.md's citations were each read at the new line).
+- Line numbers of the section and of the brief's "What is on the tree" are from main at 4f6b12e97; the build's tree is renumbered (the Files section lists every changed file; DESIGN.md's citations were each read at the new line).
 - C85 cannot run on main (finding 4).
 
 

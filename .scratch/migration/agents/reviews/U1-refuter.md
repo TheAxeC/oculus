@@ -10,7 +10,7 @@ Verification, run from /Users/axelfaes/workspace/research-hub/.agents/worktrees/
 - 7: `sh bin/size-check.sh` -> exit 0; `sh bin/folder-check.sh` -> exit 0
 - 8: `grep -rn "{G\." config src` -> no output, exit 1
 - 9: `lsof -iTCP:8792 -sTCP:LISTEN` -> nothing listening. `npm run build`, then `npx playwright test` -> `333 passed (8.6m)`, exit 0
-- 10: `git diff a7769781 --name-only --relative -- tests | xargs node bin/revert-check.mjs` (35 files) -> `132 reverts, 0 unproven, 459 unchecked`, exit 1. I intersected every `it(`/`test(` title the diff adds with that output, and none of them is anything but `red`.
+- 10: `git diff 075a336c --name-only --relative -- tests | xargs node bin/revert-check.mjs` (35 files) -> `132 reverts, 0 unproven, 459 unchecked`, exit 1. I intersected every `it(`/`test(` title the diff adds with that output, and none of them is anything but `red`.
 - 11 after: `ls -d $TMPDIR/oculus-* | wc -l` -> `7015`
 - `git status --short`: 69 modified files and one untracked file, `src/lib/views/feeds/radar/RadarIntro.svelte`.
 - glyphs.yml content: a python comparison of the base `glyphs:`/`ascii:` maps with the new map gives 137 -> 136 names. `spark_blocks` is dropped and nothing is added. Every name keeps the stand-in its old character had. `bang` had no `ascii:` entry and is now `"!"`.
@@ -177,7 +177,7 @@ I did not rerun revert-check over the 43 files the report names, so its `183 rev
 
 ## Standards
 
-1. Own-key checks are applied in `text.ts` (`glyph`, `hasGlyph`), `themes.ts:55` and `appearance.ts:126`, but not in the sibling checks of the same glyph finding. `src/lib/data/sources/config/catalogs.ts:125` `if (!(name in glyphs)) {` and `:186` `if (!(name in glyphs)) continue;` still use `in`. An `icons.yml` row named `constructor` (or `toString`) is therefore not reported as `icon_not_glyph`, and its drawing is installed. This predates the step (base a7769781 has the same lines at 115 and 176). The file is on this step's path list, and the round made "own keys only" its rule for glyph names.
+1. Own-key checks are applied in `text.ts` (`glyph`, `hasGlyph`), `themes.ts:55` and `appearance.ts:126`, but not in the sibling checks of the same glyph finding. `src/lib/data/sources/config/catalogs.ts:125` `if (!(name in glyphs)) {` and `:186` `if (!(name in glyphs)) continue;` still use `in`. An `icons.yml` row named `constructor` (or `toString`) is therefore not reported as `icon_not_glyph`, and its drawing is installed. This predates the step (base 075a336c has the same lines at 115 and 176). The file is on this step's path list, and the round made "own keys only" its rule for glyph names.
 
 2. `RadarIntro.svelte` style:
    ```

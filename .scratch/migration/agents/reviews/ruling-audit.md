@@ -2,7 +2,7 @@
 
 The count is 240 lines that end in "(the user)" plus 7 lines that carry the marker in their head, "(2026-10-05, the user)": Z466, Z467, Z468, Z472, Z473, Z532 and Z533. The second form was read as well, since Z466 itself has it. Z533 was added to `plan.md` while this audit ran and was read.
 
-What was compared: where the plan line or `orchestrator-history.md` / `choices.md` holds Axel's words in quotation marks, the booked text was compared with them. Where his answer is recorded as an option letter or "agreed" and the options as put to him are on file (in the history entry, in `choices.md`, or for Z78 to Z88 in commit 528b3d11's `orchestrator-state.md`), the booked text was compared with the option he chose. The rest are listed at the end.
+What was compared: where the plan line or `orchestrator-history.md` / `choices.md` holds Axel's words in quotation marks, the booked text was compared with them. Where his answer is recorded as an option letter or "agreed" and the options as put to him are on file (in the history entry, in `choices.md`, or for Z78 to Z88 in commit 4054841e's `orchestrator-state.md`), the booked text was compared with the option he chose. The rest are listed at the end.
 
 ## Z466
 
@@ -67,4 +67,4 @@ The other supersessions in the list (Z291 by Z368, Z421 replacing Z363's 30 s, Z
 
 ## Checked and not settled
 
-Z367 books "while the sweeps run no other step is dispatched beyond finishing X3c and Q116" on Axel's elided words "Yes ... 4 would run the 4 sweeps and then T1a after" (`orchestrator-history.md:140`). The question he answered is not on file (not in the parent of commit 32836f901), so the pause cannot be compared with what he was asked. Axel later ruled Z370 (a) on that reading.
+Z367 books "while the sweeps run no other step is dispatched beyond finishing X3c and Q116" on Axel's elided words "Yes ... 4 would run the 4 sweeps and then T1a after" (`orchestrator-history.md:140`). The question he answered is not on file (not in the parent of commit 13de52372), so the pause cannot be compared with what he was asked. Axel later ruled Z370 (a) on that reading.

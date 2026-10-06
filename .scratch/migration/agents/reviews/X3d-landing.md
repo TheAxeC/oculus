@@ -16,7 +16,7 @@ The runner's agent listing (ListAgents) showed one subagent running, a656c8c3d8e
 
 ## What landed
 
-From base 6dc78524, 94 paths staged by the cherry-pick (8230 insertions, 1303 deletions; `git diff --cached --shortstat`), plus the fixes at landing below.
+From base 2c7a6ea4, 94 paths staged by the cherry-pick (8230 insertions, 1303 deletions; `git diff --cached --shortstat`), plus the fixes at landing below.
 
 - The Source Control part of the Repositories view as VS Code's: change groups as lists or trees with Seti file icons, the full-width commit button, the lanes under Outgoing and Incoming, each file's own diff bar (Open File, Previous Change, Next Change, Collapse Unchanged Regions, `...`), group diffs with a header per file.
 - The Graph's commit press no longer hangs the page: the cause found in `agents/reviews/X3d-diagnosis.md` (`ui/tree/virtual.ts`, `VirtualRows.svelte`) fixed with its test.

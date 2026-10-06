@@ -20,7 +20,7 @@ ListAgents at 05:00 listed no subagent, only two idle peer sessions (ordo-01, re
 
 ## What landed
 
-From base eaf8034f, on main with the landing fixes (`git diff --cached --shortstat` at the commit, quoted in the commit's booking).
+From base 8ac90a3b, on main with the landing fixes (`git diff --cached --shortstat` at the commit, quoted in the commit's booking).
 
 - The LaTeX view `latex`, instance state `{ root, path }`, opened by Open LaTeX in the Files row menu on a `.tex` file or a folder whose listing holds one; the tab draws the `journals` glyph.
 - The folder forms of `/api/latex` (`root` with `path`, `file`, `outline`, `count`) beside the project form, which gains `outline` and `count`; the `latex` action of the terminal route for a folder's main.
@@ -71,7 +71,7 @@ The findings of the run over repair round 1 (`agents/reviews/D14-refuter.md`, "C
 10. Proof 3: the builder's async table, two cells corrected: `onSaved` "after close or forgotten" and `build` "after close" cannot occur, since the store builds whether or not a view is open; the tests the cells named test a filter and a failed request.
 11. Proof 4: DONE row 4's proof (`tests/views/sources/files/menu/latex-menu.test.ts`) is an audit: its cases are titled "audits that", as the tree check requires of a case under `tests/views/` that does not render.
 12. The slow-tagged `tests/server/core/paths.test.ts` names the only four functions called `inside` or `inside...` under `src` (lines 89-102); D14's two are renamed: `inside` in `ui/controls/editor/kit/latex.ts` to `resolveAgainst`, and `inside(text, group)` in `data/prose/latex.ts` to `groupText`.
-13. The slow-tagged real-hub walk of `tests/server/edit/yaml/yaml-edit.test.ts` skips side-tier rules (`!isSideTier(rule)`); it was red on main's head 248bb23a before D14, shown on a clean detached copy.
+13. The slow-tagged real-hub walk of `tests/server/edit/yaml/yaml-edit.test.ts` skips side-tier rules (`!isSideTier(rule)`); it was red on main's head 0b63325f before D14, shown on a clean detached copy.
 
 ## The look (TEST, localhost:8790, tab 812136282)
 

@@ -21,14 +21,14 @@ It was taken back out of main at its look on TEST, for two reasons, and this reb
 
 ## What is on the tree
 
-Read on main at 2ac1a5cb for items 15 to 19:
+Read on main at 89bc8f36 for items 15 to 19:
 
 - `src/lib/ui/tree/virtual.ts` (67 lines) holds `rowWindow(virtualizer)`, which builds a new `RowWindow` on every call; `src/lib/ui/tree/VirtualRows.svelte` (270 lines) writes `windowed = rowWindow(virtualizer)` in its `onChange` and in `configure`; `tests/ui/tree/virtual.test.ts` is 134 lines (`wc -l`).
 - `src/lib/ui/controls/ToolButton.svelte:151-155` draws every button inside `<Tooltip ... block={rail || cell}>`. `src/lib/ui/menu/Tooltip.svelte:300-308`: the wrapper `.tip` is `display: inline-flex`, as wide as its content, and only `.tip.block` is `display: flex; width: 100%`. The patch gives the primary button `width: 100%` and, joined, `flex: 1 1 auto`, and does not change `block` (`grep -n "block={" agents/reviews/X3d-landing-attempt.patch` prints nothing), so the button's width resolves against the content-wide wrapper and the Commit button is as wide as its words. This is why it is short.
 - In the patch, `graph/CommitRow.svelte`'s props say "The lanes of the row; the rows under Incoming and Outgoing have none" (patch line 5046), and `Graph.svelte` draws `<GraphHead kind="outgoing" ...>` with its commits after it as plain rows.
 - Oculus draws no file-type icon anywhere (`grep -rn "seti" src` prints nothing). `seti-ui` 1.11.0 (MIT, jesseweed/seti-ui, last published 2024-10-12, `npm view seti-ui`) ships the font `styles/_fonts/seti/seti.woff` and the table `styles/components/icons/mapping.less`, which maps file names and extensions to a glyph and a colour; VS Code's default icon theme, `extensions/theme-seti/icons/vs-seti-icon-theme.json` in the installed app, is generated from those two files. `src/lib/ui/display` holds eight items (`ls`).
 
-Read on main at 64275504, when the step was first prepared:
+Read on main at 97e112d1, when the step was first prepared:
 
 - VS Code 1.137.0 is installed (`grep -m1 '"version"' "/Applications/Visual Studio Code.app/Contents/Resources/app/package.json"`). Every rule of its stylesheet that names the Source Control view is saved, one rule per line, in `.scratch/migration/agents/reviews/X3d-vscode-scm.css` (130 lines, extracted from `out/vs/workbench/workbench.desktop.main.css`). The numbers under "VS Code's measures" are read from that file, from `out/vs/workbench/workbench.desktop.main.js` and from `extensions/git/package.json`. They are VS Code's default look: `workbench.experimental.modernUI` is off by default and is not set in the user's settings, so the rules under `.modern-ui` (saved lines 127-130) are not taken.
 - The view is `src/lib/views/sources/repositories/` (19 files, 3915 lines, `find src/lib/views/sources/repositories -type f | xargs wc -l`; the folder itself holds ten items): `Repositories.svelte` (365, the pane, its `...` menu, the questions), `RepoList.svelte` (140, the Repositories section), `Repo.svelte` (294, the branch line, the path line, the commit box, the sections), `Changes.svelte` (378), `graph/Graph.svelte` (447), `graph/Lanes.svelte` (69), `graph/CommitFiles.svelte` (107), `refs/Stashes.svelte`, `refs/Tags.svelte`, `refs/Branches.svelte`, `Worktrees.svelte`, `diff/Diff.svelte` (505), `diff/DiffSection.svelte` (344), `merge/`, `menus/`. A component over 540 lines and any file over 900 fail `tests/checks/tree/size.test.ts`.
@@ -259,4 +259,4 @@ Write it to `.scratch/migration/agents/reviews/X3d-report.md` in the worktree. F
 
 ## The patch as applied
 
-`git apply --3way agents/reviews/X3d-landing-attempt.patch` in the worktree, at base 6dc78524: all 76 files applied clean, none left with conflict markers, none skipped, no binary file. The patch is the step's first build with the fixes its landing made; `agents/reviews/X3d-backed-out.patch` is the build without those fixes, kept for the record and not applied.
+`git apply --3way agents/reviews/X3d-landing-attempt.patch` in the worktree, at base 2c7a6ea4: all 76 files applied clean, none left with conflict markers, none skipped, no binary file. The patch is the step's first build with the fixes its landing made; `agents/reviews/X3d-backed-out.patch` is the build without those fixes, kept for the record and not applied.

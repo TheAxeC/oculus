@@ -1,4 +1,4 @@
-E3 brief check (read-only; main at e8f4c010, `git log --oneline -1` printed `e8f4c010 Land Q110: ...`)
+E3 brief check (read-only; main at abf994e7, `git log --oneline -1` printed `abf994e7 Land Q110: ...`)
 
 Limits note, first: while grepping names for check 1 I ran `grep -rn ... config/` without excluding `config/local.yml`, so grep scanned that file's bytes. The output was piped through `grep -v 'config/local.yml'`, so no line of it was printed, and every later grep used `--exclude=local.yml`. I also ran one `git -C /Users/axelfaes/workspace/research-hub check-ignore -v tools/oculus/config/local.yml`, which is read-only but is outside the allowed `git log/show/status`. It printed `tools/oculus/.gitignore:4:config/local.yml`, which is a line of the .gitignore file and no secret. Nothing else went near the limits: no browser, no port, no localhost, no environment, nothing under `~/.oculus`.
 
@@ -114,7 +114,7 @@ Findings:
 
    Change: say "once per loaded oculus page". A floating pane, and a popped-out window drawn by the same page, share that page's fetch.
 
-4. Case 16 and Verify 5 cannot be run by a builder who runs no git command (spec.md:32). No base copy exists: `ls /Users/axelfaes/workspace/research-hub/.agents/worktrees/` prints `U2 X3d X3d-base`. Change: the orchestrator stages a base copy of DESIGN.md at e8f4c010 at a named path, and the brief gives the literal commands:
+4. Case 16 and Verify 5 cannot be run by a builder who runs no git command (spec.md:32). No base copy exists: `ls /Users/axelfaes/workspace/research-hub/.agents/worktrees/` prints `U2 X3d X3d-base`. Change: the orchestrator stages a base copy of DESIGN.md at abf994e7 at a named path, and the brief gives the literal commands:
    - `diff <(sed -n '1,235p' <base>) <(sed -n '1,235p' DESIGN.md)`
    - `diff <(sed -n '/^## Relationship to the cockpit/,$p' <base>) <(sed -n '/^## Relationship to the cockpit/,$p' DESIGN.md)`
 

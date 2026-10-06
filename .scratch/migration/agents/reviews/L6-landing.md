@@ -12,7 +12,7 @@ Nothing of L6's brief.
 
 ## What landed
 
-L6, cherry-picked from `.agents/worktrees/L6` at base `7319fa60` by `tools/oculus/.scratch/migration/land.sh L6 7319fa60 <runs> --no-browser` (+6,593 -1,955 over 83 files), then the Doc text applied (+6 -5 over DESIGN.md and HELP.md), the browser suite run by hand.
+L6, cherry-picked from `.agents/worktrees/L6` at base `90c55cd2` by `tools/oculus/.scratch/migration/land.sh L6 90c55cd2 <runs> --no-browser` (+6,593 -1,955 over 83 files), then the Doc text applied (+6 -5 over DESIGN.md and HELP.md), the browser suite run by hand.
 
 - The status bar is drawn as VS Code's: 22 px across the whole window under the rail, where it sat right of the rail before; every item 12 px with an icon and a tooltip, fixed at every text scale.
 - Left group: the machine's name (opens Status), the branch of the active tab's repository (a list of its branches to switch to, after a confirmation), behind and ahead (pushes after a confirmation when only ahead, else opens Repositories), the Findings view's count (opens Findings), HPC, usage, server.

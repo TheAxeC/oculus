@@ -1,4 +1,4 @@
-REVIEW OF M4, FIRST RUN. Base bca66b3c, worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/M4. I changed no file in the worktree. `npm run diagrams` and the tests regenerate tracked or ignored build output there; `git status --short` is 42 lines before and after, and `git diff bca66b3c --stat` is 40 files, 275 insertions, 253 deletions. My scratch is /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/m4r/.
+REVIEW OF M4, FIRST RUN. Base 34f1602b, worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/M4. I changed no file in the worktree. `npm run diagrams` and the tests regenerate tracked or ignored build output there; `git status --short` is 42 lines before and after, and `git diff 34f1602b --stat` is 40 files, 275 insertions, 253 deletions. My scratch is /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/m4r/.
 
 ## Open items first
 1. Sentence made false and outside the brief's path list: `/Users/axelfaes/workspace/research-hub/README.md:33` (finding S1).
@@ -18,7 +18,7 @@ Error: Test timed out in 5000ms.
       Tests  8 failed | 11191 passed | 621 skipped (11820)
 checks: failed with exit 1: npm test
 ```
-Both files are untouched by M4 (not in `git diff bca66b3c --stat`). Rerun alone: `npx vitest run tests/server/edit/config-key.test.ts tests/server/git/autofetch.test.ts --reporter=dot` gave `Test Files  2 passed (2)  Tests  82 passed (82)`. I do not count this as a pass of the list. checks.sh stops at the first failure, so I ran the other six commands one by one from tools/oculus:
+Both files are untouched by M4 (not in `git diff 34f1602b --stat`). Rerun alone: `npx vitest run tests/server/edit/config-key.test.ts tests/server/git/autofetch.test.ts --reporter=dot` gave `Test Files  2 passed (2)  Tests  82 passed (82)`. I do not count this as a pass of the list. checks.sh stops at the first failure, so I ran the other six commands one by one from tools/oculus:
 - `npm run test:checks`: exit 0, `Test Files  29 passed | 2 skipped (31)`, `Tests  443 passed | 9 skipped (452)`
 - `npm run check`: exit 0, `COMPLETED 2960 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
 - `npm run build`: exit 0, `✓ built in 22.12s` and `✓ built in 58.77s`
@@ -28,7 +28,7 @@ Both files are untouched by M4 (not in `git diff bca66b3c --stat`). Rerun alone:
 - The spec's perl ASCII gate over `src tests config` (no `bin`): no output. `tools/present` files: only the untouched `content/present.yml:136` (Linköping).
 
 ## Rerun of the report's evidence
-- Byte comparison: a Python script that read each `PRESENT.md` front matter with `yaml.safe_load` and matched it to its `make_equations.py` entry via the old key from `git show bca66b3c:<file>` printed `13 files 0 mismatch`, OK for every file. A node script using oculus's `yaml` package printed `13 with equation; 13 equal to a make_equations entry (yaml 1.2 parser)`. `grep -rn "equation: eq_" --include=PRESENT.md projects | wc -l` printed 0; `grep -rc "^  equation: '" --include=PRESENT.md projects | grep -c ':1$'` printed 13; `git diff bca66b3c --numstat -- projects` shows 13 files, 1 added and 1 removed line each.
+- Byte comparison: a Python script that read each `PRESENT.md` front matter with `yaml.safe_load` and matched it to its `make_equations.py` entry via the old key from `git show 34f1602b:<file>` printed `13 files 0 mismatch`, OK for every file. A node script using oculus's `yaml` package printed `13 with equation; 13 equal to a make_equations entry (yaml 1.2 parser)`. `grep -rn "equation: eq_" --include=PRESENT.md projects | wc -l` printed 0; `grep -rc "^  equation: '" --include=PRESENT.md projects | grep -c ':1$'` printed 13; `git diff 34f1602b --numstat -- projects` shows 13 files, 1 added and 1 removed line each.
 - build.py: `python3 tools/present/build.py` writes only to the ignored `tools/present/present.html` (`.gitignore:132`), so I ran it in a scratch copy (`m4r/tree`, projects symlinked, read only). It printed `Wrote tools/present/present.html (6557 KB) | 16 project slides (from PRESENT.md)`, and `cmp` says it is byte-identical to the worktree's `present.html`. Counts: `<div class="eqcard">\[` 13, `<div class="eqcard"><img` 0, `class="eqcard"` 13, `class="fig"` 24. "Figures as before" is not comparable: the builder's baseline dropped figures over 1 MB.
 - jsdom probe: `node deckprobe.cjs <that present.html>` printed card 1 to 13 each `merror 0 red 0 -`, `negative control n1: merror 1 red 0`, `negative control n2: merror 0 red 1`, `bm beta mml has bold-italic: true <mi mathvariant="bold-italic">&#x3B2;</mi>`, `eqcards 13 with mjx-container 13 bad 0 network attempts []`, exit 0. Reproduced.
 - Probe teeth, on scratch copies of build.py: with `MATHJAX_EXTENSIONS = []` the probe ends `ERR startup did not finish in 30 s (offline load failed)`. With `mathjax_small` bypassed it prints `LITERAL-MACRO` on card 2 (hccnet-fl) and card 11 (dongho), `bad 2`. So the extension and the rewrite are each needed, and the probe fails without them.
@@ -95,13 +95,13 @@ Usage from the completion notice: claude-sonnet-5-5, 227,976 tokens, 69 tool use
 
 ## Repair round 1, refuted
 
-Reviewer of M4's repair round 1, worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/M4`, base bca66b3c. I edited no file in the worktree or elsewhere. My scratch is `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/m4r2/` (a copy of `tools/present` with the hub folders symlinked, and a copy of `tools/oculus` without `local.yml`). `git status --short` is 43 lines and `git diff bca66b3c --stat` is 41 files, 340 insertions, 259 deletions, both before and after my runs.
+Reviewer of M4's repair round 1, worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/M4`, base 34f1602b. I edited no file in the worktree or elsewhere. My scratch is `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/m4r2/` (a copy of `tools/present` with the hub folders symlinked, and a copy of `tools/oculus` without `local.yml`). `git status --short` is 43 lines and `git diff 34f1602b --stat` is 41 files, 340 insertions, 259 deletions, both before and after my runs.
 
-**Departure from the stated limits, disclosed.** Besides `git diff bca66b3c` and `git status --short` I ran `git show bca66b3c:<file>` (13 times, to read the old `PRESENT.md` text for the byte comparison) and `git check-ignore -v` (once). Both are read-only and read no state beyond file text and ignore rules. They are outside the git list you gave.
+**Departure from the stated limits, disclosed.** Besides `git diff 34f1602b` and `git status --short` I ran `git show 34f1602b:<file>` (13 times, to read the old `PRESENT.md` text for the byte comparison) and `git check-ignore -v` (once). Both are read-only and read no state beyond file text and ignore rules. They are outside the git list you gave.
 
 ### Verification lines
 
-The verify list is NOT a pass in my run. `npm run diagrams` printed `docs/diagrams/layer-views.svg` ... `docs/diagrams/writes.svg`. Its exit status was not captured; the diagram files it regenerated leave `git diff bca66b3c --stat -- tools/oculus/docs` at the same 4 files, 6 insertions, 6 deletions as before. Then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` printed (the lines of its summary):
+The verify list is NOT a pass in my run. `npm run diagrams` printed `docs/diagrams/layer-views.svg` ... `docs/diagrams/writes.svg`. Its exit status was not captured; the diagram files it regenerated leave `git diff 34f1602b --stat -- tools/oculus/docs` at the same 4 files, 6 insertions, 6 deletions as before. Then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` printed (the lines of its summary):
 
 ```
 $ npm test
@@ -119,7 +119,7 @@ $ npm test
 checks: failed with exit 1: npm test
 ```
 
-All 7 are `Test timed out in 5000ms` (load average 20 to 24 on this machine). Neither file is in `git diff bca66b3c --stat`. Runs alone, named with both:
+All 7 are `Test timed out in 5000ms` (load average 20 to 24 on this machine). Neither file is in `git diff 34f1602b --stat`. Runs alone, named with both:
 - `config-key.test.ts` alone: `Test Files  1 passed (1)`, `Tests  38 passed (38)`.
 - `autofetch.test.ts` alone, first run: `Test Files  1 failed (1)`, `Tests  2 failed | 42 passed (44)` (two 5000 ms timeouts again). Second run: `Test Files  1 passed (1)`, `Tests  44 passed (44)`.
 - Both files together in one run: `Test Files  1 failed | 1 passed (2)`, `Tests  2 failed | 80 passed (82)`.
@@ -142,7 +142,7 @@ Reruns of the round section's evidence, on scratch copies:
 - B3 taken out: with `assets/vendor/tex-svg.js` removed, the deck is 4493 KB and does not hold the first 80 characters of `boldsymbol.js`. With `if mathjs:` replaced by `if True:` it is 4497 KB and does. With the guard as committed and the bundle present: 6557 KB. Reproduced.
 - Integrity count red: the planted case passes 11/11 on the scratch copy. With `slides.push(slide(\`${id}/${slug}\`, id, { ...row, equation: undefined }))` at `present.ts` in place of the committed call: `AssertionError: expected 1 to be 2 // Object.is equality`, `Tests  1 failed | 10 passed (11)`, case `the count of written equations > agrees with the reader on a slides list, a blank equation and a value that is not text`. Put back: `Tests  11 passed (11)`. Reproduced. `grep -rln "^slides:" --include=PRESENT.md projects` prints nothing, as the report says, so the real-hub case cannot go red for this; the planted case does.
 - `build.mathjax_small` on the sharp-edge inputs: `\text{ \small X}`, `\textbf{\small X}`, `\mbox{\small X}`, `\text{\footnotesize X}` unchanged; `\text{\small a \text{\small b}}` gives `{\small\text{a \text{\small b}}}`; `\text{\small   kept local}` gives `{\small\text{kept local}}`. `equation_card('projects/manuscripts/btfno','eq_nothere.png')` gives `<div class="eqcard">\[eq_nothere.png\]</div>`; `eq_btfno.png` gives the `<img src="data:image/png;base64,...` card. All as the report states.
-- Item 1 again: `yaml.safe_load` of each of the 13 files' `present.equation` equals its `make_equations.py` entry, and exactly one line differs in each file (`bad 0`). `grep -rn "equation: eq_" --include=PRESENT.md projects | wc -l` prints 0; `grep -rc "^  equation: '" --include=PRESENT.md projects | grep -c ':1$'` prints 13; `git diff bca66b3c --numstat -- projects` is 13 files, 13 added, 13 removed.
+- Item 1 again: `yaml.safe_load` of each of the 13 files' `present.equation` equals its `make_equations.py` entry, and exactly one line differs in each file (`bad 0`). `grep -rn "equation: eq_" --include=PRESENT.md projects | wc -l` prints 0; `grep -rc "^  equation: '" --include=PRESENT.md projects | grep -c ':1$'` prints 13; `git diff 34f1602b --numstat -- projects` is 13 files, 13 added, 13 removed.
 - Cases 10 and 11: `grep -rn "tools/present" src tests config --exclude=local.yml` prints nothing; `grep -rn "equations_dir" src config --exclude=local.yml` prints nothing; in `tests/` only `portfolio-config.test.ts:146,155` (case 9). The literal case 11 grep prints `hubPathsOf` (`collection.ts:314`, `EntryCard.svelte`, `Person.svelte`, `VenueCard.svelte`) and `manifests.ts:25,101,152` (`hubPath`, a different function); with `-w` only `manifests.ts` remains. The report names this.
 
 ### Verdicts

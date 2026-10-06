@@ -1,6 +1,6 @@
-# PR1 refuter report (worktree `.agents/worktrees/PR1`, base 628ac4b01)
+# PR1 refuter report (worktree `.agents/worktrees/PR1`, base 7e464b956)
 
-I changed no file. The only git commands I ran were `git diff 628ac4b01` (with `--stat` and word-diff forms) and `git status --short`. I fetched Electron v44.5.1 source files from raw.githubusercontent.com into my scratchpad.
+I changed no file. The only git commands I ran were `git diff 7e464b956` (with `--stat` and word-diff forms) and `git status --short`. I fetched Electron v44.5.1 source files from raw.githubusercontent.com into my scratchpad.
 
 **Overall:** every item and every case is met by reading, and every check is green. The open problems are:
 - **B1:** in full screen, keyboard focus can leave the deck box while the slide stays on screen.
@@ -221,7 +221,7 @@ aed7391d3da51eb81, claude-opus-5-5; tokens and minutes as the state file records
 - St4: closed in the same round, the title slide's key hint in `config/present.yml` names `F` (the write list widened by that one line).
 - P4: closed by the reviewer's reading in 3.1.
 
-## Repair round 1, refuted (PR1, worktree `.agents/worktrees/PR1`, base 628ac4b01)
+## Repair round 1, refuted (PR1, worktree `.agents/worktrees/PR1`, base 7e464b956)
 
 **What is not closed:** two behaviour findings and one gap in G53's test.
 - **B3:** B1 is closed only for unmodified keys. Cmd+Shift+F or Cmd+Shift+H can still move the keyboard out of the full-screen box while the slide stays on screen. The builder's report names this hazard and leaves it: "This is stated, not fixed".
@@ -230,7 +230,7 @@ aed7391d3da51eb81, claude-opus-5-5; tokens and minutes as the state file records
 
 Everything else the round was sent to close is closed, and every check is green.
 
-I changed no file. The only git commands I ran were `git diff 628ac4b01` (with `--stat`, `--word-diff` and `-U0`) and `git status --short`. `git status --short` printed the same ten lines before and after my runs.
+I changed no file. The only git commands I ran were `git diff 7e464b956` (with `--stat`, `--word-diff` and `-U0`) and `git status --short`. `git status --short` printed the same ten lines before and after my runs.
 
 ## 1. The brief's checks, rerun from `tools/oculus` in the worktree
 
@@ -412,7 +412,7 @@ None against the brief's items beyond B4's effect on item 3, which is listed und
   - A grep over `src` and `tests` for `\bG[0-9][0-9]?\b` outside this file printed nothing, so no other file names a guarded entry. `guarded.md` names the test, not the reverse, and the rules file treats a plan id in a comment as a defect.
   - Title `:128`: `'keeps the window own state: $title'` should read "the window's own state". The `title` field quoting needs care if the apostrophe is added.
   - The test must still be named in `agents/guarded.md` under G53 by file and title. That is the orchestrator's booking.
-- History words: `git diff 628ac4b01 -U0 | grep '^+'` over `src` and `config`, plus the test file, hit "before" and "still" five times. Each describes an order of events or a state, so none is a finding.
+- History words: `git diff 7e464b956 -U0 | grep '^+'` over `src` and `config`, plus the test file, hit "before" and "still" five times. Each describes an order of events or a state, so none is a finding.
 
 ### Behaviour
 

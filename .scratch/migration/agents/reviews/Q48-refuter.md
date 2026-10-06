@@ -1,4 +1,4 @@
-# Step Q48 refuter report (on .agents/worktrees/q48, base ac11faae)
+# Step Q48 refuter report (on .agents/worktrees/q48, base 7b902143)
 
 ## Verification (rerun by the reviewer)
 
@@ -65,7 +65,7 @@ Every verification command reproduces the builder's reported output, and every r
 
 ## 3. Standards
 
-- `src/lib/views/Files.svelte`, 619 lines (`wc -l`; `git show ac11faae:tools/oculus/src/lib/views/Files.svelte | wc -l` is 592). `agents/spec.md`, "The principles every package is judged on": "a file stays under 1000 lines and **a component under about 600**, split by responsibility before it grows past that". The step is what carries the file past the guide. The builder names it and says splitting touches paths the brief does not list.
+- `src/lib/views/Files.svelte`, 619 lines (`wc -l`; `git show 7b902143:tools/oculus/src/lib/views/Files.svelte | wc -l` is 592). `agents/spec.md`, "The principles every package is judged on": "a file stays under 1000 lines and **a component under about 600**, split by responsibility before it grows past that". The step is what carries the file past the guide. The builder names it and says splitting touches paths the brief does not list.
 - `tests/state/form-drafts.test.ts:193-196`, the case `it('takes the draft of an add form nobody typed into, which sent nothing', ...)` carries no revert of its own, and it stays green under the revert named for the block above it: with `takeFormDraft` forgetting the draft whatever it holds, `takeFormDraft('one', ADD, {})` still answers true and still clears. `agents/spec.md`: "Every new or changed test names the revert that turns it red."
 - `src/lib/state/form-drafts.svelte.ts:220-223` with `:255-258`: `markKept` writes `answered.kept = { ...answered.kept, [instance]: left ? [...held, form] : held }` unconditionally, so a `false` mark adds an `[]` entry for an instance that never had one, and the `draft === undefined` branch of `settleFormDraft` (an answer landing after the tab closed) writes that entry back after `forgetForms` removed it at `src/lib/state/layout.svelte.ts:596`. The record is never trimmed again. Probe: `settleFormDraft(own, ADD, sent)` after `closeInstance(own)` answers false and `formKept` answers false, so nothing is observable through the store's API and no test covers it. `agents/spec.md`: "Every asynchronous path is exercised in flight, after close, and superseded by a later one."
 - Not a finding, recorded so the orchestrator can check it off: every path that takes a tab away reaches `forgetForms`. `grep -rn "clearInstanceState" src/lib` gives `layout.svelte.ts:537` (the remove-everywhere path), `:596` (`closeInstance`), `:617` (`forgetTabs`, used by `closePane:609` and `closePage:441`) and `:814` (a preview tab retargeted); all four are the wrapper installed at `src/lib/state/context.ts:111-116`. A move between pages (`moveInstanceToPage`, `carryToPage`) calls none of them and keeps the state, which is right.
@@ -74,7 +74,7 @@ Every verification command reproduces the builder's reported output, and every r
 
 - A bookmark edit form whose save left text in it is exempted from the gone-bookmark close for any save, not only a rename, and the exemption does not end. `editedGone(now, marks, true)` answers false whatever made `kept` true (`src/lib/state/fs.ts:441`), and the mark is taken away only by a later `settle`, `clear` or `take`. Reproduced in the served run, two arms of one probe: the bookmark form was opened over `tool.py`, Path filled, saved through a held request, and the bookmark then taken away. With text typed while the request was out: `rows=0`, the instance still holds `{"form":"bookmark","editing":"tool.py"}`, `drafts=["<id>#forms"]`, the edit form is drawn nowhere (`form=0`), and closing the tab raises the confirmation (`asks-on-close=1`). Without the typing: `{"form":"","editing":""}`, `drafts=[]`, `asks-on-close=0`. So the tab asks about a form the reader cannot see over a bookmark that is gone, which is the symptom the step was opened to remove, now reachable by another route. The brief prescribes the rule ("it closes a form over a bookmark that is gone, not one whose text is newer than its last answer"), and the report's before/after table states only the rename case.
 - A collection add form left open after its entry was added refuses its next Save. Reproduced: title typed, Save pressed, `kind` filled while the request was out, the form left open with the title unchanged; the next Save answers `not saved: title: an entry with that title is already in the file`, and the entry count under that title stays 1. The value typed while the request was out cannot be saved from that form at all; the reader has to retype it in the new entry's edit form. Neither is in the report's before/after table.
-- The guarantee the base test asserted, "a second save cannot add another" (`tests/browser/unsaved-forms.spec.ts:356` at ac11faae, with its revert comment "leaves it open over the later text, so a second Save adds a second entry"), is removed with that test and is not replaced by a test. It now rests on the server refusing a duplicate identity, not on the form closing. The report does not say so.
+- The guarantee the base test asserted, "a second save cannot add another" (`tests/browser/unsaved-forms.spec.ts:356` at 7b902143, with its revert comment "leaves it open over the later text, so a second Save adds a second entry"), is removed with that test and is not replaced by a test. It now rests on the server refusing a duplicate identity, not on the form closing. The report does not say so.
 - `taken` treats a draft typed back to exactly what the save sent as the same draft, so a form closed, reopened and retyped to the same values closes and forgets. Probe: `takeFormDraft` answers true after `sent -> newer -> sent`. The builder states this as judgment call 1.
 
 ## Not checked
@@ -120,7 +120,7 @@ npx playwright test tests/browser/files-forms.spec.ts tests/browser/unsaved-form
   69 passed (3.5m)        (the report's figure)
 
 git status --short (from inside the worktree): the same ten modified files, no new file; the ten
-  +/- pairs of the report's "Files changed" table match git diff ac11faae --stat exactly.
+  +/- pairs of the report's "Files changed" table match git diff 7b902143 --stat exactly.
 
 Reverts, each in the reviewer's own clone under scratchpad/q48-review2/clone, rebuilt before each browser run:
   editedGone drops `saving`                       -> npx vitest run tests/state/explorer.test.ts: 1 failed | 21 passed
@@ -200,7 +200,7 @@ npx playwright test files-forms unsaved-forms files cards
   71 passed (3.4m)                                       (the report's figure)
 
 git status --short (from inside the worktree): the same twelve modified files, no new file; the
-  twelve rows of the report's "Files changed" table match git diff ac11faae --stat exactly
+  twelve rows of the report's "Files changed" table match git diff 7b902143 --stat exactly
   (1211 insertions, 67 deletions).
 
 grep -rn "Array.isArray(kept)" src/lib -> src/lib/state/fs.ts:456 and

@@ -142,7 +142,7 @@ What undoing each change turns red:
 - `ToolButton`'s `cut` is a new prop that only RadarCard uses. CrossLinks and `views/sources/search/Results.svelte` still reach into `.label` through HELD entries.
 - `slashCommand` reads the first `<command-name>` and the first `<command-args>` anywhere in a prompt that starts with `<command-`, so a command prompt whose args themselves quote those tags is titled by the first pair.
 - `Empty` now draws every message through `CodeText`. A message with a backtick pair that was meant literally would draw as code. `grep -rn '`' config/text` shows only the twelve lines the brief names.
-- Rule breach, in the build round: one `git log -1` was run, read-only, in the main checkout while I collected line counts. It printed main's head, `47d3caf9`, which is not the brief's `d5e08b8e`. The "before" counts above are from main at that head, and for the files the brief lists they match its own counts. No other git command was run, and none in repair round 1.
+- Rule breach, in the build round: one `git log -1` was run, read-only, in the main checkout while I collected line counts. It printed main's head, `3d7e8a5e`, which is not the brief's `d42dafdb`. The "before" counts above are from main at that head, and for the files the brief lists they match its own counts. No other git command was run, and none in repair round 1.
 - No test failed or timed out outside this step's files in the final verify run.
 
 ## Before and after, for the look (TEST page)

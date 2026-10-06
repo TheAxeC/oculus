@@ -292,4 +292,4 @@ The Intl and locale formatters produce words that do not come from `config/text/
 ## Orchestrator check
 
 - `git ls-files` over the six folders: 95 files, equal to the report.
-- The four files the worktree holds and main lacks were removed from main by Q67 (`43ee0de2`), which also added `personal/account-setup/`; X3b's worktree is cut from `a8848c49`, before Q67. They are not X3b additions.
+- The four files the worktree holds and main lacks were removed from main by Q67 (`d5c515bf`), which also added `personal/account-setup/`; X3b's worktree is cut from `fcb314bd`, before Q67. They are not X3b additions.

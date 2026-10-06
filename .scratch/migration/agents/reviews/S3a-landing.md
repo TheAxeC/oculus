@@ -16,7 +16,7 @@ The runner's agent listing (ListAgents) showed only X3d's builder a479ec935c42cc
 
 ## What landed
 
-Main at 3ee5555d plus the step, from base 2ac1a5cb, 32 files changed (1857 insertions, 91 deletions).
+Main at b73101cf plus the step, from base 89bc8f36, 32 files changed (1857 insertions, 91 deletions).
 
 - `config/catalogs/options.yml`: every option of the five tracked config files and every `local.yml` key, with its description, default, control and a family's `fields`.
 - `src/lib/data/sources/config/options.ts`: the catalog's reader and the walk that says which key paths are options; `LOCAL_KEYS` exported from `local.ts`.

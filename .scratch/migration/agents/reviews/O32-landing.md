@@ -13,7 +13,7 @@ Booked list: 1, carried for O32 itself: O32's launch recipes in the Ordo plan sk
 
 ## What landed
 
-O32, cherry-picked from `.agents/worktrees/O32` at base `138afb83` onto main by `tools/oculus/.scratch/migration/land.sh O32 138afb83 --no-browser` (+710 -86 over 10 files before the landing fixes; the browser suite was run by hand once port 8792 was free, since L3's builder shared it).
+O32, cherry-picked from `.agents/worktrees/O32` at base `6d87499f` onto main by `tools/oculus/.scratch/migration/land.sh O32 6d87499f --no-browser` (+710 -86 over 10 files before the landing fixes; the browser suite was run by hand once port 8792 was free, since L3's builder shared it).
 
 - `bin/dispatch-note.mjs start --pid <n>` records the builder's process id and its start time as `ps` prints it under `LC_ALL=C TZ=UTC`; a pid signal 0 does not find is refused, and a live one whose `ps` fails is recorded with an empty start.
 - A launch with a pid and no end stamp reads running while that process runs with that start time and done once it does not; a record without a pid reads as before. The sessions watcher's 15 s re-check carries each launched agent's status, so the change reaches the page within one re-check. One `ps` per scan serves the registry and the builders, and only launches started inside the scan's window are asked about.

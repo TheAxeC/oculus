@@ -19,7 +19,7 @@ NOT DONE, two halves of the brief, both blocked on the same clash: item 5's "fix
 | 7 | `tests/negatives.test.ts` | Check DONE, comments NOT DONE | `npx vitest run tests/negatives.test.ts`, 5 passed |
 | 8 | primitive-styling case | DONE | `npx vitest run tests/boundaries.test.ts`, 9 passed |
 | 9 | `tests/audits.test.ts` | DONE | `npx vitest run tests/audits.test.ts`, 4 passed |
-| 10 | config-diff print | DONE | `git diff --unified=0 db3aa942 -- config \| grep -E '^\+[^+]'` printed nothing (grep exit 1); this step adds no config key |
+| 10 | config-diff print | DONE | `git diff --unified=0 ee7ab653 -- config \| grep -E '^\+[^+]'` printed nothing (grep exit 1); this step adds no config key |
 | 11 | look rule in `agents/spec.md` | DONE | the sentence is `.scratch/migration/agents/spec.md:54`, verbatim |
 
 Verification list: `npx vitest run --reporter=dot` 256 files, 4274 tests passed; `npm run check` `COMPLETED 1231 FILES 0 ERRORS 0 WARNINGS`; `npm run build` `built in 7.34s`; `npm run format:check` `All matched files use Prettier code style!`; `npm run lint` no output; the ASCII gate printed nothing. `npx playwright test` 241 passed (6.1m).
@@ -144,11 +144,11 @@ The three cases the recurring pass named as encoding a defect are no longer in t
 | 4 | `node bin/cited-lines.mjs <this report's citations>` | `14 cited lines, 0 missing` | under 1s |
 | 5 | the count around both suites | `before 647280 after 647280`, `equal exit 0` | 473s |
 | 6 | `find src tests bin -type f \( -name '*.ts' -o -name '*.svelte' \) \| xargs wc -l \| awk -v allow=bin/size-allow.txt '...'` | no output, exit 0; with `-v allow=/dev/null` it prints the twelve and exits 1 | under 1s |
-| 10 | `git diff --unified=0 db3aa942 -- config \| grep -E '^\+[^+]'` | nothing, grep exit 1: this step adds no config key | under 1s |
+| 10 | `git diff --unified=0 ee7ab653 -- config \| grep -E '^\+[^+]'` | nothing, grep exit 1: this step adds no config key | under 1s |
 
 ## Line counts
 
-New: `tests/scratch.ts` 36, `tests/scratch.test.ts` 132, `tests/duplication.test.ts` 288, `tests/audits.test.ts` 195, `tests/negatives.test.ts` 151, `tests/allow-duplication.ts` 606, `tests/allow-audits.ts` 161, `tests/allow-styling.ts` 126, `tests/allow-negatives.ts` 11, `tests/bin/revert-check.test.ts` 137, `tests/bin/cited-lines.test.ts` 83, `bin/revert-check.mjs` 240, `bin/cited-lines.mjs` 109, `bin/size-allow.txt` 15. Changed: `tests/boundaries.test.ts` 539, `.scratch/migration/agents/spec.md` +1, and 150 tracked files in all, `153 files changed, 1076 insertions(+), 306 deletions(-)` against db3aa942.
+New: `tests/scratch.ts` 36, `tests/scratch.test.ts` 132, `tests/duplication.test.ts` 288, `tests/audits.test.ts` 195, `tests/negatives.test.ts` 151, `tests/allow-duplication.ts` 606, `tests/allow-audits.ts` 161, `tests/allow-styling.ts` 126, `tests/allow-negatives.ts` 11, `tests/bin/revert-check.test.ts` 137, `tests/bin/cited-lines.test.ts` 83, `bin/revert-check.mjs` 240, `bin/cited-lines.mjs` 109, `bin/size-allow.txt` 15. Changed: `tests/boundaries.test.ts` 539, `.scratch/migration/agents/spec.md` +1, and 150 tracked files in all, `153 files changed, 1076 insertions(+), 306 deletions(-)` against ee7ab653.
 
 The size check stays green, and three files on its allow list grew inside it: `tests/views/collection.test.ts` 928 to 957, `tests/routes/terminal.test.ts` 968 to 970, `tests/shell/rail.test.ts` unchanged at 906. Membership of `bin/size-allow.txt` is binary, so growth inside the list is not caught; the check only refuses a file that is not on it.
 
@@ -177,7 +177,7 @@ All eleven rulings done. `tests/server/git.test.ts` and three of the step's own 
 
 | # | Ruling | State | Command and output |
 | --- | --- | --- | --- |
-| 1 | the head-comment command is the one that was run | DONE | `git diff --name-only ec7bc6e5 --diff-filter=d --relative -- src config tests bin | xargs -I{} sh -c 'echo "--- {}"; sed -n "1,14p" {}'`: 149 files, 0 `No such file`, 5s; the 17 untracked files printed by the same command fed from `git status --porcelain` |
+| 1 | the head-comment command is the one that was run | DONE | `git diff --name-only bbae5dd9 --diff-filter=d --relative -- src config tests bin | xargs -I{} sh -c 'echo "--- {}"; sed -n "1,14p" {}'`: 149 files, 0 `No such file`, 5s; the 17 untracked files printed by the same command fed from `git status --porcelain` |
 | 2 | the revert check never calls a revert proven when the case did not run | DONE | `node bin/revert-check.mjs <8 files>`: `53 reverts, 0 unproven`, every line red, 428s; `npx vitest run tests/bin/revert-check.test.ts`: 7 passed |
 | 3 | the citation check flags a blank line, and the report's citation is right | DONE | `node bin/cited-lines.mjs <citations>`: `19 cited lines, 0 missing`, exit 0. The miss was `views/shared/CardActions.svelte:202`, which is `src/lib/views/shared/CardActions.svelte:202` |
 | 4 | the scratch count measures the run, not the machine | DONE | `sh bin/scratch-count.sh`: `node before 0 / node after 0 / browser before 0 / browser after 0`, exit 0, 626s for both suites |
@@ -186,7 +186,7 @@ All eleven rulings done. `tests/server/git.test.ts` and three of the step's own 
 | 7 | the scratch guard sees every way a directory is taken | DONE | `npx vitest run tests/scratch.test.ts`: 7 passed |
 | 8 | `explains()` refuses a restatement | DONE | `npx vitest run tests/negatives.test.ts`: 6 passed |
 | 9 | the audits check walks `tests/views` recursively | DONE | a planted case in `under/planted.test.ts`, 6 passed |
-| 10 | `agents/spec.md` left exactly as it is | DONE | `git diff --stat ec7bc6e5 -- .scratch/migration/agents/spec.md`: `1 file changed, 1 insertion(+)`, untouched this round |
+| 10 | `agents/spec.md` left exactly as it is | DONE | `git diff --stat bbae5dd9 -- .scratch/migration/agents/spec.md`: `1 file changed, 1 insertion(+)`, untouched this round |
 | 11 | every timing measured in the run quoted | DONE | the table below |
 
 ## What each check now refuses that it accepted before
@@ -232,7 +232,7 @@ New this round: `bin/size-check.sh` 52, `bin/scratch-count.sh` 37, `tests/size.t
 
 Changed this round: `bin/revert-check.mjs` 319, `bin/cited-lines.mjs` 116, `bin/size-allow.txt` 15, `tests/scratch.test.ts` 265, `tests/duplication.test.ts` 320, `tests/audits.test.ts` 248, `tests/negatives.test.ts` 206, `tests/boundaries.test.ts` 561, `tests/allow-styling.ts` 155, `tests/bin/revert-check.test.ts` 274, `tests/bin/cited-lines.test.ts` 92, `tests/data/real-hub.probe.ts` 130, `tests/server/git.test.ts` 616, and eight comments under `tests/views/`.
 
-The step's whole diff against ec7bc6e5: 150 files changed, 1076 insertions, 292 deletions, plus 17 untracked files.
+The step's whole diff against bbae5dd9: 150 files changed, 1076 insertions, 292 deletions, plus 17 untracked files.
 
 ## Decisions the orchestrator may reverse
 
@@ -297,7 +297,7 @@ The browser suite ran inside the count script; on its own under a private `TMPDI
 
 New: `tests/reason.ts` 38. Changed: `bin/revert-check.mjs` 407, `bin/cited-lines.mjs` 152, `bin/size-check.sh` 53, `bin/scratch-count.sh` 54, `tests/scratch.test.ts` 335, `tests/duplication.test.ts` 376, `tests/negatives.test.ts` 242, `tests/audits.test.ts` 258, `tests/boundaries.test.ts` 567, `tests/size.test.ts` 151, `tests/bin/revert-check.test.ts` 440, `tests/bin/cited-lines.test.ts` 123, `tests/allow-duplication.txt` 754 (744 entries, one per clone), `tests/allow-audits.txt` 160, `tests/allow-negatives.ts` 63 (48 entries, one per absence), `tests/data/real-hub.probe.ts` 130.
 
-The step's whole diff against ec7bc6e5: 150 files changed, 1082 insertions, 292 deletions, plus 18 untracked files.
+The step's whole diff against bbae5dd9: 150 files changed, 1082 insertions, 292 deletions, plus 18 untracked files.
 
 ## What is left over
 

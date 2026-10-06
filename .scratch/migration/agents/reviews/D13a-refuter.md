@@ -1,4 +1,4 @@
-# Step D13a refuter report (on .agents/worktrees/D13a, base fcde80b7)
+# Step D13a refuter report (on .agents/worktrees/D13a, base f4dff40e)
 
 A page this report cites is named with its section. A finding in code keeps its `file:line`.
 
@@ -93,7 +93,7 @@ Reviewer usage: not measured exactly; about 65 tool uses, roughly 300k tokens, a
 
 # Repair round 1, refuted
 
-Tree hash after the round: `(git diff fcde80b7; git status --short) | md5` = f9faf3d3ebb7fe9afc7e33ca0b698235.
+Tree hash after the round: `(git diff f4dff40e; git status --short) | md5` = f9faf3d3ebb7fe9afc7e33ca0b698235.
 
 ## Verification (from the worktree's `tools/oculus`)
 

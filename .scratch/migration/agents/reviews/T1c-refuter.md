@@ -1,6 +1,6 @@
 # Step T1c refuter report
 
-T1c review (refute), worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/T1c, base d160d13f.
+T1c review (refute), worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/T1c, base 202fa868.
 
 Not done in the step, and therefore open:
 - Item 1 is violated by one deletion: `root/vite-plugin.test.ts` loses the only test of the port move's fall-back branch. Spec 1 below.
@@ -37,7 +37,7 @@ checks: 7 commands passed
 | Worktree | 8.93 4.69 3.88 | 109 files passed, 30 skipped; 1670 tests passed, 639 skipped | 17.74 s |
 
 - The copy of main's tests sits in my scratch folder with node_modules linked to the worktree's. `local.yml` was excluded from the copy.
-- Diff: 111 files changed, 1732 insertions, 3758 deletions (`git diff d160d13f --stat`).
+- Diff: 111 files changed, 1732 insertions, 3758 deletions (`git diff 202fa868 --stat`).
 - `git status --short` shows three new files: `tests/server/accounts/calendar/poll-fixture.ts`, `tests/server/accounts/calendar/poll-timeout.test.ts` and the report. No test file was deleted.
 - A scan of every added line for non-ASCII characters found none: `grep '^+' full.diff | LC_ALL=C grep '[^ -~]'` printed nothing.
 
@@ -62,7 +62,7 @@ checks: 7 commands passed
    - The git-ops retitle "refuses to take a deletion on a path both sides changed" is correct, since the body never tested "not in conflict".
    - The `core/changes.test.ts` diff carries prettier and comment-rewrap churn. No assertion changes meaning. See Standards 3.
 5. Comments and helpers, with outside-imported helpers keeping every export: **holds for the exports, with two comment findings**.
-   - `git diff d160d13f --stat` lists no change to `machine/line-counts.ts`.
+   - `git diff 202fa868 --stat` lists no change to `machine/line-counts.ts`.
    - `tmux-fixture.ts` keeps its exports and adds `tmuxOptions`.
    - The new `tmux-fixture.ts` comment is inaccurate. See Standards 1.
    - `poll-timeout.test.ts` has no layer label in its head comment. See Standards 2.
@@ -90,7 +90,7 @@ checks: 7 commands passed
   - The source checks are unchanged.
   - The file also changed its head tag sentence ("its cases start real git processes"), which is true.
   - It also deleted "refuses a path that is not a worktree of the root". That case is held by the kept climb case at `:401`, which reaches the same `worktreeUnder` false branch (`git-write.ts:509`, `OUTSIDE_WORKTREES`) and asserts the same two refusals.
-- `core/paths.test.ts` untouched: **met**. `git diff d160d13f --stat` lists no change to it.
+- `core/paths.test.ts` untouched: **met**. `git diff 202fa868 --stat` lists no change to it.
 - Helper exports (`line-counts.ts`): **met**.
 - Stale allow-list entry removed, `test:checks` green: **met**.
 - Folds listed old title against row, each row keeping its expectation, table passing: **partial**.
@@ -214,7 +214,7 @@ checks: 7 commands passed
 ## Disclosure and usage
 
 - I ran one `git -C . status --short <paths>`. That is a variant of the allowed `git status --short`: read-only, and it printed nothing.
-- Every other git command was `git diff d160d13f` or `git status --short` from inside the worktree.
+- Every other git command was `git diff 202fa868` or `git status --short` from inside the worktree.
 - Scratch files are under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/t1c-review/`.
 - Early on, my `full.diff` may have overwritten a builder file of the same name in the shared `scratchpad/t1c/` folder. The report cites no such file, and every file it does cite there is intact.
 - No file in the worktree, on main or in the ledger was edited. `local.yml`, ports 8787 and 8790, and curl were not touched.
@@ -306,7 +306,7 @@ npx vitest run tests/server/git/git-ops.test.ts --tagsFilter slow --reporter=ver
 
 ### Verdicts
 
-These cover the whole diff since `d160d13f`: 113 changed files and 4 new ones (`git status --short` prints 117 lines, the same before and after the verification run).
+These cover the whole diff since `202fa868`: 113 changed files and 4 new ones (`git status --short` prints 117 lines, the same before and after the verification run).
 
 Items of "What to build":
 1. **Violated.**
@@ -406,7 +406,7 @@ Cases of "Cases":
   - Verdict: item 1 violated.
 - **Standards 3: `machine/pty/tmux-fixture.ts:9`.**
   - The hunk: `export { privateTmux, tmuxOptions, watchEnds, type PrivateTmux } from './tmux-server.ts';`
-  - What is wrong: `tmuxOptions` was not an export at the base (`git diff d160d13f` shows `TMUX`, `PrivateTmux`, `privateTmux` and `watchEnds` only). Its one outside importer, `commands-pane.test.ts:27`, imports `TMUX, privateTmux, watchEnds`. An export the step adds with no importer is removed, under the rules file's principle on exports.
+  - What is wrong: `tmuxOptions` was not an export at the base (`git diff 202fa868` shows `TMUX`, `PrivateTmux`, `privateTmux` and `watchEnds` only). Its one outside importer, `commands-pane.test.ts:27`, imports `TMUX, privateTmux, watchEnds`. An export the step adds with no importer is removed, under the rules file's principle on exports.
   - Failure scenario: the API of the tmux helpers has two entry points to keep in step.
 - **Standards 4: `machine/pty/tmux-server.ts:25-39`.**
   - The hunk: `export function requireProgram(...): () => boolean` and the doc line "Returns whether it ran".

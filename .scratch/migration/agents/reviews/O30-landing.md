@@ -20,7 +20,7 @@ Oculus in its own window: Electron runs the oculus server in a utility process a
 
 ## Verification
 
-In `.agents/worktrees/gate-O30` at main 209028a73 with the range:
+In `.agents/worktrees/gate-O30` at main 9bb1eef23 with the range:
 
 - `npm run diagrams`: exit 0.
 - `npm run test:landing`: ok ASCII gate; ok `npm run format:check`; ok `npm run test:checks` (76.3 s); ok `npm run lint`; ok `npm run check, then npm run build, then npm run test:slow` (258.6 s); FAILED `npm test` (15.6 s) on `ENOTEMPTY: directory not empty, rename .../node_modules/.vite/vitest/.../deps___vitest___temp_...`, two vitest runs racing on the shared deps cache at startup, folded into Q124.

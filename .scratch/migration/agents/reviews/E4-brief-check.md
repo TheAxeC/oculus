@@ -1,6 +1,6 @@
-# Step E4 brief check (on main at eba29a18e)
+# Step E4 brief check (on main at 8aa491caa)
 
-This is the report of the fresh agent from the `spec` skill's "Steps / The brief check", run on `agents/briefs/E4.md` (written at 53908af5c). `git log --oneline 53908af5c..HEAD -- tools/oculus ':!tools/oculus/.scratch'` printed `eba29a18e Refactor layout.yml ...`, `0aea28449 Land D20 ...`, `b07d24766 Land D38 ...`, `ee0407a5a Land X3f ...` and `71017ce60 Land S5 ...`. `git status --short tools/oculus ':!tools/oculus/.scratch'` printed nothing, so every read below is main at HEAD.
+This is the report of the fresh agent from the `spec` skill's "Steps / The brief check", run on `agents/briefs/E4.md` (written at 748e88ac7). `git log --oneline 748e88ac7..HEAD -- tools/oculus ':!tools/oculus/.scratch'` printed `8aa491caa Refactor layout.yml ...`, `722a287a7 Land D20 ...`, `5b4e737a8 Land D38 ...`, `e6d00fb0f Land X3f ...` and `30b4ddced Land S5 ...`. `git status --short tools/oculus ':!tools/oculus/.scratch'` printed nothing, so every read below is main at HEAD.
 
 The biggest findings, in order of weight:
 
@@ -73,13 +73,13 @@ Commands run from `tools/oculus` unless stated otherwise.
   - `npm view penpal@8.0.1 exports --json` printed an object with `import` (`types ./dist/penpal.d.ts`, `default ./dist/penpal.mjs`) and `require` (`./dist/penpal.cjs`), and no subpath keys. In substance this matches "names only `.`", though the brief's wording omits `require`.
   - From `npm pack penpal@8.0.1`, unpacked in my scratchpad: `grep -n "^import" dist/penpal.mjs` printed nothing; `serializeError` is at :15-20; `createErrorReplyMessage` is at :88-97; `allowedOrigins?.length ? allowedOrigins : [window.origin]` is at :516; `if (source !== this.#remoteWindow) return;` is at :597; the origin test is at :599; `export { ... WindowMessenger ... connect ...}` is at :756. Holds.
 - **The roots.**
-  - `grep -n "export function browserRoots\|export function repositoryRoots"` printed `25:` and `45:`. browserRoots is :25-36; repositoryRoots is :45-49, where the brief says :44-48. That file is unchanged since 53908af5c.
+  - `grep -n "export function browserRoots\|export function repositoryRoots"` printed `25:` and `45:`. browserRoots is :25-36; repositoryRoots is :45-49, where the brief says :44-48. That file is unchanged since 748e88ac7.
   - `grep -n "ENGINE_ROOT = " src/lib/server/files/files.ts` printed `242:`.
   - `grep -n "export function workspaceRoots" src/lib/server/files/fs.ts` printed `283:`.
   - `grep -n game-engine config/sources.yml` printed `90:`.
   - Holds.
 - **Real paths.**
-  - `grep -n "export function" src/lib/server/core/paths.ts` printed `15: inside`, `22: permitted`, `28: below`, `39: realPath`. realPath is :39-45; the brief says :40-46, and it was :39 at the base too (`git show 53908af5c:... | grep -n` printed `39:`). `inside` is :15-19, which holds.
+  - `grep -n "export function" src/lib/server/core/paths.ts` printed `15: inside`, `22: permitted`, `28: below`, `39: realPath`. realPath is :39-45; the brief says :40-46, and it was :39 at the base too (`git show 748e88ac7:... | grep -n` printed `39:`). `inside` is :15-19, which holds.
   - `grep -rn "realPath(.*true)" src` printed `processes/read.ts:47` and `:52`, and `portfolio.ts:246`. The brief says :242; portfolio.ts gained 7 lines since the base.
 - **The hub.** `channels.ts` has `publish` at :142-149 and `version(channel)` at :48. Holds.
 - **The git payload.**
@@ -111,7 +111,7 @@ Commands run from `tools/oculus` unless stated otherwise.
 - **Opening: changed.**
   - `wc -l opening.ts` printed `110`; the brief says 85.
   - `tabOf` is now the exported `tabForKind` at :50-61, sending `html` to `document` at :57. `openRow` is :68-81, `openRowBeside` :84-88, `openBookmark` :98-110 (`.html` to Document at :105-106).
-  - `tabForKind` is also called by `views/sources/source/read-again.ts:38`. That landed with X3f (`git log` printed `ee0407a5a`).
+  - `tabForKind` is also called by `views/sources/source/read-again.ts:38`. That landed with X3f (`git log` printed `e6d00fb0f`).
 - **Writes: changed.**
   - `wc -l writes.ts` printed `556`; the brief says 542.
   - `handleWrite` is at :268 and the token check at :274, which holds.
@@ -132,17 +132,17 @@ Commands run from `tools/oculus` unless stated otherwise.
   - **S5's rule as it now stands** (`settings.ts:1-10` head comment): "a key that is missing is the entry's `default`, and a key whose value the rule refuses is the `default` too and comes back as a problem naming the key". `PROBLEM_READERS` is at :447-466, and `settingProblems` at :472.
   - **options.yml:9 says every entry outside local.yml holds `description`, `heading`, `section`, `default` and `control`.** `HEADINGS` (catalog/options.ts:55-66) is `appearance, editor, terminal, sessions, cluster, boards, rail, presentation, sources, calendar`. A missing or unknown heading is `findings.options.heading_missing` or `heading_unknown` (option-findings.ts:48-51).
   - The brief's "S5 with Q119 (repair round 1 in flight)" is now on main as just described.
-- **Layout.** layout.yml has `rail:` at :9 (entries :10-20), `nav_groups:` :24 (:25-35), `direct_chord: v` :39, `arrangements:` :43 and `floats:` :114. Holds. eba29a18e moved tabs inside the help and views arrangements without changing the line count.
+- **Layout.** layout.yml has `rail:` at :9 (entries :10-20), `nav_groups:` :24 (:25-35), `direct_chord: v` :39, `arrangements:` :43 and `floats:` :114. Holds. 8aa491caa moved tabs inside the help and views arrangements without changing the line count.
 - **Glyphs.**
   - `grep -n "^  app:\|^  app_view:\|^  app-view:"` printed nothing, and `grep -c` of hyphenated names printed `0`. Holds.
   - Underscore names: `40` (the brief says 38).
   - `edit` :29, `lock` :82, `page` :128 (the brief says :27, :79, :125).
   - `ls node_modules/lucide-static/icons` holds both `blocks.svg` and `app-window.svg`.
-  - **Not stated in the brief:** `grep -n "blocks\|app-window" config/catalogs/icons.yml` printed `17: open_program: app-window`. So `app_view` would draw the same icon as Open in Program. That mapping was already present at the base (`git log -S` printed a5bcb7af4).
+  - **Not stated in the brief:** `grep -n "blocks\|app-window" config/catalogs/icons.yml` printed `17: open_program: app-window`. So `app_view` would draw the same icon as Open in Program. That mapping was already present at the base (`git log -S` printed f16183e68).
 - **Theme.** `tokensCss` is imported at `theme.ts:14` and `WALL_CLASS` is at :33; the brief says :12 and :31.
 - **Notices.** notices.svelte.ts is 97 lines and `allFindings` is at status.ts:224. Holds.
 - **Folder counts** (`ls -A <f> | wc -l`). Same as the brief except `src/lib/server/machine` is `8` (was 7) and `src/lib/data/sources/config` is `10` (was 9).
-  - **Not in the brief:** `src/lib/data/helpers` holds `10` items at the base and at HEAD (`git ls-tree --name-only 53908af5c tools/oculus/src/lib/data/helpers/ | wc -l` printed `10`). Item 1's `src/lib/data/helpers/apps.ts` makes it 11, against agents/spec.md's ten-item rule.
+  - **Not in the brief:** `src/lib/data/helpers` holds `10` items at the base and at HEAD (`git ls-tree --name-only 748e88ac7 tools/oculus/src/lib/data/helpers/ | wc -l` printed `10`). Item 1's `src/lib/data/helpers/apps.ts` makes it 11, against agents/spec.md's ten-item rule.
 - **Sizes** (`wc -l`), brief value first:
   - context.ts: 732 then 737
   - writes.ts: 542 then 556
@@ -167,10 +167,10 @@ Commands run from `tools/oculus` unless stated otherwise.
   - `Z520` (E4's choices: the rail place, the glyphs and icons, the limits, `allow-downloads`, `not_declared`/`closed`).
   - `grep -n "GA\b\|GC\b" agents/guarded.md` printed nothing, and G1's Code line (`agents/guarded.md:8`) does not name `approve` yet.
 - **S5, X3f, D38 and D20, which the brief treats as in flight:**
-  - S5 landed at 71017ce60: the reader rule above, `options.yml` rewritten (1280 lines), the readers moved.
-  - X3f landed at ee0407a5a: `opening.ts` restructured, Document.svelte rewritten (no `window.open`, `keyInFrame`), PaneBody focuses an `iframe`, the section's :307, :326 and :336 changed.
-  - D20 landed at 0aea28449: `writes.svelte.ts` is 595 lines, `collectionFile` moved.
-  - D38 landed at b07d24766: `radar-add`, `literature:` in behavior.yml and options.yml, `literature` in LOCAL_KEYS, `(docs)/literature`.
+  - S5 landed at 30b4ddced: the reader rule above, `options.yml` rewritten (1280 lines), the readers moved.
+  - X3f landed at e6d00fb0f: `opening.ts` restructured, Document.svelte rewritten (no `window.open`, `keyInFrame`), PaneBody focuses an `iframe`, the section's :307, :326 and :336 changed.
+  - D20 landed at 722a287a7: `writes.svelte.ts` is 595 lines, `collectionFile` moved.
+  - D38 landed at 5b4e737a8: `radar-add`, `literature:` in behavior.yml and options.yml, `literature` in LOCAL_KEYS, `(docs)/literature`.
   - So the brief's "E4 is dispatched after X3f lands" and "after S5 lands" are both met.
   - DESIGN.md: the section is now :249-341 (`grep -n "^## "` printed `249:## Apps added while oculus runs` and `342:## Relationship to the cockpit`). E4's path :149 is now :151.
   - HELP.md: `## Source Control` is now :201, so E4's :198 is now :200. Its :267 is now :269 (the behavior.yml row) and its :282 is now :284 (local.yml). :19 holds.
@@ -300,7 +300,7 @@ Findings:
 
 ## Shared paths
 
-A3's and D44's diffs were read in their worktrees (`git diff HEAD -U0` in `.agents/worktrees/A3` and `.agents/worktrees/D44`, both at base 6044d753c). O30 has no worktree yet, so it was read from `agents/briefs/O30.md`'s write list, numbered at 94bb9b3a8. `git diff --stat 94bb9b3a8 53908af5c -- +page.svelte DESIGN.md` printed nothing, so its lines are as at the base. E4's lines are given at HEAD.
+A3's and D44's diffs were read in their worktrees (`git diff HEAD -U0` in `.agents/worktrees/A3` and `.agents/worktrees/D44`, both at base 378c5b60e). O30 has no worktree yet, so it was read from `agents/briefs/O30.md`'s write list, numbered at 06979a5cd. `git diff --stat 06979a5cd 748e88ac7 -- +page.svelte DESIGN.md` printed nothing, so its lines are as at the base. E4's lines are given at HEAD.
 
 E4 and A3:
 
@@ -356,7 +356,7 @@ Agent usage: aeb43ede13fd69892, claude-opus-5-5, 315,721 tokens, 114 tool uses, 
 
 ## Closed
 
-Closed in `agents/briefs/E4.md` on main at b732308e9, each change checked against the tree by the command named. Section numbers are this report's.
+Closed in `agents/briefs/E4.md` on main at 4f6b12e97, each change checked against the tree by the command named. Section numbers are this report's.
 
 Section 1, Names:
 - keys.test.ts:322 and the four app registration keys: `badgeMark` stays a string catalog key, `registerApps` gives each row `apps.editing_mark` or `apps.unapproved_mark` and registers again on every push (item 3, Decision 19); keys.test.ts gains `registerApps` over a two-row fixture in its `beforeEach` (`grep -n "beforeEach\|registration.badgeMark" tests/checks/source/keys.test.ts`: :34, :322) and joins the write list.
@@ -398,7 +398,7 @@ Section 8, Dictated text:
 - `node build`: item 14 starts `node src/server.ts --engine <scratch>/engine` after `npm run build` (`sed -n 344p HELP.md`; `sed -n 19,23p src/server.ts`).
 
 Shared paths:
-- The brief's section is rewritten: S5, X3f, D38 and D20 landed (`git log --oneline 53908af5c..HEAD -- tools/oculus ':!tools/oculus/.scratch'`), A3 and D44 read from their worktrees, A3's and D44's shared files judged simple as the check gives them, with the files this closing added (`options.ts`, `workbench.yml`, `boundaries.test.ts`, `DESIGN.md:85`) read the same way (`git diff HEAD -U0` in each worktree); O30's `+page.svelte` change starts at :191, so E4's :177-190 is simple, and O30 leaves the apps section to the second of the two to land.
+- The brief's section is rewritten: S5, X3f, D38 and D20 landed (`git log --oneline 748e88ac7..HEAD -- tools/oculus ':!tools/oculus/.scratch'`), A3 and D44 read from their worktrees, A3's and D44's shared files judged simple as the check gives them, with the files this closing added (`options.ts`, `workbench.yml`, `boundaries.test.ts`, `DESIGN.md:85`) read the same way (`git diff HEAD -U0` in each worktree); O30's `+page.svelte` change starts at :191, so E4's :177-190 is simple, and O30 leaves the apps section to the second of the two to land.
 
 Declined to judge:
 - `app-window`: Z559. The heading: Z558. Vite's `import.meta.resolve`: C100. Chrome's behaviour: the control runs of item 14. O30's `+page.svelte` hunk: :191. The `__data.json` token for `curl` is not changed: item 14 still reads it from the page data, and the builder quotes how.

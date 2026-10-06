@@ -1,4 +1,4 @@
-REFUTE REPORT, step Q66 (oculus/migration), worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q66, base d6359dcd. I changed no file in the worktree (`git status --short` prints the same 30 lines before and after my runs). My scratch copies are under the session scratchpad (q66rev-base, q66rev-mut).
+REFUTE REPORT, step Q66 (oculus/migration), worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q66, base 8e5ca1de. I changed no file in the worktree (`git status --short` prints the same 30 lines before and after my runs). My scratch copies are under the session scratchpad (q66rev-base, q66rev-mut).
 
 ## 1. Verification lines
 
@@ -34,7 +34,7 @@ Because checks.sh stops at its first failing command, I ran the rest one by one 
 
 The report's quoted numbers reproduce: line counts (308, 433, 90, 298, 59, 235, 483, 456, 311, 741, 191, 178, 101, 37, 13), the four test files `Tests 53 passed (53)` in my mutation copy against the report's 90 for a wider set, `tests/shell/panes` holds 8 items. `Test Files 424 passed | 1 failed (447)` matches the report's 425/447 up to the timeout.
 
-Reruns of the report's evidence, first run on the unchanged tree (see Spec S1): I rebuilt the unchanged source by reverse-applying `git diff d6359dcd -- tools/oculus/src` with `patch -R -p3` onto a scratch copy and kept the new tests. `npx vitest run tests/state/client/queries.test.ts tests/state/client/client-state.test.ts tests/shell/panes --reporter=verbose` there printed `Failed Tests 31`. The failure forms: `TypeError: queries.scoped is not a function` (14 queries.test.ts tests), `TypeError: shownGate is not a function` (6) and `TypeError: useShown is not a function` (2) in tab-view.test.ts, `TypeError: Cannot read properties of undefined (reading 'wrap')` (3 in client-state.test.ts plus 3 in tab-scope.client.test.ts), `AssertionError: expected [ '/api/memories' ] to deeply equal []` (tab-view "makes no request ... while hidden"), `AssertionError: expected [ 'tabScope' ] to deeply equal []` (client-state audit), and the two pre-existing client-state tests that list `STORES`. The one new test that passes on the unchanged tree is tab-view "makes the request for the same view when shown", which is the control case. On the changed tree the same four files print `Tests 53 passed (53)`.
+Reruns of the report's evidence, first run on the unchanged tree (see Spec S1): I rebuilt the unchanged source by reverse-applying `git diff 8e5ca1de -- tools/oculus/src` with `patch -R -p3` onto a scratch copy and kept the new tests. `npx vitest run tests/state/client/queries.test.ts tests/state/client/client-state.test.ts tests/shell/panes --reporter=verbose` there printed `Failed Tests 31`. The failure forms: `TypeError: queries.scoped is not a function` (14 queries.test.ts tests), `TypeError: shownGate is not a function` (6) and `TypeError: useShown is not a function` (2) in tab-view.test.ts, `TypeError: Cannot read properties of undefined (reading 'wrap')` (3 in client-state.test.ts plus 3 in tab-scope.client.test.ts), `AssertionError: expected [ '/api/memories' ] to deeply equal []` (tab-view "makes no request ... while hidden"), `AssertionError: expected [ 'tabScope' ] to deeply equal []` (client-state audit), and the two pre-existing client-state tests that list `STORES`. The one new test that passes on the unchanged tree is tab-view "makes the request for the same view when shown", which is the control case. On the changed tree the same four files print `Tests 53 passed (53)`.
 
 I also ran three of the builder's single-edit reverts on a scratch copy of the worktree: removing `&& !hidden()` from `read` turned 8 tests red (the report says 8); `invalidate(key, false)` in `deferRefetch` turned only "wakes a reader outside the scope ..." red (the report names it); removing `if (!shown()) return false;` from `due` turned only "answers false while hidden and records nothing" red (the report names it). All three match.
 
@@ -46,7 +46,7 @@ What to build:
 3. The tab provides it: holds. `SHOWN_KEY`, `provideTabState`, `useShown`, `shownGate` with `due/note/clear` as specified; `use.ts` comments are true.
 4. TabView: holds. `provideTabState(() => shown)` after `provideInstance`; head comment says what a hidden view does.
 5. The five direct re-reads: holds as a diff (each gates through one `shownGate(useShown())`; every reset path calls `clear()`: Changes `:69`, Source `:224`, Graph `:169`; Diff's subject effect calls `note` and the follow effect uses the gate; File sets `src` in an effect). Nothing tests the wiring (see Spec S3, Behaviour B1).
-6. Terminal: holds. No file under `terminals.svelte.ts` or the terminal views is in `git diff d6359dcd --stat`.
+6. Terminal: holds. No file under `terminals.svelte.ts` or the terminal views is in `git diff 8e5ca1de --stat`.
 7. Docs: holds. `DESIGN.md:194` carries the sentence; every comment the brief names is changed (hunks read); `PaneBody.svelte`, `TabView.svelte`, `use.ts`, `context.ts`, `queries.svelte.ts` heads are true for a hidden tab. No other sentence in `src`, `config`, `HELP.md`, `DESIGN.md`, `README.md` is made false (grep of "hidden tab|neither builds|fetched again|still being drawn|re-read" over those; the hits I read are either changed or unrelated, e.g. `views/structure/map/Graph.svelte:161`).
 8. Tests: holds. `queries.test.ts` new describe (14 tests), `client-state.test.ts` (`STORES` has `tabScope`, 3 new tests), `tab-view.test.ts` (10), `tab-scope.client.test.ts` (3), each with a prose `// Revert:` comment, no directive. Two helper files outside the brief's path list (see S2).
 
@@ -110,7 +110,7 @@ Usage from the completion notice: claude-sonnet-5-5, 197,616 tokens, 55 tool use
 
 # Repair round 1, refuted
 
-Step Q66, worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q66, base d6359dcd. I edited no file in the worktree. `git status --short` printed 30 lines before and after my runs. `npm run diagrams` and `npm run build` rewrote only the regenerated diagrams and the ignored `build/` and `.svelte-kit/`. My scratch copies (`mut`, `base`) and outputs are in /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/q66r1/. The scratch copies symlink the worktree's `node_modules`, so vitest may have written its cache there.
+Step Q66, worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q66, base 8e5ca1de. I edited no file in the worktree. `git status --short` printed 30 lines before and after my runs. `npm run diagrams` and `npm run build` rewrote only the regenerated diagrams and the ignored `build/` and `.svelte-kit/`. My scratch copies (`mut`, `base`) and outputs are in /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/q66r1/. The scratch copies symlink the worktree's `node_modules`, so vitest may have written its cache there.
 
 ## 1. Verification lines
 
@@ -128,7 +128,7 @@ $ npm test
       Tests  2 failed | 11115 passed | 619 skipped (11736)
 checks: failed with exit 1: npm test
 ```
-The line `checks: 7 commands passed` was not printed in my run. Both failures are 5000 ms timeouts in `tests/server/edit/config-key.test.ts`, which the step does not change (`git diff d6359dcd --stat -- tools/oculus/tests/server` prints nothing). I named them and did not count the run as a pass of the list.
+The line `checks: 7 commands passed` was not printed in my run. Both failures are 5000 ms timeouts in `tests/server/edit/config-key.test.ts`, which the step does not change (`git diff 8e5ca1de --stat -- tools/oculus/tests/server` prints nothing). I named them and did not count the run as a pass of the list.
 - `npx vitest run tests/server/edit/config-key.test.ts` alone: `Tests 4 failed | 34 passed (38)`, all `Test timed out in 5000ms`, at load 23.
 - `tests/server/git/autofetch.test.ts` alone: `Tests 44 passed (44)`. In a three-file run with `transcripts.test.ts` and `config-key.test.ts` it printed one 5328 ms timeout, "fetches a clone whose path holds a space".
 - I did not get `config-key.test.ts` to green. It is not a file the step changes.
@@ -153,9 +153,9 @@ Because `checks.sh` stops at its first failing command, I ran the other six comm
   - A shown tab starting with `undrawn()`: `× draws the picture of a File tab that is shown`, `1 failed | 12 passed`.
   - The first branch replaced by `{#if false}`: `× draws "No file chosen" for a File tab that names no file`, `1 failed | 12 passed`.
 - The B1 fix taken out on the scratch copy: `type`, `known`, `openable`, `alt`, the download name and the second `ProgramButton` read from live `path` and `root`. The result is `Tests 13 passed (13)`, so no test covers B1. The report says so ("No test ... seen at the look").
-- Ruling 3: `git diff d6359dcd --word-diff` over `latex.svelte.ts`, `fs.svelte.ts` and `docs.svelte.ts` shows only the intended clause insertions and the re-wrapping, with no word lost. The rewrapped paragraphs have lines of at most 99 columns. `npx prettier --check` on the three files passes. `tests/checks/source/comment-width.test.ts` passes (`Tests 2 passed (2)`).
+- Ruling 3: `git diff 8e5ca1de --word-diff` over `latex.svelte.ts`, `fs.svelte.ts` and `docs.svelte.ts` shows only the intended clause insertions and the re-wrapping, with no word lost. The rewrapped paragraphs have lines of at most 99 columns. `npx prettier --check` on the three files passes. `tests/checks/source/comment-width.test.ts` passes (`Tests 2 passed (2)`).
 - Ruling 4: the main checkout's `orchestrator-state.md` "Open items" section (`:197-203`) holds only its intro text, so the report's "none" is true.
-- Rulings 6 and 7. I reverse-applied `git diff d6359dcd -- tools/oculus/src` onto a scratch copy and kept the new tests. `queries.test.ts`, `client-state.test.ts` and `tests/shell/panes` gave `Tests 32 failed | 61 passed (93)`. That is the first report's 31 plus the new hidden-File test.
+- Rulings 6 and 7. I reverse-applied `git diff 8e5ca1de -- tools/oculus/src` onto a scratch copy and kept the new tests. `queries.test.ts`, `client-state.test.ts` and `tests/shell/panes` gave `Tests 32 failed | 61 passed (93)`. That is the first report's 31 plus the new hidden-File test.
 - The `taken()`/`undrawn()` move. With both functions placed above `function read` in a scratch copy, `duplication.test.ts` fails: `File.svelte:142 and Source.svelte:305 hold the same 9 lines (2c052d077c43)` and `Note.svelte:105 and Source.svelte:302 hold the same 9 lines (edea524db3b6)`, `Tests 2 failed | 16 passed (18)`. The report's claim reproduces.
 
 ## 2. Verdicts, whole diff since the base

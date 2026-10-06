@@ -16,7 +16,7 @@ Nothing inside the brief. `bench: []` in `.agents/plan.yaml`, so no A/B. The ste
 
 ## What landed
 
-From base a549ed92, 74 paths staged by the cherry-pick (3139 insertions, 851 deletions; `git diff --cached --shortstat`), plus the fixes at landing below.
+From base ec247019, 74 paths staged by the cherry-pick (3139 insertions, 851 deletions; `git diff --cached --shortstat`), plus the fixes at landing below.
 
 - Every reader of untyped input in the five folders reads through a module-level `...Shape` schema held with `satisfies z.ZodType`: request bodies (the terminal, git, deposit, file-browser write, source, open, account add, mail triage, memories upload), the cloc, ripgrep and `gh` output, the usage and account files, the provider answers of the mail and calendar accounts, and the run-time configuration readers.
 - The hand checks the schemas replace are gone: the loop count fell from 222 lines to 99 in 35 files.

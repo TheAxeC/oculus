@@ -1,6 +1,6 @@
-# Step Q85a brief check (on main at 64275504)
+# Step Q85a brief check (on main at 97e112d1)
 
-`git rev-parse HEAD` printed `6427550467324c648277dc879256fe7262165b40`. All commands ran from `tools/oculus` unless a scratch folder is named. The zod and tsc probes ran in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/zodprobe` with its own `npm install zod@4.6.5 typescript@6.0.3` on node v24.21.0. Nothing in the repository was written.
+`git rev-parse HEAD` printed `97e112d1ad0c271ca3b72359d35c8674b31b0d30`. All commands ran from `tools/oculus` unless a scratch folder is named. The zod and tsc probes ran in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/zodprobe` with its own `npm install zod@4.6.5 typescript@6.0.3` on node v24.21.0. Nothing in the repository was written.
 
 ## 1. Names
 

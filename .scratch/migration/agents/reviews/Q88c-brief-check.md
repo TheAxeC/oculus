@@ -1,6 +1,6 @@
 # Brief check of Q88c
 
-Brief: `tools/oculus/.scratch/migration/agents/briefs/Q88c.md`. Checked against `plan.md:287-295` and the Rulings Z52, Z55, Z70, Z83, Z150, Z152, Z162, Z172 and Z175, against `agents/spec.md`, `agents/reviews/vscode-parity.md:234-268`, the tree at main 70f7dc54, and VS Code's git extension (`/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/main.js` and `package.json`). Nothing was written and no state-changing git command was run. Every finding below was read from the file and line named; I did not run the test suite or checks.sh.
+Brief: `tools/oculus/.scratch/migration/agents/briefs/Q88c.md`. Checked against `plan.md:287-295` and the Rulings Z52, Z55, Z70, Z83, Z150, Z152, Z162, Z172 and Z175, against `agents/spec.md`, `agents/reviews/vscode-parity.md:234-268`, the tree at main da5e10a2, and VS Code's git extension (`/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/main.js` and `package.json`). Nothing was written and no state-changing git command was run. Every finding below was read from the file and line named; I did not run the test suite or checks.sh.
 
 The brief is not ready to dispatch. Section 6 holds blocking items: a gate collision, a cherry-pick state the code cannot hold, a folder-limit breach, an unspecified identity guard for trash, and missing paths. Section 5 holds false VS Code claims in Decisions 1 and 2 and a set of user-visible choices that no ruling covers.
 
@@ -174,7 +174,7 @@ Usage, from the completion notice: claude-sonnet-5-5 (agent a5ef36663a256e394), 
 
 ## Closed
 
-Every finding is closed in `agents/briefs/Q88c.md` as written on main at d210de04, by ruling Z240 (the orchestrator, automode) and open item Z241.
+Every finding is closed in `agents/briefs/Q88c.md` as written on main at 50be07eb, by ruling Z240 (the orchestrator, automode) and open item Z241.
 
 - Section 1, docs outside the paths: `DESIGN.md:128` and `HELP.md:44` and `:222` are in the path list and item 21; L4 has landed, so `HELP.md:27-45` is no longer shared.
 - Section 1, tests outside the paths: `menu-words.test.ts`, `config-folder.test.ts`, `sessions-fixture.ts` are in the path list; case 21 names their expected changes. `VOCAB_KEYS` tests run unchanged as part of the list.

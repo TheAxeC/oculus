@@ -1,4 +1,4 @@
-# Step Q106 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q106, base 5322b56f)
+# Step Q106 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q106, base e5824e1b)
 
 This report cites pages (the rules file, a standard, a skill's text) by their section, never by line number. A finding in code keeps its `file:line`. Every command ran from `tools/oculus` in the worktree with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`, in the foreground. Mutations and probes ran on a scratch copy under `$TMPDIR/q106rev.DKgnc1`, which is now deleted (`ls -d $TMPDIR/q106rev.*` prints "no matches found"). `git status --short` in the worktree prints the same 20 paths before and after the review.
 
@@ -170,16 +170,16 @@ Usage: reviewer a441a918298825101, served claude-opus-5-5; 209,569 tokens, 59 to
 
 ## Repair round 1, refuted
 
-Reviewer: a fresh agent. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q106`, base `5322b56f`. Every command ran from `tools/oculus` in the worktree with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`, in the foreground.
+Reviewer: a fresh agent. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q106`, base `e5824e1b`. Every command ran from `tools/oculus` in the worktree with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`, in the foreground.
 
 Disclosure about my scratch files. I wrote only inside the session scratchpad `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad`, and I found afterwards that the orchestrator shares that folder. Two things follow:
 - `checks.log` there now holds my verify run. If the orchestrator had a file of that name, my run overwrote it.
 - I created `base/` with `mkdir -p` for the base collection counts and then removed it with `rm -rf`. If a folder named `base` was already there, it is gone.
 
-I cannot tell whether either name existed before my run. A grep of the ledger for either path found nothing. Nothing in the worktree, the main checkout or the ledger was written: `git status --short` prints the same 20 paths before and after, and `git diff 5322b56f | shasum` prints f1778e2b5b078bee2ee752079adc76359110a14f both times.
+I cannot tell whether either name existed before my run. A grep of the ledger for either path found nothing. Nothing in the worktree, the main checkout or the ledger was written: `git status --short` prints the same 20 paths before and after, and `git diff e5824e1b | shasum` prints f1778e2b5b078bee2ee752079adc76359110a14f both times.
 
 ```
-$ git diff 5322b56f | shasum
+$ git diff e5824e1b | shasum
 f1778e2b5b078bee2ee752079adc76359110a14f  -        (the hash the round was reported at)
 
 $ npm run diagrams          exit 0; shasum of docs/diagrams/* before and after: no difference ("diagrams unchanged by the rerun")

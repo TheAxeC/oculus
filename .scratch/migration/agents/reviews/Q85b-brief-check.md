@@ -2,7 +2,7 @@
 
 Model: claude-sonnet-5-5 (served, read from the agent's record). Usage: 321979 tokens, 91 tool uses, 871 s (14 min 31 s), from the completion notice.
 
-BRIEF CHECK, Q85b (zod in `src/lib/state`). Nothing was changed anywhere. All commands ran from `/Users/axelfaes/workspace/research-hub/tools/oculus` on main at bf9b3da0. `config/local.yml` was not read. Ports 8787 and 8790 were not touched. No vitest, build or vite process was run.
+BRIEF CHECK, Q85b (zod in `src/lib/state`). Nothing was changed anywhere. All commands ran from `/Users/axelfaes/workspace/research-hub/tools/oculus` on main at ff2fd009. `config/local.yml` was not read. Ports 8787 and 8790 were not touched. No vitest, build or vite process was run.
 
 Verdict: the brief is not ready to dispatch as written. Findings 8.2, 8.3, 8.4 and 8.5 each stop the builder at a check or a step. Findings 6.1, 6.2 and 6.3 leave parts of the goal unreached while every check passes. Details follow, by heading.
 
@@ -28,7 +28,7 @@ Mapping:
 - "The same" (zod validation, `data/model` facade through `satisfies`, redundant hand checks deleted, answers unchanged): items 1, 3 to 9, and 10 (what stays).
 - "In the state layer, 71 files": the paths list, items 3 to 9.
 - "506 check lines": verify 2 (before and after per file). The brief never states how many lines are expected to remain, so the 506 is never reconciled to a target.
-- "after Q85a1, Q85a2 and Q85a4": landed. `git log` shows 58b860a0 (Q85a4), 0b38c14c (Q85a2).
+- "after Q85a1, Q85a2 and Q85a4": landed. `git log` shows 6a56bb75 (Q85a4), 5357e9de (Q85a2).
 - Z73 (`orchestrator-state.md:275`) "schemas at the inputs of its area, delete the hand checks they make redundant": items 1 and 3 to 9.
 
 Items with no part of the line behind them: item 2 (move `core/shapes.ts` to `data/`, edit 20 server files), item 13 (timing bound), item 14 (bundle measure). Item 2 is the only one that is a design choice outside the state layer. It is in "Decisions taken", so it is surfaced, but see finding 8.2: its location is wrong.
@@ -186,7 +186,7 @@ Commands: `ls tools/oculus/docs/adr` -> "No such file or directory"; `ls docs/ad
 8.6. Size limits (finding 19 above and Cases 17): `terminals.svelte.ts` 899, `fs.test.ts` 900, `collection.test.ts` 896, `repositories.ts` 801, `collection.ts` 800.
 
 8.7. S3c overlap, against `agents/briefs/S3c.md`:
-- Accurate: `DESIGN.md` lines 85 and 171 (S3c.md:143), `tests/checks/tree/boundaries.test.ts` (S3c.md:144), `state/client/context.ts` `settingsTyped` registration (S3c.md:133), a new `state/system/config/` folder (S3c.md:46), the S3c worktree at a157d199 (`git worktree list`).
+- Accurate: `DESIGN.md` lines 85 and 171 (S3c.md:143), `tests/checks/tree/boundaries.test.ts` (S3c.md:144), `state/client/context.ts` `settingsTyped` registration (S3c.md:133), a new `state/system/config/` folder (S3c.md:46), the S3c worktree at 069f5581 (`git worktree list`).
 - Not accurate: S3c.md names `ui.svelte.ts` only as "(the resets Z149 (2) needs)" (S3c.md:134). `grep -n "setWallpaper\|setCodeTheme\|460" S3c.md` prints nothing. The Q85b brief's "the setters `setWallpaper` and `setCodeTheme`, lines 460-500" is its own inference. On the tree `setWallpaper` is `ui.svelte.ts:471`, `boundedTextScale` is `:491-495` and `setCodeTheme` is `:509`. The brief's stated S3c range 460-500 contains Q85b's own `boundedTextScale:492`, so the sentence "the two hunks of `ui.svelte.ts` are apart" contradicts its own line numbers. Q85b's hunks are `300-392` (loadUi, savedHeld, instancesOf) and `:492`; S3c's hunks are unknown until its builder reports. Fix: say "S3c's hunks in `ui.svelte.ts` are not known; the landing that comes second merges by hand".
 - Not named: `docs/diagrams/` (both regenerate; the state file notes it); `tests/state/workbench/ui.test.ts` (Q85b adds cases; S3c's resets will likely add cases there too, `ui.test.ts` is 641 lines).
 - The sentence "Any hand reader S3c adds (its instance-state reader, its YAML reader) is converted at the landing that comes second" matches S3c.md:59 (drafts in the instance state) and :158 (the first client import of `yaml`).

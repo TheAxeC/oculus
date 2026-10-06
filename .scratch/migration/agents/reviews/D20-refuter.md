@@ -1,6 +1,6 @@
 # D20 refuter report
 
-Reviewer a4074e57a1552c160, claude-opus-5-5, ordo-high (stopped by the orchestrator by mistake and resumed): 167,719 tokens, 110 tool uses, 22.1 min (completion notice of the resumed run). Worktree `.agents/worktrees/D20`, base 16b31cef0.
+Reviewer a4074e57a1552c160, claude-opus-5-5, ordo-high (stopped by the orchestrator by mistake and resumed): 167,719 tokens, 110 tool uses, 22.1 min (completion notice of the resumed run). Worktree `.agents/worktrees/D20`, base 87c0a7a81.
 
 Not done or not met, first: the tests of G38 to G41 are not written; Z515 (1)'s record of layout writes per browser tab is absent; five tree checks fail on D20's own lines (layer boundaries, import order, duplication, two comment-width rows), which `test:quick` does not run, so the landing list would be red; a clean-tree commit answers "On branch main"; a cancelled merge is left mid-merge with nothing on the page saying so.
 
@@ -40,7 +40,7 @@ The look halves; the cases resting on the builder's gone probes; the 600 MB expo
 
 ## Repair round 1, refuted
 
-Reviewer a1d2b19ab1091cd56, claude-opus-5-5: 307,540 tokens, 99 tool uses, 20.1 min (completion notice). Worktree `.agents/worktrees/D20`, base 16b31cef0.
+Reviewer a1d2b19ab1091cd56, claude-opus-5-5: 307,540 tokens, 99 tool uses, 20.1 min (completion notice). Worktree `.agents/worktrees/D20`, base 87c0a7a81.
 
 ### Verification
 

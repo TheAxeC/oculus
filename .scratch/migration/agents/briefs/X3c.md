@@ -20,9 +20,9 @@ A design ruling decides what is built. It never exempts the code: every line is 
 - Z324 (automode, at this `/spec`): the closures of the brief check's findings, as items, decisions and cases below say.
 - Two causes booked here were not found at this `/spec` and are open items for Axel, so their items are not in this brief: the rail click that writes a rail reorder (Z288 5, Z275; open item Z325) and the active tab left out of sight (Z294, Q78-look-1; open item Z326). The step does not change `shell/rail/` for them, and the report says so.
 
-## What is on the tree (read on main at 76bdcd8c)
+## What is on the tree (read on main at e752624e)
 
-All paths below `tools/oculus/` unless they start with `.agents/`. The brief was first written on main at a9c0d38d; every premise below was read again at 76bdcd8c, and the line numbers that moved are given as they now stand.
+All paths below `tools/oculus/` unless they start with `.agents/`. The brief was first written on main at e1d7de25; every premise below was read again at e752624e, and the line numbers that moved are given as they now stand.
 
 - `Instance` is `{ id, view, state, preview?: true }` (`src/lib/state/workbench/layout/model.ts:18`); `LAYOUT_VERSION = 5` (`:131`). No pin of a tab exists. The session pin of a view is `pinInstance(id, session, label)` and `unpinInstance` (`state/workbench/layout/instances.ts:54`, `:116-140`), offered by `views/shared/sessions/SessionPicker.svelte:77-78` with the words `sessions.pin_pane` "Pin this pane" and `sessions.unpin_pane` "Unpin this pane" (`config/text/views/sessions/session-list.yml:43`, `:67`). (`sessions.pin_label` "Pin" in `SessionDetail.svelte:315` is the session's scoring pin, not this one, and stays.)
 - The saved layout (`state/workbench/layout/saved/saved.ts`, 644 lines, beside `migrate.ts` and `fold.ts`): a tab is read through `tabIdShape` (`:54-59`) and built at `:316-320`, `preview` kept only when it is `true`. The version is compared three times: `needsFloats` answers `version < LAYOUT_VERSION` (`:462`), the gate takes `LAYOUT_VERSION`, `FLOATLESS_VERSION` and `PAGES_VERSION` (`:481`), and floats are read only when `version === LAYOUT_VERSION` (`:505`). `tests/state/workbench/layout/saved/layout-locked.test.ts:60` pins `LAYOUT_VERSION` to 5; `DESIGN.md:375` names `{ version: 5, ... }`.

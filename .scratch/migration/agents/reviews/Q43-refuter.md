@@ -1,4 +1,4 @@
-# Step Q43 refuter report (on .agents/worktrees/q43, base 17e22699)
+# Step Q43 refuter report (on .agents/worktrees/q43, base 4735b6db)
 
 ## Verification (rerun by the reviewer)
 Every command below was run from `tools/oculus` in the worktree.
@@ -123,7 +123,7 @@ ASCII gate (perl form): printed nothing
 find src tests bin -type f | xargs wc -l | sort -n | tail -3: 970 tests/state/layout.test.ts, 979 tests/state/board.test.ts, 164494 total. Files.svelte 588, fs.ts 485, files-forms.spec.ts 408.
 npm run build: exit 0
 npx playwright test tests/browser/files.spec.ts tests/browser/files-forms.spec.ts tests/browser/unsaved-forms.spec.ts: 45 passed (1.3m). The first try was refused by the 8792 lock; it passed on the retry.
-Merge check, git merge-file of main HEAD / base 17e22699 / step: context.ts 0 conflicts; unsaved-forms.spec.ts 1 conflict (the head comment, lines 7-10).
+Merge check, git merge-file of main HEAD / base 4735b6db / step: context.ts 0 conflicts; unsaved-forms.spec.ts 1 conflict (the head comment, lines 7-10).
 
 Node reverts in scratchpad/q43-review2/node, npx vitest run tests/state/explorer.test.ts (unchanged: 21 passed):
 N1 formSettled without the opening compare: red (1 case)

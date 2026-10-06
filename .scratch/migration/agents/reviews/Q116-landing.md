@@ -17,7 +17,7 @@ Q116's builder `a5abb57454b9e1db7` and its reviewer `a1e45c47e28e50948` are not 
 
 ## What landed
 
-Q116, one commit on main (the commit that carries this file), from base e24474a9, as `agents/briefs/Q116.md` says: `underSource` and `isUnderSource` in `src/lib/state/system/lines.svelte.ts` sum every row whose folder is `src` or starts with `src/`; `LineCounts.svelte` draws that sum as a `src/` row directly above the first row under `src`, in folder style with no languages, the total unchanged; the help sentence in `config/text/views/system/status.yml`; HELP.md's Status row; one table test of the sum and the updated rows of `tests/views/system/status.test.ts`; the four layer diagrams, whose `views/system` to `state` and `views` to `state` counts rise by one for the new value import.
+Q116, one commit on main (the commit that carries this file), from base 76148458, as `agents/briefs/Q116.md` says: `underSource` and `isUnderSource` in `src/lib/state/system/lines.svelte.ts` sum every row whose folder is `src` or starts with `src/`; `LineCounts.svelte` draws that sum as a `src/` row directly above the first row under `src`, in folder style with no languages, the total unchanged; the help sentence in `config/text/views/system/status.yml`; HELP.md's Status row; one table test of the sum and the updated rows of `tests/views/system/status.test.ts`; the four layer diagrams, whose `views/system` to `state` and `views` to `state` counts rise by one for the new value import.
 
 ## Fixes at landing
 

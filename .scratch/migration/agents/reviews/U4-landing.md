@@ -23,7 +23,7 @@ Nothing of the brief is left undone.
 
 ## What landed
 
-The cherry-pick of b240670e..U4 onto main (19 files, 221 insertions, 96 deletions, `git diff --cached --stat`), plus one fix at landing: `src/lib/views/boards/focus/Tasks.svelte` `.head` gap 8 px to 4 px (the review's Spec 1, the head's gap at the counterpart's 4 px).
+The cherry-pick of 1dcb9627..U4 onto main (19 files, 221 insertions, 96 deletions, `git diff --cached --stat`), plus one fix at landing: `src/lib/views/boards/focus/Tasks.svelte` `.head` gap 8 px to 4 px (the review's Spec 1, the head's gap at the counterpart's 4 px).
 
 - Focus: the ticker row actions as the small text button (weight 400, no uppercase, no letter-spacing), lane heads 22 px with the name at 11 px cut with an ellipsis, cards and the career panel a step smaller.
 - Sessions: session and terminal rows two lines at 40 px (Z180 (b)).

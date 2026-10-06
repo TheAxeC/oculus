@@ -1,4 +1,4 @@
-BRIEF CHECK REPORT: step D24 (the Personal board), brief `tools/oculus/.scratch/migration/agents/briefs/D24.md` (working-tree version), main at c73570a5. Read-only; nothing changed. Paths are relative to `/Users/axelfaes/workspace/research-hub/tools/oculus` unless absolute. I did not read, grep or hash `config/local.yml`, started no server, ran no test and no state-changing git command.
+BRIEF CHECK REPORT: step D24 (the Personal board), brief `tools/oculus/.scratch/migration/agents/briefs/D24.md` (working-tree version), main at 4f0d3a99. Read-only; nothing changed. Paths are relative to `/Users/axelfaes/workspace/research-hub/tools/oculus` unless absolute. I did not read, grep or hash `config/local.yml`, started no server, ran no test and no state-changing git command.
 
 Findings that block the step as written, in order of weight:
 - A. Item 3's watcher plan cannot be built from the paths and calls the brief names (Names 5, 6; Premises 7).

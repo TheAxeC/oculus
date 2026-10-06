@@ -6,7 +6,7 @@ Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern th
 
 A design ruling decides what is built. It never exempts the code: every line is written to the standards pages, so that people can read, use and maintain it.
 
-## What is on the tree (read on main at 01d928259)
+## What is on the tree (read on main at bc42cb101)
 
 - The step line, `plan.md:645` (`grep -n "^- PR1 " plan.md`): "a Present control in the Present view's toolbar and a key put the slide frame into full screen on the whole monitor, in a browser tab and in the desktop app, with no rail, tabs or toolbar; Esc leaves; the arrows, space and a click move through the slides; the pointer hides while it rests". Its rulings: Z637 (Axel, the four Present steps) and Z641 (the orchestrator, automode, `grep -n "^- Z641 " plan.md`), whose words are under "What to build".
 - The Present view is `src/lib/views/academic/present/Present.svelte`, 288 lines (`wc -l`). Its toolbar is the snippet `bar` (`:155`), holding Previous, Next, the Overview chip, the Slides button and the counter; the pane is `<Pane title=... {bar}>` (`:189`); the deck box `div.present` (`:193-206`) is the focusable region the keys are bound to (`onkeydown={keys}`), and it holds the empty state, the overview grid or the scaled stage. `keys` (`:113-146`) takes ArrowRight and PageDown (next), ArrowLeft and PageUp (previous), Home, End, `o`/`O` (the grid) and Escape (closes the grid only when it is open), and returns on any event with Alt, Ctrl or Meta. The frame's scale is `fit(width, height)` from the box's `bind:clientWidth` and `bind:clientHeight` (`grep -n "fit(width, height)\|bind:clientWidth" src/lib/views/academic/present/Present.svelte`).
@@ -132,7 +132,7 @@ The builder adds no dependency. A library the builder finds that would cover its
 
 ## What it must do
 
-As "What to build" gives it, items 1 to 9; every path, line and name there was checked on main at 01d928259.
+As "What to build" gives it, items 1 to 9; every path, line and name there was checked on main at bc42cb101.
 
 ## Conventions
 

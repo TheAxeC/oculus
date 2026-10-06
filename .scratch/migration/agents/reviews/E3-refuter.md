@@ -1,4 +1,4 @@
-# Step E3 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/E3, base 1c95c890)
+# Step E3 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/E3, base 192431a7)
 
 This report cites pages by section and code by `file:line`. DESIGN.md line numbers are the worktree's. The section is still lines 236 to 327, and the file is 418 lines in both the base copy and the worktree.
 
@@ -9,7 +9,7 @@ $ git status --short            (from tools/oculus in the worktree)
  M DESIGN.md
 ?? .scratch/migration/agents/reviews/E3-report.md
 
-$ git diff 1c95c890 --stat
+$ git diff 192431a7 --stat
  tools/oculus/DESIGN.md | 18 +++++++++---------
  1 file changed, 9 insertions(+), 9 deletions(-)
  (the changed lines are 260, 264, 266, 307, 311, 313, 315, 325 and 327, all inside the section)
@@ -163,7 +163,7 @@ Usage: reviewer ac1301d307cfb017c, served claude-opus-5-5; 205,911 tokens, 30 to
 
 ## Repair round 1, refuted
 
-Reviewer of E3's repair round 1, on /Users/axelfaes/workspace/research-hub/.agents/worktrees/E3 (code under tools/oculus), base 1c95c890. DESIGN.md line numbers are the worktree's. The file is still 418 lines, and the section is still lines 236 to 327.
+Reviewer of E3's repair round 1, on /Users/axelfaes/workspace/research-hub/.agents/worktrees/E3 (code under tools/oculus), base 192431a7. DESIGN.md line numbers are the worktree's. The file is still 418 lines, and the section is still lines 236 to 327.
 
 How I found the round's changes: nothing on disk holds the round base (`ls` of `agents/reviews`, `agents/briefs` and `.agents/worktrees` shows only E3.md, E3-round1.md, E3-refuter.md, E3-report.md, E3-brief-check.md, the worktree E3 and E3-base-DESIGN.md). So I ran `grep -c -F` on the repaired DESIGN.md for each first-run sentence that the first refuter report quotes. Every quote the round was sent to change now prints 0: "a push that arrived after it began carries", "the version and value of the last answer.", "After a fetch the page calls", "(read, not parsed)", "The page holds the version the GET answered, not the pushed one", "the page then reads the value", "hexadecimal", "reaches the page as a new `storeBytes` and `storeVersion`", "so a file placed by hand costs the watcher one stat", "or the store of an app removed since the last push" and "A 404 (the app removed or refused since the push)". "the engine's config folder" prints 1, and that one hit is DESIGN.md:392, outside the section. The quotes of lines the round did not touch still print 1: line 260 "A `wss:` origin is refused." and line 266 "The rows carry no store value, so the first frame carries none, ...". This supports the builder's claim that the round changed only lines 264, 307, 311, 315 and 327. For line 313, the first report quotes no first-run text, so whether the round left it unchanged is not verified.
 
@@ -171,7 +171,7 @@ How I found the round's changes: nothing on disk holds the round base (`ls` of `
 $ git status --short            (from tools/oculus in the worktree)
  M DESIGN.md
 ?? .scratch/migration/agents/reviews/E3-report.md
-$ git diff 1c95c890 --stat
+$ git diff 192431a7 --stat
  tools/oculus/DESIGN.md | 18 +++++++++---------
  1 file changed, 9 insertions(+), 9 deletions(-)
 

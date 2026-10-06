@@ -31,7 +31,7 @@ Q77b, revert-check proves only the directives a change adds or changes, one comm
 
 ## Verification on main
 
-- `land.sh Q77b 10754960`: red at the unit suite on the comment-width check (`Tests 1 failed | 5379 passed`), fixed at landing.
+- `land.sh Q77b fcbcfc0e`: red at the unit suite on the comment-width check (`Tests 1 failed | 5379 passed`), fixed at landing.
 - After the fix: unit `Test Files 343 passed (343)`, `Tests 5380 passed (5380)`; `npm run check` `0 ERRORS 0 WARNINGS`; build exit 0; Prettier clean; lint exit 0; ASCII no output; size and folder checks exit 0; browser `467 passed (8.2m)`; `$TMPDIR/oculus-*` holds only the pre-existing `oculus-revert-vwIMNl`.
 - revert-check: the round reviewer's run `17 reverts, 0 unproven, 0 unchecked` over `revert-base.test.ts`; not rerun at landing, since the cherry-pick applied with no conflict and the landing fix is a comment.
 - No look: Q77b changes tooling and tests, no view.

@@ -1,4 +1,4 @@
-# Step Q77a refuter report (on .agents/worktrees/Q77a, base 8ca4ca00)
+# Step Q77a refuter report (on .agents/worktrees/Q77a, base c420b8b2)
 
 ## Verification (rerun by the reviewer)
 
@@ -11,7 +11,7 @@ All commands were run from `.agents/worktrees/Q77a/tools/oculus`. Before any run
 - ASCII gate (the perl form in spec.md): no output.
 - `sh bin/size-check.sh`: exit 0. `sh bin/folder-check.sh`: exit 0. `bin/revert-check.mjs` is 896 lines; `tests/checks/bin` holds 9 files.
 - `node bin/revert-check.mjs tests/checks/bin/revert-check.test.ts`: `36 reverts, 0 unproven, 0 unchecked`, 36 `red` lines, real 195.50 s, load 4.66 to 7.44. The seven new or changed directives are all `red`: lines 23 and 26 to 31 of the output (the copy-signal case, the five in-memory cases, and the run-folder signal case).
-- Timings, back to back, each with its load. "Original" means main's `bin/revert-check.mjs` (identical to 8ca4ca00's; `git diff --stat 8ca4ca00 HEAD` on that file is empty), copied into a scratch folder and run with `--root` set to the worktree's tools/oculus.
+- Timings, back to back, each with its load. "Original" means main's `bin/revert-check.mjs` (identical to c420b8b2's; `git diff --stat c420b8b2 HEAD` on that file is empty), copied into a scratch folder and run with `--root` set to the worktree's tools/oculus.
 
 | Run | Output | Real time | Load, start to end |
 | --- | --- | --- | --- |
@@ -41,7 +41,7 @@ The in-memory path adds about 1.0 s to each directive that falls back (16.13 s o
 
 - **The two wrong premises in the report are both confirmed.**
   - `find tests -name 'config-folder*'` prints `tests/checks/config/config-folder.test.ts`; the path in the brief does not exist.
-  - The case count: at 8ca4ca00 (and at 192979e1), `grep -c 'it('` gives 58 and `grep -c '^\s*it('` gives 30. The new tree has 36.
+  - The case count: at c420b8b2 (and at 5df2d1fa), `grep -c 'it('` gives 58 and `grep -c '^\s*it('` gives 30. The new tree has 36.
 - **The fixture's own `vitest.config.mjs`** (`tests/checks/bin/revert-fixture.ts`, in `fixture()`) is needed. Vitest finds its configuration by walking up from the root. The note in `node_modules/vitest/dist/chunks/cli-api.CnMVyzaz.js:11404` says "simulates how `findUp` works in packages/vitest/src/node/create.ts". So a fixture under a copy's `.case-tmp` would take the copy's `vite.config.ts`, whose `include: ['tests/**/*.test.ts']` drops the fixture's `.js` cases. I did not rerun V8 without the file.
 - **The rewritten "unremovable" case** (`revert-check.test.ts:747-775`) is needed. The in-memory path runs with the working directory set to the real fixture, so the old body's `chmodSync(join(process.cwd(), 'src'), 0o500)` would take the write bit off the fixture itself instead of off a copy. Its move to `unwritableTemp()` is also justified: the old cleanup ran only when the assertions passed.
 - **The copy-signal case now uses a browser spec** (`:548-576`). This is a change no item asks for, and it is needed: a unit case now goes through memory first, so a browser case is the only way left to hold only a copy.
@@ -121,7 +121,7 @@ node bin/revert-check.mjs tests/checks/bin/revert-check.test.ts
   output lines 9, 23, 26-33 (the changed and new directives, incl. both of "runs cases on a copy of its own..." at bin/revert-check.mjs:773 and :793) all `red`
 timed scratch copy of the new script, dispatch-note:  20 reverts, 0 unproven, 0 unchecked | 73.18 real | load 4.95 -> 7.41
 timed scratch copy of the new script, diagrams:      50 reverts, 0 unproven, 0 unchecked | 95.35 real | load 7.41 -> 7.21
-copy-only script (8ca4ca00, rebuilt by reverse patch, 661 lines), dispatch-note: 20 reverts, 0 unproven, 0 unchecked | 66.62 real | load 5.78 -> 9.77
+copy-only script (c420b8b2, rebuilt by reverse patch, 661 lines), dispatch-note: 20 reverts, 0 unproven, 0 unchecked | 66.62 real | load 5.78 -> 9.77
 diff copy-only vs new, dispatch-note: DIFF EMPTY
 ```
 
@@ -253,7 +253,7 @@ Probes. Each fixture ran `clean, writer, clean`, and in each the fixture root wa
 
 ### Standards
 - **Item 3 is not met for the test files.** Comment lines over 100 columns that are not directive lines:
-  - `tests/views/whole/type-scale.test.ts:335` (111 columns, new this round; it was 98 at 8ca4ca00): `// bin/revert-check/revert-check.mjs, which resolves a case by its name: drop \`font-size: var(--fs-lg)\``
+  - `tests/views/whole/type-scale.test.ts:335` (111 columns, new this round; it was 98 at c420b8b2): `// bin/revert-check/revert-check.mjs, which resolves a case by its name: drop \`font-size: var(--fs-lg)\``
   - `tests/checks/bin/revert-check.test.ts:467` (111 columns, new this round): `// Revert: in real of bin/revert-check/directives.mjs, compare the path as written instead of following the`
   - `tests/checks/bin/revert-check.test.ts:789` (101 columns, from round 1 and not fixed): `// it; there, with the revert in the file, it takes the write bit off a folder of its`
   - No comment line in `bin/revert-check/*.mjs` or `bin/migrations/revert-anchors.mjs` passes 100 columns (checked with `awk`).

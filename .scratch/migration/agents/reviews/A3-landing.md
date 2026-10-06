@@ -31,7 +31,7 @@ Conflicts with O30 in `boundaries.test.ts` and the diagrams resolved, both sides
 
 ## Verification
 
-In `.agents/worktrees/gate-A3` at main 8ed2d1f5a with the range and the fixes: `npm run diagrams` exit 0; `npm run test:landing`: ok ASCII gate, ok format:check, ok npm test (130.9 s), ok test:checks (159.9 s), ok lint (174.6 s), ok "npm run check, then npm run build, then npm run test:slow" (334.5 s), "every command passed". Main's staged code and the gate's: `cmp` equal.
+In `.agents/worktrees/gate-A3` at main 3cb170eae with the range and the fixes: `npm run diagrams` exit 0; `npm run test:landing`: ok ASCII gate, ok format:check, ok npm test (130.9 s), ok test:checks (159.9 s), ok lint (174.6 s), ok "npm run check, then npm run build, then npm run test:slow" (334.5 s), "every command passed". Main's staged code and the gate's: `cmp` equal.
 
 ## The look
 

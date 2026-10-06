@@ -1,4 +1,4 @@
-# Step D44 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D44, base 6044d753c)
+# Step D44 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D44, base 378c5b60e)
 
 A page this report cites is named by its section. A finding in code keeps its `file:line`. Paths are under `tools/oculus/` unless they say otherwise.
 
@@ -282,7 +282,7 @@ Every finding is sent to the builder in repair round 1 (`agents/briefs/D44-round
 
 ## Repair round 1, refuted
 
-Reviewer over round 1: a023b1cea1940a333, claude-opus-5-5. Worktree `.agents/worktrees/D44`, base 6044d753c; the round's delta read against the round-0 diff (`scratchpad/d44.diff`) and the whole diff since the base.
+Reviewer over round 1: a023b1cea1940a333, claude-opus-5-5. Worktree `.agents/worktrees/D44`, base 378c5b60e; the round's delta read against the round-0 diff (`scratchpad/d44.diff`) and the whole diff since the base.
 
 ### Verification
 
@@ -303,7 +303,7 @@ test:quick: over the time limit
 checks: 1 commands passed
 ```
 
-`checks.sh` takes only the state file, so `-- --base 6044d753c` is not passed; the quick tier's default base is HEAD, which is the base. The 45 s limit was run with four other agents on the machine; whether the step alone stays under it is not verified.
+`checks.sh` takes only the state file, so `-- --base 378c5b60e` is not passed; the quick tier's default base is HEAD, which is the base. The 45 s limit was run with four other agents on the machine; whether the step alone stays under it is not verified.
 
 Brief verify 2 (as written): 7 files, 55 tests passed; with the round's new files: 11 files, 72 tests. `submit.test.ts` 29 passed, 1.92 s; `submit-files.test.ts` 4 passed, 1.52 s. Verify 3: `sh-syntax` prints `echo /local/$SLURM_JOB_ID`, the build exits 0 and `build/server/chunks/chunks/submit.js-DovpnpQa.js` imports it. Verify 4: 177 scripts, named 99, warned 78, the eight rows of section 2's table. Verify 5: the ASCII gate and `LC_ALL=C grep` print nothing; `folder-check.sh` exits 0; `Source.svelte` 520 of 520. Verify 6: unused exports 255 to 254, only `KILL_GRACE_MS` leaving. Tree checks: 15 passed, 1 skipped; 226 tests passed, 3 skipped.
 

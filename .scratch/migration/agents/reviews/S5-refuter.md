@@ -1,4 +1,4 @@
-# Step S5 refuter report (on .agents/worktrees/S5, base 6005baee6)
+# Step S5 refuter report (on .agents/worktrees/S5, base 8bb4960ba)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
 
@@ -171,13 +171,13 @@ Cases of the brief's "Cases":
 - A run of the watcher rebuild carrying `optionFindings` into the config payload. It needs a Hub and fs watchers, which the review's no-server rule keeps out.
 - Whether the builder's misplaced grep over `config/` printed any line of local.yml. The builder's transcript was not read.
 - bits-ui's own behaviour under SuggestInput and HueSelect (Combobox and Select keys, portal), beyond reading the code.
-- The reviewer ran `git -C . diff 6005baee6 -- <paths>` once: the allowed `git diff <base>`, with a no-op `-C .`. All scratch work ran in scratchpad/s5-refute (a copy of the worktree and the base without config/local.yml). Nothing in the worktree or the ledger was written.
+- The reviewer ran `git -C . diff 8bb4960ba -- <paths>` once: the allowed `git diff <base>`, with a no-op `-C .`. All scratch work ran in scratchpad/s5-refute (a copy of the worktree and the base without config/local.yml). Nothing in the worktree or the ledger was written.
 
 Reviewer usage: ordo-high on claude-opus-5-5 (ab608db77fb2265cd), 365,219 tokens, 97 tool uses, 22.0 min.
 
 ## Repair round 1, refuted
 
-Reviewer a78d8970b3fff491c, claude-opus-5-5, ordo-high (stopped by the orchestrator by mistake and resumed): 191,100 tokens, 114 tool uses, 20.1 min (completion notice of the resumed run). Base 6005baee6; no round-start tree recorded, so the whole diff since the base was read.
+Reviewer a78d8970b3fff491c, claude-opus-5-5, ordo-high (stopped by the orchestrator by mistake and resumed): 191,100 tokens, 114 tool uses, 20.1 min (completion notice of the resumed run). Base 8bb4960ba; no round-start tree recorded, so the whole diff since the base was read.
 
 ### Verification
 
@@ -196,7 +196,7 @@ Spec
 
 Proof
 1. `tests/data/sources/config/settings.test.ts:241-246`: the title's second `%s` takes `field`, not `kind`, so two rows print the same title "answers the default for a days_back with a daysBack problem". Verdict none.
-2. `S5-report.md:905`: the diagrams row lists 10 files; `git diff 6005baee6 --stat -- docs/diagrams` shows 14 (`layer-ui.dot/.svg`, `layer-views.dot/.svg` missing). Verdict none.
+2. `S5-report.md:905`: the diagrams row lists 10 files; `git diff 8bb4960ba --stat -- docs/diagrams` shows 14 (`layer-ui.dot/.svg`, `layer-views.dot/.svg` missing). Verdict none.
 3. `S5-report.md:496`: S5's cases are not rerun on the round's final tree though the round changes code they run through; the reviewer's rerun passes. Verdict none.
 
 Standards

@@ -1,4 +1,4 @@
-# Step Q91 refuter report (on .agents/worktrees/Q91, base 2dbe1a72)
+# Step Q91 refuter report (on .agents/worktrees/Q91, base e36d29bc)
 
 Everything below was rerun or read in this run. Four findings are worth fixing before landing: one write that drops comments (B1), two proofs that do not exercise their case (P1, P2), and two landing conflicts with D25 and X3c that the dispatch entries do not name (B4). The verify list is red on `npm test` only, for a timeout in a file the step does not touch; that file passes alone.
 
@@ -15,8 +15,8 @@ Error: Test timed out in 5000ms.
 checks: failed with exit 1: npm test
 
 $ npx vitest run tests/server/machine/commands/placeholders.test.ts   -> Test Files 1 passed (1), Tests 9 passed (9)
-$ git diff 2dbe1a72 --stat -- tests/server/machine vite.config.ts vitest.config.ts package.json   -> (empty)
-$ git diff 2dbe1a72 | grep -n "testTimeout\|timeout:"   -> (empty): no timeout, threshold or test config raised in the diff
+$ git diff e36d29bc --stat -- tests/server/machine vite.config.ts vitest.config.ts package.json   -> (empty)
+$ git diff e36d29bc | grep -n "testTimeout\|timeout:"   -> (empty): no timeout, threshold or test config raised in the diff
 The remaining commands of the list, each run alone:
 $ npm run test:checks      -> exit 0, Test Files 31 passed | 2 skipped (33), Tests 471 passed | 9 skipped (480)
 $ npm run check            -> COMPLETED 3316 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
@@ -36,7 +36,7 @@ Brief gate 2:
 $ grep -n "'followup.do'\|'priority'\|'waiting-on'\|'snooze'\|'subtasks'" src/lib/state/forms/schema.ts
 66, 257, 260, 337, 339, 340 (none inside NOT_IN_MODEL, which is schema.ts:57-63 with the five fields)
 
-Brief gate 3, first runs: the final tests run on my own unchanged-tree copy ($TMPDIR/q91base, src and config reversed with `git diff -R 2dbe1a72` plus patch, the new src files removed):
+Brief gate 3, first runs: the final tests run on my own unchanged-tree copy ($TMPDIR/q91base, src and config reversed with `git diff -R e36d29bc` plus patch, the new src files removed):
 $ npx vitest run card-details, yaml-edit-followup, schema-modelled, multi-select, undo-removed
  Test Files 5 failed (5), Tests 41 failed | 48 passed (89). This matches the report's table: C3's bare-note write passes on the base, and the one-note list, the follow-up fields, Status, CodeText, glyphs, casing and focus tests fail there.
 
@@ -146,10 +146,10 @@ Cases of the brief's "Cases":
 - The 33 builder removals I did not reproduce (see P3).
 - The cherry-pick behaviour in B4 (b). It needs a trial landing, which this review may not make.
 
-Reviewer usage: tokens not measured by me (the harness records them); about 62 tool uses; about 40 minutes. Note for the orchestrator: besides `git diff` and `git status --short`, I ran `git show 2dbe1a72:<path>` (read-only) for eight moved files to compare them with their base copies. No file under the worktree or the ledger was changed. Scratch copies are in $TMPDIR/q91rev, $TMPDIR/q91base and $TMPDIR/q91probe.
+Reviewer usage: tokens not measured by me (the harness records them); about 62 tool uses; about 40 minutes. Note for the orchestrator: besides `git diff` and `git status --short`, I ran `git show e36d29bc:<path>` (read-only) for eight moved files to compare them with their base copies. No file under the worktree or the ledger was changed. Scratch copies are in $TMPDIR/q91rev, $TMPDIR/q91base and $TMPDIR/q91probe.
 
 
-## Repair round 1, refuted (Q91, on .agents/worktrees/Q91, base 2dbe1a72, delta against the scratchpad's q91-round1-start/)
+## Repair round 1, refuted (Q91, on .agents/worktrees/Q91, base e36d29bc, delta against the scratchpad's q91-round1-start/)
 
 **Summary.** The verify list is red on `npm test` only. The failure is one timeout in `tests/server/machine/commands/placeholders.test.ts`, a file the step does not touch, and that file passes when run alone. The other six commands pass when run one at a time.
 
@@ -176,7 +176,7 @@ Error: Test timed out in 5000ms.
 checks: failed with exit 1: npm test
 
 $ npx vitest run tests/server/machine/commands/placeholders.test.ts   -> Test Files 1 passed (1), Tests 9 passed (9)
-$ git diff 2dbe1a72 --stat -- tests/server/machine vite.config.ts vitest.config.ts package.json   -> (empty)
+$ git diff e36d29bc --stat -- tests/server/machine vite.config.ts vitest.config.ts package.json   -> (empty)
 The remaining commands of the list, each run once alone:
 $ npm run test:checks      -> exit 0, Test Files 31 passed | 2 skipped (33), Tests 471 passed | 9 skipped (480)
 $ npm run check            -> exit 0, COMPLETED 3318 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
@@ -189,7 +189,7 @@ spec.md perl ASCII gate over src tests config (local.yml excluded) -> no output
 The round report's evidence, rerun:
 $ wc -l (every path of the round's file table)   -> every count matches the table (yaml-edit.ts 862, yaml-values.ts 172, yaml-ranges.ts 77, lines.ts 345, manifest.ts 486, restore.ts 134, undo.ts 391, changes.ts 316, schema.ts 383, manifest-draft.ts 133, Editor.svelte 348, ProjectTree.svelte 105, the six test files 450/190/281/191/376/244, DESIGN.md 434, HELP.md 342)
 $ ls src/lib/server/edit/entry-edit | wc -l   -> 8 ;  ls src/lib/server/edit | wc -l   -> 10 ;  size.test.ts:28 LINES = 900
-$ git diff 2dbe1a72 --name-status (non-test paths)   -> every path outside "Paths this step writes" is marked in the round's file table
+$ git diff e36d29bc --name-status (non-test paths)   -> every path outside "Paths this step writes" is marked in the round's file table
 Brief gate 2, from the worktree root:
 $ grep -n "'followup.do'\|'priority'\|'waiting-on'\|'snooze'\|'subtasks'" tools/oculus/src/lib/state/forms/schema.ts   -> 66, 88, 279, 282, 359, 361 (as the report says; none inside NOT_IN_MODEL)
 
@@ -379,11 +379,11 @@ Probes (node type stripping over setFields / insertReplaced in the scratch copie
 
 - **What only a look on screen settles.** The read-only date box and its line in the editor, the several-notes sentence on screen, and every look item of the brief. Reason: these need TEST.
 - **Whether `replaced` should be renamed `before`/`after` at landing.** Reason: it is already the orchestrator's landing note (state file, Q91 `landing_notes`). The delta still carries `{ offset, left, text }`.
-- **A bare note that is not text (`followup: 5`).** Expanding it drops the 5 in silence, at round start and now (probe: "followup:\n  after: 2026-12-01"). Reason: the round did not introduce it. I did not run it on the base 2dbe1a72, so whether the step introduced it is not verified.
+- **A bare note that is not text (`followup: 5`).** Expanding it drops the 5 in silence, at round start and now (probe: "followup:\n  after: 2026-12-01"). Reason: the round did not introduce it. I did not run it on the base e36d29bc, so whether the step introduced it is not verified.
 - **The first review's B4 landing conflicts with X3c and D25.** Reason: they are landing work, outside a read and a rerun.
 - **Tokens.** Reason: the harness records them, not me.
 
-Reviewer usage: tokens not measured by me (the harness records them); about 45 tool uses; about 30 minutes (12:57 to 13:27 by `date`). Beyond `git diff 2dbe1a72` and `git status --short`, I ran no git command. No file under the worktree or the ledger was changed. The build wrote only its ignored output. Scratch copies are in the session scratchpad: `rv-base/`, `rv-rm/` and `rv-probe*.mts`.
+Reviewer usage: tokens not measured by me (the harness records them); about 45 tool uses; about 30 minutes (12:57 to 13:27 by `date`). Beyond `git diff e36d29bc` and `git status --short`, I ran no git command. No file under the worktree or the ledger was changed. The build wrote only its ignored output. Scratch copies are in the session scratchpad: `rv-base/`, `rv-rm/` and `rv-probe*.mts`.
 
 ## Closed
 

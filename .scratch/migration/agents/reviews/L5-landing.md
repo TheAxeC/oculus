@@ -13,7 +13,7 @@ Booked list: 2, carried for Q68 (the git watcher case that fails under load, que
 
 ## What landed
 
-L5, cherry-picked from `.agents/worktrees/L5` at base `4b0a7ad5` onto main by `tools/oculus/.scratch/migration/land.sh L5 <base> <runs> --no-browser` (+4,032 -2,189 over 62 files), then fixed at landing (+211 -168 over 16 files) and the browser suite run by hand.
+L5, cherry-picked from `.agents/worktrees/L5` at base `5d8c1136` onto main by `tools/oculus/.scratch/migration/land.sh L5 <base> <runs> --no-browser` (+4,032 -2,189 over 62 files), then fixed at landing (+211 -168 over 16 files) and the browser suite run by hand.
 
 - The rail is VS Code's activity bar: 48 px wide, drawn in the ground's colour with a 1 px border on its right edge, as VS Code's Modern themes draw it. Items are icon-only, 48 px square, with a 24 px icon that stays fixed at every text scale. Icons are muted until hovered, and the page on screen draws in the text colour with a 2 px accent bar.
 - One 16 px badge per item, inside it over the icon's lower right corner. It is drawn in the accent with its black or white, at 9 px in the UI face, and counts the first view of the page that counts anything.

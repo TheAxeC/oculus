@@ -17,7 +17,7 @@ Q91's builder `aa0dc0b58528fb2a9` and its reviewers `a7ac5b16bbf539b33` and `a0e
 
 ## What landed
 
-Q91, one commit on main (the commit that carries this file), from base 2dbe1a72: the project view and its manifest editor reworked, as `agents/briefs/Q91.md` says. The explorer tree moved to `views/shared/explorer/` and is drawn by the Files view and by every project card, each card's tree keeping its own state; the follow-up field written in each shape the hub holds (a bare note, a map, a list of one), a list of several shown read-only; the undo of a rewritten note; the owed-look defects M3-1 to M3-3 and Q88c-18 (Z289) and the Focus view's narrow-pane wrapping (Z296).
+Q91, one commit on main (the commit that carries this file), from base e36d29bc: the project view and its manifest editor reworked, as `agents/briefs/Q91.md` says. The explorer tree moved to `views/shared/explorer/` and is drawn by the Files view and by every project card, each card's tree keeping its own state; the follow-up field written in each shape the hub holds (a bare note, a map, a list of one), a list of several shown read-only; the undo of a rewritten note; the owed-look defects M3-1 to M3-3 and Q88c-18 (Z289) and the Focus view's narrow-pane wrapping (Z296).
 
 ## Fixes at landing
 

@@ -1,4 +1,4 @@
-# Step Q88 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q88, base 2a72d052)
+# Step Q88 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q88, base f4e8a6de)
 
 This report cites a page (the rules file, a standard, a skill's text) by its section, since a page's line numbers move. A finding in code keeps its `file:line`.
 
@@ -134,7 +134,7 @@ Reviewer usage: 68 tool uses, 286k tokens, 13 min (from the completion notice). 
 
 # Repair round 1, refuted
 
-Worktree `.agents/worktrees/Q88`, base 2a72d052, the round's delta read against the whole diff since the base. The reviewer changed nothing; its logs are in `.scratch-refute-r1/` at the worktree root.
+Worktree `.agents/worktrees/Q88`, base f4e8a6de, the round's delta read against the whole diff since the base. The reviewer changed nothing; its logs are in `.scratch-refute-r1/` at the worktree root.
 
 ## Verification lines (verbatim)
 
@@ -206,7 +206,7 @@ Reviewer usage: 41 tool uses, 184k tokens, 7 min (from the completion notice).
 # Closed
 
 - First review, Spec 1 (Kill Terminal from a menu without arming): closed in repair round 1 (`pressKill`), and at landing for the row menu (fix 1).
-- First review, Spec 2 (the first-run record): closed at landing, `agents/reviews/Q88-first-run.txt` saved from the builder's log; the four new modules absent at base (`git cat-file -e 2a72d052:<path>` exits 1).
+- First review, Spec 2 (the first-run record): closed at landing, `agents/reviews/Q88-first-run.txt` saved from the builder's log; the four new modules absent at base (`git cat-file -e f4e8a6de:<path>` exits 1).
 - First review, Proof 1 (the tag-delete test green under its revert): closed in repair round 1; the round-1 reviewer's rerun of the revert: 2 failed.
 - First review, Proof 2 and Behaviour 1 (a busy name opens no menu): closed in repair round 1, the bare span in `Graph.svelte`.
 - First review, Standards 1 (the shell body twice): closed in repair round 1, `openShell` in `state/shared/stores/shell.ts`.

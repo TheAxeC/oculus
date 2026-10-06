@@ -1,4 +1,4 @@
-# Step X3c brief check (on main at a9c0d38d)
+# Step X3c brief check (on main at e1d7de25)
 
 This is the report of the `spec` skill's fresh brief-check agent ("Steps / The brief check") on `tools/oculus/.scratch/migration/agents/briefs/X3c.md`, the uncommitted working-tree copy. It changes no file. `tools/oculus/` is shortened to `oculus/` in the paths below. Facts about VS Code are read from the installed VS Code 1.137.0 (`/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/workbench.desktop.main.js`, its `.css`, and `nls.messages.json` for the menu words). That is a local read, with no web use. I name the certainty of each VS Code fact where it is given.
 
@@ -70,7 +70,7 @@ Findings:
 
 ## 3. Premises
 
-Every command was run on main at a9c0d38d. A path relative to `oculus/` is given relative to it.
+Every command was run on main at e1d7de25. A path relative to `oculus/` is given relative to it.
 
 - `Instance` at `model.ts:18` and `LAYOUT_VERSION = 5` at `:131`: read; matches.
 - `pinInstance`/`unpinInstance` at `instances.ts:54` and `:116-140`: read; matches (116 and 132).
@@ -235,7 +235,7 @@ Usage (completion notice): claude-opus-5-5, 318,282 tokens, 113 tool uses, 17.0 
 
 ## Closed
 
-Each finding is closed in `agents/briefs/X3c.md` as rewritten at `/spec X3c` on main at 76bdcd8c, the choices among them booked as Z324 (automode).
+Each finding is closed in `agents/briefs/X3c.md` as rewritten at `/spec X3c` on main at e752624e, the choices among them booked as Z324 (automode).
 
 - 1.1 and 1.2: item 1 names the three version comparisons of `saved.ts` (now `:462`, `:481`, `:505`), `layout-locked.test.ts:60` and `DESIGN.md:375`; C1 holds a float, a locked pane and `needsFloats`.
 - 1.3: item 1, a pinned tab keeps its pin across a float, a page move and a split (`floats.ts:70` in the paths); C35.

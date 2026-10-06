@@ -1,6 +1,6 @@
-# Q85a1 brief check (on main at 68220421)
+# Q85a1 brief check (on main at 077a0ba9)
 
-`git rev-parse HEAD` printed `682204212dc37a73d36f7ec63121618a5d7546ed`. Commands ran from `/Users/axelfaes/workspace/research-hub/tools/oculus` unless the scratch folder is named. Probe files written: `bc1.ts`, `bc1.mjs`, `bc2.mjs`, `bc3.ts`, `bc3.mjs`, `tsconfig.bc1.json`, `tsconfig.bc3.json` in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/zodprobe` (zod 4.6.5, TypeScript 6.0.3, node v24.21.0). Nothing in the repository was written. 17 findings, F1 to F17.
+`git rev-parse HEAD` printed `077a0ba9dfc169681c311d298c4d01d828639723`. Commands ran from `/Users/axelfaes/workspace/research-hub/tools/oculus` unless the scratch folder is named. Probe files written: `bc1.ts`, `bc1.mjs`, `bc2.mjs`, `bc3.ts`, `bc3.mjs`, `tsconfig.bc1.json`, `tsconfig.bc3.json` in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/zodprobe` (zod 4.6.5, TypeScript 6.0.3, node v24.21.0). Nothing in the repository was written. 17 findings, F1 to F17.
 
 ## Names
 

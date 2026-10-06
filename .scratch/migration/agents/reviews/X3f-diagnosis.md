@@ -8,9 +8,9 @@ From the task of this diagnosis, X3f's look on TEST: "A double click on a file r
 
 ## Where the probes run
 
-The scratch copy `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.R5Wx0U/tree`, a detached worktree of the hub at `ec4c6f577` with `tools/oculus/.scratch/migration/agents/reviews/X3f-backed-out.patch` applied by `git apply --3way` (49 files), then `npm ci` in `tools/oculus` and `npm install --no-save jsdom@26.1.0` (jsdom is no dependency of oculus; `cmp` showed `package.json` and `package-lock.json` unchanged after the install). The harness of the red command is the folder `tests/diag/` of the copy, written for this diagnosis and given whole in the appendix at the end of this record. The paths redirected under `$TMPDIR`: none; no command of the red command touches the home folder, the installed skills or a server.
+The scratch copy `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.R5Wx0U/tree`, a detached worktree of the hub at `6c3781d10` with `tools/oculus/.scratch/migration/agents/reviews/X3f-backed-out.patch` applied by `git apply --3way` (49 files), then `npm ci` in `tools/oculus` and `npm install --no-save jsdom@26.1.0` (jsdom is no dependency of oculus; `cmp` showed `package.json` and `package-lock.json` unchanged after the install). The harness of the red command is the folder `tests/diag/` of the copy, written for this diagnosis and given whole in the appendix at the end of this record. The paths redirected under `$TMPDIR`: none; no command of the red command touches the home folder, the installed skills or a server.
 
-Taken from inside the step's worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3f` (at `ec4c6f577`):
+Taken from inside the step's worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3f` (at `6c3781d10`):
 
 ```
 M  tools/oculus/DESIGN.md
@@ -361,7 +361,7 @@ walked preview: tabs=[files:-, source:icons.yml(preview), source:agents.yml, sou
 
 The shrunk case with the fix, with the real Files view put back (`DIAG_SOURCE=fake DIAG_STRIP=no`): `Tests  4 passed (4)`. The original, unshrunk case is the red command itself, quoted above. The sweeps of "No red command" with the fix (`npx vitest run --project client tests/diag/focus.client.test.ts tests/diag/files-real.client.test.ts`): `Tests  64 passed (64)`.
 
-The project's gates on the copy with the fix, the folder `tests/diag` moved out first: `npm run test:quick -- --base ec4c6f577` printed `ok` for svelte-kit sync, prettier, the ASCII gate, vitest, eslint and svelte-check and `every command passed` (it took 66.2 s against its 45 s limit on that run, 22.8 s and 45.0 s on the two runs before it with the same fix and comments); `npx vitest run` of `tests/checks/source/comment-width.test.ts`, `history.test.ts`, `tests/checks/tree/boundaries.test.ts`, `size.test.ts`, `duplication.test.ts`, `tests/checks/imports/order.test.ts` and `cycles.test.ts` printed `Tests  64 passed (64)`; `sh utils/folder-check.sh` exited 0; `sh utils/unused-exports.sh` printed the same 381 lines with and without the fix (`diff` printed nothing).
+The project's gates on the copy with the fix, the folder `tests/diag` moved out first: `npm run test:quick -- --base 6c3781d10` printed `ok` for svelte-kit sync, prettier, the ASCII gate, vitest, eslint and svelte-check and `every command passed` (it took 66.2 s against its 45 s limit on that run, 22.8 s and 45.0 s on the two runs before it with the same fix and comments); `npx vitest run` of `tests/checks/source/comment-width.test.ts`, `history.test.ts`, `tests/checks/tree/boundaries.test.ts`, `size.test.ts`, `duplication.test.ts`, `tests/checks/imports/order.test.ts` and `cycles.test.ts` printed `Tests  64 passed (64)`; `sh utils/folder-check.sh` exited 0; `sh utils/unused-exports.sh` printed the same 381 lines with and without the fix (`diff` printed nothing).
 
 What the fix leaves to the look on TEST, not verified here: Chrome's own order of a mousedown on the row with `detail === 2` (jsdom has no native double-click counting; the harness sets `detail`), and that the release of that press, which now lands in the kept tab's editor (`press 2: down=row up=editor`), selects nothing there.
 
@@ -379,7 +379,7 @@ From the task of this diagnosis, X3f's look on TEST: "After a double click the k
 
 ## Where the probes run
 
-The same scratch copy as the first diagnosis of this record: `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.R5Wx0U/tree`, at `ec4c6f577` with `X3f-backed-out.patch` applied, `npm ci`, jsdom installed with `--no-save`, the harness in `tests/diag/` (appendix). The paths redirected under `$TMPDIR`: none. The step's worktree printed the `git status --short` and the `shasum` quoted under the first diagnosis (`0a9b2cb164f312fd74fc75032d73def626b54019  -`).
+The same scratch copy as the first diagnosis of this record: `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.R5Wx0U/tree`, at `6c3781d10` with `X3f-backed-out.patch` applied, `npm ci`, jsdom installed with `--no-save`, the harness in `tests/diag/` (appendix). The paths redirected under `$TMPDIR`: none. The step's worktree printed the `git status --short` and the `shasum` quoted under the first diagnosis (`0a9b2cb164f312fd74fc75032d73def626b54019  -`).
 
 ## Red command
 
@@ -818,7 +818,7 @@ From the task of this diagnosis, X3f's look on TEST: "The strip's file actions a
 
 ## Where the probes run
 
-The same scratch copy as the first diagnosis of this record: `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.R5Wx0U/tree`, at `ec4c6f577` with `X3f-backed-out.patch` applied, `npm ci`, jsdom installed with `--no-save`, the harness in `tests/diag/` (appendix). The paths redirected under `$TMPDIR`: none. The step's worktree printed the `git status --short` and the `shasum` quoted under the first diagnosis (`0a9b2cb164f312fd74fc75032d73def626b54019  -`).
+The same scratch copy as the first diagnosis of this record: `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.R5Wx0U/tree`, at `6c3781d10` with `X3f-backed-out.patch` applied, `npm ci`, jsdom installed with `--no-save`, the harness in `tests/diag/` (appendix). The paths redirected under `$TMPDIR`: none. The step's worktree printed the `git status --short` and the `shasum` quoted under the first diagnosis (`0a9b2cb164f312fd74fc75032d73def626b54019  -`).
 
 ## Red command
 

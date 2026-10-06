@@ -1,4 +1,4 @@
-# Brief check: Q108 (oculus/migration), brief `tools/oculus/.scratch/migration/agents/briefs/Q108.md` (uncommitted), main at 6c92512f
+# Brief check: Q108 (oculus/migration), brief `tools/oculus/.scratch/migration/agents/briefs/Q108.md` (uncommitted), main at 3865a849
 
 I changed nothing in the repository. For check 3 I made scratch copies outside the repository, under `/private/tmp/claude-502/.../scratchpad/q108/`: main's `zones.ts`, a copy with the patch's `zones.ts` hunk applied by `patch`, the patch's `zones.test.ts` pointed at each copy, and a symlink to `tools/oculus/node_modules`. The only git commands I ran were `git log`, `git status --short` and `git grep`. I checked that the patch applies cleanly without running `git apply`, by hashing each file's git blob with `shasum`.
 
@@ -53,7 +53,7 @@ Every part has an item. One finding:
 ## 3. Premises
 
 Confirmed, with the command and its output:
-- Step line at `plan.md:277` and ruling at `plan.md:578` (`sed -n 277p`; `grep -n "Inline fixes patch (2026-09-30)"` prints 578). The HEAD is 6c92512f (`git log --oneline -3`).
+- Step line at `plan.md:277` and ruling at `plan.md:578` (`sed -n 277p`; `grep -n "Inline fixes patch (2026-09-30)"` prints 578). The HEAD is 3865a849 (`git log --oneline -3`).
 - The patch touches ten paths (`grep -c '^diff --git'` prints 10). `zones.test.ts` in it is 121 lines.
 - The patch applies cleanly. I did not run `git apply --check`, because the brief-check rules allow no git command beyond show, log, diff and status. Instead, `shasum` of `blob <size>\0<content>` for each of the nine pre-image files matches the patch's `index` line exactly (`b4671e0c`, `13784e63`, `7408107f`, `d300e76e`, `ca08b166`, `e7650ff6`, `d8024c7c`, `049ee4f3`, `d1583799`), and `tests/ui/controls/editor/zones.test.ts` does not exist (`ls: No such file or directory`).
 - `zones.ts` is 120 lines (`wc -l`). `changeViewZones` is at :68, `heightInPx: room` at :71 and `OUT_OF_SIGHT` at :19. `onDidChangeModel` has no hit anywhere outside `.scratch`.

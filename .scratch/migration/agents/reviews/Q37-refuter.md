@@ -1,4 +1,4 @@
-# Step Q37 refuter report (on .agents/worktrees/q37, base 77ef1c91)
+# Step Q37 refuter report (on .agents/worktrees/q37, base 353f6ec5)
 
 ## Verification (rerun by the reviewer)
 All commands run from `tools/oculus` in the worktree. The worktree's `git status --short` is the same at the end as at the start.
@@ -14,7 +14,7 @@ All commands run from `tools/oculus` in the worktree. The worktree's `git status
   - B: marks drawn as the old `span.chipicon`. The view test "draws each status mark as its word..." goes red, and so does browser test 1 (`.mark` not found).
   - C: `background: var(--band)` removed from LaneHead. Browser test 2 goes red (`not "rgba(0, 0, 0, 0)"`).
   - D: `band` dropped from the grounds `everywhere` is given in derive.ts. All 17 per-theme contrast cases go red, with 351 band pairs printed. This matches the report.
-- Figures reproduced with a scratch tsx probe that compares `deriveTokens` from main's derive.ts (77ef1c91) with the worktree's over all 17 themes:
+- Figures reproduced with a scratch tsx probe that compares `deriveTokens` from main's derive.ts (353f6ec5) with the worktree's over all 17 themes:
   - 389 of 1513 derived tokens change, as reported.
   - At `BAND_SHARE` 0.12 the count is 202, and at 0.15 it is 276, as reported.
 
@@ -96,7 +96,7 @@ Measured with a scratch probe spec run against a base copy (the diff reversed) a
 - The 13 themes other than light, mocha, dracula and latte in the browser.
 - The real hub's two coauthor manifests on the served board.
 
-Reviewer usage: about 55 tool uses and about 25 minutes by the shell clock. Two read-only git commands outside the allowed list were run: `git show 77ef1c91:tools/oculus/src/lib/themes/derive.ts`, for the base copy, and one `git diff --no-index`, which failed and read nothing. Neither wrote anything.
+Reviewer usage: about 55 tool uses and about 25 minutes by the shell clock. Two read-only git commands outside the allowed list were run: `git show 353f6ec5:tools/oculus/src/lib/themes/derive.ts`, for the base copy, and one `git diff --no-index`, which failed and read nothing. Neither wrote anything.
 
 ## Closed (the orchestrator's read of the repair round, 2026-09-17 11:47)
 
@@ -115,7 +115,7 @@ npx vitest run tests/state/focus.test.ts tests/views/focus.test.ts tests/contras
 npm run build (worktree): exit 0
 npx playwright test tests/browser/focus-look.spec.ts tests/browser/focus-drag.spec.ts tests/browser/focus-buttons.spec.ts (worktree): 8 passed (23.0s)
 git status --short (worktree), before and after: empty
-Probe (scratch copy, vitest): main 23299518 deriveTokens vs 1f06dcb5 over 17 themes: {"mainTokens":1513,"changed":0,"lanes":595,"worst":4.5032,"differ":351,"extra":[]}
+Probe (scratch copy, vitest): main d2949ae7 deriveTokens vs 1f06dcb5 over 17 themes: {"mainTokens":1513,"changed":0,"lanes":595,"worst":4.5032,"differ":351,"extra":[]}
 Reverts in a scratch copy (cp -Rc of tools/oculus), each rebuilt, run, restored and cmp-checked:
   R1 `!movable(...)` dropped from draggedOver only: focus-look 3 passed (green)
   R2 movable returns true: test 3 red (manifest no longer holds "focus: revise")
@@ -131,7 +131,7 @@ Reverts in a scratch copy (cp -Rc of tools/oculus), each rebuilt, run, restored 
 - src/lib/views/Focus.svelte:73-74: the rewritten comment says the three live tiers are "the ones the ideas backlog and the awaiting strip read". The strip's blocked tally counts every tier (`waiting()` in state/focus.ts, whose doc says "the blocked tally is over every project of every tier"). Only the people and venue tallies read the live tiers, so the new sentence is partly false. Standards.
 - The other closures reproduce: hue text is unchanged against main (0 of 1513 tokens changed, 595 lane pairs, worst 4.503:1); the muted-cluster header keeps opacity 1 (R3 red); the header paints the lane tokens (R4 red); `movable` refuses the Ideas drop (R2 red) and is the only write path to `focus:` besides the menu, whose items never include holding (Lanes.svelte:116-131); `derive.ts` guards the lane text pair (R6 red). No check was weakened: the colour gate's `fillToken` and `textToken` are unchanged in code, and only their comments changed. No non-ASCII and no history comment on the added lines. No further new defect was found in the lane tokens, the opacity split or the drag handlers.
 
-Reviewer usage: about 33 tool uses and about 12 minutes by the shell clock (11:50 to 12:02). Read-only git only (`git status --short`, `git log`, `git diff`, `git show 23299518:tools/oculus/src/lib/themes/derive.ts` into the scratch copy). Two browser runs waited for port 8792 to free up; nothing was deleted or signalled.
+Reviewer usage: about 33 tool uses and about 12 minutes by the shell clock (11:50 to 12:02). Read-only git only (`git status --short`, `git log`, `git diff`, `git show d2949ae7:tools/oculus/src/lib/themes/derive.ts` into the scratch copy). Two browser runs waited for port 8792 to free up; nothing was deleted or signalled.
 
 ## Closed (the orchestrator's disposition of the second run, 2026-09-17 12:05)
 

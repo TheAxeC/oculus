@@ -17,7 +17,7 @@ D44's builder a95c739803eb0fe23 and its reviewers had ended; the agent listing s
 
 ## What landed
 
-From base 6044d753c, 52 files (+2102 -220, `git diff --cached --shortstat`), and engram's `code/hpc/oculus_submit_check.slurm` (Z539): Submit Job on a `.slurm` file under a project's `code/`, from the source tab's title-bar control and the palette. The server computes the plan (the files git keeps minus `__pycache__`, `.npy`, `results/` and `logs/`; the cluster folder from `paths.cluster` or `~/projects/<id>`; the rsync vector; the one remote `cd <folder> && sbatch --parsable <script>`; the `/local/$SLURM_JOB_ID` warning read through `sh-syntax`), shows it in a confirm, computes it again at the press and runs it only when equal (G43); `paths.cluster` is held to `clusterFolder` with its finding (G15).
+From base 378c5b60e, 52 files (+2102 -220, `git diff --cached --shortstat`), and engram's `code/hpc/oculus_submit_check.slurm` (Z539): Submit Job on a `.slurm` file under a project's `code/`, from the source tab's title-bar control and the palette. The server computes the plan (the files git keeps minus `__pycache__`, `.npy`, `results/` and `logs/`; the cluster folder from `paths.cluster` or `~/projects/<id>`; the rsync vector; the one remote `cd <folder> && sbatch --parsable <script>`; the `/local/$SLURM_JOB_ID` warning read through `sh-syntax`), shows it in a confirm, computes it again at the press and runs it only when equal (G43); `paths.cluster` is held to `clusterFolder` with its finding (G15).
 
 Fixes at landing, 4:
 - DESIGN.md:128: the git write forms are held by the head comment of `server/git/git-write.ts` and the paragraph, read at review.

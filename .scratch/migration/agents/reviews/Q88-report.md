@@ -24,7 +24,7 @@ The cases were written as tests before any source change and run on the unchange
 
 The cases added to these files after the rulings (the Untracked menu, names passed through, Checkout without the checked-out branch, the read-only box, the picker and the addable-false case) were written against the new modules and were not run on the unchanged tree.
 
-Cases the brief's rules got wrong, and the rulings (`agents/briefs/Q88-cases.md`, commit 016256ec):
+Cases the brief's rules got wrong, and the rulings (`agents/briefs/Q88-cases.md`, commit aaeb67bc):
 
 1. Case 6, Discard Changes on an untracked file. Rule: the Untracked menu offers Discard Changes. Result: the server refuses to discard an untracked path (`src/lib/server/git/git-write.ts:209-212`, `discard`) and the view draws Discard only for `changed`. Ruling, option (a): the Untracked menu is Open File, Stage Changes, Reveal in Explorer View; removing an untracked file is Q88b's. The test asserts the Untracked menu without Discard.
 2. Case 17, names from data. Rule: no label that is not `t(...)` of a key. Result: a branch, tag or terminal name cannot be a key. Ruling, option (a): labels the builders write are `t(...)` of a key, and a name from the repository or the terminal list passes through unchanged, asserted equal to the name handed in (`tests/ui/menu/menu-words.test.ts`, "passes each name from data through exactly as it was handed", and the first case counts exactly those names as the only labels without `@`).

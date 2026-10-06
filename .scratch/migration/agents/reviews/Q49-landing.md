@@ -12,7 +12,7 @@ Nothing of the step itself. What this landing did not close is the third open it
 
 ## What landed
 
-Q49 landed 2026-09-18 05:31 from worktree `q49` at base `2ac73578` by `land.sh --no-browser`, after one review (seven rulings), one repair round, and a second review whose eighteen findings were closed here or recorded below.
+Q49 landed 2026-09-18 05:31 from worktree `q49` at base `6a2b48c5` by `land.sh --no-browser`, after one review (seven rulings), one repair round, and a second review whose eighteen findings were closed here or recorded below.
 
 A button a ticker row is not drawing is out of the page: it holds no width, answers no press and is no Tab stop, and the row is the same box to the board whether it is open or not. An open row draws its buttons on the line at the row's end and the name is cut where they begin; a row too narrow draws the ones it measured room for, keeping the one it exists for and the one holding the keyboard.
 

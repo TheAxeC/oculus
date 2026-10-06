@@ -1,4 +1,4 @@
-# Step Q34 refuter report (on .agents/worktrees/q34, base 22ef9103)
+# Step Q34 refuter report (on .agents/worktrees/q34, base 1ab01fff)
 
 ## Verification (rerun by the reviewer)
 
@@ -15,7 +15,7 @@ All commands were run from `tools/oculus` in the worktree unless a clone is name
 - `git status --short` lists 29 modified and 10 untracked files. None of `state/focus.ts`, `views/focus/Lanes.svelte`, `Band.svelte`, `LaneHead.svelte`, `state/tones.ts` or `config/vocab.yml` is among them.
 - Clones for probes and reverts, all under `scratchpad/q34-review/`:
   - `after/`: a copy of the worktree's `tools/oculus`.
-  - `base/`: the same copy with `git diff 22ef9103` applied in reverse and the 10 new files removed.
+  - `base/`: the same copy with `git diff 1ab01fff` applied in reverse and the 10 new files removed.
   - `node/`: a copy used for the node reverts.
   - Both `after/` and `base/` were built. Screenshots are in `shots-base/` and `shots-after/` (light and dark themes, 1600 and 700 wide) and in `meas-*`. Probes are `probe*/`. Logs are `meas-*.log`, `narrow-*.log`, `band.log` and `reverts/`.
 
@@ -159,7 +159,7 @@ Reviewer usage: about 65 tool uses, 14:04 to 14:37 (33 minutes).
 All commands run from tools/oculus in .agents/worktrees/q34 unless a clone is named.
 Clones are under scratchpad/q34-review2/:
   cur = a copy of the worktree
-  r1  = the worktree with `git diff 22ef9103` reversed, then q34-round1's tracked.patch and untracked.tar applied
+  r1  = the worktree with `git diff 1ab01fff` reversed, then q34-round1's tracked.patch and untracked.tar applied
   rev = a copy of cur used for the reverts; each file was restored from cur and checked with cmp
 The round's delta is `diff -ruN r1 cur` (delta-src.patch, delta-tests.patch, delta-config.patch).
 

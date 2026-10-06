@@ -4,7 +4,7 @@ Withdrawn 2026-09-16 12:34: Axel reversed the ruling of 00:40, so the theme word
 
 Read `../spec.md` first, its section "The principles every package is judged on" and its amendments of 2026-09-16 (the port rule, the hub migration package). The plan's M2 line (Axel, 2026-09-16 00:40) and his ruling of 11:00: the theme words of `registries/venues.yml` and `registries/data.yml` become keys of `registries/domains.yml`, a finding otherwise; `high-end` leaves the themes for the tier word it already is; the mapping is the table below, recommended by the orchestrator and agreed as the approach, each row his to amend afterwards (the table is booked in the state file's open items).
 
-## What is on the tree (written 2026-09-16 at 11:10 against main at 51a83a56)
+## What is on the tree (written 2026-09-16 at 11:10 against main at 28b0afe3)
 
 - `registries/venues.yml`: 90 entries under `entries:`, the schema field `themes` of type `tags` and a `tier` field of type `select` over `venue_tiers`. Thirteen theme words (`core-ml` 29, `clinical` 28, `high-end` 21, `signal` 15, `theory` 13, `informatics` 10, `federated` 9, `neuro` 9, `imaging` 9, `bio` 5, `cs` 4, `systems` 2, `method` 2; counted with a YAML load).
 - `registries/data.yml`: `datasets:` with the schema fields `key, name, modality, themes, description, size, hpc_path, access, source, retrieval` and a top-level `theme_labels:` map (`single-cell: Single-cell`, ..., eleven words); the words `single-cell` 12, `eeg` 9, `mri-imaging` 8, `bci-ecog` 6, `ecg` 5, `survival-tabular` 5, `clinical-ehr` 4, `pde-operator` 3, `ct-imaging` 1, `mammography` 1, `simulated-copula` 1.

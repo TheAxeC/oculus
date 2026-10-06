@@ -1,4 +1,4 @@
-# Step L4 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/L4, base 3a246eca)
+# Step L4 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/L4, base c4ec2c34)
 
 Pages cited (the rules file, the brief, the state file) are named with their section. Findings in code keep `file:line`. Paths are relative to `tools/oculus` in the worktree.
 
@@ -7,7 +7,7 @@ Pages cited (the rules file, the brief, the state file) are named with their sec
 ```
 $ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
 > node utils/diagrams/diagrams.mjs   (exit 0; the tracked diagrams are unchanged by it:
-  `git diff 3a246eca -- docs/diagrams | shasum` 3db2a075... before and after; `git diff 3a246eca | shasum` 2f6bbc17... before and after; `git status --short | shasum` a540be6a... before and after)
+  `git diff c4ec2c34 -- docs/diagrams | shasum` 3db2a075... before and after; `git diff c4ec2c34 | shasum` 2f6bbc17... before and after; `git status --short | shasum` a540be6a... before and after)
 
 $ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md   (run 1, output through tail -150)
 ... format:check, lint, the non-ASCII grep, then:
@@ -48,7 +48,7 @@ $ npx vitest run <the twelve files the report names> --reporter=dot         Test
 Counts of run 2 (424 files, 11158 tests) match the report's 424 / 11158.
 ```
 
-Not reproduced: the report's "first run on the unchanged tree" counts (they need a second checkout at base 3a246eca with stub modules; I may write nowhere). See Declined to judge.
+Not reproduced: the report's "first run on the unchanged tree" counts (they need a second checkout at base c4ec2c34 with stub modules; I may write nowhere). See Declined to judge.
 
 ## Verdicts
 
@@ -127,7 +127,7 @@ Cases of the brief's "Cases":
 ## Declined to judge
 
 - The look and every pointer gesture (`interactjs` move and resize, the 24 px docking on release, the Alt-drag outline, the sash drag, the Alt key pressed or released with the pointer at rest): no DOM and no browser here; the report says the same.
-- The report's first run on the unchanged tree (counts per file, built with stub modules): reproducing it needs a second checkout at 3a246eca and writing files, which this review may not do; I read the new tests and the old code instead (e.g. `closeInstance(tree, 's', keep)` has no fourth parameter on the base).
+- The report's first run on the unchanged tree (counts per file, built with stub modules): reproducing it needs a second checkout at c4ec2c34 and writing files, which this review may not do; I read the new tests and the old code instead (e.g. `closeInstance(tree, 's', keep)` has no fourth parameter on the base).
 - Whether a tab dropped on the border zone of a float should be refused (item 7: "refuses edge drops") or taken as a centre drop, which `PaneBody.svelte:89` does: the store refuses every split (case 12 met); the pointer path needs the DOM.
 - Whether the page-to-float strip drop (`transferInstance(id, path, index, floatId)`, `instances.ts:291-307`) behaves: read as correct (`carryToPage` writes through `writeHost`); no test drives it (a test would need a new file).
 - `npm view interactjs` and the library's published facts: ruled by LA18, a network fetch.
@@ -137,7 +137,7 @@ Reviewer usage: not reported by the runner to me; about 60 tool uses, about 55 m
 
 ## Repair round 1, refuted
 
-Step L4, worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/L4`, base 3a246eca. Paths are relative to `tools/oculus` unless stated. My scratch files are in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/l4r1/`. The worktree is unchanged by me: `git diff 3a246eca | shasum` printed `aabd88bf...` and `git status --short | shasum` printed `78d6a7a2...` before and after every command.
+Step L4, worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/L4`, base c4ec2c34. Paths are relative to `tools/oculus` unless stated. My scratch files are in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/l4r1/`. The worktree is unchanged by me: `git diff c4ec2c34 | shasum` printed `aabd88bf...` and `git status --short | shasum` printed `78d6a7a2...` before and after every command.
 
 ### Verification (rerun by me)
 
@@ -161,7 +161,7 @@ $ npm test
 checks: failed with exit 1: npm test
 ```
 
-The two failing files rerun alone (neither is in the step's diff, and `git diff 3a246eca --stat -- tests/server` printed nothing):
+The two failing files rerun alone (neither is in the step's diff, and `git diff c4ec2c34 --stat -- tests/server` printed nothing):
 
 ```
 $ npx vitest run tests/server/edit/config-key.test.ts --reporter=dot      Test Files  1 passed (1)   Tests  35 passed (35)

@@ -1,4 +1,4 @@
-# Step X3f refuter report (on .agents/worktrees/X3f, base 9c7070289)
+# Step X3f refuter report (on .agents/worktrees/X3f, base 441e8c1a7)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
 
@@ -10,8 +10,8 @@ There is no ADR folder: `ls docs/adr tools/oculus/docs/adr` printed "No such fil
 $ npm run diagrams            (from tools/oculus; shasum of docs/diagrams/* before and after: identical, "DIAGRAMS_UNCHANGED")
 exit 0
 
-$ npm run test:quick -- --base 9c7070289
-test:quick: 47 changed file(s), from git since 9c7070289
+$ npm run test:quick -- --base 441e8c1a7
+test:quick: 47 changed file(s), from git since 441e8c1a7
 test:quick: 27 test file(s), 10 essential
 ok      prettier (0.4 s): All matched files use Prettier code style!
 ok      ASCII gate (0.4 s)
@@ -65,7 +65,7 @@ Commands the report quotes as evidence:
 - the three tree checks, "47 passed (47)": reproduced.
 - unused-exports diff empty: reproduced.
 - useTabActions grep: reproduced, line for line.
-- "No file under tests/ differs from the base copy": `git diff 9c7070289 --stat` lists no path under tests/. Reproduced.
+- "No file under tests/ differs from the base copy": `git diff 441e8c1a7 --stat` lists no path under tests/. Reproduced.
 - line counts: wc -l gives PaneView 496, PaneBody 235, Source 508, File 321, fs.svelte.ts 819, layout.svelte.ts 835, row-menu.ts 499, all as reported and all under 880 / 520.
 - folder items (ls -A): views/shared/links 8, views/shared/prose 7, state/workbench/layout/open 10, views/sources/doc 2, views/sources/source 9, views/sources 10, shell/panes 10, config/text/views/sources 10. All are at most 10.
 - history-word grep: "every hit is a runtime condition". Not reproduced (Proof 1).
@@ -173,7 +173,7 @@ Agent usage: 246,295 tokens, 57 tool uses, 11.0 min (opus, ordo-high).
 
 ## Repair round 1, refuted
 
-No tree snapshot was recorded when the round was sent, so this run reads the nine items of `agents/briefs/X3f-round1.md` against the whole diff since 9c7070289 (`git diff 9c7070289`, `git status --short` in `.agents/worktrees/X3f`). The worktree copies of `briefs/X3f.md` and `briefs/X3f-cases.md` are identical to the main checkout's (`cmp` printed `SAME_BRIEF`, `SAME_CASES`). The builder's report is identical in the two checkouts (`cmp` printed `SAME_REPORT`). No file under `tests/` differs from the base copy (`diff -rq X3f-base/tools/oculus/tests X3f/tools/oculus/tests` printed `TESTS_SAME`).
+No tree snapshot was recorded when the round was sent, so this run reads the nine items of `agents/briefs/X3f-round1.md` against the whole diff since 441e8c1a7 (`git diff 441e8c1a7`, `git status --short` in `.agents/worktrees/X3f`). The worktree copies of `briefs/X3f.md` and `briefs/X3f-cases.md` are identical to the main checkout's (`cmp` printed `SAME_BRIEF`, `SAME_CASES`). The builder's report is identical in the two checkouts (`cmp` printed `SAME_REPORT`). No file under `tests/` differs from the base copy (`diff -rq X3f-base/tools/oculus/tests X3f/tools/oculus/tests` printed `TESTS_SAME`).
 
 ```
 $ npm run diagrams                     (from tools/oculus in the worktree; shasum of docs/diagrams/* before and after)
@@ -190,8 +190,8 @@ ok      svelte-check (24.8 s): 1791154324235 COMPLETED 358 FILES 0 ERRORS 0 WARN
 test:quick: 29.0 s (limit 45.0 s); every command passed
 checks: 1 commands passed
 
-$ npm run test:quick -- --base 9c7070289
-test:quick: 52 changed file(s), from git since 9c7070289
+$ npm run test:quick -- --base 441e8c1a7
+test:quick: 52 changed file(s), from git since 441e8c1a7
 test:quick: 27 test file(s), 10 essential
 ok      svelte-check (7.8 s): 1791154334657 COMPLETED 358 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
 ok      vitest (12.0 s): Duration  8.18s (transform 19.22s, setup 0ms, import 28.56s, tests 3.31s, environment 8ms)
@@ -309,13 +309,13 @@ Reviewer usage: ordo-high on claude-opus-5-5 (a2e13fa0838de52ab), 190,712 tokens
 
 ## Repair round 2, refuted
 
-Step X3f, on `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3f`, base ec4c6f577. The round-2 diff was read against a round-1 tree, which I rebuilt in my scratchpad by applying `X3f-backed-out.patch` to a copy of `X3f-base`. The behaviour-removed runs were made on a second scratch copy of the worktree's `tools/oculus`, with `node_modules` symlinked. Each source file was put back and confirmed with `cmp`. Both copies are under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/` (`r1/` and `mut/`). The worktree itself is unchanged: `git status --short` showed only the builder's files.
+Step X3f, on `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3f`, base 6c3781d10. The round-2 diff was read against a round-1 tree, which I rebuilt in my scratchpad by applying `X3f-backed-out.patch` to a copy of `X3f-base`. The behaviour-removed runs were made on a second scratch copy of the worktree's `tools/oculus`, with `node_modules` symlinked. Each source file was put back and confirmed with `cmp`. Both copies are under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/` (`r1/` and `mut/`). The worktree itself is unchanged: `git status --short` showed only the builder's files.
 
 ```
 # from tools/oculus in the worktree
 npm run diagrams                      -> exit 0; shasum of docs/diagrams/* identical before and after
 checks.sh                             -> ok ASCII gate (0.4 s); ok prettier (0.8 s); ok svelte-kit sync (7.1 s); ok eslint (35.1 s); ok svelte-check (29.5 s): ... 355 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS; ok vitest (38.9 s): Duration 31.38s ...; test:quick: 39.2 s (limit 45.0 s); every command passed; ... checks: 1 commands passed
-npm run test:quick -- --base ec4c6f577 -> 95 changed file(s); 67 test file(s), 10 essential; ...; test:quick: 12.0 s (limit 45.0 s); every command passed
+npm run test:quick -- --base 6c3781d10 -> 95 changed file(s); 67 test file(s), 10 essential; ...; test:quick: 12.0 s (limit 45.0 s); every command passed
 
 Verify 1: npx vitest run armed-keep.client, opening.client, tab-actions.client, comment-draft.client
   -> Test Files 4 passed (4) / Tests 33 passed (33)
@@ -468,11 +468,11 @@ Usage: ordo-high on claude-opus-5-5 (a4505c32f469215eb), 136,251 tokens, 114 too
 
 ## Repair round 3, refuted
 
-Reviewer a74583b625c668d96, claude-opus-5-5: 323,724 tokens, 102 tool uses, 18.5 min (completion notice). Worktree `.agents/worktrees/X3f`, base f672330af.
+Reviewer a74583b625c668d96, claude-opus-5-5: 323,724 tokens, 102 tool uses, 18.5 min (completion notice). Worktree `.agents/worktrees/X3f`, base b249c7e49.
 
 ### Verification
 
-`npm run diagrams` exit 0, diagrams unchanged. `checks.sh` from `tools/oculus`: prettier, ASCII gate, svelte-kit sync, vitest (35.07 s), eslint, svelte-check (359 FILES 0 ERRORS 0 WARNINGS) ok; `test:quick: 45.8 s (limit 45.0 s); every command passed`; `checks: 1 commands passed`. `npm run test:quick -- --base f672330af`: 14.0 s, every command passed. `npx vitest run tests/checks`: 16 files, 227 tests passed. `sh utils/folder-check.sh` exit 0. Reproduced: the round-2 tree red (10 failed | 12 passed (22)), File.svelte without 'bar' (4 failed), handUp ignoring its place (2 failed), handUp cleanup dropping the place (1 failed), the route probe (`stage=bogus` 400 with no read, head and index 200), the unused-exports list, the line and folder counts, VS Code 1.137.0's `git.blame.statusBarItem.enabled` default True. Not reproduced: "DESIGN.md: the Git form list adds blame --porcelain HEAD and --contents -".
+`npm run diagrams` exit 0, diagrams unchanged. `checks.sh` from `tools/oculus`: prettier, ASCII gate, svelte-kit sync, vitest (35.07 s), eslint, svelte-check (359 FILES 0 ERRORS 0 WARNINGS) ok; `test:quick: 45.8 s (limit 45.0 s); every command passed`; `checks: 1 commands passed`. `npm run test:quick -- --base b249c7e49`: 14.0 s, every command passed. `npx vitest run tests/checks`: 16 files, 227 tests passed. `sh utils/folder-check.sh` exit 0. Reproduced: the round-2 tree red (10 failed | 12 passed (22)), File.svelte without 'bar' (4 failed), handUp ignoring its place (2 failed), handUp cleanup dropping the place (1 failed), the route probe (`stage=bogus` 400 with no read, head and index 200), the unused-exports list, the line and folder counts, VS Code 1.137.0's `git.blame.statusBarItem.enabled` default True. Not reproduced: "DESIGN.md: the Git form list adds blame --porcelain HEAD and --contents -".
 
 ### Verdicts
 

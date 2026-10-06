@@ -18,7 +18,7 @@ None.
 
 ## What landed
 
-Base 64d1354a, `git cherry-pick -n main..Q102-land` on main, 80 files, 4453 insertions and 672 deletions before the fixes at landing.
+Base c296a1c7, `git cherry-pick -n main..Q102-land` on main, 80 files, 4453 insertions and 672 deletions before the fixes at landing.
 
 - New Terminal starts a shell at once in the tab's folder; the other kinds (Claude, Codex, a start with a prompt) are in a dropdown beside it.
 - Split starts a terminal of the same kind and folder right of the one split; a tab's row holds any number of terminals and scrolls sideways when they do not fit.

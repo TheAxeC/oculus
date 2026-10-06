@@ -15,7 +15,7 @@ All commands were run from /Users/axelfaes/workspace/research-hub/.agents/worktr
 5. `npm run lint`: `lint exit 0`
 6. ASCII gate of spec.md, piped to `wc -l`: `0`
 7. `sh bin/size-check.sh`: `size exit 0`. `sh bin/folder-check.sh`: `folder exit 0`
-8. `npm run diagrams` twice. The md5 of `docs/diagrams/*` was `a721f2b76a0cd1b0b393c42d0c175c22` before the first run, after the first run and after the second run. My runs changed nothing in docs/diagrams. The six diagram files differ from c2e6dedc because the builder's run rewrote them.
+8. `npm run diagrams` twice. The md5 of `docs/diagrams/*` was `a721f2b76a0cd1b0b393c42d0c175c22` before the first run, after the first run and after the second run. My runs changed nothing in docs/diagrams. The six diagram files differ from 77855d47 because the builder's run rewrote them.
 9. After `npm run build` and the port wait (free 3x):
    - `npx playwright test tests/browser/workbench/system.spec.ts`: `15 passed (22.1s)`
    - The whole suite, `npx playwright test --reporter=dot`: `410 passed (7.4m)`
@@ -31,7 +31,7 @@ All commands were run from /Users/axelfaes/workspace/research-hub/.agents/worktr
 ## Spec
 
 1. The report's claim that tree fact 6 was wrong reproduces.
-   - `git show c2e6dedc:tools/oculus/tests/state/system/docs.test.ts | grep -c "^\s*it("` prints `11`: the file existed and drove the store through `createClientState`.
+   - `git show 77855d47:tools/oculus/tests/state/system/docs.test.ts | grep -c "^\s*it("` prints `11`: the file existed and drove the store through `createClientState`.
    - `grep createDocs` over tests prints nothing because that file never names the function.
    - The brief's premise was wrong. The builder rewrote the file (now 19 cases), which item 5 covers.
 2. The wire shape `file` (docs.ts:92-96, :162, :167) is a user-visible shape the brief did not name.

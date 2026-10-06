@@ -12,7 +12,7 @@ Nothing of Q74's brief. The channels diagram, outside the brief, carries 178 pai
 
 ## What landed
 
-Q74, cherry-picked from `.agents/worktrees/Q74` at base `f90268dc` by `tools/oculus/.scratch/migration/land.sh Q74 f90268dc <runs> --no-browser` (+3,150 -2,042 over 26 files), then fixed at landing (+252 -11 over 7 files), the browser suite run by hand. The commit follows this report.
+Q74, cherry-picked from `.agents/worktrees/Q74` at base `a48c7e98` by `tools/oculus/.scratch/migration/land.sh Q74 a48c7e98 <runs> --no-browser` (+3,150 -2,042 over 26 files), then fixed at landing (+252 -11 over 7 files), the browser suite run by hand. The commit follows this report.
 
 - Each layer diagram is a column of the layer's folders; every count on an arrow between two folders stands inside the layer's box, halfway along its arrow; each folder draws its own dashed arrow to a box of each other layer it reaches.
 - `arrowsAlong()` in `bin/diagrams/labels.mjs` names two arrows that run within 1.5 pt of each other for more than 40 pt, each piece of a curve at most 0.5 pt; `tests/checks/diagrams/readable.test.ts` holds the overview, the six layer diagrams and the writes diagram to none.

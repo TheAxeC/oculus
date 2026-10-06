@@ -1,4 +1,4 @@
-Brief check of D13c (tools/oculus/.scratch/migration/agents/briefs/D13c.md), against main at de5f74cd (`git log --oneline -1` printed `de5f74cd Land Q86c: the Map's forces back on d3-force`). I wrote only to the scratchpad `D13c-check/`, and nothing in the repository changed.
+Brief check of D13c (tools/oculus/.scratch/migration/agents/briefs/D13c.md), against main at 62c6f933 (`git log --oneline -1` printed `62c6f933 Land Q86c: the Map's forces back on d3-force`). I wrote only to the scratchpad `D13c-check/`, and nothing in the repository changed.
 
 Three findings would make the build go red or miss the goal:
 - **F1, layer rule.** The list module in `data/helpers` cannot be imported by the state or view layers under `boundaries.test.ts`'s ALLOWED table unless the brief adds it to that table.

@@ -10,7 +10,7 @@ Nothing of the step. Three holes in the audits scan are booked into Q59 rather t
 
 ## What landed
 
-R14 landed 2026-09-18 10:44 from worktree `r14` at base `ec7bc6e5`, after one review, two repair rounds (the second beyond the cap under its one exception), and a third review whose ten findings were closed at this landing except the three booked ones. 168 files, 5,140 insertions.
+R14 landed 2026-09-18 10:44 from worktree `r14` at base `bbae5dd9`, after one review, two repair rounds (the second beyond the cap under its one exception), and a third review whose ten findings were closed at this landing except the three booked ones. 168 files, 5,140 insertions.
 
 Eleven checks, each refusing what it used to accept:
 

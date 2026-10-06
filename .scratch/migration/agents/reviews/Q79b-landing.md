@@ -51,7 +51,7 @@ $ ! LC_ALL=C grep -rna '[^ -~]' src tests     exit 0
 
 The route and pty files the fixes changed: `npx vitest run tests/routes/sessions tests/server/machine/pty/sessions.test.ts tests/server/machine/pty/channel.test.ts` gives `Test Files 8 passed (8)`, `Tests 104 passed (104)`. `scratch.test.ts`: `Tests 17 passed (17)`.
 
-Lint on main also named two errors in `MenuList.svelte`, from the look fix of `f07a63a5`; that fix is its own commit, `8d4a600a`.
+Lint on main also named two errors in `MenuList.svelte`, from the look fix of `c3ecfb4e`; that fix is its own commit, `92a910dc`.
 
 ## Usage
 

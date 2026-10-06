@@ -1,4 +1,4 @@
-# Step Q71 refuter report (on .agents/worktrees/Q71, base 28a63283)
+# Step Q71 refuter report (on .agents/worktrees/Q71, base 08dee04b)
 
 ## Verification (rerun by the reviewer)
 All commands were run from `.agents/worktrees/Q71/tools/oculus`.
@@ -12,7 +12,7 @@ All commands were run from `.agents/worktrees/Q71/tools/oculus`.
 - `npm run diagrams` run twice: I copied `docs/diagrams` before the first run and after it. Both `diff -r` comparisons print nothing, so the committed tree equals run 1, which equals run 2.
 - `npm run build`, then `npx playwright test --reporter=line`: `386 passed (6.0m)`. Port 8792 was free before and after the run.
 - Measuring script, saved in the scratchpad:
-  - On main at b282238f, whose src is identical to 28a63283 (`git diff --stat 28a63283 b282238f` touches only `orchestrator-state.md`): `modules 557 edges 2069`, `module cycles 2 [...local.ts, merge.ts], [...focus-lanes, ticker, feeds, rail-badges]`, the three folder rings as the report quotes them, `views->state 449 files 153 targets 57`.
+  - On main at dbc384c8, whose src is identical to 08dee04b (`git diff --stat 08dee04b dbc384c8` touches only `orchestrator-state.md`): `modules 557 edges 2069`, `module cycles 2 [...local.ts, merge.ts], [...focus-lanes, ticker, feeds, rail-badges]`, the three folder rings as the report quotes them, `views->state 449 files 153 targets 57`.
   - On the worktree: `modules 560 edges 2094` / `module cycles 0 []` / `folder rings []` / `views->state 471 files 153 targets 64`. Both runs match the report.
 - `node bin/revert-check.mjs` over every added or changed test file (124 files), in batches:
   - unit: 12 + 32 + 31 + 38 + 124 + 129 = **366 reverts, 1 unproven**. The one is `GREEN tests/state/boards/structure/graph.test.ts :: list the configured types first, then the rest by name, each counted over the drawn graph (revert src/lib/state/boards/structure/graph.ts:353)`. A rerun of that file alone reproduced it: `4 reverts, 1 unproven`.
@@ -270,7 +270,7 @@ The reply's evidence, rerun:
 - The reply's "No git command was run in this round".
 - The rendered look of `layer-state.svg` and `channels.svg` in the Help view, in either theme.
 
-I ran one git command outside the three allowed: `git show 28a63283:tools/oculus/tests/checks/tree/boundaries.test.ts`, which is read-only; its output was discarded. I also created and deleted `/tmp/null` through a mistyped redirect. Every probe tree I planted under `$TMPDIR` is removed; no process I started is running (`pgrep` for vitest, playwright and revert-check prints nothing; port 8792 is free).
+I ran one git command outside the three allowed: `git show 08dee04b:tools/oculus/tests/checks/tree/boundaries.test.ts`, which is read-only; its output was discarded. I also created and deleted `/tmp/null` through a mistyped redirect. Every probe tree I planted under `$TMPDIR` is removed; no process I started is running (`pgrep` for vitest, playwright and revert-check prints nothing; port 8792 is free).
 
 Reviewer usage: tokens not known; about 45 tool uses; about 30 minutes, most of it the vitest, playwright and revert-check runs.
 

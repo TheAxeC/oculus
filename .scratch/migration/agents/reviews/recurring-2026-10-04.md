@@ -4,7 +4,7 @@ Recurring-findings pass, plan oculus/migration, over the 14 refuter reports writ
 
 - The two scripts Z253 approved and D32 built, `utils/outside-paths.mjs` (the changed files minus the brief's path list) and `utils/unused-exports.sh` (exports with no importer outside their file and its tests), are required by nothing: `grep -c 'outside-paths\|unused-exports\|cited-lines'` over `agents/spec.md`, `orchestrator-state.md` and the briefs of the 14 steps printed nothing or 0. `outside-paths.mjs` runs git, so a builder may not run it.
 - `agents/spec.md:32` sent the builder to "the base copy your brief names", and no brief named one: `grep -c -i 'base copy'` over the briefs of the 14 steps and of T1b, T1d and T1e printed 0 for each. A builder that needs a file as it was, or the list of what it changed, then reaches for git.
-- `sh utils/unused-exports.sh` on main at 1e14d279 prints 258 unused exports, so a builder can use it only against the base's own output.
+- `sh utils/unused-exports.sh` on main at cf91445b prints 258 unused exports, so a builder can use it only against the base's own output.
 
 ## Causes in three or more steps
 

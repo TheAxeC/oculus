@@ -18,7 +18,7 @@ Read `../spec.md` first; it governs this package unchanged. Four items Axel rais
 
 ## Facts to check on the tree before dispatch
 
-Checked 2026-09-12 at 17:15 on main at a7fafb72: the registry hook `badge?: () => string` at `views/registry.ts` line 30, used once (`hpc`, `routes/views.ts` line 73); the rail draws it at lines 197 to 200 with `.badge` at line 374; `nav_groups` at `layout.yml` lines 14 to 24; the tray's `.tray` rule at `UpdateTray.svelte` lines 102 to 115; the rail's `.view` at lines 359 to 372, `.flyout` at 352, `.controls > div` at 339, `.toggle` at 384; `leads_badge_days: 14` at `behavior.yml` line 53; `parity.md` line 42 is the recorded gap. Re-check the line numbers at dispatch.
+Checked 2026-09-12 at 17:15 on main at 735f29b5: the registry hook `badge?: () => string` at `views/registry.ts` line 30, used once (`hpc`, `routes/views.ts` line 73); the rail draws it at lines 197 to 200 with `.badge` at line 374; `nav_groups` at `layout.yml` lines 14 to 24; the tray's `.tray` rule at `UpdateTray.svelte` lines 102 to 115; the rail's `.view` at lines 359 to 372, `.flyout` at 352, `.controls > div` at 339, `.toggle` at 384; `leads_badge_days: 14` at `behavior.yml` line 53; `parity.md` line 42 is the recorded gap. Re-check the line numbers at dispatch.
 
 ## Conventions, verify, report
 

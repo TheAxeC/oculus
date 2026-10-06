@@ -14,7 +14,7 @@ Nothing in the brief. A running Terminal kept in a hidden tab was not measured, 
 
 ## What landed
 
-Q65, cherry-picked from `.agents/worktrees/Q65` at base `fbe3c308` onto main by `tools/oculus/.scratch/migration/land.sh Q65 fbe3c308` (+2,424 -570 over 80 files before the Doc text).
+Q65, cherry-picked from `.agents/worktrees/Q65` at base `b1161343` onto main by `tools/oculus/.scratch/migration/land.sh Q65 b1161343` (+2,424 -570 over 80 files before the Doc text).
 
 - The Files view's header carries two toggles, `hidden files` and `ignored files`, off until pressed and kept per tab. They reach the server as `hidden=1` and `ignored=1`; the ignored names come from `git check-ignore --stdin -z` through `server/git/git.ts`'s one call site, and a folder listed again with the same entries within two seconds reuses the answer before.
 - In development a component's stylesheet is served compiled whichever the page asks for first (`src/lib/server/core/style-first.ts`), which is the cause of the white page with serif text.

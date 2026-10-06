@@ -1,4 +1,4 @@
-# Step Q85a2 refuter report (on .agents/worktrees/Q85a2, base 4f4dcfc4)
+# Step Q85a2 refuter report (on .agents/worktrees/Q85a2, base 130c4d6f)
 
 Not done, first: the step is not green. `npm test` and `npm run test:checks` each fail two cases. Both failures come from the move of `core/json.ts` and the `bodies.ts` text, and are handed to the orchestrator. The review also found one defect that no case catches: an `event_msg` record with no `payload` key throws inside `foldCodex`. That stops the fold, and every later scan double-counts the rollout.
 
@@ -240,7 +240,7 @@ My recommendation: A1 if the layers drawing stays clean, otherwise G. A2 and B b
 
 ## Own deviation
 
-Besides the two allowed commands, I ran one read-only `git show 4f4dcfc4:tools/oculus/src/lib/server/edit/writes/bodies.ts` inside a `node -e` script to compare the base readers. I changed nothing.
+Besides the two allowed commands, I ran one read-only `git show 130c4d6f:tools/oculus/src/lib/server/edit/writes/bodies.ts` inside a `node -e` script to compare the base readers. I changed nothing.
 
 ## Probe files
 
@@ -250,7 +250,7 @@ Reviewer usage: about 440,000 tokens (estimate, not measured), about 150 tool us
 
 ## Repair round 1, refuted
 
-Worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85a2, base 4f4dcfc4. Everything in the round holds except one defect the round introduced (Spec 1: a fractional cache `offset` now freezes a session). Two smaller Standards findings follow. All three are small and inside the brief, so they can be fixed at landing.
+Worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85a2, base 130c4d6f. Everything in the round holds except one defect the round introduced (Spec 1: a fractional cache `offset` now freezes a session). Two smaller Standards findings follow. All three are small and inside the brief, so they can be fixed at landing.
 
 ### Verification (rerun by the reviewer, from tools/oculus in the worktree)
 
@@ -282,7 +282,7 @@ checks: 7 commands passed
 - Per-file `satisfies` and `safeParse` counts for 8 files match the report's table.
 - `grep -rnE "\b(whole|list|text|str|scalar|fields|strings)\(" src/lib/server/edit src/lib/server/sessions src/lib/server/transcripts` prints 20 lines (base prints 80).
 
-My own trees, built in the scratchpad dir `rr1/` outside the tree. `wt` is a copy of the worktree. `base` is the worktree with `git diff 4f4dcfc4` reversed; its `src` equals the older `scratchpad/basetree/src` (`diff -rq` empty).
+My own trees, built in the scratchpad dir `rr1/` outside the tree. `wt` is a copy of the worktree. `base` is the worktree with `git diff 130c4d6f` reversed; its `src` equals the older `scratchpad/basetree/src` (`diff -rq` empty).
 - **Fuzz, base against wt**, using the first reviewer's `fuzz.mts`: Claude and Codex records, `foldClaude`, `foldCodex`, `claudeUsage`, `codexUsage` and `readTurns`. Seeds 7, 11, 23, 99, 2000 sequences each: `sequences 2000, differences 0` four times. The generator includes `event_msg` records with no payload and `command: ['']`, `['', 3]`, `[]`, `['', '']`.
 - **Codex commands:** 500 combinations of `command` (20 forms, `[3]`, `['ls', 3]`, `[null, 'x']`, `{}`, `true` among them) with `path`, `changes`, `name`, `description` and `exit_code`, through `readTurns`: `cases 500 diffs 0`.
 - **Write bodies:** all 20 readers, 31,227 JSON bodies: `differences 0`. Bodies with an own `undefined` key are skipped; they differ, and brief decision 7 excludes them.
@@ -412,7 +412,7 @@ None beyond Spec 1. The slower `loadCache`, the dropped wrong-typed entry and th
 - **Visual quality of the regenerated SVG diagrams.** `readable.test.ts` passes, but I did not look at the drawings.
 - **The merge with Q85a4.** That is the landing's, as your note says.
 
-Reviewer usage: tokens not measured, about 110 tool uses (estimate), about 45 minutes (estimate). My probes and trees are under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/rr1/`. I changed no file in the worktree; `npm run diagrams` rewrote the same six already-modified `docs/diagrams` files, and I ran no git command other than `git diff 4f4dcfc4` and `git status --short`.
+Reviewer usage: tokens not measured, about 110 tool uses (estimate), about 45 minutes (estimate). My probes and trees are under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/rr1/`. I changed no file in the worktree; `npm run diagrams` rewrote the same six already-modified `docs/diagrams` files, and I ran no git command other than `git diff 130c4d6f` and `git status --short`.
 
 Recorded usage: reviewer a890ccc337bb5cdfb, served claude-sonnet-5-5; 321,329 tokens, 105 tool uses, 23.8 min (from its completion notice).
 

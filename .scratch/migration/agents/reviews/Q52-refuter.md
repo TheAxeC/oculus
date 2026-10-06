@@ -1,6 +1,6 @@
 # Review: Q52, one branch-state rule for the two git views
 
-Reviewer a966a73bca89c9035, claude:opus, read-only, 07:00 to 07:16. Worktree `.agents/worktrees/q52`, base `66e22825`. Nothing in the worktree was edited; every revert, the boundary experiment, the naming experiment and the probe ran on a copy, restored to byte-identity after each, and `git status --short` with `git diff --stat 66e22825` (13 files, 272 insertions, 68 deletions) is identical to the reading at the start.
+Reviewer a966a73bca89c9035, claude:opus, read-only, 07:00 to 07:16. Worktree `.agents/worktrees/q52`, base `07f99ee1`. Nothing in the worktree was edited; every revert, the boundary experiment, the naming experiment and the probe ran on a copy, restored to byte-identity after each, and `git status --short` with `git diff --stat 07f99ee1` (13 files, 272 insertions, 68 deletions) is identical to the reading at the start.
 
 ## Verification, rerun
 
@@ -88,7 +88,7 @@ npm run lint                    no output, exit 0
 the ASCII gate                  printed nothing, exit 0
 both catalogs                   parse, exit 0
 npx playwright test repositories changes   11 passed (25.0s)
-git diff --stat 66e22825        14 files changed, 401 insertions(+), 79 deletions(-)
+git diff --stat 07f99ee1        14 files changed, 401 insertions(+), 79 deletions(-)
 ```
 
 Nothing in the worktree was edited; every revert, probe and catalog experiment ran on a copy, and the two git readings are identical to the start.

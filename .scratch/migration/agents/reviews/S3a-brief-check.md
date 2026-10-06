@@ -1,6 +1,6 @@
-# Step S3a brief check (on main at 26d32c0f)
+# Step S3a brief check (on main at cd71d5e0)
 
-This is the report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/S3a.md`. The brief says it was read at e9484791. `git show --stat 26d32c0f` lists only ledger files (Q106 brief, review and round, choices.md, the state file), so the tree under `tools/oculus` outside `.scratch` is the same as the one the brief read.
+This is the report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/S3a.md`. The brief says it was read at 205e137f. `git show --stat cd71d5e0` lists only ledger files (Q106 brief, review and round, choices.md, the state file), so the tree under `tools/oculus` outside `.scratch` is the same as the one the brief read.
 
 ## 1. Names
 

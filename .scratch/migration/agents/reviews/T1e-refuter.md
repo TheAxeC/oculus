@@ -1,4 +1,4 @@
-# Step T1e refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/T1e, base 44187f9f3)
+# Step T1e refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/T1e, base 812eb07c2)
 
 The worktree was not changed by this review. `git status --short` run from the worktree at the end shows the 125 tracked test-folder changes plus the untracked `tools/oculus/.scratch/migration/agents/reviews/T1e-report.md`, and nothing else. All my experiments ran on a scratch copy under my scratchpad.
 
@@ -39,7 +39,7 @@ ASCII grep        -> exit 0
 Evidence commands, rerun:
 
 - **Diff extent.**
-  - `git diff 44187f9f3 --stat` gives 126 files changed, 2825 insertions and 5396 deletions, all under tests/routes, tests/data, tests/checks and tests/fixtures.
+  - `git diff 812eb07c2 --stat` gives 126 files changed, 2825 insertions and 5396 deletions, all under tests/routes, tests/data, tests/checks and tests/fixtures.
   - `diff -rq` against the base copy gives 126 differences, none outside those four folders.
 - **Deleted files.**
   - Deleted: tests/checks/config/options-walk.test.ts and tests/data/snapshot/build-timing.test.ts.
@@ -51,7 +51,7 @@ Evidence commands, rerun:
 - **Duplication on a scratch copy.**
   - With the two stale allow-duplication lines removed: `Tests 18 passed (18)` (load 6.28).
   - With `export` removed from slideProject at tests/routes/edit/write-fixture.ts:288: 2 tests fail. One is the new clone "tests/routes/edit/write-fixture.ts:288 and tests/server/core/changes.test.ts:94 hold the same 11 lines (84838e85ca2b)", and the other names entry 20c1f0a1f3eb as stale.
-- **Merged tree.** I built a scratch tree from main ffb4457ae plus the T1e diff, resolved the rejects by hand and removed the memories/images entry.
+- **Merged tree.** I built a scratch tree from main af9c63f55 plus the T1e diff, resolved the rejects by hand and removed the memories/images entry.
   - test:checks: `Test Files 30 passed | 2 skipped (32)`, `Tests 406 passed | 40 skipped (446)` (load 9.19).
   - npm test: `Test Files 578 passed | 46 skipped (624)`, `Tests 13896 passed | 1010 skipped (14906)`, Duration 134.69s (load 8.85 to 8.49).
 - **Probe for slow causes.**
@@ -344,7 +344,7 @@ Holders cited in tests/server have moved since T1c landed on main:
 
 **Behaviour 2. Landing interactions.** These are facts for the lander, not defects of the step.
 
-- T1c landed after this base (44187f9f3 is an ancestor of ffb4457ae).
+- T1c landed after this base (812eb07c2 is an ancestor of af9c63f55).
 - The cherry-pick will conflict in tests/checks/tree/allow-duplication.txt (2 of 2 hunks) and in the head hunk of tests/routes/machine/commands.test.ts (1 of 3).
 - In commands.test.ts, main's line 8 names hooks-server.test.ts and should be kept.
 - Main already lacks the calendar-config/poll entry, so only the memories/images entry (505416a28794) needs removing.

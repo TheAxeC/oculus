@@ -1,4 +1,4 @@
-# Step Q119 brief check (on S5's worktree `.agents/worktrees/S5`, base 6005baee6 plus S5's uncommitted build; main at a5f1285bd for the files S5 does not touch)
+# Step Q119 brief check (on S5's worktree `.agents/worktrees/S5`, base 8bb4960ba plus S5's uncommitted build; main at 50a19350b for the files S5 does not touch)
 
 I changed no file. Scratch work went to $TMPDIR/q119bc only. I never opened, grepped or hashed config/local.yml. Every grep over config/ carried --exclude=local.yml.
 
@@ -21,13 +21,13 @@ Findings: 1, 2, 3, 4, 5, 6, 7 and 8.
 1. `sed -n 257p plan.md` shows Q116's line. `grep -n Q119 plan.md` finds only rulings Z443, Z454, Z462-Z464 and Z468. The brief quotes "(plan.md:257)", a line that no longer exists, since Z468 removed Q119 as a step.
 2. Mapping the quoted line: "wrong value ... gives a finding that names the key" maps to 1.1-1.3, 1.6 and 1.7. "Default is used" maps to 1.1 and 1.4. "At start and on a change" maps to 2.1, 2.2 and 2.4. "The server starts" maps to 2.1. "Findings view shows the key" maps to 1.6 and Decision 11. "Tests in settings.test.ts assert" maps to Cases 1-10. "local.ts likewise ... only that key takes its default" maps to 3.1, 3.2, 3.3 and 3.5. Z454 (D11's sentence) maps to 3.4.
 3. Z463 (`grep -n "^- Z463" plan.md`): "the move stated in HELP.md with its before and after". No requirement serves it. Decision 10 says only "reported among the before and after" (the report), and item 4's HELP.md:282 bullet does not name the port move.
-4. Z468 (`grep -n "^- Z468" plan.md`) folds Q119 into S5's repair round 1. The brief still has its own report path (`agents/reviews/Q119-report.md`), its own write list and its own "unchanged tree". The round needs four things stated: S5's report path; the union with S5's write list; S5's base copy (6005baee6) for `diff -rq`; and "unchanged tree" meaning S5's worktree as it stands before the round.
+4. Z468 (`grep -n "^- Z468" plan.md`) folds Q119 into S5's repair round 1. The brief still has its own report path (`agents/reviews/Q119-report.md`), its own write list and its own "unchanged tree". The round needs four things stated: S5's report path; the union with S5's write list; S5's base copy (8bb4960ba) for `diff -rq`; and "unchanged tree" meaning S5's worktree as it stands before the round.
 
 Findings: 1, 3 and 4.
 
 ## 3. Premises
 
-1. Base: `git merge-base --is-ancestor 6005baee6 ec4c6f577` is true. S5's base is older than the brief's ec4c6f577, and the builder works in S5's worktree. In the files S5 changed, every line number has moved (worktree line count vs main's):
+1. Base: `git merge-base --is-ancestor 8bb4960ba 6c3781d10` is true. S5's base is older than the brief's 6c3781d10, and the builder works in S5's worktree. In the files S5 changed, every line number has moved (worktree line count vs main's):
    - options.yml: 1210 vs 722
    - findings.yml: 140 vs 129
    - context.ts: 734 vs 732
@@ -65,7 +65,7 @@ Findings: 1, 3 and 4.
 8. images.ts :39 and :328 are now :41 and :330. writes.ts :231 is now :237, and `changesKeep` :258 is now :265 (`grep -n "loadLocalOrDefaults\|changesKeep"` in the worktree). config.test.ts :388-403 is now :389-404 (comment :389-390), the loadLocal describe is :75-153, and :288 is now :289.
 9. Ledger references: Z454 is at plan.md:1175, not :1171 (`grep -n "^- Z454" plan.md`; the file is being edited). D11's case 31 is at D11.md:268, not :197 (`grep -n "rite_dap_bin must be" agents/briefs/D11.md`).
 10. Unused exports: `sh utils/unused-exports.sh` in the worktree prints 380 lines ("Unused exports (256)"), not 381. Over the files Q119 touches, the brief's list leaves out four lines: `catalogs.ts: VOCAB_KEYS, iconCatalog`; `config-checks.ts: optionText, replacedText`; `context.ts: hostInfo, createServerContext, carryServerContext, carryingHandler`; and `context.ts: ContextDependencies`.
-11. pty/routes.ts: lines 28, 203, 311, 353 and 429 hold in the worktree. On main (D37 landed) they are 29, 225, 324, 361 and 433 (`git grep -n loadLocalOrDefaults HEAD`). Three of main's hunks sit next to Q119's edits: old 305-310, old 347-352 and old 425-427 (`git diff -U0 6005baee6 HEAD -- .../routes.ts`). Landing S5 with Q119 by cherry-pick is therefore not a simple merge there.
+11. pty/routes.ts: lines 28, 203, 311, 353 and 429 hold in the worktree. On main (D37 landed) they are 29, 225, 324, 361 and 433 (`git grep -n loadLocalOrDefaults HEAD`). Three of main's hunks sit next to Q119's edits: old 305-310, old 347-352 and old 425-427 (`git diff -U0 8bb4960ba HEAD -- .../routes.ts`). Landing S5 with Q119 by cherry-pick is therefore not a simple merge there.
 12. These hold, rerun in the worktree:
     - settings.ts: 297 lines; every reader line; `blockOf` :66; `settingOf` :73; `confirmDelete` :181; `defaultPatterns` :228; `behaviorDropped` :240; `processesSettings` :252.
     - local.ts: 376 lines; `applyLocal` :257; `loadLocal` :328; `reportedLocal` :340; `loadLocalOrDefaults` :349; `checkLocal` :368.

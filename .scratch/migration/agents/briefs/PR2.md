@@ -8,7 +8,7 @@ A design ruling decides what is built. It never exempts the code: every line is 
 
 The worktree is `.agents/worktrees/PR2`. Its sparse checkout holds the plan's paths plus `deck`, `docs` and `.agents/skills`, which this step writes at the hub's root. The base copy is `.agents/worktrees/PR2-base/tools/oculus/` with `unused-exports.txt` beside it, unpacked by the orchestrator at the base. Your scratch server uses port 8792.
 
-## What is on the tree (read on main at 4f97e9fad)
+## What is on the tree (read on main at 4ce24363b)
 
 - A deck today is one file, `tools/oculus/config/present.yml` (273 lines, `wc -l`), under one `deck:` map: `tag_tones`, `meta` (kicker, title_html, lede, a hand-typed `legend`, `hint`, closing words, contact), `themes` (eleven domain colours and labels copied by hand from `config/catalogs/vocab.yml`'s `domains`), `order` (21 lines of `{ slide: <kind>, ref: <key> }`), `framing` (`engine`, `transition`), `summaries` (`summary1` eight hand-typed rows, `summary2` six), `ideas` (ten hand-typed cards with `maturity`) (`cat config/present.yml`). The Slides view saves `selection:` and `slide_order:` into this file when it is used; the file holds neither today (`grep -c -E "selection:|slide_order:" config/present.yml` prints 0).
 - A project's slide is the `present:` map of its `PRESENT.md` front matter. `find projects tools/oculus/demo -name PRESENT.md` lists 18 files (premise corrected: an earlier count used `-maxdepth 3` and missed the archive):

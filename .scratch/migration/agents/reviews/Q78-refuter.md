@@ -1,6 +1,6 @@
 # Q78 refutation (claude:opus, read-only, first run over the builder report)
 
-Q78 refutation. I changed nothing in the worktree. The only files I wrote are two probe scripts in my scratchpad: `render.mjs` runs `renderMarkdown` over a real hub file, and `purify.mjs` runs DOMPurify with `PROFILE` in Chrome through Playwright's library. Both ran against the worktree's source. The one git commands I ran are the read-only `git diff d1b9c274` and `git status --short`.
+Q78 refutation. I changed nothing in the worktree. The only files I wrote are two probe scripts in my scratchpad: `render.mjs` runs `renderMarkdown` over a real hub file, and `purify.mjs` runs DOMPurify with `PROFILE` in Chrome through Playwright's library. Both ran against the worktree's source. The one git commands I ran are the read-only `git diff fa7499f2` and `git status --short`.
 
 ## Verification (run from `.agents/worktrees/Q78/tools/oculus`)
 
@@ -36,7 +36,7 @@ Q78 refutation. I changed nothing in the worktree. The only files I wrote are tw
    - So scrolling the Pane body for the project tab is a substitute target, and the report says so (judgment call 1).
 3. **The press reaches a fourth view the brief does not name: the source tab's Markdown preview.** `Preview.svelte:54` draws through the same partial (`<Markdown {doc} loading=... failed=... />`), so `jump` now handles fragment links there too. The report and the head comment name only the doc, help and project views.
 4. The builder disclosed one read-only `git diff --stat` against the brief's "Run no git command". spec.md's last paragraph allows reading git state for the worker's own change. The breach is procedural only.
-5. The lock adds only `marked-gfm-heading-id` 4.1.4 and `github-slugger` 2.0.0 (read from `git diff d1b9c274 -- package-lock.json`). `html.ts` and `turns.ts` are unchanged (not in `git status`). Both match the report.
+5. The lock adds only `marked-gfm-heading-id` 4.1.4 and `github-slugger` 2.0.0 (read from `git diff fa7499f2 -- package-lock.json`). `html.ts` and `turns.ts` are unchanged (not in `git status`). Both match the report.
 
 ## Proof
 
@@ -103,7 +103,7 @@ Q78 refutation. I changed nothing in the worktree. The only files I wrote are tw
 
 # Repair round 1, refuted (claude:opus, read-only, a fresh reviewer)
 
-Q78 repair round 1 refutation. I changed nothing. The only git commands were the read-only `git diff d1b9c274` and `git status --short`, run from the worktree. `git diff d1b9c274 --stat | tail -1` printed `35 files changed, 861 insertions(+), 643 deletions(-)` both before and after the revert-check, and `git status --short` still lists 38 entries.
+Q78 repair round 1 refutation. I changed nothing. The only git commands were the read-only `git diff fa7499f2` and `git status --short`, run from the worktree. `git diff fa7499f2 --stat | tail -1` printed `35 files changed, 861 insertions(+), 643 deletions(-)` both before and after the revert-check, and `git status --short` still lists 38 entries.
 
 ## Verification (run from `.agents/worktrees/Q78/tools/oculus`, each once)
 

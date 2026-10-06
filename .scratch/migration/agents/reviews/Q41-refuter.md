@@ -1,4 +1,4 @@
-# Step Q41 refuter report (on .agents/worktrees/q41, base 21fd6359)
+# Step Q41 refuter report (on .agents/worktrees/q41, base 129806c3)
 
 ## Verification (rerun by the reviewer)
 All from `tools/oculus` in the worktree:
@@ -69,7 +69,7 @@ All from `tools/oculus` in the worktree:
   - `tests/lane-distance.test.ts:198`: "13" (section 2).
   - `focus.ts:246-247`: "the board shows" (section 1).
 - **Head comment:** `src/lib/themes/derive.ts:44-50`, the `LANE_SHARE` comment, is true for the 22 pairs. It ties a pure colour module to the Focus layout and a test file by name. That is noted, not a defect.
-- **History:** no package id or date in any added line (`git diff 21fd6359 | grep '^+.*\(Q[0-9]\+\|2026\)'` is empty). The revert comments follow the tree's convention.
+- **History:** no package id or date in any added line (`git diff 129806c3 | grep '^+.*\(Q[0-9]\+\|2026\)'` is empty). The revert comments follow the tree's convention.
 - **Non-ASCII:** gate clean.
 - **File sizes:** all under 1000 lines. `tests/state/focus.test.ts` 803, `tests/contrast.test.ts` 256, `tests/lane-distance.test.ts` 290, `tests/themes.ts` 34.
 - **Paths:** within the brief plus the ruling's widening (`derive.ts`, the `Focus.svelte` comment). `tests/config-folder.test.ts:283` also changed, carrying the Jobs tone. It is not in the brief's path list; it is a needed follow-on.

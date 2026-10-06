@@ -11,7 +11,7 @@ I ran this command on main and in the X3b worktree:
 - **Main:** 123 files.
 - **X3b worktree:** 121 files. `diff` shows two differences:
   - X3b adds `src/lib/ui/forms/Prompt.svelte` and `src/lib/ui/forms/prompt.ts`.
-  - X3b lacks `ui/controls/RowButton.svelte`, `routes/api/(accounts)/connect/+server.ts`, `routes/api/(sessions)/agents/+server.ts` and `routes/api/(sessions)/customizations/+server.ts`. X3b branches from `a8848c49`, which is older than these files, so I audited them from main.
+  - X3b lacks `ui/controls/RowButton.svelte`, `routes/api/(accounts)/connect/+server.ts`, `routes/api/(sessions)/agents/+server.ts` and `routes/api/(sessions)/customizations/+server.ts`. X3b branches from `fcb314bd`, which is older than these files, so I audited them from main.
 - **Audited set:** 125 files, 14,600 lines (`wc -l`). The ten X3b-named files and the two X3b additions were read from the worktree.
 
 ## Installed versions

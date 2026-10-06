@@ -1,6 +1,6 @@
-# Step S3c brief check (on main at 821c28a6)
+# Step S3c brief check (on main at aadfcd72)
 
-Read-only. `git log -1 --format=%h` prints `821c28a6`. `git status --short` prints `?? ../../shikijs-types-4.4.3.tgz` and `?? .scratch/migration/agents/briefs/S3c.md`, so the brief read is the on-disk copy. `config/local.yml` was not opened, every grep over `config/` used `--exclude=local.yml`, no port was contacted, no calendar address was fetched, no `.vscode` folder was read. The plan has no Goal heading; the goal here is Z75 read through the part of DESIGN.md this step delivers. I read VS Code 1.137.0's own `workbench.desktop.main.js` under `/Applications/Visual Studio Code.app` for one constant (check 8).
+Read-only. `git log -1 --format=%h` prints `aadfcd72`. `git status --short` prints `?? ../../shikijs-types-4.4.3.tgz` and `?? .scratch/migration/agents/briefs/S3c.md`, so the brief read is the on-disk copy. `config/local.yml` was not opened, every grep over `config/` used `--exclude=local.yml`, no port was contacted, no calendar address was fetched, no `.vscode` folder was read. The plan has no Goal heading; the goal here is Z75 read through the part of DESIGN.md this step delivers. I read VS Code 1.137.0's own `workbench.desktop.main.js` under `/Applications/Visual Studio Code.app` for one constant (check 8).
 
 ## 1. Names
 

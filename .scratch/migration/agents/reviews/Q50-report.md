@@ -112,7 +112,7 @@ Everything in the five rulings is done.
 | 4. `theaxec.github.io` stated as live | DONE | with its measurement |
 | 4b. A case that prints every host-shaped value of the real hub | DONE | `npx vitest run tests/integrity.test.ts` prints `integrity: 256 link/url/folder values, 0 read as a web address, 0 dotted first segment`, 9 passed |
 | 5. Decision 3 corrected, with a test on the port group | DONE | new case red under revert F |
-| 5b. Files-changed numbers corrected | DONE | the reconstruction now reproduces `git diff 84fd99e1 --numstat` |
+| 5b. Files-changed numbers corrected | DONE | the reconstruction now reproduces `git diff dacfc4bb --numstat` |
 | `npx vitest run --reporter=dot` | DONE | `Test Files 251 passed (251) / Tests 4274 passed (4274)` |
 | `npm run check` | DONE | `COMPLETED 1222 FILES 0 ERRORS 0 WARNINGS` |
 | `npm run build`, `format:check`, `lint`, the ASCII gate | DONE | built; Prettier clean; eslint silent; the gate printed nothing |

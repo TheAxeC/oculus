@@ -1,7 +1,7 @@
-# Step X3b refuter report (on .agents/worktrees/X3b, base a8848c49)
+# Step X3b refuter report (on .agents/worktrees/X3b, base fcb314bd)
 
 ## Verification (rerun by the reviewer)
-All commands were run from .agents/worktrees/X3b/tools/oculus. The worktree diff was compared byte for byte before and after my runs (`git diff a8848c49 | cmp`) and is unchanged.
+All commands were run from .agents/worktrees/X3b/tools/oculus. The worktree diff was compared byte for byte before and after my runs (`git diff fcb314bd | cmp`) and is unchanged.
 1. `npx vitest run --reporter=dot` gave `Test Files  319 passed (319)` and `Tests  5029 passed (5029)`, exit 0.
 2. `npm run check` gave `COMPLETED 1438 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
 3. `npm run build` gave `build=0`.
@@ -85,7 +85,7 @@ Reviewer: claude:opus native agent ac86b667fb134aca7, sampled under option (b). 
 - revert-check per file, each browser case on its own free port: the six scm specs `44 reverts, 0 unproven, 0 unchecked`; rail, views/changes and sources/repositories specs `38 reverts, 0 unproven, 10 unchecked` (rail 27 red; the unchecked are 3 rail cases unchanged from main, 2 describe names, 5 with a prose revert or none); eleven unit files `144 reverts, 0 unproven, 151 unchecked`, every unchecked one in a case the round did not change.
 - `OCULUS_BROWSER_PORT=47123 npx playwright test tests/browser/scm tests/browser/views/changes.spec.ts tests/browser/sources/repositories.spec.ts tests/browser/shell/rail.spec.ts tests/browser/shell/shell-defects.spec.ts tests/browser/status/bar.spec.ts`: `104 passed (2.2m)`.
 - collection.spec.ts "+ subtask adds a line and done ticks it" five times: `1 passed` each (4.2 to 4.5 s); the boards folder twice: `50 passed` both. X3b's changes to ToolButton (`cell` default false, `data` default `{}`) and TextArea (`code` default false) are additive, and collection.spec.ts is byte-identical to main; the builder's one failure did not reproduce.
-- `ls -d $TMPDIR/oculus-*`: 0 before and after. The worktree unchanged by the review (`git diff a8848c49 | shasum` and the untracked files' shasum the same before and after).
+- `ls -d $TMPDIR/oculus-*`: 0 before and after. The worktree unchanged by the review (`git diff fcb314bd | shasum` and the untracked files' shasum the same before and after).
 - The report's line counts match `wc -l`; "14 raw buttons in views" matches `grep -rn "<button" src/lib/views | wc -l`.
 
 ## The round's closures

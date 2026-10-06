@@ -1,4 +1,4 @@
-# Step Q33 refuter report, third review (on .agents/worktrees/q33, base 133e7c39)
+# Step Q33 refuter report, third review (on .agents/worktrees/q33, base 84bc4dde)
 
 Two defects are open, both in the tab strip's new scroll code, and neither has a test:
 - **Widening the window when the strip is at its end** leaves the left edge off a tab's start.

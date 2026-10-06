@@ -12,7 +12,7 @@ Booked list: 3, carried for O32 (its skill half, in the installed plan skills), 
 
 ## What landed
 
-Q68, cherry-picked from `.agents/worktrees/Q68` at base `d0232795` by `tools/oculus/.scratch/migration/land.sh Q68 d0232795 <runs> --no-browser` (+513 -162 over 5 files), then three fixes at landing (+4 -3 over 2 files), the browser suite run by hand.
+Q68, cherry-picked from `.agents/worktrees/Q68` at base `f7c93a6b` by `tools/oculus/.scratch/migration/land.sh Q68 f7c93a6b <runs> --no-browser` (+513 -162 over 5 files), then three fixes at landing (+4 -3 over 2 files), the browser suite run by hand.
 
 - The git watcher polls the saved workspaces file every 500 ms on its own clock instead of watching its folder. A folder `fs.watch` on darwin loses a write made while its FSEvents stream registers; under file churn the old watcher lost the added root in 2 of 10 and 3 of 10 runs, the new one in 0 of 20 (the builder's reproduction, confirmed by the reviewer's own).
 - A watcher closed during a tick schedules no next one.

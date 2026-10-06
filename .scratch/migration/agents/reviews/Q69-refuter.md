@@ -1,4 +1,4 @@
-# Step Q69 refuter report (on .agents/worktrees/Q69, base 695861af)
+# Step Q69 refuter report (on .agents/worktrees/Q69, base 12f542f5)
 
 ## Verification (rerun by the reviewer)
 ```
@@ -24,8 +24,8 @@ ls -d $TMPDIR/oculus-* | wc -l                      -> 7015 before, 7015 after e
 Report's evidence:
    npx vitest run tests/server/core/dev-server.test.ts          -> 2 passed
    node bin/revert-check.mjs tests/server/core/dev-server.test.ts -> 2 reverts, 0 unproven, 0 unchecked (both red under vite.config.ts:15)
-   git show 695861af:.../vite.config.ts                         -> componentBeforeStyle() at :15; style-first.ts on the base (item 9 already on the tree: reproduced)
-   git show 695861af:.../Help.svelte | grep '<Pane'             -> 52:<Pane title={t('views.help')}> (premise 5 wrong: reproduced)
+   git show 12f542f5:.../vite.config.ts                         -> componentBeforeStyle() at :15; style-first.ts on the base (item 9 already on the tree: reproduced)
+   git show 12f542f5:.../Help.svelte | grep '<Pane'             -> 52:<Pane title={t('views.help')}> (premise 5 wrong: reproduced)
    wc -l on Agents.svelte, dispatches.ts, background.ts, PickSession.svelte, views.spec, dispatches.test, SessionDetail, cache.ts -> 247, 235, 112, 42, 548, 564, 507, 114, as reported
 ```
 
@@ -113,7 +113,7 @@ Report's evidence:
   - It breaks none of the boundary rules the spec names, and `boundaries.test.ts` passes.
   - The file now falls under `npm run check` (tsconfig `allowJs`/`checkJs`), which reports 0 errors.
   - `bin/size-check.sh` and the ASCII gate already covered `bin/`.
-  - The file keeps main's `LOCK_WAIT_MS = 2000` and mode 755 (`git diff 007c637b` shows `old mode 100644 new mode 100755`). Apart from the JSDoc annotations, it differs from main at 409de414 only in the head comment's new sentence.
+  - The file keeps main's `LOCK_WAIT_MS = 2000` and mode 755 (`git diff 007c637b` shows `old mode 100644 new mode 100755`). Apart from the JSDoc annotations, it differs from main at 505be196 only in the head comment's new sentence.
   - The dev-server test's copy of `bin/dispatch-note.mjs` (dev-server.test.ts:35-47) is needed because `src` now imports it. It hides nothing: the built server bundles the file, as the build grep above shows.
 - The `stopped` status is carried to every place that reads an agent status:
   - the payload comment (model-sessions.ts:29-31);

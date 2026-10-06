@@ -1,4 +1,4 @@
-# Step R14 refuter report (on .agents/worktrees/r14, base ec7bc6e5)
+# Step R14 refuter report (on .agents/worktrees/r14, base bbae5dd9)
 
 ## Verification (rerun by the reviewer)
 
@@ -42,7 +42,7 @@ $ node bin/revert-check.mjs tests/duplication.test.ts tests/audits.test.ts tests
 real 102.24   exit 0
 
 command 2, as the report lists it for the verification list:
-$ git diff --name-only ec7bc6e5 --diff-filter=d -- src config tests bin | xargs -I{} sh -c 'echo "--- {}"; sed -n "1,14p" {}'
+$ git diff --name-only bbae5dd9 --diff-filter=d -- src config tests bin | xargs -I{} sh -c 'echo "--- {}"; sed -n "1,14p" {}'
 --- tools/oculus/tests/bin/claude-usage.test.ts
 sed: tools/oculus/tests/bin/claude-usage.test.ts: No such file or directory
 (same for every file)
@@ -66,7 +66,7 @@ $ find src tests bin -type f \( -name '*.ts' -o -name '*.svelte' \) | xargs wc -
 with two planted files (src/lib/planted-big.ts 901, src/lib/PlantedBig.svelte 541): both printed, exit 1
 
 command 10:
-$ git diff --unified=0 ec7bc6e5 -- config | grep -E '^\+[^+]'
+$ git diff --unified=0 bbae5dd9 -- config | grep -E '^\+[^+]'
 (nothing, grep exit 1)   real 0.01
 ```
 
@@ -79,7 +79,7 @@ Each of the eleven checks was planted against and shown red, then shown green wi
 - Brief item 3 ("An allow list names what is deliberate, each entry with its reason"): `tests/allow-duplication.ts` holds 578 `HELD` entries and `grep -c "why:" tests/allow-duplication.ts` prints 0; `tests/allow-audits.ts` holds 150 bare strings. Only `tests/allow-styling.ts` carries a `why` per entry, and its 28 citations all resolve (`node bin/cited-lines.mjs tests/allow-styling.ts` prints `25 cited lines, 0 missing`). The report files this as decision 6 and attributes it to a ruling I was not given.
 - Brief decision 3 ("An allow list is a file beside its test (`tests/allow-<name>.ts` or a constant in the test), never a silenced rule"): `bin/size-allow.txt` is a plain text file with no test and no orphan case. Appending `src/lib/planted-big.ts` and `src/lib/PlantedBig.svelte` to it turned my planted violation from exit 1 to exit 0. Nothing in the tree fails when a name is added to it, so its head comment's "nothing is added to this list" is prose only. The four `tests/allow-*.ts` lists each do have an orphan case (all four fired when I planted a stale entry).
 - Rule clash, for the orchestrator to note rather than a defect of the diff: `agents/spec.md:33` says "You never edit anything under `tools/oculus/.scratch/`", and `agents/spec.md:3` says "Nothing in a brief overrides anything here", while brief item 11 and decision 4 instruct the builder to edit `agents/spec.md`. The builder followed the brief.
-- Brief premise, "Files over the size line today ... `src/lib/views/Files.svelte` 592" and six others (7 files, read at db3aa942). At the worktree base ec7bc6e5 there are 12, each already over before the step (`git show ec7bc6e5:tools/oculus/<f> | wc -l` for every entry of `bin/size-allow.txt`: 980, 970, 968, 942, 940, 928, 908, 906, 596, 592, 557, 547). The builder states this at report line 34.
+- Brief premise, "Files over the size line today ... `src/lib/views/Files.svelte` 592" and six others (7 files, read at ee7ab653). At the worktree base bbae5dd9 there are 12, each already over before the step (`git show bbae5dd9:tools/oculus/<f> | wc -l` for every entry of `bin/size-allow.txt`: 980, 970, 968, 942, 940, 928, 908, 906, 596, 592, 557, 547). The builder states this at report line 34.
 
 ## 2. Proof
 
@@ -123,7 +123,7 @@ Each of the eleven checks was planted against and shown red, then shown green wi
 
 ## 4. Behaviour
 
-- None. `git diff --name-only ec7bc6e5 -- tools/oculus/src tools/oculus/config` prints nothing, and every removed line under `tests/` is import bookkeeping or the `mkdtempSync(join(tmpdir(), ...))` call it replaced; no assertion was removed, loosened or re-aimed. Diff: 150 files changed, 1033 insertions, 279 deletions, plus 14 untracked files totalling 2290 lines.
+- None. `git diff --name-only bbae5dd9 -- tools/oculus/src tools/oculus/config` prints nothing, and every removed line under `tests/` is import bookkeeping or the `mkdtempSync(join(tmpdir(), ...))` call it replaced; no assertion was removed, loosened or re-aimed. Diff: 150 files changed, 1033 insertions, 279 deletions, plus 14 untracked files totalling 2290 lines.
 
 ## Not checked
 
@@ -151,7 +151,7 @@ the head-comment print               149 files, 0 No such file, 11.2s
 node bin/cited-lines.mjs <report>    25 cited lines, 2 missing, exit 1
 sh bin/scratch-count.sh              node before 0 / node after 0 / browser before 0 / browser after 0, exit 0, 746s
 sh bin/size-check.sh                 no output, exit 0
-git diff --stat ec7bc6e5             150 files changed, 1076 insertions(+), 292 deletions(-)
+git diff --stat bbae5dd9             150 files changed, 1076 insertions(+), 292 deletions(-)
 ```
 
 The worktree is untouched: every plant, revert and stub was made in a copy under `scratchpad/r14-review2/`.
@@ -182,7 +182,7 @@ Rulings 1, 3, 4 and 5 are met.
 
 10. `bin/scratch-count.sh`: **the exit status does not follow a red suite.** With `"test": "exit 1"` and an empty `testDir`, the script prints `the node suite is red` and `the browser suite is red` as prose and exits 0. The verification list reads the exit status. Isolation holds (a directory planted in `$TMPDIR` mid-run did not move the count) and the script cleans up after itself. `left()` at `:21-23` counts only top-level directories named `oculus-*`, so a leak with another prefix, a leaked file or a leak one level down is not seen.
 
-11. `bin/size-check.sh` and `tests/size.test.ts:50` measure `.ts` and `.svelte` only. A planted `bin/planted.mjs` of 2000 lines leaves the check at exit 0; `bin/` already holds `migrate-joint-work.mjs` 466, `revert-check.mjs` 319 and `cited-lines.mjs` 116. All five ratchet shapes hold. Every entry is still over its line and under its count on main at `5b434d2e`.
+11. `bin/size-check.sh` and `tests/size.test.ts:50` measure `.ts` and `.svelte` only. A planted `bin/planted.mjs` of 2000 lines leaves the check at exit 0; `bin/` already holds `migrate-joint-work.mjs` 466, `revert-check.mjs` 319 and `cited-lines.mjs` 116. All five ratchet shapes hold. Every entry is still over its line and under its count on main at `16534873`.
 
 12. `tests/allow-duplication.txt` is keyed on the file pair only: a brand-new nine-line clone between two listed files leaves `tests/duplication.test.ts` at `Tests 9 passed`. 578 listed pairs may share any amount of new code.
 
@@ -204,7 +204,7 @@ Rulings 1, 3, 4 and 5 are met.
 
 ## Behaviour
 
-21. One change to how a suite runs, which the report states: `tests/server/git.test.ts` gained `{ timeout: 60000 }` on one case. `git diff ec7bc6e5 | grep -nE "^\+.*(timeout|retries|test\.slow|\.concurrent|setConfig|testTimeout|hookTimeout)"` prints that line and nothing else; the config files are untouched; `git diff --name-only ec7bc6e5 -- src config` prints nothing.
+21. One change to how a suite runs, which the report states: `tests/server/git.test.ts` gained `{ timeout: 60000 }` on one case. `git diff bbae5dd9 | grep -nE "^\+.*(timeout|retries|test\.slow|\.concurrent|setConfig|testTimeout|hookTimeout)"` prints that line and nothing else; the config files are untouched; `git diff --name-only bbae5dd9 -- src config` prints nothing.
 22. The 88 converted call sites are faithful in the sample read whole (`tests/browser/repositories.spec.ts`, `tests/server/audit.test.ts`, `tests/watch/portfolio.test.ts`, `tests/data/real-hub.probe.ts`, `tests/server/git.test.ts`): each replaces `mkdtempSync(join(tmpdir(), 'X'))` with `scratchDir('X')`, keeps the containment assertion and adds the sweep. Over the whole diff, the removed lines that are not an import, an empty line, a `mkdtempSync` or a `tmpdir()` are 52, all import-list continuations plus the one reindented git case. No assertion was removed, loosened or re-aimed.
 
 ## Not checked
@@ -231,7 +231,7 @@ sh bin/size-check.sh                 no output, exit 0
 sh bin/scratch-count.sh              node before 0 / the node suite is red / node after 0 /
                                      browser before 0 / browser after 0, exit 1, 494s
 node bin/cited-lines.mjs --root . <the round-2 section>   10 cited lines, 4 missing, exit 1
-git diff --stat ec7bc6e5             150 files changed, 1082 insertions(+), 292 deletions(-)
+git diff --stat bbae5dd9             150 files changed, 1082 insertions(+), 292 deletions(-)
 ```
 
 The worktree is untouched; every plant was made in a copy under `scratchpad/r14-review3/`.

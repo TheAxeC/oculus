@@ -20,7 +20,7 @@ ListAgents at 05:55 listed no subagent, only two idle peer sessions (ordo-01, re
 
 ## What landed
 
-From base 3c772d4c, on main with the merge and the landing fixes (`git diff --cached --shortstat` at the commit, quoted in the commit's booking).
+From base eb87b0fc, on main with the merge and the landing fixes (`git diff --cached --shortstat` at the commit, quoted in the commit's booking).
 
 - A list editor (add, edit, remove, reorder) for every list option, a key/value table for every key/value family, a form for each record family and the rollup form for `tab_rollup`, all through the confirmed `config-value` write of the whole value with its `base` (Z190 (a)); the block writer `server/edit/block-edit.ts` with `block-render.ts` and `block-source.ts`, the checks shared with `config-key` in `config-checks.ts`.
 - A draft kept per tab under the file and key, a second Save waiting while a write is out, a draft started over a value the file no longer holds named and only discarded, and a draft dropped with a sentence when a push leaves its row in a form the editor does not draw.

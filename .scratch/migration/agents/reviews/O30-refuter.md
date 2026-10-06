@@ -1,6 +1,6 @@
 # O30 refuter report
 
-O30 review (refute), native window. Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/O30 at base b5299f4e5, the builder's work uncommitted on top. I changed nothing in the worktree or the ledger. The only git commands I ran were `git diff b5299f4e5` and `git status --short`, from inside the worktree. I never started the app and never took focus.
+O30 review (refute), native window. Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/O30 at base 9a5f38a5b, the builder's work uncommitted on top. I changed nothing in the worktree or the ledger. The only git commands I ran were `git diff 9a5f38a5b` and `git status --short`, from inside the worktree. I never started the app and never took focus.
 
 Summary: the step is not finished. Case 12's scroll clause is not built; Z592 rules option (a), so it goes into the repair round. The new code has one Behaviour defect (B1): after a port move, the app's own `origin` is not updated. Several "not verified" items are work left undone rather than real limits. Four added tests are named by no guarded.md entry. Every verify command I could run passed.
 
@@ -42,7 +42,7 @@ Summary: the step is not finished. Case 12's scroll clause is not built; Z592 ru
 
 Also:
 - `ls tools/oculus/docs` prints `diagrams`, so there is no `docs/adr`.
-- `node tools/oculus/utils/outside-paths.mjs <brief> b5299f4e5`, run from the worktree root, lists 28 paths. The report's file table names each source and test path among them with a reason (spec.md:34). The three `.scratch` paths in the list are the orchestrator's synced copies.
+- `node tools/oculus/utils/outside-paths.mjs <brief> 9a5f38a5b`, run from the worktree root, lists 28 paths. The report's file table names each source and test path among them with a reason (spec.md:34). The three `.scratch` paths in the list are the orchestrator's synced copies.
 - I packaged the app with `node src/desktop/package.ts --out <scratch>/pkg` (exit 0):
   - `plutil` prints `local.research.oculus`, `oculus` and `electron.icns`.
   - `codesign --verify --deep --strict` exits 0.
@@ -226,7 +226,7 @@ Usage: a566f8df9598698f1, claude-opus-5-5, 161,018 tokens, 101 tool uses, 16.2 m
 
 # Repair round 1, refuted
 
-Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/O30`, base b5299f4e5, the work uncommitted. I changed nothing. The only git commands I ran were `git diff b5299f4e5` and `git status --short`, both from inside the worktree. I never started the app, never took focus, never touched ports 8787 or 8790, ran no curl, and never opened `config/local.yml`.
+Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/O30`, base 9a5f38a5b, the work uncommitted. I changed nothing. The only git commands I ran were `git diff 9a5f38a5b` and `git status --short`, both from inside the worktree. I never started the app, never took focus, never touched ports 8787 or 8790, ran no curl, and never opened `config/local.yml`.
 
 **Summary.**
 - **Two tree checks are red.** Round 1 broke them: `comment-width` at `src/desktop/decide/window-file.ts:4` (the St2 fix) and `imports/order` on `state/shared/install.ts` (the St8 fix). `test:quick` does not run `tests/checks`, so the builder's list stayed green, but the landing list runs them. Both fixes are small enough for landing.
@@ -536,7 +536,7 @@ Served model claude-opus-5-5; my tokens, tool uses and time are not known to me.
 
 # Repair round 2, refuted
 
-**Repair round 2, refuted.** I changed nothing in the worktree or the ledger, invoked no skill and started no agent. The only git commands I ran were `git diff b5299f4e5` and `git status --short`, from inside the worktree. I never started the app and never took focus. I ran no curl, touched neither port 8787 nor port 8790, and never opened `config/local.yml`.
+**Repair round 2, refuted.** I changed nothing in the worktree or the ledger, invoked no skill and started no agent. The only git commands I ran were `git diff 9a5f38a5b` and `git status --short`, from inside the worktree. I never started the app and never took focus. I ran no curl, touched neither port 8787 nor port 8790, and never opened `config/local.yml`.
 
 One command I meant to run in the foreground (a `find` over `/private/tmp/claude-502`) went over the 120 s limit and was moved to the background. I stopped it with TaskStop. Its partial output gave the builder's run folder, which sits in this session's scratchpad (`scratchpad/cases/r27.*`, `scratchpad/o30-look/app.log`). I read those files and did not change them.
 
@@ -678,7 +678,7 @@ The diagrams rows are in `diagrams.test.ts`, a file the step does not change. Un
   - **Where:** `src/lib/views/sources/source/Source.svelte:99-100,154,467-468` in the worktree, against main's `Source.svelte` at 520 lines.
   - **The hunks:** `+ import LockedCode from './save/LockedCode.svelte'; + import { lockedWords } from './save/locked-words';`, then `+ setSourceFirst,`, `+ first={draft.first}` and `+ onfirst=...`.
   - **The evidence:**
-    - `diff` of main's `save/LockedCode.svelte` and `save/locked-words.ts` against the worktree's prints nothing; both came in with D44 (297349683).
+    - `diff` of main's `save/LockedCode.svelte` and `save/locked-words.ts` against the worktree's prints nothing; both came in with D44 (d7ff5fd3d).
     - `git merge-file -p` (ours = main, base = O30-base, theirs = worktree) gives one conflict, at those two imports, and 528 lines. Resolved to main's side, that is 523.
   - **What is wrong:** the round brief asked for "at or under 520 lines with this step's lines in it". Main is 520 before the step's three lines.
   - **Failure:** the size rule (spec.md, "What every package obeys") is broken on main.
@@ -772,7 +772,7 @@ Reviewer usage: agent id not known to me, claude-opus-5-5, tokens, tool uses and
 
 # The brief prepared again after the back-out, refuted
 
-## Step O30 refuter report (on .agents/worktrees/O30, base a977b2448)
+## Step O30 refuter report (on .agents/worktrees/O30, base dcb17c8b5)
 
 Scope: items 17 to 20 and their cases, as the dispatch asked. Items 1 to 16 were not judged again.
 
@@ -842,7 +842,7 @@ Cases 19.x (node --experimental-strip-types on a scratch module importing src/de
 19.4: "done"      (and 'listen EADDRINUSE: ...' then 'done': "done")
 19.5: "Error: b"
 
-End state: ps -ax shows no Electron, src/server.ts, vitest or knip process of this review (only VS Code's crashpad handler); no o30rev* scratch left in $TMPDIR; git status --short still 127 lines, git diff a977b2448 --stat still "124 files changed, 6465 insertions(+), 1876 deletions(-)".
+End state: ps -ax shows no Electron, src/server.ts, vitest or knip process of this review (only VS Code's crashpad handler); no o30rev* scratch left in $TMPDIR; git status --short still 127 lines, git diff dcb17c8b5 --stat still "124 files changed, 6465 insertions(+), 1876 deletions(-)".
 ```
 
 ## Verdicts
@@ -945,7 +945,7 @@ The round's delta is this:
 
 ```
 $ (worktree root) git status --short | wc -l            127
-$ git diff a977b2448 --stat | tail -1                   124 files changed, 6562 insertions(+), 1844 deletions(-)
+$ git diff dcb17c8b5 --stat | tail -1                   124 files changed, 6562 insertions(+), 1844 deletions(-)
   (the same before and after this review)
 
 $ diff -rq -x node_modules -x .svelte-kit -x build -x .git -x .scratch -x local.yml -x .DS_Store gate-O30/tools/oculus O30/tools/oculus

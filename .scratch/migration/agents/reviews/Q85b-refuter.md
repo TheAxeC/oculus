@@ -1,4 +1,4 @@
-# Step Q85b refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85b, base 402437e8)
+# Step Q85b refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85b, base 3389af71)
 
 Result: two answers of the step differ from the unchanged tree without being named (Behaviour 1 and 2), and one declared type is wider than its check (Behaviour 3). Everything else I read or reran holds. The two Standards findings are small. Nothing under $TMPDIR that I created is left (`ls` of those paths after `rm` printed "No such file or directory" for each); the worktree still shows 205 `git status --short` lines, the number the builder's report gives.
 
@@ -62,7 +62,7 @@ Items of the brief's "What to build":
 - 9: holds. The grep prints 0. `allow-duplication.txt`: two entries removed because the clone is gone (`agents.ts`/`catalogue.ts`, `inbox.ts`/`rail-badges.ts`), the deposit entry re-marked (30 lines at 100 and 14 became 27 lines at 99 and 20; the state file may not import `server/`), the rest path edits for the moved tests; I read the whole diff of the file.
 - 10: holds; the 62 remaining check lines are the report's, each classified.
 - 11: holds. `DESIGN.md` "Untyped input" and the `state/` row read whole; a grep of the added src lines for step ids, dates, "previously", "no longer" and similar prints no hit.
-- 12: holds. `git diff -U0` over `tests` (moved files excluded) shows removed lines only as imports, header comments, the stub `WebSocket` moved to `tests/state/client/socket-stub.ts`, and path text in comments. I diffed all six moved files against the base (`git show 402437e8:<path> | diff`): only import depth changes, plus appended cases in `focus-lanes.test.ts` and `fs-shape.test.ts`. New cases for the over-850-line files are in `collection-fields.test.ts`, `focus-config.test.ts` and `fs-answers.test.ts`.
+- 12: holds. `git diff -U0` over `tests` (moved files excluded) shows removed lines only as imports, header comments, the stub `WebSocket` moved to `tests/state/client/socket-stub.ts`, and path text in comments. I diffed all six moved files against the base (`git show 3389af71:<path> | diff`): only import depth changes, plus appended cases in `focus-lanes.test.ts` and `fs-shape.test.ts`. New cases for the over-850-line files are in `collection-fields.test.ts`, `focus-config.test.ts` and `fs-answers.test.ts`.
 - 13: holds. The test is tagged slow, builds the stub socket, feeds 50,000 frames and asserts only a count heard; ratio about 1.33 against the 1.5 bound.
 - 14: holds for the changed tree (30156, one zod chunk of 2033179 bytes). The baseline 30064 is the report's and I did not rerun it.
 - 15: violated, Behaviour 1 and 2; the three named defects (own `__proto__` skipped, JSON null/not JSON, failing list items left out) hold as built (`mapOfShape`, `readJson`, `rowsShape`/`survivorsShape`).
@@ -99,8 +99,8 @@ none
 
 ## 2. Proof
 
-- Report "Total: 506 -> 59 in these 71 files": my count `git diff 402437e8 --name-only -- src/lib/state` then `grep -cE "typeof |Array\.isArray|isRecord\(|isMap\(" <file>` summed over the files that exist gives 58 over 78 changed files, and 0 in each of the two new files; what is wrong: one line and 7 files apart; the decision resting on it: none, the whole-directory grep prints 62 as the report says; failure scenario: none; verdict: none.
-- Report item 7: four of the 40 names (`foot`, `lede`, `n`, `popover`) are "counted, not read"; what is wrong: a "not verified" in the report; I read the removed lines for `foot`, `lede`, `popover`, `sums` and `dock` in `git diff 402437e8 -- src`: all were local variables of the removed functions, none a call; verdict: none.
+- Report "Total: 506 -> 59 in these 71 files": my count `git diff 3389af71 --name-only -- src/lib/state` then `grep -cE "typeof |Array\.isArray|isRecord\(|isMap\(" <file>` summed over the files that exist gives 58 over 78 changed files, and 0 in each of the two new files; what is wrong: one line and 7 files apart; the decision resting on it: none, the whole-directory grep prints 62 as the report says; failure scenario: none; verdict: none.
+- Report item 7: four of the 40 names (`foot`, `lede`, `n`, `popover`) are "counted, not read"; what is wrong: a "not verified" in the report; I read the removed lines for `foot`, `lede`, `popover`, `sums` and `dock` in `git diff 3389af71 -- src`: all were local variables of the removed functions, none a call; verdict: none.
 
 ## 3. Standards
 
@@ -124,7 +124,7 @@ Reviewer usage: about 600,000 tokens (the session counter went from 15,000,000 t
 
 ## Repair round 1, refuted
 
-# Step Q85b refuter report over repair round 1 (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85b, base 402437e8)
+# Step Q85b refuter report over repair round 1 (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85b, base 3389af71)
 
 Result: all six rulings are closed in the code, and each failing-first claim I reran reproduced. Nothing was closed by removing a check, and the fixes stay inside their findings. I have 2 Proof findings and 1 Standards finding, all small, and none about behaviour.
 
@@ -173,7 +173,7 @@ Ruling 6, the per-file total, recomputed:
 
 ```
 80 files, lines 58, files with a line 29      (git status --short src/lib/state | grep -v '^ D', directories expanded, grep -c summed; report: 80 / 58)
-base 71 files (grep -l unknown at 402437e8, check lines > 0): before 506, after 59   (so the older "506 -> 59 in these 71 files" is also true)
+base 71 files (grep -l unknown at 3389af71, check lines > 0): before 506, after 59   (so the older "506 -> 59 in these 71 files" is also true)
 ```
 
 Failing-first claims, run in a scratch copy of the worktree under the session scratchpad (the worktree was not edited):
@@ -243,7 +243,7 @@ none. The only answer the delta changes beyond the first review's list is Z155 (
 - The 170 files outside the delta, and the new test files the first review did not read line by line (listed in its "Declined to judge"): not re-read this round. This run's `npm test`, `test:checks` and the greps above are the evidence.
 - The bundle baseline 30064 and the per-round timing values of the first review: not reproduced here.
 - The page in a browser: not run (no browser, and the brief's verify list has none).
-- Read-only git beyond `git diff` and `git status --short`: I also ran `git show 402437e8:...` and `git grep ... 402437e8` to count check lines at the base. They read only and wrote nothing.
+- Read-only git beyond `git diff` and `git status --short`: I also ran `git show 3389af71:...` and `git grep ... 3389af71` to count check lines at the base. They read only and wrote nothing.
 
 Reviewer usage: about 210,000 tokens (the session counter went from about 15,000,000 to 14,792,000), about 55 tool uses, about 17 minutes.
 

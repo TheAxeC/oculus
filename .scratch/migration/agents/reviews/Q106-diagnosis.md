@@ -10,7 +10,7 @@ This record was opened by the orchestrating session and handed, under Axel's rul
 
 ## Where the probes run
 
-- The scratch copy: `$TMPDIR/diagnose.0WBiXW/tree`, a detached worktree of main at `1c95c890`, nothing applied, `tools/oculus/node_modules` a symlink to the main checkout's. Paths redirected under `$TMPDIR`: none (no probe touches the home folder, the installed skills or the pinned checkout).
+- The scratch copy: `$TMPDIR/diagnose.0WBiXW/tree`, a detached worktree of main at `192431a7`, nothing applied, `tools/oculus/node_modules` a symlink to the main checkout's. Paths redirected under `$TMPDIR`: none (no probe touches the home folder, the installed skills or the pinned checkout).
 - The TEST page in Chrome, tab 812136209 on `http://localhost:8790/`, for the red command in the page and for two probes made by patching the page at run time (the running server serves the main checkout, so a change in the scratch copy cannot reach the page). Every in-page addition carried the tag DIAG-7c1e and was removed by reloading.
 
 What changed on TEST's layout: each run of the red command closed the History and Slides tabs of TEST's middle pane (path `[1]`), and the class check below activated the Deposit tab of the right pane. Before the first run TEST's saved layout was copied to `sessionStorage` under `DIAG-7c1e.saved`; before each run, and at the end, it was written back to `localStorage` and the tab reloaded, and the copy was removed. After the last reload TEST is the page on screen with its panes as they were at the start (9 tabs, active `6da5bf`; 2 tabs, active `81a353`; 32 tabs, active `9fa7c7`), no key holding `DIAG` is left in either storage, and `HTMLElement.prototype.focus` and `Storage.prototype.setItem` are native again. One effect the restore cannot undo: closing a tab clears what the ui store keeps under its instance id (`forgetTabs`, `layout/instances.ts:272-275`), so whatever the ui store held for the History tab `c3e097...` and the Slides tab `81a353...` of TEST is gone. No other page was touched.
@@ -166,7 +166,7 @@ AssertionError: expected 1 to be +0 // Object.is equality
 
 The third case passes on both trees by design: it holds the give-back itself, which the fix must keep.
 
-Fix (the whole change against `1c95c890`, from `tools/oculus`; the two new test files are quoted after it):
+Fix (the whole change against `192431a7`, from `tools/oculus`; the two new test files are quoted after it):
 
 ```diff
 --- a/tools/oculus/src/lib/ui/frame/quiet-focus.ts

@@ -1,6 +1,6 @@
 Brief check of Q84
 
-Everything below was read on main at 72aed598 (`git log --oneline -1`). Nothing in the repository was changed. The only files written are in the scratch folder `.../scratchpad/Q84-check/`: `npm pack @tanstack/query-core@5.104.0`, extracted to `package/`, and one probe script, `turns.mjs`, run with node 24.21.
+Everything below was read on main at 85159a9e (`git log --oneline -1`). Nothing in the repository was changed. The only files written are in the scratch folder `.../scratchpad/Q84-check/`: `npm pack @tanstack/query-core@5.104.0`, extracted to `package/`, and one probe script, `turns.mjs`, run with node 24.21.
 
 The brief cannot be dispatched as written. Six findings each stop it:
 - An existing suite cannot pass unchanged: `tests/state/sessions/agents.test.ts:89-100` asserts two requests in flight at once, and its 5-microtask `settle()` is too short for query-core, which I measured.

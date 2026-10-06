@@ -90,9 +90,9 @@ claude-opus-5-5. About 75k tokens of context and about 45 tool uses. Wall time w
 
 ## Repair round 1, refuted
 
-Q124 refuter over repair round 1. Worktree: `.agents/worktrees/Q124`. Base: `ba6a995f2`. Reviewed without changing any file. The worktree's `git status --short` still prints 11 lines, the same as at the start. One side effect of my stale-cache rounds: the worktree's `node_modules/.vite` now holds a `cp -cR` clone of main's cache.
+Q124 refuter over repair round 1. Worktree: `.agents/worktrees/Q124`. Base: `4ddcc08b7`. Reviewed without changing any file. The worktree's `git status --short` still prints 11 lines, the same as at the start. One side effect of my stale-cache rounds: the worktree's `node_modules/.vite` now holds a `cp -cR` clone of main's cache.
 
-**How I identified the delta.** The builder made no commit, so I read `git diff ba6a995f2` and compared it with what the first refuter report says it reviewed:
+**How I identified the delta.** The builder made no commit, so I read `git diff 4ddcc08b7` and compared it with what the first refuter report says it reviewed:
 - `noVitestDepsCache` at `vite.config.ts:25-36` and the tag comment at `:57-67`;
 - `landing.mjs:10` "They share no folder that two of them write";
 - `quick.mjs:11-12` "so a run of npm test beside it reads whole files";
@@ -264,7 +264,7 @@ None. The B1 closure reproduces:
 
 ### Merge with main (a fact for landing, not a finding)
 
-Main's `vite.config.ts` (O30b, `4f97e9fad`) is now `defineConfig(({ mode }) => { ... })`:
+Main's `vite.config.ts` (O30b, `4ce24363b`) is now `defineConfig(({ mode }) => { ... })`:
 - `sveltekit({ outDir: folders.kit, ... })` is inside the function (`:39-46`);
 - the head comment has a second paragraph (`:4-9`);
 - a `build-folders.ts` import was added;

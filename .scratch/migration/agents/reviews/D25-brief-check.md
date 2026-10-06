@@ -1,4 +1,4 @@
-## Brief check of D25 (oculus/migration), read on main at 3949d212
+## Brief check of D25 (oculus/migration), read on main at 2b571384
 
 Commands ran from `/Users/axelfaes/workspace/research-hub` or its `tools/oculus`. The brief is `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/briefs/D25.md` (uncommitted). `plan.md` has no `## Goal` section: its opening paragraph says it is the execution ledger for `tools/oculus/DESIGN.md`. So the goal D25 delivers is taken to be its own line, `plan.md:475-483`.
 
@@ -170,7 +170,7 @@ None. `ls tools/oculus/docs/adr` prints "No such file or directory", as does `ls
 
 ## Shared paths with X3c
 
-X3c's worktree (`.agents/worktrees/X3c`, base ddcd610c) holds only test changes so far (`git status --short`), so this compares X3c's brief items with D25's ranges. `git diff --stat ddcd610c 3949d212` touches only `.scratch` files, so both are cut from the same source.
+X3c's worktree (`.agents/worktrees/X3c`, base c02b7570) holds only test changes so far (`git status --short`), so this compares X3c's brief items with D25's ranges. `git diff --stat c02b7570 2b571384` touches only `.scratch` files, so both are cut from the same source.
 
 1. **`source.svelte.ts`: the ranges overlap.** X3c item 16 changes the `rendered` default at `:106` and its doc comment at `:93-95`. Both fall inside D25's named 75-120, where D25 adds `wrap` after `:83` and `:112`. The hunks are 5-8 lines apart, so a clean merge is likely but not verified. D25 also needs the interface (around `:226`, `setSourceIndent`) and the returned object (around `:434-447`), outside its ranges.
 2. **`Source.svelte`:** no overlap between D25's 160-185, 320-340 and 455-485 and X3c's areas (`title` `:149`, the toolbar and bar snippets around `:350-430`, `<Pane ... {bar}>` `:436`).

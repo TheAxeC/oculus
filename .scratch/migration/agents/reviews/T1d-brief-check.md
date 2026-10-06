@@ -1,4 +1,4 @@
-# Step T1d brief check (on main at 1e14d279999948a5b59617e957a6e8defb0545f1)
+# Step T1d brief check (on main at cf91445bf86eb9f2460887f8ee0eec8f2a9b486a)
 
 The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/T1d.md`. Pages are cited by section; code and grep hits keep `file:line`. All commands ran from `tools/oculus` on main's head unless stated. Nothing was changed anywhere.
 
@@ -54,7 +54,7 @@ Findings:
 - Helpers imported from outside (`grep -rn "from '\.[./]*/\(views\|shell\|ui\|themes\)/" tests` outside the folders): the same eight. Missing: `ui/frame/client-runtime.ts`, used by `vite.config.ts:63` (see 1).
 - The comments-outside counts: match (see 1).
 - `allow-duplication.txt` (128 lines) and its line list: match. `duplication.test.ts:597-606` and `:304`: match.
-- Slow-tier sentences: `vite.config.ts:31-35` and `README.md:15` match. **`HELP.md:342` is stale**: `grep -n "module-tag slow" tools/oculus/HELP.md` prints `346:` at 1e14d279 (it was `342:` at T1c's base 11418b375). `agents/spec.md:56`: matches.
+- Slow-tier sentences: `vite.config.ts:31-35` and `README.md:15` match. **`HELP.md:342` is stale**: `grep -n "module-tag slow" tools/oculus/HELP.md` prints `346:` at cf91445b (it was `342:` at T1c's base b93d69b52). `agents/spec.md:56`: matches.
 - `ls tools/oculus/docs` prints `diagrams`. Matches.
 - Not on the brief's list: `tests/ui/theme/colours.test.ts` is red on main. `npx vitest run tests/ui/theme/colours.test.ts --reporter=verbose` (load 5.67) printed `× ... the colour rule > holds in every component and stylesheet under ui, shell, views and routes 128ms` with `"lib/views/sources/files/sections/OpenEditors.svelte: .dirty: background: currentColor (not a surface or a hue)"`, `Tests 1 failed | 13 passed (14)`. That is Z359's finding, owed to X3e (unticked at `plan.md:192`), and Z364 lets `test:slow` stay red on it. The brief does not name it, and item 3 may untag the file (see 5), which would put a known red into `npm test`.
 
@@ -188,4 +188,4 @@ Completion notice: 220,718 tokens, 70 tool uses, 11.1 min (agent a16750a87be697a
 - The question (f): item 7 asks a slower quick run to be explained file by file.
 - Implied inputs: client tests (Decision 7), `.svelte` probes (kept while imported; `client-runtime.ts` kept), the press harness (item 1), menu tests with a divider (item 1's paragraph), `html.test.ts:199` (a case, keep), tree-wide checks outside `views/whole/` (Decision 5), polling waits (item 4, Decision 6), the fixed sleep (item 4), hook cost (item 3), a `src/` export left with no caller (item 8, now naming the three test-only methods), a helper changed in place (item 5).
 - Declined to judge, T1b's brief disagreeing: T1d now carries the same module-load, hook, minimum-over-runs, `vi.waitFor`, client-test and holder sentences as T1b.
-- The audits check (Z376): ruled (b); the brief's item 9 rewrites the check with no title escape and no allow list, moves kept non-rendering cases to the folder of the code they call and the tree checks of `views/whole/` to `tests/checks/views/`, and its paths list widens to match. The brief's premises were reread on main at fa5e42a2f after T1c and T1b landed, with the rulings Z379 to Z388 carried into items 3, 4 and Decision 2.
+- The audits check (Z376): ruled (b); the brief's item 9 rewrites the check with no title escape and no allow list, moves kept non-rendering cases to the folder of the code they call and the tree checks of `views/whole/` to `tests/checks/views/`, and its paths list widens to match. The brief's premises were reread on main at 8d88bbf00 after T1c and T1b landed, with the rulings Z379 to Z388 carried into items 3, 4 and Decision 2.

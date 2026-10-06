@@ -1,8 +1,8 @@
-# Step A1 refuter report (on .agents/worktrees/A1, base ce71ecf1)
+# Step A1 refuter report (on .agents/worktrees/A1, base 3c4f40b2)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
 
-The step is judged against `agents/spec.md` as it stood at ce71ecf1, read from the saved copy `scratchpad/spec-at-ce71ecf1.md`. Places where the newer rule sentences on main would also apply are listed separately, after the four headings.
+The step is judged against `agents/spec.md` as it stood at 3c4f40b2, read from the saved copy `scratchpad/spec-at-3c4f40b2.md`. Places where the newer rule sentences on main would also apply are listed separately, after the four headings.
 
 ## Verification (rerun by the reviewer)
 
@@ -252,7 +252,7 @@ subject.staged ? 'staged' : 'changed'       // :146
 - The rules file says "One source file under 1000 lines ... A file within 20 lines of its cap is split".
 - The tree checks a `.ts` file at 900 (`tests/checks/tree/size.test.ts` `LINES = 900`, `utils/size-check.sh` `$1 > 900`). Round 1 used that check's line as "its cap" when it judged Diff.svelte against 540.
 - On that reading 862 is 38 under the cap. On the rules file's 1000 it is 138 under. Neither is within 20 lines. Not a finding.
-- The step adds 13 lines (849 to 862, `git diff ce71ecf1 --numstat`: 21 added, 8 removed). Main's copy is 857 after X3a, so the hand-merged file should come to about 870, 30 under 900. Measure it again at landing.
+- The step adds 13 lines (849 to 862, `git diff 3c4f40b2 --numstat`: 21 added, 8 removed). Main's copy is 857 after X3a, so the hand-merged file should come to about 870, 30 under 900. Measure it again at landing.
 
 ### Rulings
 
@@ -286,7 +286,7 @@ subject.staged ? 'staged' : 'changed'       // :146
     - Rewraps: `test:checks` is green.
     - Diff.svelte is 504.
     - History greps print nothing.
-    - Edited assertions: section 7 matches `git diff ce71ecf1` of `instance-state-sources.test.ts`, `zones.test.ts`, `diff-pane.test.ts`, `gutter.test.ts` and `type-scale.test.ts`.
+    - Edited assertions: section 7 matches `git diff 3c4f40b2` of `instance-state-sources.test.ts`, `zones.test.ts`, `diff-pane.test.ts`, `gutter.test.ts` and `type-scale.test.ts`.
     - Mutation table, head-comment list and asynchronous-path table are present.
     - The exports are local.
     - `DiffSide` and `CommentBarShape` are explained.
@@ -295,7 +295,7 @@ subject.staged ? 'staged' : 'changed'       // :146
 
 In the 35 changed files I found no check removed in place of a fix. One fix reaches beyond its finding: the `Diff.svelte` split moved the reads into `diff-read.ts` (`readDiff`, `GROUP_READS`, `answer`). That is the split ruling 11 asked for, and the moved code is unchanged except that `repo` is now passed as an argument.
 
-### Verdicts, whole diff since ce71ecf1
+### Verdicts, whole diff since 3c4f40b2
 
 **Items:**
 - 1: holds.
@@ -351,7 +351,7 @@ In the 35 changed files I found no check removed in place of a fix. One fix reac
 
 ### Declined to judge
 
-- **How the delta was taken.** No tree state was recorded when the round was sent at 12:05. The delta is the 35 files modified after the round's rulings file, as listed in `scratchpad/a1-round1-files.txt`. I read each through `git diff ce71ecf1 -- <file>`, against the whole diff since the base. So a line of those files changed in the first build cannot be told apart from one changed in the round.
+- **How the delta was taken.** No tree state was recorded when the round was sent at 12:05. The delta is the 35 files modified after the round's rulings file, as listed in `scratchpad/a1-round1-files.txt`. I read each through `git diff 3c4f40b2 -- <file>`, against the whole diff since the base. So a line of those files changed in the first build cannot be told apart from one changed in the round.
 - **The builder's mutated runs and its pre-round failing runs** (sections 3 and 5). Reproducing them means editing a copy of the source, and this review writes no file. No pre-round copy of the tree was available to me.
 - **Everything inside Monaco's DOM and the browser:**
   - the `+` on hover, the press on the real glyph margin, and the right-click entry being drawn;

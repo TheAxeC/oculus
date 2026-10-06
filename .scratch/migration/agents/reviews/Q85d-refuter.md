@@ -1,4 +1,4 @@
-# Step Q85d refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85d, base c62d2ce3)
+# Step Q85d refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85d, base 131d750f)
 
 Reviewer: first run, claude-sonnet-5-5. I changed nothing in the worktree or the ledger. `git status --short` printed 76 lines before and after my runs. The runs wrote only `.svelte-kit/` and `build/`, which git ignores. I did not open `config/local.yml` and did not copy it into my scratch copy. I touched no port and no browser. My scratch copy is removed.
 
@@ -34,7 +34,7 @@ The brief's grep checks, rerun in the worktree:
 
 Reproduction of the report's first-run claims. The report's harness was deleted, so I rebuilt the unchanged tree myself:
 - Copy: a scratch copy of `tools/oculus` in my own scratchpad, without `local.yml`.
-- Base source: `git diff c62d2ce3 -- tools/oculus/src` reversed into it, with `answers.ts` removed.
+- Base source: `git diff 131d750f -- tools/oculus/src` reversed into it, with `answers.ts` removed.
 - Test files: the step's new and changed test files kept as they are in the worktree.
 - Run: each with `npx vitest run <file> --reporter=dot`.
 
@@ -83,7 +83,7 @@ Cases of the brief's "Cases":
 - 10 CommandCenter, Usage, `labelModeOf`, `pushedCollections`: met, `focus.test.ts` ('5' to 4, NaN, 2), `usage.test.ts` (0, -1, NaN, Infinity, '5', 5), `graph.test.ts`, `page.test.ts`.
 - 11 LeadCard, RadarCard, Person status, DatasetCard, LineCard: met, the added render cases. They pass on base.
 - 12 Bookmark readers: met, `opening.test.ts` (open or not; drawn `r/p`, `/p`, `/p`, `/p`, `r/`, `r/`) and `fs-shape.test.ts` (`bookmarkRows`).
-- 13 existing cases unedited but three: met, `git diff c62d2ce3 --numstat -- tests` as above.
+- 13 existing cases unedited but three: met, `git diff 131d750f --numstat -- tests` as above.
 - 14 E, F, G, H answer as today: met by reading the 66 remaining lines plus the green suite.
 
 ## 1. Spec
@@ -134,11 +134,11 @@ Usage, from the completion notice: reviewer a1869e27b7f463b00, claude-sonnet-5-5
 
 ## Repair round 1, refuted
 
-Reviewer: claude-sonnet-5-5, fresh session. I changed no file. `git status --short | wc -l` printed 93 and `git diff c62d2ce3 --stat | tail -1` printed `86 files changed, 1701 insertions(+), 3819 deletions(-)` both before and after my runs. I did not open or copy `config/local.yml`, touched no port and no browser, and removed my scratch copy (`ls $TMPDIR | grep -c q85d` printed 0).
+Reviewer: claude-sonnet-5-5, fresh session. I changed no file. `git status --short | wc -l` printed 93 and `git diff 131d750f --stat | tail -1` printed `86 files changed, 1701 insertions(+), 3819 deletions(-)` both before and after my runs. I did not open or copy `config/local.yml`, touched no port and no browser, and removed my scratch copy (`ls $TMPDIR | grep -c q85d` printed 0).
 
 ### Verification lines (verbatim)
 
-`npm run diagrams` exited 0 and printed `docs/diagrams/layer-views.svg`, `channels.dot`, `channels.svg`, `writes.dot`, `writes.svg`. `git diff c62d2ce3 --stat -- docs/diagrams | tail -1` printed `8 files changed, 830 insertions(+), 594 deletions(-)` before and after, so the committed diagrams match the source.
+`npm run diagrams` exited 0 and printed `docs/diagrams/layer-views.svg`, `channels.dot`, `channels.svg`, `writes.dot`, `writes.svg`. `git diff 131d750f --stat -- docs/diagrams | tail -1` printed `8 files changed, 830 insertions(+), 594 deletions(-)` before and after, so the committed diagrams match the source.
 
 The pass line `checks: 7 commands passed` was NOT reproduced. `checks.sh` stopped at `npm test` both times:
 
@@ -184,7 +184,7 @@ Reruns of the round report's evidence, in the same form:
   - `data/shapes/shapes` is imported by 16 files in views and shell. `data/helpers/guards` by none.
   - `sed -n 148p DESIGN.md | grep -o ... | sort -u` prints the three areas.
 
-### Verdicts for the whole diff since c62d2ce3
+### Verdicts for the whole diff since 131d750f
 
 Items of "What to build" (no `Q85d-cases.md` exists):
 - 1 holds. The rule holds in all the new schemas, all `...Shape` consts at module level. Spec 1 of the first report is closed: `mergeSidesOf` and `graphPageOf` answer the input (`answers.ts` `mergeSidesShape = unchanged(...)`, `graphPageShape = z.union([unchanged(...), ...])`; `toBe` tests; failing pre-round form reproduced above).
@@ -212,7 +212,7 @@ Cases of "Cases":
 - 10 met (`focus.test.ts`, `usage.test.ts` incl. Infinity, `graph.test.ts`, `page.test.ts`).
 - 11 met.
 - 12 met (`opening.test.ts`, `fs-shape.test.ts`).
-- 13 met: `git diff c62d2ce3 --numstat -- tests` deletions are only in `history.test.ts`, `page.test.ts:111`, `boundaries.test.ts` comment and rows, `palette-open.test.ts` import line, `allow-audits.txt`, `allow-duplication.txt`, plus the ten moved files and two comment edits below.
+- 13 met: `git diff 131d750f --numstat -- tests` deletions are only in `history.test.ts`, `page.test.ts:111`, `boundaries.test.ts` comment and rows, `palette-open.test.ts` import line, `allow-audits.txt`, `allow-duplication.txt`, plus the ten moved files and two comment edits below.
 - 14 met by reading the 66 lines and the green suites.
 
 ### Closure of the seven rulings
@@ -221,7 +221,7 @@ Cases of "Cases":
 2. Spec 2, one text reader: closed. Verified by reading: `grep -rnE "readOr\(" src/lib/views src/lib/shell src/routes src/lib/state/workbench/layout/instance.ts` shows `readOr` only over schemas with no top-level `.catch` (Config `openShape`, `retrievalShape`, `whereShape`, `themeNamesShape`, `mapShape`, `anyNumberShape`). The `.catch(<fallback>)` schemas (`warnAtShape`, `cadenceShape`, `wordShape` in `labelModeOf` and `instanceText`, `textOrNumberShape`) are read with `.parse`. One form throughout.
 3. Standards 1: closed. `DESIGN.md:169` (`shell/`) and `:170` (`views/`) list `data/shapes/shapes`.
 4. Standards 2: closed. Read each citation: `views.ts:68-80` (`registerCollections` at 68, `typeof module.registration` at 71), `Document.svelte:103` (contextmenu listener), `:113` (`window.open`), `:134-141` iframe, `:138` sandbox, `+page.svelte:72-74` token effect, `opening.ts:47-70` and `:62-70`. A grep of every `name:digits` citation of a changed file across `DESIGN.md`, `HELP.md`, `README.md` finds no other stale one (`fs.ts:222-233` is the server's file, `index.ts:228` is `data/model`).
-5. Standards 3: closed. The ten moved files differ from base only by one more `../` in import and mock paths and prettier re-wrapping (diffed one by one with `git show c62d2ce3:<path>` against the new file). No case changed. Grep of `src tests docs *.md config utils vite.config.ts` finds no old path left; the two outside comments were updated. `repositories.test.ts` is now 883 lines (limit 900).
+5. Standards 3: closed. The ten moved files differ from base only by one more `../` in import and mock paths and prettier re-wrapping (diffed one by one with `git show 131d750f:<path>` against the new file). No case changed. Grep of `src tests docs *.md config utils vite.config.ts` finds no old path left; the two outside comments were updated. `repositories.test.ts` is now 883 lines (limit 900).
 6. Standards 4: closed. `wasRead` is `return body !== undefined;`; the tests pass `undefined`.
 7. Standards 5: closed. `BookmarkRow` is defined once (`fs.ts:615`); `state/workbench/navigation/rail.ts:23` re-exports it as `Bookmark`; `shell/rail/rail.ts:9,12` imports and re-exports it; `npm run check` is clean.
 

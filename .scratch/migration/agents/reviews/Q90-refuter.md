@@ -1,6 +1,6 @@
 # Q90 refuter
 
-Q90 review. I ran every command below from `.agents/worktrees/Q90/tools/oculus`, where HEAD is 60f25936 "wip" on base 6283272e. `git status --short` printed nothing before my runs and nothing after them. I made every revert and experiment in scratch copies under my scratchpad, never in the worktree.
+Q90 review. I ran every command below from `.agents/worktrees/Q90/tools/oculus`, where HEAD is 60f25936 "wip" on base 26f7d178. `git status --short` printed nothing before my runs and nothing after them. I made every revert and experiment in scratch copies under my scratchpad, never in the worktree.
 
 ## Verification lines (verbatim)
 
@@ -21,7 +21,7 @@ Q90 review. I ran every command below from `.agents/worktrees/Q90/tools/oculus`,
   - What fails: `npx vitest run tests/checks/diagrams --reporter=dot` fails 2 cases at head:
     - "are what the source gives now, each file byte for byte": `AssertionError: run npm run diagrams: expected [ 'docs/diagrams/layers.dot', ... ] to deeply equal []`. It received `layers.dot/.svg`, `layer-server.dot/.svg` and `layer-state.dot/.svg`.
     - "are named stale, every one at once, when an import and a publish are added": the same six files come back as extras.
-  - Proof that this step causes it: in a scratch copy with the six changed files restored from 6283272e and `hub-address.ts` removed, `npx vitest run tests/checks/diagrams` printed `Tests  63 passed (63)`.
+  - Proof that this step causes it: in a scratch copy with the six changed files restored from 26f7d178 and `hub-address.ts` removed, `npx vitest run tests/checks/diagrams` printed `Tests  63 passed (63)`.
   - Cause: the new import edges. After `npm run diagrams` in a copy of head, `layer-state.dot` reads `"folder state/boards to layer data" [label="13"...]` where the committed file has `label="12"`, and the diagrams test then printed `Tests  63 passed (63)`.
   - Fix: run `npm run diagrams` and commit the six regenerated files under `docs/diagrams/`.
   - Why nothing caught it: the brief's path list and command 1 name neither `docs/diagrams` nor `tests/checks/diagrams`. The rules file's `npm test` at the end would have caught it, but the brief forbids running the whole suite.
@@ -42,7 +42,7 @@ Q90 review. I ran every command below from `.agents/worktrees/Q90/tools/oculus`,
 - The new directive is red under its revert.
   - Command 7 shows it red.
   - Independently, with `projects.ts:468` reverted to `link !== "" &&` in a copy: `FAIL ... looks for a hub path on disk and leaves a web address alone` with `+   "Addressed: link path missing: https://www.embs.org/jbhi/"`.
-- The builder's claims reproduce. `collection.ts` went from 815 lines (`git show 6283272e:...| wc -l`) to 795. `hub-address.ts` has 34 lines.
+- The builder's claims reproduce. `collection.ts` went from 815 lines (`git show 26f7d178:...| wc -l`) to 795. `hub-address.ts` has 34 lines.
 - No check was loosened. The boundary entry is exact and proven required, as above.
 - **For information, the second-copy experiment** (in a copy, the import in `collection.ts` replaced by a local copy of the rule):
   - With an identical local copy, command 1 plus `show-in-files.test.ts` raised no failure tied to the duplicate. No duplication check flagged it. The one failure in that run was `tests/checks/tree/size.test.ts > ... is on the list with a count it has not passed`. It did not recur in 3 reruns of `size.test.ts` alone, and I did not capture its message.
@@ -57,7 +57,7 @@ Q90 review. I ran every command below from `.agents/worktrees/Q90/tools/oculus`,
 
 - F1 above also breaks the spec's "Verify before you report" (`npm test`) rule, through a brief that did not allow the full suite.
 - The head comment of `src/lib/data/hub-address.ts:1-8` is in the tree's form (layer, what, why) and matches `data/helpers/text-kind.ts`.
-- There is no history in added lines: `git diff 6283272e | grep '^+' | grep -niE "Q90|20[0-9]{2}-|previously|was moved|used to|no longer"` printed nothing.
+- There is no history in added lines: `git diff 26f7d178 | grep '^+' | grep -niE "Q90|20[0-9]{2}-|previously|was moved|used to|no longer"` printed nothing.
 - The ASCII gate is clean. Every added comment line is 100 columns or less; the only long added line is the revert directive at `audit.test.ts:362`, in the same form as the file's other directives.
 - `src/lib/data/` now holds 8 items (`ls src/lib/data | wc -l`).
 - **Sentences made false by the move:** none found.

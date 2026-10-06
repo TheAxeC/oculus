@@ -1,4 +1,4 @@
-# Step X3d brief check (on main at 3ab29091)
+# Step X3d brief check (on main at 0d9d289f)
 
 Not done: three points are under "Declined to judge" (whether VS Code's modern UI experiment is on in Axel's install, the full order of VS Code's diff editor title actions, the order of controls on VS Code's repository row). Nothing was written, no git state changed, no server or browser started, `config/local.yml` not read. Every other check asked for was run.
 

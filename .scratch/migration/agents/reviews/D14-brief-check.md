@@ -1,6 +1,6 @@
-# Step D14 brief check (brief read from disk, uncommitted; tree at 11013a2b)
+# Step D14 brief check (brief read from disk, uncommitted; tree at f39fc8ed)
 
-The brief says "on main at c8347790". Main is now 11013a2b (`git log --oneline c8347790..HEAD` prints two ledger commits, Q35's prepare and launch). `git diff --stat c8347790 HEAD -- tools/oculus/src tools/oculus/config tools/oculus/tests tools/oculus/DESIGN.md tools/oculus/HELP.md tools/oculus/package.json` prints nothing, so every premise below holds for either commit. `plan.md` has no "Goal" heading; I used its opening paragraph, the D14 line (`plan.md:412`) and the Rulings section as the goal. I opened no `local.yml`, read no `.vscode`, started no server and ran no git command that writes. Throwaway probes ran only under `$TMPDIR`.
+The brief says "on main at 9ec1e8ef". Main is now f39fc8ed (`git log --oneline 9ec1e8ef..HEAD` prints two ledger commits, Q35's prepare and launch). `git diff --stat 9ec1e8ef HEAD -- tools/oculus/src tools/oculus/config tools/oculus/tests tools/oculus/DESIGN.md tools/oculus/HELP.md tools/oculus/package.json` prints nothing, so every premise below holds for either commit. `plan.md` has no "Goal" heading; I used its opening paragraph, the D14 line (`plan.md:412`) and the Rulings section as the goal. I opened no `local.yml`, read no `.vscode`, started no server and ran no git command that writes. Throwaway probes ran only under `$TMPDIR`.
 
 ## 1. Names
 
@@ -173,11 +173,11 @@ Agent usage: claude-sonnet-5-5 (my own model name; the runner's record is the se
 
 Usage (from the completion notice): claude-sonnet-5-5, 272,742 tokens, 109 tool uses, 15.3 min.
 
-## Closed (2026-10-02, /spec D14 on main at 8ef3abbe)
+## Closed (2026-10-02, /spec D14 on main at 125203b5)
 
 - Names 1: `DESIGN.md:23` is D36's under Z196 (b); D14 builds no lint. Names 2 to 4: the omitted paths, the catalog files and the DESIGN.md and HELP.md ranges are in "Paths this step writes".
 - S1: magic comments, root and sections on `latex-utensils` (Z279), the comment block parsed alone (decision 5), a refused file listed in `skipped`. S2: formatting is item 12 (Z278, `tex-fmt`), lint is D36's (Z196).
-- P1: `views/academic` holds 2, stated. P2: the ranges re-read at 8ef3abbe (`startLatex` 378-428, `latex` 537-550). P3: Z192 booked in `plan.md` Rulings, the state file's closed log and `choices.md`. P4: the catalog files named. P5: the sizes of `Editor.svelte`, `Tree.svelte`, `Source.svelte` stated with their limits.
+- P1: `views/academic` holds 2, stated. P2: the ranges re-read at 125203b5 (`startLatex` 378-428, `latex` 537-550). P3: Z192 booked in `plan.md` Rulings, the state file's closed log and `choices.md`. P4: the catalog files named. P5: the sizes of `Editor.svelte`, `Tree.svelte`, `Source.svelte` stated with their limits.
 - C1: item 10's failure rule from the real outputs, case 8 built from them. C2: item 14, case 9. C3: case 13's in-flight, after-close and superseded cases, case 14's second save. C4: `onSaved` in the store, a state test (case 14), `''` and another value counted as `on_save`. C5: the project panel shows the shared rows, the project form gains `outline` and `count`. C6: `DESIGN.md:148` named and zod required. C7: decisions 4 to 6 booked under Z192, the wire shapes listed as decision 2. C8: Z196 (b). C9: one reader (Z279), the Files Outline through it, case 17. C10: `instanceText`. C11: the props through `Source.svelte` named in the paths.
 - Q1 to Q3: cases 11, 13, 15, 16, 19 and the look items; the docs remain a read at landing.
 - I1: case 9. I2: case 8. I3: case 8 (missing, timeout). I4: lint is not built. I5: case 7. I6: case 14. I7: no `.latexmkrc` on the tree sets `out_dir` (`find` printed nothing); not built. I8: item 11 (`trust: false`), case 11. I9: decision 3. I10: lint is not built; the word count lasts until the next build (item 10). I11: item 3 reads `!TEX` in any case. I12: case 3.

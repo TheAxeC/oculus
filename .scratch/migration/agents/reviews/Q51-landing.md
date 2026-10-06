@@ -12,7 +12,7 @@ Nothing of the step, and nothing the review left open.
 
 ## What landed
 
-Q51 landed 2026-09-18 06:48 from worktree `q51` at base `aa6a918b` by `land.sh --no-browser`, after one review and no repair round: the review found no behaviour change and one comment to correct, which is this landing's single fix.
+Q51 landed 2026-09-18 06:48 from worktree `q51` at base `6dcd7ca3` by `land.sh --no-browser`, after one review and no repair round: the review found no behaviour change and one comment to correct, which is this landing's single fix.
 
 `src/lib/state/layout.svelte.ts` is 440 lines, from 942. What moved, each a factory taking one `LayoutAccess` value so that no module declares a rune or holds state of its own: `access.ts` 40 (the store's own core), `storage.ts` 78 (where an arrangement is written and read back), `attention.ts` 149 (what the reader last acted in), `instances.ts` 333 (the instances on a page), `opening.ts` 162 (showing a view), `show-in-files.ts` 50 (the file browser's ask).
 

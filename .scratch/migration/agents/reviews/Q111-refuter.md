@@ -1,4 +1,4 @@
-# Step Q111 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q111, base 34d6a249)
+# Step Q111 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q111, base 7d40613f)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
 
@@ -209,7 +209,7 @@ Usage: reviewer a540291c88c1458ad, served claude-opus-5-5; 230,315 tokens, 51 to
 
 ## Repair round 1, refuted
 
-Reviewed in worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q111`, base `34d6a249`. The round's delta was read against the whole diff since the base.
+Reviewed in worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q111`, base `7d40613f`. The round's delta was read against the whole diff since the base.
 
 **Summary.** All seven rulings are closed. I reproduced each of the three scratch-copy failures myself. There are three new small findings. Each can be fixed at landing and none needs another round:
 - Standards 1: two head comments are false.
@@ -311,7 +311,7 @@ AssertionError: expected 'a: 1\n# --\nx: 2\nb: 2\n# --\n' to be 'a: 1\nb: 2\n# -
 
 Each file was restored after its probe, checked with `diff -q` against the worktree. On the worktree, all three tests pass (61 passed above).
 
-**Ruling 4, the first-run table.** I reversed the step's `src` diff on the copy with `patch -R` over `git diff 34d6a249 -- src`. That gives `yaml-edit.ts` 720, `manifest.ts` 354, `undo.ts` 305 and `changes.ts` 267 lines. Result: `Tests 44 failed | 17 passed (61)`.
+**Ruling 4, the first-run table.** I reversed the step's `src` diff on the copy with `patch -R` over `git diff 7d40613f -- src`. That gives `yaml-edit.ts` 720, `manifest.ts` 354, `undo.ts` 305 and `changes.ts` 267 lines. Result: `Tests 44 failed | 17 passed (61)`.
 - The 17 that pass are the ones the report names: cases 10, 13 and 14 (ten), case 26, the two "keeps nothing" tests, "refuses a group with no removed lines, or lines that fit nowhere", and "refuses to write over a field edited since".
 - Each pure test fails with the message the new table gives. For example: "reports only the fields that were written" fails with `TypeError: Cannot convert undefined or null to object`, and "tries the earlier of two places at the same distance" fails with `TypeError: insertRemoved is not a function`.
 

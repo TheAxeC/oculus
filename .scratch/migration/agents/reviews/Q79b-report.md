@@ -8,7 +8,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 - None.
 
-## The cases' first run (unchanged tree, worktree at 89a83e3b)
+## The cases' first run (unchanged tree, worktree at f4c1a365)
 
 Commands: `npx vitest run tests/checks/source/code.test.ts --reporter=verbose`, `npx vitest run tests/checks/tree/scratch.test.ts -t "first run"`, `npx vitest run tests/checks/source/code.test.ts tests/checks/source/html-sites.test.ts tests/checks/source/history.test.ts tests/checks/tree/negatives.test.ts`.
 
@@ -190,7 +190,7 @@ The rule, in `findUnswept` of `tests/checks/tree/scratch.test.ts`, read by TypeS
 
 ## Files, line counts before and after
 
-Before is the file at base 89a83e3b, from round one's count, except the four marked "(main)": their before is the main checkout's file, not verified equal to base. Every after count was checked against `wc -l` of the tree just now, with no mismatch.
+Before is the file at base f4c1a365, from round one's count, except the four marked "(main)": their before is the main checkout's file, not verified equal to base. Every after count was checked against `wc -l` of the tree just now, with no mismatch.
 
 | File | Before | After |
 |---|---|---|

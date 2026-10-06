@@ -136,7 +136,7 @@ About 190k tokens of context and about 60 tool calls.
 - `node bin/revert-check.mjs` over kept-tabs, files-forms, unsaved-forms, source.spec and map.spec: `37 reverts, 0 unproven, 22 unchecked`. Every case this round changed is red under its directive, including the hidden-confirm case (`workbench-keys.svelte.ts:239`), the hidden-Map case (`labels.ts:81`) and the seven reload cases (`ui.svelte.ts:252`).
 - `npx vitest run tests/server/git/git.test.ts -t "audits that nothing"`: `AssertionError: expected 0 to be greater than 0`, `1 failed | 39 skipped`. The same with `-t "ran every command without optional locks"` gives the same failure.
 - `ls -d $TMPDIR/oculus-* | wc -l`: 7015 before, 7015 after
-- Paths changed both by this step and by main since `fbe3c308` (`git diff fbe3c308 main --name-only`, intersected with this step's changed and untracked paths):
+- Paths changed both by this step and by main since `b1161343` (`git diff b1161343 main --name-only`, intersected with this step's changed and untracked paths):
   - `tests/checks/tree/allow-duplication.txt`
   - `tests/checks/tree/duplication.test.ts`
 
@@ -179,7 +179,7 @@ About 190k tokens of context and about 60 tool calls.
   - **The report's wording.** "The same as the other git reads" in the report is therefore not accurate.
   - **What would close it.** A hidden Files tab defers its re-read until it is shown, and ignored names are kept per folder until that folder's watch fires, or both. A measurement of the event-loop stall under many folders and several tabs would show the size.
 - **Ruling 9 is partly open: a running Terminal in a hidden tab is not measured.**
-  - **Not a defect in the tree.** The served layer puts a failing `tmux` on PATH on purpose (`tests/browser/helpers/serve.ts:179-199`: "browser layer: this run has no tmux"). This step changes nothing under `src/lib/server/machine` (`git diff fbe3c308 --stat -- src/lib/server/machine` prints nothing). The 400 the builder saw is raised by the unchanged `startTerminal` check (`src/lib/server/machine/pty/sessions.ts:312-315`) and points to the builder's scratch tmux setup.
+  - **Not a defect in the tree.** The served layer puts a failing `tmux` on PATH on purpose (`tests/browser/helpers/serve.ts:179-199`: "browser layer: this run has no tmux"). This step changes nothing under `src/lib/server/machine` (`git diff b1161343 --stat -- src/lib/server/machine` prints nothing). The 400 the builder saw is raised by the unchanged `startTerminal` check (`src/lib/server/machine/pty/sessions.ts:312-315`) and points to the builder's scratch tmux setup.
   - **The measurement can still be taken.** It can be run on a development server in an engine copy with a real tmux, as `tests/server/core/dev-server.test.ts` builds one. From reading `Terminal.svelte:273-289`, a hidden Terminal keeps `subscribePty` writing to xterm, and its ResizeObserver still fires `resized()` when the tab hides.
 - **A confirm shown again after a switch (from reading, not run).**
   - `Confirm.svelte:39-41` focuses Yes only when the dialog mounts, and handles Escape only from the `.ground` it wraps (`:48-53`, `:74`).

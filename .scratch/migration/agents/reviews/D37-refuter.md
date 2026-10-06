@@ -1,4 +1,4 @@
-# Step D37 refuter report (on .agents/worktrees/D37, base ed0e6de58)
+# Step D37 refuter report (on .agents/worktrees/D37, base 48841862f)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
 
@@ -189,13 +189,13 @@ Reviewer usage: ordo-high on claude-opus-5-5 (a69f261fc8c1776c5), 316,568 tokens
 
 ## Repair round 1, refuted
 
-Reviewer of D37 over repair round 1, on `.agents/worktrees/D37`, base ed0e6de58. Nothing in the worktree or the ledger was changed. Probes ran on scratch copies under the session scratchpad (`rv37/tree` for the worktree with one fix taken out at a time, `rv37/base` for the base `src`). One stray copy this review made in `/tmp/x/` (`channel.ts`) was removed, and `/tmp/x/ctx-new.txt`, which was there before, was left alone.
+Reviewer of D37 over repair round 1, on `.agents/worktrees/D37`, base 48841862f. Nothing in the worktree or the ledger was changed. Probes ran on scratch copies under the session scratchpad (`rv37/tree` for the worktree with one fix taken out at a time, `rv37/base` for the base `src`). One stray copy this review made in `/tmp/x/` (`channel.ts`) was removed, and `/tmp/x/ctx-new.txt`, which was there before, was left alone.
 
 Open items of the state file (`orchestrator-state.md`, "Open items"): "- None."
 
 ```
 $ sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md   (from .agents/worktrees/D37/tools/oculus; run twice, both green)
-test:quick: 62 changed file(s), from git since HEAD          (59 modified in `git diff ed0e6de58` + refusal.ts, terminal-words.ts, the report)
+test:quick: 62 changed file(s), from git since HEAD          (59 modified in `git diff 48841862f` + refusal.ts, terminal-words.ts, the report)
 ok      ASCII gate (0.4 s)
 ok      prettier (1.7 s): All matched files use Prettier code style!
 ok      svelte-kit sync (2.0 s)

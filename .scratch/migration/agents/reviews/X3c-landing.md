@@ -16,7 +16,7 @@ X3c's builder `aa0cc6392e8b3076f` and its reviewers `a535e06539cbd8738` and `afe
 
 ## What landed
 
-X3c, one commit on main (the commit that carries this file), from base ddcd610c, as `agents/briefs/X3c.md` and its round-1 rulings say: pinned tabs, wrapped tabs and preview tabs; the tab's right-click menu on bits-ui with its close questions; a file tab's path breadcrumb under the strip and its Save, Revert, star, Preview and Blame at the strip's end; New Text File opening an untitled source whose first Save asks for a served root and a name; the strip revealing the active tab; the key sheet and the update tray taking the focus; palette rows kept to one line. Merged on main with D25 and Q91: `DESIGN.md`, `HELP.md`, `Files.svelte`, `Editor.svelte` and `Source.svelte` keep both steps' changes, and X3c's `gutter-read.ts`, a copy of `source-gutter.svelte.ts`, is removed.
+X3c, one commit on main (the commit that carries this file), from base c02b7570, as `agents/briefs/X3c.md` and its round-1 rulings say: pinned tabs, wrapped tabs and preview tabs; the tab's right-click menu on bits-ui with its close questions; a file tab's path breadcrumb under the strip and its Save, Revert, star, Preview and Blame at the strip's end; New Text File opening an untitled source whose first Save asks for a served root and a name; the strip revealing the active tab; the key sheet and the update tray taking the focus; palette rows kept to one line. Merged on main with D25 and Q91: `DESIGN.md`, `HELP.md`, `Files.svelte`, `Editor.svelte` and `Source.svelte` keep both steps' changes, and X3c's `gutter-read.ts`, a copy of `source-gutter.svelte.ts`, is removed.
 
 ## Fixes at landing
 

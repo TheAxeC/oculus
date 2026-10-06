@@ -1,6 +1,6 @@
 # Brief check: Q123
 
-The brief `agents/briefs/Q123.md`, on main at a564e4e29. The checker changed no file in the repository and ran no git command that changes state. It made two private tmux servers (`tmux -L q123check-<pid> -f /dev/null`) and killed both; `tmux -L <name> list-sessions` prints "no server running" for each, and their two empty socket files remain in `/private/tmp/tmux-502/`.
+The brief `agents/briefs/Q123.md`, on main at 10ac00c69. The checker changed no file in the repository and ran no git command that changes state. It made two private tmux servers (`tmux -L q123check-<pid> -f /dev/null`) and killed both; `tmux -L <name> list-sessions` prints "no server running" for each, and their two empty socket files remain in `/private/tmp/tmux-502/`.
 
 `plan.md` has no Goal section; the goal was taken from the step line and Z621.
 
@@ -112,7 +112,7 @@ Usage: aa96e2257854c7ff2, claude-opus-5-5, 181,338 tokens, 47 tool uses, 9.0 min
 
 ## Closed
 
-Every finding is closed by a change to `agents/briefs/Q123.md`, under the orchestrator's rulings 1 to 11. Line numbers written into the brief were checked on main at 5896cf9b1 with `grep -n` and `sed -n`; `git diff --stat a564e4e29 HEAD -- tools/oculus/src tools/oculus/tests tools/oculus/DESIGN.md tools/oculus/HELP.md tools/oculus/utils` prints nothing. One number moved from the report: the membership check is `channel.ts:606` (`grep -n "has(sink)) return" channel.ts` prints 606), and the brief carries 606. `LC_ALL=C grep -n '[^ -~]' briefs/Q123.md` exits 1.
+Every finding is closed by a change to `agents/briefs/Q123.md`, under the orchestrator's rulings 1 to 11. Line numbers written into the brief were checked on main at 7813074e8 with `grep -n` and `sed -n`; `git diff --stat 10ac00c69 HEAD -- tools/oculus/src tools/oculus/tests tools/oculus/DESIGN.md tools/oculus/HELP.md tools/oculus/utils` prints nothing. One number moved from the report: the membership check is `channel.ts:606` (`grep -n "has(sink)) return" channel.ts` prints 606), and the brief carries 606. `LC_ALL=C grep -n '[^ -~]' briefs/Q123.md` exits 1.
 
 ### Names
 

@@ -1,4 +1,4 @@
-# Step Q30 refuter report (on .agents/worktrees/q30, base 115da2e7)
+# Step Q30 refuter report (on .agents/worktrees/q30, base 7980ec73)
 
 ## Verification (rerun by the reviewer)
 All commands run from `tools/oculus` in the worktree.
@@ -26,7 +26,7 @@ All commands run from `tools/oculus` in the worktree.
 - No reserved decision was taken otherwise: the wire shape stays `message: string`, the file is `config/text/findings.yml`, and HELP.md and DESIGN.md are not edited.
 
 ## 2. Proof
-- **Before-and-after sentence comparison, reproduced independently.** I built two copies of the data layer and config under `scratchpad/q30-review/`: `base` (the worktree copy with `git diff 115da2e7 -- src/lib/data` reverse-applied by `patch -R`, and the new files removed) and `after`. `compare.ts` raises every key of `findings.yml` at least once over synthetic inputs: every reader, `deckFindings`, `loadConfig` (no directory, duplicate top key, duplicate text key, parse, not a map, text not a map), `iconFindings`, `behaviorFindings`, and `validate` with its theme checks, including all four `must_be_*` variants, every shape word and both joint-work forms. Result: 106 findings on each. `diff base.txt after.txt` shows exactly one line:
+- **Before-and-after sentence comparison, reproduced independently.** I built two copies of the data layer and config under `scratchpad/q30-review/`: `base` (the worktree copy with `git diff 7980ec73 -- src/lib/data` reverse-applied by `patch -R`, and the new files removed) and `after`. `compare.ts` raises every key of `findings.yml` at least once over synthetic inputs: every reader, `deckFindings`, `loadConfig` (no directory, duplicate top key, duplicate text key, parse, not a map, text not a map), `iconFindings`, `behaviorFindings`, and `validate` with its theme checks, including all four `must_be_*` variants, every shape word and both joint-work forms. Result: 106 findings on each. `diff base.txt after.txt` shows exactly one line:
   ```
   < config.nodir |  | config directory does not exist
   > config.nodir |  | findings.config.directory_missing
@@ -58,7 +58,7 @@ All commands run from `tools/oculus` in the worktree.
 - `config/text/findings.yml:31` `findings.present.order_not_a_map` repeats `findings.file.not_a_map` (both "is not a map of keys"), against the builder's own shared-group rule.
 - The spec items were checked with no other defect found:
   - No new file lacks a head comment (`finding-text.ts`, `finding-text.test.ts` and `findings.yml` each carry one).
-  - The history scan of added lines (`git diff 115da2e7 | grep "^+"` for package ids, dates and history words) found nothing.
+  - The history scan of added lines (`git diff 7980ec73 | grep "^+"` for package ids, dates and history words) found nothing.
   - The boundaries test passes, the ASCII gate is clean, and every Svelte file is untouched.
 
 ## 4. Behaviour
@@ -93,7 +93,7 @@ Reviewer usage: about 45 tool uses, about 12 minutes (13:23 to 13:35).
 
 ## Repair round 1, refuted
 ```
-All commands from tools/oculus in the worktree (PATH with node v24.21.0). The round's delta = the worktree now against scratchpad/q30-round1 (base 115da2e7 + tracked.patch + untracked.tar), rebuilt under scratchpad/q30-review2/round1; diff -ru covers 13 files (findings.yml, finding-text.ts, sources/config.ts, sources/present.ts, validate-themes.ts, validate.ts, server/audit.ts, tests: config, data/finding-text, keys, routes/docs, text, watch/portfolio).
+All commands from tools/oculus in the worktree (PATH with node v24.21.0). The round's delta = the worktree now against scratchpad/q30-round1 (base 7980ec73 + tracked.patch + untracked.tar), rebuilt under scratchpad/q30-review2/round1; diff -ru covers 13 files (findings.yml, finding-text.ts, sources/config.ts, sources/present.ts, validate-themes.ts, validate.ts, server/audit.ts, tests: config, data/finding-text, keys, routes/docs, text, watch/portfolio).
 
 npx vitest run --reporter=dot                 Test Files 237 passed (237), Tests 3983 passed (3983); no timing failure
 npm run check                                 COMPLETED 1181 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
@@ -121,11 +121,11 @@ H probe-write (engine copy, findings.yml = "text: [", hub with id: other in fold
   copy1: buildPortfolio threw ...findings.manifests.scan_missing; renderHubDoc threw ...findings.docs.missing; writeManifest threw ...findings.manifests.scan_missing
 I probe-cycle (config/text/zz.yml = "text: &x\n  a: *x\n", yaml parse gives a cyclic map):
   now:   loadConfig threw RangeError: Maximum call stack size exceeded
-  copy1: loadConfig findings ["Maximum call stack size exceeded"] (base 115da2e7 has the same catch, config.ts:367-374 there)
+  copy1: loadConfig findings ["Maximum call stack size exceeded"] (base 7980ec73 has the same catch, config.ts:367-374 there)
 J keys.test WORDS regex set to never match      "has a reader for every catalog key" red with 7 orphans: server.chat.chat_focus_note, chat_index_note, chat_instruction, chat_name, chat_name_focus, seed_focus, server.latex.name
 K words vs findingText, catalog 'focus {0} {1} {2}', args id, 'a{2}b', /cwd:
   words: "focus id a/cwdb /cwd"; findingText: "focus id a{2}b /cwd"; words on a missing key throws "text key not in config: server.chat.nope"; findingText gives "server.chat.nope 1"
-Worktree unchanged by the review: md5 of git diff 115da2e7 equal at start and end.
+Worktree unchanged by the review: md5 of git diff 7980ec73 equal at start and end.
 ```
 - `tests/keys.test.ts:39-43`: the key gate now misses a computed finding key. It is a new defect of ruling 2. The round narrowed `WORDS` to `words(catalog,` and put `FINDING_LITERAL` in its place, and that regex only matches a whole quoted `findings.a.b`. A `findingText` call whose key is a concatenation, a template or a variable is no longer read by any test. Reverts B1 and B2 stay green now, and the same two calls were red before the round under "uses literals except at the documented computed prefixes". Since `findingText` no longer throws, such a key would show on the page as the key and its arguments, and no test would fail. `server/audit.ts:266` `findingText(catalog, key, ...args)` is such a call; it passes only because it is no longer scanned, and the audit's documented computed-prefix entry was deleted along with it. Today no source has a computed `findings.` key (scratchpad/q30-review2/survey.mjs over src lists only the audit call). The ruling asked for coverage "whatever the variable is named"; it did not ask to drop the check on non-literal keys. Proof.
 - `src/lib/data/finding-text.ts:31-32`: the comment says "A key misspelt in the code is caught by tests/keys.test.ts". The builder's DESIGN.md decision line makes the same claim. Per the finding above, it holds only for a key written as a whole literal. Standards.
@@ -142,7 +142,7 @@ Worktree unchanged by the review: md5 of git diff 115da2e7 equal at start and en
   - behaviour: a missing `server.chat.*` or `server.latex.name` key would give the key and its arguments instead of a throw, and the fill would become single-pass.
 
   The file is outside the brief's paths and the rulings; not done, and a booking is needed. Spec.
-- No history in added lines (`git diff 115da2e7 | grep "^+"` for package ids, dates and history words: nothing). config.ts is 902 lines and validate.ts 826, both under 1000.
+- No history in added lines (`git diff 7980ec73 | grep "^+"` for package ids, dates and history words: nothing). config.ts is 902 lines and validate.ts 826, both under 1000.
 
 Reviewer usage: about 33 tool uses, about 12 minutes (13:46 to 13:58).
 

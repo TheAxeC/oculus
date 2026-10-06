@@ -1,4 +1,4 @@
-# Step Q31 refuter report (on .agents/worktrees/q31, base 77ef1c91)
+# Step Q31 refuter report (on .agents/worktrees/q31, base 353f6ec5)
 
 ## Verification (rerun by the reviewer)
 All commands run from `tools/oculus` in the worktree, PATH with node v24.21.0.

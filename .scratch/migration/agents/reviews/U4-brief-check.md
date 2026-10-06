@@ -1,6 +1,6 @@
 # U4 brief check
 
-BRIEF CHECK OF U4 (brief: tools/oculus/.scratch/migration/agents/briefs/U4.md, tree on main at f2684ff2). Nothing was changed. No browser, no URL, no port, no .vscode, config/local.yml never opened; every config grep carried --exclude=local.yml.
+BRIEF CHECK OF U4 (brief: tools/oculus/.scratch/migration/agents/briefs/U4.md, tree on main at e97c71c1). Nothing was changed. No browser, no URL, no port, no .vscode, config/local.yml never opened; every config grep carried --exclude=local.yml.
 
 Grep helper used for "Names": a scratchpad script running `grep -rnIE --exclude=local.yml --exclude-dir=node_modules,.svelte-kit,build,.git,.agents,.scratch,diagrams` over tools/oculus `src tests DESIGN.md HELP.md README.md config docs utils demo assets`. Line numbers below were read in this session.
 
@@ -113,7 +113,7 @@ claude-sonnet-5-5 (served, checked in the subagent record), 306,765 tokens, 84 t
 
 ## Closed
 
-Each finding is closed by a change to `agents/briefs/U4.md`, re-read on main at 286e9e07.
+Each finding is closed by a change to `agents/briefs/U4.md`, re-read on main at 8be281e8.
 
 Names
 - 1, 2, 8: item 2 keeps the Ticker's own `.act` button, its classes and title, and changes only its look, so the script, the reveal rules, `primitives.test.ts:500-556` and `wall.test.ts:138` stay true (decision 3).

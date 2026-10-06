@@ -1,4 +1,4 @@
-BRIEF CHECK REPORT, step D27 (oculus/migration), brief `tools/oculus/.scratch/migration/agents/briefs/D27.md`, tree at main 99988ef2 (`git log --oneline -1` prints `99988ef2 Book Z172 into Q88c and raise workers_at_once to five`). I changed nothing in the repository; my only writes were scratch copies under the session scratchpad. I did not run the test suite (read-only role); where a claim below says "red" or "breaks", it is from reading the code or from a command named with it, and says so.
+BRIEF CHECK REPORT, step D27 (oculus/migration), brief `tools/oculus/.scratch/migration/agents/briefs/D27.md`, tree at main 04b39b45 (`git log --oneline -1` prints `04b39b45 Book Z172 into Q88c and raise workers_at_once to five`). I changed nothing in the repository; my only writes were scratch copies under the session scratchpad. I did not run the test suite (read-only role); where a claim below says "red" or "breaks", it is from reading the code or from a command named with it, and says so.
 
 Findings that block the brief as written: Names 1, 2, 3 and 4, Cases and checks 1, 2, 3 and 4, The step line 1. The rest are smaller.
 
@@ -139,7 +139,7 @@ Read the "Paths this step writes" of `U3.md`, `Q85c.md`, `D31.md` and `D35.md` (
 - Whether `notIn: ["string","comment"]` in the rite configuration is honoured under the Shiki bridge's token types: needs Monaco running.
 - Whether `keys.test.ts`, `status.test.ts` and `boundaries.test.ts` go red: read from source, tests not run (read-only role, and a suite run writes caches).
 - The exact hunks of D35 and U3 beyond what their "Paths" list says; both briefs leave open-ended lines ("each other line the report names").
-- Whether Z78's "every language of the three repositories that Shiki ships" is met by the plan's list: the ruling's text (commit 528b3d11's state file) names C, C++, CMake, Lua, Ruby, SCSS, Java, Dart, Fortran, Jinja, `.pyi` and Svelte, which the brief carries; `git ls-files` in the three repositories also shows `.csv` (177 files in the hub, a Shiki grammar `csv` exists) and `.clo` (14 LaTeX class-option files); I did not judge whether they were meant to be in scope, and neither appears in the ruling.
+- Whether Z78's "every language of the three repositories that Shiki ships" is met by the plan's list: the ruling's text (commit 4054841e's state file) names C, C++, CMake, Lua, Ruby, SCSS, Java, Dart, Fortran, Jinja, `.pyi` and Svelte, which the brief carries; `git ls-files` in the three repositories also shows `.csv` (177 files in the hub, a Shiki grammar `csv` exists) and `.clo` (14 LaTeX class-option files); I did not judge whether they were meant to be in scope, and neither appears in the ruling.
 - Performance of `languageMap` per call (Implied 13): the cost was not measured.
 - Whether the added hljs registrations change the server's start time or bundle size: not measured.
 
@@ -149,7 +149,7 @@ Usage (from the completion notice): claude-sonnet-5-5, 301,967 tokens, 104 tool 
 
 ## Closed
 
-Each finding is closed by a change to `agents/briefs/D27.md`, re-read on main at 1a60f8f2 (Q85c and D31 landed).
+Each finding is closed by a change to `agents/briefs/D27.md`, re-read on main at acbf7544 (Q85c and D31 landed).
 
 Names
 1. The status bar and the picker: item 8 registers `svelte`, `rite` and `fortran-fixed` in highlight.js on wrapped grammars with no aliases, so `registered()` equals the map's languages plus plaintext and every alias keeps its owner (case 23 checks `html`, `svg`, `f90`, `h`); item 9 adds the `statusbar.language_<name>` keys with VS Code's display names (Z178, automode); `statusbar.yml`, `status.test.ts` and `keys.test.ts` are in the paths.
@@ -218,7 +218,7 @@ Merge claims
 4. The `options.yml` entry goes after `scan` (item 10); D35 is not in flight.
 5. `DESIGN.md:379` is apart from U3's lines (374-375 and 392); U3's round adds 410, also apart.
 6. `File.svelte` leaves the paths (decision 7); `Source.svelte`'s line 133 and import are apart from U3's hunks (28-30, 56-61, 124, 330 on).
-7. U3 does not change `ui/controls/editor/Editor.svelte` (`git diff ab4d9084 --stat` in its worktree).
+7. U3 does not change `ui/controls/editor/Editor.svelte` (`git diff 41cc19bf --stat` in its worktree).
 8. `source.test.ts` lines 494-516 are apart from U3's hunks, which end by line 314.
 
 Declined to judge: `.csv` and `.clo` are not in Z78's list, and the brief leaves them plain.

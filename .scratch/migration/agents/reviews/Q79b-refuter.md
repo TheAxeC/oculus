@@ -1,4 +1,4 @@
-# Step Q79b refuter report (on .agents/worktrees/Q79b, base 89a83e3b)
+# Step Q79b refuter report (on .agents/worktrees/Q79b, base f4c1a365)
 
 A page this report cites is named with its section. A finding in code keeps its `file:line`.
 
@@ -35,8 +35,8 @@ Brief verify 5: grep -rn "readdirSync" tests   one-folder reads only: scratch.te
 Brief verify 6 (npm run diagrams): not run, as instructed.
 
 Claims rerun:
-- 102 suites: the diff removes the line "afterAll(sweepScratch);" from 102 files (awk over git diff 89a83e3b); 103 with the helper's comment line.
-- 104 deleted and 13 kept: git diff 89a83e3b | grep -c "^-.*startsWith(resolve(tmpdir())" prints 105 (104 assertions plus the helper's old if line); 117 - 104 = 13.
+- 102 suites: the diff removes the line "afterAll(sweepScratch);" from 102 files (awk over git diff f4c1a365); 103 with the helper's comment line.
+- 104 deleted and 13 kept: git diff f4c1a365 | grep -c "^-.*startsWith(resolve(tmpdir())" prints 105 (104 assertions plus the helper's old if line); 117 - 104 = 13.
 - Each deleted assertion: a parse of each deleted line's variable against its assignments in the current file; every one is the unchanged return of scratchDir, plantScratch or a local wrapper that returns scratchDir's value unchanged (memories.test.ts scratch(), images.test.ts scratch(), class fields in background, folders, codex, sessions, transcript-fixture).
 - Reader time: commentText over 1072 files of src, tests and bin (.ts, .js, .mjs, .svelte, .sh, .css) took 2771 ms at load about 9 (report: 1073 files, 3030 ms). The one-file createProgram for syntax errors is 115 ms of it over 814 modules; the getChildren walk is 393 ms.
 - 49 walker lists: not rerun from the builder's scripts. find src tests bin config -name ".*" and -type l print nothing, so a glob and a readdir walk see the same files on today's tree; the hub's project.yml count by find (code, attic and dot folders excluded) is 94, the sum of the report's six integrity lists (33+5+15+0+16+25); the 21 symlinks under projects/ are files (AGENTS.md).
@@ -120,8 +120,8 @@ spec.md's perl ASCII gate over src tests bin config: prints nothing. bin/folder-
 ```
 
 The builder's quoted commands, rerun:
-- Verify 2: `grep -rl "afterAll(sweepScratch)" tests` prints nothing; `git diff 89a83e3b | grep -c "^-afterAll(sweepScratch);"` prints 102.
-- Verify 3: `grep -rn "startsWith(resolve(tmpdir())" tests | wc -l` prints 13, the same 13 lines the report keeps; `git diff 89a83e3b | grep -c "^-.*startsWith(resolve(tmpdir())"` prints 105 (104 assertions plus the helper's old `if`).
+- Verify 2: `grep -rl "afterAll(sweepScratch)" tests` prints nothing; `git diff f4c1a365 | grep -c "^-afterAll(sweepScratch);"` prints 102.
+- Verify 3: `grep -rn "startsWith(resolve(tmpdir())" tests | wc -l` prints 13, the same 13 lines the report keeps; `git diff f4c1a365 | grep -c "^-.*startsWith(resolve(tmpdir())"` prints 105 (104 assertions plus the helper's old `if`).
 - Verify 5: `grep -rn "readdirSync" tests` lists only the one-folder reads the report names.
 - The walker comparison: `walks/before.mjs` then `walks/after2.mjs` print `every list equal` over 49 lists, the counts as the report gives them (size:src 649, scratch:tests 403, history:tests 409); on the builder's dot tree (56 dot names) 50 "equal" lines and `every list equal`. `after2.mjs`'s copies match the current `size`, `comment-width`, `keys`, `config-folder` and `shape` walkers. A probe of `treeFiles`'s patterns over `.h/.z/.q/.g`, `.h/.z/.q/f`, `.h/.z/.y`, `a/.b/.c` and `a/.b/d` returns all five.
 - The `$TMPDIR` counts: around checks.sh the system `$TMPDIR` held 1823 entries before and after, `comm -13` of it and of its parent empty. A full run with `TMPDIR` at the reviewer's scratch `T/` leaves only `node-compile-cache`; that run had 23 failures in 12 files, each caused by the chosen folder (a git worktree around it, a tmux socket path of 113 bytes or more, three timeouts at load 18), none leaving a directory behind.

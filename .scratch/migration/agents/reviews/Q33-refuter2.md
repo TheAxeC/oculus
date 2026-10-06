@@ -1,4 +1,4 @@
-# Step Q33 refuter report, second review (on .agents/worktrees/q33, base 133e7c39)
+# Step Q33 refuter report, second review (on .agents/worktrees/q33, base 84bc4dde)
 
 Nothing was written in the worktree or the main checkout. `git status --short` at the end lists the same 30 modified and 3 untracked paths as at the start. The probes ran in APFS clones under `scratchpad/q33-review2/{a,b,c}` (no symlinks). Those clones have been deleted; their output logs are still in that folder. The stray `d16/.../node_modules/node_modules` symlink from the first review no longer exists (`ls`: No such file).
 
@@ -29,7 +29,7 @@ Nothing was written in the worktree or the main checkout. `git status --short` a
 - **ASCII gate (perl form):** printed nothing.
 - **File lengths:** the tail is `970 tests/state/layout.test.ts`, `979 tests/state/board.test.ts`. Tabs.svelte 578, ActivityRail.svelte 518, Menu.svelte 451, shell-defects.spec.ts 555.
 - **Browser suite:** `npx playwright test` gave `145 passed (3.1m)`.
-- **Report figures reproduced** (a vitest probe comparing `deriveTokens` against main's `derive.ts`, rebuilt by reverse-applying `git diff 133e7c39`):
+- **Report figures reproduced** (a vitest probe comparing `deriveTokens` against main's `derive.ts`, rebuilt by reverse-applying `git diff 84bc4dde`):
   - `--accent-txt` is the same as main's in 17 of 17 themes, and no existing derived key differs from main.
   - `--accent-bg-txt` on `--accent-bg` ranges from 4.51 (gruvboxlight) to 6.60 (rosepine); light `#95492c` on `#e6d6d2` is 4.56, mocha 6.00.
   - The `:root` defaults equal light's derived values.

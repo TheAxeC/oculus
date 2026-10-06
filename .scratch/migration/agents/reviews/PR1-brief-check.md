@@ -1,6 +1,6 @@
-# Step PR1 brief check (on main at 01d928259)
+# Step PR1 brief check (on main at bc42cb101)
 
-The fresh read-only agent of the `spec` skill's brief check, on `tools/oculus/.scratch/migration/agents/briefs/PR1.md` (uncommitted working copy). I edited no files and ran no git command other than `git rev-parse --short HEAD`, which printed `01d928259`. I also fetched Electron's and Chromium's source text with `curl` into my scratchpad, because the brief's item 8 premise could not be settled from `node_modules/electron`.
+The fresh read-only agent of the `spec` skill's brief check, on `tools/oculus/.scratch/migration/agents/briefs/PR1.md` (uncommitted working copy). I edited no files and ran no git command other than `git rev-parse --short HEAD`, which printed `bc42cb101`. I also fetched Electron's and Chromium's source text with `curl` into my scratchpad, because the brief's item 8 premise could not be settled from `node_modules/electron`.
 
 ## 1. Names
 

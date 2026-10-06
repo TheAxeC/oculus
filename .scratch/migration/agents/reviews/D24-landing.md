@@ -24,7 +24,7 @@ The Personal board, the Projects page's fourth tab, draws a card for each side p
 
 The six manifests drafted in the builder's report were written to the repositories and committed there by path, no push: cathedra fc105f3f, game-engine 4f45a69, ordo 1428d06, scotoma 9ce4590, officium e201aa1, youtube-downloader a012ba5 (with `!.oculus/project.yml` added to its `.gitignore`, whose `*.yml` would otherwise ignore the manifest; `git status --short` there shows `.oculus/` untracked before the commit).
 
-Base bca66b3c, cherry-picked by `land.sh` (wip ca7c8cb2 on D24-land). Conflicts in `src/lib/server/root/context.ts` and four diagram files: `context.ts` keeps D35's start functions and builds the portfolio watcher in `startPortfolio` with D24's `roots` and `workspacesFile`; the diagrams were taken from D24 and regenerated.
+Base 34f1602b, cherry-picked by `land.sh` (wip ca7c8cb2 on D24-land). Conflicts in `src/lib/server/root/context.ts` and four diagram files: `context.ts` keeps D35's start functions and builds the portfolio watcher in `startPortfolio` with D24's `roots` and `workspacesFile`; the diagrams were taken from D24 and regenerated.
 
 Changed files outside the brief's path list: `HELP.md`, `config/text/app.yml`, `config/text/findings.yml`, `src/lib/data/model/index.ts`, `src/lib/data/snapshot/normalise-personal.ts` (new), `normalise.ts`, `validate.ts`, `src/lib/server/core/paths.ts` (a fix at landing), `src/lib/server/root/context.ts`, `src/lib/state/boards/career.ts`, `src/lib/state/client/selectors.svelte.ts`, `src/lib/state/shared/words/status-rows.ts` (new), `src/lib/state/workbench/navigation/registry.ts`, `src/lib/state/workbench/rail-badges.svelte.ts`, and 50 test files.
 

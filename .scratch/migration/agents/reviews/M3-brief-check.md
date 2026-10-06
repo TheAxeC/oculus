@@ -1,6 +1,6 @@
 # M3 brief check
 
-BRIEF CHECK OF M3 (resources registry). Read-only: no file written, no git command that changes state, no skill, no agent, no URL, no port. Base: main at 3dc0b879, brief on disk (169 lines).
+BRIEF CHECK OF M3 (resources registry). Read-only: no file written, no git command that changes state, no skill, no agent, no URL, no port. Base: main at 179fd262, brief on disk (169 lines).
 
 Disclosure first: one command of mine, `grep -rn "max_lines\|maxLines\|900" config/*.yml | grep -v local.yml | head`, had a glob that included `config/local.yml`. Its output went through `grep -v local.yml`, so nothing from that file was printed or used. Every other grep over `config/` was `git grep` with `':!config/local.yml'` (git ignores the file) or named files.
 

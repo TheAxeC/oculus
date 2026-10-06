@@ -1,16 +1,16 @@
-# X3e premise recheck against main a564e4e29
+# X3e premise recheck against main 10ac00c69
 
-X3e brief premise check against main at a564e4e29. I changed nothing.
+X3e brief premise check against main at 10ac00c69. I changed nothing.
 
-Since e3657deca, seven commits touched `tools/oculus/src`, `tests`, `config`, `HELP.md` and `DESIGN.md`: D44 297349683, a37aaa5de, eba29a18e, ebb6861c1, O30 8ed2d1f5a, A3 af7d8df07 and E4 a564e4e29. `git diff --stat e3657deca HEAD -- <those paths> ':!tools/oculus/config/local.yml'` prints "296 files changed, 21969 insertions(+), 2365 deletions(-)". All numbers below come from main's tree. `plan.md` is modified in the working tree, but every plan.md line cited here has the same number in HEAD and in the working tree (`git show HEAD:...plan.md | grep -nE ...` and the same grep on the file).
+Since 8411697e8, seven commits touched `tools/oculus/src`, `tests`, `config`, `HELP.md` and `DESIGN.md`: D44 d7ff5fd3d, 57c6ba7e6, 8aa491caa, 61f253977, O30 3cb170eae, A3 09509b5b6 and E4 10ac00c69. `git diff --stat 8411697e8 HEAD -- <those paths> ':!tools/oculus/config/local.yml'` prints "296 files changed, 21969 insertions(+), 2365 deletions(-)". All numbers below come from main's tree. `plan.md` is modified in the working tree, but every plan.md line cited here has the same number in HEAD and in the working tree (`git show HEAD:...plan.md | grep -nE ...` and the same grep on the file).
 
 ## Claims no longer true
 
-1. **Brief :45.** Claim: the dispatch checks that `git diff --quiet e3657deca <head> -- tools/oculus/src tools/oculus/config tools/oculus/tests tools/oculus/HELP.md tools/oculus/DESIGN.md` exits 0. Now: that diff holds 296 files (command above), so the dispatch check fails. Correct to: "read on main at a564e4e29 … `git diff --quiet a564e4e29 <head> -- …` exits 0". Every "read on main at e3657deca" heading (:43, :45, :49, :97, :108) needs the same new base.
+1. **Brief :45.** Claim: the dispatch checks that `git diff --quiet 8411697e8 <head> -- tools/oculus/src tools/oculus/config tools/oculus/tests tools/oculus/HELP.md tools/oculus/DESIGN.md` exits 0. Now: that diff holds 296 files (command above), so the dispatch check fails. Correct to: "read on main at 10ac00c69 … `git diff --quiet 10ac00c69 <head> -- …` exits 0". Every "read on main at 8411697e8" heading (:43, :45, :49, :97, :108) needs the same new base.
 
-2. **Brief :49.** Claim: the list of premise files unchanged since 8077dd556, with `git diff --quiet 8077dd556 HEAD -- <file>` exiting 0 for each. Now the command fails for seven of them: `payloads.ts`, `commands.svelte.ts`, `pane-view.ts`, `auth.ts`, `core/git/run.ts`, `core/git/files.ts` and `picker.ts` (per-file loop of `git diff --quiet 8077dd556 HEAD`). They changed in E4, A3, O30 and D44 (`git log --oneline 8077dd556..HEAD -- <file>`). Correct to: remove those seven from the list and add a sentence naming D44, O30, A3 and E4 as landed after e3657deca.
+2. **Brief :49.** Claim: the list of premise files unchanged since 863cdc7d0, with `git diff --quiet 863cdc7d0 HEAD -- <file>` exiting 0 for each. Now the command fails for seven of them: `payloads.ts`, `commands.svelte.ts`, `pane-view.ts`, `auth.ts`, `core/git/run.ts`, `core/git/files.ts` and `picker.ts` (per-file loop of `git diff --quiet 863cdc7d0 HEAD`). They changed in E4, A3, O30 and D44 (`git log --oneline 863cdc7d0..HEAD -- <file>`). Correct to: remove those seven from the list and add a sentence naming D44, O30, A3 and E4 as landed after 8411697e8.
 
-3. **Brief :97.** Claim: `run.ts`, `files.ts` and `picker.ts` are unchanged since 8077dd556, and the moved lines of `context.ts`, `context-fixture.ts` and `git.test.ts` are corrected below. Now: those three files changed (item 2), and `context.ts`, `context-fixture.ts` and `git.test.ts` moved again (items 17, 37 and 41). Correct to: name D44 (run.ts, files.ts) and O30 (picker.ts) as the commits that changed them.
+3. **Brief :97.** Claim: `run.ts`, `files.ts` and `picker.ts` are unchanged since 863cdc7d0, and the moved lines of `context.ts`, `context-fixture.ts` and `git.test.ts` are corrected below. Now: those three files changed (item 2), and `context.ts`, `context-fixture.ts` and `git.test.ts` moved again (items 17, 37 and 41). Correct to: name D44 (run.ts, files.ts) and O30 (picker.ts) as the commits that changed them.
 
 4. **Brief :22 (Z440).** Claim: `sed -n 440,482p settings.ts` shows `PROBLEM_READERS` and `settingProblems`. Now: they are at :505-525 and :531-541 (`grep -n "PROBLEM_READERS\|export function settingProblems"`). Correct to: `sed -n 497,541p`.
 
@@ -34,7 +34,7 @@ Since e3657deca, seven commits touched `tools/oculus/src`, `tests`, `config`, `H
     - `state/sessions/latex.svelte.ts:355-358` and `filesMoved` at :389-400, which calls the shared `holds` (`latex.svelte.ts:51` imports it from `docs.svelte.ts`).
     - `state/sources/files.svelte.ts:85-89`, which marks every project's files query on any `files` message.
 
-    Both predate e3657deca (`git diff --quiet e3657deca HEAD` on both exits 0). E4 adds a third: the app frames, through `state/system/apps/rules.ts:102-105` (`partOf`) and `apps.svelte.ts:281` and :341. Correct to: "Six followers read the payload…", naming them. Item C2 must also say what the LaTeX follower and the project files store do with `folders`. `holds` (`docs.svelte.ts:142`) is shared by three callers (docs, commands, latex), so changing it changes `latex.svelte.ts` (`grep -rn "holds(" src/lib`).
+    Both predate 8411697e8 (`git diff --quiet 8411697e8 HEAD` on both exits 0). E4 adds a third: the app frames, through `state/system/apps/rules.ts:102-105` (`partOf`) and `apps.svelte.ts:281` and :341. Correct to: "Six followers read the payload…", naming them. Item C2 must also say what the LaTeX follower and the project files store do with `folders`. `holds` (`docs.svelte.ts:142`) is shared by three callers (docs, commands, latex), so changing it changes `latex.svelte.ts` (`grep -rn "holds(" src/lib`).
 
 14. **Brief :70, :161, :188.** Claim: the watcher is built at `context.ts:362-367` (`make.watchGit(hub, {` at :363). Now: `startGit` at :396-401, `make.watchGit` at :397 (`grep -n "make.watchGit"`). Correct to: `context.ts:396-401` (`:397`).
 
@@ -72,7 +72,7 @@ Since e3657deca, seven commits touched `tools/oculus/src`, `tests`, `config`, `H
 
 20. **Brief :106, :227, :541, :554.** Claim: `ServerContext.folderPicker` is `context.ts:138-139`, built at :462, and `close()` is :477-495. Now: the doc is at :164 and the field at :165; it is built at :554; `close()` runs :570-590 and now also calls `apps.close()`, `hpcSubmits.close()` and `held.schedules.close()` (`grep -n "folderPicker\|close(): void"`, `sed -n 570,592p`). Correct to: `:164-165`, `:554`, `:570-590`, "the field's doc at `:164`".
 
-21. **Brief :106.** Claim: a server's `close` event calls `close()` at `server/root/process/serve.ts:43-47`. Now the block is :44-48 (`sed -n 40,48p`). serve.ts is unchanged since e3657deca, so this number was already one off. Correct to: `:44-48`.
+21. **Brief :106.** Claim: a server's `close` event calls `close()` at `server/root/process/serve.ts:43-47`. Now the block is :44-48 (`sed -n 40,48p`). serve.ts is unchanged since 8411697e8, so this number was already one off. Correct to: `:44-48`.
 
 22. **Brief :106, :513, :674, :215.** Claims:
     - `context-fixture.ts:98` builds `folderPicker`: now :115.
@@ -173,17 +173,17 @@ Since e3657deca, seven commits touched `tools/oculus/src`, `tests`, `config`, `H
 
 40. **Brief :106 (H2 premise).** Claim: "The route … passes no connection", and `PickerState` is a flag. The route text is still true. But O30's `src/server.ts:58` now sets `context.folderPicker.ask = askParentToPick(parent)` when the server has a parent; `askParentToPick` is at `server/root/process/parent.ts:96-115`. Correct to: add that sentence (see B1).
 
-41. **Brief :671, :670.** Claim: git.test.ts sentence assertions at `:61, :73, :208`, "beside D20's capitalised :125 and :145". Now: :60, :72 and :151. Only one capitalised D20 assertion is left, at :88. a37aaa5de deleted the 'cancel ends the write in flight…' case, which held :125 (`grep -n "error: '\|toEqual({ error\|it('" tests/routes/git/git.test.ts`). Correct to: "`git.test.ts:60, :72, :151` … beside D20's capitalised :88".
+41. **Brief :671, :670.** Claim: git.test.ts sentence assertions at `:61, :73, :208`, "beside D20's capitalised :125 and :145". Now: :60, :72 and :151. Only one capitalised D20 assertion is left, at :88. 57c6ba7e6 deleted the 'cancel ends the write in flight…' case, which held :125 (`grep -n "error: '\|toEqual({ error\|it('" tests/routes/git/git.test.ts`). Correct to: "`git.test.ts:60, :72, :151` … beside D20's capitalised :88".
 
 42. **Brief :479 (paths) and :558.** Claim: `Source.svelte` "(the load effect at :347-355 only; the file is 528 lines, over the 520 rule, and D44 splits it…; `grep -n loadSourceDraft` printed :354)", and the folder is full. Now: D44 has landed. Source.svelte is 513 lines, the load effect is still there at :361-369, `loadSourceDraft` is at :151 and :368, and the folder holds 9 items (`wc -l`, `grep -n loadSourceDraft`, folder count). Correct to: "the load effect at :361-369 only; 513 lines".
 
-43. **Brief :773 (Z553).** Claim: "`Source.svelte` is 528 lines, over the 520 limit, its folder at 10 items". Now: 513 lines and 9 items, and the effect stayed in `Source.svelte` after D44's split. Correct to: "D44 landed at 297349683; the load effect stayed in `Source.svelte:361-369` (513 lines)".
+43. **Brief :773 (Z553).** Claim: "`Source.svelte` is 528 lines, over the 520 limit, its folder at 10 items". Now: 513 lines and 9 items, and the effect stayed in `Source.svelte` after D44's split. Correct to: "D44 landed at d7ff5fd3d; the load effect stayed in `Source.svelte:361-369` (513 lines)".
 
 44. **Brief :774 (Z554) against :420-519 (paths).** Claim: "X3e's paths gain … `submit.ts`, added at X3e's dispatch". Now: the "Paths this step writes" list names neither `src/lib/server/machine/hpc/submit.ts` nor the test helper whose type follows it (item 30). Correct to: add `tools/oculus/src/lib/server/machine/hpc/submit.ts` (the `kept` type at :100 and its await at :215) and `tools/oculus/tests/server/machine/hpc/submit-world.ts` (`listed`, :21-33). If the types require it, also add `submit.test.ts` and `submit-files.test.ts`, and run them under G43 (item 49).
 
 45. **Brief :526.** Claim: "`HELP.md` and `DESIGN.md` are not in this list: A3 and D44 write them beside this step". Now A3 and D44 have landed (`queue.md`, "Landed"). The steps that now write them beside X3e are D23 (HELP.md and DESIGN.md lines, `D23.md` paths), D45, E4g (HELP.md :210-221, :21, :82; DESIGN.md :79-80) and O30b (DESIGN.md :38-81, :436). Correct to name those.
 
-46. **Brief :532-561 ("Shared with the steps in flight").** Claim: the steps in flight are A3 and D44, both building from 6044d753c. Now: A3, D44, O30 and E4 have landed. `queue.md` shows "In flight (0 of 6 slots)" and queues E4g, O30b, Q123, Q124, D23 and X3e "now", and D45 "at the first free slot". Every region in this section is obsolete, including A3's settings.ts append and context.ts regions and D44's run.ts, files.ts, context.ts and Source.svelte regions. The overlaps the section must now judge, from each brief's "Paths this step writes":
+46. **Brief :532-561 ("Shared with the steps in flight").** Claim: the steps in flight are A3 and D44, both building from 378c5b60e. Now: A3, D44, O30 and E4 have landed. `queue.md` shows "In flight (0 of 6 slots)" and queues E4g, O30b, Q123, Q124, D23 and X3e "now", and D45 "at the first free slot". Every region in this section is obsolete, including A3's settings.ts append and context.ts regions and D44's run.ts, files.ts, context.ts and Source.svelte regions. The overlaps the section must now judge, from each brief's "Paths this step writes":
     - **D23** (`briefs/D23.md`, committed): `server/root/context.ts`, `tests/server/root/context-fixture.ts`, `server/core/auth.ts` (`carriesToken`), `views/sources/files/sections/Outline.svelte` and `Sections.svelte`, `state/workbench/palette.ts`, `shell/keys/Palette.svelte` plus two new `shell/keys` files (`palette-modes.ts`, `ChoiceRows.svelte`; shell/keys goes from 7 to 9, and X3e's `PaletteCommands.svelte` would make 10), `shell/panes/PaneView.svelte`, `config/text/app.yml` (the `palette` group, ":17 onward"), `files.yml`, `source.yml`, `glyphs.yml`, `icons.yml`, `options.yml`, `Source.svelte`, HELP.md and DESIGN.md.
     - **D45**: `settings.ts` (`PROBLEM_READERS`), `pty/routes.ts`, `row-menu.ts`, `palette.ts`, `files.yml`, `options.yml`, `Source.svelte`, `commands.svelte.ts` :31, and `state/sessions/latex.svelte.ts`, which it moves to `state/sessions/latex/`. That file is a `files` follower using `holds` (item 13).
     - **O30b**: `src/lib/server/root/watch/git.ts` (adds `.svelte-kit-app` and `build-app` to `IGNORED` at :80, `O30b.md` item 4), `vite-plugin.ts`, `src/server.ts`.
@@ -198,8 +198,8 @@ Since e3657deca, seven commits touched `tools/oculus/src`, `tests`, `config`, `H
 48. **Brief :563-568 ("Steps not in flight").** Claims:
     - "D45 (waiting, …)": now "at the first free slot (its brief rechecked on main)" (`queue.md`).
     - D28's context.ts lines "main's :363" and "main's :477-495": now :397 and :570-590.
-    - "O30 (queued, once X3e has landed …) … O30 lands after X3e and builds on that text": O30 landed at 8ed2d1f5a, before X3e, with `PickerState = { open: boolean; ask?: PickAsk }`. X3e now builds on O30's text (B1). The cites `O30.md:139` and `:286` no longer hold the lines described (`sed -n 139p` and `286p O30.md`).
-    - "E4 (queued, once X3e has landed; `E4.md:211`) … lands after X3e": E4 landed at a564e4e29 (`queue.md`), and `E4.md:211` is now a case line.
+    - "O30 (queued, once X3e has landed …) … O30 lands after X3e and builds on that text": O30 landed at 3cb170eae, before X3e, with `PickerState = { open: boolean; ask?: PickAsk }`. X3e now builds on O30's text (B1). The cites `O30.md:139` and `:286` no longer hold the lines described (`sed -n 139p` and `286p O30.md`).
+    - "E4 (queued, once X3e has landed; `E4.md:211`) … lands after X3e": E4 landed at 10ac00c69 (`queue.md`), and `E4.md:211` is now a case line.
 
     Correct to: say O30 and E4 have landed and what X3e takes from them (B1, B3).
 
@@ -222,7 +222,7 @@ Since e3657deca, seven commits touched `tools/oculus/src`, `tests`, `config`, `H
     - Read 26 (:654): `files.ts` whole now includes `keptFiles`.
     - Read 27 (:655): `context.ts:125-145` and `:455-497` → `:155-170` and `:545-592`. `context-fixture.ts:50-100` → `:50-117`.
 
-52. **Brief :743, :750, :764 ("Changes from the brief check").** These are stale numbers from older bases, already wrong at e3657deca:
+52. **Brief :743, :750, :764 ("Changes from the brief check").** These are stale numbers from older bases, already wrong at 8411697e8:
     - Item 5 says the paths take the `<ul>` at :266, the `<li>` at :276-288 and the style block at :351-379. They are now :271, :281-293 and :356-384 (`grep -n` over `Tree.svelte`).
     - Item 12 says the `<li>` is :276-288.
     - Item 26 says `Repo.svelte:130-132`; it is now :133-135 (`grep -n "repositories.merging"`).
@@ -231,7 +231,7 @@ Since e3657deca, seven commits touched `tools/oculus/src`, `tests`, `config`, `H
 
 ## Claims a landing changed by more than a number
 
-**B1. O30 (8ed2d1f5a): the folder panel has a second path (H2, G42's five rows, D17).**
+**B1. O30 (3cb170eae): the folder panel has a second path (H2, G42's five rows, D17).**
 
 What changed: `PickerState` is `{ open: boolean; ask?: PickAsk }` (`picker.ts:63`). `handlePick` skips the platform refusal when `ask` is set (`:114`) and, with `ask`, answers from the parent's sheet instead of osascript (`:120-123`); a cancel there answers ok with `[]`. In the desktop app, `src/server.ts:58` sets `ask`; `askParentToPick` (`server/root/process/parent.ts:96-115`) sends `pick-folders` and has no cancel message.
 
@@ -252,7 +252,7 @@ A3's `handleSchedules` (`server/machine/schedules/routes.ts:244-250`) and E4's `
 
 None of these is in the paths, and none asserts the sentence (`grep -rn "missing or stale" tests` prints three lines).
 
-**B3. E4 (a564e4e29): the `files` payload is now a documented app contract (C0, C1, Z439).**
+**B3. E4 (10ac00c69): the `files` payload is now a documented app contract (C0, C1, Z439).**
 
 What changed: DESIGN.md:323 says "`files` is the notice `{ root, bookmarks? }` (`model-sessions.ts:672`, `watch/git.ts:237`, `watch/bookmarks.ts:76`) … the bookmarks notice (`root: ''`) reaches machine apps only". `config/text/views/apps/apps.yml:34` and :41 (`apps.read.files`, `apps.read_root.files`) word what an app is told. Apps receive the payload through `state/system/apps/rules.ts:102-105`, which filters a root app by `notice.root === dir`, and `apps.svelte.ts:341`.
 
@@ -263,22 +263,22 @@ What it means for X3e: C1's `folders` and the new `{ root: '', workspaces: true 
 
 **B4. O30: where a tab is built (C3).** The `Tab` is built in `shell/panes/strip/strip-tab.ts` (item 23), so C3's `gone` lands in that file and in `StripTabFacts`, not in `PaneView.svelte:186-217`. D28's brief (`D28.md` paths, "`PaneView.svelte` (`deleted` beside `dirty`, X3f :212)") has the same stale target.
 
-**B5. D44 (297349683): `keptFiles` is a new synchronous on-demand read (H1.4, Z554).** It is called through an injected dependency: `src/routes/api/(machine)/hpc/+server.ts:38` passes `kept: keptFiles` to `submit.ts`, which calls `deps.kept(code)` synchronously at :215. G43 covers it, and its tests construct a synchronous stand-in (`submit-world.ts:21-39`) and pass `keptFiles` itself (`submit-files.test.ts:72`). Making it asynchronous changes the `SubmitDeps.kept` type and those test files (item 30). The route file needs no change.
+**B5. D44 (d7ff5fd3d): `keptFiles` is a new synchronous on-demand read (H1.4, Z554).** It is called through an injected dependency: `src/routes/api/(machine)/hpc/+server.ts:38` passes `kept: keptFiles` to `submit.ts`, which calls `deps.kept(code)` synchronously at :215. G43 covers it, and its tests construct a synchronous stand-in (`submit-world.ts:21-39`) and pass `keptFiles` itself (`submit-files.test.ts:72`). Making it asynchronous changes the `SubmitDeps.kept` type and those test files (item 30). The route file needs no change.
 
-**B6. Followers the brief did not count (C2, decision 32).** The LaTeX follower `state/sessions/latex.svelte.ts:355-400`, which uses the shared `holds`, and the project files store `state/sources/files.svelte.ts:85-89` predate e3657deca. They would re-read once per throttle window under C1's `IGNORED`-folder messages, which decision 32 exists to prevent. Changing `holds` changes `latex.svelte.ts`, which is not in the paths and which D45 moves to `state/sessions/latex/`. That is a collision to judge in the shared-paths section.
+**B6. Followers the brief did not count (C2, decision 32).** The LaTeX follower `state/sessions/latex.svelte.ts:355-400`, which uses the shared `holds`, and the project files store `state/sources/files.svelte.ts:85-89` predate 8411697e8. They would re-read once per throttle window under C1's `IGNORED`-folder messages, which decision 32 exists to prevent. Changing `holds` changes `latex.svelte.ts`, which is not in the paths and which D45 moves to `state/sessions/latex/`. That is a collision to judge in the shared-paths section.
 
 **B7. O30b (queued "now"): `IGNORED` gets two names.** O30b rewrites `IGNORED` (`watch/git.ts:80`) to add `.svelte-kit-app` and `build-app`. The list at brief :69 then grows. The merge is simple only if X3e leaves :80 alone.
 
-**B8. A3 (af7d8df07) and E4: what `context.ts` holds now (H2, E2, D5).** `close()` (:570-590) now also closes `apps`, `hpcSubmits` and `held.schedules`. The git watcher is built by `startGit` (:396-401) beside the new `startSchedules` (:415-439) and the `apps` watcher (:443-449). `closePicker` and the watcher's `depth` and catalog go into that text. The brief's "not simple at `close()`" against A3 and D44 is settled; both have landed.
+**B8. A3 (09509b5b6) and E4: what `context.ts` holds now (H2, E2, D5).** `close()` (:570-590) now also closes `apps`, `hpcSubmits` and `held.schedules`. The git watcher is built by `startGit` (:396-401) beside the new `startSchedules` (:415-439) and the `apps` watcher (:443-449). `closePicker` and the watcher's `depth` and catalog go into that text. The brief's "not simple at `close()`" against A3 and D44 is settled; both have landed.
 
-**B9. A3: no new setting reader.** A3 did not add a reader after `latexAutoBuild`, and does not rewrite `heldAt`, as the brief's :539 expected; settings.ts's diff since e3657deca holds only E4's `closedPaths` and `appsSettings`. E1's depth reader joins `PROBLEM_READERS` (:505-525) with E4's `appsSettings` already inside it, and D45 (`settings.ts`, `PROBLEM_READERS`) is now the step that shares this region.
+**B9. A3: no new setting reader.** A3 did not add a reader after `latexAutoBuild`, and does not rewrite `heldAt`, as the brief's :539 expected; settings.ts's diff since 8411697e8 holds only E4's `closedPaths` and `appsSettings`. E1's depth reader joins `PROBLEM_READERS` (:505-525) with E4's `appsSettings` already inside it, and D45 (`settings.ts`, `PROBLEM_READERS`) is now the step that shares this region.
 
-**B10. a37aaa5de: test cases deleted.** It cut `settings.test.ts` from 585 to 533 lines (its synthetic catalog `DEFAULTS` is now :45-81), deleted the 'cancel ends the write in flight…' case from `git.test.ts`, and deleted `value-rule.test.ts`, `editor-options.test.ts` and `tree-keep.test.ts`. The brief names none of the deleted files. G13's settings row is "one case per setting reader" (`guarded.md` G13 Test line), which matches the brief's :667.
+**B10. 57c6ba7e6: test cases deleted.** It cut `settings.test.ts` from 585 to 533 lines (its synthetic catalog `DEFAULTS` is now :45-81), deleted the 'cancel ends the write in flight…' case from `git.test.ts`, and deleted `value-rule.test.ts`, `editor-options.test.ts` and `tree-keep.test.ts`. The brief names none of the deleted files. G13's settings row is "one case per setting reader" (`guarded.md` G13 Test line), which matches the brief's :667.
 
 ## Unchanged
 
 289 claims checked and found true. The count is a hand tally of the checks run above, not a script's output. Among them:
-- every claim on the 100 cited files that `git diff --quiet e3657deca HEAD` shows unchanged and that I spot-checked (dragging, Tree, place, roots, bodies, config-write, fs, list-edit, notes, collection, entries, the Files sections, files-view, fs.svelte, ops, the whole of watch/git.ts, docs, fs-history, the git reads, autofetch, lines, git-routes, parse, running, server.yml's groups, app.yml's palette group, the views of section D, files.yml, Repo.svelte, picker.test.ts, vite-plugin, app.d.ts);
+- every claim on the 100 cited files that `git diff --quiet 8411697e8 HEAD` shows unchanged and that I spot-checked (dragging, Tree, place, roots, bodies, config-write, fs, list-edit, notes, collection, entries, the Files sections, files-view, fs.svelte, ops, the whole of watch/git.ts, docs, fs-history, the git reads, autofetch, lines, git-routes, parse, running, server.yml's groups, app.yml's palette group, the views of section D, files.yml, Repo.svelte, picker.test.ts, vite-plugin, app.d.ts);
 - the existence of 44 test files the brief names;
 - spec.md :48, :64 and :97;
 - G42 at `guarded.md:28-30`;
@@ -286,7 +286,7 @@ What it means for X3e: C1's `folders` and the new `{ root: '', workspaces: true 
 - the `json({ error })` literals;
 - the absence of read-path sentences in tests;
 - 23 of the 26 folder counts;
-- the ancestry of ee0407a5a, 0aea28449, 71017ce60 and 8077dd556, and that b68058ce4 is not an ancestor;
+- the ancestry of e6d00fb0f, 722a287a7, 30b4ddced and 863cdc7d0, and that b68058ce4 is not an ancestor;
 - `plan.md:196` and the other plan.md lines cited;
 - quick.mjs's last-line format;
 - the lucide `target.svg` and the missing `head` glyph.

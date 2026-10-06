@@ -1,4 +1,4 @@
-# Step S4 brief check (on main at 8ef3abbe)
+# Step S4 brief check (on main at 125203b5)
 
 The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/S4.md`. `plan.md` has no heading named Goal (`grep -n -i 'goal' plan.md` finds no heading). I took the goal from its opening paragraph, "Execution ledger for `tools/oculus/DESIGN.md`", together with the step line and the five rulings.
 
@@ -114,7 +114,7 @@ Findings: none.
 - Folder cap (`git ls-files <dir> | cut -d/ -f1 | sort -u | wc -l`; `utils/folder-check.sh` allows at most ten items):
   - `views/system/workbench/settings/` already holds 10 tracked items: the 8 partials plus `said.ts` and `writer.svelte.ts`, which the brief does not list. Item 3's "new partials under `views/system/workbench/settings/`" cannot fit.
   - `tests/state/system` holds 10 and `tests/state/workbench/layout` holds 10, which is where the editors' state tests and the migration's tests would naturally go.
-- D18 is in flight. Its worktree is `.agents/worktrees/D18` at 47a41fa4, built and round-reviewed, and its landing waits only on Z275 (state file line 779). There, `grep -rn "group: 'info'" src` lists `views/system/machine/processes/Processes.svelte:8`; `config/layout.yml:93` is `[status, findings, audit, history, config, gallery, processes]`; `HELP.md:70` is `y1-y7`. Consequences:
+- D18 is in flight. Its worktree is `.agents/worktrees/D18` at 57986be1, built and round-reviewed, and its landing waits only on Z275 (state file line 779). There, `grep -rn "group: 'info'" src` lists `views/system/machine/processes/Processes.svelte:8`; `config/layout.yml:93` is `[status, findings, audit, history, config, gallery, processes]`; `HELP.md:70` is `y1-y7`. Consequences:
   - If D18 lands before S4, the merged group holds ten views and `y1`-`y9` reach nine of them. Item 7's "nine, every one reachable by `y1` to `y9`" and C20 are then false.
   - If S4 lands first, D18's landing re-adds a tenth view to a group and an arrangement that no longer exist.
   - D18 also adds `processes.patterns`, so C1's "7 lists" becomes 8.

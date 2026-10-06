@@ -1,6 +1,6 @@
 # A1 brief check
 
-BRIEF CHECK OF STEP A1 (oculus/migration), main at 3dc0b879. Nothing was changed anywhere. config/local.yml was never opened. No URL fetched, no port touched, no server started. Everything below was read or run in /Users/axelfaes/workspace/research-hub, read-only.
+BRIEF CHECK OF STEP A1 (oculus/migration), main at 179fd262. Nothing was changed anywhere. config/local.yml was never opened. No URL fetched, no port touched, no server started. Everything below was read or run in /Users/axelfaes/workspace/research-hub, read-only.
 
 Summary: 21 findings. The ones that most need a ruling or a brief edit are Names 1 and 2, Cases 2 to 6 and 9, The question 1, and Other 1.
 

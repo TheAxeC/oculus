@@ -1,4 +1,4 @@
-BRIEF CHECK OF M4 (brief read in full at the working-tree version, plan.md, spec.md, the tree on main at c73570a5). Nothing was changed in the repository; scratch files are under /private/tmp/claude-502/m4probe/. `config/local.yml` was never opened.
+BRIEF CHECK OF M4 (brief read in full at the working-tree version, plan.md, spec.md, the tree on main at 4f0d3a99). Nothing was changed in the repository; scratch files are under /private/tmp/claude-502/m4probe/. `config/local.yml` was never opened.
 
 Summary: the brief's premises hold (all 13 lines, the KaTeX probe, the line numbers). It has 3 blocking findings: (1) the step silently removes the equations from the cockpit deck `tools/present/present.html`, which the brief says "stays for the cockpit"; (2) the new test (item 4) contradicts case 9 and spec.md:35; (3) case 7 contradicts case 10. Further findings are listed per check below.
 

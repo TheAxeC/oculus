@@ -1,4 +1,4 @@
-# Q96 repair round 1 (sent 2026-09-29 from the worktree as handed back, `(git diff 43936573; git status --short) | md5` = 1c902d200930797b53aa82e7e9982d2f)
+# Q96 repair round 1 (sent 2026-09-29 from the worktree as handed back, `(git diff a3c51883; git status --short) | md5` = 1c902d200930797b53aa82e7e9982d2f)
 
 Read `agents/reviews/Q96-refuter.md` in the main checkout in full, then do each item below. Every rule of the brief and the spec still holds: work only in your worktree, no git command, no browser test, no tmux on the default server, no `// revert:` lines, logs only in your own scratch folder. Run only the test files you change while working, then the verify list once at the end through `checks.sh`, and rewrite the report at the brief's path in full, the rulings below included.
 

@@ -1,8 +1,8 @@
 # D14, the first run of each test of the final tests
 
-The builder's per-test results of its final tests, run on two trees: the unchanged tree at the base eaf8034f (first section) and the tree before repair round 1 (second section). Written by the builder's summ.py from vitest's JSON report; vitest's ellipsis is written as three dots.
+The builder's per-test results of its final tests, run on two trees: the unchanged tree at the base 8ac90a3b (first section) and the tree before repair round 1 (second section). Written by the builder's summ.py from vitest's JSON report; vitest's ellipsis is written as three dots.
 
-## On the unchanged tree (base eaf8034f)
+## On the unchanged tree (base 8ac90a3b)
 
 tests/checks/config/config-folder.test.ts | 3 fail / 23 pass
     passed | oculus's own config directory merges without a finding, so no key is defined in two files

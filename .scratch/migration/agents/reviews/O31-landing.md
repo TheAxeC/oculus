@@ -13,7 +13,7 @@ The plan skill's launch recipes do not write the note yet: that waits on the fir
 
 ## What landed
 
-O31, cherry-picked from `.agents/worktrees/O31` at base `10c2852c` onto main by `tools/oculus/.scratch/migration/land.sh O31 10c2852c` (+2,069 -175 over 24 files before the landing fixes).
+O31, cherry-picked from `.agents/worktrees/O31` at base `cee6d57e` onto main by `tools/oculus/.scratch/migration/land.sh O31 cee6d57e` (+2,069 -175 over 24 files before the landing fixes).
 
 - The three session stores read one folder per account of their tool from `local.yml`'s `accounts`, each real folder once, so a symlinked account lists nothing twice; the watcher watches each.
 - `bin/dispatch-note.mjs` writes `~/.oculus/dispatches.json`: `start` prints an id, `transcript <id> <path>` and `end <id>` complete the record. Every write takes a lock, a dead lock is cleared only under a second lock that re-checks it, a lock older than any write holds one is stale whatever its pid, a waiter's lock is stamped fresh when it takes it, and a killed writer's leftovers are swept.

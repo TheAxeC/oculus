@@ -1,6 +1,6 @@
 # Brief check of PR2 (oculus/migration)
 
-Main moved during the check. It is now at `4f97e9fad` (O30b landed; `git log --oneline -4`), not the `7e6c14d8c` the brief reads. O30b changed `tools/oculus/DESIGN.md`, `HELP.md`, `README.md`, `docs/diagrams/layers.*`, `src/lib/data/sources/config.ts` and `vite.config.ts` (`git show --stat 4f97e9fad`). The worktree is cut at the new head, so every DESIGN.md line number below is given for both heads.
+Main moved during the check. It is now at `4ce24363b` (O30b landed; `git log --oneline -4`), not the `c86f10f2f` the brief reads. O30b changed `tools/oculus/DESIGN.md`, `HELP.md`, `README.md`, `docs/diagrams/layers.*`, `src/lib/data/sources/config.ts` and `vite.config.ts` (`git show --stat 4ce24363b`). The worktree is cut at the new head, so every DESIGN.md line number below is given for both heads.
 
 ## 1. Names
 
@@ -85,8 +85,8 @@ Premises that are wrong:
   - `ProjectCard.svelte:185-193`: the control is at 182-195.
   - `layout.yml:146` and `:157`: the lines are 141 and 152.
   - DESIGN.md `:110`, `:382`, `:389`:
-    - At `7e6c14d8c`, 110 is blank, 382 is the opened-views bullet and 389 is the manual bullet. The deck lines are 111, 383 and 390.
-    - At `4f97e9fad` they are 113, 385 and 392 (`git show <rev>:tools/oculus/DESIGN.md | perl -ne 'print "$.\n" if /PRESENT|.../'`).
+    - At `c86f10f2f`, 110 is blank, 382 is the opened-views bullet and 389 is the manual bullet. The deck lines are 111, 383 and 390.
+    - At `4ce24363b` they are 113, 385 and 392 (`git show <rev>:tools/oculus/DESIGN.md | perl -ne 'print "$.\n" if /PRESENT|.../'`).
 - **"btfno ... the 12 present: keys"** (decision 1): btfno has 11 (`tag, title, sub, hook, eli5, equation, specs, panels, method, results, extra`).
 - **Readers list incomplete:** it misses `normalise.ts`, `items.ts`, `config-sources.ts`, `editors/sources.ts`, `bodies.ts`, `app-gate.ts` and `apps.ts` (all under check 1).
 - **Case 19 cannot run as written.** It names "`npm run demo` or the demo the tests start". `grep -c demo package.json` gives 0, and `git grep -i demo` over src, tests, utils, bin and config gives nothing.
@@ -215,11 +215,11 @@ Usage: Opus 5.5 (claude-opus-5-5); about 255k tokens; about 75 tool uses.
 
 ## Closed
 
-Each finding is closed in `agents/briefs/PR2.md` as rewritten after this check (main at 4f97e9fad), or raised to Axel.
+Each finding is closed in `agents/briefs/PR2.md` as rewritten after this check (main at 4ce24363b), or raised to Axel.
 
 - Check 1, names: every source, word, test and document hit is now named in "What is on the tree" and in "Paths this step writes" (`normalise.ts`, `items.ts`, `config-sources.ts`, `editors/sources.ts`, `bodies.ts`, `app-gate.ts`, `apps.ts`, `history.yml`, `workbench.yml`, `project.yml` words, `config-folder.test.ts`, `boundaries.test.ts`, `allow-duplication.txt`, `normalise.test.ts`, `writes.test.ts:153`, `docs/apps.md:271`, DATA-MAP 234, 253, 311, 356, `demo/README.md:5`); `slide_tags` reads the project slides' `tag.class` (part 1); `tests/fixtures/present.ts` taken out of the readers and the write list; the raw-pls project comment listed for the report only; the research-cockpit skill and `tools/present` raised to Axel as Z650, ruled (b): part 9 rewrites the skill and DATA-MAP:138 and leaves `tools/present` as it is.
 - Check 2: the audit's `SCANNED` (part 2); the key hint drawn on every deck's first slide (part 5, Z651); recent decks in the deck menu (part 5, Z651); counts follow the design's "holds" (part 1, case 2); Z638 by case 11; Z637 per-deck defaults by case 13; the Z649 points stand as self-rule, booked.
-- Check 3: 18 `PRESENT.md` files with the two archive files converted (part 4, Z651); the HCCNet-FL reason rewritten from the design's groups; the demo's `slides:` list converted into a second slide; `selection:`/`slide_order:` premise corrected; line numbers corrected to 4f97e9fad (card.ts:94, ProjectCard 182-195, layout.yml 141 and 152, DESIGN.md 113, 385, 392); btfno's 11 keys; case 19 rewritten as case 22 over the deck reader; the base copy and `unused-exports.txt` named.
+- Check 3: 18 `PRESENT.md` files with the two archive files converted (part 4, Z651); the HCCNet-FL reason rewritten from the design's groups; the demo's `slides:` list converted into a second slide; `selection:`/`slide_order:` premise corrected; line numbers corrected to 4ce24363b (card.ts:94, ProjectCard 182-195, layout.yml 141 and 152, DESIGN.md 113, 385, 392); btfno's 11 keys; case 19 rewritten as case 22 over the deck reader; the base copy and `unused-exports.txt` named.
 - Check 4: G32 keeps its wording; the malformed-input cases are quoted runs; G2 and G32 Code lines rewritten at landing; G12, G14, G16, G21, G24 named; the hub data writes go through `convert-decks.py` only; the builder runs no git command (verify 2, 3 and case 20 use `find` and `grep`); the ASCII gate in the perl form; port 8792 named.
 - Check 5: case 1 now changes a `main.md` headline and sees the row follow; case 2 counts an unshown group; case 5 the YAML-list ambiguity; case 16 the path escapes; case 18 the stale `base`; block lists written by the script and a flow list read back (part 7); case 22 for the demo; G14 kept by the no-finding summary row (part 1, Z651).
 - Check 6: every implied input given an expected result in part 1, part 5 or part 7; the `more` discovery of future idea decks and the three chips becoming entry statuses with repeated icons go to Axel in the report to him.

@@ -1,4 +1,4 @@
-Brief check of Q86c (tools/oculus/.scratch/migration/agents/briefs/Q86c.md) against main. Main moved from 30da78fc to 914a1b9b during the check. `git diff 30da78fc HEAD --stat -- tools/oculus/src tools/oculus/tests` prints nothing. The only change is the test-run rule in agents/spec.md, and it agrees with the brief's verify item 1.
+Brief check of Q86c (tools/oculus/.scratch/migration/agents/briefs/Q86c.md) against main. Main moved from 3d189486 to 8d25619b during the check. `git diff 3d189486 HEAD --stat -- tools/oculus/src tools/oculus/tests` prints nothing. The only change is the test-run rule in agents/spec.md, and it agrees with the brief's verify item 1.
 
 I changed nothing in the repository. My scratch files are under .../scratchpad/Q86c-check/: the d3-force 3.0.0 source from `npm pack`, and probe.mjs, probe2.mjs and big.mjs. The probe is my own build of the brief's design (my box force, my LCG), run with node over the real neato placement from the repository's @viz-js/viz 3.30.0. Its numbers describe that probe, not the builder's future code.
 
@@ -54,7 +54,7 @@ Commands: `wc -l`, `grep -n` of the declarations, and `sed -n` of the ranges.
 - DESIGN.md:291 content matches.
 - `grep -n d3 package.json` prints nothing, and node_modules/d3-force is absent. Correct.
 - The brief's grep over src and tests lists, within the Map, graph.ts, layout.ts, Graph.svelte and graph.test.ts. Correct as stated. It does not show that layout.test.ts and map.test.ts depend on mapPlacement's output.
-- Pre-Q86 constants: `git show 27e7e27f^:.../graph.ts` shows repulse 9200, collide 31, center 0.012, damping 0.88, cool 0.992, and a box clamp at graph.ts:536-541 on `node.x + node.vx * alpha`, applied after integration. Consistent with the brief.
+- Pre-Q86 constants: `git show bf4d8eab^:.../graph.ts` shows repulse 9200, collide 31, center 0.012, damping 0.88, cool 0.992, and a box clamp at graph.ts:536-541 on `node.x + node.vx * alpha`, applied after integration. Consistent with the brief.
 - **Libraries checked, one wrong date:** `npm view d3-force time --json` shows 3.0.0 was published 2021-06-05T19:11:01Z. 2022-06-14 is `time.modified`, a registry metadata date, not a release. License ISC, maintainers mbostock and recifs, dependencies d3-dispatch, d3-quadtree and d3-timer "1 - 3", type module, latest 3.0.0, @types/d3-force 3.0.10 exists: all correct.
 - Folder limit: `git ls-files src/lib/state/boards/structure | wc -l` is 3 and the tests folder is 4, so adding forces.ts and forces.test.ts stays under 10.
 - Premises that are wrong in the design itself:

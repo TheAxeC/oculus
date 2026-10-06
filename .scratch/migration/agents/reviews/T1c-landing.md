@@ -18,7 +18,7 @@ T1c's builder `ac23a216933c977fe` and its reviewers `a194094e84c8be37a` and `a53
 
 ## What landed
 
-T1c, one commit on main (the commit that carries this file), from base d160d13f: the sweep of `tests/server/` as `agents/briefs/T1c.md` and its round-1 rulings say. The folder holds 139 test files and 47,506 lines after the sweep, against 138 and 49,184 before (`find tests/server -name '*.test.ts' | wc -l`, and the `.ts` lines through `cat | wc -l`). The deletions, folds and slow tags are listed file by file in `agents/reviews/T1c-report.md`. `allow-duplication.txt` merged with X3c's change without a conflict.
+T1c, one commit on main (the commit that carries this file), from base 202fa868: the sweep of `tests/server/` as `agents/briefs/T1c.md` and its round-1 rulings say. The folder holds 139 test files and 47,506 lines after the sweep, against 138 and 49,184 before (`find tests/server -name '*.test.ts' | wc -l`, and the `.ts` lines through `cat | wc -l`). The deletions, folds and slow tags are listed file by file in `agents/reviews/T1c-report.md`. `allow-duplication.txt` merged with X3c's change without a conflict.
 
 ## Fixes at landing
 

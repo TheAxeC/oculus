@@ -1,7 +1,7 @@
 In flight (3 of 6 slots):
 - D23 (language servers): building.
-- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): repair round 1, base cfc9e60d9; Axel reads the new HELP.md and DESIGN.md before it lands.
-- PR2 (Present decks from any folder): building, base 6fb105892.
+- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): repair round 1, base 02ac124ec; Axel reads the new HELP.md and DESIGN.md before it lands.
+- PR2 (Present decks from any folder): building, base 7e1d73675.
 
 Queued, in order (24 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
@@ -32,307 +32,307 @@ Queued, in order (24 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- Q124 (every tree check with no limit, and the vitest races), 2026-10-06, d163a606c.
-- O30b (the app's own build folders), 2026-10-06, 4f97e9fad.
-- E4g (the apps guide), 2026-10-06, 7e6c14d8c.
-- PR1 (Present full screen), 2026-10-06, 1c36ba0c6.
+- Q124 (every tree check with no limit, and the vitest races), 2026-10-06, abf4356cf.
+- O30b (the app's own build folders), 2026-10-06, 4ce24363b.
+- E4g (the apps guide), 2026-10-06, c86f10f2f.
+- PR1 (Present full screen), 2026-10-06, 687cd1d5c.
 - E4 (the apps), 2026-10-06.
-- A3 (scheduled runs), 2026-10-06, af7d8df07.
-- O30 (the native window in Electron), 2026-10-06, 8ed2d1f5a.
-- D44 (Submit on a .slurm file), 2026-10-05, 297349683.
-- D20 (an agent from a task or a worktree), 2026-10-05, 0aea28449.
-- D38 (the Literature search view), 2026-10-05, b07d24766.
-- X3f (a file tab's actions, file icons and the double click), 2026-10-05, ee0407a5a.
-- S5 (the Settings view's controls and headings), 2026-10-05, 71017ce60.
-- D42 (a file's history), 2026-10-05, 8077dd55.
-- H3 (the hub's data map), 2026-10-05, 575c997c.
-- D37 (the Search view's replace and the LaTeX build), 2026-10-05, a5f1285b.
-- T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.
-- T1a (the test tiers), 2026-10-04, 6c8a217be.
-- T2d (the deletion sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, 1d88f437.
-- T2b (the deletion sweep of tests/server/), 2026-10-04, 07cf23ea.
-- T2a (the deletion sweep of tests/state/), 2026-10-04, d11f8b6e.
-- T2c (the deletion sweep of tests/views/, shell/, ui/ and themes/), 2026-10-04, 2af5d443.
-- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, b8f89eb1.
-- T1b (the test sweep of tests/state/), 2026-10-04, fa5e42a2.
-- T1c (the test sweep of tests/server/), 2026-10-04, ffb4457a.
-- X3c (the tab strip as VS Code's), 2026-10-04, 1e14d279.
-- Q116 (the Status view's line count of everything under src/), 2026-10-03, 5a7654bf.
-- D25 (the editor's options), 2026-10-03, 4c7cf915.
-- Q91 (the project view and its editor), 2026-10-03, a8ba6553.
-- D17 (project commands), 2026-10-03, 76bdcd8c.
-- S4 (the Settings editor finished), 2026-10-03, ff048bf3.
-- D14 (LaTeX on any folder), 2026-10-03, 48baece1.
-- D32 (replace in the Search view), 2026-10-03, 248bb23a.
-- D18 (the Processes view), 2026-10-03, 7fc33812.
-- M3 (the resources registry), 2026-10-02, 8ef3abbe.
-- Q88c (the Source Control rows' and the pane strip's new right-click capabilities), 2026-10-02, 81f5e4fe.
-- A1 (a comment on a line of a session's diff, sent to that session), 2026-10-02, 33be30af.
-- X3a (the Files view as VS Code's Explorer), 2026-10-02, 705e588d.
-- D24 (the Personal board: side projects and the Files roots' manifests as cards), 2026-10-02, 4ce50c59.
-- D35 (every configuration file live, the server's port move and the page following it), 2026-10-02, 15824705.
-- M4 (the Present view's equations as LaTeX), 2026-10-02, d210de04.
-- L4 (floating panes and kept empty panes), 2026-10-02, ce7346bb.
-- Q66 (a hidden tab defers its work), 2026-10-02, 41e7583b.
-- Q35 (Changes, Customizations, Audit, Present), 2026-10-02, 36e0a3b5.
-- Q85d (zod in the views, ui, shell and routes), 2026-10-02, e77103dc.
-- D27 (the editor's languages), 2026-10-01, c431d27f.
-- U4 (Focus and Sessions at the other views' size), 2026-10-01, 8adc354c.
-- U3 (every view on VS Code's scale), 2026-10-01, b0a2190e.
-- Q85c (zod in the data folder), 2026-10-01, cbedc0c8.
-- D31 (git auto fetch), 2026-10-01, 0209aa42.
-- Q88b (the Files view's file operations), 2026-10-01, 5dca2568.
-- Q85b (zod in the state layer), 2026-10-01, 83318e94.
-- S3c (the Settings editor), 2026-10-01, 209c0cbf.
-- Q85a2 (zod in the edit, sessions and transcripts folders), 2026-10-01, 0b38c14c.
-- U2 (every view's look against VS Code), 2026-10-01, e8b517c0.
-- Q85a4 (zod in the other server folders), 2026-10-01, 58b860a0.
-- Q109 (terminal fixes and options), 2026-10-01, 4148664b.
-- S3b (the `config-key` write), 2026-10-01, ae1e8024.
-- X3d (Source Control as VS Code's), 2026-10-01, a5a6eed6.
-- S3a (the options catalog), 2026-10-01, 87d8ab6a.
-- Q107 (a Terminal tab never closes while its terminals run), 2026-10-01, c6d32e5a.
-- Q106 (Close pane closes a pane of two or more tabs after Confirm), 2026-10-01, 2ac1a5cb.
-- Q111 (Undo gives a cleared field's lines back), 2026-09-30, 3b437d63.
-- E3 (the apps section's text), 2026-09-30, 439f9680.
-- Q110 (an undo gives a replaced value back), 2026-09-30, e8f4c010.
-- Q108 (the four kept fixes as a step), 2026-09-30, 3ae6b03f.
-- Q85a1 (zod at the `core` and `root` inputs), 2026-09-30, 42259e30.
-- E2 (the apps section rewritten), 2026-09-30, ef10430b.
-- E1 (the apps design section), 2026-09-30, 3ab29091.
-- Q102 (the terminal as VS Code's), 2026-09-30, 7dde39e2.
-- Q84 (the stores on @tanstack/query-core), 2026-09-30, 556dcaf2.
-- D13c (the code theme key), 2026-09-30, 5a503e82.
-- Q86c (the Map's forces on d3-force), 2026-09-30, de5f74cd.
-- D13b (the diffs and the merge on Monaco), 2026-09-30, f6403f40.
-- Q105 (`bin/` renamed to `utils/`), 2026-09-29, ae8999e5.
-- Q104 (the slow test files tagged), 2026-09-29, eecbd8f0.
-- Q83 (small libraries in place of hand code), 2026-09-29, d1986845.
-- Q103 (the Live HPC view's failure text), 2026-09-29, 8965f644.
-- Q86b (the Map's drag after neato), 2026-09-29, 1e8fdcda.
-- Q88 (right-click menus), 2026-09-29, 88e6a1c3.
-- D13a (the source tab on Monaco), 2026-09-29, 2267831d.
-- Q79b (the test half of section D), 2026-09-29, 9390421c.
-- Q96 (the Rail section on bits-ui), 2026-09-29, 7e2c0360.
-- Q81 (menus and dialogs on bits-ui), 2026-09-29, a5bdc88b.
-- Q82 (the tree on @zag-js/tree-view), 2026-09-29, 2349e0fb.
-- Q87 (the duplication check on jscpd), 2026-09-29, 5c395891.
-- Q86 (the Map on Graphviz's neato), 2026-09-29, 27e7e27f.
-- Q101 (a terminal panel per tab), 2026-09-29, 4490d3fc.
-- Q79d (the audit's shared helpers), 2026-09-29, 703aec66.
-- Q100 (the Calendar's strips), 2026-09-29, a26286e1.
-- Q99 (the terminal and Pages defects), 2026-09-28, f2ace0c0.
-- Q79a (the server half of section D), 2026-09-28, 6a5ad2f8.
-- Q79c (the page half of section D), 2026-09-28, f2330638.
-- Q92 (Inbox and Calendar beautified), 2026-09-28, 26ab6f90.
-- Q89 (the terminal as VS Code's), 2026-09-28, a99e184d.
-- Q80 (line counts on the Status view), 2026-09-28, 8b9cbc3d.
-- Q98 (what the looks found), 2026-09-28, 9cb6c235.
-- Q97 (Help on the rail), 2026-09-28, d5e08b8e.
-- Q94 (the launch note removed), 2026-09-28, 6b73371d.
-- Q95 ("Add a button" fixed), 2026-09-28, b927aae0.
-- L7 (the rail and pages rebuilt), 2026-09-28, 667ed708.
-- Q93 (revert-check removed), 2026-09-28, d075e44b.
-- Q77b (revert-check --base), 2026-09-27, 09990baa.
-- Q77a (a unit revert proof is cheap), 2026-09-27, 10754960.
-- Q77e (diagrams parse once), 2026-09-27, d0ce4539.
-- Q77d (the slow unit tests made fast), 2026-09-27, e569de1e.
-- Q90 (URL links in the Audit), 2026-09-27, 3ca5ac6c.
-- Q77c (a directive names its target line), 2026-09-27, fc6d362b.
-- Q78 (a [TOC] line draws a contents list), 2026-09-27, 878db057.
-- X3b (Source Control brought to VS Code's), 2026-09-26, d1b9c274.
-- Q76 (the document tabs), 2026-09-26, a0b24769.
-- S2 (the sessions views rebuilt to VS Code's Agents window), 2026-09-26, e1f043ce.
-- Q67 (assisted account setup), 2026-09-26, 43ee0de2.
-- Q74 (the layer diagrams readable), 2026-09-25, 76268779.
-- Q73 (what Q71 left, closed), 2026-09-25, 8192794b.
-- Q71 (the architecture made sound), 2026-09-25, f36048cb.
-- Q70 (watchers and a page start under load, closed), 2026-09-25, 21758320.
-- Q69 (what earlier landings left), 2026-09-25, ae9dcb6a.
-- L6 (the status bar drawn like VS Code's), 2026-09-24, 0deb9ae8.
-- Q68 (the git watcher under load), 2026-09-24, 5dd0044e.
-- L5 (the rail drawn like VS Code's activity bar), 2026-09-24, 94745613.
-- U1 (as little unicode as possible), 2026-09-24, 2bafb78c.
-- P1 (VS Code parity audit, done by the orchestrator), 2026-09-23, 6338e827.
-- L3 (the rail switches pages), 2026-09-23, 03101534.
-- R18 (oculus's diagrams generated from the source), 2026-09-23, db400be3.
-- Q65 (Axel's fixes and small requests of 2026-09-21), 2026-09-23, 83ec3663.
-- O31 (the session stores per account), 2026-09-23, 6e0920b3.
-- Q59 (the recurring and closure findings), 2026-09-23, 8a591738.
-- Q58 (size-allow split, ten items a folder), 2026-09-22, a5bcb7af.
-- Q56 (the Files view asks again), 2026-09-20, cdba3605.
-- Q53 (the shell's drawing defects), 2026-09-20, ab391fc5.
-- Q36 (the ssh SIGTERM test), 2026-09-20, 5b29afd3.
-- Q52 (the two git views), 2026-09-18, 5e2392c0.
-- Q54 (Tabs.svelte split), 2026-09-18, 5e2392c0.
-- R14 (the recurring-pass checks), 2026-09-18, ad45717c.
-- Q51 (layout.svelte.ts split), 2026-09-18, 04378dee.
-- Q50 (a web address is no hub path), 2026-09-18, 66e22825.
-- Q49 (hidden ticker buttons take no room), 2026-09-18, aa6a918b.
-- Q48 (an add answer closes its opening), 2026-09-18, 84fd99e1.
-- R12 (sharp edges), 2026-09-18, 7fd52a0e.
-- R13 (lint on), 2026-09-18, 7fd52a0e.
-- Q47 (the Sessions view's Changes panel), 2026-09-17, 81fdbd52.
-- Q46 (the Memories wall proportions), 2026-09-17, a8d56e5e.
-- Q38 (tabs and panes as VS Code's), 2026-09-17, c9335540.
-- D22 (Show in Files), 2026-09-17, 872422d7.
-- Q41 (the awaiting strip), 2026-09-17, c5dad5a7.
-- Q45 (the terminal text filled once), 2026-09-17, 77e9a425.
-- Q44 (the Repositories picker), 2026-09-17, 7845ff16.
-- Q43 (the Files view's forms kept), 2026-09-17, 71ce7d1d.
-- Q34 (the boards and cards), 2026-09-17, ccaacace.
-- Q42 (closed pane state cleared), 2026-09-17, 949f2ee4.
-- Q30 (the finding sentences catalogued), 2026-09-17, 61b79e76.
-- Q32 (Files and Repositories as VS Code's), 2026-09-17, 09e0aefd.
-- Q39 (Q33's unfinished proofs), 2026-09-17, a305640b.
-- Q31 (unsaved edits kept), 2026-09-17, 115da2e7.
-- Q37 (the Focus board), 2026-09-17, d5f1ce02.
-- Q33 (the shell's defects), 2026-09-16, 120e8730.
-- D16 (a file opens in its program), 2026-09-16, d5c34142.
-- M2 (the theme words listed), 2026-09-16, 19d8f74a.
-- D9 (the mail connector), 2026-09-16, 1766f6eb.
-- D12 (search across files), 2026-09-16, 9bc9099d.
-- Q29 (six fixes of delivered work), 2026-09-16, 29427c25.
-- D8 (the calendar connector), 2026-09-16, a3c96df1.
-- Q26 (the update tasks as sessions), 2026-09-16, 101c7315.
-- D7 (persons and organisations), 2026-09-16, 3bf66d6e.
-- M1 (one word for a research line), 2026-09-16, 477a0754.
-- D5 (the LaTeX panel on a project), 2026-09-16, 37c8beec.
-- Q25 (a view opens its file), 2026-09-16, d3a9a5a8.
-- Q21 (no environment variables), 2026-09-16, 173f6896.
-- Q27 (Tab and Shift+Tab), 2026-09-16, 5def0882.
-- Q24 (the Map's layout parameters kept), 2026-09-16, 185c5bd7.
-- D21 (files open as in an editor), 2026-09-16, 6a91cde1.
-- D4 (the Repositories view), 2026-09-16, a9cf6558.
-- Q23 (the lead dismiss as a status), 2026-09-16, 8855579b.
-- Q20 (local.yml into config/), 2026-09-16, 8757baa8.
-- D6 (more highlight.js languages), 2026-09-16, f80b7766.
-- Q28 (the audit messages reworded), 2026-09-16, f939e8c1.
-- Q22 (the Files pane tinted), 2026-09-15, d5de1e19.
-- O28b (the Memories wall and the Audit), 2026-09-15, f331c137.
-- D3 (software as a project type), 2026-09-15, f5256f3d.
-- D1 (the change log and History), 2026-09-15, defbe4a6.
-- D2 (the map's filters), 2026-09-15, a304f622.
-- O27b (the file browser), 2026-09-15, d4cf3eab.
-- P2 (the Slides view and the card), 2026-09-15, 561aef3d.
-- O28a (the Help view), 2026-09-15, ccad421c.
-- Q17 (the look), 2026-09-15, 07322c5c.
-- P1 (the Present view, live), 2026-09-15, 73ddfa40.
-- O27a (the file browser), 2026-09-15, 3279c042.
-- Q19 (the rail label wraps), 2026-09-15, 03e41111.
-- Q15b (the log-path prewarm ported from the cockpit), 2026-09-15, 4f71b11b.
-- Q15 (Live HPC stopping), 2026-09-15, 2476309d.
-- Q16 (the lighter project card), 2026-09-15, 137a89af.
-- H1 (funding keys complete), 2026-09-15, 8a4d4172.
-- L2 (nested pages), 2026-09-15, b2c4982b.
-- L1 (one tree per page), 2026-09-15, 7c6ea5ab.
-- R17 (client context), 2026-09-15, ea4709d1.
-- K1 (the digit keys), 2026-09-14, 69e1bf54.
-- R13b (the typing rules), 2026-09-14, 491389b9.
-- R13a (the mechanical rules), 2026-09-14, 5c26cfed.
-- R10 (no history in code), 2026-09-14, cf6f4565.
-- Q18 (the Tasks section), 2026-09-14, 189cb243.
-- R12f (the waiting-on vocabulary), 2026-09-14, 38443bff.
-- R12e (the files channel), 2026-09-14, b06e4ddf.
-- R12c (the data and usage edges), 2026-09-14, acdc200f.
-- R12d (the test infrastructure), 2026-09-14, daefdc27.
-- R12b (the views' edges), 2026-09-14, 97ea3fe3.
-- R12a (the server's and the watchers' edges), 2026-09-14, 0ca7e0ec.
-- W3 (a tinted surface for the bare views), 2026-09-14, 3d11d962.
-- R15 (global hooks snippet), 2026-09-14, c0c0d3fc.
-- R11 (config push repaints), 2026-09-14, 470e5319.
-- R14 (sanitise {@html}), 2026-09-14, f4f0a0a5.
-- W2 (the rail over a wallpaper), 2026-09-14, a20972c9.
-- W1 (wallpaper through the panes), 2026-09-14, c564588d.
-- R9 (two workers at a time), 2026-09-14, 4dce5161.
-- R16 (feed labels), 2026-09-14, 8033a069.
-- R8 (the landing script), 2026-09-14, 7f4cb6b3.
-- R6 (simplicity), 2026-09-14, 21cbf65f.
-- R5 (single responsibility), 2026-09-14, fe86d80f.
-- R4 (one transcript fold), 2026-09-14, 5f1288a6.
-- R7 (the catalog and the registry oculus's own), 2026-09-14, 4053b799.
-- R3 (no globals), 2026-09-14, c499d1a4.
-- D19c (fresh usage figures), 2026-09-13, 6bdaa33e.
-- D19b (the usage bars), 2026-09-13, f77fcd5e.
-- D19 (the Usage view), 2026-09-13, ead8940a.
-- Q14 (the keyboard chords), 2026-09-13, 61a6a301.
-- Q13 (the small fixes of 2026-09-13), 2026-09-13, 852d08ce.
-- Q12 (the HPC header), 2026-09-13, e3d05377.
-- Q11 (chat as a claude terminal), 2026-09-13, 983cd987.
-- Q10 (the map's link mode), 2026-09-13, e9cd0666.
-- Q9 (the source view), 2026-09-13, 57efd405.
-- F1 (the feeds on the socket), 2026-09-13, 0dc604bd.
-- Q8 (the cards and the Focus board), 2026-09-12, 763aaf0c.
-- Q7 (the type of every view), 2026-09-12, 318038a1.
-- Q6 (the counts on the pane tabs), 2026-09-12, 7240b003.
-- Q5 (several sessions and terminals at once), 2026-09-12, 59ce8dc9.
-- Q4b (the views), 2026-09-12, 9c1807a4.
-- Q4a (the rail), 2026-09-12, 2562cab4.
-- O25g (the Focus ticker's feed lines open their views), 2026-09-12, a7fafb72.
-- O25f (the Update action and the Cmd-K search), 2026-09-12, c83556d9.
-- O25e (the LinkedIn view), 2026-09-12, 12508a78.
-- O25d (the Inbox view), 2026-09-12, 0ee20f94.
-- O25c (the Position Leads view), 2026-09-12, 11f319cf.
-- O25b (Lit Watch and the feed module), 2026-09-12, c20b4295.
-- Q3b (the terminal pane), 2026-09-12, c3c50eff.
-- Q3 (workbench and view polish), 2026-09-12, da9dd625.
-- O25a (the Data view with the per-dataset recovery terminal), 2026-09-11, 055c5397.
-- O24b (Programs, Domains and Map), 2026-09-11, 0b234717.
-- O24a (the metalist editor), 2026-09-11, 4ecd5c5f.
-- X1 (execution exercise of the plan-orchestration skill), 2026-09-11, daa4c980.
-- O26 (view), 2026-09-11, f726381c.
-- Q2 (browser test layer), 2026-09-11, b2a0a2d2.
-- O22b (view), 2026-09-11, 2b01458d.
-- Q1 (consolidation), 2026-09-11, e73062a6.
-- P0 (parity audit), 2026-09-11, e0e55026.
-- P4 (collections parity), 2026-09-11, 4c9d29e2.
-- P3 (boards parity), 2026-09-11, 817b4519.
-- P2 (Focus parity), 2026-09-11, 9ccaeb00.
-- P1 (writes foundation), 2026-09-11, 7fe97845.
-- O10e (pages), 2026-09-11, d3d5464d.
-- O22 (view), 2026-09-11, cbbff5a0.
-- O23 (views), 2026-09-11, cbbff5a0.
-- O21 (tools), 2026-09-11, 354e8ee5.
-- O19b (transcript view), 2026-09-11, 9ad72fa9.
-- O20 (git panel), 2026-09-11, 84ac9aee.
-- O19 (terminal, migration), 2026-09-11, 98269539.
-- O18 (terminal, view), 2026-09-11, 625a824b.
-- O17 (terminal, server), 2026-09-11, c07157f4.
-- O16 (notifications), 2026-09-11, 14bfcb85.
-- O15 (sessions, writes and cards), 2026-09-11, 02577989.
-- O14d (rail groups), 2026-09-11, a4820ce4.
-- O14c (document tabs), 2026-09-10, 0df45756.
-- O14b (project tab and rail tooltips), 2026-09-10, 95135280.
-- O14 (sessions, views), 2026-09-10, 4ddf935a.
-- O13 (sessions, channels), 2026-09-10, 8e8232de.
-- O12 (sessions, server), 2026-09-10, 5ddaa912.
-- O11 (writes), 2026-09-10, 3430c834.
-- O10d (appearance), 2026-09-10, a1980d7a.
-- O10c (config regrouped), 2026-09-10, 11f2f882.
-- O10b (docking), 2026-09-10, d0f34ad8.
-- O10 (Projects view), 2026-09-10, 3057ad69.
-- O9 (primitives), 2026-09-10, d7e634c7.
-- O8 (shell, workbench), 2026-09-10, 72a15df7.
-- O7 (shell, layout as data), 2026-09-10, b87c6565.
-- O6 (socket), 2026-09-10, ec31bef5.
-- O5 (themes and catalog), 2026-09-10, cd4c01a2.
-- O4 (data, validate and normalise), 2026-09-10, 6e84069d.
-- O3 (data sources, part two), 2026-09-10, 91a0a40a.
-- O2 (data sources, part one), 2026-09-10, 0d3231d7.
-- O1 (scaffold), 2026-09-10, 58de1836.
-- S1 (hub), 2026-09-10, 7c0ab4f2.
-- C1 (cockpit), 2026-09-10, f8af492b.
-- C2 (cockpit), 2026-09-10, f8af492b.
-- C3 (cockpit), 2026-09-10, f8af492b.
-- C4 (cockpit B1 and B2), 2026-09-10, f8af492b.
-- C5 (cockpit B3), 2026-09-10, f8af492b.
-- C6 (cockpit B4), 2026-09-10, f8af492b.
-- C7 (cockpit), 2026-09-10, f8af492b.
-- C8 (cockpit B5), 2026-09-10, f8af492b.
-- C9 (cockpit B6), 2026-09-10, f8af492b.
-- C10 (cockpit B7), 2026-09-10, f8af492b.
-- C11 (cockpit B8), 2026-09-10, f8af492b.
-- C12 (cockpit H1), 2026-09-10, f8af492b.
-- C13 (cockpit H2), 2026-09-10, f8af492b.
-- R1 (hub), 2026-09-10, f8af492b.
-- O0 (oculus), 2026-09-10, f8af492b.
+- A3 (scheduled runs), 2026-10-06, 09509b5b6.
+- O30 (the native window in Electron), 2026-10-06, 3cb170eae.
+- D44 (Submit on a .slurm file), 2026-10-05, d7ff5fd3d.
+- D20 (an agent from a task or a worktree), 2026-10-05, 722a287a7.
+- D38 (the Literature search view), 2026-10-05, 5b4e737a8.
+- X3f (a file tab's actions, file icons and the double click), 2026-10-05, e6d00fb0f.
+- S5 (the Settings view's controls and headings), 2026-10-05, 30b4ddced.
+- D42 (a file's history), 2026-10-05, 863cdc7d.
+- H3 (the hub's data map), 2026-10-05, fc2905d7.
+- D37 (the Search view's replace and the LaTeX build), 2026-10-05, 50a19350.
+- T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, 2ce6def2.
+- T1a (the test tiers), 2026-10-04, 97e03827c.
+- T2d (the deletion sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, 7db4c1ad.
+- T2b (the deletion sweep of tests/server/), 2026-10-04, f61ae2de.
+- T2a (the deletion sweep of tests/state/), 2026-10-04, 239d7afa.
+- T2c (the deletion sweep of tests/views/, shell/, ui/ and themes/), 2026-10-04, 0ccfa372.
+- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, 6f5500c5.
+- T1b (the test sweep of tests/state/), 2026-10-04, 8d88bbf0.
+- T1c (the test sweep of tests/server/), 2026-10-04, af9c63f5.
+- X3c (the tab strip as VS Code's), 2026-10-04, cf91445b.
+- Q116 (the Status view's line count of everything under src/), 2026-10-03, bc67a961.
+- D25 (the editor's options), 2026-10-03, f80e5772.
+- Q91 (the project view and its editor), 2026-10-03, 5dad8bdc.
+- D17 (project commands), 2026-10-03, e752624e.
+- S4 (the Settings editor finished), 2026-10-03, 1184e5f3.
+- D14 (LaTeX on any folder), 2026-10-03, cbf456ea.
+- D32 (replace in the Search view), 2026-10-03, 0b63325f.
+- D18 (the Processes view), 2026-10-03, c1bd0cd6.
+- M3 (the resources registry), 2026-10-02, 125203b5.
+- Q88c (the Source Control rows' and the pane strip's new right-click capabilities), 2026-10-02, f444ac50.
+- A1 (a comment on a line of a session's diff, sent to that session), 2026-10-02, e6eb8f22.
+- X3a (the Files view as VS Code's Explorer), 2026-10-02, 63d8ea82.
+- D24 (the Personal board: side projects and the Files roots' manifests as cards), 2026-10-02, 41809010.
+- D35 (every configuration file live, the server's port move and the page following it), 2026-10-02, f8e6555d.
+- M4 (the Present view's equations as LaTeX), 2026-10-02, 50be07eb.
+- L4 (floating panes and kept empty panes), 2026-10-02, 5531bc5c.
+- Q66 (a hidden tab defers its work), 2026-10-02, d2d85b3a.
+- Q35 (Changes, Customizations, Audit, Present), 2026-10-02, aea2c245.
+- Q85d (zod in the views, ui, shell and routes), 2026-10-02, 999c2544.
+- D27 (the editor's languages), 2026-10-01, 90c03a3e.
+- U4 (Focus and Sessions at the other views' size), 2026-10-01, 42bd0a90.
+- U3 (every view on VS Code's scale), 2026-10-01, 79771729.
+- Q85c (zod in the data folder), 2026-10-01, 7f67d961.
+- D31 (git auto fetch), 2026-10-01, e610687d.
+- Q88b (the Files view's file operations), 2026-10-01, 286a533e.
+- Q85b (zod in the state layer), 2026-10-01, 0000594d.
+- S3c (the Settings editor), 2026-10-01, 60c5577b.
+- Q85a2 (zod in the edit, sessions and transcripts folders), 2026-10-01, 5357e9de.
+- U2 (every view's look against VS Code), 2026-10-01, bda79291.
+- Q85a4 (zod in the other server folders), 2026-10-01, 6a56bb75.
+- Q109 (terminal fixes and options), 2026-10-01, 26d6c9ce.
+- S3b (the `config-key` write), 2026-10-01, 6c19f6ec.
+- X3d (Source Control as VS Code's), 2026-10-01, 729ef4ee.
+- S3a (the options catalog), 2026-10-01, 540d460e.
+- Q107 (a Terminal tab never closes while its terminals run), 2026-10-01, a8c061d1.
+- Q106 (Close pane closes a pane of two or more tabs after Confirm), 2026-10-01, 89bc8f36.
+- Q111 (Undo gives a cleared field's lines back), 2026-09-30, 4e43303a.
+- E3 (the apps section's text), 2026-09-30, 093fcbb0.
+- Q110 (an undo gives a replaced value back), 2026-09-30, abf994e7.
+- Q108 (the four kept fixes as a step), 2026-09-30, 02d77394.
+- Q85a1 (zod at the `core` and `root` inputs), 2026-09-30, 7c965148.
+- E2 (the apps section rewritten), 2026-09-30, 37c2cd59.
+- E1 (the apps design section), 2026-09-30, 0d9d289f.
+- Q102 (the terminal as VS Code's), 2026-09-30, 44d5fe00.
+- Q84 (the stores on @tanstack/query-core), 2026-09-30, 515260ba.
+- D13c (the code theme key), 2026-09-30, b89dd493.
+- Q86c (the Map's forces on d3-force), 2026-09-30, 62c6f933.
+- D13b (the diffs and the merge on Monaco), 2026-09-30, 9b83c6e6.
+- Q105 (`bin/` renamed to `utils/`), 2026-09-29, 138d95f2.
+- Q104 (the slow test files tagged), 2026-09-29, c5009fda.
+- Q83 (small libraries in place of hand code), 2026-09-29, e4a0d526.
+- Q103 (the Live HPC view's failure text), 2026-09-29, 8d04f0a6.
+- Q86b (the Map's drag after neato), 2026-09-29, 4062a864.
+- Q88 (right-click menus), 2026-09-29, 40c555c2.
+- D13a (the source tab on Monaco), 2026-09-29, c7fc1f8b.
+- Q79b (the test half of section D), 2026-09-29, bdacf140.
+- Q96 (the Rail section on bits-ui), 2026-09-29, f79e0dd6.
+- Q81 (menus and dialogs on bits-ui), 2026-09-29, 3f7d0364.
+- Q82 (the tree on @zag-js/tree-view), 2026-09-29, d8c3689e.
+- Q87 (the duplication check on jscpd), 2026-09-29, c96ec9f8.
+- Q86 (the Map on Graphviz's neato), 2026-09-29, bf4d8eab.
+- Q101 (a terminal panel per tab), 2026-09-29, cb4487a8.
+- Q79d (the audit's shared helpers), 2026-09-29, 414d27fa.
+- Q100 (the Calendar's strips), 2026-09-29, bd2a7e96.
+- Q99 (the terminal and Pages defects), 2026-09-28, 115716d8.
+- Q79a (the server half of section D), 2026-09-28, 71022424.
+- Q79c (the page half of section D), 2026-09-28, 2c67ed70.
+- Q92 (Inbox and Calendar beautified), 2026-09-28, e59c242b.
+- Q89 (the terminal as VS Code's), 2026-09-28, c347facb.
+- Q80 (line counts on the Status view), 2026-09-28, e6ef0494.
+- Q98 (what the looks found), 2026-09-28, 49edf431.
+- Q97 (Help on the rail), 2026-09-28, d42dafdb.
+- Q94 (the launch note removed), 2026-09-28, b47a3e16.
+- Q95 ("Add a button" fixed), 2026-09-28, 162eed77.
+- L7 (the rail and pages rebuilt), 2026-09-28, de8048da.
+- Q93 (revert-check removed), 2026-09-28, 1e9fa152.
+- Q77b (revert-check --base), 2026-09-27, d67f129c.
+- Q77a (a unit revert proof is cheap), 2026-09-27, fcbcfc0e.
+- Q77e (diagrams parse once), 2026-09-27, 46c7bc7d.
+- Q77d (the slow unit tests made fast), 2026-09-27, 93878406.
+- Q90 (URL links in the Audit), 2026-09-27, 53211e25.
+- Q77c (a directive names its target line), 2026-09-27, edb892d4.
+- Q78 (a [TOC] line draws a contents list), 2026-09-27, 9fc6e9ff.
+- X3b (Source Control brought to VS Code's), 2026-09-26, fa7499f2.
+- Q76 (the document tabs), 2026-09-26, 5f25210a.
+- S2 (the sessions views rebuilt to VS Code's Agents window), 2026-09-26, 5e2be41c.
+- Q67 (assisted account setup), 2026-09-26, d5c515bf.
+- Q74 (the layer diagrams readable), 2026-09-25, 231b410d.
+- Q73 (what Q71 left, closed), 2026-09-25, 8d8d74d6.
+- Q71 (the architecture made sound), 2026-09-25, fcc66c6b.
+- Q70 (watchers and a page start under load, closed), 2026-09-25, 77e384c9.
+- Q69 (what earlier landings left), 2026-09-25, 0c86fef2.
+- L6 (the status bar drawn like VS Code's), 2026-09-24, bab9ad2f.
+- Q68 (the git watcher under load), 2026-09-24, 1dda2c38.
+- L5 (the rail drawn like VS Code's activity bar), 2026-09-24, 8b82940d.
+- U1 (as little unicode as possible), 2026-09-24, a0477f61.
+- P1 (VS Code parity audit, done by the orchestrator), 2026-09-23, 0785e17a.
+- L3 (the rail switches pages), 2026-09-23, a3f413fe.
+- R18 (oculus's diagrams generated from the source), 2026-09-23, 8d6c3a97.
+- Q65 (Axel's fixes and small requests of 2026-09-21), 2026-09-23, 8f37c141.
+- O31 (the session stores per account), 2026-09-23, 210ceaed.
+- Q59 (the recurring and closure findings), 2026-09-23, 2c265bde.
+- Q58 (size-allow split, ten items a folder), 2026-09-22, f16183e6.
+- Q56 (the Files view asks again), 2026-09-20, 94462cbb.
+- Q53 (the shell's drawing defects), 2026-09-20, 7f008481.
+- Q36 (the ssh SIGTERM test), 2026-09-20, 3d17825a.
+- Q52 (the two git views), 2026-09-18, d7b17edc.
+- Q54 (Tabs.svelte split), 2026-09-18, d7b17edc.
+- R14 (the recurring-pass checks), 2026-09-18, 0dfa3a86.
+- Q51 (layout.svelte.ts split), 2026-09-18, e98e789a.
+- Q50 (a web address is no hub path), 2026-09-18, 07f99ee1.
+- Q49 (hidden ticker buttons take no room), 2026-09-18, 6dcd7ca3.
+- Q48 (an add answer closes its opening), 2026-09-18, dacfc4bb.
+- R12 (sharp edges), 2026-09-18, 96dddbde.
+- R13 (lint on), 2026-09-18, 96dddbde.
+- Q47 (the Sessions view's Changes panel), 2026-09-17, 17b72fd3.
+- Q46 (the Memories wall proportions), 2026-09-17, 92a50035.
+- Q38 (tabs and panes as VS Code's), 2026-09-17, dc3c03d1.
+- D22 (Show in Files), 2026-09-17, 4c5a533e.
+- Q41 (the awaiting strip), 2026-09-17, 53d36cae.
+- Q45 (the terminal text filled once), 2026-09-17, 520e3885.
+- Q44 (the Repositories picker), 2026-09-17, 0acb75b0.
+- Q43 (the Files view's forms kept), 2026-09-17, 6dced6c6.
+- Q34 (the boards and cards), 2026-09-17, 0425d1dd.
+- Q42 (closed pane state cleared), 2026-09-17, 898396f8.
+- Q30 (the finding sentences catalogued), 2026-09-17, 76b58b86.
+- Q32 (Files and Repositories as VS Code's), 2026-09-17, aa247d98.
+- Q39 (Q33's unfinished proofs), 2026-09-17, ae9c04d6.
+- Q31 (unsaved edits kept), 2026-09-17, 7980ec73.
+- Q37 (the Focus board), 2026-09-17, 41b22aad.
+- Q33 (the shell's defects), 2026-09-16, fc0b9e2c.
+- D16 (a file opens in its program), 2026-09-16, 0de73b24.
+- M2 (the theme words listed), 2026-09-16, 2b639e2e.
+- D9 (the mail connector), 2026-09-16, feacf678.
+- D12 (search across files), 2026-09-16, 9c21c521.
+- Q29 (six fixes of delivered work), 2026-09-16, 519e5ebc.
+- D8 (the calendar connector), 2026-09-16, eca36c9b.
+- Q26 (the update tasks as sessions), 2026-09-16, 6f617d07.
+- D7 (persons and organisations), 2026-09-16, d89a9889.
+- M1 (one word for a research line), 2026-09-16, 0ed88018.
+- D5 (the LaTeX panel on a project), 2026-09-16, 316a9453.
+- Q25 (a view opens its file), 2026-09-16, b9aabba2.
+- Q21 (no environment variables), 2026-09-16, a7b97ea7.
+- Q27 (Tab and Shift+Tab), 2026-09-16, cf45ee59.
+- Q24 (the Map's layout parameters kept), 2026-09-16, 86207ef5.
+- D21 (files open as in an editor), 2026-09-16, 5b7ad4b8.
+- D4 (the Repositories view), 2026-09-16, 9c152f6b.
+- Q23 (the lead dismiss as a status), 2026-09-16, 29bca464.
+- Q20 (local.yml into config/), 2026-09-16, 390e12cf.
+- D6 (more highlight.js languages), 2026-09-16, 7084e843.
+- Q28 (the audit messages reworded), 2026-09-16, 7c962654.
+- Q22 (the Files pane tinted), 2026-09-15, 872802bb.
+- O28b (the Memories wall and the Audit), 2026-09-15, b8cd77e7.
+- D3 (software as a project type), 2026-09-15, ff773e3d.
+- D1 (the change log and History), 2026-09-15, 719740e9.
+- D2 (the map's filters), 2026-09-15, 22cc74af.
+- O27b (the file browser), 2026-09-15, 63533113.
+- P2 (the Slides view and the card), 2026-09-15, 93e993d9.
+- O28a (the Help view), 2026-09-15, e6e5a5d0.
+- Q17 (the look), 2026-09-15, ae508e60.
+- P1 (the Present view, live), 2026-09-15, bcd9b169.
+- O27a (the file browser), 2026-09-15, 1fc83567.
+- Q19 (the rail label wraps), 2026-09-15, 14a4aae3.
+- Q15b (the log-path prewarm ported from the cockpit), 2026-09-15, 6a6db17b.
+- Q15 (Live HPC stopping), 2026-09-15, 02708774.
+- Q16 (the lighter project card), 2026-09-15, 7b8ccd83.
+- H1 (funding keys complete), 2026-09-15, a02b088f.
+- L2 (nested pages), 2026-09-15, 86a7d336.
+- L1 (one tree per page), 2026-09-15, 97e46535.
+- R17 (client context), 2026-09-15, 923070a6.
+- K1 (the digit keys), 2026-09-14, 265380bb.
+- R13b (the typing rules), 2026-09-14, 67e988ff.
+- R13a (the mechanical rules), 2026-09-14, 43aa9fb4.
+- R10 (no history in code), 2026-09-14, d55a84d4.
+- Q18 (the Tasks section), 2026-09-14, b99fa445.
+- R12f (the waiting-on vocabulary), 2026-09-14, 2d4ddbfe.
+- R12e (the files channel), 2026-09-14, 3fb10eff.
+- R12c (the data and usage edges), 2026-09-14, a5b05910.
+- R12d (the test infrastructure), 2026-09-14, 5df9ac2b.
+- R12b (the views' edges), 2026-09-14, 809a36fc.
+- R12a (the server's and the watchers' edges), 2026-09-14, 9399e38e.
+- W3 (a tinted surface for the bare views), 2026-09-14, e8ffc3d8.
+- R15 (global hooks snippet), 2026-09-14, 601f03bb.
+- R11 (config push repaints), 2026-09-14, ea849d33.
+- R14 (sanitise {@html}), 2026-09-14, 911a0cb3.
+- W2 (the rail over a wallpaper), 2026-09-14, 2d48447c.
+- W1 (wallpaper through the panes), 2026-09-14, ddf8aca5.
+- R9 (two workers at a time), 2026-09-14, 506f05e0.
+- R16 (feed labels), 2026-09-14, 9bd873bd.
+- R8 (the landing script), 2026-09-14, e1db74b4.
+- R6 (simplicity), 2026-09-14, efdbd0f3.
+- R5 (single responsibility), 2026-09-14, bd6cee54.
+- R4 (one transcript fold), 2026-09-14, ec746e12.
+- R7 (the catalog and the registry oculus's own), 2026-09-14, 7a017cc9.
+- R3 (no globals), 2026-09-14, f8548d4f.
+- D19c (fresh usage figures), 2026-09-13, 5f95ef53.
+- D19b (the usage bars), 2026-09-13, b28e0c01.
+- D19 (the Usage view), 2026-09-13, bc407e39.
+- Q14 (the keyboard chords), 2026-09-13, 30b713aa.
+- Q13 (the small fixes of 2026-09-13), 2026-09-13, 7ae3823c.
+- Q12 (the HPC header), 2026-09-13, 9ce6a209.
+- Q11 (chat as a claude terminal), 2026-09-13, 04c240af.
+- Q10 (the map's link mode), 2026-09-13, f75ffe07.
+- Q9 (the source view), 2026-09-13, 53970c9a.
+- F1 (the feeds on the socket), 2026-09-13, ae89e24c.
+- Q8 (the cards and the Focus board), 2026-09-12, 6984d68f.
+- Q7 (the type of every view), 2026-09-12, 4ca2f7bc.
+- Q6 (the counts on the pane tabs), 2026-09-12, 5e3c8a9c.
+- Q5 (several sessions and terminals at once), 2026-09-12, edec8835.
+- Q4b (the views), 2026-09-12, 9a75aa16.
+- Q4a (the rail), 2026-09-12, d4ef11f2.
+- O25g (the Focus ticker's feed lines open their views), 2026-09-12, 735f29b5.
+- O25f (the Update action and the Cmd-K search), 2026-09-12, edfb6905.
+- O25e (the LinkedIn view), 2026-09-12, fee68aed.
+- O25d (the Inbox view), 2026-09-12, f10c2fb1.
+- O25c (the Position Leads view), 2026-09-12, 208e8f5b.
+- O25b (Lit Watch and the feed module), 2026-09-12, 1238bb7e.
+- Q3b (the terminal pane), 2026-09-12, 7c9cf478.
+- Q3 (workbench and view polish), 2026-09-12, 6a99a615.
+- O25a (the Data view with the per-dataset recovery terminal), 2026-09-11, fc8275e1.
+- O24b (Programs, Domains and Map), 2026-09-11, d08c7d07.
+- O24a (the metalist editor), 2026-09-11, 51d96e3b.
+- X1 (execution exercise of the plan-orchestration skill), 2026-09-11, 33ab18ab.
+- O26 (view), 2026-09-11, 77a4a150.
+- Q2 (browser test layer), 2026-09-11, a1cc7ef0.
+- O22b (view), 2026-09-11, e2e73da9.
+- Q1 (consolidation), 2026-09-11, f2f4dbce.
+- P0 (parity audit), 2026-09-11, fd159e8b.
+- P4 (collections parity), 2026-09-11, 9804e2c2.
+- P3 (boards parity), 2026-09-11, fcd32176.
+- P2 (Focus parity), 2026-09-11, 81df9fbe.
+- P1 (writes foundation), 2026-09-11, feeea152.
+- O10e (pages), 2026-09-11, 402edd1d.
+- O22 (view), 2026-09-11, 4ed7c510.
+- O23 (views), 2026-09-11, 4ed7c510.
+- O21 (tools), 2026-09-11, 81c5fe0e.
+- O19b (transcript view), 2026-09-11, c2c7c72b.
+- O20 (git panel), 2026-09-11, 2ee460b5.
+- O19 (terminal, migration), 2026-09-11, 39d90dc3.
+- O18 (terminal, view), 2026-09-11, 7d34e34a.
+- O17 (terminal, server), 2026-09-11, 6ea535a1.
+- O16 (notifications), 2026-09-11, af830eb6.
+- O15 (sessions, writes and cards), 2026-09-11, a97d6036.
+- O14d (rail groups), 2026-09-11, 2c1118f5.
+- O14c (document tabs), 2026-09-10, a7d9e323.
+- O14b (project tab and rail tooltips), 2026-09-10, e59cf14d.
+- O14 (sessions, views), 2026-09-10, b566c997.
+- O13 (sessions, channels), 2026-09-10, 58a895f6.
+- O12 (sessions, server), 2026-09-10, a37b7058.
+- O11 (writes), 2026-09-10, b33de07c.
+- O10d (appearance), 2026-09-10, 6b19fb20.
+- O10c (config regrouped), 2026-09-10, 74624f78.
+- O10b (docking), 2026-09-10, 207bd7c7.
+- O10 (Projects view), 2026-09-10, 4a83ff40.
+- O9 (primitives), 2026-09-10, 30d07263.
+- O8 (shell, workbench), 2026-09-10, 20ba25b5.
+- O7 (shell, layout as data), 2026-09-10, abc0d21e.
+- O6 (socket), 2026-09-10, e1a85a25.
+- O5 (themes and catalog), 2026-09-10, 93ba20fc.
+- O4 (data, validate and normalise), 2026-09-10, dd6e294b.
+- O3 (data sources, part two), 2026-09-10, 9548e37e.
+- O2 (data sources, part one), 2026-09-10, 9370d258.
+- O1 (scaffold), 2026-09-10, 4d9fa045.
+- S1 (hub), 2026-09-10, f2fa66a1.
+- C1 (cockpit), 2026-09-10, 89e21b47.
+- C2 (cockpit), 2026-09-10, 89e21b47.
+- C3 (cockpit), 2026-09-10, 89e21b47.
+- C4 (cockpit B1 and B2), 2026-09-10, 89e21b47.
+- C5 (cockpit B3), 2026-09-10, 89e21b47.
+- C6 (cockpit B4), 2026-09-10, 89e21b47.
+- C7 (cockpit), 2026-09-10, 89e21b47.
+- C8 (cockpit B5), 2026-09-10, 89e21b47.
+- C9 (cockpit B6), 2026-09-10, 89e21b47.
+- C10 (cockpit B7), 2026-09-10, 89e21b47.
+- C11 (cockpit B8), 2026-09-10, 89e21b47.
+- C12 (cockpit H1), 2026-09-10, 89e21b47.
+- C13 (cockpit H2), 2026-09-10, 89e21b47.
+- R1 (hub), 2026-09-10, 89e21b47.
+- O0 (oculus), 2026-09-10, 89e21b47.

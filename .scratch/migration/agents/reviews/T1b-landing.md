@@ -16,7 +16,7 @@ T1b's builder `abd43d8d8cfbcff37` and its reviewers `a7468f675784a9dfd` and `a7c
 
 ## What landed
 
-T1b, one commit on main (the commit that carries this file), from base 12bf19450: the sweep of `tests/state/` as `agents/briefs/T1b.md`, its round (`agents/briefs/T1b-round1.md`) and Z381 to Z388 say. The folder holds 206 test files and 58,446 lines after the sweep, against 205 and 66,497 before (`find tests/state -name '*.test.ts' | wc -l`, and the `.ts` lines through `cat | wc -l`). The deletions, folds, assertion cuts and slow tags are listed file by file in `agents/reviews/T1b-report.md`. `allow-duplication.txt` merged with T1c's change without a conflict.
+T1b, one commit on main (the commit that carries this file), from base db5132b4a: the sweep of `tests/state/` as `agents/briefs/T1b.md`, its round (`agents/briefs/T1b-round1.md`) and Z381 to Z388 say. The folder holds 206 test files and 58,446 lines after the sweep, against 205 and 66,497 before (`find tests/state -name '*.test.ts' | wc -l`, and the `.ts` lines through `cat | wc -l`). The deletions, folds, assertion cuts and slow tags are listed file by file in `agents/reviews/T1b-report.md`. `allow-duplication.txt` merged with T1c's change without a conflict.
 
 ## Fixes at landing
 

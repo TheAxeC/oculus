@@ -1,6 +1,6 @@
 Brief check of E1
 
-Base: main at fdd56f69 ("Stop D23 on Z72 and send Q102's repair round 1", `git log -1 --oneline`). The brief read is the working-tree copy of tools/oculus/.scratch/migration/agents/briefs/E1.md (`git diff --stat` shows 88 insertions, 4 deletions against main). I changed nothing in the repository. penpal 8.0.1 was unpacked only in the scratch folder (`npm pack penpal@8.0.1`) so its source could be read.
+Base: main at d43564c4 ("Stop D23 on Z72 and send Q102's repair round 1", `git log -1 --oneline`). The brief read is the working-tree copy of tools/oculus/.scratch/migration/agents/briefs/E1.md (`git diff --stat` shows 88 insertions, 4 deletions against main). I changed nothing in the repository. penpal 8.0.1 was unpacked only in the scratch folder (`npm pack penpal@8.0.1`) so its source could be read.
 
 The brief has two serious gaps. First, it leaves out four places the section must be measured against: hooks.server.ts's guard, the token in the page data, the collection-view registration precedent and DESIGN.md:299. Second, some of its origin and bridge reasoning is wrong or incomplete (findings F1 to F4, C1 and C2). The scope matches the plan line and Answer 19.
 

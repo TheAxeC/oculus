@@ -1,6 +1,6 @@
-# Step D42 brief check (on main at 3e3574ef9)
+# Step D42 brief check (on main at ea41aa96c)
 
-The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/D42.md`. The brief says it was read at ed0e6de58. `git diff --stat ed0e6de58 HEAD -- tools/oculus ':!tools/oculus/config/local.yml'` shows only three ledger files changed since then (`S5-brief-check.md`, `orchestrator-state.md`, `queue.md`), so the source tree is the same at both commits. There is no D42 worktree or base copy yet (`ls .agents/worktrees/` printed `D37 D37-base X3f X3f-base`). Every command below ran on the main checkout. A path written without a prefix is under `tools/oculus/`.
+The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/D42.md`. The brief says it was read at 48841862f. `git diff --stat 48841862f HEAD -- tools/oculus ':!tools/oculus/config/local.yml'` shows only three ledger files changed since then (`S5-brief-check.md`, `orchestrator-state.md`, `queue.md`), so the source tree is the same at both commits. There is no D42 worktree or base copy yet (`ls .agents/worktrees/` printed `D37 D37-base X3f X3f-base`). Every command below ran on the main checkout. A path written without a prefix is under `tools/oculus/`.
 
 ## 1. Names
 
@@ -53,15 +53,15 @@ Findings: none against the step line itself. The authority of item 8 is under "D
 - **The record separator.** Item 1 says "each commit's record opens with the record separator, as `GRAPH_FORMAT` does". `grep -n GRAPH_FORMAT parse.ts` printed `93:export const GRAPH_FORMAT = '--format=%H%x1f%h%x1f%P%x1f%D%x1f%an%x1f%aI%x1f%s%x1f%B%x1e';`. GRAPH_FORMAT ends each record with `%x1e`. It does not open with it. The brief's own probe command opens with `%x1e`, which is right for `-z --name-status` output.
 - **The 50-commit cap and HELP.md's history.** `git log --follow --format=%h -- tools/oculus/HELP.md | wc -l` printed `115`, which matches.
 - **Paging with `--skip` (the important one).** Item 2 pages with `--skip=<n>` together with `--follow`. That does not page a file's history:
-  - `diff <(git log --follow --format=%h -- tools/oculus/HELP.md | sed -n 51,101p) <(git log --follow --skip=50 -51 --format=%h -- tools/oculus/HELP.md)` shows that the "second page" is the file's commits 1 to 51 again: `ffb4457ae at line 1`, `d075e44b3 at line 50` of the full list.
+  - `diff <(git log --follow --format=%h -- tools/oculus/HELP.md | sed -n 51,101p) <(git log --follow --skip=50 -51 --format=%h -- tools/oculus/HELP.md)` shows that the "second page" is the file's commits 1 to 51 again: `af9c63f55 at line 1`, `1e9fa1524 at line 50` of the full list.
   - `git log --follow --skip=100 -51 ... | wc -l` printed `51`.
-  - `git log --follow --skip=3 -2 --format=%h -- .../diff/DiffEditor.svelte` printed `4c7cf9154 33be30af8`, the two newest. The 4th and 5th are `5a503e825 f6403f406`.
+  - `git log --follow --skip=3 -2 --format=%h -- .../diff/DiffEditor.svelte` printed `f80e57720 e6eb8f228`, the two newest. The 4th and 5th are `b89dd4938 9b83c6e6c`.
   - `git log --follow --format=%h --skip=114 -- tools/oculus/HELP.md | wc -l` printed `110`. Without `--follow` the same command printed `1`.
   - `git --version` printed `git version 2.49.0`. Under `--follow`, `--skip` counts commits of the whole history walk, not the file's own commits.
-  - A cursor form does page correctly: `git log --follow -51 --format=%h 8b9cbc3db^ -- tools/oculus/HELP.md | head -3` printed `d5e08b8e6 6b73371d4 667ed7084`, which are lines 47 to 49 of the full list after `8b9cbc3db` at line 46.
+  - A cursor form does page correctly: `git log --follow -51 --format=%h e6ef04947^ -- tools/oculus/HELP.md | head -3` printed `d42dafdbd b47a3e162 de8048dab`, which are lines 47 to 49 of the full list after `e6ef04947` at line 46.
   - So the wire shape `skip=<n>` cannot be built as the brief writes it. A replacement such as `before=<hash>` with the path at that commit is a different route parameter.
 - **The rename output.** `git log --follow -z --name-status --diff-merges=first-parent --format='%x1e%H%x1f%an%x1f%cI' -2 -- tools/oculus/src/lib/ui/controls/editor/diff/DiffEditor.svelte | od -c` shows `R079\0<old>\0<new>\0`, which matches. The status block begins with `\n` after the format's `\0` (`\0  \n   R   0   7   9`). Fed whole to `parseNameStatus`, the first field is `"\nR079"`, whose first character is `\n`. So "reusing `parseNameStatus`" works only after that newline is stripped. The brief does not say so.
-- **The empty diff before a rename.** `git show --format= --no-color --no-ext-diff -M --diff-merges=first-parent c8d890799 -- .../atlas/acquisition_headers.json | wc -l` printed `0`, and with `analysis/` it printed `2158`, which matches. `commitDiff` at `reads.ts:107-141` matches.
+- **The empty diff before a rename.** `git show --format= --no-color --no-ext-diff -M --diff-merges=first-parent 159c94ca1 -- .../atlas/acquisition_headers.json | wc -l` printed `0`, and with `analysis/` it printed `2158`, which matches. `commitDiff` at `reads.ts:107-141` matches.
 - **The lists go stale.**
   - `grep -rn "\.bump(" src/lib` printed only `latex.svelte.ts:506`.
   - `staleTime: Infinity` (`queries.svelte.ts:46`) and `markText` (`context.ts:328-331`) match.
@@ -191,7 +191,7 @@ Agent usage: a5f84259f8e93e657, claude-opus-5-5, 207,414 tokens, 81 tool uses, 1
 
 ## Closed
 
-Each finding is closed by a change to `agents/briefs/D42.md`, listed in its section "Changes from the brief check" under the number given here. The brief was read again on main at 6005baee6, whose source tree is that of ed0e6de58 (`git diff --stat ed0e6de58 HEAD -- tools/oculus ':!tools/oculus/config/local.yml' ':!tools/oculus/.scratch'` prints nothing).
+Each finding is closed by a change to `agents/briefs/D42.md`, listed in its section "Changes from the brief check" under the number given here. The brief was read again on main at 8bb4960ba, whose source tree is that of 48841862f (`git diff --stat 48841862f HEAD -- tools/oculus ':!tools/oculus/config/local.yml' ':!tools/oculus/.scratch'` prints nothing).
 
 Names:
 - `ShowPath.svelte` missing from Read and the write list: change 1. It is in Read 6 and the write list, and item 5 orders the scrolls: for a Timeline ask the head's `scrollIntoView({ block: 'start' })` runs in place of the row's, since the tree and the sections share one scroll (`Files.svelte:229-305`).

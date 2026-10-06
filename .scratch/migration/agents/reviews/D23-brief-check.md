@@ -1,6 +1,6 @@
-# Step D23 brief check (on main at 1dee6354a)
+# Step D23 brief check (on main at 04833d093)
 
-This checks `agents/briefs/D23.md` (working copy, 450 lines, pure ASCII: `LC_ALL=C grep -n '[^ -~]' D23.md` prints nothing). It was read against HEAD 1dee6354a, exported read-only with `git archive HEAD tools/oculus | tar -x -C $TMPDIR/d23bc`. `config/local.yml` is not in that export and was never opened. Main's index currently holds D37's cherry-pick, staged and uncommitted (`git diff --cached --stat`: 61 files, +1821 -881). Where that changes a premise, the finding below says so.
+This checks `agents/briefs/D23.md` (working copy, 450 lines, pure ASCII: `LC_ALL=C grep -n '[^ -~]' D23.md` prints nothing). It was read against HEAD 04833d093, exported read-only with `git archive HEAD tools/oculus | tar -x -C $TMPDIR/d23bc`. `config/local.yml` is not in that export and was never opened. Main's index currently holds D37's cherry-pick, staged and uncommitted (`git diff --cached --stat`: 61 files, +1821 -881). Where that changes a premise, the finding below says so.
 
 Pages are cited by section: `agents/spec.md` (the rules file), `agents/guarded.md`, the state file and `plan.md` Rulings. Code, HELP.md and DESIGN.md are cited by `file:line`.
 
@@ -70,13 +70,13 @@ Findings:
   - `git show HEAD:.../plan.md | grep -n ...` prints these numbers exactly, so they match HEAD.
   - In the working copy each line after 526 is one higher (`grep -n` prints 742, 744, ..., 1186-1188) because of the uncommitted D23b widening at 527.
 - `orchestrator-state.md:129` (the libraries rule). Working copy: 129. HEAD: 128 (`git show HEAD:... | grep -n "code is written by hand only"`). This cite matches the working copy, while the plan cites match HEAD.
-- The source tree unchanged since 3dccf6a8c (`git diff --stat 3dccf6a8c..HEAD -- tools/oculus ':!tools/oculus/.scratch'`): prints nothing, so it holds.
+- The source tree unchanged since ffaddd6f0 (`git diff --stat ffaddd6f0..HEAD -- tools/oculus ':!tools/oculus/.scratch'`): prints nothing, so it holds.
 - **D37's landing in the index** will move main's head before dispatch.
   - `git diff --cached --stat -- tools/oculus/src/lib/ui/controls/editor/Editor.svelte`: +7 lines at 289. The brief's "496 lines, cap 520", `Editor.svelte:292-302` and `:385-390` become 503, 299-309 and 392-397.
   - `data/file-ops.ts:23` `TEXT_LIMIT` becomes `:27` (`git show :tools/oculus/src/lib/data/file-ops.ts | grep -n "TEXT_LIMIT ="`).
   - `data/model/index.ts` 511 becomes 517.
   - D37's HELP and DESIGN hunks are one-line replacements (`git diff --cached -U0 -- HELP.md DESIGN.md`: `-131 +131`, `-33 +33` and so on), so no cited doc line moves.
-  - The brief's base ("read on main at 1dee6354a") is not the head the worktree will be made at.
+  - The brief's base ("read on main at 04833d093") is not the head the worktree will be made at.
 - **The Monaco client.**
   - `index.js` 3203 lines and `index.d.ts` 263 lines (`wc -l`): matches.
   - `createFeatures()` at 3060 with 22 features (`sed -n 3045,3090p`): matches.
@@ -130,7 +130,7 @@ Findings:
 - Line 55: "The ruled texts are kept whole at the end of this brief." The end section holds Answer 11, the plan line, Z92, Z72, Z74 (4) and Step 0 only. Z80, Z79 (4), Z182, Z47 4 (a), Z88, The queue, Z466 to Z468 and Z260 are not there.
 
 Findings:
-- P1. The brief's base will not be 1dee6354a once D37's staged landing is committed. `ui/controls/editor/Editor.svelte` becomes 503 lines, its cited ranges move by +7, and `TEXT_LIMIT` moves to `file-ops.ts:27`.
+- P1. The brief's base will not be 04833d093 once D37's staged landing is committed. `ui/controls/editor/Editor.svelte` becomes 503 lines, its cited ranges move by +7, and `TEXT_LIMIT` moves to `file-ops.ts:27`.
 - P2. OI-1's names of the `local.yml` path keys are wrong: they are `sessions_cache`, `sessions_overrides`, `calendar_dir` and `mail_dir`, at 693-722.
 - P3. Line 7 (brief waits on open items; "Axel's ruling"; "into Decisions") is false.
 - P4. Line 55 (ruled texts kept whole at the end) is false.
@@ -239,7 +239,7 @@ Usage: claude-opus-5-5 (ad0ebdc1a60146409), 312,538 tokens, 124 tool uses, 16.2 
 
 ### Closed
 
-Every finding above is closed in the brief `agents/briefs/D23.md` (754 lines, read on main at 4927e2d57), each by the brief line named.
+Every finding above is closed in the brief `agents/briefs/D23.md` (754 lines, read on main at 1025790bf), each by the brief line named.
 
 - N1. `DESIGN.md:396` and `:399` are in the write list (line 494), their new text under "Doc text this step writes" (lines 324, 325).
 - N2. `HELP.md:48` and `DESIGN.md:427` are in the write list (lines 493, 494), their new text at lines 328 and 326; the breadcrumb's symbol segments are built in section 3 (line 272).
@@ -247,7 +247,7 @@ Every finding above is closed in the brief `agents/briefs/D23.md` (754 lines, re
 - N4. "Shared paths (for the orchestrator)" (lines 500-509): D23 dispatches after X3f lands (line 504) and after S5 with Q119 lands (line 505); D42 (line 506), H3 (line 507) and the diagrams (line 508); `cpp-file.ts` sits under `server/machine/lsp/clangd/`, leaving `data/sources/config` at 9 items before Q119's split (line 509).
 - L1. Z482 is written into section 1's server lifetimes (lines 134-139), G36's text (line 415) and the doc text for DESIGN.md:153 and :416 (line 332), with cases 41 (last tab closed), 42 (reopened inside 60 s) and 43 (reopened after) at lines 384-386, and look item 14 (line 641).
 - L2. Z483: the parity table puts the References view and clangd's AST and memory-usage views in D23 (lines 295, 314); the References view (line 273, `textDocument/references` and `textDocument/implementation`), the AST view (line 274, `textDocument/ast`) and the memory-usage view (line 275, `$/memoryUsage`) each with its place, rows and actions; their glyphs (line 276); cases 53-55 (lines 396-398); their paths (lines 467, 468, 485, 487); Decision 4 (line 516); the view's place as UV-5 (line 556).
-- P1. The brief is read on main's head 4927e2d57, after H3 landed at 575c997c8 (lines 49, 51); every `file:line` was re-read there, `sources.yml` moved to `roots:` 88-94 and `languages:` 98 (lines 106, 107), and D42's staged landing and the one line it moves in `files.yml` are stated (line 51).
+- P1. The brief is read on main's head 1025790bf, after H3 landed at fc2905d77 (lines 49, 51); every `file:line` was re-read there, `sources.yml` moved to `roots:` 88-94 and `languages:` 98 (lines 106, 107), and D42's staged landing and the one line it moves in `files.yml` are stated (line 51).
 - P2. OI-1 names the keys `sessions_cache`, `sessions_overrides`, `workspaces`, `bookmarks`, `notes`, `changes`, `history`, `approvals`, `calendar_dir`, `mail_dir` at `options.yml:693-722` (line 22).
 - P3. Line 7 states the six items ruled Z476 to Z481 by the orchestrator in automode under "Open items, ruled", G36 approved by Axel (Z485 (a)) and every finding closed; OI-4 says the same (line 14).
 - P4. "The scope as ruled (kept whole)" (lines 663-754) holds Answer 11, the plan line, The queue, Z92, Z72, Z74 (4), the Settings ruling, Z79 (4), Z80, Z88, Z47 4 (a), Z182 as ruled and as raised, Z260 as ruled and as chosen, Z466 to Z468 and Z476 to Z485, each compared with its ledger line at head.
@@ -293,9 +293,9 @@ Every finding above is closed in the brief `agents/briefs/D23.md` (754 lines, re
 - Declined, `.gyp` served as Python: probed, served (line 88).
 - Declined, VS Code's `semanticTokenScopes` defaults: read from `tokenClassificationRegistry.ts:545-595` at microsoft/vscode 548a0c47, and vscode-clangd 0.6.0 adds none (line 172).
 
-# The first brief check, of the 173-line brief at cf880dbe
+# The first brief check, of the 173-line brief at b36df239
 
-Brief check of D23 (tools/oculus/.scratch/migration/agents/briefs/D23.md, working-tree version, 173 lines), read against main at cf880dbe. I changed no file in the repository. Every probe ran from /private/tmp/claude-502/.../scratchpad/D23-brief-check/ using the packed pyright 1.1.414 and /usr/bin/clangd.
+Brief check of D23 (tools/oculus/.scratch/migration/agents/briefs/D23.md, working-tree version, 173 lines), read against main at b36df239. I changed no file in the repository. Every probe ran from /private/tmp/claude-502/.../scratchpad/D23-brief-check/ using the packed pyright 1.1.414 and /usr/bin/clangd.
 
 Summary: the brief is not ready to dispatch. Five findings would each make the builder fail or build the wrong thing:
 - F1: pyright switches to pull diagnostics under Monaco's client capabilities.
@@ -471,20 +471,20 @@ Missing, each with its expected result:
 
 ## Rechecked after S5 (2026-10-05)
 
-Agent a06e5bd28d3450606, claude-opus-5-5: 372,291 tokens, 139 tool uses, 16.4 min (completion notice). The brief's premises reread on main at a21aa859d: 42 corrections marked "(corrected after S5: ...)", among them Format on save's four places after S5 moved the readers to `data/sources/config/editor-options.ts`, `DESIGN.md:85` and `HELP.md:169` added to the doc text, and the Outline following the followed tab (Z490). Shared paths: X3f shares 23 paths, `Source.svelte` and `Outline.svelte` rewritten by both, so D23 is prepared on a base after X3f lands; D20's shared files merge simply; D44's `Source.svelte` is not simple, so the second of D23 and D44 is prepared on the other's landing. The "Closed" line numbers above refer to the brief before this recheck.
+Agent a06e5bd28d3450606, claude-opus-5-5: 372,291 tokens, 139 tool uses, 16.4 min (completion notice). The brief's premises reread on main at f073b0494: 42 corrections marked "(corrected after S5: ...)", among them Format on save's four places after S5 moved the readers to `data/sources/config/editor-options.ts`, `DESIGN.md:85` and `HELP.md:169` added to the doc text, and the Outline following the followed tab (Z490). Shared paths: X3f shares 23 paths, `Source.svelte` and `Outline.svelte` rewritten by both, so D23 is prepared on a base after X3f lands; D20's shared files merge simply; D44's `Source.svelte` is not simple, so the second of D23 and D44 is prepared on the other's landing. The "Closed" line numbers above refer to the brief before this recheck.
 
 Closed by the orchestrator: F3 as case 58, F12 as case 59, the first check's case 19 as case 60. Show AST stays in Monaco's right-click menu opening a Files view section, as VS Code's clangd does (Z483, Z496).
 
 ## Rechecked after X3f (2026-10-05)
 
-The brief's premises reread on main at b1aedbfc6, whose source tree is X3f's landing ee0407a5a (`git log --oneline a21aa859d..HEAD -- tools/oculus ':!tools/oculus/.scratch'` prints only ee0407a5a). 42 places are marked "(corrected after X3f: ...)" and 17 "(added after X3f ...)", and two paths in "Shared paths" are marked "added to D23's paths by this recheck". The main ones:
+The brief's premises reread on main at 273196959, whose source tree is X3f's landing e6d00fb0f (`git log --oneline f073b0494..HEAD -- tools/oculus ':!tools/oculus/.scratch'` prints only e6d00fb0f). 42 places are marked "(corrected after X3f: ...)" and 17 "(added after X3f ...)", and two paths in "Shared paths" are marked "added to D23's paths by this recheck". The main ones:
 
 - `Source.svelte` is 528 lines on main, over the 520 a component may have, so the step must leave it at or under 520; the split into `language/` and by concern into `status/`, `actions/` or `save/` is now required, not conditional.
 - The palette lists the source tab's own actions and what the editor says through `onactions`, so an action added by `addAction` inside an extension is listed nowhere. The language actions are handed to the tab as `EditorOwnAction`s joined to `own`; `EditorOwnAction` gains an optional context menu group for Show AST; labels carry VS Code's category, as X3f's `cmd_*` keys do. `status/ask-perform.ts` joins the paths.
 - The breadcrumb's segments carry no icon and the bar is drawn by `PaneStrip.svelte`'s `path` snippet; `Breadcrumb.svelte` gains an optional glyph per segment, and `PaneStrip.svelte` joins the paths.
 - The References view makes the Explorer group's chords `s1-s4`: `HELP.md:69` and `config/text/app.yml:12` join the doc text. `DESIGN.md:430`, rewritten by X3f, lists the status bar's right group and must name the three language items.
 - `tests/server/root/context-fixture.ts` (it builds a whole `ServerContext`) and `src/lib/server/root/watch/local.ts` (`FIELDS`, so a changed `lsp` is seen) join the paths.
-- Every `HELP.md` line after 85 is one higher; every `plan.md` cite moved by three, `orchestrator-history.md` by eight, `choices.md` Z260 to 1631-1636; each quoted ruling compared with its line at b1aedbfc6, all identical. Every reference to X3f's worktree or to X3f being in flight is rewritten to main.
+- Every `HELP.md` line after 85 is one higher; every `plan.md` cite moved by three, `orchestrator-history.md` by eight, `choices.md` Z260 to 1631-1636; each quoted ruling compared with its line at 273196959, all identical. Every reference to X3f's worktree or to X3f being in flight is rewritten to main.
 
 Shared paths, rewritten for D38 and D20, with merges simulated by `git merge-file` on D38's files as its worktree held them:
 
@@ -497,7 +497,7 @@ Usage of the recheck after X3f: ordo-high on claude-opus-5-5 (a109988b506ff31e4)
 
 ## Rechecked after D38 and D20 (2026-10-05)
 
-The brief's premises reread on main's working tree: head f0f311964 ("Book Axel's rulings Z538, Z539, Z543 and Z545"), D38 committed at b07d24766 (`git log --oneline 1fb89b9cd..HEAD -- tools/oculus ':!tools/oculus/.scratch'` prints only that commit), and D20 applied and staged on it (`git diff --cached --stat -- tools/oculus` prints `97 files changed, 3944 insertions(+), 992 deletions(-)`, none under `docs/`). Outside the ledger the working tree holds one unstaged change, `src/lib/views/feeds/literature/Head.svelte`, which no line of the brief names. Every path the brief cites under `src`, `config` and `tests` (190 paths) was compared with b1aedbfc6 by `git diff --stat b1aedbfc6 -- <path>` over each, and `HELP.md`, `DESIGN.md` and `package.json` by their hunks: the changed files are `HELP.md`, `DESIGN.md`, `config/text/app.yml`, `config/catalogs/options.yml`, `config/behavior.yml`, `package.json`, `data/sources/config/local.ts`, `server/root/watch/local.ts`, `server/root/context.ts`, `data/model/index.ts`, `tests/data/sources/config/local.test.ts` and `tests/server/root/context-fixture.ts`, each cited line of them read again by a grep; every other cited file is unchanged and its cites hold (sizes, anchors and folder counts rerun: `Source.svelte` 528, `Palette.svelte` 523, `Editor.svelte` 508, `glyphs.yml` 177 names, the ten-item folders still at 10).
+The brief's premises reread on main's working tree: head d67982033 ("Book Axel's rulings Z538, Z539, Z543 and Z545"), D38 committed at 5b4e737a8 (`git log --oneline 52e9e8f4e..HEAD -- tools/oculus ':!tools/oculus/.scratch'` prints only that commit), and D20 applied and staged on it (`git diff --cached --stat -- tools/oculus` prints `97 files changed, 3944 insertions(+), 992 deletions(-)`, none under `docs/`). Outside the ledger the working tree holds one unstaged change, `src/lib/views/feeds/literature/Head.svelte`, which no line of the brief names. Every path the brief cites under `src`, `config` and `tests` (190 paths) was compared with 273196959 by `git diff --stat 273196959 -- <path>` over each, and `HELP.md`, `DESIGN.md` and `package.json` by their hunks: the changed files are `HELP.md`, `DESIGN.md`, `config/text/app.yml`, `config/catalogs/options.yml`, `config/behavior.yml`, `package.json`, `data/sources/config/local.ts`, `server/root/watch/local.ts`, `server/root/context.ts`, `data/model/index.ts`, `tests/data/sources/config/local.test.ts` and `tests/server/root/context-fixture.ts`, each cited line of them read again by a grep; every other cited file is unchanged and its cites hold (sizes, anchors and folder counts rerun: `Source.svelte` 528, `Palette.svelte` 523, `Editor.svelte` 508, `glyphs.yml` 177 names, the ten-item folders still at 10).
 
 48 places are marked "(corrected after D38 and D20: ...)" on 44 lines and 4 "(added after D38 and D20 ...)"; 33 lines of ledger cites in "The scope as ruled" are renumbered under that section's one marker, each quoted ruling compared with its new line by a script over the working copies (31 cites and the three quoted blocks, every one identical); "Shared paths" is rewritten. The main ones:
 
@@ -505,7 +505,7 @@ The brief's premises reread on main's working tree: head f0f311964 ("Book Axel's
 - Ledger: `plan.md` holds one line more from `:506` (D38's booking), so D23's line is `:533-536` and every ruling one higher; `orchestrator-history.md` holds four more at `:7-10`, so Z72 and Z74 are at `:1277-1278` and Z182's raising at `:338`; `choices.md` unchanged; `orchestrator-state.md`'s "code is written by hand only" is at `:79`.
 - Code lines D38 or D20 moved: `options.yml`'s `local.yml` entries at `:1205-1280` and `approvals` at `:1236-1238`, D38's `literature.*` keys ending the file; `local.ts` `approvals` at `:87`, `:141`, `:379`; `context.ts`'s `terminals` lines at `:71`, `:108`, `:293`, `:440`, `:494` and `changedKeys` at `:681-692`; `context-fixture.ts`'s at `:43-44`, `:56`, `:119`; `index.ts`'s `model-processes.ts` export at `:535`; `local.test.ts`'s second `hpc_host` row at `:118` and D38's rows ending the table at `:85-87`; `package.json`'s `nodemailer`, `seti-ui`, `trash` and `write-file-atomic` at `:86`, `:87`, `:90`, `:91`.
 - `src/lib/server/machine` holds 8 items, D20 having added `seeds/`; D23's `lsp/` and D11's `debug/` bring it to 10.
-- Wrong before D38 and D20, found by this recheck: the lsp folder's naming cited "HELP.md:282" for the history folder, which is `HELP.md:121` (the `files` row) and `DESIGN.md:400`; `editor.languages` ends at `options.yml:529`, `latex.auto_build` at 530 (so on a21aa859d as well), where the brief said 533; `socket.ts`'s head comment is lines 1-16, where the brief said 1-12.
+- Wrong before D38 and D20, found by this recheck: the lsp folder's naming cited "HELP.md:282" for the history folder, which is `HELP.md:121` (the `files` row) and `DESIGN.md:400`; `editor.languages` ends at `options.yml:529`, `latex.auto_build` at 530 (so on f073b0494 as well), where the brief said 533; `socket.ts`'s head comment is lines 1-16, where the brief said 1-12.
 - Added: Z545 (b) has A3 put an exception for a scheduled run's idle terminal into the processes paragraph, `DESIGN.md:155`, which D23 also rewrites (premise 13).
 
 Shared paths, rewritten: nothing of D38 or D20 is left to merge, the placements the last recheck asked for (`lsp` after `approvals`, the wire types' export as a new line after `index.ts:535`, the relay beside `terminals`) hold on main, and after D20's commit no step is in flight (the dispatch block names D20 alone). Steps not in flight that share paths, judged at preparation: A3 (its own brief judges the merge with D23 not simple: `model-processes.ts`, `model/index.ts`, `state/client/context.ts`, `context.ts`, `context-fixture.ts`, `package.json`, `DESIGN.md:85`, `:114` and the Processes paragraph), D44 (`Source.svelte` beyond a hunk, `ask-perform.ts`, `source.yml`, the glyph catalogs, `context.ts`, `context-fixture.ts`, `package.json`, `HELP.md`, `DESIGN.md`), D45 (the `latex-editor.ts` move, `s1-s5`, `options.yml:530-564` beginning on the line after D23's `:529`, the status items, `Source.svelte`) and M6 (as `agents/briefs/M6.md:342` lists). In each case whichever is dispatched second is prepared on main after the first lands. `A3.md` and `D44.md` were being changed by other agents while this was read, so the A3 quote is as `grep -n "^- D23 (" agents/briefs/A3.md` printed it at 369.

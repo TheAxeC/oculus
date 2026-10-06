@@ -1,4 +1,4 @@
-# Step Q79a refuter report (on .agents/worktrees/Q79a, base aad34cdd)
+# Step Q79a refuter report (on .agents/worktrees/Q79a, base ac2a5f72)
 
 ## Verification (rerun by the reviewer)
 
@@ -18,7 +18,7 @@ $ grep -rn "sameOrigin(" src | grep -v "export function"        -> src/hooks.ser
 $ grep -rn "locals.server.config" src | wc -l                  -> 0
 $ grep -rn "loadConfig(" src                                    -> hooks.server.ts:61, root/watch/portfolio.ts:289, root/context.ts:205, root/context.ts:283, config/merge.ts:109 (definition); each read has its comment
 $ npm run diagrams                                              -> not run (it writes into the worktree); tests/checks/diagrams: Tests 68 passed (68), the check that the committed diagrams match their source
-Brief premises at base (git grep aad34cdd): 22 files / 24 hand JSON answers; 25 files / 30 sameOrigin calls; 4 locals.config() readers. All reproduce.
+Brief premises at base (git grep ac2a5f72): 22 files / 24 hand JSON answers; 25 files / 30 sameOrigin calls; 4 locals.config() readers. All reproduce.
 
 Report's quoted evidence, rerun:
 $ grep -rn "application/json" src/lib/server src/routes src/hooks.server.ts -> connect/api.ts:79, files/files.ts:53 only
@@ -29,7 +29,7 @@ $ npx vitest run tests/server/machine/usage                     -> Tests 47 pass
 $ npx vitest run tests/server/git/git-ops.test.ts               -> Tests 37 passed (37)
 $ npx vitest run tests/checks/diagrams                          -> Tests 68 passed (68)
 $ (auth, hooks-server, and the four above together)           -> Test Files 9 passed (9), Tests 189 passed (189)
-Migration, old (git show aad34cdd:...migrate-joint-work.mjs via node stdin) vs new, over the test's COLLABORATIONS fixture in a scratch hub: both exit 0; parsed people.yml, organisations.yml, joint-work.yml isDeepStrictEqual true and JSON-equal true for all three; text diff: "tags: [federated]" became "tags: [ \"federated\" ]".
+Migration, old (git show ac2a5f72:...migrate-joint-work.mjs via node stdin) vs new, over the test's COLLABORATIONS fixture in a scratch hub: both exit 0; parsed people.yml, organisations.yml, joint-work.yml isDeepStrictEqual true and JSON-equal true for all three; text diff: "tags: [federated]" became "tags: [ \"federated\" ]".
 Host table: built server, `HOME=<scratch> node src/server.ts --engine <scratch engine>` on port 8797 (config/ copied, the worktree holds no local.yml; scratch local.yml; scratch hub), stopped with kill, curl afterwards 000:
   GET /api/changes, no headers            -> {"changes":[],"page":50} [200]
   GET /api/fs, no headers                 -> 200, the workspaces
@@ -49,7 +49,7 @@ Not reproduced: the "Before" column (the builder read it, did not run it; I did 
 
 ## 1. Spec
 
-- Brief, "Decisions taken in this brief" 1, premise not reproduced: "The five real call sites this changes ... core/changes.ts:235, files/fs.ts, git/git-reads.ts, content/memories.ts:143, root/hooks.ts:215". `git grep -n "sameOrigin(" aad34cdd -- src` shows the auth.ts rule (neither header refused) in front of 15 token-free GET routes, and each now answers a headerless client where it answered 403: /api/connect (setup.ts handleSetupRead), /api/docs, /api/latex, /api/changes, /api/file/[root]/[...path] (route and files.ts serveFile), /api/fs GET, /api/project-files, /api/source GET, /api/deposit GET, /api/git GET, /api/lines, /api/agents (compose.ts), /api/terminal GET (pty/routes.ts handleTerminalList), /api/customizations, /api/transcript. The curls above show /api/file serving file bytes and /api/lines starting its count for a request with neither header. The decision was taken on a count of three GETs; it is the orchestrator's to re-put with the real set.
+- Brief, "Decisions taken in this brief" 1, premise not reproduced: "The five real call sites this changes ... core/changes.ts:235, files/fs.ts, git/git-reads.ts, content/memories.ts:143, root/hooks.ts:215". `git grep -n "sameOrigin(" ac2a5f72 -- src` shows the auth.ts rule (neither header refused) in front of 15 token-free GET routes, and each now answers a headerless client where it answered 403: /api/connect (setup.ts handleSetupRead), /api/docs, /api/latex, /api/changes, /api/file/[root]/[...path] (route and files.ts serveFile), /api/fs GET, /api/project-files, /api/source GET, /api/deposit GET, /api/git GET, /api/lines, /api/agents (compose.ts), /api/terminal GET (pty/routes.ts handleTerminalList), /api/customizations, /api/transcript. The curls above show /api/file serving file bytes and /api/lines starting its count for a request with neither header. The decision was taken on a count of three GETs; it is the orchestrator's to re-put with the real set.
 - src/hooks.server.ts:9-15 and DESIGN.md:146, decision 1's reason "a browser always sends one of the two": not verified by a command here (no browser tests allowed). By the Fetch Metadata spec, Sec-Fetch-* go only to potentially trustworthy URLs, so on 127.0.0.1/localhost current browsers send Sec-Fetch-Site and are judged as before. A browser without Fetch Metadata, or a non-trustworthy host alias of this machine (the own-host branch at auth.ts exists for such a host), sends neither header on a cross-site no-cors GET (img, script, link, a navigation); that request now reaches the 15 routes above. What would settle it: one request from a cross-site page in each supported browser to the served address. The sentence in DESIGN.md and the auth.ts head comment states the reason as fact.
 - tests/server/core/auth.test.ts:113-134: the brief's json() case (the `{ error: 'origin' }` answer of changes.ts) was replaced by gatedBody's two answers without the stop the brief prescribes for a case its rules get wrong; listed as a judgment call in the report, not handed back.
 - bin/diagrams/writes.mjs:127-180 and tests/checks/diagrams/diagrams.test.ts: outside the brief's path list; needed by item 1 (the refusal reader parsed the old `json(4xx, ...)` shape). Stated in the report. No item names it.
@@ -60,7 +60,7 @@ Not reproduced: the "Before" column (the builder read it, did not run it; I did 
 - src/hooks.server.ts:15 `const UNGUARDED = ['/api/calendar/callback', '/api/mail/callback'];`: no test sends a request with route id `/api/(accounts)/calendar/callback` through `handle` (`grep -rn "calendar/callback" tests` shows only address strings in account tests). Dropping the calendar entry would leave the suite green while the calendar consent redirect is refused 403.
 - tests/routes/sessions/hook.test.ts:52 "answers 200 for a same-origin Origin": handleHookRequest no longer reads Origin, so the case passes whatever the origin; its title names a behaviour the route no longer has.
 - Report, "Judgment calls", the three JSON-string comparisons left: "The side they build may carry optional fields set to undefined, which JSON drops and isDeepStrictEqual does not". For two of the three this does not hold: `audit-mute.ts:48 kept(..., wanted: string[])` and `rail.ts:72 kept(..., wanted: RailEntry[])` with `export type RailEntry = { label: string; glyph: string; page: string }` (data/sources/config/rail.ts:19), no optional field. Only connect/rows.ts:178 can carry an optional field. Neither swap was asked by the brief (item 4 names yaml-edit's deepEqual and deck-edit's same), so this is the stated reason, not a missing item.
-- Report, "Files, lines before and after": measured against the main checkout's working tree, not base aad34cdd. It lists docs/diagrams/layer-state.dot and layer-views.dot as changed; `git status --short` shows neither changed, and it omits the three changed .svg files. Its totals (1559 removed, 1800 added) do not match `git diff aad34cdd --stat` (120 files, 1814 insertions, 1573 deletions).
+- Report, "Files, lines before and after": measured against the main checkout's working tree, not base ac2a5f72. It lists docs/diagrams/layer-state.dot and layer-views.dot as changed; `git status --short` shows neither changed, and it omits the three changed .svg files. Its totals (1559 removed, 1800 added) do not match `git diff ac2a5f72 --stat` (120 files, 1814 insertions, 1573 deletions).
 
 ## 3. Standards
 

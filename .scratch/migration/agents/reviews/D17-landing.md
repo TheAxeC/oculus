@@ -20,7 +20,7 @@ ListAgents at 07:44 listed no subagent, only two idle peer sessions (ordo-01, re
 
 ## What landed
 
-From base 201a8fcb, on main with the merge and the landing fixes: 139 files, 10911 insertions, 1380 deletions (`git diff --cached --shortstat` before the commit).
+From base a238de92, on main with the merge and the landing fixes: 139 files, 10911 insertions, 1380 deletions (`git diff --cached --shortstat` before the commit).
 
 - A repository's commands from `.oculus/commands.yml` (`{ name, run, cwd?, depends_on?, default? }`), from the form saving to `~/.oculus/commands.json` keyed by the repository's path, and found in CMake presets, `package.json` scripts and Makefile targets (`server/machine/commands/`).
 - A run behind approval of the chain's exact text and folders, in the shared `approvals.json` (`server/machine/approvals/approvals.ts`); the chain in one task terminal, each command preceded by a marker line holding a per-run token and its name (Z304).

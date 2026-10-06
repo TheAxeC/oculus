@@ -1,9 +1,9 @@
-## Refutation of O30b (oculus/migration), worktree `.agents/worktrees/O30b`, base dff7539f4
+## Refutation of O30b (oculus/migration), worktree `.agents/worktrees/O30b`, base f4d7420db
 
 **Verdict:** all eight items hold. Every case I was allowed to run is met. No finding needs another repair round. There are two Spec findings, two Proof findings, three Standards findings and one Behaviour finding. All are small and can be fixed at landing.
 
 I ran the two read-only git commands, from the worktree:
-- `git diff dff7539f4` covers 25 tracked files, +300/-156.
+- `git diff f4d7420db` covers 25 tracked files, +300/-156.
 - `git status --short` (run at the start and again at the end) shows the same 25 `M` files and the same two `??` files: `src/lib/server/root/process/build-folders.ts` and the report. My build runs changed nothing that git tracks.
 
 What I could not run: case 14 (row 4 of `start.test.ts`), because that row binds port 8817, which my rules forbid. Case 15 is left for the look at landing.

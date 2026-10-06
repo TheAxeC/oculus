@@ -12,7 +12,7 @@ Nothing of Q73's brief. The layer diagrams read worse with the word nodes than b
 
 ## What landed
 
-Q73, cherry-picked from `.agents/worktrees/Q73` at base `96786a24` by `tools/oculus/.scratch/migration/land.sh Q73 96786a24 <runs> --no-browser` (+6,030 -2,659 over 404 files), then fixed at landing (+67 -3 over 3 files), the browser suite run by hand. The commit follows this report.
+Q73, cherry-picked from `.agents/worktrees/Q73` at base `359e1ee9` by `tools/oculus/.scratch/migration/land.sh Q73 359e1ee9 <runs> --no-browser` (+6,030 -2,659 over 404 files), then fixed at landing (+67 -3 over 3 files), the browser suite run by hand. The commit follows this report.
 
 - `state/life` is a folder of its own again; `state/shared/words` and `state/shared/stores` sit under one foot folder with an inner order the order check reads.
 - One import reader, `bin/diagrams/imports.mjs`, on the TypeScript compiler API and `svelte/compiler`, serves the cycle, order, boundary and augmentation checks and the diagram tool; the reviewer compared it with `ts.preProcessFile` over the 563 files of `src` and found it agreeing on 3,015 of 3,016 imports, the one difference the built handler of `src/server.ts` it reads on purpose.

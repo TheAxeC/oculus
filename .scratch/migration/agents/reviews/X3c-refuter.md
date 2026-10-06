@@ -1,4 +1,4 @@
-# Step X3c refuter report (on .agents/worktrees/X3c, base ddcd610c)
+# Step X3c refuter report (on .agents/worktrees/X3c, base c02b7570)
 
 The step is not ready to land. The source tab's Save, Revert, star, Open in Program, Preview and Blame are no longer drawn anywhere in the app (Spec 1). The report's first line says "Everything in the brief is done".
 
@@ -75,7 +75,7 @@ $ grep -rn "new-note" src tests
 $ ls <worktree root>/package.json
 ls: ...: No such file or directory   (as the report says)
 
-The first run on the unchanged tree. The reviewer built its own unchanged tree: a copy of tools/oculus with `git diff ddcd610c -- tools/oculus/src tools/oculus/config` applied in reverse, new-note.ts taken from the diff, the step's 12 new source files moved aside, and the step's final tests kept. That copy's src is byte-identical to the builder's base copy (`diff -rq` prints nothing). It is in the scratchpad at rv-x3c-refuter/. The builder's 49 files were run there:
+The first run on the unchanged tree. The reviewer built its own unchanged tree: a copy of tools/oculus with `git diff c02b7570 -- tools/oculus/src tools/oculus/config` applied in reverse, new-note.ts taken from the diff, the step's 12 new source files moved aside, and the step's final tests kept. That copy's src is byte-identical to the builder's base copy (`diff -rq` prints nothing). It is in the scratchpad at rv-x3c-refuter/. The builder's 49 files were run there:
 $ npx vitest run <the 49 files> --reporter=json
 1488 total, 1332 passed, 156 failed; the files that do not load: pane-strip-menu.test.ts, source.test.ts, tab-menu.test.ts, tab-path.test.ts, viewport.test.ts
 The only per-test difference from the builder's first-run-base.json (1488/1333/155) is "layer boundaries holds across src/lib". It failed in the unit run under load and passes alone (`npx vitest run tests/checks/tree/boundaries.test.ts --testTimeout 0`: 11 passed).
@@ -315,7 +315,7 @@ Reviewer usage: about 350,000 tokens, about 80 tool uses, about 40 minutes.
 
 ## Repair round 1, refuted
 
-On /Users/axelfaes/workspace/research-hub/.agents/worktrees/X3c (product under tools/oculus), base ddcd610c. This was checked against the round as sent: the copy at scratchpad/x3c-round1-start and the round's report, which is the section "Repair round 1" of `agents/reviews/X3c-report.md` in the worktree.
+On /Users/axelfaes/workspace/research-hub/.agents/worktrees/X3c (product under tools/oculus), base c02b7570. This was checked against the round as sent: the copy at scratchpad/x3c-round1-start and the round's report, which is the section "Repair round 1" of `agents/reviews/X3c-report.md` in the worktree.
 
 ```
 $ npm run build            (run alone, before the list)
@@ -372,13 +372,13 @@ Evidence the round's report relies on, checked again:
 - R14. Sending Split Right to the left edge fails "splits to the edge each split item names".
 - R11. The 26 test files the round adds or changes, run on the base copy: 757 tests, 704 passed, 53 failed, 6 files do not load. Every per-file count matches the report's list.
 - R2. The installed VS Code is 1.137.0. dark_modern.json and light_modern.json set all ten keys; the files they include set none of them. The values match the report's table.
-- R3. `git diff ddcd610c --stat` lists none of these files: processes.test.ts (state and view), sessions.test.ts, terminal.test.ts, presses.test.ts, processes.ts, processes.svelte.ts.
+- R3. `git diff c02b7570 --stat` lists none of these files: processes.test.ts (state and view), sessions.test.ts, terminal.test.ts, presses.test.ts, processes.ts, processes.svelte.ts.
 - colours.test.ts (slow tag), run alone on each tree: base and final fail with the same two entries (the DiffEditor gradient and the OpenEditors `.dirty` currentColor), as the report says.
 - wc -l, ruling 16: PaneView.svelte 495/540, Source.svelte 511/540, terminals.svelte.ts 819/900.
 - wc -l of other files: fs.svelte.ts 888/900 (877 at the base), TerminalGrid.svelte 532/540 (515 at the base).
 ```
 
-One read-only command outside what the brief allows was run once: `git show ddcd610c:tools/oculus/src/lib/views/sources/files/sections/OpenEditors.svelte`.
+One read-only command outside what the brief allows was run once: `git show c02b7570:tools/oculus/src/lib/views/sources/files/sections/OpenEditors.svelte`.
 
 ### Verdicts
 
@@ -496,7 +496,7 @@ Spec
      - Ruling 8 asked for a test that "with an unsaved tab among those an item closes, the question names that tab".
      - When several tabs close and no terminal runs a program, `closeAsk` returns the count sentence with an empty detail. Tab b is never named, and the test asserts that count sentence.
      - The tab is named only when a busy terminal closes with it (the test "names the tabs holding unsaved text when a terminal running a program is closed with them").
-     - `closeAsk` is unchanged since the base (`git diff ddcd610c` on pages.ts adds 81 lines and none of them touch closeAsk). So either the code must name the unsaved tabs in the `many` case, or the ruling's premise was false for that case.
+     - `closeAsk` is unchanged since the base (`git diff c02b7570` on pages.ts adds 81 lines and none of them touch closeAsk). So either the code must name the unsaved tabs in the `many` case, or the ruling's premise was false for that case.
      - The round's report marks R8 DONE and says neither.
      - The old test at tab-menu.test.ts:233 is titled "asks first, naming the tab that holds unsaved text" and asserts 'Close 2 tabs?'. Its title is false.
    - Failure scenario: a reader chooses Close Others with an unsaved tab among three. The dialog reads "Close these 2 tabs?" and does not say which one holds unsaved text, which C4 requires.
@@ -533,7 +533,7 @@ Proof
 3. The round's report, file table ("Files (R17)"):
    - The quoted hunk: `M 168 tests/views/sessions/presses.test.ts` (line 704).
    - What is wrong:
-     - presses.test.ts is identical to the base; my `git diff ddcd610c --stat` does not list it. The same report says it was restored (line 750).
+     - presses.test.ts is identical to the base; my `git diff c02b7570 --stat` does not list it. The same report says it was restored (line 750).
      - The table has no row for tests/ui/controls/prompt.test.ts, which the round changed (it has the choices case) and which the report's own R7 row cites.
      - `git status --short` still shows `D  tools/oculus/src/lib/state/workbench/layout/open/new-note.ts` staged in the index. The table should say so when it lists the deletion.
      - The R3 row says `terminalTabTitle` is "used by `folds.ts` only". terminals.svelte.ts:757 (`adopt`) uses it too, also for the tab.

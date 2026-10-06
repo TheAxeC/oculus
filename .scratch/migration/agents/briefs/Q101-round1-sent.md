@@ -16,7 +16,7 @@ The round starts at the worktree commit 55bea404 (the step's work as you left it
 ## Report corrections
 
 7. The file table drops `tests/checks/config/config-folder.test.ts`, which the step does not change.
-8. `TerminalRows.svelte`'s before count is 197 (the base, `git diff 3d4f9bd4 --numstat` as the reviewer read it).
+8. `TerminalRows.svelte`'s before count is 197 (the base, `git diff a6f61d7e --numstat` as the reviewer read it).
 9. R2's wording says it turns the first-message case red, and names the case it leaves green.
 10. The before and after of a tab's last terminal ending is given in full: at the base, tabs pinned to the ended terminal closed on every page, a tab following the selection closed only while the selection still showed that terminal, a terminal selection was cleared and a session selection kept, and a composer tab New had put there stayed with its typed text; after, with item 3 applied.
 11. Under the user-visible changes, with before and after: a session press on a project card with only a Terminal tab open (now opens the session's detail view); the Repositories view's shell (now in the page's Terminal tab, not a tab of its own); a composing tab whose last terminal ends (item 3); New after a Split in the same tab (item 4).

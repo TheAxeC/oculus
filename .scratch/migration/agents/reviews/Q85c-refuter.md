@@ -1,4 +1,4 @@
-# Step Q85c refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85c, base 8db30ca2)
+# Step Q85c refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85c, base d734fd80)
 
 Pages cited are named by section. Findings in code keep file:line (line numbers are the worktree's, from `tools/oculus`).
 
@@ -42,7 +42,7 @@ LC_ALL=C grep -rna '[^ -~]' src tests DESIGN.md  -> no output
 wc -l normalise.ts validate.ts     -> 767 and 849
 ls: src/lib/data/snapshot 6, tests/data/sources 9, tests/data 9, tests/data/snapshot 4
 grep -c 'safeParse\|readAs(' per file: deck 2, editor 1, opens-in-program 1, search 1, index 1, shapes 8, normalise 6, validate-themes 2, validate 12, career 0, collections 2, agents 2, catalogs 3, local 6, merge 2, options 0, rail 8, settings 4, themes 2, docs 1, feeds 0, manifests 0, present 3, registries 2, yaml-file 1, compact 0, normalise-career 7   (claim: 0 for feeds, manifests, career, options; the rest at least 1)
-case 14: base src/lib/data rebuilt in the scratchpad by reverse-applying `git diff 8db30ca2 -- src/lib/data` with patch -R (no other git command); JSON.stringify(buildPortfolio(demo, config)) of both trees, 43256 bytes each; `cmp base.json new.json` -> no output, exit 0
+case 14: base src/lib/data rebuilt in the scratchpad by reverse-applying `git diff d734fd80 -- src/lib/data` with patch -R (no other git command); JSON.stringify(buildPortfolio(demo, config)) of both trees, 43256 bytes each; `cmp base.json new.json` -> no output, exit 0
 first run on the unchanged tree: the worktree's new and changed test files (22 files) run against that rebuilt base tree -> Test Files 1 failed | 21 passed (22), Tests 2 failed | 503 passed (505); the two failures are tests/data/sources/config/merge.test.ts "flattenText > skips an own __proto__ key at every level" ("expected [ '__proto__.a', 'b' ] to strictly equal [ 'b' ]") and "loadConfig > skips a top-level __proto__ key of a file ..." (prototype not Object.prototype). The same 22 files in the worktree pass (inside the 669 above).
 timing (tests/data/snapshot/build-timing.test.ts, base then worktree, 3 alternating rounds, ms per 200 runs, machine loaded):
   buildPortfolio 2571.2/4109.7, 2791.1/2394.9, 3195.3/2319.3 (means 2852 vs 2941, 1.03x)
@@ -123,7 +123,7 @@ No test asserts a known defect, none has a threshold widened, none is made to pa
 ## Declined to judge
 
 - The look on the TEST page: no view, style or markup file changed (diff paths above), so it is the orchestrator's landing step and nothing a read can settle.
-- The unchanged-tree results come from a rebuilt base: `src/lib/data` of the worktree copied to the scratchpad and `git diff 8db30ca2 -- src/lib/data` reverse-applied with `patch -R`, a copy of the app tree around it (symlinks for `node_modules`, `config`, `demo`). That is the base as the diff states it; no second git command (`git show`, `git worktree`) was allowed to confirm it against the commit.
+- The unchanged-tree results come from a rebuilt base: `src/lib/data` of the worktree copied to the scratchpad and `git diff d734fd80 -- src/lib/data` reverse-applied with `patch -R`, a copy of the app tree around it (symlinks for `node_modules`, `config`, `demo`). That is the base as the diff states it; no second git command (`git show`, `git worktree`) was allowed to confirm it against the commit.
 - Whether the builder started a helper agent or ran more git commands than it states: the report says none; no command here can verify what the builder ran.
 - `config/local.yml`: never opened, printed, grepped or hashed by me. `vite.config.ts` calls `loadLocal(engineDir())` when vitest starts, as in every run of the list; that is the app's own tooling.
 - Whether the literal gate or the intent counts for the four zero-count files (Spec 3): the orchestrator's decision; I gave my reading.
@@ -134,7 +134,7 @@ Reviewer usage: about 330,000 tokens (context counter), about 80 tool uses, abou
 
 ## Repair round 1, refuted
 
-# Q85c repair round 1, reviewer report (worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85c, base 8db30ca2, product tools/oculus)
+# Q85c repair round 1, reviewer report (worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85c, base d734fd80, product tools/oculus)
 
 Position first: every ruling of round 1 is closed. The verification list is green. I found 0 Spec, 0 Proof, 2 Standards (low) and 1 Behaviour (low) findings. Nothing was changed anywhere. `git status --short` in the worktree still prints 48 paths after my runs. My scratch files are under $TMPDIR with the prefix `Q85c-r1-review-`.
 
@@ -165,7 +165,7 @@ Commands the round's report quotes, rerun:
 - Counting grep over `src/lib/data` printed 14 files and 41 lines (validate 12, normalise 2, shapes 2, connect 2, calendar 1, model-sessions 1, agents 1, options 4, merge 1, worktrees 3, code-themes 1, search 1, guards 9, opens-in-program 1). The `.issues|prettifyError|treeifyError` grep and the non-`Shape` `const x = z` grep print nothing. The cast grep prints `snapshot/compact.ts:6` and `sources/config/merge.ts:63` only. The item 6 grep prints `helpers/guards.ts:18` only.
 - `sed -n 148p DESIGN.md | grep -c 'src/lib/data'` printed 1, and `grep -o "server/transcripts., .src/lib/data. and .state/."` matched the opening scope sentence.
 - `grep -rn "export { career" src/lib/data` and `grep -n "?? \['']" settings.ts` print nothing. `grep -rn "rowsShape(" src/lib/data` prints only module-level consts (`index.ts:61,77,104`, `normalise.ts:72`, `present.ts:134,142`, `feeds.ts:35`, `validate.ts:170` inside `listNamesShape`) plus the helper's own definition in `shapes.ts`.
-- `q85c-answers.mjs` was in the session scratchpad. I ran it on the tree it was run on (`$S/base/oculus`, which I confirmed equals the base: reverse-applying `git diff 8db30ca2 -- tools/oculus/src/lib/data` onto a copy of the worktree's folder leaves only the three new files as the difference) and on the worktree. All ten changed answers reproduce:
+- `q85c-answers.mjs` was in the session scratchpad. I ran it on the tree it was run on (`$S/base/oculus`, which I confirmed equals the base: reverse-applying `git diff d734fd80 -- tools/oculus/src/lib/data` onto a copy of the worktree's folder leaves only the three new files as the difference) and on the worktree. All ten changed answers reproduce:
   - Before: `flattenText` gave `["__proto__.a","b"]` and nested `["a.__proto__.c","a.d"]`; `textCatalog` and `portfolioConfigFrom(...).text` gave `["__proto__.a","b"]`.
   - Before, `loadConfig`: the map case replaced the prototype (`protoIsObject:false`, `inherited_a:"x"`) with a `defined_twice __proto__` finding; the text case kept the prototype and had the same finding; the two-file case replaced the prototype and had two findings.
   - Before: registry meta and collection meta had `protoIsObject:false` and `injected:"yes"`.

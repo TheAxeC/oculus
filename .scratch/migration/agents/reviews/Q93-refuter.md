@@ -1,4 +1,4 @@
-# Step Q93 refuter report (on .agents/worktrees/Q93, base 7bb7d2bc)
+# Step Q93 refuter report (on .agents/worktrees/Q93, base 6cf0b497)
 
 ## Verification (rerun by the reviewer)
 
@@ -42,7 +42,7 @@ Item 8: sh bin/scratch-count.sh
    Test Files  2 failed | 337 passed (339) / Tests  1 failed | 5299 passed (5300) / Duration 174.64s
   the same under npx vitest run --reporter=dot (load 9.62): Test Files 339 passed (339), Tests 5300 passed (5300), Duration 69.61s, exit 0
 Sweep check: 184 files had directive lines at base (git grep -c over tests minus browser and revert-*), 1400 lines at base, 1400 directive lines removed by the diff; 138 files change only by removed directive lines (0 added, 0 other removed); the other 46 carry the comment edits read below.
-Premise 5: git ls-tree -r 7bb7d2bc tools/oculus/tests/browser | wc -l -> 78; 78 deletions under tests/browser in git status.
+Premise 5: git ls-tree -r 6cf0b497 tools/oculus/tests/browser | wc -l -> 78; 78 deletions under tests/browser in git status.
 ```
 
 Why the verify runner shows RED: `grep` exits 1 when it finds nothing, and the runner treats any non-zero exit as a failure. The last command in the verify list at `orchestrator-state.md:12` is therefore red whenever the tree is clean. This is a fault in the list, not in the step: the grep printed nothing. It will be red on main too until the list is written as `! LC_ALL=C grep -rna '[^ -~]' src tests`.
@@ -65,7 +65,7 @@ Sample of the mechanical sweep, read in full. Each file's hunks remove only `// 
 
 - **`demo/hpc/batch.txt`, `demo/hpc/quota.txt`, `demo/sessions/claude/projects/demo-hub/0f2c1a64-....jsonl` deleted, and the paragraph at `demo/README.md:9` deleted with them.**
   - This is outside the brief's paths, and no item asks for it. The report names it as decision 3.
-  - Reachability check, which passes. At base, only three test files and the README named these files: `git grep 'demo/hpc|demo/sessions|batch\.txt|quota\.txt|sessions/claude|0f2c1a64' 7bb7d2bc` finds only `tests/browser/helpers/serve.ts:16,225-229`, `tests/browser/views/hpc.spec.ts:2-3,13`, `tests/browser/workbench/sanitise.spec.ts:8` and `demo/README.md:9`.
+  - Reachability check, which passes. At base, only three test files and the README named these files: `git grep 'demo/hpc|demo/sessions|batch\.txt|quota\.txt|sessions/claude|0f2c1a64' 6cf0b497` finds only `tests/browser/helpers/serve.ts:16,225-229`, `tests/browser/views/hpc.spec.ts:2-3,13`, `tests/browser/workbench/sanitise.spec.ts:8` and `demo/README.md:9`.
   - After the step, nothing in `src`, `tests`, `bin`, `config`, `vite.config.ts`, `HELP.md`, `DESIGN.md`, `README.md` or `demo` names them.
   - No config key builds a path into the hub that could reach them:
     - Session stores take `account.dir` from `local.yml` or from home (`src/lib/data/sources/config/local.ts:120-131`), joined with `projects` or `sessions` (`src/lib/server/sessions/folders.ts:56-58`).
@@ -162,10 +162,10 @@ Reviewer usage: tokens not measured, about 45 tool uses, about 25 minutes.
 - allow-duplication.txt, recomputed by a node port of `meaningful`/`copies`/`markOf` (scratchpad `dup.mjs`, allow list empty, first offset of each run) over every entry:
   - Round's list against the current tree: `ok 597 off 66 missing 0 noNum 3`.
   - The list at 98100b22 against the current tree: `ok 304 off 359`. 359 - 66 = 293, the builder's count.
-  - All 293 renumbered entries touch a file changed since 7bb7d2bc (`git diff 7bb7d2bc --name-only`, 327 files). A loop over the 293 finds 0 whose two files are both unchanged.
+  - All 293 renumbered entries touch a file changed since 6cf0b497 (`git diff 6cf0b497 --name-only`, 327 files). A loop over the 293 finds 0 whose two files are both unchanged.
   - None of the 66 stale entries touches a changed file.
   - The 66 are the same set under the old `indexOf('/*')` logic, so the round's item 7 moved no window start.
-  - Main (ff6040bf), old logic: `ok 291 off 375 noNum 4`. This reproduces the builder's "375 off on main".
+  - Main (c0624648), old logic: `ok 291 off 375 noNum 4`. This reproduces the builder's "375 off on main".
   - The builder's 293 reproduces. The round's 82 does not, by this method: 293 entries were off and are now right.
 - allow-duplication.txt shape: `git diff 98100b22 --numstat` gives `293 293`. `diff` of the 98100b22 list and the current list, with ` at N and N,` masked, prints nothing. So no path, mark, entry or other reason text changed: 678 lines before and after, no trailing newline, as before.
 - Sample of 10 renumbered entries checked by hand (`sed -n` at the listed lines in both files, leading whitespace stripped). Each window starts on identical lines:

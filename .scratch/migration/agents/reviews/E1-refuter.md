@@ -19,7 +19,7 @@ The brief's gate and the commands the report quotes, each rerun:
 - `LC_ALL=C grep -n '[^ -~]' DESIGN.md` printed nothing (exit 1).
 - `grep -n '^## Apps\|^## Relationship\|^## Hot reload' DESIGN.md` printed 222, 234 and 313. `wc -l DESIGN.md` gives 402.
 - `npx vitest run tests/checks/source/history.test.ts`: 3 passed.
-- `git diff 9023d17d --stat`: DESIGN.md only, 79 insertions and 0 deletions.
+- `git diff aae8f7b7 --stat`: DESIGN.md only, 79 insertions and 0 deletions.
 - The report's open items match the base state file's "Open items" section exactly (`diff` of the two extracts is empty). They are not the main checkout's current list, where Z72 has since been ruled; that is expected.
 - `grep -rn "\.views()" src` reproduces the single hit at views.ts:59.
 
@@ -142,7 +142,7 @@ checks: 7 commands passed
 Other checks:
 - `LC_ALL=C grep -n '[^ -~]' DESIGN.md` printed nothing (exit 1).
 - `git status --short` shows `M DESIGN.md` and `?? .scratch/migration/agents/reviews/E1-report.md`, and nothing else after the diagrams run.
-- `git diff 9023d17d --stat` shows DESIGN.md only, with 79 insertions.
+- `git diff aae8f7b7 --stat` shows DESIGN.md only, with 79 insertions.
 - The section is at 234-312, `## Relationship to the cockpit` is at 313, and the file has 402 lines.
 
 ### The 20 items
@@ -202,7 +202,7 @@ Other checks:
 - **B4: closed as disclosure.** :286 names the Document view's frame (`Document.svelte:134-141`, with `sandbox="allow-same-origin allow-scripts"` at 138), and 7r gives option (c). The regression is still recommended; see Spec F2.
 - **B5: closed.** :276 and :259 record and compare size, mtime and ctime, and hash the app again when any of them differs.
 
-### Verdicts over the whole diff since 9023d17d
+### Verdicts over the whole diff since aae8f7b7
 
 ### What to build
 - 1, where an app lives: met (:240).

@@ -1,4 +1,4 @@
-# Step Q92 refuter report (on .agents/worktrees/Q92, base 09e58eb1)
+# Step Q92 refuter report (on .agents/worktrees/Q92, base 8685afa6)
 
 ## Verification (rerun by the reviewer)
 
@@ -31,7 +31,7 @@ $ grep -rni agenda src config HELP.md DESIGN.md README.md tests docs/diagrams/*.
 $ grep -rn "agenda_empty|calendar.cancelled|calendar.tentative|open_event" src config HELP.md DESIGN.md README.md tests
   -> no reader of the removed keys
 $ grep -rn ENTITIES src -> src/lib/state/life/present.ts:61, :117 only (matches the report)
-$ git diff 09e58eb1 -- package-lock.json | grep '^+ *"node_modules/' -> @event-calendar/core, entities, ical.js only
+$ git diff 8685afa6 -- package-lock.json | grep '^+ *"node_modules/' -> @event-calendar/core, entities, ical.js only
 $ npm ls -> @event-calendar/core@5.15.0, entities@8.1.0, ical.js@2.2.1, svelte@5.57.1
 ```
 
@@ -62,7 +62,7 @@ To check the report's claims about repeating events (spec.md:58 edge cases), I r
 - Brief case "The validRange given to the library ... starts 2031-01-30 and ends 2031-05-03": it is tested on the pure function `calendarRange` (`tests/state/life/calendar.test.ts:760-774`). The view's handing of `range` to `options.validRange` (`Calendar.svelte`, the `...(range === null ? {} : { validRange: range })` line) is not asserted. The report says a server render runs no effects. It does not say that the `options` prop reaching the library is unasserted.
 - Brief case footer "Read-only over 31 days back and 62 days ahead." (`tests/views/personal/calendar.test.ts:268-272`): the case builds its payload with `daysBack: 31, daysAhead: 62`, so it stays green with `config/behavior.yml` put back to 1 and 14. The report says this case passed on the unchanged tree. The window itself is proved by `tests/data/sources/calendar-config.test.ts:114-120`, which reads the shipped config.
 - Also green on the unchanged tree, as the report says: the mail Add form offering two providers, the mail endpoint refusing `ics`, the Remove of `ics-work`, the `mail:` ics row throwing, and the Help entity case. These guard behaviour that must survive; they do not prove the change.
-- The first run of the brief's cases on the unchanged tree was not reproduced (see Not checked). The quoted failures are consistent with the tree: each test names a function, key or file that base 09e58eb1 lacks.
+- The first run of the brief's cases on the unchanged tree was not reproduced (see Not checked). The quoted failures are consistent with the tree: each test names a function, key or file that base 8685afa6 lacks.
 
 ## 3. Standards
 - None found.
@@ -93,7 +93,7 @@ To check the report's claims about repeating events (spec.md:58 edge cases), I r
 
 Reviewer usage: 38 tool uses, about 30 minutes.
 
-## Repair round 1, refuted (worktree .agents/worktrees/Q92, round delta `git diff abe17f5f`, read against `git diff 09e58eb1`)
+## Repair round 1, refuted (worktree .agents/worktrees/Q92, round delta `git diff abe17f5f`, read against `git diff 8685afa6`)
 
 ```
 $ export PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH; sh /Users/axelfaes/.claude/skills/land/templates/verify.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md

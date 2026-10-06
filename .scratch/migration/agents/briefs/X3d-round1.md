@@ -1,6 +1,6 @@
 # X3d, repair round 1
 
-The refuter's report is `agents/reviews/X3d-refuter.md` (the review of X3d as prepared again on base 6dc78524). Each finding below has its ruling; change nothing else. Run no git command, not even `git status`: spec.md:32 forbids it (St1). Work in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3d`. Your paths are the brief's, widened by this round where a ruling names a file. Rewrite your report `tools/oculus/.scratch/migration/agents/reviews/X3d-report.md` for the whole step after the round, with a "Repair round 1" section that names each finding below, what changed, and the test that fails without the change (quoted from a run on the code before this round's change, in the test's final form).
+The refuter's report is `agents/reviews/X3d-refuter.md` (the review of X3d as prepared again on base 2c7a6ea4). Each finding below has its ruling; change nothing else. Run no git command, not even `git status`: spec.md:32 forbids it (St1). Work in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3d`. Your paths are the brief's, widened by this round where a ruling names a file. Rewrite your report `tools/oculus/.scratch/migration/agents/reviews/X3d-report.md` for the whole step after the round, with a "Repair round 1" section that names each finding below, what changed, and the test that fails without the change (quoted from a run on the code before this round's change, in the test's final form).
 
 ## Spec
 

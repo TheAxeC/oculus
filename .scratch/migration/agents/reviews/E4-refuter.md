@@ -1,6 +1,6 @@
 # E4 refuter report
 
-E4 review (refute), worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/E4, base ba20f682b. I made no edits to the worktree, the main checkout or the ledger, and invoked no skill or agent. Scratch files are in my scratchpad only. The one headless Chrome I ran used a scratch profile under my scratchpad. It was stopped and the profile removed: the follow-up `ps` shows no Chrome process and `ls -a` of that folder lists only `x.html`. I sent no curl and touched neither port 8787 nor 8790.
+E4 review (refute), worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/E4, base b811d87d5. I made no edits to the worktree, the main checkout or the ledger, and invoked no skill or agent. Scratch files are in my scratchpad only. The one headless Chrome I ran used a scratch profile under my scratchpad. It was stopped and the profile removed: the follow-up `ps` shows no Chrome process and `ls -a` of that folder lists only `x.html`. I sent no curl and touched neither port 8787 nor 8790.
 
 **Bottom line.** The step is not acceptable as built. Five problems decide it:
 - **Item 6 is broken (C38).** The Document view's new link handler can never act.
@@ -154,7 +154,7 @@ No test timed out, so no test was rerun alone.
 
 **S2. Two finding keys, `list_shape` and `file_unreadable`, are added to the section and to findings.yml without being reported.**
 - **Place:** DESIGN.md:274; config/text/findings.yml.
-- **What is wrong:** These are a user-visible vocabulary the brief does not name. `git show ba20f682b:tools/oculus/DESIGN.md | grep -c list_shape` gives 0, and `grep -c 'list_shape\|file_unreadable' E4-report.md` gives 0. The rules require no silent design decision.
+- **What is wrong:** These are a user-visible vocabulary the brief does not name. `git show b811d87d5:tools/oculus/DESIGN.md | grep -c list_shape` gives 0, and `grep -c 'list_shape\|file_unreadable' E4-report.md` gives 0. The rules require no silent design decision.
 - **Failure scenario:** Findings keys Axel never ruled reach the Findings view.
 
 **S3. DESIGN.md's list of refusal words lacks `not_json`, and still words `not_declared` as reads only.**
@@ -433,7 +433,7 @@ None of the titles below is named in guarded.md. G49 and G50 say "written by E4,
 
 **Tests whose failure costs nothing:** 'answers a POST with 405' in app-store.test.ts and app-open.test.ts (T3).
 
-**Lines added:** 2484 in new test files (`cat ... | wc -l`) plus 345 in changed test files (`git diff --numstat ba20f682b -- tests`: added 345, deleted 20). That is 2829 added test lines.
+**Lines added:** 2484 in new test files (`cat ... | wc -l`) plus 345 in changed test files (`git diff --numstat b811d87d5 -- tests`: added 345, deleted 20). That is 2829 added test lines.
 
 ## 5. Breakage code
 

@@ -1,4 +1,4 @@
-# Step Q67 refuter report (on .agents/worktrees/Q67, base ef269f83)
+# Step Q67 refuter report (on .agents/worktrees/Q67, base d52afada)
 
 ## Verification (rerun by the reviewer)
 All commands were run from `.agents/worktrees/Q67/tools/oculus`.
@@ -9,7 +9,7 @@ All commands were run from `.agents/worktrees/Q67/tools/oculus`.
 - `npm run lint` exited 0.
 - The ASCII gate (spec.md form) printed nothing.
 - `sh bin/size-check.sh` and `sh bin/folder-check.sh` both exited 0.
-- `npm run diagrams` run twice: the sha of `git diff ef269f83 -- docs/diagrams` was `737f9f41...` before, after the first run and after the second. No difference.
+- `npm run diagrams` run twice: the sha of `git diff d52afada -- docs/diagrams` was `737f9f41...` before, after the first run and after the second. No difference.
 - `npx playwright test` (whole suite, after build, once 8792 and the lock were free) printed `391 passed (6.9m)`. This matches the report.
 - `node bin/revert-check.mjs` over the 25 changed or added unit test files printed `161 reverts, 0 unproven, 151 unchecked`. This matches the report's unit row.
 - `ls -d $TMPDIR/oculus-* | wc -l` was 3 before and 3 after. Other runs held entries throughout (`oculus-browser-*`, `oculus-browser.lock`, `oculus-revert-*`), so nothing leaked could be attributed to this step either way.
@@ -87,7 +87,7 @@ All commands were run from `.agents/worktrees/Q67/tools/oculus`.
 - `npm run lint`: `lint exit 0`
 - ASCII gate (the rules file's perl line): no output, `ascii exit 0`
 - `sh bin/size-check.sh`: `size exit 0`. `sh bin/folder-check.sh`: `folder exit 0`
-- `npm run diagrams` twice: the sha of `git diff ef269f83 -- docs/diagrams` was `3cd788ff...` before, after the first run and after the second.
+- `npm run diagrams` twice: the sha of `git diff d52afada -- docs/diagrams` was `3cd788ff...` before, after the first run and after the second.
 - `npx playwright test`, after the build, with port 8792 free: `393 passed (7.0m)`, `pw exit 0`.
 - Revert-check over the unit files of items 1, 2, 5 and 12 (`node bin/revert-check.mjs` with rows.test.ts, accounts.test.ts, accounts-store.test.ts, account-setup.test.ts, remove-account.test.ts, calendar/poll.test.ts and mail/poll.test.ts): `74 reverts, 0 unproven, 18 unchecked`. The 18 unchecked are older poll cases that name no revert.
 - Revert-check over `tests/browser/views/accounts/accounts.spec.ts`:

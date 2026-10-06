@@ -114,7 +114,7 @@ Verification (run from /Users/axelfaes/workspace/research-hub/.agents/worktrees/
 - `node bin/revert-check.mjs tests/state/workbench/navigation/status.test.ts tests/shell/status/status-bar.test.ts tests/state/workbench/navigation/pages.test.ts tests/state/workbench/layout/pages.test.ts tests/shell/rail/rail.test.ts tests/state/workbench/navigation/rail.test.ts`: `52 reverts, 0 unproven, 28 unchecked`. The 28 unchecked are older layout/pages.test cases.
 - `node bin/revert-check.mjs tests/browser/shell/settings.spec.ts tests/browser/shell/views.spec.ts tests/browser/workbench/pages.spec.ts tests/browser/shell/rail.spec.ts tests/browser/shell/shell-defects.spec.ts`: `25 reverts, 0 unproven, 35 unchecked`. Every case the round names is red under its revert: fresh start `Workbench.svelte:148`, badges `ActivityRail.svelte:253`, catalogue `Catalogue.svelte:95` and `:87`, glyph `navigation/rail.ts:36`, CRT `Appearance.svelte:94`, glyphs `Appearance.svelte:112`, status `StatusBar.svelte:48` and `:31`, bookmarks `ActivityRail.svelte:273`.
 - `md5 config/layout.yml` gave `25a258cca122047c256e054379fdf5dd` and `md5 ~/.oculus/bookmarks.yml` gave `6bf9f6f0bfe27704f81c2da09f0493a2`, both the same before and after every run.
-- `git diff 138afb83 --stat -- src/lib/server/core/context.ts src/lib/server/files/fs/bookmarks.ts` prints nothing: both files are back to base. `grep -rn "layoutFile\|layout\.yml" src/lib/server` shows the only writer of layout.yml is `writeRail` (`writes.ts:467`, `undo.ts:225`), the Settings save and its undo. So the server never writes layout.yml on its own.
+- `git diff 6d87499f --stat -- src/lib/server/core/context.ts src/lib/server/files/fs/bookmarks.ts` prints nothing: both files are back to base. `grep -rn "layoutFile\|layout\.yml" src/lib/server` shows the only writer of layout.yml is `writeRail` (`writes.ts:467`, `undo.ts:225`), the Settings save and its undo. So the server never writes layout.yml on its own.
 - `ls -d $TMPDIR/oculus-* | wc -l` after: `7015`
 
 ## Spec
@@ -143,7 +143,7 @@ Verification (run from /Users/axelfaes/workspace/research-hub/.agents/worktrees/
 ## Standards
 
 1. Comments and case names the step makes false, not carried by item 8:
-   - `tests/browser/helpers/rail.ts:152-153` (added in this step, `git diff 138afb83`): "which shows it at once as the strip of pages once did". This is history in a comment.
+   - `tests/browser/helpers/rail.ts:152-153` (added in this step, `git diff 6d87499f`): "which shows it at once as the strip of pages once did". This is history in a comment.
    - `tests/browser/workbench/pages.spec.ts:9`: "gives every test a context of its own, so each test starts on the first rail page." Six cases of that file call `boot()`, which starts on the seeded Status page (`grep -c "await boot(page)"` gives 6). Only one calls `bootFresh()`.
    - `tests/browser/shell/shell-defects.spec.ts:469`, case name "a tab activated from the rail is brought in whole..." The case opens the view through `openView`, the palette. The rail no longer activates a view's tab.
    - `tests/browser/workbench/kept-tabs.spec.ts:104-105`: "rather than a view opened from the rail, since walking the rail's menus presses Escape". The rail has no menus now.

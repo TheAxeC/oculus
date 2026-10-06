@@ -1,6 +1,6 @@
 # Review of Q54, `ui/Tabs.svelte` split by concern
 
-Worktree untouched. Opening and closing `git status --short` are byte-identical, and `git diff --stat 8d8426df` is unchanged:
+Worktree untouched. Opening and closing `git status --short` are byte-identical, and `git diff --stat 687780b3` is unchanged:
 
 ```
  M bin/size-allow.txt
@@ -72,7 +72,7 @@ The ASCII gate (the spec's `perl` one-liner over `find src tests bin config -typ
 ```
 Port 8792 was free at each check (`lsof -iTCP:8792 -sTCP:LISTEN` printed nothing); no lock touched, no pid signalled, no `pgrep -f`.
 
-`wc -l` -> `362 src/lib/ui/Tabs.svelte`, `306 src/lib/ui/TabFace.svelte`. Every row of the report's line-count table reproduces, including `tests/boundaries.test.ts` which the report marked "not measured before": `git show 8d8426df:...` gives 567, the tree gives 568.
+`wc -l` -> `362 src/lib/ui/Tabs.svelte`, `306 src/lib/ui/TabFace.svelte`. Every row of the report's line-count table reproduces, including `tests/boundaries.test.ts` which the report marked "not measured before": `git show 687780b3:...` gives 567, the tree gives 568.
 
 `node bin/revert-check.mjs tests/ui/primitives.test.ts tests/ui/wall.test.ts tests/views/type-scale.test.ts tests/boundaries.test.ts tests/size.test.ts` -> `23 reverts, 1 unproven, 77 unchecked`. All seven directives the report quotes come back `red`:
 ```
@@ -84,7 +84,7 @@ red tests/ui/wall.test.ts :: answers every surface a component paints, or names 
 red tests/boundaries.test.ts :: lets no view or shell component style a primitive own class (revert tests/allow-styling.ts:72)
 red tests/size.test.ts :: is on the list with a count it has not passed (revert bin/size-allow.txt:7)
 ```
-The one `GREEN` is `tests/ui/primitives.test.ts :: draws a row action as a button only when the caller says what one means (revert src/lib/ui/Ticker.svelte:231)`; `git diff 8d8426df` touches neither `src/lib/ui/Ticker.svelte` nor that directive's line, so it is pre-existing, as the report says. Each of the eight directive line numbers names the line it claims (`TabFace.svelte:77 class:current`, `:78 class:dirty`, `:89 aria-label`, `:100 <Glyph name={tab.glyph} />`, `:169 border-top-color: var(--accent)`, `:177 border-top-color: var(--line)`, `:258 background: var(--chip)`, `:289 display: flex`).
+The one `GREEN` is `tests/ui/primitives.test.ts :: draws a row action as a button only when the caller says what one means (revert src/lib/ui/Ticker.svelte:231)`; `git diff 687780b3` touches neither `src/lib/ui/Ticker.svelte` nor that directive's line, so it is pre-existing, as the report says. Each of the eight directive line numbers names the line it claims (`TabFace.svelte:77 class:current`, `:78 class:dirty`, `:89 aria-label`, `:100 <Glyph name={tab.glyph} />`, `:169 border-top-color: var(--accent)`, `:177 border-top-color: var(--line)`, `:258 background: var(--chip)`, `:289 display: flex`).
 
 The two hand-run `type-scale` reverts, run by me in the copy:
 - delete `font-size: var(--fs-lg);` at `src/lib/ui/TabFace.svelte:224` -> `FAIL tests/views/type-scale.test.ts > the view type scale > sets every pass-through role in src/lib/ui/TabFace.svelte`, `Tests 1 failed | 155 passed (156)`

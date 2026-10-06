@@ -57,7 +57,7 @@ Case to test:
 
 After the change and repair round 1 the same three files: `Test Files  3 passed (3)`, `Tests  70 passed (70)` (`npx vitest run` on the three files). No existing case was edited; no file was added.
 
-Case 11 as rewritten in repair round 1, run at landing by the orchestrator on the unchanged tree (a detached tree at 8155b826 with the round's `changes.test.ts` copied in): `npx vitest run tests/server/core/changes.test.ts -t "own __proto__ keys"` printed `pass ... answers a line with its keys in the order they were written and its own __proto__ keys`, `Tests  1 passed | 20 skipped (21)`. The base's hand reader already answers the ruled line in the written key order, so the case holds a behaviour the change preserves.
+Case 11 as rewritten in repair round 1, run at landing by the orchestrator on the unchanged tree (a detached tree at 1ea26d17 with the round's `changes.test.ts` copied in): `npx vitest run tests/server/core/changes.test.ts -t "own __proto__ keys"` printed `pass ... answers a line with its keys in the order they were written and its own __proto__ keys`, `Tests  1 passed | 20 skipped (21)`. The base's hand reader already answers the ruled line in the written key order, so the case holds a behaviour the change preserves.
 
 At landing the three inputs of case 24 that sat inside the cases for 2 and 8 were removed (`''` and the BOM-prefixed message in `socket.test.ts`, the YAML set for `events` in `hooks.test.ts`); case 24 is held by the verify list, as the brief says.
 

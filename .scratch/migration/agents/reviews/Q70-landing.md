@@ -15,7 +15,7 @@ Booked list: 3, carried for O32 (its skill half, waiting on the Ordo release tha
 
 ## What landed
 
-Q70, cherry-picked from `.agents/worktrees/Q70` at base `62eced10` by `tools/oculus/.scratch/migration/land.sh Q70 62eced10 <runs> --no-browser` (+2,108 -1,317 over 22 files), then fixed at landing (+142 -93 over 12 files), the browser suite run by hand.
+Q70, cherry-picked from `.agents/worktrees/Q70` at base `759efa1e` by `tools/oculus/.scratch/migration/land.sh Q70 759efa1e <runs> --no-browser` (+2,108 -1,317 over 22 files), then fixed at landing (+142 -93 over 12 files), the browser suite run by hand.
 
 - The mail poller polls its notes file every 500 ms on a clock, through `server/watch/file-poll.ts`, which the git watcher's workspaces poll uses too; a write made while a watch would be arming is no longer lost.
 - The git watcher drops an event whose path (the path itself, not a link's target) or nearest remaining folder last changed before the newest read of its root that answered began; a failed read hides nothing.

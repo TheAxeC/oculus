@@ -29,7 +29,7 @@ Q77e, the diagram generator parses each source file once, one commit on main (th
 
 ## Verification on main
 
-- `land.sh Q77e 15a88e95`: red at the unit suite on the duplication check (`Tests 1 failed | 5351 passed`); after the fix, by hand: `Test Files 342 passed (342)`, `Tests 5352 passed (5352)`; `npm run check` `COMPLETED 1514 FILES 0 ERRORS 0 WARNINGS`; build ok; `All matched files use Prettier code style!`; lint exit 0; the ASCII gate no output; size and folder checks exit 0; browser `467 passed (10.6m)`.
+- `land.sh Q77e 0ec6659f`: red at the unit suite on the duplication check (`Tests 1 failed | 5351 passed`); after the fix, by hand: `Test Files 342 passed (342)`, `Tests 5352 passed (5352)`; `npm run check` `COMPLETED 1514 FILES 0 ERRORS 0 WARNINGS`; build ok; `All matched files use Prettier code style!`; lint exit 0; the ASCII gate no output; size and folder checks exit 0; browser `467 passed (10.6m)`.
 - `node bin/revert-check.mjs tests/checks/diagrams/diagrams.test.ts`: `56 reverts, 0 unproven, 0 unchecked`, 373.05 s; `parsed.test.ts`: `5 reverts, 0 unproven, 0 unchecked`.
 - No look: Q77e changes tooling and tests, no view.
 - Every agent of the step has ended: both builders and both reviewers returned their final message.

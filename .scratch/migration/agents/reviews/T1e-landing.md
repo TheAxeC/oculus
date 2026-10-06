@@ -16,7 +16,7 @@ T1e's builder `ab51f46426a84a1f0` and its reviewers `a83115633ce9293bf` and `a56
 
 ## What landed
 
-T1e, one commit on main (the commit that carries this file), from base 44187f9f3: the sweep of its four folders as `agents/briefs/T1e.md` and its round-1 rulings say. Counted with `find <folder> -name '*.ts' | wc -l` and `cat | wc -l` on main against the base copy:
+T1e, one commit on main (the commit that carries this file), from base 812eb07c2: the sweep of its four folders as `agents/briefs/T1e.md` and its round-1 rulings say. Counted with `find <folder> -name '*.ts' | wc -l` and `cat | wc -l` on main against the base copy:
 
 | Folder | Files before | Files after | Lines before | Lines after |
 |---|---|---|---|---|

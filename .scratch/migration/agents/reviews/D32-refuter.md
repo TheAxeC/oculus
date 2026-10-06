@@ -1,6 +1,6 @@
-# Step D32 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D32, base bdc0ac53)
+# Step D32 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D32, base 8ee38daf)
 
-Pages are cited by section; code is cited by file:line under the worktree's `tools/oculus/` unless stated. I changed nothing. The only git I ran was `git diff bdc0ac53` and `git status --short`, from inside the worktree.
+Pages are cited by section; code is cited by file:line under the worktree's `tools/oculus/` unless stated. I changed nothing. The only git I ran was `git diff 8ee38daf` and `git status --short`, from inside the worktree.
 
 ## Verification (rerun by the reviewer)
 
@@ -22,7 +22,7 @@ Commands the report quotes, rerun:
 - Item 20 grep, `grep -rn 'String(response.status)\|HTTP \${' src/lib/state src/lib/views src/lib/ui`: no output, exit 1. Matches the report.
 - `sh utils/unused-exports.sh`: exit 0. A direct knip run of the same command exits 1. `cmp` of the two outputs: EQUAL. The output is 348 lines (the report says 353; no decision rests on that number). It holds `codeThemeIds`, `languageNamed` and `hostZone`, and nothing for `FILE_FIELDS` or `searchArgs`. The only flagged exports in the step's modules were already flagged at base (`file-ops.ts` MAX_NAME_LENGTH; `history.ts` DELETE_MAX_BYTES and others).
 - Case 33, in a scratch copy. With no node_modules the script prints "node_modules is not here; run npm install in ..." and exits 2. With an empty node_modules it prints "knip is not installed ..." and exits 2.
-- `node utils/outside-paths.mjs <main-checkout brief> bdc0ac53` from the worktree root: exit 0, 22 paths, the same as the report. See Behaviour 1 for why that list is incomplete.
+- `node utils/outside-paths.mjs <main-checkout brief> 8ee38daf` from the worktree root: exit 0, 22 paths, the same as the report. See Behaviour 1 for why that list is incomplete.
 - previewUrl length for 500, 1000, 1500 and 2000 hits in one file: 4996, 9997, 15497 and 20997 characters, against node's `http.maxHeaderSize` of 16384. This reproduces D32-1 (booked as Z285).
 - How ripgrep numbers groups, on `abc(` with `(a)(?:b)(?P<n>c)[(]`: `<1=a><2=c><n=c>`, so a named group also gets a number. The numbering holds under `-w`.
 - VS Code comparison (my harness `scratchpad/vsharness.mjs`, which runs VS Code's `ReplacePattern` and `buildReplaceStringWithCasePreserved` logic as written in VS Code): `replacementOf` was compared on 1428 inputs and gave 0 differences. There were 52 further inputs where VS Code's own code throws, for example `\u` placed past the end of a group.
@@ -141,7 +141,7 @@ Usage (completion notice): claude-opus-5-5, 107,087 tokens, 103 tool uses, 15.9 
 
 ## Repair round 1, refuted
 
-Reviewer a0129346811f03d66 at ordo-high, served claude-opus-5-5; 309,013 tokens, 86 tool uses, 28.7 min (its completion notice). Worktree `.agents/worktrees/D32`, base bdc0ac53. The reviewer changed nothing; its only git commands were `git diff bdc0ac53` (with `--name-only --no-renames`) and `git status --short`, from inside the worktree.
+Reviewer a0129346811f03d66 at ordo-high, served claude-opus-5-5; 309,013 tokens, 86 tool uses, 28.7 min (its completion notice). Worktree `.agents/worktrees/D32`, base 8ee38daf. The reviewer changed nothing; its only git commands were `git diff 8ee38daf` (with `--name-only --no-renames`) and `git status --short`, from inside the worktree.
 
 The round's delta: 59 files, those modified after 2026-10-02 17:14 (`find . -newer <stamp>` from the worktree root, without node_modules, .svelte-kit, build/ and .git): the report; `DESIGN.md`, `HELP.md`; 18 diagram files (the layer-data, layer-shell and layer-ui pairs byte-identical to the base); 20 source files (`src/lib/data/file-ops.ts`, `src/lib/data/helpers/search/{query,replace}.ts`, `src/lib/server/files/fs/{ops,replace}.ts`, `src/lib/server/files/search.ts`, `src/lib/state/shared/answers/answers.ts`, `src/lib/state/sources/repositories/{answers,replace-preview,repositories}.ts`, `src/lib/state/sources/search/{hits,keys,search.svelte,search,words}.ts`, `src/lib/views/sources/repositories/diff/Diff.svelte`, `src/lib/views/sources/search/{box-keys.ts,Results.svelte,Search.svelte}`, `src/routes/api/(files)/ops/+server.ts`); 18 test files (`tests/checks/tree/allow-duplication.txt`, `tests/checks/utils/outside-paths.test.ts`, `tests/data/helpers/replace.test.ts`, `tests/routes/replace/{preview.test,replace-fixture}.ts`, `tests/state/sources/fs/{fs-files.test,fs-fixture,fs-notes.test,fs.test}.ts`, `tests/state/sources/repositories/diff/{diff-read,diff-view}.test.ts`, `tests/state/sources/search/{endpoint.test,replace.test,search-fixture,search.test}.ts`, `tests/views/sources/search.test.ts`, `tests/views/whole/type-scale.test.ts`); `utils/outside-paths.mjs`.
 

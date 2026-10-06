@@ -1,6 +1,6 @@
 # X3d refuter report
 
-The review of X3d as prepared again on base 6dc78524 (reviewer a0069f4ae7f73ca18, claude-opus-5-5, 360,431 tokens, 94 tool uses, 16.4 min). The report of the attempt taken back out of main is in git history at cbe70683.
+The review of X3d as prepared again on base 2c7a6ea4 (reviewer a0069f4ae7f73ca18, claude-opus-5-5, 360,431 tokens, 94 tool uses, 16.4 min). The report of the attempt taken back out of main is in git history at 1908b1e9.
 
 ## Verification lines (verbatim)
 
@@ -219,7 +219,7 @@ claude-opus-5-5, roughly 360,000 tokens, about 65 tool uses; minutes not measure
 
 ## Repair round 1, refuted
 
-Step X3d. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3d`, base 6dc78524. Reviewer: a fresh agent, read-only. The only git commands run were `git diff 6dc78524` and `git status --short`, both inside the worktree.
+Step X3d. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3d`, base 2c7a6ea4. Reviewer: a fresh agent, read-only. The only git commands run were `git diff 2c7a6ea4` and `git status --short`, both inside the worktree.
 
 ### Summary
 
@@ -261,7 +261,7 @@ The brief's verify items:
 - **Verify 5 (the look):** not rerun. It needs a server and a browser, which this review may not start.
 
 Evidence commands from the report, rerun:
-- **colours.ts untouched:** `git diff 6dc78524 --stat -- src/lib/ui/controls/editor/kit/colours.ts` prints nothing.
+- **colours.ts untouched:** `git diff 2c7a6ea4 --stat -- src/lib/ui/controls/editor/kit/colours.ts` prints nothing.
 - **The wall literal:** `grep -rln "color-mix(in srgb, var(--chip) var(--wall-panel), transparent)" src | wc -l` gives 13 files with 13 lines, as claimed.
 - **S4 shared-token check:** reproduced on a scratch copy with both rules set to `var(--diff-wall-surface)` and the token added to tokens.css. `npx vitest run tests/ui/theme/colours.test.ts tests/ui/theme/wall.test.ts` gives `Tests  2 failed | 15 passed (17)`, both lines "(not a surface or a hue)", as `s4-shared-token-checks.txt` says.
 - **P3:** `grep -n "^let \|^var " tests/views/sources/repositories/press-on-render.ts` exits 1 with no output.
@@ -351,7 +351,7 @@ None of the closures removed a check. The diff's removed assertions (changes.tes
 
 Fixes that reach beyond their finding: `MenuItem.disabled` in menu-items.ts and MenuList.svelte, and `openFile` revealing a folder. Both are needed by their item (B8 and B1) and both are named in the report. Neither is an overreach. The first has the defect in Behaviour finding 1.
 
-### Verdicts: items of the brief, whole diff since 6dc78524
+### Verdicts: items of the brief, whole diff since 2c7a6ea4
 
 - **15 holds.** `rowWindow`/`sameWindow` and `untrack`; `virtual.test.ts` is in `npm test`. Case 28 was reproduced on base by the first refuter.
 - **16 holds.** The code is `block={rail || cell || primary}`; `case30-x3d.txt` shows insets 11 and 12.

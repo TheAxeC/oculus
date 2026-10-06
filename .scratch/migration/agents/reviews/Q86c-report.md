@@ -114,7 +114,7 @@ For each revert, the change was made in the source, the named test file run with
 
 The revert commands are in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/Q86c-build/reverts.py` and `extra.py`. Every revert was run on the final test files; the outputs are in `reverts-2.log` and `reverts-3.log` in the same folder. The source is put back after each revert and compared with the original. After the last revert, `npx vitest run tests/state/boards/structure/forces.test.ts tests/state/boards/structure/layout.test.ts` printed `Tests  29 passed (29)`.
 
-## Files, with line counts (`wc -l`; base 194792bc in brackets)
+## Files, with line counts (`wc -l`; base de977c87 in brackets)
 
 - `src/lib/state/boards/structure/forces.ts`: 194 (new)
 - `src/lib/state/boards/structure/graph.ts`: 466 (733)
@@ -156,7 +156,7 @@ The review measured 22.6, 58.2, 102.3 and 374.2 ms with an inline d3-force scrip
 - **A project with no edge dragged across the map.** Before, nothing else moved. After, the circles it passes are pushed out of its way.
 - **Release.** Before, the dropped node stayed where it was dropped. After, it is freed and takes part in the simulation again, so it may drift while the map cools (decision 3).
 - **Click on a node.** It opens the node with nothing moved.
-- **A link written from link mode.** Before Q86c, the drawn positions stayed. Graph.svelte at base 194792bc declares `placed` at line 79 and writes it only at lines 195, 212 and 269, never back to null, so a dragged picture survived the write. After, the new related edge changes `placementKey()` (`layout.test.ts:231-232`: an added edge gives another key). The whole Map is placed again from neato and settled, and a dragged picture is replaced by the new placement.
+- **A link written from link mode.** Before Q86c, the drawn positions stayed. Graph.svelte at base de977c87 declares `placed` at line 79 and writes it only at lines 195, 212 and 269, never back to null, so a dragged picture survived the write. After, the new related edge changes `placementKey()` (`layout.test.ts:231-232`: an added edge gives another key). The whole Map is placed again from neato and settled, and a dragged picture is replaced by the new placement.
 - **Toggling link mode, or a hub push that changes no node or edge.** The key is unchanged, so the simulation and a dragged picture stay.
 
 ## Decisions the brief did not cover (each reversible)

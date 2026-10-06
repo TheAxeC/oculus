@@ -1,4 +1,4 @@
-# Step M2 refuter report (on .agents/worktrees/m2, base 209112cd)
+# Step M2 refuter report (on .agents/worktrees/m2, base 3bba5a76)
 
 ## Verification (rerun by the reviewer)
 - `npm test` (from tools/oculus), first run: `Test Files 1 failed | 228 passed (229)`, `Tests 1 failed | 3806 passed (3807)`. The failure was `tests/server/hpc/ssh.test.ts:95` "Matcher did not succeed in time" (a 20 s timeout, with other shells running at the same time). Rerunning `npx vitest run tests/server/hpc/ssh.test.ts tests/integrity.test.ts` gave `Test Files 2 passed (2)`, `Tests 13 passed (13)`. A second full `npm test` gave `Test Files 229 passed (229)`, `Tests 3807 passed (3807)`. The ssh file is not touched by the diff.

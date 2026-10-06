@@ -1,4 +1,4 @@
-# Step Q86b refuter report (on .agents/worktrees/Q86b, base 38c12da7)
+# Step Q86b refuter report (on .agents/worktrees/Q86b, base 7444dd36)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number. A finding in code keeps its file:line.
 
@@ -99,10 +99,10 @@ Cases of the brief's "Cases" (judged against Q86b-cases.md where it rules):
 - The first-run table's graph.ts rows beyond the count: I reproduced the 21 failures and the label rows on the base sources, but not each error message of the graph rows.
 - The earlier load-average timeouts the report mentions in four unchanged files: not rerun, per spec.md's rule on test files the step does not change. My run of the list was green.
 
-Reviewer usage: 38 tool uses, 193k tokens, 12 min (from the completion notice). One read-only `git -C . status` ran inside a compound command beside the permitted `git diff 38c12da7` and `git status --short`; it changed nothing. Copies, probes and logs are only in scratchpad/q86b-refute/.
+Reviewer usage: 38 tool uses, 193k tokens, 12 min (from the completion notice). One read-only `git -C . status` ran inside a compound command beside the permitted `git diff 7444dd36` and `git status --short`; it changed nothing. Copies, probes and logs are only in scratchpad/q86b-refute/.
 ## Repair round 1, refuted
 
-A fresh reviewer over the round (from the worktree after round 1, against the whole diff since base 38c12da7). Its probes and logs: the session scratchpad `q86b-refute-r1/` (`tail.log`, `jitter.log`, `p3.log`, `press.log`, `balance.log`, `checks.log`).
+A fresh reviewer over the round (from the worktree after round 1, against the whole diff since base 7444dd36). Its probes and logs: the session scratchpad `q86b-refute-r1/` (`tail.log`, `jitter.log`, `p3.log`, `press.log`, `balance.log`, `checks.log`).
 
 I sent my review of Q86b's repair round 1. It finds two problems: new sentences in the docs are false, and the creep that ruling Z49 asked to end is still there.
 
@@ -124,9 +124,9 @@ Usage: 31 tool uses, 178k tokens, 14.5 min.
 
 ## Repair round 2, refuted
 
-A fresh reviewer over round 2 (the worktree after the round, against the whole diff since base 38c12da7). Its probes and logs: the session scratchpad `q86b-refute-r2/` (`checks.log`, `probe.log`, `tail2.log`, `contact.log`).
+A fresh reviewer over round 2 (the worktree after the round, against the whole diff since base 7444dd36). Its probes and logs: the session scratchpad `q86b-refute-r2/` (`checks.log`, `probe.log`, `tail2.log`, `contact.log`).
 
-Q86b repair round 2 refutation (worktree .agents/worktrees/Q86b, base 38c12da7). I changed no file in the worktree, the main checkout or the ledger. `git status --short` shows the same 17 entries as before the review. Probes, copies and logs are only in scratchpad/q86b-refute-r2/.
+Q86b repair round 2 refutation (worktree .agents/worktrees/Q86b, base 7444dd36). I changed no file in the worktree, the main checkout or the ledger. `git status --short` shows the same 17 entries as before the review. Probes, copies and logs are only in scratchpad/q86b-refute-r2/.
 
 ## Verification lines, verbatim
 

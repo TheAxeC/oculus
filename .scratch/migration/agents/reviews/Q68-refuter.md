@@ -1,4 +1,4 @@
-# Step Q68 refuter report (on .agents/worktrees/Q68, base d0232795)
+# Step Q68 refuter report (on .agents/worktrees/Q68, base f7c93a6b)
 
 ## Verification (rerun by the reviewer)
 ```
@@ -87,7 +87,7 @@ ls -d $TMPDIR/oculus-* | wc -l (before):  7016
 10. ls -d $TMPDIR/oculus-* | wc -l (after):  7015 (one fewer; not grown)
 
 Commands the round's report quotes, rerun or replaced:
-- Ruling 1, paired alternating runs of git.test.ts alone, base (scratch copy of the worktree with git diff d0232795 reversed; 22 cases) against Q68 (21 cases):
+- Ruling 1, paired alternating runs of git.test.ts alone, base (scratch copy of the worktree with git diff f7c93a6b reversed; 22 cases) against Q68 (21 cases):
     natural load (load avg 10-12, fseventsd at 0.1% CPU), 8 per side: base 22/22 x8; Q68 21/21 x8.
     beside 8 churn (load avg 13-29), 6 per side: base 22/22 x5, 1 failed x1 ("reads a root added to the workspaces file while it is running", 7509ms); Q68 21/21 x6.
   The three cases ("re-reads only the root that changed...", "publishes one files message...", "drops a root the sessions payload no longer names") failed 0 times on either side in 28 file runs and 4 whole runs.

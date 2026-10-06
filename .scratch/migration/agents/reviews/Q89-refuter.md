@@ -1,6 +1,6 @@
 # Q89 refuter report
 
-Reviewer a116360e9ab07e528, a fresh agent, over `git diff 36db3164` in `.agents/worktrees/Q89`.
+Reviewer a116360e9ab07e528, a fresh agent, over `git diff 34a30f8e` in `.agents/worktrees/Q89`.
 
 Verify, run from /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q89/tools/oculus with `sh /Users/axelfaes/.claude-work/skills/land/templates/verify.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`. It exited 0. Its summary lines, verbatim:
 
@@ -37,7 +37,7 @@ My run had no timeouts, so no untouched file needed a separate run. The "Rebasin
    - The `colours` and `wall` run gives `2 passed (2)`, `16 passed (16)`.
    - The picker grep prints nothing (exit 1).
    - The perl ASCII gate prints nothing.
-   - Line counts before and after (from `git diff 36db3164 --numstat` plus `wc -l`) match the report's table on every row.
+   - Line counts before and after (from `git diff 34a30f8e --numstat` plus `wc -l`) match the report's table on every row.
 
 ## Standards
 
@@ -72,9 +72,9 @@ Not measured. Roughly 60k tokens of context, one full run of the verify script (
 
 ## Repair round 1, refuted
 
-Reviewer a38991e425707e8b4, a fresh agent, over `git diff 65baf8da` read against `git diff 36db3164`.
+Reviewer a38991e425707e8b4, a fresh agent, over `git diff 65baf8da` read against `git diff 34a30f8e`.
 
-Scope: `git diff 65baf8da` (the round) read against `git diff 36db3164` (the whole step) in `.agents/worktrees/Q89`. `git status --short` lists the 11 modified paths of the round plus the untracked report, and nothing else. I changed nothing in the worktree or the ledger. Every revert test below ran in a copy of `tools/oculus` in my scratchpad, which I deleted afterwards. After deleting it, `git status --short | wc -l` still printed 12, the same as before.
+Scope: `git diff 65baf8da` (the round) read against `git diff 34a30f8e` (the whole step) in `.agents/worktrees/Q89`. `git status --short` lists the 11 modified paths of the round plus the untracked report, and nothing else. I changed nothing in the worktree or the ledger. Every revert test below ran in a copy of `tools/oculus` in my scratchpad, which I deleted afterwards. After deleting it, `git status --short | wc -l` still printed 12, the same as before.
 
 ### Verify
 
@@ -214,7 +214,7 @@ None. Each of rulings 1 to 7 is built as ruled, and rulings 8 and 9 are in the r
 Not measured. Roughly 70k tokens of context. One full verify run (about 6 minutes), one run of the report's vitest subset, and eight targeted vitest runs in the scratch copy.
 
 
-Reviewer aefceffa630f486a8, a fresh agent, over `git diff 8803f5b9` read against `git diff 36db3164`.
+Reviewer aefceffa630f486a8, a fresh agent, over `git diff 8803f5b9` read against `git diff 34a30f8e`.
 
 ## Repair round 2, refuted
 

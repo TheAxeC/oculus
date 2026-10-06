@@ -1,4 +1,4 @@
-D14 refuter report (reviewer, read only; worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/D14, base eaf8034f)
+D14 refuter report (reviewer, read only; worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/D14, base 8ac90a3b)
 
 ## Verification lines
 
@@ -178,8 +178,8 @@ I also re-ran the commands the builder's report cites:
 - The real `tex-fmt`: not installed here (Z280 is open).
 - The bundle size change: it needs a second, base build. I reproduced only that the parser is in the page chunk.
 - How often finding Behaviour 2's window occurs: not measured.
-- The builder's note on `scratchpad/base`: the copy there has a DESIGN.md byte-equal to eaf8034f's, no `content/latex/` folder and no latex-utensils in its `package.json`. Whether it equals the staged base of any other step in flight was not checked.
-- Git commands outside the brief's two: for these comparisons I ran `git show eaf8034f:<path>` (read only) several times. The brief allows only `git diff` and `git status --short`.
+- The builder's note on `scratchpad/base`: the copy there has a DESIGN.md byte-equal to 8ac90a3b's, no `content/latex/` folder and no latex-utensils in its `package.json`. Whether it equals the staged base of any other step in flight was not checked.
+- Git commands outside the brief's two: for these comparisons I ran `git show 8ac90a3b:<path>` (read only) several times. The brief allows only `git diff` and `git status --short`.
 
 ## Usage
 
@@ -187,7 +187,7 @@ About 320,000 tokens (the context counter went from 15,000,000 to about 14,680,0
 
 ## Repair round 1, refuted
 
-D14 (LaTeX on any folder). Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/D14, base eaf8034f, reviewer read only. The round's delta is the 57 files under the worktree modified after 2026-10-02 20:53 (`find . -newer <ref>`, the reference made with `touch -t 202610022053` in my scratchpad), each read against `git diff eaf8034f -- <path>`.
+D14 (LaTeX on any folder). Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/D14, base 8ac90a3b, reviewer read only. The round's delta is the 57 files under the worktree modified after 2026-10-02 20:53 (`find . -newer <ref>`, the reference made with `touch -t 202610022053` in my scratchpad), each read against `git diff 8ac90a3b -- <path>`.
 
 **Summary.** Every verify command is green. Rulings 1 to 6, 8 to 12 and 16 to 20 are closed. Rulings 7, 13, 14 and 15 are closed in part. A Build press while a save's build is out or running starts a second latexmk; I reproduced this with a probe. That makes the sentence ruling 15 asked to be true false in `latex.svelte.ts:33-34` and in `DESIGN.md:406`. Each open part is small and can be fixed at landing.
 
@@ -238,7 +238,7 @@ Other commands, rerun from `tools/oculus` in the worktree:
   - the never-named release, `!one.listed && one.missed < 1` changed to `!one.listed`: `starts a new build after a terminal the list never named ... expected [...] to have a length of 2 but got 1`.
 - **Line scan against the parser:** `scanSections` gives the same `{level, title, line}` list as the parser on all 227 real files the parser accepts. On the 4 files it refuses, the scan gives 20, 18, 21 and 16 headings.
 
-## Item verdicts (whole diff since eaf8034f)
+## Item verdicts (whole diff since 8ac90a3b)
 
 1. **Holds.** `mains` and `buildState` are now exported with no caller in `src` (Standards 6).
 2. **Holds.** The project form names its outline's files against the project folder and carries `folder` (endpoint.ts:117-120).
@@ -351,7 +351,7 @@ No other substitute mechanism and no decision that was the user's. The glyph wen
    - Verdict: minor wording.
 6. **Exports without a caller** (whole diff). `server/content/latex.ts:164` `export function mains` and `:324` `export function buildState` have no caller in `src` (`grep -rn "[^.a-zA-Z]mains(\|buildState(" src` prints only their definitions); only tests read them. Brief item 1 names `mains(folder)`, so the spec's remove-or-localise rule and the brief point different ways. Minor.
 7. **Files near their caps** (whole diff, not this round's delta). `terminals.svelte.ts` is 888 of 900 and `Editor.svelte` 530 of 540, both within the spec's 20-line split margin. `ui/controls/editor/kit/` is at 10 of 10 items.
-8. **Allow lists the round touched.** Only the `ALLOWED` state row in `boundaries.test.ts`: `data/helpers/files/latex` became `data/prose/latex`, with a comment paragraph saying why. It is a move, not a widening, and the comment is true (type-only import of latex-utensils, no I/O). No `allow-*.txt` changed (`git diff eaf8034f --stat -- tests/checks/` shows only `config-folder.test.ts` and `boundaries.test.ts`).
+8. **Allow lists the round touched.** Only the `ALLOWED` state row in `boundaries.test.ts`: `data/helpers/files/latex` became `data/prose/latex`, with a comment paragraph saying why. It is a move, not a widening, and the comment is true (type-only import of latex-utensils, no I/O). No `allow-*.txt` changed (`git diff 8ac90a3b --stat -- tests/checks/` shows only `config-folder.test.ts` and `boundaries.test.ts`).
 9. **Clean otherwise.**
    - No history wording in the round's comments or test titles (my scan found only the runtime sense of "before" and "still").
    - Non-ASCII is clean, and each new file has a head comment.
@@ -383,7 +383,7 @@ No other substitute mechanism and no decision that was the user's. The glyph wen
   - the `journals` tab glyph.
 - **Real `tex-fmt`:** not installed (Z280 open).
 - **The base build's chunk size (2,459,624 B):** not reproduced, since it needs a base build.
-- **Git commands outside my brief.** I ran `git show eaf8034f:<path>` (read only) three times, to read the base `server.yml` and the base `relFile` and `mains`, and one `git grep ... eaf8034f`, which printed nothing. They changed nothing, but they were outside the two git commands allowed.
+- **Git commands outside my brief.** I ran `git show 8ac90a3b:<path>` (read only) three times, to read the base `server.yml` and the base `relFile` and `mains`, and one `git grep ... 8ac90a3b`, which printed nothing. They changed nothing, but they were outside the two git commands allowed.
 - **Scratch copy.** The probes and mutations ran on a scratch copy at `.../scratchpad/copy/oculus` (no `config/local.yml` in it: `test -e` printed "absent"). Nothing in the worktree was changed.
 
 ## Usage

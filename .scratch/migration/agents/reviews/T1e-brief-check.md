@@ -1,6 +1,6 @@
-# Step T1e brief check (on main at 1e14d2799)
+# Step T1e brief check (on main at cf91445bf)
 
-The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/T1e.md`. Every command ran from `tools/oculus` on main at `1e14d2799` unless another directory is named. The ledger files `plan.md`, `orchestrator-state.md`, `queue.md` and `agents/reviews/T1c-report.md` are uncommitted on main, and the briefs T1b, T1d and T1e are untracked (`git status --short .`). They were read as they are on disk.
+The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/T1e.md`. Every command ran from `tools/oculus` on main at `cf91445bf` unless another directory is named. The ledger files `plan.md`, `orchestrator-state.md`, `queue.md` and `agents/reviews/T1c-report.md` are uncommitted on main, and the briefs T1b, T1d and T1e are untracked (`git status --short .`). They were read as they are on disk.
 
 ## 1. Names
 

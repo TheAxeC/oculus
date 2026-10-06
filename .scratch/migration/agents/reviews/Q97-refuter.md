@@ -1,4 +1,4 @@
-# Step Q97 refuter report (on .agents/worktrees/Q97, base 4e33d99e)
+# Step Q97 refuter report (on .agents/worktrees/Q97, base 6a431ede)
 
 ## Verification (rerun by the reviewer)
 

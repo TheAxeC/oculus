@@ -1,6 +1,6 @@
-# Q103 brief check (on main at 1498a18d7caff3b58bf4ba01aa9feb84655aa933)
+# Q103 brief check (on main at 4c03e267a0ad89cfe48260fa13631e3db886294e)
 
-Head from `git log -1 --format='%H %s'`, which printed `1498a18d... Send Q83's stop ruling`. The corrected Q103 step line the brief cites (plan.md:255) is in the main checkout's working tree only, not committed: `git show HEAD:tools/oculus/.scratch/migration/plan.md | sed -n 253,257p` prints the old text ("the cluster's capacity table (every GPU node) collapsible, its open state kept in the pane's instance state"), and `git diff --stat HEAD -- .../plan.md` prints `1 file changed, 1 insertion(+), 1 deletion(-)`. The builder never reads plan.md, so this does not block the build, but the booking must commit the corrected line.
+Head from `git log -1 --format='%H %s'`, which printed `4c03e267... Send Q83's stop ruling`. The corrected Q103 step line the brief cites (plan.md:255) is in the main checkout's working tree only, not committed: `git show HEAD:tools/oculus/.scratch/migration/plan.md | sed -n 253,257p` prints the old text ("the cluster's capacity table (every GPU node) collapsible, its open state kept in the pane's instance state"), and `git diff --stat HEAD -- .../plan.md` prints `1 file changed, 1 insertion(+), 1 deletion(-)`. The builder never reads plan.md, so this does not block the build, but the booking must commit the corrected line.
 
 plan.md has no `## Goal` heading; the goal is the opening paragraph, lines 1-4 (the migration ledger for DESIGN.md). The `## Rulings` section was read at lines 378-510. The rulings on this step are line 473 (Axel's terminal report names Q103 as his) and line 441 (the HPC Disk and Recent sizes). No ruling contradicts the brief.
 

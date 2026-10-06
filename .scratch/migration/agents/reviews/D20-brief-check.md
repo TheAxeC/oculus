@@ -1,6 +1,6 @@
-# Brief check of D20, plan oculus/migration. Head read: 40cc596ff ("Book D45's choices and start D45, X3f and D20"), one bookkeeping commit past 8077dd556. It changes only ledger files: `git show --stat 40cc596ff` lists choices.md, orchestrator-history.md, orchestrator-state.md, plan.md and queue.md.
+# Brief check of D20, plan oculus/migration. Head read: ecf05f165 ("Book D45's choices and start D45, X3f and D20"), one bookkeeping commit past 863cdc7d0. It changes only ledger files: `git show --stat ecf05f165` lists choices.md, orchestrator-history.md, orchestrator-state.md, plan.md and queue.md.
 
-**Verdict: the brief does not exist yet, so it cannot be dispatched.** `agents/briefs/D20.md` is 20 lines (`wc -l`). Its heading is "# Brief: D20 (to be written at dispatch)". Its last commit is a8373e751 ("Carry D20's booked widenings into its brief file"), and the working copy is unchanged (`git status --short` is clean).
+**Verdict: the brief does not exist yet, so it cannot be dispatched.** `agents/briefs/D20.md` is 20 lines (`wc -l`). Its heading is "# Brief: D20 (to be written at dispatch)". Its last commit is 65046ef38 ("Carry D20's booked widenings into its brief file"), and the working copy is unchanged (`git status --short` is clean).
 
 It holds only the booked plan line, A2's line and the five widenings. It has none of these sections: "What to build", "What is on the tree", "Paths this step writes", the cases, the verification list, the report shape, the libraries checked, the base copy, the worktree and the port.
 
@@ -54,7 +54,7 @@ The widenings Z307, Z312 and Z313 each say "D20's /spec finds the cause read-onl
 6. "Its project when it names one": the tasks schema has no project field (`tasks/tasks.yml:6-13`: title, status, deadline, kind, note, tags, followup). The link runs the other way: a project names the entry (EntryCard's cross-links).
 7. "Q11's Ask" holds: `ask()` is at `views/shared/card/ProjectCard.svelte:279-287`.
 8. `DESIGN.md:150` has moved to `DESIGN.md:153` (`grep -n "seeded with a task" DESIGN.md`).
-9. "D17.md item 3" is wrong. D17's item 3 is Placeholders; the approval store is item 4 (`grep -n approv agents/briefs/D17.md`, line 42). D17 has landed (`git log -1 76bdcd8c`: "Add project commands").
+9. "D17.md item 3" is wrong. D17's item 3 is Placeholders; the approval store is item 4 (`grep -n approv agents/briefs/D17.md`, line 42). D17 has landed (`git log -1 e752624e`: "Add project commands").
 
    The store is `server/machine/approvals/approvals.ts` (`isApproved` :92, `approveTexts` :113), and it writes only `command:` keys (:44-46). DESIGN.md:328 puts the seeded agent under kind `command`. The only approve wire is `POST /api/commands {action:'approve', repo, texts}` (commands/routes.ts:103), which is tied to a repository.
 10. Z289 holds unmoved: `foldFrom` at `server/sessions/stores/transcripts.ts:79`, with `toString` at :104 and the `catch` answering 0 at :117-118.
@@ -348,9 +348,9 @@ Declined to judge
 1. Z307 scrollback: found and written. Z307 tab and Z313: held.
 2. `commitMenu` while busy: run; it answers four items (case 44).
 
-## The check over the full brief (`agents/briefs/D20.md`, 329 lines, committed at 6bf3a1795)
+## The check over the full brief (`agents/briefs/D20.md`, 329 lines, committed at 9b912872a)
 
-Main's head is 6bf3a1795, not 94bb9b3a8. The only commit since then is the plan booking. `git diff --stat 94bb9b3a8 HEAD -- tools/oculus/src tools/oculus/config tools/oculus/tests tools/oculus/utils tools/oculus/HELP.md tools/oculus/DESIGN.md` prints nothing. `git diff --stat 40cc596ff 94bb9b3a8 -- <same>` also prints nothing, so the brief's base claim holds. The base copy `.agents/worktrees/D20-base` and the worktree `D20` do not exist yet (`ls .agents/worktrees`). That is expected before preparation.
+Main's head is 9b912872a, not 06979a5cd. The only commit since then is the plan booking. `git diff --stat 06979a5cd HEAD -- tools/oculus/src tools/oculus/config tools/oculus/tests tools/oculus/utils tools/oculus/HELP.md tools/oculus/DESIGN.md` prints nothing. `git diff --stat ecf05f165 06979a5cd -- <same>` also prints nothing, so the brief's base claim holds. The base copy `.agents/worktrees/D20-base` and the worktree `D20` do not exist yet (`ls .agents/worktrees`). That is expected before preparation.
 
 ### Names
 
@@ -388,7 +388,7 @@ Every part maps to an item:
 - Z312: idle pill 6, commit limit and reason 7. The busy pill is in Z515.
 - Z313: in Z515.
 
-1. Z126 (`plan.md:834`, `:580`) says A2 was folded into D20 "its line kept whole in `agents/briefs/D20.md`". The brief quotes only the D20 line (`grep -n A2 D20.md` finds :69, :166, :264, none of them A2's own line). A2's line, from `git log -p -S"- A2 "` at 17cd844b0, is: "A2 a session in a new worktree: Claude or Codex started in a fresh worktree of a repository from the Repositories view (Axel 2026-09-23, from the same comparison; with D20; brief at dispatch)". It should be quoted under "The plan line and the rulings".
+1. Z126 (`plan.md:834`, `:580`) says A2 was folded into D20 "its line kept whole in `agents/briefs/D20.md`". The brief quotes only the D20 line (`grep -n A2 D20.md` finds :69, :166, :264, none of them A2's own line). A2's line, from `git log -p -S"- A2 "` at 41939d2fa, is: "A2 a session in a new worktree: Claude or Codex started in a fresh worktree of a repository from the Repositories view (Axel 2026-09-23, from the same comparison; with D20; brief at dispatch)". It should be quoted under "The plan line and the rulings".
 2. Case 23 needs "the Sessions view's New" to open the composer and ask the confirmation. Z313 (New opens nothing) is held out of the brief (:16, Z515 (2)), so case 23's second half cannot pass while Z313 is unfixed. Either drop that half or tie it to Z515's outcome.
 
 ### Premises
@@ -556,13 +556,13 @@ Findings:
 
 ### Shared paths
 
-1. X3f (`X3f-round2.md:148`; worktree `git -C .agents/worktrees/X3f diff HEAD`, base ec4c6f577, 95 changed or added paths): the brief's list of X3f lines is incomplete.
+1. X3f (`X3f-round2.md:148`; worktree `git -C .agents/worktrees/X3f diff HEAD`, base 6c3781d10, 95 changed or added paths): the brief's list of X3f lines is incomplete.
    - The worktree's diff also changes DESIGN.md :305, :324, :334 and :417, HELP.md :159 and :161, and inserts one line after HELP.md:85 (the Cmd+S row).
    - DESIGN.md :328 (D20) has 3 unchanged lines to X3f's :324 and 5 to :334: simple.
    - Every HELP.md pair has unchanged lines between: simple. After X3f lands, D20's HELP.md line numbers after 85 shift by one.
    - The only other shared path is `docs/diagrams/`. X3f's `ui/controls/editor/*` changes add no item to `ui/controls/`.
-   - `git diff -U0 ec4c6f577 HEAD -- HELP.md DESIGN.md` shows only single-line replacements.
-2. S5 with Q119 (worktree base 6005baee6, 109 paths):
+   - `git diff -U0 6c3781d10 HEAD -- HELP.md DESIGN.md` shows only single-line replacements.
+2. S5 with Q119 (worktree base 8bb4960ba, 109 paths):
    - compose.ts :34 and :233. routes.ts :28, :203, :311, :353 and :429 at its base, which are :29, :225, :324, :361 and :433 at head (`grep -n loadLocalOrDefaults`).
    - server.yml: insertions at :29, :31 and :52 in `config_key` and `config_value`. D20 adds after `fork` and `latex`.
    - HELP.md :154, :157, :261, :274. DESIGN.md :85, :408.

@@ -1,6 +1,6 @@
 # D35 review, first run (reviewer report)
 
-Worktree untouched by hand. `npm run diagrams` and `npm run build` regenerated files; `git diff bca2c6b3 --stat | tail -1` still prints `46 files changed, 3990 insertions(+), 1411 deletions(-)`, the same as before. All mutation runs were on a scratch copy (`/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d35r/copy`). No server was started outside tests on ephemeral ports. I did not open `config/local.yml`.
+Worktree untouched by hand. `npm run diagrams` and `npm run build` regenerated files; `git diff c0cbe960 --stat | tail -1` still prints `46 files changed, 3990 insertions(+), 1411 deletions(-)`, the same as before. All mutation runs were on a scratch copy (`/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d35r/copy`). No server was started outside tests on ephemeral ports. I did not open `config/local.yml`.
 
 ## Verification lines (verbatim)
 
@@ -45,7 +45,7 @@ Brief verify items 3 to 6:
   - `src/lib/data/sources/config.ts`: `63,64d62 < CADENCE_WORDS, < cadenceShape,` (ruling B).
   - `tests/views/system/help.test.ts`: lines 343 to 346 assert the new HELP sentences (`read again whenever it changes`, `a changed \`port\` moves the server`). Main's copy asserts the removed ones, so the brief's "main's copy" cannot hold for it.
 
-  `git diff bca2c6b3 --name-only | grep routes` lists only `tests/routes/sessions/hook.test.ts`.
+  `git diff c0cbe960 --name-only | grep routes` lists only `tests/routes/sessions/hook.test.ts`.
 
 Seen-failing runs on a scratch copy (a mutation made on a copy of the worktree file, the named tests run, the file restored). Each of these fails without its behaviour:
 1. Page follows (`socket.svelte.ts`, `location.assign(moved)` replaced by `void moved`): `config-seed.test.ts > the page follows a server that moves > goes to its own address on the new port when a later push reports another address, once` and `> takes the first address from the configuration the page was built from`. `Tests  2 failed | 26 passed (28)`.
@@ -192,9 +192,9 @@ Examined without finding (each with its check):
 
 As far as I can count: about 295,000 tokens of context consumed (the session counter fell from 15,000,000 to 14,700,000), about 85 tool calls, about 55 minutes wall-clock. Machine runs: one checks.sh (8 min), one verify-2 run, one `test:checks`/`check`/`build`/`format`/`lint` sequence (about 10 min), two config-key runs, 16 mutation runs and one scratch-test file.
 
-## The earlier build, taken back out of main: Step D35 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D35, base c44def15)
+## The earlier build, taken back out of main: Step D35 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D35, base 0d8b2c45)
 
-I changed nothing. The only git I ran was `git diff c44def15` and `git status --short`. `npm run diagrams` rewrote files in the worktree as the brief told me to; `git status --short | wc -l` printed 66 before and after, and the file set is unchanged.
+I changed nothing. The only git I ran was `git diff 0d8b2c45` and `git status --short`. `npm run diagrams` rewrote files in the worktree as the brief told me to; `git status --short | wc -l` printed 66 before and after, and the file set is unchanged.
 
 ### Verification (rerun by the reviewer)
 
@@ -282,7 +282,7 @@ Cases of the brief's "Cases":
 
 ### 2. Proof
 
-- Proof 1. Report, "First run on the unchanged tree": "17 files failed ... (output in `scratchpad/firstrun3.txt`)", per-file counts only, one failure line quoted ("Expected: 'read once when the server starts and used from that value'"). What is wrong: the ruling (D35-cases.md 1) and brief verify 7 say each changed or new test's failure on the unchanged tree is quoted in the report; the report points to scratchpad files instead, and builds the "unchanged tree" from the main checkout (not at the base c44def15: main's head is later). I could not rebuild an unchanged tree under the git restriction, so I did not reproduce the 132 failures. Decision resting on it: whether each new test fails without the change. Failure scenario: a new test that passes on the unchanged tree sits among the 132 counted without anyone being told which. Verdict: cases 1-17, 21-24 met only on the strength of reading the tests; not reproduced.
+- Proof 1. Report, "First run on the unchanged tree": "17 files failed ... (output in `scratchpad/firstrun3.txt`)", per-file counts only, one failure line quoted ("Expected: 'read once when the server starts and used from that value'"). What is wrong: the ruling (D35-cases.md 1) and brief verify 7 say each changed or new test's failure on the unchanged tree is quoted in the report; the report points to scratchpad files instead, and builds the "unchanged tree" from the main checkout (not at the base 0d8b2c45: main's head is later). I could not rebuild an unchanged tree under the git restriction, so I did not reproduce the 132 failures. Decision resting on it: whether each new test fails without the change. Failure scenario: a new test that passes on the unchanged tree sits among the 132 counted without anyone being told which. Verdict: cases 1-17, 21-24 met only on the strength of reading the tests; not reproduced.
 - Proof 2. `src/lib/server/machine/hpc/poll.ts:121` (`publishQuota`), `:229` (`prewarmStep`), `:326` (days branch of `set`): `const began = asking;` and the `began !== asking` guards. What is wrong: spec.md says every asynchronous path is exercised in flight, after close and superseded. By reading `tests/server/machine/hpc/poll.test.ts`, no test changes the host or the window while a quota read or a prewarm is in flight, and none changes `days` while a poll is in flight. The only in-flight test ("drops the rows of a poll begun under the old host ...") gates the queue read; quota answers `NOTHING` and prewarm is unused. Taking the guard out of `publishQuota` or `prewarmStep` leaves every test green. Failure scenario: the old host's quota meters or its log paths land under the new host's name. Verdict: item 4 holds (code reads correct); case 4 met for the queue read only.
 - Proof 3. `tests/server/accounts/calendar/live.test.ts`, `mail/live.test.ts`, `connect/loop.test.ts`: no test changes the period or the window while a round is in flight. The two paths that matter are `loop.ts` `setPollMin` (`if (running === null) schedule()`) and the queued follow-up of `takeLoopSettings` (`void loop.run(true)` over a running round). Same spec.md rule. Failure scenario: a window change that arrives mid-round could leave a stale window until the next period with nothing failing. The code reads correct. Verdict: items 5 and 13 hold.
 
@@ -307,7 +307,7 @@ Cases of the brief's "Cases":
 ### Declined to judge
 
 - The look on TEST and the interleaved A/B: the orchestrator's, not a read or a rerun.
-- Proof 1's first run: I cannot build an unchanged tree under the read-only git rule, and whether the main checkout's drift since c44def15 touched the restored files is not verified.
+- Proof 1's first run: I cannot build an unchanged tree under the read-only git rule, and whether the main checkout's drift since 0d8b2c45 touched the restored files is not verified.
 - Case 20's "the parse error is a finding on the config channel (existing)": not exercised by any test of this step and not checked.
 - Whether `payload: z.object({ config: z.unknown() })` accepts a message with no `config` key (the `undefined` case of case 19): not checked; the test passes either way, since every other non-map logs the same single line.
 - The `ordo-medium` builder experiment's evaluation (tokens, first-report bar): the orchestrator's.
@@ -317,7 +317,7 @@ Reviewer usage: left to the orchestrator.
 
 ### Repair round 1, refuted
 
-Everything below was produced by my own runs in this session. I changed nothing in the worktree. The only git I ran was `git diff c44def15` (with `--stat`, `--numstat`, `--name-only` and path arguments) and `git status --short`. `npm run diagrams` and `checks.sh` rewrote generated files in the worktree as the brief told me to; `git status --short | wc -l` printed 68 before and after (66 files at the first review plus `poll-fixture.ts` and `poll-live.test.ts`). `config/local.yml` was never opened, grepped or copied; every `find` and `rsync` excluded it. My scratch copies of the step's tree are removed.
+Everything below was produced by my own runs in this session. I changed nothing in the worktree. The only git I ran was `git diff 0d8b2c45` (with `--stat`, `--numstat`, `--name-only` and path arguments) and `git status --short`. `npm run diagrams` and `checks.sh` rewrote generated files in the worktree as the brief told me to; `git status --short | wc -l` printed 68 before and after (66 files at the first review plus `poll-fixture.ts` and `poll-live.test.ts`). `config/local.yml` was never opened, grepped or copied; every `find` and `rsync` excluded it. My scratch copies of the step's tree are removed.
 
 #### Open at the top
 
@@ -356,7 +356,7 @@ grep -rn "loadLocalOrDefaults|reportedLocal" src tests DESIGN.md HELP.md README.
 
 Proof 1 (first runs), a scratch copy of the step's tree with the 31 base files from scratchpad/D35-base copied over it,
 live-settings.ts deleted (ls | grep -c live-settings: 0), the step's tests kept, each test file run alone:
-  30 of the 31 base files: line counts of "diff base worktree" equal "git diff c44def15 --numstat" (added, removed).
+  30 of the 31 base files: line counts of "diff base worktree" equal "git diff 0d8b2c45 --numstat" (added, removed).
   config/catalogs/options.yml (30/30 vs git 28/28, a different diff algorithm): `patch -R` of git's diff over the
   worktree file gives the base file byte for byte (cmp: identical).
   Result lines, failed/passed: calendar-config 3/15, mail-config 2/15, settings 6/46, memories 2/25, wallpaper 3/15,
@@ -398,7 +398,7 @@ Slow-tagged files that exercise changed modules (not in the verify list), run on
 ```
 The same file run in the worktree: `Tests 1 failed | 31 passed (32)`, `Received: "Cannot read properties of undefined (reading 'hub')"`, at `tests/server/git/deposit.test.ts:285`. Source and test were byte-identical between worktree and copy (`cmp`).
 
-#### Verdicts, for the whole diff since c44def15
+#### Verdicts, for the whole diff since 0d8b2c45
 
 Items of the brief's "What to build":
 
@@ -486,7 +486,7 @@ Reviewer usage: not measured inside the session (no counter is available to me);
 
 # Repair round 1, refuted
 
-I changed no file in the worktree or the main checkout. Git run: none except what the task allows (`git diff bca2c6b3 --stat`, `git status --short`; both print 59 status lines and `53 files changed, 4393 insertions(+), 1528 deletions(-)` before and after my runs). `npm run diagrams` rewrote tracked diagrams as the verify list requires. All mutation runs and the three scratch scripts ran on a copy in the scratchpad (`.../scratchpad/r1/copy`, without `config/local.yml`, node_modules symlinked) or from the scratchpad, on ephemeral ports. I never opened `config/local.yml`. No server was started outside a test or a scratch script, and none on 8787 or 8790.
+I changed no file in the worktree or the main checkout. Git run: none except what the task allows (`git diff c0cbe960 --stat`, `git status --short`; both print 59 status lines and `53 files changed, 4393 insertions(+), 1528 deletions(-)` before and after my runs). `npm run diagrams` rewrote tracked diagrams as the verify list requires. All mutation runs and the three scratch scripts ran on a copy in the scratchpad (`.../scratchpad/r1/copy`, without `config/local.yml`, node_modules symlinked) or from the scratchpad, on ephemeral ports. I never opened `config/local.yml`. No server was started outside a test or a scratch script, and none on 8787 or 8790.
 
 ## Verification (rerun by the reviewer)
 
@@ -516,7 +516,7 @@ Commands the round section quotes, rerun:
 - `npx vitest run tests/server/edit/config-key.test.ts --reporter=dot`: `Tests  54 passed (54)`, tests 32.59 s; the same file on main (`/Users/axelfaes/workspace/research-hub/tools/oculus`): `Tests  38 passed (38)`, tests 26.52 s, at load 13 to 17. `-t "bounds of the cadences"`: `16 passed | 38 skipped`, tests 3.86 s. The file's added time is about 6 s, as the report says.
 - `grep -rn --exclude=local.yml 'takes effect when the server is started again' config HELP.md DESIGN.md src | wc -l` prints 0; `grep -rn 'loadLocalOrDefaults(' src | wc -l` prints 11; `grep -c 'A change is read again at once.' config/catalogs/options.yml` prints 15; `grep -c 'moves the server to the new port' ...` prints 1; `ls src/lib/server/root | wc -l` prints 9, `ls tests/server/root | wc -l` prints 10.
 - The ASCII gate of `agents/spec.md` over `src tests bin config` (with `! -name local.yml`) prints nothing.
-- `cmp` of the 27 files item 9 lists against main: 26 same; `src/lib/data/sources/config.ts` differs (ruling B) and `tests/views/system/help.test.ts` differs (asserts the new HELP sentences, as the first report said); the 7 route folders under `src/routes/api/` are identical; `git diff bca2c6b3 --name-only | grep routes` lists `src/routes/+page.svelte`, `tests/routes/page.test.ts`, `tests/routes/sessions/hook.test.ts`.
+- `cmp` of the 27 files item 9 lists against main: 26 same; `src/lib/data/sources/config.ts` differs (ruling B) and `tests/views/system/help.test.ts` differs (asserts the new HELP sentences, as the first report said); the 7 route folders under `src/routes/api/` are identical; `git diff c0cbe960 --name-only | grep routes` lists `src/routes/+page.svelte`, `tests/routes/page.test.ts`, `tests/routes/sessions/hook.test.ts`.
 - Failing-before table, rerun on the scratch copy (fix taken out by hand, file run, file restored, `cmp` printed no difference each time). All reproduced as red: forwarded-page condition removed (2 failed: `stays on a forwarded port...`, `stays on an https page...`); `carryWorkbench(localStorage, window)` removed (`carries the arrangement and the settings in the window name before it goes`); `takeCarried(localStorage, window);` removed from `+page.svelte` (`tests/routes/page.test.ts`, the order audit); `win.name = ''` removed (3 failed); `if (held === null) return;` replaced (3 failed); `await finishRequests();` removed (`lets a request in flight finish...` and `ends an idle connection at once while a request in flight finishes` failed with `fetch failed`); grace timer ignoring `graceMs` (`ends a request still in flight when the grace period is over...` timed out at 5000 ms); `before();` removed (3 failed, `keeps a socket that was open...` timed out); `exit(1);` removed (1 failed); `'workspaces'` removed from `FIELDS` (2 failed); `if (mover.moving()) return;` removed from `serve.ts` (`leaves the context and the socket open when a move stops the server` failed); `carryingHandler(handler, context)` replaced (`hands the handler every request with the context on it` failed); `throw error;` first in the `settlePort` catch (1 failed); the `reloadLocal` try/catch rethrowing (1 failed); `tryStart` rethrowing (1 failed). Also `rebuild(rebuiltBy(changed), previous)` removed (9 failed, cases 27 to 32, 38, 39 and the throwing-constructor case), `else void settlePort();` replaced (8 failed, cases 35, 36), `if (closed) return;` removed from `reloadLocal` (case 40 failed), `changedKeys` filter made always true (10+ failed).
 - Counts the report gives that I did not reproduce, no decision resting on them: `storage.setItem` removed gives 2 failures (report: 3 cases); `JSON.stringify` write removed gives 4 (report: 9); `if (held === null) return;` replaced gives 3 (report: 6 cases, 3 of them left-alone).
 - `closeIdleConnections()` taken out of `serverMover` (scratch copy): `Tests  12 passed (12)` in `tests/server/root/vite-plugin.test.ts`, i.e. the idle-connection case still passes (Standards 1).

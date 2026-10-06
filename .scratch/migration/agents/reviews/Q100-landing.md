@@ -23,6 +23,6 @@ TaskStop on the builder and both reviewers found none running; `ListAgents` list
 
 ## Checks
 
-- `npm test` ran once: red only on the git cap case in `tests/server/core/git.test.ts`, which Q100 does not change; that case is tagged slow and left out of `npm test` (4390ffda).
+- `npm test` ran once: red only on the git cap case in `tests/server/core/git.test.ts`, which Q100 does not change; that case is tagged slow and left out of `npm test` (1040bf7a).
 - `npm run check` 0 errors (1483 files), build, format and lint clean; the three changed-area test files 50 passed.
 - Look on TEST under tokyo night: the week header, the month weekday row and the list date headings hide the rows scrolled under them; header background alpha 0.97. Theme set back to vscode dark modern.

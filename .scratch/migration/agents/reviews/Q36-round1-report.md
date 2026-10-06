@@ -8,6 +8,6 @@ NOT DONE: repeated machine-cost measurements reuse `probe-pid`, so a retry can r
 | Loaded proof | NOT DONE | The refuter's five runs with 16 busy loops passed 4 of 5; the red run reported `too loaded to prove the kill: 268ms over the grace`. |
 | Revert proof | DONE | `node bin/revert-check.mjs tests/server/hpc/ssh.test.ts` reported 10 reverts, 0 unproven, and 3 unchanged cases unchecked. |
 | Static gates | DONE | `npm run check` reported 0 errors and 0 warnings; build, format, lint, ASCII and size gates passed. |
-| Source scope | DONE | `git diff 2ddd4a8b -- src/lib/server/hpc/ssh.ts` printed nothing. |
+| Source scope | DONE | `git diff 49e052b9 -- src/lib/server/hpc/ssh.ts` printed nothing. |
 
 Changed file: `tests/server/hpc/ssh.test.ts`, 440 lines.

@@ -12,7 +12,7 @@ Nothing of the brief. One thing outside it is booked rather than done: the four 
 
 ## What landed
 
-Q59, cherry-picked from `.agents/worktrees/Q59` at base `5fd87384` onto main by `tools/oculus/.scratch/migration/land.sh Q59 5fd87384`, which exited 0: +7,231 -4,207 over 551 files at that point, and the landing fix above on top of it. Nothing outside `tools/oculus/` is touched.
+Q59, cherry-picked from `.agents/worktrees/Q59` at base `bdc6aad1` onto main by `tools/oculus/.scratch/migration/land.sh Q59 bdc6aad1`, which exited 0: +7,231 -4,207 over 551 files at that point, and the landing fix above on top of it. Nothing outside `tools/oculus/` is touched.
 
 Every item of the brief, the list whole in `agents/briefs/Q59.md` and one row each in `agents/reviews/Q59-report.md`: the comment width of the whole tree with a check that holds it; the tree and tab-badge measures as tokens; the glyph catalog's orphans with a reader scan tightened to the four shapes the source names a glyph in; the browser cleanup moved out of the case bodies into `keepServedFiles()`, which also puts back the notes a case writes; the orientation cap; the unborn branch; the test scratch and the signal cleanup of `bin/revert-check.mjs`; the served run's layout in one helper; the sash reach measured at five device-pixel ratios and its sliver token; the six view findings; the four state findings; the seven test and document findings; the audits scan reading code alone with its floor held to what the scan still finds; the write timeout Axel ruled in, worded from `app.write_timed_out`; the project tab's absent-document tags Axel ruled in; the type-scale guard over `src/lib/ui`; and every revert directive of the tree pointed at the line its prose names.
 
@@ -43,7 +43,7 @@ sh bin/size-check.sh                exit 0
 sh bin/folder-check.sh              exit 0
 npm run test:browser                291 passed (9.5m), on a tree whose src and config are
                                     identical to main's now (`diff -r -q`)
-sh .../land.sh Q59 5fd87384         exit 0, all of the above in order
+sh .../land.sh Q59 bdc6aad1         exit 0, all of the above in order
 node bin/revert-check.mjs         over the files whose directives or targets this step moved
                                   after the clean whole-tree run: 19 reverts, 0 unproven, 0
                                   unchecked over comment-width, audits, add-forms and writes;

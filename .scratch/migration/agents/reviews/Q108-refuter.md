@@ -1,6 +1,6 @@
-Refuter report: Q108 (oculus/migration), worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q108, base a6efe87c
+Refuter report: Q108 (oculus/migration), worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q108, base ae31a6fe
 
-I changed nothing in the worktree. The only git commands I ran were `git diff a6efe87c` and `git status --short`. I reproduced the builder's runs on a copy of `tools/oculus` outside the worktree, at /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/q108r/oc. The copy was made with rsync, which left out `config/local.yml`, `node_modules` (symlinked instead), `build`, `docs`, `demo` and `.scratch`. Main's `zones.ts` and `Jobs.svelte` were restored in that copy by `patch -R` of `git diff a6efe87c` for those two paths.
+I changed nothing in the worktree. The only git commands I ran were `git diff ae31a6fe` and `git status --short`. I reproduced the builder's runs on a copy of `tools/oculus` outside the worktree, at /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/q108r/oc. The copy was made with rsync, which left out `config/local.yml`, `node_modules` (symlinked instead), `build`, `docs`, `demo` and `.scratch`. Main's `zones.ts` and `Jobs.svelte` were restored in that copy by `patch -R` of `git diff ae31a6fe` for those two paths.
 
 ## 1. Verification lines
 
@@ -136,7 +136,7 @@ Usage: claude-opus-5-5 (served, read from the transcript), 152,342 tokens, 37 to
 
 ## Repair round 1, refuted
 
-Q108 (oculus/migration), worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q108, base a6efe87c. I changed nothing in the worktree. The only git commands I ran were `git diff a6efe87c` and `git status --short`. I ran the probes on a scratch copy at /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/q108r1/oc. The copy was made by rsync, leaving out `config/local.yml`, `node_modules` (symlinked instead), `build`, `.svelte-kit`, `.scratch` and `demo`.
+Q108 (oculus/migration), worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q108, base ae31a6fe. I changed nothing in the worktree. The only git commands I ran were `git diff ae31a6fe` and `git status --short`. I ran the probes on a scratch copy at /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/q108r1/oc. The copy was made by rsync, leaving out `config/local.yml`, `node_modules` (symlinked instead), `build`, `.svelte-kit`, `.scratch` and `demo`.
 
 ## 1. Verification lines
 
@@ -172,7 +172,7 @@ Other checks:
 
 ## 2. The delta
 
-I saved the current `git diff a6efe87c` to scratch and ran `diff` against `agents/reviews/Q108-round1-base.diff`. The round changed two files and nothing else.
+I saved the current `git diff ae31a6fe` to scratch and ran `diff` against `agents/reviews/Q108-round1-base.diff`. The round changed two files and nothing else.
 
 `tests/ui/controls/editor/zones.test.ts`:
 - The fake's `removed: string[]` became `changes: () => number`. The doc comment is "How many times the editor was asked to change its zones, with a model or without."
@@ -239,7 +239,7 @@ Cases:
 13. Met. All three assertions can fail. In its final form it also fails on main's `zones.ts`, so it is no longer an audit (Proof 1).
 14. Met (an audit).
 
-The run behind the audit and main verdicts: main's `zones.ts` was restored on the scratch copy by `patch -R` of `git diff a6efe87c -- tools/oculus/src/lib/ui/controls/editor/zones.ts`. The result was 120 lines with 0 `onDidChangeModel`. `npx vitest run tests/ui/controls/editor/zones.test.ts --reporter=verbose` gave `Tests  6 failed | 3 passed (9)`:
+The run behind the audit and main verdicts: main's `zones.ts` was restored on the scratch copy by `patch -R` of `git diff ae31a6fe -- tools/oculus/src/lib/ui/controls/editor/zones.ts`. The result was 120 lines with 0 `onDidChangeModel`. `npx vitest run tests/ui/controls/editor/zones.test.ts --reporter=verbose` gave `Tests  6 failed | 3 passed (9)`:
 - Passed: case 1 ("keeps a bar out of sight..."), case 5 ("gives a bar of no height...") and case 14 ("makes the room of a bar placed on an editor that already holds a model at once").
 - Failed: cases 2, 3, 4, 11, 12 and 13. Case 13 failed with `AssertionError: expected 2 to be 1 // Object.is equality`.
 - The file was then restored: `cmp` same.

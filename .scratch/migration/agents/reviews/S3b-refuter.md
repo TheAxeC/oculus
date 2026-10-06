@@ -1,4 +1,4 @@
-# Step S3b refuter report (on .agents/worktrees/S3b, base 41177dcf)
+# Step S3b refuter report (on .agents/worktrees/S3b, base 8ea443a0)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
 
@@ -34,7 +34,7 @@ Verify 3: npx vitest run tests/server/edit tests/routes/edit tests/server/machin
 Verify 4: shasum of config/appearance.yml, behavior.yml, layout.yml, present.yml, sources.yml and catalogs/options.yml, taken before diagrams/checks/verify 3 and again after them, then diffed
 SUMS-SAME (97cdefba..., ca2a2cf0..., ec13dbee..., cb54e715..., 1674b4d9..., ad8e2934..., the same sums the report gives)
 
-Verify 5, the first run on the unchanged tree. The scratch copy was under $TMPDIR. Its source and config changes were reversed with `git diff 41177dcf -- tools/oculus/src tools/oculus/config` and `patch -R`, config-key.ts was deleted, and the step's tests were kept. Then:
+Verify 5, the first run on the unchanged tree. The scratch copy was under $TMPDIR. Its source and config changes were reversed with `git diff 8ea443a0 -- tools/oculus/src tools/oculus/config` and `patch -R`, config-key.ts was deleted, and the step's tests were kept. Then:
 npx vitest run tests/server/edit/config-key.test.ts tests/routes/edit tests/server/machine/usage/refresh.test.ts tests/state/client/writes.test.ts --testTimeout 0
  Test Files  5 failed | 4 passed (9)
       Tests  17 failed | 191 passed (208)
@@ -212,7 +212,7 @@ Reviewer usage: tokens not visible to the reviewer; about 62 tool uses; time not
 
 ## Repair round 1, refuted
 
-# Step S3b refuter report over repair round 1 (on .agents/worktrees/S3b, base 41177dcf)
+# Step S3b refuter report over repair round 1 (on .agents/worktrees/S3b, base 8ea443a0)
 
 A page this report cites is named with its section. A finding in code keeps its `file:line`.
 
@@ -228,7 +228,7 @@ checks: failed with exit 254: npm test
 
 From .agents/worktrees/S3b/tools/oculus:
 $ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
-diagrams exit=0. `git status --short | shasum` gave 2a9875e5... before and after the run. `git diff 41177dcf --stat -- docs/diagrams` gave 6 files, 562 insertions, 514 deletions, the same churn as before the run.
+diagrams exit=0. `git status --short | shasum` gave 2a9875e5... before and after the run. `git diff 8ea443a0 --stat -- docs/diagrams` gave 6 files, 562 insertions, 514 deletions, the same churn as before the run.
 
 $ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
 exit=0
@@ -262,7 +262,7 @@ LC_ALL=C grep -n '[^ -~]' utils/diagrams/writes.mjs HELP.md DESIGN.md -> nothing
 
 Brief verify 5 and the closures. These were run on a scratch copy of tools/oculus under the session scratchpad. The copy was made with rsync excluding node_modules, .scratch and config/local.yml, and node_modules was symlinked. A baseline run of the four step test files on the copy gave Tests 151 passed (151).
 
-- First run on the unchanged source. The src and config diff was reversed with `git diff 41177dcf -- tools/oculus/src tools/oculus/config` and `patch -R`, and config-key.ts was deleted:
+- First run on the unchanged source. The src and config diff was reversed with `git diff 8ea443a0 -- tools/oculus/src tools/oculus/config` and `patch -R`, and config-key.ts was deleted:
   npx vitest run tests/server/edit/config-key.test.ts tests/routes/edit tests/server/machine/usage/refresh.test.ts tests/state/client/writes.test.ts --testTimeout 0
    Test Files  6 failed | 3 passed (9)
         Tests  20 failed | 191 passed (211)
@@ -275,7 +275,7 @@ Brief verify 5 and the closures. These were run on a scratch copy of tools/oculu
 - Ruling 10, the rail branch mapped to null: 1 failed, the rail test, "expected 404 to be 500".
 - Ruling 10, the deck branch mapped to null: 1 failed, the deck test, "expected 404 to be 500".
 - Ruling 10, writes.ts mapping 'unwritable' to 404: all 3 unwritable-undo tests failed, "expected 404 to be 500".
-- Ruling 5, utils/diagrams/writes.mjs reversed to the base with `git diff 41177dcf -- tools/oculus/utils/diagrams/writes.mjs` and `patch -R`, then npm run diagrams and npx vitest run tests/checks/diagrams:
+- Ruling 5, utils/diagrams/writes.mjs reversed to the base with `git diff 8ea443a0 -- tools/oculus/utils/diagrams/writes.mjs` and `patch -R`, then npm run diagrams and npx vitest run tests/checks/diagrams:
    x parts two arrows that reach one module from two modules (expected 1 to be 2)
    x parts a plain arrow that runs along an arrow drawn through its words (expected 1 to be 2)
    x have no two arrows running along each other in the write diagram: the four pairs the first report quoted (feeds.ts to file on disk along feeds.ts->json.ts for 85, along feeds.ts->entries.ts for 41, config-key.ts->json.ts along deck.ts->json.ts for 56, entries.ts->changes.ts along manifest.ts->changes.ts for 54)
@@ -285,7 +285,7 @@ Brief verify 5 and the closures. These were run on a scratch copy of tools/oculu
 - The report's claim under ruling 1 that a docs: path under an unreadable folder does not make docFindings throw. A node probe with a folder at chmod 000 printed "exists false". That fits content/docs.ts:479, where existsSync runs before statSync, so the finder gives "no file at" and does not throw.
 
 grep checks: `grep -n "type Written" yaml-edit.ts` gives `107:type Written = ...`, which is not exported. `grep -n plain config-key.ts` finds only prose in comments; there is no import and no call.
-The scratch copy was removed. Two logs (checks.log and diagrams.log) were written to the shared scratchpad and may have replaced files of the same name there. At the end, `git status --short | shasum` from tools/oculus gave 2a9875e5..., the same as at the start (31 lines), and `git diff 41177dcf --stat` gave 27 files, 1036 insertions, 570 deletions.
+The scratch copy was removed. Two logs (checks.log and diagrams.log) were written to the shared scratchpad and may have replaced files of the same name there. At the end, `git status --short | shasum` from tools/oculus gave 2a9875e5..., the same as at the start (31 lines), and `git diff 8ea443a0 --stat` gave 27 files, 1036 insertions, 570 deletions.
 ```
 
 ## Verdicts

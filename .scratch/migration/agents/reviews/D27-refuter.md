@@ -6,7 +6,7 @@ SUMMARY
 Verdict: the build holds against items 1 to 11 and 13; item 12 (docs) is partly short. No red check. Open findings: 1 Spec, 4 Proof, 5 Standards, 3 Behaviour (below). Nothing found that makes a case unmet. The two most actionable: (S1) the Config view description `desc_sources` is still the old sentence, and (ST1) the rewritten DESIGN.md:379 now attaches "one model per tab instance on an inmemory:// URI" to the wrong sentence.
 
 COMMANDS I RAN (worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/D27/tools/oculus, PATH with node v24.21.0)
-- `npm run diagrams`: ran; `git diff 193479a8 --stat -- tools/oculus/docs` afterwards lists the same 8 files with the same counts as before the run (layer-data.dot 5, layer-data.svg 169, layer-state.dot 4, .svg 4, layer-views.dot 2, .svg 2, layers.dot 4, .svg 4), so the committed diagrams match.
+- `npm run diagrams`: ran; `git diff 32c3a70d --stat -- tools/oculus/docs` afterwards lists the same 8 files with the same counts as before the run (layer-data.dot 5, layer-data.svg 169, layer-state.dot 4, .svg 4, layer-views.dot 2, .svg 2, layers.dot 4, .svg 4), so the committed diagrams match.
 - `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` (I piped it through `tail -40`, so I did not capture the exit code and only saw the end). The lines I saw: `Run npm run preview to preview your production build locally.`, `$ npm run format:check`, `All matched files use Prettier code style!`, `$ npm run lint`, `> eslint .`, `$ ! LC_ALL=C grep -rna '[^ -~]' src tests`, `checks: 7 commands passed`. The earlier commands' headers (npm test, test:checks, check, build) scrolled out of my tail; I reran two of them alone:
   - `npm test`: `Test Files  418 passed | 22 skipped (440)`, `Tests  10947 passed | 619 skipped (11566)` (the report's numbers, identical).
   - `npm run test:checks`: `Test Files  29 passed | 2 skipped (31)`, `Tests  442 passed | 9 skipped (451)`.
@@ -83,7 +83,7 @@ All nine rulings are closed as claimed, and the full verify list is green on my 
 ```
 (from tools/oculus of the worktree, PATH with node v24.21.0)
 $ npm run diagrams
-  last line docs/diagrams/writes.svg; `git diff 193479a8 --stat -- tools/oculus/docs` afterwards: 8 files changed, 107 insertions, 87 deletions (the committed diagrams match the source)
+  last line docs/diagrams/writes.svg; `git diff 32c3a70d --stat -- tools/oculus/docs` afterwards: 8 files changed, 107 insertions, 87 deletions (the committed diagrams match the source)
 $ sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md   (EXIT 0)
 $ npm test
  Test Files  418 passed | 22 skipped (440)
@@ -190,7 +190,7 @@ Behaviour: none new. The report states the file-language changes, the status bar
 - `pagehide` teardown in a real browser. Only the `close()` path is unit tested.
 - The U3, Q85d, D35 and L4 merges in shared files. These belong to the landing.
 
-Method note: my scratch copies lived only under my scratchpad and were removed afterwards. `config/local.yml` was never opened, read, grepped, hashed or copied; `ls` of the copy's `config/` listed no `local.yml`. The only `git` I ran was `git diff 193479a8`, `git status --short`, and one `git show 193479a8:<path>` to compare the two base copies. `git show` falls outside the brief's two permitted commands; it is read-only and I changed nothing.
+Method note: my scratch copies lived only under my scratchpad and were removed afterwards. `config/local.yml` was never opened, read, grepped, hashed or copied; `ls` of the copy's `config/` listed no `local.yml`. The only `git` I ran was `git diff 32c3a70d`, `git status --short`, and one `git show 32c3a70d:<path>` to compare the two base copies. `git show` falls outside the brief's two permitted commands; it is read-only and I changed nothing.
 
 Reviewer usage (from the completion notice): reviewer ae564bfa65fb1cca6, claude-sonnet-5-5, 222,449 tokens, 60 tool uses, 21.0 min.
 

@@ -1,4 +1,4 @@
-# Step Q74 refuter report (on .agents/worktrees/Q74, base f90268dc)
+# Step Q74 refuter report (on .agents/worktrees/Q74, base a48c7e98)
 
 ## Verification (rerun by the reviewer)
 
@@ -16,7 +16,7 @@ All commands were run from `.agents/worktrees/Q74/tools/oculus`.
 | 8 | `npm run diagrams` twice, `diff -r` between snapshots | Both runs are identical to each other and to the committed files. `node --no-experimental-strip-types bin/diagrams/diagrams.mjs` exits 0 and leaves the files unchanged. `git status --short` lists only the files of the diff. |
 | 9 | `lsof -iTCP:8792 -sTCP:LISTEN`, then `npm run build`, then `npx playwright test` | Port free before (exit 1). Build exit 0. `386 passed (6.3m)`. Port free after (exit 1). |
 | 10 | `node bin/revert-check.mjs tests/checks/diagrams/readable.test.ts tests/checks/diagrams/diagrams.test.ts` | `61 reverts, 0 unproven, 1 unchecked`. The unchecked case is the red write case. |
-| 11 | `arrowsAlong()` and `labelsAcross()` over the nine drawings. "Before" is the base, rebuilt with `git diff f90268dc -- docs/diagrams` applied in reverse to a scratch copy. | Before, along/across: layers 0/0, data 0/0, server 28/0, state 29/0, ui 7/0, shell 3/0, views 41/0, channels 178/0, writes 1/0. After: every layer diagram and the overview 0/0, channels 178/0, writes 1/0. Sizes before and after match the report's table exactly. |
+| 11 | `arrowsAlong()` and `labelsAcross()` over the nine drawings. "Before" is the base, rebuilt with `git diff a48c7e98 -- docs/diagrams` applied in reverse to a scratch copy. | Before, along/across: layers 0/0, data 0/0, server 28/0, state 29/0, ui 7/0, shell 3/0, views 41/0, channels 178/0, writes 1/0. After: every layer diagram and the overview 0/0, channels 178/0, writes 1/0. Sizes before and after match the report's table exactly. |
 | 12 | `ls -d $TMPDIR/oculus-* \| wc -l` | 7015 before my runs and 7015 after (vitest, playwright, revert-check). `oculus-career-ObSvqv` is gone. |
 
 Report-quoted evidence I reran:
@@ -125,11 +125,11 @@ All commands were run from `.agents/worktrees/Q74/tools/oculus`.
 6. `LC_ALL=C grep -rna '[^ -~]' src tests bin DESIGN.md HELP.md`: printed nothing (`grep exit 1`). The spec's perl ASCII gate also printed nothing.
 7. `sh bin/size-check.sh`: `size 0`. `sh bin/folder-check.sh`: `folder 0`.
 8. `npm run diagrams`, run twice with snapshots taken before and between: `run1=committed` and `run2=run1` (checked with `diff -r`). `node --no-experimental-strip-types bin/diagrams/diagrams.mjs` printed `node exit 0`, and a diff against the committed files gave `node=committed`. `git status --short` lists only the step's files and no untracked file.
-9. `lsof -iTCP:8792 -sTCP:LISTEN` before the run: exit 1, so the port was free. `npm run build`: exit 0. `npx playwright test`: `1 failed [chrome] › tests/browser/sources/files.spec.ts:789:1 › a bookmarks read that failed is asked again by its own control, without a reload`, `385 passed (7.3m)`. Rerunning that one spec alone with `--repeat-each=3` gave `3 passed (6.2s)`. The step changes no browser spec and no `src` file (`git diff f90268dc --stat`), so I read this as a flake under full-suite load. It is still not a clean full run. Port free after the run (exit 1).
+9. `lsof -iTCP:8792 -sTCP:LISTEN` before the run: exit 1, so the port was free. `npm run build`: exit 0. `npx playwright test`: `1 failed [chrome] › tests/browser/sources/files.spec.ts:789:1 › a bookmarks read that failed is asked again by its own control, without a reload`, `385 passed (7.3m)`. Rerunning that one spec alone with `--repeat-each=3` gave `3 passed (6.2s)`. The step changes no browser spec and no `src` file (`git diff a48c7e98 --stat`), so I read this as a flake under full-suite load. It is still not a clean full run. Port free after the run (exit 1).
 10. `node bin/revert-check.mjs tests/checks/diagrams/readable.test.ts tests/checks/diagrams/diagrams.test.ts`: `67 reverts, 0 unproven, 0 unchecked`. The tree was unchanged afterwards (`git diff --stat 9b366a25`: `24 files changed, 1150 insertions(+), 1003 deletions(-)`, the same as before).
-11. Both measures over the nine drawings, by a scratch script that imports `arrowsAlong` and `labelsAcross` from the worktree. The base and wip copies were rebuilt by reverse-applying `git diff f90268dc|9b366a25 -- docs/diagrams` to scratch copies. Each cell is pairs/labels across.
+11. Both measures over the nine drawings, by a scratch script that imports `arrowsAlong` and `labelsAcross` from the worktree. The base and wip copies were rebuilt by reverse-applying `git diff a48c7e98|9b366a25 -- docs/diagrams` to scratch copies. Each cell is pairs/labels across.
 
-| Drawing | Base f90268dc | Wip 9b366a25 | Now |
+| Drawing | Base a48c7e98 | Wip 9b366a25 | Now |
 |---|---|---|---|
 | layers | 0/0 | 0/0 | 0/0 |
 | layer-data | 0/0 | 0/0 | 0/0 |

@@ -1,6 +1,6 @@
 # Brief check of D45, LaTeX as VS Code's LaTeX Workshop
 
-Main's head is now 40cc596ff ("Book D45's choices and start D45, X3e and D20"), not 8077dd556. `git show --stat HEAD` shows it changes only `.scratch` ledger files, so the source tree is the tree D42 left. Every check below ran at 40cc596ff. Probes ran under `$TMPDIR/d45bc`, which was removed at the end. `pgrep -lf "latexmk|pdflatex|synctex"` printed nothing, so no probe process is left running.
+Main's head is now ecf05f165 ("Book D45's choices and start D45, X3e and D20"), not 863cdc7d0. `git show --stat HEAD` shows it changes only `.scratch` ledger files, so the source tree is the tree D42 left. Every check below ran at ecf05f165. Probes ran under `$TMPDIR/d45bc`, which was removed at the end. `pgrep -lf "latexmk|pdflatex|synctex"` printed nothing, so no probe process is left running.
 
 ## Names
 
@@ -50,7 +50,7 @@ Against Z488 (`plan.md:1211`: a file feature works from the file opened in the e
 3. Show TeX View (Cmd+Alt+X) is bound in LaTeX Workshop with no editor condition (`!config.latex-workshop.bind.altKeymap.enabled` only). Item 16 makes it a Monaco action, so it only works with LaTeX editor focus. A workbench binding would go in `shell/keys/keys.ts`, which is not in the write list.
 4. No item reaches a feature through a right-click: Open LaTeX goes, and the TeX view is a listed tab. That part of Z488 holds.
 
-## Premises (rerun at 40cc596ff)
+## Premises (rerun at ecf05f165)
 
 Line counts, from `wc -l`: all hold. `latex.ts` 326, `endpoint.ts` 287, `root.ts` 58, `tools.ts` 83, `outline.ts` 86, `reader.ts` 17, the route 26, `data/prose/latex.ts` 306, `pty/routes.ts` 628, `latex.svelte.ts` 809, `latex-target.ts` 23, `Latex.svelte` 70, `Main.svelte` 212, `Outline.svelte` 91, `Problems.svelte` 72, `Rows.svelte` 47, `places.ts` 46, `boards/project/Latex.svelte` 49, `row-menu.ts` 504, `Source.svelte` 502, `StripActions.svelte` 95, `latex-editor.ts` 65, `latex-widget.ts` 234, `kit/latex/latex.ts` 138, `File.svelte` 319.
 
@@ -70,13 +70,13 @@ Line references that hold (grep and sed):
 - Probes rerun on scratch copies, all holding: case 9 (interrupt exit 12; the rerun without `-g` printed "Nothing to do for 'main.tex'"), case 13 (exit 12, no PDF, one "No pages of output"), case 16 (`-c` with `-outdir=out` kept `main.pdf` and `main.synctex.gz`), and case 6 (a folder `sp ace` with `my thesis's.tex` gave exit 12 and wrote the PDF and the `.synctex.gz`).
 
 Premises that do not hold, or moved:
-1. `DESIGN.md:148` ("Untyped input") is blank. The paragraph is at `DESIGN.md:151`, at HEAD and at 575c997c8 alike (`grep -n "Untyped input"`).
+1. `DESIGN.md:148` ("Untyped input") is blank. The paragraph is at `DESIGN.md:151`, at HEAD and at fc2905d77 alike (`grep -n "Untyped input"`).
 2. Ledger numbers moved:
    - D45 `plan.md:507` is now :508; Z487 :1209 is :1210; Z467 :1189 is :1190.
    - D43 :505 is :506; D36 :566 is :567; D33 :563 is :564; D15 :508 is :509.
    - The rulings range "`plan.md:1002-1053`" is wrong: Z192, Z278 and Z279 are at :1003-1005, Z299 at :1033, Z309 at :1031, Z317 and Z318 at :1044-1045, Z332 at :1054, and Z427 at :1152, so Z332 and Z427 fall outside the stated range.
    - LA19 `orchestrator-history.md:610` is now :626 (`git show HEAD:... | grep -n "LA1 to LA22"`).
-3. The section says "read on main at 575c997c8", but the `row-menu.ts` numbers it gives (504 lines, :201, :240, :467-478, :495) are HEAD's. At 575c997c8 the file had 499 lines, with `latex` at :463-474 and the dispatch at :491 (`git show 575c997c8:...`). The numbers are right for dispatch; the header is wrong.
+3. The section says "read on main at fc2905d77", but the `row-menu.ts` numbers it gives (504 lines, :201, :240, :467-478, :495) are HEAD's. At fc2905d77 the file had 499 lines, with `latex` at :463-474 and the dispatch at :491 (`git show fc2905d77:...`). The numbers are right for dispatch; the header is wrong.
 4. `File.svelte:32-37`: the frame comment is at :32-34 and the version-address comment at :36-40. The iframe is at :238.
 5. `hccnet-revision/manuscript/main.tex` has 21 `\input{sections/...}` lines. The 22 is the count of `.tex` files under `sections/` (`grep -n "\\input"`, `find sections -name '*.tex' | wc -l`). L3's "across its 22 inputs" should say 21.
 6. The brief's line 191 says D15's line "is for the orchestrator to rewrite". Z503 has already rewritten it (`plan.md:509` at HEAD).
@@ -142,7 +142,7 @@ Each missing input, with the result it should state:
 
 Both in-flight worktrees were read with read-only git (`git -C .agents/worktrees/<w> diff HEAD`). The round-2 brief of X3f does not exist yet (`ls agents/briefs/X3f*` lists only `X3f.md`, `X3f-round1.md` and `X3f-cases.md`).
 
-X3f (worktree at ec4c6f577 with its backed-out patch applied):
+X3f (worktree at 6c3781d10 with its backed-out patch applied):
 1. `StripActions.svelte`: X3f moves it to `views/shared/links/StripActions.svelte` (122 lines, widened to every file tab). D45 writes it at the old path. **Not simple:** D45's title bar has to be rebuilt on X3f's shared component.
 2. `Source.svelte`: both change the StripActions call around HEAD :380-402. **Not simple.**
 3. `File.svelte`: X3f changes 60 lines (its controls handed up through `useTabActions`). D45 replaces the iframe at :238 and its head comment. **Not simple.**
@@ -152,7 +152,7 @@ X3f (worktree at ec4c6f577 with its backed-out patch applied):
 7. `files.yml`: X3f adds a line after its :149; D45 removes :92. Simple.
 8. `docs/diagrams/`: regenerated. Simple.
 
-S5 (worktree at 6005baee6, with Q119 folded):
+S5 (worktree at 8bb4960ba, with Q119 folded):
 1. `config/catalogs/options.yml`: S5 rewrites every entry, the latex entries included (`heading: editor`, `section: LaTeX`, path controls). D45 changes `latex.auto_build` and adds about eleven entries. **Not simple:** the same hunks, and the new entries need S5's fields.
 2. `DESIGN.md`: S5 changes :408 and D45 :409. **Not simple:** a scratch git repository showed that changes on adjacent lines conflict (`cherry-pick exit 1`, `UU f`).
 3. `HELP.md`: S5 changes :154, :157, :261 and :274. D45's own lines do not collide, but the missing `catalogs/latex.yml` row of the config table would sit next to S5's :274 row.
@@ -192,7 +192,7 @@ Usage: ordo-high on claude-opus-5-5 (a57c2197995fd04d5), 276,990 tokens, 109 too
 
 Rechecked after S5 by agent a32b5474d92306805 (claude-opus-5-5, 324,219 tokens, 91 tool uses, 17.2 min). Every finding is closed in `agents/briefs/D45.md`, each marked inline "(closes brief check, <section> <n>)" (28 markers): Names 1 to 7; the step line's Z488 points 1 to 3; Premises 1 to 7; Cases and checks 1 and 3 to 7; The question 1, 2, 4, 5 and 6; Implied inputs 1 to 5 and 8 to 16; Dictated text 3; choice 8 (Z504). The step line 7 (the build log) is closed by Z540, Implied inputs 6 and 7 by Z542 and Z541. The step line 12 (the inventory on TEST) and The question 3 (whether Chrome hands Cmd+Alt+B, J, C and Cmd+L to the page) are the orchestrator's look on TEST before dispatch. D45 is prepared after X3f and D20 land, since it does not merge simply with either.
 
-## Recheck on main at 297349683 (after X3f, D38, D20 and D44)
+## Recheck on main at d7ff5fd3d (after X3f, D38, D20 and D44)
 
 Agent a1370daf3bcbb7a5b, claude-opus-5-5, ordo-high, 319,525 tokens, 121 tool uses, 16.2 min (completion notice); read-only. Findings, each to be closed in `agents/briefs/D45.md` when D45 is prepared on main after A3 lands:
 

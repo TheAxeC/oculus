@@ -18,9 +18,9 @@ Nothing inside the brief. The step writes ledger files only, so it has no code t
 
 ## What landed
 
-`land.sh` printed `worktree git commit: nothing staged, no wip commit made` and `nothing to copy: 86e6d8bb..U2 holds no commit`: the step's output is ledger files, which reach main by copy.
+`land.sh` printed `worktree git commit: nothing staged, no wip commit made` and `nothing to copy: 26272633..U2 holds no commit`: the step's output is ledger files, which reach main by copy.
 
-- `agents/reviews/U2-audit.md`: 56 view sections, the common differences and the proposed grouping, committed with the report at 31a11b36 and corrected at this landing.
+- `agents/reviews/U2-audit.md`: 56 view sections, the common differences and the proposed grouping, committed with the report at d7cb2856 and corrected at this landing.
 - `agents/reviews/U2-vscode.css`: the VS Code 1.137.0 rules the audit cites, lines 1107-1115 added at this landing.
 - `agents/reviews/U2-shots/`: 81 of the worktree's 88 shots (`ls | wc -l` prints 81). Not committed: `source-narrow.png` and `source-wide.png` (the text of `~/.claude/rules/never-take-the-lazy-option.md`), `present-narrow.png` and `present-wide.png` (the portfolio thesis slide), `education-narrow.png` and `education-wide.png` (institutions and evaluation roles), `customization-wide.png` (a 16 px strip with nothing to measure).
 - `plan.md`: B6 of U2's first review (a Customizations row whose file is a symlink outside every root opens a source tab answering HTTP 404) booked under Q35, widened in automode.

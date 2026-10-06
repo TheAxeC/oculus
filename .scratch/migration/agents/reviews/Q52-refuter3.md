@@ -1,6 +1,6 @@
 # Review: Q52, the run over repair round 2
 
-Reviewer, claude:opus, read-only, 10:44 to 11:32. Worktree `.agents/worktrees/q52`, base `66e22825`. Nothing in the worktree was edited: every revert, probe and browser experiment ran on an rsync copy under the scratch folder (`scratchpad/q52-review3/tree`, node_modules symlinked, its own port 8795). `git status --short` gives the same 20 lines and `git diff --stat 66e22825` the same `18 files changed, 607 insertions(+), 131 deletions(-)` as at the start.
+Reviewer, claude:opus, read-only, 10:44 to 11:32. Worktree `.agents/worktrees/q52`, base `07f99ee1`. Nothing in the worktree was edited: every revert, probe and browser experiment ran on an rsync copy under the scratch folder (`scratchpad/q52-review3/tree`, node_modules symlinked, its own port 8795). `git status --short` gives the same 20 lines and `git diff --stat 07f99ee1` the same `18 files changed, 607 insertions(+), 131 deletions(-)` as at the start.
 
 ## Verification, rerun from the worktree's `tools/oculus`
 
@@ -14,7 +14,7 @@ the ASCII gate (the amendment perl)  printed nothing, exit 0
 LC_ALL=C grep -rna '[^ -~]' src tests   printed nothing
 python3 yaml.safe_load changes.yml + repositories.yml   both parse
 npx playwright test repositories changes   12 passed (47.5s)
-git status --short / git diff --stat 66e22825   20 lines / 18 files, 607 insertions, 131 deletions
+git status --short / git diff --stat 07f99ee1   20 lines / 18 files, 607 insertions, 131 deletions
 ```
 
 All three numbers I was given reproduce: 4287 over 251 files, `COMPLETED 1223 FILES 0 ERRORS`, `12 passed`.
@@ -29,7 +29,7 @@ All three numbers I was given reproduce: 4287 over 251 files, `COMPLETED 1223 FI
    - every root gone: rendered through the real view, the picker is drawn, the first gone root is shown as `data-repo="missing"` with `sessions.ch_nofolder`, and `repositories.empty` is not drawn.
    - no roots at all: no picker, `Nothing is on the channel yet.`
 3. **The reader's pick survives all three, in the page.** One case of my own, green: a picked repository whose folder is deleted keeps `data-root` and reads `This workspace folder is not there.`; the same root with `.git` removed keeps `data-root` and reads `This workspace is not a git repository.` with `title="not a git repository (or any of the parent directories): .git"`; re-inited with a corrupt `.git/index` it keeps `data-root` and reads `git could not read this repository: .git/index: index file smaller than expected`.
-4. **The rename is clean.** `grep -rn repositoryRoots src tests config bin HELP.md DESIGN.md README.md` gives three hits, all server: `server/roots.ts:39` (the definition, `repositoryRoots(target: RootsTarget)`) and `server/context.ts:36,216`. No server path is in the rename: the diff's server hunks are `server/git.ts` (present/exists) and `server/watch/git.ts` (one comment). `git show 66e22825:.../state/repositories.ts` and `:.../server/roots.ts` both declare a `repositoryRoots` at the base, with different signatures in different layers and no import between them (nothing client-side may import `lib/server`), so the two were never one function; the rename ends the shared name.
+4. **The rename is clean.** `grep -rn repositoryRoots src tests config bin HELP.md DESIGN.md README.md` gives three hits, all server: `server/roots.ts:39` (the definition, `repositoryRoots(target: RootsTarget)`) and `server/context.ts:36,216`. No server path is in the rename: the diff's server hunks are `server/git.ts` (present/exists) and `server/watch/git.ts` (one comment). `git show 07f99ee1:.../state/repositories.ts` and `:.../server/roots.ts` both declare a `repositoryRoots` at the base, with different signatures in different layers and no import between them (nothing client-side may import `lib/server`), so the two were never one function; the rename ends the shared name.
 5. The three new keys and the reworded `empty` are right for what they mark, and `empty` is unreachable in the state it used to describe: it is drawn only for `roots.length === 0`, and a channel carrying only folders now draws the picker and the row's sentence (`tests/views/repositories.test.ts:337`, reproduced in my own render). `tests/keys.test.ts` holds both ways: putting `error:` back into `repositories.yml` reddens `has a reader for every catalog key` with `+ [ "repositories.error" ]`; deleting `pick_missing` reddens `names a catalog key in every literal read`.
 
 ## Proof

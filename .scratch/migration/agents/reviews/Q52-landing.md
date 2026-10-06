@@ -35,7 +35,7 @@ Two things the third review named are not closed and are not defects of this ste
 
 ## What landed
 
-Cherry-picked from `66e22825` onto main: 22 files, 735 insertions, 147 deletions.
+Cherry-picked from `07f99ee1` onto main: 22 files, 735 insertions, 147 deletions.
 
 - `src/lib/views/shared/repo-shape.ts` (new) holds `repoShape(root, state)` and `shapeBadge(shape)`, the one rule both git views read. `src/lib/views/shared/branch-state.ts` (new) holds the branch line. `src/lib/views/sessions/repo-shape.ts` is deleted, so the Changes panel's copy is gone.
 - `src/lib/state/repositories.ts` `pickerRoots` offers every root the `git` channel carries a state for, which is Axel's ruling of 08:15 in place of the `repository === true` filter.
@@ -71,7 +71,7 @@ The one red in the full run is `tests/server/mail/poll.test.ts > republishes whe
 
 ## What is next
 
-Q54 lands on the head Q52 leaves; its review came back with no Spec and no Behaviour finding. Then Q53, which is in its repair round. Then Q56, whose brief was rechecked against `919a28bf` today and gained one premise: the workspaces section has no failure sentence at all, so it gets one.
+Q54 lands on the head Q52 leaves; its review came back with no Spec and no Behaviour finding. Then Q53, which is in its repair round. Then Q56, whose brief was rechecked against `f41009a0` today and gained one premise: the workspaces section has no failure sentence at all, so it gets one.
 
 ## The look owed, done 2026-09-28
 

@@ -1,4 +1,4 @@
-# D13a repair round 1 (sent 2026-09-29 from the worktree as handed back, `(git diff fcde80b7; git status --short) | md5` = 1dfcd6efd8a17e297e122a0a93d8e075)
+# D13a repair round 1 (sent 2026-09-29 from the worktree as handed back, `(git diff f4dff40e; git status --short) | md5` = 1dfcd6efd8a17e297e122a0a93d8e075)
 
 Read `agents/reviews/D13a-refuter.md` in the main checkout in full, then do each item below. Every rule of the brief and the spec still holds: work only in your worktree, no git command of any form (read-only `git -C . diff` included), no browser test, no tmux on the default server, no `// revert:` lines, logs only in your own scratch folder. The reviewer's `.scratch-refute/` at the worktree root is left alone. Run only the test files you change while working, then the verify list once at the end through `checks.sh`, and rewrite the report at the brief's path in full, each ruling below carried in it. A test file the step does not change that times out in the full run under load is run alone, and both runs are quoted.
 

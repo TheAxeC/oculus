@@ -1,4 +1,4 @@
-# Step D16 refuter report, third review (on .agents/worktrees/d16, base 8601f148)
+# Step D16 refuter report, third review (on .agents/worktrees/d16, base 76c3b390)
 
 ## Second review's findings
 - **The shapes Axel has not seen are still not booked: OPEN.** These are the `file_index.ext` default change (`config/behavior.yml:75`), the 403 `the file would run rather than open`, the 404 rooted-missing answer and the `open_program` glyph. `grep -n "file_index\|would run rather\|404\|open_program" orchestrator-state.md plan.md` hits only the usage line :703. Open item :175 still describes the `drawnInPage` rule as the agreed rule, and round 3 removed that rule.
@@ -8,7 +8,7 @@
 - **The cards' superseded press: PARTLY OPEN.** Both cards now have the guard (`CardDocs.svelte:65`, `EntryCard.svelte:155`). I removed both guards on a copy, then ran build and `open-file.spec.ts`: `1 failed, 6 passed`, the failure being the collection card case at :251. No case covers the project card's guard.
 - **File view close while an open is in flight: OPEN.** It is still not exercised. The effect is harmless.
 - **`runs()` fail-closed catch unpinned: OPEN, stated.** The equivalent catch in `mayOpen` (`open.ts:109-110`) is reported as an audit (A21, `42 passed`).
-- **Process reference in a test comment: CLOSED.** That file is gone, and `git diff 8601f148 | grep '^+' | grep -i "ruling\|round\|D16\|2026"` prints nothing.
+- **Process reference in a test comment: CLOSED.** That file is gone, and `git diff 76c3b390 | grep '^+' | grep -i "ruling\|round\|D16\|2026"` prints nothing.
 - **Doc text, HELP 114 execute-bit claim: CLOSED.** The text now says the page cannot see the mode.
 - **Doc text, HELP 69 "a page": CLOSED.**
 - **Doc text, DESIGN `openable` claim: CLOSED.** The claim is now true.
@@ -27,7 +27,7 @@ All runs were from `tools/oculus` in the worktree with node v24.21.0, between 16
 - `find src tests bin -type f | xargs wc -l | sort -n | tail -3`: 970 layout.test.ts, 979 board.test.ts, total **154768**. The report says 154767.
 - `npx playwright test tests/browser/open-file.spec.ts tests/browser/board.spec.ts tests/browser/collection.spec.ts`: `17 passed (25.8s)`, first try, no lock held.
 - Per-file test counts all match the report: open.test.ts 42, opens-in-program.test.ts 7, context.test.ts 4. I also counted card-docs.test.ts 6 and file.test.ts 19.
-- `git diff 8601f148 --numstat` and `wc -l` of the four new files (76, 98, 209, 275) match the report's file list.
+- `git diff 76c3b390 --numstat` and `wc -l` of the four new files (76, 98, 209, 275) match the report's file list.
 - Node reverts on a copy (`scratchpad/d16-review3/oculus`):
 
 | Revert | Result |

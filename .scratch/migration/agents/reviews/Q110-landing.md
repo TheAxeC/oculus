@@ -16,7 +16,7 @@ Nothing of the brief.
 
 ## What landed
 
-From base ce795acb, one wip commit on `Q110-land` cherry-picked by `land.sh` (5 files changed, 292 insertions(+), 12 deletions(-)), plus the fixes at landing:
+From base 6f6e047f, one wip commit on `Q110-land` cherry-picked by `land.sh` (5 files changed, 292 insertions(+), 12 deletions(-)), plus the fixes at landing:
 
 - `src/lib/server/edit/writes/manifest.ts`: `writeManifest(hub, config, id, fields, reading: ValueReading = 'form')`; under `'record'` each value is written as the record holds it, so `[]`, `''`, `false` and a value `coerce` would normalise come back as the file held them, and `null` removes the field; `readonly`, `keymap` and an unknown type are refused under both readings through `unwritable`. `currentOf` is no longer exported.
 - `src/lib/server/edit/writes/undo.ts`: the manifest row of `apply` passes `'record'`.

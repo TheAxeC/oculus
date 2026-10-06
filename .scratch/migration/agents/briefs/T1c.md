@@ -4,7 +4,7 @@ Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern th
 
 A design ruling decides what is built. It never exempts the code: every line is written to the standards pages, so that people can read, use and maintain it.
 
-## What is on the tree (read on main at 11418b375)
+## What is on the tree (read on main at b93d69b52)
 
 - The step line, `plan.md:226`, rests on the rulings Z350, Z351, Z354, Z363, Z365 and Z367, each a line of `plan.md`'s Rulings ending "(the user).". Z363: the sweep may cut harder than one test per behaviour. Z367: four sweeps run side by side; T1a (the tiers) follows all four.
 - `tests/server/` holds 138 test files and 49,184 lines in all `.ts` files (`find tests/server -name '*.test.ts' | wc -l`; `find tests/server -name '*.ts' -exec cat {} + | wc -l`). By folder (test files / lines): accounts 15 / 5,571; content 7 / 2,090; core 15 / 3,807; edit 12 / 5,455; files 8 / 3,299; git 11 / 4,194; machine 35 / 11,632; root 24 / 8,752; sessions 9 / 4,043; transcripts 2 / 341. No file sits directly in `tests/server/` (`ls -p tests/server | grep -v /` prints nothing).
@@ -17,11 +17,11 @@ A design ruling decides what is built. It never exempts the code: every line is 
 - `ignoredIn` (`src/lib/server/core/git/files.ts:29-41`) has one branch for every failure of git, `if (!done.ok) return none;` (`:38`); `run()` (`run.ts:160-168`) answers `ok: false` for a spawn error, a timeout and a non-zero exit alike.
 - `tests/server/core/paths.test.ts:105` ("leave `isMap` to the guard") fails in the slow tier on main: three source files import the yaml library's `isMap` under its own name (`npx vitest run tests/server/core/paths.test.ts --tagsFilter slow`: `1 failed | 8 passed`). Z364 (the orchestrator, automode) puts that fix into T1a, which lands with `npm run test:slow` green apart from X3e's colour finding (Z359).
 - A folder may hold at most 10 items (`tests/checks/tree/`); `tests/server/files/` is at 10. A `.ts` file may not pass 900 lines (`tests/checks/tree/size.test.ts:28`).
-- `tests/checks/tree/allow-duplication.txt` lists clone pairs, 24 of them naming a `tests/server` file, all within `:39-65` on main (`grep -n "tests/server" tests/checks/tree/allow-duplication.txt`); `tests/checks/tree/duplication.test.ts` fails on an entry whose clone is no longer shared (`:597-606`) and on a new clone among `tests/` (`:304`). X3c, in flight, changes only `:16-23` of that file (`git diff ddcd610c -- tools/oculus/tests/checks/tree/allow-duplication.txt` in its worktree: one hunk `@@ -16,8 +16,6 @@`).
+- `tests/checks/tree/allow-duplication.txt` lists clone pairs, 24 of them naming a `tests/server` file, all within `:39-65` on main (`grep -n "tests/server" tests/checks/tree/allow-duplication.txt`); `tests/checks/tree/duplication.test.ts` fails on an entry whose clone is no longer shared (`:597-606`) and on a new clone among `tests/` (`:304`). X3c, in flight, changes only `:16-23` of that file (`git diff c02b7570 -- tools/oculus/tests/checks/tree/allow-duplication.txt` in its worktree: one hunk `@@ -16,8 +16,6 @@`).
 - Helper modules under `tests/server/` are imported from other folders: `writes-fixture`, `history-fixture`, `ops-fixture`, `git/refs/repo`, `machine/commands/commands-fixture`, `machine/line-counts` (also by `tests/state/system/lines.test.ts`, landed with Q116), `machine/pty/tmux-fixture`, `root/context-fixture` (`grep -rn "tests/server\|\.\./server/" tests --include=*.ts | grep import` outside `tests/server`).
 - Comments outside `tests/server/` name `tests/server` files: twelve in `tests/state`, two in `tests/data`, two in `tests/views`, six in `tests/routes`, and four in `src` (`machine/pty/tmux.ts:118`, `machine/pty/sessions.ts:166`, `root/hooks.ts:63`, `git/git-message.ts:11`) (`grep -rn "tests/server" tests src | grep -v "^tests/server/"`); 44 comments inside `tests/server` name a test file.
 - Sentences that describe the slow tier only by its file form: `vite.config.ts:31-35`, `README.md:15`, `HELP.md:342`, `agents/spec.md:56`.
-- The steps in flight: X3c changes no file under `tests/server/`. Q116 has landed (5a7654bf).
+- The steps in flight: X3c changes no file under `tests/server/`. Q116 has landed (bc67a961).
 - `agents/spec.md:37` named `tests/server/edit/yaml-edit.test.ts`; the file is `tests/server/edit/yaml/yaml-edit.test.ts`. Corrected in `spec.md` at this /spec.
 - No ADR folder exists (`ls tools/oculus/docs` prints `diagrams` alone), so no ADR touches the step.
 

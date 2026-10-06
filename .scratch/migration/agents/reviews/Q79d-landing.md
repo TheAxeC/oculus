@@ -25,7 +25,7 @@ Nothing.
 ## Found and fixed at landing
 
 - The round review's findings: three head comments name their new imports; the audit case lists `isFieldMap` and reads `bin`; `bin/migrations/migrate-joint-work.mjs` imports `isMap as isYamlMap`. Each audit change turns red when undone (quoted in the booking). The lazy option for the `bin` finding was narrowing the comments to `src`.
-- Defects Q100's landing left on main (a26286e1): the list-title rule written twice in `Calendar.svelte`, three comment lines over the hundredth column, and `type-scale.test.ts` without the list-title rule. Q100's booking now carries a correction saying its list-title fix was not verified.
+- Defects Q100's landing left on main (bd2a7e96): the list-title rule written twice in `Calendar.svelte`, three comment lines over the hundredth column, and `type-scale.test.ts` without the list-title rule. Q100's booking now carries a correction saying its list-title fix was not verified.
 
 ## Verification on main
 

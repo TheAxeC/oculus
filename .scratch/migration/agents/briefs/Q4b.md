@@ -20,7 +20,7 @@ Read `../spec.md` first; it governs this package unchanged. Five items Axel rais
 
 ## Facts to check on the tree before dispatch
 
-Checked 2026-09-12 at 17:15 on main at a7fafb72: the `font-size` counts above (`grep -rhn 'font-size:' src/lib/views | sort | uniq -c`); `--fs-*` tokens at `tokens.css` lines 67 to 74 (3xs 8.5, xxs 9.5, xs 10.5, sm 11.5, md 12.5, lg 13.5, xl 15, 2xl 19); `Card.svelte` `.card` at line 82 painting `--panel`, `Pane.svelte` line 43 painting `--panel`; `--panel: #fff`, `--chip: #f1f5f9`, `--bg: #f1f5f9` in tokens.css lines 10 to 15; `CrossLinks.svelte` lines 28 to 36; `Terminal.svelte` `fontSize()` at line 131, the theme effect at 245 to 255; the ui store's four appearance fields at `ui.svelte.ts` lines 25 to 28; `config/text.yml` at 977 lines; the `intro` class in Radar, Collection, Programs, Leads, Domains, Data. Re-check the line numbers at dispatch.
+Checked 2026-09-12 at 17:15 on main at 735f29b5: the `font-size` counts above (`grep -rhn 'font-size:' src/lib/views | sort | uniq -c`); `--fs-*` tokens at `tokens.css` lines 67 to 74 (3xs 8.5, xxs 9.5, xs 10.5, sm 11.5, md 12.5, lg 13.5, xl 15, 2xl 19); `Card.svelte` `.card` at line 82 painting `--panel`, `Pane.svelte` line 43 painting `--panel`; `--panel: #fff`, `--chip: #f1f5f9`, `--bg: #f1f5f9` in tokens.css lines 10 to 15; `CrossLinks.svelte` lines 28 to 36; `Terminal.svelte` `fontSize()` at line 131, the theme effect at 245 to 255; the ui store's four appearance fields at `ui.svelte.ts` lines 25 to 28; `config/text.yml` at 977 lines; the `intro` class in Radar, Collection, Programs, Leads, Domains, Data. Re-check the line numbers at dispatch.
 
 ## Conventions, verify, report
 

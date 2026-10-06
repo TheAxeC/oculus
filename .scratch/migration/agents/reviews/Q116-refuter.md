@@ -1,4 +1,4 @@
-# Step Q116 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q116, base e24474a9)
+# Step Q116 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q116, base 76148458)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number. A finding in code keeps its `file:line`.
 
@@ -33,7 +33,7 @@ npx vitest run tests/state/system/lines.test.ts tests/views/system/status.test.t
  Test Files  2 passed (2)
       Tests  90 passed (90)
 
-First run on the unchanged tree (scratch copy of tools/oculus with lines.svelte.ts and LineCounts.svelte reverse-patched to the base from `git diff e24474a9`, tests in their final form):
+First run on the unchanged tree (scratch copy of tools/oculus with lines.svelte.ts and LineCounts.svelte reverse-patched to the base from `git diff 76148458`, tests in their final form):
  x sums every row under src and no row beside them
  x sums only a folder that is src or starts with src/
  x gives null for rows with none under src and for no rows
@@ -104,7 +104,7 @@ Cases of the brief's "Cases":
 
 ## 2. Proof
 
-- `.scratch/migration/agents/reviews/Q116-report.md`, "Files with line counts": "All are inside the brief's write list. ... My change adds no import edge between files that was not already there (`LineCounts.svelte` already imported from `lines.svelte`), so I expect no difference"; what is wrong: both sentences are false. `git diff e24474a9 --stat` shows four `docs/diagrams/` files changed, and the base import was type-only, which the diagrams do not count, so the step adds a counted edge (137 to 138, 822 to 823). The decision resting on it is whether the four diagram files land with the step; failure scenario: the orchestrator, told no diagram changes, reads the four files as stray noise and drops them, leaving main's diagrams stale and `tests/checks/diagrams/diagrams.test.ts` red; verdict: none.
+- `.scratch/migration/agents/reviews/Q116-report.md`, "Files with line counts": "All are inside the brief's write list. ... My change adds no import edge between files that was not already there (`LineCounts.svelte` already imported from `lines.svelte`), so I expect no difference"; what is wrong: both sentences are false. `git diff 76148458 --stat` shows four `docs/diagrams/` files changed, and the base import was type-only, which the diagrams do not count, so the step adds a counted edge (137 to 138, 822 to 823). The decision resting on it is whether the four diagram files land with the step; failure scenario: the orchestrator, told no diagram changes, reads the four files as stray noise and drops them, leaving main's diagrams stale and `tests/checks/diagrams/diagrams.test.ts` red; verdict: none.
 
 ## 3. Standards
 
@@ -119,7 +119,7 @@ none. The report's "User-visible change" names the view, the state, the before a
 - The row's look on TEST (its place among the real rows, the figures against a real cloc count): the landing look is the orchestrator's, and the reviewer may not touch a running server.
 - Whether cloc gives every file under `src/` a language on this tree: not run, since the counter runs cloc and git outside the review's allowed commands; the `src/` row's figures against a real count are seen at the look.
 - The `fatal: Needed a single revision` line printed during `npm test`: it comes from a test running git in the worktree, the suite is green, and it is not in a file the step changed.
-- A note on the reviewer's own commands: besides `git diff e24474a9` and `git status --short`, the reviewer ran `git ls-files src | wc -l` once, read-only, which changed nothing; every mutation and base run was made on a scratch copy under the reviewer's scratchpad, never in the worktree.
+- A note on the reviewer's own commands: besides `git diff 76148458` and `git status --short`, the reviewer ran `git ls-files src | wc -l` once, read-only, which changed nothing; every mutation and base run was made on a scratch copy under the reviewer's scratchpad, never in the worktree.
 
 Reviewer usage: claude-opus-5-5, 136,700 tokens, 32 tool uses, 13.0 min (from the completion notice).
 

@@ -15,4 +15,4 @@ Not chosen: (b), a remote `mkdir -p` before the copy, which adds a remote proces
 
 ## The base copy
 
-`.agents/worktrees/D44-base/tools/oculus/` now exists, unpacked from `git archive 6044d753c` as `D44.md:13` says, and `.agents/worktrees/D44-base/unused-exports.txt` holds 379 lines (`sh utils/unused-exports.sh` on main, whose `src`, `tests`, `utils` and `config` equal the base: `git diff --quiet 6044d753c HEAD -- ...` exits 0). Verify 6 compares with that file, never with the copy in your scratchpad (382 lines).
+`.agents/worktrees/D44-base/tools/oculus/` now exists, unpacked from `git archive 378c5b60e` as `D44.md:13` says, and `.agents/worktrees/D44-base/unused-exports.txt` holds 379 lines (`sh utils/unused-exports.sh` on main, whose `src`, `tests`, `utils` and `config` equal the base: `git diff --quiet 378c5b60e HEAD -- ...` exits 0). Verify 6 compares with that file, never with the copy in your scratchpad (382 lines).

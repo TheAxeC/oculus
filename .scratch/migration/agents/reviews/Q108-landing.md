@@ -16,7 +16,7 @@ Nothing of the brief.
 
 ## What landed
 
-Commit on main after 009ca601 (this commit), from base a6efe87c, one wip commit on `Q108-land` cherry-picked with `git cherry-pick -n a6efe87c..Q108-land`, 16 files, 317 insertions, 24 deletions:
+Commit on main after 17473d5f (this commit), from base ae31a6fe, one wip commit on `Q108-land` cherry-picked with `git cherry-pick -n ae31a6fe..Q108-land`, 16 files, 317 insertions, 24 deletions:
 
 - `src/lib/ui/controls/editor/zones.ts`: a bar's room is made again on every model change (`room()`, an `onDidChangeModel` listener disposed in `unmount`), so Monaco's dropped view zones come back.
 - `tests/ui/controls/editor/zones.test.ts`: a fake editor faithful to Monaco (no zone without a model), cases 1 to 5 and 11 to 14.

@@ -19,7 +19,7 @@ None.
 
 ## What landed
 
-Apps added while oculus runs, from base ba20f682b (145 files, 11795 insertions, 2462 deletions):
+Apps added while oculus runs, from base b811d87d5 (145 files, 11795 insertions, 2462 deletions):
 
 - machine apps under `~/.oculus/apps/` and root apps under `<root>/.oculus/apps/`, each offered in the catalogue's Apps group;
 - each app drawn in a sandboxed frame on penpal 8.0.1, only after approval of the hash of its files;

@@ -1,4 +1,4 @@
-# Step M3 refuter report (on .agents/worktrees/M3, base f3bf2b6d)
+# Step M3 refuter report (on .agents/worktrees/M3, base 71a7ca5a)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
 
@@ -41,7 +41,7 @@ $ python3 tools/cockpit/build.py --selftest --dummy  -> exit 0, "SELFTEST PASS"
 # Brief verify 3
 $ grep -rnE '^compute: *(hpc|local)' projects --include=project.yml   -> no output, exit 1
 $ grep -rnE '^compute:' projects --include=project.yml | wc -l        -> 17
-$ git diff --numstat f3bf2b6d -- projects | awk '{print $1,$2}' | sort | uniq -c  -> "17 1 1"; each of the 17 parses with compute a list (yaml.safe_load loop, no BAD line)
+$ git diff --numstat 71a7ca5a -- projects | awk '{print $1,$2}' | sort | uniq -c  -> "17 1 1"; each of the 17 parses with compute a list (yaml.safe_load loop, no BAD line)
 # Brief verify 4 (from tools/oculus)
 $ grep -rn "slurm\.host\|SlurmSettings.host\|COMPUTE_VALUES\|compute_hpc\|compute_local\|hpc_label\|local_label" src config tests --exclude=local.yml  -> no output, exit 1
 $ grep -rnE "slurm.*host:|'slurm', \{ host" tests  -> no output, exit 1
@@ -70,7 +70,7 @@ $ grep -rlE "import \{[^}]*projectOf" tests | wc -l -> 32
 $ wc -l src/lib/server/root/context.ts -> 882; git diff --numstat: 21 added, 17 removed (net +4)
 $ ls registries | wc -l -> 10; ls demo/registries | wc -l -> 9
 # First runs: the step's new and changed tests run over a scratchpad copy whose src and config are the base
-# (git diff f3bf2b6d -- src config applied in reverse, host.ts removed): every case test named in the report's
+# (git diff 71a7ca5a -- src config applied in reverse, host.ts removed): every case test named in the report's
 # table fails there (built.test.ts 5 of 5, host-less poll-live cases, route refusal, view sentence, resources.test.ts,
 # board-filters compute cases, projects.test.ts tag and saved-filter cases, context-reload host cases).
 ```
@@ -221,8 +221,8 @@ folder items: tests/server/machine/hpc 9, src/lib/server/machine/hpc 7, tests/se
 grep -rlw over src tests for each export the report lists -> the importers the report's table names; RESOURCE_KINDS, RESERVED_RESOURCE_KEYS, ResourceFault only in normalise.ts (local, normalise.ts:453,456,459)
 grep -n '^#.* - \|^#.*--' over both registry files -> no output; sed -n 49p config/sources.yml | grep -c ' - ' -> 0
 grep -vc '^#' tests/checks/tree/allow-duplication.txt -> 121
-git diff f3bf2b6d -- allow-duplication.txt: 49 lines removed, 20 added; of these, 3 are the same line moved (comm over the first three fields), which leaves 46 and 17
-# First runs on the unchanged tree: scratchpad/r1rev, a copy of the worktree's tools/oculus without config/local.yml, with `git diff f3bf2b6d -- src config` applied in reverse and host.ts and validate-kinds.ts removed
+git diff 71a7ca5a -- allow-duplication.txt: 49 lines removed, 20 added; of these, 3 are the same line moved (comm over the first three fields), which leaves 46 and 17
+# First runs on the unchanged tree: scratchpad/r1rev, a copy of the worktree's tools/oculus without config/local.yml, with `git diff 71a7ca5a -- src config` applied in reverse and host.ts and validate-kinds.ts removed
 vitest run local, portfolio-config, config-folder, normalise, portfolio (watch), projects -> Tests 25 failed | 241 passed (266):
   portfolio-config.test.ts:34:49 and :83:22; config-folder.test.ts:375:44 ([...96] vs [...97]) and :684:48 ([...13] vs [...14]);
   normalise.test.ts:258:23 ({...36} vs {...37}); portfolio.test.ts:677:28 ([...3] vs [...4]); projects.test.ts:544:80 ("expected +0 to be 1");
@@ -319,13 +319,13 @@ Behaviour
 
 ### Declined to judge
 
-- How the delta was taken. No tree state was recorded when the round was sent, so the delta is the 91 files of `m3-round1-files.txt` (modified after `M3-round1.md`). I read each tracked file through `git diff f3bf2b6d -- <file>` against the whole diff. The `__pycache__` files, `tools/cockpit/AUDIT_AUTO.md`, `dummy/AUDIT_AUTO.md` and `dummy/cockpit.html` in that list do not appear in `git status --short`, so I did not read them. For a file changed in both rounds, the round's part cannot be separated from the first build's, so findings in such files are judged against the whole diff.
+- How the delta was taken. No tree state was recorded when the round was sent, so the delta is the 91 files of `m3-round1-files.txt` (modified after `M3-round1.md`). I read each tracked file through `git diff 71a7ca5a -- <file>` against the whole diff. The `__pycache__` files, `tools/cockpit/AUDIT_AUTO.md`, `dummy/AUDIT_AUTO.md` and `dummy/cockpit.html` in that list do not appear in `git status --short`, so I did not read them. For a file changed in both rounds, the round's part cannot be separated from the first build's, so findings in such files are judged against the whole diff.
 - `bash tools/cockpit/tests/run.sh` as a whole. In this worktree it exits 1 on `test_presentation.py`, which imports `deck_config` from `tools/present`, a folder the worktree does not check out. With main's `tools/present` on `PYTHONPATH`, the same file fails five times with `FileNotFoundError: .../worktrees/M3/tools/present/build.py`. The step changes neither file. I did not reproduce the builder's run with a link placed in the worktree, since that would write in the worktree.
 - The look on TEST (card tags, the facet menu, the chips field, and the HPC view's sentence with no footer), because it needs the browser on Axel's server.
 - The slow `yaml-edit.test.ts` failure. I did not rerun it; the first review settled it by reading.
 - The report's count of full-list runs (2), and its statement that the builder ran no git command. Neither can be checked from the tree.
 - Behaviour B1, which I settled by reading and did not run.
 - A push that changes both the `slurm:` block and the hpc sentences hands the poller twice, which may publish twice. No case names this, and I did not test it.
-- My own commands outside the brief. I ran `git ls-files tools/present` and `git ls-files tools/cockpit/tests` once each; that is a git command other than the two this review permits. I also ran `git diff` in its `--stat`, `--numstat` and `-U0 --word-diff` forms against `f3bf2b6d`. The removal runs and the base runs used scratch copies (`r1rev`, `r1mut`, `r1ck`, `r1hub`) made without `config/local.yml`. The worktree's state is unchanged: `git status --short | wc -l` prints 134 before and after my commands.
+- My own commands outside the brief. I ran `git ls-files tools/present` and `git ls-files tools/cockpit/tests` once each; that is a git command other than the two this review permits. I also ran `git diff` in its `--stat`, `--numstat` and `-U0 --word-diff` forms against `71a7ca5a`. The removal runs and the base runs used scratch copies (`r1rev`, `r1mut`, `r1ck`, `r1hub`) made without `config/local.yml`. The worktree's state is unchanged: `git status --short | wc -l` prints 134 before and after my commands.
 
 Reviewer usage: not measured inside the session, so the figures come from the completion notice; about 50 tool uses.

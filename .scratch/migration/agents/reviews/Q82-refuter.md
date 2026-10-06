@@ -1,4 +1,4 @@
-# Step Q82 refuter report (reviewer a6d13a2b6f68312ca, on .agents/worktrees/Q82, base 03a8747b)
+# Step Q82 refuter report (reviewer a6d13a2b6f68312ca, on .agents/worktrees/Q82, base 3fefa8ff)
 
 ## Verification
 
@@ -30,10 +30,10 @@ Other commands, from the worktree's `tools/oculus`:
 - `grep -rn "rowMove\|stopOf" src`: no output, exit 1.
 - `sh bin/folder-check.sh`: exit 0. The spec's `LC_ALL=C perl ...` ASCII gate over `src tests bin config`: no output, exit 0.
 - Rename grep `grep -rn "rowMove\|stopOf\|RowMove\|tabindex(\|onkeydown(id\|data-row-id\|focusRow\|\bentered\b\|dataset.rowId" DESIGN.md HELP.md README.md docs bin src tests config .scratch/migration/agents/spec.md`: only unrelated hits (`ActivityRail.svelte:265` has its own `entered`, `Changes.svelte:88` a new `rowId`, a comment in `git.test.ts:605`). Nothing reads `data-row-id`.
-- `git diff 03a8747b -- tools/oculus/package-lock.json | grep '^+.*"node_modules/'`: adds `@tanstack/virtual-core`, `@zag-js/anatomy`, `collection`, `core`, `dom-query`, `svelte`, `tree-view`, `types`, `utils`, and `csstype`. The six other `@zag-js/*` packages and `csstype` come in as dependencies of the two packages the brief names. Nothing is removed.
+- `git diff 3fefa8ff -- tools/oculus/package-lock.json | grep '^+.*"node_modules/'`: adds `@tanstack/virtual-core`, `@zag-js/anatomy`, `collection`, `core`, `dom-query`, `svelte`, `tree-view`, `types`, `utils`, and `csstype`. The six other `@zag-js/*` packages and `csstype` come in as dependencies of the two packages the brief names. Nothing is removed.
 - Diagrams sample: `layers.dot/.svg` "views to ui" 545 to 548, `layer-views.dot/.svg` "folder views/sources to layer ui" 134 to 137. Those are the three new `VirtualRows` imports.
 - Line counts before and after: `wc -l` on a base copy and on the worktree match the report's table (for example Tree.svelte 278/300, Graph.svelte 318/372, repositories.ts 465/469).
-- The first run, reproduced. I copied the project to my scratch folder, reversed `git diff 03a8747b -- tools/oculus/src` with `patch -R` and removed `VirtualRows.svelte` and `virtual.ts`, then ran `npx vitest run tests/ui/tree tests/views/sources/files/files.test.ts tests/views/sources/repositories/repositories.test.ts`: `Test Files 5 failed (5)`, `Tests 15 failed | 82 passed (97)`. The report says 12 failed | 85 passed. The same five files on the delivered source: `Tests 100 passed (100)`.
+- The first run, reproduced. I copied the project to my scratch folder, reversed `git diff 3fefa8ff -- tools/oculus/src` with `patch -R` and removed `VirtualRows.svelte` and `virtual.ts`, then ran `npx vitest run tests/ui/tree tests/views/sources/files/files.test.ts tests/views/sources/repositories/repositories.test.ts`: `Test Files 5 failed (5)`, `Tests 15 failed | 82 passed (97)`. The report says 12 failed | 85 passed. The same five files on the delivered source: `Tests 100 passed (100)`.
 - Revert runs. Each was made in the scratch copy and restored after, with `npx vitest run <file>`. Each named revert turns its test red:
   - tree.test.ts, 1 failed | 12 passed each time: `aria-level={level}` after `{...fromTree}` turns "draws each row as a treeitem at the level its parent gives it" red. `focusedValue: current ?? held` turns "gives exactly one row the stop" red. `'aria-expanded': state.expanded` turns "says a closed row is closed" red. Dropping `role="tree"` turns "is a tree named by its label" red.
   - virtual.test.ts: `after` from `first.start` turns 2 tests red. `before: first.start` turns 1 red. Removing the early return turns 1 red.
@@ -140,7 +140,7 @@ Reruns of the builder's quoted commands:
 - `grep -n "zag\|virtual-core" package.json`: lines 40, 45 and 46, all under `dependencies`.
 - `wc -l`: TreeView 251, VirtualRows 270, tree-keys 150, virtual.ts 67, Graph 379, files.test.ts 928, repositories.test.ts (views) 708, tree-keys.test 199, tree.test 288, virtual.test 134. These match the report's table.
 - The label-pruning effect is at `TreeView.svelte:93-98`, as the report cites.
-- The report's first-run count ("15 failed | 82 passed (97)") is quoted from the first refuter and marked not re-run, as the round asked. I ran the tests as delivered now against the base source, with `git diff 03a8747b -- tools/oculus/src` reversed by `patch -R` in `scratchpad/.../base`: `Test Files 5 failed (5)`, `Tests 20 failed | 9 passed (29)`. The count differs because `virtual.test.ts`, `tree-keys.test.ts` and `files.test.ts` now fail at import. No decision rests on this number.
+- The report's first-run count ("15 failed | 82 passed (97)") is quoted from the first refuter and marked not re-run, as the round asked. I ran the tests as delivered now against the base source, with `git diff 3fefa8ff -- tools/oculus/src` reversed by `patch -R` in `scratchpad/.../base`: `Test Files 5 failed (5)`, `Tests 20 failed | 9 passed (29)`. The count differs because `virtual.test.ts`, `tree-keys.test.ts` and `files.test.ts` now fail at import. No decision rests on this number.
 
 The report's reverts, each reproduced on the copy in `scratchpad/Q82-round1-refute/copy` with `rev.py` (apply the change, run the one file, restore, and assert the file is back byte for byte):
 - `indexPaths`, `paths.set(child.value, path)`: "is its place among its parent's children..." `AssertionError: expected [] to deeply equal [ +0 ]`, 1 failed | 15 passed.

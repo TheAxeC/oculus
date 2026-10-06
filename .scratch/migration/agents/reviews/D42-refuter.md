@@ -1,4 +1,4 @@
-# Step D42 refuter report (on .agents/worktrees/D42, base 81c779ac2)
+# Step D42 refuter report (on .agents/worktrees/D42, base 1f02d5c7c)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
 
@@ -154,7 +154,7 @@ Cases of the brief's "Cases":
 
 ## 3. Standards
 
-- 1. `compare-words.ts:15-16` and `:39-41`: "`const SHORT = 7;` ... `t('repositories.diff_commit_failed', (subject.commit ?? '').slice(0, SHORT))`". What is wrong: item 7 asks for the commit's short hash; git abbreviates this repository's hashes to 9 characters (the brief's `f6403f406`, `4c7cf9154`), and the length is a constant guessed beside git's own `%h`. Failure scenario: case 18, the tab labelled `DiffEditor.svelte (f6403f406)` says "The change in commit f6403f4 could not be read.", two names for one commit on one tab. Verdict: item 7 partial, case 18 partial.
+- 1. `compare-words.ts:15-16` and `:39-41`: "`const SHORT = 7;` ... `t('repositories.diff_commit_failed', (subject.commit ?? '').slice(0, SHORT))`". What is wrong: item 7 asks for the commit's short hash; git abbreviates this repository's hashes to 9 characters (the brief's `9b83c6e6c`, `f80e57720`), and the length is a constant guessed beside git's own `%h`. Failure scenario: case 18, the tab labelled `DiffEditor.svelte (9b83c6e6c)` says "The change in commit 9b83c6e could not be read.", two names for one commit on one tab. Verdict: item 7 partial, case 18 partial.
 - 2. `fs-history.ts:869-871`: "`const NO_COMMITS: FileCommits = { commits: [], more: false, failed: false, loading: true };`" (and `NO_COPIES`), rewritten by the step and handed to every caller as `data ?? NO_COMMITS`. What is wrong: spec.md, "The principles every package is judged on": "a shared fallback object handed to callers is frozen or built per call"; the step built `noPages()` per call in its new module and left these two shared. Failure scenario: a later caller that pushes into `commits` of the fallback changes the answer every other file's Timeline draws while its read is in flight. No current caller mutates it (read).
 - 3. `agents/reviews/D42-report.md`: the report quotes no grep of the added comment lines for the history words, no reuse grep before the new helpers and types (`sectionOpened`, `GitFileCommit`, `createPages`), and no grep of the renamed names (`commitsOf` to `pageOf`, `error` to `failed`, `fileVersion` out of the history keys), each of which spec.md, "What every package obeys" and "The principles every package is judged on", requires in the report. My own greps find no stale hit and no history wording (only runtime uses of "before"/"no longer"), so the code is not wrong; the reader of the report cannot see it. Failure scenario: the orchestrator lands on the report's word for checks it did not show.
 - 4. The report's opening section: "One read-only `git diff HEAD --stat` ran in this session". spec.md, "Where you work": the builder never runs a git command. It changed nothing on the tree.
@@ -178,7 +178,7 @@ Reviewer usage: ordo-high on claude-opus-5-5 (a6b4415611d2a417e), 258,282 tokens
 
 Not settled here: the builder's scratch folder `$TMPDIR/d42-r1` (which its report names for the `merge` and `subrepo` repositories and `probe-sub.mjs`) was cleared at the start of this review, before my own repositories were put there. I did not check whether the builder's files were in it, so its scratch runs cannot be rerun from that folder. The folder now holds only my repositories A, B and C and probe1 to probe3. Nothing in the repository or the worktree was changed.
 
-The state file records no commit or tree for the start of the round. The delta was therefore read as the whole diff since base 81c779ac2, together with the first review's line references.
+The state file records no commit or tree for the start of the round. The delta was therefore read as the whole diff since base 1f02d5c7c, together with the first review's line references.
 
 ```
 $ sh ~/.claude/skills/land/templates/checks.sh .../migration/orchestrator-state.md   (from tools/oculus in the worktree; tail)

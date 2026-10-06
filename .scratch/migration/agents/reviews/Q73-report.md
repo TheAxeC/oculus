@@ -292,7 +292,7 @@ Kept, with reasons:
 8. `npm run diagrams` twice, then `diff -r`: `SAME`
 9. `386 passed (6.6m)`
 10. `revert-check`: unit and browser totals as in item 7 above
-11. Measuring script, before (the base at `96786a24`): `modules 563 edges 2098`, `module cycles 0 []`, `folder rings []`, `views->state 477 files 155 targets 65`. After: `modules 563 edges 2099`, `module cycles 0 []`, `folder rings []`, `views->state 478 files 155 targets 65`.
+11. Measuring script, before (the base at `359e1ee9`): `modules 563 edges 2098`, `module cycles 0 []`, `folder rings []`, `views->state 477 files 155 targets 65`. After: `modules 563 edges 2099`, `module cycles 0 []`, `folder rings []`, `views->state 478 files 155 targets 65`.
 12. `$TMPDIR/oculus-*`: 7015 before and after
 
 ## Files changed this round

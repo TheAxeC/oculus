@@ -1,4 +1,4 @@
-# Step Q85a1 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85a1, base 8155b826)
+# Step Q85a1 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85a1, base 1ea26d17)
 
 A page this report cites is named with its section. A finding in code keeps its `file:line`. Paths are relative to `tools/oculus` in the worktree unless absolute.
 

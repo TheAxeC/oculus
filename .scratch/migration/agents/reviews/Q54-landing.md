@@ -33,7 +33,7 @@ Nothing of Q54's brief is unbuilt. Two things came out of its review that are no
 
 ## What landed
 
-Cherry-picked from `8d8426df` onto main with no conflict: 9 files, 44 insertions, 265 deletions.
+Cherry-picked from `687780b3` onto main with no conflict: 9 files, 44 insertions, 265 deletions.
 
 - `src/lib/ui/Tabs.svelte` 596 to 362. It keeps the strip, its scrolling, its focus order, its drag, its opener and menu, and every style of `.strip`.
 - `src/lib/ui/TabFace.svelte` (new, 306) owns one tab: the `.tab` wrapper, the face button with its glyph, label, badge and split cells, the close control with its dot and cross, and every style for those. The caller binds the wrapper and the face button through `$bindable`, so the strip measures and focuses the same elements.
@@ -71,4 +71,4 @@ The one red in the full run is `tests/server/watch/git.test.ts > reads a root ad
 
 ## What is next
 
-Q53 is in its repair round with seven rulings plus the Ticker directive. Q56 was dispatched at 12:10 from `521c938c`, the Files view asking again after a read that failed, its brief rechecked against that head and widened by one premise: the workspaces section has no failure sentence at all, so it gets one. After those, Q58, Q59, Q36, O31, then Q35.
+Q53 is in its repair round with seven rulings plus the Ticker directive. Q56 was dispatched at 12:10 from `32939877`, the Files view asking again after a read that failed, its brief rechecked against that head and widened by one premise: the workspaces section has no failure sentence at all, so it gets one. After those, Q58, Q59, Q36, O31, then Q35.

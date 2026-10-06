@@ -1,4 +1,4 @@
-# Step Q95 refuter report (on .agents/worktrees/Q95, base c53af148)
+# Step Q95 refuter report (on .agents/worktrees/Q95, base 11c8e13a)
 
 ## Verification (rerun by the reviewer)
 
@@ -26,7 +26,7 @@ npm run lint rc=0
 spec.md perl ASCII gate over src tests bin config: printed nothing
 $ npx vitest run tests/views/system/workbench/settings.test.ts   (worktree)
  Tests  13 passed (13)
-Scratch copy with RailEditor.svelte from c53af148: 2 failed | 11 passed (13), both "glyph not in config/catalogs/glyphs.yml"
+Scratch copy with RailEditor.svelte from 11c8e13a: 2 failed | 11 passed (13), both "glyph not in config/catalogs/glyphs.yml"
 Scratch copy with the guard as {#if false}: 1 failed | 12 passed (13), the glyph-held case
 ```
 

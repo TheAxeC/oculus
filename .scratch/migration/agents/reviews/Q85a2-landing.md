@@ -18,7 +18,7 @@ Nothing inside the brief. The step changes no view, so it has no look, and `benc
 
 ## What landed
 
-From base 4f4dcfc4, 54 paths staged on main (`git diff --cached --shortstat`: 2825 insertions, 885 deletions), the fixes at landing among them.
+From base 130c4d6f, 54 paths staged on main (`git diff --cached --shortstat`: 2825 insertions, 885 deletions), the fixes at landing among them.
 
 - Every reader of untyped input in `edit`, `sessions` and `transcripts` reads through a zod schema beside it: the write endpoint's bodies, the YAML and JSON files the writers parse, the changes-log values an undo reads, the Claude and Codex transcript records the fold, the turns reader and the usage table read, the fold cache, the overrides file, a Claude registry file and a settings file's hooks.
 - The shared helpers live in `core/shapes.ts` (`unchanged`, `mapShape`, `anyNumberShape`, `filledTextShape`, `wholeShape`, `stringItemsShape`, `quickly`, `readAs`, `text`); `core/json.ts` keeps the disk readers and writers.

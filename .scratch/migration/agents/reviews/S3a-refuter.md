@@ -1,4 +1,4 @@
-# Step S3a refuter report (on .agents/worktrees/S3a, base 2ac1a5cb)
+# Step S3a refuter report (on .agents/worktrees/S3a, base 89bc8f36)
 
 This report cites pages (the rules file, a standard, a skill's text) by their section, never by line number, because a page's lines move and its section names do not. A finding in code keeps its `file:line`.
 
@@ -39,7 +39,7 @@ Case 15, rerun (python3 over yaml.safe_load of options.yml and the five tracked 
 checked 87 differences 0 families 21 {'appearance.yml': 14, 'behavior.yml': 44, 'layout.yml': 17, 'present.yml': 19, 'sources.yml': 14, 'local.yml': 16}
 (matches the report's "checked 87 differences 0" and its per-file counts)
 
-The unchanged tree: a copy of the worktree's tools/oculus under $TMPDIR (config/local.yml and .scratch not copied, node_modules symlinked), with `git diff 2ac1a5cb -- tools/oculus/src tools/oculus/config` reverse-applied and the new options.yml and options.ts deleted; the step's tests kept as they are after the change:
+The unchanged tree: a copy of the worktree's tools/oculus under $TMPDIR (config/local.yml and .scratch not copied, node_modules symlinked), with `git diff 89bc8f36 -- tools/oculus/src tools/oculus/config` reverse-applied and the new options.yml and options.ts deleted; the step's tests kept as they are after the change:
 $ npx vitest run tests/state/boards/focus-lanes.test.ts tests/state/boards/focus.test.ts tests/state/feeds/feeds.test.ts tests/views/boards/focus.test.ts tests/checks/config tests/views/system/help.test.ts tests/views/system/config.test.ts --testTimeout 0
  Test Files  7 failed | 3 passed | 1 skipped (11)
       Tests  12 failed | 212 passed | 9 skipped (233)
@@ -239,7 +239,7 @@ Reviewer usage: about 285,000 tokens (from the context counter), 75 tool uses, m
 
 ## Repair round 1, refuted
 
-Reviewed in the worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/S3a against base 2ac1a5cb. The diff since the base: `git status --short` lists 27 modified paths and 6 untracked ones. The round added two paths that were not in the 31 of the round base: src/lib/state/boards/structure/graph.ts and tests/state/boards/structure/graph.test.ts. Today's `git diff --binary 2ac1a5cb | shasum` is 309ca424..., and the round base's was 5ee29d52....
+Reviewed in the worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/S3a against base 89bc8f36. The diff since the base: `git status --short` lists 27 modified paths and 6 untracked ones. The round added two paths that were not in the 31 of the round base: src/lib/state/boards/structure/graph.ts and tests/state/boards/structure/graph.test.ts. Today's `git diff --binary 89bc8f36 | shasum` is 309ca424..., and the round base's was 5ee29d52....
 
 How I found the round's delta: eleven files were modified after the round was sent at 02:25 (`stat -f "%Sm %N"`):
 - config/catalogs/options.yml
@@ -402,7 +402,7 @@ Cases of the brief's "Cases":
 
 - **Behaviour 1. The builder's report, "User-visible changes", item 5 (S3a-report.md:112), together with round row 6.**
   - The text: "`config/layout.yml:174` comment: `map_label_mode: short        # Map tab nodes; its word for the full title is `title``."
-  - What is wrong: that comment no longer exists. `git diff 2ac1a5cb` shows no change at layout.yml:174, which is back to the base text "# Map tab nodes". The round's opening paragraph (S3a-report.md:288) lists what it supersedes and does not name this item.
+  - What is wrong: that comment no longer exists. `git diff 89bc8f36` shows no change at layout.yml:174, which is back to the base text "# Map tab nodes". The round's opening paragraph (S3a-report.md:288) lists what it supersedes and does not name this item.
   - The round's host-visible change has no before and after in that section:
     - Before: `map_label_mode: title` drew full titles on the Map, and `full` drew the short handle.
     - After: `full` draws full titles, and `title` draws the short handle (graph.ts:83; graph.test.ts:271-274).

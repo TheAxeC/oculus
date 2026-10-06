@@ -28,7 +28,7 @@ Q77c, a revert directive names its target line by the line's text, one commit on
 
 ## Verification on main
 
-- `land.sh Q77c aac420c6`, exit 0, 926.78 s: `Test Files  341 passed (341)` / `Tests  5344 passed (5344)`; `npm run check` `COMPLETED 1509 FILES 0 ERRORS 0 WARNINGS`; `All matched files use Prettier code style!`; the browser suite `467 passed (10.3m)`.
+- `land.sh Q77c b1770828`, exit 0, 926.78 s: `Test Files  341 passed (341)` / `Tests  5344 passed (5344)`; `npm run check` `COMPLETED 1509 FILES 0 ERRORS 0 WARNINGS`; `All matched files use Prettier code style!`; the browser suite `467 passed (10.3m)`.
 - After the landing fixes: `npx vitest run tests/checks/bin/revert-check.test.ts tests/checks/bin/revert-anchors.test.ts tests/checks/source/comment-width.test.ts` `39 passed`; `node bin/revert-check.mjs tests/checks/bin/revert-check.test.ts tests/checks/bin/revert-anchors.test.ts` `39 reverts, 0 unproven, 0 unchecked`; `node bin/migrations/revert-anchors.mjs --check` `0 directives converted in 0 files written, 0 refused`; `npm run check` 0 errors; lint exit 0; Prettier clean; ASCII gate no output; size and folder checks exit 0.
 - The review resolved all 1742 converted directives against the target files at the base: 0 mismatches.
 - No look: Q77c changes tooling and test comments, no view.

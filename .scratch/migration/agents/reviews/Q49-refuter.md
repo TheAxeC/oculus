@@ -53,7 +53,7 @@ npx playwright test tests/browser/focus-buttons.spec.ts tests/browser/focus-look
 {@const hidden = row.actions.filter((action) => action.id !== keep)}
 ```
 
-The kept button is rendered after the group, so it is last in every row, at every width. Measured in my own clone by building the base component (`git show 2ac73578:tools/oculus/src/lib/ui/Ticker.svelte`) and the delivered one and reading the drawn order off the served board at 1600:
+The kept button is rendered after the group, so it is last in every row, at every width. Measured in my own clone by building the base component (`git show 6a2b48c5:tools/oculus/src/lib/ui/Ticker.svelte`) and the delivered one and reading the drawn order off the served board at 1600:
 
 | | drawn order of a task row's buttons | index of `kept` |
 | --- | --- | --- |
@@ -240,7 +240,7 @@ npx playwright test (the whole suite)                246 passed (7.2m)
 
 The worktree was not written to; every revert ran in a copy at `scratchpad/q49-review2/oculus`, restored and diffed clean after each. All six reverts the report names printed the error their case names, 1 failed each. The round's whole measurement table reproduced cell for cell, including the Tab walks.
 
-**Base measurement**, the same spec against `git show 2ac73578:.../Ticker.svelte`: the name at rest is 264.67 px at 1600, **0.00 at 900**, 158.30 at 760, **0.00 at 480**. The step's headline is larger than the report claims: at 900 and 480 the base draws no name at all.
+**Base measurement**, the same spec against `git show 6a2b48c5:.../Ticker.svelte`: the name at rest is 264.67 px at 1600, **0.00 at 900**, 158.30 at 760, **0.00 at 480**. The step's headline is larger than the report claims: at 900 and 480 the base draws no name at all.
 
 ## Spec
 

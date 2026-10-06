@@ -1,4 +1,4 @@
-# Step E2 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/E2, base d7af9cac)
+# Step E2 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/E2, base d42e4648)
 
 A page this report cites is named with its section. Lines of `tools/oculus/DESIGN.md` are those of the worktree's file after the rewrite (the section is lines 234 to 326).
 
@@ -29,7 +29,7 @@ $ git status --short        (after the diagrams run)
  M tools/oculus/DESIGN.md
 ?? tools/oculus/.scratch/migration/agents/reviews/E2-report.md
 
-$ git diff d7af9cac --stat
+$ git diff d42e4648 --stat
  tools/oculus/DESIGN.md | 68 ++++++++++++++++++++++++++++++--------------------
  hunks: @@ -233,11 +233,13 @@ and @@ -250,65 +252,77 @@ ; every removed line is a line of the section
 
@@ -170,7 +170,7 @@ Files: `/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2/tools/oculus
 
 ## Repair round 1, refuted
 
-Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2`, base d7af9cac. Lines of `tools/oculus/DESIGN.md` are those of the worktree's file; the section is lines 234 to 326. Nothing was written outside my scratchpad.
+Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/E2`, base d42e4648. Lines of `tools/oculus/DESIGN.md` are those of the worktree's file; the section is lines 234 to 326. Nothing was written outside my scratchpad.
 
 Verification, rerun from the worktree's `tools/oculus` in the foreground:
 
@@ -210,7 +210,7 @@ $ git status --short        (after everything)
  M DESIGN.md
 ?? .scratch/migration/agents/reviews/E2-report.md
 
-$ git diff d7af9cac --stat
+$ git diff d42e4648 --stat
  tools/oculus/DESIGN.md | 68 ++++++++++++++++++++++++++++++--------------------
  1 file changed, 41 insertions(+), 27 deletions(-)
  hunks: @@ -233,11 +233,13 @@ and @@ -250,65 +252,77 @@

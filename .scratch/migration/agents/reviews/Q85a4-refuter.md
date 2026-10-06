@@ -1,4 +1,4 @@
-# Step Q85a4 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85a4, base a549ed92)
+# Step Q85a4 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85a4, base ec247019)
 
 The step is not ready to land as it stands. Item 6 is violated (Standards 1), item 1 is violated on its naming rule (Spec 1), and Spec 2 and Behaviour 1 need fixes. The verify list passes, and every case is met.
 
@@ -203,7 +203,7 @@ Usage (the completion notice): claude-opus-5-5, 118,315 tokens, 88 tool uses, 20
 
 ## Repair round 1, refuted
 
-Q85a4, worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85a4, base a549ed92. The verify list passes, and every claim of the round that I reran reproduces. I found two Standards findings, both small and inside the brief. Spec, Proof and Behaviour have none.
+Q85a4, worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85a4, base ec247019. The verify list passes, and every claim of the round that I reran reproduces. I found two Standards findings, both small and inside the brief. Spec, Proof and Behaviour have none.
 
 ```
 $ npm run diagrams   (docs/diagrams identical before and after the run: diff -r printed nothing)
@@ -242,7 +242,7 @@ npx vitest run tests/server/machine/pty/compose.test.ts tests/server/accounts/ma
  git-ops.test.ts  "hunks and lines > refuses a mode that is a property every object inherits"   TypeError: flags is not iterable
  git-ops.test.ts  "stashes > refuses a mode that is a property every object inherits"          TypeError: flags is not iterable
 ```
-Each failure matches the report's quote. The unchanged tree is the base `src` rebuilt by reverse-applying `git diff a549ed92 -- src` to a copy, and it equals the builder's `src-orig` (`diff -rq` printed nothing). Running the 26 changed test files against it gives:
+Each failure matches the report's quote. The unchanged tree is the base `src` rebuilt by reverse-applying `git diff ec247019 -- src` to a copy, and it equals the builder's `src-orig` (`diff -rq` printed nothing). Running the 26 changed test files against it gives:
 ```
  Tests  7 failed | 614 passed (621)
  refresh.test.ts "answers the two settings as a number and a string" | context.test.ts "throws the same sentence before a replaced refresher ..." | triage.test.ts (the __proto__ write and the __proto__ note) | audit.test.ts "a scalar field read as text" | git-ops.test.ts (the two inherited-mode cases)

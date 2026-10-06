@@ -1,4 +1,4 @@
-# Step Q73 refuter report (on .agents/worktrees/Q73, base 96786a24)
+# Step Q73 refuter report (on .agents/worktrees/Q73, base 359e1ee9)
 
 ## Verification (rerun by the reviewer)
 
@@ -17,7 +17,7 @@ All commands were run from `.agents/worktrees/Q73/tools/oculus`.
 | 9 | `npm run build`, then `npx playwright test` | `386 passed (6.4m)`. Port 8792 was free before and after (`lsof` exit 1). |
 | 10 | `node bin/revert-check.mjs` over the 107 changed or added `*.test.ts` files, in three chunks | `209 reverts, 0 unproven, 418 unchecked`, then `127, 0, 613`, then `57, 0, 423`. Total: 393 reverts, 0 unproven, 1454 unchecked. |
 | 10b | `node bin/revert-check.mjs` over the 5 changed browser specs | `31 reverts, 0 unproven, 19 unchecked` |
-| 11 | Q71 measuring script, on a base tree rebuilt from `git diff 96786a24` and on the worktree | before: `modules 563 edges 2098`, `module cycles 0 []`, `folder rings []`, `views->state 477 files 155 targets 65`. After: `modules 563 edges 2099`, `module cycles 0 []`, `folder rings []`, `views->state 478 files 155 targets 65`. |
+| 11 | Q71 measuring script, on a base tree rebuilt from `git diff 359e1ee9` and on the worktree | before: `modules 563 edges 2098`, `module cycles 0 []`, `folder rings []`, `views->state 477 files 155 targets 65`. After: `modules 563 edges 2099`, `module cycles 0 []`, `folder rings []`, `views->state 478 files 155 targets 65`. |
 | 12 | `ls -d $TMPDIR/oculus-* \| wc -l` | 7015 before, 7015 after |
 
 Commands I added:
@@ -29,7 +29,7 @@ Commands I added:
 
 ## 1. Spec
 
-- **Premise 3 of the brief does not reproduce in the tree at 96786a24.**
+- **Premise 3 of the brief does not reproduce in the tree at 359e1ee9.**
   - Fact 3 says a comment turned a type import into a runtime edge, one edge of the overview's `state -> data` label. The base reader applied to the base tree produces no edge that the code-only reader drops: the edge-set diff above removes nothing, and `state -> data` is 53 before and after (`docs/diagrams/layers.dot`).
   - The synthetic probe does reproduce with the base `runtimeImports`, which returns `[{"spec":"../x.ts",...}]`.
   - The report says the same thing under "Wrong or impossible in the brief".
@@ -232,7 +232,7 @@ Reviewer usage: about 45 tool uses. The clock read 22 minutes of wall time, the 
 
 ## Closed
 
-The first run's findings, closed in repair round 1 (`agents/reviews/Q73-round1-sent.md`, the reply in `agents/reviews/Q73-report.md`): the hand lexer replaced by the TypeScript and Svelte parsers in `bin/diagrams/imports.mjs` (the `++`, `}`, HTML-comment and markup `import()` probes rerun clean); reference directives read from TypeScript whatever their attributes; the exact label test; every count and call list drawn as a word node, with no spacing search and no throw on layout; the standards findings; `usageRows` and `nextRefresh` in state with the kept list completed; the report's figures. Brief fact 3's example edge did not reproduce on the tree at 96786a24 (the reader defect did, on the probe); noted, no change.
+The first run's findings, closed in repair round 1 (`agents/reviews/Q73-round1-sent.md`, the reply in `agents/reviews/Q73-report.md`): the hand lexer replaced by the TypeScript and Svelte parsers in `bin/diagrams/imports.mjs` (the `++`, `}`, HTML-comment and markup `import()` probes rerun clean); reference directives read from TypeScript whatever their attributes; the exact label test; every count and call list drawn as a word node, with no spacing search and no throw on layout; the standards findings; `usageRows` and `nextRefresh` in state with the kept list completed; the report's figures. Brief fact 3's example edge did not reproduce on the tree at 359e1ee9 (the reader defect did, on the probe); noted, no change.
 
 The run over round 1, fixed at landing on 2026-09-25 (small, inside the brief):
 - Proof, the string, template and regular-expression case removed: restored in `tests/checks/imports/cycles.test.ts`, red under the reviewer's revert of `imports.mjs` stripping `//` comments by pattern.

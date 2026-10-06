@@ -1,6 +1,6 @@
-# Step T1b brief check (on main at 1e14d279)
+# Step T1b brief check (on main at cf91445b)
 
-The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/T1b.md`. Every command ran from `tools/oculus` on main at 1e14d2799 unless it names another folder. On main, `git status --short .` shows only ledger files changed (`plan.md`, `orchestrator-state.md`, `queue.md`, `T1c-report.md`, and the untracked `T1b.md`), so `src/` and `tests/` are main's head.
+The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/T1b.md`. Every command ran from `tools/oculus` on main at cf91445bf unless it names another folder. On main, `git status --short .` shows only ledger files changed (`plan.md`, `orchestrator-state.md`, `queue.md`, `T1c-report.md`, and the untracked `T1b.md`), so `src/` and `tests/` are main's head.
 
 ## 1. Names
 

@@ -1,4 +1,4 @@
-# Step Q79d refuter report (reviewer a0f9a49e067ffa141, on .agents/worktrees/Q79d, base 7487fbce)
+# Step Q79d refuter report (reviewer a0f9a49e067ffa141, on .agents/worktrees/Q79d, base 34d55dea)
 
 ## Verification
 
@@ -78,7 +78,7 @@ Error: Test timed out in 5000ms.
 checks: failed with exit 1: npm test
 ```
 
-The step does not change `tests/checks/imports/order.test.ts` (`git diff 7487fbce --stat -- tools/oculus/tests/checks` lists only `allow-duplication.txt` and `boundaries.test.ts`). Run alone with `npx vitest run tests/checks/imports/order.test.ts`: `Test Files 1 passed (1)`, `Tests 13 passed (13)`. A timeout under load; not investigated.
+The step does not change `tests/checks/imports/order.test.ts` (`git diff 34d55dea --stat -- tools/oculus/tests/checks` lists only `allow-duplication.txt` and `boundaries.test.ts`). Run alone with `npx vitest run tests/checks/imports/order.test.ts`: `Test Files 1 passed (1)`, `Tests 13 passed (13)`. A timeout under load; not investigated.
 
 The other five commands of the verify list, run by hand once each:
 

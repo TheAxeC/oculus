@@ -33,7 +33,7 @@ Nothing of the brief. Case 15 (the packaged app's not-built dialog) was not look
 
 ## Verification
 
-From the gate at main's head (7e6c14d8c) with the step and the fixes: `npm run diagrams && npm run test:landing` printed `ok` for the ASCII gate, `npm run format:check`, `npm run lint`, `npm run test:checks`, `npm test`, and `npm run check, then npm run build, then npm run test:slow` (458.8 s), `exit=0`. Main's staged diff equals the gate's (`cmp` printed nothing).
+From the gate at main's head (c86f10f2f) with the step and the fixes: `npm run diagrams && npm run test:landing` printed `ok` for the ASCII gate, `npm run format:check`, `npm run lint`, `npm run test:checks`, `npm test`, and `npm run check, then npm run build, then npm run test:slow` (458.8 s), `exit=0`. Main's staged diff equals the gate's (`cmp` printed nothing).
 
 ## The look
 

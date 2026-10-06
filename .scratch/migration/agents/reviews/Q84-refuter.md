@@ -2,7 +2,7 @@ Refutation of Q84
 
 Summary: the verify list is green. Item 4 is not built, and the report's reason for leaving it is only half right. Three behaviour differences in the rewritten stores were confirmed by probes run on the new tree and on a rebuilt copy of the base tree. Case 18 is unmet, and cases 20 and 21 are partial.
 
-A breach of my own brief, stated first: I ran `git show f7ab9b6a:<file>` three times, read-only, to read the old docs, files, latex, fs and transcript stores. My brief allowed only `git diff f7ab9b6a` and `git status --short`. Nothing was changed by it. After that I got base copies only from `git diff f7ab9b6a -- src`, reverse-applied inside the scratch folder.
+A breach of my own brief, stated first: I ran `git show 28bd9fb6:<file>` three times, read-only, to read the old docs, files, latex, fs and transcript stores. My brief allowed only `git diff 28bd9fb6` and `git status --short`. Nothing was changed by it. After that I got base copies only from `git diff 28bd9fb6 -- src`, reverse-applied inside the scratch folder.
 
 ## Verification lines (checks.sh, run from tools/oculus in the worktree, exit 0)
 
@@ -109,7 +109,7 @@ The first run on the unchanged tree is **not verifiable**, since the tree has ch
 
 ## Existing tests changed
 
-`grep "^-[^-]"` over `git diff f7ab9b6a -- tests/` removes only the following. No assertion, stub or expected value changed.
+`grep "^-[^-]"` over `git diff 28bd9fb6 -- tests/` removes only the following. No assertion, stub or expected value changed.
 - The two allow-list rows.
 - The agents `settle()` helper and its doc line (the wait helper the brief allows).
 - The constructor lines of agents, changes and lines.
@@ -131,7 +131,7 @@ The first run on the unchanged tree is **not verifiable**, since the tree has ch
 - `src/lib/state/client/writes.svelte.ts:347-348` breaks a comment mid-sentence: `"...rather than carried\n     * here. An action that can lose\n     * work carries \`confirm: true\`..."`. It reads as a hand edit that was not rewrapped.
 - `DESIGN.md:174` and `HELP.md:260` describe `state/shared/stores/` as "the shapes of the stores other stores are handed, types only", and `tests/checks/imports/order.ts:12` says "the shapes of the shared stores in `stores/`". The step put a stateful runtime module there, which the ten stores and `context.ts` import. `shell.ts` and `post.ts` had already made "types only" inexact, and this makes it further from true. The rule that a change grepping a name updates every sentence it makes false (spec.md:57) is not met.
 
-**Behaviour** (each confirmed by `scratchpad/Q84-refute/copy/tests/probe/probe.test.ts`, run on the new tree and on a base copy rebuilt by `patch -R` of `git diff f7ab9b6a -- src`)
+**Behaviour** (each confirmed by `scratchpad/Q84-refute/copy/tests/probe/probe.test.ts`, run on the new tree and on a base copy rebuilt by `patch -R` of `git diff 28bd9fb6 -- src`)
 - **latex re-asks on a repeated `sessions` version.** `latex.svelte.ts:79-82` has `if (message.channel !== 'sessions') return; for (const id of waiting.keys()) queries.mark([KIND, id], 'wait');`. `entities.receive` passes an equal version on (`entities.svelte.ts:50` drops only a lower one). The old store compared the `T:version` signature and did not ask. Probe: requests went from 2 to 3 on the new tree and stayed 2 to 2 on the base. Failure scenario: a resent sessions message at the same version during a build sends one more `/api/latex` request per waiting project. Fix: skip a version already heard, as `files.svelte.ts:69` does.
 - **saveNote no longer re-reads a note the page never read.** `fs.svelte.ts:650-660`: `queries.hold([...NOTE, id], saved)` on a key with no query builds a fresh query that is not stale, so the note is never asked for. The old store set `notes[id]` with no round, so the next `note(id)` fetched it. Probe:
   - New tree: requests `["POST /api/fs"]`, and the note reads `{"body":"typed","modified":1790730140957}`, the client clock.
@@ -213,7 +213,7 @@ Every revert below was run on a copy at scratchpad/Q84-refute-r1/copy, never in 
 
 Each fix changes only what its finding named.
 
-## Verdicts, What to build (whole diff since f7ab9b6a)
+## Verdicts, What to build (whole diff since 28bd9fb6)
 
 1. **Dependency: holds.** package.json:45 has `"^5.104.0"`, and README.md:13 names `@tanstack/query-core` (MIT).
 2. **One query client and one helper: holds.**
@@ -230,7 +230,7 @@ Each fix changes only what its finding named.
 5. **Duplication list: holds.** Both rows are gone and duplication.test.ts passes.
 6. **Docs and comments: holds**, apart from the Standards findings below.
 
-No assertion, stub or expected value of an existing test changed. Every `^-` line of `git diff f7ab9b6a -- tests/` is one of these:
+No assertion, stub or expected value of an existing test changed. Every `^-` line of `git diff 28bd9fb6 -- tests/` is one of these:
 - a comment;
 - an allow-list row;
 - the agents `settle()` helper;
@@ -287,7 +287,7 @@ No assertion, stub or expected value of an existing test changed. Every `^-` lin
 - **The writeToken doc comment (writes.svelte.ts, "for the one reader that is not a fetch").** It was already false on the base, because hpc, usage-refresh, terminals and search call `writeToken()` for fetches. This diff removed three such callers and made nothing newly false, so it is outside this step.
 - **The builder's red runs other than the round's.** I reran only the round's reverts and six case-20 guard reverts.
 
-Scratch files are under scratchpad/Q84-refute-r1/: checks.log, and copy/ (the repaired tree plus tests/probe/probe.test.ts). Nothing in the worktree was changed, and I ran no git command other than `git diff f7ab9b6a` and `git status --short`.
+Scratch files are under scratchpad/Q84-refute-r1/: checks.log, and copy/ (the repaired tree plus tests/probe/probe.test.ts). Nothing in the worktree was changed, and I ran no git command other than `git diff 28bd9fb6` and `git status --short`.
 
 ## Closed
 

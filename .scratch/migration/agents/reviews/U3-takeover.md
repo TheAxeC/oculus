@@ -1,6 +1,6 @@
 # U3, the worktree a new builder takes over (Z164 (b))
 
-The first builder of U3 split the views into six groups (G1 to G6) and gave each to a helper agent, working in the same worktree, from the group file below. All seven agents were stopped at 16:37 on 2026-10-01 (each transcript's meta reads `stoppedByUser: true`), with no final report from the builder. The worktree `.agents/worktrees/U3` holds 259 changed paths against the base ab4d9084 (`git status --short | wc -l`).
+The first builder of U3 split the views into six groups (G1 to G6) and gave each to a helper agent, working in the same worktree, from the group file below. All seven agents were stopped at 16:37 on 2026-10-01 (each transcript's meta reads `stoppedByUser: true`), with no final report from the builder. The worktree `.agents/worktrees/U3` holds 259 changed paths against the base 41cc19bf (`git status --short | wc -l`).
 
 What is known of each group:
 

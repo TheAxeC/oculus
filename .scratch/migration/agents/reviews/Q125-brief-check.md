@@ -1,4 +1,4 @@
-# Step Q125 brief check (on main at 01d928259)
+# Step Q125 brief check (on main at bc42cb101)
 
 The report of the fresh agent of the `spec` skill's "Steps / The brief check", on `agents/briefs/Q125.md` (the uncommitted working copy). I changed no file.
 
@@ -118,7 +118,7 @@ Findings:
 - `grep -rln "HELP.md" src config tests utils` prints the 8 files the brief lists. Matches. The docs.ts comment lines `:11`, `:268`, `:287` and `:549`, and `MANUAL` at `:534`, match.
 - `DESIGN.md:388` is "The manual, the configuration and the hub's own documents ..." (2348 characters). Matches.
 - `agents/spec.md:66` is the line quoted. Matches.
-- `grep -n "Every brief also lists" orchestrator-state.md` prints 186 in the working copy. In the committed HEAD the same text is at line 185 (`git show HEAD:...| grep -n` prints 185), so "on main at 01d928259" is line 185 and the working copy is line 186. The "Doc text" item asks for the line as `grep -n` prints it at the time, so this does no harm.
+- `grep -n "Every brief also lists" orchestrator-state.md` prints 186 in the working copy. In the committed HEAD the same text is at line 185 (`git show HEAD:...| grep -n` prints 185), so "on main at bc42cb101" is line 185 and the working copy is line 186. The "Doc text" item asks for the line as `grep -n` prints it at the time, so this does no harm.
 - The template correction: `grep -n "HELP\|DESIGN" ~/.claude-work/skills/spec/templates/brief.md` prints nothing (exit 1). Matches. The template does define a "Doc text" section (`brief.md:103-104`).
 - Layer rule: DESIGN.md `:178` lets `views/` import `ui/, state/, views/shared/, ...`. Matches.
 - Not stated by the brief but bearing on its premises:

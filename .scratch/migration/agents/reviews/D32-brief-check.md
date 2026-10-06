@@ -1,6 +1,6 @@
-# Step D32 brief check (on main at 247f7c52; tree identical to 3a308a8f outside the ledger)
+# Step D32 brief check (on main at 3de83f4f; tree identical to 9e8b0cfa outside the ledger)
 
-This report covers the brief at `tools/oculus/.scratch/migration/agents/briefs/D32.md`. `git show --stat 247f7c52` shows that the only commit since the brief's base (3a308a8f) changed ledger files and nothing else: `D18-round1.md`, `M3-report.md`, `choices.md`, `orchestrator-state.md`, `plan.md`. Every premise was rerun on the tree, which is the same as at 3a308a8f.
+This report covers the brief at `tools/oculus/.scratch/migration/agents/briefs/D32.md`. `git show --stat 3de83f4f` shows that the only commit since the brief's base (9e8b0cfa) changed ledger files and nothing else: `D18-round1.md`, `M3-report.md`, `choices.md`, `orchestrator-state.md`, `plan.md`. Every premise was rerun on the tree, which is the same as at 9e8b0cfa.
 
 ## 1. Names
 
@@ -74,7 +74,7 @@ Differing:
 - `isReadonly` is `source.ts:42`; the brief says `:41`.
 - On N1, the brief says the socket checks the payload at `:338`. The schema check is `socket.svelte.ts:331`; `:338` is the `receive`. The brief also calls the `config` payload at `:315` "a payload it built". `seedConfig` receives it from `routes/+page.svelte:69` (`data.seed.payload`), the server's seed, so the socket does not build it.
 - On N3, the brief gives the reason "the panel calls `state.plan.files.map`". No such call exists: `grep -rn "plan.files" src/lib/views` prints nothing. The panel reads `plan?.changes.length` (`Deposit.svelte:158`) and `one.files.length` with `#each one.files` (`:250-252`). These throw on a partial state in the same way, so the judgment holds; only the quoted call is wrong.
-- `plan.md` after 247f7c52: Z258 and Z259 are at `:874-875`; the brief says `:873-874`.
+- `plan.md` after 3de83f4f: Z258 and Z259 are at `:874-875`; the brief says `:873-874`.
 - Steps in flight. Comparing the "Paths this step writes" of `A1.md`, `Q88c.md`, `D18.md` and `M3.md` shows shared files the brief's last bullet does not name:
   - D18 writes `state/client/entities.svelte.ts` (and `payloads.ts`), which N1 changes.
   - Q88c writes `config/text/` including `ui.yml`, where item 20 adds two keys.

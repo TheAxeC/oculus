@@ -1,6 +1,6 @@
 # Q109 brief check
 
-Brief check of Q109 (`tools/oculus/.scratch/migration/agents/briefs/Q109.md`), read on main at 87d8ab6a (`git rev-parse --short HEAD` printed `87d8ab6a`). I changed nothing in the repository. The es-toolkit and lodash-es tarballs and the simulation scripts sat in `$TMPDIR/q109bc`, which I have removed (`ls -d "$TMPDIR/q109bc"` printed "No such file or directory").
+Brief check of Q109 (`tools/oculus/.scratch/migration/agents/briefs/Q109.md`), read on main at 540d460e (`git rev-parse --short HEAD` printed `540d460e`). I changed nothing in the repository. The es-toolkit and lodash-es tarballs and the simulation scripts sat in `$TMPDIR/q109bc`, which I have removed (`ls -d "$TMPDIR/q109bc"` printed "No such file or directory").
 
 The most serious finding comes first, because it decides whether the step can be built as briefed.
 
@@ -56,7 +56,7 @@ Hits outside "Paths this step writes", or inside a path but not named by the bri
 
 Each part of the plan's line, Step 0 lines and rulings, mapped to "What to build":
 - **"name, icon and colour drawn once set"** (Z101 (a), diagnosis 1): no item, deliberately. The brief says nothing is built and the look confirms it.
-  - The line's "a test each" for this part rests on the test 5a84830c added (`git show 5a84830c` adds "tells its listeners when a title, an icon or a colour was set" to `tests/server/machine/pty/channel.test.ts`).
+  - The line's "a test each" for this part rests on the test 874a27b4 added (`git show 874a27b4` adds "tells its listeners when a title, an icon or a colour was set" to `tests/server/machine/pty/channel.test.ts`).
   - Reading it, it fails with the old `${id}:${name}` signature. It has not been run against that signature, and the brief does not ask for it.
 - **"its lines after its tab moves pane"** (Z101 (a), diagnosis 2): item 1, cases 1 to 4.
 - **"a sole terminal's bar name gets the row's `terminalRowMenu`"** (ruling Q109 rename): item 3, cases 12 to 15.
@@ -97,7 +97,7 @@ Hold as stated:
 - The five `perfect-debounce` importers, at the lines and constants given, each with `queued.cancel()` on close.
 - `package.json:76`, `DESIGN.md:116`, `README.md:13`, `HELP.md:221`.
 - `perfect-debounce` is only a direct dependency (`npm ls` printed `perfect-debounce@2.1.0` under oculus only).
-- 5a84830c touched `channel.ts` and `channel.test.ts` (`git show --stat`).
+- 874a27b4 touched `channel.ts` and `channel.test.ts` (`git show --stat`).
 
 Small drift:
 - `config/appearance.yml:28-31` is `29-32`: `terminal:` at 31, `font_px` at 32.
@@ -147,7 +147,7 @@ Small drift:
 - **Item 4 and cases 16 to 19**: the reader and `gridOptions` tests pass whether or not a mounted grid follows a config change, and whether or not copy on selection is attached at mount. Case 20, a reading, is the only check of the former; the look is the only check of the latter.
 - **Case 21**: yes, an audit (check 4).
 - **Item 5 (docs)**: the grep in verify item 3 passes even if `DESIGN.md:116` keeps the stale perfect-debounce reason and `usage/watch.ts:5-7` keeps its false comment (check 1).
-- **Diagnosis 1**: rests on the look and on the 5a84830c test (check 2).
+- **Diagnosis 1**: rests on the look and on the 874a27b4 test (check 2).
 
 ## 6. Implied inputs
 
@@ -230,7 +230,7 @@ Also checked: `es-toolkit/compat` is exported (`./compat`, `./compat/*`), it has
 - Whether the four catalog descriptions are true to their reader. They do not exist yet; that is the reviewer's reading.
 - Whether the step's path list is disjoint from U2's. U2's worktree diff shows no overlapping file (`git diff --name-only HEAD` filtered for terminal, watch, appearance, package and doc paths printed nothing).
 - Whether the shared lines with X3d merge simply. That judgment is the orchestrator's (`shared_paths:`).
-- Whether 5a84830c's test fails on the old signature, by running it. I checked it by reading only; running it would mean editing a tree.
+- Whether 874a27b4's test fails on the old signature, by running it. I checked it by reading only; running it would mean editing a tree.
 - I ran no vitest command in the repository, so as not to write caches into the main checkout. Every timing claim above comes from the node simulations quoted.
 
 Usage: claude-opus-5-5, about 270,000 tokens, about 55 tool calls.

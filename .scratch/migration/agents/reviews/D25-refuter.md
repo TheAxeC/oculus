@@ -1,4 +1,4 @@
-# Step D25 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D25, base 5f492a9b)
+# Step D25 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D25, base 1dcf894d)
 
 Summary: the verify list is green on the worktree (`checks: 7 commands passed`). The builder's report says the list was NOT done because `placeholders.test.ts` timed out. That claim does not reproduce: the file passed inside my full `npm test` run and passed alone. I found 5 Spec, 5 Proof, 6 Standards and 2 Behaviour findings. One item is violated (item 3, a head comment the brief named was not rewritten). Two cases are partial (2 and 16). The rest are code-quality and report-shape findings.
 
@@ -40,7 +40,7 @@ ls src/lib/ui/controls/editor | wc -l -> 10 ; ls src/lib/ui/controls/editor/kit 
 git status --short -- tools/oculus/docs/diagrams -> the 7 .dot and 7 .svg files listed as M, nothing new
 The spec's ASCII gate (perl over src tests bin config, local.yml excluded) -> no output, exit 0
 
-The unchanged tree: a scratch copy under $TMPDIR, made from the worktree with `git diff -R --no-renames 5f492a9b` applied forward and the step's new files removed. Editor.svelte 538, Source.svelte 528, fs.svelte.ts 877, DiffEditor.svelte 492, paint_limit_kb: 64. The worktree's final tests were copied into it.
+The unchanged tree: a scratch copy under $TMPDIR, made from the worktree with `git diff -R --no-renames 1dcf894d` applied forward and the step's new files removed. Editor.svelte 538, Source.svelte 528, fs.svelte.ts 877, DiffEditor.svelte 492, paint_limit_kb: 64. The worktree's final tests were copied into it.
 $ npx vitest run <undo-replaced, fs-text-fresh, paint, diff-pane, compare-header.client, colours, settings, editor-text, editor, wrap, gutter>
   37 failed, among them: "draws the x of ***x*** bold and italic", the 4 byte-for-byte undo cases
   ("Cannot read properties of undefined (reading 'offset')"), "names the left file and then the right
@@ -257,7 +257,7 @@ Error: Test timed out in 5000ms.
    Duration  303.69s (transform 56.46s, setup 0ms, import 703.23s, tests 439.75s, environment 323ms)
 checks: failed with exit 1: npm test
 
-Neither file is changed by the step: `git diff 5f492a9b --stat` over the two files printed nothing. `uptime` gave load averages 13.35 15.44 15.52.
+Neither file is changed by the step: `git diff 1dcf894d --stat` over the two files printed nothing. `uptime` gave load averages 13.35 15.44 15.52.
 The audit-mute write (`writeMute`, config/audit-mute.ts) imports none of the modules the step changed.
 $ npx vitest run tests/routes/edit/audit-mute.test.ts
  Test Files  1 passed (1)
@@ -299,7 +299,7 @@ grep "layoutWatch" diff/DiffEditor.svelte -> :66 (import), :224 (call)   (the re
 npm run diagrams, on a scratch copy of the worktree: rc 0; diff -rq of its docs/diagrams against the worktree's -> no output
 git status --short: docs/diagrams shows the 7 .dot and 7 .svg as M, nothing new
 
-First runs (the unchanged tree is my own scratch copy: `git diff --no-renames 5f492a9b` applied in reverse, the 12 deleted files rebuilt from their deletion hunks, the untracked files removed; Editor.svelte 538, Source.svelte 528, paint_limit_kb: 64):
+First runs (the unchanged tree is my own scratch copy: `git diff --no-renames 1dcf894d` applied in reverse, the 12 deleted files rebuilt from their deletion hunks, the untracked files removed; Editor.svelte 538, Source.svelte 528, paint_limit_kb: 64):
 ruling 8, fs-text-fresh.test.ts "ends the draft of an emptied family written as {} ...": AssertionError: expected { 'status.line': 220, next: 300 } to deeply equal {}
 ruling 5, editor-options.test.ts: TypeError: readEditorOptions is not a function (suite does not load)
 Pre-round tree (the round-start copy, with the current test files copied in):
@@ -339,7 +339,7 @@ Rulings of `D25-round1.md`, over the delta:
 - 10: done. `wrap.test.ts:40` carries `[[]]`, and the run prints "reads a stored [] as null". The `[undefined]` row was added beyond the ruling. It keeps the case the old `[]` produced, and it is harmless.
 - 11: done. `Palette.svelte:16-27` is greedy-wrapped at 100 (lines 25 to 27 are 96, 93 and 22 columns, and each next word would pass 100).
 - 12: done.
-  - The head clauses, `oncaret`, `flush` and the separate indent and readOnly effects match the base (no hunk in `git diff 5f492a9b` at those places).
+  - The head clauses, `oncaret`, `flush` and the separate indent and readOnly effects match the base (no hunk in `git diff 1dcf894d` at those places).
   - 494 lines.
   - One base blank line is still missing (Standards 4).
   - The room was made with `gutter/marks.css` (Standards 1 and 2).
@@ -413,7 +413,7 @@ Spec
   - Failure scenario: landing keeps a one-file folder and a path that changed for nothing, or moves the file back by hand and edits about 15 import lines.
   - Verdict: none (a landing note).
 - **Spec 3.** The round's own report: "`src/lib/state/workbench/palette-source.svelte.ts` (new)".
-  - What is wrong: the file exists at the base (`git status --short` shows M; `git diff 5f492a9b --stat` gives 44 insertions and 4 deletions).
+  - What is wrong: the file exists at the base (`git status --short` shows M; `git diff 1dcf894d --stat` gives 44 insertions and 4 deletions).
   - Failure scenario: a reader treats a shared store that already exists as a new module. No decision rests on it.
   - Verdict: none.
 

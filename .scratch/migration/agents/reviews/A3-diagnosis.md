@@ -12,7 +12,7 @@ From `tools/oculus/.scratch/migration/agents/reviews/A3-refuter.md`, section "2.
 
 ## Where the probes run
 
-A scratch copy at `$TMPDIR/diagnose.M9CEDn/tree` (TMPDIR `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/`), made by `git worktree add --detach "$tmp/tree" 995e6dfad` from the main checkout, with `git diff --binary 995e6dfad` from the step's worktree applied by `git apply --allow-empty` (exit 0; four whitespace warnings), and the 19 files `git status --porcelain --untracked-files=all` lists with `??` copied to the same paths. `node_modules` and `.svelte-kit` are `cp -c` clones of the step worktree's (the step's `tools/oculus` has no other ignored file: `git status --ignored --porcelain .` lists only those two). `diff -rq --exclude=node_modules --exclude=.svelte-kit --exclude=local.yml` between the step's `tools/oculus` and the copy's printed nothing. For probe 2 a second detached worktree at 995e6dfad with nothing applied (`$tmp/base`), same `node_modules` clone. The paths redirected under `$TMPDIR`: HOME (`$tmp/home`) and TMUX_TMPDIR (`$tmp/tmux`) for every test run; ORDO_STABLE and ORDO_SKILL_DIRS not needed (no skill or pinned checkout is touched).
+A scratch copy at `$TMPDIR/diagnose.M9CEDn/tree` (TMPDIR `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/`), made by `git worktree add --detach "$tmp/tree" 81daf48b1` from the main checkout, with `git diff --binary 81daf48b1` from the step's worktree applied by `git apply --allow-empty` (exit 0; four whitespace warnings), and the 19 files `git status --porcelain --untracked-files=all` lists with `??` copied to the same paths. `node_modules` and `.svelte-kit` are `cp -c` clones of the step worktree's (the step's `tools/oculus` has no other ignored file: `git status --ignored --porcelain .` lists only those two). `diff -rq --exclude=node_modules --exclude=.svelte-kit --exclude=local.yml` between the step's `tools/oculus` and the copy's printed nothing. For probe 2 a second detached worktree at 81daf48b1 with nothing applied (`$tmp/base`), same `node_modules` clone. The paths redirected under `$TMPDIR`: HOME (`$tmp/home`) and TMUX_TMPDIR (`$tmp/tmux`) for every test run; ORDO_STABLE and ORDO_SKILL_DIRS not needed (no skill or pinned checkout is touched).
 
 Taken before the copy was made, from inside `.agents/worktrees/A3`:
 
@@ -101,11 +101,11 @@ MM tools/oculus/tests/server/root/context-fixture.ts
 ?? tools/oculus/src/routes/api/(machine)/schedules/
 ?? tools/oculus/tests/routes/machine/schedules.test.ts
 ?? tools/oculus/tests/server/machine/schedules/
-$ git diff --binary 995e6dfad | shasum
+$ git diff --binary 81daf48b1 | shasum
 8fa1673a6c70f3ae43952669eddca5d416afcd01  -
 ```
 
-Run again at the end of the diagnosis from the same worktree: `git diff --binary 995e6dfad | shasum` printed `8fa1673a6c70f3ae43952669eddca5d416afcd01  -` and `git status --short | wc -l` printed 83, the same 83 lines. The step's worktree was not changed.
+Run again at the end of the diagnosis from the same worktree: `git diff --binary 81daf48b1 | shasum` printed `8fa1673a6c70f3ae43952669eddca5d416afcd01  -` and `git status --short | wc -l` printed 83, the same 83 lines. The step's worktree was not changed.
 
 ## Red command
 
@@ -339,6 +339,6 @@ $ ps -axo comm,args | awk '$1=="awk" && /while \(1\)/' | wc -l
 0
 ```
 
-The `DIAG-` hits a wider grep finds in the copy are earlier diagnosis records under `.scratch/migration/agents/reviews/` (D20, X3e, X3f, Q109), not this diagnosis's tag. The scratch scripts (`loop.sh`, `red.sh`, `red2.sh`, `red2-base.sh`, `ab.sh`) and their logs were removed from the scratchpad. `git worktree list | grep -i diagnose` still lists `/private/var/folders/.../diagnose.yilYbS/tree` at b5299f4e5. That worktree belongs to another diagnosis, at O30's base, and was left alone. No credential or `.env` file was copied. `tools/oculus/config/local.yml` was never opened, printed, grepped, hashed or copied: the step's worktree has none, and every grep over config carried `--exclude=local.yml`. Two loads were heavier than needed and slowed the machine for a few minutes each: 22 `yes` processes for about 10 minutes, and 20 awk loops for about 10 minutes. Both were stopped with `pkill -P <script pid>`, and none is left.
+The `DIAG-` hits a wider grep finds in the copy are earlier diagnosis records under `.scratch/migration/agents/reviews/` (D20, X3e, X3f, Q109), not this diagnosis's tag. The scratch scripts (`loop.sh`, `red.sh`, `red2.sh`, `red2-base.sh`, `ab.sh`) and their logs were removed from the scratchpad. `git worktree list | grep -i diagnose` still lists `/private/var/folders/.../diagnose.yilYbS/tree` at 9a5f38a5b. That worktree belongs to another diagnosis, at O30's base, and was left alone. No credential or `.env` file was copied. `tools/oculus/config/local.yml` was never opened, printed, grepped, hashed or copied: the step's worktree has none, and every grep over config carried `--exclude=local.yml`. Two loads were heavier than needed and slowed the machine for a few minutes each: 22 `yes` processes for about 10 minutes, and 20 awk loops for about 10 minutes. Both were stopped with `pkill -P <script pid>`, and none is left.
 
 Red command run again on the original case: carried by the round as its check.

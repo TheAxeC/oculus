@@ -1,6 +1,6 @@
-# Step S3c refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/S3c, base a157d199)
+# Step S3c refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/S3c, base 069f5581)
 
-Reading order followed: plan.yaml, the refute skill, the state file's S3c dispatch entry (the `note:` line of 11:32 included), the brief, its brief check with the Closed heading, spec.md, plan.md's S3c line and Z75, Z94, Z118, Z149, the diff (`git diff a157d199`, `git status --short`, every new file read whole), then the builder's report. No edit was made to any file. `npm run diagrams` rewrote `docs/diagrams/*` as the brief's verify step; `git status --short` afterwards lists the same files as before. `config/local.yml`, ports 8787 and 8790 and `.vscode` were not touched.
+Reading order followed: plan.yaml, the refute skill, the state file's S3c dispatch entry (the `note:` line of 11:32 included), the brief, its brief check with the Closed heading, spec.md, plan.md's S3c line and Z75, Z94, Z118, Z149, the diff (`git diff 069f5581`, `git status --short`, every new file read whole), then the builder's report. No edit was made to any file. `npm run diagrams` rewrote `docs/diagrams/*` as the brief's verify step; `git status --short` afterwards lists the same files as before. `config/local.yml`, ports 8787 and 8790 and `.vscode` were not touched.
 
 ## Verification (rerun by the reviewer)
 
@@ -119,9 +119,9 @@ Cases of the brief's "Cases":
 Reviewer usage: tokens not measured by the reviewer, about 55 tool uses, minutes not measured.
 
 
-# Step S3c refuter report, repair round 1 (on /Users/axelfaes/workspace/research-hube/.agents/worktrees/S3c, base a157d199)
+# Step S3c refuter report, repair round 1 (on /Users/axelfaes/workspace/research-hube/.agents/worktrees/S3c, base 069f5581)
 
-(Worktree path: /Users/axelfaes/workspace/research-hub/.agents/worktrees/S3c.) Reading order: refute skill and templates/report.md, plan.yaml, the state file's S3c dispatch entry, spec.md, the brief, S3c-round1.md, the first refuter report, the builder's report, plan.md Z153 (line 721) and the state file's Z153 entry (line 173), then `git diff a157d199` and every new file whole. No file in the worktree or the ledger was changed. `npm run diagrams` rewrote docs/diagrams/*; `git status --short | wc -l` printed 43 before and after, the same files. Mutations ran on a copy of tools/oculus under $TMPDIR (node_modules symlinked, config/local.yml excluded, never opened), removed afterwards (`ls $TMPDIR | grep -c s3c` printed 0). Ports 8787 and 8790 and `.vscode` untouched.
+(Worktree path: /Users/axelfaes/workspace/research-hub/.agents/worktrees/S3c.) Reading order: refute skill and templates/report.md, plan.yaml, the state file's S3c dispatch entry, spec.md, the brief, S3c-round1.md, the first refuter report, the builder's report, plan.md Z153 (line 721) and the state file's Z153 entry (line 173), then `git diff 069f5581` and every new file whole. No file in the worktree or the ledger was changed. `npm run diagrams` rewrote docs/diagrams/*; `git status --short | wc -l` printed 43 before and after, the same files. Mutations ran on a copy of tools/oculus under $TMPDIR (node_modules symlinked, config/local.yml excluded, never opened), removed afterwards (`ls $TMPDIR | grep -c s3c` printed 0). Ports 8787 and 8790 and `.vscode` untouched.
 
 ## Repair round 1, refuted
 
@@ -145,7 +145,7 @@ Commands the round-1 section quotes, rerun in the same form:
 npx vitest run tests/state/system/settings tests/views/system/workbench/settings.test.ts tests/ui/forms/number-input.test.ts tests/ui/forms/text-input.test.ts tests/state/workbench/ui.test.ts
   Test Files  8 passed (8)   Tests  167 passed (167)            (report: 8 files, 167: reproduces)
 grep -rn typedInto src/lib: Search.svelte:19,57; TextInput.svelte:17,74; TextArea.svelte:17,93; DateInput.svelte:9,34,43; text-menu.ts:66   (report: 4 callers and the definition: reproduces; DateInput calls it twice)
-git grep -l lodash-es a157d199 -- src: only src/lib/server/** files; grep -rn lodash-es src | grep -v /server/ : browser.ts:16, rows.ts:19, write.ts:13   (first client import of lodash-es: reproduces)
+git grep -l lodash-es 069f5581 -- src: only src/lib/server/** files; grep -rn lodash-es src | grep -v /server/ : browser.ts:16, rows.ts:19, write.ts:13   (first client import of lodash-es: reproduces)
 grep -rhoE "const [A-Z][A-Za-z]*Shape =" src/lib | wc -l: 0   (reproduces)
 find .svelte-kit/output/client/_app/immutable -name '*.js' -not -path '*workers*' -exec wc -c {} + | sort -n | tail: nodes/2.B6R9JOhY.js 2159674; chunks/I7Dj73QH.js 2737063   (report "after" figures 2,159,674 and 2,737,063 reproduce; file hashes differ between builds)
 perl ASCII gate over src tests config (local.yml excluded); LC_ALL=C grep -nP '[^\x00-\x7F]' HELP.md DESIGN.md S3c-report.md: printed nothing

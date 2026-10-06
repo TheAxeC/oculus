@@ -45,7 +45,7 @@ Do not delete the directive and do not weaken the case. Re-run `node bin/revert-
 
 ## Part 3, Axel's ruling on the picker badge tones (sent 2026-09-18 12:35:42)
 
-Axel has ruled on the repository picker's badge colour, and it is yours to build in this round. It widens your paths by one file: `src/lib/views/Repositories.svelte`, which landed in Q52 at `521c938c` and is no longer held by another step.
+Axel has ruled on the repository picker's badge colour, and it is yours to build in this round. It widens your paths by one file: `src/lib/views/Repositories.svelte`, which landed in Q52 at `32939877` and is no longer held by another step.
 
 The ruling: the three picker badge words get their own tones. Today `Repositories.svelte` passes no `badgeTone` at all, so "gone", "no repository" and "unreadable" draw in the same neutral pair (`--accent-txt` on `--chip`), and a reader scanning a list of roots cannot tell the three apart before reading the word. Leaving them neutral because the contrast passes was the lazy option and was rejected.
 

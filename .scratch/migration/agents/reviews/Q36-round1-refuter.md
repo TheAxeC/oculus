@@ -8,7 +8,7 @@ Other results:
 - Check: 0 errors, 0 warnings.
 - Build, formatting, lint, ASCII, and size checks passed.
 - Revert checker: 10 red reverts, 0 unproven, 3 unchanged cases unchecked.
-- `src/lib/server/hpc/ssh.ts` is unchanged from `2ddd4a8b`.
+- `src/lib/server/hpc/ssh.ts` is unchanged from `49e052b9`.
 - Final `git status --short` lists only `tests/server/hpc/ssh.test.ts`.
 
 Report: [q36-review-cli-final.md](/private/tmp/q36-review-cli-final.md)

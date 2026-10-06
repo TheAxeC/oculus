@@ -16,7 +16,7 @@ The runner's agent listing (ListAgents) showed X3d's builder and S3a's builder r
 
 ## What landed
 
-Main at f7f19955 plus the step, cherry-picked from base dcef00c9 with no conflict (`Auto-merging` on `DESIGN.md`, `HELP.md`, `docs/diagrams/layers.dot` and `layers.svg`). 43 files changed in the step's wip commit.
+Main at a1a2692e plus the step, cherry-picked from base b7a5618a with no conflict (`Auto-merging` on `DESIGN.md`, `HELP.md`, `docs/diagrams/layers.dot` and `layers.svg`). 43 files changed in the step's wip commit.
 
 - **Server (`src/lib/server/machine/pty/`).**
   - `channel.ts`: reads of the list are ordered by turn. A "no server" answer is confirmed by two more reads. The empty list is taken only when no control client runs and the tmux server that gave the last list is not running.

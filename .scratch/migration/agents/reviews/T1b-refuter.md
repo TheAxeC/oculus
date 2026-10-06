@@ -1,4 +1,4 @@
-# Step T1b refuter report (on .agents/worktrees/T1b, base 12bf19450)
+# Step T1b refuter report (on .agents/worktrees/T1b, base db5132b4a)
 
 A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
 
@@ -44,7 +44,7 @@ diff -rq <base>/tests tests              -> only tests/state/** and tests/checks
   Only in worktree: tests/state/client/fetch-record.ts, tests/state/sessions/terminal/pty/, tests/state/shared/answers.test.ts
   Only in base: client/socket-timing.test.ts, sessions/terminal/pty-io.test.ts, sources/off-facets.ts; 167 files differ
 git status --short                        -> also M .scratch/migration/agents/briefs/T1b.md (byte-identical to main's copy, so it is the orchestrator's sync and not the builder's change)
-git diff 12bf19450 -- allow-duplication.txt -> two removals (writes/notice-sources 5f8d3f4b7492, terminals/hpc f86fb737d860), no addition
+git diff db5132b4a -- allow-duplication.txt -> two removals (writes/notice-sources 5f8d3f4b7492, terminals/hpc f86fb737d860), no addition
 find tests/state -name '*.test.ts' | wc -l -> 206; all .ts lines 58367; per folder test files/lines: boards 23/6866, client 10/3485, feeds 8/1628, forms 5/1853, life 7/2348, sessions 24/7992, shared 12/3076, sources 53/12175, system 19/4569, workbench 45/14375 (all match the report)
 largest .ts: life/present.test.ts 807; folders at 10 items: tests/state, sessions, workbench, client, system/settings, sessions/terminal, workbench/layout, workbench/navigation, boards/board, workbench/layout/open (matches)
 grep -rn "it('audits\|it(\"audits" tests/state -> nothing; grep -rn "audits" tests/state -> nothing
@@ -272,7 +272,7 @@ Evidence commands, rerun:
 
 ```
 diff -rq <base>/src src                                  -> nothing (src unchanged)
-git diff 12bf19450 --stat -- . ':!tests/state'           -> allow-duplication.txt (2 removals) and .scratch/.../briefs/T1b.md (cmp equal to main's copy, the orchestrator's sync)
+git diff db5132b4a --stat -- . ':!tests/state'           -> allow-duplication.txt (2 removals) and .scratch/.../briefs/T1b.md (cmp equal to main's copy, the orchestrator's sync)
 cmp over the 226 .ts files of tests/state vs base        -> equal=53 changed=167 new=6 (report's corrected figure holds)
 cmp of the six helpers imported from outside tests/state -> all six equal to base
 find tests src -newer agents/briefs/T1b-round1.md        -> fixtures/client.ts (cmp equal to base), client-state, queries, terminal-close, memories-message, commands-pane, pty/pty-fixture, pty/pty-socket, shared/answers.test.ts, shared/arrival.ts, explorer, arrangement, registry

@@ -35,7 +35,7 @@ Q77a, revert-check proves a unit directive in memory, one commit on main (the co
 
 ## Verification on main
 
-- `land.sh Q77a 8ca4ca00 --no-browser`: red at the unit suite on the comment-width check (three lines), fixed at landing.
+- `land.sh Q77a c420b8b2 --no-browser`: red at the unit suite on the comment-width check (three lines), fixed at landing.
 - After the fixes: unit `Test Files 342 passed (342)`, `Tests 5363 passed (5363)`; after the last test change `tests/checks/bin` and the comment-width check `90 passed`; `npm run check` `0 ERRORS 0 WARNINGS`; build ok; Prettier clean; lint exit 0; ASCII no output; size and folder checks exit 0.
 - `node bin/revert-check/revert-check.mjs tests/checks/bin/revert-check.test.ts`: `42 reverts, 0 unproven, 0 unchecked`; `revert-anchors.test.ts` 2 red; `node bin/migrations/revert-anchors.mjs --check`: `0 directives converted in 0 files written, 0 refused`; no new oculus-revert folder left in the temporary directory.
 - Browser: `466 passed`, 1 failed (above), its file rerun `11 passed`.

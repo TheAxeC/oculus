@@ -10,7 +10,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## The cases' first run on the unchanged tree
 
-The cases were written as tests against the pure functions and the store, with empty stub modules standing in for the two new modules (`layout/open/floats.ts`, `shell/panes/floats/float-geometry.ts`) so that the files load, and run on the tree as it was at the base (3a246eca). Counts are passed / total per file, taken from vitest's JSON output of that run (`scratchpad/first-run.json`, `first-run-store.json`, `first-run-b.json`); the files then held fewer cases than they hold now (float-geometry 13, now 18; pane-strip-menu 11, now 13; layout-floats 27, floats-store 33, kept-panes 21, now 22 after the file-tab route case was added).
+The cases were written as tests against the pure functions and the store, with empty stub modules standing in for the two new modules (`layout/open/floats.ts`, `shell/panes/floats/float-geometry.ts`) so that the files load, and run on the tree as it was at the base (c4ec2c34). Counts are passed / total per file, taken from vitest's JSON output of that run (`scratchpad/first-run.json`, `first-run-store.json`, `first-run-b.json`); the files then held fewer cases than they hold now (float-geometry 13, now 18; pane-strip-menu 11, now 13; layout-floats 27, floats-store 33, kept-panes 21, now 22 after the file-tab route case was added).
 
 | File | Passed / total | What passed on the old tree |
 |---|---|---|

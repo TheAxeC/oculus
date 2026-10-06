@@ -64,7 +64,7 @@ NOT DONE by the builder: the look halves listed under "The look" (they need the 
 
 # D20 report: an agent started from a task or in a new worktree, with the terminal, graph, git and transcript defects booked on it
 
-Worktree `.agents/worktrees/D20`, tool root `tools/oculus`, base 16b31cef0. Node 24.21.0.
+Worktree `.agents/worktrees/D20`, tool root `tools/oculus`, base 87c0a7a81. Node 24.21.0.
 
 ## Open items of the state file (verbatim, `sed -n 158,178p .scratch/migration/orchestrator-state.md`)
 

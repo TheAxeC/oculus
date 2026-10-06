@@ -26,7 +26,7 @@ On main: 38 files, 870 insertions and 334 deletions, with the fixes at landing (
 
 ## Premise correction
 
-The brief said `Repo.svelte`'s `.path` gains the three cut rules. The base already held them (`git show f9d13777:tools/oculus/src/lib/views/sources/repositories/Repo.svelte`, lines 291-299), so no change was needed there.
+The brief said `Repo.svelte`'s `.path` gains the three cut rules. The base already held them (`git show b89702b9:tools/oculus/src/lib/views/sources/repositories/Repo.svelte`, lines 291-299), so no change was needed there.
 
 ## Fixes at landing
 

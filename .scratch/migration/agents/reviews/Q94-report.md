@@ -128,7 +128,7 @@ Counted with `grep -cE "^\s*(it|test)\("`.
 
 ## Wrong or impossible in the brief
 
-The brief's premises were read at `667ed708`. This report compares against the main checkout at its current head, and the diff there matches the brief's line references. Nothing in the brief turned out wrong.
+The brief's premises were read at `de8048da`. This report compares against the main checkout at its current head, and the diff there matches the brief's line references. Nothing in the brief turned out wrong.
 
 ## Limitations and sharp edges
 

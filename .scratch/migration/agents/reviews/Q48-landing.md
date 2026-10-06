@@ -12,7 +12,7 @@ Nothing of the step itself. The one thing this landing did not close is the open
 
 ## What landed
 
-Q48 landed 2026-09-18 03:56 from worktree `q48` at base ac11faae by `land.sh --no-browser`, after one review (nine rulings), a repair round, a second review (five rulings), a second round under the cap's one exception, and a third review whose five findings were all closed at this landing.
+Q48 landed 2026-09-18 03:56 from worktree `q48` at base 7b902143 by `land.sh --no-browser`, after one review (nine rulings), a repair round, a second review (five rulings), a second round under the cap's one exception, and a third review whose five findings were all closed at this landing.
 
 What the step built: an add form forgets its draft and closes only while the draft is still what the save sent, and a form left open goes on writing the entry it added, kept beside the draft under `<id>#added`, until its identity field is typed away from that entry; the Save control is not pressable while its own save is out; the gone-bookmark close moved into the fs store, over every file browser the layout holds, for a read that answered and no other, leaving a form a save of its own is out from; a bookmark form whose save renames its bookmark is carried onto the new id with its draft.
 

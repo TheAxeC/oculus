@@ -16,7 +16,7 @@ Nothing of D42.
 
 ## What landed
 
-From base 81c779ac2, 40 files, +1150 -318: the Timeline section of the Files view, following the file tab shown last on the page; Open Timeline in the Files row menu and the file tab menu; `git log --follow` paged by one ordering read from HEAD (Z474); each row opening the diff of the file at that commit against its parent; the commit's short hash (git's `%h`) in the diff tab's label and its failure line.
+From base 1f02d5c7c, 40 files, +1150 -318: the Timeline section of the Files view, following the file tab shown last on the page; Open Timeline in the Files row menu and the file tab menu; `git log --follow` paged by one ordering read from HEAD (Z474); each row opening the diff of the file at that commit against its parent; the commit's short hash (git's `%h`) in the diff tab's label and its failure line.
 
 ## Fixes at landing
 
@@ -46,8 +46,8 @@ Ten files of different types, each opened with Open Timeline from the Files row 
 | `src/lib/ui/controls/editor/bars/LineBars.svelte` | Svelte, renamed | 3 |
 | `src/lib/ui/controls/editor/bars/zones.ts` | TypeScript, renamed | 4 |
 
-- `fa95b7540` on `applications.yml` opened its diff at `@@ -35,7`, line 38 removed and added, as `git show`.
-- The oldest row of `zones.ts`, `f6403f406`, opened as the file added, as `git show -M --name-status` reports (`A`).
+- `6bb1de33d` on `applications.yml` opened its diff at `@@ -35,7`, line 38 removed and added, as `git show`.
+- The oldest row of `zones.ts`, `9b83c6e6c`, opened as the file added, as `git show -M --name-status` reports (`A`).
 - HELP.md drew 50 rows, 100 after Load more and 117 after a second, its last two the oldest two of `git log --follow`.
 - A later page's full walk on HELP.md, timed three times from `tools/oculus`: 0.38 s, 0.39 s, 0.38 s, against the 5 s timeout.
 - Cases 20 and 47: closing the followed tab falls back to the file tab the pane showed before, the round's ruling and VS Code's behaviour.

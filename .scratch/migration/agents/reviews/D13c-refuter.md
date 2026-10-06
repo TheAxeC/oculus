@@ -1,6 +1,6 @@
 Refutation of D13c
 
-Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D13c/tools/oculus`, base `dc2ffdc3`. Nothing was edited. Git use was limited to `git diff dc2ffdc3` and `git status --short`. My only write was the check log at `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/D13c-refute/checks.log`.
+Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D13c/tools/oculus`, base `8d021622`. Nothing was edited. Git use was limited to `git diff 8d021622` and `git status --short`. My only write was the check log at `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/D13c-refute/checks.log`.
 
 Summary: the verify list is green, every one of the 26 cases is met, and every item of "What to build" holds. There are two findings that need a change:
 - **Behaviour:** a code theme whose import fails produces an unhandled promise rejection, and the Settings view then names a theme that is not painted.
@@ -165,7 +165,7 @@ claude-opus-5-5 (the transcript's message.model), 44 tool uses, 187,353 tokens, 
 
 Refutation of D13c, repair round 1
 
-Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D13c/tools/oculus`, base `dc2ffdc3`. I edited nothing in the tree. Git use was limited to `git diff dc2ffdc3` and `git status --short`.
+Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D13c/tools/oculus`, base `8d021622`. I edited nothing in the tree. Git use was limited to `git diff 8d021622` and `git status --short`.
 
 My only writes went to `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/D13c-refute2/`:
 - `checks.log`
@@ -221,7 +221,7 @@ Other commands I ran:
   - both mount calls (`Editor.svelte:197` and `DiffEditor.svelte:174`, each `void paintCode(loaded, codeTheme, () => (painted = null))`);
   - inside `repaint` (`look.ts:60`), which both effects reach (`Editor.svelte:371`, `DiffEditor.svelte:295`).
 - **The unit test.** `tests/ui/controls/editor/look.test.ts` has two cases with a stand-in kit. Case 1 asserts both halves of the ruling: `.resolves.toBeUndefined()` and `painted` null. Case 2 guards against a helper that clears the key on success.
-- **No new words.** The only text-catalog additions in `git diff dc2ffdc3 -- config` are the main round's `code_theme`, `code_theme_tokens` and `findings.appearance.code_theme`. No status line was added.
+- **No new words.** The only text-catalog additions in `git diff 8d021622 -- config` are the main round's `code_theme`, `code_theme_tokens` and `findings.appearance.code_theme`. No status line was added.
 - **The fix removed no check.** The change to `repaint`'s signature (`done(painted: boolean)` in place of a success callback) is what the ruling asked, since `repaint` uses the helper. It does not reach beyond the finding.
 - **What the cleared key does in practice.** `painted` is a plain `let` (`Editor.svelte:146`, `DiffEditor.svelte:109`), so clearing it does not re-run the effect. That is correct, because a reactive key would retry a failing import in a loop. See Behaviour 1 for what this means for a reader.
 - **Not a finding.** When a queued paint X fails after a later paint Y's frame has already set `painted` to Y, X's closure sets `painted` to null although Y painted. The only consequence is one extra repaint on the next effect run, and the painter's signature check makes that cheap (`load.ts:195-202`).

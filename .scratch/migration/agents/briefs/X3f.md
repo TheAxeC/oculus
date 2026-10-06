@@ -8,7 +8,7 @@ A design ruling decides what is built. It never exempts the code: every line is 
 
 "X3f a file tab's actions on every file tab, and a file row opening as VS Code's (Axel's report 2026-10-04 of X3c's item 12): (A) a double click on a file in the Files tree opens it as a kept tab, as VS Code's; (B) every file tab draws Save, Revert, the star, Open in Program, Preview and Blame at the strip's end where they apply to its file, whatever the file (today only the source view hands them up, `views/sources/source/Source.svelte:300-304` through `ui/tabs/tab-actions.svelte.ts`, and a file that opens in another view draws none); (C) Open Preview on a Markdown file opens its rendered preview, as VS Code's (today it opens the source view, `views/shared/explorer/tree/menu/row-menu.ts:492-493`). X3f's /spec reproduces each on TEST and finds each cause read-only before the brief."
 
-## What is on the tree (read on main at e6ef64e28)
+## What is on the tree (read on main at ad51b1fdd)
 
 Paths are under `tools/oculus/` in the worktree `.agents/worktrees/X3f`. The base copy of the tree is `.agents/worktrees/X3f-base/tools/oculus/` (`src`, `tests`, `utils`, `config`), and beside it `unused-exports.txt`, the output of `sh utils/unused-exports.sh` on main at the base. Read a file as it was at the base there.
 

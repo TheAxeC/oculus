@@ -1,4 +1,4 @@
-# Step Q33 refuter report (on .agents/worktrees/q33, base 133e7c39)
+# Step Q33 refuter report (on .agents/worktrees/q33, base 84bc4dde)
 
 **Incident during this review, not caused by the builder: two unintended writes outside q33.** The scratchpad directory is shared with other agents in this session. I made a scratch copy at `<scratchpad>/rev`, but a folder of that name already existed and belonged to someone else. Its `node_modules` was a symlink into d16.
 - My `rsync -a` of q33's `tools/oculus` wrote over files in that folder. It deleted nothing, but whoever owns it now has q33 files mixed into their copy. It also now holds my `tests/browser/zw-measure.spec.ts`.
@@ -19,7 +19,7 @@ All commands were run from `tools/oculus` in q33:
 - **Whole browser suite:** `npx playwright test` gave `141 passed (3.3m)`. This covers the report's "not rerun after the last ToolButton change" line.
 - **Report figures that reproduced:** the foot heights (300 to 233.34 px default, 338 to 270.80 px mocha) and the rename grep (hits only in pane-view.ts, PaneView.svelte, ui.yml, nested.spec.ts, paneview.test.ts, shell-defects.spec.ts).
 
-Reviewer measurements were run on scratch copies built from the q33 tree and from q33 with `git diff 133e7c39` reverse-applied (main). The probe specs were `zz-measure.spec.ts` and `zz-behave.spec.ts`, which exist only in those copies.
+Reviewer measurements were run on scratch copies built from the q33 tree and from q33 with `git diff 84bc4dde` reverse-applied (main). The probe specs were `zz-measure.spec.ts` and `zz-behave.spec.ts`, which exist only in those copies.
 
 ## 1. Spec
 - **Premise, item 6 (tabs shrink): the builder is right, the brief was wrong.**

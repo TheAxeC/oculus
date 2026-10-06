@@ -20,7 +20,7 @@ ListAgents at 02:53 listed no subagent, only two idle peer sessions (ordo-01, re
 
 ## What landed
 
-From base 47a41fa4, 98 paths staged on main (5939 insertions, 1496 deletions; `git diff --cached --shortstat`), the six landing-fix files among them.
+From base 57986be1, 98 paths staged on main (5939 insertions, 1496 deletions; `git diff --cached --shortstat`), the six landing-fix files among them.
 
 - The Processes view: oculus's own processes (the trees under every pane of its terminal sessions) and the local processes matching `processes: { patterns: [...] }` in `config/behavior.yml`, read from one `ps -axo pid=,ppid=,pcpu=,rss=,lstart=,command=` run oculus starts itself (Z257 (b)); `systeminformation` removed; columns PID, Parent, User, Started, CPU, Memory, Command and Folder; the head line counting projects in flight and agents running; the watcher reading every ten seconds while a page is connected (Z244 (b)).
 - The System view texts moved under `config/text/views/system/machine/` (`hpc.yml`, `usage.yml`, the new `processes.yml`), `HELP.md`, `DESIGN.md` and the regenerated diagrams.

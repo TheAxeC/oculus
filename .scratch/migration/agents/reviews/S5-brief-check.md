@@ -1,6 +1,6 @@
 # S5 brief check
 
-Agent: ordo-high on claude-opus-5-5, 273,684 tokens, 104 tool uses, 12.6 min. Read on main at 603ba0759 (no change under src, config, tests, HELP.md, DESIGN.md since 7cc898b4f); changed nothing.
+Agent: ordo-high on claude-opus-5-5, 273,684 tokens, 104 tool uses, 12.6 min. Read on main at 0928c0d86 (no change under src, config, tests, HELP.md, DESIGN.md since cce4e49fd); changed nothing.
 
 Blocking findings:
 - (A) The server writes are missing: `src/lib/server/edit/writes/config/config-key.ts` (`single()` 65-69 treats every control but `list` as single; `misfit()` 72-88 falls to the choice check reading `entry.values ?? []`) refuses long, glyph, hue, colour, folder, file with `server.config_key.not_choice`, every `values_from` choice, `multi` and `parked` leaves, and `empty: true` (''). `config-value.ts:248` (`const collection = entry.fields !== undefined || entry.control === 'list'`) refuses multi and parked as single. `config-checks.ts:129-132` is where catalog findings would join the write's refusals.

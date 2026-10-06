@@ -1,4 +1,4 @@
-Brief check of D31 (brief `tools/oculus/.scratch/migration/agents/briefs/D31.md`, tree on main at 2616cfff). I changed nothing. I never opened or grepped `config/local.yml`.
+Brief check of D31 (brief `tools/oculus/.scratch/migration/agents/briefs/D31.md`, tree on main at 0bd4c1d5). I changed nothing. I never opened or grepped `config/local.yml`.
 
 ## Names
 

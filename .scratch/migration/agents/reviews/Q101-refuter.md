@@ -1,4 +1,4 @@
-# Step Q101 refuter report (reviewer a1c2f1a2de69bc190, on .agents/worktrees/Q101, base 3d4f9bd4)
+# Step Q101 refuter report (reviewer a1c2f1a2de69bc190, on .agents/worktrees/Q101, base a6f61d7e)
 
 ## Verification
 
@@ -17,7 +17,7 @@
 checks: failed with exit 1: npm test
 ```
 
-Both are the defects fixed on main at 703aec66; Q101 changes neither file, and its `type-scale.test.ts` change is the Terminal and TerminalGrid lines only. The rest of the list by hand: `npm run check` `COMPLETED 1486 FILES 0 ERRORS`, build, format, lint and the ASCII check exit 0. The report's greps, line counts, `folder-check.sh`, `npm run diagrams` and the step's 8 test files (`Tests 237 passed`) reproduce. Reverts R1 to R6 and R9 to R16 turn their tests red; R7 and R8 stay green (Proof 1 and 2). The reviewer ran one `git -C . diff`, read-only, outside the allowed set.
+Both are the defects fixed on main at 414d27fa; Q101 changes neither file, and its `type-scale.test.ts` change is the Terminal and TerminalGrid lines only. The rest of the list by hand: `npm run check` `COMPLETED 1486 FILES 0 ERRORS`, build, format, lint and the ASCII check exit 0. The report's greps, line counts, `folder-check.sh`, `npm run diagrams` and the step's 8 test files (`Tests 237 passed`) reproduce. Reverts R1 to R6 and R9 to R16 turn their tests red; R7 and R8 stay green (Proof 1 and 2). The reviewer ran one `git -C . diff`, read-only, outside the allowed set.
 
 ## 1. Spec
 
@@ -59,7 +59,7 @@ Reviewer usage: 65 tool uses, 242k tokens, 15 min (from the completion notice).
 
 ### Verification
 
-`checks.sh` from the worktree's tools/oculus: `Test Files  3 failed | 345 passed (348)`, `Tests  3 failed | 5603 passed | 1 skipped (5607)`, `checks: failed with exit 1: npm test`. The three: comment-width (`Calendar.svelte:355`, `tinted.test.ts:13`, `:44`) and type-scale's Calendar entry, both fixed on main in 703aec66, and `tests/checks/tree/scratch.test.ts`, failing on a stray `$TMPDIR/out.txt` no step wrote. Run one by one after it, each exit 0: `npm run check` (`COMPLETED 1486 FILES 0 ERRORS 0 WARNINGS`), `npm run build`, `npm run format:check`, `npm run lint`, `! LC_ALL=C grep -rna '[^ -~]' src tests`. The round's 10 test files: `Test Files 10 passed (10)`, `Tests 269 passed (269)`. The grep of the removed names prints nothing. R1 to R9 judged by reading: each red but R6, which only an audit catches. The round's item 5 premise was wrong: the first message clears a selected terminal it does not list (`terminals.svelte.ts:343-346`, `:198-208`); the builder's test asserts what the code does.
+`checks.sh` from the worktree's tools/oculus: `Test Files  3 failed | 345 passed (348)`, `Tests  3 failed | 5603 passed | 1 skipped (5607)`, `checks: failed with exit 1: npm test`. The three: comment-width (`Calendar.svelte:355`, `tinted.test.ts:13`, `:44`) and type-scale's Calendar entry, both fixed on main in 414d27fa, and `tests/checks/tree/scratch.test.ts`, failing on a stray `$TMPDIR/out.txt` no step wrote. Run one by one after it, each exit 0: `npm run check` (`COMPLETED 1486 FILES 0 ERRORS 0 WARNINGS`), `npm run build`, `npm run format:check`, `npm run lint`, `! LC_ALL=C grep -rna '[^ -~]' src tests`. The round's 10 test files: `Test Files 10 passed (10)`, `Tests 269 passed (269)`. The grep of the removed names prints nothing. R1 to R9 judged by reading: each red but R6, which only an audit catches. The round's item 5 premise was wrong: the first message clears a selected terminal it does not list (`terminals.svelte.ts:343-346`, `:198-208`); the builder's test asserts what the code does.
 
 ### 1. Spec
 
@@ -90,6 +90,6 @@ Reviewer usage: 36 tool uses, 179k tokens, 9 min (from the completion notice).
 
 The round was the step's last (`repair_rounds: 1`); each finding of the round's review is small and inside the brief, and is fixed on main at landing:
 - Spec 1 and Proof 1: the bar's New calls the terminals store's rule for its own tab, so New has one copy, and the store's case covers it.
-- Proof 2 and 3: corrected in the landing booking (R6 judged by reading; the base line counts from `git diff 3d4f9bd4 --numstat`).
+- Proof 2 and 3: corrected in the landing booking (R6 judged by reading; the base line counts from `git diff a6f61d7e --numstat`).
 - Standards 1: `DESIGN.md:208` rewritten to the saved arrangement without `views`.
 - Standards 2: the three sentences reworded to what a start keeps (the accounts and picks) and what New and Split set (the folder and kind).

@@ -12,7 +12,7 @@ From `agents/reviews/D20-refuter.md`, "Repair round 1, refuted", finding Behavio
 
 ## Where the probes run
 
-A scratch copy at `$TMPDIR/diagnose.aGxFX2/tree` (`/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.aGxFX2/tree`), a detached worktree made from the main checkout at the dispatch entry's base `16b31cef0`, with the step's diff (`git diff --binary 16b31cef0` from inside `.agents/worktrees/D20`) applied by `git apply --allow-empty` and each `??` file of the step's worktree copied to the same path. `tools/oculus/node_modules` in the copy is a symlink to the main checkout's `node_modules`, read only. Every repository the probes made lives under `$TMPDIR`. The paths redirected under `$TMPDIR`: none (nothing touches the home, the installed skills or the pinned checkout). git 2.49.0 (`/opt/homebrew/bin/git`), node v24.21.0.
+A scratch copy at `$TMPDIR/diagnose.aGxFX2/tree` (`/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.aGxFX2/tree`), a detached worktree made from the main checkout at the dispatch entry's base `87c0a7a81`, with the step's diff (`git diff --binary 87c0a7a81` from inside `.agents/worktrees/D20`) applied by `git apply --allow-empty` and each `??` file of the step's worktree copied to the same path. `tools/oculus/node_modules` in the copy is a symlink to the main checkout's `node_modules`, read only. Every repository the probes made lives under `$TMPDIR`. The paths redirected under `$TMPDIR`: none (nothing touches the home, the installed skills or the pinned checkout). git 2.49.0 (`/opt/homebrew/bin/git`), node v24.21.0.
 
 Taken before the copy was made, from inside the step's worktree:
 
@@ -32,7 +32,7 @@ $ git status --short     (93 tracked files changed or deleted, and these untrack
 ?? tools/oculus/tests/server/core/git-failure.test.ts
 ?? tools/oculus/tests/server/sessions/transcripts.test.ts
 ?? tools/oculus/tests/state/workbench/layout/tree-keep.test.ts
-$ git diff --binary 16b31cef0 | shasum
+$ git diff --binary 87c0a7a81 | shasum
 a2cc1cdb371d9b0fc9aa930fcd9fd11b894bcb49  -
 ```
 
@@ -526,7 +526,7 @@ From inside the step's worktree, after the cleanup, the same as before the copy 
 $ git status --short | wc -l
      107
 (the same 14 `??` paths as listed under "Where the probes run")
-$ git diff --binary 16b31cef0 | shasum
+$ git diff --binary 87c0a7a81 | shasum
 a2cc1cdb371d9b0fc9aa930fcd9fd11b894bcb49  -
 $ git worktree list | grep -c diagnose
 0

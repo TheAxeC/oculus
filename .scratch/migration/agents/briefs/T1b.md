@@ -4,7 +4,7 @@ Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern th
 
 A design ruling decides what is built. It never exempts the code: every line is written to the standards pages, so that people can read, use and maintain it.
 
-## What is on the tree (read on main at 1e14d279)
+## What is on the tree (read on main at cf91445b)
 
 - The step line, `plan.md:225`, rests on the rulings Z350, Z351, Z354, Z363, Z365 and Z367, each a line of `plan.md`'s Rulings ending "(the user).". Z363: the sweep may cut harder than one test per behaviour. Z367: four sweeps run side by side; T1a (the tiers) follows all four.
 - The step line's counts were read before X3c landed. `tests/state/` now holds 205 test files and 66,497 lines in all `.ts` files (`find tests/state -name '*.test.ts' | wc -l`; `find tests/state -name '*.ts' -exec cat {} + | wc -l`); corrected in `plan.md` at this /spec. By folder (test files / lines): boards 23 / 7,213; client 11 / 3,704; feeds 8 / 1,723; forms 5 / 2,021; life 7 / 2,482; sessions 23 / 8,266; shared 11 / 4,109; sources 53 / 13,662; system 19 / 5,215; workbench 45 / 18,102. No file sits directly in `tests/state/` (`ls -p tests/state | grep -v /` prints nothing).

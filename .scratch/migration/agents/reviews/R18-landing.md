@@ -15,7 +15,7 @@ Booked list: none.
 
 ## What landed
 
-R18, cherry-picked from `.agents/worktrees/R18` at base `6e76876f` onto main by `tools/oculus/.scratch/migration/land.sh R18 6e76876f` (+6,973 -28 over 28 files before the landing fixes).
+R18, cherry-picked from `.agents/worktrees/R18` at base `bb4e25a0` onto main by `tools/oculus/.scratch/migration/land.sh R18 bb4e25a0` (+6,973 -28 over 28 files before the landing fixes).
 
 - `node bin/diagrams.mjs` reads the source and writes `docs/diagrams/layers`, `channels` and `writes`, each as a Graphviz `.dot` file and the `.svg` rendered from it by `@viz-js/viz` 3.30.0 (a pinned dev dependency, no system install). What a reader cannot place or follow is drawn with its file and line in a dashed group named "not placed"; a module the write trace reaches that writes nothing is in a dashed group of its own.
 - `tests/checks/diagrams/diagrams.test.ts` fails, naming every stale file, while a committed diagram differs from the source.

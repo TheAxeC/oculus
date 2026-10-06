@@ -1,4 +1,4 @@
-# Step Q107 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q107, base dcef00c9)
+# Step Q107 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q107, base b7a5618a)
 
 ## Verification (rerun by the reviewer)
 
@@ -175,12 +175,12 @@ $ ASCII gate of spec.md over src tests config, plus DESIGN.md HELP.md and the pr
 prints nothing, exit 0
 
 $ sh utils/folder-check.sh   exit 0
-$ git status --short | wc -l   38     $ git diff dcef00c9 | shasum   e3cbf0efca9a246778e4924855ef432c8499ac17 (before and after my review)
+$ git status --short | wc -l   38     $ git diff b7a5618a | shasum   e3cbf0efca9a246778e4924855ef432c8499ac17 (before and after my review)
 ```
 
 ### How I identified the round's delta
 
-1. **Timestamps.** I ran `stat` over every path in `git diff dcef00c9 --name-only` plus the untracked files. The round was sent at 00:10. These paths were modified after it:
+1. **Timestamps.** I ran `stat` over every path in `git diff b7a5618a --name-only` plus the untracked files. The round was sent at 00:10. These paths were modified after it:
    - `tests/server/machine/pty/channel-list.test.ts` (00:13)
    - the probe (00:16)
    - `tests/state/client/terminal/terminal-tabs.test.ts` (00:17)
@@ -198,7 +198,7 @@ $ git status --short | wc -l   38     $ git diff dcef00c9 | shasum   e3cbf0efca9
    - `layer-state.dot` and `layer-state.svg`. Their only hunk is `state/workbench to state/shared` going from 14 to 16, and the two new imports of `followKey` make that change.
 3. **`terminals.svelte.ts` is unchanged in content.** Its 00:17 timestamp comes from the ruling-2 mutant copy being put back. It is still 885 lines, and `attachTerminal`'s `find` sits at `:412`, where the first review cited it.
 4. **Pre-round `channel.ts`.** I rebuilt it as the final file with the `live()` guard at `:383` removed. That matches the first review's quote: `if (confirmed >= NO_SERVER_CONFIRMS) { this.#take(turn, []); return; }`.
-5. **Caveat on the shasum.** `git diff dcef00c9 | shasum` covers tracked files only, and nine of the 38 paths are untracked. So the round-base shasum never covered `storage-events.ts`, `ui-shared.test.ts`, `channel-list.test.ts` or the probe.
+5. **Caveat on the shasum.** `git diff b7a5618a | shasum` covers tracked files only, and nine of the 38 paths are untracked. So the round-base shasum never covered `storage-events.ts`, `ui-shared.test.ts`, `channel-list.test.ts` or the probe.
 
 ### Closures
 
@@ -247,7 +247,7 @@ $ git status --short | wc -l   38     $ git diff dcef00c9 | shasum   e3cbf0efca9
 
 **The hidden-tab RED:** consistent with ruling 1, which asked only for the result. Judged against the brief, it leaves item 2 and cases 14 and 17 short (Spec 1).
 
-### Verdicts, whole diff since dcef00c9
+### Verdicts, whole diff since b7a5618a
 
 **Items of "What to build"**
 
@@ -482,7 +482,7 @@ newline name first "oculus-aaaaac-shell\t...\t/private/var/.../tools/oculus\ttwo
 
 ps on macOS for a tmux server on my own socket: `ps -o comm= -p 64002` printed "tmux"; kill -0 after kill-server exit=1.
 
-At the end: ls $TMPDIR | grep -c '^q7' -> 0; pgrep -fl 'q7s|q7o|q7p|q7c' exit=1; lsof -iTCP:8813 -sTCP:LISTEN exit=1; git status --short | wc -l 45; git diff dcef00c9 | shasum 94a34f7aa0d5694a10b4ece5cdcd4989a819ad38 (same as at my start).
+At the end: ls $TMPDIR | grep -c '^q7' -> 0; pgrep -fl 'q7s|q7o|q7p|q7c' exit=1; lsof -iTCP:8813 -sTCP:LISTEN exit=1; git status --short | wc -l 45; git diff b7a5618a | shasum 94a34f7aa0d5694a10b4ece5cdcd4989a819ad38 (same as at my start).
 ```
 
 ### The round's delta, as I identified it
@@ -522,7 +522,7 @@ At the end: ls $TMPDIR | grep -c '^q7' -> 0; pgrep -fl 'q7s|q7o|q7p|q7c' exit=1;
   - The report's own form, with the line removed, fails all 11 cases through a TypeError. That shows a crash, and the specific binding is what my mutant shows.
 - **Ruling 3: closed as ruled.** The first line says "Everything in the brief is done." Both probe runs the ruling names are green in my reruns. Spec 1 was not known to the builder.
 
-### Verdicts, whole diff since dcef00c9
+### Verdicts, whole diff since b7a5618a
 
 **Items of "What to build"**
 

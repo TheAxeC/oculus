@@ -1,4 +1,4 @@
-Brief check of Q102 (tools/oculus/.scratch/migration/agents/briefs/Q102.md, 139 lines, read whole), on main at de5f74cd (`git rev-parse --short HEAD`). Nothing in the repository was changed.
+Brief check of Q102 (tools/oculus/.scratch/migration/agents/briefs/Q102.md, 139 lines, read whole), on main at 62c6f933 (`git rev-parse --short HEAD`). Nothing in the repository was changed.
 
 ## Names
 
@@ -55,7 +55,7 @@ No part is unmapped. Two notes:
 
 ## Premises
 
-Rechecked with `sed -n`, `grep -n` and `wc -l` on main at de5f74cd.
+Rechecked with `sed -n`, `grep -n` and `wc -l` on main at 62c6f933.
 
 **Hold as stated:**
 - `Terminal.svelte`: 249-254 (bar New calling `composeInTab`), 20, 100-104, 146-150, 178-183 (`splitOn`), 189 (`stop: stopTerminal`), 302-325 (Sash at 307).
@@ -81,7 +81,7 @@ Rechecked with `sed -n`, `grep -n` and `wc -l` on main at de5f74cd.
 
 **Differ:**
 - `moveTerminal` starts at `terminals.svelte.ts:401`, not 400; the close is at 412.
-- Z40 (d) is at `orchestrator-state.md:181` in the working copy but at 180 on HEAD (`git show HEAD:... | grep -n`). The state file has uncommitted edits, so "read on main at de5f74cd" is not strictly what was cited.
+- Z40 (d) is at `orchestrator-state.md:181` in the working copy but at 180 on HEAD (`git show HEAD:... | grep -n`). The state file has uncommitted edits, so "read on main at 62c6f933" is not strictly what was cited.
 - "the composer's folder falls back to `hubRoot()` (`composer.ts:101-107`)": `composerWorkspace` there takes a `hub` parameter. The `hubRoot()` call is at `Composer.svelte:78`.
 - The "two halves are assumed by" list leaves out `emptyTab` (terminal-tabs.ts:55-65, sets `beside: null, share`) and `withTerminal` (146-164, sets `beside: null`). Both assume the pair.
 - `closeInstanceAnywhere` is not a user-facing removal (see Names).

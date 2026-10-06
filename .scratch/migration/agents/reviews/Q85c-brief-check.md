@@ -1,8 +1,8 @@
-# Step Q85c brief check (on main at d7978ad7)
+# Step Q85c brief check (on main at eb924ec4)
 
 Brief checked: `tools/oculus/.scratch/migration/agents/briefs/Q85c.md`, against `plan.md` (the Q85c line, Rulings Z73, Z96, Z127, "The queue"), `agents/spec.md` (the only standard `orchestrator-state.md` names), and the tree on main. I changed nothing in the repository. I wrote one scratch script in the session scratchpad (`p1.mjs`) that imports `programApps`, `usageTiers` and `flattenText` under `node --experimental-strip-types`, to see what they answer today. I opened no file under `config/` and never touched `config/local.yml`. I did not run vitest.
 
-State of main while I checked: HEAD is d7978ad7, but the working tree now holds a staged, uncommitted landing of Q88b. `git status --short` shows `A src/lib/data/file-ops.ts`, `M src/lib/data/helpers/search.ts`, `M tests/checks/tree/allow-duplication.txt`, `A tests/data/file-ops.test.ts`, `M tests/data/helpers/search.test.ts` and `MM DESIGN.md`. The premise commands below were run against HEAD's content (the 195 count is confirmed with `git grep ... d7978ad7`). Premise F5 gives what changes when Q88b commits.
+State of main while I checked: HEAD is eb924ec4, but the working tree now holds a staged, uncommitted landing of Q88b. `git status --short` shows `A src/lib/data/file-ops.ts`, `M src/lib/data/helpers/search.ts`, `M tests/checks/tree/allow-duplication.txt`, `A tests/data/file-ops.test.ts`, `M tests/data/helpers/search.test.ts` and `MM DESIGN.md`. The premise commands below were run against HEAD's content (the 195 count is confirmed with `git grep ... eb924ec4`). Premise F5 gives what changes when Q88b commits.
 
 ## 1. Names
 
@@ -39,7 +39,7 @@ Findings: none (no part of the line lacks an item). Items 8, 9, 10 and 11 go bey
 
 Commands run from `tools/oculus`.
 
-- `grep -rcE "typeof |Array\.isArray|isRecord\(|isMap\(" --include='*.ts' src/lib/data | awk -F: '$2>0'`: 30 files, 195 lines. Every per-file number in the brief matches (validate 37, normalise 35, settings 14, index 13, local 12, present 11, guards 9, rail 6, and so on down to 1). `git grep -c ... d7978ad7` also gives 30 files, 195 lines.
+- `grep -rcE "typeof |Array\.isArray|isRecord\(|isMap\(" --include='*.ts' src/lib/data | awk -F: '$2>0'`: 30 files, 195 lines. Every per-file number in the brief matches (validate 37, normalise 35, settings 14, index 13, local 12, present 11, guards 9, rail 6, and so on down to 1). `git grep -c ... eb924ec4` also gives 30 files, 195 lines.
 - The cast grep (`as Record<string, unknown>|as Record<string, string>|\(held as|parsed as` over `src/lib/data`): 31 hits. Every location the brief names is present. Two hits are not named: `sources/config/rail.ts:34` and `helpers/files/opens-in-program.ts:60`.
 - Item 6's grep prints exactly the lines the brief lists (all 31 with the `guards.ts:18` line). Every `settings.ts` (19, 57, 86, 127, 144, 157), `local.ts` (144, 187, 233), `registries` (91, 131), `collections` (59, 97), `manifests:103`, `docs:124`, `career:46`, `merge` (158, 212), `catalogs` (108, 157, 198), `themes:20`, `rail:33`, `agents:262`, `search:188`, `opens-in-program:58`, `validate:779` and `normalise:65` is there.
 - Every reader line range of "What is on the tree" was read and matches: `registries.ts:81-95,119-142`, `collections.ts:49-63,86-105`, `manifests.ts:103-107`, `docs.ts:124-131`, `career.ts:36-54`, `feeds.ts:35-40,61-71,106`, `present.ts:74-110,269-273,346-349`, `deck.ts:58-75`, `local.ts:141-155,184-190,232-236`, `rail.ts:33-124`, `agents.ts:262-284`, `settings.ts:17-165`, `catalogs.ts:101-204`, `themes.ts:20-65`, `options.ts:50-80`, `merge.ts:148-166,210-218`, `index.ts:41-197`, `search.ts:186-191`, `opens-in-program.ts:56-62`, `editor.ts:15-17`, `normalise.ts` (60-70, 102, 107, 155, 167, 215-221, 233-249, 264, 278-280, 359, 406, 489-504, 569-611, 622-647), `validate.ts` (144-154, 209, 281-304, 325-327, 341, 388-390, 412-414, 443-459, 776-781), `validate-themes.ts:52-54`.
@@ -53,7 +53,7 @@ Commands run from `tools/oculus`.
 - `grep -rnE "\.issues|prettifyError|treeifyError" src/lib/data` prints nothing today, and the `const x = z` name grep prints only `...Shape` names.
 - `merge.ts:74` is the doc comment ("local.yml is left out by name"). The code that does it is `merge.ts:79`.
 - `tests/data/demo-hub.test.ts:13-18` builds the demo hub as the brief says.
-- Q88b writes `search.ts` hunks at base lines 11, 42, 69, 110, 146, 156, 173. `git diff 5ef2a351` in the Q88b worktree shows none at 186-191.
+- Q88b writes `search.ts` hunks at base lines 11, 42, 69, 110, 146, 156, 173. `git diff eada2136` in the Q88b worktree shows none at 186-191.
 - U3's brief says no file of `src/lib/data` is changed.
 
 Findings:
@@ -137,7 +137,7 @@ Every finding is closed by a change to `agents/briefs/Q85c.md`; F1, F2 and F8 wi
 
 - F1: item 6 and "Paths this step writes" rewrite allowlist lines 46 and 51-54 to the moved paths, the same pair and mark (Z163).
 - F2: the `readFile` clone is folded into a new `src/lib/data/sources/yaml-file.ts`, named in item 6, the paths and decision 6; lines 14-18 are removed (Z163).
-- F3, F5: the premises are restated on main with Q88b landed (5dca2568): 196 lines, `search.ts` 3 with `refusalFrom` (`:62`) kept as a vocabulary comparison, `searchCap` at `:222-227`, the in-flight paragraph replaced by what Q88b left; the plan line reads 196.
+- F3, F5: the premises are restated on main with Q88b landed (286a533e): 196 lines, `search.ts` 3 with `refusalFrom` (`:62`) kept as a vocabulary comparison, `searchCap` at `:222-227`, the in-flight paragraph replaced by what Q88b left; the plan line reads 196.
 - F4: `snapshot/` holds 4; the folder counts of `src/lib/data` (10) and `sources/` (9) added.
 - F6: `normalise.ts:107` and `merge.ts:53` leave the cast list and Verify 3 prints them; `local.ts:249` joins the casts that go.
 - F7: `validate.ts:543,549` convert through `textOrNumberShape`, `:589` through `listOrOneShape`, `:716,718` through a row schema with `.catch('')`; `shapeOf` (`:133-135`) is a kept class of its own.

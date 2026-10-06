@@ -1,6 +1,6 @@
 # Q35 refute report (reviewer, claude-sonnet-5-5)
 
-Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q35, base f9d13777. I ran only `git diff f9d13777` and `git status --short`; the `git status` line count (39) was the same before and after my runs. The one command that writes files is `npm run diagrams`, which left `git diff f9d13777 | md5` unchanged (a8aa9046...), so the committed diagrams match the source. For the "unchanged tree" check I used a scratch copy outside the repo (`.../scratchpad/unchanged`), reverse-applying `git diff f9d13777 -- src config DESIGN.md HELP.md` with `patch -R`.
+Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q35, base b89702b9. I ran only `git diff b89702b9` and `git status --short`; the `git status` line count (39) was the same before and after my runs. The one command that writes files is `npm run diagrams`, which left `git diff b89702b9 | md5` unchanged (a8aa9046...), so the committed diagrams match the source. For the "unchanged tree" check I used a scratch copy outside the repo (`.../scratchpad/unchanged`), reverse-applying `git diff b89702b9 -- src config DESIGN.md HELP.md` with `patch -R`.
 
 ## 1. Verification lines, verbatim
 
@@ -59,7 +59,7 @@ What to build:
 
 | Item | Verdict | Note |
 | --- | --- | --- |
-| 1 Changes paths cut at the end; `elide`, `PATH_MAX`, `sessions.ch_elide` removed | holds | `grep -rn "elide" src config` empty. The brief's premise that `Repo.svelte`'s `.path` "gains the three rules" does not reproduce: the base already has them (`git show f9d13777:...Repo.svelte` lines 291-299). Nothing to add. |
+| 1 Changes paths cut at the end; `elide`, `PATH_MAX`, `sessions.ch_elide` removed | holds | `grep -rn "elide" src config` empty. The brief's premise that `Repo.svelte`'s `.path` "gains the three rules" does not reproduce: the base already has them (`git show b89702b9:...Repo.svelte` lines 291-299). Nothing to add. |
 | 2 Aligned columns | holds | Grid plus subgrid in `ChangesTouched.svelte` and `ChangeGroups.svelte`. Look only. |
 | 3 Customizations open where the file is | holds | `realPath()` in `rowOf()`, `Customizations.svelte` unchanged. |
 | 4 Audit as a list | holds | `ul`/`li[data-card]`, `tinted`, no `Card`, row-reveal. |
@@ -158,7 +158,7 @@ Usage from the completion notice: claude-sonnet-5-5, 190,538 tokens, 61 tool use
 
 # Repair round 1, refuted
 
-Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q35 (tools/oculus), base f9d13777. I ran only `git diff f9d13777` and `git status --short` there. `git diff f9d13777 | md5` was `a4a68695401b7dd7455a63a0aa3c6924` before and after all my runs, and `git status --short` listed 39 entries before and after. My scratch copies and outputs are under /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/q35r1/ (`copy/`, `unchanged/`, files named by pid or command).
+Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q35 (tools/oculus), base b89702b9. I ran only `git diff b89702b9` and `git status --short` there. `git diff b89702b9 | md5` was `a4a68695401b7dd7455a63a0aa3c6924` before and after all my runs, and `git status --short` listed 39 entries before and after. My scratch copies and outputs are under /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/q35r1/ (`copy/`, `unchanged/`, files named by pid or command).
 
 ## Verification lines, verbatim
 
@@ -254,7 +254,7 @@ Cases:
 - Failure scenario: the second of the two landings conflicts on the row and on the file. The orchestrator merges it; I change nothing.
 
 **S2. The report omits that the brief's premise on `Repo.svelte`'s `.path` does not reproduce.**
-- Place: report "Anything wrong in the brief" names only the Panel sentence. Brief item 1 says `.path` "gains the three rules"; `git show f9d13777:tools/oculus/src/lib/views/sources/repositories/Repo.svelte` lines 291-299 already hold `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`.
+- Place: report "Anything wrong in the brief" names only the Panel sentence. Brief item 1 says `.path` "gains the three rules"; `git show b89702b9:tools/oculus/src/lib/views/sources/repositories/Repo.svelte` lines 291-299 already hold `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`.
 - Verdict: reporting gap, low. The code needs nothing.
 
 **S3. Customizations tab id and label follow the real path (low, stated in the report).**

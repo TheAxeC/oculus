@@ -1,4 +1,4 @@
-# Step Q86c refuter report (on .agents/worktrees/Q86c, base 194792bc)
+# Step Q86c refuter report (on .agents/worktrees/Q86c, base de977c87)
 
 Reviewer: an Opus agent (model `claude-opus-5-5`, read from its transcript), 33 tool uses, 169k tokens, 9.7 min, from its completion notice. Nothing in the worktree, the main checkout or the ledger was changed by it.
 
@@ -33,7 +33,7 @@ Commands the builder's report quotes, rerun:
 - `npx vitest run --reporter=verbose tests/state/boards/structure/forces.test.ts tests/views/structure/map.test.ts tests/views/structure/map-pointer.test.ts tests/state/boards/structure/graph.test.ts tests/state/boards/structure/layout.test.ts` printed `the least room to the held pillar over the drag: 24.31`, `the least room to the lone node over the drag: -0.93`, `Test Files  5 passed (5)`, `Tests  83 passed (83)`. The two measurements match the report.
 - `npx vitest run tests/checks/tree/scratch.test.ts` gave `Tests  17 passed (17)`, matching the report.
 - `grep -n d3 package.json` gave `23: "@types/d3-force": "3.0.10"` and `52: "d3-force": "3.0.0"`.
-- `git diff 194792bc -- package-lock.json` adds exactly `node_modules/@types/d3-force`, `d3-dispatch`, `d3-force`, `d3-quadtree`, `d3-timer`, and removes none. This matches the report.
+- `git diff de977c87 -- package-lock.json` adds exactly `node_modules/@types/d3-force`, `d3-dispatch`, `d3-force`, `d3-quadtree`, `d3-timer`, and removes none. This matches the report.
 - Settle times (decision 5): the report's `timing.config.mjs` is not on disk. As an approximation, an inline `node --input-type=module` script ran d3-force with the same forces and clamp from random starts, not neato's. Medians of 5 runs: 44 nodes 22.6 ms, 97 nodes 58.2 ms, 157 nodes 102.3 ms, 406 nodes 374.2 ms, each 300 ticks. The report gives 24.0, 61.1, 126.0 and 545.7 ms. Same order of magnitude; the report ran under heavier load.
 
 ## 2. Verdicts
@@ -106,7 +106,7 @@ None. Checks run: line counts (forces.ts 194, Graph.svelte 538, layout.ts 272, f
 
 ## Repair round 1, refuted
 
-Q86c, on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q86c, base 194792bc. I changed nothing in the worktree, the main checkout or the ledger. `git status --short` lists the same 19 paths before and after my run. All reverts ran in a scratch copy at /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/Q86c-r1-refute/. That copy was made by rsync of tools/oculus without node_modules, .svelte-kit, build, .scratch and config/local.yml, and node_modules is a symlink to the worktree's. The script is reverts.py in that folder. It checks that each source file is back byte for byte after each revert.
+Q86c, on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q86c, base de977c87. I changed nothing in the worktree, the main checkout or the ledger. `git status --short` lists the same 19 paths before and after my run. All reverts ran in a scratch copy at /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/Q86c-r1-refute/. That copy was made by rsync of tools/oculus without node_modules, .svelte-kit, build, .scratch and config/local.yml, and node_modules is a symlink to the worktree's. The script is reverts.py in that folder. It checks that each source file is back byte for byte after each revert.
 
 ```
 $ npm run diagrams            (from tools/oculus in the worktree, 00:45)

@@ -1,6 +1,6 @@
-# S4 refutation (the Settings editor finished), worktree .agents/worktrees/S4, base 3c772d4c
+# S4 refutation (the Settings editor finished), worktree .agents/worktrees/S4, base eb87b0fc
 
-Disclosure first: I ran one git command beyond the two allowed. `git show 3c772d4c:tools/oculus/src/lib/views/system/config/Config.svelte | grep -n "Chip\|chip"` is read-only and changed nothing, but the brief allowed only `git diff` and `git status --short`. After that I read base content only through `git diff 3c772d4c -- <path>`. I wrote probe files only under my scratchpad (`.../scratchpad/s4/`), and I made a scratch engine copy of `config/` there with `rsync --exclude local.yml`. I never opened, printed, grepped or hashed `local.yml`. As the brief asked, I ran `npm run diagrams` once in the worktree. It changed no byte (the md5 is equal before and after; see below).
+Disclosure first: I ran one git command beyond the two allowed. `git show eb87b0fc:tools/oculus/src/lib/views/system/config/Config.svelte | grep -n "Chip\|chip"` is read-only and changed nothing, but the brief allowed only `git diff` and `git status --short`. After that I read base content only through `git diff eb87b0fc -- <path>`. I wrote probe files only under my scratchpad (`.../scratchpad/s4/`), and I made a scratch engine copy of `config/` there with `rsync --exclude local.yml`. I never opened, printed, grepped or hashed `local.yml`. As the brief asked, I ran `npm run diagrams` once in the worktree. It changed no byte (the md5 is equal before and after; see below).
 
 ## Verification lines (verbatim)
 
@@ -195,13 +195,13 @@ Usage: not measured (about 75 tool calls, claude-opus-5-5).
 
 ## Repair round 1, refuted
 
-S4, the Settings editor finished. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/S4`, base 3c772d4c.
+S4, the Settings editor finished. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/S4`, base eb87b0fc.
 
 **What I touched outside the worktree.** I changed nothing in the worktree or the repository. The worktree's status still has the same 116 entries (`git status --short | wc -l`), and the same 51 files are newer than the round's start.
 
 My scratchpad, `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad`, turned out to be shared with earlier agents of this session. It holds the builder's `s4-pre-r1/` and other agents' folders. Before I saw that, I wrote into a folder `base/` that already existed there (dated Oct 1) with `rsync` and `patch -R`, and I used plain file names at its top: `checks.txt`, `cv.bak`, `Item.bak`, `fold.bak`, `s4.patch`, `untracked.txt`, `patch.log`, `patch2.log`, `probe1.mjs`, `zz-pre.mjs`, `ref`, `rbase-path`. I don't know whether any of those names belonged to another agent; the orchestrator should not rely on them.
 
-Everything I made myself is in `wt/` (a copy of the worktree's `tools/oculus`, my probes under `wt/oculus/probes/`), `eng/` (a scratch engine) and `rbase-<pid>/` (a clean base built from `git diff 3c772d4c`). No copy holds `local.yml`. I ran `npm run diagrams` twice in the worktree, as the brief asks; no byte changed.
+Everything I made myself is in `wt/` (a copy of the worktree's `tools/oculus`, my probes under `wt/oculus/probes/`), `eng/` (a scratch engine) and `rbase-<pid>/` (a clean base built from `git diff eb87b0fc`). No copy holds `local.yml`. I ran `npm run diagrams` twice in the worktree, as the brief asks; no byte changed.
 
 ## Verification lines (verbatim)
 
@@ -240,7 +240,7 @@ The other checks:
   - `grep -rn "badge:" src/lib/views` gives the report's nine views.
   - Every line count in the report matches `wc -l` (28 files checked).
   - The B4 sentences match the code: `TabFace.svelte:89`, `PaneView.svelte:316`, `ui.yml:87-88`, `typed.ts:81-83`.
-- **Failing lines on the unchanged tree.** I built a clean base (`patch -R` of `git diff 3c772d4c`, the new files removed, the 4 deleted files restored from the diff). I ran four test files there in their final form: `layout-saved`, `retired`, `guards` and `options-catalog` (with the base's own helper). 26 tests failed, and each failing line matches the report's quote.
+- **Failing lines on the unchanged tree.** I built a clean base (`patch -R` of `git diff eb87b0fc`, the new files removed, the 4 deleted files restored from the diff). I ran four test files there in their final form: `layout-saved`, `retired`, `guards` and `options-catalog` (with the base's own helper). 26 tests failed, and each failing line matches the report's quote.
 - **The fixes taken out one at a time** (on my scratch copy):
   - Item's guard removed: "is drawn once, under the editor..." fails with `expected 2 to be 1`.
   - `wants_record` removed: both B2 tests fail on the sentence.
@@ -420,14 +420,14 @@ Usage: about 75 tool calls; tokens not measured (claude-opus-5-5).
 
 ## Repair round 2, refuted
 
-S4, the Settings editor finished. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/S4`, base 3c772d4c. I changed nothing in the worktree or the repository. `git status --short` lists the same entries as at the start: 123 lines, and the same 22 untracked paths. Everything I made is in `scratchpad/s4-r2-review/`:
+S4, the Settings editor finished. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/S4`, base eb87b0fc. I changed nothing in the worktree or the repository. `git status --short` lists the same entries as at the start: 123 lines, and the same 22 untracked paths. Everything I made is in `scratchpad/s4-r2-review/`:
 - `wt/`: a copy of the worktree's `tools/oculus`, with no `local.yml`; its `node_modules` is a symlink to the worktree's. My probes are under `wt/tests/probes/`.
 - `tmp/`: the scratch engines. Every vitest run had `TMPDIR` set to this folder.
 - The saved outputs.
 
 I read the builder's folder `s4-r2/` without writing to it.
 
-The delta is the 45 files newer than 2026-10-02 23:05 (`find -newer`). I read each one against `git diff 3c772d4c`.
+The delta is the 45 files newer than 2026-10-02 23:05 (`find -newer`). I read each one against `git diff eb87b0fc`.
 
 ### Verification lines (verbatim)
 
@@ -547,7 +547,7 @@ Each fix taken out on my copy, with the tests in their final form:
     - The title at `settings-editors.test.ts:105` carries none either.
     - `grep -rn "before the merge\|oldViewsRoot" tests src` prints nothing.
 
-The moved refusal tests under `saved/refusals/`: each of the five files equals its base contents, line for line, except the import prefixes. That is 376, 448, 555, 447 and 121 lines, compared through the `-` lines of `git diff 3c772d4c` and `diff`. No assertion is lost.
+The moved refusal tests under `saved/refusals/`: each of the five files equals its base contents, line for line, except the import prefixes. That is 376, 448, 555, 447 and 121 lines, compared through the `-` lines of `git diff eb87b0fc` and `diff`. No assertion is lost.
 
 ### Spec
 

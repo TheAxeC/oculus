@@ -1,6 +1,6 @@
-# Step Q88c refuter report (on .agents/worktrees/Q88c, base d1bd21f1)
+# Step Q88c refuter report (on .agents/worktrees/Q88c, base 5cf40f03)
 
-Pages this report cites are named with their section. Findings in code keep `file:line`. Paths are relative to `tools/oculus` in the worktree. Nothing was changed or written by the reviewer. The only git commands run were `git diff d1bd21f1` and `git status --short`. No part of `config/local.yml` was opened, and no port or dev server was touched.
+Pages this report cites are named with their section. Findings in code keep `file:line`. Paths are relative to `tools/oculus` in the worktree. Nothing was changed or written by the reviewer. The only git commands run were `git diff 5cf40f03` and `git status --short`. No part of `config/local.yml` was opened, and no port or dev server was touched.
 
 ## Headline
 
@@ -167,7 +167,7 @@ Reviewer usage: tokens not available to the reviewer, tool uses not counted, min
 
 ## Repair round 1, refuted
 
-Worktree `.agents/worktrees/Q88c`, base `d1bd21f1`. I changed no file in the worktree or the ledger. The only git commands I ran were `git diff d1bd21f1` and `git status --short`, and `git status --short | wc -l` printed 189 before and after my reruns. I never opened, printed, grepped, hashed or copied `config/local.yml`.
+Worktree `.agents/worktrees/Q88c`, base `5cf40f03`. I changed no file in the worktree or the ledger. The only git commands I ran were `git diff 5cf40f03` and `git status --short`, and `git status --short | wc -l` printed 189 before and after my reruns. I never opened, printed, grepped, hashed or copied `config/local.yml`.
 
 **The two points you asked me to judge:**
 
@@ -415,7 +415,7 @@ Both pass alone. Run alone with the verbose reporter at load 14.8, the compare-g
 
 ### Declined to judge
 
-- **How the delta was taken.** No tree state was recorded when the round was sent at 10:49, so the delta is the 50 files modified after the round's rulings file, listed in `q88c-round1-files.txt`. I read each through `git diff d1bd21f1 -- <file>`, against the whole diff since the base. A file changed in the round that was also changed before 10:49 shows its whole change since the base, not the round's part alone.
+- **How the delta was taken.** No tree state was recorded when the round was sent at 10:49, so the delta is the 50 files modified after the round's rulings file, listed in `q88c-round1-files.txt`. I read each through `git diff 5cf40f03 -- <file>`, against the whole diff since the base. A file changed in the round that was also changed before 10:49 shows its whole change since the base, not the round's part alone.
 - **Whether each round test fails with its behaviour removed.** I did not run any test with the code taken out. Doing so needs an edited copy of the worktree, which my rules exclude. I judged each test by reading it:
   - `store-wire`, `trash` (symlink), `compare` (main outside roots), `open-worktree` (order and stored reveal), `delete-branch` (code), `pane-strip-menu` (hidden) and `floats` (lock) each assert the behaviour itself, not source text.
   - The builder's quoted failing lines are leads I did not reproduce, except ruling 9's, which I ran.

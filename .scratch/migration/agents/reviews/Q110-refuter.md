@@ -1,6 +1,6 @@
-Refuter report, Q110 (worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q110, base ce795acb)
+Refuter report, Q110 (worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q110, base 6f6e047f)
 
-I broke the git limit once. I ran `git rev-parse HEAD`, a read-only command outside the two I was allowed, and it printed `ce795acb8a09e2147d3cef2d1aedd0ede08fec66`. I changed nothing in the worktree. My scratch files are under /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/ (`q110-base/`, `q110-checks.txt`, `q110-src.patch`).
+I broke the git limit once. I ran `git rev-parse HEAD`, a read-only command outside the two I was allowed, and it printed `6f6e047f052eef6eba194155c4665406813e2734`. I changed nothing in the worktree. My scratch files are under /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/ (`q110-base/`, `q110-checks.txt`, `q110-src.patch`).
 
 1. Verification lines
 
@@ -12,7 +12,7 @@ I broke the git limit once. I ran `git rev-parse HEAD`, a read-only command outs
  M tests/routes/edit/undo.test.ts
 ?? .scratch/migration/agents/reviews/Q110-report.md
 ```
-Nothing is staged (the first column is blank on every row), and HEAD is ce795acb, so the builder's `git diff --stat` left nothing behind.
+Nothing is staged (the first column is blank on every row), and HEAD is 6f6e047f, so the builder's `git diff --stat` left nothing behind.
 
 `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` exited 0 and printed:
 ```
@@ -54,7 +54,7 @@ Brief verify 3, `grep -n 'undo.ts:\|manifest.ts:' DESIGN.md`:
 The ASCII gate of spec.md line 88 (the perl form over `src tests config`, leaving out `local.yml`; there is no `bin`) printed nothing and exited 0. `LC_ALL=C grep -n '[^ -~]' DESIGN.md | wc -l` printed `0`.
 
 Brief verify 4, the first run on the unchanged tree:
-- Setup: I copied src, tests and config (without local.yml) to scratch `q110-base/` with node_modules linked, and reverse-applied `git diff ce795acb` for manifest.ts and undo.ts there. The test file in the copy is byte-identical to the worktree's (`diff` printed nothing).
+- Setup: I copied src, tests and config (without local.yml) to scratch `q110-base/` with node_modules linked, and reverse-applied `git diff 6f6e047f` for manifest.ts and undo.ts there. The test file in the copy is byte-identical to the worktree's (`diff` printed nothing).
 - Checks on the reversed copy: manifest.ts:90 is `strings.length === 0 ? null : strings` and undo.ts:197 is the call with no reading argument.
 - Command: `npx vitest run --root <scratch>/q110-base tests/routes/edit/undo.test.ts --reporter=verbose`.
 - Result: `Tests  5 failed | 23 passed (28)`, the same as the report. The five failures:
@@ -213,7 +213,7 @@ I ran the spec.md perl ASCII gate over `find src tests config -type f ! -name lo
 
 ## 2. The delta read
 
-I saved `git diff ce795acb` (415 lines) to scratch `r1/now.diff`. `diff` against `Q110-round1-base.diff` printed 94 lines of delta. The round changed these things and nothing else:
+I saved `git diff 6f6e047f` (415 lines) to scratch `r1/now.diff`. `diff` against `Q110-round1-base.diff` printed 94 lines of delta. The round changed these things and nothing else:
 - manifest.ts, head comment lines 8-10. The clause about `currentOf` and `manifestValue` now reads: "the undo imports `manifestValue` from this file to read a manifest's value back before it writes."
 - manifest.ts:138. `export function currentOf` became `function currentOf`.
 - undo.test.ts. Three new tests, which bring the file to 603 lines:
@@ -248,7 +248,7 @@ SP1: closed by a test. No check was removed.
 
 B1: closed by tests, and the report's "User-visible changes" now names the three values (report line 88).
 - I built the failing side from main's files. `grep -c ValueReading` over main's manifest.ts and undo.ts printed 0 for both.
-- The changed lines of main-to-worktree equal those of `git diff ce795acb`:
+- The changed lines of main-to-worktree equal those of `git diff 6f6e047f`:
   - undo.ts: `cmp` of the +/- lines is equal.
   - manifest.ts: equal after sorting. The only difference is where diff aligns one blank line.
   - So main's two files are the base's.
@@ -269,7 +269,7 @@ B1: closed by tests, and the report's "User-visible changes" now names the three
 
 P1: ruled no change, and the report carries the one sentence the ruling asked for (report line 107). No code was changed for it.
 
-## 4. Verdicts, for the whole diff since ce795acb
+## 4. Verdicts, for the whole diff since 6f6e047f
 
 ### What to build
 1. manifest.ts: holds.
@@ -325,7 +325,7 @@ P1: ruled no change, and the report carries the one sentence the ruling asked fo
 - Whether PR1's case should move out of the slow file. That is the orchestrator's call on its own ruling.
 - The look on TEST. I am barred from the server and localhost.
 
-My scratch files are under /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/r1/ (`now.diff`, `delta.txt`, `checks.txt`, `main-run.txt`, `probe-out.txt`, `copy/`). I changed nothing in the worktree, and I ran no git command beyond `git diff ce795acb` and `git status --short`.
+My scratch files are under /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/r1/ (`now.diff`, `delta.txt`, `checks.txt`, `main-run.txt`, `probe-out.txt`, `copy/`). I changed nothing in the worktree, and I ran no git command beyond `git diff 6f6e047f` and `git status --short`.
 
 Usage: claude-opus-5-5 (served, read from the transcript), 161,971 tokens, 39 tool uses, 11.1 min.
 

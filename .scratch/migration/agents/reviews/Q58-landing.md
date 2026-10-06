@@ -12,7 +12,7 @@ Nothing inside the brief. The plan is paused after Q58, as Axel asked.
 
 ## What landed
 
-Q58 as one commit on main, the whole range from base `572e12ae` cherry-picked by `land.sh` and the landing fixes made on main:
+Q58 as one commit on main, the whole range from base `e9a53f16` cherry-picked by `land.sh` and the landing fixes made on main:
 
 - the eleven files over the size line split by concern, `bin/size-allow.txt` down to its header;
 - every folder under `src`, `tests`, `bin` and `config` at ten items or fewer, held by `bin/folder-check.sh` and its cases;

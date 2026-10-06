@@ -4,7 +4,7 @@
 
 Every quoted command output carries `<REDACTED>` in place of the value of a secret in it, as the rules file's rule on secrets in quoted command output says. None of the quoted lines held one.
 
-**Result.** The symptom does not happen on main at c6d32e5a. The red command below, which asserts every part of the symptom, ran green three times in a row on c6d32e5a. It also ran green once on Q107's parent (f7f19955). The same command ran RED on every part when the server's `channel.ts` had the list signature from before commit 5a84830c (id and name only). With that signature the whole symptom comes back, including the second-terminal and the colour-on-end parts. So Q107 is not what removed the symptom; 5a84830c (2026-09-30 16:29) is. As the brief says, I stopped here: no shrink, no hypotheses, no probes, no fix and no test. One other defect turned up during the runs and is not diagnosed (see "Not diagnosed: the sessions list held back while a store is written"). The orchestrator decides whether to raise it.
+**Result.** The symptom does not happen on main at a8c061d1. The red command below, which asserts every part of the symptom, ran green three times in a row on a8c061d1. It also ran green once on Q107's parent (a1a2692e). The same command ran RED on every part when the server's `channel.ts` had the list signature from before commit 874a27b4 (id and name only). With that signature the whole symptom comes back, including the second-terminal and the colour-on-end parts. So Q107 is not what removed the symptom; 874a27b4 (2026-09-30 16:29) is. As the brief says, I stopped here: no shrink, no hypotheses, no probes, no fix and no test. One other defect turned up during the runs and is not diagnosed (see "Not diagnosed: the sessions list held back while a store is written"). The orchestrator decides whether to raise it.
 
 ## Symptom
 
@@ -14,14 +14,14 @@ Source: the orchestrator's brief for Q109, the same text as Z101 in `tools/oculu
 
 ## Where the probes run
 
-- **Scratch copy:** `$tmp/tree`, where `$tmp=/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.EU4ddC`. It was made with `git worktree add --detach "$tmp/tree" c6d32e5a` from the main checkout. Nothing was applied to it. `npm ci` was run in `$tmp/tree/tools/oculus` (node v24.21.0). The copy has no `config/local.yml` (`test -e config/local.yml` printed "no local.yml in copy").
+- **Scratch copy:** `$tmp/tree`, where `$tmp=/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.EU4ddC`. It was made with `git worktree add --detach "$tmp/tree" a8c061d1` from the main checkout. Nothing was applied to it. `npm ci` was run in `$tmp/tree/tools/oculus` (node v24.21.0). The copy has no `config/local.yml` (`test -e config/local.yml` printed "no local.yml in copy").
 - **Server:** `vite dev --port 8823 --strictPort`, started from the copy's `tools/oculus` by `$tmp/drv/server.sh`:
   `env -i HOME=$tmp/sh TMUX_TMPDIR=$tmp/stm PATH=$tmp/bin:<node 24>:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin SHELL=/bin/zsh LANG=en_US.UTF-8 TERM=xterm-256color node node_modules/vite/bin/vite.js dev --port 8823 --strictPort`
   `$tmp/bin/ssh` is a stub that prints "ssh disabled in the diagnosis scratch server" and exits 255.
 - **tmux:** every tmux command named the socket `$tmp/stm/tmux-502/default`.
 - **Browser:** headless Chrome (`--headless=new`, a new `--user-data-dir` under `$tmp/profiles` for every run, `--remote-debugging-port=9411`), driven over the DevTools protocol by `$tmp/drv/cdp.mjs`. Ports 8787 and 8790 were never touched.
 - **Paths redirected under `$TMPDIR`:** HOME and TMUX_TMPDIR on the server process. ORDO_STABLE and ORDO_SKILL_DIRS are not read by this code and were not set.
-- **Comparison runs:** for the run on Q107's parent, `$tmp/drv/swap.sh parent` wrote `git show c6d32e5a^:<path>` over the 17 source and config paths Q107 changed (`git diff --name-status c6d32e5a^ c6d32e5a -- tools/oculus/src tools/oculus/config`) and removed the 4 it added. `swap.sh main` put them back, checked byte for byte against `git show c6d32e5a:<path>`. For the pre-fix signature runs, main's `channel.ts` had one hunk replaced: the reverse of 5a84830c's change at `#took`, shown under "Comparison runs". It was then restored and checked with `git show c6d32e5a:.../channel.ts | cmp`, which printed "channel.ts is c6d32e5a's".
+- **Comparison runs:** for the run on Q107's parent, `$tmp/drv/swap.sh parent` wrote `git show a8c061d1^:<path>` over the 17 source and config paths Q107 changed (`git diff --name-status a8c061d1^ a8c061d1 -- tools/oculus/src tools/oculus/config`) and removed the 4 it added. `swap.sh main` put them back, checked byte for byte against `git show a8c061d1:<path>`. For the pre-fix signature runs, main's `channel.ts` had one hunk replaced: the reverse of 874a27b4's change at `#took`, shown under "Comparison runs". It was then restored and checked with `git show a8c061d1:.../channel.ts | cmp`, which printed "channel.ts is a8c061d1's".
 - **One side effect outside `$tmp`:** two early server-level runs (`diag-red.mjs`, quoted under "Comparison runs") started the dev server with HOME and TMUX_TMPDIR redirected. The first of them had the real `ssh` on PATH. OpenSSH reads its configuration from the account's home directory and not from HOME, so that start may have run the server's HPC poll once (`squeue`, `sacct`, `sinfo`, `quota`, `df` on the login node; no compute). That run's log was not kept, so whether the poll reached the host is not verified. Every later start ran with the ssh stub, and the later logs say "hpc publish: unreachable".
 
 ## Red command
@@ -50,7 +50,7 @@ What it does, against the scratch server on 8823:
 
 No second terminal is started. RED is any failed assertion, and the exit code is 1 on RED.
 
-Runs on main at c6d32e5a (the final script; the server freshly started on c6d32e5a's sources):
+Runs on main at a8c061d1 (the final script; the server freshly started on a8c061d1's sources):
 
 ```
 === run 1
@@ -117,7 +117,7 @@ exit 0
 
 ### The same command on the pre-fix signature
 
-This run shows the command fails when the defect is present. Main's `channel.ts` had its `#took` signature replaced by the line from before 5a84830c, and the server was started on it:
+This run shows the command fails when the defect is present. Main's `channel.ts` had its `#took` signature replaced by the line from before 874a27b4, and the server was started on it:
 
 ```
 started dd8847-shell; page draws {"bar":"zsh","glyph":"terminal_shell","markStyle":null,"tabs":["Sessions","dd8847-shell","Transcript","Timeline","Session","Changes","Agents","Files"],"rows":[]}
@@ -141,9 +141,9 @@ RESULT: RED
 exit 1
 ```
 
-### The same command on Q107's parent (f7f19955)
+### The same command on Q107's parent (a1a2692e)
 
-The 17 changed paths were swapped to f7f19955 and the 4 added ones removed. The run is the same as the three main runs, with the line ending `RESULT: green` / `exit 0`. Every assertion was green: list `{"title":"build","icon":"wallpaper","color":"red"}`; bar "build"; mark `wallpaper` in `var(--c-red)`, then `var(--c-green)`; strip tab "build"; after the reload the same; the row `{"title":"build","glyph":"wallpaper","markStyle":"color: var(--c-green);"}`.
+The 17 changed paths were swapped to a1a2692e and the 4 added ones removed. The run is the same as the three main runs, with the line ending `RESULT: green` / `exit 0`. Every assertion was green: list `{"title":"build","icon":"wallpaper","color":"red"}`; bar "build"; mark `wallpaper` in `var(--c-red)`, then `var(--c-green)`; strip tab "build"; after the reload the same; the row `{"title":"build","glyph":"wallpaper","markStyle":"color: var(--c-green);"}`.
 
 ### Runs after the tightening
 
@@ -151,7 +151,7 @@ Not run. The command already runs unattended in about 40 s per run, and the brie
 
 ## No red command
 
-Not applicable. The red command was built and detects the symptom (the pre-fix run above). It is green on c6d32e5a.
+Not applicable. The red command was built and detects the symptom (the pre-fix run above). It is green on a8c061d1.
 
 ## Comparison runs
 
@@ -159,17 +159,17 @@ These were run while building the red command. Each is one input through two ver
 
 | Run | Version and condition | Result |
 |---|---|---|
-| `node diag-red.mjs`: websocket client only, no page; start a shell, rename, red, wallpaper, then green, 6 s each | c6d32e5a | green: "sessions list says title="build" icon="wallpaper" color="red"", then color="green" |
-| the same with a client subscribed to the terminal's `pty:` channel (`DIAG_ATTACH=1`), so a control client is open | c6d32e5a | green, the same lines |
-| `red-page.mjs`, an early version without the reload and row checks | c6d32e5a | green on every assertion |
-| the same | f7f19955 (Q107's parent) | green on every assertion |
-| the same, `routes.ts` rewritten with its own bytes before the start (SSR reload) | c6d32e5a | green |
-| the same, `channel.ts` rewritten with its own bytes before the start ("[vite] server restarted") | c6d32e5a | green |
+| `node diag-red.mjs`: websocket client only, no page; start a shell, rename, red, wallpaper, then green, 6 s each | a8c061d1 | green: "sessions list says title="build" icon="wallpaper" color="red"", then color="green" |
+| the same with a client subscribed to the terminal's `pty:` channel (`DIAG_ATTACH=1`), so a control client is open | a8c061d1 | green, the same lines |
+| `red-page.mjs`, an early version without the reload and row checks | a8c061d1 | green on every assertion |
+| the same | a1a2692e (Q107's parent) | green on every assertion |
+| the same, `routes.ts` rewritten with its own bytes before the start (SSR reload) | a8c061d1 | green |
+| the same, `channel.ts` rewritten with its own bytes before the start ("[vite] server restarted") | a8c061d1 | green |
 | the same, server started on the pre-fix signature | pre-fix | RED: "0 sessions lists heard", bar "zsh", mark `terminal_shell`, strip tab "ca773f-shell" |
 | server started on the pre-fix signature, then main's `channel.ts` written over it while running, by plain write and by write-then-rename ("channel.ts changed, restarting server..."), then the look | pre-fix, then main | green in both: the restart loads the fixed signature |
 | pre-fix signature, `SECOND=1`: after the first checks a second shell is started, the colour set to yellow, and the second shell stopped | pre-fix | every part of the symptom (block below) |
-| `SECOND=1`, 4 other shells running first (`EXTRA=4`) | c6d32e5a | green; after the second shell started and ended, the colour followed every change |
-| `SECOND=1` (final script) | c6d32e5a | green; yellow drawn at once ("after yellow: list says color "yellow"; page draws mark "color: var(--c-gold);"") |
+| `SECOND=1`, 4 other shells running first (`EXTRA=4`) | a8c061d1 | green; after the second shell started and ended, the colour followed every change |
+| `SECOND=1` (final script) | a8c061d1 | green; yellow drawn at once ("after yellow: list says color "yellow"; page draws mark "color: var(--c-gold);"") |
 
 The pre-fix `SECOND=1` run reproduces every part of the symptom:
 
@@ -185,7 +185,7 @@ stop the second terminal: 200 {"ok":true,"id":"a889c2-shell"}
 after the second terminal ended: list says color "yellow"; page draws mark "color: var(--c-gold);"
 ```
 
-The pre-fix hunk, which is the reverse of 5a84830c's change to `src/lib/server/machine/pty/channel.ts` at `#took`:
+The pre-fix hunk, which is the reverse of 874a27b4's change to `src/lib/server/machine/pty/channel.ts` at `#took`:
 
 ```diff
 -        // Everything the reader sets on a terminal is in the signature, so a rename or a new icon
@@ -198,7 +198,7 @@ The pre-fix hunk, which is the reverse of 5a84830c's change to `src/lib/server/m
 
 **What TEST on 8790 ran at 18:20 is not verified.** 8790 was neither touched nor read. Three facts bear on it:
 
-- `git log -S'one.title, one.icon, one.color' -- .../channel.ts` names only 5a84830c (2026-09-30 16:29:19) as adding the fixed signature, and no later commit removes it.
+- `git log -S'one.title, one.icon, one.color' -- .../channel.ts` names only 874a27b4 (2026-09-30 16:29:19) as adding the fixed signature, and no later commit removes it.
 - The patch of changes taken off main (`agents/reviews/inline-fixes-2026-09-30.patch`) holds no `channel.ts` (`grep "^diff --git"` lists ten other paths).
 - On this scratch server, a running dev server picked up the fixed `channel.ts` on save and drew every change.
 
@@ -206,7 +206,7 @@ A dev server on main that restarted after 16:29 would therefore not show the sym
 
 ## Shrunk case
 
-Not run. The red command is green on c6d32e5a, and the brief stops at that point.
+Not run. The red command is green on a8c061d1, and the brief stops at that point.
 
 ## Hypotheses
 
@@ -218,15 +218,15 @@ None. The comparison runs above are version comparisons made while building the 
 
 ## Cause
 
-The symptom does not occur on main at c6d32e5a: the red command ran green three times in a row. On a server running the list signature from before 5a84830c, the symptom occurs in full, every part of the red command RED. On Q107's parent it does not occur. The commit that ends it is therefore 5a84830c, not Q107. That TEST's server ran pre-5a84830c code at 18:20 is consistent with every part of the symptom but is not verified.
+The symptom does not occur on main at a8c061d1: the red command ran green three times in a row. On a server running the list signature from before 874a27b4, the symptom occurs in full, every part of the red command RED. On Q107's parent it does not occur. The commit that ends it is therefore 874a27b4, not Q107. That TEST's server ran pre-874a27b4 code at 18:20 is consistent with every part of the symptom but is not verified.
 
 ## Fix and test
 
-None. There is no defect on main to fix for this symptom. 5a84830c already holds the fix at `#took` and its test in `tests/server/machine/pty/channel.test.ts` (the commit message says "Add the test that fails without it"; that test was not run in this diagnosis). No test reaches it: not applicable. No test is written: not applicable.
+None. There is no defect on main to fix for this symptom. 874a27b4 already holds the fix at `#took` and its test in `tests/server/machine/pty/channel.test.ts` (the commit message says "Add the test that fails without it"; that test was not run in this diagnosis). No test reaches it: not applicable. No test is written: not applicable.
 
 ## Not diagnosed: the sessions list held back while a store is written
 
-**Not diagnosed. The orchestrator decides whether to raise it.** On c6d32e5a, while a watched session store (`$HOME/.claude/projects`, present when the server started) was written more often than every 500 ms, the `sessions` channel published no list at all. A terminal start was not listed within 20 s, and the list came about 260 to 510 ms after the writes stopped. The same hold-back applies to a rename, an icon or a colour. It does not match Z101: Z101's second terminal was drawn at once, while here a start is held back too.
+**Not diagnosed. The orchestrator decides whether to raise it.** On a8c061d1, while a watched session store (`$HOME/.claude/projects`, present when the server started) was written more often than every 500 ms, the `sessions` channel published no list at all. A terminal start was not listed within 20 s, and the list came about 260 to 510 ms after the writes stopped. The same hold-back applies to a rename, an icon or a colour. It does not match Z101: Z101's second terminal was drawn at once, while here a start is held back too.
 
 Measured with `node starve.mjs 0 100 300 450 600 1000` (a websocket client, a writer appending a line to `$tmp/sh/.claude/projects/-diag/w.jsonl` at the interval named, then a shell started through `/api/terminal`):
 
@@ -271,7 +271,7 @@ $ git worktree list | grep -c diagnose.EU4ddC
 ```
 
 - No probe added logging, so the tag grep has nothing to find.
-- Before the removal, `git status --short` in the copy listed only the untracked `tools/oculus/diag-red.mjs`. Every swapped source was back at c6d32e5a, checked with `git show c6d32e5a:<path> | cmp` for each of the 17 paths.
+- Before the removal, `git status --short` in the copy listed only the untracked `tools/oculus/diag-red.mjs`. Every swapped source was back at a8c061d1, checked with `git show a8c061d1:<path> | cmp` for each of the 17 paths.
 - No credential or `.env` file was copied into `$tmp`.
 - The red command on the original case: carried by the record, since no fix was made.
 - Nothing was written into the ledger, the main checkout or any step's worktree.
@@ -294,11 +294,11 @@ Every quoted command output carries `<REDACTED>` in place of the value of a secr
 
 From Z101 in `orchestrator-state.md`, as the orchestrator quoted it: "after "Split tab downwards" moved the Terminal tab into a pane of its own, the grid drew only the cursor and none of the shell's earlier lines, until the list of two terminals was shown." It was seen before Q107 landed.
 
-**Does it still happen on main at c6d32e5a? Yes.** The red command below is red on c6d32e5a.
+**Does it still happen on main at a8c061d1? Yes.** The red command below is red on a8c061d1.
 
 ## Where the probes run
 
-- **Scratch copy:** `git worktree add --detach "$tmp/tree" c6d32e5a`, run from the main checkout, with `tmp=/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.G8fR6w`. Nothing was applied to it. `npm ci` ran in `tools/oculus` with node v24.21.0.
+- **Scratch copy:** `git worktree add --detach "$tmp/tree" a8c061d1`, run from the main checkout, with `tmp=/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.G8fR6w`. Nothing was applied to it. `npm ci` ran in `tools/oculus` with node v24.21.0.
 - **Dev server:** started from the copy on port 8824 (`vite dev --port 8824 --strictPort`), in its own process group. It ran with `HOME=$tmp/h`, `ZDOTDIR=$tmp/h` (so zsh reads no real rc file), `TMUX_TMPDIR=$tmp/tm` (so it has its own tmux socket) and `PATH` led by `$tmp/bin/ssh`, a stub that exits 255.
 - **Browser:** headless Chrome with `--remote-debugging-port=9424` and a fresh profile under `$tmp/profiles/<run>` for every run. It is driven over the DevTools protocol by `$tmp/drv/cdp.mjs` and `$tmp/drv/red.mjs`.
 - **tmux:** every command named `-S $tmp/tm/tmux-502/default`.
@@ -664,7 +664,7 @@ Every quoted command output carries `<REDACTED>` in place of the value of a secr
 
 ### Symptom
 
-Quoted from the brief. It was found by Q109's first diagnosis, measured on main at c6d32e5a with a websocket client subscribed to `sessions`, a writer appending a line to a transcript under the server's `$HOME/.claude/projects` at the interval named, then a shell started through `/api/terminal`:
+Quoted from the brief. It was found by Q109's first diagnosis, measured on main at a8c061d1 with a websocket client subscribed to `sessions`, a writer appending a line to a transcript under the server's `$HOME/.claude/projects` at the interval named, then a shell started through `/api/terminal`:
 
 "writes every 0 ms: the started terminal listed in 567 ms
 writes every 100 ms: the started terminal listed NOT within 20000 ms; after the writes stopped, listed in 511 ms
@@ -677,7 +677,7 @@ The brief adds that the same hold-back applies to a rename, an icon or a colour,
 
 ### Where the probes run
 
-- **Scratch copy:** `$tmp=/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.c56kE4`, with a detached worktree at `$tmp/tree` made by `git worktree add --detach "$tmp/tree" c6d32e5a` from the main checkout. Nothing was applied to it, and `npm ci` was run in `$tmp/tree/tools/oculus` with node v24.21.0.
+- **Scratch copy:** `$tmp=/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.c56kE4`, with a detached worktree at `$tmp/tree` made by `git worktree add --detach "$tmp/tree" a8c061d1` from the main checkout. Nothing was applied to it, and `npm ci` was run in `$tmp/tree/tools/oculus` with node v24.21.0.
 - **Server:** the copy's own dev server on port 8825, started by `$tmp/tree/tools/oculus/diag-starve.mjs` (an untracked file in the copy) under `env -i HOME=$tmp/home TMUX_TMPDIR=$tmp/tmux PATH=$tmp/bin:<node>:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin`.
   - `$tmp/bin/ssh` was a stub that prints "ssh disabled" and exits 255.
   - Every tmux command named `-S $tmp/tmux/tmux-502/default`.
@@ -708,7 +708,7 @@ writes every 1000 ms: the started terminal listed in 500 ms
       Tests  3 failed | 2 passed | 15 skipped (20)
 ```
 
-The symptom's 0 ms row was not put in the unit red command, because a fake 1 ms writer bypasses FSEvents. Measured instead on the copy's own server at c6d32e5a with `$tmp/orig.sh 0 100 300 450 600 1000` (the original case, below):
+The symptom's 0 ms row was not put in the unit red command, because a fake 1 ms writer bypasses FSEvents. Measured instead on the copy's own server at a8c061d1 with `$tmp/orig.sh 0 100 300 450 600 1000` (the original case, below):
 
 ```
 writes every 0 ms: the started terminal listed NOT within 20000 ms; after the writes stopped, listed in 569 ms
@@ -781,7 +781,7 @@ The cause is hypothesis 1. In `src/lib/server/root/watch/sessions.ts`, every sto
 
 **The bound.** A change is published at most `MAX_WAIT = 2 * DEBOUNCE = 1000` ms after the first event of the burst it falls into, however often events keep coming. Since the terminal change is itself in that burst, a terminal start, end, rename, icon or colour, and a store write, are each published within 1000 ms plus the time of the rescan and the delivery. The reasons for 1000 ms:
 - **A burst still costs one rescan.** A burst that ends within one quiet of its start is rescanned once, by the quiet, before the cap fires. Measured with a throwaway counting block over the watcher's `onChange` (the "COUNT Q109" cases, removed with the copy): "a burst of three events 100 ms apart: 1 rescans", both with the fix and without it.
-- **Steady writes cost no more than they do today.** Under writes that never stop, it costs about one rescan a second, which is fewer than a writer every 600 ms already causes at c6d32e5a, where each write is a rescan. Measured over 20000 simulated ms, writes every 100 / 300 / 600 / 1000 ms:
+- **Steady writes cost no more than they do today.** Under writes that never stop, it costs about one rescan a second, which is fewer than a writer every 600 ms already causes at a8c061d1, where each write is a rescan. Measured over 20000 simulated ms, writes every 100 / 300 / 600 / 1000 ms:
   - without the fix: 0 / 0 / 32 / 19 rescans;
   - with the fix: 18 / 16 / 32 / 19 rescans.
 - **A started terminal appears within about a second.** The server measurement below shows 94 to 998 ms.
@@ -791,7 +791,7 @@ The cause is hypothesis 1. In `src/lib/server/root/watch/sessions.ts`, every sto
 - a renamed terminal with a new icon and colour, with writes every 100 ms;
 - the session's own appended prompts, with writes every 100 ms.
 
-`sessions.ts` was at c6d32e5a, checked with `git diff --quiet src/lib/server/root/watch/sessions.ts && echo "sessions.ts == c6d32e5a"`, which printed that line:
+`sessions.ts` was at a8c061d1, checked with `git diff --quiet src/lib/server/root/watch/sessions.ts && echo "sessions.ts == a8c061d1"`, which printed that line:
 
 ```
 $ cd $tmp/tree/tools/oculus && npx vitest run tests/server/root/watch/sessions.test.ts --reporter=verbose
@@ -1058,7 +1058,7 @@ No test reaches it: not applicable. No test is written: not applicable.
 
 **Observations outside this symptom, from reading only (not probed):**
 - **Other watchers:** `portfolio.ts:25`, `bookmarks.ts:28`, `local.ts:12` and `machine/usage/watch.ts:11` use the same restarting perfect-debounce with no cap. A store of theirs that is written more often than their quiet would hold their channel back the same way.
-- **Promise list:** perfect-debounce pushes one `resolve` per call onto `resolveList`, which is emptied only when its timer fires or on `cancel()`. At c6d32e5a, that list grows for as long as writes never leave a quiet. The fix's cap calls `queued.cancel()`, which empties it at least once per MAX_WAIT. The memory this costs today is not measured.
+- **Promise list:** perfect-debounce pushes one `resolve` per call onto `resolveList`, which is emptied only when its timer fires or on `cancel()`. At a8c061d1, that list grows for as long as writes never leave a quiet. The fix's cap calls `queued.cancel()`, which empties it at least once per MAX_WAIT. The memory this costs today is not measured.
 
 ### Cleanup
 

@@ -1,4 +1,4 @@
-Q102 refute report (worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q102, base 64d1354a). Nothing was changed in the worktree; probes ran on a copy under the scratch folder Q102-refute/copy and on a private tmux socket that was killed afterwards.
+Q102 refute report (worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q102, base c296a1c7). Nothing was changed in the worktree; probes ran on a copy under the scratch folder Q102-refute/copy and on a private tmux socket that was killed afterwards.
 
 VERIFICATION LINES
 
@@ -110,7 +110,7 @@ S3. Paths outside the brief's list are not flagged as such.
 - Verdict: low.
 
 S4. A brief premise that my grep does not reproduce, and the report does not name it.
-- At base, Workbench.svelte:160 `composeIn: (page) => client.terminals.composeIn(page)` is the key handler's composeIn. The strip's composeIn came from PaneView.svelte:96 (`terminals: { composeIn }`), per `git show 64d1354a:.../PaneView.svelte | grep -n composeIn`.
+- At base, Workbench.svelte:160 `composeIn: (page) => client.terminals.composeIn(page)` is the key handler's composeIn. The strip's composeIn came from PaneView.svelte:96 (`terminals: { composeIn }`), per `git show c296a1c7:.../PaneView.svelte | grep -n composeIn`.
 - The builder wired newTerminalIn in PaneView, which is correct. The report's "Brief errors" leaves this out.
 - The report's first "Not done" item (the trailing `;` not verified against real tmux) is settled by my probe above. The brief's case 23 premise, that the argument "holds it as typed", is what is wrong.
 
@@ -208,7 +208,7 @@ DECLINED TO JUDGE
 
 The run of a fresh reviewer (claude-opus-5-5) over repair round 1, saved 2026-09-30 as it reported.
 
-Q102 refute report over repair round 1. Worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q102. Base: 64d1354a. I changed nothing in the worktree: `git status --short` gives 87 entries before and after, and `npm run diagrams` rewrote no diagram (the md5 of docs/diagrams/* was defc86ab... both before and after). All probes ran on a copy at scratchpad/Q102-refute-r1/copy (node_modules linked) or on a private tmux socket in that folder. The tmux server was killed and its socket removed.
+Q102 refute report over repair round 1. Worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q102. Base: c296a1c7. I changed nothing in the worktree: `git status --short` gives 87 entries before and after, and `npm run diagrams` rewrote no diagram (the md5 of docs/diagrams/* was defc86ab... both before and after). All probes ran on a copy at scratchpad/Q102-refute-r1/copy (node_modules linked) or on a private tmux socket in that folder. The tmux server was killed and its socket removed.
 
 Not closed: two claims in the round section do not reproduce (item 9's grep, and the report's Clear proof via the parity file). Item 10 is left as the builder states. The before and after of item 11 leaves out three user-visible changes the round itself made.
 
@@ -285,9 +285,9 @@ Item 10, the four cases in tests/views/sessions/terminal.test.ts (534, 547, 559,
   - "never opens a file, a script or an address that does not parse": a `javascript:` or `file:` link would open. This is the security case.
 - Under the spec's own definition (an assertion over source text, a label alone or a constant) they are coverage, not audits; the tree check names them audits only because they do not render.
 
-The first run per case not recorded: nothing shows that each of the 40 cases failed, or did not apply, on the unchanged tree. So for any case that passed first (29 of the 99 new or changed tests did, by the builder's totals), it is unproven whether the test ever exercised the behaviour the step adds. What stands in for it is a named revert per test: the builder's "Red once" lists for both rounds, the first reviewer's R1-R12, and my probes above. Those show that the tests go red against a revert of the fix. They do not show the state of the tree before the step. The first run cannot be recovered from the worktree now. Getting it would need the tests run on a checkout of 64d1354a.
+The first run per case not recorded: nothing shows that each of the 40 cases failed, or did not apply, on the unchanged tree. So for any case that passed first (29 of the 99 new or changed tests did, by the builder's totals), it is unproven whether the test ever exercised the behaviour the step adds. What stands in for it is a named revert per test: the builder's "Red once" lists for both rounds, the first reviewer's R1-R12, and my probes above. Those show that the tests go red against a revert of the fix. They do not show the state of the tree before the step. The first run cannot be recovered from the worktree now. Getting it would need the tests run on a checkout of c296a1c7.
 
-VERDICTS, the whole diff since 64d1354a
+VERDICTS, the whole diff since c296a1c7
 
 What to build:
 1. New Terminal: holds. Store tests in terminal-start.test.ts for the bar, the hub root, the three presses, the two quick presses, a refusal, the pane strip and the active tab (probe above), and the no-folder refusal. That each control calls the store is a look item.

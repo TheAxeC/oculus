@@ -1,4 +1,4 @@
-# Step Q96 refuter report (on .agents/worktrees/Q96, base 43936573)
+# Step Q96 refuter report (on .agents/worktrees/Q96, base a3c51883)
 
 ## Verification (rerun by the reviewer)
 
@@ -27,7 +27,7 @@ $ spec.md ASCII gate (perl form over src tests bin config)
 $ comment width over the new files (awk 'length > 100' on comment lines)
 (no output)
 
-$ moved files compared with their deletions in `git diff 43936573` (diff of the '-' lines against the new file)
+$ moved files compared with their deletions in `git diff a3c51883` (diff of the '-' lines against the new file)
 tests/ui/{colours,theme,wall}.test.ts -> tests/ui/theme/: only relative import depth and SRC path changed; wall.test.ts also gains the GlyphList/GlyphSelect entries and the choice/ paths
 src/lib/ui/forms/{Select,MultiSelect}.svelte -> forms/choice/: import paths; Select takes isStray from choices.ts
 src/lib/ui/menu/{KeySheet.svelte,key-rows.ts} -> menu/keys/: import paths only
@@ -95,7 +95,7 @@ AssertionError: expected [ { channel: 'files', ...(2) }, ...(1) ] to have a leng
 checks: failed with exit 1: npm test
 $ npx vitest run tests/server/git/git-ops.test.ts        Test Files  1 passed (1)   Tests  37 passed (37)
 $ npx vitest run tests/server/root/watch/bookmarks.test.ts   Test Files  1 passed (1)   Tests  4 passed (4)
-(neither file is in git diff 43936573)
+(neither file is in git diff a3c51883)
 npm run check exit 0 (0 ERRORS 0 WARNINGS); build exit 0; format:check exit 0; lint exit 0; ASCII grep exit 0
 sh bin/folder-check.sh: no output, exit 0
 grep -rn "Tooltip.Provider" src: TooltipGroup.svelte:20 and :27

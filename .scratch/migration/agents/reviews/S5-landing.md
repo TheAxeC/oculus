@@ -16,7 +16,7 @@ Look row 19 (`local.yml` `port: x`) was not run: a wrong port takes 8790, the po
 
 ## What landed
 
-From base 6005baee6, 113 files (+9323 -3201, `git diff --cached --stat`): every option and field of a family takes the control its value needs; the Settings view's twelve subject headings; a wrong value in `behavior.yml` or `local.yml` takes its default with a finding instead of stopping the server (Q119); oculus's port default 8790; Q122's catalog checks.
+From base 8bb4960ba, 113 files (+9323 -3201, `git diff --cached --stat`): every option and field of a family takes the control its value needs; the Settings view's twelve subject headings; a wrong value in `behavior.yml` or `local.yml` takes its default with a finding instead of stopping the server (Q119); oculus's port default 8790; Q122's catalog checks.
 
 Fixes at landing:
 - The cherry-pick conflicted with main in three text files: `DESIGN.md` (S5's line on views drawn from one file kept, main's LaTeX line kept), `src/lib/server/machine/pty/routes.ts` (main's `refusal(...)` answers kept with S5's `loadLocal`, then prettier), `src/lib/state/sessions/latex.svelte.ts` (the head comment merged: S5's catalog-default sentence with main's terminal-ended rules). The diagram files were regenerated with `npm run diagrams`.

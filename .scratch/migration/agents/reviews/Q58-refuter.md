@@ -1,4 +1,4 @@
-# Step Q58 refuter report (on .agents/worktrees/Q58, base 572e12ae)
+# Step Q58 refuter report (on .agents/worktrees/Q58, base e9a53f16)
 
 The first review, by a fresh reviewer agent (claude:opus) that changed nothing; saved by the orchestrator as the agent returned it.
 
@@ -7,7 +7,7 @@ The first review, by a fresh reviewer agent (claude:opus) that changed nothing; 
 npx vitest run --reporter=dot
   Test Files  271 passed (271)
        Tests  4402 passed (4402)          (no timeout, no rerun needed)
-base 572e12ae, same command in a git-archive copy with node_modules linked:
+base e9a53f16, same command in a git-archive copy with node_modules linked:
   Test Files  262 passed | 1 skipped (263)
        Tests  4380 passed | 15 skipped (4395)
 npm run check
@@ -22,7 +22,7 @@ ASCII gate (perl form)
   prints nothing, exit 0
 sh bin/size-check.sh      exit 0
 sh bin/folder-check.sh    exit 0
-bin/folder-check.sh over a git-archive copy of 572e12ae
+bin/folder-check.sh over a git-archive copy of e9a53f16
   23 lines ("config holds 11 items ...", ..., "tests/views holds 54 items ..."), exit 1
 npm run test:browser      (port 8792 free on first probe)
   271 passed (7.0m)
@@ -116,7 +116,7 @@ Reviewer's own checks (scripts in the scratchpad, reading the trees through git 
     Tests  9 passed (9)
   history test with `|| file.endsWith('.sh')` reverted (scratch copy): 1 failed | 1 passed
   allow-duplication.txt "at A and B" checked against where each entry's mark first sits:
-    now 181 of 735 wrong; pre-round 179; base 572e12ae 69 of 742
+    now 181 of 735 wrong; pre-round 179; base e9a53f16 69 of 742
   comment lines over 100 columns not verbatim in the base tree (directives left out): 22
   empty folders under src tests bin config: 0
 ```

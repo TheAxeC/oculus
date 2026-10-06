@@ -14,7 +14,7 @@ Diagnosed here, as the orchestrator's prompt names them: why one page can start 
 
 ## Where the probes run
 
-A scratch copy: a detached worktree of main's head `6dd4684a45ca649533cf94e11e85662a83c2e737` at `$tmp/tree`, with `$tmp` = `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.EGuQFs` (`mktemp -d "${TMPDIR:-/tmp}/diagnose.XXXXXX"`), made by `git worktree add --detach "$tmp/tree" HEAD` from `/Users/axelfaes/workspace/research-hub`. Nothing was applied to it (a brief-check form reads the brief as it stands). `$tmp/tree/tools/oculus/node_modules` is a symbolic link to the main checkout's `tools/oculus/node_modules`, used only to import SvelteKit and Vite. The paths redirected under `$TMPDIR`: HOME (`$tmp/home`), and PATH puts `$tmp/bin` first, where a fake `osascript` stands in for `/usr/bin/osascript`, so no macOS panel was opened by any run. ORDO_STABLE and ORDO_SKILL_DIRS: not touched by any command here.
+A scratch copy: a detached worktree of main's head `bb5e5d1fb31f227102e150c2b26933cabac279b8` at `$tmp/tree`, with `$tmp` = `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.EGuQFs` (`mktemp -d "${TMPDIR:-/tmp}/diagnose.XXXXXX"`), made by `git worktree add --detach "$tmp/tree" HEAD` from `/Users/axelfaes/workspace/research-hub`. Nothing was applied to it (a brief-check form reads the brief as it stands). `$tmp/tree/tools/oculus/node_modules` is a symbolic link to the main checkout's `tools/oculus/node_modules`, used only to import SvelteKit and Vite. The paths redirected under `$TMPDIR`: HOME (`$tmp/home`), and PATH puts `$tmp/bin` first, where a fake `osascript` stands in for `/usr/bin/osascript`, so no macOS panel was opened by any run. ORDO_STABLE and ORDO_SKILL_DIRS: not touched by any command here.
 
 The server path of the symptom: Add Folder to Workspace (`explorer.addFolders`, `src/lib/state/sources/explorer/ops.svelte.ts:580`) and `:folder` (`explorer.openFolder`, `ops.svelte.ts:596`, from `src/lib/shell/keys/Palette.svelte:272`) both POST `/api/folders/pick` (`src/routes/api/(files)/folders/pick/+server.ts:9-10`), which calls `handlePick` (`src/lib/server/files/fs/picker.ts:91-116`), which runs `osascript -l JavaScript -e PICKER_SCRIPT` through `execFile` (`picker.ts:68-79`). The open flag is `locals.server.folderPicker`, a field of the ServerContext built by `pickerState()` (`src/lib/server/root/context.ts:457`).
 
@@ -345,14 +345,14 @@ src/lib/server/root/vite-plugin.ts true
 On the day of the look, eight commits on main touched one of those 159 files, each a restart of a dev server running in the main checkout (`git log --since='2026-10-02 00:00' --until='2026-10-03 00:00' -- <the 159 files>`):
 
 ```
-8ef3abbe3 2026-10-02 16:18:14 +0200 Land M3, the resources registry
-81f5e4fe3 2026-10-02 16:00:54 +0200 Land Q88c, the Source Control rows' and the pane strip's right-click capabilities
-33be30af8 2026-10-02 14:40:33 +0200 Land A1, a comment on a line of a session's diff
-705e588de 2026-10-02 11:49:21 +0200 Land X3a, the Files view as VS Code's Explorer
-4ce50c593 2026-10-02 08:23:30 +0200 Land D24, the Personal board
-158247056 2026-10-02 07:47:26 +0200 Land D35, every configuration file live
-d210de045 2026-10-02 06:41:47 +0200 Land M4, the Present view's equations as LaTeX
-e77103dcb 2026-10-02 01:23:22 +0200 Read the views', shell's and routes' inputs through zod (Q85d)
+125203b5f 2026-10-02 16:18:14 +0200 Land M3, the resources registry
+f444ac509 2026-10-02 16:00:54 +0200 Land Q88c, the Source Control rows' and the pane strip's right-click capabilities
+e6eb8f228 2026-10-02 14:40:33 +0200 Land A1, a comment on a line of a session's diff
+63d8ea82a 2026-10-02 11:49:21 +0200 Land X3a, the Files view as VS Code's Explorer
+41809010f 2026-10-02 08:23:30 +0200 Land D24, the Personal board
+f8e6555d7 2026-10-02 07:47:26 +0200 Land D35, every configuration file live
+50be07eb1 2026-10-02 06:41:47 +0200 Land M4, the Present view's equations as LaTeX
+999c2544a 2026-10-02 01:23:22 +0200 Read the views', shell's and routes' inputs through zod (Q85d)
 ```
 
 ## Hypotheses
@@ -809,7 +809,7 @@ AssertionError: expected { status: 500, ...(2) } to match object { status: 200, 
 
 The four failures show the symptom: the run is not ended when the connection closes (line 99) or when the connection was gone before the run (line 114), the server has no way to end its panel when it closes (line 123), and a -128 cancel is answered 500 `failed` (line 132). The red runs spawn nothing: every test hands in its own runner, and the fake's log stayed empty.
 
-Fix, three files at main's head `6dd4684a4`: `tools/oculus/src/lib/server/files/fs/picker.ts` (head comment :9-16, `PickRun` :45, `PickRunner` :48, `PickerState` and `pickerState` :50-56, `PickDeps` :58-62, `osascript` :67-79, a new `cancelled` before `pathsOf` :81, `handlePick` :105-115), `tools/oculus/src/lib/server/root/context.ts` (:59, :135, `close()` :471-489) and `tools/oculus/src/routes/api/(files)/folders/pick/+server.ts` (:1-10):
+Fix, three files at main's head `bb5e5d1fb`: `tools/oculus/src/lib/server/files/fs/picker.ts` (head comment :9-16, `PickRun` :45, `PickRunner` :48, `PickerState` and `pickerState` :50-56, `PickDeps` :58-62, `osascript` :67-79, a new `cancelled` before `pathsOf` :81, `handlePick` :105-115), `tools/oculus/src/lib/server/root/context.ts` (:59, :135, `close()` :471-489) and `tools/oculus/src/routes/api/(files)/folders/pick/+server.ts` (:1-10):
 
 ```diff
 diff --git a/tools/oculus/src/lib/server/files/fs/picker.ts b/tools/oculus/src/lib/server/files/fs/picker.ts

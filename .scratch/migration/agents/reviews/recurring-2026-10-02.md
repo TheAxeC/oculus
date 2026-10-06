@@ -270,7 +270,7 @@ No line requires the builder to show that each test fails without the behaviour,
 | Q102 | 122 | "S6. The builder ran git commands." |
 | Q110 | 15 | "the builder's `git diff --stat` left nothing behind" |
 
-Reviewers broke the same rule too: Q84-refuter.md:5 ("I ran `git show f7ab9b6a:<file>` three times") and Q110-refuter.md:3 ("I ran `git rev-parse HEAD`").
+Reviewers broke the same rule too: Q84-refuter.md:5 ("I ran `git show 28bd9fb6:<file>` three times") and Q110-refuter.md:3 ("I ran `git rev-parse HEAD`").
 
 **Spec rules.** spec.md:32: "You never run a git command. Not `add`, not `commit`, not `stash`, not `checkout`, not `status`." spec.md:94 adds that "a builder runs no git command at all, since the orchestrator reads its diff". The examples in line 32 are the ones builders do not break.
 
@@ -575,7 +575,7 @@ Q84, Q89, Q96 and U1 come after Q59 landed, and all four are mid-sentence short 
 
 | Step | Line | Quote |
 |---|---|---|
-| Q73 | 32 | "Premise 3 of the brief does not reproduce in the tree at 96786a24." |
+| Q73 | 32 | "Premise 3 of the brief does not reproduce in the tree at 359e1ee9." |
 | Q76 | 36 | "The brief's premise was wrong." |
 | Q77d | 43 | "Part 4's premise does not reproduce." |
 | Q79a | 54 | "the brief's json() case ... was replaced ... without the stop the brief prescribes" |

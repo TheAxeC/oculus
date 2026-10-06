@@ -20,7 +20,7 @@ S3a the options catalog `config/catalogs/options.yml` under `options:`, every op
 - Z123 (a) (the orchestrator, automode): `refresh_stale_days` is the one key for a feed's staleness; `stale_days` and the fallback in code are removed. Built here (What to build 6).
 - Z125 (a) (the orchestrator, automode): both are built in this step, since the catalog describes those keys; no separate step.
 
-## What is on the tree (read on main at b5c84982; the tree outside `.scratch` is as at e9484791)
+## What is on the tree (read on main at 125404f8; the tree outside `.scratch` is as at 205e137f)
 
 - The five tracked config files, top-level keys (`python3` over `yaml.safe_load`): `appearance.yml` 6, `behavior.yml` 31, `layout.yml` 13, `present.yml` 1 (`deck`), `sources.yml` 15.
 - The family rule, applied by walking each file (a script in the session's scratch folder, and again by the brief check): 115 options on the base tree, 22 of them families, and 111 once `stale_days`' four leaves are removed (What to build 6). appearance 14 (family `themes`); behavior 48 (44 after) (families `read_limits`, `usage_tiers`, `open.program_ext`); layout 19 (families `rail`, `nav_groups`, `arrangements`, `tab_split`, `tab_rollup`, `nav_live`, `docs`); present 19 (families `deck.tag_tones`, `deck.meta.legend`, `deck.themes`, `deck.order`, `deck.framing`, `deck.summaries`, `deck.ideas.items`); sources 15 (families `scan`, `collections`, `indexes`, `roots`). No list of records sits outside these families. Two keys hold a dot inside a family (`read_limits` has `status.line`; `open.program_ext` has `.docx` and the like), so every dotted key path outside a family is unique. No tracked value is `null`.

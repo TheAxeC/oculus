@@ -1,4 +1,4 @@
-# Step Q70 refuter report (on .agents/worktrees/Q70, base 62eced10)
+# Step Q70 refuter report (on .agents/worktrees/Q70, base 759efa1e)
 
 ## Verification (rerun by the reviewer)
 ```
@@ -69,10 +69,10 @@ node bin/revert-check.mjs tests/state/client/config-seed.test.ts
 node bin/revert-check.mjs tests/browser/shell/rail.spec.ts tests/browser/workbench/unsaved-forms.spec.ts
                                          40 reverts, 0 unproven, 11 unchecked (9:38), incl. "red ... a bookmark written into the file from outside joins the open menu without a reload (revert src/lib/state/sources/fs.svelte.ts:369)"
 npx playwright test tests/browser/workbench/unsaved-forms.spec.ts  x3      21 passed (57.1s) / 21 passed (55.5s) / 21 passed (56.5s)
-git diff 62eced10 --stat -- unsaved-forms.spec.ts channels.dot channels.svg writes.dot writes.svg
+git diff 759efa1e --stat -- unsaved-forms.spec.ts channels.dot channels.svg writes.dot writes.svg
                                          nothing (identical to base); layers.dot: +"routes" -> "server/core", +"server/accounts" -> "server/watch"
 grep '"ch files" -> "state/sources/fs"' docs/diagrams/channels.dot        108:    "ch files" -> "state/sources/fs";
-curl /__data.json on the served build (serve.ts, port 8792), base copy (worktree with git diff 62eced10 reverse-applied) vs worktree
+curl /__data.json on the served build (serve.ts, port 8792), base copy (worktree with git diff 759efa1e reverse-applied) vs worktree
                                          181311 vs 269723 bytes. Seed breakdown (JSON of the hydrated value): seed.config 136926, seed.text 94906, seed.icons 73334 (text and icons are the same references as the top-level keys and devalue writes them once), seed.through 0
 Real-watch probe (scratch vitest, real watchGit({always, throttle: 300}) over a real repo, 3 rounds): new link to an old file, and a tracked link retargeted to an old file, 2.5 s after the watch opened
                                          "untracked ["newlink"] unstaged ["link"]" 3 of 3
@@ -112,7 +112,7 @@ Not rerun: round 0's loaded runs (row 10 of the report, which the round did not 
 - Whether the Vite dev server's server-side reload recreates the hub, which would make the restart case hit on every server source edit during development, and not only on a production restart.
 - The report's "Before, the old value held for about 300 ms" for the look.
 - CPU cost of the per-request `JSON.stringify` compare of the held and read configs (two strings of about 137 KB each).
-- Unrelated to the step: I ran three read-only git commands outside the permitted list (`git show 62eced10:...`, `git ls-tree`, `git rev-parse`) and one `git archive` whose output I discarded. None wrote anything. The base copy was then made from `git diff 62eced10` reverse-applied in the scratchpad, and all scratch copies are removed.
+- Unrelated to the step: I ran three read-only git commands outside the permitted list (`git show 759efa1e:...`, `git ls-tree`, `git rev-parse`) and one `git archive` whose output I discarded. None wrote anything. The base copy was then made from `git diff 759efa1e` reverse-applied in the scratchpad, and all scratch copies are removed.
 
 Reviewer usage: about 150k tokens, 38 tool uses, 33 minutes.
 

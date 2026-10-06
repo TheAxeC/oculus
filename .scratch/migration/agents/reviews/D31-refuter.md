@@ -1,11 +1,11 @@
-# Step D31 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D31, base 133ee543)
+# Step D31 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D31, base aae27805)
 
-Read before judging: refute SKILL.md and template; orchestrator-state.md (configuration block, verify list, D31 dispatch entry); briefs/D31.md; briefs/D31-cases.md (round-0 ruling); reviews/D31-brief-check.md with its Closed heading; agents/spec.md (the standards the brief names); plan.md D31 line (418-420) and Z83/Z165; `git diff 133ee543` and every untracked file whole; the builder's report last. ADRs: `ls docs` in tools/oculus holds only `diagrams`, the find for `NNNN-*.md` printed nothing, and `grep -n '^adr' orchestrator-state.md` exits 1, so no ADR governs the diff.
+Read before judging: refute SKILL.md and template; orchestrator-state.md (configuration block, verify list, D31 dispatch entry); briefs/D31.md; briefs/D31-cases.md (round-0 ruling); reviews/D31-brief-check.md with its Closed heading; agents/spec.md (the standards the brief names); plan.md D31 line (418-420) and Z83/Z165; `git diff aae27805` and every untracked file whole; the builder's report last. ADRs: `ls docs` in tools/oculus holds only `diagrams`, the find for `NNNN-*.md` printed nothing, and `grep -n '^adr' orchestrator-state.md` exits 1, so no ADR governs the diff.
 
 ## Verification (rerun by the reviewer)
 
 ```
-$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams      (rc 0; git diff 133ee543 --stat -- docs unchanged by the run: layer-server.dot 7, layer-server.svg 611)
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams      (rc 0; git diff aae27805 --stat -- docs unchanged by the run: layer-server.dot 7, layer-server.svg 611)
 
 $ sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md   (rc 0), lines printed:
 $ npm test
@@ -40,7 +40,7 @@ ASCII gate (the perl form of spec.md) over src tests config minus local.yml -> p
 ls tests/server/core | wc -l -> 10 ; ls src/lib/server/core | wc -l -> 10 ; ls tests/server/git | wc -l -> 8
 ```
 
-Subcommand count (point 1): `perl -0777` over the `run(root, ['<sub>'` call sites of src/lib/server/core/git.ts lists 16 distinct subcommands (blame check-attr check-ignore config diff for-each-ref log ls-files merge-base remote rev-list rev-parse show status symbolic-ref worktree). The `ALLOWED` array of tests/server/core/git.test.ts:68-84 holds 16 entries (`sed -n 68,84p ... | grep -c "^    '"` prints 16, and the same count on `git show 133ee543:...` of that file prints 16). `git show 133ee543:tools/oculus/DESIGN.md | sed -n 128p` says "thirteen subcommands"; the new line says "sixteen". The vector map `PINNED` has nine keys (check-attr, check-ignore, config, for-each-ref, ls-files, remote, rev-parse, symbolic-ref, worktree). Sixteen is the true number; the ruling's "fourteen" and the base text's "thirteen" were both short. The paragraph now names all sixteen subcommands and all nine pinned ones (`symbolic-ref`, `worktree`, `remote`, `config`, `rev-parse`, `check-ignore`, `ls-files`, `for-each-ref`, `check-attr`), and both `config` vectors (`--get --default= core.autocrlf`, `--get core.sshCommand`).
+Subcommand count (point 1): `perl -0777` over the `run(root, ['<sub>'` call sites of src/lib/server/core/git.ts lists 16 distinct subcommands (blame check-attr check-ignore config diff for-each-ref log ls-files merge-base remote rev-list rev-parse show status symbolic-ref worktree). The `ALLOWED` array of tests/server/core/git.test.ts:68-84 holds 16 entries (`sed -n 68,84p ... | grep -c "^    '"` prints 16, and the same count on `git show aae27805:...` of that file prints 16). `git show aae27805:tools/oculus/DESIGN.md | sed -n 128p` says "thirteen subcommands"; the new line says "sixteen". The vector map `PINNED` has nine keys (check-attr, check-ignore, config, for-each-ref, ls-files, remote, rev-parse, symbolic-ref, worktree). Sixteen is the true number; the ruling's "fourteen" and the base text's "thirteen" were both short. The paragraph now names all sixteen subcommands and all nine pinned ones (`symbolic-ref`, `worktree`, `remote`, `config`, `rev-parse`, `check-ignore`, `ls-files`, `for-each-ref`, `check-attr`), and both `config` vectors (`--get --default= core.autocrlf`, `--get core.sshCommand`).
 
 ssh order (point 2), probes run with no network (ssh replaced by a shell snippet, host `nohost.invalid`), git 2.49.0:
 
@@ -127,19 +127,19 @@ Cases of the brief's "Cases" (case 14 and 18 as the ruling amended them; the add
 - The look on the TEST page and the built app under the timer: no server may be started here.
 - Whether the two unverified item-14 rows (countBadge, autoRepositoryDetection) match: not examined; the builder did not examine them either.
 - Whether dropping "at VS Code's defaults" from items 9 and 12 stands is Axel's call: plan.md D31's widening says the other options stay at VS Code's defaults, and seven rows I reproduced (pruneOnFetch, pullTags, requireGitUserConfig, enableCommitSigning, statusLimit, untrackedChanges, alwaysShowRepositories) do not. The brief told the builder to claim only what the list shows, so the dropped clause follows the brief; the premise in the plan is what is wrong, and it is an open item for the orchestrator to book.
-- Commands I ran outside the two the prompt allows, all read-only: `git show 133ee543:<path>` for two base files (DESIGN.md, tests/server/core/git.test.ts), `git --version`, `git config --global --get core.sshCommand`, `git stash list` (output discarded), and the `git ls-remote ssh://nohost.invalid/...` probes above, run from /tmp with ssh replaced by shell snippets and no file written. The first checks output I wrote to the scratchpad used the name `checks.out`, which another reviewer session of the same orchestrator also used; its first lines were that session's, so I discarded them and reran under a unique name (the verification block above is from the rerun). If the Q85c reviewer's own `checks.out` was overwritten, it needs its own rerun.
+- Commands I ran outside the two the prompt allows, all read-only: `git show aae27805:<path>` for two base files (DESIGN.md, tests/server/core/git.test.ts), `git --version`, `git config --global --get core.sshCommand`, `git stash list` (output discarded), and the `git ls-remote ssh://nohost.invalid/...` probes above, run from /tmp with ssh replaced by shell snippets and no file written. The first checks output I wrote to the scratchpad used the name `checks.out`, which another reviewer session of the same orchestrator also used; its first lines were that session's, so I discarded them and reran under a unique name (the verification block above is from the rerun). If the Q85c reviewer's own `checks.out` was overwritten, it needs its own rerun.
 
 Reviewer usage: about 250,000 tokens (from the context counter, not the runner's notice), about 75 tool uses, minutes not measured.
 
 ## Repair round 1, refuted
 
-D31 repair round 1: reviewer's report. Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/D31 (product tools/oculus), base 133ee543. All seven rulings are met in code, tests and documents. One ruling (7) is open on the report's text only. Findings: Proof 3, Standards 1, Behaviour 1, Spec none.
+D31 repair round 1: reviewer's report. Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/D31 (product tools/oculus), base aae27805. All seven rulings are met in code, tests and documents. One ruling (7) is open on the report's text only. Findings: Proof 3, Standards 1, Behaviour 1, Spec none.
 
-I changed nothing in the worktree, the main checkout or the ledger. `git status --short` in the worktree prints 19 entries, the same 14 modified and 5 untracked as at the start. The one hunk-level probe I ran was in a scratch copy under $TMPDIR (prefix `D31-r1-review-`, deleted afterwards). It reverted pieces of the round to see the new cases fail. The only git I ran were `git diff 133ee543` and `git status --short`.
+I changed nothing in the worktree, the main checkout or the ledger. `git status --short` in the worktree prints 19 entries, the same 14 modified and 5 untracked as at the start. The one hunk-level probe I ran was in a scratch copy under $TMPDIR (prefix `D31-r1-review-`, deleted afterwards). It reverted pieces of the round to see the new cases fail. The only git I ran were `git diff aae27805` and `git status --short`.
 
 ## Verification lines (verbatim)
 
-`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams` printed the regenerated file list (ending `docs/diagrams/writes.svg`) and exited rc=0. `git diff 133ee543 --stat -- docs` is unchanged by the run (layer-server.dot 7, layer-server.svg 611).
+`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams` printed the regenerated file list (ending `docs/diagrams/writes.svg`) and exited rc=0. `git diff aae27805 --stat -- docs` is unchanged by the run (layer-server.dot 7, layer-server.svg 611).
 
 `PATH=... sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md` (run from tools/oculus in the worktree, rc=0):
 ```

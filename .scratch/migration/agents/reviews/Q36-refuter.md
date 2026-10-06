@@ -9,10 +9,10 @@ Worktree untouched, from `/Users/axelfaes/workspace/research-hub/.agents/worktre
 ```
 === git status --short ===
  M tests/server/hpc/ssh.test.ts
-=== git diff --stat 2ddd4a8b ===
+=== git diff --stat 49e052b9 ===
  tools/oculus/tests/server/hpc/ssh.test.ts | 249 +++++++++++++++++++++++++++---
  1 file changed, 226 insertions(+), 23 deletions(-)
-=== ssh.ts still byte-unchanged ===  (git diff 2ddd4a8b -- src/lib/server/hpc/ssh.ts | wc -l)
+=== ssh.ts still byte-unchanged ===  (git diff 49e052b9 -- src/lib/server/hpc/ssh.ts | wc -l)
        0
 ```
 
@@ -83,7 +83,7 @@ grep -c '// revert:' on the main checkout's tests/server/hpc/ssh.test.ts -> 0   
 The brief's four items are met and the paths held.
 
 - Item 1 and 2: both kill cases now run `machineCost` then `killAfterBudget` then assert against `killBound` (`tests/server/hpc/ssh.test.ts:235-251`).
-- Item 3: `KILL_GRACE_MS = 2000` at `src/lib/server/hpc/ssh.ts:27`; `git diff 2ddd4a8b -- src/lib/server/hpc/ssh.ts` is 0 lines, so the file is byte-unchanged as reported. The named revert is red.
+- Item 3: `KILL_GRACE_MS = 2000` at `src/lib/server/hpc/ssh.ts:27`; `git diff 49e052b9 -- src/lib/server/hpc/ssh.ts` is 0 lines, so the file is byte-unchanged as reported. The named revert is red.
 - Item 4: load stated, and reproduced above.
 - Brief decision 3 (paths): `git status --short` shows one modified file. Held.
 - Spec's write ban: the new `spawn` writes only under `scratchDir('oculus-ssh-')` (`:51`, `:158-162`). Held.
@@ -111,7 +111,7 @@ Two defects in the delivered file.
   // charges for each of them. The fork and the exec that get a stub as far as recording its pid cost
   // more than the budget the case used to give them, and a child killed before it recorded anything
   ```
-  "the budget the case used to give them" is the earlier version of this test. The spec's rule (`agents/spec.md:39`) is that a comment says what the code does and why, never an earlier attempt. `git diff 2ddd4a8b | grep '^+' | grep -E '\b(Q|R|D|O|M)[0-9]{1,3}\b|20[0-9]{2}-[0-9]|previously|used to|...'` returns this one line and nothing else. The sentence works without it: the fork and the exec cost more than a fixed 250 ms budget on a loaded machine.
+  "the budget the case used to give them" is the earlier version of this test. The spec's rule (`agents/spec.md:39`) is that a comment says what the code does and why, never an earlier attempt. `git diff 49e052b9 | grep '^+' | grep -E '\b(Q|R|D|O|M)[0-9]{1,3}\b|20[0-9]{2}-[0-9]|previously|used to|...'` returns this one line and nothing else. The sentence works without it: the fork and the exec cost more than a fixed 250 ms budget on a loaded machine.
 
 - **A head-comment sentence the measurements make false. `tests/server/hpc/ssh.test.ts:18-19`:**
   ```
