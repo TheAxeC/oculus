@@ -53,6 +53,19 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with E4g: config/text/app.yml:12 (the key sheet line, the second landing writes both changes), HELP.md and DESIGN.md (disjoint lines); with O30b: DESIGN.md (D23's decision after O30b's :436, the second puts its item after the other's), HELP.md (disjoint); with Q123: pty/channel.ts (disjoint hunks), pty/routes.ts (adjacent imports), tests/routes/sessions/terminal-actions.test.ts (adjacent imports), tests/server/machine/pty/channel.test.ts (the second to land rewrites the other's subscribed() calls to its form), DESIGN.md:375 (one line, both edits kept); with Q124: package.json (disjoint lines); docs/diagrams regenerated at landing; so the merge is simple
   landing: not-started
   round: 0
+- step: Q125
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a53eac68600a643ef (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/Q125
+  base: cfc9e60d9
+  launched: 2026-10-06
+  report: agents/reviews/Q125-report.md
+  brief_check: agents/reviews/Q125-brief-check.md (a401d3fdf1183fba1, claude-opus-5-5, 223,091 tokens, 83 tool uses, 12.3 min)
+  shared_paths: HELP.md, DESIGN.md and README.md with E4g, O30b, Q124, D23 and PR1, and config/layout.yml with E4g and D23, under Z642: the second to land carries the other's text; docs/diagrams regenerated at landing
+  landing: not-started
+  round: 0
 - step: PR1
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -64,6 +77,8 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/PR1-report.md
   brief_check: agents/reviews/PR1-brief-check.md (a6a8c0abc5e9e3d71, claude-opus-5-5, 176,558 tokens, 48 tool uses, 9.3 min)
   shared_paths: with E4g, O30b, Q124 and D23: HELP.md and DESIGN.md (PR1 writes HELP.md:139 and DESIGN.md:382 and :436, disjoint from E4g's, Q124's and D23's lines; O30b also writes :436, so the second to land adds its sentence to that item); with Q125 (queued): HELP.md and DESIGN.md under Z642; docs/diagrams regenerated at landing; so the merge is simple
+  builder_usage: 201,688 tokens, 52 tool uses, 26.8 min
+  reviewer_report: agents/reviews/PR1-refuter.md (aed7391d3da51eb81, claude-opus-5-5, running)
   landing: not-started
   round: 0
 - step: O30b
@@ -79,7 +94,7 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with Q124: vite.config.ts (O30b's function form, Q124's few-line cache setting carried by hand at the second landing), tests/tiers/landing.mjs (head comment, both), tests/checks/diagrams/diagrams.test.ts (O30b :170-184, Q124 the per-case limits, disjoint), .gitignore (both add lines), README.md and HELP.md (disjoint lines); with E4g: DESIGN.md's tree (both lines kept) and HELP.md (disjoint); with Q123: DESIGN.md (:375 against the tree and :436) and HELP.md (disjoint); docs/diagrams regenerated at landing; so the merge is simple
   landing: not-started
   round: 0 (cases ruling agents/briefs/O30b-cases.md, rulings A1 and B1 on the hand-back; builder resumed)
-  builder_usage: hand-back 279,639 tokens, 76 tool uses, 35.7 min; final run 208,577 tokens, 129 tool uses, 87.1 min
+  builder_usage: hand-back 279,639 tokens, 76 tool uses, 35.7 min; final run 218,857 tokens, 129 tool uses, 138.8 min (its last notice came when its stuck shell, pid 80452, ended)
   reviewer_report: agents/reviews/O30b-refuter.md (a1d5134e2f2e837cf, claude-opus-5-5, running)
 - step: Q124
   executor: agent
@@ -93,9 +108,9 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/Q124-brief-check.md (a637e9ef56264db07, claude-opus-5-5, 202,225 tokens, 63 tool uses, 9.0 min), closed in the brief by ad1758291d4f08a72 (claude-opus-5-5; 123,025 tokens, 19 tool uses, 4.4 min)
   shared_paths: with O30b: vite.config.ts (O30b turns the config into a function of the mode, Q124 changes its cache setting; the second landing re-applies the other's few lines inside the new shape) and tests/tiers/landing.mjs (head comment only, both); with D23: package.json (D23 adds dependencies, Q124 changes the test scripts, separate hunks); with O30b, HELP.md (O30b :186, :365, :367, Q124 :371-373, adjacent and merged at the second landing); so the merge is simple
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-10-06 to a39e65a9fa382453f: the .svelte-kit/types race of the review's B1 ended at its cause, the comments S1 to S3, the report's P1 citation)
   builder_usage: 242,256 tokens, 97 tool uses, 97.4 min
-  reviewer_report: (a68c2590b5c60eb18, claude-opus-5-5, stopped: dispatched before /refute was invoked for Q124); agents/reviews/Q124-refuter.md (a8ffa34a027b813e6, claude-opus-5-5, running)
+  reviewer_report: (a68c2590b5c60eb18, claude-opus-5-5, stopped: dispatched before /refute was invoked for Q124); agents/reviews/Q124-refuter.md (a8ffa34a027b813e6, claude-opus-5-5, 178,043 tokens, 52 tool uses, 62.6 min)
 ```
 
 ## The standing demands (from Axel, in force)

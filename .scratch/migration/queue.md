@@ -1,12 +1,12 @@
-In flight (5 of 6 slots):
-- E4g (the apps guide in docs/apps.md): refuted (`agents/reviews/E4g-refuter.md`), findings to close, base 31068a9de.
-- Q124 (every tree check with no limit, and the landing's vitest cache race): built, under review, base ba6a995f2.
+In flight (6 of 6 slots):
+- E4g (the apps guide in docs/apps.md): repair round 1, base 31068a9de.
+- Q124 (every tree check with no limit, and the landing's vitest cache race): repair round 1 (the .svelte-kit/types race), base ba6a995f2.
 - O30b (the app's own build folders): built, under review, base dff7539f4.
 - D23 (language servers): building.
-- PR1 (Present full screen): building, base 628ac4b01; open item Z644 (a guarded entry for the window file) may add its test.
+- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): building, base cfc9e60d9; Axel reads the new HELP.md and DESIGN.md before it lands.
+- PR1 (Present full screen): built, under review, base 628ac4b01; open item Z644 (a guarded entry for the window file) may add its test.
 
-Queued, in order (26 steps):
-- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): brief checked and corrected; at the next free slot, beside the steps writing HELP.md or DESIGN.md (ruling Z642); the second to land carries the other's text.
+Queued, in order (25 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
 - X3e (Files lists reordered by drag): prepared again under Z635 (a); once D23 has landed (both split Palette.svelte).
 - PR2 (Present decks from any folder): once PR1 has landed.
