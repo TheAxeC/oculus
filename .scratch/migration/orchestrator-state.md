@@ -36,7 +36,7 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D23-report.md
   brief_check: agents/reviews/D23-brief-check.md (its agent id and usage are not in the ledger); the brief corrected to main at 10ac00c69 by a3954c49b6f0bf078 (claude-opus-5-5; usage not recorded: no completion notice was read)
   shared_paths: with E4g: config/text/app.yml:12 (the key sheet line, the second landing writes both changes), HELP.md and DESIGN.md (disjoint lines); with O30b: DESIGN.md (D23's decision after O30b's :436, the second puts its item after the other's), HELP.md (disjoint); with Q123: pty/channel.ts (disjoint hunks), pty/routes.ts (adjacent imports), tests/routes/sessions/terminal-actions.test.ts (adjacent imports), tests/server/machine/pty/channel.test.ts (the second to land rewrites the other's subscribed() calls to its form), DESIGN.md:375 (one line, both edits kept); with Q124: package.json (disjoint lines); docs/diagrams regenerated at landing; so the merge is simple
-  builder_usage: 127,533 tokens, 1135 tool uses, 309.7 min
+  builder_usage: 127,533 tokens, 1135 tool uses, 309.7 min; round 1 156,448 tokens, 282 tool uses, 84.4 min
   reviewer_report: agents/reviews/D23-refuter.md (a0a498ede0a9659bb, claude-opus-5-5, 238,723 tokens, 126 tool uses, 22.5 min)
   landing: not-started
   round: 1 (sent 2026-10-06 to a4832e8f1d3fc04a3: agents/briefs/D23-round1.md, 17 items, rulings Z657 to Z661)
@@ -174,7 +174,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Z667 (2026-10-06, PR3, a rule clash): your ruling Z664 has PR3 reword the 40 deck lines with a spaced hyphen, in 8 project decks under `projects/`; the plan's rules file (`agents/spec.md:37` and `:101`) lets a builder write under `projects/` only through a script the brief names, and a rewording is a judgment no script can make (the hub's rule that scripts compute facts). Options: (a) the PR3 builder rewords the 40 lines by hand in its worktree copies of the 8 files the brief names, and `agents/spec.md:101` gains the sentence "A brief may also name lines of hub text a builder rewords by hand, where a ruling of Axel's asks for the rewording; the report lists each line before and after, and the reviewer reads each one." Pros: the rewording lands with PR3 as you ruled, reviewed line by line; the rule's protection (no unnamed data path written) stands. Cons: a second way into hub data beside the script. (b) The rewording leaves PR3 and becomes a small text step of its own under the same exception. Pros: PR3's diff stays code. Cons: the same exception, one more step and landing for 40 lines. (c) You reword them yourself. Pros: no change to the rules. Cons: your hands; this is the lazy option. Recommendation (a): it does what Z664 asked in the step you named, and the exception is as narrow as the rule's own data-path clause. PR3's builder starts on parts 1 to 7 and 9 meanwhile, and does part 8 once you rule.
 
 
 
@@ -239,6 +238,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-06. Axel ruled Z667 (a): PR3's builder rewords the 40 deck lines by hand; `agents/spec.md:101` gains the sentence for hub text a ruling asks to have reworded. Sent to PR3's builder.
 - 2026-10-06 20:20. Q125 landed (the user's guide, the design document and six guides; booking in plan.md; `agents/reviews/Q125-landing.md`) on Axel's acceptance, with the doc changes of PR1, PR2, O30b, Q124 and E4g carried into its guides and nine fixes at landing. PR3 ruled (Z664, Z665) and being prepared. In flight: D23 (repair round 1).
 - 2026-10-06 19:45. PR2 landed (Present decks from any folder; booking in plan.md; `agents/reviews/PR2-landing.md`) with Z655 and Z656 fixed at landing; its look on a scratch oculus (Z662). D23's review saved and repair round 1 sent (Z657 to Z661). In flight: D23 (repair round 1), Q125 (waits for Axel's read). Next: /spec for PR3 and the queued steps that waited for PR2.
 - 2026-10-06. Q124 landed (tree checks with no limit, the vitest races), after O30b and E4g; PR2 and Q125 had their last repair rounds (Z653 for PR2); D23 built. In flight: PR2 (round 2 returned, under review), D23 (built, under review), Q125 (rounds done; waits for Axel's read, then lands; Q126 after it, Z654).

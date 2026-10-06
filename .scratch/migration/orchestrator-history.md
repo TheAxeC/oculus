@@ -1874,3 +1874,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z666 (2026-10-06): automode, PR3's brief choices (the slide menu, `deck-edit`, the multi-list `deck-slides`, the drafts POST, the names, the PDF through the upload).
 - Z667 (2026-10-06): open item, PR3's part 8 against the rules file's script-only rule for hub data.
 - Z668 (2026-10-06): automode, PR3's brief-check choices (the acts, the names, the image folder, the PDF name, G1).
+- Z667 ruled (2026-10-06): Axel (a), PR3's builder rewords the deck lines; spec.md:101 extended.

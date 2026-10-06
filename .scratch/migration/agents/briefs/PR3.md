@@ -142,7 +142,7 @@ Ruled by Axel (Z665): no new dependency.
 
 ### 8. The carried spaced hyphens (Z664)
 
-This part waits for Axel's ruling Z667 on how a project deck is written in this step: `agents/spec.md` lets a builder write a hub data path only through a script the brief names, and a rewording is a judgment no script makes. Do parts 1 to 7 and 9 first; the orchestrator sends the ruling while you build, and you do this part as it says. If no ruling has come when the rest is done, say so on the report's first line.
+Ruled by Axel (Z667 (a)): you reword these lines by hand in the worktree copies of the 8 files this brief names, and nowhere else under `projects/`; `agents/spec.md:101` allows it for lines a ruling asks to have reworded.
 
 
 Each of the 40 lines that `grep -nE "\S - \S" projects/*/*/present/*.md projects/archive/*/*/*/present/*.md` prints is reworded so the spaced hyphen standing for a dash is a comma, a colon, a semicolon, parentheses or a new sentence, as the hub's prose rule says. Every number, name, unit, HTML tag and Markdown mark on the line is kept byte for byte; a hyphen inside a word or a number range and a minus sign in a formula are not touched. The report lists each line before and after.
@@ -228,7 +228,7 @@ The tests this step keeps are rows of existing entries' tables: G8 (each of `dec
 - `tools/oculus/tests/` (the rows of the entries named under "Cases", and the tests the change makes obsolete)
 - `tools/oculus/.scratch/migration/agents/guarded.md` lines of G2, G8, G9, G32 and G49 (the Code and Test lines only)
 - `tools/oculus/HELP.md`, `tools/oculus/DESIGN.md`, `tools/oculus/docs/views.md`, `tools/oculus/docs/files-and-search.md`, `tools/oculus/docs/apps.md` line 435, `tools/oculus/docs/configuration.md` line 64 (the passages part 9 names)
-- once Z667 is ruled, as it says: `projects/manuscripts/raw-pls/present/main.md`, `projects/manuscripts/fed-multicellular-immune/present/main.md`, `projects/manuscripts/dries-bttr-ecg/present/main.md`, `projects/archive/published/2026/hccnet-fl/present/main.md`, `projects/manuscripts/hccnet-revision/present/main.md`, `projects/manuscripts/ecg-readable-substrate/present/main.md`, `projects/manuscripts/ward-bttr-crosssubject/present/main.md`, `projects/manuscripts/bttd-source-eeg/present/main.md`
+- `projects/manuscripts/raw-pls/present/main.md`, `projects/manuscripts/fed-multicellular-immune/present/main.md`, `projects/manuscripts/dries-bttr-ecg/present/main.md`, `projects/archive/published/2026/hccnet-fl/present/main.md`, `projects/manuscripts/hccnet-revision/present/main.md`, `projects/manuscripts/ecg-readable-substrate/present/main.md`, `projects/manuscripts/ward-bttr-crosssubject/present/main.md`, `projects/manuscripts/bttd-source-eeg/present/main.md`
 - `tools/oculus/.scratch/migration/agents/reviews/PR3-report.md`
 
 One path per line: a whole file, or a range of lines of a shared document, numbered as on main at the base. The step writes these paths and nothing else.

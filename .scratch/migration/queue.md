@@ -1,8 +1,7 @@
 In flight (3 of 6 slots):
-- D23 (language servers): repair round 1 running, base 465efcdfb.
+- D23 (language servers): repair round 1 done, its review running, base 465efcdfb.
 - Q126 (DESIGN.md reduced where Q125 left it short, Z654): builder running, base 60263c8d.
-- PR3 (Present decks edited and generated, PDF export): builder running, base 272f60b4; part 8 waits for Axel's ruling Z667.
-
+- PR3 (Present decks edited and generated, PDF export): builder running, base 272f60b4 (Z667 ruled (a), sent to the builder).
 
 Queued, in order (23 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).

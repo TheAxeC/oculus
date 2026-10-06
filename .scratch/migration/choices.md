@@ -11,6 +11,10 @@ The question: the transition slide's hint belongs in the foot with no lede (brie
 - Chosen: (d) a section slide may carry `foot:` in its front matter, the key the summary and grid entries of `order:` already use; the transition carries its hint there with no cards, which draws the old slide exactly.
 - Not chosen: (a) four numbered cards the builder wrote (words the deck never had, repeating the foot); (b) the hint as the lede (the foot unmet); (c) a text slide (the legend lost).
 
+## Z667 (2026-10-06, step PR3, Axel)
+
+Ruled (a): PR3's builder rewords the 40 carried deck lines by hand in its worktree copies of the 8 files its brief names, and `agents/spec.md:101` gains the sentence that allows hub text a ruling asks to have reworded, each line listed before and after and read by the reviewer. Not chosen: (b) a step of its own; (c) Axel rewords them (the lazy option).
+
 ## Z668 (2026-10-06, step PR3, the orchestrator, automode)
 
 PR3's brief, closing its brief check: the `deck-edit` acts `new`, `duplicate`, `delete`, `image`, `create`, `outline`, with `create` and `outline` in the body's shape; the write kind keeps the name `deck-edit` and the line-edit module `server/edit/deck-edit.ts` keeps its own; an image goes into the folder of the slide's file (the folder the reader resolves images against, the deck's folder for every deck on the tree); a project deck's PDF is named after the project folder (`btfno/present/btfno.pdf`), a root's own deck after the root's folder; the slide heading of New Slide comes from the catalog; G1 gets no row (the deck POST is a read, the write route's row covers every body), the desktop and drop cases are looks at landing. Not chosen: renaming the kind to `deck-file` (the two names never meet a reader); the image in the deck's folder linked with `../` (a link that breaks when the slide file moves); `present/present.pdf` for every project (the lazy option: thirteen PDFs of one name).
