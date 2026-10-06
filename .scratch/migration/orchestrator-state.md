@@ -38,6 +38,19 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with O30b: DESIGN.md's file tree (E4g adds docs/apps.md under docs/ at :79-80, O30b adds its build folders higher in the same block; both lines kept) and HELP.md (E4g :21, :82 and :210-221, O30b :186, :365 and :367, disjoint); so the merge is simple
   landing: not-started
   round: 0
+- step: Q124
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a39e65a9fa382453f (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/Q124
+  base: ba6a995f2
+  launched: 2026-10-06
+  report: agents/reviews/Q124-report.md
+  brief_check: agents/reviews/Q124-brief-check.md (a637e9ef56264db07, claude-opus-5-5, 202,225 tokens, 63 tool uses, 9.0 min), closed in the brief by ad1758291d4f08a72 (claude-opus-5-5; 123,025 tokens, 19 tool uses, 4.4 min)
+  shared_paths: with O30b: vite.config.ts (O30b turns the config into a function of the mode, Q124 changes its cache setting; the second landing re-applies the other's few lines inside the new shape) and tests/tiers/landing.mjs (head comment only, both); with D23: package.json (D23 adds dependencies, Q124 changes the test scripts, separate hunks); with O30b, HELP.md (O30b :186, :365, :367, Q124 :371-373, adjacent and merged at the second landing); so the merge is simple
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
