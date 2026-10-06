@@ -769,3 +769,168 @@ The diagrams rows are in `diagrams.test.ts`, a file the step does not change. Un
 - Whether the time a test takes counts as cost under the rule that a test exists only where its failure costs something. That is the user's call.
 
 Reviewer usage: agent id not known to me, claude-opus-5-5, tokens, tool uses and minutes not known to me.
+
+# The brief prepared again after the back-out, refuted
+
+## Step O30 refuter report (on .agents/worktrees/O30, base a977b2448)
+
+Scope: items 17 to 20 and their cases, as the dispatch asked. Items 1 to 16 were not judged again.
+
+## Verification (rerun by the reviewer)
+
+```
+$ (tools/oculus) PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude-work/skills/land/templates/checks.sh .../orchestrator-state.md
+$ npm run test:quick
+        tests/server/desktop/window-guard.test.ts: changed
+        tests/server/desktop/start.test.ts: changed, run by npm run test:checks or test:slow
+ok      prettier (0.3 s): All matched files use Prettier code style!
+ok      ASCII gate (0.3 s)
+ok      svelte-kit sync (1.2 s)
+ok      eslint (1.5 s)
+ok      svelte-check (4.9 s): 1791263055137 COMPLETED 379 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (10.3 s): Duration  7.78s (transform 14.47s, setup 0ms, import 21.92s, tests 7.17s, environment 82ms)
+checks: 1 commands passed          (exit 0)
+(start.test.ts is tagged slow; quick.mjs isSlow() and --tagsFilter !slow leave it out, so no app started)
+
+$ npx prettier --check tests/tiers/landing.mjs tests/server/desktop/start.test.ts src/desktop/server/build.ts src/desktop/server/process.ts src/desktop/server/error-line.ts src/desktop/app.ts
+All matched files use Prettier code style!     (exit 0)
+$ npx eslint <the same six files>              (no output, exit 0)
+$ LC_ALL=C grep -n '[^ -~]' <the same six files>   (no output, exit 1)
+$ LC_ALL=C grep -c '[^ -~]' HELP.md DESIGN.md terminal.yml ReadAgainButton.svelte actions/read-again.ts sessions.ts channel.ts   (0 for each)
+$ npx vitest run tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts
+ Test Files  2 passed (2) / Tests  5 passed (5)
+
+Commands the builder's report quotes as evidence:
+$ grep -rn '^<<<<<<<\|^>>>>>>>' tools/oculus --include='*.ts' --include='*.svelte' --include='*.json' --include='*.md' --include='*.yml' --exclude=local.yml --exclude-dir=node_modules   (from the worktree root; no output, exit 1)
+$ grep -rln '^<<<<<<<\|^>>>>>>>' tools/oculus/docs tools/oculus/package-lock.json   (no output, exit 1); find for *.orig / *.rej: none
+$ npm install --offline --dry-run      up to date in 458ms; cmp package-lock.json against a copy taken before: identical
+$ npx vitest run tests/checks/tree tests/checks/imports tests/checks/source tests/checks/diagrams tests/checks/config/config-folder.test.ts tests/checks/config/config.test.ts --tagsFilter '!slow' --testTimeout 0 --hookTimeout 0
+ Test Files  13 passed (13) / Tests  195 passed (195)
+$ sh utils/unused-exports.sh, diffed against .agents/worktrees/O30-base/unused-exports.txt
+> src/lib/server/root/process/parent.ts: parentOf, askParentToPick
+> src/lib/server/root/process/parent.ts: ParentPort
+(config.ts and local.ts lose engineDir/DEFAULT_PORT, ssh.ts loses KILL_GRACE_MS; no line for error-line.ts; matches the report)
+
+Item 20 against the landing's state (read only):
+$ diff -rq --exclude=local.yml gate-O30/tools/oculus/{src,tests,config,docs/diagrams} O30/tools/oculus/{...}
+Files .../src/desktop/app.ts ... differ
+Files .../src/desktop/server/build.ts ... differ
+Only in .../O30/tools/oculus/src/desktop/server: error-line.ts
+Files .../src/desktop/server/process.ts ... differ
+Files .../tests/server/desktop/start.test.ts ... differ
+Files .../tests/tiers/landing.mjs ... differ
+$ diff -q for package.json, package-lock.json, HELP.md, DESIGN.md, README.md; diff -rq utils, assets: all identical
+
+Case 17.2 (the lane's line copied out of landing.mjs:29-30 with sed, a scratch npm first on PATH, removed after):
+line: npm run check; c=$?; npm run build; b=$?; npm run test:slow; s=$?; [ $c -eq 0 ] && [ $b -eq 0 ] && [ $s -eq 0 ]
+FAIL=[run test:slow] exit 1   calls: run check, run build, run test:slow
+FAIL=[none]          exit 0   calls: run check, run build, run test:slow
+FAIL=[run check]     exit 1   calls: run check, run build, run test:slow
+
+Cases 18.x (scratch module under $TMPDIR: start.test.ts:41-46 and :173-209 copied verbatim with sed, a node -e child, lines collected as run() collects them; removed after):
+18.1: rejected after 25 ms (0 ms after the dialog line): a dialog before "oculus on http://127.0.0.1:8817"; the output was: / [screen] dialog /
+18.2: settled after 32 ms
+18.3: settled after 25 ms
+18.4: rejected after 27 ms: no line with "oculus on http://127.0.0.1:8817"; the output was: / something else /
+one chunk, dialog first ('[screen] dialog\n<text>\n' in one write): settled after 25 ms
+two chunks, dialog first (the text 300 ms later): rejected after 26 ms
+
+Cases 19.x (node --experimental-strip-types on a scratch module importing src/desktop/server/error-line.ts; removed after):
+19.1: "Error: Could not load /x/.svelte-kit/output/server/manifest.js: ENOENT: no such file or directory, open '/x/.svelte-kit/output/server/manifest.js'"
+19.2: "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'x' imported from /y.js"
+19.3: "SyntaxError: Unexpected token '}'"
+19.4: "done"      (and 'listen EADDRINUSE: ...' then 'done': "done")
+19.5: "Error: b"
+
+End state: ps -ax shows no Electron, src/server.ts, vitest or knip process of this review (only VS Code's crashpad handler); no o30rev* scratch left in $TMPDIR; git status --short still 127 lines, git diff a977b2448 --stat still "124 files changed, 6465 insertions(+), 1876 deletions(-)".
+```
+
+## Verdicts
+
+Items of the brief's "What to build":
+
+- 17: holds. `tests/tiers/landing.mjs:24-32` is one lane `'npm run check, then npm run build, then npm run test:slow'` running the three with `;` and red when any is red (case 17.2's runs); the separate `test:slow` entry is gone (`grep -n test:slow` hits only :25 and :29); the head comment (:3-12) gives the reason and lists the slow tests in the lane; nothing else in the file changed (diff against gate-O30).
+- 18: violated. The code fails at once on a dialog line in the cases the brief names, but it settles on the text when a dialog line comes first and the text arrives in the same chunk (Spec 1), and the report does not quote the lines that show a dialog's message is printed before the recorder's line (Spec 2). No row's title or assertion changed (diff against gate-O30 touches `printed()` and its doc comment only).
+- 19: holds. `src/desktop/server/error-line.ts` holds the rule once (`ERROR_LINE`, :10) behind one export, `errorReason()`. `build.ts:9,25,33,46` and `process.ts:13,80,95,115,117` use it. Cases 19.1 to 19.5 give the expected lines.
+- 20: holds. The worktree equals gate-O30 in every compared path except the six files items 17 to 19 change. Each hunk of `O30-landing-fixes.diff` answers what item 20 names: terminal.yml, TerminalGrid.svelte and terminal-list.ts answer Z612; DESIGN.md:374 and HELP.md's terminal row answer Z619 and Z612; sessions.ts and channel.ts answer Z619; DESIGN.md:396 answers St2-2; appearance.ts answers St2-1; HELP.md:13, windows.ts `moveTo`, desktop-windows.svelte.ts, desktop.ts `'move-to'` and layout/index.ts `carryWorkbench` answer B2-3; bridge.ts answers B2-4; writes.svelte.ts, shapes.ts and socket.svelte.ts answer B2-1 and B2-2; the read-again move, ReadAgainButton.svelte and Source.svelte answer S2-1 and its merge, with `LockedCode` and `lockedWords` kept at Source.svelte:106,108; package.json and the lockfile keep both dependencies. The diagram hunks resolve the conflicts, and layer-shell's 8 to 9 is the new shell-to-state import that B2-3 brings. Source.svelte is 513 lines.
+
+Cases of the brief's "Cases":
+
+- 17.1: met. Reading `landing.mjs:21-40`: one entry runs check, build, test:slow in that order, and no other entry names `test:slow`.
+- 17.2: met. The three runs above give exit 1, exit 0 and exit 1, each with all three calls.
+- 18.1: met. Rejected 0 ms after the dialog line; the error holds the awaited text and the lines.
+- 18.2: met. Settled.
+- 18.3: met. Settled on the message printed before `[screen] dialog`.
+- 18.4: met. The "no line with" error.
+- 19.1: met. The `Error: Could not load ...` line.
+- 19.2: met. The `Error [ERR_MODULE_NOT_FOUND]: ...` line.
+- 19.3: met. The `SyntaxError: ...` line.
+- 19.4: met. `done`.
+- 19.5: met. `Error: b`.
+- 20.1: met. The marker grep prints nothing, and there is no `.orig` or `.rej` file. The dry run's output cannot be rerun on the applied tree; the equality with gate-O30 stands in for it.
+- 20.2: met. The `diff -rq` above lists only the files of items 17 to 19.
+
+## 1. Spec
+
+- `tests/server/desktop/start.test.ts:175-196`, quoted:
+  ```ts
+  const seen = (): boolean => lines.some((line) => line.includes(text));
+  const asked = (): boolean => lines.some((line) => line.startsWith('[screen] dialog'));
+  ... if (seen()) { stop(); done(); } else if (asked()) { stop(); fail(refused()); }
+  ```
+  - What is wrong: item 18 says the wait fails at once "when the app has asked for a dialog ... before the awaited text is printed", and the head comment (:167-169) says the same. The code checks only whether each line is present, never their order, and `seen()` wins.
+    - When `[screen] dialog` and the awaited text arrive in one `data` chunk with the dialog first, or are both already in `lines` when `printed()` is called, the wait settles on the text.
+    - The scratch run shows it: "one chunk, dialog first: settled after 25 ms" against "two chunks, dialog first: rejected after 26 ms".
+    - The fix: compare the index of the first line holding `text` with the index of the first `[screen] dialog` line, and settle only when the text's index is lower. Case 18.3 still settles on that rule, since the message is printed first on the same stream.
+  - Failure scenario: an app that hits an unexpected dialog while the server's relayed line is flushed in the same pipe write passes or fails the same row depending on how the pipe split the bytes. A row that should go red goes green on some runs.
+  - Verdict: item 18 violated.
+- `O30-report.md`, "The cases' first run" and the DONE table row 18: the line "18, `printed()` fails at once on a dialog | DONE | `tests/server/desktop/start.test.ts:165-209`, the head comment (:165-172) says both rules".
+  - What is wrong: item 18's first bullet asks the builder to find where a dialog's message is printed and quote the lines that show it comes before the recorder's line. The report quotes none; only the head comment asserts it.
+  - My read confirms the order, so the quote is missing and the order itself is right:
+    - `src/desktop/dialogs.ts:24` `log(\`dialog: ${options.message}\`)` runs before `:32-35` `dialog.showMessageBox(...)`;
+    - `app.ts:107-108` passes `print`, and `app.ts:51-53` prints a non-error line with `console.log`, which is stdout;
+    - `tests/server/desktop/app-harness.ts:12-14,22-24` records `[screen] dialog` with `process.stdout.write`;
+    - so both lines go on the one stream, in that order.
+  - Failure scenario: the orchestrator at landing has no evidence for the premise that rows 2 and 5 rely on. If the message were printed on stderr, the order across two pipes would not hold, and those rows could fail at once on their own expected dialog.
+  - Verdict: item 18 violated (the report part).
+- `O30-report.md`, "Files changed": "why the tool reports them is not investigated" (the knip lines for `parent.ts: parentOf, askParentToPick` and `ParentPort`).
+  - What is wrong: `agents/spec.md`, "The principles every package is judged on", asks the report to give, for each line the step added, what was done with it. The cause is known. knip takes package.json `main` (`src/desktop/main.ts`) as its entry and does not read `src/server.ts`, which imports all three at :16 and uses them at :45 and :58. The base list confirms it: it already flagged `engineDir`, which `src/server.ts` imported at the base. `agents/reviews/O30-refuter.md` (its verification item 4) says the same.
+  - Failure scenario: a later cleanup reads "not investigated" as possibly dead code and removes `parentOf`. The server then stops reporting `listening` to the app.
+  - Verdict: none (it concerns items 1 to 16's lines).
+
+## 2. Proof
+
+- None. Every command the report quotes reproduced, apart from the stubbed-electron run named under "Declined to judge". The report's timing for `test:quick` (31.7 s) differs from mine (12.0 s), and no decision rests on it.
+
+## 3. Standards
+
+- `O30-report.md` as a whole.
+  - What is wrong: `agents/spec.md`, "What every package obeys", asks for two greps to be quoted in the report:
+    - the history-word grep over the comment lines and test titles the step added or changed, with each hit judged;
+    - after a rename, a grep of the name across `src`, `tests`, `config` and the three documents.
+  - Neither is quoted. V4 runs `history.test.ts` only, and the documents grep covers `stderr|error line|last line`, not the renamed `last` field.
+  - My greps:
+    - three hits of "before" in `start.test.ts:169,171,179`, all the order of output lines and none history;
+    - no stale `last` use of the renamed fields in src, tests, HELP.md, DESIGN.md or README.md.
+  - Failure scenario: the orchestrator cannot check from the report that the rule was applied, and has to rerun both greps.
+  - Verdict: none.
+- `tests/server/desktop/start.test.ts:167` and `tests/tiers/landing.mjs:11`.
+  - What is wrong: `agents/spec.md`, "What every package obeys", says an edited comment is rewrapped as a whole paragraph at 100 columns, so no line inside a sentence ends short.
+    - `start.test.ts:167` ends at column 96 although the next word "(a" fits (99).
+    - `landing.mjs:11` ends at column 95 although "this" fits (100).
+  - Failure scenario: a reader sees a ragged comment, and a later rewrap of the paragraph shows up as an unrelated diff. A landing fix.
+  - Verdict: none.
+
+## 4. Behaviour
+
+- None found beyond Spec 1. The report states before and after for both dialogs, the landing lane and the slow rows, and the lane time as added, not measured.
+
+## Declined to judge
+
+- Z627, whether the app's checkout build should write into folders of its own: it is Axel's open item. Item 17 removes only the landing's own collision.
+- The report's run of `process.ts` under plain Node with `electron` stubbed by a resolve hook was not reproduced: it needs a scratch loader hook and a stub of `utilityProcess`. My judgment of the server side rests on reading `process.ts:80,95,115-117` and on running `errorReason()` directly with the 19.2 and EADDRINUSE streams.
+- The slow rows of `start.test.ts`, the dialogs' look and the landing lane's wall time (826 s, added in the brief): each needs the app started, which the review may not do. They are the orchestrator's at landing.
+- `patch -p1 -E --dry-run` output: it cannot be rerun on the applied tree. The `diff -rq` against gate-O30 shows the result.
+- Items 1 to 16: outside this review's scope by the dispatch.
+
+Reviewer usage: a1f7cd3cd58643a76, claude-opus-5-5, 260,959 tokens, 61 tool uses, 9.6 minutes.
