@@ -216,3 +216,214 @@ The tray, the rows and the dialog against the mock-up and Z569 to Z588 match by 
 - The cause of the one red run (Proof 3): not found.
 
 Reviewer usage: agent id not visible to the reviewer, served model claude-opus-5-5, tokens, tool uses and minutes not measured by the reviewer.
+
+## Repair round 1, refuted
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH bash ~/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (from the worktree's tools/oculus)
+$ npm run test:quick
+test:quick: 77 changed file(s), from git since HEAD
+test:quick: 83 test file(s), 10 essential
+ok      ASCII gate (0.5 s)
+ok      prettier (1.1 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.0 s)
+ok      eslint (1.9 s)
+ok      svelte-check (9.3 s): 1791252963547 COMPLETED 376 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (18.5 s): Duration  14.99s (transform 21.39s, setup 0ms, import 38.48s, tests 19.12s, environment 205ms)
+test:quick: 19.1 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+exit 0
+
+$ npm run test:checks
+ Test Files  15 passed | 1 skipped (16)
+      Tests  227 passed | 3 skipped (230)
+exit 0
+
+$ npx vitest run tests/server/machine/schedules tests/routes/machine/schedules.test.ts tests/routes/sessions/terminal-actions.test.ts tests/server/machine/commands/run.test.ts tests/data/sources/config/local.test.ts --reporter=verbose
+ Test Files  8 passed (8)
+      Tests  45 passed (45)
+ (pass) |unit| tests/server/machine/schedules/run.test.ts > runEntry > starts what a schedule runs, or refuses it with its word 130ms
+ (pass) |unit| tests/server/machine/schedules/watch.test.ts > watchSchedules > starts a schedule once per due time 448ms
+ (pass) |unit| tests/server/machine/schedules/record.test.ts > the run record > refuses a write over a schedule record it cannot read, leaving it 21ms
+ (pass) |unit| tests/server/machine/schedules/file.test.ts > the schedules file > refuses an edit over a schedules file it cannot read, leaving it 55ms
+ (pass) |unit| tests/data/sources/config/local.test.ts > checkLocal > answers "schedules: 3" with the sentence it would throw 0ms
+ (pass) |unit| tests/routes/machine/schedules.test.ts > POST /api/schedules > refuses a request without the write token 13ms
+
+The builder's round probes (pair, save, commit, stop, s51), copied from its scratchpad to $SP/rv1/rerun with only their output paths moved, run with its vitest config under a scratch HOME:
+  pair.out: identical to the report's five blocks, "byte-equal after the pair: true" on all five
+  save.out: identical to the report's five saves
+  commit.out: status=500 body={"error":"schedules-unwritten","names":[]} / schedules.yml unchanged=true / record unchanged=true
+  stop: "the server closed right after the 07:00 claim was written: starts asked=0 new-session calls=0 runs={schedule due=07:00 failed terminal=null why={"word":"server-stopped","names":[]}}"
+  S51: "at 07:00:10: new-session calls=0; starts asked of runEntry=1; runs={schedule due=07:00 failed terminal=null why={"word":"folder-not-served","names":["<repo>"]}}"
+  (the stop and S51 tests show as failed only because their final flush writes to the builder's own a3r1 path, which I redirected; the lines above are what they printed)
+
+My probes ($SP/rv1/edge.probe.ts, alias2.probe.ts, closestop.probe.ts; scratch files and a scratch HOME only):
+  anchor on A, pause B (runs: *r)             pause THREW Unresolved alias (the anchor must be set before the alias): r
+  alias runs, save changing when              save THREW Unresolved alias (the anchor must be set before the alias): r
+  alias, delete A (the anchor holder)         refused 409 entry-changed
+  flow-map entry {name: A, runs: {task: litwatch}, ...}   pause then resume: byte-equal false ("{name: A," comes back as "{ name: A,")
+  CRLF file                                   pause writes "  paused: true\n" (LF) into a CRLF file; resume restores byte-equal
+  comment on the last key line, no final newline, comment line after the last key, block-scalar prompt, folded when, empty `when:`, indented list, merge anchor on the item, tab after a value: pause then resume byte-equal true
+  duplicate key                               pause refused 409 schedules-unread
+  plain `when: 0 7 * * 1`, save `*/5 * * * *`  ok, written "when: \"*/5 * * * *\""
+  plain name renamed to 2026 / "a: b # c"      ok, written quoted
+  task: radar, dialog's Lit Watch, nothing else changed   plan ok, text null (nothing written)
+  unattended: 1, dialog's off, nothing else    plan ok, text null (nothing written)
+  closestop: stop asked of the earlier idle terminal: 1 / close() called while the earlier terminal is being ended / run asked after close(): 1 / record: {"trigger":"catch-up",...,"outcome":"started","terminal":"new-one"}
+
+Other checks:
+  LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md README.md .scratch/migration/agents/reviews/A3-report.md   exit 1, no hits
+  sh utils/unused-exports.sh | wc -l    378 (base 378); none of the step's names in it
+  breakage grep over every added line of the diff and every untracked file (mutat, mutant, stryker, revert, breakage, inject, sabotage): no hit
+  history-word grep over added comment lines and test titles: every "before", "still" hit describes run-time order, none compares with an earlier state of the code
+  wc -l: largest source watch.ts 724, file.ts 659, context.ts 813, terminals.svelte.ts 830; components 245, 221, 262
+  folder items: schedules 6, state/system/machine 10, shell/rail 8, tests/server/machine/schedules 5, tests/server/machine 7, api/(machine) 4
+  ls src/lib/server/machine/tasks tests/server/machine/tasks   both "No such file or directory"
+```
+
+### Verdicts
+
+Round items (`A3-rebuild-round1.md`):
+
+- 1: violated, Spec 1. The five probe lines and the save probe reproduce byte for byte, and the re-parse compares raw lists (`file.ts:628-630`, `isDeepStrictEqual(holds, plan.asked)` against `changedRaw`). An entry whose value is an alias throws instead.
+- 2: holds. `file.test.ts:66-85` runs 5 edits over 3 unread texts through `handleSchedules`, asserting 409, the exact body, the file byte-equal and `reload` not called. Read, not broken: if the route wrote over an unread file, the bytes would change and `toBe(held)` at :84 would fail, and the 409 at :79 would fail too. The title differs from the ruled one; see Standards 1.
+- 3: holds for what it says. Behaviour 1 makes one clause of DESIGN.md:138 false ("a run claimed while the server closes is recorded as failed with `server-stopped`").
+- 4: holds. `schedule.svelte.ts:485-495` uses `unreadableAnswer`, `failedAnswer` and `wordSentence`. The three `app.schedules` keys are gone. The commit failure answers `schedules-unwritten` (`routes.ts:165-169`). See Standards 2 for the new `ui` key.
+- 5: holds (`config.test.ts:379`, run in test:checks).
+- 6: holds (`routes.ts:165-181`; commit probe rerun).
+- 7: holds for the window it names (`watch.ts:491-505`; stop probe rerun). The neighbouring window inside `launch` is Behaviour 1.
+- 8: holds (S51 probe rerun: `failed` with `folder-not-served`, `runEntry` asked once).
+- 9: holds (report :1436).
+- 10: holds (run above; tree checks only inside test:checks).
+
+A3.md items, for the whole diff:
+
+- 0: holds (the `tasks` folders are gone).
+- 1: violated, Spec 1; see also Behaviour 2.
+- 2: holds.
+- 3: holds; see Behaviour 3 for the record change after the commit.
+- 4: violated, Behaviour 1.
+- 5, 6: hold.
+- 7: holds; Behaviour 3.
+- 8: holds.
+- 9: holds.
+- 10: holds; Behaviour 2.
+- 11: holds by server render; the DOM is declined.
+- 12: holds.
+- 13: violated in one clause (DESIGN.md:138, Behaviour 1).
+- 14: not applicable (E4 not on main).
+
+Cases, for the whole diff: as the first refuter report gives them, with these changes:
+
+- C24: partial, Behaviour 1.
+- S5: met. A pause no longer changes `task: radar`, but a dialog Save cannot correct it (Behaviour 2).
+- S19: met by the run; Behaviour 3 names the path where it fails.
+- S20: met (probes above).
+- S23: met (raw-list compare).
+- S43: met. A pause or resume while the record does not read writes, as Z609 rules.
+- S47: met.
+- S51: met. The due-time refusal comes from the rerun; the reread part comes from the first review's run.
+- Verify item 8: unmet, as in the first review (no new test of new behaviour this round).
+
+### Findings
+
+**Spec**
+
+1. `src/lib/server/machine/schedules/file.ts:566-571` (`changedEntry`):
+   ```
+   const patched = patchedText(parsed, map, changes);
+   if (patched !== null) texts.push(patched);
+   ...
+   texts.push(withEntry(parsed, at, changedNode(parsed.doc, map, changes)));
+   ```
+   - What is wrong: the rendered fallback is always built, even when the byte patch is good. `withEntry` renders the node alone in a new `Document`, and an alias whose anchor sits in another entry throws "Unresolved alias". `planEdit` has no catch, so the throw leaves `chained` and the POST ends as SvelteKit's 500. My probe threw on Pause of `runs: *r` and on a Save changing `when` of that entry. Deleting the anchor-holding entry is refused `entry-changed`, whose sentence ("try again") cannot help.
+   - Failure scenario: a reader shares a `runs` map between two entries with `&r` and `*r` (ordinary hand-written YAML). Pause on the second shows "The server refused the request (HTTP 500)." The schedule keeps running.
+   - Verdict: round item 1 and A3.md item 1 violated.
+   - Landing fix, small: in `file.ts:558-573`, build the rendered text only inside a `try` and push it only when it renders, so the byte patch carries a block entry. `planEdit:628-639` then refuses when no text holds.
+
+**Proof**
+
+1. Report, "Decisions the round made", fifth bullet: "The record was checked readable before the write, so this is reached only by a record that went unreadable in between."
+   - What is wrong: `renameRecord` and `dropRecord` (`record.ts:313-329`) go through `change` (`record.ts:173-200`). It also fails with `why: 'locked'` (a lock held past `LOCK_WAIT_MS`, `record.ts:145`) and `why: 'unwritable'` (`:125`, `:181`, `:196`). The route answers all of them `record-unread` (`routes.ts:226`).
+   - The orchestrator's ruling on the 409 answer rests on this sentence.
+   - Failure scenario: see Behaviour 3.
+   - No landing fix; it goes with Behaviour 3.
+
+**Standards**
+
+1. `tests/server/machine/schedules/file.test.ts:41`: `it('refuses an edit over a schedules file it cannot read, leaving it'`
+   - What is wrong: G31 as ruled (Z575; A3.md "Guarded entries as ruled", :572) names 'refuses a write over a schedules file it cannot read, leaving it'. The round brief item 2 used "an edit", and the builder renamed the test to match. At landing the G31 Test line and the test title must agree.
+   - Failure scenario: the orchestrator copies G31 as ruled into `agents/guarded.md`, and the entry names a test that does not exist.
+   - Landing fix, tiny: write G31's Test line in `agents/guarded.md` with the test's title (or rename `file.test.ts:41` back).
+   - Every other added or changed test sits in a named entry: watch.test.ts and run.test.ts under G46 as ruled; record.test.ts under G31; schedules.test.ts under G1; config.test.ts and config-folder.test.ts held whole under G12 and G13; the local.test.ts row under G13; boundaries.test.ts under G16.
+2. `config/text/ui.yml:5`: `answer_unreachable: The server did not answer.`
+   - What is wrong: `config/text/views/shared/commands.yml:49` already holds `unreachable: The server did not answer.`, read by `commands.svelte.ts:388`. That is one sentence under two keys (spec.md, "a parser, a fold or a rule exists once and is reused"). DESIGN.md "Untyped input" names `ui.answer_refused` and `ui.answer_unreadable` but not the new key.
+   - Failure scenario: a later rewording changes one of the two, and the tray and the command bar say different things for the same event.
+   - Landing fix, small but outside A3's paths: `commands.svelte.ts:388` reads `unreachableAnswer()` and `commands.yml:49` goes. Otherwise leave it.
+3. Paths outside the write list: `state/client/writes.svelte.ts:164-175`, `state/shared/answers/answers.ts:109-112`, `config/text/ui.yml:5` and `state/shared/stores/shapes.ts:151-163` (the `Posted.status` field).
+   - What is wrong: item 4 needs them (`failedAnswer` takes `{ status }`, and `Posted` had none), and the change is minimal. The report names them only inside the item 4 row, with no file-table line giving the reason, as spec.md's "Where you work" asks.
+   - Failure scenario: the landing reads the file list against the write list and finds four unexplained paths.
+   - No code fix; one line in the landing booking.
+
+No history in comments, no non-ASCII, no file over its limit, and no breakage code.
+
+**Behaviour**
+
+1. `src/lib/server/machine/schedules/watch.ts:394-406` (`launch`):
+   ```
+   if (earlier.state === 'idle') { await options.stop(earlier.terminal)...; options.refresh(); }
+   ...
+   answer = await options.run(entry, SCHEDULED_SIZE)
+   ```
+   - What is wrong: there is no `stopped()` check after the await on the earlier terminal's stop. A `close()` during it (a server stop, or a rebuild after a `local.yml` change) still starts the run. My closestop probe printed "run asked after close(): 1", with the record settled `started` with the new terminal.
+   - This breaks G46's "close() leaves no timer and starts nothing" and C24, and makes DESIGN.md:138's `server-stopped` clause false for this window.
+   - Failure scenario: Axel stops the server at the moment a due time ends an idle earlier terminal. A Claude session starts after the server has gone, unattended when the schedule says so.
+   - Verdict: A3.md item 4 violated, C24 partial.
+   - Landing fix, small: after the stop at `watch.ts:399-400`, add `if (stopped())`, settle the run `failed` with `server-stopped` as `watch.ts:493-503` does, and return.
+2. `src/lib/server/machine/schedules/file.ts:376-392` (`changesOf` compares with `readEntry`'s normalised entry) together with `schedule.svelte.ts:381-405` (`openDialog` fills the dialog from that normalised entry):
+   - What is wrong: a row with `runs: { task: radar }` opens with Task Lit Watch, and one with `unattended: 1` opens with Run unattended off. A Save that keeps those values is "no change". The route answers `{ ok: true }` with nothing written (probe: "plan ok, text null"), the dialog closes (`schedule.svelte.ts:505`), and the problem stays.
+   - The report states that a no-change save writes nothing, but not this consequence.
+   - Failure scenario: the reader typed `task: litwach`, sees the problem sentence, opens Edit, sees Lit Watch chosen and presses Save. The dialog closes and the row still says the task is unknown and does not run. The only way through the dialog is to pick another task, save, pick Lit Watch and save again.
+   - Not a landing fix; a decision (automode).
+     - (a) The dialog opens a field that carries a problem (the task of `update-task-unknown`, a `flag-wrong` flag) with no value chosen, and `check(draft)` asks for one. The server treats a value sent for such a key as a change, comparing it with the raw value. The fault is ended at both ends, and an untouched key keeps its bytes, as Z609 wants.
+     - (b) The server compares every key with the raw value. Simpler, but a save that changes only `when` would rewrite `task: radar` to `litwatch`, which Z609 forbids.
+     - (c) Keep it. This is the lazy option.
+     - Recommendation: (a).
+3. `src/lib/server/machine/schedules/routes.ts:170-181` and `:226`: `return wrote.recorded ? OK() : refuse('record-unread');`
+   - What is wrong: after the schedules file is committed, a failed rename or drop answers 409 `record-unread` ("The run record does not read, so nothing starts.") for a lock that stays taken or a record that cannot be written as well (Proof 1), and logs no reason. The dialog stays open over a save that landed.
+   - For a new entry under a reused name whose drop failed, the record keeps the old `pattern`, `since` and `handled`. When the pattern is the same, the reused name inherits the handled time and can catch up at once, which item 3 and S19 exclude.
+   - Failure scenario: the reader saves a new "Weekly radar" with `0 7 * * *` while another server's claim holds the lock past 2 s. The dialog says the record does not read, the file holds the entry, and the old entry's 07:00 of today starts as a catch-up.
+   - Not a landing fix; a decision (automode).
+     - (a) Hold the record's lock across the commit: take the lock, check the record reads, commit `schedules.yml`, change the record, release. This ends the window, and a lock that stays taken refuses before anything is written.
+     - (b) Keep commit-first and answer the true failure with new words (`record-locked`, `record-unwritten`) and a stderr line. The S19 window stays.
+     - (c) Keep it. This is the lazy option.
+     - Recommendation: (a).
+4. Minor, found while probing the inputs the brief named:
+   - A pause or a save that adds a key to a CRLF file writes that one line with LF (`file.ts:463`, `:493`). The file then mixes line ends. It still parses, and a resume restores it byte for byte.
+   - A flow-map entry is rendered by the library, so a pause then a resume gives `{ name: A, ... }` for `{name: A, ...}`. Keys, order and values stay; the head comment of `file.ts:18-20` says so, and the report does not.
+   - Landing fix for CRLF, small: use `\r\n` at `file.ts:463` and `:493` when the text holds it. The flow-map spacing is as designed.
+
+The decisions the builder took that the brief did not name, each judged on whether it is a user-visible shape:
+
+- `schedules-unwritten`: user-visible. It is a word on the wire of `/api/schedules` and a sentence in the dialog ("The schedules file could not be written, so nothing was saved."). Item 4 asked for a word and did not name it. Needs a ruling (automode); the recommendation is to keep it.
+- `server-stopped`: user-visible. It is stored in `~/.oculus/schedule.json` as `why.word` and shown on the run line ("failed: The server stopped before the run started."). The word is ruled by Z610 and round item 7; only the sentence is the builder's.
+- `ui.answer_unreachable` and `unreachableAnswer`: the key's sentence is user-visible, and the function is internal. See Standards 2.
+- `outcome_failed_bare`: user-visible ("failed" with no reason). Every failed run this code writes carries `why`, so only a hand-edited record reaches it. The same goes for the fallback `wordSentence(word, names) ?? word` (`schedule.svelte.ts:247`), which shows a raw machine word to the reader against spec.md's "every user-facing string from a catalog file". It is small, but naming an unknown word needs a catalog sentence, so it needs a ruling.
+- A record change failing after the commit, answered 409 `record-unread` with the file kept: user-visible (the answer and the dialog's sentence). See Behaviour 3 and Proof 1.
+- A no-change save writing nothing: the no-write itself is internal (no change-log line, no reload), but its effect through the dialog is user-visible. See Behaviour 2.
+
+Closures, checked:
+
+- No check was removed in place of a fix.
+- Item 2 added assertions.
+- Item 5 renamed a title only.
+- Item 4 widened `Posted` by one field, needed by `failedAnswer`.
+- No fix reaches beyond its finding, except the new shared `ui` key (Standards 2).
+
+### Declined to judge
+
+- What needs a DOM: the dialog's behaviour after a no-change save, the 409 sentence shown in the open dialog, the tray's Escape order and z-order. They belong to the look; I started no app.
+- Whether the base copy the builder diffed against equals 995e6dfad byte for byte. The git commands that would show it are outside what this review may run.
+- The `npx tsc --noEmit -p .` claim (only two `CardAction` lines): not rerun, since it is not in the verify list and no decision rests on it.
+
+Reviewer usage: a1226d68c43be5990, claude-opus-5-5, 328,871 tokens, 61 tool uses, 11.7 min.

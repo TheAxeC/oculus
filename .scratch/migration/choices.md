@@ -2,6 +2,60 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z618 (2026-10-06, step A3)
+
+The question: A3 gets the plan's extra repair round: A3.md item 4 (G46, close() starts nothing) is violated in `launch` and item 3's S19 window stays open through Z614, both too large for landing; the review's other findings go in the same round.
+
+- Chosen: an extra round.
+- Not chosen: (b) fix at landing, which is too large for the landing and leaves Z613 and Z614 unreviewed, the lazy one.
+
+Where it is built: A3's repair round 2 (`agents/briefs/A3-round2.md`). Booked in `plan.md` Rulings.
+
+## Z617 (2026-10-06, step A3)
+
+The question: A3, the builder's words stand: `schedules-unwritten` for a schedules file that could not be written, and the sentence of `server-stopped`; `ui.answer_unreachable` becomes the one key for "The server did not answer.", read by the command bar too.
+
+- Chosen: keep the words and fold the duplicate sentence into one key.
+- Not chosen: (b) keep both keys, the lazy one, which lets the tray and the command bar drift.
+
+Where it is built: A3's repair round 2 (`agents/briefs/A3-round2.md`). Booked in `plan.md` Rulings.
+
+## Z616 (2026-10-06, step A3)
+
+The question: A3, a run record naming a reason this version does not know shows the catalog sentence `outcome_failed_unknown` instead of the raw word; `outcome_failed_bare` stays for a run with no reason.
+
+- Chosen: a catalog sentence for an unknown word.
+- Not chosen: (b) keep showing the raw word, against spec.md's catalog rule, the lazy one.
+
+Where it is built: A3's repair round 2 (`agents/briefs/A3-round2.md`). Booked in `plan.md` Rulings.
+
+## Z615 (2026-10-06, step A3)
+
+The question: A3, an entry the dialog cannot write (neither the byte patch nor the rendered entry holds) is refused 409 with `entry-unwritable` and the sentence "The entry \"{name}\" cannot be changed from here; edit schedules.yml by hand."
+
+- Chosen: a word of its own with a sentence that tells the reader what to do.
+- Not chosen: (b) reuse `entry-changed`, whose "try again" cannot help; (c) leave the 500, the lazy one.
+
+Where it is built: A3's repair round 2 (`agents/briefs/A3-round2.md`). Booked in `plan.md` Rulings.
+
+## Z614 (2026-10-06, step A3)
+
+The question: A3, a save that renames or drops a record entry holds the record's lock across the commit: lock, check the record reads, commit schedules.yml, change the record, release; a lock held past LOCK_WAIT_MS refuses before any write with `record-locked`.
+
+- Chosen: (a) hold the lock across the commit.
+- Not chosen: (b) keep commit-first with new words for the failure, which leaves the catch-up window of S19 open; (c) keep it, the lazy one.
+
+Where it is built: A3's repair round 2 (`agents/briefs/A3-round2.md`). Booked in `plan.md` Rulings.
+
+## Z613 (2026-10-06, step A3)
+
+The question: A3, a dialog field whose value carries a problem (an unknown task, a wrong flag) opens with no value chosen and asks for one; the server treats a value sent for such a key as a change and compares it with the raw value, so a Save can correct it while an untouched key keeps its bytes.
+
+- Chosen: (a) the field opens empty and the server compares a sent value for a problem key with the raw value.
+- Not chosen: (b) compare every key with the raw value, which rewrites keys the reader did not touch against Z609; (c) keep it, the lazy one.
+
+Where it is built: A3's repair round 2 (`agents/briefs/A3-round2.md`). Booked in `plan.md` Rulings.
+
 ## Z612 (2026-10-06, step O30)
 
 The question: a one-line terminal paste closed by a line break asks "Paste 1 lines into the terminal?", while HELP.md says only a paste of several lines asks.
