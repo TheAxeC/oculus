@@ -24,7 +24,20 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []   # steps in flight, up to six (Z632)
+dispatch:   # steps in flight, up to six (Z632)
+- step: E4g
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a0af7bce29bac6fa9 (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/E4g
+  base: 31068a9de
+  launched: 2026-10-06
+  report: agents/reviews/E4g-report.md
+  brief_check: agents/reviews/E4g-brief-check.md (a0be667a081a9ab33, claude-opus-5-5, 205,592 tokens, 78 tool uses, 8.8 min)
+  shared_paths: with O30b: DESIGN.md's file tree (E4g adds docs/apps.md under docs/ at :79-80, O30b adds its build folders higher in the same block; both lines kept) and HELP.md (E4g :21, :82 and :210-221, O30b :186, :365 and :367, disjoint); so the merge is simple
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
