@@ -52,21 +52,16 @@ function walk(dir: string): string[] {
 }
 
 describe('a comment line', () => {
-    // Every file under the three roots is parsed, which takes longer than a case's default limit.
-    it(
-        'ends by the hundredth column everywhere under src, tests and utils',
-        { timeout: 30000 },
-        () => {
-            const found = ['src', 'tests', 'utils'].flatMap((top) =>
-                walk(join(ENGINE, top)).flatMap((file) =>
-                    tooWide(file, readFileSync(file, 'utf8')).map(
-                        (at) => `${relative(ENGINE, file)}:${at}`
-                    )
+    it('ends by the hundredth column everywhere under src, tests and utils', () => {
+        const found = ['src', 'tests', 'utils'].flatMap((top) =>
+            walk(join(ENGINE, top)).flatMap((file) =>
+                tooWide(file, readFileSync(file, 'utf8')).map(
+                    (at) => `${relative(ENGINE, file)}:${at}`
                 )
-            );
-            expect(found).toEqual([]);
-        }
-    );
+            )
+        );
+        expect(found).toEqual([]);
+    });
 
     it('is found in each language the tree is written in', () => {
         const long = `${'word '.repeat(22)}end`;

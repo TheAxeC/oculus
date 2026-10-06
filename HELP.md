@@ -369,7 +369,7 @@ The app: `npm run app` starts the app from the checkout (Electron; its first run
 The checks, from `tools/oculus`:
 
 - `npm test` runs the unit suite over the data layer, the server, the stores, the shell and the views, leaving out the tree checks and the tests tagged slow. A file named `*.client.test.ts` runs in Svelte's client runtime with no DOM, which is where an effect's teardown runs; every other file runs against Svelte's server build.
-- `npm run test:checks` runs the tree checks under `tests/checks` (comment width, file size, duplication, import order and the rest) with no time limit.
-- `npm run test:slow` runs the tests tagged slow (`// @module-tag slow` in a test file's head comment tags the file, `{ tags: ['slow'] }` a test or a describe), which start a process, wait on a real timer, open a socket or take 100 ms or more in a run of their own.
+- `npm run test:checks` runs every tree check under `tests/checks` (comment width, file size, duplication, import order and the rest), the ones tagged slow included, with no time limit.
+- `npm run test:slow` runs the tests tagged slow outside `tests/checks` (`// @module-tag slow` in a test file's head comment tags the file, `{ tags: ['slow'] }` a test or a describe), which start a process, wait on a real timer, open a socket or take 100 ms or more in a run of their own.
 - `npm run check` runs the TypeScript and Svelte check over every file.
 - `npm run lint` and `npm run format:check` hold the source to its conventions.

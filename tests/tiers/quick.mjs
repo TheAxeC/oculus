@@ -8,7 +8,8 @@
 //   import a changed file at most RELATED_DEPTH imports away, and every changed test,
 //   with the test files sharing their loaded modules (`--no-isolate`) so each file does not load
 //   them again, the config read without bundling it, and the translated modules kept on disk
-//   between runs;
+//   between runs (node_modules/.experimental-vitest-cache, where each file is written under a
+//   temporary name and renamed into place, so another test:quick run reads whole files);
 // - prettier and eslint over the changed files only, with their caches, so a file that has not
 //   changed since a green run costs nothing;
 // - svelte-check, incremental: the type check of the whole tree, the one command that reads files
@@ -124,7 +125,10 @@ function isUnitTest(path) {
     return TEST_FILE.test(path) && path.startsWith('tests/') && !path.startsWith('tests/checks/');
 }
 
-/** Whether a file is tagged slow as a whole, which test:slow runs. */
+/**
+ * Whether a file is tagged slow as a whole: npm test leaves it out, and test:slow runs it unless it
+ * is under tests/checks, where test:checks runs it.
+ */
 function isSlow(path) {
     return readFileSync(join(ROOT, path), 'utf8').includes('@module-tag slow');
 }
@@ -228,6 +232,9 @@ function track(promise, display = show) {
 }
 
 const pending = [];
+// A checkout with no generated types yet lets vitest's start write them, so vitest then waits for
+// the sync instead of writing them beside it (vite.config.ts, `syncTypesOnce`).
+const noTypesYet = !existsSync(join(ROOT, '.svelte-kit', 'non-ambient.d.ts'));
 const synced = track(runTask('svelte-kit sync', join(BIN, 'svelte-kit'), ['sync']));
 pending.push(synced);
 const formatted = existing.filter((one) => FORMATTED.test(one));
@@ -249,7 +256,8 @@ for (const [path, why] of picks) {
     if (why !== 'essential') console.log(`        ${path}: ${why}`);
 }
 for (const path of left) {
-    console.log(`        ${path}: changed, run by npm run test:checks or test:slow`);
+    const command = isUnitTest(path) ? 'test:slow' : 'test:checks';
+    console.log(`        ${path}: changed, run by npm run ${command}`);
 }
 
 const select = [...picks.keys()];
@@ -262,6 +270,7 @@ const flags = [
     'runner',
     '--experimental.fsModuleCache'
 ];
+if (noTypesYet) await synced;
 pending.push(track(runTask('vitest', process.execPath, [VITEST, 'run', ...select, ...flags])));
 const linted = existing.filter((one) => LINTED.test(one));
 if (linted.length > 0) {

@@ -125,8 +125,7 @@ function documentHits(base = '.'): string[] {
 }
 
 describe('no history in code', () => {
-    // Every file under the four roots is parsed, which takes longer than a case's default limit.
-    it('names no package id, date or session in any comment', { timeout: 30000 }, () => {
+    it('names no package id, date or session in any comment', () => {
         expect(commentHits().join('\n')).toBe('');
     });
 

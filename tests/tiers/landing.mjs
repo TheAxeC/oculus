@@ -6,15 +6,28 @@
 // start test's server row reads build-app/. The lint keeps its cache in
 // node_modules/.cache/eslint/, the one npm run test:quick keeps.
 //
-// The list is the unit suite, the tree checks, the type check, the build and the slow tests (one
-// lane, in that order), the format check, the lint over the whole tree and the ASCII gate. The type
-// check and the ASCII gate are in it because npm run test:quick holds them and nothing else in this
-// list does.
+// The vitest runs (npm test, npm run test:checks and, in the third lane, npm run test:slow) start
+// together over one node_modules/.vite and one .svelte-kit. vite.config.ts turns off the optimized
+// dependencies of Vitest's own environment, the one folder in node_modules/.vite that two runs
+// rename into, and keeps a vitest start from running SvelteKit's type sync while .svelte-kit holds
+// the types, so no vitest run writes .svelte-kit/types; the third lane's `svelte-kit sync` and
+// build write them, one after the other. A checkout with no types yet gets them from one
+// `svelte-kit sync` run before the commands start. The files the runs share, results.json and
+// _svelte_metadata.json under node_modules/.vite/vitest/, are hints that a reader survives torn:
+// Vitest reads results.json inside a try and the Svelte plugin reads its metadata inside a try.
+// Nothing here staggers or retries the starts.
+//
+// The list is the unit suite, the tree checks (every file under tests/checks, the ones tagged slow
+// included), the type check, the build and the slow tests outside tests/checks (one lane, in that
+// order), the format check, the lint over the whole tree and the ASCII gate. The type check and the
+// ASCII gate are in it because npm run test:quick holds them and nothing else in this list does.
 //
 // Each command prints its line when it ends, and its whole output when it failed. The last line
 // names the commands that failed, and the exit code is 1 when there is one.
 
-import { ASCII_GATE, ROOT, judgeAscii, runTask, seconds, show } from './run.mjs';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { ASCII_GATE, BIN, ROOT, judgeAscii, runTask, seconds, show } from './run.mjs';
 
 const NPM = 'npm';
 
@@ -42,6 +55,11 @@ const LIST = [
 const started = Date.now();
 const red = [];
 console.log(`test:landing: ${LIST.length} commands, from ${ROOT}`);
+if (!existsSync(join(ROOT, '.svelte-kit', 'non-ambient.d.ts'))) {
+    const synced = await runTask('svelte-kit sync', join(BIN, 'svelte-kit'), ['sync']);
+    show(synced);
+    if (!synced.ok) red.push(synced.name);
+}
 await Promise.all(
     LIST.map(async ([name, command, args, judge = (one) => one]) => {
         const result = judge(await runTask(name, command, args));

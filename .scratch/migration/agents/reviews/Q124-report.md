@@ -235,3 +235,21 @@ The citation in "Findings outside the brief" now names `exports/vite/dev/index.j
 Files changed this round: `vite.config.ts` (72 base, 135 now), `tests/tiers/landing.mjs` (54 base, 64 now), `tests/tiers/quick.mjs` (285 base, 290 now), both inside the original write list. `package.json`, `README.md` and `HELP.md` are unchanged this round.
 
 Judgment calls: (1) the wrapper keys on the `__vitest__` environment and the marker file, with no environment variable; reversible by deleting `syncTypesOnce`. (2) The marker is the fixed path `.svelte-kit/non-ambient.d.ts`, SvelteKit's default `outDir`; the checkout sets no other (`kit` options are inline in `vite.config.ts`). (3) `vite.config.ts` now has a top-level `await`.
+
+## Corrections at landing (the orchestrator)
+
+The review over repair round 1 (`agents/reviews/Q124-refuter.md`, R1-3 to R1-5) found lines of this report that the round made false. They stand corrected here; the lines above are left as the builder wrote them.
+
+- The history-word row of the DONE table: over the round's lines the grep printed one hit, "still" in `tests/tiers/landing.mjs`; the comment was rewritten at landing and no longer holds it.
+- "it is written whole with one `writeFile`" (The mechanism that ends the race): too strong, as the first review's S1 found; the comment the round wrote says what holds.
+- The `quick.mjs` row of "Comments and documents re-read": the comment says the cache is written under a temporary name and renamed into place, so another `test:quick` run reads whole files.
+- The file table's line counts for `landing.mjs`, `quick.mjs` and `vite.config.ts` are those of the first run; the files as landed are counted in `agents/reviews/Q124-landing.md`.
+- The quoted sentence "They share no folder that two of them write" no longer exists; `landing.mjs`'s head comment was rewritten in the round and at landing.
+- The corrected citation of P1 sits in the round's B1 "Cause" bullet, not under "Findings outside the brief".
+- The first line: the race is ended for every start once `.svelte-kit` holds the types. On a checkout with none, `npm run test:quick` now makes vitest wait for its `svelte-kit sync`, and `npm run test:landing` runs one `svelte-kit sync` before its commands (fixed at landing). Two `npx svelte-kit sync` or two lone `npx vitest run` started by hand at once on a checkout with no types still both write them.
+
+Host- or user-visible change the table above lacked:
+
+| What | Before | After |
+| --- | --- | --- |
+| a vitest start and `.svelte-kit` | every start rewrote `.svelte-kit` (`tsconfig.json`, `ambient.d.ts`, `generated/`, `types/`) | a start writes nothing there while `non-ambient.d.ts` exists; after a route is added, `./$types` for it resolves after `npm run check`, `npx svelte-kit sync` or a dev server start, not after `npm test` |

@@ -1,5 +1,4 @@
-In flight (4 of 6 slots):
-- Q124 (every tree check with no limit, and the landing's vitest cache race): repair round 1 returned, its review running, base ba6a995f2.
+In flight (3 of 6 slots):
 - D23 (language servers): building.
 - Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): building, base cfc9e60d9; Axel reads the new HELP.md and DESIGN.md before it lands.
 - PR2 (Present decks from any folder): building, base 6fb105892.
@@ -33,6 +32,7 @@ Queued, in order (24 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- Q124 (every tree check with no limit, and the vitest races), 2026-10-06, a350a2dc5.
 - O30b (the app's own build folders), 2026-10-06, 4f97e9fad.
 - E4g (the apps guide), 2026-10-06, 7e6c14d8c.
 - PR1 (Present full screen), 2026-10-06, 1c36ba0c6.

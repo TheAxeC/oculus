@@ -65,21 +65,6 @@ dispatch:   # steps in flight, up to six (Z632)
   builder_usage: hand-back 286,831 tokens, 65 tool uses, 16.5 min
   landing: not-started
   round: 0 (cases ruling agents/briefs/Q125-cases.md, rulings A to E (Z646) on the hand-back; builder resumed; G54's test, Z645 (a), added to the brief by message to the builder: tests/checks/config/arrangements.test.ts)
-- step: Q124
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a39e65a9fa382453f (builder, launched 2026-10-06)
-  worktree: .agents/worktrees/Q124
-  base: ba6a995f2
-  launched: 2026-10-06
-  report: agents/reviews/Q124-report.md
-  brief_check: agents/reviews/Q124-brief-check.md (a637e9ef56264db07, claude-opus-5-5, 202,225 tokens, 63 tool uses, 9.0 min), closed in the brief by ad1758291d4f08a72 (claude-opus-5-5; 123,025 tokens, 19 tool uses, 4.4 min)
-  shared_paths: with O30b: vite.config.ts (O30b turns the config into a function of the mode, Q124 changes its cache setting; the second landing re-applies the other's few lines inside the new shape) and tests/tiers/landing.mjs (head comment only, both); with D23: package.json (D23 adds dependencies, Q124 changes the test scripts, separate hunks); with O30b, HELP.md (O30b :186, :365, :367, Q124 :371-373, adjacent and merged at the second landing); so the merge is simple
-  landing: not-started
-  round: 1 (sent 2026-10-06 to a39e65a9fa382453f: the .svelte-kit/types race of the review's B1 ended at its cause, the comments S1 to S3, the report's P1 citation) ; returned 2026-10-06, reviewer over round 1 a8c2b6c8333c87868 running
-  builder_usage: 242,256 tokens, 97 tool uses, 97.4 min; round 1: 300,812 tokens, 142 tool uses, 62.1 min
-  reviewer_report: (a68c2590b5c60eb18, claude-opus-5-5, stopped: dispatched before /refute was invoked for Q124); agents/reviews/Q124-refuter.md (a8ffa34a027b813e6, claude-opus-5-5, 178,043 tokens, 52 tool uses, 62.6 min)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -250,7 +235,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-06. O30b landed (the app's own build folders) after E4g (the apps guide); PR2 is building (Z650 ruled (b)). In flight: PR2 (building), Q124 (reviewer over round 1), D23 (building), Q125 (building).
+- 2026-10-06. Q124 landed (tree checks with no limit, the vitest races), after O30b and E4g; PR2 is building with Z650 (b) and Z652. In flight: PR2 (building), D23 (building), Q125 (building).
 - 2026-10-06 12:55. Q123 landed (a terminal pane attached as its program left it; booking in plan.md; `agents/reviews/Q123-landing.md`) with five fixes at landing, B1 the top row's shift among them. In flight: E4g (repair round 1), Q124 (under review), O30b (under review), D23 and PR1 (building). Open items Z644 and Z645 raised. Next: Q125 into the free slot, then each landing as its review closes.
 - 2026-10-06 09:30. E4 landed (apps added while oculus runs; booking in plan.md; `agents/reviews/E4-landing.md`) after its look on TEST, which Axel's dev-server restart (Z631) made possible. Axel ruled Z630 (G51's words, written into guarded.md), Z632 (`workers_at_once` 6 in both files) and Z633 (step E4g, the apps guide in `tools/oculus/docs/apps.md`, first in the queue). Nothing in flight. Next: /spec for E4g, O30b, Q123, Q124, D23 and X3e, the six slots.
 - 2026-10-06 08:35. E4 staged on main, not committed: gate-E4 passed `npm run test:landing` (6 of 6), main's staged diff `cmp`-equal to the gate's, penpal and the Electron binary installed in main's node_modules, guarded.md names E4's tests (G1, G8, G9, G31, G49, G50). The look waits on Z631 (Axel's dev server needs a restart to resolve penpal); `~/.oculus/approvals.json` and `workspaces.json` back at their shasums, the scratch apps kept in the session scratchpad. Next: the look, the booking, the commit, then O30b, Q123, Q124 prepared.
