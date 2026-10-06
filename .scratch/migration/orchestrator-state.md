@@ -38,6 +38,19 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with O30b: DESIGN.md's file tree (E4g adds docs/apps.md under docs/ at :79-80, O30b adds its build folders higher in the same block; both lines kept) and HELP.md (E4g :21, :82 and :210-221, O30b :186, :365 and :367, disjoint); so the merge is simple
   landing: not-started
   round: 0
+- step: O30b
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a790ab45acb7513c3 (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/O30b
+  base: dff7539f4
+  launched: 2026-10-06
+  report: agents/reviews/O30b-report.md
+  brief_check: agents/reviews/O30b-brief-check.md (a4fbb5ab96ae037e3, claude-opus-5-5, 225,807 tokens, 65 tool uses, 9.4 min), closed in the brief by a85fbf1484fff6900 (claude-opus-5-5; 179,741 tokens, 41 tool uses, 8.9 min)
+  shared_paths: with Q124: vite.config.ts (O30b's function form, Q124's few-line cache setting carried by hand at the second landing), tests/tiers/landing.mjs (head comment, both), tests/checks/diagrams/diagrams.test.ts (O30b :170-184, Q124 the per-case limits, disjoint), .gitignore (both add lines), README.md and HELP.md (disjoint lines); with E4g: DESIGN.md's tree (both lines kept) and HELP.md (disjoint); with Q123: DESIGN.md (:375 against the tree and :436) and HELP.md (disjoint); docs/diagrams regenerated at landing; so the merge is simple
+  landing: not-started
+  round: 0
 - step: Q123
   executor: agent
   worker: claude:sonnet at ordo-high
