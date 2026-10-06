@@ -106,3 +106,14 @@ export function themeClasses(tokens: string = tokensCss, themes: string = themes
         (name) => name !== ':root' && name !== CRT_CLASS
     );
 }
+
+/**
+ * The names of the custom properties a theme sets on the document: every property tokens.css
+ * declares on `:root` and every one the derivation adds to them. An app's frame is given the value
+ * each has on the page, so it is painted in the page's colours.
+ */
+export function tokenNames(tokens: string = tokensCss, themes: string = themesCss): string[] {
+    const blocks = parseBlocks(`${tokens}\n${themes}`);
+    const base = resolveTheme(blocks, '');
+    return [...new Set([...Object.keys(base), ...Object.keys(deriveTokens(base))])];
+}

@@ -24,9 +24,14 @@
 //
 // A last line cut off by an interrupted write is closed with a newline before the next record, so
 // that record is read back.
+//
+// A record whose values are too large for a line (an app's store) holds their byte sizes as
+// `before` and `after` and hands the values themselves as `kept`. Append writes `kept` to
+// `<undoDir>/<at>.json`, never to the log, and deletes that file when the record leaves the window
+// the log keeps.
 
 import { json } from '@sveltejs/kit';
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { z } from 'zod';
@@ -108,6 +113,13 @@ export type ChangeRecord = {
      * on the record of an undo that put text back; on no other record.
      */
     replaced?: ReplacedText;
+    /**
+     * The two values themselves, for a record whose `before` and `after` are their byte sizes. They
+     * are written to the undo folder under the record's moment and are not part of the line.
+     */
+    kept?: { before: unknown; after: unknown };
+    /** The view id of the app whose frame sent the write, on a write an app made. */
+    app?: string;
 };
 
 /** One line of the log. */
@@ -127,6 +139,8 @@ export type ChangeLog = {
     file: string;
     keep: number;
     writes: FsWrites;
+    /** The folder the values of a record's `kept` are written to, one `<at>.json` each. */
+    undoDir?: string;
 };
 
 /** How many changes one read answers with, which is the page "load older" walks back through. */
@@ -173,6 +187,25 @@ export function same(left: unknown, right: unknown): boolean {
     const keys = Object.keys(one);
     if (keys.length !== Object.keys(other).length) return false;
     return keys.every((key) => key in other && same(one[key], other[key]));
+}
+
+/** The file that holds the values a record kept, or null for a log that has no undo folder. */
+function keptFile(log: ChangeLog, at: string): string | null {
+    return log.undoDir === undefined ? null : join(log.undoDir, `${at}.json`);
+}
+
+/** The values a record kept, or null when the file is gone or does not hold two values. */
+export function keptValues(log: ChangeLog, at: string): { before: unknown; after: unknown } | null {
+    const file = keptFile(log, at);
+    if (file === null || !existsSync(file)) return null;
+    try {
+        const held = JSON.parse(readFileSync(file, 'utf8')) as unknown;
+        if (typeof held !== 'object' || held === null) return null;
+        if (!('before' in held) || !('after' in held)) return null;
+        return { before: held.before, after: held.after };
+    } catch {
+        return null;
+    }
 }
 
 /** The text of the log, or the empty string for a file that is not there yet or cannot be read. */
@@ -271,18 +304,27 @@ function append(log: ChangeLog, kind: string, records: ChangeRecord[], undoes?: 
     const closing = text !== '' && !text.endsWith('\n') ? '\n' : '';
     let moment = Math.max(Date.now(), lastMoment(lines) + 1);
     const written = records.map((record) => {
+        const { kept, ...line } = record;
         const one: Change = {
             at: new Date(moment).toISOString(),
             kind,
-            ...record,
+            ...line,
             ...(undoes === undefined ? {} : { undoes })
         };
+        const file = kept === undefined ? null : keptFile(log, one.at);
+        if (file !== null) writeTextAtomic(file, JSON.stringify(kept), MODE);
         moment += 1;
         return JSON.stringify(one);
     });
     mkdirSync(dirname(log.file), { recursive: true });
     if (lines.length + written.length > log.keep * 2) {
-        const kept = [...lines, ...written].slice(-log.keep);
+        const all = [...lines, ...written];
+        const kept = all.slice(-log.keep);
+        for (const gone of all.slice(0, all.length - kept.length)) {
+            const old = parseLine(gone);
+            const file = old === null || log.undoDir === undefined ? null : keptFile(log, old.at);
+            if (file !== null) rmSync(file, { force: true });
+        }
         writeTextAtomic(log.file, `${kept.join('\n')}\n`, MODE);
         return;
     }

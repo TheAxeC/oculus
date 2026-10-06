@@ -191,3 +191,5 @@ icons:
     bell_unread: bell-dot
     bell_quiet: bell-off
     clear_all: list-x
+    app: blocks
+    app_view: layout-panel-top

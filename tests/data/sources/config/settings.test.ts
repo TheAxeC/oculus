@@ -1,10 +1,11 @@
 // Layer 1, data tests. The typed readers of single settings out of the merged map (slurm, calendar,
 // search, literature search, open, mail, the change log's length, the usage tiers, the Processes
 // view's program names, the LaTeX formatter and its auto build, the usage refresh, the automatic
-// fetch, the editor's paint limit and the Files view's delete prompt). Each reader is run over a
-// map that carries its own options catalog, whose every default differs from the shipped one, so a
-// default written in code instead of read from the entry fails a row. A wrong value answers the
-// entry's default and a problem naming the key.
+// fetch, the editor's paint limit, the Files view's delete prompt and the apps' limits and closed
+// folders). Each reader is run over a map that carries its own options catalog, whose every default
+// differs from the shipped one, so a default written in code instead of read from the entry fails a
+// row. A wrong value answers the entry's default and a problem naming the key; a missing key
+// answers the default and no problem; a catalog with no entry for a key throws.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -22,8 +23,10 @@ import {
     refreshSettings,
     searchSettings,
     slurmSettings,
-    usageTiers
+    usageTiers,
+    appsSettings
 } from '../../../../src/lib/data/sources/config.ts';
+import { behaviorFindings } from '../../../../src/lib/data/sources/config/catalogs.ts';
 import {
     latexAutoBuild,
     paintLimit,
@@ -66,7 +69,15 @@ const DEFAULTS: Record<string, unknown> = {
     usage_refresh_model: 'm2',
     'git.autofetch_minutes': 7,
     'editor.paint_limit_kb': 100,
-    'files.confirm_delete': false
+    'files.confirm_delete': false,
+    'apps.connect_timeout_s': 11,
+    'apps.state_max_kb': 70,
+    'apps.store_max_kb': 300,
+    'apps.writes_per_min': 40,
+    'apps.opens_per_min': 41,
+    'apps.keys_per_s': 25,
+    'apps.max_files': 600,
+    'apps.max_mb': 25
 };
 
 /** A merged map whose catalog gives each setting a synthetic default, with the given keys set. */
@@ -393,5 +404,130 @@ describe('confirmDelete', () => {
         const wrong = mapWith({ files: { confirm_delete: 'no' } });
         expect(confirmDelete(wrong)).toBe(false);
         expect(confirmDelete({})).toBe(true);
+    });
+});
+
+describe('appsSettings', () => {
+    const read = (apps: unknown) => outcome((p) => appsSettings(mapWith({ apps }), p));
+    const limits = (apps: unknown) => {
+        const got = read(apps);
+        return 'threw' in got
+            ? got
+            : {
+                  value: { ...(got.value as object), closedPaths: undefined },
+                  problems: got.problems
+              };
+    };
+    const DEFAULT_LIMITS = {
+        connectTimeoutS: 11,
+        stateMaxKb: 70,
+        storeMaxKb: 300,
+        writesPerMin: 40,
+        opensPerMin: 41,
+        keysPerS: 25,
+        maxFiles: 600,
+        maxMb: 25,
+        closedPaths: undefined
+    };
+    const closed = (held: unknown) => {
+        const apps = held === undefined ? {} : { closed_paths: held };
+        const found = behaviorFindings(engineDir(), mapWith({ apps }));
+        return [
+            appsSettings(mapWith({ apps })).closedPaths,
+            found.filter((one) => one.key === 'apps.closed_paths').length
+        ];
+    };
+
+    it.each([
+        [
+            'a limit that is missing, which answers the entry default and no problem',
+            () => limits({ closed_paths: ['secrets'] }),
+            { value: DEFAULT_LIMITS, problems: [] }
+        ],
+        [
+            'a limit below its minimum',
+            () => limits({ writes_per_min: -1, closed_paths: [] }),
+            { value: DEFAULT_LIMITS, problems: ['apps.writes_per_min: range'] }
+        ],
+        [
+            'a limit that is not a number',
+            () => limits({ keys_per_s: 'x', closed_paths: [] }),
+            { value: DEFAULT_LIMITS, problems: ['apps.keys_per_s: number'] }
+        ],
+        [
+            'a limit that is not whole',
+            () => limits({ max_files: 2.5, closed_paths: [] }),
+            { value: DEFAULT_LIMITS, problems: ['apps.max_files: whole'] }
+        ],
+        [
+            'limits that are set',
+            () => {
+                const got = limits({ writes_per_min: 5, keys_per_s: 3, closed_paths: [] });
+                const value = 'value' in got ? (got.value as Record<string, unknown>) : {};
+                return [value.writesPerMin, value.keysPerS];
+            },
+            [5, 3]
+        ],
+        [
+            'closed_paths of a missing key',
+            () => closed(undefined),
+            [{ folders: null, shaped: false }, 1]
+        ],
+        [
+            'closed_paths holding a number',
+            () => closed(['a', 5]),
+            [{ folders: null, shaped: false }, 1]
+        ],
+        [
+            'closed_paths with an empty entry',
+            () => closed(['', 'secrets']),
+            [{ folders: ['secrets'], shaped: false }, 1]
+        ],
+        [
+            'closed_paths with a dot-led entry',
+            () => closed(['.x', 'secrets']),
+            [{ folders: ['secrets'], shaped: false }, 1]
+        ],
+        [
+            'closed_paths with an entry named twice',
+            () => closed(['secrets', 'secrets']),
+            [{ folders: ['secrets'], shaped: true }, 0]
+        ],
+        [
+            'closed_paths of two folders',
+            () => closed(['secrets', 'a/b']),
+            [{ folders: ['secrets', 'a/b'], shaped: true }, 0]
+        ],
+        [
+            'the closed_paths finding, worded with the key and the file',
+            () => {
+                const [found] = behaviorFindings(
+                    engineDir(),
+                    mapWith({ apps: { closed_paths: 5 } })
+                );
+                return [
+                    found.key,
+                    /config[\\/]behavior\.yml$/.test(found.file),
+                    found.message.includes('apps.closed_paths'),
+                    found.message.includes('config/behavior.yml')
+                ];
+            },
+            ['apps.closed_paths', true, true, true]
+        ],
+        [
+            'a catalog with no entry for an apps limit, which throws',
+            () =>
+                Object.keys(
+                    outcome((p) =>
+                        appsSettings(
+                            mapWith({ apps: { closed_paths: [] } }, ['apps.keys_per_s']),
+                            p
+                        )
+                    )
+                ),
+            ['threw']
+        ]
+    ] as [string, () => unknown, unknown][])('reads %s', (_row, observe, expected) => {
+        expect(observe()).toStrictEqual(expected);
     });
 });

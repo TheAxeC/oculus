@@ -7,6 +7,12 @@ import { json, type Handle, type RequestEvent } from '@sveltejs/kit';
 /** The routes the origin guard judges: every API route, and not the page. */
 const GUARDED = '/api/';
 
+/** The id of the route that serves the page. */
+const PAGE = '/';
+
+/** The policy the page is sent with: a frame in it loads only from this origin. */
+const FRAME_SRC = "frame-src 'self'";
+
 /**
  * The API paths the origin guard passes unchecked: the two OAuth callbacks. A provider's redirect
  * reaches them from the provider's site with no oculus token, so `Sec-Fetch-Site` is `cross-site`;
@@ -65,11 +71,14 @@ function refused(event: RequestEvent): boolean {
 // holds the one event loop the socket's upgrade waits on, so a read per request made the socket
 // open late on a loaded machine. A finding of the read is said on the read, so once a request.
 //
+// The page's answer carries `Content-Security-Policy: frame-src 'self'`, which holds the frame of
+// an app, whose files are served from /apps/ outside the guard, to the addresses of this origin.
+//
 // Every request under /api/ passes DESIGN.md's one "Auth" rule (`sameOrigin` in
 // lib/server/core/auth.ts) here, before any route sees it, and one that fails it is answered 403
 // with `{ error: 'forbidden' }`; UNGUARDED names the two paths passed unchecked and HEADERLESS the
 // five that admit a request with neither header, each with its reason.
-export const handle: Handle = ({ event, resolve }) => {
+export const handle: Handle = async ({ event, resolve }) => {
     const context = serverContext(event.platform);
     if (refused(event)) return json({ error: 'forbidden' }, { status: 403 });
     event.locals.server = context;
@@ -92,7 +101,12 @@ export const handle: Handle = ({ event, resolve }) => {
         return value;
     };
 
-    return resolve(event, {
+    const response = await resolve(event, {
         transformPageChunk: ({ html }) => html.replace('%oculus.title%', t('app.title'))
     });
+    // A script inside a sandboxed app frame can navigate its own frame to any address with the
+    // reader's data in the query, unless the page that holds the frame names where a frame may
+    // load from. The page's own frames (the document and file views) load from this origin.
+    if (event.route.id === PAGE) response.headers.set('content-security-policy', FRAME_SRC);
+    return response;
 };

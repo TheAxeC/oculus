@@ -81,6 +81,7 @@ describe('checkLocal', () => {
             'mail: [{ provider: ics, label: a }]',
             'local.yml: mail[0].provider must be google or microsoft'
         ],
+        ['apps_dir: 3', 'local.yml: apps_dir must be a path'],
         ['literature: abc', 'local.yml: literature must be a map'],
         ['literature: { wos_key: 3 }', 'local.yml: literature.wos_key must be a non-empty string'],
         ["literature: { mailto: '' }", 'local.yml: literature.mailto must be a non-empty string']

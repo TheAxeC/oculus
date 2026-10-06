@@ -23,6 +23,7 @@
 import { createRegistry, type RegistryStore } from '../workbench/navigation/registry.ts';
 import { createAgents, type AgentsStore } from '../sessions/agents.svelte.ts';
 import { createChanges, type ChangesStore } from '../sessions/changes.svelte.ts';
+import { createApps, type AppsStore } from '../system/apps/apps.svelte.ts';
 import { createAudit, type AuditStore } from '../system/audit.svelte.ts';
 import { createAccounts, type AccountsStore } from '../life/accounts.svelte.ts';
 import { createCalendar, type CalendarStore } from '../life/calendar.svelte.ts';
@@ -69,6 +70,7 @@ import { paneAt } from '../workbench/layout/index.ts';
 import { createLatex, type LatexStore } from '../sessions/latex.svelte.ts';
 import type { Desktop } from '../shared/stores/desktop.ts';
 import { createLayout, type LayoutStore } from '../workbench/layout.svelte.ts';
+import { appsSettings } from '../../data/sources/config/settings.ts';
 import { createLines, type LinesStore } from '../system/lines.svelte.ts';
 import { createManifestDraft, type ManifestDraftStore } from '../forms/manifest-draft.ts';
 import { createMemories, type MemoriesStore } from '../life/memories.svelte.ts';
@@ -93,7 +95,7 @@ import { createExplorer, type ExplorerStore } from '../sources/explorer/ops.svel
 import { createSearch, type SearchStore } from '../sources/search/search.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
-import { createSource, type SourceStore } from '../sessions/source.svelte.ts';
+import { createSource, sourceTabState, type SourceStore } from '../sessions/source.svelte.ts';
 import {
     createTerminals,
     terminalLabel,
@@ -181,6 +183,8 @@ export type ClientState = {
     /** The notifications the status bar's bell counts and its centre lists. */
     notices: NoticesStore;
     registry: RegistryStore;
+    /** The apps found while oculus runs, and the frames drawn for them. */
+    apps: AppsStore;
     /** The copy of these stores a tab provides for its subtree. */
     tabScope: TabScopeStore;
 };
@@ -337,6 +341,13 @@ export function createClientState(desktop?: Desktop): ClientState {
         }
     };
     const fs = withQueries('fs', createFs(writes, fsForms, entities, queries));
+    /**
+     * The roots a root key is resolved against on the page: the current workspace's roots only,
+     * which are the ones the server's file route serves (`addedRoots`, server/files/fs.ts). A key
+     * can name another folder in another workspace (state/system/apps/instance.ts), so the roots of
+     * the other workspaces are never searched.
+     */
+    const servedRoots = (): { key: string; dir: string }[] => fs.roots();
     const docs = withQueries('docs', createDocs(entities, queries));
     const latex = withQueries('latex', createLatex(entities, terminals, fs, queries, writes));
     const deposit = withQueries('deposit', createDeposit(queries));
@@ -368,7 +379,7 @@ export function createClientState(desktop?: Desktop): ClientState {
     // The Source Control views open a repository's file in a source tab by the root the file routes
     // serve it under, and point the Repositories view at a commit through its remembered state.
     const repositories = createRepositories(writes, terminals, layout, {
-        served: () => fs.workspaces().workspaces.flatMap((workspace) => workspace.roots),
+        served: servedRoots,
         instanceState: ui.instanceState,
         setInstanceState: ui.setInstanceState
     });
@@ -434,7 +445,7 @@ export function createClientState(desktop?: Desktop): ClientState {
             onScreen: () => sourceOnScreen(layout.activeInstance(), editorStatus.statusOf),
             focusedSource: () => editorStatus.focused(),
             gitRoots: selectors.gitRoots,
-            served: () => fs.workspaces().workspaces.flatMap((workspace) => workspace.roots),
+            served: servedRoots,
             openFile: (repo, path, line) => repositories.openFile(repo, path, line)
         })
     );
@@ -456,6 +467,18 @@ export function createClientState(desktop?: Desktop): ClientState {
     // document, a file), and the layout lands it apart from a page's tool views. The registry is
     // built over the layout, so the layout is told the rule once both exist.
     layout.registerOpened((view) => registry.viewFor(view)?.group === '');
+    const apps = createApps({
+        entities,
+        writes,
+        ui,
+        registry,
+        layout,
+        notices,
+        sourceState: sourceTabState,
+        settings: () => appsSettings(entities.config()?.config ?? {}),
+        served: servedRoots,
+        projectOf: selectors.projectOf
+    });
     const tabScope: TabScopeStore = {
         wrap: (state, shown) =>
             Object.assign(
@@ -513,6 +536,7 @@ export function createClientState(desktop?: Desktop): ClientState {
         headings,
         notices,
         registry,
+        apps,
         tabScope
     };
 }

@@ -95,6 +95,7 @@ import { watchUsageRefresh, type UsageRefreshWatcher } from '../machine/usage/re
 import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
 import { LISTEN_HOST, type PortMove } from './mover.ts';
+import { watchApps, type AppsWatcher, type AppsWatchOptions } from './watch/apps.ts';
 import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
 import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
 import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
@@ -131,7 +132,14 @@ export type ServerContext = {
      * built again after a change of local.yml's `schedules` or `schedule_record`.
      */
     schedules: SchedulesWatcher;
+    /** The apps found in the machine's folder and in the roots, and the keeping of an app. */
+    apps: AppsWatcher;
     token: string;
+    /**
+     * The second secret of the process, which the address key of every approved app is made with
+     * and no page is sent.
+     */
+    appsSecret: string;
     /**
      * The machine the server runs on and the address a page reaches it at, replaced when the port
      * moves.
@@ -232,6 +240,7 @@ export type ContextDependencies = {
     watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
     watchMail: (hub: Hub, options: MailOptions) => MailWatcher;
     watchLocal: (engine: string, changed: () => void) => LocalWatcher;
+    watchApps: (hub: Hub, options: AppsWatchOptions) => AppsWatcher;
     watchUsageRefresh: typeof watchUsageRefresh;
     watchUsage: typeof watchUsage;
 };
@@ -253,6 +262,7 @@ const dependencies: ContextDependencies = {
     watchCalendar,
     watchMail,
     watchLocal: (engine, changed) => watchLocal(engine, changed),
+    watchApps: (hub, options) => watchApps(hub, options),
     watchUsageRefresh,
     watchUsage
 };
@@ -315,6 +325,7 @@ export function createServerContext(
     registerFilesChannel(hub);
     const terminals = make.createTerminals(hub);
     const token = make.mintToken();
+    const appsSecret = make.mintToken();
     const store = new HookStore();
     const hooks: HookTarget = {
         store,
@@ -426,6 +437,16 @@ export function createServerContext(
             refresh: () => terminals.refresh()
         });
     };
+    // The apps are read from the machine's apps folder and the roots, and the paths that name them
+    // are read from `local` at each read, so a key of local.yml that changed is followed by
+    // `follow()` below and no watcher is built again.
+    const apps = make.watchApps(hub, {
+        engine,
+        secret: appsSecret,
+        local: () => local,
+        config: () => make.loadConfig(engine).config,
+        roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local })
+    });
 
     const portfolio = startPortfolio();
     const sessions = startSessions();
@@ -520,7 +541,9 @@ export function createServerContext(
             runNow: (name) => owned().schedules.runNow(name),
             close: () => owned().schedules.close()
         },
+        apps,
         token,
+        appsSecret,
         host,
         local,
         engine,
@@ -549,6 +572,7 @@ export function createServerContext(
             closed = true;
             built.live?.close();
             localWatch.close();
+            apps.close();
             const held = owned();
             held.usageRefresh.close();
             polled.mail.close();
@@ -775,6 +799,11 @@ export function createServerContext(
         if (changed.includes('mail') || changed.includes('mailDir')) {
             context.mailDir = local.mailDir ?? defaultConnectDir('mail');
             polled.mail.setAccounts(local.mail, context.mailDir);
+        }
+        if (
+            changed.some((key) => key === 'appsDir' || key === 'approvals' || key === 'workspaces')
+        ) {
+            apps.follow();
         }
         wantedPort = next.port;
         if (wantedPort === local.port) lastRefusal = undefined;

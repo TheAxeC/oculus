@@ -368,9 +368,14 @@ describe('loadConfig', () => {
 
 describe('behaviorFindings', () => {
     /**
-     * The merged catalog these findings are worded from, as the server's merged config holds it.
+     * The merged catalog these findings are worded from, as the server's merged config holds it,
+     * and the `apps.closed_paths` key behavior.yml carries, which a configuration without it is
+     * given a finding for.
      */
-    const WORDS = { text: loadConfig(engineDir()).config.text };
+    const WORDS = {
+        text: loadConfig(engineDir()).config.text,
+        apps: { closed_paths: ['secrets'] }
+    };
 
     it.each([
         ['chat.skip_permissions', { chat: { skip_permissions: true } }],

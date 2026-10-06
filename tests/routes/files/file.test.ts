@@ -8,7 +8,7 @@
 // its iframe, and the roots read from the machine's own config/sources.yml, which
 // tests/checks/config/config.test.ts reads.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { serveFile } from '../../../src/lib/server/files/files.ts';
@@ -51,4 +51,49 @@ describe('serving a file under a root', () => {
             expect(serveFile(roots(), key, path).status).toBe(404);
         }
     );
+});
+
+describe('answers a file of an apps folder as plain text with nosniff', () => {
+    /** A root holding an app's page, an ordinary page, a sibling folder and a link to the apps. */
+    function world(): { roots: Root[]; folders: string[] } {
+        const dir = folder({
+            '.oculus/apps/notes/index.html': PAGE,
+            '.oculus/apps-old/index.html': PAGE,
+            'docs/manual.html': PAGE
+        });
+        symlinkSync(join(dir, '.oculus', 'apps'), join(dir, 'alias'));
+        return {
+            roots: [{ key: 'hub', dir }],
+            folders: [realpathSync(join(dir, '.oculus', 'apps'))]
+        };
+    }
+
+    it.each([
+        [
+            'a page of an app',
+            '.oculus/apps/notes/index.html',
+            'text/plain; charset=utf-8',
+            'nosniff'
+        ],
+        [
+            'a page of an app reached through a link to the apps folder',
+            'alias/notes/index.html',
+            'text/plain; charset=utf-8',
+            'nosniff'
+        ],
+        ['a page outside every apps folder', 'docs/manual.html', 'text/html; charset=utf-8', null],
+        [
+            'a page of a folder named like the apps folder',
+            '.oculus/apps-old/index.html',
+            'text/html; charset=utf-8',
+            null
+        ]
+    ])('%s, with the type %s', async (_row, path, type, sniff) => {
+        const { roots, folders } = world();
+        const response = serveFile(roots, 'hub', path, folders);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('content-type')).toBe(type);
+        expect(response.headers.get('x-content-type-options')).toBe(sniff);
+        expect(await response.text()).not.toBe('');
+    });
 });

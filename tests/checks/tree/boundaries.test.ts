@@ -96,6 +96,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/files/paths` holds the `/` path rules (a path's last name, the path under a
 // folder, the deepest folder holding a target) that the file browser, the source tab and the status
 // bar read a root or a repository by, so the three agree on which one holds a file.
+// `data/helpers/files/apps` holds what an app may name (the channels it reads, the write kinds it
+// asks for, the confirmations) and the two rules a file path an app names is judged by (the segment
+// rule and the `closed_paths` match): the page refuses an app's request by them before it sends
+// it and the server refuses the same request by them when it arrives, so a copy on each side
+// would let the two disagree. It imports no node module.
 // `data/shapes/shapes` holds the zod helpers (a schema that answers its input, the map and number
 // schemas, the quick path) that the server's, the state layer's, the views' and the shell's readers
 // of untyped input share, so all four read by one rule. `data/file-ops` holds what a file or folder
@@ -160,6 +165,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/accounts/connect',
         'data/helpers/dates',
         'data/helpers/files/paths',
+        'data/helpers/files/apps',
         'data/helpers/deck',
         'data/accounts/leads',
         'data/helpers/worktrees',

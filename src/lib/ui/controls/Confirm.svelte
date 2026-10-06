@@ -8,6 +8,8 @@
     // a confirm, and a confirm that is a second press of the same button is one the hand learns to
     // press twice. So it is a real dialog: modal, focus on the confirm, Escape cancels, Tab stays
     // inside it. A press on the ground behind it cancels too, which is the way out for a pointer.
+    // A question raised by something other than the reader (an app's write or outside address)
+    // opens with the keyboard on Cancel (`focus`), so a key meant for that app never confirms it.
     // A caller may give a box of its own (`option`, VS Code's "Do not ask me again"), whose state
     // the confirm hands to `onconfirm`.
     // Drawn in a tab, it stays in that tab, and one left open in a tab the pane hides takes the
@@ -33,6 +35,8 @@
         detail?: string;
         /** Where the dialog stands, as ui/frame/Modal.svelte takes it; `dialog` unless given. */
         level?: 'dialog' | 'tray' | 'palette' | 'sheet';
+        /** The control that holds the keyboard when the dialog opens; the confirm unless given. */
+        focus?: 'confirm' | 'cancel';
     };
 
     let {
@@ -43,14 +47,16 @@
         oncancel,
         detail = '',
         option = '',
-        level = 'dialog'
+        level = 'dialog',
+        focus = 'confirm'
     }: Props = $props();
 
     let yes: HTMLButtonElement | undefined = $state();
+    let no: HTMLButtonElement | undefined = $state();
     let checked = $state(false);
 </script>
 
-<Modal alert {level} onclose={oncancel} onopen={() => yes?.focus()}>
+<Modal alert {level} onclose={oncancel} onopen={() => (focus === 'cancel' ? no : yes)?.focus()}>
     {#snippet children(props)}
         <div {...props} class="box" aria-label={message}>
             <p class="message">{message}</p>
@@ -61,7 +67,9 @@
                 <label class="option"><input type="checkbox" bind:checked />{option}</label>
             {/if}
             <div class="row">
-                <button type="button" class="cancel" onclick={oncancel}>{cancel}</button>
+                <button type="button" class="cancel" bind:this={no} onclick={oncancel}
+                    >{cancel}</button
+                >
                 <button type="button" class="yes" bind:this={yes} onclick={() => onconfirm(checked)}
                     >{confirm}</button
                 >
@@ -102,6 +110,7 @@
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
         white-space: pre-line;
+        overflow-wrap: anywhere;
     }
 
     .option {

@@ -9,6 +9,7 @@
 // when the catalog holds no rule for a key it reads, or no default that reads, since without one no
 // value can be read.
 
+import { closedPathEntryOk } from '../../helpers/files/apps.ts';
 import type { ProgramApps } from '../../helpers/files/opens-in-program.ts';
 import { byKey } from '../../helpers/guards.ts';
 import { FORMATTERS, type Formatter } from '../../prose/latex.ts';
@@ -328,6 +329,63 @@ export function mailSettings(
     return { pollMin: read.number('mail.poll_min'), perSignal: read.number('mail.per_signal') };
 }
 
+/**
+ * The folders `apps.closed_paths` names, which `open({ file })` refuses for every app. `folders` is
+ * null while the key is missing or is not a list of strings, and every file target is then closed;
+ * `shaped` is false for that and for a list holding an entry that is not a folder path, which is
+ * left out while the others apply.
+ */
+export type ClosedPaths = { folders: string[] | null; shaped: boolean };
+
+/** The limits of the `apps:` block of config/behavior.yml and the folders closed to `open`. */
+export type AppsSettings = {
+    connectTimeoutS: number;
+    stateMaxKb: number;
+    storeMaxKb: number;
+    writesPerMin: number;
+    opensPerMin: number;
+    keysPerS: number;
+    maxFiles: number;
+    maxMb: number;
+    closedPaths: ClosedPaths;
+};
+
+/**
+ * Read `apps.closed_paths` without the entry's default: a key that is missing, or a value that is
+ * not a list of strings, closes every file target instead of reading as `[secrets]`, so a damaged
+ * key can only close files. An entry that is not a folder path is left out; a repeated entry is
+ * applied once and is no problem.
+ */
+export function closedPaths(config: Record<string, unknown>): ClosedPaths {
+    const block = readAs(mapShape, config.apps);
+    const held = block === null ? undefined : block.closed_paths;
+    if (!Array.isArray(held) || !held.every((one) => typeof one === 'string')) {
+        return { folders: null, shaped: false };
+    }
+    const folders = [...new Set(held.filter((one: string) => closedPathEntryOk(one)))];
+    return { folders, shaped: folders.length === new Set(held).size };
+}
+
+/** Read `apps:`'s eight limits, each its default when it is missing or wrong, and `closed_paths`.
+ * */
+export function appsSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): AppsSettings {
+    const read = settingReader(config, problems);
+    return {
+        connectTimeoutS: read.number('apps.connect_timeout_s'),
+        stateMaxKb: read.number('apps.state_max_kb'),
+        storeMaxKb: read.number('apps.store_max_kb'),
+        writesPerMin: read.number('apps.writes_per_min'),
+        opensPerMin: read.number('apps.opens_per_min'),
+        keysPerS: read.number('apps.keys_per_s'),
+        maxFiles: read.number('apps.max_files'),
+        maxMb: read.number('apps.max_mb'),
+        closedPaths: closedPaths(config)
+    };
+}
+
 /** Read `changes.keep`, how many change-log lines are kept. */
 export function changesKeep(
     config: Record<string, unknown>,
@@ -455,6 +513,7 @@ const PROBLEM_READERS: ((
     openSettings,
     confirmDelete,
     mailSettings,
+    appsSettings,
     changesKeep,
     usageTiers,
     refreshSettings,

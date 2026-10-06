@@ -10,6 +10,7 @@
 
 import type { QueryClient, QueryKey } from '@tanstack/query-core';
 import type {
+    AppsPayload,
     AuditPayload,
     CalendarPayload,
     ConfigPayload,
@@ -41,6 +42,7 @@ export type Payloads = {
     usage: UsagePayload;
     audit: AuditPayload;
     files: FilesPayload;
+    apps: AppsPayload;
 };
 
 /** What every channel of the wire reads as, one instance per client. */
@@ -69,6 +71,7 @@ export type EntitiesStore = {
     inbox: () => InboxPayload | null;
     usage: () => UsagePayload | null;
     audit: () => AuditPayload | null;
+    apps: () => AppsPayload | null;
 };
 
 /** The minute clock of one client. */
@@ -92,6 +95,8 @@ export type SocketStore = {
     installConfig: (payload: ConfigPayload | null) => void;
     /** Hold the configuration the page was built from until a push above `through` arrives. */
     seedConfig: (payload: ConfigPayload | undefined, through: number) => void;
+    /** Hold the apps the page was built from until a push above `through` arrives. */
+    seedApps: (payload: AppsPayload, through: number) => void;
 };
 
 /** What the endpoint answers with when it wrote, or refused what it was asked to write. */
@@ -111,6 +116,8 @@ export type WriteAnswer = {
     code?: string;
     /** True when the request never reached the server: the fetch itself threw. */
     network?: boolean;
+    /** The status of a refused request, which a write from an app's frame reports by number. */
+    status?: number;
     /** What the endpoint had to say: git's own output, or the suggested commit message. */
     output?: string;
     /** The branch rows of a deposit `branches` action. Absent on every other write. */
@@ -251,6 +258,12 @@ export type WritesStore = {
         fields?: Record<string, unknown>
     ) => Promise<WriteAnswer>;
     send: (request: unknown, path?: string, options?: SendOptions) => Promise<WriteAnswer>;
+    /**
+     * One write from an app's frame to /api/write: the token, `x-oculus-app` with the view id (the
+     * root key percent-encoded) and `x-oculus-write-kind` with the kind the app named. A refusal
+     * is the app's to word, so it is not told to the notifications.
+     */
+    sendFromApp: (request: unknown, app: string, kind: string) => Promise<WriteAnswer>;
     /**
      * Hear every write that does not land, unless its caller says it: the words the server gave,
      * or the error of a write that got no answer, with whether the server answered.

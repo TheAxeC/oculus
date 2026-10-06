@@ -90,6 +90,7 @@
         "monaco-editor": "0.57.0",
         "node-diff3": "3.2.1",
         "nodemailer": "^10.0.12",
+        "penpal": "8.0.1",
         "seti-ui": "1.11.0",
         "sh-syntax": "0.7.0",
         "shell-env": "4.0.3",

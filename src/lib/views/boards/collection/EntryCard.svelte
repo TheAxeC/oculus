@@ -52,17 +52,19 @@
         type SchemaField
     } from '$lib/state/boards/collection';
     import { HUB_ROOT, opensInProgram } from '$lib/state/sources/fs';
+    import { openPage } from '$lib/views/shared/explorer/opening';
     import { personName } from '$lib/state/boards/person';
     import { t } from '$lib/state/shared/words/text';
     import { statusTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         entities: { portfolio },
         layout: { openView, showInFiles },
         selectors: { archiveDead, programApps },
         writes: { writeEntry }
-    } = useState();
+    } = client;
 
     type Props = {
         entry: Entry;
@@ -222,7 +224,7 @@
     /** One local HTML file of the hub as its own tab, the way a bookmark of the rail opens one. */
     function openDocument(link: string): void {
         const parts = link.split('/').filter((one) => one !== '');
-        openView('document', {
+        openPage(client, {
             root: HUB_ROOT,
             path: link,
             label: parts[parts.length - 1] ?? link

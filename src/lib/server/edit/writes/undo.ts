@@ -19,7 +19,9 @@
 import { isAbsolute, join, resolve } from 'node:path';
 import { z } from 'zod';
 import { scalar } from '../../../data/helpers/guards.ts';
-import { same } from '../../core/changes.ts';
+import { keptValues, same } from '../../core/changes.ts';
+import { appById } from '../../machine/apps/held.ts';
+import { APP_STORE, storeNow, writeAppStore } from './app-store.ts';
 import { mapShape, stringItemsShape } from '../../../data/shapes/shapes.ts';
 import { feedValueShape } from './bodies.ts';
 import {
@@ -226,6 +228,7 @@ const scalarBeforeShape = z.catch(feedValueShape, null);
  */
 export function undoChange(into: WriteTarget, change: Change): UndoOutcome {
     if (change.undo === 'none') return { error: 'nothing' };
+    if (change.kind === APP_STORE) return undoStore(into, change);
     let outcome;
     try {
         const now = valueNow(into, change);
@@ -241,6 +244,30 @@ export function undoChange(into: WriteTarget, change: Change): UndoOutcome {
     if ('error' in outcome) return outcome;
     // A writer that wrote no byte has not put the value back, whatever it said about the fields it
     // would not write, so the answer is a refusal and carries what it objected to.
+    if (outcome.changed.length === 0) return { error: 'refused', refused: outcome.refused };
+    return outcome;
+}
+
+/**
+ * The undo of a store write. The record holds byte sizes, so the two values come from the file the
+ * change log kept for it: `nothing` when that file is gone, `gone` when no held app has the view
+ * id, `moved` when the store holds a value other than the one the write left, and otherwise the
+ * value before goes back through the store writer, which records the undo like any other write.
+ */
+function undoStore(into: WriteTarget, change: Change): UndoOutcome {
+    if (into.apps === undefined || into.changes === undefined) return UNWRITABLE;
+    const kept = keptValues(into.changes, change.at);
+    if (kept === null) return { error: 'nothing' };
+    const app = appById(into.apps.held(), change.key);
+    if (app === undefined) return { error: 'gone' };
+    let outcome;
+    try {
+        if (!same(storeNow(into, app), kept.after)) return { error: 'moved' };
+        outcome = writeAppStore(into, app, kept.before);
+    } catch {
+        return UNWRITABLE;
+    }
+    if ('error' in outcome) return outcome;
     if (outcome.changed.length === 0) return { error: 'refused', refused: outcome.refused };
     return outcome;
 }

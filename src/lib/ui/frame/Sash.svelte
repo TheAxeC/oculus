@@ -9,9 +9,11 @@
     // while it is dragged or holds the keyboard, where the line widens to `--sash-focus-line` in
     // place of the browser's focus ring. A pointer catches it past its own thickness on either
     // side, over the border of what sits there and never inside it, at every device pixel ratio, on
-    // a layer that takes no room, so the thickness a split lays out is still SASH_PX.
+    // a layer that takes no room, so the thickness a split lays out is SASH_PX. While a drag
+    // is in progress the body carries SASHING_CLASS, which a frame drawing another document reads
+    // to stop taking the pointer, so a fast drag over it keeps its moves.
 
-    import { SASH_PX, STEP } from '$lib/ui/frame/sash-size';
+    import { SASH_PX, SASHING_CLASS, STEP } from '$lib/ui/frame/sash-size';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -50,6 +52,7 @@
         dragging = true;
         last = along(event);
         document.body.style.userSelect = 'none';
+        document.body.classList.add(SASHING_CLASS);
     }
 
     function move(event: PointerEvent): void {
@@ -64,6 +67,7 @@
         if (!dragging) return;
         dragging = false;
         document.body.style.userSelect = '';
+        document.body.classList.remove(SASHING_CLASS);
         const handle = event.currentTarget;
         if (handle instanceof HTMLElement && handle.hasPointerCapture(event.pointerId)) {
             handle.releasePointerCapture(event.pointerId);

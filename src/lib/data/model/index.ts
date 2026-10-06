@@ -243,6 +243,42 @@ export type ConfigPayload = {
 };
 
 /**
+ * One app the apps watcher found: a folder of web files with an `app.yml`, in the machine's apps
+ * folder (`root` empty) or in the `.oculus/apps/` folder of a root the file browser shows. The row
+ * holds what the page draws and what the server serves by: `hash` is the content hash, `approved`
+ * whether the approvals file holds it or the app is kept approved, and `key` the address key the
+ * app's files are served under, empty unless the app is approved. The store's size and version ride
+ * in the row and its value does not, since a publish sends the whole payload to every page.
+ */
+export type AppRow = {
+    name: string;
+    root: string;
+    title: string;
+    description: string;
+    glyph: string;
+    folder: string;
+    entry: string;
+    reads: string[];
+    writes: string[];
+    connects: string[];
+    files: number;
+    bytes: number;
+    hash: string;
+    approved: boolean;
+    kept: boolean;
+    key: string;
+    storeBytes: number;
+    storeVersion: string;
+    storeFile: string;
+};
+
+/**
+ * The payload of the `apps` channel: the apps found, what was wrong with the folders and manifests
+ * read, and the real path of every apps folder the watcher holds.
+ */
+export type AppsPayload = { rows: AppRow[]; findings: Finding[]; folders: string[] };
+
+/**
  * Which section of the audit a finding belongs to: an open marker left in a document, a manifest
  * field a live project has not filled in, a folder the tier standard does not name, a status the
  * project's own tier and type contradict, a field that has stopped being a glance, and the public

@@ -1,4 +1,5 @@
 import { collectionKeys, glyphCatalog, textCatalog, vocabCatalog } from '$lib/data/sources/config';
+import { payloadOf } from '$lib/server/machine/apps/held';
 import { configSeed } from '$lib/server/root/config-seed';
 import type { PageServerLoad } from './$types';
 
@@ -21,6 +22,10 @@ import type { PageServerLoad } from './$types';
 // once per key before it renders, and the registry is filled in the page's script body rather than
 // from a fetch, so the view catalogue and the pane tabs draw every collection on the first frame.
 //
+// The apps ride with them too, the held rows and findings and the apps folders, with the version of
+// the `apps` channel they are at least as new as, so the registry holds the apps' views before the
+// first frame and the socket's replay is taken only above that version.
+//
 // The write token rides with them, which is how DESIGN.md's "Auth" delivers it to the page: it is
 // minted by ServerContext, put on the event by hooks.server.ts, and reaches the browser here and
 // nowhere else. invalidateAll() runs this load again, which is how a page that met a 403 gets the
@@ -41,6 +46,10 @@ export const load: PageServerLoad = ({ locals }) => {
             icons,
             host: locals.server.host
         }),
+        apps: {
+            ...payloadOf(locals.server.apps.held()),
+            version: locals.server.hub.version('apps')
+        },
         token: locals.token
     };
 };

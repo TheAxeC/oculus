@@ -3,6 +3,8 @@
 
 import type { Component } from 'svelte';
 import { z } from 'zod';
+import { appViewId } from '$lib/data/helpers/files/apps';
+import type { AppRow } from '$lib/data/model';
 import { collectionKeys } from '$lib/data/snapshot/normalise';
 import { itemsShape, readAs } from '$lib/data/shapes/shapes';
 import type {
@@ -77,4 +79,47 @@ export function registerCollections(registry: RegistryStore, keys: string[]): vo
         }
         registry.registerComponent(module.default, wanted);
     }
+}
+
+/**
+ * The registration of one app: its view id, the manifest's title and glyph as data, the group
+ * `apps`, and the order the section gives (the machine apps by name, then the apps of each root).
+ * The badge is a lock while the app is not approved and the editing glyph while it is kept
+ * approved, with the words each mark has.
+ */
+function registrationOfApp(row: AppRow, index: number): ViewRegistration {
+    return {
+        id: appViewId(row.root, row.name),
+        label: 'apps.label',
+        glyph: 'apps.glyph',
+        words: row.root === '' ? row.title : `${row.title} (${row.root})`,
+        glyphName: row.glyph,
+        group: 'apps',
+        order: index,
+        badgeGlyph: () => (!row.approved ? 'lock' : row.kept ? 'edit' : ''),
+        badgeMark: row.kept ? 'apps.editing_mark' : 'apps.unapproved_mark'
+    };
+}
+
+/**
+ * Register one view per app row, each drawn by the one component that exports `appRegistration`,
+ * and drop the views of every app the rows do not hold. A tab on a dropped view stays open and
+ * draws as an unknown view until the app returns. It runs again on every push of the `apps`
+ * channel, which is what keeps a badge and a title following the row.
+ *
+ * A config push runs registerCollections alone: the factory it calls is the module's
+ * `registration` export, which AppFrame does not have, so neither call touches the other's views.
+ */
+export function registerApps(registry: RegistryStore, rows: AppRow[]): void {
+    const module = Object.values(viewModules).find(
+        (one) => (one as { appRegistration?: unknown }).appRegistration !== undefined
+    ) as ViewModule | undefined;
+    if (module === undefined) return;
+    const wanted = rows.map(registrationOfApp);
+    const ids = new Set(wanted.map((registration) => registration.id));
+    for (const registration of registry.views()) {
+        if (registration.component !== module.default) continue;
+        if (!ids.has(registration.id)) registry.dropView(registration.id);
+    }
+    registry.registerComponent(module.default, wanted);
 }

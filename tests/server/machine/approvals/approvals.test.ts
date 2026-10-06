@@ -3,13 +3,16 @@
 //
 // The file path is handed in; a case never reads or writes the machine's own `~/.oculus`.
 
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect } from 'vitest';
 import { it } from '../../../fixtures/scratch.ts';
 import {
+    approveApp,
     approveTexts,
-    isApproved
+    approvedApps,
+    isApproved,
+    revokeApp
 } from '../../../../src/lib/server/machine/approvals/approvals.ts';
 import { enterHome, leaveHome } from '../commands/commands-fixture.ts';
 
@@ -36,6 +39,21 @@ describe('the approvals file', () => {
         const refused = approveTexts(file, [TEXT]);
         expect(refused.ok).toBe(false);
         expect(refused.ok ? '' : refused.error).toContain('approvals.json is not JSON');
+        expect(readFileSync(file, 'utf8')).toBe(bytes);
+    });
+
+    it('reads a file that is not JSON as no approved app and refuses an app approval or revoke over it', () => {
+        const bytes = 'not json {';
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, bytes);
+        expect(approvedApps(file).size).toBe(0);
+        const app = { hash: 'a'.repeat(64), folder: join(home, 'apps', 'notes'), label: 'Notes' };
+        const approved = approveApp(file, app);
+        const revoked = revokeApp(file, app.folder);
+        for (const refused of [approved, revoked]) {
+            expect(refused.ok).toBe(false);
+            expect(refused.ok ? '' : refused.error).toContain('approvals.json is not JSON');
+        }
         expect(readFileSync(file, 'utf8')).toBe(bytes);
     });
 });

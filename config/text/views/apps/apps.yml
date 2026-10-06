@@ -1,0 +1,68 @@
+# Oculus text owned by the apps: the catalogue entry, the approval panel, the bridge's refusals and the words each channel and write an app may declare is shown in.
+text:
+    apps:
+        label: Apps
+        glyph: app_view
+        unapproved_mark: This app is not approved
+        editing_mark: This app stays approved while its files change
+        approve_title: Approve this app
+        approve_question: 'This app is a folder of web files that runs inside oculus. It runs only after you approve it, and it asks again whenever its files change. It can:'
+        approve: Approve
+        keep_approved: Keep approved while I edit
+        revoke: Revoke
+        open_folder: Open the app's folder
+        reload: Reload the app
+        folder_unshown: 'The folder of this app, {0}, is inside no root the file browser shows.'
+        name_line: 'Name: {0}'
+        folder_line: 'Folder: {0}'
+        size_line: '{0} files, {1}'
+        size_kb: '{0} KB'
+        size_mb: '{0} MB'
+        reads_none: Read nothing from oculus.
+        writes_none: Write nothing to oculus.
+        connects: 'Reach {0} on the internet.'
+        connects_none: Reach no address outside this machine.
+        store_machine: 'Keep its own data in {0}.'
+        store_root: 'Keep its own data in {0}, a file of the root that git tracks unless the root ignores .oculus/app-data/.'
+        read:
+            portfolio: Read the portfolio, with every project, person, venue and funding entry.
+            feeds: Read the feeds.
+            git: Read the state of every repository, with branches, status and commit subjects.
+            hpc: Read the job queue of the cluster.
+            audit: Read the audit findings.
+            config: Read the configuration, with this machine's name and address.
+            files: Be told when a file under a root or the bookmarks changed.
+            inbox: Read the subjects and senders of your mail.
+            calendar: Read the titles and attendees of your calendar events.
+            sessions: Read the titles, prompts and paths of your Claude sessions.
+            usage: Read the labels and limits of your accounts.
+        read_root:
+            git: Read the state of the repository of its own root.
+            files: Be told when a file under its own root changed.
+        write:
+            manifest: Edit a project's manifest.
+            entry: Edit an entry of a collection.
+            subtask: Change a subtask of a project or an entry.
+            subtask-add: Add a subtask to a project or an entry.
+            host: Edit a host of a project.
+            new-entry: Add an entry to a collection.
+            reorder: Reorder the entries of a collection.
+            delete-entry: Delete an entry of a collection, asking you first.
+            feed-field: Edit a field of a feed item.
+            feed-delete: Delete a feed item, asking you first.
+            lead-add: Add a lead.
+            radar-add: Add a paper to the radar.
+            linkedin-idea: Move a LinkedIn idea, asking you first.
+            linkedin-post: Move a LinkedIn post, asking you first.
+            new-idea: Create an idea project, asking you first.
+        changed: This app changed since you approved it. Read what it asks for again and approve it to run it.
+        load_failed: The app did not answer in time.
+        approve_failed: 'The approval was not saved: {0}'
+        changed_meanwhile: The app changed while you read it, so it was not approved. Read what it asks for now.
+        refused_read: 'The app {0} asked to read {1}, which its manifest does not list.'
+        refused_write: 'The app {0} asked to write {1}, which its manifest does not list or which no app may write.'
+        refused_open: 'The app {0} asked to open something it may not open.'
+        refused_not_json: not_json
+        confirm_write: 'The app {0} asks to {1}: {2}'
+        confirm_open_url: 'The app {0} asks to open this address in a new browser tab. The address can carry what the app has read.'
+        rate: 'The app {0} sent calls faster than oculus lets an app send them, so some were refused.'

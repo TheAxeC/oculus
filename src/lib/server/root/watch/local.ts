@@ -94,6 +94,7 @@ const FIELDS: (keyof LocalConfig)[] = [
     'accounts',
     'calendars',
     'calendarDir',
+    'appsDir',
     'mail',
     'mailDir',
     'literature'

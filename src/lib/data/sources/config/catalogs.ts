@@ -15,7 +15,7 @@ import { readEditorOptions, type EditorProblem } from './editor-options.ts';
 import { configDir } from './folder.ts';
 import { localFile, type LocalProblem } from './local.ts';
 import { CATALOGS_DIR, textCatalog } from './merge.ts';
-import { settingProblems } from './settings.ts';
+import { closedPaths, settingProblems } from './settings.ts';
 
 /**
  * The keys of the merged config the client state installs before the page renders: the colours and
@@ -158,8 +158,10 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
  * What is wrong with `behavior.yml` that only the reader can put right and that the options
  * catalog does not describe, as findings on the config channel: a key written under a name the tree
  * does not read, which is ignored where it stands (`chat.skip_permissions` and
- * `tasks.skip_permissions`, whose place is a schedule's Run unattended choice). It is worded from
- * the merged catalog, as iconFindings' are.
+ * `tasks.skip_permissions`, whose place is a schedule's Run unattended choice), and an
+ * `apps.closed_paths` that is missing, is no list of strings or holds an entry that is no folder
+ * path, since the default of the entry does not stand in for it. It is worded from the merged
+ * catalog, as iconFindings' are.
  */
 export function behaviorFindings(engine: string, config: Record<string, unknown>): Finding[] {
     const file = join(configDir(engine), 'behavior.yml');
@@ -173,6 +175,18 @@ export function behaviorFindings(engine: string, config: Record<string, unknown>
             file,
             key,
             message: findingText(catalog, 'findings.config.skip_permissions_retired', key)
+        });
+    }
+    if (!closedPaths(config).shaped) {
+        findings.push({
+            file,
+            key: 'apps.closed_paths',
+            message: findingText(
+                catalog,
+                'findings.apps.closed_paths_shape',
+                'apps.closed_paths',
+                'config/behavior.yml'
+            )
         });
     }
     return findings;

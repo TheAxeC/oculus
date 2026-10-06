@@ -22,6 +22,7 @@ import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path
 import { Readable } from 'node:stream';
 import mime from 'mime';
 import { z } from 'zod';
+import { inAppsFolder } from '../../data/helpers/files/apps.ts';
 import { configDir } from '../../data/sources/config.ts';
 import type { Finding } from '../../data/model/index.ts';
 import { inside, realPath } from '../core/paths.ts';
@@ -213,14 +214,26 @@ export function expandHome(dir: string): string {
  * root nothing configures, a root whose directory is not there, a path that leaves the root once
  * both ends are resolved, a file that is not there, and a directory.
  */
-export function serveFile(list: Root[], key: string, path: string): Response {
+export function serveFile(
+    list: Root[],
+    key: string,
+    path: string,
+    appFolders: readonly string[] = []
+): Response {
     const full = resolveRootFile(list, key, path);
     if (full === null) return new Response(null, { status: 404 });
     // The bytes are streamed: a manual is megabytes and nothing here holds one in memory.
     const body = Readable.toWeb(createReadStream(full)) as ReadableStream;
+    // A file of an apps folder is app code. It is sent as plain text with sniffing off, so a page
+    // that opens it (the Document view's frame has this origin) shows its source and never runs it.
+    const app = inAppsFolder(appFolders, full, '');
     return new Response(body, {
         status: 200,
-        headers: { 'content-type': typeOf(full), 'cache-control': CACHE }
+        headers: {
+            'content-type': app ? 'text/plain; charset=utf-8' : typeOf(full),
+            'cache-control': CACHE,
+            ...(app ? { 'x-content-type-options': 'nosniff' } : {})
+        }
     });
 }
 

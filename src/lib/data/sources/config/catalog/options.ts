@@ -62,7 +62,8 @@ export const HEADINGS = [
     'rail',
     'presentation',
     'sources',
-    'calendar'
+    'calendar',
+    'apps'
 ] as const;
 
 /** One of the words of HEADINGS. */

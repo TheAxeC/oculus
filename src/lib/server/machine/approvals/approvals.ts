@@ -4,9 +4,10 @@
 // project command is approved by is the whole chain a press runs, with the repository's path.
 //
 // The shape is the one every user of the processes rule shares, `{ version: 1, approved: { "<kind>:
-// <sha256>": { label, at, folder? } } }`; an entry of a kind this module does not write (an app's,
-// with its folder) is kept as it stood. The file is private to its owner (mode 0600), and the
-// default file's folder, `~/.oculus`, is made mode 0700 when it is looser; the file is written
+// <sha256>": { label, at, folder? } } }`. An app is approved under `app:<sha256>` of its content,
+// with the real path of its folder, and at most one `app` entry is live per folder; an entry of a
+// kind a call does not write is kept as it stood. The file is private to its owner (mode 0600), and
+// the default file's folder, `~/.oculus`, is made mode 0700 when it is looser; the file is written
 // whole by a rename and read back to check the write. A file that is not JSON, or not that shape,
 // is read as holding no approvals, which asks again for everything and approves nothing by mistake,
 // and a write over it is refused with the reason, so the bytes the reader put there are never
@@ -106,22 +107,11 @@ function privateFolder(folder: string): void {
     }
 }
 
-/**
- * Approve the texts: one entry for each, none added for a text already held, so an approval
- * pressed twice leaves one. Answers `{ ok: true }`, or the reason the file was left as it was.
- */
-export function approveTexts(
-    file: string,
-    texts: string[],
-    now: Date = new Date()
-): { ok: true } | { ok: false; error: string } {
-    const loaded = load(file);
-    if (!loaded.ok) return loaded;
-    const approved = { ...loaded.approvals.approved };
-    for (const text of texts) {
-        const key = commandKey(text);
-        if (!(key in approved)) approved[key] = { label: text, at: now.toISOString() };
-    }
+/** What a write of the file answers: done, or the reason the file was left as it was. */
+export type ApprovalWrite = { ok: true } | { ok: false; error: string };
+
+/** Write the approved entries whole by a rename, read them back, and say what went wrong. */
+function store(file: string, approved: Approvals['approved']): ApprovalWrite {
     const content = `${JSON.stringify({ version: 1, approved }, null, 2)}\n`;
     try {
         mkdirSync(dirname(file), { recursive: true, mode: FOLDER_MODE });
@@ -136,4 +126,83 @@ export function approveTexts(
         return { ok: false, error: `${basename(file)} cannot be written: ${why}` };
     }
     return { ok: true };
+}
+
+/**
+ * Approve the texts: one entry for each, none added for a text already held, so an approval
+ * pressed twice leaves one. Answers `{ ok: true }`, or the reason the file was left as it was.
+ */
+export function approveTexts(file: string, texts: string[], now: Date = new Date()): ApprovalWrite {
+    const loaded = load(file);
+    if (!loaded.ok) return loaded;
+    const approved = { ...loaded.approvals.approved };
+    for (const text of texts) {
+        const key = commandKey(text);
+        if (!(key in approved)) approved[key] = { label: text, at: now.toISOString() };
+    }
+    return store(file, approved);
+}
+
+/** The key of an app: `app:` and the content hash the watcher computed, as hex. */
+function appKey(hash: string): string {
+    return `app:${hash}`;
+}
+
+/** The folder an `app` entry was approved for, or null for an entry that names none. */
+function folderOf(entry: Record<string, unknown>): string | null {
+    return typeof entry.folder === 'string' ? entry.folder : null;
+}
+
+/** The entries of the file without the `app` entries of this folder, and only those. */
+function withoutApp(approved: Approvals['approved'], folder: string): Approvals['approved'] {
+    return Object.fromEntries(
+        Object.entries(approved).filter(
+            ([key, entry]) => !(key.startsWith('app:') && folderOf(entry) === folder)
+        )
+    );
+}
+
+/** The content hashes of the apps the file holds approved, none for a file that does not read. */
+export function approvedApps(file: string): Set<string> {
+    return new Set(
+        Object.keys(readApprovals(file).approved)
+            .filter((key) => key.startsWith('app:'))
+            .map((key) => key.slice('app:'.length))
+    );
+}
+
+/**
+ * Approve an app by its content hash: its entry is written with the real path of its folder, and
+ * the `app` entries of that folder, and only those, are removed, so one approval per folder is
+ * live. Answers `{ ok: true }`, or the reason the file was left as it was.
+ */
+export function approveApp(
+    file: string,
+    app: { hash: string; folder: string; label: string },
+    now: Date = new Date()
+): ApprovalWrite {
+    const loaded = load(file);
+    if (!loaded.ok) return loaded;
+    const approved = withoutApp(loaded.approvals.approved, app.folder);
+    approved[appKey(app.hash)] = {
+        label: app.label,
+        at: now.toISOString(),
+        folder: app.folder
+    };
+    return store(file, approved);
+}
+
+/**
+ * Take back the approval of the app in this folder: its `app` entries are removed and nothing else
+ * is. A file that holds none is left as it is. Answers `{ ok: true }`, or the reason the file was
+ * left as it was.
+ */
+export function revokeApp(file: string, folder: string): ApprovalWrite {
+    const loaded = load(file);
+    if (!loaded.ok) return loaded;
+    const approved = withoutApp(loaded.approvals.approved, folder);
+    if (Object.keys(approved).length === Object.keys(loaded.approvals.approved).length) {
+        return { ok: true };
+    }
+    return store(file, approved);
 }

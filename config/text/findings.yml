@@ -178,3 +178,38 @@ text:
             venue_theme: theme "{0}" is not one of the venue themes
             dataset_theme: theme "{0}" is not one of the dataset themes
             theme_labels_retired: 'theme_labels is not read; the labels are data_themes in config/catalogs/vocab.yml'
+        apps:
+            name_empty: the name is missing or empty, so the folder is not an app
+            name_shape: 'the name {0} must start with a lowercase letter and hold only lowercase letters, digits and hyphens, 40 characters at most, so the folder is not an app'
+            name_not_folder: 'the name {0} is not the folder name {1}, so the folder is not an app'
+            key_missing: 'the key {0} is missing, so the folder is not an app'
+            key_unknown: 'the key {0} is not one this oculus reads, so the folder is not an app'
+            title_shape: the title must be 1 to 40 characters with no control character, so the folder is not an app
+            description_shape: the description must be text of 200 characters at most, so the folder is not an app
+            bridge_unknown: 'bridge {0} is not a version this oculus reads, which is 1, so the folder is not an app'
+            entry_shape: 'the entry {0} must be a relative path of names that do not start with a dot, ending in .html, so the folder is not an app'
+            entry_missing: 'the entry {0} is not a file of the app, so the folder is not an app'
+            list_repeated: '{1} names {0} twice, so the folder is not an app'
+            list_shape: '{0} must be a list of names, so the folder is not an app'
+            file_unreadable: 'the file {0} cannot be read, so the folder is not an app'
+            channel_unknown: 'reads names {0}, which is no channel an app can read, so the folder is not an app'
+            channel_closed: 'reads names {0}, which is closed to {1}: it carries {2}, so the folder is not an app'
+            write_unknown: 'writes names {0}, which is no write an app can ask for, so the folder is not an app'
+            write_closed: 'writes names {0}, which is closed to every app, so the folder is not an app'
+            connect_shape: "connects names {0}, which is not an https origin, or an http origin of localhost or 127.0.0.1 on a port other than oculus's own, with no user name, path, query or wildcard, so the folder is not an app"
+            too_large: 'the folder holds more than {0} files or {1} MB, so the folder is not an app'
+            glyph_unknown: 'the glyph {0} is no glyph an app can use, so the app is drawn with the default glyph'
+            folder_outside: 'the apps folder resolves to {0}, which lies outside the root, so none of its apps is offered'
+            repeated: '{0} is already read as an earlier apps folder or app folder, so it is left out'
+            apps_dir_not_folder: 'apps_dir names {0}, which is not a folder, so there are no machine apps'
+            closed_paths_shape: '{0} in {1} must be a list of folder paths, each relative to a root with no empty, dot or dot-led name, so an entry that is not is left out and, while the key is missing or no list, no app can open a file'
+            who_every: every app
+            who_root: a root app
+            carries:
+                apps: the address key of every approved app
+                pty: whatever a terminal printed, secrets included
+                processes: "the machine's process table: program names, arguments and folders"
+                inbox: mail subjects and senders
+                calendar: event titles and attendees
+                sessions: titles, prompts and paths taken from session transcripts
+                usage: account labels and limits

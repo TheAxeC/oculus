@@ -16,6 +16,7 @@ rail:
   - { label: "Pillars", glyph: pillar, page: pillars }
   - { label: "References", glyph: venue, page: references }
   - { label: "Present", glyph: poster, page: present }
+  - { label: "Apps", glyph: app, page: apps }
   - { label: "Help", glyph: question, page: help }
   - { label: "System", glyph: sliders, page: views }
 
@@ -31,6 +32,7 @@ nav_groups:
   pillars: { label: "Pillars", glyph: book, chord: l }
   references: { label: "References", glyph: venue_dist, chord: r }
   present: { label: "Present", glyph: conference, chord: t }
+  apps: { label: "Apps", glyph: app }
   help: { label: "Help", glyph: page, chord: h }
   views: { label: "System", glyph: settings, chord: y }
 
@@ -107,6 +109,8 @@ arrangements:
           children:
             - { kind: pane, view: [catalogue, pages, processes] }
             - { kind: pane, view: [status, findings, audit, history, gallery] }
+  apps:
+    root: { kind: pane, view: [] }
 
 
 # The floats a browser with no saved layout starts with, and Reset all pages gives back: panes over every page, each one a pane of tabs (`view` is one view id or a list of them, as in an arrangement's pane) placed either docked on an edge of the window, `{ view, dock: left | right | bottom, size }` where `size` is the fraction of the window's width (its height for `bottom`) from 0.1 to 0.6, or free, `{ view, x, y, w, h }` in fractions of the window with `x + w` and `y + h` at most 1 and `w` and `h` at least 0.1. One float may be docked on an edge; of two on one edge the first stays. After that first load the floats are the reader's own, kept in the saved layout beside the pages. An entry that does not add up is left out and the rest kept.

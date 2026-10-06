@@ -208,24 +208,26 @@ export function repoStatus(
 /**
  * How many findings the Findings view lists, which is what the findings item counts, as VS Code's
  * Problems count is the Problems view's: everything the build found wrong in the hub's YAML, the
- * snapshot's, and in config/, the config channel's.
+ * snapshot's, in config/, the config channel's, and in the apps folders, the apps channel's.
  */
 export function findingsCount(
     snapshot: { findings?: readonly unknown[] } | null,
-    config: { findings?: readonly unknown[] } | null
+    config: { findings?: readonly unknown[] } | null,
+    apps: { findings?: readonly unknown[] } | null = null
 ): number {
-    return allFindings(snapshot, config).length;
+    return allFindings(snapshot, config, apps).length;
 }
 
 /**
- * Every finding the page knows of: the portfolio's, then the configuration's. The Findings view
- * lists them and the status bar counts them, so both read one list.
+ * Every finding the page knows of: the portfolio's, then the configuration's, then the apps'. The
+ * Findings view lists them and the status bar counts them, so both read one list.
  */
 export function allFindings<T>(
     snapshot: { findings?: readonly T[] } | null,
-    config: { findings?: readonly T[] } | null
+    config: { findings?: readonly T[] } | null,
+    apps: { findings?: readonly T[] } | null = null
 ): T[] {
-    return [...(snapshot?.findings ?? []), ...(config?.findings ?? [])];
+    return [...(snapshot?.findings ?? []), ...(config?.findings ?? []), ...(apps?.findings ?? [])];
 }
 
 /** The words the page hands the status bar at once. */

@@ -25,6 +25,7 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ProjectTree from '../explorer/ProjectTree.svelte';
+    import { openPage } from '../explorer/opening';
     import { humanSize, type BoardItem } from '$lib/state/boards/board';
     import {
         cardTreeKey,
@@ -43,7 +44,6 @@
 
     const {
         files: { files },
-        layout: { openView },
         selectors: { programApps },
         ui: { instanceState, setInstanceState }
     } = client;
@@ -78,7 +78,7 @@
 
     /** Open a readable row from the file listing. */
     function openReadable(path: string): void {
-        openView('document', {
+        openPage(client, {
             root: 'hub',
             path: `${held?.folder ?? ''}/${path}`,
             label: nameOf(path)

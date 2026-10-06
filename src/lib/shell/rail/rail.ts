@@ -52,6 +52,7 @@ export function bookmarkPicked(saved: readonly Bookmark[], id: string): Bookmark
  * tab; the rail re-exports it under the name its own readers know it by.
  */
 export { documentState } from '$lib/state/workbench/layout';
+export { sourceTabState } from '$lib/state/workbench/navigation/rail';
 
 /**
  * Which edges of the rail's list have more entries past them, each drawn as a fade at that edge.

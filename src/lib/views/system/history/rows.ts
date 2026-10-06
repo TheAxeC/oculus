@@ -53,6 +53,15 @@ export function shown(value: unknown): Shown {
 /** The `kind` the change log files a file operation under. */
 export const FILE_RECORD = 'files';
 
+/** The `kind` the change log files a write of an app's store under. */
+export const STORE_RECORD = 'app-store';
+
+/** The size of a store a store record names, as the number of bytes. */
+export function shownBytes(size: unknown): Shown {
+    if (typeof size !== 'number') return { text: '', size: 0, empty: true };
+    return { text: t('history.bytes', String(size)), size: 0, empty: false };
+}
+
 /**
  * The word an operation of a file record is called: VS Code's own name for it. A replace says in
  * how many files it wrote, which is the number of files its record names after the change.

@@ -25,12 +25,13 @@
     import { useState } from '$lib/state/client/use';
 
     const {
+        apps: { findings: appFindings },
         entities: { config, portfolio }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
-    const found = $derived(allFindings(portfolio(), config()));
+    const found = $derived(allFindings(portfolio(), config(), { findings: appFindings() }));
 </script>
 
 <Pane title={t('views.findings')} tinted>

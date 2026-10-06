@@ -195,3 +195,26 @@ open:
     ".pages": com.apple.iWork.Pages
     ".numbers": com.apple.iWork.Numbers
     ".key": com.apple.iWork.Keynote
+
+
+# === Apps ===================================================================
+# An app is a folder of web files that oculus finds while it runs and draws in a sandboxed frame once the reader has approved it (DESIGN.md, "Apps added while oculus runs"). These are the limits an app's frame is held to and the folders `open` never reaches for an app.
+apps:
+  # Seconds a frame is given to complete the bridge handshake before it is drawn as failed to load.
+  connect_timeout_s: 10
+  # Kilobytes of one tab's saved state that `setState` accepts.
+  state_max_kb: 64
+  # Kilobytes of an app's store that `setStore` accepts and `getStore` reads.
+  store_max_kb: 256
+  # Writes, `setStore` included, that pass per frame per minute.
+  writes_per_min: 30
+  # Calls of `open` that pass per frame per minute.
+  opens_per_min: 30
+  # Key events per second the page takes from a frame.
+  keys_per_s: 20
+  # Files an app's folder may hold.
+  max_files: 500
+  # Megabytes an app's files may total.
+  max_mb: 20
+  # Folders, each relative to a root and applied to every root, that `open({ file })` never reaches for an app, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
+  closed_paths: [secrets]

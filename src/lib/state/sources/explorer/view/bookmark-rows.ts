@@ -51,25 +51,34 @@ export type BookmarkRow = {
     label: string;
     root: string;
     path: string;
-    view: 'document' | 'file' | 'files';
+    view: 'document' | 'file' | 'files' | 'source';
     kind?: Exclude<BookmarkKind, 'file'>;
 };
 
 /**
  * The bookmarks the rail draws: one row per entry whose root and path are both filled texts, in
  * the order the file holds them. An entry with either missing names nothing and is left out. A
- * folder opens in the Files view, a path that is a page opens in the document view and any other in
- * the file view. An entry the read gave no kind is a file.
+ * folder opens in the Files view, a file in an apps folder (`holds`) opens as source text, a path
+ * that is a page opens in the document view and any other in the file view. An entry the read gave
+ * no kind is a file.
  */
 export function bookmarkRows(
-    entries: { title: string; fields: Record<string, unknown>; kind?: BookmarkKind }[]
+    entries: { title: string; fields: Record<string, unknown>; kind?: BookmarkKind }[],
+    holds: (root: string, path: string) => boolean = () => false
 ): BookmarkRow[] {
     return entries.flatMap((entry) => {
         const ref = readAs(namedRefShape, entry.fields);
         if (ref === null) return [];
         const kind = entry.kind ?? 'file';
         const page = typeOfFile(ref.path).kind === 'html';
-        const view = kind === 'folder' ? 'files' : page ? 'document' : 'file';
+        const view =
+            kind === 'folder'
+                ? 'files'
+                : holds(ref.root, ref.path)
+                  ? 'source'
+                  : page
+                    ? 'document'
+                    : 'file';
         return [
             {
                 label: entry.title,

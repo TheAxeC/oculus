@@ -68,6 +68,7 @@ type Options = {
 export type WorkbenchKeys = {
     keys: (event: KeyboardEvent) => void;
     paneFocused: (event: FocusEvent) => void;
+    frameFocused: () => void;
     panePressed: (event: PointerEvent) => void;
     clearCursor: () => void;
     syncCards: () => void;
@@ -279,11 +280,21 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         );
     }
 
+    /**
+     * The place in its pane of a frame that holds the focus: the frames are drawn outside the panes
+     * (shell/frames/FrameLayer.svelte), so the pane of a frame is the pane of its slot.
+     */
+    function frameSlot(element: HTMLElement): HTMLElement | null {
+        const id = element.dataset.frameOf;
+        if (id === undefined) return null;
+        return document.querySelector<HTMLElement>(`[data-frame-slot="${CSS.escape(id)}"]`);
+    }
+
     /** Find the pane keyboard navigation should address from focus, cursor or active main tab. */
     function focusedPaneElement(): HTMLElement | null {
         const element = document.activeElement;
         if (element instanceof HTMLElement) {
-            const pane = element.closest<HTMLElement>('[data-pane]');
+            const pane = (frameSlot(element) ?? element).closest<HTMLElement>('[data-pane]');
             if (pane !== null) return pane;
         }
         if (lastFocusedPane?.isConnected) return lastFocusedPane;
@@ -443,11 +454,22 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         rememberPane(event.target);
     }
 
+    /**
+     * The window lost the focus to a frame (a press inside it): Chrome sends the page no `focusin`
+     * for the frame's element, so a `focusin` is raised on the frame's slot, where the pane that
+     * holds the slot hears it as a focus inside the pane.
+     */
+    function frameFocused(): void {
+        const element = document.activeElement;
+        if (!(element instanceof HTMLIFrameElement)) return;
+        frameSlot(element)?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    }
+
     function panePressed(event: PointerEvent): void {
         rememberPane(event.target);
     }
 
-    return { keys, paneFocused, panePressed, clearCursor, syncCards, stopCards };
+    return { keys, paneFocused, frameFocused, panePressed, clearCursor, syncCards, stopCards };
 }
 
 /**

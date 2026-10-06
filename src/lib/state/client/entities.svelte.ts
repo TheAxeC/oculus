@@ -105,6 +105,8 @@ export function createEntities(): EntitiesStore {
         /**
          * What the audit scan found and what the reader has parked, or null before the first scan.
          */
-        audit: () => payload('audit')
+        audit: () => payload('audit'),
+        /** The apps found in the machine's folder and the roots, or null before the first push. */
+        apps: () => payload('apps')
     };
 }

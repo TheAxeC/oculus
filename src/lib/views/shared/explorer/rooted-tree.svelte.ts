@@ -70,6 +70,7 @@ export type RootedTree = ReturnType<typeof createRootedTree>;
 export function createRootedTree(client: ClientState, input: RootedInput) {
     const {
         explorer,
+        apps: { holds },
         fs: { bookmarks, entries, heldEntries, listing, readFileKind },
         layout: { armKeep, askFocus, disarmKeep, keepPreview, openView, showInFiles },
         selectors: { configMap, gitFor, gitRoots },
@@ -93,6 +94,7 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
         keepPreview,
         readFileKind,
         showInFiles,
+        holds,
         armKeep: (id: string, pressedAt: number) => {
             if (!closed) armKeep(id, input.owner(), pressedAt);
         },

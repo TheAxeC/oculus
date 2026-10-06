@@ -35,7 +35,7 @@
     import { provideState } from '$lib/state/client/use';
     import { provideSpelling } from '$lib/ui/controls/text/spelling';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
-    import { pushedCollections, registerAll, registerCollections } from './views.ts';
+    import { pushedCollections, registerAll, registerApps, registerCollections } from './views.ts';
     import type { PageData } from './$types';
 
     let { data }: { data: PageData } = $props();
@@ -54,12 +54,13 @@
     provideTipIds(createTipIds());
     provideSpelling(desktop?.bridge.spelling);
     const {
+        apps: { findings: appFindings, holds, rows: appRows },
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
         fs: { bookmarks: savedBookmarks, workspaces },
         layout: { activeInstance, loadLayout, openView, stopFollowing },
         repositories,
         selectors: { waitingCount },
-        socket: { connect, disconnect, seedConfig, status: socketStatus },
+        socket: { connect, disconnect, seedApps, seedConfig, status: socketStatus },
         ui: { instanceState, loadUi, setInstanceState, stopFollowing: stopFollowingUi },
         writes: { setToken, writeRail }
     } = client;
@@ -77,12 +78,26 @@
         registerCollections(client.registry, data.collections);
         setToken(data.token);
         seedConfig(data.seed.payload, data.seed.through);
+        const { rows, findings, folders, version } = data.apps;
+        seedApps({ rows, findings, folders }, version);
+        registerApps(client.registry, rows);
     });
 
     // A load that ran again with a token a restarted server minted replaces the one this client
     // holds, without the page being reloaded by hand.
     $effect(() => {
         setToken(data.token);
+    });
+
+    // The same load hands the apps the server held when it ran. They are seeded again, untracked,
+    // and a seed older than the rows already held is ignored; the registry then takes the rows the
+    // page holds after the seed, so an ignored seed never registers its older rows.
+    $effect(() => {
+        const { rows, findings, folders, version } = data.apps;
+        untrack(() => {
+            seedApps({ rows, findings, folders }, version);
+            registerApps(client.registry, appRows());
+        });
     });
 
     /*
@@ -98,7 +113,17 @@
         // A push whose `collections:` is missing or malformed names no keys, and registering none
         // would close every collection tab on every page; the registry follows a real list only.
         const keys = pushedCollections(pushed);
-        if (keys !== null) registerCollections(client.registry, keys);
+        if (keys !== null) untrack(() => registerCollections(client.registry, keys));
+    });
+
+    // The apps' views follow the rows of the `apps` channel: a push moves a badge, a title, an app
+    // added or taken away, and the registry is the one place the pane tabs and the catalogue read.
+    // The registry is a reactive map, so the call runs untracked: it reads the registrations to
+    // drop the stale ones and writes the current ones, and tracked it would run again on its own
+    // writes.
+    $effect(() => {
+        const rows = appRows();
+        untrack(() => registerApps(client.registry, rows));
     });
 
     /**
@@ -132,7 +157,7 @@
     const status = $derived(
         statusWords(socketStatus(), usage(), hpc(), sessions(), {
             host: config()?.host ?? null,
-            findings: findingsCount(portfolio(), config()),
+            findings: findingsCount(portfolio(), config(), { findings: appFindings() }),
             repo: repoStatus(tabFile(activeInstance()?.state), served, gitPayload(), HUB_ROOT)
         })
     );
@@ -169,7 +194,7 @@
      * store; the rail is handed what to draw. Which view opens one is a question about a file name,
      * which state/sources/fs.ts answers.
      */
-    const saved = $derived<Bookmark[]>(bookmarkRows(savedBookmarks().entries));
+    const saved = $derived<Bookmark[]>(bookmarkRows(savedBookmarks().entries, holds));
 
     /**
      * Rewrite the rail's `rail:` list as the rail asks, a page button moved or hidden, through the
@@ -196,7 +221,8 @@
             'feeds',
             'audit',
             'processes',
-            'schedule'
+            'schedule',
+            'apps'
         ]);
         takeCarried(localStorage, window, location.origin);
         loadUi(localStorage, window);

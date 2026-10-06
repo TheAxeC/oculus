@@ -47,7 +47,15 @@
     import { stamp } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
     import { instanceText } from '$lib/state/workbench/layout';
-    import { FILE_RECORD, fileOperation, shown, shownPaths, undoSaid } from './rows';
+    import {
+        FILE_RECORD,
+        STORE_RECORD,
+        fileOperation,
+        shown,
+        shownBytes,
+        shownPaths,
+        undoSaid
+    } from './rows';
     import type { Shown } from './rows';
     import { matching, type Change } from '$lib/state/sessions/changes.svelte';
     import { currentWorkspace } from '$lib/state/sources/fs-transport';
@@ -85,10 +93,12 @@
 
     /**
      * The two sides of one row: what the file held, and what the write put there. A file operation
-     * names the paths it took and left, not the values of a field.
+     * names the paths it took and left, not the values of a field, and a write of an app's store
+     * names the size of the store before and after.
      */
     function sides(row: Change): { side: string; label: string; held: Shown }[] {
-        const fold = row.kind === FILE_RECORD ? shownPaths : shown;
+        const fold =
+            row.kind === FILE_RECORD ? shownPaths : row.kind === STORE_RECORD ? shownBytes : shown;
         return [
             { side: 'before', label: t('history.before'), held: fold(row.before) },
             { side: 'after', label: t('history.after'), held: fold(row.after) }

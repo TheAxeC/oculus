@@ -13,6 +13,10 @@
     // The body is a grid so that a float docked to an edge takes a track of its own beside the
     // area.
     //
+    // The frames of the tabs are not part of any tree either: frames/FrameLayer.svelte draws each
+    // once, outside the block keyed by the page, and a pane draws only the slot a frame is laid
+    // over, so a layout change never loads a frame's document again.
+    //
     // In the desktop app the page of a popped-out window (`?float=<id>`) is this component with the
     // body drawn as that one float alone, filling the window (panes/floats/FloatWindow.svelte):
     // no rail, no status bar and no page, and none of the work that fills the rail's pages and
@@ -34,10 +38,12 @@
     import PaneView from './panes/PaneView.svelte';
     import FloatLayer from './panes/floats/FloatLayer.svelte';
     import FloatWindow from './panes/floats/FloatWindow.svelte';
+    import FrameLayer from './frames/FrameLayer.svelte';
     import { bodyTracks } from './panes/floats/float-geometry';
     import SplitView from './panes/SplitView.svelte';
     import UpdateTray from './rail/UpdateTray.svelte';
     import KeySheet from '$lib/ui/menu/keys/KeySheet.svelte';
+    import { provideTabFrames } from '$lib/ui/tabs/tab-frames.svelte';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import { paneAt, resize, type FloatSpec, type Layout } from '$lib/state/workbench/layout';
@@ -69,6 +75,9 @@
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
+
+    /** The frames of every tab under the workbench, drawn by the frame layer. */
+    const frames = provideTabFrames();
 
     const {
         layout: { change, activeInstance, currentPage, expandChild, floats, focused, layout },
@@ -308,6 +317,7 @@
 <svelte:window
     onkeydown={keyboard.keys}
     onfocusin={keyboard.paneFocused}
+    onblur={keyboard.frameFocused}
     onpointerdown={keyboard.panePressed}
 />
 
@@ -371,6 +381,7 @@
         <StatusBar {status} {git} onpalette={openPalette} />
     </div>
 {/if}
+<FrameLayer {frames} />
 <DropLayer />
 <Palette
     open={paletteOpen}

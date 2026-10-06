@@ -40,7 +40,13 @@ import { setAppearance } from '../shared/words/appearance.ts';
 import { setVocab } from '../shared/words/tones.ts';
 import type { WritesStore } from './writes.svelte.ts';
 import { carryWorkbench } from '../workbench/layout/saved/carry.ts';
-import type { ConfigPayload, HostInfo, Message, Subscription } from '../../data/model/index.ts';
+import type {
+    AppsPayload,
+    ConfigPayload,
+    HostInfo,
+    Message,
+    Subscription
+} from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 import type { SocketStore, Status } from '../shared/stores/shapes.ts';
 
@@ -105,6 +111,8 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
 
     /** The newest `config` push version the seeded configuration is at least as new as. */
     let seededThrough = -1;
+    /** The newest `apps` push version the seeded apps are at least as new as. */
+    let seededApps = -1;
     /** Whether a socket of this page has opened before, so the next open is a reconnect. */
     let opened = false;
     /** The token the last subscribe message carried to the server. */
@@ -227,6 +235,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
             const reconnected = opened;
             if (reconnected) {
                 seededThrough = -1;
+                seededApps = -1;
                 entities.reconnected();
             }
             opened = true;
@@ -336,6 +345,16 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         entities.receive({ channel: 'config', version: through, payload });
     }
 
+    /**
+     * Take no `apps` push at or below `through`, and put the apps the page was built from on the
+     * channel. A seed that fails the channel's schema is not held.
+     */
+    function seedApps(payload: AppsPayload, through: number): void {
+        if (!payloadShapes.apps.safeParse(payload).success) return;
+        seededApps = Math.max(seededApps, through);
+        entities.receive({ channel: 'apps', version: through, payload });
+    }
+
     function handle(data: string): void {
         let parsed: unknown;
         try {
@@ -351,6 +370,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         const shape = byKey<z.ZodType>(payloadShapes, message.channel);
         if (shape !== undefined && !shape.safeParse(message.payload).success) return;
         if (message.channel === 'config' && message.version <= seededThrough) return;
+        if (message.channel === 'apps' && message.version <= seededApps) return;
         const heard = listeners.get(message.channel);
         if (heard !== undefined && heard.size > 0) {
             for (const fn of [...heard]) fn(message);
@@ -369,6 +389,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         unsubscribe,
         listen,
         installConfig,
-        seedConfig
+        seedConfig,
+        seedApps
     };
 }

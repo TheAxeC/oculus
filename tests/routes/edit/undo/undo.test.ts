@@ -7,8 +7,8 @@
 // The cases tagged slow take 100 ms or more; every other case runs in npm test. A hook loads the
 // configuration once, since the first load costs more than a later one, so no case pays for it.
 
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join, resolve, sep } from 'node:path';
 import { expect, describe } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite } from '../../../../src/lib/server/edit/writes.ts';
@@ -31,6 +31,8 @@ import {
     warmConfig
 } from '../write-fixture.ts';
 import { it, test } from '../../../fixtures/scratch.ts';
+import { present } from '../../../fixtures/present.ts';
+import { MANIFEST as APP_MANIFEST, notesFiles, routeSetup } from '../../apps/apps-fixture.ts';
 
 test.beforeAll(warmConfig);
 
@@ -285,5 +287,47 @@ describe('taking a change back', () => {
         writeFileSync(radarFile, `# a new head line\n${radar()}`);
         await undo(moved);
         expect(radar()).toBe(`# a new head line\n${before}`);
+    });
+    it('puts an app store back to the value before, and refuses it once the store has moved or the kept values are gone', async () => {
+        const setup = routeSetup({ machine: notesFiles(APP_MANIFEST) });
+        const data = join(setup.fixture.base, 'data');
+        const into = target();
+        into.apps = { held: setup.held, data, maxKb: 256 };
+        into.changes = { ...present(into.changes, 'the change log'), undoDir: join(data, '.undo') };
+        const headers = { 'x-oculus-app': 'app:notes', 'x-oculus-write-kind': 'app-store' };
+        const store = async (value: unknown): Promise<Change> => {
+            const response = await handleWrite(request({ store: value }, headers), TOKEN, into);
+            expect(response.status).toBe(200);
+            return changesOf(into)[0];
+        };
+        const file = present(
+            setup.held().apps.find((one) => one.id === 'app:notes'),
+            'the app notes'
+        ).row.storeFile;
+        const held = (): unknown => JSON.parse(readFileSync(file, 'utf8'));
+        expect(resolve(file).startsWith(resolve(data) + sep)).toBe(true);
+
+        // The store written twice, and the second write taken back: the value before returns.
+        await store({ n: 1 });
+        const second = await store({ n: 2 });
+        expect((await undone(into, second)).status).toBe(200);
+        expect(held()).toEqual({ n: 1 });
+        expect(changesOf(into)[0]).toMatchObject({ kind: 'app-store', undoes: second.at });
+
+        // A store another write moved since is refused and left as it is.
+        const third = await store({ n: 3 });
+        await store({ n: 4 });
+        const moved = await undone(into, third);
+        expect(moved.status).toBe(409);
+        expect(await moved.json()).toEqual({ error: 'moved' });
+        expect(held()).toEqual({ n: 4 });
+
+        // A record whose kept values are gone has nothing to put back.
+        const fifth = await store({ n: 5 });
+        rmSync(join(data, '.undo', `${fifth.at}.json`));
+        const gone = await undone(into, fifth);
+        expect(gone.status).toBe(404);
+        expect(await gone.json()).toEqual({ error: 'nothing' });
+        expect(held()).toEqual({ n: 5 });
     });
 });

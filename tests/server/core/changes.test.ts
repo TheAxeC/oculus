@@ -11,11 +11,12 @@
 // A describe whose cases take 100 ms or more in a run of its own is tagged slow, and so is a single
 // case that does.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import { readChanges } from '../../../src/lib/server/core/changes.ts';
+import { logChanges, readChanges } from '../../../src/lib/server/core/changes.ts';
+import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
@@ -266,5 +267,45 @@ describe('what each writer records', { tags: ['slow'] }, () => {
             before: null,
             undo: 'none'
         });
+    });
+});
+
+describe('what a store write leaves in the undo folder', () => {
+    it('keeps the values of a record outside its line and deletes them when the record leaves the window', async () => {
+        const dir = scratchDir('oculus-changes-kept-');
+        const log: ChangeLog = {
+            file: join(dir, 'changes.jsonl'),
+            keep: 2,
+            writes: fsWrites(),
+            undoDir: join(dir, '.undo')
+        };
+        expect(resolve(log.undoDir ?? '').startsWith(resolve(dir) + sep)).toBe(true);
+        const record = (n: number) => ({
+            file: join(dir, 'notes.json'),
+            key: 'app:notes',
+            field: 'store',
+            before: n,
+            after: n + 1,
+            undo: 'field' as const,
+            kept: { before: { n }, after: { n: n + 1 } }
+        });
+        await logChanges(log, 'app-store', [record(0)]);
+        const [first] = readChanges(log);
+        expect(first).toMatchObject({ key: 'app:notes', field: 'store', before: 0, after: 1 });
+        expect('kept' in first).toBe(false);
+        const keptFile = join(dir, '.undo', `${first.at}.json`);
+        expect(JSON.parse(readFileSync(keptFile, 'utf8'))).toEqual({
+            before: { n: 0 },
+            after: { n: 1 }
+        });
+        for (const n of [1, 2, 3]) await logChanges(log, 'app-store', [record(n)]);
+        expect(existsSync(keptFile)).toBe(true);
+        await logChanges(log, 'app-store', [record(4)]);
+        expect(existsSync(keptFile)).toBe(false);
+        const left = readChanges(log);
+        expect(left).toHaveLength(2);
+        for (const change of left) {
+            expect(existsSync(join(dir, '.undo', `${change.at}.json`))).toBe(true);
+        }
     });
 });

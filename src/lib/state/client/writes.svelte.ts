@@ -25,6 +25,7 @@ import {
     survivorsShape,
     unchanged
 } from '../../data/shapes/shapes.ts';
+import { APP_HEADER, KIND_HEADER, appHeaderValue } from '../../data/helpers/files/apps.ts';
 import { failedAnswer, unreadableAnswer } from '../shared/answers/answers.ts';
 import { t } from '../shared/words/text.ts';
 import type {
@@ -224,10 +225,15 @@ export function createWrites(
         return state.error;
     }
 
-    async function post(body: unknown, path: string, signal: AbortSignal): Promise<Response> {
+    async function post(
+        body: unknown,
+        path: string,
+        signal: AbortSignal,
+        extra: Record<string, string> = {}
+    ): Promise<Response> {
         return fetch(path, {
             method: 'POST',
-            headers: { 'content-type': 'application/json', 'x-oculus-token': token },
+            headers: { 'content-type': 'application/json', 'x-oculus-token': token, ...extra },
             body: JSON.stringify(body),
             signal
         });
@@ -516,6 +522,15 @@ export function createWrites(
         return tell(await exchange(request, path, limited), options);
     }
 
+    /**
+     * One write from an app's frame. The headers name the app and the kind it sent, which the
+     * server checks against the body before any writer runs.
+     */
+    async function sendFromApp(request: unknown, app: string, kind: string): Promise<WriteAnswer> {
+        const headers = { [APP_HEADER]: appHeaderValue(app), [KIND_HEADER]: kind };
+        return tell(await exchange(request, '/api/write', true, headers), { said: true });
+    }
+
     /** A write whose request failed or whose answer could not be read, said as a failed read. */
     function failedRead(error: string): Exchange {
         state.error = error;
@@ -529,18 +544,28 @@ export function createWrites(
      * request that never answers leaves no form waiting on it. A git write passes `limited` false
      * and waits for the server's answer, which its own limits and Cancel bound.
      */
-    async function exchange(request: unknown, path: string, limited = true): Promise<Exchange> {
+    async function exchange(
+        request: unknown,
+        path: string,
+        limited = true,
+        extra: Record<string, string> = {}
+    ): Promise<Exchange> {
         state.pending += 1;
         state.error = null;
         const gate = new AbortController();
         const wait = limited ? writeTimeout(settings()) : null;
         const timer = wait === null ? null : setTimeout(() => gate.abort(), wait);
         try {
-            let response = await post(request, path, gate.signal);
+            let response = await post(request, path, gate.signal, extra);
             let body = await readJson(response);
-            if (response.status === 403 && refusalsShape.parse(fields(body)).refused.length === 0) {
+            // A 403 naming the kind is a refusal of the request's own, not a stale token.
+            const stale =
+                response.status === 403 &&
+                refusalsShape.parse(fields(body)).refused.length === 0 &&
+                fields(body).error !== 'kind';
+            if (stale) {
                 await renewToken();
-                response = await post(request, path, gate.signal);
+                response = await post(request, path, gate.signal, extra);
                 body = await readJson(response);
             }
             const held = answerShape.parse(fields(body));
@@ -554,6 +579,7 @@ export function createWrites(
                         changed: [],
                         refused: held.refused,
                         error,
+                        status: response.status,
                         ...(held.code === undefined ? {} : { code: held.code })
                     }
                 };
@@ -624,6 +650,7 @@ export function createWrites(
         writeGit,
         writeDeposit,
         send,
+        sendFromApp,
         onUnwritten
     };
 }

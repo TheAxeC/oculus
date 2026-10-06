@@ -6,7 +6,8 @@
 // read from disk, whatever the roots turn out to be. The roots are the configured ones with the
 // current workspace's after them, so a folder the reader added in the file browser is served
 // exactly as a configured one is; the configuration is the request's own read and the hub comes off
-// its ServerContext, so one request reads the workspaces file once.
+// its ServerContext, so one request reads the workspaces file once. A file inside an apps folder is
+// sent as plain text, since it is app code and a page that opens it shows its source.
 
 import { serveFile } from '$lib/server/files/files';
 import { browserRoots } from '$lib/server/files/roots';
@@ -18,5 +19,5 @@ export const GET: RequestHandler = ({ params, locals }) => {
         engine: locals.server.engine,
         local: locals.server.local
     });
-    return serveFile(roots, params.root, params.path);
+    return serveFile(roots, params.root, params.path, locals.server.apps.held().folders);
 };

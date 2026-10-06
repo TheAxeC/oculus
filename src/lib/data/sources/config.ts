@@ -65,6 +65,7 @@ export {
     vocabCatalog
 } from './config/catalogs.ts';
 export {
+    type AppsSettings,
     type CalendarSettings,
     type MailSettings,
     type LiteratureSettings,
@@ -73,9 +74,11 @@ export {
     type ProcessesSettings,
     type SearchSettings,
     type SlurmSettings,
+    appsSettings,
     autofetchMin,
     calendarSettings,
     changesKeep,
+    closedPaths,
     confirmDelete,
     latexFormatting,
     literatureSettings,

@@ -33,3 +33,6 @@ export function draggedShare(
     if (room <= 0) return share;
     return Math.min(most, Math.max(least, share + delta / room));
 }
+
+/** The class the body carries while a sash is dragged. */
+export const SASHING_CLASS = 'sashing';

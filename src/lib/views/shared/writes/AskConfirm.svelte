@@ -31,6 +31,7 @@
         detail={asking.detail}
         confirm={asking.confirm ?? t('ui.confirm_ok')}
         cancel={t('ui.confirm_cancel')}
+        focus={asking.focus}
         onconfirm={answered}
         oncancel={onclose}
     />

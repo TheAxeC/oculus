@@ -114,6 +114,11 @@ export type LocalConfig = {
      * unless the machine sets it, and the calendar connector then uses ~/.oculus/calendar.
      */
     calendarDir?: string;
+    /**
+     * Where the machine's apps live, `apps_dir` in the file. Absent unless the machine sets it, and
+     * the apps watcher then reads ~/.oculus/apps.
+     */
+    appsDir?: string;
     /** The mail accounts the Inbox view reads, empty unless the machine names any. */
     mail: MailAccountConfig[];
     /**
@@ -156,6 +161,7 @@ export const LOCAL_KEYS = [
     'accounts',
     'calendars',
     'calendar_dir',
+    'apps_dir',
     'mail',
     'mail_dir',
     'literature'
@@ -392,6 +398,7 @@ const STATE_PATHS = [
     ['schedules', 'schedules'],
     ['schedule_record', 'scheduleRecord'],
     ['calendar_dir', 'calendarDir'],
+    ['apps_dir', 'appsDir'],
     ['mail_dir', 'mailDir']
 ] as const;
 

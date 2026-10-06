@@ -26,15 +26,19 @@
     // window.parent; the file it holds is the owner's own document from the owner's own disk, which
     // is the same ground api/docs renders a README on.
     //
+    // The view draws the frame's slot and describes the frame to the workbench's tab frames
+    // (ui/tabs/tab-frames.svelte.ts), which the frame layer draws over the slot, so a layout change
+    // never loads the manual again.
+    //
     // A right-click in the document opens the prose menu (views/shared/prose/prose-menu.ts), as it
     // does on rendered Markdown. The frame is a document of its own whose right-clicks never reach
     // this page, so the frame's own right-click is heard on the frame's document, each time a page
     // loads in it: what it selects and the image under the pointer are read there, and the
-    // right-click is raised again on the frame element at the same point, where the menu opens.
-    // With no selection and no image the frame's right-click opens nothing. A key pressed with
-    // Cmd or Ctrl inside the frame is raised again on the frame element the same way, so the
-    // workbench's keys hear it and one they take (Cmd+S among them) is kept from the browser, whose
-    // own save dialog would otherwise open over the page.
+    // right-click is raised again on the slot at the same point, where the menu opens. With no
+    // selection and no image the frame's right-click opens nothing. A key pressed with Cmd or Ctrl
+    // inside the frame is raised again on the slot the same way, so the workbench's keys hear it
+    // and one they take (Cmd+S among them) is kept from the browser, whose own save dialog would
+    // otherwise open over the page.
     //
     // The tab draws no row of controls and hands none to the pane's strip: its path is the
     // breadcrumb the pane draws under the strip, the star and, for a file whose extension
@@ -48,6 +52,8 @@
     import { proseAt, proseMenu, prosePicked } from '../../shared/prose/prose-menu';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import FrameSlot from '$lib/ui/tabs/FrameSlot.svelte';
+    import { drawFrame, useTabFrames, type FrameSpec } from '$lib/ui/tabs/tab-frames.svelte';
     import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import { servedFile } from '$lib/views/shared/links/file-bar';
     import { t } from '$lib/state/shared/words/text';
@@ -63,7 +69,8 @@
         layout: { openView }
     } = useState();
 
-    let frame: HTMLIFrameElement | null = $state(null);
+    const frames = useTabFrames();
+
     let menu: MenuItem[] = $state([]);
     let heard: { text: string; image: string | null } = { text: '', image: null };
 
@@ -77,20 +84,20 @@
 
     /**
      * A right-click inside the frame: read there, kept from the browser's own menu, and raised
-     * again on the frame element at the same point of this page, where the menu opens. A
-     * right-click the browser raises for a key comes at no point, and opens at the element it was
-     * raised on.
+     * again on the slot at the same point of this page, where the menu opens. A right-click the
+     * browser raises for a key comes at no point, and opens at the element it was raised on.
      */
     function inFrame(event: MouseEvent): void {
-        const held = frame;
-        if (held === null) return;
+        const held = frames?.frameOf(instance.id);
+        const slot = frames?.slotOf(instance.id);
+        if (held === undefined || slot === undefined) return;
         const view = held.contentWindow;
         heard = proseAt(event.target, view === null ? null : view.getSelection());
         const origin = window.location.origin;
         menu = proseMenu({ selection: heard.text !== '', image: heard.image, origin }, t);
         event.preventDefault();
         if (menu.length === 0) return;
-        const box = held.getBoundingClientRect();
+        const box = slot.getBoundingClientRect();
         let x = event.clientX;
         let y = event.clientY;
         const target = event.target as { getBoundingClientRect?: () => DOMRect } | null;
@@ -99,7 +106,7 @@
             x = rect.right;
             y = rect.top;
         }
-        held.dispatchEvent(
+        slot.dispatchEvent(
             new MouseEvent('contextmenu', {
                 bubbles: true,
                 cancelable: true,
@@ -110,13 +117,13 @@
     }
 
     /**
-     * A key with Cmd or Ctrl pressed inside the frame, raised again on the frame element, where it
-     * reaches the workbench's keys; a key they take is kept from the browser. A key without them is
-     * the document's own (its search box, its links) and stays there.
+     * A key with Cmd or Ctrl pressed inside the frame, raised again on the slot, where it reaches
+     * the workbench's keys; a key they take is kept from the browser. A key without them is the
+     * document's own (its search box, its links) and stays there.
      */
     function keyInFrame(event: KeyboardEvent): void {
-        const held = frame;
-        if (held === null || !(event.metaKey || event.ctrlKey)) return;
+        const slot = frames?.slotOf(instance.id);
+        if (slot === undefined || !(event.metaKey || event.ctrlKey)) return;
         const again = new KeyboardEvent('keydown', {
             key: event.key,
             code: event.code,
@@ -128,18 +135,51 @@
             bubbles: true,
             cancelable: true
         });
-        held.dispatchEvent(again);
+        slot.dispatchEvent(again);
         if (again.defaultPrevented) event.preventDefault();
     }
 
     /**
-     * Each page the frame loads is heard for its right-clicks and its keys; a page of its own goes
-     * with it.
+     * A press on a link whose address is of another origin opens in a new tab of the browser with
+     * no opener, so a manual's link to the web never replaces the page in the frame, and a link of
+     * this origin stays in the frame. The target is an element of the frame's own document, so it
+     * is read by its shape: `instanceof Element` is false for it.
      */
-    function loaded(): void {
-        frame?.contentDocument?.addEventListener('contextmenu', inFrame);
-        frame?.contentDocument?.addEventListener('keydown', keyInFrame);
+    function clickInFrame(event: MouseEvent): void {
+        const target = event.target as { closest?: (selector: string) => Element | null } | null;
+        const link = typeof target?.closest === 'function' ? target.closest('a[href]') : null;
+        if (link === null || event.defaultPrevented) return;
+        const address = new URL(
+            link.getAttribute('href') ?? '',
+            frames?.frameOf(instance.id)?.contentWindow?.location.href ?? window.location.href
+        );
+        if (address.origin === window.location.origin || !/^https?:$/.test(address.protocol))
+            return;
+        event.preventDefault();
+        window.open(address.href, '_blank', 'noopener');
     }
+
+    /**
+     * The frame the tab holds while the file is served. Each page the frame loads is heard for its
+     * right-clicks, its keys and its links by the frame layer, which hands them to these.
+     */
+    const frame = $derived<FrameSpec | null>(
+        src === ''
+            ? null
+            : {
+                  kind: 'document',
+                  view: instance.view,
+                  src,
+                  title,
+                  key: '',
+                  hear: { contextmenu: inFrame, keydown: keyInFrame, click: clickInFrame }
+              }
+    );
+    drawFrame(
+        frames,
+        () => instance.id,
+        () => frame
+    );
 
     function picked(pick: string): void {
         prosePicked(pick, heard, { openView });
@@ -166,14 +206,7 @@
             <Empty message={t('document.none')} glyph={t('document.none_glyph')} />
         {:else}
             <ContextMenu label={t('ui.prose_menu')} items={menu} onpick={picked}>
-                <iframe
-                    class="frame"
-                    {title}
-                    {src}
-                    sandbox="allow-same-origin allow-scripts"
-                    bind:this={frame}
-                    onload={loaded}
-                ></iframe>
+                <FrameSlot id={instance.id} />
             </ContextMenu>
         {/if}
     </div>
@@ -185,20 +218,5 @@
         height: 100%;
         min-width: 0;
         min-height: 0;
-    }
-
-    /* The frame is the body: the document inside it scrolls, so the pane does not scroll around
-       it. */
-    .frame {
-        display: block;
-        width: 100%;
-        height: 100%;
-        border: 0;
-        background: var(--panel);
-    }
-
-    :global(body.wall) .frame {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
     }
 </style>

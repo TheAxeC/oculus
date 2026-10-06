@@ -4,6 +4,7 @@
 import type { LocalConfig } from '../../../src/lib/data/sources/config.ts';
 import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
+import { noApps } from '../../../src/lib/server/machine/apps/held.ts';
 import { hostInfo, type ServerContext } from '../../../src/lib/server/root/context.ts';
 import { RateLimiter } from '../../../src/lib/server/root/hooks.ts';
 import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
@@ -88,12 +89,22 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             }),
             close: noop
         },
+        apps: {
+            held: noApps,
+            reread: noop,
+            rereadStores: noop,
+            follow: noop,
+            keep: noop,
+            unkeep: noop,
+            close: noop
+        },
         token: ROUTE_TOKEN,
         schedules: {
             reload: noop,
             runNow: () => Promise.resolve({ refused: 'record-unread', names: [] }),
             close: noop
         },
+        appsSecret: 'the-apps-secret-of-this-context',
         host: hostInfo(local.port),
         local,
         engine: overrides.engine ?? '/fixture/engine',

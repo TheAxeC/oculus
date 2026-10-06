@@ -192,3 +192,5 @@ glyphs:
   bell_unread: "(N)"
   bell_quiet: "(z)"
   clear_all: "[c]"
+  app: "[A]"
+  app_view: "[a]"

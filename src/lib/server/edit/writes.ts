@@ -30,11 +30,21 @@
 import { json } from '@sveltejs/kit';
 import { join } from 'node:path';
 import { portfolioConfigFrom } from '../../data/index.ts';
-import { changesKeep, configDir, loadLocal, localFile } from '../../data/sources/config.ts';
+import {
+    appsSettings,
+    changesKeep,
+    configDir,
+    loadLocal,
+    localFile
+} from '../../data/sources/config.ts';
 import { FILES_KIND } from '../../data/file-ops.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges, pathOf } from '../core/changes.ts';
 import { undoChange } from './writes/undo.ts';
+import { APP_STORE, writeAppStore } from './writes/app-store.ts';
+import { gateWrite, storeWrite } from './writes/app-gate.ts';
+import { defaultAppData } from '../machine/apps/store.ts';
+import type { AppsHeld, HeldApp } from '../machine/apps/held.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { rootsFile } from '../files/files.ts';
 import { entities as entitiesOf, projects as projectsOf } from '../sessions/stores/hooks.ts';
@@ -146,6 +156,13 @@ export type WriteTarget = {
      * `unwritable` to the undo of a file operation.
      */
     files?: FilesTarget;
+    /**
+     * What a write from an app's frame needs: the apps the server holds, the folder the machine
+     * apps' stores and the undo folder are under, the largest store in kilobytes, and the call that
+     * tells the apps watcher a store changed. A target built without it refuses every write that
+     * carries an app header.
+     */
+    apps?: { held: () => AppsHeld; data: string; maxKb: number; stored?: () => void };
 };
 
 export type WriteOutcome = {
@@ -225,7 +242,13 @@ const LAYOUT = 'layout.yml';
 export function target(
     engine: string,
     merged: Record<string, unknown>,
-    server?: { hub: HubLike; fsWrites: FsWrites; opsWrites?: FsWrites }
+    server?: {
+        hub: HubLike;
+        fsWrites: FsWrites;
+        opsWrites?: FsWrites;
+        apps?: { held: () => AppsHeld; rereadStores?: () => void };
+    },
+    appData: string = defaultAppData()
 ): WriteTarget {
     const local = loadLocal(engine);
     return {
@@ -256,7 +279,18 @@ export function target(
                 : {
                       file: local.changes ?? defaultChangesPath(),
                       keep: changesKeep(merged),
-                      writes: server.fsWrites
+                      writes: server.fsWrites,
+                      undoDir: join(appData, '.undo')
+                  },
+        apps:
+            server?.apps === undefined
+                ? undefined
+                : {
+                      held: () =>
+                          server.apps?.held() ?? { apps: [], findings: [], folders: [], links: [] },
+                      data: appData,
+                      maxKb: appsSettings(merged).storeMaxKb,
+                      stored: () => server.apps?.rereadStores?.()
                   }
     };
 }
@@ -274,6 +308,13 @@ export async function handleWrite(
     const read = await tokenedBody(request, token);
     if (read instanceof Response) return read;
     const body = read.body;
+    const gate = gateWrite(request.headers, body, into.apps?.held);
+    if ('refused' in gate) return json({ error: 'kind' }, { status: 403 });
+    const app = gate.app;
+    if (app !== null) {
+        const stored = storeWrite(body);
+        if (stored !== null) return storeAnswer(into, app, stored.store);
+    }
     const session = sessionWrite(body);
     if (session !== null) {
         const changed: string[] = [];
@@ -313,7 +354,7 @@ export async function handleWrite(
         const outcome = writeManifest(into.hub, into.config, write.id, write.fields);
         if (!outcome.found)
             return json({ error: `no project with the id ${write.id}` }, { status: 404 });
-        return answer(outcome, 'manifest', into);
+        return answer(outcome, 'manifest', into, undefined, app ?? undefined);
     }
 
     const entry = entryWrite(body);
@@ -329,7 +370,7 @@ export async function handleWrite(
         if (!outcome.found) {
             return json({ error: `no entry ${entry.id} in ${entry.collection}` }, { status: 404 });
         }
-        return answer(outcome, 'entry', into);
+        return answer(outcome, 'entry', into, undefined, app ?? undefined);
     }
 
     const subtask = subtaskWrite(body);
@@ -343,21 +384,21 @@ export async function handleWrite(
             subtask.value
         );
         if (!outcome.found) return json({ error: notFound(subtask.target) }, { status: 404 });
-        return answer(outcome, 'subtask', into);
+        return answer(outcome, 'subtask', into, undefined, app ?? undefined);
     }
 
     const added = subtaskAdd(body);
     if (added !== null) {
         const outcome = writeSubtaskAdd(into.hub, into.config, added.target, added.fields);
         if (!outcome.found) return json({ error: notFound(added.target) }, { status: 404 });
-        return answer(outcome, 'subtask-add', into);
+        return answer(outcome, 'subtask-add', into, undefined, app ?? undefined);
     }
 
     const host = hostWrite(body);
     if (host !== null) {
         const outcome = writeHost(into.hub, host.name, host.status, into.career);
         if (!outcome.found) return json({ error: `no host named ${host.name}` }, { status: 404 });
-        return answer(outcome, 'host', into);
+        return answer(outcome, 'host', into, undefined, app ?? undefined);
     }
 
     const fresh = newEntry(body);
@@ -371,7 +412,7 @@ export async function handleWrite(
         );
         if (!outcome.found)
             return json({ error: `no collection ${fresh.collection}` }, { status: 404 });
-        return answer(outcome, 'new-entry', into);
+        return answer(outcome, 'new-entry', into, undefined, app ?? undefined);
     }
 
     const order = reorderWrite(body);
@@ -385,7 +426,7 @@ export async function handleWrite(
         );
         if (!outcome.found)
             return json({ error: `no collection ${order.collection}` }, { status: 404 });
-        return answer(outcome, 'reorder', into);
+        return answer(outcome, 'reorder', into, undefined, app ?? undefined);
     }
 
     const removal = deleteEntryWrite(body);
@@ -403,7 +444,7 @@ export async function handleWrite(
                 { status: 404 }
             );
         }
-        return answer(outcome, 'delete-entry', into);
+        return answer(outcome, 'delete-entry', into, undefined, app ?? undefined);
     }
 
     const feedField = feedFieldWrite(body);
@@ -424,7 +465,7 @@ export async function handleWrite(
                 { status: 404 }
             );
         }
-        return answer(outcome, 'feed-field', into);
+        return answer(outcome, 'feed-field', into, undefined, app ?? undefined);
     }
 
     const feedDelete = feedDeleteWrite(body);
@@ -438,7 +479,7 @@ export async function handleWrite(
                 { status: 404 }
             );
         }
-        return answer(outcome, 'feed-delete', into);
+        return answer(outcome, 'feed-delete', into, undefined, app ?? undefined);
     }
 
     const lead = leadAddWrite(body);
@@ -446,7 +487,7 @@ export async function handleWrite(
         const outcome = addLead(into.hub, into.config, lead.fields);
         if (!outcome.found)
             return json({ error: 'the leads feed is not on this hub' }, { status: 404 });
-        return answer(outcome, 'lead-add', into);
+        return answer(outcome, 'lead-add', into, undefined, app ?? undefined);
     }
 
     const radar = radarAddWrite(body);
@@ -460,7 +501,7 @@ export async function handleWrite(
         if (!outcome.found) {
             return json({ error: 'Lit Watch has no file on this hub' }, { status: 404 });
         }
-        return answer(outcome, 'radar-add', into);
+        return answer(outcome, 'radar-add', into, undefined, app ?? undefined);
     }
 
     const linkedinIdea = linkedinIdeaWrite(body);
@@ -473,7 +514,7 @@ export async function handleWrite(
         );
         if (!outcome.found)
             return json({ error: 'the LinkedIn folder is not on this hub' }, { status: 404 });
-        return answer(outcome, 'linkedin-idea', into);
+        return answer(outcome, 'linkedin-idea', into, undefined, app ?? undefined);
     }
 
     const linkedinPost = linkedinPostWrite(body);
@@ -481,7 +522,7 @@ export async function handleWrite(
         const outcome = markLinkedinPosted(into.hub, into.config, linkedinPost.file);
         if (!outcome.found)
             return json({ error: 'the LinkedIn idea file is not on this hub' }, { status: 404 });
-        return answer(outcome, 'linkedin-post', into);
+        return answer(outcome, 'linkedin-post', into, undefined, app ?? undefined);
     }
 
     const configured = configWrite(body, into);
@@ -493,7 +534,15 @@ export async function handleWrite(
     }
 
     const idea = newIdea(body);
-    if (idea !== null) return answer(createIdea(into.hub, idea.fields), 'new-idea', into);
+    if (idea !== null) {
+        return answer(
+            createIdea(into.hub, idea.fields),
+            'new-idea',
+            into,
+            undefined,
+            app ?? undefined
+        );
+    }
 
     const undo = undoWrite(body);
     if (undo !== null) {
@@ -533,11 +582,13 @@ async function answer(
     outcome: WriteOutcome,
     kind: string,
     into: WriteTarget,
-    undoes?: string
+    undoes?: string,
+    app?: HeldApp
 ): Promise<Response> {
     const records = outcome.records?.map((record) => ({
         ...record,
-        file: pathOf(into.hub, record.file)
+        file: pathOf(into.hub, record.file),
+        ...(app === undefined ? {} : { app: app.id })
     }));
     await logChanges(into.changes, kind, records, undoes);
     return json({
@@ -553,4 +604,17 @@ function notFound(target: SubtaskTarget): string {
     return target.collection === undefined
         ? `no project with the id ${target.id}`
         : `no entry ${target.id} in ${target.collection}`;
+}
+
+/** The answer to a store write of an app: written and recorded, or refused with its word. */
+async function storeAnswer(into: WriteTarget, app: HeldApp, value: unknown): Promise<Response> {
+    let outcome;
+    try {
+        outcome = writeAppStore(into, app, value);
+    } catch {
+        // A folder that cannot be written is the app's refusal to word, not a failure of the route.
+        return json({ ok: true, changed: [], refused: [{ field: 'store', reason: 'unwritable' }] });
+    }
+    if ('error' in outcome) return json({ error: outcome.error }, { status: 500 });
+    return answer(outcome, APP_STORE, into, undefined, app);
 }

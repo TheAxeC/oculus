@@ -21,7 +21,8 @@ import {
 import { CATALOGS, LOCAL_NAME } from '../../../src/lib/state/system/config/config-files.ts';
 import { SETTINGS_MESSAGES } from '../../../src/lib/state/system/config/messages.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
-import { registerAll, registerCollections } from '../../../src/routes/views.ts';
+import { registerAll, registerApps, registerCollections } from '../../../src/routes/views.ts';
+import { fixtureApp } from '../../fixtures/entities-fixture.ts';
 import { recordedKinds } from '../../fixtures/kinds.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
@@ -36,6 +37,10 @@ beforeEach(() => {
     ({ views } = client.registry);
     registerAll(client.registry);
     registerCollections(client.registry, collectionKeys(config));
+    registerApps(client.registry, [
+        fixtureApp({ name: 'draft', approved: false, key: '' }),
+        fixtureApp({ name: 'kept', kept: true })
+    ]);
 });
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'src');

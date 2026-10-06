@@ -110,6 +110,8 @@ function headingTitle(id: Heading | typeof UNHEADED): string {
             return t('workbench.settings_heading_sources');
         case 'calendar':
             return t('workbench.settings_heading_calendar');
+        case 'apps':
+            return t('workbench.settings_heading_apps');
         case 'unheaded':
             return t('workbench.settings_heading_unheaded');
     }

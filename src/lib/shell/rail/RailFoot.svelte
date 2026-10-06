@@ -12,6 +12,7 @@
         bookmarkChoices,
         bookmarkPicked,
         documentState,
+        sourceTabState,
         type Bookmark
     } from '$lib/shell/rail/rail';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -47,6 +48,10 @@
         if (mark === null) return;
         if (mark.view === 'files') {
             showInFiles(mark.path, mark.root, true);
+            return;
+        }
+        if (mark.view === 'source') {
+            openView('source', sourceTabState(mark.root, mark.path));
             return;
         }
         if (mark.view === 'file') {

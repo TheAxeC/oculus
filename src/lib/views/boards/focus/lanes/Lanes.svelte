@@ -38,13 +38,14 @@
     } from '$lib/state/boards/focus';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { openPage } from '$lib/views/shared/explorer/opening';
 
+    const client = useState();
     const {
         selectors: { configMap },
         entities: { portfolio },
-        writes: { writeManifest },
-        layout: { openView }
-    } = useState();
+        writes: { writeManifest }
+    } = client;
 
     type Props = {
         now: number;
@@ -148,7 +149,7 @@
     function openMissing(project: Project): void {
         if (project.ghost) {
             if (hasReadme(project)) {
-                openView('document', {
+                openPage(client, {
                     root: 'hub',
                     path: `${project.folder}/README.md`,
                     label: 'README.md'

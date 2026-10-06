@@ -9,10 +9,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FILES_KIND } from '../../src/lib/data/file-ops.ts';
 import { engineDir } from '../../src/lib/data/sources/config.ts';
+import { APP_STORE } from '../../src/lib/server/edit/writes/app-store.ts';
 
 /**
  * Every kind the change log files a record under: the write endpoint's body kinds, except `undo`,
- * which records as the kind it took back, and the file operations' own.
+ * which records as the kind it took back, the file operations' own and the app store's, which the
+ * endpoint takes as a `store` body of an app and no `kind`.
  */
 export function recordedKinds(): string[] {
     const source = readFileSync(
@@ -20,5 +22,5 @@ export function recordedKinds(): string[] {
         'utf8'
     );
     const found = [...source.matchAll(/kind: z\.literal\('([a-z-]+)'\)/g)].map((one) => one[1]);
-    return [...new Set([...found, FILES_KIND])].filter((kind) => kind !== 'undo');
+    return [...new Set([...found, FILES_KIND, APP_STORE])].filter((kind) => kind !== 'undo');
 }

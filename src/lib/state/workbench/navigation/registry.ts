@@ -12,6 +12,7 @@
 // view is therefore renamed or re-iconed in config.
 
 import type { Component } from 'svelte';
+import { SvelteMap } from 'svelte/reactivity';
 import type { Instance, ViewId } from '../layout/index.ts';
 import type { LayoutStore } from '../layout.svelte.ts';
 import type { BadgeCell, RailBadgesStore } from '../rail-badges.svelte.ts';
@@ -78,6 +79,13 @@ export type Registration = {
      * A text-catalog key whose value is a name in the `glyphs:` map of config/catalogs/glyphs.yml.
      */
     glyph: string;
+    /**
+     * The view's name as it is drawn, for a view whose name is data and not a catalog word: an
+     * app's title. When present it is the label, and `label` is not looked up.
+     */
+    words?: string;
+    /** A glyph name drawn as it is, for a view whose glyph is data: an app's manifest names one. */
+    glyphName?: string;
     component: Component<ViewProps>;
     /** The stable id of the `nav_groups` group of the view catalogue that owns this view. */
     group: string;
@@ -115,14 +123,14 @@ export type Registration = {
 /** What a view module exports; the loader supplies the module's default component. */
 export type ViewRegistration = Omit<Registration, 'component'>;
 
-/** Resolve the catalog label key carried by registration metadata. */
-export function registrationLabel(registration: Pick<Registration, 'label'>): string {
-    return lookup(registration.label);
+/** Resolve the label a registration carries: its own words, or the catalog key's value. */
+export function registrationLabel(registration: Pick<Registration, 'label' | 'words'>): string {
+    return registration.words ?? lookup(registration.label);
 }
 
-/** Resolve the catalog glyph key carried by registration metadata. */
-export function registrationGlyph(registration: Pick<Registration, 'glyph'>): string {
-    return lookup(registration.glyph);
+/** Resolve the glyph a registration carries: its own glyph name, or the catalog key's value. */
+export function registrationGlyph(registration: Pick<Registration, 'glyph' | 'glyphName'>): string {
+    return registration.glyphName ?? lookup(registration.glyph);
 }
 
 /**
@@ -155,6 +163,11 @@ export type RegistryStore = {
     registerView: (registration: Registration) => void;
     registerComponent: (component: Component<ViewProps>, registrations: ViewRegistration[]) => void;
     unregisterView: (id: ViewId) => void;
+    /**
+     * Take a registration out and close no tab: a tab on a view that has no registration draws as
+     * an unknown view, and draws the view again when it is registered again.
+     */
+    dropView: (id: ViewId) => void;
     viewFor: (id: ViewId) => Registration | undefined;
     views: () => Registration[];
 };
@@ -163,7 +176,7 @@ export function createRegistry(layout: LayoutStore): RegistryStore {
     /**
      * Insertion order is registration order, and a re-registration keeps the id's first position.
      */
-    const registry = new Map<ViewId, Registration>();
+    const registry = new SvelteMap<ViewId, Registration>();
 
     /** Register a view, replacing an earlier registration of the same id. */
     function registerView(registration: Registration): void {
@@ -191,6 +204,11 @@ export function createRegistry(layout: LayoutStore): RegistryStore {
         registry.delete(id);
     }
 
+    /** Drop a registration and leave every tab on it open. */
+    function dropView(id: ViewId): void {
+        registry.delete(id);
+    }
+
     /** The registration of a view, or undefined when the id names none. */
     function viewFor(id: ViewId): Registration | undefined {
         return registry.get(id);
@@ -201,5 +219,5 @@ export function createRegistry(layout: LayoutStore): RegistryStore {
         return [...registry.values()];
     }
 
-    return { registerView, registerComponent, unregisterView, viewFor, views };
+    return { registerView, registerComponent, unregisterView, dropView, viewFor, views };
 }

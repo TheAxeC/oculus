@@ -68,7 +68,7 @@ export function pageNameOf(pages: readonly Page[], id: string): string {
  */
 export function tabNameOf(
     instance: Instance,
-    viewFor: (id: string) => Pick<Registration, 'label'> | undefined
+    viewFor: (id: string) => Pick<Registration, 'label' | 'words'> | undefined
 ): string {
     const own = readAs(tabLabelShape, instance.state)?.label;
     if (own !== undefined) return own;

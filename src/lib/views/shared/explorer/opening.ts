@@ -28,6 +28,8 @@ export type Opener = {
     readFileKind: ClientState['fs']['readFileKind'];
     /** Show a folder in the Files view of the page, open and selected, for a folder bookmark. */
     showInFiles?: ClientState['layout']['showInFiles'];
+    /** Whether a file lies in an apps folder, which opens as source text. */
+    holds: ClientState['apps']['holds'];
     /**
      * Let the next press on the opened preview tab keep it. A press that opened the tab is a first
      * click, and the second click of a double click lands on the tab, not on the row.
@@ -41,24 +43,47 @@ export type Opener = {
 export type BesideOpener = {
     openBeside: ClientState['layout']['openBeside'];
     readFileKind: ClientState['fs']['readFileKind'];
+    /** Whether a file lies in an apps folder, which opens as source text. */
+    holds: ClientState['apps']['holds'];
 };
 
 /**
  * The view a file of one kind opens in, and the state that tab is given. The tree's rows know the
- * size of a file; a caller that has only the path leaves it out.
+ * size of a file; a caller that has only the path passes undefined. A file in an apps folder opens
+ * as source text whatever its kind, since an app's page is code to read and never a page to run in
+ * the Document view; `holds` says whether a file lies in one.
  */
 export function tabForKind(
     kind: string,
     root: string,
     path: string,
-    size?: number
+    size: number | undefined,
+    holds: Opener['holds']
 ): { view: string; state: unknown } {
     const label = nameOf(path);
+    if (holds(root, path)) return { view: 'source', state: sourceTabState(root, path) };
     if (kind === 'html') return { view: 'document', state: documentState({ label, root, path }) };
     if (kind === 'text' || kind === 'missing') {
         return { view: 'source', state: sourceTabState(root, path) };
     }
     return { view: 'file', state: { root, path, label, size } };
+}
+
+/**
+ * Open a file as a page in the Document view, or as source text when it lies in an apps folder.
+ * Every opener of a page that does not know the file's kind (a project's documents, an entry's
+ * link, a ghost project's README) goes through here, so a page of an app is never run in the
+ * Document view.
+ */
+export function openPage(
+    client: Pick<ClientState, 'apps' | 'layout'>,
+    page: { root: string; path: string; label: string }
+): string {
+    const tab = tabForKind('html', page.root, page.path, undefined, client.apps.holds);
+    return client.layout.openView(
+        tab.view,
+        tab.view === 'document' ? documentState(page) : tab.state
+    );
 }
 
 /**
@@ -76,7 +101,7 @@ export async function openRow(
     pressedAt?: number
 ): Promise<void> {
     const type = await opener.readFileKind(row.root, row.path);
-    const tab = tabForKind(type.kind, row.root, row.path, row.size);
+    const tab = tabForKind(type.kind, row.root, row.path, row.size, opener.holds);
     const id = opener.openView(tab.view, tab.state, undefined, { preview });
     if (!preview) {
         opener.keepPreview(id);
@@ -87,7 +112,7 @@ export async function openRow(
 /** Open one file in the view that can show it, in a new pane beside the one being read. */
 export async function openRowBeside(opener: BesideOpener, row: TreeRow): Promise<void> {
     const type = await opener.readFileKind(row.root, row.path);
-    const tab = tabForKind(type.kind, row.root, row.path, row.size);
+    const tab = tabForKind(type.kind, row.root, row.path, row.size, opener.holds);
     opener.openBeside(tab.view, tab.state);
 }
 
@@ -102,8 +127,12 @@ export function openBookmark(opener: Opener, entry: Entry & { kind?: BookmarkKin
         opener.showInFiles(ref.path, ref.root, true);
         return;
     }
-    if (typeOfFile(ref.path).kind === 'html') {
-        opener.openView('document', documentState({ label: entry.title, ...ref }));
+    const kind = typeOfFile(ref.path).kind;
+    if (kind === 'html' || opener.holds(ref.root, ref.path)) {
+        const tab = tabForKind(kind, ref.root, ref.path, undefined, opener.holds);
+        const state =
+            tab.view === 'document' ? documentState({ label: entry.title, ...ref }) : tab.state;
+        opener.openView(tab.view, state);
         return;
     }
     opener.openView('file', { ...ref, label: entry.title });

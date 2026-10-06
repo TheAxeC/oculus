@@ -24,6 +24,11 @@
     // too. The keep ends when the double-click time (`KEEP_WINDOW_MS`) runs out, at any press
     // outside the layer, at any key, and when another tab of the pane is the active one.
     //
+    // A tab whose view holds a frame draws a slot here and not the frame: the frame is laid over
+    // the slot by the frame layer (shell/frames/FrameLayer.svelte), so a pane drawn again never
+    // loads the frame's document again. The layer over the body is above the slot and not above
+    // the frame, so the pane has the frame take no pointer while the layer is up.
+    //
     // The body turns the pointer's place inside its own rect into an edge or a centre. It performs
     // nothing: the drag store holds what is hovered and the pointer coming up is what performs it.
     // Every drop it reports has an item in the pane menu, which is the keyboard path. The pane of a
@@ -39,6 +44,7 @@
     import TabView from './TabView.svelte';
     import { showable, stillPreview, type Instance } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
+    import { useTabFrames } from '$lib/ui/tabs/tab-frames.svelte';
 
     const {
         layout: {
@@ -55,6 +61,9 @@
         drag: { dragging, hover },
         registry: { viewFor }
     } = useState();
+
+    /** The frames of the workbench's tabs, which are not drawn in this body (frames/FrameLayer). */
+    const frames = useTabFrames();
 
     type Props = {
         /** The pane's tabs, in the order the strip draws them. */
@@ -146,17 +155,24 @@
         };
     });
 
+    // The frame of the tab takes no pointer while the layer is up, so the press reaches the layer.
+    $effect(() => {
+        const id = active;
+        frames?.shield(id, armed !== null || pressing);
+        return () => frames?.shield(id, false);
+    });
+
     /**
-     * What takes the keyboard in a tab's view: the input of its code editor (the edit context
-     * element Monaco uses where the browser has EditContext, else its input textarea), else its
-     * frame, else the box the view marks with `data-tab-focus`; null while the view has drawn none
-     * of them.
+     * What takes the keyboard in the view of tab `id`: the input of its code editor (the edit
+     * context element Monaco uses where the browser has EditContext, else its input textarea),
+     * else its frame, which the frame layer draws, else the box the view marks with
+     * `data-tab-focus`; null while the view has drawn none of them.
      */
-    function inputOf(view: HTMLElement): HTMLElement | null {
+    function inputOf(view: HTMLElement, id: string): HTMLElement | null {
         return (
             view.querySelector<HTMLElement>('.monaco-editor .native-edit-context') ??
             view.querySelector<HTMLElement>('.monaco-editor textarea.inputarea') ??
-            view.querySelector<HTMLElement>('iframe') ??
+            frames?.frameOf(id) ??
             view.querySelector<HTMLElement>('[data-tab-focus]')
         );
     }
@@ -214,8 +230,11 @@
         }
         let watch: MutationObserver | undefined;
         let ended = false;
+        // The frame layer draws a frame after the view mounts, so the effect runs again when it
+        // has.
+        frames?.frameOf(asked);
         const give = (view: HTMLElement): boolean => {
-            const input = inputOf(view);
+            const input = inputOf(view, asked);
             if (input === null) return false;
             input.focus();
             keepThroughPress(input);

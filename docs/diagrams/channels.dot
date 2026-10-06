@@ -18,6 +18,7 @@ digraph channels {
     subgraph "cluster_publish server/root" {
         label="server/root"; style=solid;
         "server/root/hooks";
+        "server/root/watch/apps";
         "server/root/watch/bookmarks";
         "server/root/watch/git";
         "server/root/watch/portfolio";
@@ -25,6 +26,7 @@ digraph channels {
     }
     subgraph "cluster_channels" {
         label="channels"; style=solid;
+        "ch apps" [label="apps", shape=ellipse];
         "ch audit" [label="audit", shape=ellipse];
         "ch blank" [label="blank", shape=ellipse];
         "ch calendar" [label="calendar", shape=ellipse];
@@ -61,6 +63,7 @@ digraph channels {
         "? src/lib/shell/panes/PaneView.svelte:439" [label="src/lib/shell/panes/PaneView.svelte:439 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
+        "? src/lib/state/system/apps/apps.svelte.ts:278" [label="src/lib/state/system/apps/apps.svelte.ts:278 message(channel)"];
         "? src/lib/state/system/config/editors/draft.ts:346" [label="src/lib/state/system/config/editors/draft.ts:346 message('notYaml', place.label, name)"];
         "? src/lib/state/system/config/editors/draft.ts:351" [label="src/lib/state/system/config/editors/draft.ts:351 message('where', place.label, name)"];
         "? src/lib/state/system/config/editors/draft.ts:459" [label="src/lib/state/system/config/editors/draft.ts:459 message('emptyKey', index + 1)"];
@@ -109,6 +112,8 @@ digraph channels {
         "state/sessions/terminal/pty/pty-wire";
         "state/sessions/terminals";
         "state/sources/search/search";
+        "state/system/apps/apps";
+        "state/system/apps/rules";
         "state/system/audit";
         "state/system/config/browser";
         "state/system/config/editors/draft";
@@ -157,6 +162,7 @@ digraph channels {
     "? src/lib/shell/panes/PaneView.svelte:439" -> "shell/panes/PaneView";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
     "? src/lib/state/client/queries.svelte.ts:79" -> "state/client/queries";
+    "? src/lib/state/system/apps/apps.svelte.ts:278" -> "state/system/apps/apps";
     "? src/lib/state/system/config/editors/draft.ts:346" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:351" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:459" -> "state/system/config/editors/draft";
@@ -187,6 +193,9 @@ digraph channels {
     "? src/lib/views/shared/changes/CommitBox.svelte:72" -> "views/shared/changes";
     "? src/lib/views/system/workbench/editors/Editor.svelte:132" -> "views/system/workbench";
     "? src/lib/views/system/workbench/settings/Item.svelte:108" -> "views/system/workbench";
+    "ch apps" -> "routes/+page" [style=dashed];
+    "ch apps" -> "state/client/socket";
+    "ch apps" -> "state/system/apps/apps";
     "ch audit" -> "routes/+page" [style=dashed];
     "ch audit" -> "state/system/audit";
     "ch blank" -> "state/system/config/editors/fields";
@@ -217,10 +226,14 @@ digraph channels {
     "ch files" -> "routes/+page" [style=dashed];
     "ch files" -> "state/sessions/latex";
     "ch files" -> "state/sessions/terminal/commands";
+    "ch files" -> "state/system/apps/apps";
+    "ch files" -> "state/system/apps/rules";
     "ch files" -> "state/system/docs";
     "ch git" -> "routes/+page" [style=dashed];
     "ch git" -> "routes/+page";
     "ch git" -> "state/client/selectors";
+    "ch git" -> "state/system/apps/apps";
+    "ch git" -> "state/system/apps/rules";
     "ch git" -> "views/sessions/terminal";
     "ch git" -> "views/system/status";
     "ch hpc" -> "routes/+page" [style=dashed];
@@ -289,6 +302,7 @@ digraph channels {
     "server/machine/schedules/watch" -> "? src/lib/server/machine/schedules/watch.ts:290";
     "server/machine/usage/watch" -> "ch usage";
     "server/root/hooks" -> "ch sessions";
+    "server/root/watch/apps" -> "ch apps";
     "server/root/watch/bookmarks" -> "ch files";
     "server/root/watch/git" -> "ch files";
     "server/root/watch/git" -> "ch git";

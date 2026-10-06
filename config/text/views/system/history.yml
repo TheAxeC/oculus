@@ -54,6 +54,8 @@ text:
         kind_config_value: list or family
         kind_files: file operation
         kind_roots: workspace folder
+        kind_app_store: app store
+        bytes: '{0} bytes'
         file_named: '{0} of {1}'
         file_create: Create
         file_rename: Rename

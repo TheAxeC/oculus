@@ -6,6 +6,7 @@ import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/st
 import type { ClientState } from '$lib/state/client/context';
 import { findView, type Layout } from '$lib/state/workbench/layout';
 import { t } from '$lib/state/shared/words/text';
+import { openPage } from '../explorer/opening';
 import type { CardAction } from './CardActions.svelte';
 
 export type Translate = (key: string, ...args: (string | number)[]) => string;
@@ -82,11 +83,7 @@ export function goto(client: ClientState, view: string, label: string): void {
 
 /** Open one of a project's fixed documents in a document tab under the hub root. */
 export function openDocument(client: ClientState, folder: string, path: string): void {
-    client.layout.openView('document', {
-        root: 'hub',
-        path: `${folder}/${path}`,
-        label: path
-    });
+    openPage(client, { root: 'hub', path: `${folder}/${path}`, label: path });
 }
 
 /**

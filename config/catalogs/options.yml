@@ -6,7 +6,7 @@
 # Shape. `options:` maps a config file name (appearance.yml, behavior.yml, layout.yml, present.yml, sources.yml, and local.yml for the machine's own keys) to a map of dotted key path to an entry.
 # An option is a leaf of its file: a scalar, a null or a list. A map is walked into, so `slurm.poll_min` is the key path of `poll_min` under `slurm`, and a list is one option, set as a whole.
 # A family is a list of records, or a map whose keys are names the data or the reader chooses (page names, tier names, field names, project types, tag names, file extensions, theme names) rather than names oculus reads. A family is one entry whose `fields` describe the record once; every other leaf is an option.
-# Every entry outside local.yml holds `description`, `heading` (the subject it is listed under: appearance, editor, terminal, sessions, cluster, boards, rail, presentation, sources or calendar; HEADINGS in options.ts), `section` (the group inside the heading) and, for a leaf, `default` (the value Reset writes and Modified compares with, and, for a setting src/lib/data/sources/config/settings.ts reads, the value used when the key is missing or wrong) and `control`. A local.yml entry holds `description` and `section` alone, and is listed under This machine with no value.
+# Every entry outside local.yml holds `description`, `heading` (the subject it is listed under: appearance, editor, terminal, sessions, cluster, boards, rail, presentation, sources, calendar or apps; HEADINGS in options.ts), `section` (the group inside the heading) and, for a leaf, `default` (the value Reset writes and Modified compares with, and, for a setting src/lib/data/sources/config/settings.ts reads, the value used when the key is missing or wrong) and `control`. A local.yml entry holds `description` and `section` alone, and is listed under This machine with no value.
 # The controls are toggle, number, text, long (a text area), choice, multi (several words of a list), list (one text box per item), glyph (a name of catalogs/glyphs.yml), hue (a palette hue name), colour (a palette hex, drawn as its hue), folder and file (a path inside the hub, offered from the files there), path (an absolute or ~/ path), parked (a list whose items can only be removed) and, in a family field, records (a nested list of records described by its own `fields`).
 # A choice or multi names its words in `values`, or the list they come from in `values_from` (one source, or several offered together; SOURCES in options.ts), or for a field in `values_by: { field, sources }` the source another field of the record names. `suggest_from` names the source a text box suggests from; `empty: true` adds the empty value to a choice or path, and `empty: <words>` does the same and gives the words the choice draws for its empty item; `min` and `max` bound a number; `slots` names the fixed items of a list; `items: number` makes a list's items numbers; `whole: true` holds a number, or each item of a list of numbers, to a whole number; `form` holds a text, or each item of a list, to one of the forms of FORMS in options.ts: `program` (no slash or white space), `extension` (a dot and one segment) or `bundle_id` (two or more dot-separated segments of letters, digits and dashes); `joined: true` writes a multi as one text separated by spaces; `allow_missing` lets a folder or file be absent, always (true) or while the named toggle field of the record is true.
 # A family's entry holds `description` and `fields`, and `holds: lists` when it is a map whose every key holds a list: a list of records (`tab_rollup`), or for a key/value family (fields `key` and `value`) a list of values (`languages`); a family without it is refused a key that holds a list, whatever the file holds at the time. A field is its description alone (a text box) or a map of `description`, `control` and the keys above.
@@ -655,6 +655,77 @@ options:
                     control: text
                     form: bundle_id
                     suggest_from: bundle_ids
+        apps.connect_timeout_s:
+            heading: apps
+            section: App limits
+            description: Seconds an app's frame is given to complete the bridge handshake before it is drawn as failed to load.
+            default: 10
+            control: number
+            min: 1
+            max: 2147483
+            whole: true
+        apps.state_max_kb:
+            heading: apps
+            section: App limits
+            description: Kilobytes of one tab's saved state that an app's `setState` accepts.
+            default: 64
+            control: number
+            min: 1
+            whole: true
+        apps.store_max_kb:
+            heading: apps
+            section: App limits
+            description: Kilobytes of an app's store that `setStore` accepts and `getStore` reads.
+            default: 256
+            control: number
+            min: 1
+            whole: true
+        apps.writes_per_min:
+            heading: apps
+            section: App limits
+            description: How many writes, `setStore` included, one frame may send in a minute.
+            default: 30
+            control: number
+            min: 1
+            whole: true
+        apps.opens_per_min:
+            heading: apps
+            section: App limits
+            description: How many calls of `open` one frame may send in a minute.
+            default: 30
+            control: number
+            min: 1
+            whole: true
+        apps.keys_per_s:
+            heading: apps
+            section: App limits
+            description: How many key events per second the page takes from one frame.
+            default: 20
+            control: number
+            min: 1
+            whole: true
+        apps.max_files:
+            heading: apps
+            section: App limits
+            description: How many files an app's folder may hold before the app is refused.
+            default: 500
+            control: number
+            min: 1
+            whole: true
+        apps.max_mb:
+            heading: apps
+            section: App limits
+            description: How many megabytes an app's files may total before the app is refused.
+            default: 20
+            control: number
+            min: 1
+            whole: true
+        apps.closed_paths:
+            heading: apps
+            section: Closed folders
+            description: The folders, each relative to a root and applied to every root, that an app's `open({ file })` never reaches, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
+            default: [secrets]
+            control: list
     layout.yml:
         rail:
             heading: rail
@@ -1278,3 +1349,6 @@ options:
         literature.mailto:
             section: Literature search
             description: Under `literature:`, the contact address that OpenAlex, Crossref and NCBI ask callers to send with a request. The Settings view never shows the value. A change is read again at the next search.
+        apps_dir:
+            section: Apps
+            description: Where the machine's apps live, one folder of web files per app. Without it the folder is ~/.oculus/apps. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.

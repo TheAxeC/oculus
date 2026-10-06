@@ -381,6 +381,7 @@ export type RowStores = {
     rootOf: ClientState['latex']['rootOf'];
     keepPreview: ClientState['layout']['keepPreview'];
     readFileKind: ClientState['fs']['readFileKind'];
+    holds: ClientState['apps']['holds'];
     openFile: ClientState['writes']['openFile'];
     revealPath: ClientState['writes']['revealPath'];
     openFolder: ClientState['writes']['openFolder'];
@@ -401,6 +402,7 @@ export function rowStores(client: ClientState): RowStores {
         rootOf: client.latex.rootOf,
         keepPreview: client.layout.keepPreview,
         readFileKind: client.fs.readFileKind,
+        holds: client.apps.holds,
         openFile: client.writes.openFile,
         revealPath: client.writes.revealPath,
         openFolder: client.writes.openFolder,

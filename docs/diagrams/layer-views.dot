@@ -5,6 +5,7 @@ digraph layer_views {
     subgraph "cluster_views" {
         label="views"; style=solid;
         "folder views/academic" [label="views/academic"];
+        "folder views/apps" [label="views/apps"];
         "folder views/boards" [label="views/boards"];
         "folder views/feeds" [label="views/feeds"];
         "folder views/personal" [label="views/personal"];
@@ -16,7 +17,10 @@ digraph layer_views {
         "folder views/academic to folder views/shared" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/academic to layer state" [label="21", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/academic to layer ui" [label="21", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/boards to folder views/shared" [label="24", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/apps to folder views/shared" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/apps to layer state" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/apps to layer ui" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/boards to folder views/shared" [label="26", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/boards to layer data" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/boards to layer state" [label="97", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/boards to layer ui" [label="95", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -34,7 +38,7 @@ digraph layer_views {
         "folder views/sources to folder views/shared" [label="63", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sources to layer data" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sources to layer state" [label="232", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/sources to layer ui" [label="193", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/sources to layer ui" [label="197", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/structure to folder views/shared" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/structure to layer data" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/structure to layer state" [label="36", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -47,6 +51,8 @@ digraph layer_views {
     }
     "layer state from folder views/academic" [label="state", style=dashed];
     "layer ui from folder views/academic" [label="ui", style=dashed];
+    "layer state from folder views/apps" [label="state", style=dashed];
+    "layer ui from folder views/apps" [label="ui", style=dashed];
     "layer data from folder views/boards" [label="data", style=dashed];
     "layer state from folder views/boards" [label="state", style=dashed];
     "layer ui from folder views/boards" [label="ui", style=dashed];
@@ -68,7 +74,8 @@ digraph layer_views {
     "layer ui from folder views/system" [label="ui", style=dashed];
     "layer state from folder views/shared" [label="state", style=dashed];
     "layer ui from folder views/shared" [label="ui", style=dashed];
-    "folder views/academic" -> "folder views/boards" [style=invis, weight=10, minlen=3];
+    "folder views/academic" -> "folder views/apps" [style=invis, weight=10, minlen=3];
+    "folder views/apps" -> "folder views/boards" [style=invis, weight=10, minlen=3];
     "folder views/boards" -> "folder views/feeds" [style=invis, weight=10, minlen=4];
     "folder views/feeds" -> "folder views/personal" [style=invis, weight=10, minlen=4];
     "folder views/personal" -> "folder views/sessions" [style=invis, weight=10, minlen=3];
@@ -76,7 +83,7 @@ digraph layer_views {
     "folder views/sources" -> "folder views/structure" [style=invis, weight=10, minlen=4];
     "folder views/structure" -> "folder views/system" [style=invis, weight=10, minlen=4];
     "folder views/system" -> "folder views/shared" [style=invis, weight=10, minlen=3];
-    "folder views/academic" -> "folder views/academic to folder views/shared" [arrowhead=none, minlen=13, weight=10];
+    "folder views/academic" -> "folder views/academic to folder views/shared" [arrowhead=none, minlen=16, weight=10];
     "folder views/academic to folder views/shared" -> "folder views/shared" [];
     "folder views/academic" -> "folder views/academic to layer state" [arrowhead=none, style=dashed];
     "folder views/academic to layer state" -> "layer state from folder views/academic" [style=dashed];
@@ -84,6 +91,14 @@ digraph layer_views {
     "folder views/academic" -> "folder views/academic to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
     "folder views/academic to layer ui" -> "layer ui from folder views/academic" [style=dashed];
     { rank=same; "folder views/academic to layer ui"; "layer ui from folder views/academic"; }
+    "folder views/apps" -> "folder views/apps to folder views/shared" [arrowhead=none, minlen=13, weight=10];
+    "folder views/apps to folder views/shared" -> "folder views/shared" [];
+    "folder views/apps" -> "folder views/apps to layer state" [arrowhead=none, style=dashed];
+    "folder views/apps to layer state" -> "layer state from folder views/apps" [style=dashed];
+    { rank=same; "folder views/apps"; "folder views/apps to layer state"; "layer state from folder views/apps"; }
+    "folder views/apps" -> "folder views/apps to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
+    "folder views/apps to layer ui" -> "layer ui from folder views/apps" [style=dashed];
+    { rank=same; "folder views/apps to layer ui"; "layer ui from folder views/apps"; }
     "folder views/boards" -> "folder views/boards to folder views/shared" [arrowhead=none, minlen=14, weight=10];
     "folder views/boards to folder views/shared" -> "folder views/shared" [];
     "folder views/boards" -> "folder views/boards to layer data" [arrowhead=none, style=dashed];

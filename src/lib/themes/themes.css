@@ -1,14 +1,17 @@
 /* The themes. Fourteen blocks are ported from the cockpit's assets/css/08-themes.css and
-   01-base.css with their values unchanged; the two VS Code blocks below are oculus's own and their
-   values are authored here, which is why they are the only ones an adjustment may touch.
-   A theme is a block of token overrides and nothing else, so no component knows a theme exists. The
-   body carries one palette class; the thirteen terminal palettes additionally carry `rice`, which
-   holds the shape they share (square corners, no shadow, monospace chrome, one step down the type
-   scale). `crt` is an independent overlay that goes on any of them.
+   01-base.css with their token values unchanged; the two VS Code blocks below are oculus's own and
+   their values are authored here, which is why they are the only ones an adjustment may touch. A
+   theme is a block of token overrides, so no component knows a theme exists. A dark theme's block
+   also sets `color-scheme: dark`, so the page's native controls and scrollbars and the frame of an
+   app follow it; the light themes take the base `color-scheme: light` of tokens.css. The body
+   carries one palette class; the thirteen terminal palettes additionally carry `rice`, which holds
+   the shape they share (square corners, no shadow, monospace chrome, one step down the type scale).
+   `crt` is an independent overlay that goes on any of them.
    The theme names and the class string each one puts on the body are the `themes:` list of
    config/appearance.yml; light is :root alone and carries no class. */
 
 body.dark {
+    color-scheme: dark;
     --bg: #0b1120;
     --panel: #121a2b;
     --card: #1b2638;
@@ -38,6 +41,7 @@ body.dark {
    the page take the first and the panes the second. The red and amber tints are the dark theme's,
    because a tint has to darken with the ground it sits on; every other hue inherits :root. */
 body.vscode-dark-modern {
+    color-scheme: dark;
     --bg: #181818;
     --panel: #1f1f1f;
     --card: #262626;
@@ -99,6 +103,7 @@ body.vscode-light-modern {
 
 /* --- Catppuccin Mocha ---------------------------------------------------- */
 body.mocha {
+    color-scheme: dark;
     --bg: #181825;
     --panel: #1e1e2e;
     --card: #292c3c;
@@ -145,6 +150,7 @@ body.mocha {
 
 /* --- Gruvbox dark -------------------------------------------------------- */
 body.gruvbox {
+    color-scheme: dark;
     --bg: #1d2021;
     --panel: #282828;
     --card: #32302f;
@@ -191,6 +197,7 @@ body.gruvbox {
 
 /* --- Nord ---------------------------------------------------------------- */
 body.nord {
+    color-scheme: dark;
     --bg: #2e3440;
     --panel: #3b4252;
     --card: #434c5e;
@@ -237,6 +244,7 @@ body.nord {
 
 /* --- Tokyo Night (folke/tokyonight.nvim) --------------------------------- */
 body.tokyonight {
+    color-scheme: dark;
     --bg: #16161e;
     --panel: #1a1b26;
     --card: #20222f;
@@ -291,6 +299,7 @@ body.tokyonight {
 
 /* --- Rose Pine (rosepinetheme.com) --------------------------------------- */
 body.rosepine {
+    color-scheme: dark;
     --bg: #191724;
     --panel: #1f1d2e;
     --card: #232135;
@@ -345,6 +354,7 @@ body.rosepine {
 
 /* --- Everforest (sainnhe/everforest) ------------------------------------- */
 body.everforest {
+    color-scheme: dark;
     --bg: #272e33;
     --panel: #2d353b;
     --card: #343f44;
@@ -399,6 +409,7 @@ body.everforest {
 
 /* --- Dracula (draculatheme.com) ------------------------------------------ */
 body.dracula {
+    color-scheme: dark;
     --bg: #21222c;
     --panel: #282a36;
     --card: #343746;
@@ -507,6 +518,7 @@ body.latte {
 
 /* --- Solarized (ethanschoonover.com/solarized) --------------------------- */
 body.solarized {
+    color-scheme: dark;
     --bg: #002b36;
     --panel: #073642;
     --card: #0a3f4c;
@@ -561,6 +573,7 @@ body.solarized {
 
 /* --- Kanagawa (rebelot/kanagawa.nvim) ------------------------------------ */
 body.kanagawa {
+    color-scheme: dark;
     --bg: #1f1f28;
     --panel: #2a2a37;
     --card: #31313f;
@@ -669,6 +682,7 @@ body.gruvboxlight {
 
 /* --- Synthwave '84 (robb0wen/synthwave-vscode) - neon, pairs with the CRT overlay --- */
 body.synthwave {
+    color-scheme: dark;
     --bg: #241b2f;
     --panel: #2a2139;
     --card: #34294f;
@@ -723,6 +737,7 @@ body.synthwave {
 
 /* --- Tokyo Neon (folke/tokyonight.nvim, neon) - neon, pairs with the CRT overlay --- */
 body.tokyoneon {
+    color-scheme: dark;
     --bg: #0f0f17;
     --panel: #16161e;
     --card: #1c1d2b;

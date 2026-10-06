@@ -31,7 +31,10 @@
     //
     // The PDF frame carries no sandbox: Chrome refuses to run its own PDF viewer inside a sandboxed
     // frame and draws an error page instead, and what the frame shows is a file this server serves
-    // from a root it checked, so the frame is as trusted as the page around it.
+    // from a root it checked, so the frame is as trusted as the page around it. The view draws the
+    // frame's slot and describes the frame to the workbench's tab frames (ui/tabs/
+    // tab-frames.svelte.ts), which the frame layer draws over the slot, so a layout change never
+    // loads the PDF again.
     //
     // The address carries the file's version from the fs store, so a file written under the open
     // tab, which is what a LaTeX build does to the PDF it rebuilds, is a new address and the frame
@@ -61,6 +64,8 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import FrameSlot from '$lib/ui/tabs/FrameSlot.svelte';
+    import { drawFrame, useTabFrames, type FrameSpec } from '$lib/ui/tabs/tab-frames.svelte';
     import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import { servedFile } from '$lib/views/shared/links/file-bar';
     import FileBarActions from '../../shared/links/FileBarActions.svelte';
@@ -81,6 +86,8 @@
     } = client;
 
     let { instance }: ViewProps = $props();
+
+    const frames = useTabFrames();
 
     /** The address of the picture that failed to load, and the empty string while none has. */
     let unreadable = $state('');
@@ -170,6 +177,18 @@
         untrack(() => void handOn(mine, own, fileRoot, filePath));
     });
 
+    /** The frame the tab holds while it draws a PDF. */
+    const frame = $derived<FrameSpec | null>(
+        src !== '' && type.kind === 'pdf'
+            ? { kind: 'pdf', view: instance.view, src, title, key: '' }
+            : null
+    );
+    drawFrame(
+        frames,
+        () => instance.id,
+        () => frame
+    );
+
     /** Ask the server for the picture again, in a new element. */
     function retry(): void {
         unreadable = '';
@@ -217,7 +236,7 @@
                 {/key}
             {/if}
         {:else if type.kind === 'pdf'}
-            <iframe class="frame" {title} {src}></iframe>
+            <FrameSlot id={instance.id} />
         {:else if known === null || known.kind === 'text'}
             <Empty message={t('file.loading')} glyph={t('file.none_glyph')} />
         {:else}
@@ -243,21 +262,6 @@
         height: 100%;
         min-width: 0;
         min-height: 0;
-    }
-
-    /* The frame is the body: the document inside it scrolls, so the pane does not scroll around
-       it. */
-    .frame {
-        display: block;
-        width: 100%;
-        height: 100%;
-        border: 0;
-        background: var(--panel);
-    }
-
-    :global(body.wall) .frame {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
     }
 
     .picture {

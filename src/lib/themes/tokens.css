@@ -212,6 +212,12 @@
     --sash-delay: 300ms;
 }
 
+/* The light scheme unless a theme's block says dark, so a light theme hands an app's frame the
+   light scheme whatever the system's mode is. */
+body {
+    color-scheme: light;
+}
+
 /* The chip surface at the wallpaper's opacity, the one translucent fill the views share under
    `body.wall`. It is declared on body, where a theme sets `--chip`, so the mix takes the theme's
    chip and not the default one. */

@@ -145,6 +145,7 @@ text:
         settings_heading_appearance: Appearance
         settings_heading_boards: Boards and audit
         settings_heading_calendar: Calendar and mail
+        settings_heading_apps: Apps
         settings_heading_cluster: Cluster
         settings_heading_editor: Editor
         settings_heading_machine: This machine

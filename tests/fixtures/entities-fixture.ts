@@ -1,9 +1,10 @@
 // What a synthetic portfolio holds for the two entities that are summaries of one file each rather
 // than maps keyed by id. A fixture tree has none of the three generated feeds on it and no career
 // file, so both are the empty answer; a test that is about them says so by overriding these. The
-// project every test builds from is here too, so a field added to Project is added once.
+// project every test builds from is here too, so a field added to Project is added once, and so is
+// the app row, so a field added to AppRow is.
 
-import type { Career, Feeds, Project, Resource } from '../../src/lib/data/model/index.ts';
+import type { AppRow, Career, Feeds, Project, Resource } from '../../src/lib/data/model/index.ts';
 
 /** No feed file on this hub, which is not the same answer as a feed with nothing in it. */
 export const NO_FEEDS: Feeds = {
@@ -65,5 +66,31 @@ export function fixtureProject(over: Partial<Project> = {}): Project {
         folder: '',
         file: '',
         ...over
+    };
+}
+
+/** An app row with every field set, so a case names only what it changes. */
+export function fixtureApp(change: Partial<AppRow> = {}): AppRow {
+    return {
+        name: 'notes',
+        root: '',
+        title: 'Notes',
+        description: '',
+        glyph: 'app_view',
+        folder: '/apps/notes',
+        entry: 'index.html',
+        reads: [],
+        writes: [],
+        connects: [],
+        files: 1,
+        bytes: 10,
+        hash: 'a',
+        approved: true,
+        kept: false,
+        key: 'k',
+        storeBytes: 0,
+        storeVersion: '',
+        storeFile: '',
+        ...change
     };
 }

@@ -190,12 +190,16 @@ export function raised(order: string[], free: string[], id: string): string[] {
     return [...stack.filter((one) => one !== id), id];
 }
 
-/** The z-index of a float by its rank in the stack: each float one above the one behind it. */
+/**
+ * The z-index of a float by its rank in the stack: each float two above the one behind it, so the
+ * odd depth between two floats is the one the frames of the front float's tabs are drawn at
+ * (shell/frames/FrameLayer.svelte).
+ */
 export function depthOf(stack: string[], id: string): number {
-    return BASE_DEPTH + Math.max(stack.indexOf(id), 0);
+    return BASE_DEPTH + 2 * Math.max(stack.indexOf(id), 0);
 }
 
-/** The z-index of the drag layer, above the front float of `count` free floats. */
+/** The z-index of the drag layer, above the front float of `count` free floats and its frames. */
 export function dragDepth(count: number): number {
-    return BASE_DEPTH + count;
+    return BASE_DEPTH + 2 * count;
 }
