@@ -5,6 +5,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
 - Z631 (2026-10-06, step E4, its look): Axel's dev server could not resolve penpal after it was installed. Closed by Axel, 2026-10-06: "Z631 done, restarted (a)".
+- Z635 (2026-10-06, step X3e): the desktop app's folder sheet, which no code can close, and G42. Closed by Axel, 2026-10-06: "Z635 (a)"; G42 gains the sentence for the sheet in `agents/guarded.md`, and X3e builds it.
+- Z634 (2026-10-06, step Q123): the words of G52. Closed by Axel, 2026-10-06: "Z634 (a)"; G52 written in `agents/guarded.md` with the proposed words.
 - Z630 (2026-10-06, step Q123): the words of G51. Closed by Axel, 2026-10-06: "Z630 (a)"; G51 written in `agents/guarded.md` with those words.
 - Z605 (2026-10-06): E4, the block `describe('the shipped files')` that main's sweep removed from `tests/data/sources/config/settings.test.ts` and E4 brings back is removed at E4's landing. (the user: "Z605 (a)")
 - Z629 (2026-10-06): O30, O30's landing look runs the unpackaged app from the gate on a scratch hub, a scratch HOME and a scratch tmux socket, on port 8817, photographs each window with `screencapture -o -l <window id>` and reads each photograph, then quits the app; no window is driven through the remote debugging port, which the runner refused. The cases that need a press, a drag or a key are booked as not looked at. (the orchestrator, automode)

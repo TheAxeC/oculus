@@ -25,7 +25,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G7. A value that reaches a command is passed as an argument, never put into a shell string.
   Code: `src/routes/api/` commands, hpc, open.
   Test: commands: `tests/server/machine/commands/placeholders.test.ts`, 'creates nothing, for each line, each selection and each shell'; hpc: `tests/server/machine/hpc/actions.test.ts`, 'accepts only the decided id shape and safe absolute paths'; open: `tests/routes/files/open-program.test.ts`, 'names the application for a file and reveals a folder, the path last'; commands route: `tests/server/machine/commands/placeholders.test.ts`, 'creates nothing, for each line, each selection and each shell'; hpc route: `tests/server/machine/hpc/actions.test.ts`, 'accepts only the decided id shape and safe absolute paths'; open program: `tests/routes/files/open-program.test.ts`, 'names the application for a file and reveals a folder, the path last'.
-- G42. A folder panel lives no longer than the request that opened it, and a cancel adds no folder and says no failure.
+- G42. A folder panel lives no longer than the request that opened it, and a cancel adds no folder and says no failure. In the desktop app, whose sheet no code can close, a request whose connection closes stops waiting at once, the next press opens a new sheet, and the answer of the old sheet adds no folder.
   Code: `src/lib/server/files/fs/picker.ts`, `src/routes/api/(files)/folders/pick/+server.ts`.
   Test: `tests/server/files/picker.test.ts`, 'ends the panel when the connection the request came on closes, and a new press opens one', 'never opens the panel when the connection closed before it would open', 'ends the open panel when its server closes', 'answers a panel the reader cancelled, which osascript reports as error -128, as no folders', 'answers any other non-zero exit as failed', written by X3e.
 - G47. An app window shows only its own server's page: a navigation or a window opened to any other address goes to the default browser when it is an http, https or mailto address and is refused otherwise, and never opens in an app window; the bridge answers only the top frame of the server's page, and every app window keeps Node integration off and context isolation and the sandbox on, subframes included.
@@ -99,6 +99,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Code: the page's app store cache under `src/lib/state/system/apps/`.
   Test: `tests/state/system/apps/store-cache.test.ts`, 'drops an answer a later push contradicts and fetches once more'.
 - G51. A page that attaches to a terminal pane is given the terminal modes the pane's program set (bracketed paste, application cursor keys, mouse reporting), so a paste or a key reaches the program as it asked.
+  Code: the pane's attach under `src/lib/server/machine/pty/`.
+  Test: written by Q123, its file and title named in `agents/briefs/Q123.md`.
+- G52. A page that attaches to a terminal pane whose program is in its alternate screen is given the shell's text in the grid's normal buffer and the program's screen in its alternate buffer, so the program draws full screen and leaving it shows the shell's text again with the cursor where the shell left it.
   Code: the pane's attach under `src/lib/server/machine/pty/`.
   Test: written by Q123, its file and title named in `agents/briefs/Q123.md`.
 

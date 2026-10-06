@@ -1,13 +1,14 @@
 In flight (4 of 6 slots):
 - E4g (the apps guide in docs/apps.md): building, base 31068a9de.
 - Q124 (every tree check with no limit, and the landing's vitest cache race): building, base ba6a995f2.
-- Q123 (a terminal pane attached as its program left it): building, base a686df2ad; its landing waits on Axel's Z634 (G52's words).
+- Q123 (a terminal pane attached as its program left it): building, base a686df2ad; resumed with the cases ruling (the pty folder split, and the read of a program that left); G52 ruled (Z634 (a)).
 - O30b (the app's own build folders): building, base dff7539f4.
 
-Queued, in order (23 steps):
-- D23 (language servers): now.
-- X3e (Files lists reordered by drag): waits on Axel's Z635 (the app's folder sheet and G42).
-- D45 (LaTeX as VS Code's LaTeX Workshop): at the first free slot (its brief rechecked on main).
+Queued, in order (24 steps):
+- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): next; it launches when no step in flight writes HELP.md or DESIGN.md, and until it lands no step that writes either is launched.
+- D23 (language servers): its brief is prepared now; launched after Q125 lands.
+- D45 (LaTeX as VS Code's LaTeX Workshop): its brief is rechecked now; launched after Q125 lands.
+- X3e (Files lists reordered by drag): prepared again under Z635 (a); launched after Q125 lands.
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.
 - D11 (the debug client for rite): once D45 and D23 have landed.
