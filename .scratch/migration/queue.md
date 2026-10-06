@@ -4,7 +4,7 @@ In flight (6 of 6 slots):
 - O30b (the app's own build folders): built, under review, base dff7539f4.
 - D23 (language servers): building.
 - Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): building, base cfc9e60d9; Axel reads the new HELP.md and DESIGN.md before it lands.
-- PR1 (Present full screen): built, under review, base 628ac4b01; open item Z644 (a guarded entry for the window file) may add its test.
+- PR1 (Present full screen): repair round 1 (the review's findings and G53's test), base 628ac4b01.
 
 Queued, in order (25 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).

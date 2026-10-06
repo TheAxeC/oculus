@@ -79,9 +79,9 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/PR1-brief-check.md (a6a8c0abc5e9e3d71, claude-opus-5-5, 176,558 tokens, 48 tool uses, 9.3 min)
   shared_paths: with E4g, O30b, Q124 and D23: HELP.md and DESIGN.md (PR1 writes HELP.md:139 and DESIGN.md:382 and :436, disjoint from E4g's, Q124's and D23's lines; O30b also writes :436, so the second to land adds its sentence to that item); with Q125 (queued): HELP.md and DESIGN.md under Z642; docs/diagrams regenerated at landing; so the merge is simple
   builder_usage: 201,688 tokens, 52 tool uses, 26.8 min
-  reviewer_report: agents/reviews/PR1-refuter.md (aed7391d3da51eb81, claude-opus-5-5, running)
+  reviewer_report: agents/reviews/PR1-refuter.md (aed7391d3da51eb81, claude-opus-5-5, 224,203 tokens, 61 tool uses, 21.3 min)
   landing: not-started
-  round: 0 (G53's test, Z644 (a), goes to PR1's builder with the review's findings in repair round 1)
+  round: 1 (sent 2026-10-06 to a9144e12c4f81cb07: G53's test (Z644 (a)), B1 the keys in full screen, B2 the float's bounds, the pending-request paths, St1 to St5, P1 to P3)
 - step: O30b
   executor: agent
   worker: claude:sonnet at ordo-high
