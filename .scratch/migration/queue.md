@@ -14,7 +14,7 @@ Queued, in order (23 steps):
 - D41 (links in Markdown checked): once M7 has landed.
 - M8 (the hub's YAML checked in the editor): being prepared, its premise survey running.
 - D43 (LaTeX navigation): being prepared, its premise survey running.
-- D23b (cross-file language features): being prepared again, its premise recheck running.
+- D23b (cross-file language features): waits until D23c lands (both restructure `server/machine/lsp/`, `relay.ts` and `transport.ts`; not a simple merge); its recheck (`agents/reviews/D23b-premise-recheck.md`) names nine choices for Axel, raised at its /spec.
 - D33 (the Problems view): being prepared, its premise survey and its diagnosis of the card cursor after a reload running.
 - D39 (hub keys as links): once M8 and D23b have landed.
 - D36 (linters on save): once D33 has landed.
