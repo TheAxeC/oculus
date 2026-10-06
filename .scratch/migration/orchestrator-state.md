@@ -38,6 +38,8 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with O30b: DESIGN.md's file tree (E4g adds docs/apps.md under docs/ at :79-80, O30b adds its build folders higher in the same block; both lines kept) and HELP.md (E4g :21, :82 and :210-221, O30b :186, :365 and :367, disjoint); so the merge is simple
   landing: not-started
   round: 0
+  builder_usage: 154,994 tokens, 322 tool uses, 82.4 min
+  reviewer_report: agents/reviews/E4g-refuter.md (a1387d637f72b6115, claude-opus-5-5, running)
 - step: O30b
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -65,7 +67,8 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with E4g and O30b: DESIGN.md (Q123 :375, E4g :79-80 and :83, O30b's tree and :436, disjoint) and HELP.md (Q123 :147, E4g :21, :82, :210-221, O30b :186, :365, :367, Q124 :371-373, disjoint); docs/diagrams regenerated at landing; so the merge is simple. D23's channel.ts and channel.test.ts are judged at D23's /spec. G52 ruled (Z634 (a)).
   landing: not-started
   round: 0 (cases ruling agents/briefs/Q123-cases.md, rulings A and B on the hand-back; builder resumed)
-  builder_usage: hand-back 165,442 tokens, 30 tool uses, 9.0 min
+  builder_usage: hand-back 165,442 tokens, 30 tool uses, 9.0 min; final run after the cases ruling: no completion notice arrived, so not recorded
+  reviewer_report: agents/reviews/Q123-refuter.md (a4d132c79107eead5, claude-opus-5-5, running)
 - step: Q124
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -79,6 +82,8 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with O30b: vite.config.ts (O30b turns the config into a function of the mode, Q124 changes its cache setting; the second landing re-applies the other's few lines inside the new shape) and tests/tiers/landing.mjs (head comment only, both); with D23: package.json (D23 adds dependencies, Q124 changes the test scripts, separate hunks); with O30b, HELP.md (O30b :186, :365, :367, Q124 :371-373, adjacent and merged at the second landing); so the merge is simple
   landing: not-started
   round: 0
+  builder_usage: 242,256 tokens, 97 tool uses, 97.4 min
+  reviewer_report: (a68c2590b5c60eb18, claude-opus-5-5, stopped: dispatched before /refute was invoked for Q124); agents/reviews/Q124-refuter.md (a8ffa34a027b813e6, claude-opus-5-5, running)
 ```
 
 ## The standing demands (from Axel, in force)

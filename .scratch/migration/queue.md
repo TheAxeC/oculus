@@ -1,15 +1,15 @@
-In flight (4 of 6 slots):
-- E4g (the apps guide in docs/apps.md): building, base 31068a9de.
-- Q124 (every tree check with no limit, and the landing's vitest cache race): building, base ba6a995f2.
-- Q123 (a terminal pane attached as its program left it): building, base a686df2ad; resumed with the cases ruling (the pty folder split, and the read of a program that left); G52 ruled (Z634 (a)).
+In flight (5 of 6 slots):
+- E4g (the apps guide in docs/apps.md): built, under review, base 31068a9de.
+- Q124 (every tree check with no limit, and the landing's vitest cache race): built, under review, base ba6a995f2.
+- Q123 (a terminal pane attached as its program left it): built, under review, base a686df2ad; resumed with the cases ruling (the pty folder split, and the read of a program that left); G52 ruled (Z634 (a)).
 - O30b (the app's own build folders): building, base dff7539f4.
+- D23 (language servers): building.
 
-Queued, in order (28 steps):
-- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): next; it launches when no step in flight writes HELP.md or DESIGN.md, and until it lands no step that writes either is launched.
-- D23 (language servers): its brief is prepared now; launched after Q125 lands.
-- D45 (LaTeX as VS Code's LaTeX Workshop): its brief is rechecked now; launched after Q125 lands.
-- X3e (Files lists reordered by drag): prepared again under Z635 (a); launched after Q125 lands.
-- PR1 (Present full screen): after Q125 lands.
+Queued, in order (27 steps):
+- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): it launches when no step in flight writes HELP.md or DESIGN.md (ruling Z636).
+- D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
+- X3e (Files lists reordered by drag): prepared again under Z635 (a); once D23 has landed (both split Palette.svelte).
+- PR1 (Present full screen): next.
 - PR2 (Present decks from any folder): once PR1 has landed.
 - PR3 (Present decks edited and generated, PDF export): once PR2 has landed.
 - PR4 (Present's presenter screen): once PR3 has landed.
