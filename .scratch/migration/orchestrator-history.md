@@ -1858,3 +1858,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z650 (2026-10-06): PR2 against the paused cockpit's public deck, raised to Axel (a clash of rulings); ruled (b) by Axel: the cockpit is not updated.
 - Z651 (2026-10-06, the orchestrator, automode): PR2's brief check closed in the brief.
 - Z652 (2026-10-06): Axel: new idea decks go to the idea grid (`more` without ideas, `ideas` discovers); sent to PR2's builder.
+- Z653 (2026-10-06): automode, (a): a Present tab's identity is its deck's root and path in the tab's layout state, as Open LaTeX; sent to PR2's builder as repair round 2.

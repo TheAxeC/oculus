@@ -146,3 +146,191 @@ Cases:
 - Whether the builder's git commands touched the main checkout's index or config: it is not visible from the worktree's metadata.
 
 Reviewer usage: agent-ac8902c2a666de395, claude-opus-5-5, about 500k tokens in the part after the context was compacted (the earlier part was not counted), 34 tool uses since then (the earlier count is not available), minutes not measured.
+
+## Repair round 1, refuted
+
+Read this first. Every closure the round claims reproduces, and every verify item passes on my rerun, verify 7 included: I ran it as a live server on 8792 and then stopped it. Eight findings remain. None of them is a red check.
+
+The three that matter most:
+- **The transition fix changed a format rule.** It went into the general `section` rule, not into the one deck file. Every section slide without a numbered list now draws all its words as one small inline foot line, with any block Markdown flattened (Spec 1).
+- **Open Presentation re-points a tab instead of opening one per deck.** The deck now lives in the instance state, so Open Presentation and the card re-point an existing Present tab rather than open a tab per deck as Open LaTeX does. The report gives no before and after for this (Behaviour 1).
+- **Case 18 is partial.** No test row reaches the refusal of an edit that does not read back, and that path can be reached (Spec 2).
+
+One event the brief's limits name: my first start of the scratch server had a scratch `local.yml` with no `port:`. It tried to listen on 8790, found the port in use and exited without listening. It sent nothing to the process on 8790. The second start named `port: 8792`.
+
+```
+1. npm run test:quick -- --base 7e1d73675   (worktree tools/oculus)
+   ok prettier; ok ASCII gate; ok svelte-kit sync; ok eslint;
+   ok svelte-check: COMPLETED 392 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+   ok vitest; "test:quick: 30.8 s (limit 45.0 s); every command passed"
+   (npm run diagrams not run, since it writes files; tests/checks/diagrams ran in the next line)
+   npx vitest run --tagsFilter '!slow' over config-folder, config, integrity, keys, tests/checks/tree,
+   tests/checks/diagrams, deposit, contrast: "Test Files 9 passed | 1 skipped (10), Tests 175 passed | 1 skipped"
+   npx vitest run --reporter verbose present, deck route, deck-slides, deck-edit, undo, changes, writes:
+   "Test Files 7 passed (7), Tests 30 passed (30)"; deck-slides' one it: 1269 ms, 938 ms and 1038 ms in three runs
+2. node tools/oculus/utils/migrations/convert-decks.mjs --check   -> "nothing left to convert"
+   find projects tools/oculus/demo -name PRESENT.md   -> (nothing)
+3. grep -rn PRESENT src tests   -> git-index.ts:336 and :357 (ALREADY_PRESENT) only
+   grep -rn -E "slide_order|OPEN_TIERS|DeckTheme" src tests config --exclude=local.yml   -> nothing (exit 1)
+4. spec.md perl gate over src tests config   -> nothing; sh utils/folder-check.sh exit 0
+   the same gate over the 145 files the step writes outside projects/ and deck/: 188 hit lines
+   (research-cockpit 69, remove-unicode 66, project-cleanup 28, project-new 22, project.active.yml 3);
+   the hit lines intersected (comm) with the lines `git diff -U0 7e1d73675` adds in those files (17 lines): empty.
+   The builder's "none of the 188 is a line this step wrote" reproduces. The six regenerated .svg: 0 non-ASCII.
+5. sh utils/unused-exports.sh   -> exit 0, "Unused exports (250)" / "(122)" against the base's 256 / 123;
+   the only added lines are audit/scan.ts (moved), writeDeckSlides/deckSlidesWrite (renamed), ROW_DECK (beside ROW_LATEX)
+6. the four files' first run on the unchanged tree: not rerun (it needs the base tree with the new tests copied in);
+   the report quotes "Test Files 4 failed (4) Tests 2 failed (2)"
+7. HOME=<scratch> node src/server.ts --engine <scratch engine, config copied --exclude=local.yml, scratch local.yml
+   naming hub=worktree, port 8792> --handler build/handler.js; token read from /__data.json:
+   deck                                200 ok 21 'Structured models, everywhere they hide' findings []
+     groups (name, count, members, candidates, missing, conflicts): pillars 7 7 16 [] []; more 7 7 7 [] []; ideas 9 9 0 [] []
+   projects/manuscripts/btfno/present  200 ok 1 'A PDE-solving neural operator built from specialist low-rank blocks' findings []
+   tools/oculus/demo/deck              200 ok 26 'The demo hub, at a glance' findings []
+   ../                                 403 {'error': 'outside'}
+   projects/nothere                    200 missing 0, one finding 'deck folder projects/nothere is not in <hub>'
+   no token                            403
+   title.md#0 lede '7 pillar projects and 7 more. ...' legend [liver, method, heart, brain]
+   engine.md#0 cards 3, foot 'Each of the next slides leads ...'
+   transition.md#0 heading '7 more, same backbone', lede '', foot 'Same four-layer format: ...'
+   server stopped: lsof -nP -iTCP:8792 -sTCP:LISTEN exit 1; pgrep of the scratch engine exit 1
+Report evidence rerun:
+   idea chips (yaml): {nascent: 25, scoping: 5, de-risking: 2, parked: 1}; non-grid nascent 23; exploring only in the
+     four active projects; config/present.yml keys ['defaults']; git diff --stat -- tools/present network registries: empty
+   reader probes over scratch decks (node, the worktree's src):
+     case 2/6: finding 'group g names nope, which matches no deck'; 'a count of group nogroup ... stays as written'
+     case 7: state empty, finding 'deck a is found by the discovering groups g1, g2 and named by none; it is in neither'
+     case 8: pillars [a], more [b] with a as candidate
+     case 10: self 'group g names deck, which matches no deck'; cycle 'deck a holds itself through its groups; the repeat is not placed'
+     case 12/16: 'figure gone.png is not in d/', 'figure missing.png is not in d/', '../../outside.png is outside d',
+       'link.md is outside d' (symlink out of the root), find globs '../*/present' and '/etc/*' outside;
+       text body '# T\n\n![missing.png](#gap) and ![../../outside.png](#gap)'
+     case 13: tagTones {"measured":"red"}
+     case 23: unparsable 'present.yml does not parse', empty 'present.yml is not a map', state unreadable
+     case 9 (the hub deck's groups over a scratch hub): ideas members [tenth], more members [m1], fedbtd found by no group
+     case 22 (a copy of tools/oculus/demo): title, graph-bandits #0 and #1, summary, closing; one finding, the graphs domain
+     template tools/cockpit/templates/docs/present read as a deck: ok, one project slide, no finding
+   marked.parse('![sub/gone.png](#gap)') -> '<p><img src="#gap" alt="sub/gone.png"></p>', and GAP_IMAGE matches it
+   worktree: git status --short 232 entries at the start and at the end
+```
+
+### Verdicts
+
+Items:
+- 1: violated in one sub-point (Spec 1: a section slide with no numbered list draws its words as an inline foot). Everything else holds:
+  - the split now reads front matter through `splitFrontmatter` and `parseFrontmatter` of `docs.ts` (`split.ts:18,97-98`);
+  - the kinds, groups, counts and findings hold, by the probes above and the route answer.
+- 2: holds. Verified by the live route answers on 8792, `portfolio_deck` in `sources.yml` and `Project.deck`.
+- 3: holds. Verified by the chip counts above and `writes.test.ts`'s `chips: [nascent]` passing.
+- 4: holds:
+  - the transition's hint is the foot (route answer);
+  - the slide rule is the first line of `deck/present.yml` and a comment in the template `main.md`, carried verbatim from the base `config/present.yml:3`;
+  - `--check` prints "nothing left to convert".
+  - The `.mjs` substitution stands as the first review accepted it. Spec 3 (the template lacks `panels:`) is minor.
+- 5: holds:
+  - `PresentState` holds `root` and `path` beside `slide`, `overview` and `recent` (`present.ts:57-66`);
+  - the layout state holds `label` only (`show.ts:99-101`);
+  - a pane with no root opens the portfolio deck (`parsePresentState` `:85-95`, `present.svelte.ts:141-143`);
+  - the key hint is drawn (`Slide.svelte:72-73`), and `desc_present` is rewritten.
+  - Behaviour 1 concerns how tabs are found.
+- 6: holds by reading `row-menu.ts` (`present` fact, item after Open LaTeX, the label is the folder's name). Behaviour 1 notes that a second Open Presentation does not get a tab of its own, as Open LaTeX does.
+- 7: holds. The write, record and undo tests pass, and the round-trip and refusals hold. Spec 2 covers the test row that case 18 misses.
+- 8: holds:
+  - the step's added skill lines are ASCII (no gate hit on an added line) and one line each;
+  - the research-cockpit sentence now reads "no build is needed for it ... Report which files you changed".
+- 9: holds. `tools/present` diff is empty, and research-cockpit and `DATA-MAP.md:138` are rewritten.
+
+Cases:
+- 1: met. Route answer: the order, the lede, the legend, the engine cards, the transition foot and the key hint at `Slide.svelte:73`.
+- 2: met (route counts 7 and 9; the unknown-count probe).
+- 3, 4, 5, 11: met by `present.test.ts` (four `splitSlides` rows and the reader test, passed). Case 3 is checked through the slides' front matter (null, `{kind: image}`, null), and the reader's default kind is `text` (`kinds.ts:213`).
+- 6, 7, 8, 10: met by my probes above.
+- 9: met (route: `fedbtd` in no group; the tenth-idea probe).
+- 12: met. The Markdown image becomes `#gap` with a finding (probe). The sanitiser keeps it, which settles the point the report left open, by reading the code:
+  - `ALLOWED_URI_REGEXP` (`ui/html.ts:114`) admits `#gap` through its `[^a-z]` branch, and `img`, `src` and `alt` are in the profile;
+  - the document renderer (`data/prose/markdown.ts:114-134`) has no image renderer of its own;
+  - marked emits `<img src="#gap" alt="...">`, which `GAP_IMAGE` matches (run above).
+- 13: met (probe; the portfolio deck keeps `config/present.yml`'s tones, per the report's run).
+- 14: not verifiable here. The reader half (a deck in a second root, its image served from that root) is the report's scratch run, which I did not rerun; the menu entry needs the look.
+- 15: met by reading `row-menu.ts:235-240,276-279`. The menu itself needs the look.
+- 16: met (route test rows; my 403 on `../`; probe findings for a symlink, `..`, the globs and an image outside).
+- 17: met (`deck-slides.test.ts`, `changes.test.ts`, `undo.test.ts` passed).
+- 18: partial. The repeated name, unknown name, unknown group, file not named `present.yml` and stale `base` rows pass. No row reaches "a file whose edit does not read back" (Spec 2).
+- 19: not verifiable without a page. By reading, `present.svelte.ts:84-89` marks held decks stale on `files`, `portfolio` and `config`.
+- 20, 21: met (find, greps, chips above).
+- 22: met (demo probe).
+- 23: met for the reader (probes and the live `missing` answer). The view's sentence comes from `nothingToShow` (`present.ts`), read, not looked at.
+- 24: met by reading `parsePresentState`, `shownRef` and `shown()`. My node run of `present.ts` could not load, because of a Svelte `$state` import; the report quotes its own run.
+- 25: met (the `deck-gone` undo test passed). The test is outside the brief's test plan (Standards 2).
+- 26: met (`writes.test.ts` passed).
+
+### Findings
+
+**Spec**
+1. `src/lib/data/sources/deck/kinds.ts:125-156`: "A section with no list has no lede, and its words are the foot." with `if (items.length === 0) return { lede: '', items, foot: before.join('\n').trim() };`.
+   - What is wrong: the round was asked for the transition's hint as the foot. The closure changes the `section` kind for every deck, where the brief's part 1 says "`section`: the `#` heading and the paragraphs after it ... text after the list is the foot". `Section.svelte:46-47` draws the foot as `<p class="hint"><Words text={foot} /></p>`, which is inline (no `block`) and in small muted type. The fix reaches beyond the finding. The report states the new rule as a host-visible change but calls it "as the brief says".
+   - Failure scenario: a custom deck's slide `kind: section` with `# Part two`, `Why this matters.` and a bullet list. My run gives `{"lede":"","cards":[],"foot":"Why this matters.\n\n- one\n- two"}`, so the paragraph and the list are drawn as one small inline hint line ("Why this matters. - one - two") with no lede.
+   - Verdict: item 1 violated in this sub-point. A fix inside the file, or a foot taken only from text after a blank-line-separated last paragraph, would leave the general rule alone. Which shape is the orchestrator's choice.
+2. `tests/server/edit/deck-edit.test.ts:118-125`: the refusal rows are "a group the file does not hold", "a file that does not parse" and "a group that is not a map".
+   - What is wrong: all three are refused by `groupSlides` before the edit (`deck-edit.ts:55`). None reaches the read-back refusal of `kept()` (`:40-47,57`), which case 18 names ("a file whose edit does not read back") and which the brief makes a G8 test.
+   - The path can be reached: `setGroupSlides('groups: { g: { slides: [a] } }\n...', 'g', ['b'])` returns null after `setList` produced `"slides:\n- b\norder: ..."` (my run).
+   - Failure scenario: a change that let `kept()` accept a mangled flow-style file would pass every row.
+   - Verdict: case 18 partial.
+3. `tools/cockpit/templates/docs/present/main.md:3-18`.
+   - What is wrong: the front matter lists `kind`, `tag`, `title`, `sub`, `hook`, `eli5`, `specs`, `method`, `results`, `equation`, `mechanism` and `headline`, but not `panels:` (nor `extra:`). The brief's part 8 asks for "`main.md` (`kind: project` with empty keys)", and the keys are part 1's list.
+   - Failure scenario: someone starting a project deck from the template finds no key for figures and does not learn that panels draw them.
+   - Verdict: none (minor, fixable at landing).
+
+**Proof**
+1. `PR2-report.md`, "The guarded tests".
+   - What is wrong: the first-run failing line on the unchanged tree is quoted only for the four deck files. spec.md "What every package obeys" asks for it for every test the step adds or changes. The changed tests have none:
+     - `undo.test.ts` (three deck tests);
+     - `changes.test.ts` "records a deck group's list as the file held it and as it holds it now";
+     - `writes.test.ts:153`, whose case-26 first run is a reading of `manifest.ts:444`.
+   - Further, the G9 row names no titles, although the orchestrator rewrites guarded.md G9's two deck titles from this list. The titles are:
+     - `changes.test.ts` "records a deck group's list as the file held it and as it holds it now";
+     - `undo.test.ts` "puts a deck group's list back to what the save before it left".
+   - The G8 row also says deck-edit has "one `it` of 5 rows ... and one of 3 refusal rows", when it is one `it` holding both tables.
+   - Failure scenario: the orchestrator books G9 without the titles or a seen-failing line.
+   - Verdict: none.
+
+**Standards**
+1. `tests/routes/edit/deck-slides.test.ts:62`, the one `it`.
+   - What is wrong: it ran in 1269 ms, 938 ms and 1038 ms and is not tagged slow. spec.md "Tests" says "A test runs in well under a second; one that cannot ... is tagged slow".
+   - Failure scenario: every `test:quick` touching the write path carries a one-second test inside the 45 s limit, against the rule.
+   - Verdict: none.
+2. `tests/routes/edit/undo/undo.test.ts`, the three deck `it`s ("puts a deck group's list back ...", "refuses to put a deck group's list back over a list changed since", "answers an undo of a record of the retired deck write with deck-gone ...").
+   - What is wrong: spec.md "Tests" asks for one test per unit, as a table where a unit has several outcomes. The round asked for "tests as one per unit with tables, tests outside the plan removed". Case 25 (`deck-gone`) is one the brief makes "a run or a look", and the "moved" refusal is no case of the brief.
+   - Failure scenario: the suite carries deck tests the brief's test plan does not own, in a shape the round asked to fold.
+   - Verdict: none (fold at landing).
+3. History wording, which spec.md "What every package obeys" bans, in three places:
+   - `src/lib/state/life/present.ts:82`: "A pane saved before decks could be chosen holds a slide and nothing else, which is still read as the portfolio deck.";
+   - `src/lib/data/sources/deck/project.ts:4`: "The keys are the ones a project's slide has always had";
+   - `tests/fixtures/kinds.ts:15`: "The kinds a write that no longer exists left in the log".
+   - What is wrong: the rule bans 'before', 'still', 'always had' and 'no longer' where they compare with an earlier state. The report does not quote the grep with each hit judged, which the same rule requires.
+   - Failure scenario: a reader of the comment learns the code's history instead of what it does.
+   - Verdict: none.
+4. PR2-report.md "Git": "two in this round (`git -C /dev/null status` ..., and `git -C <hub>` with no subcommand ...)".
+   - What is wrong: spec.md "Where you work" forbids every git command, `git -C` by name.
+   - What I could check: `.git/worktrees/PR2/logs/HEAD` is empty (rewritten at 17:05:15, so it shows nothing either way). Neither command as described can write: `-C /dev/null` enters no repository, and a bare `git` prints usage.
+   - Failure scenario: none observed; this is a conduct finding.
+   - Verdict: none.
+
+**Behaviour**
+1. `src/lib/state/workbench/layout/open/show.ts:97-103`: `const id = open('present', { label });` then `setInstanceState(id, openedDeck(...))`.
+   - What is wrong: a Present tab's layout state now holds only `label`, so `stateId` (`instance.ts:132-141`) is null. `openInto` (`opening.ts:138-141`) therefore finds any Present tab of the focused pane (`findIn(inside, 'present', null)`) and re-points it.
+   - Open Presentation on a second folder from the same pane replaces the deck the first one opened, which goes to the pane's recent list. It does not get a tab of its own, which Open LaTeX's `{ root, path, label }` gives (`row-menu.ts:536`) and which brief item 6 names ("as Open LaTeX does").
+   - The report's judgment call ("the layout state of a tab keeps its label only") gives no before and after of this.
+   - It follows from item 5's instance-state sentence, which the round enforced. The two sentences of the brief pull apart here, and that is for the orchestrator to rule.
+   - Failure scenario: a reader opens `talks/a` then `talks/b` from the Files view, expecting two tabs as with Open LaTeX, and finds one tab showing `b`.
+   - Verdict: none on the items. The before and after belongs in the report, or the identity in the tab's layout state.
+
+### Declined to judge
+
+- Verify 1's `npm run diagrams`. It writes files. Its check, `tests/checks/diagrams`, passed instead.
+- Verify 6's first run on the unchanged tree. It needs the base tree with the new tests copied in. The report quotes it.
+- Cases 14 (Files menu and deck menu), 15, 19 and 23's empty state as drawn, the deck menu, the Slides view and the drag. They need the running page and a look, and the brief bars a browser here.
+- Case 14's reader half and the tenth idea run on the real hub copy. I did not rerun them; case 9 was reproduced on a scratch hub with the hub deck's groups.
+- Whether the builder's git commands touched the main checkout. It is not visible from git metadata I may read.
+
+Reviewer usage: agent id not visible from inside the run, claude-opus-5-5, token count not visible from inside the run, about 80 tool uses counted by hand, about 16 minutes (17:45:28 to 18:00 by `date`).

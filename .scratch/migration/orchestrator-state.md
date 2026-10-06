@@ -36,10 +36,10 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/PR2-report.md
   brief_check: agents/reviews/PR2-brief-check.md (a4be0b9c90d5e0f8b, claude-opus-5-5, 262,300 tokens, 111 tool uses, 16.2 min)
   shared_paths: with D23: src/lib/state/client/context.ts, config/catalogs/options.yml, config/text/views/sources/files.yml, tests/checks/config/config.test.ts and src/lib/data/model/index.ts (different keys and entries in each); with Q125: src/lib/data/model/model-entities.ts and model/index.ts (D23's and Q125's types are not the deck's), HELP.md and DESIGN.md (PR2 rewrites its Present and Slides lines inside Q125's rewrite, carried by hand at the second landing as Z642 says); so the merge is simple
-  builder_usage: 347,934 tokens, 609 tool uses, 113.1 min
-  reviewer_report: agents/reviews/PR2-refuter.md (ac8902c2a666de395, claude-opus-5-5, 149,642 tokens, 114 tool uses, 15.6 min)
+  builder_usage: 347,934 tokens, 609 tool uses, 113.1 min; round 1: 208,624 tokens, 249 tool uses, 44.9 min
+  reviewer_report: agents/reviews/PR2-refuter.md (ac8902c2a666de395, claude-opus-5-5, 149,642 tokens, 114 tool uses, 15.6 min); over round 1: ac66e4d8f80f5fe9f, claude-opus-5-5, 341,182 tokens, 108 tool uses, 16.7 min
   landing: not-started
-  round: 1 (sent 2026-10-06 to ad626fab8e2a49ab3: Spec 2 to 4, Behaviour 1 to 3, Standards 1 to 3, desc_present, Proof 1 and 2 of the review; "Open Presentation" kept in the Files menu)
+  round: 2 (sent 2026-10-06 to ad626fab8e2a49ab3 under the round cap's exception, item 6's tab per deck unbuilt by round 1 (ruling Z653) and the section rule changed beyond the finding: Spec 1 to 3, Proof 1, Standards 1 to 3, Behaviour 1 of the review over round 1); before it, round: 1 (sent 2026-10-06 to ad626fab8e2a49ab3: Spec 2 to 4, Behaviour 1 to 3, Standards 1 to 3, desc_present, Proof 1 and 2 of the review; "Open Presentation" kept in the Files menu)
 - step: D23
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -238,7 +238,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-06. Q124 landed (tree checks with no limit, the vitest races), after O30b and E4g; PR2 is building with Z650 (b) and Z652. In flight: PR2 (repair round 1), D23 (building), Q125 (repair round 2).
+- 2026-10-06. Q124 landed (tree checks with no limit, the vitest races), after O30b and E4g; PR2 is building with Z650 (b) and Z652. In flight: PR2 (repair round 2), D23 (building), Q125 (repair round 2).
 - 2026-10-06 12:55. Q123 landed (a terminal pane attached as its program left it; booking in plan.md; `agents/reviews/Q123-landing.md`) with five fixes at landing, B1 the top row's shift among them. In flight: E4g (repair round 1), Q124 (under review), O30b (under review), D23 and PR1 (building). Open items Z644 and Z645 raised. Next: Q125 into the free slot, then each landing as its review closes.
 - 2026-10-06 09:30. E4 landed (apps added while oculus runs; booking in plan.md; `agents/reviews/E4-landing.md`) after its look on TEST, which Axel's dev-server restart (Z631) made possible. Axel ruled Z630 (G51's words, written into guarded.md), Z632 (`workers_at_once` 6 in both files) and Z633 (step E4g, the apps guide in `tools/oculus/docs/apps.md`, first in the queue). Nothing in flight. Next: /spec for E4g, O30b, Q123, Q124, D23 and X3e, the six slots.
 - 2026-10-06 08:35. E4 staged on main, not committed: gate-E4 passed `npm run test:landing` (6 of 6), main's staged diff `cmp`-equal to the gate's, penpal and the Electron binary installed in main's node_modules, guarded.md names E4's tests (G1, G8, G9, G31, G49, G50). The look waits on Z631 (Axel's dev server needs a restart to resolve penpal); `~/.oculus/approvals.json` and `workspaces.json` back at their shasums, the scratch apps kept in the session scratchpad. Next: the look, the booking, the commit, then O30b, Q123, Q124 prepared.

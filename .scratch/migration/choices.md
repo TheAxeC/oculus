@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z653 (2026-10-06, step PR2)
+
+The question: brief item 5 puts a Present deck's `root` and `path` in the pane's instance state, and item 6 says Open Presentation opens a deck "as Open LaTeX does", which gives each file its own tab through `{ root, path, label }` in the tab's layout state. Built to item 5, a second Open Presentation re-points the pane's one Present tab (the review over PR2's round 1, Behaviour 1).
+
+- Chosen: (a) `root` and `path` in the tab's layout state beside `label`, so each deck has its own tab and pressing a deck already open focuses it; `slide`, `overview` and `recent` stay in the instance state.
+- Not chosen: (b) both in the instance state, one Present tab per pane re-pointed to each deck (the lazy option, already built).
+
 ## Z651 (2026-10-06, step PR2)
 
 The question: points PR2's brief check found the brief and the ruled design leave open or state wrongly.
