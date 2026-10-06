@@ -3,7 +3,7 @@ In flight (2 of 6 slots):
 - D23c (library definitions read-only, the symbol selected on open): builder running, base 951b61e3.
 
 Queued, in order (23 steps):
-- D45 (LaTeX as VS Code's LaTeX Workshop): stopped at /spec on Z671; (2) ruled (a), the names and (1) still open.
+- D45 (LaTeX as VS Code's LaTeX Workshop): ruled, being prepared again.
 - X3e (Files lists reordered by drag): being prepared again under Z635 (a), its premise recheck running.
 - PR4 (Present's presenter screen): once PR3 has landed.
 - D28 (saving a file as VS Code does): once X3e has landed.
@@ -12,7 +12,7 @@ Queued, in order (23 steps):
 - D15 (PDF reading): once D45 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D41 (links in Markdown checked): once M7 has landed.
-- M8 (the hub's YAML checked in the editor): stopped at /spec on Z672 (eight choices for Axel); after his rulings it waits for D23c to land.
+- M8 (the hub's YAML checked in the editor): ruled in automode; waits for D23c to land.
 - D43 (LaTeX navigation): being prepared, its premise survey running.
 - D23b (cross-file language features): waits until D23c lands (both restructure `server/machine/lsp/`, `relay.ts` and `transport.ts`; not a simple merge); its recheck (`agents/reviews/D23b-premise-recheck.md`) names nine choices for Axel, raised at its /spec.
 - D33 (the Problems view): being prepared, its premise survey and its diagnosis of the card cursor after a reload running.

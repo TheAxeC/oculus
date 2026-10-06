@@ -159,58 +159,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-### Z671: D45 (LaTeX as VS Code's LaTeX Workshop), raised at its /spec 2026-10-06
-
-Source: `agents/reviews/D45-premise-recheck.md`, section 2, items 2 and 3.
-
-- (1) Jumping from a click in the PDF to the matching `.tex` line when oculus runs as the desktop app. The PDF viewer's "View in Web Browser" page `/pdf` opens in the default browser there (`src/desktop/decide/links.ts:39-48` keeps only `/` and `/?float=<id>` in an app window), and the planned `BroadcastChannel` cannot reach from that browser to the app window.
-  - (a) Recommended. Send the jump through oculus's server socket. Pro: works in the browser and in the app alike. Con: one new message kind on the socket.
-  - (b) Open `/pdf` in an app window. Pro: the `BroadcastChannel` then reaches. Con: changes G47's sentence "An app window shows only its own server's page", a guarded rule, for one viewer.
-  - (c) No jump from the browser viewer in the app. The lazy option: it drops the jump there.
-- (2) A PDF's two menu items. Ruled (a) by Axel 2026-10-06: both kept. He found the names confusing: "Open in Browser Tab and View in Web Browser is EXTREMELY confusing." Open: their names.
-  - "Open in Browser Tab" opens the file's bytes in the browser's own PDF viewer (`files.yml:106`); "View in Web Browser" opens oculus's PDF viewer, which has the jump to the source.
-  - (a) Recommended. "Open in Browser" and "Open Linked to Source in Browser". Pro: each says what the reader gets. Con: "Open in Browser Tab" is renamed on every file type that offers it.
-  - (b) "Open in Browser" and "Open in oculus PDF Viewer". Pro: short. Con: names the program, not what it gives the reader.
-  - (c) The current names. The lazy option.
-
-### Z672: M8 (the hub's YAML checked in the editor), raised at its /spec 2026-10-07
-
-Source: `agents/reviews/M8-premise-survey.md`, sections 1, 4 and 7. After the rulings M8 still waits for D23c to land: both add a folder to `src/lib/server/machine/lsp/` (10 items) and both change `relay.ts` (869 of 880 lines).
-
-- (1) The key naming a reference to another file. Today: `options_from:` in the 16 hub `schema:` blocks, `from:` in `manifest-schema.yml`, `values_from:` in `options.yml`.
-  - (a) Recommended. `from:` everywhere; the readers, the apps API's `optionsFrom` (`docs/apps.md:247`) and the cockpit selftest (`tools/cockpit/src/cockpit/selftest.py:595-621`) follow. Pro: one name for one thing, as M8's line names it. Con: the apps API changes.
-  - (b) Each file keeps its name. The lazy option: three names for one thing.
-- (2) What a `from:` names. Today a bare word, sometimes a registry (`people`), sometimes a vocab list (`venue_categories`).
-  - (a) Recommended. A registry by its `sources.yml` name (`from: people`), a vocab list with a prefix (`from: vocab.venue_categories`). Pro: each path written once, the two kinds cannot clash. Con: every vocab reference is rewritten.
-  - (b) A file and key field (`from: { file: registries/people.yml, key: key }`). Pro: explicit. Con: the path written in every schema.
-  - (c) Today's bare words. The lazy option.
-- (3) How a condition is written (`when:`). Today conditions live only in help text and header comments.
-  - (a) Recommended. A map of field to value or values, all of which must hold for the field to be allowed (`when: { category: conference }`); `required: { when: ... }` for a conditional requirement; a tier condition as a path pattern (`when: { path: projects/archive/** }`). Pro: readable, maps onto JSON Schema `if`/`then`. Con: no "or" between fields.
-  - (b) A string expression. Pro: any condition. Con: a small language to parse and document.
-  - (c) Raw JSON Schema `if`/`then` in the YAML. Con: unreadable in a registry file.
-  - Lazy option: conditions left in help text.
-- (4) `options.yml` says `description:` (202 times) and `values:` where the other schemas say `help:` and `options:`.
-  - (a) Recommended. Rename to `help:` and `options:`. Pro: one name per thing. Con: a rename across `options.yml`, `catalog/options.ts` and `value-rule.ts`.
-  - (b) Keep them, translated in the generator. The lazy option.
-- (5) Where the three new schemas go.
-  - (a) Recommended. `registries/career.yml` and `feeds/literature-radar.yml` get their own `schema:` block, as the other 16 hub files; the side projects' schema is `config/catalogs/side-project-schema.yml` (the folder 8 to 9 items). Career is a map of sections, so its block gains a nested field form. Pro: each file carries its schema. Con: a nested form added to the format.
-  - (b) All three in `config/catalogs/`. Con: 11 items, a subfolder that also moves `manifest-schema.yml`.
-  - (c) One `config/catalogs/schemas.yml`. Con: three files' schemas away from them.
-- (6) Whether the Findings view and the real-hub test G14 apply the same schemas as the editor.
-  - (a) Recommended. Validate through the generated JSON Schemas with ajv 8.20.0 (MIT, blakeembrey and esp, released 2026-04-24), a new direct dependency, replacing `validate.ts:83-132`'s `REFERENCES` table. Pro: one rule for both. Con: a dependency, part of `validate.ts` rewritten.
-  - (b) A hand-written check in `validate.ts`. Con: two implementations of one rule.
-  - (c) Editor marks only. The lazy option: the Findings view and G14 never see a wrong value.
-- (7) The data departures M8 settles; each is Axel's data.
-  - `registries/data.yml:77`, `pmc-patients` has `access: public`, not a `data_access` value. Recommended: `open`, since the set needs no credentials. Alternative: add `public` to `data_access`.
-  - `outcome` and `doi` on 18 manifests outside the archive tier, `outcome` holding the involvement statement; the card already shows it on every tier (`CardDetails.svelte:72-74`). Recommended: allow both on every tier, the section "Archive (archive tier)" renamed. Alternatives: move the text to another field; delete it (data loss, the lazy option).
-  - The journal `hcin` (`registries/venues.yml:245`) has `timing`, `deadline` and `call`. Recommended: those three allowed on every venue, the month fields conference-only. Alternative: drop them (loses the 2026-12-02 deadline).
-  - The Graz BCI event (`network/events.yml:62-73`), `role: present` with no `link` (a co-author presents). Recommended: `link` allowed, not required, so it is valid. Alternative: a new role value.
-  - `kuleuven-thesis`, `uhasselt-thesis` and `xai-nl` have no `category`. Recommended: add `thesis` and `meeting` to `venue_categories` (two new groups in the Venues view). Alternative: `journal` or `conference`, which is false.
-  - `registries/data.yml` uses eight retrieval methods, its comment at `:9` names four, and `tools/data/redownload.py:217-240` skips `direct` and `script`. Recommended: the eight are the allowed values, the comment rewritten, and `redownload.py` handles `direct` and `script` in M8. Alternative: the script left skipping them (the lazy option).
-- (8) Which YAML files M8 covers.
-  - (a) Recommended. The files its line names, plus the 26 deck `present.yml` files (their schema after PR3 lands) and `.oculus/cpp.yml`, since the editor opens them. Pro: every YAML file oculus reads gets completion and marks. Con: two more schemas and a wait on PR3.
-  - (b) Only the files the line names. The lazy option.
-- Not choices, done in M8: the stale help lines `venues.yml:27` and `data.yml:28` (they name `config/vocab.yml`) corrected; yaml-language-server 1.24.0 (MIT) is ruled by Z345; monaco-yaml is not used, since it runs outside D23's relay.
+None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
