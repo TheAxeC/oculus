@@ -218,7 +218,12 @@ export type WritesStore = {
     addLinkedinIdea: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     markPosted: (file: string) => Promise<WriteAnswer>;
     newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    writeDeck: (selection: string[], order: string[]) => Promise<WriteAnswer>;
+    writeDeckSlides: (
+        deck: { root: string; path: string },
+        group: string,
+        base: string[],
+        slides: string[]
+    ) => Promise<WriteAnswer>;
     /** Rewrite the rail list; `said` when the caller posts the refusal's notification itself. */
     writeRail: (
         rail: { label: string; glyph: string; page: string }[],

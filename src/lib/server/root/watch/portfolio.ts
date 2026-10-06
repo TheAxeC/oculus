@@ -9,10 +9,10 @@
 //
 // The filter is what keeps that cheap. `projects/` holds tens of thousands of files, nearly all of
 // them under a project's `code/` deposit or its `attic/`, so a build there would otherwise rebuild
-// the portfolio on every write. An event counts only when its filename ends in .yml or is the one
-// Markdown file the build reads, a project's PRESENT.md, and no segment of its path is `code` or
-// `attic`, which also drops an editor's swap and lock files. The flat LinkedIn folder also accepts
-// the post filenames read by server/edit/feeds.ts.
+// the portfolio on every write. An event counts only when its filename ends in .yml or .md, which
+// the later filter narrows to the Markdown slide files of a deck, and no segment of its path is
+// `code` or `attic`, which also drops an editor's swap and lock files. The flat LinkedIn folder
+// also accepts the post filenames read by server/edit/feeds.ts.
 //
 // One rebuild too many is possible and harmless: the first fs.watch of a process on darwin can
 // deliver an event for a write that happened shortly before the watch was opened, so a start that
@@ -24,7 +24,12 @@ import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
 import { buildPortfolio, portfolioConfigFrom } from '../../../data/index.ts';
-import { AUDIT_PATHS, auditFindings, auditRules, mutedSignatures } from '../../content/audit.ts';
+import {
+    AUDIT_PATHS,
+    auditFindings,
+    auditRules,
+    mutedSignatures
+} from '../../content/audit/scan.ts';
 import {
     behaviorFindings,
     configDir,
@@ -42,7 +47,7 @@ import {
     type IconMemory
 } from '../../../data/sources/config.ts';
 import { MANIFEST, ROOT_FOLDER } from '../../../data/sources/manifests.ts';
-import { PRESENT_DOC } from '../../../data/sources/present.ts';
+import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
 import { railFindings } from '../../../data/sources/config/rail.ts';
 import {
@@ -141,12 +146,12 @@ export function audited(parts: string[]): boolean {
 }
 
 /**
- * Whether a watch event is one of ours: a YAML file, a project's PRESENT.md, or one of the
- * documents and folders the audit scan reads, outside every `code/` and `attic/` folder. PRESENT.md
- * is here because its front matter is in the snapshot, so a slide saved has to reach the open deck
- * the way a changed manifest reaches the open board. `code/README.md` is the one path taken from
- * inside a `code/` folder: the deposit holds thousands of files and none of the others is read by
- * anything.
+ * Whether a watch event is one of ours: a YAML file, a Markdown file, or one of the documents and
+ * folders the audit scan reads, outside every `code/` and `attic/` folder. A Markdown file is here
+ * because the slide files of a deck are read into the snapshot's findings, so a slide saved has to
+ * reach the audit the way a changed manifest does; `named` below keeps only the ones of a deck.
+ * `code/README.md` is the one path taken from inside a `code/` folder: the deposit holds thousands
+ * of files and none of the others is read by anything.
  */
 export function relevant(filename: string | null): boolean {
     if (filename === null || filename === '') return false;
@@ -155,16 +160,17 @@ export function relevant(filename: string | null): boolean {
     const name = parts[parts.length - 1];
     const deposit = parts.length >= 2 && parts[parts.length - 2] === 'code' && name === 'README.md';
     if (!deposit && parts.some((part) => NEVER.includes(part))) return false;
-    return name.endsWith('.yml') || name === PRESENT_DOC || audited(parts);
+    return name.endsWith('.yml') || name.endsWith('.md') || audited(parts);
 }
 
 /**
  * The hub files a rebuild actually reads: every registry, collection and YAML feed file, the career
- * file, and every `project.yml` and `PRESENT.md` under a scan tier. A `.yml` kept beside one of
- * them (a note next to a registry, a draft, a second file in a project folder) changes nothing the
- * snapshot holds, so an event for it is not a rebuild. The set is derived from the same config the
- * build was made from, which is why the predicate is built again at every rebuild rather than held
- * as a constant.
+ * file, every `project.yml` and `present.yml` under a scan tier, the Markdown files inside a
+ * project's `present/` folder, and the `.yml` and `.md` files of the portfolio deck's folder. A
+ * `.yml` kept beside one of them (a note next to a registry, a draft, a second file in a project
+ * folder) changes nothing the snapshot holds, so an event for it is not a rebuild. The set is
+ * derived from the same config the build was made from, which is why the predicate is built again
+ * at every rebuild rather than held as a constant.
  */
 export function namedByConfig(
     hub: string,
@@ -180,12 +186,16 @@ export function namedByConfig(
     }
     files.add(join(hub, config.career));
     const tiers = config.scan.map((rule) => join(hub, rule.dir) + sep);
-    const perProject = [MANIFEST, PRESENT_DOC];
+    const deck = config.portfolioDeck === null ? null : join(hub, config.portfolioDeck) + sep;
+    const perProject = [MANIFEST, DECK_FILE];
     return (path: string): boolean => {
         if (files.has(path)) return true;
+        if (deck !== null && path.startsWith(deck)) return /\.(yml|md)$/.test(path);
         const tier = tiers.find((one) => path.startsWith(one));
         if (tier === undefined) return false;
         if (perProject.includes(basename(path))) return true;
+        const below = path.slice(tier.length).split(sep);
+        if (path.endsWith('.md') && below.slice(0, -1).includes(PROJECT_DECK)) return true;
         // The audit reads a project's documents and folders off the disk, so an event on one of
         // them under a tier is a rebuild like a changed manifest; the path is read tier-relative,
         // so a folder of the hub above the tier never counts as one of a project's.
@@ -235,6 +245,7 @@ export function roleDirectories(
     for (const file of [config.feeds.leads, config.feeds.radar]) {
         dirs.add(dirname(join(hub, file)));
     }
+    if (config.portfolioDeck !== null) dirs.add(join(hub, config.portfolioDeck));
     return [...dirs];
 }
 
@@ -532,7 +543,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 hub.publish('config', payload);
                 if (closed) return;
             }
-            const portfolio = portfolioConfigFrom(config, paths.engine);
+            const portfolio = portfolioConfigFrom(config);
             const roots = personalRoots(paths.roots(), paths.hub, engineConfig);
             named = namedByConfig(paths.hub, portfolio, roots);
             watchRootParents(roots);

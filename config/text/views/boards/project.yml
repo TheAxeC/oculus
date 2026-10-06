@@ -74,9 +74,9 @@ text:
             overdue: overdue {0}d
             pin_glyph: pin
             pin_to_top: Pin to Top
-            present: Slide
+            present: Open presentation
             present_glyph: poster
-            present_tip: open the public deck at this project's slide
+            present_tip: open this project's own deck in the Present view
             pillar_glyph: pillar
             repro_glyph: check
             reproduced: Reproduced

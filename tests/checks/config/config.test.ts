@@ -23,7 +23,6 @@ import {
     themeFindings,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { ENGINE_ROOT, engineRoot, rootsFile } from '../../../src/lib/server/files/files.ts';
 import { layoutFile } from '../../../src/lib/server/content/docs.ts';
 import { parse } from 'yaml';
@@ -174,9 +173,6 @@ describe('the config folder of an engine', () => {
         writeConfig(copy, 'behavior.yml', 'stale_days: 7\n');
         expect(loadConfig(engine).config.stale_days).toBe(30);
         expect(loadConfig(copy).config.stale_days).toBe(7);
-        expect(portfolioConfigFrom(loadConfig(copy).config, copy).deckFile).toBe(
-            join(copy, 'config', 'present.yml')
-        );
     });
 
     it('is the folder the engine root serves and the file a root finding names', () => {

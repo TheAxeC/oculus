@@ -99,6 +99,7 @@ text:
         menu_open_program: Open in Program
         menu_open_side: Open to the Side
         menu_paste: Paste
+        menu_present: Open Presentation
         menu_preview: Open Preview
         menu_remove_bookmark: Remove Bookmark
         menu_remove_root: Remove Folder from Workspace

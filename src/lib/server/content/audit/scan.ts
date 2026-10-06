@@ -19,17 +19,10 @@
 // path, the projects and collections of the snapshot, the rules read out of the configuration, and
 // the text catalog the messages are written in.
 
-import type { AuditFinding, AuditKind } from '../../data/model/index.ts';
-import {
-    markers,
-    gaps,
-    conformance,
-    guardrails,
-    readability,
-    collections
-} from './audit/projects.ts';
-import { publications } from './audit/publications.ts';
-import { type AuditInput, collector } from './audit/rules.ts';
+import type { AuditFinding, AuditKind } from '../../../data/model/index.ts';
+import { markers, gaps, conformance, guardrails, readability, collections } from './projects.ts';
+import { publications } from './publications.ts';
+import { type AuditInput, collector } from './rules.ts';
 
 /** The order the Audit view draws the sections in, and the order the findings come back in. */
 const KINDS: AuditKind[] = ['todo', 'data', 'conform', 'manifest', 'readability', 'publink'];
@@ -63,6 +56,6 @@ export {
     auditRules,
     mutedSignatures,
     signatureOf
-} from './audit/rules.ts';
-export { AUDIT_PATHS, firstMarker } from './audit/projects.ts';
-export { jaccard, normalTitle, titleWords } from './audit/publications.ts';
+} from './rules.ts';
+export { AUDIT_PATHS, firstMarker } from './projects.ts';
+export { jaccard, normalTitle, titleWords } from './publications.ts';

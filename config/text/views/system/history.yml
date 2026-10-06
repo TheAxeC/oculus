@@ -27,6 +27,7 @@ text:
         unknown: The change log no longer holds this write.
         nothing: This write cannot be taken back.
         copy_gone: The copy of a deleted file is no longer kept, so the delete cannot be taken back.
+        deck_gone: This write belongs to the deck format that is gone, so it cannot be taken back.
         unwritable: The file cannot be written, so the earlier value was not put back.
         refused_write: The file would not take the earlier value back, so it was left alone.
         refused: 'The undo was refused: {0}'
@@ -47,6 +48,7 @@ text:
         kind_linkedin_idea: LinkedIn idea
         kind_linkedin_post: LinkedIn post
         kind_deck: deck
+        kind_deck_slides: deck group
         kind_new_idea: idea scaffolded
         kind_audit_mute: audit mute
         kind_rail: rail list

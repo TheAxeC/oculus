@@ -42,6 +42,15 @@
         border-radius: var(--radius-sm);
     }
 
+    .inline :global(.gap),
+    .block :global(.gap) {
+        padding: 2px 8px;
+        border: 1px dashed var(--line);
+        border-radius: var(--radius-sm);
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--slide-fs-small);
+    }
+
     .block :global(table) {
         border-collapse: collapse;
         font-size: var(--slide-fs-small);

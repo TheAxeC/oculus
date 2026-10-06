@@ -12,7 +12,6 @@
 // has typed so far.
 
 import { PICTURE_EXTENSIONS } from '../../../../data/file-ops.ts';
-import { deckSources } from '../../../../data/helpers/deck.ts';
 import { isMap } from '../../../../data/helpers/guards.ts';
 import type { Project } from '../../../../data/model/index.ts';
 import { registered } from '../../../../data/prose/languages.ts';
@@ -105,10 +104,6 @@ export function listsOf(inputs: ListInputs): Lists {
                 return portfolio === null
                     ? { state: 'loading' }
                     : READY(resourcesOfKind(portfolio.resources, 'cluster'));
-            case 'slides':
-                return portfolio === null
-                    ? { state: 'loading' }
-                    : READY(deckSources(portfolio.projects).map((one) => one.id));
             case 'slide_tags':
                 return portfolio === null
                     ? { state: 'loading' }

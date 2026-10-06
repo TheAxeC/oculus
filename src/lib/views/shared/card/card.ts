@@ -87,12 +87,12 @@ export function openDocument(client: ClientState, folder: string, path: string):
 }
 
 /**
- * The slide the deck opens at for one project: the first of the slides its PRESENT.md declares, and
- * nothing for a project that declares none. It is the whole of what the card's deck control
- * decides, so which slide a card opens is a plain call rather than a rendered page.
+ * The deck a card's presentation control opens: the project's own `present/` folder, relative to
+ * the hub, and nothing for a project that holds none. It is the whole of what the control decides,
+ * so which deck a card opens is a plain call rather than a rendered page.
  */
-export function deckSlideOf(project: BoardItem['project']): string | null {
-    return (project.present ?? [])[0]?.id ?? null;
+export function deckOf(project: BoardItem['project']): string | null {
+    return project.deck ?? null;
 }
 
 /** The catalogued label for a code-deposit state. */

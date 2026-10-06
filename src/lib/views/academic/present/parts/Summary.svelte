@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, Present partial. A cross-project summary slide: one row per project, the field's own
-    // hue as the dot beside it, and the foot line under the table.
+    // Layer 3, Present partial. A cross-project summary slide: one row per project, the domain's
+    // label and hue as the field and the dot beside it, and the foot line under the table.
     //
     // The table is ui/display/Table.svelte. Every cell but the field is words, and the field is the
     // one the `cell` snippet is for, so the slide describes its four columns and draws nothing of a
@@ -12,11 +12,12 @@
     import { t } from '$lib/state/shared/words/text';
     import Dot from './Dot.svelte';
     import Words from './Words.svelte';
-    import type { DeckSummary } from '$lib/state/life/present';
+    import { domainLabel, domainTone } from '$lib/state/shared/words/tones';
+    import type { DeckSummaryRow } from '$lib/state/life/present';
 
-    type Props = { summary: DeckSummary };
+    type Props = { heading: string; rows: DeckSummaryRow[]; foot: string };
 
-    let { summary }: Props = $props();
+    let { heading, rows: summary, foot }: Props = $props();
 
     const columns: Column[] = [
         { key: 'field', label: t('present.col_field') },
@@ -27,13 +28,13 @@
 
     /** The rows as the table takes them, each carrying the key it is drawn under. */
     const rows = $derived(
-        summary.rows.map((row, at) => ({
+        summary.map((row, at) => ({
             row: at,
-            field: row.field ?? '',
-            project: row.project ?? '',
-            mechanism: row.mechanism ?? '',
-            headline: row.headline ?? '',
-            tone: row.tone
+            field: row.domain === undefined ? '' : domainLabel(row.domain),
+            project: row.project,
+            mechanism: row.mechanism,
+            headline: row.headline,
+            tone: row.domain === undefined ? undefined : domainTone(row.domain)
         }))
     );
 
@@ -62,14 +63,14 @@
 {/snippet}
 
 <section class="slide" data-slide-kind="summary">
-    {#if summary.title !== undefined}
-        <h3 class="headline"><Words text={summary.title} /></h3>
+    {#if heading !== ''}
+        <h3 class="headline"><Words text={heading} /></h3>
     {/if}
     <div class="scroll">
         <Table {columns} {rows} rowKey="row" {cell} />
     </div>
-    {#if summary.foot !== undefined}
-        <p class="hint"><Words text={summary.foot} /></p>
+    {#if foot !== ''}
+        <p class="hint"><Words text={foot} /></p>
     {/if}
 </section>
 

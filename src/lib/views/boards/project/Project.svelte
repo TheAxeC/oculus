@@ -47,7 +47,6 @@
     import { absentDocs, markdownDocNames, type BoardItem } from '$lib/state/boards/board';
     import { cardCursor, instanceText } from '$lib/state/workbench/layout/instance';
     import { modelShort, stamp } from '$lib/state/shared/words/format';
-    import { PRESENT_DOC } from '$lib/state/life/present';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -69,12 +68,10 @@
     const folder = $derived(item === null ? '' : folderOf(item));
     const rows = $derived(folder === '' ? [] : sessionsForProject(folder));
     /**
-     * The Markdown this tab can draw: the fixed documents the folder holds, and the PRESENT.md when
-     * the project has one. A PRESENT.md is not one of the four a project is measured by, so the
-     * card's document row does not report on it; its narrative is still a document of the project,
-     * and api/docs answers with the body alone, the front matter split off.
+     * The Markdown this tab can draw: the fixed documents the folder holds. The project's deck is
+     * opened from the card's presentation control.
      */
-    const names = $derived(item === null ? [] : markdownDocNames(item.project, PRESENT_DOC));
+    const names = $derived(item === null ? [] : markdownDocNames(item.project));
     const chosen = $derived(pick(names, instanceText(instanceState(instance.id), 'doc')));
     const shown = $derived(chosen === '' ? null : docFor(id, chosen));
     const lag = $derived(staleLag());

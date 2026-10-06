@@ -396,13 +396,17 @@ export function createWrites(
     }
 
     /**
-     * Save the public deck's slide selection and its order. `order` is every slide of the catalog,
-     * shown or not, and `selection` the ones the deck shows; an empty selection, a key outside the
-     * catalog and an order that is not the whole catalog are each refused and the file is
-     * untouched.
+     * Save one group's `slides:` list in a deck's `present.yml`. `base` is the list the caller
+     * read, so a file that changed since is refused and left as it is, as is a name no deck of the
+     * group answers to.
      */
-    async function writeDeck(selection: string[], order: string[]): Promise<WriteAnswer> {
-        return send({ kind: 'deck', selection, order });
+    async function writeDeckSlides(
+        deck: { root: string; path: string },
+        group: string,
+        base: string[],
+        slides: string[]
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'deck-slides', root: deck.root, path: deck.path, group, base, slides });
     }
 
     /**
@@ -639,7 +643,7 @@ export function createWrites(
         addLinkedinIdea,
         markPosted,
         newEntry,
-        writeDeck,
+        writeDeckSlides,
         writeRail,
         writeConfigKey,
         writeConfigValue,

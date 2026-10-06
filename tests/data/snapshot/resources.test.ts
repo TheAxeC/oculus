@@ -14,7 +14,7 @@ import { it, plantScratch } from '../../fixtures/scratch.ts';
 const ENGINE = engineDir();
 const LOADED = loadConfig(ENGINE).config;
 const CATALOG = textCatalog(LOADED);
-const CONFIG = portfolioConfigFrom(LOADED, ENGINE);
+const CONFIG = portfolioConfigFrom(LOADED);
 
 /** The sentence of a catalog key, which the catalog must hold. */
 function sentence(key: string, ...args: string[]): string {

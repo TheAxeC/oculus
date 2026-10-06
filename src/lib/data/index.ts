@@ -7,18 +7,26 @@
 
 import { join } from 'node:path';
 import { z } from 'zod';
-import { keysOfShape, optionalTextShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
+import { isMap, str, strings } from './helpers/guards.ts';
+import {
+    filledTextShape,
+    keysOfShape,
+    optionalTextShape,
+    readAs,
+    readOr,
+    rowsShape
+} from './shapes/shapes.ts';
 import { readManifests, readPersonal } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
 import { CAREER_FILE, readCareer } from './sources/career.ts';
 import { readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
-import { deckFindings, readPresent } from './sources/present.ts';
-import { configDir, textCatalog } from './sources/config.ts';
+import { createReader, HUB_KEY } from './sources/deck/read.ts';
+import type { DeckProject } from './sources/deck/kinds.ts';
+import { textCatalog } from './sources/config.ts';
 import { normalise } from './snapshot/normalise.ts';
 import { validate } from './snapshot/validate.ts';
-import type { TextCatalog } from './helpers/finding-text.ts';
 import type {
     CollectionFile,
     DocPresence,
@@ -27,7 +35,7 @@ import type {
     Id,
     PersonalRoot,
     PortfolioConfig,
-    PresentSlide,
+    RawDeck,
     RawManifest,
     RawPortfolio,
     RegistryFiles,
@@ -35,9 +43,6 @@ import type {
     Snapshot,
     Vocabulary
 } from './model/index.ts';
-
-/** The one config file the public deck lives in, inside the engine's config directory. */
-export const DECK_FILE = 'present.yml';
 
 /**
  * One `scan:` rule: a map with a `dir` that is a text, carrying its `type` when that is a text and
@@ -111,6 +116,16 @@ function vocabKeys(value: unknown): string[] {
     return readOr(vocabKeysShape, value, []);
 }
 
+/** The `tag_tones` of the engine's `defaults:`, each class with the hue name it wears. */
+function tagTones(defaults: unknown): Record<string, string> {
+    const held = isMap(defaults) && isMap(defaults.tag_tones) ? defaults.tag_tones : {};
+    return Object.fromEntries(
+        Object.entries(held).flatMap(([name, tone]) =>
+            typeof tone === 'string' && tone !== '' ? [[name, tone]] : []
+        )
+    );
+}
+
 /** A config path: the text the key holds. */
 const pathShape = z.string();
 
@@ -121,10 +136,7 @@ const pathShape = z.string();
  * moved on in one place still builds. The text catalog travels with it, since every reader words
  * its findings from config/text/findings.yml.
  */
-export function portfolioConfigFrom(
-    merged: Record<string, unknown>,
-    engine: string
-): PortfolioConfig {
+export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioConfig {
     const path = (key: string, fallback: string): string =>
         readOr(pathShape, merged[key], fallback);
     const collections = collectionFiles(merged.collections);
@@ -178,8 +190,9 @@ export function portfolioConfigFrom(
         career: path('career_file', CAREER_FILE),
         schema: merged.manifest_schema,
         vocab,
-        deck: merged.deck,
-        deckFile: join(configDir(engine), DECK_FILE),
+        portfolioDeck: readAs(filledTextShape, merged.portfolio_deck) ?? null,
+        tagTones: tagTones(merged.defaults),
+        domains: readOr(keysOfShape, merged.domains, []),
         text: textCatalog(merged)
     };
 }
@@ -194,20 +207,44 @@ function documents(hub: string, manifests: RawManifest[]): Record<Id, DocPresenc
     return found;
 }
 
-/** The slides of every project that carries a PRESENT.md, by project id, with what was wrong. */
-function slides(
+/** What the deck reader needs to know of each project: where it is and what it is called. */
+function deckProjects(manifests: RawManifest[]): DeckProject[] {
+    return manifests.map((manifest) => {
+        const status = isMap(manifest.status) ? manifest.status : {};
+        const project: DeckProject = {
+            id: manifest.id,
+            file: manifest.file,
+            folder: manifest.folder,
+            tier: manifest.tier,
+            chips: strings(status.chips),
+            short: str(manifest.short) ?? '',
+            title: str(manifest.title) ?? manifest.id
+        };
+        if (manifest.type !== undefined) project.type = manifest.type;
+        const domain = str(manifest.domain);
+        if (domain !== undefined && domain !== '') project.domain = domain;
+        return project;
+    });
+}
+
+/** The portfolio deck and every project deck read, with what was wrong in them. */
+function decks(
     hub: string,
     manifests: RawManifest[],
-    catalog: TextCatalog
-): { present: Record<Id, PresentSlide[]>; findings: Finding[] } {
-    const present: Record<Id, PresentSlide[]> = {};
-    const findings: Finding[] = [];
-    for (const manifest of manifests) {
-        const read = readPresent({ hub, folder: manifest.folder }, manifest.id, catalog);
-        present[manifest.id] = read.slides;
-        findings.push(...read.findings);
-    }
-    return { present, findings };
+    config: PortfolioConfig
+): { decks: Record<Id, RawDeck>; findings: Finding[] } {
+    const root = { key: HUB_KEY, dir: hub };
+    const reader = createReader({
+        hub: root,
+        projects: deckProjects(manifests),
+        domains: config.domains,
+        tagTones: config.tagTones,
+        catalog: config.text
+    });
+    const found: Record<Id, RawDeck> = {};
+    for (const one of reader.projectDecks()) found[one.id] = { path: one.path, tags: one.tags };
+    if (config.portfolioDeck !== null) reader.read(root, config.portfolioDeck);
+    return { decks: found, findings: reader.findings() };
 }
 
 /**
@@ -229,13 +266,7 @@ export function buildPortfolio(
     const collections = readCollections(hub, config.collections, config.text);
     const feeds = readFeeds(hub, config.feeds, config.text);
     const career = readCareer(hub, config.career, config.text);
-    const present = slides(hub, manifests.manifests, config.text);
-    const deck = deckFindings(
-        config.deck,
-        Object.values(present.present).flatMap((list) => list.map((one) => one.id)),
-        config.deckFile,
-        config.text
-    );
+    const deck = decks(hub, manifests.manifests, config);
 
     const raw: RawPortfolio = {
         manifests: manifests.manifests,
@@ -245,7 +276,7 @@ export function buildPortfolio(
         feeds: feeds.feeds,
         career: career.career,
         docs: documents(hub, manifests.manifests),
-        present: present.present,
+        decks: deck.decks,
         findings: [
             ...manifests.findings,
             ...personal.findings,
@@ -253,8 +284,7 @@ export function buildPortfolio(
             ...collections.findings,
             ...feeds.findings,
             ...career.findings,
-            ...present.findings,
-            ...deck
+            ...deck.findings
         ]
     };
 

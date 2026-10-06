@@ -49,7 +49,7 @@ function hubWith(files: Record<string, string>, folders: string[] = []): string 
 
 /** The portfolio config of the shipped engine over a scan that carries the hub tier. */
 function configOver(scan: ScanRule[] = SCAN): PortfolioConfig {
-    return { ...portfolioConfigFrom(MERGED, engineDir()), scan };
+    return { ...portfolioConfigFrom(MERGED), scan };
 }
 
 describe('the hub tier', () => {

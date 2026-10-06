@@ -114,7 +114,7 @@ refusedBy, refusing, written"];
     "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/audit-mute.ts" [tooltip="writeMute"];
     "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/config-key.ts" [tooltip="writeConfigKey"];
     "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/config-value.ts" [tooltip="writeConfigValue"];
-    "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/deck.ts" [tooltip="writeDeck"];
+    "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/deck.ts" [tooltip="writeDeckSlides"];
     "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/rail.ts" [tooltip="writeRail"];
     "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/roots.ts" [tooltip="addRootTo, removeRootFrom"];
     "lib/server/edit/writes/config/deck.ts" -> "lib/server/core/json.ts" [tooltip="writeTextAtomic"];
@@ -151,7 +151,7 @@ removeRadarEntry, restoreFeedEntry, writeFeedField"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/app-store.ts" [tooltip="APP_STORE", style=dotted];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/config-key.ts" [tooltip="configKeyNow, writeConfigKey"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/config-value.ts" [tailport=se, tooltip="configValueNow, putBackConfigValue, writeConfigValue"];
-    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/deck.ts" [tailport=s, tooltip="deckNow, writeDeck"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/deck.ts" [tailport=s, tooltip="deckSlidesNow, undoDeckSlides"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/rail.ts" [tailport=n, tooltip="railNow, writeRail"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/roots.ts" [headport=sw, tooltip="rootsNow, writeRoots"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/entries.ts" [tooltip="createEntry, idOfIdentity, identityOrder

@@ -12,7 +12,6 @@ import type {
     Id,
     Organisation,
     Person,
-    PresentSlide,
     Pillar,
     Project,
     RawCollection,
@@ -37,6 +36,14 @@ import type {
 
 export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
 
+/** A project's own deck as the snapshot carries it: where it is, and the tag classes it uses. */
+export type RawDeck = {
+    /** The deck's folder relative to the hub. */
+    path: string;
+    /** The `tag.class` of each of its project slides, each once. */
+    tags: string[];
+};
+
 export type RawPortfolio = {
     manifests: RawManifest[];
     /** The side projects of the hub's side-projects tier and of the Files roots, unchecked. */
@@ -54,10 +61,11 @@ export type RawPortfolio = {
      */
     docs: Record<Id, DocPresence[]>;
     /**
-     * The slides each project's PRESENT.md declares, by project id, from sources/present.ts. It
-     * sits beside `docs` for the same reason: no manifest key names it, it is read from the folder.
+     * The deck each project's `present/` folder holds, by project id, from sources/deck/. It sits
+     * beside `docs` for the same reason: no manifest key names it, it is read from the folder. A
+     * project with no `present/present.yml` has no entry.
      */
-    present: Record<Id, PresentSlide[]>;
+    decks: Record<Id, RawDeck>;
     findings: Finding[];
 };
 
@@ -132,10 +140,12 @@ export type PortfolioConfig = {
     career: string;
     schema: unknown;
     vocab: Vocabulary;
-    /** The `deck:` map of config/present.yml, unparsed: its shape is the deck's own business. */
-    deck: unknown;
-    /** The file the deck was read from, so a finding about the deck names it. */
-    deckFile: string;
+    /** The hub folder of the portfolio deck, `portfolio_deck:` of sources.yml, or null. */
+    portfolioDeck: string | null;
+    /** The hue each `tag.class` wears, the engine's `defaults.tag_tones`. */
+    tagTones: Record<string, string>;
+    /** The keys of the `domains:` of vocab.yml, which a project's `domain:` is checked against. */
+    domains: string[];
     /**
      * The flat text catalog of the merged config, which the readers and the validation rules word
      * their findings from.
@@ -355,17 +365,11 @@ export type {
     Dataset,
     Deck,
     DeckCard,
-    DeckChip,
-    DeckEntry,
-    DeckFraming,
-    DeckIdea,
-    DeckIdeas,
-    DeckKind,
-    DeckMeta,
+    DeckGroup,
+    DeckIdeaCard,
     DeckSlide,
-    DeckSummary,
+    DeckState,
     DeckSummaryRow,
-    DeckTheme,
     DocFlag,
     DocPresence,
     Domain,
@@ -400,6 +404,7 @@ export type {
     Resource,
     ScanRule,
     SideProject,
+    SlideKind,
     Subtask,
     Tier,
     Venue
@@ -524,6 +529,7 @@ export {
     TERMINAL_REFUSALS
 } from './model-sessions.ts';
 
+export { DECK_GAP } from './model-entities.ts';
 export { confirmValues } from './model-agents.ts';
 export type {
     AgentAccount,

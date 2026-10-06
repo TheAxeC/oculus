@@ -29,6 +29,7 @@ import {
     createAway,
     createInstances,
     createOpening,
+    createShowDeck,
     createShowInFiles,
     createFloatOps,
     createLoad,
@@ -66,6 +67,7 @@ import {
     type Layout,
     type OpenOptions,
     type Opening,
+    type ShowDeck,
     type ShowInFiles,
     type Page,
     type Pages,
@@ -209,6 +211,8 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         showTimeline: ShowInFiles['showTimeline'];
         /** Show one folder as a Files tab rooted at it, found again by the folder. */
         showFolderInFiles: (path: string, root?: string) => string;
+        /** Show a deck in a Present tab, beside the tab being read when asked. */
+        showDeck: ShowDeck['showDeck'];
         /**
          * The keep armed for the preview tab a press just opened, or null
          * (layout/open/armed-keep.svelte.ts): while it is armed the pane showing the tab takes the
@@ -396,6 +400,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         openedRule(view)
     );
     const files = createShowInFiles(access, attention, opening.openView);
+    const decks = createShowDeck(opening.openView, opening.openBeside);
     const keeps = createArmedKeeps((id) => {
         const host = holding(id);
         return host === null ? null : (findInstance(host.workbench.root, id)?.instance ?? null);
@@ -771,6 +776,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         copiesToWindow: (id) => instances.instanceView(id) !== TERMINAL_VIEW,
         restateInstance: instances.restateInstance,
         pinInstance: instances.pinInstance,
+        pointInstance: instances.pointInstance,
         unpinInstance: instances.unpinInstance,
         keepPreview: instances.keepPreview,
         pinTab: instances.pinTab,
@@ -815,6 +821,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         showInFiles: files.showInFiles,
         showTimeline: files.showTimeline,
         showFolderInFiles: files.showFolderInFiles,
+        showDeck: decks.showDeck,
         armedKeep: keeps.armed,
         armKeep: keeps.arm,
         disarmKeep: keeps.disarm,

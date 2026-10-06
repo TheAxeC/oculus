@@ -1,5 +1,5 @@
-// Layer 2, server. The writes of the engine's own configuration files, as one dispatch: the deck,
-// the audit's mute list, the rail, one option of a tracked config file, one list or family of one,
+// Layer 2, server. The writes of configuration files, as one dispatch: a deck group's slides, the
+// audit's mute list, the rail, one option of a tracked config file, one list or family of one,
 // and the default workspace's folders. Each is a file of the reader's own, and anything about it
 // can go wrong on this machine, so a writer that throws is told as `unwritable` and the file is
 // left alone.
@@ -12,7 +12,7 @@ import {
     auditMuteWrite,
     configKeyWrite,
     configValueWrite,
-    deckWrite,
+    deckSlidesWrite,
     railWrite,
     rootsWrite
 } from '../bodies.ts';
@@ -21,7 +21,7 @@ import { writeMute } from './audit-mute.ts';
 import { writeConfigKey } from './config-key.ts';
 import type { SourceInputs } from './config-sources.ts';
 import { writeConfigValue } from './config-value.ts';
-import { writeDeck } from './deck.ts';
+import { writeDeckSlides } from './deck.ts';
 import { writeRail } from './rail.ts';
 import { addRootTo, removeRootFrom } from './roots.ts';
 
@@ -55,12 +55,8 @@ function sourcesOf(into: WriteTarget): SourceInputs {
 
 /** The answer to a body that is a write of a configuration file, or null for any other body. */
 export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | null {
-    const deck = deckWrite(body);
-    if (deck !== null) {
-        return settled('deck', () =>
-            writeDeck(into.config, into.projects(), deck.selection, deck.order)
-        );
-    }
+    const deck = deckSlidesWrite(body);
+    if (deck !== null) return settled('deck-slides', () => writeDeckSlides(into, deck));
     const mute = auditMuteWrite(body);
     if (mute !== null) {
         return settled('audit-mute', () =>

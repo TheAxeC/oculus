@@ -115,7 +115,7 @@ describe("oculus's own config directory", () => {
             'wrap_tabs',
             'terminal'
         ],
-        'present.yml': ['deck'],
+        'present.yml': ['defaults'],
         'behavior.yml': [
             'read_limits',
             'context_window',
@@ -190,6 +190,7 @@ describe("oculus's own config directory", () => {
             'publications_file',
             'linkedin_dir',
             'career_file',
+            'portfolio_deck',
             'roots',
             'languages'
         ],

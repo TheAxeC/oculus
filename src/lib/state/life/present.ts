@@ -1,68 +1,36 @@
-// Layer 2, client state, pure. The deck as data: the `deck:` map of config/present.yml read into
-// the typed Deck, and the ordered list of slides the Present view draws.
+// Layer 2, client state, pure. What one Present pane holds of its own, and the reads over a deck
+// the server answered.
 //
-// Which slides the deck places, under which keys and in which order, is data/helpers/deck.ts: the
-// write that saves a selection checks the keys it was sent against the same rule, and a second copy
-// of it would let the view and the write disagree about what a key is. What is here is the typed
-// Deck the config map reads into, and the words and the hue each placed entry is drawn with.
+// A deck is read by the server (data/sources/deck/read.ts) and arrives whole: the slides in order
+// with their words, the groups with their members. What is here is the pane's own state (the
+// slide it is on, whether its grid is open and the decks it has shown), the deck a tab's layout
+// state names, the moves over a deck's slides, the frame the slides are laid out in, and the one
+// hue a slide's status tag wears.
 //
-// Nothing here reads a store or a file: the caller hands in the config map and the projects. The
-// one thing it reaches for is the tone catalog, because a colour the deck writes as a hex is
-// painted as the palette hue that hex stands for, which is what keeps every pair on a slide inside
-// the set contrast.test.ts measures.
+// Nothing here reads a store or a file.
 
-import { decodeHTML } from 'entities';
 import { z } from 'zod';
-import {
-    PRESENT_DOC,
-    catalogKeys,
-    deckChoice,
-    deckEntries,
-    deckOrder,
-    deckSources,
-    defaultKeys,
-    savedKeys,
-    slideKey
-} from '../../data/helpers/deck.ts';
-import { byKey } from '../../data/helpers/guards.ts';
-import { mapOfShape, optionalTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
-import { toneOf, UNKNOWN_TONE } from '../shared/words/tones.ts';
-import type {
-    Deck,
-    DeckCard,
-    DeckChip,
-    DeckEntry,
-    DeckFraming,
-    DeckIdea,
-    DeckIdeas,
-    DeckMeta,
-    DeckSlide,
-    DeckSummary,
-    DeckSummaryRow,
-    DeckTheme,
-    PresentSlide,
-    Project
-} from '../../data/model/index.ts';
+import { byKey, isMap, item } from '../../data/helpers/guards.ts';
+import { optionalTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
+import { domainTone } from '../shared/words/tones.ts';
+import type { Deck, DeckSlide, PresentSlide } from '../../data/model/index.ts';
+
+export { DECK_GAP } from '../../data/model/index.ts';
 
 /** The model types a Present component needs, re-exported so no view imports the data layer. */
 export type {
     Deck,
-    DeckChip,
-    DeckFraming,
-    DeckIdeas,
-    DeckMeta,
+    DeckCard,
+    DeckIdeaCard,
     DeckSlide,
-    DeckSummary,
-    DeckTheme,
+    DeckSummaryRow,
     PresentPanel,
-    PresentSlide,
-    Project
+    PresentSlide
 } from '../../data/model/index.ts';
 
 /**
- * Whether a slide was written as a slide. A PRESENT.md with no `present:` front matter still has a
- * slide in the deck, carrying its narrative and nothing else, and that is the one the view draws as
- * the body rather than as the four-layer project slide.
+ * Whether a project slide was written with the rich keys. One written with none carries its body
+ * alone, and that is what the view draws instead of the four-layer slide.
  */
 export function hasSlideContent(slide: PresentSlide): boolean {
     return (
@@ -79,28 +47,81 @@ export function hasSlideContent(slide: PresentSlide): boolean {
     );
 }
 
-/** What one Present pane holds of its own: the slide it is on, and whether its grid is open. */
+/** A deck by the served root it is in and its folder under that root. */
+export type DeckRef = { root: string; path: string };
+
+/** How many decks a pane remembers having shown. */
+const RECENT_LIMIT = 10;
+
+/** What one Present pane holds of its own: its place in the deck it shows and its history. */
 export type PresentState = {
     /** The key of the slide the pane draws; empty means the deck's first. */
     slide: string;
     overview: boolean;
+    /** The decks the pane has shown, newest first, without the one it shows now. */
+    recent: DeckRef[];
 };
+
+/** One remembered deck, kept when it names both halves. */
+const refShape = z.object({ root: z.string().min(1), path: z.string() });
 
 /** The fields a Present pane keeps, each read as absent when it is of the wrong type. */
 const presentStateShape = z.object({
     slide: optionalTextShape,
-    overview: z.boolean().catch(false)
+    overview: z.boolean().catch(false),
+    recent: rowsShape(refShape).catch(() => [])
 });
 
-/**
- * One pane's own state out of whatever its instance holds, with the defaults for what is missing.
- */
+/** One pane's own state out of what its instance holds, with defaults for what is missing. */
 export function parsePresentState(value: unknown): PresentState {
     const held = readAs(presentStateShape, value);
-    return { slide: held?.slide ?? '', overview: held?.overview ?? false };
+    return {
+        slide: held?.slide ?? '',
+        overview: held?.overview ?? false,
+        recent: (held?.recent ?? []).slice(0, RECENT_LIMIT)
+    };
 }
 
-export { PRESENT_DOC, slideKey };
+/**
+ * The `path` a tab's layout state holds for the deck that is a root's own folder. A tab's identity
+ * needs a filled path, and that deck's path is empty, so the state holds this one in its place.
+ */
+const ROOT_TOP = '.';
+
+/** The `root` and `path` fields of a state that names a deck. */
+const deckFieldsShape = z.object({ root: optionalTextShape, path: optionalTextShape });
+
+/**
+ * The deck a tab's layout state names: its `root` and `path`, which are the tab's identity as a
+ * LaTeX tab's are. A state with no root names the portfolio deck, which is the empty reference;
+ * the Present store resolves it against the configuration.
+ */
+export function deckRefOf(state: unknown): DeckRef {
+    const held = readAs(deckFieldsShape, state);
+    const root = held?.root ?? '';
+    if (root === '') return { root: '', path: '' };
+    const path = held?.path ?? '';
+    return { root, path: path === ROOT_TOP ? '' : path };
+}
+
+/** Whether two references name one deck. */
+export function sameDeck(left: DeckRef, right: DeckRef): boolean {
+    return left.root === right.root && left.path === right.path;
+}
+
+/**
+ * The reference a tab is named by for a deck: the empty one for the portfolio deck (`home`, null
+ * while the configuration is unread), so every way of opening it finds the one portfolio tab.
+ */
+export function tabDeck(ref: DeckRef, home: DeckRef | null): DeckRef {
+    return home !== null && sameDeck(ref, home) ? { root: '', path: '' } : ref;
+}
+
+/** The remembered decks after the pane left `shown` for `next`: `shown` first, `next` removed. */
+function withRecent(recent: DeckRef[], shown: DeckRef, next: DeckRef): DeckRef[] {
+    const rest = recent.filter((one) => !sameDeck(one, shown) && !sameDeck(one, next));
+    return [shown, ...rest].slice(0, RECENT_LIMIT);
+}
 
 /** The size in px a slide is laid out at; the pane scales this frame as a whole. */
 export const FRAME_WIDTH = 1280;
@@ -132,342 +153,142 @@ export function equationScale(needed: number, room: number): number {
     return Math.max(LEAST_EQUATION_SCALE, Math.floor((room / needed) * 100) / 100);
 }
 
-/**
- * A title written as HTML, as the plain words an overview tile and a pane title draw. The escapes
- * are decoded by `entities`, the parser the mail snippet and the manual use; a no-break space it
- * gives is folded into a plain one with the rest of the white space.
- */
-export function plainTitle(html: string): string {
-    return decodeHTML(html.replace(/<[^>]+>/g, ' '))
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
-/** The palette hue a colour the deck wrote stands for, and nothing when it wrote none. */
-function hue(value: unknown): string | undefined {
-    const written = readAs(optionalTextShape, value);
-    return written ? toneOf(written) : undefined;
-}
-
-/** A legend chip: the label it is written with, and the hue of its colour. */
-const chipShape = z
-    .object({ label: optionalTextShape, color: z.unknown().optional() })
-    .transform((row): DeckChip => ({
-        label: row.label ?? '',
-        tone: hue(row.color) ?? UNKNOWN_TONE
-    }));
-
-/** The chips of a legend, from the rows that are maps; none for a legend that is no list. */
-const chipsShape = rowsShape(chipShape).catch(() => []);
-
-/** The words of the deck's `meta:` map and the `DeckMeta` field each one is kept under. */
-const META_WORDS = [
-    ['kicker', 'kicker'],
-    ['title_html', 'titleHtml'],
-    ['lede', 'lede'],
-    ['hint', 'hint'],
-    ['closing_kicker', 'closingKicker'],
-    ['closing_title_html', 'closingTitleHtml'],
-    ['closing_lede', 'closingLede'],
-    ['contact', 'contact']
-] as const;
-
-const metaShape = z
-    .object({
-        legend: chipsShape,
-        kicker: optionalTextShape,
-        title_html: optionalTextShape,
-        lede: optionalTextShape,
-        hint: optionalTextShape,
-        closing_kicker: optionalTextShape,
-        closing_title_html: optionalTextShape,
-        closing_lede: optionalTextShape,
-        contact: optionalTextShape
-    })
-    .transform((map): DeckMeta => {
-        const held: DeckMeta = { legend: map.legend };
-        for (const [from, to] of META_WORDS) {
-            const text = map[from];
-            if (text !== undefined) Object.assign(held, { [to]: text });
-        }
-        return held;
-    })
-    .catch(() => ({ legend: [] }));
-
-/** A theme: the hue of its colour and its label. */
-const themeShape = z
-    .object({ color: z.unknown().optional(), label: optionalTextShape })
-    .transform((item): DeckTheme => ({
-        tone: hue(item.color) ?? UNKNOWN_TONE,
-        label: item.label ?? ''
-    }));
-
-/** A framing card: the fields it is written with, a field it lacks left out. */
-const cardShape = z
-    .object({ n: optionalTextShape, title: optionalTextShape, body: optionalTextShape })
-    .transform((item): DeckCard => {
-        const card: DeckCard = {};
-        if (item.n !== undefined) card.n = item.n;
-        if (item.title !== undefined) card.title = item.title;
-        if (item.body !== undefined) card.body = item.body;
-        return card;
-    });
-
-/** A framing slide, the empty one for a value that is no map. */
-const framingShape = z
-    .object({
-        title: optionalTextShape,
-        lede: optionalTextShape,
-        hint: optionalTextShape,
-        cards: rowsShape(cardShape).catch(() => []),
-        legend: chipsShape
-    })
-    .transform((map): DeckFraming => {
-        const one: DeckFraming = { cards: map.cards, legend: map.legend };
-        if (map.title !== undefined) one.title = map.title;
-        if (map.lede !== undefined) one.lede = map.lede;
-        if (map.hint !== undefined) one.hint = map.hint;
-        return one;
-    })
-    .catch(() => ({ cards: [], legend: [] }));
-
-/** A summary row: the four texts it is written with and the hue of its colour. */
-const summaryRowShape = z
-    .object({
-        field: optionalTextShape,
-        project: optionalTextShape,
-        mechanism: optionalTextShape,
-        headline: optionalTextShape,
-        color: z.unknown().optional()
-    })
-    .transform((item): DeckSummaryRow => {
-        const row: DeckSummaryRow = {};
-        for (const key of ['field', 'project', 'mechanism', 'headline'] as const) {
-            const text = item[key];
-            if (text !== undefined) row[key] = text;
-        }
-        const tone = hue(item.color);
-        if (tone !== undefined) row.tone = tone;
-        return row;
-    });
-
-/** A summary slide, the empty one for a value that is no map. */
-const summaryShape = z
-    .object({
-        title: optionalTextShape,
-        foot: optionalTextShape,
-        rows: rowsShape(summaryRowShape).catch(() => [])
-    })
-    .transform((map): DeckSummary => {
-        const one: DeckSummary = { rows: map.rows };
-        if (map.title !== undefined) one.title = map.title;
-        if (map.foot !== undefined) one.foot = map.foot;
-        return one;
-    })
-    .catch(() => ({ rows: [] }));
-
-/** An idea: the three texts it is written with and the hue of its colour. */
-const ideaShape = z
-    .object({
-        title: optionalTextShape,
-        desc: optionalTextShape,
-        maturity: optionalTextShape,
-        color: z.unknown().optional()
-    })
-    .transform((item): DeckIdea => {
-        const one: DeckIdea = {};
-        for (const key of ['title', 'desc', 'maturity'] as const) {
-            const text = item[key];
-            if (text !== undefined) one[key] = text;
-        }
-        const tone = hue(item.color);
-        if (tone !== undefined) one.tone = tone;
-        return one;
-    });
-
-/** The ideas slide, none for a value that is no map. */
-const ideasShape = z
-    .object({
-        title: optionalTextShape,
-        lede: optionalTextShape,
-        hint: optionalTextShape,
-        items: rowsShape(ideaShape).catch(() => [])
-    })
-    .transform((map): DeckIdeas | null => {
-        const held: DeckIdeas = { items: map.items };
-        if (map.title !== undefined) held.title = map.title;
-        if (map.lede !== undefined) held.lede = map.lede;
-        if (map.hint !== undefined) held.hint = map.hint;
-        return held;
-    })
-    .catch(() => null);
-
-/** The `deck:` map of the merged config. */
-const deckShape = z
-    .object({
-        meta: metaShape,
-        themes: mapOfShape(themeShape).catch(() => ({})),
-        order: z.unknown().optional().transform(deckOrder),
-        framing: mapOfShape(framingShape).catch(() => ({})),
-        summaries: mapOfShape(summaryShape).catch(() => ({})),
-        ideas: ideasShape,
-        selection: z.unknown().optional().transform(savedKeys),
-        slide_order: z.unknown().optional().transform(savedKeys),
-        tag_tones: mapOfShape(z.string().min(1)).catch(() => ({}))
-    })
-    .transform((map): Deck => ({
-        meta: map.meta,
-        themes: map.themes,
-        order: map.order,
-        framing: map.framing,
-        summaries: map.summaries,
-        ideas: map.ideas,
-        selection: map.selection,
-        slideOrder: map.slide_order,
-        tagTones: map.tag_tones
-    }));
-
-/** The deck of the merged config, empty in every part when the config holds no `deck:` map. */
-export function deckFrom(config: Record<string, unknown>): Deck {
-    return (
-        readAs(deckShape, config.deck) ?? {
-            meta: { legend: [] },
-            themes: {},
-            order: [],
-            framing: {},
-            summaries: {},
-            ideas: null,
-            selection: null,
-            slideOrder: null,
-            tagTones: {}
-        }
-    );
-}
-
-/** The framing slide a ref names, or nothing when the deck declares none under that key. */
-export function framingOf(deck: Deck, ref: string | undefined): DeckFraming | undefined {
-    return byKey(deck.framing, ref ?? '');
-}
-
-/** The summary slide a ref names, or nothing when the deck declares none under that key. */
-export function summaryOf(deck: Deck, ref: string | undefined): DeckSummary | undefined {
-    return byKey(deck.summaries, ref ?? '');
-}
-
 /** The hue a slide's status chip wears, from the deck's `tag_tones` by the tag's class. */
 export function tagToneOf(deck: Deck, slide: PresentSlide): string | undefined {
     return byKey(deck.tagTones, slide.tag?.class ?? '');
 }
 
-/** The deck's theme for a project, by the first of its domains the deck names. */
-export function themeOf(deck: Deck, project: Project): DeckTheme | undefined {
-    for (const domain of project.domainIds) {
-        const theme = byKey(deck.themes, domain);
-        if (theme !== undefined) return theme;
+/** Where a key sits in a deck's slides, and the first slide when the deck does not hold it. */
+export function indexOf(slides: DeckSlide[], key: string): number {
+    const found = slides.findIndex((slide) => slide.key === key);
+    return found === -1 ? 0 : found;
+}
+
+/** The slide a key names, the first slide when the deck does not hold it, null for none. */
+export function slideAt(slides: DeckSlide[], key: string): DeckSlide | null {
+    return item(slides, indexOf(slides, key)) ?? null;
+}
+
+/** The key `by` slides on, stopping at both ends; the key given back for an empty deck. */
+export function stepKey(slides: DeckSlide[], key: string, by: number): string {
+    const next = Math.min(Math.max(indexOf(slides, key) + by, 0), slides.length - 1);
+    return item(slides, next)?.key ?? key;
+}
+
+/**
+ * The hue a slide carries on the overview tile and on its own left edge: its project's domain, and
+ * nothing for a slide that belongs to no project.
+ */
+export function slideTone(row: DeckSlide): string | undefined {
+    if (row.kind === 'project')
+        return row.domain === undefined ? undefined : domainTone(row.domain);
+    if (row.kind === 'idea') {
+        return row.card.domain === undefined ? undefined : domainTone(row.card.domain);
     }
     return undefined;
 }
 
-/** One project's slides paired with the project, in the order the deck places them. */
-export type SlideSource = {
-    slide: PresentSlide;
-    project: Project;
-};
-
-/**
- * Every project slide there is, paired with its project, in the order data/helpers/deck.ts appends
- * the ones no `order:` line placed: active work first, then manuscripts, then ideas, then
- * everything else, each by title.
- */
-export function slideSources(projects: Project[]): SlideSource[] {
-    const held = new Map<string, SlideSource>();
-    for (const project of projects) {
-        for (const slide of project.present ?? []) held.set(slide.id, { slide, project });
-    }
-    return deckSources(projects).flatMap((source) => {
-        const found = held.get(source.id);
-        return found === undefined ? [] : [found];
-    });
+/** The words a deck's tab and menu entry carry: its title, else its name. */
+export function deckLabel(deck: Deck): string {
+    return deck.title === '' ? deck.name : deck.title;
 }
 
-/** The words a row of the deck is named by in the overview and the pane title. */
-function titleOf(deck: Deck, entry: DeckEntry, source: SlideSource | undefined): string {
-    switch (entry.slide) {
-        case 'title':
-            return plainTitle(deck.meta.titleHtml ?? '');
-        case 'closing':
-            return plainTitle(deck.meta.closingTitleHtml ?? '');
-        case 'framing':
-            return plainTitle(byKey(deck.framing, entry.ref ?? '')?.title ?? '');
-        case 'summary':
-            return plainTitle(byKey(deck.summaries, entry.ref ?? '')?.title ?? '');
-        case 'ideas':
-            return plainTitle(deck.ideas?.title ?? '');
-        default:
-            if (source === undefined) return '';
-            return plainTitle(source.slide.title ?? source.project.title);
-    }
+/** The `label` a tab's layout state holds, which names the tab; empty for none. */
+export function labelOf(state: unknown): string {
+    const label = isMap(state) ? state.label : undefined;
+    return typeof label === 'string' ? label : '';
 }
 
-/** The hue a project's slide is drawn in, from the deck's themes by the project's domain. */
-function toneFor(deck: Deck, source: SlideSource | undefined): string | undefined {
-    if (source === undefined) return undefined;
-    return themeOf(deck, source.project)?.tone;
+/** A tab's layout state with its label set, every other field kept. */
+export function withLabel(state: unknown, label: string): unknown {
+    return { ...(isMap(state) ? state : {}), label };
 }
 
 /**
- * The deck as the reader moves through it: the entries data/helpers/deck.ts places, narrowed to the
- * saved selection and put in the saved order, each drawn with the words and the hue it wears.
+ * A tab's layout state naming a deck: `base` (the label) with the deck's `root` and `path`, which
+ * make the deck the tab's identity. The portfolio deck is the one with no root and no path.
  */
-export function deckSlides(deck: Deck, projects: Project[]): DeckSlide[] {
-    return rowsOf(
-        deck,
-        projects,
-        deckChoice(placement(deck, projects), deck.selection, deck.slideOrder)
+export function deckState(base: unknown, ref: DeckRef): Record<string, unknown> {
+    const rest: Record<string, unknown> = { ...(isMap(base) ? base : {}) };
+    delete rest.root;
+    delete rest.path;
+    return ref.root === '' ? rest : { ...rest, root: ref.root, path: ref.path || ROOT_TOP };
+}
+
+/**
+ * A pane's own state after it leaves the deck it showed (`shown`, null when none is resolved) for
+ * `next`: the first slide, the grid closed, and the deck it left remembered.
+ */
+export function leftDeck(value: unknown, shown: DeckRef | null, next: DeckRef): PresentState {
+    const held = parsePresentState(value);
+    return {
+        ...held,
+        slide: '',
+        overview: false,
+        recent: shown === null ? held.recent : withRecent(held.recent, shown, next)
+    };
+}
+
+/** One row of the deck menu: what it is called, and the deck it opens. */
+export type DeckChoice = { id: string; label: string; ref: DeckRef };
+
+/** The folder name a deck reference ends in, which names a deck the menu has no title for. */
+function folderName(ref: DeckRef): string {
+    return (
+        ref.path
+            .split('/')
+            .filter((part) => part !== '')
+            .at(-1) ?? ref.root
     );
 }
 
+/** What the catalog's `t` is to the helpers below. */
+type Say = (key: string, ...args: (string | number)[]) => string;
+
+/** The decks the menu lists: the one on screen, portfolio, project and recent ones. */
+export function deckChoices(
+    on: { ref: DeckRef; deck: Deck } | null,
+    home: DeckRef | null,
+    projects: { ref: DeckRef; id: string; title: string }[],
+    recent: DeckRef[],
+    t: Say
+): DeckChoice[] {
+    const found: DeckChoice[] = [];
+    const add = (choice: DeckChoice): void => {
+        if (!found.some((one) => sameDeck(one.ref, choice.ref))) found.push(choice);
+    };
+    if (on !== null) add({ id: 'shown', label: deckLabel(on.deck), ref: on.ref });
+    if (home !== null) add({ id: 'portfolio', label: t('present.deck_portfolio'), ref: home });
+    for (const one of projects) {
+        add({ id: `project:${one.id}`, label: t('present.deck_project', one.title), ref: one.ref });
+    }
+    for (const [index, one] of recent.entries()) {
+        add({ id: `recent:${index}`, label: folderName(one), ref: one });
+    }
+    return found;
+}
+
 /**
- * Every slide the deck could hold, in the order the Slides view lists them: every project slide
- * there is beside the deck's own, put in the saved order. It is the same catalog the deck write
- * checks against. An archived project's slide is in it, unticked until a selection names it.
+ * What a pane says when its deck draws nothing, and whether that is a failure: no deck named, the
+ * answer yet to come, a request that failed, or a folder that holds no slides.
  */
-export function deckCatalog(deck: Deck, projects: Project[]): DeckSlide[] {
-    return rowsOf(
-        deck,
-        projects,
-        deckChoice(deckEntries(deck.order, deckSources(projects), true), null, deck.slideOrder)
-    );
-}
-
-/** The catalog rows a deck with no saved selection shows, which is what the ticks start from. */
-export function deckDefaultKeys(deck: Deck, projects: Project[]): string[] {
-    return defaultKeys(deck.order, deckSources(projects));
-}
-
-/** The keys of that catalog, for a caller that wants the vocabulary and not the words. */
-export function deckCatalogKeys(deck: Deck, projects: Project[]): string[] {
-    return catalogKeys(deck.order, deckSources(projects), deck.slideOrder);
-}
-
-/** The entries the deck places before any saved selection narrows them. */
-function placement(deck: Deck, projects: Project[]): DeckEntry[] {
-    return deckEntries(deck.order, deckSources(projects), deck.selection !== null);
-}
-
-/** One row per entry: its key, its kind, the words it is named by and the hue it is drawn in. */
-function rowsOf(deck: Deck, projects: Project[], entries: DeckEntry[]): DeckSlide[] {
-    const byId = new Map(slideSources(projects).map((source) => [source.slide.id, source]));
-    return entries.map((entry) => {
-        const source = entry.slide === 'project' ? byId.get(entry.ref ?? '') : undefined;
-        const tone = toneFor(deck, source);
-        const row: DeckSlide = {
-            key: slideKey(entry),
-            kind: entry.slide,
-            title: titleOf(deck, entry, source)
-        };
-        if (entry.ref !== undefined) row.ref = entry.ref;
-        if (tone !== undefined) row.tone = tone;
-        return row;
-    });
+export function nothingToShow(
+    ref: DeckRef | null,
+    answer: { deck: Deck | null; error: string; loading: boolean } | null,
+    t: Say
+): { message: string; error: boolean } {
+    if (ref === null) return { message: t('present.empty_unnamed'), error: false };
+    if (answer === null || answer.loading) return { message: t('present.loading'), error: false };
+    const deck = answer.deck;
+    if (deck === null) return { message: t('present.failed', answer.error), error: true };
+    const folder = deck.path === '' ? deck.name : deck.path;
+    if (deck.state === 'missing')
+        return { message: t('present.empty_missing', folder), error: true };
+    if (deck.state === 'no_file') {
+        return { message: t('present.empty_no_file', folder), error: false };
+    }
+    if (deck.state === 'unreadable') {
+        return { message: t('present.empty_unreadable', folder), error: true };
+    }
+    return { message: t('present.empty', folder), error: false };
 }

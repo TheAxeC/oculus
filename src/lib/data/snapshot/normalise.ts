@@ -30,11 +30,11 @@ import type {
     Id,
     Organisation,
     Person,
-    PresentSlide,
     Pillar,
     Project,
     Reproduced,
     RawCollection,
+    RawDeck,
     RawEntry,
     RawManifest,
     RawPortfolio,
@@ -290,7 +290,7 @@ const authorsShape = z.union([z.string(), z.array(z.unknown()).transform(strings
 function project(
     manifest: RawManifest,
     found: DocPresence[] | undefined,
-    slides: PresentSlide[] | undefined
+    deck: RawDeck | undefined
 ): Project {
     const status = readOr(mapShape, manifest.status, {});
     const domain = str(manifest.domain);
@@ -336,7 +336,8 @@ function project(
         venue: str(manifest.venue),
         staleDays: lag > 0 ? lag : undefined,
         docs: docs(found),
-        present: slides !== undefined && slides.length > 0 ? slides : undefined,
+        deck: deck?.path,
+        deckTags: deck !== undefined && deck.tags.length > 0 ? deck.tags : undefined,
         folder: manifest.folder,
         file: manifest.file
     });
@@ -750,7 +751,7 @@ export function normalise(
         entries.filter((item) => item.key.length > 0);
 
     const projects = raw.manifests.map((manifest) =>
-        project(manifest, raw.docs[manifest.id], raw.present[manifest.id])
+        project(manifest, raw.docs[manifest.id], raw.decks[manifest.id])
     );
     const venues = withId(raw.registries.venues.entries).map(venue);
     const datasets = withId(raw.registries.datasets.entries).map(dataset);

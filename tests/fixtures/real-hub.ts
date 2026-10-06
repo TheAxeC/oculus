@@ -28,7 +28,7 @@ function filled(path: string): boolean {
 export function realHub(engine: string = engineDir()): { hub: string; present: boolean } {
     const hub = loadLocal(engine).hub;
     if (!existsSync(hub)) return { hub, present: false };
-    const config = portfolioConfigFrom(loadConfig(engine).config, engine);
+    const config = portfolioConfigFrom(loadConfig(engine).config);
     // The registries file the config names, and a scan folder with projects in it. A hub may not
     // carry every folder the scan lists, so one that is filled is what says the data is here.
     const registries = existsSync(join(hub, config.registries.venues));

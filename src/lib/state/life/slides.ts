@@ -1,45 +1,45 @@
-// Layer 2, client state, pure. The Slides view's own state: which slides the reader has ticked,
-// what order they have dragged them into, and the line the status region is showing.
+// Layer 2, client state, pure. The Slides view's own state: for each group of a deck, the list of
+// deck names the reader has ticked and ordered, and the line the status region is showing.
 //
 // It is here rather than inside the component because it is what the view is: a tick and a move are
-// answers over two lists, and a pure answer is a plain call in a test rather than a rendered page.
-// The catalog itself is not here; it is the deck's, and state/life/present.ts computes it.
+// answers over a list, and a pure answer is a plain call in a test rather than a rendered page.
+// The groups themselves are the deck's, which the server answers; what the reader's work is held
+// against is each group's `slides:` as the file holds it.
 //
-// The work is held against the catalog it was made over. A push that adds or removes a slide leaves
-// the two out of step, and the view then draws what the file says and says that the unsaved work
-// was dropped, rather than saving an order over a deck that has moved underneath it.
+// The work is held against the lists it was made over. A push that changes a group's `slides:`
+// leaves the two out of step, and the view then draws what the file says and says that the unsaved
+// work was dropped, rather than saving a list over a deck that has moved underneath it.
 
 import { z } from 'zod';
-import { fieldItemsShape, readAs } from '../../data/shapes/shapes.ts';
+import { mapOfShape, readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { movedOrder } from '../boards/collection.ts';
 import { t } from '../shared/words/text.ts';
+import type { DeckGroup } from '../../data/model/index.ts';
 
-/** What the reader is looking at: the order the rows are in, and which of them are ticked. */
-export type SlidePicks = {
-    /** Every key of the catalog, in the order the deck would show them. */
-    order: string[];
-    /** The keys whose slides the deck shows, a subset of `order`, in `order`'s own order. */
-    picked: string[];
-};
+/** What the reader changed: the list of each group they touched, by group name. */
+export type SlideWork = Record<string, string[]>;
 
-/**
- * One Slides pane's own state: the reader's work, the catalog it was made over, and the last line.
- */
-export type SlidesState = SlidePicks & {
-    /** The signature of the catalog the work was made over; empty when there is no work. */
+/** One Slides pane's own state: the work, what it was made over and a line. */
+export type SlidesState = {
+    work: SlideWork;
+    /** The signature of the lists the work was made over; empty when there is no work. */
     at: string;
     /** What the status region is showing, already translated; empty for nothing. */
     said: string;
 };
 
 /** What a write answered, as much of it as the status line depends on. */
-export type SaveAnswer = { ok: boolean; error?: string; network?: boolean };
+export type SaveAnswer = {
+    ok: boolean;
+    error?: string;
+    network?: boolean;
+    refused?: { field: string; reason: string }[];
+};
 
 /** The fields a Slides pane keeps, each read as absent when it is of the wrong type. */
 const slidesStateShape = z.object({
+    work: mapOfShape(stringItemsShape).catch(() => ({})),
     at: z.string().catch(''),
-    order: fieldItemsShape,
-    picked: fieldItemsShape,
     said: z.string().catch('')
 });
 
@@ -47,93 +47,122 @@ const slidesStateShape = z.object({
  * One pane's own state out of whatever its instance holds, with the defaults for what is missing.
  */
 export function parseSlidesState(value: unknown): SlidesState {
-    return readAs(slidesStateShape, value) ?? { at: '', order: [], picked: [], said: '' };
+    const held = readAs(slidesStateShape, value);
+    return {
+        work: held?.work ?? {},
+        at: held?.at ?? '',
+        said: held?.said ?? ''
+    };
 }
 
 /**
- * The catalog a piece of work was made over. Work held against a different one is the reader's
- * edits over a deck that has since gained, lost or moved a slide, so it is dropped and the file
- * answers.
+ * The lists a piece of work was made over. Work held against different ones is the reader's edits
+ * over a deck whose file has since changed, so it is dropped and the file answers.
  */
-export function catalogSignature(keys: string[]): string {
-    return keys.join('\n');
+export function listsSignature(groups: DeckGroup[]): string {
+    return JSON.stringify(groups.map((group) => [group.name, group.slides]));
+}
+
+/** The kinds of row a group lists. */
+export type RowKind = 'named' | 'found' | 'candidate' | 'missing' | 'conflict';
+
+/** One row of a group: a deck name, whether it is ticked, what it is and the words it wears. */
+export type GroupRow = {
+    name: string;
+    title: string;
+    kind: RowKind;
+    ticked: boolean;
+    /** The other groups a conflicting deck is found by. */
+    others: string[];
+};
+
+/** The list a group is drawn from: the reader's work when they made some, else the file's. */
+export function listOf(group: DeckGroup, work: SlideWork): string[] {
+    return work[group.name] ?? group.slides;
 }
 
 /**
- * What the file says: every slide of the catalog in its order, ticked where the saved selection
- * holds it. A deck that has saved no selection shows the slides `defaults` names, which is the deck
- * a reader moving through it sees today, so a first save writes what they already see.
+ * The rows of one group, over the list that is being edited: the ticked ones in the list's order
+ * (a name no deck matches is marked missing), then the decks found by discovery, which the group
+ * holds without naming, then the decks found and not held, then the conflicting ones.
  */
-export function fileState(
-    keys: string[],
-    selection: string[] | null,
-    defaults: string[]
-): SlidePicks {
-    const shown = selection ?? defaults;
-    return { order: [...keys], picked: keys.filter((key) => shown.includes(key)) };
+export function groupRows(group: DeckGroup, list: string[]): GroupRow[] {
+    const titles = new Map<string, string>();
+    for (const one of [...group.members, ...group.candidates]) titles.set(one.name, one.title);
+    const missing = new Set(group.missing);
+    const ticked = list.map((name): GroupRow => ({
+        name,
+        title: titles.get(name) ?? name,
+        kind: missing.has(name) ? 'missing' : 'named',
+        ticked: true,
+        others: []
+    }));
+    const found = group.members
+        .filter((one) => !one.named && !list.includes(one.name))
+        .map((one): GroupRow => ({
+            name: one.name,
+            title: one.title,
+            kind: 'found',
+            ticked: true,
+            others: []
+        }));
+    const heldBefore = group.members.filter((one) => one.named && !list.includes(one.name));
+    const candidates = [...heldBefore, ...group.candidates]
+        .filter((one) => !list.includes(one.name))
+        .map((one): GroupRow => ({
+            name: one.name,
+            title: one.title,
+            kind: 'candidate',
+            ticked: false,
+            others: []
+        }));
+    const conflicts = group.conflicts
+        .filter((one) => !list.includes(one.name))
+        .map((one): GroupRow => ({
+            name: one.name,
+            title: titles.get(one.name) ?? one.name,
+            kind: 'conflict',
+            ticked: false,
+            others: one.others
+        }));
+    return [...ticked, ...found, ...candidates, ...conflicts];
 }
 
-/**
- * One slide ticked or unticked. The ticks stay in the catalog's own order, whatever order they came
- * in.
- */
-export function withTick(held: SlidePicks, key: string, on: boolean): SlidePicks {
-    if (!held.order.includes(key)) return held;
-    const picked = held.order.filter((one) => (one === key ? on : held.picked.includes(one)));
-    return { order: held.order, picked };
+/** One name ticked or unticked in a list: ticked goes last, unticked is taken out. */
+export function withTick(list: string[], name: string, on: boolean): string[] {
+    const without = list.filter((one) => one !== name);
+    return on ? [...without, name] : without;
 }
 
-/** One slide moved to another place in the deck, and nothing when it cannot go there. */
-export function withMove(held: SlidePicks, key: string, to: number): SlidePicks | null {
-    const order = movedOrder(held.order, held.order.indexOf(key), to);
-    return order === null ? null : { order, picked: held.picked };
+/** One name moved to another place in a list, and nothing when it cannot go there. */
+export function withMove(list: string[], name: string, to: number): string[] | null {
+    return movedOrder(list, list.indexOf(name), to);
+}
+
+/** The groups whose work differs from what the file holds, with the list to write. */
+export function changedGroups(
+    groups: DeckGroup[],
+    work: SlideWork
+): { group: DeckGroup; slides: string[] }[] {
+    return groups.flatMap((group) => {
+        const slides = Object.hasOwn(work, group.name) ? work[group.name] : group.slides;
+        const same =
+            slides.length === group.slides.length &&
+            slides.every((name, at) => name === group.slides[at]);
+        return same ? [] : [{ group, slides }];
+    });
 }
 
 /**
  * The line the status region shows for one answer. The endpoint answers a word for the machine, and
- * the reader is shown a sentence: a word this does not know gets the general one rather than being
- * printed, so nothing on screen is the wire's vocabulary.
+ * the reader is shown a sentence: a refusal says why in the server's own sentence, and a word this
+ * does not know gets the general one rather than being printed.
  */
-/**
- * The pane's state once a save has answered: the work as it was sent, the sentence for the answer,
- * and the catalog the work is held against. A save that landed is held against the catalog its own
- * write produces, which is the order just sent, so the push it causes is not read as a deck that
- * moved underneath the reader; a save that was refused changed nothing on the disk, so the work is
- * held against the catalog on screen and stays, and the reader sees why the save was refused.
- */
-export function savedState(answer: SaveAnswer, picks: SlidePicks, signature: string): SlidesState {
-    return {
-        at: answer.ok ? catalogSignature(picks.order) : signature,
-        ...picks,
-        said: saveMessage(answer)
-    };
-}
-
 export function saveMessage(answer: SaveAnswer): string {
     if (answer.ok) return t('slides.saved');
     if (answer.network === true) return t('slides.failed_network');
-    if (answer.error === 'invalid') return t('slides.failed_invalid');
-    if (answer.error === 'invalid_order') return t('slides.failed_order');
+    const reason = answer.refused?.at(0)?.reason;
+    if (reason !== undefined) return reason;
     if (answer.error === 'unwritable') return t('slides.failed_file');
     return t('slides.failed_other');
-}
-
-/** The catalog's slides in the order given by key, a key the catalog does not hold left out. */
-export function slidesInOrder<T extends { key: string }>(rows: T[], order: string[]): T[] {
-    const byKey = new Map(rows.map((row) => [row.key, row]));
-    return order.flatMap((key) => {
-        const row = byKey.get(key);
-        return row === undefined ? [] : [row];
-    });
-}
-
-/** The keys of the catalog's slides, in the catalog's order. */
-export function slideKeys(rows: { key: string }[]): string[] {
-    return rows.map((row) => row.key);
-}
-
-/** The words a slide is named by: its title in the catalog, or its key where it has none. */
-export function slideTitle(rows: { key: string; title: string }[], key: string): string {
-    const row = rows.find((one) => one.key === key);
-    return row === undefined || row.title === '' ? key : row.title;
 }

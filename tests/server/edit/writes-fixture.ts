@@ -26,7 +26,7 @@ export const MANIFEST = [
 
 /** The real schema and vocabulary over a scan that names one synthetic tier. */
 export function configFor(): PortfolioConfig {
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     return { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] };
 }
 

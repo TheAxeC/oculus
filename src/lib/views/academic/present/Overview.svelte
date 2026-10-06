@@ -1,10 +1,11 @@
 <script lang="ts">
     // Layer 3, Present partial. The whole deck at once: one tile per slide, in deck order, each
-    // naming the slide and carrying the theme colour of the project it belongs to. Pressing a tile
+    // naming the slide and carrying the domain colour of the project it belongs to. Pressing a tile
     // shows that slide and closes the grid.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { slideTone } from '$lib/state/life/present';
     import type { DeckSlide } from '$lib/state/life/present';
 
     type Props = {
@@ -26,11 +27,12 @@
 
 <div class="overview" data-overview>
     {#each rows as row, at (row.key)}
+        {@const tone = slideTone(row)}
         <div
             class="tile"
-            class:toned={row.tone !== undefined}
+            class:toned={tone !== undefined}
             class:current={row.key === current}
-            style={toneStyle(row.tone)}
+            style={toneStyle(tone)}
         >
             <Card
                 id={row.key}

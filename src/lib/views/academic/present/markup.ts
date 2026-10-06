@@ -14,6 +14,8 @@
 
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import { DECK_GAP } from '$lib/state/life/present';
+import { t } from '$lib/state/shared/words/text';
 import { blockMarkdown, inlineMarkdown } from '$lib/ui/html';
 
 /**
@@ -50,6 +52,20 @@ export function tex(source: string, display: boolean): string {
     });
 }
 
+/** An image the reader gave the gap's address. */
+const GAP_IMAGE = new RegExp(`<img\\b[^>]*\\bsrc="${DECK_GAP}"[^>]*>`, 'g');
+
+/**
+ * Each image the deck's folder lacks drawn as the gap, named as a missing panel figure is. The
+ * name is the image's alt text as the sanitiser wrote it, already escaped.
+ */
+function gaps(html: string): string {
+    return html.replace(GAP_IMAGE, (tag) => {
+        const name = /\balt="([^"]*)"/.exec(tag)?.[1] ?? '';
+        return `<span class="gap">${t('present.figure_missing', name)}</span>`;
+    });
+}
+
 /** Render the text with its formulas typeset, the rest through the Markdown renderer given. */
 function typeset(text: string, markdown: (source: string) => string): string {
     const formulas: string[] = [];
@@ -67,7 +83,7 @@ function typeset(text: string, markdown: (source: string) => string): string {
             return `${MARK}${formulas.length - 1}${MARK}`;
         }
     );
-    let html = markdown(lifted);
+    let html = gaps(markdown(lifted));
     for (const [at, formula] of formulas.entries()) {
         html = html.replace(`${MARK}${at}${MARK}`, () => formula);
     }

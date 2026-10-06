@@ -61,6 +61,20 @@ export function plantScratch(
     return dir;
 }
 
+/**
+ * One file written under `root` at a path relative to it, the folders on the way made. The path is
+ * checked to stay inside `root` ahead of any write. Answers the file's full path.
+ */
+export function plantFile(root: string, rel: string, body: string | Buffer): string {
+    const full = join(root, rel);
+    if (!resolve(full).startsWith(resolve(root) + sep)) {
+        throw new Error(`the planted file is outside its directory: ${rel}`);
+    }
+    mkdirSync(dirname(full), { recursive: true });
+    writeFileSync(full, body);
+    return full;
+}
+
 /** Remove every directory made so far. A file whose own hooks need it may call it early. */
 export function sweepScratch(): void {
     for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });

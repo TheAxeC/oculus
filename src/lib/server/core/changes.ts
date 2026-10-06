@@ -91,7 +91,7 @@ export type ChangeRecord = {
     file: string;
     /**
      * What the write addressed: a project id, an entry identity, a session id, a collection,
-     * `deck`, `rail` for the rail list, or a config file's name for a setting.
+     * a deck group name, `rail` for the rail list, or a config file's name for a setting.
      */
     key: string;
     /**

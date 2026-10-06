@@ -21,7 +21,6 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
-import { parse } from 'yaml';
 import { readChanges } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
@@ -125,7 +124,7 @@ export function targetOver(
     keep = 500
 ): WriteTarget {
     const merged = loadConfig(engineDir()).config;
-    const real = portfolioConfigFrom(merged, engineDir());
+    const real = portfolioConfigFrom(merged);
     return {
         hub: dir,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
@@ -218,56 +217,69 @@ export async function undoneBack(
     return back;
 }
 
-/** A deck file of the same shape as config/present.yml, with comments the edit must keep. */
+/** The portfolio deck's file, a deck file with comments the edit must keep. */
 const DECK = `deck:
-    # the deck's own slides, in the order it shows them
-    order:
-        - { slide: title }
-        - { slide: framing, ref: engine }
-        - { slide: project, ref: alpha }
-        - { slide: closing }
-    framing:
-        engine: { title: 'The common engine' }
+    title: A deck
+
+groups:
+    # the pillars
+    pillars:
+        find: { folders: projects/*/*/present, tiers: [active] }
+        slides:
+            - alpha
+
+order:
+    - { slides: pillars }
 `;
 
-/** The `deck:` map of a deck file, as the portfolio config carries it. */
-function deckMapOf(source: string): unknown {
-    return (parse(source) as { deck: unknown }).deck;
-}
+/** The hub folder of the portfolio deck the deck target holds. */
+const DECK_FOLDER = 'deck';
 
-/** One project with one slide, at the tier whose slides join the deck on their own. */
-function slideProject(id: string, tier: Tier): Project {
+/** One project that holds a deck of one slide, at the tier it is found by. */
+function deckProject(id: string, tier: Tier): Project {
     return fixtureProject({
         id,
         tier,
         type: tier === 'active' ? 'active' : 'archive',
         title: id,
-        present: [{ id, projectId: id, specs: [], panels: [], method: [], results: [] }],
         folder: `projects/${tier}/${id}`,
         file: `projects/${tier}/${id}/project.yml`
     });
 }
 
 /**
- * A target whose deck file is a copy under the system temporary directory, so no case here writes
- * the engine's own config/present.yml. The projects are the snapshot the catalog is built over:
- * `alpha` is placed by the order and `gamma` is archived, so neither the view nor the write offers
- * it a place in the catalog.
+ * A target over a hub in a temporary directory that holds the portfolio deck and the decks of three
+ * projects: `alpha` is named by the group `pillars`, `beta` is found by it and waits as a
+ * candidate, and `gamma` is archived, so the group's `tiers:` does not find it and neither the view
+ * nor the write offers it a place.
  */
 export function deckTarget(): WriteTarget {
     const dir = scratchDir('oculus-deck-');
-    const file = join(dir, 'present.yml');
+    const file = join(dir, DECK_FOLDER, 'present.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+    mkdirSync(join(dir, DECK_FOLDER), { recursive: true });
     writeFileSync(file, DECK);
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+    const projects = [
+        deckProject('alpha', 'active'),
+        deckProject('beta', 'active'),
+        deckProject('gamma', 'archive')
+    ];
+    for (const project of projects) {
+        const folder = join(dir, project.folder, 'present');
+        mkdirSync(folder, { recursive: true });
+        writeFileSync(join(folder, 'present.yml'), 'order: [main.md]\n');
+        writeFileSync(join(folder, 'main.md'), `# ${project.id}\n`);
+    }
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     const changes = join(dir, 'changes.jsonl');
     expect(resolve(changes).startsWith(resolve(dir) + sep)).toBe(true);
     return {
         hub: dir,
-        config: { ...real, deck: deckMapOf(DECK), deckFile: file },
+        config: { ...real, portfolioDeck: DECK_FOLDER },
         engine: engineDir(),
         career: careerRules(loadConfig(engineDir()).config),
-        projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
+        projects: () => projects,
+        files: { roots: () => [{ key: 'hub', dir }] },
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),
         layoutFile: join(dir, 'layout.yml'),
@@ -276,9 +288,12 @@ export function deckTarget(): WriteTarget {
     };
 }
 
-/** What the deck file of a target holds now. */
+/** The path of the portfolio deck's file under the hub of a deck target. */
+export const DECK_PATH = `${DECK_FOLDER}/present.yml`;
+
+/** What the portfolio deck's file of a target holds now. */
 export function deckOf(into: WriteTarget): string {
-    return readFileSync(into.config.deckFile, 'utf8');
+    return readFileSync(join(into.hub, DECK_PATH), 'utf8');
 }
 
 /**

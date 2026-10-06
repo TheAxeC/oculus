@@ -35,7 +35,7 @@ function target(files: string[] = ['README.md', 'code/run.py']): FilesTarget {
         expect(resolve(path).startsWith(resolve(folder) + sep)).toBe(true);
         writeFileSync(path, 'a body\n');
     }
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     return {
         hub: dir,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },

@@ -108,10 +108,14 @@ const WHOLE_FINDING_KEY = /^(['"])findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+\1$
 
 /**
  * The `findingText` calls whose key is not a whole literal, each with the file and the argument
- * text: the audit's collector words a key its rules named through `sentence(`, which the reader
- * scan holds.
+ * text: the audit's collector words a key its rules named through `sentence(`, and the deck
+ * reader words the key its callers name as a whole literal in each `raise(` call, which the
+ * reader scan holds.
  */
-const COMPUTED_FINDING_KEYS = [{ file: 'lib/server/content/audit/rules.ts', key: 'key' }] as const;
+const COMPUTED_FINDING_KEYS = [
+    { file: 'lib/server/content/audit/rules.ts', key: 'key' },
+    { file: 'lib/data/sources/deck/read.ts', key: 'id' }
+] as const;
 
 /** Every `findingText` call under `root` whose key is not one whole `findings.` literal. */
 function computedFindingKeys(root: string): { file: string; key: string }[] {

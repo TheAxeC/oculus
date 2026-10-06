@@ -150,7 +150,7 @@ describe('adding an entry and an idea', () => {
                 'title: A new idea',
                 'focus: holding',
                 'status:',
-                '  chips: [exploring]',
+                '  chips: [nascent]',
                 '  line: New idea - scope + novelty check open.',
                 'eli5: what it is',
                 'next: Scope the idea; cited-novelty lit check; decide go/no-go.',

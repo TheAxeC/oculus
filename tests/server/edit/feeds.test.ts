@@ -45,7 +45,7 @@ let base: PortfolioConfig | undefined;
 
 function fixture(): { hub: string; config: PortfolioConfig } {
     const hub = scratchDir('oculus-feeds-');
-    base ??= portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+    base ??= portfolioConfigFrom(loadConfig(engineDir()).config);
     const config = { ...base, feeds: { ...FILES, linkedin: 'fixture/linkedin' } };
     for (const [kind, id] of [
         ['radar', 'Paper'],

@@ -1,133 +1,160 @@
-// Layer 2, server. The deck's saved selection and slide order, written into config/present.yml.
+// Layer 2, server. One group's `slides:` written into a deck's `present.yml`, and taken back.
 //
-// It is the one write that touches an engine file rather than the hub: the deck is oculus's
-// configuration, not the researcher's data. The file and the `deck:` map it holds are both on the
-// PortfolioConfig the request already carries, so nothing here reads the config a second time. The
-// watcher watches `config/`, so the file this writes is pushed on the `config` channel within a
-// second and every open Present view redraws from it; there is no build step and nothing to
-// invalidate.
+// The file is any `present.yml` under a served root: the hub's portfolio deck, a project's deck or
+// a custom deck. The request names the root and the file's path under it, the group, `base` (the
+// list the page read) and `slides` (the list it wants). It is refused, with nothing written, unless
+// the path is a `present.yml` inside a served root, the file holds `base` for that group, no
+// name is repeated, and every name is a member, a candidate, a missing name or a conflicting deck
+// of the group as the reader sees it now (server/content/deck/read.ts). The edit is over the bytes
+// (server/edit/deck-edit.ts) and its result is read back, so a file whose shape the edit cannot
+// keep is refused whole.
 //
-// What may be written is the catalog data/helpers/deck.ts computes over this engine's deck and the
-// projects of the snapshot, which is the same list the Slides view offers: every project slide
-// there is, an archived project's included, so a reader can put one on the deck. A key outside it,
-// a repeated key, an empty selection and an order that is not the whole catalog are each refused
-// and the file is left exactly as it was, and so is a file the edit could not keep or could not
-// read.
+// The record carries the file and the group, its `before` list and its `after` list, and an
+// undo writes the `before` list back while the file holds the `after` list, through the same edit
+// without the check of names, since the `before` list is what the file held.
 
 import { readFileSync } from 'node:fs';
-import { parse } from 'yaml';
-import { z } from 'zod';
-import { catalogKeys, deckOrder, deckSources, savedKeys } from '../../../../data/helpers/deck.ts';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
+import { DECK_FILE } from '../../../../data/sources/deck/read.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
-import { setDeckLists } from '../../deck-edit.ts';
-import type { ChangeRecord } from '../../../core/changes.ts';
-import type { PortfolioConfig, Project } from '../../../../data/model/index.ts';
+import { inside, realPath } from '../../../core/paths.ts';
+import { words } from '../../../core/words.ts';
+import { readDeck } from '../../../content/deck/read.ts';
+import { resolveRootPath } from '../../../files/files.ts';
+import { groupSlides, setGroupSlides } from '../../deck-edit.ts';
+import type { Change, ChangeRecord } from '../../../core/changes.ts';
+import type { WriteOutcome, WriteTarget } from '../../writes.ts';
 
-/** What a deck write answers with: what it changed, or the one word saying what was wrong. */
-export type DeckOutcome =
-    | { changed: string[]; refused: []; records?: ChangeRecord[] }
-    | { error: 'invalid' | 'invalid_order' | 'unwritable' };
+/** What the write answers with: what it changed and refused, or the word for an unusable file. */
+export type DeckSlidesOutcome =
+    | { changed: string[]; refused: WriteOutcome['refused']; records?: ChangeRecord[] }
+    | { error: 'unwritable' };
 
-/** The keys of a `deck:` map the deck reads, each absent for a `deck:` that is no map. */
-const deckMapShape = z
-    .object({
-        selection: z.unknown().optional(),
-        slide_order: z.unknown().optional(),
-        order: z.unknown().optional()
-    })
-    .catch(() => ({ selection: undefined, slide_order: undefined, order: undefined }));
+/** The one record a write of a group's list leaves. */
+function recordOf(file: string, group: string, before: string[], after: string[]): ChangeRecord {
+    return { file, key: group, field: 'slides', before, after, undo: 'field' };
+}
 
-/** A deck file: its `deck:` map, and an empty one for a file that is no map or holds none. */
-const deckFileShape = z
-    .object({ deck: deckMapShape })
-    .catch(() => ({ deck: deckMapShape.parse(undefined) }));
-
-/** The deck's two saved lists, as one text of the deck file holds them. */
-export function deckLists(source: string): { selection: string[]; order: string[] } {
-    let parsed: unknown;
-    try {
-        parsed = parse(source);
-    } catch {
-        return { selection: [], order: [] };
-    }
-    const { deck } = deckFileShape.parse(parsed);
+/**
+ * Write one list into a file the caller has checked: the edit, its read-back and the atomic write.
+ * Null when the edit could not keep the file as it was.
+ */
+function put(
+    into: WriteTarget,
+    file: string,
+    group: string,
+    slides: string[]
+): DeckSlidesOutcome | null {
+    const source = readFileSync(file, 'utf8');
+    const before = groupSlides(source, group);
+    if (before === null) return null;
+    const edited = setGroupSlides(source, group, slides);
+    if (edited === null) return null;
+    if (edited === source) return { changed: [], refused: [] };
+    writeTextAtomic(file, edited);
     return {
-        selection: savedKeys(deck.selection) ?? [],
-        order: savedKeys(deck.slide_order) ?? []
+        changed: [group],
+        refused: [],
+        records: [recordOf(hubSpelling(into.hub, file), group, before, slides)]
     };
 }
 
 /**
- * The deck's two lists as the file holds them now. The check an undo makes reads the file rather
- * than the config the request was built with, so it answers what is on disk at the moment it asks.
- * A file it may not read throws; one that is gone or does not parse gives null.
+ * A real path under the hub's real folder spelled under the hub's own path, so the record names a
+ * hub file by its path in the hub whether or not the hub's folder is reached through a link.
  */
-export function deckNow(config: PortfolioConfig): { selection: string[]; order: string[] } | null {
-    try {
-        return deckLists(readFileSync(config.deckFile, 'utf8'));
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'EACCES') throw error;
-        return null;
-    }
+function hubSpelling(hub: string, file: string): string {
+    const real = realPath(hub);
+    return real !== null && inside(file, real) ? join(hub, relative(real, file)) : file;
 }
 
-/** Whether every entry of a list is a key the catalog holds, each at most once. */
-function known(keys: string[], catalog: Set<string>): boolean {
-    return new Set(keys).size === keys.length && keys.every((key) => catalog.has(key));
+/** Whether a list holds a name twice. */
+function repeats(names: string[]): boolean {
+    return new Set(names).size !== names.length;
 }
 
 /**
- * Write the deck's selection and order. `selection` is which slides the deck shows and `order` is
- * where every slide of the catalog sits, shown or not, so unchecking a slide and checking it again
- * later brings it back where it was.
+ * Set one group's `slides:` of the `present.yml` at `path` under the served root `root`. The names
+ * of the new list are checked against the group as the reader finds it now.
  */
-export function writeDeck(
-    config: PortfolioConfig,
-    projects: Project[],
-    selection: string[],
-    order: string[]
-): DeckOutcome {
-    const deck = deckMapShape.parse(config.deck);
-    const catalog = catalogKeys(
-        deckOrder(deck.order),
-        deckSources(projects),
-        savedKeys(deck.slide_order)
-    );
-    const held = new Set(catalog);
-    if (selection.length === 0 || !known(selection, held)) return { error: 'invalid' };
-    if (order.length !== catalog.length || !known(order, held)) return { error: 'invalid_order' };
+export function writeDeckSlides(
+    into: WriteTarget,
+    request: { root: string; path: string; group: string; base: string[]; slides: string[] }
+): DeckSlidesOutcome {
+    const { root, path, group, base, slides } = request;
+    const text = into.config.text;
+    const roots = into.files?.roots();
+    if (roots === undefined) return { error: 'unwritable' };
+    const refuse = (reason: string): DeckSlidesOutcome => ({
+        changed: [],
+        refused: [{ field: `${path}:${group}`, reason }]
+    });
+    if (basename(path) !== DECK_FILE) return refuse(words(text, 'server.deck_slides.not_a_deck'));
+    const at = resolveRootPath(roots, root, path);
+    if ('error' in at) return refuse(words(text, 'server.deck_slides.outside'));
 
-    const path = config.deckFile;
+    const source = readFileSync(at.path, 'utf8');
+    const held = groupSlides(source, group);
+    if (held === null) return refuse(words(text, 'server.deck_slides.no_group', group));
+    if (!isDeepStrictEqual(held, base)) return refuse(words(text, 'server.deck_slides.changed'));
+    if (repeats(slides)) return refuse(words(text, 'server.deck_slides.repeated'));
+
+    const deck = readDeck(
+        { roots, hub: into.hub, config: into.config, projects: into.projects() },
+        root,
+        dirname(path)
+    );
+    const found = deck === 'outside' ? undefined : deck.groups.find((one) => one.name === group);
+    if (found === undefined) return refuse(words(text, 'server.deck_slides.no_group', group));
+    const known = new Set([
+        ...found.members.map((one) => one.name),
+        ...found.candidates.map((one) => one.name),
+        ...found.conflicts.map((one) => one.name),
+        ...found.missing
+    ]);
+    const stray = slides.find((name) => !known.has(name));
+    if (stray !== undefined) return refuse(words(text, 'server.deck_slides.unknown_name', stray));
+
+    return put(into, at.path, group, slides) ?? refuse(words(text, 'server.deck_slides.not_kept'));
+}
+
+/**
+ * The real path of a `deck-slides` record's file, when it is a `present.yml` in a served root. A
+ * root that is a link is compared by its real path.
+ */
+function deckFileOf(into: WriteTarget, change: Change): string | null {
+    const named = resolve(isAbsolute(change.file) ? change.file : join(into.hub, change.file));
+    const file = realPath(named) ?? named;
+    const roots = into.files?.roots() ?? [];
+    if (basename(file) !== DECK_FILE) return null;
+    return roots.some((one) => inside(file, realPath(one.dir) ?? one.dir)) ? file : null;
+}
+
+/** The list a record's group holds now, and whether the file and the group exist. */
+export function deckSlidesNow(
+    into: WriteTarget,
+    change: Change
+): { found: boolean; value: string[] | null } {
+    const file = deckFileOf(into, change);
+    if (file === null) return { found: false, value: null };
     let source: string;
     try {
-        source = readFileSync(path, 'utf8');
-    } catch {
-        return { error: 'unwritable' };
+        source = readFileSync(file, 'utf8');
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'EACCES') throw error;
+        return { found: false, value: null };
     }
-    const kept = order.filter((key) => selection.includes(key));
-    const text = setDeckLists(source, { selection: kept, slideOrder: order });
-    if (text === null) return { error: 'invalid' };
-    if (text === source) return { changed: [], refused: [] };
-    // The lists the file held are read out of the very text this edit was computed against, so the
-    // record says what was there rather than what the request's config was built with.
-    const before = deckLists(source);
-    try {
-        writeTextAtomic(path, text);
-    } catch {
-        return { error: 'unwritable' };
-    }
-    return {
-        changed: ['deck'],
-        refused: [],
-        records: [
-            {
-                file: path,
-                key: 'deck',
-                field: 'deck',
-                before,
-                after: { selection: kept, order },
-                undo: 'field'
-            }
-        ]
-    };
+    const held = groupSlides(source, change.key);
+    return { found: held !== null, value: held };
+}
+
+/** Put a record's `before` list back into its group. */
+export function undoDeckSlides(
+    into: WriteTarget,
+    change: Change,
+    before: string[]
+): DeckSlidesOutcome | null {
+    const file = deckFileOf(into, change);
+    return file === null ? null : put(into, file, change.key, before);
 }

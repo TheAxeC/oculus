@@ -375,7 +375,7 @@ export function createClientState(desktop?: Desktop): ClientState {
     const audit = createAudit(entities);
     const memories = withQueries('memories', createMemories(queries));
     const lines = withQueries('lines', createLines(queries));
-    const present = createPresent(entities);
+    const present = withQueries('present', createPresent(entities, queries, writes.writeToken));
     // The Source Control views open a repository's file in a source tab by the root the file routes
     // serve it under, and point the Repositories view at a commit through its remembered state.
     const repositories = createRepositories(writes, terminals, layout, {

@@ -534,7 +534,7 @@
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config/deck.ts -->
 <g id="edge73" class="edge">
-<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config/deck.ts: deckNow, writeDeck</title>
+<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config/deck.ts: deckSlidesNow, undoDeckSlides</title>
 <path fill="none" stroke="currentColor" d="M291.25,-329.2C291.25,-323.2 313.37,-326.7 318.25,-330.2 329.37,-338.18 325.65,-345.77 329.18,-359 370.27,-512.95 283.99,-590.47 385.85,-713 390.4,-718.47 396.74,-722.29 403.39,-724.94"/>
 <polygon fill="currentColor" stroke="currentColor" points="402.31,-726.79 408.66,-726.73 403.66,-722.81 402.31,-726.79"/>
 </g>
@@ -630,7 +630,7 @@
 </g>
 <!-- lib/server/edit/writes/config/config&#45;write.ts&#45;&gt;lib/server/edit/writes/config/deck.ts -->
 <g id="edge42" class="edge">
-<title>lib/server/edit/writes/config/config&#45;write.ts&#45;&gt;lib/server/edit/writes/config/deck.ts: writeDeck</title>
+<title>lib/server/edit/writes/config/config&#45;write.ts&#45;&gt;lib/server/edit/writes/config/deck.ts: writeDeckSlides</title>
 <path fill="none" stroke="currentColor" d="M329.36,-731C352.03,-731 380.8,-731 402.79,-731"/>
 <polygon fill="currentColor" stroke="currentColor" points="402.75,-733.1 408.75,-731 402.75,-728.9 402.75,-733.1"/>
 </g>

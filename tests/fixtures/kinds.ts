@@ -12,9 +12,15 @@ import { engineDir } from '../../src/lib/data/sources/config.ts';
 import { APP_STORE } from '../../src/lib/server/edit/writes/app-store.ts';
 
 /**
+ * The kind of the records of the `deck` write, which the log can hold: the History view draws their
+ * rows, and an undo of one is answered `deck-gone`.
+ */
+const RETIRED_KINDS = ['deck'];
+
+/**
  * Every kind the change log files a record under: the write endpoint's body kinds, except `undo`,
  * which records as the kind it took back, the file operations' own and the app store's, which the
- * endpoint takes as a `store` body of an app and no `kind`.
+ * endpoint takes as a `store` body of an app and no `kind`, and the `deck` kind of RETIRED_KINDS.
  */
 export function recordedKinds(): string[] {
     const source = readFileSync(
@@ -22,5 +28,7 @@ export function recordedKinds(): string[] {
         'utf8'
     );
     const found = [...source.matchAll(/kind: z\.literal\('([a-z-]+)'\)/g)].map((one) => one[1]);
-    return [...new Set([...found, FILES_KIND, APP_STORE])].filter((kind) => kind !== 'undo');
+    return [...new Set([...found, ...RETIRED_KINDS, FILES_KIND, APP_STORE])].filter(
+        (kind) => kind !== 'undo'
+    );
 }

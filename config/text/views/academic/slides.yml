@@ -1,30 +1,36 @@
 # Oculus text owned by the Slides view.
 text:
     slides:
+        count: '{0} slides'
         down: down
         down_tip: move {0} one place later
         drag_glyph: grip
-        drag_tip: drag {0} to another place in the deck
-        dropped: The deck changed on disk, so these are the slides the file holds now. Tick and order them again.
-        empty: The deck holds no slides to choose from.
+        drag_tip: drag {0} to another place in the group
+        dropped: The deck changed on disk, so these are the lists the file holds now. Tick and order them again.
+        empty: 'The deck in {0} defines no group, so there is no list to edit. Add a groups: block to its present.yml.'
         empty_glyph: circle_empty
+        empty_unnamed: No deck is set. Name the portfolio deck as `portfolio_deck` in config/sources.yml, or open a deck from the Present view.
         failed_file: The deck file could not be read or written on this machine.
-        failed_invalid: The deck did not take that selection. Tick at least one slide the deck still holds.
         failed_network: The save did not reach the server.
-        failed_order: The deck did not take that order. It changed on disk while you were working; try again.
         failed_other: The deck was not saved.
-        intro: Tick the slides the deck shows, and drag or step them into the order it shows them in.
-        keep_one: Keep at least one slide ticked.
-        kind: '{0}'
+        failed_read: 'The deck could not be read: {0}'
+        intro: A group lists the decks whose slides it shows, in the order it shows them. Tick a deck to add it to the group, untick it to take it out, and drag or step a ticked deck to move it. A deck marked found is on the group because the group discovers decks.
+        kind_candidate: found, not in the group
+        kind_conflict: 'found by {0} too; tick it to put it in this group'
+        kind_found: found by the group
+        kind_missing: no deck has this name
+        loading: Reading the deck ...
         moved: '{0} is now {1} of {2}'
         open: Slides
-        open_tip: choose which slides the deck shows, and in what order
+        open_tip: choose which decks each group of this deck shows, and in what order
         position: '{0}'
         save: Save
         saved: saved
         saving: saving ...
         title: Slides
-        toolbar: Slide catalog controls
+        title_of: 'Slides of {0}'
+        toolbar: Slide group controls
+        unreadable: 'The present.yml in {0} does not parse as a map, so it is not written to. Fix the file and this list comes back.'
         up: up
         up_tip: move {0} one place earlier
     views:

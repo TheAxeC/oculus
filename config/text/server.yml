@@ -47,6 +47,14 @@ text:
             not_parsed: The file does not parse
             not_in_file: The file does not hold this key as a plain or quoted value
             not_kept: The edit would change more than this one value, so the file is left as it is
+        deck_slides:
+            changed: The group's slides list changed on disk while you were working. Read the deck again and make the change again.
+            no_group: 'The deck has no group named {0}'
+            not_a_deck: That path is not a present.yml
+            not_kept: The deck file did not keep the new list, so it was left as it was
+            outside: That deck is outside the folders oculus serves
+            repeated: A deck is listed twice in the group
+            unknown_name: 'No deck named {0} belongs to the group'
         config_value:
             local: local.yml is the machine's own file and is not written from here
             no_entry: The options catalog has no list or family of that name in a tracked config file

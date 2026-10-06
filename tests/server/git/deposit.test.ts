@@ -111,7 +111,7 @@ test.beforeAll(() => {
     write(codeOf('alpha'), join('__pycache__', 'run.pyc'), 'bytes\n');
     write(codeOf('alpha'), '.depositignore', '# the hub keeps these\nresults/\nfigures/\nattic/\n');
 
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     into = {
         hub,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },

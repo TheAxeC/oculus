@@ -13,7 +13,7 @@ import { it, plantScratch } from '../../fixtures/scratch.ts';
 const ENGINE = engineDir();
 const LOADED = loadConfig(ENGINE).config;
 const CATALOG = textCatalog(LOADED);
-const CONFIG = portfolioConfigFrom(LOADED, ENGINE);
+const CONFIG = portfolioConfigFrom(LOADED);
 
 const ROWS = [
     { row: 'a folder with a space', written: '"~/a b"', shown: '"~/a b"', found: true },

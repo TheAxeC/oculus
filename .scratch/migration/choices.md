@@ -4,6 +4,48 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z655 (2026-10-06, step PR2)
+
+The question: the transition slide's hint belongs in the foot with no lede (brief part 4), but a section slide's foot is the text after its numbered list (part 1), and the transition has no list.
+
+- Chosen: (d) a section slide may carry `foot:` in its front matter, the key the summary and grid entries of `order:` already use; the transition carries its hint there with no cards, which draws the old slide exactly.
+- Not chosen: (a) four numbered cards the builder wrote (words the deck never had, repeating the foot); (b) the hint as the lede (the foot unmet); (c) a text slide (the legend lost).
+
+## Z663 (2026-10-06, step PR2)
+
+`start.test.ts` 'asks the default port ... starts no second server', red on main's head without PR2: the orchestrator finds the cause read-only and its fix goes into D23's landing as a fix at landing when small, otherwise into the brief of the next step that changes `src/desktop/`. Not chosen: leaving the red test (the lazy option).
+
+## Z662 (2026-10-06, step PR2)
+
+PR2's look on a scratch oculus over the gate's build (port 8793, its own HOME, engine config and local.yml, Z507's form), because Axel's server on 8790 runs the server code of before the landing and answers the old deck shape until it restarts. Not chosen: no look (the lazy option); a restart of Axel's server (his hands).
+
+## Z661 (2026-10-06, step D23)
+
+D23's B1 and St4: a root that stops being served sends `failed` with a new code `root_gone` for each ended server, and a tab still open under it is served again when the root returns; a localhost socket is not a network wait, so the socket tests stay untagged. Not chosen for B1: the status left at `ready` (the lazy option).
+
+## Z660 (2026-10-06, step D23)
+
+D23's wire: `approve` (page to relay, an interpreter the adapter listed) and `legend` (relay to page, clangd's token legend) join Z496's UV-2 vocabulary, as built. Not chosen: (b) an HTTP approve route and the legend inside `state`, more code for the same effect.
+
+## Z659 (2026-10-06, step D23)
+
+D23's case 47: pyright alone peaks at 513 to 553 MB on this machine and through the relay at 532 to 562 MB; the brief's 320.0 MB was wrong and is corrected in the report; no code change, since nothing in D23 causes the size. No option is lazy.
+
+## Z658 (2026-10-06, step D23)
+
+D23's case 46: a root key holding `/` is percent-encoded twice in the page address, as built, and DESIGN.md:438 says so. Not chosen: (b) such a root refused (the lazy option, a hand-edited `workspaces.json` allows it); (c) an opaque root id on the wire, unreadable in logs.
+
+## Z657 (2026-10-06, step D23)
+
+D23's case 45: a changed `lsp` key ends every held server; one a page has documents open in starts again at once under the new folder, the rest on their next document; DESIGN.md:250 says both. Not chosen: (b) every server on its next request, which leaves an open tab without features until the reader acts; (c) the build as it is, which respawns orphans and failed servers (the lazy option).
+
+## Z656 (2026-10-06, step PR2)
+
+The question: PR2's last review finds Z653's tab identity short in three places (the deck menu can leave two tabs on one deck; Open Presentation on the portfolio's own folder opens a second portfolio tab; a deck at a root's own folder shows a "." crumb and a path ending in "/."), and Present tabs of a folder deck now draw a breadcrumb bar and file items in their tab menu.
+
+- Chosen: all three fixed at landing; the breadcrumb bar and file items kept, as an Open LaTeX tab has them, and stated in the report.
+- Not chosen: a later step for the three (the lazy option); the breadcrumb bar removed from Present tabs (unlike Open LaTeX, against item 6).
+
 ## Z654 (2026-10-06, step Q125)
 
 The question: after its last repair round, Q125's review still finds about 60 DESIGN.md items outside Apps that repeat a guide, a head comment or another item, so item 5 (DESIGN.md states each decision with its reason, in a few sentences) is short. The round cap allows no further round.

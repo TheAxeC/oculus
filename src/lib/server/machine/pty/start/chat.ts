@@ -99,7 +99,7 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const seed = portfolio
         ? words(catalog, 'server.chat.seed_portfolio')
         : words(catalog, 'server.chat.seed_focus', project.title);
-    writeTextAtomic(index, portfolioContext(local.hub, config, engine), 0o600);
+    writeTextAtomic(index, portfolioContext(local.hub, config), 0o600);
     try {
         return await startTerminal(
             {

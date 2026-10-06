@@ -12,6 +12,7 @@ import {
     findInstance,
     findView,
     isInstanceOf,
+    stateId,
     panes as panesIn,
     tabsOf
 } from './instance.ts';
@@ -53,6 +54,11 @@ export type Instances = {
     instanceView: (id: string) => ViewId | undefined;
     restateInstance: (id: string, state: unknown) => void;
     pinInstance: (id: string, session: string, label: string) => void;
+    /**
+     * Point one instance at the record a state names, or activate the instance of the same view on
+     * its page that already holds it; true when the instance itself was pointed.
+     */
+    pointInstance: (id: string, state: unknown) => boolean;
     unpinInstance: (id: string) => void;
     /**
      * Keep a preview tab, which is what a double click, a keystroke, a drag and a split do to one.
@@ -131,6 +137,24 @@ export function createInstances(
             return;
         }
         restateInstance(id, { session, label });
+    }
+
+    function pointInstance(id: string, state: unknown): boolean {
+        const page = access.holding(id);
+        if (page === null) return false;
+        const caller = findInstance(page.workbench.root, id);
+        if (caller === null) return false;
+        const identity = stateId(state);
+        const existing =
+            identity === null
+                ? null
+                : findView(page.workbench.root, caller.instance.view, identity);
+        if (existing !== null && existing.id !== id) {
+            activateInstance(existing.id, page.id);
+            return false;
+        }
+        restateInstance(id, state);
+        return true;
     }
 
     /**
@@ -361,6 +385,7 @@ export function createInstances(
         instanceView,
         restateInstance,
         pinInstance,
+        pointInstance,
         unpinInstance,
         keepPreview,
         pinTab,

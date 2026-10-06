@@ -34,7 +34,7 @@ import {
     writeFeedField
 } from '../feeds.ts';
 import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
-import { deckNow, writeDeck } from './config/deck.ts';
+import { deckSlidesNow, undoDeckSlides } from './config/deck.ts';
 import { configKeyNow, writeConfigKey } from './config/config-key.ts';
 import { configValueNow, putBackConfigValue, writeConfigValue } from './config/config-value.ts';
 import { railNow, writeRail } from './config/rail.ts';
@@ -70,7 +70,7 @@ import type { WriteOutcome, WriteTarget } from '../writes.ts';
  * would otherwise say the value is back when it is not.
  */
 export type UndoOutcome =
-    | { error: 'unknown' | 'gone' | 'moved' | 'nothing' | 'copy-gone' }
+    | { error: 'unknown' | 'gone' | 'moved' | 'nothing' | 'copy-gone' | 'deck-gone' }
     | { error: 'unwritable'; records?: ChangeRecord[] }
     | { error: 'refused'; refused: WriteOutcome['refused'] }
     | WriteOutcome;
@@ -132,10 +132,7 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         return { found: true, value: entry[change.field] ?? null };
     }
     if (change.kind === 'host') return hostStatus(into.hub, change.key, into.career);
-    if (change.kind === 'deck') {
-        const lists = deckNow(into.config);
-        return lists === null ? { found: false, value: null } : { found: true, value: lists };
-    }
+    if (change.kind === 'deck-slides') return deckSlidesNow(into, change);
     if (change.kind === 'rail') {
         const rail = railNow(into.layoutFile);
         return rail === null ? { found: false, value: null } : { found: true, value: rail };
@@ -205,11 +202,6 @@ const mapBeforeShape = z.catch(mapShape, () => ({}));
 /** The string items of a list the record holds, none for anything that is not a list. */
 const wordsBeforeShape = z.catch(stringItemsShape, () => []);
 
-/** The deck's two lists a record holds, each empty when it is missing or no list. */
-const deckBeforeShape = z
-    .object({ selection: wordsBeforeShape, order: wordsBeforeShape })
-    .catch(() => ({ selection: [], order: [] }));
-
 /** The rail a record holds, as the rows the rail rule reads out of it; none for anything else. */
 const railBeforeShape = z.unknown().transform((before) => railRows(before) ?? []);
 
@@ -228,6 +220,7 @@ const scalarBeforeShape = z.catch(feedValueShape, null);
  */
 export function undoChange(into: WriteTarget, change: Change): UndoOutcome {
     if (change.undo === 'none') return { error: 'nothing' };
+    if (change.kind === 'deck') return { error: 'deck-gone' };
     if (change.kind === APP_STORE) return undoStore(into, change);
     let outcome;
     try {
@@ -308,10 +301,10 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     if (change.kind === 'host') {
         return writeHost(hub, change.key, textBeforeShape.parse(change.before), into.career);
     }
-    if (change.kind === 'deck') {
-        const before = deckBeforeShape.parse(change.before);
-        const outcome = writeDeck(config, into.projects(), before.selection, before.order);
-        if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
+    if (change.kind === 'deck-slides') {
+        const outcome = undoDeckSlides(into, change, wordsBeforeShape.parse(change.before));
+        if (outcome === null) return null;
+        if ('error' in outcome) return outcome;
         return { found: true, ...outcome };
     }
     if (change.kind === 'rail') {

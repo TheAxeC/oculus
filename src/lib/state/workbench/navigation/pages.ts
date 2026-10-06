@@ -364,14 +364,16 @@ const docShape = z.object({ path: z.string().min(1) });
 
 /**
  * The file a tab shows, or null when its view shows no one file. A document tab holds a path under
- * the hub and no root, so it is read as a file of the hub root.
+ * the hub and no root, so it is read as a file of the hub root. The path `.` names a root's own
+ * folder (a Present tab of a deck there), which is no file, as a Files tab of a root is not.
  */
 export function fileOfTab(tab: { view: string; state: unknown }): RowRef | null {
     if (tab.view === 'doc') {
         const doc = readAs(docShape, tab.state);
         return doc === null ? null : { root: HUB_ROOT, path: doc.path };
     }
-    return readAs(fileShape, tab.state);
+    const file = readAs(fileShape, tab.state);
+    return file === null || file.path === '.' ? null : file;
 }
 
 /**

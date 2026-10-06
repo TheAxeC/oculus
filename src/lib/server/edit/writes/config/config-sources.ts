@@ -10,7 +10,6 @@
 // the pieces of the write target through SourceInputs.
 
 import { codeThemeIds, CODE_TOKENS } from '../../../../data/helpers/code-themes.ts';
-import { deckSources } from '../../../../data/helpers/deck.ts';
 import type { Project } from '../../../../data/model/index.ts';
 import { registered } from '../../../../data/prose/languages.ts';
 import {
@@ -56,10 +55,6 @@ export function sourcesFor(inputs: SourceInputs, config: Record<string, unknown>
             case 'clusters': {
                 const resources = inputs.entities?.('resources') ?? null;
                 return resources === null ? null : resourcesOfKind(resources, 'cluster');
-            }
-            case 'slides': {
-                const projects = inputs.projects();
-                return projects.length === 0 ? null : deckSources(projects).map((one) => one.id);
             }
             case 'slide_tags': {
                 const projects = inputs.projects();

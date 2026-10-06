@@ -1,13 +1,12 @@
-In flight (3 of 6 slots):
-- D23 (language servers): built, under review, base 465efcdfb.
+In flight (2 of 6 slots):
+- D23 (language servers): repair round 1 running, base 465efcdfb.
 - Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): rounds done, base 02ac124ec; waits for Axel's read, then lands; Axel reads the new HELP.md and DESIGN.md before it lands.
-- PR2 (Present decks from any folder): repair round 2 returned, under review, base 7e1d73675.
 
 Queued, in order (25 steps):
 - Q126 (DESIGN.md reduced where Q125 left it short, Z654): once Q125 has landed.
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
 - X3e (Files lists reordered by drag): prepared again under Z635 (a); once D23 has landed (both split Palette.svelte).
-- PR3 (Present decks edited and generated, PDF export): once PR2 has landed.
+- PR3 (Present decks edited and generated, PDF export): ready to prepare (PR2 has landed).
 - PR4 (Present's presenter screen): once PR3 has landed.
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.
@@ -33,6 +32,7 @@ Queued, in order (25 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- PR2 (Present decks from any folder), 2026-10-06.
 - Q124 (every tree check with no limit, and the vitest races), 2026-10-06, abf4356cf.
 - O30b (the app's own build folders), 2026-10-06, 4ce24363b.
 - E4g (the apps guide), 2026-10-06, c86f10f2f.

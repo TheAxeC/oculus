@@ -1,10 +1,11 @@
-// Layer 2, client state. The file browser's ask: one path shown in the Files view of the page the
-// reader is in.
+// Layer 2, client state. The asks that open a named view for another part of the app, not for the
+// reader: one path shown in the Files view of the page the reader is in, and one deck shown in a
+// Present tab.
 //
-// The ask is written into the Files instance's own state rather than acted on here: the folders on
-// the way are read by the view, which is what draws them, and an ask written into the state is
-// still there for a tab that mounts after it. It is its own module because it is the one part of
-// the store that opens a named view for another part of the app rather than for the reader.
+// A file browser ask is written into the Files instance's own state rather than acted on here: the
+// folders on the way are read by the view, which is what draws them, and an ask written into the
+// state is still there for a tab that mounts after it. A deck is named in the layout state of its
+// Present tab (state/life/present.ts), so the opener only names the tab.
 
 import { HUB_ROOT, nameOf, normalisePath, revealAsked, rootedState } from '../../../sources/fs.ts';
 import { findView } from '../instance.ts';
@@ -13,6 +14,7 @@ import type { Attention } from './attention.ts';
 import type { ViewId } from '../model.ts';
 import { paneAt } from '../tree.ts';
 import { focusedPane } from '../workbench.ts';
+import { deckState, type DeckRef } from '../../../life/present.ts';
 
 export type ShowInFiles = {
     showInFiles: (path: string, root?: string, open?: boolean) => string;
@@ -79,4 +81,25 @@ export function createShowInFiles(
         showTimeline: (path, root) => show(path, root, false, true),
         showFolderInFiles
     };
+}
+
+export type ShowDeck = {
+    /** Open a Present tab on the deck, in the pane's place or beside the one read; its id. */
+    showDeck: (ref: DeckRef, label: string, beside?: boolean) => string;
+};
+
+export function createShowDeck(
+    openView: (view: ViewId, state?: unknown, page?: string) => string,
+    openBeside: (view: ViewId, state?: unknown, page?: string) => string
+): ShowDeck {
+    /**
+     * A Present tab is named by its deck, as a LaTeX tab is by its file: the deck's root and path
+     * are in the tab's layout state, so a second ask for the same deck activates its tab and
+     * another deck gets a tab of its own. The portfolio deck is the tab with neither.
+     */
+    function showDeck(ref: DeckRef, label: string, beside = false): string {
+        const open = beside ? openBeside : openView;
+        return open('present', deckState(label === '' ? {} : { label }, ref));
+    }
+    return { showDeck };
 }

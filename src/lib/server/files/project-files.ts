@@ -205,7 +205,7 @@ export function listFiles(into: FilesTarget, id: string): Response {
 export function filesTarget(engine: string, settings: Record<string, unknown>): FilesTarget {
     return {
         hub: loadLocal(engine).hub,
-        config: portfolioConfigFrom(settings, engine),
+        config: portfolioConfigFrom(settings),
         settings
     };
 }

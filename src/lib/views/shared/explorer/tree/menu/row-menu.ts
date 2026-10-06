@@ -18,6 +18,7 @@
 
 import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
 import { absoluteOf } from '$lib/state/workbench/navigation/pages';
+import { tabDeck } from '$lib/state/life/present';
 import {
     languageOf,
     markdownPreviewState,
@@ -76,6 +77,10 @@ export const ROW_ADD_ROOT = 'add-root';
 export const ROW_REMOVE_ROOT = 'remove-root';
 export const ROW_PREVIEW = 'preview';
 export const ROW_LATEX = 'latex';
+export const ROW_DECK = 'present';
+
+/** The file a folder holds to be a deck, and the name that file is shown under. */
+const DECK_FILE = 'present.yml';
 const ROW_TIMELINE = 'timeline';
 export const ROW_RUN = 'run-command';
 
@@ -116,6 +121,8 @@ export type RowMenuFacts = {
      * opened, has one directly in it.
      */
     latex?: boolean;
+    /** Whether the row is a `present.yml` file or a folder whose listing holds one directly. */
+    present?: boolean;
     /** The key hint of an item by its id; none when omitted. */
     hints?: Readonly<Record<string, string>>;
     /** The project commands of the repository a root or a folder row is; none when omitted. */
@@ -226,6 +233,12 @@ export function rowFacts(
                 : (entriesOf(row.root, row.path) ?? []).some(
                       (one) => one.kind === 'file' && isTex(one.name)
                   ),
+        present:
+            kind === 'file'
+                ? row.name === DECK_FILE
+                : (entriesOf(row.root, row.path) ?? []).some(
+                      (one) => one.kind === 'file' && one.name === DECK_FILE
+                  ),
         hints,
         commands
     };
@@ -238,14 +251,16 @@ export function rowFacts(
  * Copy, Download..., the two copies, Open Preview on a Markdown file, then Rename... and Delete.
  * Open LaTeX is its own group after Reveal in Finder and the terminal, on a `.tex` file and on a
  * folder or root whose listing has one: the listing the fs store holds, else the one the menu read
- * when it opened (picks.svelte.ts). A folder: New File... and New Folder..., Reveal in Finder and
- * its shell, Find in Folder..., Cut, Copy and Paste, Upload..., the two copies, then Rename... and
- * Delete. A folder or root that is a repository with project commands also offers Run Command, a
- * submenu of them. A root: those of a folder without Cut, Copy, Rename... and Delete, and Add
- * Folder to Workspace... with Remove Folder from Workspace on a root the reader added. Compare with
- * Selected needs a file selected for compare. With two or more rows selected the menu is the one
- * for the selection: Compare Selected for exactly two files, Cut and Copy, the two copies of every
- * path, and Delete. Each item carries the key hint its id has in `hints`.
+ * when it opened (picks.svelte.ts). Open Presentation follows it in that group, on a `present.yml`
+ * file and on a folder or root whose listing holds one. A folder: New File... and New Folder...,
+ * Reveal in Finder and its shell, Find in Folder..., Cut, Copy and Paste, Upload..., the two
+ * copies, then Rename... and Delete. A folder or root that is a repository with project commands
+ * also offers Run Command, a submenu of them. A root: those of a folder without Cut, Copy,
+ * Rename... and Delete, and Add Folder to Workspace... with Remove Folder from Workspace on a root
+ * the reader added. Compare with Selected needs a file selected for compare. With two or more rows
+ * selected the menu is the one for the selection: Compare Selected for exactly two files, Cut and
+ * Copy, the two copies of every path, and Delete. Each item carries the key hint its id has in
+ * `hints`.
  */
 export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string): MenuItem => {
@@ -259,7 +274,10 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         item(ROW_COPY_RELATIVE, t('files.menu_copy_relative'))
     ];
     const cutCopy = [item(ROW_CUT, t('files.menu_cut')), item(ROW_COPY, t('files.menu_copy'))];
-    const latex = facts.latex === true ? [item(ROW_LATEX, t('files.menu_latex'))] : [];
+    const latex = [
+        ...(facts.latex === true ? [item(ROW_LATEX, t('files.menu_latex'))] : []),
+        ...(facts.present === true ? [item(ROW_DECK, t('files.menu_present'))] : [])
+    ];
     const bookmark =
         facts.bookmarked === null || facts.bookmarked === undefined
             ? []
@@ -377,6 +395,7 @@ export function shellFolder(dir: string, row: Pick<TreeRow, 'kind' | 'path'>): s
 export type RowStores = {
     openBeside: ClientState['layout']['openBeside'];
     openView: ClientState['layout']['openView'];
+    showDeck: ClientState['layout']['showDeck'];
     showTimeline: ClientState['layout']['showTimeline'];
     rootOf: ClientState['latex']['rootOf'];
     keepPreview: ClientState['layout']['keepPreview'];
@@ -398,6 +417,8 @@ export function rowStores(client: ClientState): RowStores {
     return {
         openBeside: client.layout.openBeside,
         openView: client.layout.openView,
+        showDeck: (ref, label, beside) =>
+            client.layout.showDeck(tabDeck(ref, client.present.portfolio()), label, beside),
         showTimeline: client.layout.showTimeline,
         rootOf: client.latex.rootOf,
         keepPreview: client.layout.keepPreview,
@@ -517,6 +538,20 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         deps.openView('latex', { root: place.root, path: place.path, label });
     }
 
+    /**
+     * The Present view on the deck a row is about: a folder's or root's own, or the folder of the
+     * `present.yml` file. The tab is labelled with the folder's name, and a root with the name its
+     * row has in the tree.
+     */
+    function present(row: TreeRow): void {
+        const own =
+            row.kind === 'dir'
+                ? row.path
+                : row.path.slice(0, Math.max(0, row.path.lastIndexOf('/')));
+        const label = own === '' ? deps.rootName(row.root) : nameOf(own);
+        deps.showDeck({ root: row.root, path: own }, label);
+    }
+
     return (row, pick) => {
         const dir = deps.dirOf(row.root);
         const paths = rowPaths(dir, row.path);
@@ -535,6 +570,7 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         else if (pick === ROW_ADD_ROOT) deps.addRoot();
         else if (pick === ROW_REMOVE_ROOT) deps.removeRoot(row.root);
         else if (pick === ROW_LATEX) void latex(row);
+        else if (pick === ROW_DECK) present(row);
         else if (pick === ROW_TIMELINE) deps.showTimeline(row.path, row.root);
         else if (pick.startsWith(RUN_PREFIX)) {
             const command = keyOf(pick.slice(RUN_PREFIX.length));

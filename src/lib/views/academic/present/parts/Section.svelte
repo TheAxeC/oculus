@@ -1,43 +1,50 @@
 <script lang="ts">
-    // Layer 3, Present partial. A section slide: a heading and a lede, with the three cards, the
-    // legend and the hint the deck may give it.
+    // Layer 3, Present partial. A section slide: a heading and a lede, the numbered cards, the
+    // legend of the group the slide names and the foot line.
 
     import Legend from './Legend.svelte';
     import Words from './Words.svelte';
-    import type { DeckFraming } from '$lib/state/life/present';
+    import type { DeckCard } from '$lib/state/life/present';
 
-    type Props = { framing: DeckFraming };
+    type Props = {
+        heading: string;
+        lede: string;
+        cards: DeckCard[];
+        foot: string;
+        /** The domain keys the legend shows. */
+        legend: string[];
+    };
 
-    let { framing }: Props = $props();
+    let { heading, lede, cards, foot, legend }: Props = $props();
 </script>
 
-<section class="slide" data-slide-kind="framing">
-    {#if framing.title !== undefined}
-        <h3 class="headline"><Words text={framing.title} /></h3>
+<section class="slide" data-slide-kind="section">
+    {#if heading !== ''}
+        <h3 class="headline"><Words text={heading} /></h3>
     {/if}
-    {#if framing.lede !== undefined}
-        <p class="lede"><Words text={framing.lede} /></p>
+    {#if lede !== ''}
+        <div class="lede"><Words text={lede} block /></div>
     {/if}
-    {#if framing.cards.length > 0}
+    {#if cards.length > 0}
         <div class="cards">
-            {#each framing.cards as card, at (`${at}:${card.title ?? ''}`)}
+            {#each cards as card, at (`${at}:${card.title}`)}
                 <div class="card">
-                    {#if card.n !== undefined}
+                    {#if card.n !== ''}
                         <div class="n"><Words text={card.n} /></div>
                     {/if}
-                    {#if card.title !== undefined}
+                    {#if card.title !== ''}
                         <b><Words text={card.title} /></b>
                     {/if}
-                    {#if card.body !== undefined}
+                    {#if card.body !== ''}
                         <p><Words text={card.body} /></p>
                     {/if}
                 </div>
             {/each}
         </div>
     {/if}
-    <Legend chips={framing.legend} />
-    {#if framing.hint !== undefined}
-        <p class="hint"><Words text={framing.hint} /></p>
+    <Legend domains={legend} />
+    {#if foot !== ''}
+        <p class="hint"><Words text={foot} /></p>
     {/if}
 </section>
 

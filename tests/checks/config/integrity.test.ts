@@ -1,7 +1,6 @@
 // Layer 4, tree check. The one test that reads the real hub, read only. It opens hub files for
 // reading and writes none, which is the exception the standing spec grants. Its last `describe`,
-// the count of written equations, reads no hub data: it plants a PRESENT.md in a temporary
-// directory.
+// the count of written equations, reads no hub data: it plants a deck in a temporary directory.
 //
 // It is the gate DESIGN.md names: the model validates against the real hub with zero findings. A
 // finding it reports is reported, never repaired here: the fix belongs in the hub's YAML or in the
@@ -24,14 +23,16 @@ import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/source
 import { isMap } from '../../../src/lib/data/helpers/guards.ts';
 import { realHub } from '../../fixtures/real-hub.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
-import { readPresent } from '../../../src/lib/data/sources/present.ts';
+import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
+import type { DeckProject } from '../../../src/lib/data/sources/deck/kinds.ts';
+import type { Deck, Project } from '../../../src/lib/data/model/index.ts';
 
 /**
- * How many projects of the hub carry a PRESENT.md front matter. It is a floor rather than a count:
- * a slide written for one more project is not a reason for this file to fail, and the reader losing
- * the ones there are is.
+ * How many projects of the hub carry a deck of their own. It is a floor rather than a count: a deck
+ * written for one more project is not a reason for this file to fail, and the reader losing the
+ * ones there are is.
  */
-const FILES_WITH_SLIDES = 14;
+const PROJECT_DECKS = 14;
 
 /**
  * How many slides of the hub write an `equation:`. Like the floor above, a slide written for one
@@ -48,31 +49,57 @@ if (!present) {
 }
 
 const merged = loadConfig(engine).config;
-const config = portfolioConfigFrom(merged, engine);
+const config = portfolioConfigFrom(merged);
 
 /**
- * How many equations one PRESENT.md writes, counted from its parsed front matter without the
- * reader under test: the `present:` map's and that of each `slides:` entry that has an id, a value
- * that is not text or is blank after trimming left out.
+ * How many equations one slide file writes, counted from its parsed front matter without the
+ * reader under test: the file is cut at every line holding only `---` and each piece that parses
+ * as a map with an `equation:` that is text and not blank after trimming counts once.
  */
 function writtenEquations(text: string): number {
-    const block = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1];
-    if (block === undefined) return 0;
-    let front: unknown;
-    try {
-        front = parse(block);
-    } catch {
-        return 0;
-    }
-    if (!isMap(front)) return 0;
-    const entries: unknown[] = Array.isArray(front.slides) ? (front.slides as unknown[]) : [];
-    const slides = [
-        front.present,
-        ...entries.filter((one) => isMap(one) && typeof one.id === 'string' && one.id !== '')
-    ];
-    return slides.filter(
-        (one) => isMap(one) && typeof one.equation === 'string' && one.equation.trim() !== ''
-    ).length;
+    return text.split(/^---[ \t]*$/m).filter((piece) => {
+        let front: unknown;
+        try {
+            front = parse(piece);
+        } catch {
+            return false;
+        }
+        return isMap(front) && typeof front.equation === 'string' && front.equation.trim() !== '';
+    }).length;
+}
+
+/** What the deck reader needs of a project of the snapshot. */
+function deckProjects(projects: Project[]): DeckProject[] {
+    return projects.map((project) => ({
+        id: project.id,
+        file: project.file,
+        folder: project.folder,
+        tier: project.tier,
+        chips: project.chips,
+        short: project.short ?? '',
+        title: project.title
+    }));
+}
+
+/** The deck of a project folder, read as the deck route reads it. */
+function readProjectDeck(projects: Project[], folder: string): Deck {
+    const root = { key: 'hub', dir: hub };
+    return createReader({
+        hub: root,
+        projects: deckProjects(projects),
+        domains: config.domains,
+        tagTones: config.tagTones,
+        catalog: textCatalog(merged)
+    }).read(root, `${folder}/present`);
+}
+
+/** The equations a deck draws: those of its project slides and of its equation slides. */
+function drawnEquations(deck: Deck): string[] {
+    return deck.slides.flatMap((slide) => {
+        if (slide.kind === 'project')
+            return slide.slide.equation === undefined ? [] : [slide.slide.equation];
+        return slide.kind === 'equation' ? [slide.equation] : [];
+    });
 }
 
 /** Folders a project.yml never sits under: a project's own code deposit and its attic. */
@@ -164,84 +191,101 @@ describe.skipIf(!present)('the real hub', () => {
         expect(JSON.parse(JSON.stringify(snapshot))).toStrictEqual(snapshot);
     });
 
-    it('reads a front-matter slide out of every PRESENT.md that declares one', () => {
+    it('reads a deck out of every project that has a present/ folder, with no finding', () => {
         const projects = Object.values(snapshot?.entities.projects ?? {});
-        // A slide made from front matter carries no body; a narrative-only file's one slide does.
-        const withSlides = projects.filter((project) =>
-            (project.present ?? []).some((slide) => slide.body === undefined)
-        );
-        expect(withSlides.length).toBeGreaterThanOrEqual(FILES_WITH_SLIDES);
+        const withDecks = projects.filter((project) => project.deck !== undefined);
+        expect(withDecks.length).toBeGreaterThanOrEqual(PROJECT_DECKS);
+        for (const project of withDecks) {
+            const deck = readProjectDeck(projects, project.folder);
+            expect(deck.state, project.id).toBe('ok');
+            expect(deck.findings, project.id).toEqual([]);
+            expect(deck.slides.length, project.id).toBeGreaterThan(0);
+        }
     });
 
     it('reads an equation out of every slide that writes one, as LaTeX that typesets', () => {
         const projects = Object.values(snapshot?.entities.projects ?? {});
-        const equations = projects.flatMap((project) =>
-            (project.present ?? []).flatMap((slide) =>
-                slide.equation === undefined ? [] : [{ id: slide.id, equation: slide.equation }]
+        const withDecks = projects.filter((project) => project.deck !== undefined);
+        const equations = withDecks.flatMap((project) =>
+            drawnEquations(readProjectDeck(projects, project.folder)).map((equation) => ({
+                id: project.id,
+                equation
+            }))
+        );
+        // The second count: the equations the front matter of each slide file writes, parsed
+        // without the reader under test.
+        const written = withDecks.flatMap((project) =>
+            globSync('*.md', { cwd: join(hub, project.folder, 'present') }).map((file) =>
+                writtenEquations(readFileSync(join(hub, project.folder, 'present', file), 'utf8'))
             )
         );
-        // The second count: the equations the front matter of each PRESENT.md writes, parsed
-        // without the reader under test.
-        const written = globSync('**/PRESENT.md', {
-            cwd: join(hub, 'projects'),
-            exclude: NEVER_DESCEND.map((name) => `**/${name}`)
-        }).map((file) => writtenEquations(readFileSync(join(hub, 'projects', file), 'utf8')));
         expect(equations.length).toBeGreaterThanOrEqual(SLIDES_WITH_EQUATION);
         expect(equations.length).toBe(written.reduce((sum, one) => sum + one, 0));
         for (const { id, equation } of equations) {
             expect(equation, id).not.toMatch(/\.(?:png|jpe?g|svg|webp)\s*$/i);
             expect(tex(equation, true), id).not.toContain('katex-error');
         }
-        const slideFindings = (snapshot?.findings ?? []).filter((one) =>
-            one.file.endsWith('PRESENT.md')
-        );
-        expect(slideFindings).toEqual([]);
     });
 
-    it('resolves every project entry of the shipped deck order to a slide of this hub', () => {
-        const ids = new Set(
-            Object.values(snapshot?.entities.projects ?? {}).flatMap((project) =>
-                (project.present ?? []).map((slide) => slide.id)
-            )
-        );
-        const deck = merged.deck;
-        const order = isMap(deck) && Array.isArray(deck.order) ? deck.order : [];
-        const refs = order
-            .filter((entry): entry is Record<string, unknown> => isMap(entry))
-            .filter((entry) => entry.slide === 'project')
-            .map((entry) => String(entry.ref));
-        expect(refs.length).toBeGreaterThan(0);
-        expect(refs.filter((ref) => !ids.has(ref))).toEqual([]);
+    it('reads the portfolio deck with every named deck found', () => {
+        const projects = Object.values(snapshot?.entities.projects ?? {});
+        const root = { key: 'hub', dir: hub };
+        const deck = createReader({
+            hub: root,
+            projects: deckProjects(projects),
+            domains: config.domains,
+            tagTones: config.tagTones,
+            catalog: textCatalog(merged)
+        }).read(root, config.portfolioDeck ?? '');
+        expect(deck.state).toBe('ok');
+        expect(deck.findings).toEqual([]);
+        expect(deck.groups.length).toBeGreaterThan(0);
+        for (const group of deck.groups) expect(group.missing, group.name).toEqual([]);
     });
 });
 
 // The count above is only as good as its agreement with the reader on the shapes a file can take,
-// which the hub does not hold today: a slide in a `slides:` list, a blank `equation:`, and a value
-// that is not text. This runs both on a planted file in a temporary directory.
+// which the hub does not hold today: several slides in one file, a blank `equation:`, and a value
+// that is not text. This runs both on a planted deck in a temporary directory.
 describe('the count of written equations', () => {
-    it('agrees with the reader on a slides list, a blank equation and a value that is not text', () => {
+    it('agrees with the reader on several slides, a blank equation and a value that is not text', () => {
         const text = [
             '---',
-            "present: { title: A, equation: '\\min_{x} f(x)' }",
-            'slides:',
-            "  - { id: one, title: B, equation: '\\frac{a}{b}' }",
-            "  - { id: two, title: C, equation: '   ' }",
-            '  - { id: three, title: D, equation: 3 }',
-            "  - { id: four, title: E, equation: '' }",
-            "  - { title: no id, equation: '\\alpha' }",
+            'kind: project',
+            "equation: '\\min_{x} f(x)'",
+            '---',
+            '---',
+            'kind: project',
+            "equation: '\\frac{a}{b}'",
+            '---',
+            '---',
+            'kind: project',
+            "equation: '   '",
+            '---',
+            '---',
+            'kind: project',
+            'equation: 3',
+            '---',
+            '---',
+            'kind: project',
+            "equation: ''",
             '---',
             ''
         ].join('\n');
         const hub = plantScratch('oculus-integrity-', {
-            'projects/active/alpha/PRESENT.md': text
+            'projects/active/alpha/present/present.yml': 'order: [main.md]\n',
+            'projects/active/alpha/present/main.md': text
         });
-        const read = readPresent(
-            { hub, folder: 'projects/active/alpha' },
-            'alpha',
-            textCatalog(merged)
-        );
-        const drawn = read.slides.filter((slide) => slide.equation !== undefined).length;
+        const root = { key: 'hub', dir: hub };
+        const deck = createReader({
+            hub: root,
+            projects: [],
+            domains: [],
+            tagTones: {},
+            catalog: textCatalog(merged)
+        }).read(root, 'projects/active/alpha/present');
+        const drawn = drawnEquations(deck).length;
         expect(drawn).toBe(2);
-        expect(writtenEquations(text)).toBe(drawn);
+        expect(writtenEquations(text)).toBe(2);
     });
 });

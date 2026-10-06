@@ -1860,3 +1860,12 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z652 (2026-10-06): Axel: new idea decks go to the idea grid (`more` without ideas, `ideas` discovers); sent to PR2's builder.
 - Z653 (2026-10-06): automode, (a): a Present tab's identity is its deck's root and path in the tab's layout state, as Open LaTeX; sent to PR2's builder as repair round 2.
 - Z654 (2026-10-06): automode, (a): Q125 lands after Axel's read with its small findings fixed at landing; new step Q126 reduces the DESIGN.md items its last review lists.
+- Z655 (2026-10-06): automode, (d): a section slide's front matter may carry `foot:`; the transition carries its hint there with no cards; fixed at PR2's landing.
+- Z656 (2026-10-06): automode: Z653's three gaps fixed at PR2's landing; Present tabs keep the breadcrumb bar as Open LaTeX tabs.
+- Z657 (2026-10-06): automode, sent in D23's repair round 1.
+- Z658 (2026-10-06): automode, sent in D23's repair round 1.
+- Z659 (2026-10-06): automode, sent in D23's repair round 1.
+- Z660 (2026-10-06): automode, sent in D23's repair round 1.
+- Z661 (2026-10-06): automode, sent in D23's repair round 1.
+- Z662 (2026-10-06): automode, PR2's look on a scratch oculus.
+- Z663 (2026-10-06): automode, the default-port start test red on main: cause found read-only, fix at D23's landing or in the next desktop step's brief.

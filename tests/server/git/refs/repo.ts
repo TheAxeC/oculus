@@ -7,11 +7,10 @@
 // machine it runs on.
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { resolve, sep } from 'node:path';
 import { expect } from 'vitest';
-import { scratchDir, test } from '../../../fixtures/scratch.ts';
+import { plantFile, scratchDir, test } from '../../../fixtures/scratch.ts';
 
 /** The variables that take git's global and system configuration away from a command. */
 const ISOLATED = { GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null' };
@@ -47,13 +46,7 @@ export function git(root: string, ...args: string[]): string {
 }
 
 /** A file written at a path relative to the root, with the folders on the way made. */
-export function put(root: string, rel: string, body: string | Buffer): string {
-    const full = join(root, rel);
-    expect(resolve(full).startsWith(resolve(root) + sep)).toBe(true);
-    mkdirSync(dirname(full), { recursive: true });
-    writeFileSync(full, body);
-    return full;
-}
+export const put = plantFile;
 
 /** A repository on `main` with an identity of its own and one commit holding `kept.txt`. */
 export function scratchRepo(prefix = 'oculus-refs-'): string {

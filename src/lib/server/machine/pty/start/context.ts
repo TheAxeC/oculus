@@ -27,12 +27,8 @@ function addFile(parts: string[], hub: string, path: string, suffix = ''): void 
  * What a portfolio chat is handed to read first, from oculus's configured source paths: the venue
  * catalogue, the project manifests, the pillars, then the six private collections in that order.
  */
-export function portfolioContext(
-    hub: string,
-    merged: Record<string, unknown>,
-    engine: string
-): string {
-    const config = portfolioConfigFrom(merged, engine);
+export function portfolioContext(hub: string, merged: Record<string, unknown>): string {
+    const config = portfolioConfigFrom(merged);
     const parts: string[] = [];
     addFile(parts, hub, config.registries.venues, ' (venue catalogue)');
     parts.push('# PROJECT MANIFESTS (status/venue source of truth)\n');

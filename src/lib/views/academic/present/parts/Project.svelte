@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, Present partial. A project's slide: the domain and status chips, the headline and
     // the hook, the spec strip, then the method and results beside the equation and the figures. A
-    // PRESENT.md that wrote no front matter reaches here as a slide carrying its narrative alone,
-    // and that narrative is what the slide draws.
+    // slide that wrote none of the rich keys reaches here carrying its Markdown alone, and that
+    // Markdown is what the slide draws.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -10,38 +10,42 @@
     import Panel from '../Panel.svelte';
     import Words from './Words.svelte';
     import { hasSlideContent } from '$lib/state/life/present';
-    import { typeTone } from '$lib/state/shared/words/tones';
+    import { domainLabel, domainTone, typeTone } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
-    import type { DeckTheme, PresentSlide, Project } from '$lib/state/life/present';
+    import type { PresentSlide } from '$lib/state/life/present';
 
     type Props = {
         slide: PresentSlide;
-        project: Project;
-        /** The deck's theme for the project's domain, absent when the deck names none. */
-        theme?: DeckTheme;
+        /** The words naming the slide when it wrote no title of its own. */
+        title: string;
+        /** The project's type, drawn as its chip. */
+        type?: string;
+        /** The project's `domain:` key, which the chip's words and the slide's edge come from. */
+        domain?: string;
         /** The hue the slide's `tag.class` wears, from the deck's `tag_tones`. */
         tagTone?: string;
     };
 
-    let { slide, project, theme, tagTone }: Props = $props();
+    let { slide, title, type, domain, tagTone }: Props = $props();
 
     const rich = $derived(hasSlideContent(slide));
-    const style = $derived(theme === undefined ? undefined : `--tone: var(--c-${theme.tone})`);
+    const tone = $derived(domain === undefined ? undefined : domainTone(domain));
+    const style = $derived(tone === undefined ? undefined : `--tone: var(--c-${tone})`);
 </script>
 
-<section class="slide" data-slide-kind="project" data-slide={slide.id} {style}>
+<section class="slide" data-slide-kind="project" {style}>
     <div class="top">
-        {#if theme !== undefined}
-            <Tag label={theme.label} tone={theme.tone} />
+        {#if domain !== undefined}
+            <Tag label={domainLabel(domain)} {tone} />
         {/if}
-        {#if project.type !== undefined}
-            <Chip label={project.type} tone={typeTone(project.type)} filled />
+        {#if type !== undefined}
+            <Chip label={type} tone={typeTone(type)} filled />
         {/if}
         {#if slide.tag?.text !== undefined && slide.tag.text !== ''}
             <Tag label={slide.tag.text} tone={tagTone} />
         {/if}
     </div>
-    <h3 class="headline"><Words text={slide.title ?? project.title} /></h3>
+    <h3 class="headline"><Words text={slide.title ?? title} /></h3>
     {#if slide.sub !== undefined}
         <div class="sub"><Words text={slide.sub} /></div>
     {/if}
@@ -100,7 +104,7 @@
                     <Equation {slide} />
                 {/if}
                 {#each slide.panels as panel, at (`${at}:${panel.figure ?? panel.caption ?? ''}`)}
-                    <Panel {panel} folder={project.folder} />
+                    <Panel {panel} />
                 {/each}
             </div>
         </div>

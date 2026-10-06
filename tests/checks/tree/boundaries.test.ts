@@ -29,7 +29,7 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // it too and it may reach no other view's partials.
 //
 // `data/helpers/guards`, `data/accounts/calendar`, `data/accounts/mail`, `data/accounts/connect`,
-// `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/deck`, `data/helpers/editor`,
+// `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/editor`,
 // `data/accounts/leads`, `data/helpers/worktrees`, `data/helpers/files/text-kind`,
 // `data/helpers/files/opens-in-program`, `data/helpers/files/languages`, `data/helpers/run/tasks`,
 // `data/helpers/run/marker`, `data/helpers/search/**`, `data/helpers/finding-text` and
@@ -39,9 +39,7 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // and reads the mailbox and by the page that presses Connect and draws the age on a card;
 // `data/accounts/connect` because the rule a new account's label and a provider's client half are
 // held to is read by the Add form and the setup page before they send and by the server before it
-// writes, and a copy on each side would let them disagree; `data/helpers/deck` because the deck's
-// placement rule has two readers, the Present view and the write that saves a selection, and a copy
-// of it on each side would let them disagree about what a slide key is; `data/accounts/leads` for
+// writes, and a copy on each side would let them disagree; `data/accounts/leads` for
 // the same reason, since the statuses that close a lead are read by the Position Leads view, its
 // badge and the ticker on the client, and by the summary the snapshot carries on the server;
 // `data/helpers/worktrees` likewise, the Repositories view naming the path a worktree will take and
@@ -166,7 +164,6 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/dates',
         'data/helpers/files/paths',
         'data/helpers/files/apps',
-        'data/helpers/deck',
         'data/accounts/leads',
         'data/helpers/worktrees',
         'data/helpers/files/text-kind',

@@ -20,6 +20,10 @@ scan:
   - { dir: projects/archive,     nested: true, tier: archive }    # nested; type (the outcome) read from each manifest
 
 
+# The portfolio deck: the folder, relative to the hub, whose present.yml and Markdown slides the Present view opens when a pane names no deck. A project's deck is its own present/ folder and a custom deck is any folder, so this key names the one deck that belongs to the hub as a whole.
+portfolio_deck: deck
+
+
 # Venue catalogue: the Venues view, journals and conferences (registries/venues.yml).
 venues_file: registries/venues.yml
 

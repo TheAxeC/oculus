@@ -29,7 +29,7 @@ export type SeedFacts = { seed: string; cwd: string; name: string };
 
 /** The facts a reference names, or the refusal word thrown as a TerminalRefused. */
 export function seedFacts(ref: TaskRef, source: SeedSource): SeedFacts {
-    const config: PortfolioConfig = portfolioConfigFrom(source.merged, source.engine);
+    const config: PortfolioConfig = portfolioConfigFrom(source.merged);
     const answer = taskSeed(ref, source.hub, config, textCatalog(source.merged));
     if (!answer.ok) throw new TerminalRefused(answer.word);
     return { seed: answer.seed, cwd: answer.cwd, name: answer.name };

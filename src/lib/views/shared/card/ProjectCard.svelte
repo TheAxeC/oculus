@@ -24,7 +24,8 @@
     import CodeText from '$lib/ui/display/CodeText.svelte';
     import Clamp from './Clamp.svelte';
     import Subtasks from '../forms/Subtasks.svelte';
-    import { codeLabel, deadline, deckSlideOf, openDocument } from './card';
+    import { codeLabel, deadline, deckOf, openDocument } from './card';
+    import { HUB_ROOT } from '$lib/state/sources/fs';
     import {
         firstSentence,
         hasReadme,
@@ -45,11 +46,10 @@
 
     const {
         entities: { portfolio },
-        layout: { openBeside, openView, showFolderInFiles },
+        layout: { openBeside, openView, showDeck, showFolderInFiles },
         selection: { select },
         selectors: { gitRoots, hubRoot },
         terminals: { showTerminal, startChat },
-        ui: { setInstanceState },
         writes: { openFolder, writeManifest }
     } = client;
     type Props = {
@@ -179,18 +179,17 @@
                 onclick: ontoggle
             });
         }
-        const slide = deckSlideOf(item.project);
-        if (slide !== null) {
+        const deck = deckOf(item.project);
+        if (deck !== null) {
             rows.push({
                 id: 'present',
                 label: t('project.card.present'),
                 title: t('project.card.present_tip'),
                 glyph: t('project.card.present_glyph'),
                 onclick: () => {
-                    // The deck's position is the pane's own state, so the pane is opened and then
-                    // put on the slide: a pane already on the deck moves to it rather than staying
-                    // where its reader left it.
-                    setInstanceState(openBeside('present', { slide }), { slide });
+                    // The project's deck is the identity of its tab: one tab per deck, activated
+                    // when it is open already.
+                    showDeck({ root: HUB_ROOT, path: deck }, '', true);
                 }
             });
         }

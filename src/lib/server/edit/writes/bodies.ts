@@ -93,11 +93,18 @@ export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> }
 export type RadarAddWrite = { kind: 'radar-add'; fields: Record<string, unknown> };
 
 /**
- * The public deck's saved lists: which slides it shows, and where every slide of the catalog sits.
- * `order` carries the whole catalog, shown or not, so a slide unchecked and checked again comes
- * back where the reader left it.
+ * One group's `slides:` of a deck's `present.yml`: the served root and the file's path under it,
+ * the group, `base` (the list the page read, which the file must hold) and `slides` (the list
+ * to write).
  */
-export type DeckWrite = { kind: 'deck'; selection: string[]; order: string[] };
+export type DeckSlidesWrite = {
+    kind: 'deck-slides';
+    root: string;
+    path: string;
+    group: string;
+    base: string[];
+    slides: string[];
+};
 
 /** One LinkedIn idea stub and one idea promoted to a numbered post. */
 export type LinkedinIdeaWrite = { kind: 'linkedin-idea'; title: string; category: string };
@@ -139,7 +146,7 @@ export type ConfigValueWrite = {
 /** A string that is not empty, which is what every id, name and key of a body is. */
 const wordShape = z.string().min(1);
 
-/** A list of words, which is what both halves of a deck write and a reorder are. */
+/** A list of words, which is what a deck write's two lists and a reorder are. */
 const keysShape = unchanged(z.array(wordShape));
 
 /** The `target` of a subtask body: `{ id }` for a manifest, `{ collection, id }` for an entry. */
@@ -257,11 +264,14 @@ const linkedinPostShape = z.object({
     file: z.string()
 }) satisfies z.ZodType<LinkedinPostWrite>;
 
-const deckShape = z.object({
-    kind: z.literal('deck'),
-    selection: keysShape,
-    order: keysShape
-}) satisfies z.ZodType<DeckWrite>;
+const deckSlidesShape = z.object({
+    kind: z.literal('deck-slides'),
+    root: wordShape,
+    path: wordShape,
+    group: wordShape,
+    base: keysShape,
+    slides: keysShape
+}) satisfies z.ZodType<DeckSlidesWrite>;
 
 const undoShape = z.object({
     kind: z.literal('undo'),
@@ -391,12 +401,13 @@ export function linkedinPostWrite(body: unknown): LinkedinPostWrite | null {
 }
 
 /**
- * The body as a deck write, or null when it is not one. An empty selection is a list of the right
- * shape and reaches the writer, which is where it is refused: the refusal names what was wrong with
- * it rather than the body being unknown to the route.
+ * The body as a write of one deck group's list, or null when it is not one. A list that repeats a
+ * name or names none the group knows is of the right shape and reaches the writer, which is where
+ * it is refused: the refusal names what was wrong with it rather than the body being unknown to
+ * the route.
  */
-export function deckWrite(body: unknown): DeckWrite | null {
-    return readAs(deckShape, body);
+export function deckSlidesWrite(body: unknown): DeckSlidesWrite | null {
+    return readAs(deckSlidesShape, body);
 }
 
 /** One recorded change taken back, addressed by the moment the log stamped it. */

@@ -20,6 +20,7 @@ import {
     MANIFEST,
     TOKEN,
     changesOf,
+    DECK_PATH,
     deckOf,
     deckTarget,
     manifestOf,
@@ -27,6 +28,7 @@ import {
     request,
     target,
     tasksOf,
+    undoneBack,
     undone,
     warmConfig
 } from '../write-fixture.ts';
@@ -170,26 +172,25 @@ describe('taking a change back', () => {
         expect(tasksOf(into)).toContain('- { do: read it }');
     });
 
-    it(
-        "puts the deck's two lists back to what the save before them left",
-        { tags: ['slow'] },
-        async () => {
-            const into = deckTarget();
-            const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
-            // A deck of no slides is not a state the writer accepts, so the very first save has no
-            // earlier lists to put back; the save after it has, and that is the one an undo
-            // addresses.
-            const first = await made(into, { kind: 'deck', selection: ['title', 'alpha'], order });
-            expect(first.kind).toBe('deck');
-            const change = await made(into, { kind: 'deck', selection: ['closing'], order });
-            expect(
-                (await handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into)).status
-            ).toBe(200);
-            const deck = (parse(deckOf(into)) as { deck: Record<string, unknown> }).deck;
-            expect(deck.selection).toEqual(['title', 'alpha']);
-            expect(deck.slide_order).toEqual(order);
-        }
-    );
+    it("puts a deck group's list back to the list the write replaced", async () => {
+        const into = deckTarget();
+        const file = join(into.hub, DECK_PATH);
+        const before = deckOf(into);
+        const slides = (group: string, base: string[], next: string[]): unknown => ({
+            kind: 'deck-slides',
+            root: 'hub',
+            path: DECK_PATH,
+            group,
+            base,
+            slides: next
+        });
+        const change = await made(into, slides('pillars', ['alpha'], ['beta', 'alpha']));
+        expect(change.kind).toBe('deck-slides');
+        expect(deckOf(into)).not.toBe(before);
+        const back = await undoneBack(into, change, file, before);
+        expect(back.kind).toBe('deck-slides');
+        expect(back.undoes).toBe(change.at);
+    });
 
     it('puts a career host and a subtask line back', async () => {
         const into = target();

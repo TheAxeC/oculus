@@ -4,17 +4,18 @@
 // engine's configuration files are written by hand, their comments explain what each block is for,
 // and a dump would come back with the comments gone and every quote and line break the author chose
 // rewritten. Only the one list's own lines move; every other line of the file is as it was. A
-// comment written on the list key's own line goes with the line.
+// comment written on the list key's own line stays on it.
 //
-// The list is named by the map it lives under, or by nothing for a list at the top level of the
-// document. A list the file does not hold yet is appended at the end of that map, or at the end of
-// the document, so it lands where its reader looks for it whatever else the file grows.
+// The list is named by the map it lives under, a key or a path of keys down to it, or by nothing
+// for a list at the top level of the document. A list the file does not hold yet is appended at the
+// end of that map, or at the end of the document, so it lands where its reader looks for it
+// whatever else the file grows.
 //
 // The edit is only safe for a file written in blocks, which is how these files are written; a
 // flow-style map has no line to replace and no line to append to. Rather than knowing every shape
 // it cannot keep, each caller reads its own result back and compares it with the original before
-// anything is written, through readBack and othersThan below: server/edit/deck-edit.ts for the
-// deck's two lists, server/edit/writes/config/audit-mute.ts for the audit's mute list,
+// anything is written, through readBack and othersThan below: server/edit/deck-edit.ts for a deck
+// group's `slides:`, server/edit/writes/config/audit-mute.ts for the audit's mute list,
 // server/edit/writes/config/rail.ts for the rail's list of pages and
 // server/edit/writes/config/roots.ts for the default workspace's folders.
 //
@@ -59,9 +60,13 @@ function rangeOf(node: unknown): [number, number] | null {
     return held === undefined || held === null ? null : [held[0], held[1]];
 }
 
-/** One key written as the list's entry: plain where that reads back as itself, quoted otherwise. */
+/**
+ * One key written as the list's entry: plain where that reads back as the same text, quoted
+ * otherwise, which includes a word YAML reads as a number, a boolean or null.
+ */
 export function entryText(key: string): string {
-    return PLAIN.test(key) && !key.includes(': ') ? key : JSON.stringify(key);
+    if (!PLAIN.test(key) || key.includes(': ')) return JSON.stringify(key);
+    return parse(key) === key ? key : JSON.stringify(key);
 }
 
 /** The line ending the file is written with, which the inserted lines use too. */
@@ -75,12 +80,21 @@ function listText(
     items: string[],
     indent: number,
     inner: number,
-    newline: string
+    newline: string,
+    comment = ''
 ): string {
     const pad = ' '.repeat(indent);
-    if (items.length === 0) return `${pad}${field}: []`;
+    if (items.length === 0) return `${pad}${field}: []${comment}`;
     const rows = items.map((item) => `${' '.repeat(inner)}- ${item}`);
-    return [`${pad}${field}:`, ...rows].join(newline);
+    return [`${pad}${field}:${comment}`, ...rows].join(newline);
+}
+
+/** The comment ending the line an offset sits on, leading space included, and the line's end. */
+function commentAfter(source: string, from: number): { comment: string; end: number } {
+    const eol = source.indexOf('\n', from);
+    const end = eol === -1 ? source.length : eol;
+    const found = /^([ \t]*#.*?)\r?$/.exec(source.slice(from, end));
+    return { comment: found?.[1] ?? '', end };
 }
 
 /** The offset with trailing whitespace walked back off it, never past `floor`. */
@@ -90,18 +104,16 @@ function trimmed(source: string, at: number, floor: number): number {
     return held;
 }
 
+/** The map a list lives under: a key of the top level, a path of keys to it, or the document. */
+export type Owner = string | string[] | null;
+
 /**
  * The source with one list set to `keys`, replaced where the file holds that key and appended to
  * the end of its map where it does not. `owner` is the map the list lives under, and null puts it
  * at the top level of the document. A source whose root is not a map, or which holds no such map,
  * is given back unchanged: there is nothing there to write into.
  */
-export function setList(
-    source: string,
-    owner: string | null,
-    field: string,
-    keys: string[]
-): string {
+export function setList(source: string, owner: Owner, field: string, keys: string[]): string {
     return setItems(source, owner, field, keys.map(entryText));
 }
 
@@ -110,19 +122,14 @@ export function setList(
  * `{ label: "Focus", glyph: focus, page: focus }` for a list of maps. What makes each item read
  * back as what was asked is the caller's to check, which it does by reading its result back.
  */
-export function setItems(
-    source: string,
-    owner: string | null,
-    field: string,
-    items: string[]
-): string {
+export function setItems(source: string, owner: Owner, field: string, items: string[]): string {
     const root = parseDocument(source).contents;
     if (!isYamlMap(root)) return source;
 
     let outerIndent = 0;
     let map = root;
-    if (owner !== null) {
-        const pair = root.items.find((one) => nameOf(one) === owner);
+    for (const name of owner === null ? [] : [owner].flat()) {
+        const pair = map.items.find((one) => nameOf(one) === name);
         if (pair === undefined || !isYamlMap(pair.value)) return source;
         const key = rangeOf(pair.key);
         if (key === null) return source;
@@ -151,8 +158,8 @@ export function setItems(
               : indent + Math.max(indent - outerIndent, 1);
 
     const newline = newlineOf(source);
-    const block = listText(field, items, indent, inner, newline);
     if (held === undefined) {
+        const block = listText(field, items, indent, inner, newline);
         const at = trimmed(source, span[1], span[0]);
         return `${source.slice(0, at)}${newline}${block}${source.slice(at)}`;
     }
@@ -160,13 +167,19 @@ export function setItems(
     const key = rangeOf(held.key);
     if (key === null) return source;
     const value = rangeOf(held.value);
+    // A comment on the key's line is kept on the line of the rewritten key: after the colon for a
+    // list written in blocks, after the closing bracket for one written in a flow.
+    const colon = source.indexOf(':', key[1]);
+    const inline = value !== null && !source.slice(key[1], value[0]).includes('\n');
+    const note = commentAfter(source, inline ? value[1] : colon + 1);
+    const block = listText(field, items, indent, inner, newline, note.comment);
     // The edit starts at the beginning of the key's line, since the block carries its own
     // indentation. A key written with no value at all has no value node to end at, so it ends at
     // its colon; a block list ends after the newline of its last item, and a comment on the line
     // below belongs to the next key rather than to this list, so the whitespace between is walked
     // back off.
     const from = lineStart(source, key[0]);
-    const stop = trimmed(source, value === null ? source.indexOf(':', key[1]) + 1 : value[1], from);
+    const stop = inline ? note.end : trimmed(source, value === null ? colon + 1 : value[1], from);
     if (stop <= from) return source;
     return source.slice(0, from) + block + source.slice(stop);
 }

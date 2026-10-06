@@ -1,14 +1,15 @@
 <script lang="ts">
-    // Layer 3, Present partial. The governing equation at the top of a project slide, in the card
-    // the deck gives it. A slide writes it as LaTeX, which is typeset in the page; a formula that
-    // does not parse is drawn as its own source in the error colour, so one mistyped line costs its
-    // own slide. A formula wider than the card is drawn smaller until it fits (equationScale).
+    // Layer 3, Present partial. The governing equation at the top of a project slide, and the
+    // equation of an equation slide, in the card the deck gives it. A slide writes it as LaTeX,
+    // which is typeset in the page; a formula that does not parse is drawn as its own source in the
+    // error colour, so one mistyped line costs its own slide. A formula wider than the card is
+    // drawn smaller until it fits (equationScale).
 
     import type { Attachment } from 'svelte/attachments';
     import { tex } from '../markup';
     import { equationScale, type PresentSlide } from '$lib/state/life/present';
 
-    type Props = { slide: PresentSlide };
+    type Props = { slide: Pick<PresentSlide, 'equation'> };
 
     let { slide }: Props = $props();
 

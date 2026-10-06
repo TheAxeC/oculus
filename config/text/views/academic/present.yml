@@ -7,12 +7,22 @@ text:
         col_mechanism: Core mechanism
         col_project: Project
         counter: '{0} / {1}'
+        deck_menu: Deck
+        deck_portfolio: Portfolio deck
+        deck_project: 'Project: {0}'
         eli5_plain: In plain words
         eli5_purpose: Purpose
-        empty: The deck holds no slides yet.
+        empty: 'The deck in {0} draws no slides. Its present.yml has an order that names no slide file or group, or the groups it names hold no decks.'
         empty_glyph: circle_empty
+        empty_missing: 'The folder {0} is not there.'
+        empty_no_file: 'The folder {0} holds no present.yml, so it is not a deck yet.'
+        empty_unnamed: 'No deck is set. Name the portfolio deck as `portfolio_deck` in config/sources.yml, or open a deck from a project card or from a folder in the Files view.'
+        empty_unreadable: 'The present.yml in {0} does not parse as a map, so nothing is drawn. The Audit view says where.'
+        failed: 'The deck could not be read: {0}'
         figure_alt: A figure of the project
         figure_missing: 'missing figure: {0}'
+        key_hint: Arrow keys or Space move through the deck | O opens the overview | F shows it full screen
+        loading: Reading the deck ...
         method: Method
         next: Next
         overview: Overview

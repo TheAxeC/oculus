@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, Present partial. One visual of a project slide: a figure the project holds, or the
-    // inline diagram markup the slide wrote, with the caption and the explanation under it.
+    // Layer 3, Present partial. One visual of a project slide: a figure the deck's folder holds, or
+    // the inline diagram markup the slide wrote, with the caption and the explanation under it.
     //
     // A figure the folder does not hold is named in its place rather than left as a dead image, and
     // the reader who wrote the slide gets the same name as the finding does.
@@ -11,26 +11,17 @@
     // out below, so a diagram is drawn in the app's own surfaces and type rather than in the
     // deck's.
 
-    import { fileUrl } from '$lib/views/shared/links/file-url';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
     import { sanitiseDiagram } from '$lib/ui/html';
     import { t } from '$lib/state/shared/words/text';
     import Words from './parts/Words.svelte';
     import type { PresentPanel } from '$lib/state/life/present';
 
-    type Props = {
-        panel: PresentPanel;
-        /** The project's folder relative to the hub; a figure is a file inside its `present/`. */
-        folder: string;
-    };
+    type Props = { panel: PresentPanel };
 
-    let { panel, folder }: Props = $props();
+    let { panel }: Props = $props();
 
-    const src = $derived(
-        panel.figure === undefined || panel.missing === true
-            ? ''
-            : fileUrl(HUB_ROOT, `${folder}/present/${panel.figure}`)
-    );
+    /** The address the deck's route gave the figure, absent for one the deck's folder lacks. */
+    const src = $derived(panel.missing === true ? '' : (panel.src ?? ''));
     const diagram = $derived(
         panel.diagramHtml === undefined ? '' : sanitiseDiagram(panel.diagramHtml)
     );

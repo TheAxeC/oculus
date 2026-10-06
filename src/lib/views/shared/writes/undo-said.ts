@@ -39,6 +39,7 @@ export function sentenceFor(word: string): string {
     if (word === 'unknown') return t('history.unknown');
     if (word === 'nothing') return t('history.nothing');
     if (word === 'copy-gone') return t('history.copy_gone');
+    if (word === 'deck-gone') return t('history.deck_gone');
     if (word === 'unwritable') return t('history.unwritable');
     if (word === 'refused') return t('history.refused_write');
     return t('history.refused', word);

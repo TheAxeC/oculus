@@ -176,15 +176,11 @@ export function hasReadme(project: Project): boolean {
     return project.docs.some((doc) => doc.name === 'README.md' && doc.present);
 }
 
-/**
- * The Markdown a project's tab can draw: the fixed documents the folder holds, then the narrative
- * document `presentDoc` names when the project has a present narrative.
- */
-export function markdownDocNames(project: Project, presentDoc: string): string[] {
-    const found = project.docs
+/** The Markdown a project's tab can draw: the fixed documents the folder holds. */
+export function markdownDocNames(project: Project): string[] {
+    return project.docs
         .filter((doc) => doc.present && doc.name.endsWith('.md'))
         .map((doc) => doc.name);
-    return (project.present ?? []).length > 0 ? [...found, presentDoc] : found;
 }
 
 /** The known documents a project has not got, in the order the project lists them. */

@@ -21,11 +21,11 @@
 // new idea, writes/entries.ts for a collection file, writes/subtasks.ts for a subtask line and a
 // career host, writes/bodies.ts for the body parsers (one per kind of write), writes/file-undo.ts
 // for taking back a file operation, and the writers of the engine's own configuration files, in
-// writes/config/: deck.ts for the deck, audit-mute.ts for the audit's mute list, rail.ts for the
-// rail list, roots.ts for the default workspace's folders, config-key.ts for one option of a
-// tracked config file and config-value.ts for one list or family of one. What an importer of this
-// module needs of them is re-exported here, so an importer may name this module or the one that
-// holds the function.
+// writes/config/: deck.ts for a deck group's slides, audit-mute.ts for the audit's mute list,
+// rail.ts for the rail list, roots.ts for the default workspace's folders, config-key.ts for one
+// option of a tracked config file and config-value.ts for one list or family of one. What an
+// importer of this module needs of them is re-exported here, so an importer may name this module or
+// the one that holds the function.
 
 import { json } from '@sveltejs/kit';
 import { join } from 'node:path';
@@ -110,10 +110,10 @@ export type WriteTarget = {
     career: CareerRules;
     overrides?: string;
     /**
-     * The projects of the portfolio this server last published, which the deck write builds its
-     * catalog of slide keys from. It is required rather than optional so that a route reaching for
-     * a target cannot leave the deck write with no catalog and refuse every save; a process that
-     * has published no portfolio yet names no projects, and the write refuses with a reason.
+     * The projects of the portfolio this server last published, which the deck write reads a
+     * group's decks from. It is required rather than optional so that a route reaching for a target
+     * cannot leave the deck write with no projects and refuse every save; a process that has
+     * published no portfolio yet names no projects, and the write refuses with a reason.
      */
     projects: () => Project[];
     /**
@@ -187,7 +187,7 @@ export type WriteOutcome = {
 
 // The writers and the parsers, re-exported under their own names.
 export { coerce, createIdea, fieldTypes, insideHub, writeManifest } from './writes/manifest.ts';
-export { writeDeck } from './writes/config/deck.ts';
+export { writeDeckSlides } from './writes/config/deck.ts';
 export { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 export { collectionFile, identityField } from '../files/fs/collections.ts';
 export { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
@@ -201,7 +201,7 @@ export {
     auditMuteWrite,
     configKeyWrite,
     configValueWrite,
-    deckWrite,
+    deckSlidesWrite,
     deleteEntryWrite,
     entryWrite,
     feedDeleteWrite,
@@ -253,7 +253,7 @@ export function target(
     const local = loadLocal(engine);
     return {
         hub: local.hub,
-        config: portfolioConfigFrom(merged, engine),
+        config: portfolioConfigFrom(merged),
         engine,
         career: careerRules(merged),
         overrides: local.sessionsOverrides,

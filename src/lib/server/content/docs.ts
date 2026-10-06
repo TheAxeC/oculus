@@ -46,7 +46,6 @@ import { renderDocumentParts } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
 import { isSideTier } from '../../data/sources/manifests.ts';
-import { PRESENT_DOC } from '../../data/sources/present.ts';
 import { HUB_ROOT } from '../files/files.ts';
 import type {
     Finding,
@@ -71,18 +70,14 @@ export type DocTarget = {
 };
 
 /**
- * The names this route serves: the Markdown of PROJECT_DOCS, and the PRESENT.md beside them. The
- * other entries of that list are a PDF and a LaTeX source, and neither is something `marked` can
- * render, so both are refused here rather than answered with rubbish.
- *
- * PRESENT.md is not one of PROJECT_DOCS: the card's document row reports on the four a project is
- * measured by and PRESENT.md is not one of them, while the project tab draws its narrative like any
- * other document. readDoc splits the front matter off, so what this answers with is the body alone.
+ * The names this route serves: the Markdown of PROJECT_DOCS. The other entries of that list are a
+ * PDF and a LaTeX source, and neither is something `marked` can render, so both are refused here
+ * rather than answered with rubbish. readDoc splits the front matter off, so what this answers
+ * with is the body alone.
  */
-export const MARKDOWN_DOCS = [
-    ...PROJECT_DOCS.map((doc) => doc.name).filter((name) => name.endsWith('.md')),
-    PRESENT_DOC
-];
+export const MARKDOWN_DOCS = PROJECT_DOCS.map((doc) => doc.name).filter((name) =>
+    name.endsWith('.md')
+);
 
 /**
  * What the endpoint answers with: the rendered document, the headings of that render in order

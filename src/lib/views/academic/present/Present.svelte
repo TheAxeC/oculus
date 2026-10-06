@@ -23,13 +23,14 @@
     // the design size and multiplied by the text size. A slide taller than the frame scrolls
     // inside it. The overview grid and the empty state are not scaled and keep the UI's tokens.
     //
-    // The deck is not a file this builds and it is not a copy of one: the deck-level slides are
-    // config/present.yml and the project slides are the PRESENT.md front matter the snapshot
-    // carries, so a slide edited on disk is the slide on screen at the next push.
+    // The deck is a folder the server reads (api/deck): `present.yml` and the Markdown slide files,
+    // so a slide edited on disk is the slide on screen at the next push. A pane shows the portfolio
+    // deck until it is pointed at another: a project's deck, a deck it has shown, or the one a
+    // folder of the Files view opened it on. The deck menu in the toolbar lists them.
     //
     // Where the reader is, and whether the grid is open, belong to the instance rather than to the
     // store, so two panes on the deck hold two positions and a push that rebuilds the deck leaves
-    // each reader where they were. The instance's `slide` is the same key a project card sets.
+    // each reader where they were. The instance's `slide` is the key a slide of the deck carries.
     //
     // The keys are the pane's own, bound to the view's box rather than to the window: the shell
     // owns the digits and the chords, and a deck that swallowed an arrow key wherever the reader
@@ -54,17 +55,30 @@
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Chip from '$lib/ui/controls/Chip.svelte';
-    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Bar from './Bar.svelte';
     import Overview from './Overview.svelte';
     import Slide from './Slide.svelte';
+    import { CONTROLS, keepTab } from './keys';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import {
         FRAME_HEIGHT,
         FRAME_WIDTH,
+        deckChoices,
+        deckRefOf,
+        deckState,
+        deckLabel,
         fit,
+        indexOf,
+        labelOf,
+        leftDeck,
+        nothingToShow,
         parsePresentState,
+        sameDeck,
+        slideAt,
+        stepKey,
+        tabDeck,
+        withLabel,
+        type DeckRef,
         type PresentState
     } from '$lib/state/life/present';
     import { t } from '$lib/state/shared/words/text';
@@ -72,8 +86,8 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     const {
-        layout: { openBeside },
-        present: { current, first, last, next, position, previous, slides },
+        layout: { openBeside, pointInstance, restateInstance },
+        present: { deck: deckOf, portfolio, projectDecks, shown: shownDeck },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -81,13 +95,6 @@
 
     /** How long the pointer rests over the box in full screen before it is hidden. */
     const POINTER_REST_MS = 2000;
-
-    /** What a press or a click inside the slide is left to: the control's own action. */
-    const CONTROLS =
-        'a[href], button, input, select, textarea, summary, [contenteditable], [role="button"], [role="link"]';
-
-    /** What Tab stops at inside the box in full screen. */
-    const FOCUSABLE = `${CONTROLS}, [tabindex]`;
 
     /** The card cursor's keys, which act on the overview grid's tiles inside the box. */
     const GRID_KEYS = new Set(['j', 'k', 'i', 'J', 'K', 'ArrowUp', 'ArrowDown']);
@@ -112,8 +119,12 @@
     const scale = $derived(fit(width, height));
 
     const held = $derived(parsePresentState(instanceState(instance.id)));
-    const rows = $derived(slides());
-    const shown = $derived(current(held.slide));
+    const ref = $derived(shownDeck(deckRefOf(instance.state)));
+    const answer = $derived(ref === null ? null : deckOf(ref));
+    const deck = $derived(answer?.deck ?? null);
+    const rows = $derived(deck?.slides ?? []);
+    const shown = $derived(slideAt(rows, held.slide));
+    const at = $derived(indexOf(rows, held.slide));
     const grid = $derived(held.overview);
     /** The shell's card cursor, which the overview grid's tiles carry as every card list does. */
     const cursor = $derived(cardCursor(instance.state));
@@ -125,6 +136,51 @@
     function write(changes: Partial<PresentState>): void {
         setInstanceState(instance.id, { ...held, ...changes });
     }
+
+    /** The deck menu: the deck on screen, the portfolio deck, the projects' decks, recent ones. */
+    const choices = $derived(
+        deckChoices(
+            ref !== null && deck !== null ? { ref, deck } : null,
+            portfolio(),
+            projectDecks(),
+            held.recent,
+            t
+        )
+    );
+
+    /** The menu's id for the deck on screen. */
+    const chosen = $derived(
+        choices.find((one) => ref !== null && sameDeck(one.ref, ref))?.id ?? ''
+    );
+
+    /**
+     * Point the pane at another deck, remembering the one it leaves, or bring forward the tab that
+     * already shows it. The deck is named in the tab's layout state, as an opener names it
+     * (layout/open/show.ts), and the place in it is the pane's.
+     */
+    function open(next: DeckRef): void {
+        if (!pointInstance(instance.id, deckState(instance.state, tabDeck(next, portfolio())))) {
+            return;
+        }
+        setInstanceState(instance.id, leftDeck(held, ref, next));
+        box?.focus();
+    }
+
+    function choose(id: string): void {
+        const found = choices.find((one) => one.id === id);
+        if (found !== undefined) open(found.ref);
+    }
+
+    // The tab is named by the deck it shows, as a source tab is by its file.
+    $effect(() => {
+        const label = deck === null ? '' : deckLabel(deck);
+        if (label !== '' && labelOf(instance.state) !== label) {
+            restateInstance(instance.id, withLabel(instance.state, label));
+        }
+    });
+
+    /** What a deck that draws nothing says, and whether it is a failure. */
+    const nothing = $derived(nothingToShow(ref, answer, t));
 
     // The box is what the keys are bound to, so it takes the focus as soon as it exists: a reader
     // who opens the deck from the rail presses an arrow next, not a control. It never takes the
@@ -221,7 +277,7 @@
      * Move, and put the keys in force, so the next arrow key reaches this pane and not the shell.
      */
     function step(by: number): void {
-        write({ slide: by > 0 ? next(held.slide) : previous(held.slide) });
+        write({ slide: stepKey(rows, held.slide, by) });
         box?.focus();
     }
 
@@ -231,20 +287,20 @@
             case 'ArrowRight':
             case 'PageDown':
                 event.preventDefault();
-                write({ slide: next(held.slide) });
+                write({ slide: stepKey(rows, held.slide, 1) });
                 return;
             case 'ArrowLeft':
             case 'PageUp':
                 event.preventDefault();
-                write({ slide: previous(held.slide) });
+                write({ slide: stepKey(rows, held.slide, -1) });
                 return;
             case 'Home':
                 event.preventDefault();
-                write({ slide: first() });
+                write({ slide: rows.at(0)?.key ?? '' });
                 return;
             case 'End':
                 event.preventDefault();
-                write({ slide: last() });
+                write({ slide: rows.at(-1)?.key ?? '' });
                 return;
             case 'o':
             case 'O':
@@ -261,7 +317,7 @@
                 if (inControl(event.target)) return;
                 event.preventDefault();
                 if (!event.repeat)
-                    write({ slide: event.shiftKey ? previous(held.slide) : next(held.slide) });
+                    write({ slide: stepKey(rows, held.slide, event.shiftKey ? -1 : 1) });
                 return;
             case 'Escape':
                 if (!grid) return;
@@ -269,7 +325,7 @@
                 write({ overview: false });
                 return;
             case 'Tab':
-                if (full) keepTab(event);
+                if (full && box !== null) keepTab(event, box);
                 return;
             default:
                 // A key the deck does not own is not left to the shell in full screen: its keys
@@ -285,28 +341,6 @@
         }
     }
 
-    /** Tab and Shift+Tab move through the slide's controls and wrap inside the box. */
-    function keepTab(event: KeyboardEvent): void {
-        if (box === null) return;
-        const stops = [...box.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-            (element) => element.tabIndex >= 0 && element.getClientRects().length > 0
-        );
-        const at = document.activeElement;
-        const first = stops.at(0);
-        const final = stops.at(-1);
-        if (first === undefined || final === undefined) {
-            event.preventDefault();
-            return;
-        }
-        if (event.shiftKey && (at === first || at === box)) {
-            event.preventDefault();
-            final.focus();
-        } else if (!event.shiftKey && at === final) {
-            event.preventDefault();
-            first.focus();
-        }
-    }
-
     /** In full screen the focus leaving for an element outside the box ends the full screen. */
     function focusLeft(event: FocusEvent): void {
         const to = event.relatedTarget;
@@ -317,7 +351,7 @@
     function advance(event: MouseEvent): void {
         if (!full || grid || shown === null || inControl(event.target)) return;
         if (window.getSelection()?.isCollapsed === false) return;
-        write({ slide: next(held.slide) });
+        write({ slide: stepKey(rows, held.slide, 1) });
     }
 
     /** Show a slide picked in the grid, and close the grid over it. */
@@ -328,45 +362,24 @@
 </script>
 
 {#snippet bar()}
-    <Toolbar label={t('present.toolbar')}>
-        <ToolButton
-            label={t('present.previous')}
-            onclick={() => step(-1)}
-            disabled={rows.length === 0}
-        />
-        <ToolButton
-            label={t('present.next')}
-            onclick={() => step(1)}
-            disabled={rows.length === 0}
-        />
-        <Chip
-            label={t('present.overview')}
-            glyph={t('present.overview_glyph')}
-            pressed={grid}
-            onclick={() => {
-                write({ overview: !grid });
-                box?.focus();
-            }}
-        />
-        <ToolButton
-            label={t('present.present')}
-            title={rows.length === 0 ? t('present.empty') : t('present.present_tip')}
-            pressed={full}
-            active={full}
-            onclick={toggleFull}
-            disabled={rows.length === 0}
-        />
-        <ToolButton
-            label={t('slides.open')}
-            title={t('slides.open_tip')}
-            onclick={() => {
-                openBeside('slides');
-            }}
-        />
-        <span class="counter"
-            >{t('present.counter', String(position(held.slide)), String(rows.length))}</span
-        >
-    </Toolbar>
+    <Bar
+        {choices}
+        {chosen}
+        onchoose={choose}
+        count={rows.length}
+        at={rows.length === 0 ? 0 : at + 1}
+        overview={grid}
+        {full}
+        onstep={step}
+        onoverview={() => {
+            write({ overview: !grid });
+            box?.focus();
+        }}
+        onpresent={toggleFull}
+        onslides={() => {
+            openBeside('slides', deckState({}, deckRefOf(instance.state)));
+        }}
+    />
 {/snippet}
 
 <svelte:document onfullscreenchange={syncFull} />
@@ -393,8 +406,12 @@
         onpointermove={rouse}
         onclick={advance}
     >
-        {#if rows.length === 0}
-            <Empty message={t('present.empty')} glyph={t('present.empty_glyph')} />
+        {#if rows.length === 0 || deck === null}
+            <Empty
+                message={nothing.message}
+                error={nothing.error}
+                glyph={t('present.empty_glyph')}
+            />
         {:else if grid}
             <Overview {rows} current={shown?.key ?? ''} {cursor} onpick={pick} />
         {:else if shown !== null}
@@ -412,7 +429,7 @@
                     style:transform="scale({scale})"
                     style:visibility={scale === 0 ? 'hidden' : undefined}
                 >
-                    <Slide row={shown} />
+                    <Slide row={shown} {deck} first={at === 0} />
                 </div>
             </div>
         {/if}
@@ -490,13 +507,5 @@
     :global(body.wall) .frame {
         background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
-    }
-
-    /* The place in the deck closes the bar. */
-    .counter {
-        margin-left: auto;
-        color: var(--muted-txt, var(--muted));
-        font-family: var(--font-num);
-        font-size: var(--fs-sm);
     }
 </style>

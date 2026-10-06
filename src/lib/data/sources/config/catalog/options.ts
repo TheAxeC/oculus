@@ -85,9 +85,6 @@ const SOURCES = [
     'project_types',
     'status_chips',
     'entry_statuses',
-    'deck_framing',
-    'deck_summaries',
-    'slides',
     'slide_tags',
     'code_themes',
     'views',
@@ -442,8 +439,6 @@ const FROM_CONFIG: readonly Source[] = [
     'project_types',
     'status_chips',
     'entry_statuses',
-    'deck_framing',
-    'deck_summaries',
     'bundle_ids'
 ];
 
@@ -461,7 +456,6 @@ export function resourcesOfKind(resources: Record<string, unknown>, kind: string
  */
 export function configItems(source: Source, config: Record<string, unknown>): string[] | null {
     if (!FROM_CONFIG.includes(source)) return null;
-    const deck = isMap(config.deck) ? config.deck : {};
     switch (source) {
         case 'models': {
             const agents = isMap(config.agents) ? config.agents : {};
@@ -491,10 +485,6 @@ export function configItems(source: Source, config: Record<string, unknown>): st
             return keysOfRows(config.status_legend);
         case 'entry_statuses':
             return keysAt(config.status_palette);
-        case 'deck_framing':
-            return keysAt(deck.framing);
-        case 'deck_summaries':
-            return keysAt(deck.summaries);
         default: {
             const open = isMap(config.open) ? config.open : {};
             const programs = isMap(open.program_ext) ? Object.values(open.program_ext) : [];
@@ -545,15 +535,7 @@ export function classOfHex(config: Record<string, unknown>, hex: string): string
     return paletteOf(config).find(([key]) => key === lower)?.[1];
 }
 
-/** The `tag.class` of every slide the projects declare, each once, in the order they are met. */
-export function slideTagClasses(
-    projects: { present?: { tag?: { class?: string } }[] }[]
-): string[] {
-    const classes = projects.flatMap((project) =>
-        (project.present ?? []).flatMap((slide) => {
-            const name = slide.tag?.class;
-            return name === undefined || name === '' ? [] : [name];
-        })
-    );
-    return [...new Set(classes)];
+/** The `tag.class` of every project slide the projects' decks hold, each once, in the order met. */
+export function slideTagClasses(projects: { deckTags?: string[] }[]): string[] {
+    return [...new Set(projects.flatMap((project) => project.deckTags ?? []))];
 }

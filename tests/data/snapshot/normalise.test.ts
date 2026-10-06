@@ -232,7 +232,7 @@ function portfolio(): RawPortfolio {
         feeds: NO_FEEDS,
         career: null,
         docs: { alpha: documents('alpha', ['README.md']) },
-        present: {},
+        decks: {},
         findings: []
     };
 }

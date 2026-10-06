@@ -268,7 +268,7 @@ A Project holds:
 | `codeAvailability?` | `{ status?, date?, url?, doi?, repo? }`, all text |
 | `reproduced?` | `{ date?, note? }`, text |
 | `docs` | list of `{ name, label, present: boolean, human: boolean, mtime?: number }` |
-| `present?` | list of slides |
+| `deck?` | text, the hub folder of the project's `present/` deck, present when `present/present.yml` exists |
 
 An Entry of a collection is `{ id: text, title: text, fields: map, file: text, index: number }`. `fields` holds every key the entry has in the file, `title` and `key` included. `id` is the entry's `key` when it has one and its `title` otherwise. A collection's `schema` lists the fields in the order the file draws them. The example of part 10 reads the first one to learn what names an entry.
 
@@ -432,7 +432,7 @@ A UsageDay holds `tool` (`claude` or `codex`), `account`, `day` and `model` (tex
 
 The five kinds that ask you first show a confirmation in one sentence, `The app <title> asks to <kind in words>: <body>`. An example is `The app Task demo asks to delete an entry of a collection: {"kind":"delete-entry","collection":"tasks","id":"Task demo 1"}`. The words for the five kinds are `delete an entry of a collection`, `delete a feed item`, `create an idea project`, `move a LinkedIn idea` and `move a LinkedIn post`. The body is shown as JSON text, cut at 300 characters. The keyboard is on Cancel, so a key meant for the app never confirms it. Cancel rejects with `declined`. `new-idea`, `linkedin-idea` and `linkedin-post` are recorded with no way back; every other write can be undone in History.
 
-Every write is recorded in the change log with the app's id. The History view on the System page lists it with the kind in words (`entry added`, `entry removed`, `app store`). Each row shows the two values and an Undo button. An app cannot ask for `undo`, `rail`, `roots`, `audit-mute`, `config-key`, `config-value`, `session`, `deck` or `app-store`. It cannot ask for any write route that runs processes, writes arbitrary files, reaches a remote or acts on an account. Listing one of those in `writes` refuses the app with `write_closed`.
+Every write is recorded in the change log with the app's id. The History view on the System page lists it with the kind in words (`entry added`, `entry removed`, `app store`). Each row shows the two values and an Undo button. An app cannot ask for `undo`, `rail`, `roots`, `audit-mute`, `config-key`, `config-value`, `session`, `deck-slides` or `app-store`. It cannot ask for any write route that runs processes, writes arbitrary files, reaches a remote or acts on an account. Listing one of those in `writes` refuses the app with `write_closed`.
 
 ### State and store
 

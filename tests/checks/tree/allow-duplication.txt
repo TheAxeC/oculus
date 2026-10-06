@@ -27,7 +27,6 @@ tests/data/snapshot/normalise.test.ts tests/state/boards/board/board-fixture.ts 
 tests/data/sources/collections.test.ts tests/data/sources/manifests.test.ts 009d9fe6ad5d the same 17 lines at 26 and 26, to fold into one place
 tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts 33a8d3a93398 the same 19 lines at 26 and 15, to fold into one place
 tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts dd605d6cb92e the same 14 lines at 36 and 25, to fold into one place
-tests/data/sources/docs.test.ts tests/data/sources/present.test.ts 4ec036f383df the same 13 lines at 18 and 19, to fold into one place
 tests/routes/edit/write-fixture.ts tests/routes/git/deposit.test.ts 01fefb490553 the same 14 lines at 143 and 52, to fold into one place
 tests/routes/edit/write-fixture.ts tests/server/core/changes.test.ts ea172e16ebfe the same 11 lines at 76 and 64, to fold into one place
 tests/routes/files/fs.test.ts tests/server/files/fs.test.ts 9fcd8308df69 the same 19 lines at 35 and 61, to fold into one place

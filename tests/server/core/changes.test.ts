@@ -21,7 +21,7 @@ import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { deckTarget, targetOver } from '../../routes/edit/write-fixture.ts';
+import { DECK_PATH, deckTarget, targetOver } from '../../routes/edit/write-fixture.ts';
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
@@ -238,23 +238,26 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         });
     });
 
-    it("records the deck's two lists as the file held them and as it holds them now", async () => {
+    it("records a deck group's list as the file held it and as it holds it now", async () => {
         const into = deckTarget();
-        const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
-        const rows = await written(into, { kind: 'deck', selection: ['title', 'alpha'], order });
+        const rows = await written(into, {
+            kind: 'deck-slides',
+            root: 'hub',
+            path: DECK_PATH,
+            group: 'pillars',
+            base: ['alpha'],
+            slides: ['beta', 'alpha']
+        });
         expect(rows).toHaveLength(1);
         expect(rows[0]).toMatchObject({
-            kind: 'deck',
-            key: 'deck',
-            field: 'deck',
-            before: { selection: [], order: [] },
-            after: { selection: ['title', 'alpha'], order },
+            kind: 'deck-slides',
+            key: 'pillars',
+            field: 'slides',
+            before: ['alpha'],
+            after: ['beta', 'alpha'],
             undo: 'field'
         });
-        // The fixture keeps the deck file inside the hub, so the record names it the way it names
-        // every hub file; on a real machine it sits under the engine's config folder and stays
-        // absolute.
-        expect(rows[0].file).toBe('present.yml');
+        expect(rows[0].file).toBe(DECK_PATH);
     });
 
     it('records a scaffolded idea with no way back', async () => {

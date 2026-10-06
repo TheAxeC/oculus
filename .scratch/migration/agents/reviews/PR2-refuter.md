@@ -334,3 +334,222 @@ Cases:
 - Whether the builder's git commands touched the main checkout. It is not visible from git metadata I may read.
 
 Reviewer usage: agent id not visible from inside the run, claude-opus-5-5, token count not visible from inside the run, about 80 tool uses counted by hand, about 16 minutes (17:45:28 to 18:00 by `date`).
+
+## Repair round 2, refuted
+
+Read this first. Every check in the brief's "Verify before you report" passes on my rerun. That includes verify 7, which I ran as a live server on 8792 and then stopped. Every closure claimed for round 2 reproduces. The first-run table (21 files, 108 tests) also reproduces exactly.
+
+Seven findings remain. None is a red check. Five of them concern the Z653 tab identity and its documentation:
+- The deck menu can give two tabs the same deck. I reproduced this; the builder had named it as a hazard but did not run it (Behaviour 1).
+- Open Presentation on the hub's `deck/` folder opens a second tab next to an open portfolio tab (Behaviour 2).
+- `path: "."` is not read back by every reader of a tab's state. The tab breadcrumb, the tooltip, Copy Path, Reveal and Bookmark read it literally, and the Slides opener drops it, so the Slides tab of a root-top deck reuses the portfolio's Slides tab (Spec 2).
+- Present tabs now draw a breadcrumb bar, a path tooltip and file items in their tab menu. The report does not mention this (Behaviour 3).
+- DESIGN.md:385 and HELP.md:139 now state the one-tab-per-deck rule as holding everywhere, which Behaviour 1 and 2 make false (Standards 1).
+
+On the transition decision: none of options A, B or C reproduces the old slide. A adds words the deck never had (Spec 1).
+
+```
+1. npm run test:quick -- --base 7e1d73675   (worktree tools/oculus)
+   ok ASCII gate; ok svelte-kit sync; ok prettier; ok svelte-check "COMPLETED 392 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS"; ok eslint; ok vitest
+   "test:quick: 25.1 s (limit 45.0 s); every command passed"
+   npm run diagrams not run (it writes files); its check ran in the next line instead:
+   npx vitest run tests/checks --tagsFilter '!slow' --reporter=dot  -> "Test Files 15 passed | 1 skipped (16)", "Tests 228 passed | 3 skipped (231)"
+   sh utils/folder-check.sh -> exit 0
+2. node tools/oculus/utils/migrations/convert-decks.mjs --check (worktree root) -> "nothing left to convert"
+   find projects tools/oculus/demo -name PRESENT.md | wc -l -> 0;  ls utils/convert-decks.py -> No such file (the .mjs substitution, accepted in the first review)
+3. grep -rn PRESENT src tests -> git-index.ts:336 and :357 (ALREADY_PRESENT) only
+   grep -rn -E "slide_order|OPEN_TIERS|DeckTheme" src tests config --exclude=local.yml | wc -l -> 0
+4. spec.md perl gate over src tests config utils -> 0 lines
+   git diff 7e1d73675 -U0 -- . ':!projects' ':!deck', added lines with non-ASCII -> 0
+   LC_ALL=C grep '[^ -~]' over the untracked templates/docs/present, demo/deck, graph-bandits/present, deck -> nothing
+5. sh utils/unused-exports.sh -> exit 0; "Unused exports (250)", "Unused exported types (122)" against the base's 256 / 123.
+   diff against PR2-base/unused-exports.txt: only the lines the report explains (removed deck modules; audit.ts moved to audit/scan.ts; writeDeck/deckWrite renamed; ROW_DECK added)
+6. 21 files on the unchanged tree (scratch copy: PR2-base config/src/utils, the worktree's tests/ and root config files, main's demo):
+   "files 21 tests 108 passed 72 failed 35 pending 1", every row identical to the report's table
+   (config.test, keys.test, docs.test pass; integrity, present, deck route do not load; undo 0/11; changes 1/6;
+    writes.test "scaffolds an idea..." fails on the chips assertion; the undo/changes/deck-slides deck tests fail with
+    the portfolioConfigFrom TypeError before their first assertion)
+   worktree, run twice: npx vitest run present, deck route, deck-slides, deck-edit, undo, changes, writes --reporter=verbose
+   -> "Test Files 7 passed (7)", "Tests 28 passed (28)"; deck-slides' one it 191 ms and 185 ms; undo deck it 141/151 ms
+7. Build check: no file under src is newer than build/handler.js (18:41), so no rebuild.
+   HOME=<scratch>/home node src/server.ts --engine <scratch>/eng --handler build/handler.js. The engine's config was copied with --exclude=local.yml and given its own local.yml (hub: worktree, port: 8792). Queries used the page's token (<REDACTED>) plus Origin and Sec-Fetch-Site headers.
+   deck                                 200 ok 21 'Structured models, everywhere they hide' findings []
+     groups: pillars 7 7 16 [] []; more 7 7 7 [] []; ideas 9 9 0 [] []
+     title.md#0 lede '7 pillar projects and 7 more. ...' legend [liver, method, heart, brain]
+     engine.md#0 cards 3, foot 'Each of the next slides leads ...'
+     transition.md#0 lede '' cards [Equation, Specs, Method, Measured results] foot 'Same four-layer format: ...' legend [brain, heart, method, liver]
+   projects/manuscripts/btfno/present   200 ok 1 'A PDE-solving neural operator built from specialist low-rank blocks' findings []
+   tools/oculus/demo/deck               200 ok 26 'The demo hub, at a glance' findings []
+   ../                                  403 {'error': 'outside'}
+   projects/nothere                     200 missing 0, finding 'deck folder projects/nothere is not in <worktree>'
+   no token                             403
+   stopped: lsof -nP -iTCP:8792 -sTCP:LISTEN | wc -l -> 0 before the start and after the stop; pgrep -f r2rev/eng exit 1
+Report evidence rerun:
+   npm test -> "Test Files 106 passed | 17 skipped (123)", "Tests 632 passed | 71 skipped (703)"
+   npm run check -> "COMPLETED 3052 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS"; npx eslint . exit 0; npx prettier --check . "All matched files use Prettier code style!"
+   node scratchpad/cases.mts <engine>: output identical to the builder's r3-cases.txt (diff empty, 49 lines); both case 1 section runs reproduce
+   my own section probe: paragraph+bullets -> lede, 0 cards, foot ''; lede+2 cards+'The foot.' -> foot 'The foot.'; a lone paragraph -> lede
+   node scratchpad/case9/run.mts: ideas count 10 incl. scratch-tenth; scratch-tenth in more false; fedbtd found nowhere; findings 0; tagTones config defaults
+   node scratchpad/case14/run.mts: ext/talk state ok, image src /api/file/ext/talk/pic.png, findings 0
+   demo copy: title, graph-bandits #0 #1, summary, closing; the one finding: the graphs domain
+   chips (python yaml): {nascent 25, scoping 5, parked 1, de-risking 2}; exploring ideas []; exploring on 4 active projects; manifests +32 -32
+   config/present.yml keys ['defaults']; git diff --stat -- tools/present: empty
+   grep -c "Rules for what goes on a slide": 1 in deck/present.yml, demo/deck/present.yml, the template main.md, convert-decks.mjs
+   undo.ts:223 `if (change.kind === 'deck') return { error: 'deck-gone' };` (case 25, read; the report's run not rerun)
+Tab identity probes (scratch copy of the engine, *.client.test.ts with createLayout(createUi())):
+   showDeck(portfolio) vs showDeck({hub, deck}) from Files: two tab ids, same tab false
+   tab b re-pointed to talks/a as Present.svelte open() does: tabs a and b both stateId ["hub","talks/a"]; showDeck(talks/a) then activates a
+   root-top tab state {label:'ext', root:'ext', path:'.'}: fileOfTab {root:'ext', path:'.'}; tabCrumbs [ext, '.'(file:true)];
+     shownTabPath '~/talks/.'; absoluteOf '/Users/me/talks/.'; a Files tab of the same root: crumbs []
+   project deck tab crumbs: [hub, projects, manuscripts, btfno, present]
+   Slides from the portfolio, then from the root-top deck: stateId null for both, same tab true, the one Slides tab re-pointed to {root:'ext', path:''}
+Worktree: git status --short | md5 (from tools/oculus) 3100a2e0... at the start and at the end. The scratch copies symlink the worktree's node_modules, so vitest's cache there (git-ignored) was written.
+```
+
+### Verdicts
+
+Items:
+- 1: holds. The section rule is part 1's again. In `sectionParts` (`kinds.ts:129-155`), the text before the numbered list is the lede, the list gives the cards, the text after it is the foot, and text with no list is the lede (probe and cases.mts rerun). The lede is drawn as a block (`Section.svelte:25`).
+- 2: holds. Live route answers, `portfolio_deck`, `Project.deck`.
+- 3: holds. Chip counts above; the writes.test chips assertion passed.
+- 4: violated in one sub-point (Spec 1). `deck/transition.md` carries four card titles that the source deck did not have. The rest holds: --check, no PRESENT.md, and the slide rule carried into four files.
+- 5: violated in one sub-point (Spec 2, Behaviour 1). Most of Z653 holds:
+  - root and path are in the layout state (`deckState`, `present.ts:203-208`);
+  - slide, overview and recent are in the instance state;
+  - a state with no root is the portfolio deck (`deckRefOf`, `present.ts:99-105`).
+  The violated parts: `path: "."` is not read back by every reader, and the deck menu can leave two tabs on one deck.
+- 6: violated in one sub-point (Behaviour 2). Two decks get two tabs, and a second press activates the open tab from both the Files menu and the card (builder's run plus my probe). Open Presentation on the portfolio deck's own folder opens a second tab next to the portfolio tab.
+- 7: holds. The deck-slides, deck-edit, undo and changes tests pass. The flow row reaches `kept()`: `groupSlides` accepts the flow source, so `setGroupSlides` returns null at `deck-edit.ts:57`.
+- 8: violated in one sub-point (Standards 1). DESIGN.md:385 and HELP.md:139 state the one-tab-per-deck rule more broadly than the code delivers. The step's own skill lines are ASCII (gate above).
+- 9: holds. `tools/present` diff is empty.
+
+Cases:
+- 1: met (live route: order, lede, legend, engine cards, transition heading and foot; key hint `Slide.svelte:72-73`, read). The transition's extra cards are Spec 1.
+- 2: met (route counts 7 and 9; the unknown-count run).
+- 3, 4, 5, 11: met (`present.test.ts` passed; my section probe).
+- 6, 7, 8, 10: met (cases.mts rerun, identical output).
+- 9: met (route: fedbtd in no group; case9 rerun: scratch-tenth in ideas, not in more).
+- 12: met (cases rerun: panel and Markdown gaps with findings).
+- 13: met (cases rerun; case9 rerun gives the config's defaults for the portfolio deck).
+- 14: partial, with the missing part not verifiable here. The reader half is met (case14 rerun). Opening it from the Files menu and seeing it in the deck menu needs the look.
+- 15: met by reading `row-menu.ts:235,278`; the menu itself needs the look.
+- 16: met (live 403 on `../`; cases rerun: symlink and `..` findings, globs outside; route and write test rows).
+- 17: met (deck-slides, undo, changes tests passed).
+- 18: met (seven deck-slides refusal rows; deck-edit's four rows, the flow row reaching `kept()`).
+- 19: not verifiable without a page. By reading, `present.svelte.ts:84-89` marks held decks stale on files, portfolio and config.
+- 20, 21: met (find, greps, chips above).
+- 22: met (demo copy run).
+- 23: met for the reader (cases rerun; live `missing`). The view's sentence was read, not looked at.
+- 24: met. `deckRefOf({label})` gives the empty reference, which resolves to the portfolio deck; `hccnet-fl` is no key there, so `indexOf` gives 0. My probe: the portfolio tab's state is `{}` with a null identity.
+- 25: met by reading `undo.ts:223`, which returns `deck-gone` before any write, plus the report's run (not rerun).
+- 26: met (writes.test passed; it failed on the unchanged tree on the chips assertion).
+
+### Findings
+
+**Spec**
+1. `deck/transition.md:5-12`, written by `utils/migrations/convert-decks.mjs:401-416` (`const layers = ['Equation', 'Specs', 'Method', 'Measured results']`).
+   - What is wrong: the slide gains four cards with titles and empty bodies. The base deck's transition slide (`PR2-base config/present.yml`, `framing.transition`, drawn by the base `parts/Framing.svelte`) showed:
+     - the heading "Six more, same backbone: across brain, heart, immunity and survival";
+     - a topic lede, which the ruling removes (Z640);
+     - a four-chip legend;
+     - the hint in the small foot line;
+     - no cards.
+   - Part 4 says "The words are carried byte for byte except where this list changes them", and the list adds no cards.
+   - Where the four layer names already appear: the transition's own foot ("equation | specs | method | measured results") and engine.md's foot. Option A therefore draws the same four words twice on one slide.
+   - The options against the old slide:
+     - A (as built) adds content the deck never had.
+     - B (no cards, hint as the lede) keeps every word and the legend, but draws the hint at lede size under the heading instead of in the foot.
+     - C (a text slide) drops the legend, since `Plain.svelte` draws none, and drops the brief's `kind: section`.
+   - None reproduces the old slide. The brief's own two sentences cannot both hold for a section slide without a list: part 1 makes the foot "text after the list", and part 4 asks for "no lede, the hint as the foot". That is a clash inside the brief, so the decision is the orchestrator's.
+   - The one shape that reproduces the old slide exactly is a fourth option the report does not list, D: a section front-matter `foot:` key, the same shape as the `foot:` of the summary and grid `order:` entries. D is a new format key, so it needs a ruling.
+   - Recommendation: D if the orchestrator rules the key; otherwise B. Not A.
+   - The report calls B "the lazy option". It is not: B leaves the foot position unmet, while A breaks the byte-for-byte rule and repeats the foot as cards. Neither does more of the brief's work.
+   - Failure scenario: an audience sees four empty numbered boxes repeating the line under them, on a slide that never had them.
+   - Verdict: item 4 violated in this sub-point.
+2. `src/lib/state/workbench/navigation/pages.ts:369` `fileOfTab` and `src/lib/views/academic/present/Present.svelte:378` `openBeside('slides', deckRefOf(instance.state))`.
+   - What is wrong: `ROOT_TOP` is read back only by `deckRefOf`. The generic readers of a tab's root and path take `path: "."` literally:
+     - `tabCrumbs` (`shell/panes/strip/tab-crumbs.ts:19`) draws a "." crumb marked as the file;
+     - `shownTabPath` (`pane-view.ts:489`) gives the tooltip `~/talks/.`;
+     - the tab menu's Copy Path, Reveal and Bookmark (`tab-menu-state.svelte.ts:70,123`) act on `<dir>/.`.
+     A Files tab on the same root shows no crumbs.
+   - The Slides opener passes `deckRefOf`, so it writes `{root:'ext', path:''}`. `stateId` of that state is null, the same as the portfolio's Slides state, so the probe gives "same tab true": one Slides tab is re-pointed between the two decks.
+   - Failure scenario: a reader opens Present on a root's own folder and sees a "." breadcrumb, then copies a path ending in "/.". Opening Slides for that deck replaces the portfolio's Slides tab.
+   - Verdict: item 5 violated in this sub-point.
+
+**Proof**
+1. `tests/server/core/changes.test.ts:262`: `expect(rows[0].file).toBe(realpathSync(join(into.hub, DECK_PATH)));`.
+   - What is wrong: `pathOf` (`server/core/changes.ts:158-162`) names a file inside the hub by its hub-relative path. The deck write records the real path. The record is absolute only when the hub's directory is a link, as macOS's temporary directory is.
+   - On a machine where the temp directory is not a link, the record is `deck/present.yml` and this assertion fails. The test is fitted to the machine.
+   - It also fixes as expected that a deck write on a linked hub names its file absolutely while every other hub write names it relatively.
+   - Failure scenario: the suite goes red on a runner whose temporary directory is not a symlink.
+   - Verdict: none.
+2. `PR2-report.md`, "Carried sentences that break a prose rule, for Axel".
+   - What is wrong: the section is empty, and the first line points to "the spaced hyphens counted below", with nothing below.
+   - The brief's Report and Conventions sections require the list. `grep -rcE "[a-zA-Z0-9,.)'] - [a-zA-Z0-9(<'*]"` over the converted slides counts lines in 8 files: raw-pls 10, fed-multicellular-immune 6, dries-bttr-ecg 6, hccnet-fl 5, hccnet-revision 5, ecg-readable-substrate 3, ward-bttr-crosssubject 2, bttd-source-eeg 1. Examples:
+     - `dries-bttr-ecg/present/main.md:7` "Dries - supervised block-term tensor regression";
+     - `ecg-readable-substrate/present/main.md:18` "not just saliency maps - the black-box...".
+   - This is a pattern count; each line is not judged.
+   - Failure scenario: Axel is never shown the carried tells he was meant to rule on.
+   - Verdict: none (a report part, fixable at landing).
+
+**Standards**
+1. `tools/oculus/DESIGN.md:385` and `tools/oculus/HELP.md:139`.
+   - DESIGN.md: "set by `showDeck` ... for every way of opening a deck, so each deck has a tab of its own and asking for a deck that is open activates its tab".
+   - HELP.md: "Open Presentation and a project's Present button give each deck a tab of its own, and asking for a deck that is open brings its tab forward".
+   - What is wrong: the deck menu sets the identity through `restateInstance` (`Present.svelte:159-165`), not `showDeck`, and can leave two tabs on one deck (Behaviour 1). Open Presentation on the portfolio deck's folder does not bring the open portfolio tab forward (Behaviour 2).
+   - Failure scenario: a reader of DESIGN.md relies on one tab per deck when writing code that finds a deck's tab.
+   - Verdict: item 8 violated in this sub-point.
+
+**Behaviour**
+1. `src/lib/views/academic/present/Present.svelte:159-165`: `restateInstance(instance.id, deckState(instance.state, named));`.
+   - What is wrong: choosing a deck in the toolbar menu re-points this tab even when another tab already shows that deck. My probe: tabs a and b both end with stateId `["hub","talks/a"]`, and a later `showDeck(talks/a)` activates a.
+   - The report names this hazard as "not verified" and leaves it unfixed, although it is inside Z653's identity.
+   - The tree's own precedent is `pinInstance` (`layout/instances.ts:121-133`). It looks for an instance that already holds the identity (`findView`) and activates it instead of making a second one.
+   - Failure scenario: two tabs titled with the same deck. A press on that deck in the Files view activates whichever comes first in tree order.
+   - Verdict: item 5 violated in this sub-point.
+2. `src/lib/views/shared/explorer/tree/menu/row-menu.ts:545-551` (`deps.showDeck({ root: row.root, path: own }, label)`), against `present.svelte.ts:141-143`.
+   - What is wrong: the portfolio deck's tab has no identity (`{}`, stateId null). Open Presentation on the hub's `deck/` folder or its `present.yml` names it `["hub","deck"]` and opens a second tab on the same deck. The deck menu already maps the portfolio reference to the empty one (`Present.svelte:161`); the Files menu does not.
+   - Failure scenario: with the Present page open, a reader uses Open Presentation on `deck/present.yml` and gets a second tab of the same deck, not the open one brought forward.
+   - Verdict: item 6 violated in this sub-point.
+3. The generic tab readers (`fileOfTab`, `tabCrumbs`, `shownTabPath`, `tabFileFacts`, the tab menu).
+   - What is wrong: a non-portfolio Present tab now holds `root` and `path` in its layout state. It therefore draws a breadcrumb bar above the slides (btfno: hub > projects > manuscripts > btfno > present), shows the folder path as its tooltip, and offers Copy Path, Copy Relative Path, Reveal, Bookmark and Compare in its tab menu. The portfolio tab offers none of these.
+   - The report's "Host- and user-visible changes" covers the tab identity but not these surfaces, so the look has no before and after to read them against.
+   - Failure scenario: the orchestrator's look on TEST meets a breadcrumb bar over the deck that no report line describes.
+   - Verdict: none (its "." part is Spec 2).
+
+Closures of round 2, each against my rerun:
+- Item 1 (tab per deck): reproduces for the Files menu and the card. Behaviour 1 to 3 and Spec 2 remain.
+- Item 2 (section rule): reproduces (probe, cases rerun).
+- Item 3 (flow row reaches `kept()`): reproduces by reading `deck-edit.ts:24-57`; the test passes.
+- Item 4 (template keys): 14 top-level keys in `templates/docs/present/main.md`, read.
+- Item 5 (first runs): reproduces exactly (108 tests, 72/35/1).
+- Item 6 (deck-slides under a second): 191 ms and 185 ms.
+- Item 7 (undo deck tests folded to one): reproduces; `undoneBack` asserts the bytes and the `undoes` link.
+- Item 8 (history wording): my grep of added comment lines and test titles finds only the hits the report judges (positions in text, field names, comments moved unchanged).
+
+The three files that pass on the unchanged tree lose no check that guarded something:
+- `config.test.ts`: the removed `deckFile` assertion checked a path that no longer exists. The engine copy's config is still read by `loadConfig` in the same test.
+- `keys.test.ts`: the allow-list entry is for `findingText(..., id, ...)` in `deck/read.ts:99`. Every `findings.deck.*` key in `findings.yml` has a literal reader in `src` (per-key grep count of at least 1).
+- `docs.test.ts`: `plantFile` (`tests/fixtures/scratch.ts`) keeps the inside-the-root check, as a throw instead of an `expect`.
+
+### Declined to judge
+
+- `npm run diagrams`, since it writes files. Its check, `tests/checks/diagrams`, passed in the tree-checks run.
+- The views as drawn (deck menu, breadcrumb bar, Slides drag, Files menu, empty states, cases 14, 15 and 19). They need the running page and a look, and a browser is barred here.
+- Case 25's run. It was a temporary test the builder deleted; I read `undo.ts:223` instead.
+- Which of options B and D Axel or the orchestrator prefers for the transition slide. That is their ruling; Spec 1 gives the facts.
+
+Reviewer usage: agent id not visible from inside the run, claude-opus-5-5, token count not visible from inside the run, about 80 tool uses counted by hand, about 17 minutes (18:48:26 to 19:04:56 by `date`).
+
+## Closed
+
+The findings of the run over round 2, each with its disposition at landing (the orchestrator):
+
+- Spec 1, the transition slide: fixed at landing under Z655. A section slide's front matter may carry `foot:` (`src/lib/data/sources/deck/kinds.ts`, the section case); `deck/transition.md` holds `kind: section`, `legend: more`, `foot:` with the hint, and the heading, with no cards, and `utils/migrations/convert-decks.mjs` writes it so. Seen on a scratch oculus: heading, legend and foot, no cards.
+- Spec 2, `path: "."` read literally: fixed at landing under Z656. `fileOfTab` (`src/lib/state/workbench/navigation/pages.ts`) reads the path `.` as no file, so the crumbs, the tooltip and the tab menu's file items leave a root-top deck alone; the Slides opener passes `deckState({}, deckRefOf(instance.state))`, so the Slides tab of a root-top deck has its own identity.
+- Proof 1, `changes.test.ts` fitted to the machine: fixed at landing. The deck write records its file under the hub's own path (`hubSpelling` in `src/lib/server/edit/writes/config/deck.ts`) and `deckFileOf` reads a record's real path; the test expects `deck/present.yml`, which `npx vitest run tests/server/core/changes.test.ts tests/server/edit` passed (8 files, 38 tests).
+- Proof 2, the empty list of carried spaced hyphens: raised to Axel as an open item in the state file (38 lines in 8 project decks, counted by `grep -cE` over every `present/*.md` under `projects/`).
+- Standards 1, DESIGN.md:385 and HELP.md:139: fixed at landing; both state the one-tab rule as built (`showDeck`, `pointInstance`, `tabDeck`) and the breadcrumb bar of a folder deck's tab.
+- Behaviour 1, the deck menu leaving two tabs on one deck: fixed at landing under Z656. `pointInstance` (`src/lib/state/workbench/layout/instances.ts`) activates a tab on the page that already holds the chosen deck; the deck menu calls it. Seen on a scratch oculus: BT-FNO chosen in the portfolio tab's menu brought the open BT-FNO tab forward and the portfolio tab kept its deck.
+- Behaviour 2, Open Presentation on the portfolio's folder: fixed at landing under Z656. The Files menu's `showDeck` names the portfolio deck by the empty reference (`tabDeck`). Seen: Open Presentation on `deck/` twice gave one tab.
+- Behaviour 3, the breadcrumb bar and file items of a Present tab: kept (Z656) and stated in DESIGN.md, HELP.md and the landing report.

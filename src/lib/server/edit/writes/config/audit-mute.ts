@@ -19,7 +19,7 @@ import { z } from 'zod';
 import { writeTextAtomic } from '../../../core/json.ts';
 import { stringItemsShape } from '../../../../data/shapes/shapes.ts';
 import { othersThan, readBack, setList } from '../../list-edit.ts';
-import { SIGNATURE } from '../../../content/audit.ts';
+import { SIGNATURE } from '../../../content/audit/scan.ts';
 
 /** The top-level key of config/behavior.yml the parked signatures live under. */
 export const IGNORE = 'audit_ignore';
@@ -30,7 +30,7 @@ export type MuteOutcome = { changed: string[]; refused: [] } | { error: 'invalid
 /**
  * Every string entry of the list as the file writes it, in its order, and none for a file that
  * holds no list under the key or is no map. A line that is not a signature (a note the reader left
- * there by hand) is kept and written back where it was; server/content/audit.ts's
+ * there by hand) is kept and written back where it was; server/content/audit/scan.ts's
  * `mutedSignatures` is what decides which of them are muted findings, so such a line mutes nothing
  * and is not lost either.
  */

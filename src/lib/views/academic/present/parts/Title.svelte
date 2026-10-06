@@ -1,29 +1,36 @@
 <script lang="ts">
-    // Layer 3, Present partial. The deck's opening slide: the kicker, the headline, the lede, the
-    // legend and the hint that says how to move through the deck.
+    // Layer 3, Present partial. A title or a closing slide: the kicker, the headline, the lede, the
+    // legend of the group the slide names and the contact line a closing slide may carry.
 
     import Legend from './Legend.svelte';
     import Words from './Words.svelte';
-    import type { DeckMeta } from '$lib/state/life/present';
 
-    type Props = { meta: DeckMeta };
+    type Props = {
+        kind: 'title' | 'closing';
+        kicker?: string;
+        heading: string;
+        lede: string;
+        contact?: string;
+        /** The domain keys the legend shows. */
+        legend: string[];
+    };
 
-    let { meta }: Props = $props();
+    let { kind, kicker, heading, lede, contact, legend }: Props = $props();
 </script>
 
-<section class="slide" data-slide-kind="title">
-    {#if meta.kicker !== undefined}
-        <div class="kicker"><Words text={meta.kicker} /></div>
+<section class="slide" data-slide-kind={kind}>
+    {#if kicker !== undefined && kicker !== ''}
+        <div class="kicker"><Words text={kicker} /></div>
     {/if}
-    {#if meta.titleHtml !== undefined}
-        <h3 class="headline"><Words text={meta.titleHtml} /></h3>
+    {#if heading !== ''}
+        <h3 class="headline"><Words text={heading} /></h3>
     {/if}
-    {#if meta.lede !== undefined}
-        <p class="lede"><Words text={meta.lede} /></p>
+    {#if lede !== ''}
+        <div class="lede"><Words text={lede} block /></div>
     {/if}
-    <Legend chips={meta.legend} />
-    {#if meta.hint !== undefined}
-        <p class="hint"><Words text={meta.hint} /></p>
+    <Legend domains={legend} />
+    {#if contact !== undefined && contact !== ''}
+        <p class="hint"><Words text={contact} /></p>
     {/if}
 </section>
 

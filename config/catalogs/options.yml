@@ -961,10 +961,10 @@ options:
             control: choice
             values: [short, full]
     present.yml:
-        deck.tag_tones:
+        defaults.tag_tones:
             heading: presentation
             section: Status chips
-            description: The hue a slide's status chip wears, by the chip's class.
+            description: The hue each tag class of a project slide wears.
             fields:
                 key:
                     description: a slide tag class
@@ -973,173 +973,13 @@ options:
                 value:
                     description: a palette hue name
                     control: hue
-        deck.meta.kicker:
-            heading: presentation
-            section: Title slide
-            description: The small line above the headline of the title slide.
-            default: Research portfolio | technical briefing | June 2026
-            control: text
-        deck.meta.title_html:
-            heading: presentation
-            section: Title slide
-            description: The headline of the title slide. It may use a line break tag, as the tracked value does.
-            default: Structured models,<br>everywhere they hide
-            control: text
-        deck.meta.lede:
-            heading: presentation
-            section: Title slide
-            description: The paragraph under the headline of the title slide.
-            default: 'A dozen active projects spanning brain, heart, liver and immunity. A shared thesis: clinical data is intrinsically <b>multi-way</b> (modality x time x space x leads), and <b>block-term tensor structure</b>, interpolating CP and Tucker, buys interpretability and parameter efficiency that flattening throws away.'
-            control: long
-        deck.meta.legend:
-            heading: presentation
-            section: Title slide
-            description: The colour legend of the title slide, one chip per research line.
-            fields:
-                label: the words of the chip
-                color:
-                    description: the chip's colour, read as the palette hue it stands for
-                    control: colour
-        deck.meta.hint:
-            heading: presentation
-            section: Title slide
-            description: The line of keyboard hints at the foot of the title slide.
-            default: 'left / right to move | <b>O</b> for the overview | <b>F</b> for full screen | each project slide: equation | specs | method | results'
-            control: text
-        deck.meta.closing_kicker:
-            heading: presentation
-            section: Closing slide
-            description: The small line above the headline of the closing slide.
-            default: Thank you
-            control: text
-        deck.meta.closing_title_html:
-            heading: presentation
-            section: Closing slide
-            description: The headline of the closing slide. It may use a line break tag, as the tracked value does.
-            default: Questions &amp;<br>collaborations welcome
-            control: text
-        deck.meta.closing_lede:
-            heading: presentation
-            section: Closing slide
-            description: The paragraph under the headline of the closing slide.
-            default: 'Happy to go deeper on any one: the clinical motivation, the optimization and theory, or the data pipeline. Several are open to collaborators across computer science, psychology, and medicine.'
-            control: long
-        deck.meta.contact:
-            heading: presentation
-            section: Closing slide
-            description: The contact line of the closing slide.
-            default: axel.faes@gmail.com
-            control: text
-        deck.themes:
-            heading: presentation
-            section: Domain themes
-            description: A research domain's colour and the words its project slides wear. A project's slide is themed by the first of its domains that the deck names.
-            fields:
-                key:
-                    description: a research domain id, the domain value of a project.yml
-                    control: choice
-                    values_from: domains
-                color:
-                    description: the domain's colour, read as the palette hue it stands for
-                    control: colour
-                label: the words the slide shows for the domain
-        deck.order:
-            heading: presentation
-            section: Slide order
-            description: The deck's table of contents. A project slide that the list does not name is placed before the closing slide, and a project line the mounted hub does not declare places nothing.
-            fields:
-                slide:
-                    description: what the line places, title, framing, project, summary, ideas or closing
-                    control: choice
-                    values: [title, framing, project, summary, ideas, closing]
-                ref:
-                    description: for a framing or summary line the key it names in deck.framing or deck.summaries, for a project line a slide id, which is a project id or project/slug
-                    control: choice
-                    values_by:
-                        field: slide
-                        sources: { framing: deck_framing, summary: deck_summaries, project: slides }
-        deck.framing:
-            heading: presentation
-            section: Section slides
-            description: Section slides, each a heading and a lede with up to three cards, a legend and a hint.
-            fields:
-                key: the framing key that a framing line of deck.order names
-                title: the heading of the slide
-                lede:
-                    description: the paragraph under the heading
-                    control: long
-                hint: the line at the foot of the slide
-                cards:
-                    description: a list of cards, each with n (its number), title and body
-                    control: records
-                    fields:
-                        n: the number written on the card, as text
-                        title: the heading of the card
-                        body:
-                            description: the paragraph of the card
-                            control: long
-                legend:
-                    description: a list of chips, each with label and color
-                    control: records
-                    fields:
-                        label: the words of the chip
-                        color:
-                            description: the chip's colour, read as the palette hue it stands for
-                            control: colour
-        deck.summaries:
-            heading: presentation
-            section: Summary tables
-            description: Cross-project tables written by hand. When a project's headline number changes, its row here changes with it.
-            fields:
-                key: the summary key that a summary line of deck.order names
-                title: the heading of the slide
-                foot: the line at the foot of the slide
-                rows:
-                    description: a list of rows, each with field, color, project, mechanism and headline
-                    control: records
-                    fields:
-                        field: the research field the row names
-                        color:
-                            description: the field's colour, read as the palette hue it stands for
-                            control: colour
-                        project: the project the row sums up, in words
-                        mechanism: the project's method, in words
-                        headline: the project's headline result, in words
-        deck.ideas.title:
-            heading: presentation
-            section: Idea grid
-            description: The heading of the idea grid slide.
-            default: The idea pipeline, what is next
-            control: text
-        deck.ideas.lede:
-            heading: presentation
-            section: Idea grid
-            description: The paragraph under the heading of the idea grid slide.
-            default: Early-stage directions seeding the next wave. Most reuse the federated, block-term and longitudinal machinery above, plus meta-science and methods bets.
-            control: long
-        deck.ideas.hint:
-            heading: presentation
-            section: Idea grid
-            description: The line at the foot of the idea grid slide.
-            default: 'Maturity: nascent (concept) | scoping (lit-check and framing) | de-risking (feasibility experiment). Each gated on a novelty check before committing.'
-            control: text
-        deck.ideas.items:
-            heading: presentation
-            section: Idea grid
-            description: The ideas of the idea grid, one card each.
-            fields:
-                title: the heading of the card
-                desc:
-                    description: the sentence under the heading
-                    control: long
-                color:
-                    description: the card's colour, read as the palette hue it stands for
-                    control: colour
-                maturity:
-                    description: nascent, scoping or de-risking, which drives the chip colour
-                    control: choice
-                    values: [nascent, scoping, de-risking]
     sources.yml:
+        portfolio_deck:
+            heading: sources
+            section: Portfolio deck
+            description: The folder, relative to the hub, of the portfolio deck, the deck the Present view opens when a pane names none. It holds a present.yml and the Markdown slide files. A folder that is not there leaves the Present view with nothing to draw and says so.
+            default: deck
+            control: folder
         scan:
             heading: sources
             section: Project scan

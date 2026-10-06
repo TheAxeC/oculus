@@ -14,19 +14,22 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The public deck's catalog: every slide the deck could hold, in the order it
-    // would hold them, each with a tick saying whether the deck shows it, and the controls that
-    // move it. Save writes the two lists into config/present.yml and the deck is live at the next
-    // push.
+    // Layer 3, view. One deck's groups: for each group, the decks it holds in the order it shows
+    // them and the decks it found and does not hold, each with a tick saying whether the group
+    // holds it and the controls that move it. Save writes each changed group's `slides:` list into
+    // the deck's `present.yml` and the deck is live at the next push.
     //
-    // The catalog is the store's, so a slide added on disk is in this list at the next push. What
-    // is the pane's own is the reader's unsaved work: the order they have dragged the rows into,
-    // the ticks they have made and the line the status region shows, all in the instance state, so
-    // the pane is where it was when its page comes back. The work is held against the catalog it
-    // was made over, so a push that adds, removes or moves a slide draws the file again and says
-    // that the unsaved work was dropped, rather than saving an order over a deck that has moved
-    // underneath it. The pane's own save is not such a push: it writes the order it is holding, so
-    // the catalog that comes back is the one the work already names.
+    // The groups are the deck route's, so a deck added on disk is in this list at the next push.
+    // What is the pane's own is the reader's unsaved work: the list they have dragged a group into
+    // and the line the status region shows, all in the instance state, so the pane is where it was
+    // when its page comes back. The work is held against the lists it was made over, so a push that
+    // changes a group's `slides:` draws the file again and says that the unsaved work was dropped,
+    // rather than saving a list over a deck that has moved underneath it. The pane's own save is
+    // not such a push: a saved group's work is cleared with the write, so the file answers.
+    //
+    // A name the group's `slides:` holds that matches no deck is drawn as missing and a deck two
+    // discovering groups both find is drawn as a conflict; neither is skipped in silence. A deck
+    // whose `present.yml` cannot be read is not written to: the file is shown as unreadable.
     //
     // It is a tab and not a dialog: oculus has no modal for content, and Escape does nothing here.
 
@@ -40,100 +43,97 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
-        catalogSignature,
-        fileState,
+        changedGroups,
+        groupRows,
+        listOf,
+        listsSignature,
         parseSlidesState,
-        savedState,
-        slideKeys,
-        slidesInOrder,
-        slideTitle,
+        saveMessage,
         withMove,
         withTick,
-        type SlidePicks
+        type GroupRow,
+        type RowKind,
+        type SlideWork
     } from '$lib/state/life/slides';
+    import { deckLabel, deckRefOf } from '$lib/state/life/present';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     const {
-        present: { catalog, deck, defaults },
+        present: { deck: deckOf, shown: shownDeck },
         ui: { instanceState, setInstanceState },
-        writes: { writeDeck }
+        writes: { writeDeckSlides }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
-    const rows = $derived(catalog());
-
-    /** The catalog the reader's unsaved work was made over; a different one drops it. */
-    const signature = $derived(catalogSignature(slideKeys(rows)));
-
     const held = $derived(parseSlidesState(instanceState(instance.id)));
+    const ref = $derived(shownDeck(deckRefOf(instance.state)));
+    const answer = $derived(ref === null ? null : deckOf(ref));
+    const deck = $derived(answer?.deck ?? null);
+    const groups = $derived(deck?.groups ?? []);
 
-    /** Whether the work the pane is holding was made over the catalog now on screen. */
+    /** The lists the reader's unsaved work was made over; a different set drops it. */
+    const signature = $derived(listsSignature(groups));
+
+    /** Whether the work the pane is holding was made over the lists now on screen. */
     const current = $derived(held.at !== '' && held.at === signature);
 
     /** Whether a push dropped work the reader had not saved, which the status region says. */
     const dropped = $derived(held.at !== '' && held.at !== signature);
 
-    /** What is on screen: the reader's work over this catalog, or what the file says. */
-    const picks = $derived(
-        current
-            ? { order: held.order, picked: held.picked }
-            : fileState(slideKeys(rows), deck().selection, defaults())
-    );
-    const shown = $derived(slidesInOrder(rows, picks.order));
+    /** What is on screen: the reader's work over these groups, or what the file says. */
+    const work = $derived<SlideWork>(current ? held.work : {});
+    const changes = $derived(changedGroups(groups, work));
 
     /** What the status region shows: the last line, or the note that a push dropped the work. */
     const said = $derived(dropped ? t('slides.dropped') : held.said);
 
+    /** What stops a save: a file that cannot be read says so instead of being written over. */
+    const blocked = $derived(deck?.state === 'unreadable');
+
     /** True while a save is in flight, so a second press sends no second write. */
     let busy = $state(false);
 
-    function write(next: SlidePicks, words: string): void {
-        setInstanceState(instance.id, { at: signature, ...next, said: words });
+    function keep(next: SlideWork, words: string): void {
+        setInstanceState(instance.id, { ...held, work: next, at: signature, said: words });
     }
 
-    /** Keep the line and leave the work as it is, for a save that changed neither. */
-    function say(words: string): void {
-        write(picks, words);
+    /** Put one deck on the group or take it off, which is what a row's box says. */
+    function pick(group: string, list: string[], name: string, on: boolean): void {
+        keep({ ...work, [group]: withTick(list, name, on) }, '');
     }
 
-    /** The words a slide is named by, for the line that says where a move left it. */
-    function titleOf(key: string): string {
-        return slideTitle(rows, key);
-    }
-
-    /** Put one slide on the deck or take it off, which is what a row's box says. */
-    function pick(key: string, on: boolean): void {
-        write(withTick(picks, key, on), '');
-    }
-
-    /** Move one slide to another place in the deck, and say where it landed. */
-    function move(key: string, to: number): void {
-        const next = withMove(picks, key, to);
+    /** Move one deck to another place in its group, and say where it landed. */
+    function move(group: string, list: string[], name: string, to: number): void {
+        const next = withMove(list, name, to);
         if (next === null) return;
-        write(next, t('slides.moved', titleOf(key), String(to + 1), String(next.order.length)));
+        keep(
+            { ...work, [group]: next },
+            t('slides.moved', name, String(to + 1), String(next.length))
+        );
     }
 
     /**
-     * Keep the keyboard on the row after a move that took the pressed control out of reach: a slide
+     * Keep the keyboard on the row after a move that took the pressed control out of reach: a deck
      * moved to either end disables the control that moved it, and the focus would otherwise fall to
-     * the page. The other direction's control is where the reader is. A move that leaves the
-     * pressed control pressable leaves the focus where the browser put it, on that control.
+     * the page. The other direction's control is where the reader is.
      *
      * The focus is set after the update has been drawn, since the row is moved in the DOM and the
      * two controls take their new disabled state then.
      */
     async function moveFrom(
         event: MouseEvent,
-        key: string,
+        group: string,
+        list: string[],
+        name: string,
         to: number,
         other: 'up' | 'down'
     ): Promise<void> {
-        const ends = other === 'down' ? to === 0 : to === picks.order.length - 1;
+        const ends = other === 'down' ? to === 0 : to === list.length - 1;
         const pressed = event.currentTarget;
-        move(key, to);
+        move(group, list, name, to);
         if (!ends || !(pressed instanceof HTMLElement)) return;
         await tick();
         const row = pressed.closest('[data-slide-row]');
@@ -141,34 +141,63 @@
         if (next instanceof HTMLElement) next.focus();
     }
 
-    /** The key the reader is dragging, and the row that armed its own grip. */
+    /** The row the reader is dragging, and the row that armed its own grip. */
     let dragged = $state('');
     let armed = $state('');
 
-    function drop(onto: string): void {
+    function drop(group: string, list: string[], onto: string): void {
         const from = dragged;
         dragged = '';
         armed = '';
-        if (from === '' || from === onto) return;
-        move(from, picks.order.indexOf(onto));
+        if (from === '' || from === onto || !list.includes(onto)) return;
+        move(group, list, from, list.indexOf(onto));
+    }
+
+    /** What a kind of row is called beside its title. */
+    function kindWords(kind: RowKind, row: GroupRow): string {
+        switch (kind) {
+            case 'found':
+                return t('slides.kind_found');
+            case 'candidate':
+                return t('slides.kind_candidate');
+            case 'missing':
+                return t('slides.kind_missing');
+            case 'conflict':
+                return t('slides.kind_conflict', row.others.join(', '));
+            default:
+                return '';
+        }
     }
 
     /**
-     * Write both lists. An empty selection is refused here rather than sent: a deck of no slides is
-     * not something the reader can then get back to from the deck itself. What the pane holds
-     * afterwards is savedState's: the work under the catalog it now belongs to, and the sentence.
+     * Write each changed group's list. The first refusal stops the save and is told in the
+     * server's own sentence; what has been written stays written, and the unsaved groups
+     * stay as the reader left them.
      */
     async function save(): Promise<void> {
-        if (busy) return;
-        if (picks.picked.length === 0) {
-            say(t('slides.keep_one'));
-            return;
-        }
+        if (busy || ref === null || changes.length === 0) return;
         busy = true;
-        say(t('slides.saving'));
-        const answer = await writeDeck(picks.picked, picks.order);
+        keep(work, t('slides.saving'));
+        let remaining = { ...work };
+        let line = t('slides.saved');
+        for (const { group, slides } of changes) {
+            const reply = await writeDeckSlides(ref, group.name, group.slides, slides);
+            if (!reply.ok) {
+                line = saveMessage(reply);
+                break;
+            }
+            remaining = Object.fromEntries(
+                Object.entries(remaining).filter(([name]) => name !== group.name)
+            );
+        }
         busy = false;
-        setInstanceState(instance.id, savedState(answer, picks, signature));
+        const none = Object.keys(remaining).length === 0;
+        setInstanceState(instance.id, {
+            ...held,
+            work: remaining,
+            at: none ? '' : signature,
+            said: line
+        });
     }
 </script>
 
@@ -177,79 +206,139 @@
         <ToolButton
             label={t('slides.save')}
             onclick={() => void save()}
-            disabled={busy || rows.length === 0}
+            disabled={busy || blocked || changes.length === 0}
         />
         <span class="said" role="status">{said}</span>
     </Toolbar>
 {/snippet}
 
-<Pane title={t('slides.title')} {bar} tinted>
+<Pane
+    title={deck === null ? t('slides.title') : t('slides.title_of', deckLabel(deck))}
+    {bar}
+    tinted
+>
     <div class="slides" data-instance={instance.id} data-slides>
-        {#if rows.length === 0}
-            <Empty message={t('slides.empty')} glyph={t('slides.empty_glyph')} />
+        {#if ref === null}
+            <Empty message={t('slides.empty_unnamed')} glyph={t('slides.empty_glyph')} />
+        {:else if deck === null}
+            <Empty
+                message={answer?.loading === true
+                    ? t('slides.loading')
+                    : t('slides.failed_read', answer?.error ?? '')}
+                error={answer?.loading !== true}
+                glyph={t('slides.empty_glyph')}
+            />
+        {:else if blocked}
+            <Empty
+                message={t('slides.unreadable', deck.path)}
+                error
+                glyph={t('slides.empty_glyph')}
+            />
+        {:else if groups.length === 0}
+            <Empty message={t('slides.empty', deck.path)} glyph={t('slides.empty_glyph')} />
         {:else}
             <Intro html={t('slides.intro')} trusted />
-            <div class="rows" role="list" inert={busy}>
-                {#each shown as row, at (row.key)}
-                    <div
-                        class="row"
-                        class:dragging={dragged === row.key}
-                        data-slide-row={row.key}
-                        draggable={armed === row.key}
-                        ondragstart={() => (dragged = row.key)}
-                        ondragover={(event: DragEvent) => event.preventDefault()}
-                        ondrop={(event: DragEvent) => {
-                            event.preventDefault();
-                            drop(row.key);
-                        }}
-                        ondragend={() => {
-                            dragged = '';
-                            armed = '';
-                        }}
-                        role="listitem"
-                    >
-                        <span
-                            class="grip"
-                            title={t('slides.drag_tip', titleOf(row.key))}
-                            onmousedown={() => (armed = row.key)}
-                            role="presentation"
-                        >
-                            <Glyph name={t('slides.drag_glyph')} />
-                        </span>
-                        <span class="at">{t('slides.position', String(at + 1))}</span>
-                        <span class="pick">
-                            <Checkbox
-                                checked={picks.picked.includes(row.key)}
-                                label={titleOf(row.key)}
-                                onchange={(on: boolean) => pick(row.key, on)}
-                            />
-                        </span>
-                        <Tag label={t('slides.kind', row.kind)} />
-                        <span class="steps">
-                            <span data-step="up">
-                                <ToolButton
-                                    small
-                                    label={t('slides.up')}
-                                    title={t('slides.up_tip', titleOf(row.key))}
-                                    disabled={at === 0}
-                                    onclick={(event: MouseEvent) =>
-                                        void moveFrom(event, row.key, at - 1, 'down')}
-                                />
-                            </span>
-                            <span data-step="down">
-                                <ToolButton
-                                    small
-                                    label={t('slides.down')}
-                                    title={t('slides.down_tip', titleOf(row.key))}
-                                    disabled={at === shown.length - 1}
-                                    onclick={(event: MouseEvent) =>
-                                        void moveFrom(event, row.key, at + 1, 'up')}
-                                />
-                            </span>
-                        </span>
+            {#each groups as group (group.name)}
+                {@const list = listOf(group, work)}
+                {@const rows = groupRows(group, list)}
+                <section class="group" data-group={group.name} aria-label={group.name}>
+                    <h3 class="name">
+                        {group.name}
+                        <span class="count">{t('slides.count', String(group.count))}</span>
+                    </h3>
+                    <div class="rows" role="list" inert={busy}>
+                        {#each rows as row (row.name)}
+                            {@const at = list.indexOf(row.name)}
+                            {@const words = kindWords(row.kind, row)}
+                            <div
+                                class="row"
+                                class:dragging={dragged === `${group.name}/${row.name}`}
+                                class:off={!row.ticked}
+                                data-slide-row={row.name}
+                                data-row-kind={row.kind}
+                                draggable={armed === `${group.name}/${row.name}`}
+                                ondragstart={() => (dragged = row.name)}
+                                ondragover={(event: DragEvent) => event.preventDefault()}
+                                ondrop={(event: DragEvent) => {
+                                    event.preventDefault();
+                                    drop(group.name, list, row.name);
+                                }}
+                                ondragend={() => {
+                                    dragged = '';
+                                    armed = '';
+                                }}
+                                role="listitem"
+                            >
+                                {#if at >= 0}
+                                    <span
+                                        class="grip"
+                                        title={t('slides.drag_tip', row.title)}
+                                        onmousedown={() => (armed = `${group.name}/${row.name}`)}
+                                        role="presentation"
+                                    >
+                                        <Glyph name={t('slides.drag_glyph')} />
+                                    </span>
+                                    <span class="at">{t('slides.position', String(at + 1))}</span>
+                                {:else}
+                                    <span class="grip"></span>
+                                    <span class="at"></span>
+                                {/if}
+                                <span class="pick">
+                                    <Checkbox
+                                        checked={row.ticked}
+                                        label={row.title}
+                                        onchange={(on: boolean) => {
+                                            if (row.kind !== 'found')
+                                                pick(group.name, list, row.name, on);
+                                        }}
+                                    />
+                                </span>
+                                {#if words !== ''}
+                                    <Tag label={words} />
+                                {/if}
+                                {#if at >= 0}
+                                    <span class="steps">
+                                        <span data-step="up">
+                                            <ToolButton
+                                                small
+                                                label={t('slides.up')}
+                                                title={t('slides.up_tip', row.title)}
+                                                disabled={at === 0}
+                                                onclick={(event: MouseEvent) =>
+                                                    void moveFrom(
+                                                        event,
+                                                        group.name,
+                                                        list,
+                                                        row.name,
+                                                        at - 1,
+                                                        'down'
+                                                    )}
+                                            />
+                                        </span>
+                                        <span data-step="down">
+                                            <ToolButton
+                                                small
+                                                label={t('slides.down')}
+                                                title={t('slides.down_tip', row.title)}
+                                                disabled={at === list.length - 1}
+                                                onclick={(event: MouseEvent) =>
+                                                    void moveFrom(
+                                                        event,
+                                                        group.name,
+                                                        list,
+                                                        row.name,
+                                                        at + 1,
+                                                        'up'
+                                                    )}
+                                            />
+                                        </span>
+                                    </span>
+                                {/if}
+                            </div>
+                        {/each}
                     </div>
-                {/each}
-            </div>
+                </section>
+            {/each}
         {/if}
     </div>
 </Pane>
@@ -258,7 +347,7 @@
     .slides {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 14px;
         min-width: 0;
         max-width: 100%;
     }
@@ -281,6 +370,23 @@
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
         border-radius: var(--radius-sm);
         padding: 0 6px;
+    }
+
+    .name {
+        margin: 0 0 4px;
+        font-size: var(--fs-md);
+        font-weight: 700;
+    }
+
+    .count {
+        color: var(--muted-txt, var(--muted));
+        font-family: var(--font-num);
+        font-size: var(--fs-sm);
+        font-weight: 400;
+    }
+
+    .row.off {
+        color: var(--muted-txt, var(--muted));
     }
 
     .row:hover {

@@ -5,7 +5,7 @@
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { stringify } from 'yaml';
 import { z } from 'zod';
@@ -13,6 +13,7 @@ import { localDate } from '../../../data/helpers/dates.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
 import { isHubPath } from '../../../data/hub-address.ts';
 import type { Project } from '../../../data/model/index.ts';
+import { PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import {
     printed,
     type AuditInput,
@@ -32,7 +33,7 @@ const MARKERS = /%TODO|%VERIFY|%FIXME|\bTODO\b|\bFIXME\b|\bTBD\b|\bXXX\b/g;
 const PROVISIONAL = /\[PROVISIONAL\]/i;
 
 /** The documents of a project folder the markers are read from. */
-const SCANNED = ['README.md', 'code/README.md', 'PRESENT.md'];
+const SCANNED = ['README.md', 'code/README.md'];
 
 /** The document a project may keep its data notes in, beside the README's own section. */
 const DATA_DOC = 'DATA.md';
@@ -68,6 +69,21 @@ export const AUDIT_PATHS: string[] = [
     ...RETIRED,
     ...FOLDERS.map(([bad]) => bad)
 ];
+
+/**
+ * The Markdown slide files of a project's deck folder, as folder-relative names, which are scanned
+ * for the same markers as its README.
+ */
+function deckDocuments(folder: string): string[] {
+    try {
+        return readdirSync(join(folder, PROJECT_DECK))
+            .filter((name) => name.endsWith('.md'))
+            .sort()
+            .map((name) => `${PROJECT_DECK}/${name}`);
+    } catch {
+        return [];
+    }
+}
 
 /**
  * The first line of a text that carries a marker, collapsed to one line, cut to 110 characters and
@@ -129,7 +145,7 @@ export function markers(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
         if (project.ghost) continue;
         const folder = join(input.hub, project.folder);
-        for (const name of SCANNED) {
+        for (const name of [...SCANNED, ...deckDocuments(folder)]) {
             const path = join(folder, name);
             if (!existsSync(path)) continue;
             const text = slurp(path);

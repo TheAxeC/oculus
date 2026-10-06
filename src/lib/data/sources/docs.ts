@@ -5,9 +5,9 @@
 // hundred kilobytes because the READMEs are not in it, and a view that opens one asks the server
 // for that one file. readDoc is what that request calls, and the hub-level documents, the files of
 // the `docs:` list of config/layout.yml, go through it like any other.
-// projectDocs is the cheap existence check a project card shows, and it opens no file. The one
-// document the build does read is PRESENT.md, through sources/present.ts, which splits its front
-// matter with splitFrontmatter below so the two readers agree on where a block ends.
+// projectDocs is the cheap existence check a project card shows, and it opens no file. The build
+// reads no document of a project's folder but its manifest and the slide files of its `present/`
+// deck, which sources/deck/ reads.
 
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -102,34 +102,44 @@ export function readDoc(path: string, catalog: TextCatalog): DocRead {
     return { text: body, frontmatter: read.frontmatter };
 }
 
+/** One frontmatter block read: the map it holds, or the one way it failed to be one. */
+export type FrontmatterRead =
+    | { frontmatter: Record<string, unknown> }
+    | { problem: 'parse'; line: string }
+    | { problem: 'map' };
+
 /**
  * One frontmatter block as the map it holds, or the one problem that stopped it being read. An
- * empty block is no keys, the same as loadLocal reads an empty file.
+ * empty block is no keys, the same as loadLocal reads an empty file. The documents of a project and
+ * the slides of a deck read their blocks through this one rule.
  */
-export function readFrontmatter(
-    block: string,
-    path: string,
-    catalog: TextCatalog
-): { frontmatter: Record<string, unknown> } | Finding {
+export function parseFrontmatter(block: string): FrontmatterRead {
     let parsed: unknown;
     try {
         parsed = parse(block) ?? {};
     } catch (error) {
-        return {
-            file: path,
-            key: 'frontmatter',
-            message: findingText(catalog, 'findings.file.does_not_parse', errorLine(error))
-        };
+        return { problem: 'parse', line: errorLine(error) };
     }
     const frontmatter = readAs(mapShape, parsed);
-    if (frontmatter === null) {
-        return {
-            file: path,
-            key: 'frontmatter',
-            message: findingText(catalog, 'findings.file.not_a_map')
-        };
-    }
-    return { frontmatter };
+    return frontmatter === null ? { problem: 'map' } : { frontmatter };
+}
+
+/** One frontmatter block as the map it holds, or the Finding that names why it is not one. */
+function readFrontmatter(
+    block: string,
+    path: string,
+    catalog: TextCatalog
+): { frontmatter: Record<string, unknown> } | Finding {
+    const read = parseFrontmatter(block);
+    if ('frontmatter' in read) return read;
+    const key = 'frontmatter';
+    return read.problem === 'parse'
+        ? {
+              file: path,
+              key,
+              message: findingText(catalog, 'findings.file.does_not_parse', read.line)
+          }
+        : { file: path, key, message: findingText(catalog, 'findings.file.not_a_map') };
 }
 
 /**

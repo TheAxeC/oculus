@@ -441,7 +441,7 @@ export function createIdea(hub: string, fields: Record<string, unknown>): WriteO
         `title: ${renderScalar(title)}`,
         'focus: holding',
         'status:',
-        '  chips: [exploring]',
+        '  chips: [nascent]',
         `  line: ${renderScalar(IDEA_STATUS)}`,
         `eli5: ${renderScalar(eli5)}`,
         `next: ${renderScalar(IDEA_NEXT)}`

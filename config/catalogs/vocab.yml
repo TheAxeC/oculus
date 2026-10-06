@@ -93,6 +93,9 @@ status_legend:
   - { key: ai-tells,        icon: red, label: "AI-writing tells" }
   - { key: blocked,         icon: purple, label: "blocked (external)" }
   - { key: exploring,       icon: orange, label: "exploring" }
+  - { key: nascent,         icon: white, label: "nascent (concept)" }
+  - { key: scoping,         icon: yellow, label: "scoping (lit-check and framing)" }
+  - { key: de-risking,      icon: blue, label: "de-risking (feasibility experiment)" }
   - { key: parked,          icon: black, label: "parked" }
   # publication-type chips (on published works), orthogonal to outcome/role; feed the Status facet
   - { key: journal,         icon: journals, label: "journal article" }
@@ -117,6 +120,9 @@ status_palette:
   "under review":  { color: "#b45309", deadline_met: true }
   upcoming:        { color: "#b45309" }
   exploring:       { color: "#7c5cff" }
+  nascent:         { color: "#7c5cff" }
+  scoping:         { color: "#0891b2" }
+  de-risking:      { color: "#16a34a" }
   active:          { color: "#16a34a" }
   collaborator:    { color: "#0891b2" }
   todo:            { color: "#b45309" }
