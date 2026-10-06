@@ -175,7 +175,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Z650 (2026-10-06, step PR2, a clash of two rulings, automode excluded). PR2 (Z637 to Z640) replaces every `PRESENT.md` with a `present/` deck, while the cockpit stays in service because O29 is paused (Z425). The cockpit's public showcase, `tools/present/build.py` with `deck_config.py`, builds `tools/present/present.html` from `PRESENT.md`, and `.agents/skills/research-cockpit/SKILL.md:62,92-95` tells a SYNC run to edit `PRESENT.md` and rebuild it. After PR2 as briefed, that build makes an empty deck and the skill points at files that no longer exist. Options: (a) PR2 also changes `tools/present/build.py` and `deck_config.py` to read each project's `present/main.md` first `kind: project` slide (the same keys the `present:` map held) and rewrites the skill's two places to name `present/main.md`; the showcase keeps working until O29. (b) PR2 rewrites only the skill: a SYNC run edits `present/main.md` and no longer rebuilds `tools/present`; the showcase stays as last built, and oculus's Present view is the deck. (c) PR2 waits for O29. Recommendation (a): the showcase is the hub's one public deck (the skill calls it the sole public showcase) and the keys are unchanged, so the change is a reader path in two files. (b) is the lazy option: it leaves a tool in service broken. PR2 is not dispatched until this is ruled.
 
 
 
@@ -199,6 +198,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The fixture exports the four test sweeps leave unused (T1c's report names `ClientState` in `tests/fixtures/client.ts`, `sweepingOnError` in `scratch.ts` and `gitPayload` in `sessions-fixture.ts`; T1b, T1d and T1e name theirs): removed by the orchestrator at the landing of the last of T1b to T1e, after `sh utils/unused-exports.sh` and a grep of each name over `tests` and `src`, since each is unused only once all four have landed (T1e's brief, item 6).
 
 ## Closed items
+- Z650 (2026-10-06), PR2 against the paused cockpit's public deck: ruled (b) by Axel the same day, "I do not care for the cockpit and do not want to update it if we are going to delete it anyway".
 
 The closed log (what was raised and how it ended, newest first) is in `orchestrator-history.md` beside this file, under "Closed items". A new closed entry goes at its top.
 

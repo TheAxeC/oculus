@@ -44,7 +44,7 @@ The worktree is `.agents/worktrees/PR2`. Its sparse checkout holds the plan's pa
 - `exploring` is also the chip of four active projects (`eeg-saad-challenge`, `loewner`, `novel-math-primitives`, `linfoot-estimator`) and one coauthor project (`chi-purpose-centric`), a status of `network/joint-work.yml` (`config/layout.yml:152`) and an "in progress" key of the coauthor board (`config/layout.yml:141`), so it stays in the vocabulary.
 - New idea manifests: the New idea write writes `chips: [exploring]` (`src/lib/server/edit/writes/manifest.ts:444`); the `project-new` skill copies `tools/cockpit/templates/project.idea.yml` (chip `gate-pending` at `:11`) and offers an optional `PRESENT.md` (`.agents/skills/project-new/SKILL.md:44,46`) from `tools/cockpit/templates/docs/PRESENT.md`.
 - The hub's documents name `PRESENT.md` or the old deck: `README.md:23`, `docs/DATA-MAP.md:88,89,217,234,253,254,311,356`, `.agents/skills/project-new/SKILL.md:44,46`, `.agents/skills/project-cleanup/SKILL.md:36,191`, `.agents/skills/remove-unicode/SKILL.md:176`, `tools/cockpit/templates/project.active.yml:7`, `tools/cockpit/templates/project.idea.yml:2`, `tools/oculus/DESIGN.md:43,61,113,385,392`, `tools/oculus/HELP.md:81,139,298` and the other Present and Slides lines. `tools/oculus/demo/README.md:5` names a test `tests/data/demo-hub.test.ts` that does not exist (`ls tests/data`). `projects/manuscripts/raw-pls/code/campaigns/brats_realdata/saliency_overlay_figure.py:8` names `PRESENT.md` in project code, outside this step's write rights; the report lists it.
-- The cockpit's public deck: `tools/present/build.py` (364 lines) and `deck_config.py` (106 lines) build `tools/present/present.html`, the hub's public showcase, from every project's `PRESENT.md` front matter; `.agents/skills/research-cockpit/SKILL.md:62,92-95` tell a SYNC run to edit `PRESENT.md` and rebuild it; `docs/DATA-MAP.md:138` describes it. O29, which retires the cockpit, is paused (Z425). What this step does to them is ruling Z650 (part 9).
+- The cockpit's public deck: `tools/present/build.py` (364 lines) and `deck_config.py` (106 lines) build `tools/present/present.html`, the hub's public showcase, from every project's `PRESENT.md` front matter; `.agents/skills/research-cockpit/SKILL.md:62,92-95` tell a SYNC run to edit `PRESENT.md` and rebuild it; `docs/DATA-MAP.md:138` describes it. O29, which retires the cockpit, is paused (Z425). Axel ruled Z650 (b): this step does not update them (part 9).
 - The Files view's row menu (`src/lib/views/shared/explorer/tree/menu/row-menu.ts`) has Open LaTeX (`ROW_LATEX` at `:78`, its fact at `:223`, the item at `:262`, the action at `:506-517`).
 - Change pushes: the `files` channel's version moves on every write under a root the git watcher watches (`src/lib/state/sources/files.svelte.ts:12-16`).
 - Dependencies already installed: `yaml`, `marked`, `katex`, `dompurify` (`package.json:74-102`); `src/lib/data/sources/docs.ts` has `splitFrontmatter` and `readFrontmatter`. No `npm run demo` script exists (`grep -c demo package.json` prints 0).
@@ -213,7 +213,7 @@ Every sentence the change makes false is rewritten: `tools/oculus/DESIGN.md` (:4
 
 ### 9. The cockpit's public deck (ruling Z650)
 
-[Filled from Axel's ruling Z650 before dispatch.]
+Axel ruled (b): the cockpit is not updated, since it is to be deleted. `tools/present/` (`build.py`, `deck_config.py`, `present.html`, `content/`) is left exactly as it is. `.agents/skills/research-cockpit/SKILL.md:62` names a project's public slide as `present/main.md` (its `kind: project` front matter, public-safe fields only); `:92-95` drop the rebuild of the public present deck and say that oculus's Present view is the deck; `:99`'s `present` command says `tools/present` is the cockpit's old showcase, no longer rebuilt. `docs/DATA-MAP.md:138` says the same of `tools/present/`.
 
 ## Cases
 
@@ -283,7 +283,7 @@ When the first run finds a case the brief's own rules get wrong, the builder sto
 - `README.md` line 23, `docs/DATA-MAP.md` lines 88, 89, 217, 234, 253, 254, 311, 356
 - `.agents/skills/project-new/SKILL.md` lines 44, 46; `.agents/skills/project-cleanup/SKILL.md` lines 36, 191; `.agents/skills/remove-unicode/SKILL.md` line 176
 - `tools/cockpit/templates/project.active.yml` line 7, `tools/cockpit/templates/project.idea.yml` lines 2 and 11, `tools/cockpit/templates/docs/PRESENT.md` (removed), `tools/cockpit/templates/docs/present/` (new)
-- [the paths of part 9, from ruling Z650]
+- `.agents/skills/research-cockpit/SKILL.md` lines 62, 92-95, 99; `docs/DATA-MAP.md` line 138
 - `tools/oculus/.scratch/migration/agents/reviews/PR2-report.md`
 
 ## Decisions taken in this brief (each reversible, none silent)
