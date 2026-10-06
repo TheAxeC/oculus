@@ -36,8 +36,8 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/PR2-report.md
   brief_check: agents/reviews/PR2-brief-check.md (a4be0b9c90d5e0f8b, claude-opus-5-5, 262,300 tokens, 111 tool uses, 16.2 min)
   shared_paths: with D23: src/lib/state/client/context.ts, config/catalogs/options.yml, config/text/views/sources/files.yml, tests/checks/config/config.test.ts and src/lib/data/model/index.ts (different keys and entries in each); with Q125: src/lib/data/model/model-entities.ts and model/index.ts (D23's and Q125's types are not the deck's), HELP.md and DESIGN.md (PR2 rewrites its Present and Slides lines inside Q125's rewrite, carried by hand at the second landing as Z642 says); so the merge is simple
-  builder_usage: 347,934 tokens, 609 tool uses, 113.1 min; round 1: 208,624 tokens, 249 tool uses, 44.9 min
-  reviewer_report: agents/reviews/PR2-refuter.md (ac8902c2a666de395, claude-opus-5-5, 149,642 tokens, 114 tool uses, 15.6 min); over round 1: ac66e4d8f80f5fe9f, claude-opus-5-5, 341,182 tokens, 108 tool uses, 16.7 min
+  builder_usage: 347,934 tokens, 609 tool uses, 113.1 min; round 1: 208,624 tokens, 249 tool uses, 44.9 min; round 2: 284,207 tokens, 177 tool uses, 44.3 min
+  reviewer_report: agents/reviews/PR2-refuter.md (ac8902c2a666de395, claude-opus-5-5, 149,642 tokens, 114 tool uses, 15.6 min); over round 1: ac66e4d8f80f5fe9f, claude-opus-5-5, 341,182 tokens, 108 tool uses, 16.7 min; over round 2: (running: afb8c97b1def8331e, claude-opus-5-5)
   landing: not-started
   round: 2 (sent 2026-10-06 to ad626fab8e2a49ab3 under the round cap's exception, item 6's tab per deck unbuilt by round 1 (ruling Z653) and the section rule changed beyond the finding: Spec 1 to 3, Proof 1, Standards 1 to 3, Behaviour 1 of the review over round 1); before it, round: 1 (sent 2026-10-06 to ad626fab8e2a49ab3: Spec 2 to 4, Behaviour 1 to 3, Standards 1 to 3, desc_present, Proof 1 and 2 of the review; "Open Presentation" kept in the Files menu)
 - step: D23
@@ -51,6 +51,8 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D23-report.md
   brief_check: agents/reviews/D23-brief-check.md (its agent id and usage are not in the ledger); the brief corrected to main at 10ac00c69 by a3954c49b6f0bf078 (claude-opus-5-5; usage not recorded: no completion notice was read)
   shared_paths: with E4g: config/text/app.yml:12 (the key sheet line, the second landing writes both changes), HELP.md and DESIGN.md (disjoint lines); with O30b: DESIGN.md (D23's decision after O30b's :436, the second puts its item after the other's), HELP.md (disjoint); with Q123: pty/channel.ts (disjoint hunks), pty/routes.ts (adjacent imports), tests/routes/sessions/terminal-actions.test.ts (adjacent imports), tests/server/machine/pty/channel.test.ts (the second to land rewrites the other's subscribed() calls to its form), DESIGN.md:375 (one line, both edits kept); with Q124: package.json (disjoint lines); docs/diagrams regenerated at landing; so the merge is simple
+  builder_usage: 127,533 tokens, 1135 tool uses, 309.7 min
+  reviewer_report: (running: a0a498ede0a9659bb, claude-opus-5-5)
   landing: not-started
   round: 0
 - step: Q125
@@ -64,8 +66,8 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/Q125-report.md
   brief_check: agents/reviews/Q125-brief-check.md (a401d3fdf1183fba1, claude-opus-5-5, 223,091 tokens, 83 tool uses, 12.3 min)
   shared_paths: HELP.md, DESIGN.md and README.md with E4g, O30b, Q124, D23 and PR1, and config/layout.yml with E4g and D23, under Z642: the second to land carries the other's text; docs/diagrams regenerated at landing
-  builder_usage: hand-back 286,831 tokens, 65 tool uses, 16.5 min; final run 268,409 tokens, 689 tool uses, 122.6 min (it started twelve general-purpose agents against spec.md:36, all stopped, their output not used, their usage not in this figure); round 1: 222,683 tokens, 431 tool uses, 70.4 min
-  reviewer_report: agents/reviews/Q125-refuter.md (a592538c261dc0fa4, claude-opus-5-5, 282,071 tokens, 92 tool uses, 14.4 min); over round 1: a87f63d952b088f27, claude-opus-5-5, 335,705 tokens, 104 tool uses, 18.4 min
+  builder_usage: hand-back 286,831 tokens, 65 tool uses, 16.5 min; final run 268,409 tokens, 689 tool uses, 122.6 min (it started twelve general-purpose agents against spec.md:36, all stopped, their output not used, their usage not in this figure); round 1: 222,683 tokens, 431 tool uses, 70.4 min; round 2: 138,205 tokens, 417 tool uses, 72.0 min
+  reviewer_report: agents/reviews/Q125-refuter.md (a592538c261dc0fa4, claude-opus-5-5, 282,071 tokens, 92 tool uses, 14.4 min); over round 1: a87f63d952b088f27, claude-opus-5-5, 335,705 tokens, 104 tool uses, 18.4 min; over round 2: (running: a1e3ba3e91c587de9, claude-opus-5-5)
   landing: not-started
   round: 2 (sent 2026-10-06 to a53eac68600a643ef under the round cap's exception, item 5 still unbuilt and too large for landing: Spec 1 to 4, Standards 1 to 5, Proof 1 to 3 of the review over round 1; DESIGN.md cites files, never lines); before it, round: 1 (sent 2026-10-06 to a53eac68600a643ef: item 5 done whole, Spec 1 to 3, Proof 1 to 3, Standards 1 to 5, Behaviour 1 and 2 of the review); before it, round 0 (cases ruling agents/briefs/Q125-cases.md, rulings A to E (Z646) on the hand-back; builder resumed; G54's test, Z645 (a), added to the brief by message to the builder: tests/checks/config/arrangements.test.ts)
 ```
@@ -238,7 +240,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-06. Q124 landed (tree checks with no limit, the vitest races), after O30b and E4g; PR2 is building with Z650 (b) and Z652. In flight: PR2 (repair round 2), D23 (building), Q125 (repair round 2).
+- 2026-10-06. Q124 landed (tree checks with no limit, the vitest races), after O30b and E4g; PR2 and Q125 had their last repair rounds (Z653 for PR2); D23 built. In flight: PR2 (round 2 returned, under review), D23 (built, under review), Q125 (round 2 returned, under review).
 - 2026-10-06 12:55. Q123 landed (a terminal pane attached as its program left it; booking in plan.md; `agents/reviews/Q123-landing.md`) with five fixes at landing, B1 the top row's shift among them. In flight: E4g (repair round 1), Q124 (under review), O30b (under review), D23 and PR1 (building). Open items Z644 and Z645 raised. Next: Q125 into the free slot, then each landing as its review closes.
 - 2026-10-06 09:30. E4 landed (apps added while oculus runs; booking in plan.md; `agents/reviews/E4-landing.md`) after its look on TEST, which Axel's dev-server restart (Z631) made possible. Axel ruled Z630 (G51's words, written into guarded.md), Z632 (`workers_at_once` 6 in both files) and Z633 (step E4g, the apps guide in `tools/oculus/docs/apps.md`, first in the queue). Nothing in flight. Next: /spec for E4g, O30b, Q123, Q124, D23 and X3e, the six slots.
 - 2026-10-06 08:35. E4 staged on main, not committed: gate-E4 passed `npm run test:landing` (6 of 6), main's staged diff `cmp`-equal to the gate's, penpal and the Electron binary installed in main's node_modules, guarded.md names E4's tests (G1, G8, G9, G31, G49, G50). The look waits on Z631 (Axel's dev server needs a restart to resolve penpal); `~/.oculus/approvals.json` and `workspaces.json` back at their shasums, the scratch apps kept in the session scratchpad. Next: the look, the booking, the commit, then O30b, Q123, Q124 prepared.
