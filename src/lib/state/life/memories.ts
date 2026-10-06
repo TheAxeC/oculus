@@ -2,9 +2,9 @@
 // size the page checks a file against before it encodes one.
 //
 // The endpoint answers one word (`name`, `data`, `taken`, `unwritable`) or a sentence of its own
-// for a request it would not read at all, and the page never draws either: DESIGN.md's rule for the
-// deck write is that the view shows a sentence of its own per refusal, and this is that map for the
-// wall. A word this does not know gets the general sentence.
+// for a request it would not read at all, and the page never draws either: the view shows a
+// sentence of its own per refusal, and this is the map from word to sentence. A word this does not
+// know gets the general sentence.
 //
 // The limit is data/file-ops.ts's, which the server enforces in server/content/memories.ts and the
 // file operations of the Files view enforce for an upload, so the page and the server hold one

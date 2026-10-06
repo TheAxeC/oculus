@@ -11,21 +11,21 @@
 // token, terminal input and the frames of an `lsp:<language>` channel", made concrete for the
 // terminals.
 //
-// A control client is opened per attached terminal and closed a minute after nothing is attached
-// to that terminal, so a machine with no terminal open runs no tmux child. While one is open,
-// tmux's own `%session-changed` and its relatives say when the terminal list moved; while none is,
-// a `list-sessions` does, every five seconds while a page is attached to a terminal and once a
-// minute while none is, since nothing but a hand-made session can move the list then. A task
-// terminal stays in the list after its line ended, and tmux sends no notice when that happens, so
-// while a task terminal runs the list is read every five seconds whether or not a page is attached
-// and whether or not a control client is open, which is how its result reaches the page within
-// five seconds of the line's end.
+// A control client is opened per attached terminal and closed a minute after nothing is attached to
+// that terminal, so a machine with no terminal open runs no tmux child. While one is open, tmux's
+// own `%session-changed` and its relatives say when the terminal list moved; while none is, a
+// `list-sessions` does, every five seconds while a page is attached to a terminal and once a minute
+// while none is, since nothing but a hand-made session can move the list then. A task terminal
+// stays in the list after its line ended, and tmux sends no notice when that happens, so while a
+// task terminal runs the list is read every five seconds whether or not a page is attached and
+// whether or not a control client is open, which is how its result reaches the page within five
+// seconds of the line's end.
 //
-// Reads of the list run side by side and may answer in any order, so every read takes a turn
-// when it starts and its answer is taken only while no read that started later has been taken: an
-// older answer never puts back a list that a newer one has replaced. An answer of "no server" is
-// read again before it is taken as an empty list, because tmux refuses a connection for a moment
-// and that one answer would otherwise tell every page that all its terminals have ended.
+// Reads of the list run side by side and may answer in any order, so every read takes a turn when
+// it starts and its answer is taken only while no read that started later has been taken: an older
+// answer never puts back a list that a newer one has replaced. An answer of "no server" is read
+// again before it is taken as an empty list, because tmux refuses a connection for a moment and
+// that one answer would otherwise tell every page that all its terminals have ended.
 
 import { z } from 'zod';
 import type {

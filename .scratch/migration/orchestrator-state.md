@@ -25,21 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: Q126
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: afcd520222de3ff13 (builder, launched 2026-10-06)
-  worktree: .agents/worktrees/Q126
-  base: 60263c8d
-  builder_usage: 236,054 tokens, 132 tool uses, 29.5 min; round 1 300,288 tokens, 30 tool uses, 5.5 min (ran `git status` once in the worktree, against the brief; booked at landing)
-  launched: 2026-10-06
-  report: agents/reviews/Q126-report.md
-  brief_check: agents/reviews/Q126-brief-check.md (a184d66639bbbd679, claude-opus-5-5, 193,539 tokens, 55 tool uses, 8.1 min)
-  shared_paths: with D23: tools/oculus/DESIGN.md (D23 writes the socket, Hot reload, Processes, the editor theme and status bar paragraphs on a pre-Q125 base; item-level edits, whichever lands second carries the other's text into the item as the other left it, Z642's rule); with PR3 (being prepared): DESIGN.md's Present items, docs/views.md and docs/files-and-search.md (the same rule)
-  reviewer_report: agents/reviews/Q126-refuter.md (a632fa655d3e8b1a2, claude-opus-5-5, 309,031 tokens, 82 tool uses, 13.5 min); over round 1: a3c24fe9dcb004e1d, claude-opus-5-5, 249,685 tokens, 73 tool uses, 8.8 min
-  landing: not-started
-  round: 1 (sent 2026-10-06 to afcd520222de3ff13: agents/briefs/Q126-round1.md, 16 items)
 - step: PR3
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -227,6 +212,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-06 23:55. Q126 landed (DESIGN.md reduced to its decisions; booking in plan.md; `agents/reviews/Q126-landing.md`), merged with D23 by Z642's rule, with the round-1 refutation's five findings fixed at landing. In flight: PR3 (builder running). Next: prepare D23c, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-06 23:30. D23 landed (the language server client: pyright and clangd in the source editor; booking in plan.md; `agents/reviews/D23-landing.md`) with 15 fixes at landing, Z663 among them, and its look on a scratch oculus; look item 4 waived by Axel's ruling (b) 'D23 lands before Z669', Z669 (a) and Z670 (a) booked as D23c. In flight: Q126 (lands next), PR3 (builder running). Next: land Q126; prepare D23c, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-06. Axel ruled Z667 (a): PR3's builder rewords the 40 deck lines by hand; `agents/spec.md:101` gains the sentence for hub text a ruling asks to have reworded. Sent to PR3's builder.
 - 2026-10-06 20:20. Q125 landed (the user's guide, the design document and six guides; booking in plan.md; `agents/reviews/Q125-landing.md`) on Axel's acceptance, with the doc changes of PR1, PR2, O30b, Q124 and E4g carried into its guides and nine fixes at landing. PR3 ruled (Z664, Z665) and being prepared. In flight: D23 (repair round 1).

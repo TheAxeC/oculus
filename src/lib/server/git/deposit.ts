@@ -316,9 +316,9 @@ export async function adopt(id: string, options: DepositOptions = {}): Promise<O
 }
 
 /**
- * Put `code/` into the mirror as it stands and answer the plan. This is the dry run of DESIGN.md's
- * step 6: it stages, so the plan is git's own answer about what would ship, and it writes nothing
- * outside the mirrors folder.
+ * Put `code/` into the mirror as it stands and answer the plan. This is the dry run of the deposit:
+ * it stages, so the plan is git's own answer about what would ship, and it writes nothing outside
+ * the mirrors folder.
  */
 export async function sync(id: string, options: DepositOptions = {}): Promise<PlanOutcome> {
     const deposit = depositFor(id, options);

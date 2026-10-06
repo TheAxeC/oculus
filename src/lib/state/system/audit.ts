@@ -1,10 +1,10 @@
 // Layer 2, client state, pure. What a refused mute reads as, and the findings a search keeps and
 // a section of the view holds.
 //
-// The endpoint answers one word (`invalid`, `unwritable`) and the page never draws it: DESIGN.md's
-// rule for the deck write is that the view shows a sentence of its own for each, and this is that
-// map for the audit's mute. A word this does not know gets the general sentence, so a refusal the
-// endpoint grows later reads as a refusal rather than as a word out of the wire.
+// The endpoint answers one word (`invalid`, `unwritable`) and the page never draws it: the view
+// shows a sentence of its own for each, and this is the map from word to sentence for the audit's
+// mute. A word this does not know gets the general sentence, so a refusal the endpoint grows later
+// reads as a refusal rather than as a word out of the wire.
 
 import type { AuditFinding } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';

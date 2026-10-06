@@ -1,5 +1,4 @@
-In flight (2 of 6 slots):
-- Q126 (DESIGN.md reduced where Q125 left it short, Z654): refuted over round 1, ready to land, base 60263c8d.
+In flight (1 of 6 slots):
 - PR3 (Present decks edited and generated, PDF export): builder running, base 272f60b4 (Z667 ruled (a), sent to the builder).
 
 Queued, in order (24 steps):
@@ -31,6 +30,7 @@ Queued, in order (24 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- Q126 (DESIGN.md reduced where Q125 left it short), 2026-10-06.
 - D23 (the language server client), 2026-10-06.
 - Q125 (the user's guide, the design document and the guides), 2026-10-06.
 - PR2 (Present decks from any folder), 2026-10-06, 548004bc.
