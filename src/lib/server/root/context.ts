@@ -59,6 +59,7 @@ import { RateLimiter, type HookTarget } from './hooks.ts';
 import type { LogPaths } from '../machine/hpc/actions.ts';
 import type { Plan } from '../git/deposit.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
+import { defaultApprovalsPath } from '../machine/approvals/approvals.ts';
 import { defaultWorkspacesPath, ignoredCache, type IgnoredCache } from '../files/fs.ts';
 import { pickerState, type PickerState } from '../files/fs/picker.ts';
 import { submitState, type SubmitState } from '../machine/hpc/submit.ts';
@@ -69,12 +70,23 @@ import { browserRoots, repositoryRoots } from '../files/roots.ts';
 import { wallpaperMemory, type WallpaperMemory } from '../content/wallpaper.ts';
 import { hostWordsOf, hpcSettingsOf, latestResources } from '../machine/hpc/host.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.ts';
+import { savedPath } from '../machine/commands/saved.ts';
 import { Terminals } from '../machine/pty/channel.ts';
+import { stopTerminal } from '../machine/pty/sessions.ts';
 import {
     watchProcesses,
     type ProcessesOptions,
     type ProcessesWatcher
 } from '../machine/processes/watch.ts';
+import { readTable } from '../machine/processes/ps.ts';
+import { defaultSchedulesPath } from '../machine/schedules/file.ts';
+import { defaultRecordPath } from '../machine/schedules/record.ts';
+import { runEntry } from '../machine/schedules/run.ts';
+import {
+    watchSchedules,
+    type SchedulesOptions,
+    type SchedulesWatcher
+} from '../machine/schedules/watch.ts';
 import { projectFolders } from '../sessions/index.ts';
 import { HookStore, sessionRecord } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
@@ -114,6 +126,11 @@ export type ServerContext = {
     mail: MailWatcher;
     usage: UsageWatcher;
     usageRefresh: UsageRefreshWatcher;
+    /**
+     * The schedule watcher, each call handed to the one in force, so a route reaches the watcher
+     * built again after a change of local.yml's `schedules` or `schedule_record`.
+     */
+    schedules: SchedulesWatcher;
     token: string;
     /**
      * The machine the server runs on and the address a page reaches it at, replaced when the port
@@ -209,6 +226,7 @@ export type ContextDependencies = {
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
     watchAutofetch: (hub: Hub, options: AutofetchOptions) => AutofetchWatcher;
     watchBookmarks: (hub: Hub, options: BookmarksWatchOptions) => Watcher;
+    watchSchedules: (hub: Hub, options: SchedulesOptions) => SchedulesWatcher;
     watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
     watchProcesses: (hub: Hub, options: ProcessesOptions) => ProcessesWatcher;
     watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
@@ -229,6 +247,7 @@ const dependencies: ContextDependencies = {
     watchGit: (hub, options) => watchGit(hub, options),
     watchAutofetch: (hub, options) => watchAutofetch(hub, options),
     watchBookmarks,
+    watchSchedules,
     watchHpc,
     watchProcesses,
     watchCalendar,
@@ -253,6 +272,7 @@ type Parts = {
     git: GitWatcher;
     autofetch: AutofetchWatcher;
     bookmarks: Watcher;
+    schedules: SchedulesWatcher;
 };
 
 /** How an `https` address reaches the operating system for these machine values. */
@@ -377,6 +397,36 @@ export function createServerContext(
     const startBookmarks = (): Watcher =>
         make.watchBookmarks(hub, { file: local.bookmarks ?? defaultBookmarksPath() });
 
+    // The files are read from the keys at the call that builds the watcher, which a change of
+    // either key builds again. The hub, the roots and the claude program are read at each call, as
+    // the git watcher's roots are, so a root or a setting changed meanwhile is read at the next
+    // start of a run.
+    const startSchedules = (): SchedulesWatcher => {
+        const files = {
+            schedules: local.schedules ?? defaultSchedulesPath(),
+            record: local.scheduleRecord ?? defaultRecordPath(),
+            commands: savedPath()
+        };
+        const rootsFor = (): string[] =>
+            repositoryRoots({ config: make.loadConfig(engine).config, engine, local });
+        return make.watchSchedules(hub, {
+            files,
+            rootsFor,
+            local: () => local,
+            run: (entry, size) =>
+                runEntry(entry, size, {
+                    hub: local.hub,
+                    claudeBin: local.claudeBin,
+                    rootsFor,
+                    commands: files.commands,
+                    approvalsFor: () => local.approvals ?? defaultApprovalsPath()
+                }),
+            stop: (terminal) => stopTerminal(terminal),
+            table: () => readTable(),
+            refresh: () => terminals.refresh()
+        });
+    };
+
     const portfolio = startPortfolio();
     const sessions = startSessions();
     const { startUsageRefresh, startUsage } = usageStarters(
@@ -391,6 +441,7 @@ export function createServerContext(
     const git = startGit();
     const autofetch = startAutofetch();
     const bookmarks = startBookmarks();
+    const schedules = startSchedules();
     const hostWords = hostWordsOf(config);
     const polled = startPollers(
         make,
@@ -406,7 +457,16 @@ export function createServerContext(
         folders
     );
 
-    built.parts = { portfolio, sessions, usageRefresh, usage, git, autofetch, bookmarks };
+    built.parts = {
+        portfolio,
+        sessions,
+        usageRefresh,
+        usage,
+        git,
+        autofetch,
+        bookmarks,
+        schedules
+    };
     // The hand-off of every later config push, after the pollers it hands to. The two watchers a
     // key of local.yml builds again are reached through `owned()`, so a push goes to the one in
     // force.
@@ -455,6 +515,11 @@ export function createServerContext(
         get usageRefresh() {
             return owned().usageRefresh;
         },
+        schedules: {
+            reload: () => owned().schedules.reload(),
+            runNow: (name) => owned().schedules.runNow(name),
+            close: () => owned().schedules.close()
+        },
         token,
         host,
         local,
@@ -491,6 +556,7 @@ export function createServerContext(
             polled.hpc.close();
             hpcSubmits.close();
             polled.processes.close();
+            held.schedules.close();
             held.bookmarks.close();
             held.autofetch.close();
             held.git.close();
@@ -523,6 +589,9 @@ export function createServerContext(
         },
         bookmarks: (held) => {
             held.bookmarks = startBookmarks();
+        },
+        schedules: (held) => {
+            held.schedules = startSchedules();
         }
     };
 
@@ -557,6 +626,7 @@ export function createServerContext(
             if (names.sessions) held.sessions.close();
             if (names.portfolio) held.portfolio.close();
             if (names.bookmarks) held.bookmarks.close();
+            if (names.schedules) held.schedules.close();
         };
         closeAll(plan);
         const kept = new Set<keyof LocalConfig>();

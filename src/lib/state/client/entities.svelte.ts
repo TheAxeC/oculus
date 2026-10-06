@@ -92,6 +92,8 @@ export function createEntities(): EntitiesStore {
         hpc: () => payload('hpc'),
         /** The latest read of the Processes view, or null before the first one. */
         processes: () => payload('processes'),
+        /** The latest read of the schedules file, or null before the first one. */
+        schedule: () => payload('schedule'),
         /** The latest calendar payload, or null before the server's first message. */
         calendar: () => payload('calendar'),
         /**

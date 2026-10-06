@@ -20,6 +20,7 @@ import type {
     InboxPayload,
     Message,
     ProcessesPayload,
+    SchedulePayload,
     SessionsPayload,
     Snapshot,
     UsagePayload
@@ -34,6 +35,7 @@ export type Payloads = {
     git: GitPayload;
     hpc: HpcPayload;
     processes: ProcessesPayload;
+    schedule: SchedulePayload;
     calendar: CalendarPayload;
     inbox: InboxPayload;
     usage: UsagePayload;
@@ -62,6 +64,7 @@ export type EntitiesStore = {
     git: () => GitPayload | null;
     hpc: () => HpcPayload | null;
     processes: () => ProcessesPayload | null;
+    schedule: () => SchedulePayload | null;
     calendar: () => CalendarPayload | null;
     inbox: () => InboxPayload | null;
     usage: () => UsagePayload | null;
@@ -148,8 +151,16 @@ export type SendOptions = { said?: boolean; asked?: readonly string[] };
  */
 export type PostFailure = '' | 'unreachable' | 'unreadable';
 
-/** The endpoint's answer: whether it took the command, and the fields of its body. */
-export type Posted = { ok: boolean; body: Record<string, unknown>; failed: PostFailure };
+/**
+ * The endpoint's answer: whether it took the command, the HTTP status it came with (0 when no
+ * answer came), and the fields of its body.
+ */
+export type Posted = {
+    ok: boolean;
+    status: number;
+    body: Record<string, unknown>;
+    failed: PostFailure;
+};
 
 /** The page's end of the write endpoint, one per client. */
 export type WritesStore = {

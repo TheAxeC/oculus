@@ -38,6 +38,7 @@ import {
     parseAgents,
     withCacheModels
 } from '../../../data/sources/config/catalog/agents.ts';
+import { PROMPT_MAX } from '../../../data/helpers/run/schedules.ts';
 import { configDir, loadLocal, type LocalConfig } from '../../../data/sources/config.ts';
 import {
     confirmValues,
@@ -66,9 +67,6 @@ export const ACCOUNT_ENV: Record<AgentId, string> = {
 export function defaultAccountDir(agent: AgentId): string {
     return join(homedir(), agent === 'claude' ? '.claude' : '.codex');
 }
-
-/** The largest prompt a start carries, which is far past anything typed into a box. */
-export const PROMPT_MAX = 100_000;
 
 /** The most images one Codex start attaches. */
 export const IMAGES_MAX = 16;

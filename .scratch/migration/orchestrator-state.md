@@ -25,24 +25,6 @@ workers_at_once: 5           # Axel, 2026-10-05 (Z472): five, reached by landing
 
 ```yaml
 dispatch:   # steps in flight, up to seven (Z423)
-- step: A3
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a2764a62793cc286e (builder, launched 2026-10-06)
-  worktree: .agents/worktrees/A3
-  base: 995e6dfad
-  launched: 2026-10-06
-  report: agents/reviews/A3-report.md
-  builder_usage: 271,977 tokens, 452 tool uses, 109.7 min (verify item 8 not met: the modules were written before their tests, so no run with the module present and the behaviour missing exists, and none is made by removing code)
-  round_1_usage: 199,526 tokens, 94 tool uses, 22.3 min
-  round_2_usage: 100,732 tokens, 81 tool uses, 20.4 min
-  brief_check: agents/reviews/A3-brief-check.md (a48d9494f333f3e40, claude-opus-5-5, 268,096 tokens, 87 tool uses, 13.9 min), closed in the brief by a42ad450094192df4 (claude-opus-5-5; 213,493 tokens, 44 tool uses, 10.9 min)
-  shared_paths: with E4: +page.svelte's connect list, DESIGN.md:114, HELP.md:269 (one line, each step's clause), server context.ts's close() list (both-add, both kept), catalogs.ts (A3's behaviorFindings beside E4's closed_paths_shape), local.ts, local.test.ts, options.yml, behavior.yml, findings.yml, workbench.yml, boundaries.test.ts, context-fixture.ts, client payloads, entities and context, model index (separate hunks); with O30: +page.svelte and client context.ts (separate hunks), package.json (one dependency each, the lockfile regenerated at landing); the second of A3 and E4 adds schedule to the closed channels in A3's item 14 wording; so the merge is simple
-  reviewer_report: agents/reviews/A3-refuter.md (a239b2d8b039c975e, claude-opus-5-5, 268,520 tokens, 153 tool uses, 23.9 min); over round 1: a1226d68c43be5990, claude-opus-5-5, 328,871 tokens, 61 tool uses, 11.7 min; over round 2: ac84998d95f8fb970, claude-opus-5-5, 358,200 tokens, 80 tool uses, 15.1 min
-  diagnosis: agents/reviews/A3-diagnosis.md (acb1bb1231865e0e6, claude-opus-5-5), Proof 3: a tree check timing out under load in a direct vitest run (Z611)
-  landing: not-started
-  round: 2 (agents/briefs/A3-round2.md, sent 2026-10-06, the plan's extra round under Z618); round 1 agents/briefs/A3-rebuild-round1.md, sent 2026-10-06
 - step: E4
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -166,7 +148,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Z605 (2026-10-06, step E4, raised at its landing): main's commit a37aaa5de removed the test `describe('the shipped files')` from `tests/data/sources/config/settings.test.ts`, as one no guarded entry names; E4 added its eight `apps.*` keys to that test, so the cherry-pick in the gate worktree brings it back. Removing it again in the gate was refused by the runner's auto mode classifier as a test removal, and a refused call is not retried in another form (Z551). Options: (a) Axel removes that `describe` block in `.agents/worktrees/gate/tools/oculus/tests/data/sources/config/settings.test.ts` himself, or allows the edit, so the file matches main's sweep plus E4's `appsSettings` rows, recommended, since a37aaa5de already ruled the test out; (b) keep the test with E4's keys, which brings back a test no guarded entry names, against `agents/spec.md`'s test rule. E4's landing waits on this; the gate holds the cherry-pick with the diagram conflicts not yet resolved, and main is untouched.
+- Z630 (2026-10-06, step Q123, raised by the automode ruling of Z620): the words of the new guarded entry G51 in `agents/guarded.md`, which are Axel's. Proposed: "G51. A page that attaches to a terminal pane is given the terminal modes the pane's program set (bracketed paste, application cursor keys, mouse reporting), so a paste or a key reaches the program as it asked." Options: (a) these words, recommended; (b) other words Axel gives; (c) no entry, which leaves the paste-mode fix of Z619 without a test, the lazy one. Q123's alternate-screen part goes ahead; its test of the modes waits on this.
 
 
 
@@ -227,6 +209,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-06 08:00. A3 landed (scheduled runs; booking in plan.md; `agents/reviews/A3-landing.md`) with six fixes at landing and G31 widened under Z624. Z605 ruled (a) by Axel. G51's words raised as Z630. Next: E4's landing in a fresh gate with the shipped-files block removed, then O30b, Q123 and Q124 prepared.
 - 2026-10-06 07:40. O30 landed (oculus in its own window; booking in plan.md; `agents/reviews/O30-landing.md`). Axel's automode ruled Z620, Z621, Z624, Z627 and Z628 (and Z629 the look) with their recommendations: O30b, Q123 and Q124 added to the steps, A3 lands with G31 widened and its lock test under fake timers. Axel ruled Z605 (a): the block is removed at E4's landing. Next: A3's landing, E4's landing, then O30b, Q123 and Q124 prepared to fill the slots.
 - 2026-10-05 22:55. A3 not landed (Z569 to Z573): its new design goes to a fresh builder from a new brief. Its work as it stood on main with the landing fixes of the review over round 2 (4.1 to 4.3) and without the tests no entry names is saved in `agents/reviews/A3-backed-out.patch` (`cmp` equal on two diffs); worktree and branches A3, A3-land removed; dispatch entry removed. Its agents so far: builder a196231c6bb6abbd8 (claude-sonnet-5-5; 304,706 + 290,549 + 114,685 tokens, 326 + 10 + 41 tool uses, 115.4 + 4.1 + 22.6 min), reviewers a8202593373720c47, aa2f8d687b0b0cfac, a27a399928a3abcf5 (claude-opus-5-5), brief recheck a1ac267d86af973b6. E4's builder reported at 22:20.
 - 2026-10-05 21:05. D44 landed (Submit on a `.slurm` file; booking in plan.md; `agents/reviews/D44-landing.md`). Axel's no-breakage-testing rule applied: agents/spec.md:62 replaced, the breakage lines removed from the A3, A3-round1, O30 and E4 briefs; A3's and E4's builders stopped and corrected, A3's report cleaned. Z567 (the app opens dark) put first for O30's builder. A3's run over round 1 saved (aa2f8d687b0b0cfac); round 2 (Z568) sent. Running: A3's builder in round 2, O30's and E4's builders.

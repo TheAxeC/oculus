@@ -1,7 +1,7 @@
 // Layer 2, client state. The small conversions the views share: a count in three digits, a count
-// with its thousands grouped, a stamp a rail row has room for, a span in seconds, a model's short
-// name, and a path relative to a workspace. No runes here, so every one of them is a pure function
-// over its arguments and is tested directly.
+// with its thousands grouped, a stamp a rail row has room for, a time ahead with its weekday, a
+// span in seconds, a model's short name, and a path relative to a workspace. No runes here, so
+// every one of them is a pure function over its arguments and is tested directly.
 //
 // The words come from the catalog like every other word: a suffix and a separator are strings a
 // reader sees, so they are keys rather than literals. What is left in a function is arithmetic and
@@ -69,6 +69,26 @@ export function stamp(iso: string | null | undefined, now: number = Date.now()):
     }
     const day = `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     return t('sessions.stamp_day', day, time);
+}
+
+/**
+ * A time ahead, as a next run shows it: the weekday word and the day and clock of `stamp`'s day
+ * form, so a next run always names its day ("Mon 10-12 07:00"). Empty when there is nothing to
+ * read.
+ */
+export function ahead(iso: string | null | undefined): string {
+    const date = dateOf(iso);
+    if (date === null) return '';
+    const days = [
+        () => t('app.schedules.day_sun'),
+        () => t('app.schedules.day_mon'),
+        () => t('app.schedules.day_tue'),
+        () => t('app.schedules.day_wed'),
+        () => t('app.schedules.day_thu'),
+        () => t('app.schedules.day_fri'),
+        () => t('app.schedules.day_sat')
+    ];
+    return t('app.schedules.ahead', days[date.getDay()](), stamp(iso, 0));
 }
 
 /** The clock alone, whatever day the stamp is from: what a timeline row carries. */

@@ -29,15 +29,6 @@ The question: O30, the app's build from the checkout writes into folders of its 
 
 Where it is built: step O30b. Booked in `plan.md` Rulings.
 
-## Z624 (2026-10-06, step A3)
-
-The question: A3, the entry G31 gains "or whose lock stays taken" (a save whose record lock is held past its wait is refused with the reason and writes nothing), and the test 'refuses a rename or a drop while the lock is held, committing nothing' is rewritten at A3's landing under fake timers with one row through the route, so it stands under G31 and waits on no real time. Fixed at A3's landing.
-
-- Chosen: (a) G31 widened and the test folded under fake timers.
-- Not chosen: (b) no entry, the test does not land, the lazy one.
-
-Where it is built: A3's landing; `agents/guarded.md` G31. Booked in `plan.md` Rulings.
-
 ## Z621 (2026-10-06, step O30)
 
 The question: O30, a pane in an editor's alternate screen is given to an attaching page in the grid's alternate buffer, the normal buffer keeping the shell's text, so the editor draws full screen and leaving it brings the shell's text back; built by step Q123.
@@ -49,12 +40,12 @@ Where it is built: step Q123. Booked in `plan.md` Rulings.
 
 ## Z620 (2026-10-06, step O30)
 
-The question: O30, a new guarded entry G51: "A page that attaches to a terminal pane is given the terminal modes the pane's program set (bracketed paste, application cursor keys, mouse reporting), so a paste or a key reaches the program as it asked for it.", with its test written by step Q123.
+The question: O30, a test for the terminal modes given to an attaching page needs a guarded entry.
 
-- Chosen: (a) the entry and its test.
-- Not chosen: (b) no entry, the diagnosis's runs stand as the proof.
+- Chosen: (a) the entry and its test, built by step Q123; the entry's words are raised to Axel as Z630, since guarded entries are his.
+- Not chosen: (b) no entry, the diagnosis's runs standing as the proof, the lazy one.
 
-Where it is built: step Q123; `agents/guarded.md` G51, written at Q123's preparation. Booked in `plan.md` Rulings.
+Where it is built: step Q123. Booked in `plan.md` Rulings.
 
 ## Z626 (2026-10-06, step A3)
 

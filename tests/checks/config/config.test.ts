@@ -372,22 +372,25 @@ describe('behaviorFindings', () => {
      */
     const WORDS = { text: loadConfig(engineDir()).config.text };
 
-    it('names the key that replaced a retired one, against behavior.yml', () => {
-        const engine = scratch();
-        expect(behaviorFindings(engine, { ...WORDS, chat: { skip_permissions: true } })).toEqual([
-            {
-                file: join(engine, 'config', 'behavior.yml'),
-                key: 'chat.skip_permissions',
-                message: 'chat.skip_permissions is not read; the key is tasks.skip_permissions'
-            }
-        ]);
-    });
+    it.each([
+        ['chat.skip_permissions', { chat: { skip_permissions: true } }],
+        ['tasks.skip_permissions', { tasks: { skip_permissions: true } }]
+    ])(
+        'says a retired key is not read and names the Run unattended choice, against behavior.yml: %s',
+        (key, retired) => {
+            const engine = scratch();
+            expect(behaviorFindings(engine, { ...WORDS, ...retired })).toEqual([
+                {
+                    file: join(engine, 'config', 'behavior.yml'),
+                    key,
+                    message: `${key} is not read; a schedule in the update tray runs unattended through its Run unattended choice`
+                }
+            ]);
+        }
+    );
 
     it('says nothing about a configuration whose keys are all under their own names', () => {
         const engine = scratch();
-        expect(behaviorFindings(engine, { ...WORDS, tasks: { skip_permissions: true } })).toEqual(
-            []
-        );
         expect(behaviorFindings(engine, { ...WORDS, chat: { model: 'opus' } })).toEqual([]);
         expect(behaviorFindings(engine, { ...WORDS, chat: 'opus' })).toEqual([]);
         expect(behaviorFindings(engine, loadConfig(engineDir()).config)).toEqual([]);

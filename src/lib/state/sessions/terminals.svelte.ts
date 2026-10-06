@@ -34,7 +34,7 @@
 // POST carries the token state/client/writes.svelte.ts holds, and the socket carries it in its
 // subscribe message, which is what lets that socket send input at all.
 
-import { taskSkipPermissions } from '../../data/helpers/run/tasks.ts';
+import { UPDATE_TASKS, type UpdateTask } from '../../data/helpers/run/tasks.ts';
 import type { EntitiesStore, SocketStore, WritesStore } from '../shared/stores/shapes.ts';
 import { t } from '../shared/words/text.ts';
 import type {
@@ -102,8 +102,10 @@ export { RESIZE_WAIT } from './terminal/pty/pty-subscribe.ts';
 // state/client/selectors.svelte.ts re-exports the ones the session views read.
 export type { TaskRef, Terminal, TerminalKind, TerminalResume } from '../../data/model/index.ts';
 
-/** The four update skills accepted by the server's task action. */
-export type TaskKind = 'litwatch' | 'scout' | 'linkedin' | 'inbox';
+// The four update tasks the server's task action accepts, in the order the tray lists them. The
+// boundary table lets a shell file import this module and not `data/helpers/run/tasks`, so they
+// reach the tray from here.
+export { UPDATE_TASKS, type UpdateTask };
 
 /** What a LaTeX terminal does to one main file: build it, or clear what a build left beside it. */
 export type LatexStep = 'build' | 'clean';
@@ -121,8 +123,7 @@ export type TerminalsStore = {
         rows?: number
     ) => Promise<TerminalAnswer>;
     recoverDataset: (key: string, cols?: number, rows?: number) => Promise<TerminalAnswer>;
-    startTask: (kind: TaskKind, cols?: number, rows?: number) => Promise<TerminalAnswer>;
-    taskSkipsPermissions: () => boolean;
+    startTask: (kind: UpdateTask, cols?: number, rows?: number) => Promise<TerminalAnswer>;
     latex: (
         target: LatexTarget,
         main: string,
@@ -473,20 +474,11 @@ export function createTerminals(
      * Start one update skill as a Claude terminal; the server supplies its argv and hub directory.
      */
     async function startTask(
-        kind: TaskKind,
+        kind: UpdateTask,
         cols: number = COLS,
         rows: number = ROWS
     ): Promise<TerminalAnswer> {
         return post({ action: 'task', kind, cols, rows });
-    }
-
-    /**
-     * Whether a task started now runs with the CLI's permission prompts turned off. The rule is
-     * data/helpers/run/tasks.ts's, the one the server builds the argv from, so what the tray
-     * tells the reader and what the command does are one answer to one configured key.
-     */
-    function taskSkipsPermissions(): boolean {
-        return taskSkipPermissions(entities.config()?.config ?? {});
     }
 
     /**
@@ -798,7 +790,6 @@ export function createTerminals(
         startTerminal,
         recoverDataset,
         startTask,
-        taskSkipsPermissions,
         latex,
         startChat,
         resumeTerminal,

@@ -89,6 +89,11 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             close: noop
         },
         token: ROUTE_TOKEN,
+        schedules: {
+            reload: noop,
+            runNow: () => Promise.resolve({ refused: 'record-unread', names: [] }),
+            close: noop
+        },
         host: hostInfo(local.port),
         local,
         engine: overrides.engine ?? '/fixture/engine',

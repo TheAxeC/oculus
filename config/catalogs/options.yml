@@ -383,12 +383,6 @@ options:
             control: choice
             values_from: models
             empty: the command line chooses the model
-        tasks.skip_permissions:
-            heading: terminal
-            section: Update tasks
-            description: Whether the four update tasks start with --dangerously-skip-permissions. false starts them as ordinary Claude sessions, whose permission prompts the reader answers in the terminal pane. true runs them unattended, and the update tray then asks for a confirmation before each task.
-            default: false
-            control: toggle
         calendar.poll_min:
             heading: calendar
             section: Calendar reads
@@ -1236,9 +1230,15 @@ options:
         approvals:
             section: Saved files
             description: Where the approvals live, the texts of the project commands a reader approved to run, each under a key made from its text. Without it the file is ~/.oculus/approvals.json, mode 0600, in ~/.oculus, which each write makes mode 0700 when it is looser; a file named here leaves the mode of its folder as it is. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+        schedules:
+            section: Saved files
+            description: Where the schedules live, the entries the update tray's Schedules section lists and a reader may write by hand. Without it the file is ~/.oculus/schedules.yml. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+        schedule_record:
+            section: Saved files
+            description: Where the schedules' run record lives, each schedule's latest runs and the last due time it handled. Without it the file is ~/.oculus/schedule.json, mode 0600 when oculus creates it. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         claude_bin:
             section: Programs
-            description: The Claude command line that the update tasks and the chat terminal are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
+            description: The Claude command line that the update tasks, the prompts of schedules and the chat terminal are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
         open_bin:
             section: Programs
             description: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to macOS's /usr/bin/open. A change is read again at once.

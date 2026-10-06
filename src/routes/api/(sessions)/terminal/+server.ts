@@ -24,9 +24,8 @@ export const POST: RequestHandler = ({ request, locals }) => {
                 local: server.local
             }),
         projectFor: (id) => project(server.hub, id),
-        // The request's own read of the disk: `tasks.skip_permissions` decides both the argv here
-        // and the confirmation the tray draws, and the tray reads the config channel, which
-        // republishes on every save, so the two agree without a restart.
+        // The request's own read of the disk, for the actions that read the config at the request:
+        // the chat launcher, the LaTeX words, the hub task seeds and the glyph catalog.
         configFor: () => locals.config().config,
         localFor: () => server.local,
         // A project command runs in a repository under the roots the file browser serves, after the

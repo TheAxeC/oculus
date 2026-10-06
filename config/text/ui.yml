@@ -2,6 +2,7 @@
 text:
     ui:
         answer_refused: 'The server refused the request (HTTP {0}).'
+        answer_unreachable: The server did not answer.
         answer_unreadable: "The server's answer could not be read (HTTP {0})."
         bookmarks_glyph: star
         bookmarks_none: No bookmarks

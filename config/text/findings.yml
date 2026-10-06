@@ -63,7 +63,7 @@ text:
             glyph_not_ascii: glyph {0} has no stand-in of one to three printable ASCII characters
             icon_not_glyph: '{0} is not a name in config/catalogs/glyphs.yml'
             icon_not_shipped: the icon package ships no {0}.svg
-            skip_permissions_retired: 'chat.skip_permissions is not read; the key is tasks.skip_permissions'
+            skip_permissions_retired: '{0} is not read; a schedule in the update tray runs unattended through its Run unattended choice'
             setting_default: '{0} must be {1}; the default is used'
             setting_empty: '{0} must not be empty; the default is used'
             setting_block: '{0} must be a map; each of its keys takes its default'

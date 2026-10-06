@@ -203,15 +203,15 @@ export function createWrites(
                 response = await send();
             }
         } catch {
-            return { ok: false, body: {}, failed: 'unreachable' };
+            return { ok: false, status: 0, body: {}, failed: 'unreachable' };
         }
         let parsed: unknown;
         try {
             parsed = await response.json();
         } catch {
-            return { ok: false, body: {}, failed: 'unreadable' };
+            return { ok: false, status: response.status, body: {}, failed: 'unreadable' };
         }
-        return { ok: response.ok, body: fields(parsed), failed: '' };
+        return { ok: response.ok, status: response.status, body: fields(parsed), failed: '' };
     }
 
     /** Whether a write is in flight. */

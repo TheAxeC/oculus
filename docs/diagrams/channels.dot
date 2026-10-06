@@ -12,6 +12,7 @@ digraph channels {
         "server/machine/hpc/poll";
         "server/machine/processes/watch";
         "server/machine/pty/channel";
+        "server/machine/schedules/watch";
         "server/machine/usage/watch";
     }
     subgraph "cluster_publish server/root" {
@@ -47,6 +48,7 @@ digraph channels {
         "ch portfolio" [label="portfolio", shape=ellipse];
         "ch processes" [label="processes", shape=ellipse];
         "ch pty:*" [label="pty:*", shape=ellipse];
+        "ch schedule" [label="schedule", shape=ellipse];
         "ch sessions" [label="sessions", shape=ellipse];
         "ch timedOut" [label="timedOut", shape=ellipse];
         "ch usage" [label="usage", shape=ellipse];
@@ -55,6 +57,7 @@ digraph channels {
         label="not placed"; style=dashed;
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
+        "? src/lib/server/machine/schedules/watch.ts:290" [label="src/lib/server/machine/schedules/watch.ts:290 publish(CHANNEL)"];
         "? src/lib/shell/panes/PaneView.svelte:439" [label="src/lib/shell/panes/PaneView.svelte:439 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
@@ -117,6 +120,7 @@ digraph channels {
         "state/system/docs";
         "state/system/machine/hpc";
         "state/system/machine/processes";
+        "state/system/machine/schedule";
         "state/system/machine/usage-refresh";
         "state/workbench/navigation/notice-sources";
         "state/workbench/palette-source";
@@ -196,7 +200,6 @@ digraph channels {
     "ch config" -> "state/client/socket";
     "ch config" -> "state/life/present";
     "ch config" -> "state/sessions/latex";
-    "ch config" -> "state/sessions/terminals";
     "ch config" -> "state/sources/search/search";
     "ch config" -> "state/workbench/palette-source";
     "ch config" -> "views/feeds/leads";
@@ -263,6 +266,8 @@ digraph channels {
     "ch processes" -> "routes/+page" [style=dashed];
     "ch processes" -> "state/system/machine/processes";
     "ch pty:*" -> "state/sessions/terminal/pty/pty-wire";
+    "ch schedule" -> "routes/+page" [style=dashed];
+    "ch schedule" -> "state/system/machine/schedule";
     "ch sessions" -> "routes/+page" [style=dashed];
     "ch sessions" -> "routes/+page";
     "ch sessions" -> "state/client/selectors";
@@ -281,6 +286,7 @@ digraph channels {
     "server/machine/processes/watch" -> "? src/lib/server/machine/processes/watch.ts:63";
     "server/machine/processes/watch" -> "? src/lib/server/machine/processes/watch.ts:67";
     "server/machine/pty/channel" -> "ch pty:*";
+    "server/machine/schedules/watch" -> "? src/lib/server/machine/schedules/watch.ts:290";
     "server/machine/usage/watch" -> "ch usage";
     "server/root/hooks" -> "ch sessions";
     "server/root/watch/bookmarks" -> "ch files";

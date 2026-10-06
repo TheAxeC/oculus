@@ -87,6 +87,8 @@ const FIELDS: (keyof LocalConfig)[] = [
     'changes',
     'history',
     'approvals',
+    'schedules',
+    'scheduleRecord',
     'claudeBin',
     'openBin',
     'accounts',
@@ -110,7 +112,8 @@ export const WATCHERS = [
     'usage',
     'git',
     'autofetch',
-    'bookmarks'
+    'bookmarks',
+    'schedules'
 ] as const;
 export type WatcherName = (typeof WATCHERS)[number];
 
@@ -122,6 +125,8 @@ const BUILT_FROM: Partial<Record<keyof LocalConfig, WatcherName[]>> = {
     sessionsOverrides: ['sessions'],
     workspaces: ['git'],
     bookmarks: ['bookmarks'],
+    schedules: ['schedules'],
+    scheduleRecord: ['schedules'],
     claudeBin: ['usageRefresh']
 };
 
@@ -139,7 +144,8 @@ export function rebuiltBy(changed: readonly (keyof LocalConfig)[]): Record<Watch
         usage: direct.has('usage') || direct.has('sessions') || direct.has('usageRefresh'),
         git: direct.has('git'),
         autofetch: direct.has('autofetch') || direct.has('git'),
-        bookmarks: direct.has('bookmarks')
+        bookmarks: direct.has('bookmarks'),
+        schedules: direct.has('schedules')
     };
 }
 

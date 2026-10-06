@@ -19,13 +19,13 @@ import { statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { z } from 'zod';
 import { scalar, str, strings } from '../../../data/helpers/guards.ts';
+import { PROMPT_MAX } from '../../../data/helpers/run/schedules.ts';
 import type { PortfolioConfig, TaskRef } from '../../../data/model/index.ts';
 import { keyedRowsShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
 import { entryOf, identityOf, readCollection } from '../../files/fs/collections.ts';
 import { inside, realPath } from '../../core/paths.ts';
 import { words } from '../../core/words.ts';
-import { PROMPT_MAX } from '../pty/compose.ts';
 import { NAME_MAX } from '../pty/sessions.ts';
 
 /** The collection whose entries name their folder in `link:`. */

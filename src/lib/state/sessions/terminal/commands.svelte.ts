@@ -47,6 +47,7 @@ import { deepestHolding, joinPath, pathUnder } from '../../../data/helpers/files
 import { chainMarker } from '../../../data/helpers/run/marker.ts';
 import { readAs, readJson, rowsShape } from '../../../data/shapes/shapes.ts';
 import { tabOfFile, type ServedRoot } from '../../sources/repositories/file-git.ts';
+import { unreachableAnswer } from '../../shared/answers/answers.ts';
 import type { EntitiesStore, Fetcher, Queries, WritesStore } from '../../shared/stores/shapes.ts';
 import { t } from '../../shared/words/text.ts';
 import { holds } from '../../system/docs.svelte.ts';
@@ -313,7 +314,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
                 }
                 return readAs(answerShape, raw) ?? words(t('commands.unreadable'));
             } catch {
-                return words(t('commands.unreachable'));
+                return words(unreachableAnswer());
             }
         };
     }
@@ -385,7 +386,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
 
     async function write(repo: string, body: Record<string, unknown>): Promise<CommandWrite> {
         const posted = await writes.postCommand('/api/commands', { ...body, repo });
-        if (posted.failed === 'unreachable') return { ok: false, error: t('commands.unreachable') };
+        if (posted.failed === 'unreachable') return { ok: false, error: unreachableAnswer() };
         if (posted.failed === 'unreadable') return { ok: false, error: t('commands.unreadable') };
         const error = readAs(errorShape, posted.body)?.error;
         if (!posted.ok) return { ok: false, error: error ?? t('commands.refused') };

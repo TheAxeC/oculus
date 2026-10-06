@@ -71,6 +71,10 @@ const processesShape = unchangedAs<Payloads['processes']>(
     })
 );
 
+const scheduleShape = unchangedAs<Payloads['schedule']>(
+    z.object({ schedules: listShape, commands: listShape, folders: listShape, unread: listShape })
+);
+
 const calendarShape = unchangedAs<Payloads['calendar']>(
     z.object({
         status: z.string(),
@@ -121,6 +125,7 @@ export const payloadShapes: { [K in keyof Payloads]: z.ZodType<Payloads[K]> } = 
     git: gitShape,
     hpc: hpcShape,
     processes: processesShape,
+    schedule: scheduleShape,
     calendar: calendarShape,
     inbox: inboxShape,
     usage: usageShape,

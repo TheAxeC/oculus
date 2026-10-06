@@ -1,14 +1,13 @@
-In flight (2 of 5 slots; three are filled next by O30b, Q123 and Q124):
-- A3 (scheduled Update runs): its landing, with G31 widened and its lock test under fake timers (Z624, automode).
-- E4 (the apps): its landing in `.agents/worktrees/gate`, the shipped-files block removed (Z605 (a)).
+In flight (1 of 5 slots; four are filled next from the queue):
+- E4 (the apps): its landing in a fresh gate, the shipped-files block removed (Z605 (a)).
 
 Queued, in order (26 steps):
 - O30b (the app's own build folders): now.
 - Q123 (a terminal pane attached as its program left it): now.
 - Q124 (the diagrams cases without their own limit, and the landing's vitest cache race): now.
-- D23 (language servers): once A3 has landed.
-- X3e (Files lists reordered by drag): once A3 has landed.
-- D45 (LaTeX as VS Code's LaTeX Workshop): once A3 has landed (its brief rechecked on main; A3 writes the same lines of routes.ts and settings.ts).
+- D23 (language servers): now.
+- X3e (Files lists reordered by drag): now.
+- D45 (LaTeX as VS Code's LaTeX Workshop): now (its brief rechecked on main).
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.
 - D11 (the debug client for rite): once D45 and D23 have landed.
@@ -33,7 +32,8 @@ Queued, in order (26 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- O30 (the native window in Electron), 2026-10-06, the commit of this landing.
+- A3 (scheduled runs), 2026-10-06, the commit of this landing.
+- O30 (the native window in Electron), 2026-10-06, 8ed2d1f5a.
 - D44 (Submit on a .slurm file), 2026-10-05, 297349683.
 - D20 (an agent from a task or a worktree), 2026-10-05, 0aea28449.
 - D38 (the Literature search view), 2026-10-05, b07d24766.

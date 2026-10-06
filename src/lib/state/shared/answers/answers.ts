@@ -106,6 +106,11 @@ function latexWord(value: unknown): LatexRefusal | null {
     return LATEX_REFUSALS.find((one) => one === value) ?? null;
 }
 
+/** The sentence for a request that got no answer at all. */
+export function unreachableAnswer(): string {
+    return catalogText('ui.answer_unreachable');
+}
+
 /** The sentence for an answer the page could not read, with the status it came with. */
 export function unreadableAnswer(status: number | string): string {
     return catalogText('ui.answer_unreadable', status);

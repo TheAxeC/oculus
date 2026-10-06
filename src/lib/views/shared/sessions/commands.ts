@@ -6,10 +6,10 @@
 // command is told apart by its source and its name together: that pair is its key in every list
 // and the id of every pick, and a list that holds one name twice draws the source beside it.
 //
-// A command saved through the form has Edit and Delete; a command read from a file of the
-// repository or found in one has Open File at its entry, which takes the reader to the line that
-// defines it. A command has no other item, so a saved command never offers to open a file and a
-// file command never offers to be deleted from the page.
+// A command saved through the form has Edit, Schedule... and Delete; a command read from a file of
+// the repository or found in one has Open File at its entry, which takes the reader to the line
+// that defines it. A command has no other item, so a saved command never offers to open a file and
+// a file command never offers to be deleted from the page.
 
 import type { MenuItem } from '$lib/ui/menu/menu-items';
 import {
@@ -24,6 +24,7 @@ export const SHOWN = 5;
 
 /** The item ids of a command's menu. */
 export const EDIT = 'edit';
+export const SCHEDULE = 'schedule';
 export const DELETE = 'delete';
 export const OPEN = 'open';
 export const RUN = 'run';
@@ -69,6 +70,7 @@ export function commandMenu(repo: string, command: ProjectCommand): MenuItem[] {
     if (command.source === 'saved') {
         return [
             { id: EDIT, label: t('commands.edit') },
+            { id: SCHEDULE, label: t('app.tasks.schedule') },
             { id: DELETE, label: t('commands.delete') }
         ];
     }

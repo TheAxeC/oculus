@@ -13,12 +13,13 @@ import { readSavedCommands, savedPath } from './saved.ts';
 
 /**
  * The commands of a repository and what could not be read. `repo` is its real path, and the saved
- * commands are those the machine's `commands.json` holds under that path.
+ * commands are those `savedFile`, the machine's `commands.json` unless a caller names another,
+ * holds under that path.
  */
-export function listCommands(repo: string): CommandsAnswer {
+export function listCommands(repo: string, savedFile: string = savedPath()): CommandsAnswer {
     const taken: Taken = new Set();
     const file = readCommandsFile(repo, taken);
-    const saved = readSavedCommands(savedPath(), repo, taken);
+    const saved = readSavedCommands(savedFile, repo, taken);
     const found = findCommands(repo);
     return {
         commands: [...file.commands, ...saved.commands, ...found.commands],

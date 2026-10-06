@@ -55,8 +55,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/files/nesting`, the reader of the `patterns:` map of file-nesting.yml and the rule
 // that nests a folder's names: the server words its findings from it and the Files view nests the
 // rows it draws through it, so the two cannot disagree about which patterns were dropped;
-// `data/helpers/run/tasks`, the server building an update task's argv from the `tasks:` block and
-// the update tray asking that block whether the task it is about to start runs unattended;
+// `data/helpers/run/tasks`, the server starting an update task and the tray listing the four;
+// `data/helpers/run/schedules` and `data/helpers/run/cron`, the rule for one entry of the schedules
+// file and the runs a cron pattern has: the schedule dialog checks an entry and previews a pattern
+// before it sends, and the server reads the file and runs the timer by the same rule, so the two
+// cannot disagree on what runs;
 // `data/helpers/run/marker`, the line a project command's chain prints before each command, which
 // the server writes into the chain's line and the page reads the task's output by;
 // `data/helpers/editor`, the order that resolves a tab's editor options (`resolveEditor`) and their
@@ -166,6 +169,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/prose/latex',
         'data/helpers/files/nesting',
         'data/helpers/run/tasks',
+        'data/helpers/run/schedules',
+        'data/helpers/run/cron',
         'data/helpers/run/marker',
         'data/helpers/editor',
         'data/helpers/search/**',
@@ -339,7 +344,8 @@ const FROZEN = [
  * draw the question and the form `commands` holds, and the tab menu reveals a file and opens it in
  * a program through `writes` and offers Open in Program from the programs `selectors` reads, and
  * the panes, the tab menu and the windows of the desktop app ask the app's host for a window, the
- * find bar and the arrangement's save turn through `desktop`.
+ * find bar and the arrangement's save turn through `desktop`, and the update tray and its schedule
+ * list and dialog read and write the schedules through `schedule`.
  */
 const SHELL_STORES = [
     'commands',
@@ -357,7 +363,8 @@ const SHELL_STORES = [
     'registry',
     'writes',
     'selectors',
-    'desktop'
+    'desktop',
+    'schedule'
 ];
 
 /**

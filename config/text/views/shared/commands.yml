@@ -46,7 +46,6 @@ text:
         source_found: found in the repository
         source_saved: saved on this machine
         tip: '{0} ({1})'
-        unreachable: The server did not answer.
         unreadable: The server's answer could not be read.
         word_file: file
         word_found: found

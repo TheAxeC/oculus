@@ -157,19 +157,22 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
 /**
  * What is wrong with `behavior.yml` that only the reader can put right and that the options
  * catalog does not describe, as findings on the config channel: a key written under a name the tree
- * does not read, which is ignored where it stands. It is worded from the merged catalog, as
- * iconFindings' are.
+ * does not read, which is ignored where it stands (`chat.skip_permissions` and
+ * `tasks.skip_permissions`, whose place is a schedule's Run unattended choice). It is worded from
+ * the merged catalog, as iconFindings' are.
  */
 export function behaviorFindings(engine: string, config: Record<string, unknown>): Finding[] {
     const file = join(configDir(engine), 'behavior.yml');
     const catalog = textCatalog(config);
     const findings: Finding[] = [];
-    const chat = readAs(mapShape, config.chat);
-    if (chat !== null && 'skip_permissions' in chat) {
+    for (const group of ['chat', 'tasks']) {
+        const keys = readAs(mapShape, config[group]);
+        if (keys === null || !('skip_permissions' in keys)) continue;
+        const key = `${group}.skip_permissions`;
         findings.push({
             file,
-            key: 'chat.skip_permissions',
-            message: findingText(catalog, 'findings.config.skip_permissions_retired')
+            key,
+            message: findingText(catalog, 'findings.config.skip_permissions_retired', key)
         });
     }
     return findings;

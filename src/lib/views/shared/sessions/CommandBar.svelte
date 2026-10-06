@@ -4,8 +4,9 @@
     // command as a task terminal; one that has not been approved asks first. The question and the
     // form that saves a command are drawn by the shell (shell/commands/CommandAsk.svelte), which
     // the bar opens through the commands store. The tooltip of a button is the command's line and
-    // where it was read from. A right-click on a button opens its menu: Edit and Delete for a
-    // command saved through the form, Open File at its entry for one read from a file or found.
+    // where it was read from. A right-click on a button opens its menu: Edit, Schedule... and
+    // Delete for a command saved through the form, Open File at its entry for one read from a file
+    // or found. Schedule... opens the schedule dialog for the command over the update tray.
     //
     // The bar holds the repository's list while it is drawn (the commands store's `watch`), so a
     // repository nobody draws is not asked for. It draws nothing until the list is read, and a
@@ -27,6 +28,7 @@
         EDIT,
         OPEN,
         RUN,
+        SCHEDULE,
         SHOWN,
         commandKey,
         commandLabel,
@@ -46,7 +48,9 @@
 
     const {
         commands: { commands, openAt, openForm, press, remove, watch },
-        notices
+        notices,
+        schedule,
+        ui
     } = useState();
 
     // The list is held while this bar is drawn.
@@ -80,7 +84,10 @@
     function picked(action: string, command: ProjectCommand): void {
         if (action === RUN) run(command);
         else if (action === EDIT) openForm(repo, draftOf(repo, command));
-        else if (action === DELETE) ask(command);
+        else if (action === SCHEDULE) {
+            schedule.openDialog({ command: command.name, folder: repo, name: command.name });
+            ui.requestUpdateTray();
+        } else if (action === DELETE) ask(command);
         else if (action === OPEN) open(command);
     }
 

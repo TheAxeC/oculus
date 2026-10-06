@@ -47,6 +47,25 @@ export function readSavedCommands(file: string, repo: string, taken: Taken): Rea
     return collect(items, { repo, file, label: repo, source: 'saved' }, taken);
 }
 
+/**
+ * Every saved command of every repository the file holds, each as its repository's real path and
+ * its name, in the file's order; the reason when the file does not read. A missing file holds
+ * none. The commands are those readSavedCommands lists for each repository, so a command whose
+ * entry does not read is not here either.
+ */
+export function readAllSaved(
+    file: string
+): { ok: true; commands: { folder: string; name: string }[] } | { ok: false; reason: string } {
+    const loaded = load(file);
+    if (!loaded.ok) return loaded;
+    const commands = Object.entries(loaded.saved).flatMap(([repo, items]) =>
+        collect(items, { repo, file, label: repo, source: 'saved' }, new Set()).commands.map(
+            (one) => ({ folder: repo, name: one.name })
+        )
+    );
+    return { ok: true, commands };
+}
+
 /** What a save or a remove changed, for the change log: the entry before and after. */
 export type SavedChange = { before: unknown; after: unknown };
 

@@ -23,7 +23,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { join } from 'node:path';
-import { taskSkipPermissions } from '../../../data/helpers/run/tasks.ts';
+import { isUpdateTask } from '../../../data/helpers/run/tasks.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, loadLocal, textCatalog } from '../../../data/sources/config.ts';
@@ -75,6 +75,7 @@ import {
 } from './sessions.ts';
 import { TmuxFailed, TerminalRefused, refusal, refusalFor } from './refusal.ts';
 import { shellWord } from './shell-word.ts';
+import { startUpdateTask } from '../schedules/task.ts';
 import { run } from './tmux.ts';
 import type {
     SessionRecord,
@@ -84,15 +85,6 @@ import type {
     TerminalResume
 } from '../../../data/model/index.ts';
 import { taskRefOf } from '../../../data/shapes/shapes.ts';
-
-/** The four update skills the palette and tray may start. */
-const TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
-type TaskKind = (typeof TASKS)[number];
-
-/** Whether a value names one of the four update tasks. */
-function isTask(value: unknown): value is TaskKind {
-    return TASKS.some((task) => task === value);
-}
 
 /** The two things a reader does to one main file of a manuscript. */
 const LATEX_STEPS = ['build', 'clean'] as const;
@@ -392,20 +384,6 @@ async function recoverDataset(
     return json({ ok: true, terminal }, { headers: NO_STORE });
 }
 
-/**
- * The server-built shell command for one update task. It is an ordinary interactive session, the
- * shape the chat terminal has, so the skill runs in the pty the terminal pane shows and every
- * permission prompt the CLI raises is answered there by the reader; the skill invocation is the
- * session's first message, passed as the positional argument. `tasks.skip_permissions` puts
- * `--dangerously-skip-permissions` back, which runs the task unattended instead.
- */
-function taskCommand(binary: string, kind: TaskKind, skip: boolean): string {
-    const argv = [binary];
-    if (skip) argv.push('--dangerously-skip-permissions');
-    argv.push(`/research-cockpit ${kind}`);
-    return argv.map(shellWord).join(' ');
-}
-
 /** Start one of the four update tasks as a Claude terminal in the configured hub root. */
 async function startTask(
     kind: unknown,
@@ -413,24 +391,17 @@ async function startTask(
     rows: unknown,
     options: TerminalOptions
 ): Promise<Response> {
-    if (!isTask(kind)) return refusal('bad-terminal');
+    if (!isUpdateTask(kind)) return refusal('bad-terminal');
     const local = options.localFor?.() ?? loadLocal(options.engine);
-    const config = options.configFor();
-    const terminal = await startTerminal(
-        {
-            kind: 'claude',
-            cwd: local.hub,
-            cols,
-            rows,
-            name: `task ${kind}`
-        },
-        {
-            ...options,
-            command: taskCommand(local.claudeBin, kind, taskSkipPermissions(config))
-        }
-    );
+    const started = await startUpdateTask(kind, false, {
+        ...options,
+        hub: local.hub,
+        claudeBin: local.claudeBin,
+        size: { cols, rows }
+    });
+    if ('refused' in started) return refusal(started.refused, started.names);
     options.refresh?.();
-    return json({ ok: true, terminal }, { headers: NO_STORE });
+    return json({ ok: true, terminal: started.terminal }, { headers: NO_STORE });
 }
 
 /** The latexmk switch that builds with each program. */

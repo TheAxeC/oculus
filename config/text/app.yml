@@ -31,6 +31,102 @@ text:
         palette_unavailable: Unavailable
         pillars: 'Pillars: {0}'
         projects: 'Projects: {0}'
+        schedules:
+            add: Add schedule
+            ahead: '{0} {1}'
+            cancel: Cancel
+            command: Command
+            day_fri: Fri
+            day_mon: Mon
+            day_sat: Sat
+            day_sun: Sun
+            day_thu: Thu
+            day_tue: Tue
+            day_wed: Wed
+            days: Days
+            delete: Delete
+            delete_ask: Delete the schedule {0}? A run it started keeps going.
+            edit: Edit
+            folder: Folder
+            heading: Schedules
+            kind_command: Saved command
+            kind_prompt: Prompt
+            kind_task: Update task
+            name: Name
+            next: 'Next: {0}'
+            next_runs: 'Next runs: {0}'
+            none: No schedules yet.
+            off: 'Off: it runs only from Run now'
+            outcome_failed: 'failed: {0}'
+            outcome_failed_bare: failed
+            outcome_failed_unknown: failed for a reason this version of oculus does not name.
+            outcome_skipped: skipped, the earlier run was still going
+            outcome_started: started
+            pattern: Cron pattern
+            pause: Pause
+            paused: Paused
+            problem_command_missing: No saved command {0} in {1}.
+            problem_commands_unread: The saved commands file does not read.
+            problem_entry_changed: The schedules file changed since the tray read it; try again.
+            problem_entry_unwritable: 'The entry "{0}" cannot be changed from here; edit schedules.yml by hand.'
+            problem_entry_wrong: Entry {0} of the file is not a map of keys, so it does not run.
+            problem_flag_wrong: '{0} must be true or false.'
+            problem_folder_empty: The folder is empty.
+            problem_folder_missing: The folder {0} does not exist.
+            problem_folder_not_served: The folder {0} lies neither in the hub nor in a root the file browser serves, so a prompt does not start there.
+            problem_folder_wrong: The folder {0} must be hub, an absolute path or a path under ~/.
+            problem_key_unknown: '{0} is not a key of a schedule.'
+            problem_name_missing: The schedule has no name.
+            problem_name_twice: Two schedules are named {0}; neither runs until one is renamed.
+            problem_name_wrong: The name {0} is longer than 80 characters or holds a control character.
+            problem_needs_approval: "The command {0} runs lines that need your approval; run it once from its repository's command bar."
+            problem_prompt_control: The prompt holds a control character other than a tab or a new line.
+            problem_prompt_empty: The prompt is empty.
+            problem_prompt_too_long: The prompt is longer than {0} characters.
+            problem_record_locked: Another oculus is writing the run record; try again in a moment.
+            problem_record_unread: The run record does not read, so nothing starts.
+            problem_record_unwritten: The run record could not be written; check ~/.oculus/schedule.json and try again.
+            problem_runs_wrong: What it runs must be exactly one of a task, a command and a prompt.
+            problem_schedules_unread: The schedules file does not read, so oculus writes nothing to it.
+            problem_schedules_unwritten: The schedules file could not be written, so nothing was saved.
+            problem_server_stopped: The server stopped before the run started.
+            problem_unattended_command: Run unattended applies to an update task or a prompt.
+            problem_update_task_unknown: '{0} is not an update task; the tasks are {1}.'
+            problem_when_never: The pattern {0} never comes due.
+            problem_when_unreadable: 'The pattern {0} does not read: a cron pattern has five fields, such as 0 7 * * 1, or is a nickname such as @daily.'
+            prompt: Prompt
+            refused_command: Choose a saved command.
+            refused_days: Choose at least one day.
+            refused_task: Choose a task.
+            refused_time: The time must be HH:MM, such as 07:00.
+            refused_unattended: Choose whether it runs unattended.
+            resume: Resume
+            run_now: Run now
+            run_now_skipped: 'Run now started nothing: a run of {0} is still going.'
+            runs: Runs
+            runs_command: Command {0} in {1}
+            runs_prompt: 'Prompt in {0}: {1}'
+            save: Save
+            task: Task
+            time: Time
+            title_add: Add schedule
+            title_edit: Edit schedule
+            trigger_catch_up: caught up
+            trigger_hand: run now
+            trigger_schedule: scheduled
+            unattended: Run unattended
+            unattended_note: 'A run starts with --dangerously-skip-permissions: the agent edits files and runs commands with nobody asked.'
+            unattended_unset: not chosen
+            unread_commands: The saved commands file ~/.oculus/commands.json does not read, so no command schedule runs.
+            unread_record: The run record ~/.oculus/schedule.json does not read, so no schedule runs; the file is left as it is.
+            unread_schedules: '~/.oculus/schedules.yml does not read, so no schedule runs and oculus writes nothing to it.'
+            unread_schedules_at: '~/.oculus/schedules.yml does not read at line {0}, so no schedule runs and oculus writes nothing to it.'
+            when: When
+            when_custom: Custom
+            when_day: Every day
+            when_hour: Every hour
+            when_off: 'Off'
+            when_week: Weekly
         search: Search
         search_tip: Search projects, entries and tabs (Cmd-K or Ctrl-K)
         sessions: 'Sessions: {0}, {1} live'
@@ -46,10 +142,12 @@ text:
             linkedin_note: draft a post from _linkedin/
             lit_label: Lit Watch
             lit_note: new-paper radar (web | minutes)
+            next: 'Next: {0} ({1})'
+            no_schedule: No schedule
+            schedule: Schedule...
             scout_label: Scout
             scout_note: academic openings (web | minutes)
-            skip_confirm: 'Start {0} unattended? Its permission prompts are turned off, so it answers them itself.'
-            skip_confirm_ok: Start unattended
+            tasks: Tasks
             update_tasks: Update tasks
         text: Text
         text_larger: Larger text

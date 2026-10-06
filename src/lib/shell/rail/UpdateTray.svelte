@@ -1,34 +1,39 @@
 <script lang="ts">
-    // Layer 3, shell. The update-task tray. Each task starts the server-built Claude command in a
-    // terminal, selects it, and shows it in the Terminal tab of the page on screen, or a new one
-    // (the terminals store's `showTerminal`); the snapshot's feed summary supplies the
-    // last-run value beside each control, and the inbox triage's comes from the `inbox` channel,
-    // whose notes file is what that task writes.
+    // Layer 3, shell. The update tray. It holds two sections under its heading. Schedules
+    // (ScheduleList.svelte) lists the entries of `~/.oculus/schedules.yml` with their next and
+    // latest runs and the controls that edit, pause, run and delete them. Tasks lists the four
+    // update tasks: each control starts the server-built Claude command in a terminal, selects it,
+    // and shows it in the Terminal tab of the page on screen, or a new one (the terminals store's
+    // `showTerminal`); the snapshot's feed summary supplies the last-run value beside each control,
+    // the inbox triage's comes from the `inbox` channel, whose notes file is what that task
+    // writes, and each row says which schedule runs the task next and opens the schedule dialog
+    // for the task.
     //
     // A task is an ordinary Claude session, so its permission prompts are answered in the terminal
-    // pane and a press starts it straight away. While `tasks.skip_permissions` is on there is
-    // nobody to answer them and the session decides for itself, so the press asks first: the
-    // confirmation is the one place a reader is told which of the two a press is about to do. It is
-    // asked once per press and not remembered, since the answer is about this run and not about the
-    // setting.
+    // pane and a press starts it straight away. A run that goes unattended is a schedule's Run
+    // unattended choice and no press's.
     //
     // The tray stands on the modal ground ui/frame/Modal.svelte draws: the focus moves into it when
     // it opens, Tab stays inside it, and the focus goes back where it was when it closes. Escape
-    // closes it, and a confirmation raised over it takes the first Escape, so the tray stays open
-    // behind it and the next Escape closes it. A press on the ground beside it closes it.
+    // closes it, and a dialog raised over it (the delete confirmation, the schedule dialog) takes
+    // the first Escape, so the tray stays open behind it and the next Escape closes it. A press on
+    // the ground beside it closes it, and a schedule dialog left open goes with it.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Modal from '$lib/ui/frame/Modal.svelte';
+    import ScheduleDialog from './ScheduleDialog.svelte';
+    import ScheduleList from './ScheduleList.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { TaskKind } from '$lib/state/sessions/terminals.svelte';
+    import { UPDATE_TASKS, type UpdateTask } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
         paletteSource: { paletteSource },
+        schedule,
         selection: { select },
-        terminals: { showTerminal, startChat, startTask, taskSkipsPermissions }
+        terminals: { showTerminal, startChat, startTask }
     } = useState();
 
     type Props = {
@@ -37,55 +42,36 @@
     };
 
     let { open, onclose }: Props = $props();
-    let running: TaskKind | null = $state(null);
-    let asking: TaskKind | null = $state(null);
+    let running: UpdateTask | null = $state(null);
     let chatting = $state(false);
     let said = $state('');
-    const skipping = $derived(taskSkipsPermissions());
+    /** The schedule a delete is being asked about, by its position and the name read there. */
+    let deleting: { at: number; name: string } | null = $state(null);
+    const NOTES: Record<UpdateTask, () => string> = {
+        litwatch: () => t('app.tasks.lit_note'),
+        scout: () => t('app.tasks.scout_note'),
+        linkedin: () => t('app.tasks.linkedin_note'),
+        inbox: () => t('app.tasks.inbox_note')
+    };
     const current = $derived(paletteSource());
     const summary = $derived(current.snapshot?.entities.feeds);
-    const tasks = $derived([
-        {
-            kind: 'litwatch' as const,
-            label: t('app.tasks.lit_label'),
-            note: t('app.tasks.lit_note'),
-            last: summary?.radar?.lastRun
-        },
-        {
-            kind: 'scout' as const,
-            label: t('app.tasks.scout_label'),
-            note: t('app.tasks.scout_note'),
-            last: summary?.scout?.lastRun
-        },
-        {
-            kind: 'linkedin' as const,
-            label: t('app.tasks.linkedin_label'),
-            note: t('app.tasks.linkedin_note'),
-            last: summary?.linkedin?.lastPost
-        },
-        {
-            kind: 'inbox' as const,
-            label: t('app.tasks.inbox_label'),
-            note: t('app.tasks.inbox_note'),
-            last: current.notesRun ?? undefined
-        }
-    ]);
+    const lastRuns: Record<UpdateTask, () => string | null | undefined> = {
+        litwatch: () => summary?.radar?.lastRun,
+        scout: () => summary?.scout?.lastRun,
+        linkedin: () => summary?.linkedin?.lastPost,
+        inbox: () => current.notesRun ?? undefined
+    };
+    const tasks = $derived(
+        UPDATE_TASKS.map((kind) => ({
+            kind,
+            label: schedule.taskLabel(kind),
+            note: NOTES[kind](),
+            last: lastRuns[kind](),
+            next: schedule.nextOfTask(kind)
+        }))
+    );
 
-    /** One task's words, for a sentence outside the row that draws it. */
-    function taskLabel(kind: TaskKind): string {
-        return tasks.find((task) => task.kind === kind)?.label ?? kind;
-    }
-
-    /** What a press does: start the task, or ask first when the task would run unattended. */
-    function press(kind: TaskKind): void {
-        if (skipping) {
-            asking = kind;
-            return;
-        }
-        void start(kind);
-    }
-
-    async function start(kind: TaskKind): Promise<void> {
+    async function start(kind: UpdateTask): Promise<void> {
         running = kind;
         said = '';
         const answer = await startTask(kind);
@@ -94,9 +80,30 @@
             said = t('editor.failed', answer.error);
             return;
         }
-        select(answer.id);
-        showTerminal(answer.id);
+        show(answer.id);
+    }
+
+    /** Select a terminal and show it, and put the tray away. */
+    function show(id: string): void {
+        select(id);
+        showTerminal(id);
+        close();
+    }
+
+    /** Put the tray away, and a schedule dialog with it. */
+    function close(): void {
+        schedule.closeDialog();
+        deleting = null;
         onclose();
+    }
+
+    /** Delete the schedule the confirmation asked about. */
+    async function remove(): Promise<void> {
+        const target = deleting;
+        deleting = null;
+        if (target === null) return;
+        const answer = await schedule.remove(target);
+        if (!answer.ok) said = answer.error;
     }
 
     async function chat(): Promise<void> {
@@ -108,14 +115,12 @@
             said = t('editor.failed', answer.error);
             return;
         }
-        select(answer.id);
-        showTerminal(answer.id);
-        onclose();
+        show(answer.id);
     }
 </script>
 
 {#if open}
-    <Modal level="tray" {onclose}>
+    <Modal level="tray" onclose={close}>
         {#snippet children(props)}
             <div {...props} class="tray" aria-label={t('app.tasks.update_tasks')}>
                 <header>
@@ -124,24 +129,33 @@
                         label={t('app.tasks.close')}
                         glyph="dismiss"
                         compact
-                        onclick={onclose}
+                        onclick={close}
                     />
                 </header>
-                <div class="tasks">
+                <ScheduleList
+                    onshow={show}
+                    onsaid={(text: string) => (said = text)}
+                    ondelete={(at: number, name: string) => (deleting = { at, name })}
+                />
+                <section class="tasks" aria-label={t('app.tasks.tasks')}>
+                    <h3>{t('app.tasks.tasks')}</h3>
                     {#each tasks as task (task.kind)}
-                        <div
-                            class="task"
-                            data-task={task.kind}
-                            data-confirms={skipping || undefined}
-                        >
+                        <div class="task" data-task={task.kind}>
                             <ToolButton
                                 label={task.label}
                                 title={task.note}
                                 active={running === task.kind}
                                 disabled={running !== null || chatting}
-                                onclick={() => press(task.kind)}
+                                onclick={() => start(task.kind)}
                             />
                             <span class="last">{task.last ?? t('app.palette_unavailable')}</span>
+                            <span class="next" data-next>{task.next}</span>
+                            <ToolButton
+                                label={t('app.tasks.schedule')}
+                                compact
+                                onclick={() =>
+                                    schedule.openDialog({ task: task.kind, name: task.label })}
+                            />
                             {#if task.kind === 'inbox'}
                                 <span class="note">
                                     <Glyph name="info" />
@@ -160,29 +174,24 @@
                             onclick={chat}
                         />
                     </div>
-                </div>
+                </section>
                 {#if said !== ''}
                     <p class="said">{said}</p>
                 {/if}
             </div>
         {/snippet}
         {#snippet over()}
-            {#if asking !== null}
-                {@const kind = asking}
+            {#if deleting !== null}
                 <Confirm
-                    message={t('app.tasks.skip_confirm', taskLabel(kind))}
-                    confirm={t('app.tasks.skip_confirm_ok')}
+                    level="sheet"
+                    message={t('app.schedules.delete_ask', deleting.name)}
+                    confirm={t('app.schedules.delete')}
                     cancel={t('ui.confirm_cancel')}
-                    onconfirm={() => {
-                        // The kind is read before the dialog is put away: `kind` is the const over
-                        // `asking`, and once that is null there is no task to read from it.
-                        const started = kind;
-                        asking = null;
-                        void start(started);
-                    }}
-                    oncancel={() => (asking = null)}
+                    onconfirm={remove}
+                    oncancel={() => (deleting = null)}
                 />
             {/if}
+            <ScheduleDialog />
         {/snippet}
     </Modal>
 {/if}
@@ -193,6 +202,8 @@
         display: grid;
         gap: 10px;
         width: min(42rem, 100%);
+        max-height: 100%;
+        overflow: auto;
         padding: 12px;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
@@ -218,11 +229,13 @@
     }
 
     h2,
+    h3,
     .said {
         margin: 0;
     }
 
-    h2 {
+    h2,
+    h3 {
         font-size: var(--fs-md);
     }
 
@@ -236,6 +249,7 @@
     }
 
     .last,
+    .next,
     .note,
     .said {
         color: var(--muted-txt, var(--muted));

@@ -31,6 +31,8 @@
          * A line under the message: the branch, the count, whatever names what is being acted on.
          */
         detail?: string;
+        /** Where the dialog stands, as ui/frame/Modal.svelte takes it; `dialog` unless given. */
+        level?: 'dialog' | 'tray' | 'palette' | 'sheet';
     };
 
     let {
@@ -40,14 +42,15 @@
         onconfirm,
         oncancel,
         detail = '',
-        option = ''
+        option = '',
+        level = 'dialog'
     }: Props = $props();
 
     let yes: HTMLButtonElement | undefined = $state();
     let checked = $state(false);
 </script>
 
-<Modal alert onclose={oncancel} onopen={() => yes?.focus()}>
+<Modal alert {level} onclose={oncancel} onopen={() => yes?.focus()}>
     {#snippet children(props)}
         <div {...props} class="box" aria-label={message}>
             <p class="message">{message}</p>

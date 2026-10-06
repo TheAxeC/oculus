@@ -195,7 +195,8 @@
             'usage',
             'feeds',
             'audit',
-            'processes'
+            'processes',
+            'schedule'
         ]);
         takeCarried(localStorage, window, location.origin);
         loadUi(localStorage, window);

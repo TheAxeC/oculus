@@ -62,6 +62,7 @@ describe('checkLocal', () => {
             'local.yml: accounts[1].label duplicates a Claude label or reduced label: a-b'
         ],
         ['hub: 3\nport: x', 'local.yml: hub must be a path'],
+        ['schedules: 3', 'local.yml: schedules must be a path'],
         ['port: x', 'local.yml: port must be an integer'],
         ["hpc_host: ''", 'local.yml: hpc_host must be a non-empty string'],
         [

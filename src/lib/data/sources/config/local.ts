@@ -86,6 +86,16 @@ export type LocalConfig = {
      */
     approvals?: string;
     /**
+     * Where the schedules live, `schedules` in the file. Absent unless the machine sets it, and the
+     * schedule watcher then uses ~/.oculus/schedules.yml.
+     */
+    schedules?: string;
+    /**
+     * Where the schedules' run record lives, `schedule_record` in the file. Absent unless the
+     * machine sets it, and the schedule watcher then uses ~/.oculus/schedule.json.
+     */
+    scheduleRecord?: string;
+    /**
      * Absolute or PATH-resolved Claude CLI the update tasks and the chat terminal are started with.
      */
     claudeBin: string;
@@ -139,6 +149,8 @@ export const LOCAL_KEYS = [
     'changes',
     'history',
     'approvals',
+    'schedules',
+    'schedule_record',
     'claude_bin',
     'open_bin',
     'accounts',
@@ -377,6 +389,8 @@ const STATE_PATHS = [
     ['changes', 'changes'],
     ['history', 'history'],
     ['approvals', 'approvals'],
+    ['schedules', 'schedules'],
+    ['schedule_record', 'scheduleRecord'],
     ['calendar_dir', 'calendarDir'],
     ['mail_dir', 'mailDir']
 ] as const;

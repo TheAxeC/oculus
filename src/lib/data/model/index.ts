@@ -533,7 +533,19 @@ export {
     QUERY_MAX,
     SOURCE_STATES
 } from './model-search.ts';
-export type { ProcessesPayload, ProcessRow } from './model-processes.ts';
+export { SCHEDULE_WORDS, UPDATE_TASKS } from './model-processes.ts';
+export type {
+    ProcessesPayload,
+    ProcessRow,
+    ScheduleEntry,
+    SchedulePayload,
+    ScheduleProblem,
+    ScheduleRow,
+    ScheduleRun,
+    ScheduleWord,
+    UnchosenKey,
+    UpdateTask
+} from './model-processes.ts';
 export type {
     ChainLine,
     CommandContext,

@@ -62,6 +62,7 @@ import {
 } from '../sources/fs.ts';
 import { createHpc, type HpcStore } from '../system/machine/hpc.svelte.ts';
 import { createProcesses, type ProcessesStore } from '../system/machine/processes.svelte.ts';
+import { createSchedule, type ScheduleStore } from '../system/machine/schedule.svelte.ts';
 import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
 import { tabsOf } from '../workbench/layout/instance.ts';
 import { paneAt } from '../workbench/layout/index.ts';
@@ -155,6 +156,7 @@ export type ClientState = {
     feeds: FeedsStore;
     hpc: HpcStore;
     processes: ProcessesStore;
+    schedule: ScheduleStore;
     calendar: CalendarStore;
     inbox: InboxStore;
     /** The Calendar's and the Inbox's accounts, and the account setup page. */
@@ -355,6 +357,7 @@ export function createClientState(desktop?: Desktop): ClientState {
         label: terminalLabel,
         endTerminals: terminals.endTerminals
     });
+    const schedule = createSchedule(entities, { terminalById: terminals.terminalById, writes });
     const calendar = createCalendar(entities, writes, clock);
     const inbox = createInbox(entities, writes);
     const accounts = createAccounts(entities, writes, (view) => void layout.openView(view));
@@ -491,6 +494,7 @@ export function createClientState(desktop?: Desktop): ClientState {
         feeds,
         hpc,
         processes,
+        schedule,
         calendar,
         inbox,
         accounts,

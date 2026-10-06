@@ -14,10 +14,10 @@
 import { resolve } from 'node:path';
 import type { ComposeStart, PortfolioConfig, TaskRef } from '../../../data/model/index.ts';
 import { portfolioConfigFrom } from '../../../data/index.ts';
+import { PROMPT_MAX } from '../../../data/helpers/run/schedules.ts';
 import { textCatalog } from '../../../data/sources/config.ts';
 import { realPath } from '../../core/paths.ts';
 import { approveTexts, isApproved } from '../approvals/approvals.ts';
-import { PROMPT_MAX } from '../pty/compose.ts';
 import { TerminalRefused } from '../pty/refusal.ts';
 import { taskSeed } from './task-seed.ts';
 

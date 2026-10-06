@@ -9,6 +9,8 @@
 // Each placeholder of the line is `"$OCULUS_ARG_<n>"` and its value is set in the terminal's
 // environment (placeholders.ts), so the shell never reads a value as code. The line prints a token
 // minted for this start with each command's name, and the terminal's mark carries the token.
+// The start is `runCommand`, which a schedule's run (schedules/run.ts) calls as the route does, so
+// both refuse the same things in the same order.
 //
 // `rerun` runs the line of an ended task terminal again in the same pane, and `restart` does the
 // same for a line still running once the reader confirmed the process that would be stopped.
@@ -19,7 +21,12 @@
 import { randomBytes } from 'node:crypto';
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
-import type { CommandContext, Terminal, TerminalRefusal } from '../../../data/model/index.ts';
+import type {
+    ChainLine,
+    CommandContext,
+    Terminal,
+    TerminalRefusal
+} from '../../../data/model/index.ts';
 import { NOT_LISTED, NOT_OURS } from '../pty/edit.ts';
 import { refusal } from '../pty/refusal.ts';
 import {
@@ -43,6 +50,8 @@ export type CommandRunOptions = StartOptions & {
     rootsFor?: () => string[];
     /** The approvals file. Defaults to ~/.oculus/approvals.json. */
     approvalsFor?: () => string;
+    /** The saved commands file. Defaults to ~/.oculus/commands.json. */
+    savedFile?: string;
     /** Re-read the terminal manager after a write. */
     refresh?: () => void;
 };
@@ -67,34 +76,50 @@ const contextShape = z
 
 const sourceShape = z.enum(['file', 'saved', 'found']);
 
-/** Start the command a `command` action names, or answer what stops it. */
-export async function startCommand(
-    message: Record<string, unknown>,
+/** What a run of a command answers: its terminal, the chain that needs approval, or a refusal. */
+export type CommandStart =
+    | { terminal: Terminal }
+    | { approve: ChainLine[] }
+    | { refused: TerminalRefusal; names: string[] };
+
+/**
+ * Run the command of that name and source in the repository, with the context's values, in a
+ * terminal of the given grid. The arguments are as a request carries them, each checked here, so
+ * the route and a schedule's run refuse the same things in the same order. A chain not yet
+ * approved answers its lines and starts nothing.
+ */
+export async function runCommand(
+    folder: unknown,
+    name: unknown,
+    sourceName: unknown,
+    rawContext: unknown,
+    size: { cols: unknown; rows: unknown },
     options: CommandRunOptions
-): Promise<Response> {
-    const found = repositoryOf(message.repo, options.rootsFor?.() ?? []);
-    if ('error' in found) return refusal('bad-repo');
+): Promise<CommandStart> {
+    const found = repositoryOf(folder, options.rootsFor?.() ?? []);
+    if ('error' in found) return { refused: 'bad-repo', names: [] };
     const repo = found.repo;
-    const name = message.name;
-    if (typeof name !== 'string' || name === '') return refusal('bad-terminal');
-    const source = sourceShape.safeParse(message.source);
-    if (!source.success) return refusal('bad-terminal');
-    const resolved = resolveChain(listCommands(repo).commands, name, source.data);
-    if ('error' in resolved) return refusal(resolved.error, resolved.names);
-    const context = contextShape.parse(message.context);
+    if (typeof name !== 'string' || name === '') return { refused: 'bad-terminal', names: [] };
+    const source = sourceShape.safeParse(sourceName);
+    if (!source.success) return { refused: 'bad-terminal', names: [] };
+    const resolved = resolveChain(
+        listCommands(repo, options.savedFile).commands,
+        name,
+        source.data
+    );
+    if ('error' in resolved) return { refused: resolved.error, names: resolved.names };
+    const context = contextShape.parse(rawContext);
     const runs = resolved.chain.map((command) => command.run);
     const filled = fillPlaceholders(runs, context, repo);
-    if ('error' in filled) return refusal(filled.error, filled.names);
+    if ('error' in filled) return { refused: filled.error, names: filled.names };
     const approvals = options.approvalsFor?.() ?? defaultApprovalsPath();
     const lines = chainLines(repo, resolved.chain);
     const asks = resolved.chain.some((command) => command.source !== 'saved');
-    if (asks && !isApproved(approvals, chainText(repo, lines))) {
-        return json({ approve: lines }, { headers: NO_STORE });
-    }
+    if (asks && !isApproved(approvals, chainText(repo, lines))) return { approve: lines };
     const token = randomBytes(TOKEN_BYTES).toString('hex');
     const lined = resolved.chain.map((command, at) => ({ ...command, run: filled.lines[at] }));
     const terminal = await startTerminal(
-        { kind: 'shell', cwd: repo, cols: message.cols, rows: message.rows, name },
+        { kind: 'shell', cwd: repo, cols: size.cols, rows: size.rows, name },
         {
             ...options,
             command: chainLine(lined, token),
@@ -109,7 +134,25 @@ export async function startCommand(
         }
     );
     options.refresh?.();
-    return json({ ok: true, terminal }, { headers: NO_STORE });
+    return { terminal };
+}
+
+/** Start the command a `command` action names, or answer what stops it. */
+export async function startCommand(
+    message: Record<string, unknown>,
+    options: CommandRunOptions
+): Promise<Response> {
+    const started = await runCommand(
+        message.repo,
+        message.name,
+        message.source,
+        message.context,
+        { cols: message.cols, rows: message.rows },
+        options
+    );
+    if ('refused' in started) return refusal(started.refused, started.names);
+    if ('approve' in started) return json({ approve: started.approve }, { headers: NO_STORE });
+    return json({ ok: true, terminal: started.terminal }, { headers: NO_STORE });
 }
 
 /** The listed task terminal an id names, or the word that refuses it. */
