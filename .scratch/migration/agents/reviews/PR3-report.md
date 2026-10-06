@@ -1,13 +1,147 @@
 # PR3 report
 
-NOT DONE: (1) `npm run test:quick` printed "every command passed" but also "over the time limit" at 105.3 s (limit 45.0 s) on the last run, with the machine's load average at 24 (other agents running); the three earlier runs of the same selection took 19.4 s, 20.8 s and 30.8 s at a load of about 7, and a second run under the same load took 105.3 s after the first took 103.7 s. (2) Cases 16, 18, 24 and 25 are looks at landing: the print window's own 'never recorded in the window file' guarantee of G53 and the browser-tab print dialog have no automated test (details in "Anything in the brief that was wrong or impossible" and "Every judgment call"). Everything else in the brief's nine parts is built and verified; the checks are below.
+NOT DONE: nothing of repair round 1's eleven items; of the step, (1) G53's guarantee that the print window is never recorded in the window file has no test (Z674 (2) rules it so: `src/desktop/windows/print.ts` builds its own window and never goes through `windows.ts`); (2) cases 16, 18, 24 and 25 are looks at landing, and the desktop app was never started; (3) `tests/server/desktop/start.test.ts`'s `serversOf` rows are flaky and their diagnosis (Z674 (6)) is a separate dispatch, not an item of this round; (4) one defect found while checking item 5 is open and unfixed because the round says to change nothing else: a dropped image whose name holds a space is linked as `![my fig](<my fig.png>)`, which the deck reader's image pattern does not match, so the link is left relative to the page and the frame most likely does not draw it (read from the reader's output; not looked at in a page; details under "Repair round 1", item 5). The one full `npm run test:quick` run of this round (full-list runs: 1) printed "every command passed" at 45.2 s against the limit of 45.0 s.
 
 ## The state file's open items, verbatim
 
-From `tools/oculus/.scratch/migration/orchestrator-state.md`, section "Open items", lines 147 to 153:
+From `tools/oculus/.scratch/migration/orchestrator-state.md`, copied when this report was written:
 
-- Z671 (2026-10-06, D45, raised at its /spec): two choices the premise recheck named (`agents/reviews/D45-premise-recheck.md`, section 2, items 2 and 3). (1) SyncTeX from the browser PDF viewer when oculus runs as the app: Z541's `/pdf` page opens in the default browser in the app, since `src/desktop/decide/links.ts:39-48` keeps only `/` and `/?float=<id>` in an app window, and a `BroadcastChannel` does not reach from that browser to the app window, so a press in the PDF cannot jump to the source. Options: (a) recommended: carry the SyncTeX jump over the server's socket instead of a `BroadcastChannel`; it works in the browser and in the app alike, at the cost of one new message kind on the socket; (b) open `/pdf` in an app window; it changes G47's sentence "An app window shows only its own server's page" and the link decision, a wider change to a guarded rule for one viewer; (c) no SyncTeX from the browser viewer in the app, which is the lazy option: it drops inverse search there. (2) A PDF's menus: with D45 a PDF offers both Open in Browser Tab (the file's bytes in the browser's own viewer, `files.yml:106`) and View in Web Browser (oculus's PDF viewer with SyncTeX). Options: (a) recommended: keep both, each named for what it opens, since the browser's own viewer prints and saves as the browser does and oculus's viewer has SyncTeX; (b) keep View in Web Browser only for a PDF of a LaTeX root and Open in Browser Tab for every other PDF; fewer entries, but the same file type then offers different items by where it came from; (c) drop Open in Browser Tab for PDFs, which is the lazy option: it removes a working item to avoid naming two.
+## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
+
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+None.
+
+## Repair round 1
+
+The scratch copy of the worktree as it stood before the round is `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/pr3-before-round1/oculus` (made before the first edit, `node_modules` linked to the worktree's). Every failing run below was taken in it with the test file as it stands after the round; no code was removed or reverted in the worktree. In the quoted runs, vitest's long dash is written as `-` and its ellipsis as `\u2026`, so the file stays ASCII.
+
+### Item 1, F1, tests no guarded entry names (Z674 (1))
+
+- Deleted: `tests/views/academic/export.test.ts`, `tests/state/workbench/palette-source.client.test.ts`, and the describe 'the read of a file the route serves' with its `afterEach`, `vi` and `loadSource` imports in `tests/state/sessions/source.test.ts`, which is now the same file as on the unchanged tree (`cmp -s` against `PR3-base`: identical). The `effect` helper added to `tests/ui/frame/rooted.svelte.ts` for the deleted palette test is removed with it; that file is identical to the unchanged tree too (`cmp -s`). `tests/views/` holds `shared`, `sources`, `system` again. The code they tested stays.
+- Kept: the G47 rows of `tests/server/desktop/window-guard.test.ts`. Lines for `agents/guarded.md` (G47's Test line, in the form of the file's other entries):
+
+```
+- G47 Test: `tests/server/desktop/window-guard.test.ts`, 'answers the bridge only from the top frame of the server's page' (its rows for the print window: the sender `print` is told from a top frame of `/present/print` on the server's own origin, a subframe or another origin is no sender, the `print` sender may call none of `SAVE_LAYOUT`, `FIND`, `OPEN_FLOAT_WINDOW`, `PRINT_PDF`, the page may call `PRINT_PDF` and the find bar may not), 'prints only the print route of its own server, named by a root and a path and nothing else'.
+```
+
+  I did not edit G47's line; it is the orchestrator's to book.
+- G8 and G9's Test lines in `agents/guarded.md` name the two titles this round adds (below); `python3 titles.py G2 G8 G9 G32 G49` prints nothing (exit 0).
+
+### Item 2, case 19, the two-file drop
+
+Run through the act's code (`dropImage` in `src/lib/views/academic/present/acts/run.ts`, with `dropRefusal` of `state/life/present.ts`), in a throwaway test of the scratch copy (not kept, no new test), two PNG files dropped on the deck's own first slide, the write and the status line recorded:
+
+```
+two files dropped: said=["Drop one image at a time."] writes=0
+```
+
+The catalog's sentence is `present.drop_one: Drop one image at a time.` (`config/text/views/academic/present.yml:18`).
+
+### Item 3, F3, the wire fields (Z674 (7)), no code change
+
+The wire shapes in `src/lib/data/model/model-entities.ts`: `DeckSlideSource.entry` is the index of the `order:` entry that placed the slide, read by `slideActs` and `ownSlide` in `state/life/present.ts` to tell a file slide from a summary or grid entry; `DeckSlideSource.line` is the 1-based first line of the slide's place in its file, read by Edit Slide in `views/academic/present/acts/run.ts` to open the source tab at the slide; `Deck.order` is the deck's `order:` entries, read by `placedBy` in `state/life/present.ts` (the kind of the entry that placed a slide) and by `views/academic/slides/Slides.svelte` (`deck?.order`), which draws the order's rows.
+
+### Item 4, B1, a deck-edit undo is all or none
+
+`src/lib/server/edit/writes/config/deck/deck-undo.ts`: the files the undo has changed so far are kept in `done`; when a write back or a Trash call throws, each file in `done` is written again with its `after` text (the files written back, and any made file already trashed whose text is known; an image file has no text and is never one of them), the undo answers `unwritable` and no record is written. Test row in G9's deck undo table, `tests/server/edit/deck-acts.test.ts`, 'leaves every file as the act left it, and a later undo works once the Trash does': New Slide, then an undo with a Trash that rejects leaves every file of the hub as the act left it, then the undo with the working Trash removes `slide-1.md` and restores `present.yml`. Passing run: `Tests  7 passed (7)`. Failing run on the scratch copy (the code before this round; the characters vitest draws as a long dash and an ellipsis are written here as `-` and `\u2026`):
+
+```
+------- Failed Tests 1 -------
+ FAIL  |unit| tests/server/edit/deck-acts.test.ts > taking an act back when the Trash fails > leaves every file as the act left it, and a later undo works once the Trash does
+AssertionError: expected { 'deck/intro.md': '# Intro\n', \u2026(11) } to deeply equal { 'deck/intro.md': '# Intro\n', \u2026(11) }
+- Expected
++ Received
+-     - slide-1.md
+      Tests  1 failed | 6 passed (7)
+```
+
+### Item 5, B2, the image link (Z674 (3))
+
+`src/lib/server/edit/writes/config/deck/deck-files.ts` `imageLine`: a `#`, `%` or `?` of the name is written percent-encoded (`%23`, `%25`, `%3F`), the angle brackets stay for a name with a space or a bracket, the name check is unchanged. The deck reader decoded a link with `decodeURI`, which leaves `%23` and `%3F` as they are, so the linked file would not have been found: `src/lib/data/sources/deck/kinds.ts` now decodes with `decodeURIComponent` (a link with a stray `%` names itself and no longer throws). Row in G8's table of the dropped image's write (`tests/server/edit/deck-acts.test.ts`, 'copies a dropped image beside the slide and links it, under a free name, and refuses what is no image or no name'): `fig#1.png` gives `![fig#1](fig%231.png)`. Passing run: `Tests  7 passed (7)`. Failing run on the scratch copy:
+
+```
+FAIL  |unit| tests/server/edit/deck-acts.test.ts > the acts of the deck write > copies a dropped image beside the slide and links it, under a free name, and refuses what is no image or no name
+AssertionError: expected '# Engine\n\nOne slide.\n\n![fig](fig.\u2026' to contain '![fig#1](fig%231.png)\n'
+- Expected
++ Received
+- ![fig#1](fig%231.png)
++ # Engine
++ One slide.
++ ![fig](fig.png)
++ ![fig-2](fig-2.png)
++ ![my fig](<my fig.png>)
++ ![fig#1](fig#1.png)
+```
+
+What the reader does with the links, read through the deck reader on a scratch deck holding `fig#1.png`, `my fig.png`, `a?b.png`, `100%.png` and `50%.png` (a throwaway test, deleted; output as printed):
+
+```
+{
+ "findings": [],
+ "md": [
+  "# A\n\n![fig#1](/api/file/hub/deck/fig%231.png)\n\n![my fig](<my fig.png>)\n\n![q](/api/file/hub/deck/a%3Fb.png)\n\n![pc](/api/file/hub/deck/100%25.png)\n\n![raw](/api/file/hub/deck/50%25.png)"
+ ]
+}
+```
+
+`fig#1`, `a?b`, `100%25` and a raw `50%` are addressed through the file route. OPEN, unfixed: `![my fig](<my fig.png>)` stays as written, since the image pattern of `kinds.ts` (`IMAGE`, `[^)\s]+`) does not match an angle-bracket target, so a dropped image with a space in its name is copied and linked, and the reader leaves its link relative to the page (not looked at in a page, so whether the frame draws it is not verified). The round names nothing else to change, so it is left; the fix is to let `IMAGE` take `<...>` targets and strip the brackets before `unescaped`. It needs the orchestrator's yes for the file.
+
+### Item 6, B3, the History row of an order record (Z674 (5))
+
+`src/lib/views/system/history/History.svelte` `named`: a `deck-slides` record whose field is `order` is named by its key alone, so the row reads `order` beside the kind `deck order`. No test row: the brief names none and no test of this view exists.
+
+### Item 7, open question 6, log pruning cuts an act (Z674 (4))
+
+`src/lib/server/core/changes.ts`: `actStart` moves the cut back to the first record of the act it falls inside, an act being the run of `deck-edit` records with one key and `undoes` (the only kind `writtenWith` is used for, `deck-undo.ts:59`); records of other kinds are cut as before, since successive writes of one key (an app store) are not one act. Row in G9's table in `tests/server/core/changes.test.ts`, 'keeps a whole act when the cut of the window falls inside it': keep 2, acts x (2 records), y (2), z (1); the cut at five lines falls between y1 and y2; the log keeps y1, y2 and z and `writtenWith` finds both y records. Passing run: `Tests  8 passed (8)`. Failing run on the scratch copy:
+
+```
+------- Failed Tests 1 -------
+ FAIL  |unit| tests/server/core/changes.test.ts > what a store write leaves in the undo folder > keeps a whole act when the cut of the window falls inside it
+AssertionError: expected [ 'act-z', 'act-y' ] to deeply equal [ 'act-z', 'act-y', 'act-y' ]
+- Expected
++ Received
+-   "act-y",
+      Tests  1 failed | 7 passed (8)
+```
+
+### Item 8, S1, the catalog limits
+
+`config/text/server.yml` `image_large` takes `{1} MB` (`IMAGE_LIMIT_MB` from `MAX_UPLOAD_BYTES` in `deck-files.ts`, both calls), `config/text/views/academic/present.yml` `drop_large` takes `{1} MB` (`UPLOAD_LIMIT_MB` in `state/life/present.ts`, which replaces `PDF_LIMIT_MB`, so `export.ts` and the drop check read one constant), `config/text/desktop.yml` `timeout` takes `{0} seconds` (`READY_WAIT_MS`, moved from `src/desktop/windows/print.ts` to `src/lib/state/shared/stores/desktop.ts` so the page and the host read one constant, and passed as `String(READY_WAIT_MS / 1000)` in `export.ts`). `grep -rn "32 MB\|60 seconds" config/text --exclude=local.yml` prints nothing (exit 1). `tests/checks/source/keys.test.ts` is in `npm run test:checks`: `Test Files  17 passed (17)`, `Tests  243 passed (243)`.
+
+### Item 9, S2
+
+`config/text/views/academic/slides.yml`: `already_in` is before `count` and `entry_moved` after `empty_unnamed`; the keys of `text.slides` read back in sorted order (`k==sorted(k)` printed `True`).
+
+### Item 10, S3
+
+`src/lib/server/edit/writes/config/deck/deck.ts`: the comment reads "a record keyed by the bare group name names that group"; `grep -rn "first-form" src tests docs DESIGN.md` prints nothing.
+
+### Item 11, S4
+
+`src/lib/views/shared/explorer/tree/menu/row-menu.ts`: the `outline` fact is removed from `RowMenuFacts` and its fill; `ROW_DECK_OUTLINE` reads `facts.markdown`.
+
+### Verify, this round
+
+- Scoped runs: `npx vitest run` of the 11 test files this round touches or that guard what it touches: `Test Files  11 passed (11)`, `Tests  81 passed (81)`; per file `deck-acts.test.ts` 7 passed, `changes.test.ts` 8 passed, `source.test.ts` 2 passed, `window-guard.test.ts` 5 passed.
+- `npm run test:quick`, once after the last code change; full-list runs this round: 1.
+
+```
+test:quick: 109 changed file(s), from git since HEAD
+test:quick: 94 test file(s), 10 essential
+ok      ASCII gate (1.5 s)
+ok      prettier (2.1 s): All matched files use Prettier code style!
+ok      svelte-kit sync (3.1 s)
+ok      eslint (37.6 s)
+ok      vitest (43.6 s): Duration  38.81s (transform 60.96s, setup 0ms, import 118.13s, tests 28.66s, environment 188ms)
+ok      svelte-check (41.8 s): 1791329813568 COMPLETED 397 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 45.2 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+```
+
+- `npm run test:checks`: `Test Files  17 passed (17)`, `Tests  243 passed (243)`; `npx prettier --check .`: `All matched files use Prettier code style!`; `npx eslint .`: exit 0; `npm run check`: `1791330318308 COMPLETED 3078 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`; `bash utils/folder-check.sh` and `bash utils/size-check.sh`: exit 0.
+- ASCII check over the files this round changed (`grep -cP '[^\x00-\x7F]'` per file): 0 in each.
+- No Electron window, desktop app, agent, git command or slow tier was run in this round; `config/local.yml` was not opened, printed, grepped or hashed.
 
 ## The cases' first run
 
@@ -37,7 +171,7 @@ No case showed a rule of the brief to be wrong, so the build went ahead. Reading
 
 ## The cases after the build
 
-Each case was run on the final build on the scratch server (port 8794, over a copy of the hub's `deck/` in a scratch root; nothing written into `deck/` or a project). Each case's printed output is in "Appendix A" below, under the marker named here; the page runs are in "Appendix B".
+Each case was run on the final build on the scratch server (port 8794, over a copy of the hub's `deck/` in a scratch root; nothing written into `deck/` or a project). Each case's printed output is in "Appendix A" below, under the marker named here; the page runs are in "Appendix B". Both appendices were taken on the build before repair round 1; the round changes the undo of an act whose Trash fails, the image link of a name holding `#`, `%` or `?`, the act-wide prune of the change log, one History row's name and catalog parameters, which the rows of "Repair round 1" cover, and case 19's two-file run is quoted there.
 
 | Case | Script and marker in its output | Page run in Appendix B |
 |---|---|---|
@@ -58,69 +192,38 @@ Run from `tools/oculus` in the worktree unless a path says otherwise.
 
 | Row | Status | Command and output as printed |
 |---|---|---|
-| Part 1, slide list drag within and across groups, `order:` | DONE | Cases 1, 2, 3, 4, 27, 34 above; `tests/routes/edit/deck-slides.test.ts`: `Tests  2 passed (2)`. |
-| Part 2, slide actions, menus, palette | DONE | Cases 5 to 13, 29 to 31; `tests/server/edit/deck-acts.test.ts`: `Tests  6 passed (6)`; menus and palette through the page, `ui/final-step3.log`, `final-step5.log`, `final-step12.log`. |
-| Part 3, slide drawn live from drafts | DONE | Cases 16, 17, 36; `tests/routes/docs/deck.test.ts`: `Tests  3 passed (3)`; `ui/final-step10.log`. |
-| Part 4, image drop | DONE | Cases 18, 19, 32; `ui/final-step5.log`, `final-step7.log`. |
-| Part 5, New Presentation | DONE | Cases 20, 33; `ui/final-step8.log`. |
-| Part 6, New Presentation from Outline | DONE | Cases 21, 22, 23, 35; `ui/final-step9.log`; `tests/data/sources/present.test.ts`: `Tests  3 passed (3)`. |
-| Part 7, Export to PDF | DONE | Cases 24, 25 above; `grep -rn "printToPDF" src` prints `src/desktop/windows/print.ts:5` and `src/desktop/windows/print.ts:70` only. The browser print dialog of a real browser is a look at landing. |
-| Part 8, 40 lines reworded | DONE | `grep -nE "\S - \S" ../../projects/*/*/present/*.md ../../projects/archive/*/*/*/present/*.md` prints nothing, `item3 exit 1`; `git diff --stat HEAD -- projects` prints `8 files changed, 40 insertions(+), 40 deletions(-)`. |
-| Part 9, documents, catalog texts, guarded.md lines | DONE | `python3 $S/titles.py G2 G8 G9 G32 G49` prints nothing (`titles 0`): every test title the Code and Test lines of G2, G8, G9, G32 and G49 name exists in a test file. |
-| `npm run test:quick`, once after the last change | DONE with the time limit exceeded | Printed:
-```
-test:quick: 112 changed file(s), from git since HEAD
-test:quick: 97 test file(s), 10 essential
-ok      ASCII gate (1.1 s)
-ok      prettier (3.8 s): All matched files use Prettier code style!
-ok      svelte-kit sync (45.9 s)
-ok      eslint (73.5 s)
-ok      vitest (97.9 s): Duration  50.13s (transform 109.05s, setup 0ms, import 146.39s, tests 42.15s, environment 269ms)
-ok      svelte-check (55.1 s): 1791324391495 COMPLETED 397 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-test:quick: 105.3 s (limit 45.0 s); every command passed
-test:quick: over the time limit
-test:quick: not covered: tests outside the selection, tests/checks, slow tests,
-```
-Three earlier runs of the same checks, before the last test files were added: `test:quick: 19.4 s (limit 45.0 s); every command passed`, `test:quick: 20.8 s (limit 45.0 s); every command passed`, `test:quick: 30.8 s (limit 45.0 s); every command passed` (`uptime` showed a load average of 7.78 before one of them; before the last two runs it showed 23.73 and 24.06). |
-| Every changed test file passes after the change | DONE | `npx vitest run` of the 13 files: `Test Files  13 passed (13)`, `Tests  85 passed (85)`; per file after the change:
-```
-tests/data/sources/present.test.ts:       Tests  3 passed (3) 
-tests/routes/docs/deck.test.ts:       Tests  3 passed (3) 
-tests/routes/edit/app-gate.test.ts:       Tests  19 passed (19) 
-tests/routes/edit/deck-slides.test.ts:       Tests  2 passed (2) 
-tests/routes/edit/undo/undo.test.ts:       Tests  11 passed (11) 
-tests/server/core/changes.test.ts:       Tests  7 passed (7) 
-tests/server/desktop/window-guard.test.ts:       Tests  5 passed (5) 
-tests/server/edit/deck-acts.test.ts:       Tests  6 passed (6)
-```
-and `tests/views/academic/export.test.ts`: 3 passed, `tests/state/workbench/palette-source.client.test.ts`: 2 passed, `tests/state/sessions/source.test.ts`: 3 passed. |
-| Each test on the unchanged tree | DONE | Run in `scratchpad/base-run`, the unchanged tree with the changed test files copied in:
-```
-tests/data/sources/present.test.ts: Error: Cannot find module '../../../src/lib/data/sources/deck/outline.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/base-run/tests/data/sources/pre
-
-tests/routes/docs/deck.test.ts:  Test Files  1 failed (1)       Tests  2 failed | 1 passed (3) 
-tests/routes/edit/app-gate.test.ts:  Test Files  1 passed (1)       Tests  19 passed (19) 
-tests/routes/edit/deck-slides.test.ts:  Test Files  1 failed (1)       Tests  2 failed (2) 
-tests/routes/edit/undo/undo.test.ts:  Test Files  1 failed (1)       Tests  1 failed | 10 passed (11) 
-tests/server/core/changes.test.ts:  Test Files  1 failed (1)       Tests  1 failed | 6 passed (7) 
-tests/server/desktop/window-guard.test.ts:  Test Files  1 failed (1)       Tests  2 failed | 3 passed (5) 
-tests/server/edit/deck-acts.test.ts:  Test Files  1 failed (1)       Tests  6 failed (6)
-```
-`tests/views/academic/export.test.ts`: `Cannot find module '../../../src/lib/views/academic/present/acts/export.ts'`; `tests/state/workbench/palette-source.client.test.ts`: `TypeError: source.offer is not a function` (2 tests); `tests/state/sessions/source.test.ts`: `AssertionError: expected undefined to be 'no-cache'`. `tests/routes/edit/app-gate.test.ts` passes on the unchanged tree too: its new row tests a behaviour the step keeps. |
-| Tests of G47, G49, G53 | DONE | `npx vitest run tests/server/desktop/window-guard.test.ts tests/server/desktop/window-file.test.ts tests/routes/edit/app-gate.test.ts tests/routes/apps/approve.test.ts`: all inside the 13-file run above, `Test Files  13 passed (13)`. |
-| `npm run test:checks` | DONE | `Test Files  17 passed (17)`, `Tests  243 passed (243)`. |
-| `npx prettier --check .`, `npx eslint .`, `npm run check` | DONE | `All matched files use Prettier code style!`; `eslint 0`; `1791323947678 COMPLETED 3080 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`. |
-| `bash utils/folder-check.sh`, `bash utils/size-check.sh` | DONE | `folder 0`, `size 0`. |
-| `bash utils/unused-exports.sh` against the unchanged tree's list | DONE | The diff names `deckEditWrite` (a re-export from `src/lib/server/edit/writes.ts` beside `deckSlidesWrite`, which is on the base list too, used from `writes/app-gate.ts` and `writes.ts`) and no longer lists `loadSource` and `SourceLoad` (now used). |
-| ASCII gate over the added lines | DONE | `ok      ASCII gate (1.1 s)`; `grep -cP '[^\x00-\x7F]'` over the added lines: `0`; `grep -ciE "pptx\|powerpoint"` over the added lines: `0`. The files the step changes hold one line with `.pptx`, `docs/views.md:11`, which `git diff HEAD` does not touch (the sentence about a file whose extension maps to an application). |
-| Hyphen stand-ins and history words on added lines | DONE | ` -- `, ` --- ` and spaced hyphens: the 14 matches of the pattern over the added lines are all subtraction in code (`end - 1`, `at - 1`, `count - 1`); the history-word grep over the added lines matches only the unchanged words of G8 and G42 in `guarded.md` (`no longer`). |
-| Scratch server and Electron processes stopped | DONE | `lsof -nP -iTCP:8794 -sTCP:LISTEN` prints nothing (`listener exit 1`); `ps aux | grep "[w]orktrees/PR3/tools/oculus/node_modules/electron"` prints nothing. |
-| G53, the print window never recorded in the window file | NOT DONE (no test) | `src/desktop/windows/print.ts:8` says it; the window is created by `new BrowserWindow` in `print.ts`, not through `windows.ts`, which holds the list the window file records. No test of it was written; the guarantee holds by construction and is not checked by a command. |
-| Cases 16, 18, 24, 25 as looks at landing | NOT DONE here, by the brief | The runs the cases name are quoted above; the desktop app was never started. |
+| Parts 1 to 6 (slide drag and order, slide actions/menus/palette, live draft, image drop, New Presentation, New Presentation from Outline) | DONE | Cases 1-23, 27-36 in Appendix A/B; `tests/routes/edit/deck-slides.test.ts`, `deck-acts.test.ts` (7), `deck.test.ts`, `present.test.ts` pass in the scoped run below |
+| Part 7, Export to PDF | DONE | Cases 24, 25 above; `grep -rn "printToPDF" src` prints `src/desktop/windows/print.ts:5` and `src/desktop/windows/print.ts:67` only. A real browser's print dialog is a look at landing |
+| Part 8, 40 spaced-hyphen lines | DONE | `grep -nE "\S - \S" ../../projects/*/*/present/*.md ../../projects/archive/*/*/*/present/*.md` prints nothing (`item3 exit 1`); the 40 lines are listed below |
+| Part 9, documents, catalog texts, guarded.md lines | DONE | `python3 titles.py G2 G8 G9 G32 G49` prints nothing (exit 0) |
+| Repair round 1, items 1 to 11 | DONE | "Repair round 1" above; item 5 leaves one defect OPEN (the angle-bracket image link), named there |
+| `npm run test:quick`, once after the last change, full-list runs 1 | DONE | Printed:\n```\ntest:quick: 109 changed file(s), from git since HEAD
+test:quick: 94 test file(s), 10 essential
+ok      ASCII gate (1.5 s)
+ok      prettier (2.1 s): All matched files use Prettier code style!
+ok      svelte-kit sync (3.1 s)
+ok      eslint (37.6 s)
+ok      vitest (43.6 s): Duration  38.81s (transform 60.96s, setup 0ms, import 118.13s, tests 28.66s, environment 188ms)
+ok      svelte-check (41.8 s): 1791329813568 COMPLETED 397 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 45.2 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,\n```\n |
+| Scoped test run after the last change | DONE | `Test Files  11 passed (11)`, `Tests  81 passed (81)` over `deck-acts`, `changes`, `source`, `window-guard`, `present`, `deck`, `deck-slides`, `undo`, `app-gate`, `window-file` and `approve`; the tests of G47, G49 and G53 are in it |
+| New or changed tests on the unchanged tree | DONE | Round 1's rows (items 4, 5 and 7) fail on the code before the round, quoted above. The step's earlier tests: `present.test.ts` fails at import (no `outline.ts`); `deck.test.ts` 2 failed; `deck-slides.test.ts` 2 failed; `undo.test.ts` 1 failed; `changes.test.ts` 1 failed; `window-guard.test.ts` 2 failed; `deck-acts.test.ts` 6 failed. `app-gate.test.ts` passes on the unchanged tree too (its row tests a behaviour the step keeps) |
+| `npm run test:checks` | DONE | `Test Files  17 passed (17)`, `Tests  243 passed (243)` |
+| prettier, eslint, svelte-check | DONE | `All matched files use Prettier code style!`; `eslint 0`; `1791330318308 COMPLETED 3078 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| `bash utils/folder-check.sh`, `bash utils/size-check.sh` | DONE | exit 0, exit 0 |
+| `bash utils/unused-exports.sh` against the unchanged tree's list | DONE | Its diff names the same entries as before the round: `deckEditWrite` (a barrel re-export beside `deckSlidesWrite`), and `loadSource` and `SourceLoad` no longer listed (used) |
+| ASCII, pptx, hyphen stand-ins, history words on the changed files | DONE | `ok      ASCII gate (1.5 s)`; `grep -cP '[^\x00-\x7F]'` over the files this round changed: 0 each; the one `pptx` line over the changed files is `docs/views.md:11`, which this step does not touch |
+| `grep -rn "32 MB\|60 seconds" config/text --exclude=local.yml` | DONE | prints nothing (exit 1) |
+| Scratch server and Electron processes | DONE | none was started this round; `ps aux` lists no PR3 electron process |
+| G53, the print window never recorded in the window file | NOT DONE, ruled (Z674 (2)) | no test: `print.ts` builds its own window and never goes through `windows.ts` |
+| Cases 16, 18, 24, 25 as looks at landing | NOT DONE here, by the brief | the runs the cases name are quoted; the desktop app was never started |
+| The diagnosis of `start.test.ts`'s `serversOf` rows (Z674 (6)) | NOT DONE | not an item of round 1's brief; it is the orchestrator's `/diagnose` dispatch |
+| Angle-bracket image links addressed by the reader | NOT DONE, open | item 5 above |
 
 ## The files with line counts
 
-`git status --short -uall -- tools/oculus` in the worktree: M modified (85), ?? new (25), D deleted (1: `src/lib/server/edit/writes/config/deck.ts`, now the folder `writes/config/deck/`). The 8 project files of part 8 are listed with it below.
+The set this step changes in `tools/oculus` (`M` modified, `??` new, `D` deleted), built from `git status` of the worktree before this round, minus the four test files this round removed or returned to the unchanged tree (`tests/views/academic/export.test.ts`, `tests/state/workbench/palette-source.client.test.ts`, `tests/state/sessions/source.test.ts`, `tests/ui/frame/rooted.svelte.ts`), plus `src/lib/data/sources/deck/kinds.ts`; the line counts are `wc -l` now. 85 modified, 23 new, 1 deleted (`src/lib/server/edit/writes/config/deck.ts`, now the folder `writes/config/deck/`). The files this round changed are `deck-undo.ts`, `deck-files.ts`, `deck.ts`, `kinds.ts`, `changes.ts`, `History.svelte`, `row-menu.ts`, `present.ts`, `desktop.ts`, `print.ts`, `export.ts`, `server.yml`, `desktop.yml`, `present.yml`, `slides.yml`, `guarded.md`, `deck-acts.test.ts` and `changes.test.ts`. The 8 project files of part 8 are listed after the table.
 
 | Status | Lines | File |
 |---|---|---|
@@ -144,8 +247,8 @@ tests/server/edit/deck-acts.test.ts:  Test Files  1 failed (1)       Tests  6 fa
 | M | 855 | `docs/diagrams/layer-state.svg` |
 | M | 179 | `docs/diagrams/layer-views.dot` |
 | M | 809 | `docs/diagrams/layer-views.svg` |
-| M | 90 | `docs/diagrams/layers.dot` |
-| M | 493 | `docs/diagrams/layers.svg` |
+| M | 93 | `docs/diagrams/layers.dot` |
+| M | 510 | `docs/diagrams/layers.svg` |
 | M | 207 | `docs/diagrams/writes.dot` |
 | M | 994 | `docs/diagrams/writes.svg` |
 | M | 91 | `docs/files-and-search.md` |
@@ -156,31 +259,42 @@ tests/server/edit/deck-acts.test.ts:  Test Files  1 failed (1)       Tests  6 fa
 | M | 61 | `src/desktop/decide/sender.ts` |
 | M | 51 | `src/desktop/preload.cjs` |
 | M | 226 | `src/desktop/windows/bridge.ts` |
+| ?? | 74 | `src/desktop/windows/print.ts` |
 | M | 339 | `src/lib/data/file-ops.ts` |
 | M | 204 | `src/lib/data/helpers/files/apps.ts` |
 | M | 602 | `src/lib/data/model/index.ts` |
 | M | 812 | `src/lib/data/model/model-entities.ts` |
+| M | 343 | `src/lib/data/sources/deck/kinds.ts` |
+| ?? | 87 | `src/lib/data/sources/deck/order-text.ts` |
+| ?? | 87 | `src/lib/data/sources/deck/outline.ts` |
 | M | 605 | `src/lib/data/sources/deck/read.ts` |
+| ?? | 112 | `src/lib/data/sources/deck/slide-text.ts` |
 | M | 185 | `src/lib/data/sources/deck/spec.ts` |
 | M | 138 | `src/lib/data/sources/deck/split.ts` |
 | M | 79 | `src/lib/server/content/deck/endpoint.ts` |
 | M | 88 | `src/lib/server/content/deck/read.ts` |
-| M | 374 | `src/lib/server/core/changes.ts` |
+| M | 400 | `src/lib/server/core/changes.ts` |
 | M | 183 | `src/lib/server/edit/deck-edit.ts` |
 | M | 636 | `src/lib/server/edit/writes.ts` |
 | M | 126 | `src/lib/server/edit/writes/app-gate.ts` |
 | M | 544 | `src/lib/server/edit/writes/bodies.ts` |
 | M | 100 | `src/lib/server/edit/writes/config/config-write.ts` |
 | D | 0 | `src/lib/server/edit/writes/config/deck.ts` |
+| ?? | 32 | `src/lib/server/edit/writes/config/deck/deck-acts.ts` |
+| ?? | 437 | `src/lib/server/edit/writes/config/deck/deck-files.ts` |
+| ?? | 121 | `src/lib/server/edit/writes/config/deck/deck-new.ts` |
+| ?? | 118 | `src/lib/server/edit/writes/config/deck/deck-undo.ts` |
+| ?? | 242 | `src/lib/server/edit/writes/config/deck/deck.ts` |
 | M | 413 | `src/lib/server/edit/writes/undo.ts` |
 | M | 510 | `src/lib/shell/keys/Palette.svelte` |
+| ?? | 35 | `src/lib/shell/keys/command-runs.ts` |
 | M | 67 | `src/lib/shell/keys/palette-open.ts` |
 | M | 673 | `src/lib/state/client/writes.svelte.ts` |
 | M | 156 | `src/lib/state/life/present.svelte.ts` |
-| M | 456 | `src/lib/state/life/present.ts` |
+| M | 457 | `src/lib/state/life/present.ts` |
 | M | 223 | `src/lib/state/life/slides.ts` |
 | M | 509 | `src/lib/state/sessions/source.svelte.ts` |
-| M | 114 | `src/lib/state/shared/stores/desktop.ts` |
+| M | 117 | `src/lib/state/shared/stores/desktop.ts` |
 | M | 377 | `src/lib/state/shared/stores/shapes.ts` |
 | M | 78 | `src/lib/state/sources/explorer/naming.ts` |
 | M | 222 | `src/lib/state/sources/explorer/rows/tree-rows.ts` |
@@ -188,53 +302,39 @@ tests/server/edit/deck-acts.test.ts:  Test Files  1 failed (1)       Tests  6 fa
 | M | 181 | `src/lib/state/sources/explorer/view/place.ts` |
 | M | 136 | `src/lib/state/workbench/palette-source.svelte.ts` |
 | M | 355 | `src/lib/state/workbench/palette.ts` |
+| ?? | 19 | `src/lib/themes/slide.css` |
 | M | 98 | `src/lib/views/academic/present/Bar.svelte` |
 | M | 94 | `src/lib/views/academic/present/Overview.svelte` |
 | M | 490 | `src/lib/views/academic/present/Present.svelte` |
+| ?? | 131 | `src/lib/views/academic/present/acts/acts.svelte.ts` |
+| ?? | 104 | `src/lib/views/academic/present/acts/export.ts` |
+| ?? | 48 | `src/lib/views/academic/present/acts/live.svelte.ts` |
+| ?? | 36 | `src/lib/views/academic/present/acts/menu.ts` |
+| ?? | 144 | `src/lib/views/academic/present/acts/run.ts` |
+| ?? | 112 | `src/lib/views/academic/present/fullscreen.svelte.ts` |
+| ?? | 145 | `src/lib/views/academic/slides/Order.svelte` |
 | M | 433 | `src/lib/views/academic/slides/Slides.svelte` |
+| ?? | 68 | `src/lib/views/academic/slides/Steps.svelte` |
 | M | 80 | `src/lib/views/shared/explorer/tree/NameInput.svelte` |
 | M | 385 | `src/lib/views/shared/explorer/tree/Tree.svelte` |
 | M | 235 | `src/lib/views/shared/explorer/tree/control/picks.svelte.ts` |
-| M | 604 | `src/lib/views/shared/explorer/tree/menu/row-menu.ts` |
+| M | 601 | `src/lib/views/shared/explorer/tree/menu/row-menu.ts` |
 | M | 446 | `src/lib/views/shared/explorer/tree/menu/row-ops.ts` |
-| M | 391 | `src/lib/views/system/history/History.svelte` |
+| M | 393 | `src/lib/views/system/history/History.svelte` |
 | M | 48 | `src/routes/+layout.svelte` |
 | M | 30 | `src/routes/api/(docs)/deck/+server.ts` |
+| ?? | 17 | `src/routes/present/print/+page.server.ts` |
+| ?? | 154 | `src/routes/present/print/+page.svelte` |
+| ?? | 9 | `src/routes/present/print/+page.ts` |
 | M | 284 | `tests/data/sources/present.test.ts` |
 | M | 154 | `tests/routes/docs/deck.test.ts` |
 | M | 231 | `tests/routes/edit/app-gate.test.ts` |
 | M | 203 | `tests/routes/edit/deck-slides.test.ts` |
 | M | 362 | `tests/routes/edit/undo/undo.test.ts` |
 | M | 368 | `tests/routes/edit/write-fixture.ts` |
-| M | 320 | `tests/server/core/changes.test.ts` |
+| M | 340 | `tests/server/core/changes.test.ts` |
 | M | 121 | `tests/server/desktop/window-guard.test.ts` |
-| M | 59 | `tests/state/sessions/source.test.ts` |
-| M | 28 | `tests/ui/frame/rooted.svelte.ts` |
-| ?? | 77 | `src/desktop/windows/print.ts` |
-| ?? | 87 | `src/lib/data/sources/deck/order-text.ts` |
-| ?? | 87 | `src/lib/data/sources/deck/outline.ts` |
-| ?? | 112 | `src/lib/data/sources/deck/slide-text.ts` |
-| ?? | 32 | `src/lib/server/edit/writes/config/deck/deck-acts.ts` |
-| ?? | 423 | `src/lib/server/edit/writes/config/deck/deck-files.ts` |
-| ?? | 121 | `src/lib/server/edit/writes/config/deck/deck-new.ts` |
-| ?? | 110 | `src/lib/server/edit/writes/config/deck/deck-undo.ts` |
-| ?? | 242 | `src/lib/server/edit/writes/config/deck/deck.ts` |
-| ?? | 35 | `src/lib/shell/keys/command-runs.ts` |
-| ?? | 19 | `src/lib/themes/slide.css` |
-| ?? | 131 | `src/lib/views/academic/present/acts/acts.svelte.ts` |
-| ?? | 102 | `src/lib/views/academic/present/acts/export.ts` |
-| ?? | 48 | `src/lib/views/academic/present/acts/live.svelte.ts` |
-| ?? | 36 | `src/lib/views/academic/present/acts/menu.ts` |
-| ?? | 144 | `src/lib/views/academic/present/acts/run.ts` |
-| ?? | 112 | `src/lib/views/academic/present/fullscreen.svelte.ts` |
-| ?? | 145 | `src/lib/views/academic/slides/Order.svelte` |
-| ?? | 68 | `src/lib/views/academic/slides/Steps.svelte` |
-| ?? | 17 | `src/routes/present/print/+page.server.ts` |
-| ?? | 154 | `src/routes/present/print/+page.svelte` |
-| ?? | 9 | `src/routes/present/print/+page.ts` |
-| ?? | 355 | `tests/server/edit/deck-acts.test.ts` |
-| ?? | 53 | `tests/state/workbench/palette-source.client.test.ts` |
-| ?? | 79 | `tests/views/academic/export.test.ts` |
+| ?? | 376 | `tests/server/edit/deck-acts.test.ts` |
 
 Project files (part 8, outside `tools/oculus`): `projects/archive/published/2026/hccnet-fl/present/main.md`, `projects/manuscripts/bttd-source-eeg/present/main.md`, `projects/manuscripts/dries-bttr-ecg/present/main.md`, `projects/manuscripts/ecg-readable-substrate/present/main.md`, `projects/manuscripts/fed-multicellular-immune/present/main.md`, `projects/manuscripts/hccnet-revision/present/main.md`, `projects/manuscripts/raw-pls/present/main.md`, `projects/manuscripts/ward-bttr-crosssubject/present/main.md`.
 
@@ -242,15 +342,15 @@ Project files (part 8, outside `tools/oculus`): `projects/archive/published/2026
 
 - Paths written beyond the brief's list, widened rather than booked: `src/lib/server/core/changes.ts` and `History.svelte` (a record keyed `slides:<group>` or `order`, and one act key spanning files), `src/lib/data/file-ops.ts` and the explorer files (`naming.ts`, `place.ts`, `tree-rows.ts`, `files-view.ts`, `picks.svelte.ts`, `NameInput.svelte`, `Tree.svelte`) for the New Presentation and outline menu items, `src/lib/themes/slide.css`, `src/routes/+layout.svelte`, the deck data and server files under `src/lib/data/sources/deck/` and `src/lib/server/edit/writes/config/deck/`, `src/lib/state/life/*`, `src/lib/state/sessions/source.svelte.ts` (the read of a file now asks the server each time, since `/api/file/...` answers `cache-control: private, max-age=60` and an act after an image drop was refused for a file the page had read before the drop), `src/lib/state/workbench/palette-source.svelte.ts`, `Slides.svelte`, `Palette.svelte` and a new `src/lib/shell/keys/command-runs.ts` (the palette's workspace and folder commands moved out of `Palette.svelte` so it stays under 520 lines).
 - `slide-edit.ts` of the brief is merged into `src/lib/state/life/present.ts`; the brief's path `tree/row-ops.ts` is `tree/menu/row-ops.ts` in the tree.
-- The slide's source carries a new field `line` (the 1-based first line of the slide's place in its file; for a summary or grid slide, the entry's line in `present.yml`), so Edit Slide opens the source tab at the slide without the client reading the file.
-- A deck that draws no slide: the print page says it failed (`data-failed`) with the sentence `present.empty`, so the host answers at once and not after 60 s.
-- The export writes through `explorer.upload`, so the PDF is recorded and undone as any upload, and asks the replace question when `deck.pdf` exists; the size limit is the upload's 32 MB (`PDF_LIMIT_MB`), said in words when exceeded (`present.export_too_large`).
+- The slide's source carries the new fields `entry` and `line`, and the deck `order` (ruled, Z674 (7)): `line` (the 1-based first line of the slide's place in its file; for a summary or grid slide, the entry's line in `present.yml`), so Edit Slide opens the source tab at the slide without the client reading the file.
+- A deck that draws no slide: the print page says it failed (`data-failed`) with the sentence `present.empty`, so the host answers at once and not after the wait of `READY_WAIT_MS`.
+- The export writes through `explorer.upload`, so the PDF is recorded and undone as any upload, and asks the replace question when `deck.pdf` exists; the size limit is the upload's `MAX_UPLOAD_BYTES` (`UPLOAD_LIMIT_MB`), said in words when exceeded (`present.export_too_large`).
 - A page of a long slide in the PDF: a tall slide is scaled to fit the page (`src/routes/present/print/+page.svelte`), since a slide is never cut or split over two pages.
-- Act-wide undo is all or none, over every record of one 12-hex act key; it is bounded by the log's pruning, since an act whose earlier records the log has pruned undoes the records it still holds.
+- Act-wide undo is all or none, over every record of one 12-hex act key, and a failing Trash puts back every file already written (round 1, item 4); the change log prunes whole `deck-edit` acts (item 7).
 - Redo of an undone image drop is not offered (`redo (404, {'error': 'nothing'})` in `final2-cases-d.out`): the image bytes record is kept for undo only.
 - A group literally named `slides:x` is ambiguous with the record key prefix `slides:<group>`; no deck of the hub has one.
-- Rows for G47 added in `tests/server/desktop/window-guard.test.ts` (the print window's sender and address rules) are outside the brief's listed entries; dropping that hunk is possible and leaves the code unchanged.
-- Client tests added after the click-through found four defects that had no automated check: `tests/state/workbench/palette-source.client.test.ts` (an effect that offers again each time what it reads changes), `tests/views/academic/export.test.ts` (the address the host is asked to print is whole, and `deckFile` names the `present.yml` inside the folder), the new case in `tests/state/sessions/source.test.ts` (the read asks the server each time).
+- The G47 rows added in `tests/server/desktop/window-guard.test.ts` (the print window's sender and address rules) are kept and handed over as lines for `agents/guarded.md` (Z674 (1); item 1 of the round).
+- The click-through found four defects that no automated check covers, fixed in the code (the palette offer loop, the Slides Save path, the print address, the cached source read); the tests written for three of them were deleted by ruling (Z674 (1)), so they are held by the code and the page runs of Appendix B only.
 - Scratch Trash moves from the Delete case land in the real macOS Trash (the system Trash is shared); the scratch hub's files only.
 - The looks were run in standalone hidden Electron windows against the scratch server, not in the desktop app; the first run downloaded the Electron binary into the package cache.
 - The spec's standards pages: the brief's item 7 names "the standards pages' rules on list items and sentence length", and no such page exists (`agents/spec.md`, the plan's `standards:`, holds no sentence-length or list-item rule). Each new or changed sentence was read against the hub's Writing docs rules and the Ward voice, long sentences were split, and these list-form sentences keep their form because they enumerate parallel items that a split would separate: the `DESIGN.md` "Closed:" list (109 words), the `docs/window.md` "It adds what a browser tab cannot give" list (129 words), the `docs/files-and-search.md` row-menu paragraph (220 words), the `docs/configuration.md` recorded-writes list (109 words).
@@ -269,9 +369,12 @@ Project files (part 8, outside `tools/oculus`): `projects/archive/published/2026
 | Slides view | Slides moved within one group's list | Slides drag across groups, and the order entries (`slides:<group>`, summaries, grids, files) drag too; Save writes one change per file that keeps every other line, and is undone as one |
 | Files view, folder row menu | Open Presentation only | Open Presentation and New Presentation... (a title question, `present.yml` and `closing.md`, a tab opens on it) |
 | Files view, Markdown file row menu | No outline action | New Presentation from Outline, writing `<name>-slides/` beside the file; the file is unchanged |
-| History view | A deck write was named by its key and field | A deck edit's rows name what the act did and the file (`slide added: deck/slide-1.md`), a group's list row names the group, and the `order:` records read `deck order`; an act spanning files undoes as one |
+| History view | A deck write was named by its key and field | A deck edit's rows name what the act did and the file (`slide added: deck/slide-1.md`), a group's list row names the group, and the `order:` records read `order` beside the kind `deck order`; an act spanning files undoes as one |
 | Desktop app bridge | No print channel | `oculus:print-pdf`; a hidden window of the server's own origin that is never listed or recorded, answers only the print channel |
 | Config and text | None | `config/text/views/academic/present.yml`, `slides.yml`, `files.yml`, `history.yml`, `app.yml`, `desktop.yml`, `server.yml` carry the new sentences; `HELP.md`, `DESIGN.md`, `docs/views.md`, `docs/window.md`, `docs/files-and-search.md`, `docs/configuration.md` describe them |
+| Present view, an image whose name holds `#`, `%` or `?` | Linked unencoded, so the link named another file | Linked percent-encoded (`![fig#1](fig%231.png)`), and the reader decodes it; a name with a space is left unaddressed by the reader (item 5, open) |
+| Present and Files views, the size and wait sentences | `32 MB` and `60 seconds` written in the text | The limits are read from `MAX_UPLOAD_BYTES` and `READY_WAIT_MS`; the sentences read as before |
+| History view, undo of a deck act whose Trash fails | Could leave `present.yml` without the entry and the made file in place | Every file is as the act left it, and the undo says it could not be written |
 | 40 lines of 8 decks | Spaced hyphen in prose | Reworded (below) |
 
 ## Part 8, the 40 lines
@@ -429,6 +532,9 @@ Reworded by hand in the worktree copies (Z667 (a)); every number, name, unit, HT
 - Verify item 4 says `grep -ni "pptx\|powerpoint"` over the changed files prints nothing; it prints one line, `docs/views.md:11`, a sentence of the unchanged tree about opening a `.pptx` in the user's application, which this step did not touch (`git diff HEAD -- tools/oculus/docs/views.md | grep -c pptx` prints `0`, `git show HEAD:tools/oculus/docs/views.md | grep -c pptx` prints `1`).
 - Verify item 6 says the cases never start the desktop app (G48). They were run in standalone hidden Electron windows, which do not bring the desktop app's window forward; the desktop app itself was never started.
 - Verify item 1 sets a 45 s limit for `npm run test:quick`; with other agents running (load average 24) the same selection takes 105 s, with every command passing, so the limit is a measure of the machine's load at that moment.
+
+- Item 4 of round 1 asks for the files written back to be written again; a made file that an earlier Trash call already moved cannot be taken back from the Trash, so for a text file its text is written again from the record (`after`), and an image file, whose record holds only a hash, is not.
+- Z674 (6), the diagnosis of `start.test.ts`, is named in the ruling as running while the round runs and is not an item of `PR3-round1.md`; it was not done here.
 
 ## Appendix A, the cases as printed
 

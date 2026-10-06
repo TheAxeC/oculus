@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z675 (2026-10-07, step PR3, the orchestrator, automode): an image dropped on a slide whose name holds a space
+
+The question: PR3's builder found that an image named `my fig.png` is linked as `![my fig](<my fig.png>)`, a form the slide reader does not recognise, so the slide does not draw the image.
+
+- Chosen: write a space and parentheses percent-encoded as well (`my%20fig.png`), the same way as `#`, `%` and `?`, fixed when PR3 lands.
+- Not chosen: refusing names with spaces (the lazy option); a second repair round for a one-line change.
+
 ## Z674 (1) (2026-10-07, step PR3, the orchestrator, automode): the tests PR3 added that nothing asked for
 
 The question: PR3's builder wrote four tests the plan's test rule does not allow (a test exists only for an entry of the guarded list): the print window's guard rows, the PDF export's address and file name, the palette's offered commands, and the source read that asks the server each time.
