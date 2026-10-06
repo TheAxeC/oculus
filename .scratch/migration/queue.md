@@ -1,10 +1,10 @@
-In flight (2 of 6 slots):
-- PR3 (Present decks edited and generated, PDF export): builder running, base 272f60b4 (Z667 ruled (a), sent to the builder).
-- D23c (library definitions read-only, the symbol selected on open): builder running, base 951b61e3.
+In flight (2 of 6 slots; every queued step waits on PR3 or D23c landing, or on a step after them):
+- PR3 (Present decks edited and generated, PDF export): built; review running, base 272f60b4.
+- D23c (library definitions read-only, the symbol selected on open): builder building after its handed-back cases were ruled, base 951b61e3.
 
 Queued, in order (23 steps):
-- D45 (LaTeX as VS Code's LaTeX Workshop): ruled, being prepared again.
-- X3e (Files lists reordered by drag): being prepared again under Z635 (a), its premise recheck running.
+- D45 (LaTeX as VS Code's LaTeX Workshop): ruled; waits for D23c to land (both move code out of `Source.svelte`, at its 520-line limit), then /spec again.
+- X3e (Files lists reordered by drag): rechecked (`agents/reviews/X3e-premise-recheck-2.md`); waits for PR3 (both rework `Palette.svelte`) and D23c (both change `Source.svelte` at its limit) to land, then /spec again, its seven choices taken in automode there.
 - PR4 (Present's presenter screen): once PR3 has landed.
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.
@@ -13,9 +13,9 @@ Queued, in order (23 steps):
 - M7 (a project folder moved in Files): once M6 has landed.
 - D41 (links in Markdown checked): once M7 has landed.
 - M8 (the hub's YAML checked in the editor): ruled in automode; waits for D23c to land.
-- D43 (LaTeX navigation): being prepared, its premise survey running.
+- D43 (LaTeX navigation through texlab): surveyed (`agents/reviews/D43-premise-survey.md`); waits for D23c to land (both change `server/machine/lsp/`, 10 items, and `relay.ts`), then /spec, its choices taken in automode.
 - D23b (cross-file language features): waits until D23c lands (both restructure `server/machine/lsp/`, `relay.ts` and `transport.ts`; not a simple merge); its recheck (`agents/reviews/D23b-premise-recheck.md`) names nine choices for Axel, raised at its /spec.
-- D33 (the Problems view): being prepared, its premise survey and its diagnosis of the card cursor after a reload running.
+- D33 (the Problems view): surveyed (`agents/reviews/D33-premise-survey.md`), its diagnosis of the card cursor after a reload running; waits for D23c to land (both change `source-file.ts` and `source.svelte.ts`, D33 building on D23c's column), then /spec, its choices taken in automode.
 - D39 (hub keys as links): once M8 and D23b have landed.
 - D36 (linters on save): once D33 has landed.
 - D40 (the writing rules as editor marks): once D36 has landed.
