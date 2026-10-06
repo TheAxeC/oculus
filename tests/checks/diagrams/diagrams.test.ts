@@ -167,21 +167,32 @@ describe('the layer readers', () => {
         expect(dot).not.toContain('"ui to data"');
     });
 
-    it('draws the entry loading the built app as its arrow to the routes, with no lost box', () => {
-        const dot = layersDot(
-            sources({
-                ...base,
-                'server.ts':
-                    "const built = new URL('../build/handler.js', import.meta.url).href;\nconst { handler } = await import(built);\n",
-                'routes/+page.svelte':
-                    "<script>\n    import { t } from '$lib/state/shared/words/text';\n</script>\n"
-            }),
-            LAYERS
-        );
-        expect(dot).toContain(arrow('src', 'routes', '1'));
-        // The built app is followed, so nothing is left for the dashed box of what is not.
-        expect(dot).not.toContain('style=dashed');
-    });
+    it.each([
+        {
+            form: 'a name bound to the built file',
+            entry: "const built = new URL('../build/handler.js', import.meta.url).href;\nconst { handler } = await import(built);\n"
+        },
+        {
+            form: 'a name bound to the built file or to the file the command line names',
+            entry: "const built = new URL('../build/handler.js', import.meta.url).href;\nconst handlerUrl = parsed.handler === undefined ? built : pathToFileURL(parsed.handler).href;\nconst loaded = await import(handlerUrl);\n"
+        }
+    ])(
+        'draws the entry loading the built app as its arrow to the routes, with no lost box, for $form',
+        ({ entry }) => {
+            const dot = layersDot(
+                sources({
+                    ...base,
+                    'server.ts': entry,
+                    'routes/+page.svelte':
+                        "<script>\n    import { t } from '$lib/state/shared/words/text';\n</script>\n"
+                }),
+                LAYERS
+            );
+            expect(dot).toContain(arrow('src', 'routes', '1'));
+            // The built app is followed, so nothing is left for the dashed box of what is not.
+            expect(dot).not.toContain('style=dashed');
+        }
+    );
 
     it('names a module no layer row places that an import joins, in a group that says so', () => {
         const dot = layersDot(

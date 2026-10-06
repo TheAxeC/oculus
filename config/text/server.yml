@@ -98,6 +98,7 @@ text:
             name: latex {0} {1}/{2}
         start:
             already_running: oculus is already running; its window is brought to the front
+            handler_failed: 'oculus: the server handler {0} could not be loaded: {1}'
             port_in_use: 'oculus: port {0} is in use'
         task:
             name: 'Task: {0}'

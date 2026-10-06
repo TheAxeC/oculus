@@ -71,13 +71,19 @@ import {
 } from '../../core/file-poll.ts';
 import { statusFor } from '../../core/git/state.ts';
 import { TIMEOUT_MS } from '../../core/git/run.ts';
+import { APP_FOLDERS, PLAIN_FOLDERS } from '../process/build-folders.ts';
 import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds one root is re-read at most once in. */
 export const THROTTLE = 2000;
 
 /** Path segments whose writes never change what git reports about the working tree. */
-export const IGNORED = ['node_modules', '.svelte-kit', 'build', '__pycache__'];
+export const IGNORED = [
+    'node_modules',
+    ...Object.values(PLAIN_FOLDERS),
+    ...Object.values(APP_FOLDERS),
+    '__pycache__'
+];
 
 export type GitWatchOptions = {
     /** Milliseconds one root is re-read at most once in. */

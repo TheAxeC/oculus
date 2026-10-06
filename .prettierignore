@@ -1,6 +1,8 @@
 node_modules/
 .svelte-kit/
 build/
+.svelte-kit-app/
+build-app/
 package-lock.json
 .scratch/
 *.md

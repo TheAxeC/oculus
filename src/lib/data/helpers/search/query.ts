@@ -34,7 +34,7 @@ export const HIT_WIDTH = 240;
 const MAX_FILESIZE = '2M';
 
 /** The directories no search descends into, whatever a .gitignore says. */
-const SKIP_GLOBS = ['!node_modules', '!.git', '!.svelte-kit'];
+const SKIP_GLOBS = ['!node_modules', '!.git', '!.svelte-kit', '!.svelte-kit-app'];
 
 /** One search as both sides hold it. */
 export type SearchQuery = {

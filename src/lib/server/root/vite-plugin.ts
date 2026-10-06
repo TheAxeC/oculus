@@ -38,14 +38,18 @@ const dependencies: ViteServerDependencies = {
     attachSocket: attachAtWs
 };
 
-/** Build the adapter emulator and the plugin that owns one context for either Vite serve mode. */
+/**
+ * Build the adapter emulator and the plugin that owns one context for either Vite serve mode. The
+ * adapter writes the built server into `options.out`, the folder the build of this Vite mode owns.
+ */
 export function oculusViteServer(
     engine: string,
+    options: { out: string },
     replacements: Partial<ViteServerDependencies> = {}
 ): OculusViteServer {
     const make = { ...dependencies, ...replacements };
     const requests = new AsyncLocalStorage<OculusRequest>();
-    const node = adapter();
+    const node = adapter({ out: options.out });
     node.emulate = () => ({
         platform: () => {
             const request = requests.getStore();

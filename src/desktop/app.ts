@@ -10,13 +10,14 @@
 // seconds, and leaves the tmux sessions running.
 
 import { app, Menu, nativeImage, nativeTheme, session } from 'electron';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { engineDir } from '../lib/data/sources/config.ts';
 import { wordsOf } from '../lib/server/root/process/words.ts';
 import { LISTEN_HOST } from '../lib/server/root/mover.ts';
+import { appHandler } from '../lib/server/root/process/build-folders.ts';
 import { parseAppArgs, type AppArgs } from './decide/args.ts';
 import { EVENT } from './decide/channels.ts';
 import { permissionGranted } from './decide/permissions.ts';
@@ -80,7 +81,8 @@ async function begin(options: StartOptions, checkout: string, home: string): Pro
     const args = parseAppArgs(argv, {
         cwd: process.cwd(),
         fallback: checkout,
-        hasConfig: (dir) => existsSync(join(dir, 'config'))
+        hasConfig: (dir) => existsSync(join(dir, 'config')),
+        isFile: (path) => statSync(path, { throwIfNoEntry: false })?.isFile() === true
     });
     if ('error' in args) {
         const t = wordsOf(checkout);
@@ -216,6 +218,7 @@ async function run(
         const forked = forkServer({
             entry: join(checkout, 'src', 'server.ts'),
             engine: args.engine,
+            handler: appHandler(checkout),
             defaultPort: options.defaultPort,
             env,
             name: app.name,
@@ -292,7 +295,7 @@ async function run(
             return;
         }
     }
-    if (!existsSync(join(checkout, 'build', 'handler.js'))) {
+    if (!existsSync(appHandler(checkout))) {
         await say(t('desktop.dialog.not_built'), [t('desktop.dialog.quit')]);
         app.exit(1);
         return;

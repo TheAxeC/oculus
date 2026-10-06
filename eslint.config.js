@@ -24,6 +24,8 @@ export default ts.config(
         ignores: [
             '.svelte-kit/**',
             'build/**',
+            '.svelte-kit-app/**',
+            'build-app/**',
             'node_modules/**',
             'eslint.config.js',
             'vite.config.ts'

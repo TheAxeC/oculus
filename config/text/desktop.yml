@@ -6,7 +6,7 @@ text:
             build_failed: 'The build of the oculus server failed: {0}'
             continue: Continue
             env_slow: The login shell did not answer within 10 seconds, so programs on its PATH (tmux, git, claude) may not be found.
-            not_built: The oculus server is not built. Run npm run build, then start the app again.
+            not_built: The oculus server is not built. Run npm run app from the checkout once, then start the app again.
             open_window: Open a Window
             port_oculus: An oculus already answers on port {0}.
             port_other: Port {0} is held by another program, so oculus did not start.

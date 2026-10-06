@@ -1,10 +1,10 @@
 // Layer 4, test tool. npm run test:landing: the commands the orchestrator runs on main at each
 // landing, all at the same time, every one run to its end so that one red does not hide another.
-// The type check, the build and the slow tests run one after the other in one lane, since each
-// writes under .svelte-kit: the slow tests start the app, and every start of the app from the
-// checkout builds the server into .svelte-kit/output and build/, which a build running beside it
-// empties. The lint keeps its cache in node_modules/.cache/eslint/, the one npm run test:quick
-// keeps.
+// The type check and the build run one after the other in one lane, since each writes under
+// .svelte-kit. The slow tests follow in the same lane: they start the app, whose build writes
+// .svelte-kit-app/ and build-app/, folders neither the type check nor the build writes, and the
+// start test's server row reads build-app/. The lint keeps its cache in
+// node_modules/.cache/eslint/, the one npm run test:quick keeps.
 //
 // The list is the unit suite, the tree checks, the type check, the build and the slow tests (one
 // lane, in that order), the format check, the lint over the whole tree and the ASCII gate. The type

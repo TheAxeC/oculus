@@ -103,28 +103,44 @@ function lineAt(/** @type {string} */ text, /** @type {number} */ offset) {
 
 /**
  * The names a script binds to `new URL('<path>', import.meta.url)`, with or without `.href`, by
- * name, so an `import(name)` of one names that path.
+ * name, so an `import(name)` of one names that path. A name bound to a conditional expression, or
+ * to another such name, takes the path of the first of its branches that is one, so a script that
+ * loads either a built file or one it is handed names the built file.
  */
 function urlNames(/** @type {ts.SourceFile} */ source) {
     /** @type {Map<string, string>} */
     const found = new Map();
+    /**
+     * The path an expression names through `new URL(...)`, or null.
+     *
+     * @param {ts.Expression} expression
+     * @returns {string | null}
+     */
+    const pathOf = (expression) => {
+        let value = expression;
+        if (ts.isPropertyAccessExpression(value) && value.name.text === 'href') {
+            value = value.expression;
+        }
+        if (ts.isIdentifier(value)) return found.get(value.text) ?? null;
+        if (ts.isConditionalExpression(value)) {
+            return pathOf(value.whenTrue) ?? pathOf(value.whenFalse);
+        }
+        const call = ts.isNewExpression(value) ? value : null;
+        const args = call?.arguments ?? [];
+        const [path, base] = args;
+        const url =
+            call !== null &&
+            ts.isIdentifier(call.expression) &&
+            call.expression.text === 'URL' &&
+            args.length === 2 &&
+            ts.isStringLiteralLike(path) &&
+            base.getText(source) === 'import.meta.url';
+        return url ? path.text : null;
+    };
     const visit = (/** @type {ts.Node} */ node) => {
         if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
-            let value = node.initializer;
-            if (ts.isPropertyAccessExpression(value) && value.name.text === 'href') {
-                value = value.expression;
-            }
-            const call = ts.isNewExpression(value) ? value : null;
-            const args = call?.arguments ?? [];
-            const [path, base] = args;
-            const url =
-                call !== null &&
-                ts.isIdentifier(call.expression) &&
-                call.expression.text === 'URL' &&
-                args.length === 2 &&
-                ts.isStringLiteralLike(path) &&
-                base.getText(source) === 'import.meta.url';
-            if (url) found.set(node.name.text, path.text);
+            const path = pathOf(node.initializer);
+            if (path !== null) found.set(node.name.text, path);
         }
         ts.forEachChild(node, visit);
     };

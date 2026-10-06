@@ -159,3 +159,15 @@ No other behaviour findings. Ruling A1's `process.env.MODE` is set only under `-
 ## Usage
 
 claude-opus-5-5; tokens and tool-use count not visible to me (about 80 tool calls); about 3.5 hours of wall time including the pause, most of it the builds of cases 1, 2 and 9 under load. Scratch scripts and logs: `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/r/`.
+
+### Closed
+
+- S1: `src/lib/server/root/process/build-folders.ts` is named in the landing report among the paths outside the write list, with its reason (one home for the app's folder names); no step in flight writes it (`grep -l build-folders agents/briefs/{Q124,D23,Q125}.md` prints nothing).
+- S2: DESIGN.md's edits at :135, :188 and :398 are named in the landing report; the one conflict at landing was DESIGN.md's native-window line, where PR1's full-screen sentence and O30b's build folders are both kept.
+- P1: closed by the landing report's list of paths outside the write list.
+- P2: closed by St1's fix: the names are now written once in `build-folders.ts` for every server-side reader, and the head comment names the one reader that repeats them.
+- St1: fixed at landing. `build-folders.ts` holds `PLAIN_FOLDERS` beside `APP_FOLDERS` and `appHandler(checkout)`; `vite.config.ts` reads `PLAIN_FOLDERS`; `watch/git.ts` builds `IGNORED` from both; the head comment says that the search query, layer 1, writes the names again.
+- St2: fixed at landing: `handler_failed` moved before `port_in_use` in `config/text/server.yml`.
+- St3: the doubled `join(checkout, APP_FOLDERS.adapter, 'handler.js')` in `app.ts` fixed at landing by `appHandler`. The `isFile` reader stays in `src/server.ts` and `src/desktop/app.ts`: they are the server's entry and Electron's main process, each with its own `hasConfig` beside it, and `diskFs.isFile` lives in `server/machine/apps`, which neither entry loads.
+- B1: closed: the app answers a bad `--handler` value with the server's sentence as it answers a bad `--default-port`, which item 4 asked for.
+- Case 14 and case 15: not verifiable by the reviewer; case 14's row runs in `npm run test:slow` at landing; case 15 (the packaged app's dialog) has no look on TEST, which serves the browser page, so it rests on the catalog sentence.

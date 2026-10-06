@@ -293,7 +293,7 @@
 <g id="node14" class="node">
 <title>desktop to server</title>
 <polygon fill="none" stroke="none" points="301.88,-397.44 292.12,-397.44 292.12,-384.96 301.88,-384.96 301.88,-397.44"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="297" y="-388.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="297" y="-388.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
 </g>
 <!-- desktop&#45;&gt;desktop to server -->
 <g id="edge3" class="edge">

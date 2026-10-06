@@ -52,21 +52,6 @@ dispatch:   # steps in flight, up to six (Z632)
   builder_usage: hand-back 286,831 tokens, 65 tool uses, 16.5 min
   landing: not-started
   round: 0 (cases ruling agents/briefs/Q125-cases.md, rulings A to E (Z646) on the hand-back; builder resumed; G54's test, Z645 (a), added to the brief by message to the builder: tests/checks/config/arrangements.test.ts)
-- step: O30b
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a790ab45acb7513c3 (builder, launched 2026-10-06)
-  worktree: .agents/worktrees/O30b
-  base: dff7539f4
-  launched: 2026-10-06
-  report: agents/reviews/O30b-report.md
-  brief_check: agents/reviews/O30b-brief-check.md (a4fbb5ab96ae037e3, claude-opus-5-5, 225,807 tokens, 65 tool uses, 9.4 min), closed in the brief by a85fbf1484fff6900 (claude-opus-5-5; 179,741 tokens, 41 tool uses, 8.9 min)
-  shared_paths: with Q124: vite.config.ts (O30b's function form, Q124's few-line cache setting carried by hand at the second landing), tests/tiers/landing.mjs (head comment, both), tests/checks/diagrams/diagrams.test.ts (O30b :170-184, Q124 the per-case limits, disjoint), .gitignore (both add lines), README.md and HELP.md (disjoint lines); with E4g: DESIGN.md's tree (both lines kept) and HELP.md (disjoint); with Q123: DESIGN.md (:375 against the tree and :436) and HELP.md (disjoint); docs/diagrams regenerated at landing; so the merge is simple
-  landing: not-started
-  round: 0 (cases ruling agents/briefs/O30b-cases.md, rulings A1 and B1 on the hand-back; builder resumed)
-  builder_usage: hand-back 279,639 tokens, 76 tool uses, 35.7 min; final run 218,857 tokens, 129 tool uses, 138.8 min (its last notice came when its stuck shell, pid 80452, ended)
-  reviewer_report: agents/reviews/O30b-refuter.md (a1d5134e2f2e837cf, claude-opus-5-5, 238,618 tokens, 85 tool uses, 38.7 min)
 - step: Q124
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -250,7 +235,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-06. E4g landed (the apps guide); O30b lands next (its review saved, eight small findings fixed at landing); PR2 is being prepared. In flight: Q124 (round 1), D23 (building), Q125 (building).
+- 2026-10-06. O30b landed (the app's own build folders) after E4g (the apps guide); PR2's brief check is running. In flight: Q124 (round 1), D23 (building), Q125 (building).
 - 2026-10-06 12:55. Q123 landed (a terminal pane attached as its program left it; booking in plan.md; `agents/reviews/Q123-landing.md`) with five fixes at landing, B1 the top row's shift among them. In flight: E4g (repair round 1), Q124 (under review), O30b (under review), D23 and PR1 (building). Open items Z644 and Z645 raised. Next: Q125 into the free slot, then each landing as its review closes.
 - 2026-10-06 09:30. E4 landed (apps added while oculus runs; booking in plan.md; `agents/reviews/E4-landing.md`) after its look on TEST, which Axel's dev-server restart (Z631) made possible. Axel ruled Z630 (G51's words, written into guarded.md), Z632 (`workers_at_once` 6 in both files) and Z633 (step E4g, the apps guide in `tools/oculus/docs/apps.md`, first in the queue). Nothing in flight. Next: /spec for E4g, O30b, Q123, Q124, D23 and X3e, the six slots.
 - 2026-10-06 08:35. E4 staged on main, not committed: gate-E4 passed `npm run test:landing` (6 of 6), main's staged diff `cmp`-equal to the gate's, penpal and the Electron binary installed in main's node_modules, guarded.md names E4's tests (G1, G8, G9, G31, G49, G50). The look waits on Z631 (Axel's dev server needs a restart to resolve penpal); `~/.oculus/approvals.json` and `workspaces.json` back at their shasums, the scratch apps kept in the session scratchpad. Next: the look, the booking, the commit, then O30b, Q123, Q124 prepared.

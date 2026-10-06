@@ -1,8 +1,9 @@
 // Layer 2, server (the desktop host). The oculus server as a utility process of the app. It is
-// `src/server.ts` forked with the engine and the default port, never run in the main process, so a
-// long read of the config never stops the window's menus or its move. The process tells the app
-// each port it listens on and a first listen that failed (lib/server/root/process/parent.ts), and
-// asks it for the folder panel. Its output is printed on the app's own, under a prefix.
+// `src/server.ts` forked with the engine, the default port and the handler, never run in the main
+// process, so a long read of the config never stops the window's menus or its move. The process
+// tells the app each port it listens on and a first listen that failed
+// (lib/server/root/process/parent.ts), and asks it for the folder panel. Its output is printed on
+// the app's own, under a prefix.
 
 import { utilityProcess, type UtilityProcess } from 'electron';
 import {
@@ -23,6 +24,8 @@ export type ForkOptions = {
     /** The server's entry, `src/server.ts` of the checkout. */
     entry: string;
     engine: string;
+    /** The built handler the server loads, `build-app/handler.js` of the checkout. */
+    handler: string;
     /** The port a missing local.yml means. */
     defaultPort: number;
     env: NodeJS.ProcessEnv;
@@ -73,7 +76,14 @@ function relay(
 export function forkServer(options: ForkOptions): ServerProcess {
     const child: UtilityProcess = utilityProcess.fork(
         options.entry,
-        ['--engine', options.engine, '--default-port', String(options.defaultPort)],
+        [
+            '--engine',
+            options.engine,
+            '--default-port',
+            String(options.defaultPort),
+            '--handler',
+            options.handler
+        ],
         { env: options.env, stdio: 'pipe', serviceName: options.name }
     );
     let port: number | null = null;

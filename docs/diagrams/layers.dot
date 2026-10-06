@@ -17,7 +17,7 @@ digraph layers {
     "desktop to data" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "desktop" -> "desktop to data" [arrowhead=none];
     "desktop to data" -> "data" [];
-    "desktop to server" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "desktop to server" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "desktop" -> "desktop to server" [arrowhead=none];
     "desktop to server" -> "server" [];
     "routes to data" [label="18", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

@@ -4,10 +4,11 @@
 // and a first listen that failed, and asks the parent to show the folder panel. Started from a
 // terminal it has none and prints.
 
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { engineDir } from './lib/data/sources/config.ts';
 import { parseEngineArgs } from './lib/server/root/process/args.ts';
 import { createServerContext } from './lib/server/root/context.ts';
@@ -19,14 +20,16 @@ import { onShutdown } from './lib/server/root/process/shutdown.ts';
 import { serveContext, type Handler } from './lib/server/root/process/serve.ts';
 import { wordsOf } from './lib/server/root/process/words.ts';
 
-// The command line before anything else, so a mistyped flag or a directory holding no config/ is
-// said and the process ends without loading the build or opening the port. Without the flag the
-// engine is this file's own directory, which is what development and a plain start over the
-// checkout both mean.
+// The command line before anything else, so a mistyped flag, a directory holding no config/ or a
+// handler that is no file is said and the process ends without loading the build or opening the
+// port. Without `--engine` the engine is this file's own directory, which is what development and
+// a plain start over the checkout both mean. Without `--handler` the handler is the one the last
+// build of `npm run build` wrote.
 const parsed = parseEngineArgs(process.argv.slice(2), {
     cwd: process.cwd(),
     fallback: engineDir(),
-    hasConfig: (dir) => existsSync(join(dir, 'config'))
+    hasConfig: (dir) => existsSync(join(dir, 'config')),
+    isFile: (path) => statSync(path, { throwIfNoEntry: false })?.isFile() === true
 });
 if ('error' in parsed) {
     console.error(`oculus: ${parsed.error}`);
@@ -45,8 +48,19 @@ process.env.BODY_SIZE_LIMIT = String(BODY_LIMIT_BYTES);
 const parent = parentOf((process as { parentPort?: ParentPort }).parentPort);
 const t = wordsOf(parsed.engine);
 
+// The handler the command line names, or the built app of `npm run build`. A handler that does not
+// load is said through the catalog with its file and the error's message, and ends the process.
 const built = new URL('../build/handler.js', import.meta.url).href;
-const { handler } = (await import(built)) as { handler: Handler };
+const handlerUrl = parsed.handler === undefined ? built : pathToFileURL(parsed.handler).href;
+let loaded: { handler: Handler };
+try {
+    loaded = (await import(handlerUrl)) as { handler: Handler };
+} catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error(t('server.start.handler_failed', fileURLToPath(handlerUrl), reason));
+    process.exit(1);
+}
+const { handler } = loaded;
 const server = createServer();
 const { context, socket } = serveContext(server, handler, (portMove) =>
     createServerContext(

@@ -18,6 +18,7 @@ import { createServer, type Server } from 'node:http';
 import { createRequire } from 'node:module';
 import { basename, join, resolve } from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { APP_FOLDERS, APP_MODE } from '../../../src/lib/server/root/process/build-folders.ts';
 import { wordsOf } from '../../../src/lib/server/root/process/words.ts';
 
 /**
@@ -26,6 +27,8 @@ import { wordsOf } from '../../../src/lib/server/root/process/words.ts';
 const ELECTRON = createRequire(import.meta.url)('electron') as string;
 const CHECKOUT = resolve(import.meta.dirname, '..', '..', '..');
 const HARNESS = join(import.meta.dirname, 'app-harness.ts');
+/** The handler the app's own build writes, which the server rows load. */
+const HANDLER = join(CHECKOUT, APP_FOLDERS.adapter, 'handler.js');
 const PORT = 8817;
 const MINUTES = 10 * 60 * 1000;
 /** How long a process may take to end on SIGTERM before it is ended by its pid. */
@@ -52,10 +55,10 @@ afterEach(async () => {
 }, 60_000);
 
 beforeAll(() => {
-    if (existsSync(join(CHECKOUT, 'build', 'handler.js'))) return;
+    if (existsSync(HANDLER)) return;
     execFileSync(
         process.execPath,
-        [join(CHECKOUT, 'node_modules', 'vite', 'bin', 'vite.js'), 'build'],
+        [join(CHECKOUT, 'node_modules', 'vite', 'bin', 'vite.js'), 'build', '--mode', APP_MODE],
         {
             cwd: CHECKOUT,
             stdio: 'ignore'
@@ -306,7 +309,13 @@ describe('the desktop app starting and stopping', () => {
             await holder(PORT, '{"app":"other"}');
             const server = run(
                 process.execPath,
-                [join(CHECKOUT, 'src', 'server.ts'), '--engine', world.engine],
+                [
+                    join(CHECKOUT, 'src', 'server.ts'),
+                    '--engine',
+                    world.engine,
+                    '--handler',
+                    HANDLER
+                ],
                 world
             );
             expect(await server.ended).toBe(1);

@@ -1,6 +1,5 @@
-In flight (4 of 6 slots):
+In flight (3 of 6 slots):
 - Q124 (every tree check with no limit, and the landing's vitest cache race): repair round 1 (the .svelte-kit/types race), base ba6a995f2.
-- O30b (the app's own build folders): refuted, landing next, base dff7539f4.
 - D23 (language servers): building.
 - Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): building, base cfc9e60d9; Axel reads the new HELP.md and DESIGN.md before it lands.
 
@@ -34,7 +33,8 @@ Queued, in order (25 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- E4g (the apps guide), 2026-10-06, the commit of this landing.
+- O30b (the app's own build folders), 2026-10-06, the commit of this landing.
+- E4g (the apps guide), 2026-10-06, 7e6c14d8c.
 - PR1 (Present full screen), 2026-10-06, 1c36ba0c6.
 - E4 (the apps), 2026-10-06.
 - A3 (scheduled runs), 2026-10-06, af7d8df07.

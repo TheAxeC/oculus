@@ -2,6 +2,24 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+
+## Z649 (2026-10-06, step PR2)
+
+The question: the deck format Axel ruled leaves open how a later slide in a file takes its own kind and notes, how the general kinds are written in Markdown, how a deck is named in `slides:`, and the words that replace the hand-typed counts and domain lists.
+
+- Chosen: Slidev's convention for a slide's own front matter (YAML right after the `---`, closed by `---`); `|||` splits two columns; a section's numbered list draws as cards; a deck is named by its folder, or by its project for a `present/` folder; "A dozen active projects..." becomes "{{pillars.count}} pillar projects and {{more.count}} more."; the transition becomes "{{more.count}} more, same backbone"; both summary foots lose their domain lists; new ideas start `nascent`; a project card opens that project's own deck.
+- Not chosen: one front matter per file, so a second slide could carry no notes for PR4's presenter screen; keeping the hand-typed lines, which the ruled design removes.
+
+Where it is built: PR2. Booked in `plan.md` Rulings and `agents/briefs/PR2.md`.
+
+## Z648 (2026-10-06, step PR2)
+
+The question: a library for the Markdown slide decks, under `libraries: check`.
+
+- Chosen: the split written by hand (about 30 lines over the existing `splitFrontmatter` and `yaml`), the slides drawn by oculus's Present parts.
+- Not chosen: `@slidev/parser` (brings Slidev's headmatter, layouts and imports, its types package, a major release every few weeks); `@marp-team/marp-core` and `reveal.js` (would replace the Present view PR1 just built); `gray-matter` and `front-matter` (front matter is already split by oculus).
+
+Where it is built: PR2.
 ## Z647 (2026-10-06, step E4g)
 
 The question: E4g's round fix selects an asking app's tab in its pane, but a tab on a page not on screen stays unseen while the app's call waits, and DESIGN.md and the apps guide say the reader sees it.
