@@ -1,13 +1,12 @@
-In flight (0 of 6 slots; all six are filled next from the queue):
-- none.
+In flight (4 of 6 slots):
+- E4g (the apps guide in docs/apps.md): building, base 31068a9de.
+- Q124 (every tree check with no limit, and the landing's vitest cache race): building, base ba6a995f2.
+- Q123 (a terminal pane attached as its program left it): building, base a686df2ad; its landing waits on Axel's Z634 (G52's words).
+- O30b (the app's own build folders): building, base dff7539f4.
 
-Queued, in order (27 steps):
-- E4g (the apps guide in docs/apps.md): now.
-- O30b (the app's own build folders): now.
-- Q123 (a terminal pane attached as its program left it): now.
-- Q124 (the diagrams cases without their own limit, and the landing's vitest cache race): now.
+Queued, in order (23 steps):
 - D23 (language servers): now.
-- X3e (Files lists reordered by drag): now.
+- X3e (Files lists reordered by drag): waits on Axel's Z635 (the app's folder sheet and G42).
 - D45 (LaTeX as VS Code's LaTeX Workshop): at the first free slot (its brief rechecked on main).
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.
