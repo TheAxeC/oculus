@@ -161,6 +161,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Z667 (2026-10-06, PR3, a rule clash): your ruling Z664 has PR3 reword the 40 deck lines with a spaced hyphen, in 8 project decks under `projects/`; the plan's rules file (`agents/spec.md:37` and `:101`) lets a builder write under `projects/` only through a script the brief names, and a rewording is a judgment no script can make (the hub's rule that scripts compute facts). Options: (a) the PR3 builder rewords the 40 lines by hand in its worktree copies of the 8 files the brief names, and `agents/spec.md:101` gains the sentence "A brief may also name lines of hub text a builder rewords by hand, where a ruling of Axel's asks for the rewording; the report lists each line before and after, and the reviewer reads each one." Pros: the rewording lands with PR3 as you ruled, reviewed line by line; the rule's protection (no unnamed data path written) stands. Cons: a second way into hub data beside the script. (b) The rewording leaves PR3 and becomes a small text step of its own under the same exception. Pros: PR3's diff stays code. Cons: the same exception, one more step and landing for 40 lines. (c) You reword them yourself. Pros: no change to the rules. Cons: your hands; this is the lazy option. Recommendation (a): it does what Z664 asked in the step you named, and the exception is as narrow as the rule's own data-path clause. PR3's builder starts on parts 1 to 7 and 9 meanwhile, and does part 8 once you rule.
+
 
 
 
