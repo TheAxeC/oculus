@@ -1,4 +1,4 @@
-In flight (3 of 6 slots):
+In flight (4 of 6 slots):
 - Q124 (every tree check with no limit, and the landing's vitest cache race): repair round 1 (the .svelte-kit/types race), base ba6a995f2.
 - D23 (language servers): building.
 - Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): building, base cfc9e60d9; Axel reads the new HELP.md and DESIGN.md before it lands.
@@ -6,7 +6,7 @@ In flight (3 of 6 slots):
 Queued, in order (25 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
 - X3e (Files lists reordered by drag): prepared again under Z635 (a); once D23 has landed (both split Palette.svelte).
-- PR2 (Present decks from any folder): brief written and checked, its findings closed; waits on Axel's ruling Z650 (the cockpit's public deck) before dispatch.
+- PR2 (Present decks from any folder): building, base 6fb105892.
 - PR3 (Present decks edited and generated, PDF export): once PR2 has landed.
 - PR4 (Present's presenter screen): once PR3 has landed.
 - D28 (saving a file as VS Code does): once X3e has landed.
