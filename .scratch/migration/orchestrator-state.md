@@ -44,7 +44,8 @@ dispatch:   # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:sonnet at ordo-high
   model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a80adc4082930a5ef (builder, launched 2026-10-06)
+  session_id: a12b39260f0c0a455 (builder, launched 2026-10-07 on the worktree's partial changes after the builder before it was stopped by accident; served claude-sonnet-5-5)
+  builders_before: a80adc4082930a5ef (claude-sonnet-5-5, stopped 2026-10-07 mid-build, its partial changes kept in the worktree)
   worktree: .agents/worktrees/D23c
   base: 951b61e3
   launched: 2026-10-06
