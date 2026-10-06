@@ -64,8 +64,9 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/Q125-report.md
   brief_check: agents/reviews/Q125-brief-check.md (a401d3fdf1183fba1, claude-opus-5-5, 223,091 tokens, 83 tool uses, 12.3 min)
   shared_paths: HELP.md, DESIGN.md and README.md with E4g, O30b, Q124, D23 and PR1, and config/layout.yml with E4g and D23, under Z642: the second to land carries the other's text; docs/diagrams regenerated at landing
+  builder_usage: hand-back 286,831 tokens, 65 tool uses, 16.5 min
   landing: not-started
-  round: 0 (G54's test, Z645 (a), added to the brief by message to the builder: tests/checks/config/arrangements.test.ts)
+  round: 0 (cases ruling agents/briefs/Q125-cases.md, rulings A to E (Z646) on the hand-back; builder resumed; G54's test, Z645 (a), added to the brief by message to the builder: tests/checks/config/arrangements.test.ts)
 - step: PR1
   executor: agent
   worker: claude:sonnet at ordo-high

@@ -2,6 +2,15 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z646 (2026-10-06, step Q125)
+
+The question: Q125's builder handed back at its first run: the brief named three guides, so about 100,000 of HELP.md's 165,450 characters (the window, the views table's detail, files and search, terminals and commands) had no destination, and HELP.md and DESIGN.md would each have been cut because the other said a behaviour, leaving it only in code comments.
+
+- Chosen: (a) four more guides under `docs/` (Window, Views, Files and search, Terminals and commands), each the one home of its concern's user-visible behaviour; DESIGN.md keeps the decisions and points to them; every guide a tab of the Help page, chords to h9 (`agents/briefs/Q125-cases.md`).
+- Not chosen: (b) the detail kept in HELP.md, which leaves the manual as long as it is, against Z636, the lazy option for HELP.md; (c) the detail dropped where DESIGN.md or a head comment says it, which loses what a reader needs, the lazy option for the facts.
+
+Where it is built: Q125. Booked in `plan.md` Rulings.
+
 ## Z643 (2026-10-06, step Q125)
 
 The question: Q125 moves HELP.md's developer sections, which hold the nine diagrams, into README.md and DESIGN.md. The Help view draws diagrams only for the manual (`server/content/docs.ts`, `renderManualParts`; `views/system/help/Diagram.svelte`), so the diagrams would leave oculus, and the guides under `docs/` need a place to be opened.
