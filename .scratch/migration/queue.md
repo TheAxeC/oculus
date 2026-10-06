@@ -1,24 +1,24 @@
-In flight (2 of 6 slots; every queued step waits on PR3 or D23c landing, or on a step after them):
-- PR3 (Present decks edited and generated, PDF export): repair round 1 running (`agents/briefs/PR3-round1.md`), base 272f60b4; the diagnosis of `start.test.ts`'s intermittent server-count rows runs beside it, its fix to land with PR3.
-- D23c (library definitions read-only, the symbol selected on open): builder restarted on the worktree's partial changes, base 951b61e3.
+In flight (2 of 6 slots):
+- PR3 (Present decks edited and generated, PDF export): repair round 1; a diagnosis of `start.test.ts` beside it.
+- D23c (library definitions read-only, the symbol selected on open): building.
 
 Queued, in order (23 steps):
-- D45 (LaTeX as VS Code's LaTeX Workshop): ruled; waits for D23c to land (both move code out of `Source.svelte`, at its 520-line limit), then /spec again.
-- X3e (Files lists reordered by drag): rechecked (`agents/reviews/X3e-premise-recheck-2.md`); waits for PR3 (both rework `Palette.svelte`) and D23c (both change `Source.svelte` at its limit) to land, then /spec again, its seven choices taken in automode there.
-- PR4 (Present's presenter screen): once PR3 has landed.
-- D28 (saving a file as VS Code does): once X3e has landed.
-- M6 (the collection forms removed): once X3e and D28 have landed.
-- D11 (the debug client for rite): once D45 has landed.
-- D15 (PDF reading): once D45 has landed.
-- M7 (a project folder moved in Files): once M6 has landed.
-- D41 (links in Markdown checked): once M7 has landed.
-- M8 (the hub's YAML checked in the editor): ruled in automode; waits for D23c to land.
-- D43 (LaTeX navigation through texlab): surveyed (`agents/reviews/D43-premise-survey.md`); waits for D23c to land (both change `server/machine/lsp/`, 10 items, and `relay.ts`), then /spec, its choices taken in automode.
-- D23b (cross-file language features): waits until D23c lands (both restructure `server/machine/lsp/`, `relay.ts` and `transport.ts`; not a simple merge); its recheck (`agents/reviews/D23b-premise-recheck.md`) names nine choices for Axel, raised at its /spec.
-- D33 (the Problems view): surveyed (`agents/reviews/D33-premise-survey.md`), its diagnosis of the card cursor after a reload running; waits for D23c to land (both change `source-file.ts` and `source.svelte.ts`, D33 building on D23c's column), then /spec, its choices taken in automode.
-- D39 (hub keys as links): once M8 and D23b have landed.
-- D36 (linters on save): once D33 has landed.
-- D40 (the writing rules as editor marks): once D36 has landed.
+- D45 (LaTeX as VS Code's LaTeX Workshop): after D23c.
+- X3e (Files lists reordered by drag): after PR3 and D23c.
+- PR4 (Present's presenter screen): after PR3.
+- D28 (saving a file as VS Code does): after X3e.
+- M6 (the collection forms removed): after X3e and D28.
+- D11 (the debug client for rite): after D45.
+- D15 (PDF reading): after D45.
+- M7 (a project folder moved in Files): after M6.
+- D41 (links in Markdown checked): after M7.
+- M8 (the hub's YAML checked in the editor): after D23c.
+- D43 (LaTeX navigation through texlab): after D23c.
+- D23b (cross-file language features): after D23c.
+- D33 (the Problems view): after D23c.
+- D39 (hub keys as links): after M8 and D23b.
+- D36 (linters on save): after D33.
+- D40 (the writing rules as editor marks): after D36.
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (release readiness): paused (Axel).
 - O29 (retiring the cockpit): paused (Axel).
