@@ -1,7 +1,7 @@
-In flight (3 of 5 slots):
-- A3 (scheduled Update runs): repair round 2.
-- O30 (the native window in Electron): building.
-- E4 (the apps): building.
+In flight (3 of 5 slots; the other two wait on A3's landing, which waits on Z624):
+- A3 (scheduled Update runs): repair rounds done; its landing waits on Axel's ruling on Z624.
+- O30 (the native window in Electron): building again after its landing was backed out (the slow tests ran beside a build).
+- E4 (the apps): landing in `.agents/worktrees/gate`; waits on Axel's ruling on Z605.
 
 Queued, in order (23 steps):
 - D23 (language servers): once A3 has landed.
