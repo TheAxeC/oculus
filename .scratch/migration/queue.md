@@ -4,11 +4,15 @@ In flight (4 of 6 slots):
 - Q123 (a terminal pane attached as its program left it): building, base a686df2ad; resumed with the cases ruling (the pty folder split, and the read of a program that left); G52 ruled (Z634 (a)).
 - O30b (the app's own build folders): building, base dff7539f4.
 
-Queued, in order (24 steps):
+Queued, in order (28 steps):
 - Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): next; it launches when no step in flight writes HELP.md or DESIGN.md, and until it lands no step that writes either is launched.
 - D23 (language servers): its brief is prepared now; launched after Q125 lands.
 - D45 (LaTeX as VS Code's LaTeX Workshop): its brief is rechecked now; launched after Q125 lands.
 - X3e (Files lists reordered by drag): prepared again under Z635 (a); launched after Q125 lands.
+- PR1 (Present full screen): after Q125 lands.
+- PR2 (Present decks from any folder): once PR1 has landed.
+- PR3 (Present decks edited and generated, PDF export): once PR2 has landed.
+- PR4 (Present's presenter screen): once PR3 has landed.
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.
 - D11 (the debug client for rite): once D45 and D23 have landed.
