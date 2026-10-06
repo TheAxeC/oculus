@@ -1,6 +1,6 @@
 # Q124 report: every tree check runs under `npm run test:checks` with no time limit, and vitest runs started together no longer write a shared deps cache
 
-Everything in the brief is done, with two findings the orchestrator should read first: (1) a different race that the rounds showed and the brief does not cover (`svelte-check` reads `.svelte-kit/types` while a vitest start rewrites it, section "Findings outside the brief"), unfixed; (2) one premise of the brief about `results.json` does not hold (section "Premises that did not hold").
+Everything in the brief is done, and repair round 1 is done: the `.svelte-kit/types` race is ended at its cause in `vite.config.ts` (section "Repair round 1"); one premise of the brief about `results.json` does not hold (section "Premises that did not hold").
 
 ## Open items of the state file, verbatim
 
@@ -65,7 +65,7 @@ Removing a limit preserves behaviour, so none of the nine has a failing line on 
 | ASCII gate | the spec's `LC_ALL=C perl -ne ...` over `src tests bin config` prints nothing, exit 0; `LC_ALL=C grep -n '[^ -~]'` over the ten changed files prints nothing | DONE |
 | History words and package ids in added comment lines | `diff <base> <file> \| grep '^>' \| grep -inE "before\|used to\|no longer\|still\|always\|as before\|previously\|the step adds\|after this\|Q[0-9]+\|[A-Z][0-9]{2}[a-z]?\b\|20[0-9]{2}"` over `landing.mjs`, `quick.mjs`, `vite.config.ts`, `README.md`, `HELP.md` prints nothing | DONE |
 | Case-1 failure not reproduced as a test | no test added; no guarded entry asks for one | DONE |
-| Race on `.svelte-kit/types` between a vitest start and `svelte-check` | observed in 1 of 10 runs of `test:quick` beside `npm test` after the change, 0 of 10 before; not fixed | NOT DONE (outside the brief, see below) |
+| Race on `.svelte-kit/types` between a vitest start and `svelte-check` | ended in repair round 1: 0 `ENOENT` lines in 74 concurrent starts after the change, 2 in 30 starts before (section "Repair round 1") | DONE |
 
 ### Case 2 rounds, after the change
 
@@ -170,7 +170,7 @@ The `@module-tag slow` at `claude-usage.test.ts:3` stays.
 
 ## Findings outside the brief
 
-- Race between a vitest start and `svelte-check`: every vitest start of this config runs SvelteKit's `sync.all` (`@sveltejs/kit/src/exports/vite/index.js:449` / `:744`), which rewrites `.svelte-kit/types/**/$types.d.ts` with `fs.writeFileSync` (`core/sync/write_types/index.js:359`) and, for routes that no longer exist, removes files (`:52`, `:369`). `svelte-check` reading a `$types.d.ts` while that write truncates it reports `Cannot find module './$types'`. Observed once, in 10 runs of quick beside `npm test` after the change: `c2-quick-empty` round 3, `FAILED  svelte-check`, five errors in `src/routes/+page.svelte`, `+page.server.ts` and `+page.ts` (full output kept in the scratchpad `c2-quick-empty-npm_run_test_quick-*.out`); 0 of 10 quick-pair starts on the unchanged tree. It can reach the landing's `npm run check` (lane 3) and `npm run test:quick` whenever a vitest run starts beside them. It is a different folder (`.svelte-kit`) and a different reader from the deps cache the brief names, and the writer is SvelteKit's own plugin, so I did not change it; the fix would be a change to when SvelteKit's sync runs (not an option of vitest or vite that I found), and a retry or a stagger is excluded by the brief. Unfixed and unmeasured beyond the one observation: the orchestrator rules on whether it becomes a step.
+- The race between a vitest start and `svelte-check` is closed in repair round 1 (section "Repair round 1").
 - Under simultaneous load `npm test` shows 5000 ms test timeouts in files of its own (`manifest.test.ts`, `undo.test.ts`, `watch.test.ts`, `approve.test.ts`, `roots.test.ts`, `config-value.test.ts`), both before and after the change; the step does not touch them and I did not investigate them.
 - `npm run diagrams` was run once before the verify list as the spec says; the committed diagrams already matched (the case `are what the source gives now, each file byte for byte` passed before it ran), so it rewrote identical bytes.
 
@@ -186,3 +186,52 @@ The `@module-tag slow` at `claude-usage.test.ts:3` stays.
 ## Standards pages and prose
 
 `.agents/plan.yaml:8` has `standards: []`, so there are no standards pages to read the new sentences against; I read them against `spec.md` and the hub's prose rules (plain, ASCII, no em dash, no quip, no history words). The longest new sentences are the `landing.mjs` comment sentence beginning "They share no folder that two of them write" (about 50 words) and the `noVitestDepsCache` doc comment's first sentence (about 40 words); each carries a cause and its effect and I left them in one sentence each rather than split them into fragments.
+
+## Repair round 1
+
+Closures, each with the first line updated above (the first line now names the `.svelte-kit/types` race as ended).
+
+### B1: the `.svelte-kit/types` race ended at its cause
+
+- **Cause (installed sources):** every vitest start creates a Vite server, so SvelteKit's plugin `vite-plugin-sveltekit-compile` runs its `configureServer` (`@sveltejs/kit/src/exports/vite/index.js:1203-1204`), which calls `dev()`; `dev()` runs `sync.init` (`exports/vite/dev/index.js:65`) and `update_manifest()` (`:328`, calling `sync.create` at `:116`). `sync.create` writes `.svelte-kit/types/**/$types.d.ts` with `fs.writeFileSync` (`core/sync/write_types/index.js:359`) and deletes files of routes that are gone (`:46-54`, `:369-370`); `write_if_changed` keeps its previous contents per process (`core/sync/utils.js:18-33`), so every start writes. A second vitest start or a `svelte-check` reading the folder meanwhile finds a file empty or missing.
+- **Fix:** `vite.config.ts` wraps that one plugin's `configureServer` (`syncTypesOnce`, `vite.config.ts:41-70`, and `const kit = await sveltekit(...)`): when the server has the `__vitest__` environment (which only vitest's server has, `cli-api.CnMVyzaz.js:14187`) and `.svelte-kit/non-ambient.d.ts` exists (the last file `sync.create` writes, `core/sync/sync.js:40`), the hook returns without running `dev()`. Every other case runs the original hook. The config throws at load when the plugin or its `configureServer` function is missing, so a SvelteKit upgrade that renames it fails loudly.
+- **Where types are written now:** by `svelte-kit sync` only, which `npm run check`, `npm run test:quick` and the landing's check lane already run.
+- **A lone `npx vitest run`:** on a checkout without `.svelte-kit/non-ambient.d.ts` the original hook runs once, as before. Shown: `.svelte-kit` moved away, then `npm test -- tests/server/machine/commands/run.test.ts` passed (`Tests  6 passed (6)`) and regenerated `ambient.d.ts env.d.ts generated non-ambient.d.ts tsconfig.json types`. After the routes change, `npx svelte-kit sync` refreshes the types. With the types present, a vitest run left the mtimes of `.svelte-kit/types/src/routes/$types.d.ts` and `non-ambient.d.ts` unchanged.
+- **Dev server, build, preview:** none has the `__vitest__` environment, so they run the original hook. A `resolveConfig` call for `serve` prints `cacheDir ./node_modules/.vite`, `environments client,ssr`, one `vite-plugin-sveltekit-compile` plugin whose `configureServer` is a function, and the plugin order `oculus:component-before-style,vite-plugin-sveltekit-compile,oculus-server,oculus:no-vitest-deps-cache`.
+- **Evidence, concurrent rounds, every run to its end** (two starts together per round; counting lines matching `ENOENT|$types|.svelte-kit/types`; driver `r2.mjs`, logs `q124b/*.log` in the session scratchpad):
+
+| Pair | Before the repair | After the repair |
+| --- | --- | --- |
+| `npm test -- <2 files>` beside `npm run test:checks -- <2 files>`, 15 rounds | 2 of 30 starts printed a line, 2 lines in total: `ENOENT: no such file or directory, stat '.../.svelte-kit/types/src/routes/proxy+page.server.ts'` (rounds 4 and 7); all exit 0 | 0 of 30 starts, 0 lines; all exit 0 |
+| `npm run check` beside `npm test -- <2 files>`, 12 rounds | 0 of 24 starts, 0 lines | 0 of 24 starts, 0 lines; all exit 0 |
+| `npm run test:quick -- tests/tiers/run.mjs` beside `npm test -- <2 files>`, 10 rounds | not rerun; the earlier rounds of this report had one `svelte-check` failure (`Cannot find module './$types'`) in 10 | 0 of 20 starts, 0 lines; all exit 0 |
+
+- The `npm run check` pair did not show the failure before the repair in these rounds, so that row does not prove the repair; the two-start pair and the earlier quick failure do. The window is small: 2 hits in 30 starts.
+- Whole suites after the repair: `npm test` exit 0, `Test Files  103 passed | 17 skipped (120)`, `Tests  608 passed | 72 skipped (680)`; `npm run test:checks -- --reporter=verbose` exit 0, `Test Files  16 passed (16)`, `Tests  230 passed (230)`, the nine cases among them; neither output holds an `ENOENT` line (`grep -c ENOENT` prints 0 for both).
+- **What the repair does not cover:** two `svelte-kit sync` runs together (for example `npm run check` beside `npm run test:quick`) both write the types; and a fresh checkout started by two vitest runs at once has both run the original hook once, since neither finds the marker. Neither is a vitest start beside a reader of existing types, which is the failure seen.
+
+### S1, S2, S3: comments rewritten
+
+- S1, `tests/tiers/landing.mjs:9-17`: the comment now says vite.config.ts turns off the one folder two runs rename into and keeps a vitest start from running the type sync while the types exist, and that the files still shared (`results.json`, `_svelte_metadata.json`) are hints a reader survives torn, with the two `try` reads named. The claim "share no folder" and "written whole" are gone.
+- S2, `tests/tiers/quick.mjs:11-12`: the module cache is read by another `test:quick` run; the clause about `npm test` is gone.
+- S3, `tests/tiers/quick.mjs:128-131`: the doc comment says npm test leaves a slow file out and test:slow runs it unless it is under `tests/checks`, where test:checks runs it.
+
+### P1: citation corrected
+
+The citation in "Findings outside the brief" now names `exports/vite/dev/index.js:65` and `:116` (and `:328`) as the paths a vitest start takes; `exports/vite/index.js:449` (inside `is_build`) is no longer cited.
+
+### Verify list rerun after the repair
+
+| Check | Output |
+| --- | --- |
+| `npm run test:quick -- <the ten changed paths>` | `test:quick: 19.3 s (limit 45.0 s); every command passed` |
+| `npm run test:checks -- --reporter=verbose` | exit 0, `Test Files  16 passed (16)`, `Tests  230 passed (230)` |
+| `npm test` | exit 0, `Test Files  103 passed \| 17 skipped (120)`, `Tests  608 passed \| 72 skipped (680)` |
+| the four files with `--testTimeout 0 --hookTimeout 0` | exit 0, `Tests  53 passed (53)` |
+| `grep -rnE "\}, [0-9_]+\);\|timeout: *[0-9]\|\{ *timeout\|setConfig\|testTimeout\|hookTimeout" tests/checks` | prints nothing (exit 1) |
+| spec ASCII gate over `src tests bin config`; `LC_ALL=C grep -n '[^ -~]'` over the three files changed this round | prints nothing; gate exit 0 |
+| `sh utils/unused-exports.sh` | exit 0, 381 lines, none naming `vite.config.ts` or `tests/tiers/` (`syncTypesOnce` is not exported) |
+
+Files changed this round: `vite.config.ts` (72 base, 135 now), `tests/tiers/landing.mjs` (54 base, 64 now), `tests/tiers/quick.mjs` (285 base, 290 now), both inside the original write list. `package.json`, `README.md` and `HELP.md` are unchanged this round.
+
+Judgment calls: (1) the wrapper keys on the `__vitest__` environment and the marker file, with no environment variable; reversible by deleting `syncTypesOnce`. (2) The marker is the fixed path `.svelte-kit/non-ambient.d.ts`, SvelteKit's default `outDir`; the checkout sets no other (`kit` options are inline in `vite.config.ts`). (3) `vite.config.ts` now has a top-level `await`.

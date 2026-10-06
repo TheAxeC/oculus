@@ -64,8 +64,8 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/Q124-brief-check.md (a637e9ef56264db07, claude-opus-5-5, 202,225 tokens, 63 tool uses, 9.0 min), closed in the brief by ad1758291d4f08a72 (claude-opus-5-5; 123,025 tokens, 19 tool uses, 4.4 min)
   shared_paths: with O30b: vite.config.ts (O30b turns the config into a function of the mode, Q124 changes its cache setting; the second landing re-applies the other's few lines inside the new shape) and tests/tiers/landing.mjs (head comment only, both); with D23: package.json (D23 adds dependencies, Q124 changes the test scripts, separate hunks); with O30b, HELP.md (O30b :186, :365, :367, Q124 :371-373, adjacent and merged at the second landing); so the merge is simple
   landing: not-started
-  round: 1 (sent 2026-10-06 to a39e65a9fa382453f: the .svelte-kit/types race of the review's B1 ended at its cause, the comments S1 to S3, the report's P1 citation)
-  builder_usage: 242,256 tokens, 97 tool uses, 97.4 min
+  round: 1 (sent 2026-10-06 to a39e65a9fa382453f: the .svelte-kit/types race of the review's B1 ended at its cause, the comments S1 to S3, the report's P1 citation) ; returned 2026-10-06, reviewer over round 1 a8c2b6c8333c87868 running
+  builder_usage: 242,256 tokens, 97 tool uses, 97.4 min; round 1: 300,812 tokens, 142 tool uses, 62.1 min
   reviewer_report: (a68c2590b5c60eb18, claude-opus-5-5, stopped: dispatched before /refute was invoked for Q124); agents/reviews/Q124-refuter.md (a8ffa34a027b813e6, claude-opus-5-5, 178,043 tokens, 52 tool uses, 62.6 min)
 ```
 
@@ -175,6 +175,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Z650 (2026-10-06, step PR2, a clash of two rulings, automode excluded). PR2 (Z637 to Z640) replaces every `PRESENT.md` with a `present/` deck, while the cockpit stays in service because O29 is paused (Z425). The cockpit's public showcase, `tools/present/build.py` with `deck_config.py`, builds `tools/present/present.html` from `PRESENT.md`, and `.agents/skills/research-cockpit/SKILL.md:62,92-95` tells a SYNC run to edit `PRESENT.md` and rebuild it. After PR2 as briefed, that build makes an empty deck and the skill points at files that no longer exist. Options: (a) PR2 also changes `tools/present/build.py` and `deck_config.py` to read each project's `present/main.md` first `kind: project` slide (the same keys the `present:` map held) and rewrites the skill's two places to name `present/main.md`; the showcase keeps working until O29. (b) PR2 rewrites only the skill: a SYNC run edits `present/main.md` and no longer rebuilds `tools/present`; the showcase stays as last built, and oculus's Present view is the deck. (c) PR2 waits for O29. Recommendation (a): the showcase is the hub's one public deck (the skill calls it the sole public showcase) and the keys are unchanged, so the change is a reader path in two files. (b) is the lazy option: it leaves a tool in service broken. PR2 is not dispatched until this is ruled.
+
 
 
 
@@ -235,7 +237,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-06. O30b landed (the app's own build folders) after E4g (the apps guide); PR2's brief check is running. In flight: Q124 (round 1), D23 (building), Q125 (building).
+- 2026-10-06. O30b landed (the app's own build folders) after E4g (the apps guide); PR2's brief is checked and closed, waiting on Z650. In flight: Q124 (reviewer over round 1), D23 (building), Q125 (building).
 - 2026-10-06 12:55. Q123 landed (a terminal pane attached as its program left it; booking in plan.md; `agents/reviews/Q123-landing.md`) with five fixes at landing, B1 the top row's shift among them. In flight: E4g (repair round 1), Q124 (under review), O30b (under review), D23 and PR1 (building). Open items Z644 and Z645 raised. Next: Q125 into the free slot, then each landing as its review closes.
 - 2026-10-06 09:30. E4 landed (apps added while oculus runs; booking in plan.md; `agents/reviews/E4-landing.md`) after its look on TEST, which Axel's dev-server restart (Z631) made possible. Axel ruled Z630 (G51's words, written into guarded.md), Z632 (`workers_at_once` 6 in both files) and Z633 (step E4g, the apps guide in `tools/oculus/docs/apps.md`, first in the queue). Nothing in flight. Next: /spec for E4g, O30b, Q123, Q124, D23 and X3e, the six slots.
 - 2026-10-06 08:35. E4 staged on main, not committed: gate-E4 passed `npm run test:landing` (6 of 6), main's staged diff `cmp`-equal to the gate's, penpal and the Electron binary installed in main's node_modules, guarded.md names E4's tests (G1, G8, G9, G31, G49, G50). The look waits on Z631 (Axel's dev server needs a restart to resolve penpal); `~/.oculus/approvals.json` and `workspaces.json` back at their shasums, the scratch apps kept in the session scratchpad. Next: the look, the booking, the commit, then O30b, Q123, Q124 prepared.

@@ -1855,3 +1855,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z647 (2026-10-06, the orchestrator, automode): E4g's asking app's page switched to, fixed at landing.
 - Z648 (2026-10-06, the orchestrator, automode): PR2's deck split written by hand, no slide library.
 - Z649 (2026-10-06, the orchestrator, automode): PR2's slide format details and converted words.
+- Z650 (2026-10-06): PR2 against the paused cockpit's public deck, raised to Axel (a clash of rulings).
+- Z651 (2026-10-06, the orchestrator, automode): PR2's brief check closed in the brief.

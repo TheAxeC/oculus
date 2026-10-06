@@ -3,6 +3,15 @@
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
 
+
+## Z651 (2026-10-06, step PR2)
+
+The question: points PR2's brief check found the brief and the ruled design leave open or state wrongly.
+
+- Chosen: a count counts every slide of a group's members, placed or not, as the design says; the key hint drawn by Present in the foot of every deck's first slide, since no key catalog exists; the Present deck menu also lists the decks opened in that pane before; a summary member with no project slide gives a row with empty mechanism and headline and no finding; a project carries `deck?` (its `present/` folder) for apps in place of `present?`; the `deck-slides` write carries the list it was read from and refuses a changed file; the two old `deck` records keep their History name and their undo is refused; a domain missing from `vocab.yml` is a finding drawn in the neutral tone; the archived `hccnet-fl` and `fed-faithful-ecg` slides become their own decks; the malformed-deck cases are quoted runs, not tests, since no guarded entry covers a malformed deck.
+- Not chosen: the key hint on the title slide only (a deck without a title slide would show none); deleting the archive's `PRESENT.md` files (loses the HCCNet-FL slide); widening G32 to malformed input, which is Axel's wording to rule.
+
+Where it is built: PR2. Booked in `plan.md` Rulings and `agents/briefs/PR2.md`.
 ## Z649 (2026-10-06, step PR2)
 
 The question: the deck format Axel ruled leaves open how a later slide in a file takes its own kind and notes, how the general kinds are written in Markdown, how a deck is named in `slides:`, and the words that replace the hand-typed counts and domain lists.
@@ -17,7 +26,7 @@ Where it is built: PR2. Booked in `plan.md` Rulings and `agents/briefs/PR2.md`.
 The question: a library for the Markdown slide decks, under `libraries: check`.
 
 - Chosen: the split written by hand (about 30 lines over the existing `splitFrontmatter` and `yaml`), the slides drawn by oculus's Present parts.
-- Not chosen: `@slidev/parser` (brings Slidev's headmatter, layouts and imports, its types package, a major release every few weeks); `@marp-team/marp-core` and `reveal.js` (would replace the Present view PR1 just built); `gray-matter` and `front-matter` (front matter is already split by oculus).
+- Not chosen: `@slidev/parser` (it would replace only the roughly 50-line split, and brings Slidev's own rules for the decks, such as a slide's last HTML comment taken as notes and a leading yaml code block taken as front matter, which any upgrade can change, and `@slidev/types` with Vue, Monaco, Mermaid and Vite plugins as dependencies); `@marp-team/marp-core` and `reveal.js` (would replace the Present view PR1 just built); `gray-matter` and `front-matter` (front matter is already split by oculus).
 
 Where it is built: PR2.
 ## Z647 (2026-10-06, step E4g)

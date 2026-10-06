@@ -6,7 +6,7 @@ In flight (3 of 6 slots):
 Queued, in order (25 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
 - X3e (Files lists reordered by drag): prepared again under Z635 (a); once D23 has landed (both split Palette.svelte).
-- PR2 (Present decks from any folder): being prepared (brief and brief check).
+- PR2 (Present decks from any folder): brief written and checked, its findings closed; waits on Axel's ruling Z650 (the cockpit's public deck) before dispatch.
 - PR3 (Present decks edited and generated, PDF export): once PR2 has landed.
 - PR4 (Present's presenter screen): once PR3 has landed.
 - D28 (saving a file as VS Code does): once X3e has landed.
