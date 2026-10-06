@@ -74,6 +74,8 @@ dispatch:   # steps in flight, up to seven (Z423)
   patch: agents/reviews/O30-backed-out.patch applied with --3way (7 files with conflict markers); agents/reviews/O30-landing-fixes.diff for item 20
   diagnosis: agents/reviews/O30-diagnosis.md, three headings (ae831f63ce80bd34e, adfea7fe3bb4905aa, adb7a3d3f5225357b); the third is the landing red line, fixed by items 17 to 19
   shared_paths: with E4: package.json and the lockfile (each its own dependency, the lockfile regenerated), hooks.server.ts (E4 in handle, O30 HEADERLESS), +page.svelte (separate lines), context.ts (separate lines), writes.svelte.ts (E4 one function for an app's write, O30 the token listeners), read-again.ts (E4 its tabForKind call, O30 its move to actions/ with that call unchanged, a rename git carries the edit into), boundaries.test.ts (separate rows), HELP.md and DESIGN.md disjoint lines, the diagrams regenerated; with A3: package.json and the lockfile, server.yml (:19-49 vs :97-99), context.ts (separate lines), terminals.svelte.ts and shapes.ts (each adds its own member), +page.svelte (separate lines), boundaries.test.ts, HELP.md and DESIGN.md disjoint lines, the diagrams regenerated; each both-add or separate, so the merge is simple
+  builder_usage: 250,481 tokens, 70 tool uses, 10.8 min
+  reviewer_report: (a5caaef6badbe2dfe, claude-opus-5-5, stopped: it imported tests/tiers/landing.mjs, which ran the landing list and started the app through the slow lane, against the standing demand; 271,547 tokens, 72 tool uses, 12.0 min; its report is not used)
   landing: not-started
   round: 0
 ```
