@@ -4,23 +4,100 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
-## Z672 (2026-10-07, step M8, the orchestrator, automode)
+## Z673 (1) (2026-10-07, step D23c, the orchestrator, automode): the test case for a library opened read-only
 
-each part its recommendation as put to Axel 2026-10-07. (1) `from:` is the one reference key in every schema: `options_from` in the 16 hub `schema:` blocks, `values_from` in `options.yml`, the readers, the apps API's `optionsFrom` (`docs/apps.md`) and the cockpit selftest are renamed to it. (2) A `from:` names a registry by its `sources.yml` name (`from: people`) and a vocab list with the prefix `vocab.` (`from: vocab.venue_categories`). (3) A condition is `when:`, a map of field to a value or a list of values that must all hold for the field to be allowed; `required: { when: ... }` for a conditional requirement; a tier condition is a path pattern (`when: { path: projects/archive/** }`). (4) `options.yml`'s `description:` and `values:` are renamed `help:` and `options:`. (5) `registries/career.yml` and `feeds/literature-radar.yml` get their own `schema:` block, with a nested field form for career's sections; the side projects' schema is `config/catalogs/side-project-schema.yml`. (6) oculus validates the hub through the generated JSON Schemas with ajv 8.20.0 (MIT) as a direct dependency, replacing `validate.ts`'s `REFERENCES` table. (7) The data: `pmc-patients` `access: public` becomes `open`; `outcome` and `doi` are allowed on every tier, the manifest schema's section renamed; `timing`, `deadline` and `call` are allowed on every venue, the month fields conference-only; a new event role value for a talk a co-author gives, set on the Graz BCI event, with `link` kept required for `role: present`; `thesis` and `meeting` added to `venue_categories` (`kuleuven-thesis`, `uhasselt-thesis` take `thesis`, `xai-nl` takes `meeting`); the eight retrieval methods in use are the allowed values, the comment at `registries/data.yml:9` rewritten, and `tools/data/redownload.py` handles `direct` and `script`. (8) M8 also covers the 26 deck `present.yml` files (their schema after PR3 lands) and `.oculus/cpp.yml`. Not chosen, the lazy options: three reference names, bare names, conditions in help text, names translated in the generator, editor marks only, the data deleted, only the files the line names.
+The question: D23c opens a library file outside every folder oculus serves as a read-only tab. Its first test case, F12 on `os.path.join`, lands on the copy of Python's type descriptions pyright ships inside oculus's own folder, which is inside the hub, so it opens as an ordinary tab and tests nothing of D23c.
 
-## Z671 (2026-10-07, step D45, the names in automode)
+- Chosen: the case becomes F12 on `idlelib` (`import idlelib` in a hub Python file), which lands in the Python install under `~/.pyenv`, outside the hub, and must open read-only.
+- Not chosen: opening files inside oculus's `node_modules` read-only too (a different rule from the one D23c builds).
 
-The question: the names of a file's two "open it in a browser" items, since "Open in Browser Tab" does not say whether the tab is Chrome's or oculus's.
+## Z673 (2) (2026-10-07, step D23c, the orchestrator, automode): the safety rule against dot folders
 
-- Chosen: "Open in Default Browser" for the existing item on every file, and "View LaTeX PDF in Default Browser" for D45's PDF viewer with the jump to the `.tex`; both built in D45.
-- Not chosen: "Open in Browser" and "Open Linked to Source in Browser"; the current names (the lazy option).
+The question: D23c's brief refuses to open any file whose path has a folder starting with a dot, so a language server can never make oculus show `~/.ssh/config` or `~/.claude`. The Python install lives in `~/.pyenv/versions/3.13.4`, so the rule refuses every Python library on this machine and F12 into a library does nothing.
 
-## Z673 (2026-10-07, step D23c, the orchestrator, automode)
+- Chosen: one exception. A file under the Python install pyright already reports (`sys.prefix` and `sys.base_prefix`) is allowed for the pyright server that named it. Every other dot folder stays refused.
+- Not chosen: the rule as written (no Python library opens, the lazy option); a setting listing allowed folders (a new config key to keep); a fixed list of refused dot folders such as `.ssh` and `.aws` (any folder not on the list opens, `~/.claude` among them).
 
-The question: D23c's builder found that F12 on `os.path.join` lands in pyright's own stub inside the hub, so its case 1 cannot show a read-only library tab, and that the brief's rule refusing any path with a dot folder would refuse every Python library under `~/.pyenv`.
+## Z673 (3) (2026-10-07, step D23c, the orchestrator, automode): three build details
 
-- Chosen: case 1 tested on `idlelib`, a real library outside every root; the dot rule keeps one exception, the folders of the Python interpreter pyright already probes, so `~/.ssh`, `~/.claude` and the rest stay refused; plus three build details (a `held/` subfolder for the folder limit, no new server message, a word-select editor command). The full ruling: `agents/briefs/D23c-cases.md`.
-- Not chosen: every dot path refused (no library under pyenv opens, the lazy option); a setting listing allowed folders (a new config key); a fixed list of refused dot folders (misses any folder not listed, `~/.claude` among them).
+The question: three points the builder proposed, none visible to the reader.
+
+- Chosen: `held.ts` and `watch.ts` move into a subfolder `server/machine/lsp/held/`, since the language server folder is at its 10-item limit; the page learns which folder and language a library file belongs to from its own request, so no new message between server and page is added; a small editor command selects the word at the position a file is opened at.
+- Not chosen: a new message from the server naming the folder and language of each library file (more protocol for a fact the page already has).
+
+## Z671 (1) (2026-10-07, step D45, Axel): clicking in the PDF jumps to the .tex line, also in the desktop app
+
+The question: D45's "view the PDF in the browser" opens a separate browser tab. When oculus runs as the desktop app, that tab opens in Chrome while the editor is in the app, and the planned browser feature that passes the click between the two cannot cross between two programs, so the click would not reach the editor.
+
+- Ruled (a) by Axel: the click goes through oculus's server, which both the PDF tab and the editor are connected to, so it works in Chrome and in the app alike, as LaTeX Workshop's browser viewer talks to VS Code through its local server.
+- Not chosen: (b) opening that PDF tab in an app window (changes the guarded rule that an app window shows only oculus's page); (c) no jump from the browser tab in the app (the lazy option).
+
+## Z671 (2) (2026-10-07, step D45, the orchestrator, automode): the names of a file's two "open in a browser" items
+
+The question: Axel ruled both items kept and "Open in Browser Tab" a garbage name, since it does not say whether the tab is Chrome's or oculus's.
+
+- Chosen: "Open in Default Browser" for the existing item on every file that has it (the file itself, shown by the browser), and "View LaTeX PDF in Default Browser" for D45's oculus PDF viewer with the jump to the `.tex`; both renames built in D45.
+- Not chosen: "Open in Browser" and "Open Linked to Source in Browser" (still does not say which program); the current names (the lazy option).
+
+## Z672 (1) (2026-10-07, step M8, the orchestrator, automode): one name for a reference to another file
+
+The question: a field whose allowed values come from another file is marked three ways: `options_from:` in the hub's 16 `schema:` blocks, `from:` in `manifest-schema.yml`, `values_from:` in `options.yml`.
+
+- Chosen: `from:` everywhere; the code that reads it, the apps interface's `optionsFrom` (`docs/apps.md`) and the cockpit self-test change with it.
+- Not chosen: the three names kept (the lazy option).
+
+## Z672 (2) (2026-10-07, step M8, the orchestrator, automode): what the word after from: names
+
+The question: today `options_from: people` means the file `registries/people.yml` and `options_from: venue_categories` a list inside `vocab.yml`, and the line does not say which.
+
+- Chosen: a registry by its name (`from: people`), a vocab list with a prefix (`from: vocab.venue_categories`).
+- Not chosen: the file path and key written out in every schema; the bare words as today (the lazy option).
+
+## Z672 (3) (2026-10-07, step M8, the orchestrator, automode): fields that apply only sometimes
+
+The question: conditions such as "deadline is for conferences" live only in help text, which no program reads.
+
+- Chosen: a `when:` key, for example `when: { category: conference }`; `required: { when: ... }` for a field required only then; a condition on a project's tier written as a path, `when: { path: projects/archive/** }`.
+- Not chosen: a text expression (a small language to keep); raw JSON Schema `if`/`then` in the YAML (unreadable); conditions left in help text (the lazy option).
+
+## Z672 (4) (2026-10-07, step M8, the orchestrator, automode): two names in oculus's settings catalog
+
+The question: `options.yml` says `description:` and `values:` where every other schema says `help:` and `options:`.
+
+- Chosen: renamed to `help:` and `options:`.
+- Not chosen: kept and translated in the code (the lazy option).
+
+## Z672 (5) (2026-10-07, step M8, the orchestrator, automode): where the three missing descriptions go
+
+The question: `registries/career.yml`, `feeds/literature-radar.yml` and the side projects' `project.yml` have no field description.
+
+- Chosen: career and the radar get a `schema:` block at their top, as the other 16 hub files have (career's with fields nested under its sections); the side projects, spread over nine folders, share `config/catalogs/side-project-schema.yml`.
+- Not chosen: all three in `config/catalogs/` (over its 10-item limit, forcing a subfolder); one combined file (each description away from its file).
+
+## Z672 (6) (2026-10-07, step M8, the orchestrator, automode): the Findings view follows the same rules as the editor
+
+The question: whether a value the editor underlines is also a finding in the Findings view and fails the test that holds the real hub to zero findings.
+
+- Chosen: the hub is checked through the same descriptions with ajv 8.20.0 (MIT) as a new dependency, in place of the hand-written reference table in `validate.ts`.
+- Not chosen: a hand-written second copy of the rules in `validate.ts`; underlining in the editor only (the lazy option).
+
+## Z672 (7) (2026-10-07, step M8, the orchestrator, automode): the entries in the hub's data the new checks flag
+
+The question: six things in the data break the rules once a program checks them.
+
+- `pmc-patients` in `registries/data.yml` has `access: public`: becomes `open`, which its own notes describe ("Public, no data use agreement"). Not chosen: a fifth value `public`.
+- `outcome` and `doi` on 18 projects outside the archive: allowed on every project, the schema's "Archive (archive tier)" section renamed. Not chosen: moving the text to a new field; deleting it (the lazy option).
+- The journal `hcin` has `timing`, `deadline` and `call` for a topical collection: these three allowed on every venue, the month fields conference-only. Not chosen: dropping them (loses the 2026-12-02 deadline).
+- The Graz BCI event has `role: present` and no `link`, a co-author presenting: a new role value for a talk a co-author gives, set on it, `link` kept required for a talk Axel gives. Not chosen: `link` optional for every talk (nothing checks his own talks have slides).
+- `kuleuven-thesis`, `uhasselt-thesis` and `xai-nl` have no `category`: `thesis` and `meeting` added, the two theses take `thesis`, XAI-NL `meeting`. Not chosen: `journal` or `conference` (false); `category` optional (the lazy option).
+- Eight retrieval methods are in use while `data.yml:9` names four, and `tools/data/redownload.py` skips `direct` and `script`: the eight become the allowed list, the comment is rewritten, and `redownload.py` handles `direct` and `script`. Not chosen: the script left skipping those 5 datasets (the lazy option).
+
+## Z672 (8) (2026-10-07, step M8, the orchestrator, automode): which YAML files M8 covers
+
+The question: the files M8's line names, or every YAML file the editor opens.
+
+- Chosen: also the 26 deck `present.yml` files (their description after PR3 lands) and `.oculus/cpp.yml`.
+- Not chosen: only the files the line names (the lazy option).
 
 ## Z655 (2026-10-06, step PR2)
 
