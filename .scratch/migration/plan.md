@@ -1409,11 +1409,14 @@ Independent of each other; two may run side by side under R9's rule when their b
 - a566f8df9598698f1: reviewer of step O30, claude-opus-5-5
 - a73f7225903b3e5ad: reviewer of step O30 over round 1, claude-opus-5-5
 - a2b8e6b2948c401a3: reviewer of step O30 over round 2, claude-opus-5-5
+- a9657bc7866b03a87: builder of step O30, claude-sonnet-5-5
+
 Agents in no role the cost script prices:
 
 1. acb1bb1231865e0e6: diagnosis of step A3, claude-opus-5-5
 2. ae831f63ce80bd34e: diagnosis of step O30, claude-opus-5-5
 3. adfea7fe3bb4905aa: diagnosis of step O30 (the paste mode lost after a restart), claude-opus-5-5
+4. adb7a3d3f5225357b: diagnosis of step O30 (red line at its landing), claude-opus-5-5
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
