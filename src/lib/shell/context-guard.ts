@@ -4,6 +4,8 @@
 // never appear over the page's chrome. It leaves the browser's menu where that menu is the
 // control's own: a text input, a textarea, a contenteditable element (copy, paste, spelling), the
 // code editor, which draws its own menu, and the terminal grid, whose menu is the terminal view's.
+// In the desktop app Electron draws no menu of its own at all, so the elements above show the menu
+// oculus draws (a text box's, with the spelling suggestions at its top) or none.
 
 /** The elements inside which the browser's menu, or the control's own, is kept. */
 const KEEPS = 'input, textarea, [contenteditable], .monaco-editor, [data-terminal]';

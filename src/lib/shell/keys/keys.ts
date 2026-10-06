@@ -14,6 +14,11 @@ export type KeyContext = {
     confirmOpen: boolean;
     /** Whether the command modifier is Cmd (macOS) and not Ctrl; macOS when absent. */
     mac?: boolean;
+    /**
+     * Whether the page is in the desktop app, which hands the page the keys Chrome keeps for
+     * itself: Cmd+W, Cmd+N, Cmd+F, Ctrl+Tab and Ctrl+Shift+Tab. In a browser they never arrive.
+     */
+    app?: boolean;
 };
 
 export type KeyEventLike = {
@@ -49,6 +54,9 @@ export type KeyAction =
     | { kind: 'new-session' }
     | { kind: 'command-default'; which: 'build' | 'test' }
     | { kind: 'save' }
+    | { kind: 'close-tab' }
+    | { kind: 'new-text-file' }
+    | { kind: 'find' }
     | { kind: 'clear-cursor' };
 
 export type KeyResult = { action: KeyAction | null; state: KeyState };
@@ -119,6 +127,26 @@ function savesFile(event: KeyEventLike, context: KeyContext): boolean {
     return event.code === SAVE_KEY.code && event.shiftKey !== true && event.altKey !== true;
 }
 
+/**
+ * The key only the desktop app delivers: Cmd+W closes the active tab of the focused pane, Cmd+N
+ * opens a new text file in it, and Cmd+F opens the find bar. Cmd and the letter alone, the letter
+ * read from the physical key; each answers with a field focused, as the editor is one, and under no
+ * overlay. A view that takes Cmd+F itself (Monaco, the terminal) calls preventDefault first, and
+ * then the key is not the page's.
+ */
+function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
+    if (context.app !== true || event.defaultPrevented === true) return null;
+    if (context.paletteOpen || context.trayOpen || context.confirmOpen) return null;
+    const mac = context.mac !== false;
+    if ((mac ? event.metaKey : event.ctrlKey) !== true) return null;
+    if ((mac ? event.ctrlKey : event.metaKey) === true) return null;
+    if (event.shiftKey === true || event.altKey === true) return null;
+    if (event.code === 'KeyW') return { kind: 'close-tab' };
+    if (event.code === 'KeyN') return { kind: 'new-text-file' };
+    if (event.code === 'KeyF') return { kind: 'find' };
+    return null;
+}
+
 /** Resolve one workbench key, retaining only the two short-lived chord timestamps. */
 export function resolveKey(
     event: KeyEventLike,
@@ -157,11 +185,29 @@ export function resolveKey(
     if (which !== null) {
         return { action: { kind: 'command-default', which }, state: { ...state, chord: '' } };
     }
+    const taken = appKey(event, context);
+    if (taken !== null) return { action: taken, state: { ...state, chord: '' } };
     const held = context.typing || context.paletteOpen || context.trayOpen || context.confirmOpen;
     // Ctrl and a bracket carry the focused pane one tab along, the left one backwards. The browser
-    // keeps Ctrl and Tab for its own tabs and never hands it to a page, so the pair is the
-    // brackets, which Chrome binds to nothing. A field, a textarea and an overlay keep the keyboard
-    // while they hold it, and Cmd and a bracket is left alone, being a browser's own navigation.
+    // keeps Ctrl and Tab for its own tabs and never hands it to a page, so in a browser the pair is
+    // the brackets, which Chrome binds to nothing; in the desktop app Ctrl+Tab and Ctrl+Shift+Tab
+    // do the same, since the app has no browser tabs to keep them for. A field, a textarea and an
+    // overlay keep the keyboard while they hold it, and Cmd and a bracket is left alone, being a
+    // browser's own navigation.
+    if (
+        context.app === true &&
+        event.key === 'Tab' &&
+        event.ctrlKey === true &&
+        event.metaKey !== true &&
+        event.altKey !== true &&
+        event.defaultPrevented !== true &&
+        !held
+    ) {
+        return {
+            action: { kind: 'cycle-tab', by: event.shiftKey === true ? -1 : 1 },
+            state: { ...state, chord: '' }
+        };
+    }
     if (
         (event.key === ']' || event.key === '[') &&
         event.ctrlKey === true &&

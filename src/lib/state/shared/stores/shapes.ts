@@ -154,7 +154,13 @@ export type Posted = { ok: boolean; body: Record<string, unknown>; failed: PostF
 /** The page's end of the write endpoint, one per client. */
 export type WritesStore = {
     setToken: (next: string) => void;
+    onToken: (listener: () => void) => void;
     writeToken: () => string;
+    /**
+     * Run the page's load again and wait until the page holds the token it handed over: a server
+     * that restarted minted a new one, and the page that was open holds the old one.
+     */
+    renewToken: () => Promise<void>;
     /** Post one command to an endpoint of its own with the write token, and read its answer. */
     postCommand: (path: string, body: unknown) => Promise<Posted>;
     pending: () => boolean;

@@ -16,11 +16,18 @@ const UNGUARDED = ['/api/calendar/callback', '/api/mail/callback'];
 
 /**
  * The API paths that admit a request carrying neither `Origin` nor `Sec-Fetch-Site`, which every
- * other path refuses. The hook is posted by Claude Code's `curl`, which sends neither, and the
- * three picture routes are fetched by the command line as well as drawn by the page. A request to
- * one of them that carries either header is judged by the one rule like any other.
+ * other path refuses. The hook is posted by Claude Code's `curl`, which sends neither, the three
+ * picture routes are fetched by the command line as well as drawn by the page, and the health
+ * route is asked by the desktop host's Node `fetch`, which sends neither either. A request to one
+ * of them that carries either header is judged by the one rule like any other.
  */
-const HEADERLESS = ['/api/hook', '/api/memories', '/api/wallpaper', '/api/diagrams/[name]'];
+const HEADERLESS = [
+    '/api/hook',
+    '/api/memories',
+    '/api/wallpaper',
+    '/api/diagrams/[name]',
+    '/api/health'
+];
 
 /**
  * The path of the route Kit matched, its `(group)` folders left out, and null for a request that
@@ -61,7 +68,7 @@ function refused(event: RequestEvent): boolean {
 // Every request under /api/ passes DESIGN.md's one "Auth" rule (`sameOrigin` in
 // lib/server/core/auth.ts) here, before any route sees it, and one that fails it is answered 403
 // with `{ error: 'forbidden' }`; UNGUARDED names the two paths passed unchecked and HEADERLESS the
-// four that admit a request with neither header, each with its reason.
+// five that admit a request with neither header, each with its reason.
 export const handle: Handle = ({ event, resolve }) => {
     const context = serverContext(event.platform);
     if (refused(event)) return json({ error: 'forbidden' }, { status: 403 });

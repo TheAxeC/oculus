@@ -106,11 +106,14 @@ export type DockEdge = 'left' | 'right' | 'bottom';
 
 /**
  * Where a float is drawn. A free float is a rectangle in fractions of the window; a docked one
- * runs along an edge and takes `size` of the window's width, or of its height along the bottom.
+ * runs along an edge and takes `size` of the window's width, or of its height along the bottom; a
+ * float in a window of its own of the desktop app is that window's content bounds in screen
+ * points, which no window of the page draws.
  */
 export type FloatPlace =
     | { kind: 'free'; x: number; y: number; w: number; h: number }
-    | { kind: 'dock'; edge: DockEdge; size: number };
+    | { kind: 'dock'; edge: DockEdge; size: number }
+    | { kind: 'window'; x: number; y: number; w: number; h: number };
 
 /**
  * A pane drawn over every page, its tabs open wherever the page on screen is. It is a host of its

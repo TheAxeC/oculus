@@ -30,40 +30,32 @@ import {
     createInstances,
     createOpening,
     createShowInFiles,
+    createFloatOps,
+    createLoad,
     createStorage,
     defaultPages,
-    dockFloat as dockFloatIn,
     embedPage as embedIn,
     expand,
     findInstance,
-    floatPane as floatPaneIn,
     floatsFrom,
-    floatTab as floatTabIn,
     focusedPane,
     fold,
-    freeFloat as freeFloatIn,
     hostsOf,
-    isPage,
     LAYOUT_KEY,
     maximise,
-    needsFloats,
+    centred,
     newPage,
-    parseLayout,
-    parseWorkbench,
-    placeFloat as placeFloatIn,
     PREVIOUS_KEY,
     restore,
-    returnFloat as returnFloatIn,
     settleFocus,
     showable,
     tabsOf,
     unembedPage as unembedIn,
     writeHost,
     floatHost,
-    type DockEdge,
     type Edge,
     type Float,
-    type FloatPlace,
+    type FloatOps,
     type FloatSpec,
     type Focus,
     type Host,
@@ -77,10 +69,10 @@ import {
     type ShowInFiles,
     type Page,
     type Pages,
+    type SaveTurn,
     type Storable,
     type Touched,
     type ViewId,
-    UNREAD_KEY,
     type Workbench
 } from './layout/index.ts';
 import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
@@ -91,155 +83,162 @@ import { t } from '../shared/words/text.ts';
 export { LAYOUT_KEY, PREVIOUS_KEY };
 export type { OpenOptions };
 
+/** How many times an operation is run again on the envelope the host refused its save with. */
+const MAX_TURNS = 8;
+
 /** What a reader given the id of a page the list does not hold is answered with. */
 const GONE: Workbench = { root: { kind: 'pane', tabs: [], active: '' } };
 
 /** The pages one client is rendering, and their persistence. */
-export type LayoutStore = Omit<Instances, 'forgetTabs'> & {
-    currentPage: () => Page;
-    /** Every page, never a float. */
-    pages: () => Page[];
-    /** The page with this id; a float's id names no page. */
-    pageOf: (id: string) => Page | null;
-    /** The floats, in the order they were made. */
-    floats: () => Float[];
-    /** Every page and every float as a host, pages first: what a walk over every tab needs. */
-    hosts: () => Host[];
-    /** The page or float with this id. */
-    hostOf: (id: string) => Host | null;
-    /** The page or float whose tree holds this instance, or null when none does. */
-    holding: (id: string) => Host | null;
-    touchPane: (page: string) => void;
-    workbench: (page?: string) => Workbench;
-    layout: (page?: string) => Layout;
-    /** The instance the next view opened would join, which is the pane it would open into. */
-    openingInstance: () => Instance | null;
-    loadLayout: (storage?: Storable, source?: EventTarget) => boolean;
-    /** Stop taking the arrangement another browser tab saves, which a load with a source began. */
-    stopFollowing: () => void;
-    /**
-     * Show the page of one rail button, made from its arrangement the first time and switched to
-     * after that. It answers whether a page is on screen for the button.
-     */
-    openRailPage: (key: string, label: string, raw: unknown) => boolean;
-    /**
-     * Put the first rail page on screen in place of the default page, on a browser that had no
-     * saved layout and has changed nothing since. Anywhere else it changes nothing.
-     */
-    startOnRailPage: (key: string, label: string, raw: unknown, floats: FloatSpec[]) => void;
-    /**
-     * Whether a browser with no saved layout still waits for the rail list to choose its first
-     * page, so the shell draws no page until it has; false once a page was chosen or saved.
-     */
-    startingFresh: () => boolean;
-    /** The rail list came and names no page: the default page stays, and is drawn. */
-    keepDefaultPage: (floats: FloatSpec[]) => void;
-    /**
-     * Take the shipped floats into a layout that was saved before there were floats, once: each
-     * tab of a view a shipped float holds moves into it. A layout saved with floats is the
-     * reader's own and changes nothing.
-     */
-    adoptFloats: (floats: FloatSpec[]) => void;
-    /** Put a page's pane over every page as a free float. */
-    floatPane: (path: number[], page?: string) => void;
-    /**
-     * Put one tab over every page as a free float whose corner is the point, in window fractions.
-     */
-    floatTab: (id: string, at: { x: number; y: number }) => void;
-    /** Dock a float on an edge, merging its tabs into the float already docked there. */
-    dockFloat: (id: string, edge: DockEdge) => void;
-    /** Float a docked float again, in the middle of the window. */
-    freeFloat: (id: string) => void;
-    /** Put a float's tabs back into a page, which is the page on screen unless one is named. */
-    returnFloat: (id: string, page?: string) => void;
-    /** Move or resize a float; a place that does not fit the window changes nothing. */
-    placeFloat: (id: string, place: FloatPlace) => void;
-    /**
-     * The id of the page that was on screen before the one on screen now, while that page is still
-     * in the list; null on a fresh load and after it was closed. It is not saved.
-     */
-    previousPage: () => string | null;
-    openPage: (label: string) => void;
-    switchPage: (id: string) => void;
-    renamePage: (id: string, label: string) => void;
-    closePage: (id: string) => void;
-    apply: (next: Workbench, page?: string) => void;
-    change: (edit: (tree: Layout) => Layout, page?: string) => void;
-    embedPage: (nested: string, path: number[], edge: Edge, page?: string) => void;
-    unembedPage: (path: number[], page?: string) => void;
-    maximisePane: (path: number[], page?: string) => void;
-    restorePanes: (page?: string) => void;
-    foldPane: (path: number[], page?: string) => void;
-    expandChild: (path: number[], index: number, page?: string) => void;
-    focused: (page?: string) => Focus | null;
-    openView: Opening['openView'];
-    openBeside: Opening['openBeside'];
-    openInPane: Opening['openInPane'];
-    /**
-     * Open a view on a page in a pane that does not hold one instance, which is how the Views
-     * catalogue opens a view on its own page without covering itself.
-     */
-    openAway: (view: ViewId, state: unknown, page: string, avoid: string) => string;
-    /** Open a view on a page in a new pane beside the pane holding one instance. */
-    openNextTo: (view: ViewId, state: unknown, page: string, beside: string) => string;
-    /** Whether the pane at a path of a page holds one instance. */
-    paneHolds: (path: number[], id: string, page: string) => boolean;
-    /**
-     * Say which views are opened for something, which the registry knows and this store does not:
-     * where such a view lands is layout/open/landing.ts's rule. Until a rule is registered every
-     * view is a tool view.
-     */
-    registerOpened: (rule: (view: ViewId) => boolean) => void;
-    /**
-     * Rebuild one page from a rail button's arrangement: its tabs made fresh, its id and rail key
-     * kept, its name the button's words. Answers whether it was rebuilt; an id naming no page or an
-     * arrangement that does not parse changes nothing.
-     */
-    resetPage: (id: string, source: RailSource) => boolean;
-    /**
-     * Rebuild every saved page a rail button carries the key of from that button's arrangement and
-     * remove every saved page carrying a key no button carries (navigation/pages.ts's resetPlan). A
-     * page with no rail key is left alone. The floats held are replaced by the shipped ones.
-     * Answers whether anything changed.
-     */
-    resetPages: (rail: readonly RailSource[], floats: FloatSpec[]) => boolean;
-    /**
-     * Show one path in the file browser: the Files tab of the page the reader is in is activated
-     * (the panes are restored first when it sits behind a maximised pane), or one is opened there
-     * when the page has none, and it is asked to open the folders on the way, select the path and
-     * scroll it into view; with `open` a folder is shown open too. A path given with no root is a
-     * path of the hub. The returned id names the Files instance.
-     */
-    showInFiles: (path: string, root?: string, open?: boolean) => string;
-    /**
-     * Show one file in the file browser as showInFiles does, and open the Timeline section on it,
-     * scrolled to the top of the pane. A path given with no root is a path of the hub.
-     */
-    showTimeline: ShowInFiles['showTimeline'];
-    /** Show one folder as a Files tab rooted at it, found again by the folder. */
-    showFolderInFiles: (path: string, root?: string) => string;
-    /**
-     * The keep armed for the preview tab a press just opened, or null
-     * (layout/open/armed-keep.svelte.ts): while it is armed the pane showing the tab takes the next
-     * press as a keep.
-     */
-    armedKeep: () => ArmedKeep | null;
-    /** Arm the keep for a preview tab a press made at `pressedAt` opened, for an owner. */
-    armKeep: (id: string, owner: string, pressedAt: number) => void;
-    /** End the armed keep, or only one an owner armed. */
-    disarmKeep: (owner?: string) => void;
-    /**
-     * The kept tab that takes the keyboard once its pane draws it
-     * (layout/open/armed-keep.svelte.ts).
-     */
-    focusAsked: () => string | null;
-    /** Ask that a tab a double click kept take the keyboard. */
-    askFocus: (id: string) => void;
-    /** End the ask for one tab: its pane gave it the keyboard. */
-    focusGiven: (id: string) => void;
-};
+export type LayoutStore = Omit<Instances, 'forgetTabs'> &
+    FloatOps & {
+        currentPage: () => Page;
+        /** Every page, never a float. */
+        pages: () => Page[];
+        /** The page with this id; a float's id names no page. */
+        pageOf: (id: string) => Page | null;
+        /** The floats, in the order they were made. */
+        floats: () => Float[];
+        /** Every page and every float as a host, pages first: what a walk over every tab needs. */
+        hosts: () => Host[];
+        /** The page or float with this id. */
+        hostOf: (id: string) => Host | null;
+        /** The page or float whose tree holds this instance, or null when none does. */
+        holding: (id: string) => Host | null;
+        touchPane: (page: string) => void;
+        /** Whether a copy of this tab can open in a window of its own: a Terminal tab cannot. */
+        copiesToWindow: (id: string) => boolean;
+        workbench: (page?: string) => Workbench;
+        layout: (page?: string) => Layout;
+        /** The instance the next view opened would join, which is the pane it would open into. */
+        openingInstance: () => Instance | null;
+        loadLayout: (storage?: Storable, source?: EventTarget) => boolean;
+        /**
+         * Whether the saved arrangement has been read, which a page of the app draws nothing
+         * before.
+         */
+        loaded: () => boolean;
+        /**
+         * Stop taking the arrangement another browser tab saves, which a load with a source began.
+         */
+        stopFollowing: () => void;
+        /**
+         * Show the page of one rail button, made from its arrangement the first time and switched
+         * to after that. It answers whether a page is on screen for the button.
+         */
+        openRailPage: (key: string, label: string, raw: unknown) => boolean;
+        /**
+         * Put the first rail page on screen in place of the default page, on a browser that had no
+         * saved layout and has changed nothing since. Anywhere else it changes nothing.
+         */
+        startOnRailPage: (key: string, label: string, raw: unknown, floats: FloatSpec[]) => void;
+        /**
+         * Whether a browser with no saved layout still waits for the rail list to choose its first
+         * page, so the shell draws no page until it has; false once a page was chosen or saved.
+         */
+        startingFresh: () => boolean;
+        /** The rail list came and names no page: the default page stays, and is drawn. */
+        keepDefaultPage: (floats: FloatSpec[]) => void;
+        /**
+         * Take the shipped floats into a layout that was saved before there were floats, once: each
+         * tab of a view a shipped float holds moves into it. A layout saved with floats is the
+         * reader's own and changes nothing.
+         */
+        adoptFloats: (floats: FloatSpec[]) => void;
+        /**
+         * The id of the page that was on screen before the one on screen now, while that page is
+         * still in the list; null on a fresh load and after it was closed. It is not saved.
+         */
+        previousPage: () => string | null;
+        openPage: (label: string) => void;
+        switchPage: (id: string) => void;
+        renamePage: (id: string, label: string) => void;
+        closePage: (id: string) => void;
+        apply: (next: Workbench, page?: string) => void;
+        change: (edit: (tree: Layout) => Layout, page?: string) => void;
+        embedPage: (nested: string, path: number[], edge: Edge, page?: string) => void;
+        unembedPage: (path: number[], page?: string) => void;
+        maximisePane: (path: number[], page?: string) => void;
+        restorePanes: (page?: string) => void;
+        foldPane: (path: number[], page?: string) => void;
+        expandChild: (path: number[], index: number, page?: string) => void;
+        focused: (page?: string) => Focus | null;
+        openView: Opening['openView'];
+        openBeside: Opening['openBeside'];
+        openInPane: Opening['openInPane'];
+        /**
+         * Open a view on a page in a pane that does not hold one instance, which is how the Views
+         * catalogue opens a view on its own page without covering itself.
+         */
+        openAway: (view: ViewId, state: unknown, page: string, avoid: string) => string;
+        /** Open a view on a page in a new pane beside the pane holding one instance. */
+        openNextTo: (view: ViewId, state: unknown, page: string, beside: string) => string;
+        /** Whether the pane at a path of a page holds one instance. */
+        paneHolds: (path: number[], id: string, page: string) => boolean;
+        /**
+         * Say which views are opened for something, which the registry knows and this store does
+         * not: where such a view lands is layout/open/landing.ts's rule. Until a rule is registered
+         * every view is a tool view.
+         */
+        registerOpened: (rule: (view: ViewId) => boolean) => void;
+        /**
+         * Rebuild one page from a rail button's arrangement: its tabs made fresh, its id and rail
+         * key kept, its name the button's words. Answers whether it was rebuilt; an id naming no
+         * page or an arrangement that does not parse changes nothing.
+         */
+        resetPage: (id: string, source: RailSource) => boolean;
+        /**
+         * Rebuild every saved page a rail button carries the key of from that button's arrangement
+         * and remove every saved page carrying a key no button carries (navigation/pages.ts's
+         * resetPlan). A page with no rail key is left alone. The floats held are replaced by the
+         * shipped ones. Answers whether anything changed.
+         */
+        resetPages: (rail: readonly RailSource[], floats: FloatSpec[]) => boolean;
+        /**
+         * Show one path in the file browser: the Files tab of the page the reader is in is
+         * activated (the panes are restored first when it sits behind a maximised pane), or one is
+         * opened there when the page has none, and it is asked to open the folders on the way,
+         * select the path and scroll it into view; with `open` a folder is shown open too. A path
+         * given with no root is a path of the hub. The returned id names the Files instance.
+         */
+        showInFiles: (path: string, root?: string, open?: boolean) => string;
+        /**
+         * Show one file in the file browser as showInFiles does, and open the Timeline section on
+         * it, scrolled to the top of the pane. A path given with no root is a path of the hub.
+         */
+        showTimeline: ShowInFiles['showTimeline'];
+        /** Show one folder as a Files tab rooted at it, found again by the folder. */
+        showFolderInFiles: (path: string, root?: string) => string;
+        /**
+         * The keep armed for the preview tab a press just opened, or null
+         * (layout/open/armed-keep.svelte.ts): while it is armed the pane showing the tab takes the
+         * next press as a keep.
+         */
+        armedKeep: () => ArmedKeep | null;
+        /** Arm the keep for a preview tab a press made at `pressedAt` opened, for an owner. */
+        armKeep: (id: string, owner: string, pressedAt: number) => void;
+        /** End the armed keep, or only one an owner armed. */
+        disarmKeep: (owner?: string) => void;
+        /**
+         * The kept tab that takes the keyboard once its pane draws it
+         * (layout/open/armed-keep.svelte.ts).
+         */
+        focusAsked: () => string | null;
+        /** Ask that a tab a double click kept take the keyboard. */
+        askFocus: (id: string) => void;
+        /** End the ask for one tab: its pane gave it the keyboard. */
+        focusGiven: (id: string) => void;
+    };
 
-export function createLayout(ui: UiStore): LayoutStore {
+/**
+ * What the app gives the layout: the host's turn for a save of the arrangement, and whether the
+ * page is a window of the app, which is what draws a float placed in a window. A page in a browser
+ * is given none, and then every save is written directly and a float placed in a window is read as
+ * the default free place.
+ */
+export type LayoutDesktop = { turn: SaveTurn };
+
+export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore {
     /**
      * The pages, and which of them is on screen. The label of the page this starts on is empty
      * because the catalog is not installed when this module is evaluated; loadLayout names it, and
@@ -265,8 +264,11 @@ export function createLayout(ui: UiStore): LayoutStore {
      */
     let pendingFloats = false;
 
+    /** Whether the saved arrangement has been read, so a page of the app knows what it draws. */
+    let loaded = $state(false);
+
     /** Where apply() saves, once loadLayout has named it. Nothing is saved before that. */
-    const storage = createStorage();
+    const storage = createStorage(desktop?.turn);
 
     /**
      * The name of the store operation being run, which the record of layout writes names as the
@@ -298,9 +300,25 @@ export function createLayout(ui: UiStore): LayoutStore {
         return store.current.pages.find((page) => page.id === id) ?? null;
     }
 
-    /** The floats, in the order they were made. */
+    /** The floats `floats()` last mapped, and the saved list they were mapped from. */
+    let mappedFrom: Float[] = [];
+    let mapped: Float[] = [];
+
+    /**
+     * The floats, in the order they were made. A page of the app holds a float placed in a window
+     * as it is saved; a page in a browser draws it at the default free place, its tabs kept, and
+     * writes the place back only when that page changes the float.
+     */
     function floats(): Float[] {
-        return store.current.floats;
+        const held = store.current.floats;
+        if (desktop !== undefined || !held.some((one) => one.place.kind === 'window')) return held;
+        if (mappedFrom !== held) {
+            mappedFrom = held;
+            mapped = held.map((one) =>
+                one.place.kind === 'window' ? { ...one, place: centred() } : one
+            );
+        }
+        return mapped;
     }
 
     /** The page or float with this id: a float is a workbench of its one pane. */
@@ -389,69 +407,22 @@ export function createLayout(ui: UiStore): LayoutStore {
         instances.transferInstance,
         instances.splitInstance
     );
-
-    /** Ends the listening a load began for the arrangement other browser tabs save. */
-    let unfollow: () => void = () => undefined;
-
-    /**
-     * Take the arrangement another browser tab saved under the same key. Its pages replace this
-     * tab's; the page this tab shows stays the one shown while it is still a page, since which page
-     * a browser tab is looking at is that tab's own. Nothing is written back, so the save that
-     * reached this tab does not travel on to the tab it came from. A value that does not parse
-     * changes nothing.
-     */
-    function takeSaved(): void {
-        const raw = storage.read(LAYOUT_KEY);
-        const saved = raw === null ? null : parseLayout(raw, t('ui.page_default', 1));
-        if (saved === null) return;
-        const shown = store.current.current;
-        fresh = false;
-        pendingFloats = needsFloats(raw);
-        store.current = {
-            pages: saved.pages,
-            current: saved.pages.some((page) => page.id === shown) ? shown : saved.current,
-            floats: saved.floats
-        };
-    }
-
-    /**
-     * Read the saved arrangement and make it current, falling back to the default when there is
-     * none or the saved value fails parseLayout; a value that fails is first copied under
-     * UNREAD_KEY, since the next change writes the default over it. Returns whether a saved
-     * arrangement was restored, which is how a page knows whether it is looking at the default. The
-     * default argument is evaluated at the call and not at the import, so a test that never calls
-     * this touches no localStorage. A source of the browser's `storage` events (the window) makes
-     * this tab follow the arrangement the other browser tabs of the server save; without one it
-     * follows none.
-     */
-    function loadLayout(held: Storable = localStorage, source?: EventTarget): boolean {
-        storage.attach(held);
-        unfollow();
-        unfollow = source === undefined ? () => undefined : storage.follow(source, takeSaved);
-        const first = t('ui.page_default', 1);
-        const raw = storage.read(LAYOUT_KEY);
-        const parsed = raw === null ? null : parseLayout(raw, first);
-        if (raw !== null && raw !== '' && parsed === null) storage.remember(UNREAD_KEY, raw);
-        const previous = parseWorkbench(storage.read(PREVIOUS_KEY));
-        attention.clear();
-        // A browser that ran before pages holds one workbench, and holds the user's own arrangement
-        // beside it when the rail control pages retired had put the sessions arrangement on screen.
-        // Both are kept: the user's own becomes page 1 and what was on screen becomes page 2, so
-        // the control's restore is not needed to reach either of them.
-        if (parsed !== null && previous !== null && parseWorkbench(raw) !== null) {
-            const shown = newPage(t('ui.page_sessions'), parsed.pages[0].workbench);
-            // Written at once: the version 2 envelope under LAYOUT_KEY still holds only what was on
-            // screen, so a reload before the next change would lose the page the held one became.
-            pendingFloats = true;
-            savePages({ pages: [newPage(first, previous), shown], current: shown.id, floats: [] });
-        } else {
-            store.current = parsed ?? defaultPages(first);
-            fresh = parsed === null;
-            pendingFloats = parsed !== null && needsFloats(raw);
+    const floatOps = createFloatOps(access, keepRule);
+    const load = createLoad(access, storage, {
+        replace: (pages) => {
+            store.current = pages;
+        },
+        setFresh: (value) => {
+            fresh = value;
+        },
+        setPendingFloats: (value) => {
+            pendingFloats = value;
+        },
+        clearAttention: attention.clear,
+        setLoaded: () => {
+            loaded = true;
         }
-        if (previous !== null) storage.remember(PREVIOUS_KEY, '');
-        return parsed !== null;
-    }
+    });
 
     /**
      * The page of the rail button whose arrangement key is `key`, made current. The page that
@@ -742,34 +713,6 @@ export function createLayout(ui: UiStore): LayoutStore {
         return true;
     }
 
-    /** Save the pages a float operation answered, when it changed any. */
-    function floated(next: Pages): void {
-        if (next !== store.current) savePages(next);
-    }
-
-    /** The id of the page an argument names, the page on screen for none; undefined for a float. */
-    function pageIdOf(page?: string): string | undefined {
-        const host = at(page);
-        return host !== null && isPage(host) ? host.id : undefined;
-    }
-
-    /** Put a page's pane over every page as a free float. */
-    function floatPane(path: number[], page?: string): void {
-        const id = pageIdOf(page);
-        if (id !== undefined) floated(floatPaneIn(store.current, id, path));
-    }
-
-    /** Put a float's tabs back into a page, the page on screen unless one is named. */
-    function returnFloat(id: string, page?: string): void {
-        const to = pageIdOf(page);
-        if (to !== undefined) floated(returnFloatIn(store.current, id, to));
-    }
-
-    /** Move or resize a float. */
-    function placeFloat(id: string, place: FloatPlace): void {
-        floated(placeFloatIn(store.current, id, place));
-    }
-
     /**
      * The instance the next view opened without a page named would join: the active instance of the
      * page the reader is in. It is the one pane in the window a view opens into, whether that
@@ -793,7 +736,14 @@ export function createLayout(ui: UiStore): LayoutStore {
                     if (writing !== '') return run(...args);
                     writing = name;
                     try {
-                        return run(...args);
+                        let answer = run(...args);
+                        // The app's host refused a save made from an envelope another window had
+                        // moved on from; the load took the envelope it holds, and the operation
+                        // runs again on it.
+                        for (let turn = 0; turn < MAX_TURNS && load.retake(); turn++) {
+                            answer = run(...args);
+                        }
+                        return answer;
                     } finally {
                         writing = '';
                     }
@@ -818,28 +768,22 @@ export function createLayout(ui: UiStore): LayoutStore {
         openingInstance,
         instanceLayoutState: instances.instanceLayoutState,
         instanceView: instances.instanceView,
+        copiesToWindow: (id) => instances.instanceView(id) !== TERMINAL_VIEW,
         restateInstance: instances.restateInstance,
         pinInstance: instances.pinInstance,
         unpinInstance: instances.unpinInstance,
         keepPreview: instances.keepPreview,
         pinTab: instances.pinTab,
         unpinTab: instances.unpinTab,
-        loadLayout,
-        stopFollowing: () => {
-            unfollow();
-            unfollow = () => undefined;
-        },
+        loadLayout: load.loadLayout,
+        stopFollowing: load.stopFollowing,
+        loaded: () => loaded,
         openRailPage,
         startOnRailPage,
         startingFresh: () => fresh,
         keepDefaultPage,
         adoptFloats,
-        floatPane,
-        floatTab: (id, point) => floated(floatTabIn(store.current, id, point, keepRule)),
-        dockFloat: (id, edge) => floated(dockFloatIn(store.current, id, edge)),
-        freeFloat: (id) => floated(freeFloatIn(store.current, id)),
-        returnFloat,
-        placeFloat,
+        ...floatOps,
         previousPage,
         openPage,
         switchPage,

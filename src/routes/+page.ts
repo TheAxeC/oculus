@@ -1,7 +1,4 @@
-import { setCatalog, setGlyphs, setIcons } from '$lib/state/shared/words/text';
-import { setAppearance } from '$lib/state/shared/words/appearance';
-import { setVocab } from '$lib/state/shared/words/tones';
-import { configInstalled } from '$lib/state/shared/words/generation.svelte';
+import { installPageConfig } from '$lib/state/shared/page/install';
 import type { PageLoad } from './$types';
 
 // The catalog, the glyph names with their ASCII stand-ins, the tone vocabulary and the appearance
@@ -20,11 +17,6 @@ import type { PageLoad } from './$types';
 // generation at the end, after the last setter: a page already drawn then draws again with what
 // this installed instead of holding what it loaded with.
 export const load: PageLoad = ({ data }) => {
-    setCatalog(data.text);
-    setGlyphs(data.glyphs);
-    setIcons(data.icons);
-    setVocab(data.vocab);
-    setAppearance(data.vocab);
-    configInstalled();
+    installPageConfig(data);
     return { collections: data.collections, seed: data.seed, token: data.token };
 };

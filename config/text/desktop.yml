@@ -1,0 +1,60 @@
+# Oculus text owned by the desktop app: its menus, its dialogs, the find bar and the key sheet rows it adds.
+text:
+    desktop:
+        dialog:
+            args_refused: 'oculus did not start: {0}'
+            build_failed: 'The build of the oculus server failed: {0}'
+            continue: Continue
+            env_slow: The login shell did not answer within 10 seconds, so programs on its PATH (tmux, git, claude) may not be found.
+            not_built: The oculus server is not built. Run npm run build, then start the app again.
+            open_window: Open a Window
+            port_oculus: An oculus already answers on port {0}.
+            port_other: Port {0} is held by another program, so oculus did not start.
+            quit: Quit
+            restart: Restart
+            server_exited: 'The oculus server ended (exit code {0}): {1}'
+            server_failed: The oculus server could not start ({0}).
+        find:
+            case: Match case
+            case_mark: Aa
+            close: Close
+            count: '{0} of {1}'
+            next: Next match
+            placeholder: Find in page
+            previous: Previous match
+        keys:
+            rows: 'Cmd+W | close the active tab of the focused pane (in the app);;Ctrl+Tab / Ctrl+Shift+Tab | next / previous tab in the focused pane (in the app);;Cmd+N | new text file in the focused pane (in the app);;Cmd+Shift+N | new window (in the app);;Cmd+Shift+W | close the window (in the app);;Cmd+, | settings (in the app);;Cmd+R | reload the window (in the app);;Cmd+F | find in the page (in the app)'
+        menu:
+            about: About oculus
+            app: oculus
+            close_window: Close Window
+            copy: Copy
+            cut: Cut
+            devtools: Toggle Developer Tools
+            edit: Edit
+            file: File
+            front: Bring All to Front
+            full_screen: Toggle Full Screen
+            help: Help
+            help_item: oculus Help
+            hide: Hide oculus
+            hide_others: Hide Others
+            minimize: Minimize
+            new_window: New Window
+            paste: Paste
+            quit: Quit oculus
+            redo: Redo
+            reload: Reload
+            select_all: Select All
+            settings: Settings...
+            show_all: Show All
+            switch_main: Switch to Main Window
+            undo: Undo
+            view: View
+            window: Window
+            zoom: Zoom
+            zoom_in: Zoom In
+            zoom_out: Zoom Out
+            zoom_reset: Reset Zoom
+        pick:
+            add: Add

@@ -1,17 +1,22 @@
 // Layer 2, server. The command line the built server is started with, read as a pure function so
 // every rule of it is tested without starting a process.
 //
-// There is one flag, `--engine <dir>`, naming the directory that holds `config/`; the whole of what
-// the server needs is in that directory, so nothing else is a flag and nothing is read from the
-// environment. A run that must not write the checkout's own configuration points this at a copy.
+// The flag is `--engine <dir>`, naming the directory that holds `config/`; the whole of what the
+// server needs is in that directory, so nothing is read from the environment. A run that must not
+// write the checkout's own configuration points this at a copy. The one other flag is
+// `--default-port <n>`, the port a missing local.yml means; the desktop host passes it, so the port
+// it expects the server on is the port the server takes.
 
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
-export type EngineArgs = { engine: string } | { error: string };
+export type EngineArgs = { engine: string; defaultPort?: number } | { error: string };
 
-/** The one flag, in the two spellings a command line writes it in. */
+/** The flag that names the engine, in the two spellings a command line writes it in. */
 const FLAG = '--engine';
+
+/** The flag that names the port a missing local.yml means. */
+const PORT_FLAG = '--default-port';
 
 export type ArgsReader = {
     /** The directory a relative path is resolved against, which is where the command was typed. */
@@ -35,7 +40,8 @@ export type ArgsReader = {
  * the refusal would name a folder nobody typed. The line naming `--engine` twice takes the last of
  * them, as a shell takes the last redirection. A directory without `config/` is an error too: a
  * server over nothing is not a server, and a flag pointing at nothing is a typo rather than a
- * request for an empty configuration.
+ * request for an empty configuration. `--default-port <n>` is a whole port number from 1 to 65535;
+ * anything else is an error, and the line naming it twice takes the last.
  */
 export function parseEngineArgs(argv: string[], reader: ArgsReader): EngineArgs {
     const missing = { error: `${FLAG} needs the directory that holds config/` };
@@ -43,17 +49,25 @@ export function parseEngineArgs(argv: string[], reader: ArgsReader): EngineArgs 
     const notADirectory = (value: string): boolean => value === '' || value.startsWith('--');
     const { tokens } = parseArgs({
         args: argv,
-        options: { engine: { type: 'string' } },
+        options: { engine: { type: 'string' }, 'default-port': { type: 'string' } },
         strict: false,
         allowPositionals: true,
         tokens: true
     });
     let named: string | null = null;
+    let defaultPort: number | undefined;
     for (const token of tokens) {
         if (token.kind === 'option' && token.rawName === FLAG) {
             const value = token.value ?? '';
             if (notADirectory(value)) return missing;
             named = value;
+            continue;
+        }
+        if (token.kind === 'option' && token.rawName === PORT_FLAG) {
+            defaultPort = Number(token.value);
+            if (!Number.isInteger(defaultPort) || defaultPort < 1 || defaultPort > 65535) {
+                return { error: `${PORT_FLAG} needs a port number` };
+            }
             continue;
         }
         return { error: `unknown argument: ${argv[token.index]}` };
@@ -62,5 +76,5 @@ export function parseEngineArgs(argv: string[], reader: ArgsReader): EngineArgs 
     if (!reader.hasConfig(engine)) {
         return { error: `${engine} holds no config/ folder, so there is nothing to serve` };
     }
-    return { engine };
+    return defaultPort === undefined ? { engine } : { engine, defaultPort };
 }

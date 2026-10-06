@@ -96,6 +96,9 @@ text:
             too_much_output: '{0} wrote more than {1} MB of output, so it was stopped'
         latex:
             name: latex {0} {1}/{2}
+        start:
+            already_running: oculus is already running; its window is brought to the front
+            port_in_use: 'oculus: port {0} is in use'
         task:
             name: 'Task: {0}'
             seed_deadline: 'Deadline: {0}'

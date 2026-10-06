@@ -411,7 +411,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
 
     /** Post one action of the terminal route and read it as a run's answer. */
     async function post(body: Record<string, unknown>): Promise<RunAnswer> {
-        const answer = await postTerminal(body, writes.writeToken());
+        const answer = await postTerminal(body, writes);
         if (answer.approve !== undefined) return { approve: answer.approve };
         if (answer.confirm !== undefined) return { confirm: answer.confirm };
         if (!answer.ok) return { ok: false, error: answer.error };
@@ -646,7 +646,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
      */
     async function capture(id: string, pid: number): Promise<void> {
         const turn = restarted.get(id) ?? 0;
-        const answer = await postTerminal({ action: 'capture', id }, writes.writeToken());
+        const answer = await postTerminal({ action: 'capture', id }, writes);
         if (!answer.ok || answer.output === undefined) return;
         if (
             (restarted.get(id) ?? 0) !== turn ||

@@ -934,3 +934,247 @@ Cases of the brief's "Cases":
 - Items 1 to 16: outside this review's scope by the dispatch.
 
 Reviewer usage: a1f7cd3cd58643a76, claude-opus-5-5, 260,959 tokens, 61 tool uses, 9.6 minutes.
+
+## Repair round 1, refuted (the brief prepared again)
+
+All five findings the round was sent with are closed. No fix goes beyond its finding, and no check was removed or loosened. This run raises two small findings about the report and none about the code. Both have verdict none and can be closed at landing by citing the reruns below.
+
+The round's delta is this:
+- It changed only `tests/server/desktop/start.test.ts` (`printed()` and its doc comment) and the head comment of `tests/tiers/landing.mjs`. Both files have mtime 07:11:25. `app.ts`, `build.ts`, `process.ts` and `error-line.ts` have mtimes from 06:39 to 06:41, before the round (`ls -l -T`).
+- `diff -u` against gate-O30 shows the whole of items 17 and 18 after the round.
+
+```
+$ (worktree root) git status --short | wc -l            127
+$ git diff a977b2448 --stat | tail -1                   124 files changed, 6562 insertions(+), 1844 deletions(-)
+  (the same before and after this review)
+
+$ diff -rq -x node_modules -x .svelte-kit -x build -x .git -x .scratch -x local.yml -x .DS_Store gate-O30/tools/oculus O30/tools/oculus
+Files .../src/desktop/app.ts differ
+Files .../src/desktop/server/build.ts differ
+Only in O30/tools/oculus/src/desktop/server: error-line.ts
+Files .../src/desktop/server/process.ts differ
+Files .../tests/server/desktop/start.test.ts differ
+Files .../tests/tiers/landing.mjs differ
+(cmp of package.json, package-lock.json, HELP.md, DESIGN.md, README.md, vite.config.ts, tsconfig.json, .gitignore: identical)
+
+From the worktree's tools/oculus, node at $HOME/.nvm/versions/node/v24.21.0/bin:
+$ npx prettier --check tests/server/desktop/start.test.ts tests/tiers/landing.mjs src/desktop/app.ts src/desktop/server/build.ts src/desktop/server/process.ts src/desktop/server/error-line.ts
+All matched files use Prettier code style!      prettier exit 0
+$ npx eslint <the same six files>               (no output) eslint exit 0
+$ LC_ALL=C grep -n '[^ -~]' <the same six files>  (no output) grep exit 1
+$ npx vitest run tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+        tests/server/desktop/start.test.ts: changed, run by npm run test:checks or test:slow
+ok      ASCII gate (0.4 s)
+ok      prettier (1.4 s): All matched files use Prettier code style!
+ok      svelte-kit sync (1.8 s)
+ok      eslint (1.7 s)
+ok      svelte-check (4.9 s): 1791263827024 COMPLETED 379 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (10.4 s): Duration  7.60s (transform 13.93s, setup 0ms, import 21.51s, tests 6.85s, environment 74ms)
+test:quick: 10.9 s (limit 45.0 s); every command passed
+checks: 1 commands passed                        exit 0
+
+Comment wrapping. A python3 probe compared each comment line with the first word of the next line:
+landing.mjs:1-15 widths 95 97 95 94 97 95 9 | 2 | 97 100 100 13 | 2 | 96 76
+start.test.ts:165-172 widths 3 100 94 95 99 100 10 3
+no line inside a paragraph ends where the next word would fit within 100 columns
+
+Cases 18.1 to 18.7:
+- Scratch module under $TMPDIR/o30rr1-review: start.test.ts:41-46 (Running) and :173-204 (printed()) copied with sed.
+- `diff <(sed -n 173,204p start.test.ts) <(sed -n 9,40p printed.ts)` printed nothing, so the copy is verbatim.
+- Lines were collected as run() collects them (start.test.ts:119-121), with a `node -e` child per case.
+- The scratch was removed afterwards.
+18.1 dialog line, then nothing for 30 s: rejected after 24 ms (0 ms after the dialog line): a dialog before "oculus on http://127.0.0.1:8817"; the output was: // [screen] dialog //     child ended
+18.1b dialog line, the text 300 ms later (two chunks): rejected after 22 ms (0 ms after the dialog line)
+18.2 text, then a dialog line: settled after 25 ms
+18.3 a dialog message, then its recorder line: settled after 22 ms
+18.4 neither, child exits: rejected after 23 ms: no line with "oculus on http://127.0.0.1:8817"; the output was: // something else //
+18.5 one write, dialog line then the text: rejected after 23 ms: a dialog before "oculus on ..."; the output was: // [screen] dialog // oculus on http://127.0.0.1:8817 //
+18.6 both printed before the call, dialog first (lines at the call: ["[screen] dialog","","oculus on http://127.0.0.1:8817",""]): rejected after 0 ms
+18.7 one write, the text then the dialog line: settled after 30 ms
+extra: text on stderr, dialog on stdout 200 ms later: settled after 26 ms
+extra: both before the call, text first: settled after 0 ms
+
+Case 17.2:
+- The lane's line was read from landing.mjs:29-30 as text. landing.mjs was not imported.
+- A scratch npm was put first on PATH, and the scratch was removed afterwards.
+line: npm run check; c=$?; npm run build; b=$?; npm run test:slow; s=$?; [ $c -eq 0 ] && [ $b -eq 0 ] && [ $s -eq 0 ]
+FAIL=[run test:slow] exit 1 calls: run check,run build,run test:slow
+FAIL=[none]          exit 0 calls: run check,run build,run test:slow
+FAIL=[run check]     exit 1 calls: run check,run build,run test:slow
+
+Cases 19.x (node on a scratch module importing src/desktop/server/error-line.ts, removed after):
+19.1: "Error: Could not load /x/.svelte-kit/output/server/manifest.js: ENOENT: no such file or directory, open '/x/.svelte-kit/output/server/manifest.js'"
+19.2: "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'x' imported from /y.js"
+19.3: "SyntaxError: Unexpected token '}'"
+19.4: "done"   (and 'listen EADDRINUSE: ...' then 'done': "done")
+19.5: "Error: b"
+
+Case 20.1, from the worktree root:
+$ grep -rn '^<<<<<<<\|^>>>>>>>' tools/oculus --include='*.ts' --include='*.svelte' --include='*.json' --include='*.md' --include='*.yml' --exclude=local.yml --exclude-dir=node_modules
+  (no output) exit 1
+$ find for *.orig / *.rej        none
+
+The commands the round's report section quotes:
+$ grep -n "log(\`dialog\|showMessageBox" src/desktop/dialogs.ts
+24:    log(`dialog: ${options.message}`);
+34:            ? await dialog.showMessageBox(box)
+35:            : await dialog.showMessageBox(options.window, box);
+$ sed -n 51,54p src/desktop/app.ts            function print(...) { if (error) console.error(line); else console.log(line); }   (as quoted)
+$ sed -n 107,108p src/desktop/app.ts          const say = ... showDialog({ message, buttons }, print);   (as quoted)
+$ sed -n 12,14p tests/server/desktop/app-harness.ts    process.stdout.write(`[screen] ${what}\n`);   (as quoted)
+$ sed -n 22,25p tests/server/desktop/app-harness.ts    dialog.showMessageBox = ... record('dialog') ...   (as quoted)
+$ grep -n '"main"' package.json               6:    "main": "src/desktop/main.ts",
+$ sed -n 23p utils/unused-exports.sh          status=$?        (the report quotes the knip line here; it is :22, see Proof)
+$ grep -n "parentOf\|askParentToPick\|ParentPort" src/server.ts
+16:import { askParentToPick, parentOf, type ParentPort } from './lib/server/root/process/parent.ts';
+45:const parent = parentOf((process as { parentPort?: ParentPort }).parentPort);
+58:if (parent !== null) context.folderPicker.ask = askParentToPick(parent);
+$ ls -a | grep -i knip                         (nothing)
+$ grep -n knip package.json                    41:        "knip": "6.39.0",
+$ grep -n '"<script>"' package.json:6-25: no script names src/server.ts (read)
+History-word grep, over the 94 lines added in the six files against gate-O30 (error-line.ts whole):
+29: start.test.ts: * fail at once when a line opening `[screen] dialog` comes before it, ...
+31: start.test.ts: * limit. The app prints a dialog's message before the recorder's line, ...
+43: start.test.ts: fail(new Error(`a dialog before "${text}"; ...`));
+(the same 94 lines and the same three hits as the report)
+$ grep -rn -E "\.last\b|\blast:|started\.last|built\.last" src/desktop tests/server/desktop tests/tiers config HELP.md DESIGN.md README.md --exclude=local.yml
+HELP.md:202: ... a tab whose editor had the focus last ...   (as quoted)
+$ the same grep over all of src and tests: hits only in UpdateTray.svelte, sessions/group.ts, yaml-edit.ts, sessions/record.ts, present.svelte.ts, viewport.ts, storage.ts, tree.ts, editor-status.svelte.ts, headings.svelte.ts, change-tree.ts, use.ts, model-sessions.ts, pointer.ts; none in src/desktop and none in tests
+$ wc -l tests/server/desktop/start.test.ts tests/tiers/landing.mjs     333, 54
+
+End state:
+- `pgrep -fl 'Electron|src/server.ts'` printed only Visual Studio Code's crashpad handler, pid 943, which this review did not start.
+- `ps -ax` showed no vitest, knip or scratch process.
+- No o30rr1* scratch was left in $TMPDIR.
+```
+
+### The five findings, closed or not
+
+- **Spec 1, `printed()` reads presence, not order: closed.**
+  - `start.test.ts:178-188`: `decided()` compares `said = lines.findIndex(...includes(text))` with `asked = lines.findIndex(...startsWith('[screen] dialog'))`. It settles only when `said !== -1 && (asked === -1 || said < asked)` and fails otherwise once a dialog line is present.
+  - It runs at the call (`:200`, before the listeners are added) and on each chunk (`:189-191`).
+  - The doc comment (`:166-171`) states the rule by order.
+  - Cases 18.5 (one write, dialog first) and 18.6 (both lines present at the call, dialog first) now reject. 18.1 to 18.4 and 18.7 keep their results.
+  - The rule does not flip a row that should pass:
+    - The two rows that wait for a dialog (`start.test.ts:264`, `:327`) wait for the first dialog the app asks for.
+    - A failed first listen raises no second dialog: `process.ts:115-117` calls `onLost` only when `port !== null`, and `refused()` has no port.
+    - No row waits for text after an expected dialog. The harness's dialog never answers (`app-harness.ts:22-25`).
+- **Spec 2, the report did not quote the message-before-recorder lines: closed.**
+  - The report quotes `dialogs.ts:24,34-35`, `app.ts:51-54,107-108` and `app-harness.ts:12-14,22-25`, and each reruns as quoted.
+  - Every dialog of the app goes through `showDialog(..., print)`. `grep -rn -e dialogs.ts -e showMessageBox ... src tests` finds the one import at `app.ts:25`, and the calls at `app.ts:92,108,319` all pass `print`.
+  - `print` writes a non-error line on stdout, which is the stream the recorder writes to, so the order holds.
+- **Spec 3, the cause of the knip lines for `parent.ts`: closed.**
+  - The stated cause reproduces. The entry is package.json `main` (`src/desktop/main.ts`), there is no knip configuration, no script names `src/server.ts`, and `src/server.ts:16,45,58` imports and uses the three names.
+  - The quoted line number of the knip call is off by one (Proof below).
+- **Standards 1, the two greps: closed in substance.**
+  - The history-word grep reproduces exactly: 94 lines and the same three hits, each about the order of output lines.
+  - The renamed-field grep is quoted over narrower paths than the ruling names (Spec finding 1 below). My grep over all of `src` and `tests` finds no stale use.
+- **Standards 2, comment wrapping: closed.**
+  - The probe above finds no short line inside a paragraph in either comment.
+  - The longest lines are 100 columns (`landing.mjs:10,11`, `start.test.ts:166,170`), and the comment-width test passes.
+
+Nothing reaches beyond the findings. The round's diff in `start.test.ts` is `printed()`'s body and doc comment only. No `it` title and no `expect` changed (`diff -u` against gate-O30). In `landing.mjs` the round touched the head comment. The `LIST` hunk (:21-40) matches the first review's quote of :24-32 and of the line at :29-30.
+
+Nothing was removed or loosened:
+- The rule is stricter: it now also fails on the two inputs that settled before.
+- The `close` path is kept (`:192-195`, the "no line with" error, case 18.4).
+- The 10-minute `MINUTES` limit is unchanged.
+
+### Verdicts
+
+Items of the brief's "What to build", the whole diff since the base:
+
+- 17: holds.
+  - `landing.mjs:24-32` is one lane, `'npm run check, then npm run build, then npm run test:slow'`, each command run to its end and the lane red when any is red (case 17.2 rerun).
+  - `grep -n test:slow` hits only :25 and :29, so no entry of its own names it.
+  - The head comment (:3-7, :9-12) gives the reason and lists the slow tests in the lane.
+  - The rest of the file equals gate-O30.
+- 18: holds.
+  - The wait settles or fails by the order of the first text line and the first dialog line, at the call and on each chunk (`start.test.ts:173-204`).
+  - Its error holds the awaited text and every line.
+  - A dialog's own message is printed before the recorder's line on the same stream, and the report now quotes the lines that show it.
+  - The doc comment states both rules.
+  - No row's title or assertion changed.
+- 19: holds.
+  - `src/desktop/server/error-line.ts` holds the rule once (`ERROR_LINE`, :10) behind one export, `errorReason()`, used by `build.ts:9,25,33,46` and `process.ts:13,80,95,115,117`.
+  - None of these files changed in the round (mtime 06:39 to 06:41).
+- 20: holds. The worktree equals gate-O30 in every path except the six files items 17 to 19 change (`diff -rq` above).
+
+Cases of the brief's "Cases", with the round's 18.5 to 18.7:
+
+- 17.1: met. Reading `landing.mjs:21-40`: one entry runs check, build and test:slow in that order, and no other entry names `test:slow`.
+- 17.2: met. Exit 1, exit 0 and exit 1, each run with all three calls, rerun above.
+- 18.1: met. Rejected 0 ms after the dialog line, with the text and the lines; the child was ended after.
+- 18.2: met. Settled.
+- 18.3: met. Settled on the message printed before `[screen] dialog`.
+- 18.4: met. The "no line with" error.
+- 18.5: met. Rejected; one write with the dialog line first.
+- 18.6: met. Rejected at the call, with both lines present and the dialog first.
+- 18.7: met. Settled; one write with the text first.
+- 19.1: met. The `Error: Could not load ...` line.
+- 19.2: met. The `Error [ERR_MODULE_NOT_FOUND]: ...` line.
+- 19.3: met. The `SyntaxError: ...` line.
+- 19.4: met. `done`, also with `listen EADDRINUSE: ...` before it.
+- 19.5: met. `Error: b`.
+- 20.1: met. The marker grep prints nothing, and there is no `.orig` or `.rej` file. The dry run cannot be rerun on the applied tree; the equality with gate-O30 stands for it.
+- 20.2: met. The `diff -rq` above lists only the files of items 17 to 19.
+
+### Findings
+
+#### 1. Spec
+
+- `O30-report.md`, "Repair round 1", "Finding 4: the two greps".
+  - The quoted hunk: `$ grep -rn -E "\.last\b|\blast:|started\.last|built\.last" src/desktop tests/server/desktop tests/tiers config HELP.md DESIGN.md README.md --exclude=local.yml`, followed by "Over the whole `src` the same grep also finds only unrelated `last` fields ..."
+  - What is wrong:
+    - The round's ruling 4 asks for this grep quoted across `src`, `tests`, `config`, `HELP.md`, `DESIGN.md` and `README.md`.
+    - The quoted command covers `src/desktop`, `tests/server/desktop` and `tests/tiers` only.
+    - The whole-`src` result is stated without its output, and the rest of `tests` is not covered.
+    - My grep over all of `src` and `tests` (above) finds no stale use: no hit in `src/desktop` and none in `tests`. The code is right, and only the report's evidence is narrower than the ruling.
+  - Failure scenario: an orchestrator checking the report against ruling 4 cannot confirm from it that no test outside `tests/server/desktop` reads `.last` of a build result or a server start. It has to rerun the grep. The rerun above supplies it.
+  - Verdict: none.
+- `O30-report.md`, "Repair round 1", "Finding 1".
+  - The quoted hunk: the case lines 18.5 to 18.7, given after the change only.
+  - What is wrong:
+    - The refute skill's Spec heading asks for each case's first run on the unchanged tree. The report gives none for the round's new cases.
+    - 18.5's first run is in the first review ("one chunk, dialog first: settled after 25 ms").
+    - 18.6's first run exists nowhere. Reading the pre-round code the first review quotes (`seen()` checked before `asked()`, and an early `done()` when `seen()` holds at the call), it settled.
+    - 18.7 is behaviour that the change keeps, and its run after the change is quoted.
+  - Failure scenario: a reader of the report alone cannot see that 18.6 was a defect before the round. The first review and the reading above show it.
+  - Verdict: none.
+
+#### 2. Proof
+
+- None. Two small differences from the report are not findings, since no decision rests on either:
+  - `O30-report.md`, "Finding 3": `$ sed -n 23p utils/unused-exports.sh` is shown printing the knip call. That line prints `status=$?`, and the knip call is :22. The stated cause still holds.
+  - The round's quote of `checks.sh` leaves out the `ok ASCII gate` line, which my run prints. The gate passes.
+
+#### 3. Standards
+
+- None.
+  - The six files are ASCII.
+  - Prettier and eslint pass.
+  - The comment widths are within 100 with no short line.
+  - The three hits of "before" are about order, not history.
+  - `start.test.ts` has 333 lines.
+
+#### 4. Behaviour
+
+- None. The report's table states the change for a slow row that meets a dialog it did not wait for. "Repair round 1" states the rule by order, which now also fails a row whose dialog line comes first in the same pipe write.
+
+### Declined to judge
+
+- The slow rows of `start.test.ts` and the landing lane's wall time were not judged, because each needs the Electron app started, which this review may not do. They are the orchestrator's at landing.
+- The quoted `patch -p1 -E --dry-run` output was not rerun, because it cannot run on the applied tree. The `diff -rq` against gate-O30 stands for it.
+- `sh utils/unused-exports.sh` was not rerun, because the round's section quotes no run of it. The first review's run stands, and the round changed none of the files it reads for `parent.ts`.
+- Items 1 to 16 were outside this review's scope by the dispatch.
+- Z627 (the checkout build's own output folders) was not judged, because it is Axel's open item.
+
+Reviewer usage: a5128dba9664ee455, claude-opus-5-5, 214,865 tokens, 52 tool uses, 6.7 minutes.
+
+### Closed
+
+- Spec 1 (the renamed-field grep quoted over narrower paths than ruling 4): closed at landing by this run's grep over all of `src` and `tests`, quoted above, which finds no stale use; no code change.
+- Spec 2 (no first run quoted for the round's cases 18.5 to 18.7): closed at landing by the first review's run of 18.5 ("one chunk, dialog first: settled after 25 ms") and this run's reading of the pre-round code for 18.6; 18.7 is kept behaviour, its run after the change quoted; no code change.

@@ -3,7 +3,7 @@
 // taken in by a layout saved before there were floats. Each takes the pages
 // and answers new pages, or the pages it was given when it names nothing to change.
 
-import { findInstance, tabsOf } from '../instance.ts';
+import { findInstance, tabsOf } from '../../instance.ts';
 import {
     clamp,
     repane,
@@ -15,15 +15,18 @@ import {
     type Pages,
     type Pane,
     type Workbench
-} from '../model.ts';
-import { closePane, leafAt, removeTab, splitLeaf, type KeepRule } from '../tree.ts';
-import { restore, settleFocus } from '../workbench.ts';
+} from '../../model.ts';
+import { closePane, leafAt, removeTab, splitLeaf, type KeepRule } from '../../tree.ts';
+import { restore, settleFocus } from '../../workbench.ts';
 
 /** The smallest width or height of a free float and of a dock, in fractions of the window. */
 export const FLOAT_MIN = 0.1;
 
 /** The largest size a dock takes of the window. */
 export const DOCK_MAX = 0.6;
+
+/** The least width and height of a float's window, in screen points. */
+const WINDOW_MIN = 200;
 
 /** The width and height of a float that was just made, and the size of a dock that was. */
 export const START_W = 0.3;
@@ -42,13 +45,15 @@ function finite(...values: number[]): boolean {
 
 /**
  * Whether a place adds up: a free float inside the window with at least the least width and
- * height, a dock between the least and the most size.
+ * height, a dock between the least and the most size, a window of finite numbers at least
+ * WINDOW_MIN wide and high.
  */
 export function placeFits(place: FloatPlace): boolean {
     if (place.kind === 'dock') {
         return finite(place.size) && place.size >= FLOAT_MIN - EPS && place.size <= DOCK_MAX + EPS;
     }
     const { x, y, w, h } = place;
+    if (place.kind === 'window') return finite(x, y, w, h) && w >= WINDOW_MIN && h >= WINDOW_MIN;
     if (!finite(x, y, w, h)) return false;
     return (
         x >= -EPS &&
@@ -61,7 +66,7 @@ export function placeFits(place: FloatPlace): boolean {
 }
 
 /** The place a float starts at: the middle of the window. */
-function centred(): FloatPlace {
+export function centred(): FloatPlace {
     return { kind: 'free', x: (1 - START_W) / 2, y: (1 - START_H) / 2, w: START_W, h: START_H };
 }
 
@@ -209,10 +214,15 @@ export function dropInstance(held: Pages, id: string, keep?: KeepRule): Pages {
 
 /**
  * The pane at `path` of a page taken out of its tree and put over every page as a free float, in
- * the middle of the window. A page's only pane is left empty. A float's pane is never floated
- * again, and a page or path naming no pane holding a tab changes nothing.
+ * the middle of the window, or at `place`. A page's only pane is left empty. A float's pane is
+ * never floated again, and a page or path naming no pane holding a tab changes nothing.
  */
-export function floatPane(held: Pages, page: string, path: number[]): Pages {
+export function floatPane(
+    held: Pages,
+    page: string,
+    path: number[],
+    place: FloatPlace = centred()
+): Pages {
     const host = held.pages.find((one) => one.id === page);
     if (host === undefined) return held;
     const found = leafAt(host.workbench.root, path);
@@ -221,7 +231,7 @@ export function floatPane(held: Pages, page: string, path: number[]): Pages {
     const float: Float = {
         id: crypto.randomUUID(),
         pane: repane(found, found.tabs.map(kept), found.active),
-        place: centred()
+        place
     };
     return {
         ...held,
@@ -236,18 +246,19 @@ export function floatPane(held: Pages, page: string, path: number[]): Pages {
  * One tab taken out of the pane that holds it, on a page or in a float, and put over every page as
  * a free float whose top left corner is the point, in fractions of the window. The pane it left is
  * cleaned as a move cleans it, a float left with nothing is removed, and a tab nothing holds
- * changes nothing.
+ * changes nothing. A `placed` place replaces the free one the point makes.
  */
 export function floatTab(
     held: Pages,
     id: string,
     at: { x: number; y: number },
-    keep?: KeepRule
+    keep?: KeepRule,
+    placed?: FloatPlace
 ): Pages {
     const instance = instanceIn(held, id);
     if (instance === null) return held;
     const source = dropInstance(held, id, keep);
-    const place: FloatPlace = {
+    const place: FloatPlace = placed ?? {
         kind: 'free',
         x: clamp(at.x, 0, 1 - START_W),
         y: clamp(at.y, 0, 1 - START_H),
@@ -260,6 +271,30 @@ export function floatTab(
         place
     };
     return withFloats(source, [...source.floats, float]);
+}
+
+/**
+ * A copy of a tab put over every page as a new float at `place`, the tab itself left where it is.
+ * The copy has the ids it is given and the state the tab holds, copied through JSON as the saved
+ * arrangement is, so the two share nothing. A tab nothing holds changes nothing.
+ */
+export function copyTab(
+    held: Pages,
+    id: string,
+    place: FloatPlace,
+    ids: { tab: string; float: string }
+): Pages {
+    const instance = instanceIn(held, id);
+    if (instance === null) return held;
+    const state: unknown =
+        instance.state === undefined ? undefined : JSON.parse(JSON.stringify(instance.state));
+    const copy: Instance = { ...kept(instance), id: ids.tab, state };
+    const float: Float = {
+        id: ids.float,
+        pane: { kind: 'pane', tabs: [copy], active: ids.tab },
+        place
+    };
+    return withFloats(held, [...held.floats, float]);
 }
 
 /** The instance with this id, wherever it is held. */
@@ -318,7 +353,10 @@ export function dockFloat(held: Pages, id: string, edge: DockEdge): Pages {
     return replacing(held, id, { ...float, place: { kind: 'dock', edge, size } });
 }
 
-/** A docked float floated again, in the middle of the window. A free float changes nothing. */
+/**
+ * A docked float, or a float in a window of its own, floated again in the middle of the window. A
+ * free float changes nothing.
+ */
 export function freeFloat(held: Pages, id: string): Pages {
     const float = held.floats.find((one) => one.id === id);
     if (float === undefined || float.place.kind === 'free') return held;

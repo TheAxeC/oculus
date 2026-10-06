@@ -136,9 +136,28 @@ export function createWrites(
         return answer;
     }
 
-    /** Install the token the page was given. Called from the page's load, on every load. */
+    /** What registered to hear the token change: the socket, which carries it to the server. */
+    const tokenListeners: (() => void)[] = [];
+
+    function onToken(listener: () => void): void {
+        tokenListeners.push(listener);
+    }
+
+    /**
+     * Install the token the page was given. Called from the page's load, on every load; a token
+     * that differs from the one held is told to every listener.
+     */
     function setToken(next: string): void {
-        token = typeof next === 'string' ? next : '';
+        const given = typeof next === 'string' ? next : '';
+        if (given === token) return;
+        token = given;
+        for (const listener of tokenListeners) {
+            try {
+                listener();
+            } catch {
+                continue;
+            }
+        }
     }
 
     /**
@@ -150,19 +169,39 @@ export function createWrites(
     }
 
     /**
+     * Run the page's load again, so that the token a restarted server minted replaces the stale
+     * one. The import is here rather than at the top so nothing but a stale token pulls Kit's
+     * navigation module in, and a server-rendered page never touches it. The load hands the token
+     * to the page rather than installing it, and the page's effect is what puts it in this store;
+     * the tick flushes that effect, so the next request carries the new token.
+     */
+    async function renewToken(): Promise<void> {
+        const { invalidateAll } = await import('$app/navigation');
+        await invalidateAll();
+        await tick();
+    }
+
+    /**
      * Post one command to an endpoint of its own, which answers a JSON body of its own and not a
-     * write's answer, with the page's token. A fetch that fails and an answer that is not JSON are
-     * answered as what went wrong rather than thrown, so a press whose request did not come back
-     * says so in its view instead of ending in a rejection nobody reads.
+     * write's answer, with the page's token. A 403 renews the token and posts once more, as a
+     * write does. A fetch that fails and an answer that is not JSON are answered as what went
+     * wrong rather than thrown, so a press whose request did not come back says so in its view
+     * instead of ending in a rejection nobody reads.
      */
     async function postCommand(path: string, body: unknown): Promise<Posted> {
-        let response: Response;
-        try {
-            response = await fetch(path, {
+        const send = (): Promise<Response> =>
+            fetch(path, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json', 'x-oculus-token': token },
                 body: JSON.stringify(body)
             });
+        let response: Response;
+        try {
+            response = await send();
+            if (response.status === 403) {
+                await renewToken();
+                response = await send();
+            }
         } catch {
             return { ok: false, body: {}, failed: 'unreachable' };
         }
@@ -500,14 +539,7 @@ export function createWrites(
             let response = await post(request, path, gate.signal);
             let body = await readJson(response);
             if (response.status === 403 && refusalsShape.parse(fields(body)).refused.length === 0) {
-                // The import is here rather than at the top so nothing but a stale token pulls
-                // Kit's navigation module in, and a server-rendered page never touches it.
-                const { invalidateAll } = await import('$app/navigation');
-                await invalidateAll();
-                // The load hands the token to the page rather than installing it, and the page's
-                // effect is what puts it in this store; the tick flushes that effect, so the retry
-                // below carries the token the reload minted and not the stale one.
-                await tick();
+                await renewToken();
                 response = await post(request, path, gate.signal);
                 body = await readJson(response);
             }
@@ -557,7 +589,9 @@ export function createWrites(
 
     return {
         setToken,
+        onToken,
         writeToken,
+        renewToken,
         postCommand,
         pending,
         lastError,

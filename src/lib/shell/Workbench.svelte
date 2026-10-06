@@ -13,6 +13,11 @@
     // The body is a grid so that a float docked to an edge takes a track of its own beside the
     // area.
     //
+    // In the desktop app the page of a popped-out window (`?float=<id>`) is this component with the
+    // body drawn as that one float alone, filling the window (panes/floats/FloatWindow.svelte):
+    // no rail, no status bar and no page, and none of the work that fills the rail's pages and
+    // takes in the shipped floats, which the main window's page does for every window.
+    //
     // It is also where the appearance is put on the document, in one effect: the theme's class and
     // its derived tokens, the wallpaper's layer and the properties its translucent surfaces read,
     // and which of the two glyph vocabularies renders.
@@ -28,6 +33,7 @@
     import PageLeaf from './panes/leaf/PageLeaf.svelte';
     import PaneView from './panes/PaneView.svelte';
     import FloatLayer from './panes/floats/FloatLayer.svelte';
+    import FloatWindow from './panes/floats/FloatWindow.svelte';
     import { bodyTracks } from './panes/floats/float-geometry';
     import SplitView from './panes/SplitView.svelte';
     import UpdateTray from './rail/UpdateTray.svelte';
@@ -134,6 +140,9 @@
         waiting = 0
     }: Props = $props();
 
+    /** The float this page draws alone in a popped-out window of the app, or null. */
+    const floatId = client.desktop?.float ?? null;
+
     /** The area the page's tree fills, which a float let go beside it docks on. */
     let area: HTMLElement | undefined = $state();
 
@@ -188,6 +197,8 @@
                 client.editorStatus.ask(tab.instance, { kind: 'action', id: SAVE_ACTION });
         },
         mac: onMac(),
+        app: client.desktop !== undefined,
+        find: () => client.desktop?.bridge.showFind(),
         railPage: (index) => {
             const entry = pages.at(index - 1);
             if (index < 1 || entry === undefined) return false;
@@ -200,7 +211,7 @@
     // owns. The rail list comes with the config push, so this waits for it; the store answers only
     // while its pages are still the untouched default.
     $effect(() => {
-        if (!configured) return;
+        if (!configured || floatId !== null) return;
         const first = pages.at(0);
         if (first !== undefined) {
             client.layout.startOnRailPage(first.page, first.label, first.node, shipped);
@@ -244,6 +255,13 @@
         handledPaletteRequest = asked.seq;
         openPalette(asked.text);
     });
+
+    /** The key sheet's rows: the app's own after the page's, in the desktop app. */
+    const keyRows = $derived(
+        client.desktop === undefined
+            ? t('app.keys.rows')
+            : `${t('app.keys.rows')};;${t('desktop.keys.rows')}`
+    );
 
     /** The wallpaper is drawn when the viewer wants one and the theme is one it shows under. */
     const wall = $derived(wallpaper() && wallpaperOnTheme(theme()));
@@ -293,60 +311,66 @@
     onpointerdown={keyboard.panePressed}
 />
 
-<div class="workbench">
-    {#if wall}
-        <!-- Behind everything the workbench draws, and behind nothing else: a fixed layer at a
-             negative depth paints over the page's own background and under every panel. -->
-        <div class="wallpaper" style={image}></div>
+{#if floatId !== null}
+    {#if client.layout.loaded()}
+        <FloatWindow id={floatId} onpalette={openPalette} />
     {/if}
-    <div class="body" style={bodyTracks(floats())}>
-        <ActivityRail
-            {pages}
-            {saved}
-            {editRail}
-            onsearch={() => openPalette('')}
-            onupdate={openUpdate}
-        />
-        <div class="column">
-            <div class="area" bind:this={area}>
-                <!-- Keyed by the page, so a switch unmounts the hidden page's views and mounts
+{:else}
+    <div class="workbench">
+        {#if wall}
+            <!-- Behind everything the workbench draws, and behind nothing else: a fixed layer at a
+             negative depth paints over the page's own background and under every panel. -->
+            <div class="wallpaper" style={image}></div>
+        {/if}
+        <div class="body" style={bodyTracks(floats())}>
+            <ActivityRail
+                {pages}
+                {saved}
+                {editRail}
+                onsearch={() => openPalette('')}
+                onupdate={openUpdate}
+            />
+            <div class="column">
+                <div class="area" bind:this={area}>
+                    <!-- Keyed by the page, so a switch unmounts the hidden page's views and mounts
                      the shown page's: nothing is drawn twice, and every view rebuilds from the
                      stores. -->
-                {#key page.id}
-                    {#if client.layout.startingFresh()}
-                        <!-- No page until the rail list chose the first, so no view mounts
+                    {#key page.id}
+                        {#if client.layout.startingFresh()}
+                            <!-- No page until the rail list chose the first, so no view mounts
                              twice. -->
-                    {:else if zoomed !== null && focus !== null}
-                        <div class="tree" style="flex: 1 1 0">
-                            <PaneView
-                                node={zoomed}
-                                path={focus.path}
-                                page={page.id}
-                                onpalette={openPalette}
-                            />
-                        </div>
-                    {:else}
-                        <div class="tree" style="flex: 1 1 0">
-                            <SplitView
-                                layout={layout()}
-                                page={page.id}
-                                pane={paneOf}
-                                fold={foldOf}
-                                leaf={leafOf}
-                                onresize={(path: number[], sizes: number[]) =>
-                                    change((tree) => resize(tree, path, sizes))}
-                                onexpand={(path: number[], index: number) =>
-                                    expandChild(path, index)}
-                            />
-                        </div>
-                    {/if}
-                {/key}
+                        {:else if zoomed !== null && focus !== null}
+                            <div class="tree" style="flex: 1 1 0">
+                                <PaneView
+                                    node={zoomed}
+                                    path={focus.path}
+                                    page={page.id}
+                                    onpalette={openPalette}
+                                />
+                            </div>
+                        {:else}
+                            <div class="tree" style="flex: 1 1 0">
+                                <SplitView
+                                    layout={layout()}
+                                    page={page.id}
+                                    pane={paneOf}
+                                    fold={foldOf}
+                                    leaf={leafOf}
+                                    onresize={(path: number[], sizes: number[]) =>
+                                        change((tree) => resize(tree, path, sizes))}
+                                    onexpand={(path: number[], index: number) =>
+                                        expandChild(path, index)}
+                                />
+                            </div>
+                        {/if}
+                    {/key}
+                </div>
             </div>
+            <FloatLayer {area} onpalette={openPalette} />
         </div>
-        <FloatLayer {area} onpalette={openPalette} />
+        <StatusBar {status} {git} onpalette={openPalette} />
     </div>
-    <StatusBar {status} {git} onpalette={openPalette} />
-</div>
+{/if}
 <DropLayer />
 <Palette
     open={paletteOpen}
@@ -360,7 +384,7 @@
     <KeySheet
         title={t('app.keys.title')}
         hint={t('app.keys.hint')}
-        rows={t('app.keys.rows')}
+        rows={keyRows}
         onclose={() => (sheetOpen = false)}
     />
 {/if}

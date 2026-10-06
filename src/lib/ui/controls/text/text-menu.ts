@@ -10,6 +10,10 @@
 // the box's caller hears, as a key's edit does. Paste reads the clipboard's text through
 // `navigator.clipboard.readText()`; a refused read leaves the box as it was.
 //
+// In the desktop app the box's menu also shows the spell checker's suggestions for the word at the
+// caret, at its top: `wordAt` finds the word, the ask is spelling.ts's, and a pick of a suggestion
+// replaces the word's range as Paste inserts its text.
+//
 // The items are a pure function of the box's state, so which items a box offers is asserted without
 // a DOM, and the words come in as `t` so every label is a catalog key.
 
@@ -46,6 +50,52 @@ export function textMenu(facts: TextFacts, t: Words): MenuItem[] {
 
 /** A text box, a line or several. */
 type Box = HTMLInputElement | HTMLTextAreaElement;
+
+/** A word in a text, by the offsets it spans. */
+export type WordRange = { start: number; end: number; word: string };
+
+/** The id prefix of a suggestion's item, followed by the suggested word. */
+const SPELL_PICK = 'spell:';
+
+/** Whether a character belongs to a word: a letter, a mark or a digit. */
+function inWord(char: string | undefined): boolean {
+    return char !== undefined && /[\p{L}\p{M}\p{N}]/u.test(char);
+}
+
+/** Whether a character is an apostrophe, straight or curly, which a word may hold inside. */
+function apostrophe(char: string | undefined): boolean {
+    return char === "'" || char === '\u2019';
+}
+
+/**
+ * The word at a caret offset of a text: the word whose letters the caret is in or touches, taking
+ * the word to its right when the caret is between two. An apostrophe between letters belongs to the
+ * word (`don't`) and one at its ends does not, and punctuation and spaces are never part of one.
+ * A caret with no letter on either side, such as between two spaces, finds none.
+ */
+export function wordAt(text: string, offset: number): WordRange | null {
+    const at = Math.min(Math.max(offset, 0), text.length);
+    const touches = (index: number): boolean => {
+        const char = text[index];
+        return (
+            inWord(char) || (apostrophe(char) && inWord(text[index - 1]) && inWord(text[index + 1]))
+        );
+    };
+    let seed = -1;
+    if (touches(at)) seed = at;
+    else if (at > 0 && touches(at - 1)) seed = at - 1;
+    if (seed < 0) return null;
+    let start = seed;
+    while (start > 0 && touches(start - 1)) start -= 1;
+    let end = seed + 1;
+    while (end < text.length && touches(end)) end += 1;
+    return { start, end, word: text.slice(start, end) };
+}
+
+/** The items of a word's suggestions, each labelled with the suggested word itself. */
+export function suggestionItems(words: readonly string[]): MenuItem[] {
+    return words.map((word) => ({ id: `${SPELL_PICK}${word}`, label: word }));
+}
 
 /** The facts of a box at the moment a right-click arrives on it. */
 export function textFacts(box: Box, secret: boolean): TextFacts {
@@ -95,8 +145,25 @@ async function paste(box: Box): Promise<void> {
     command('insertText', text);
 }
 
-/** Run a pick from a box's menu on the box. */
-export function textPicked(box: Box, pick: string): void {
+/**
+ * Replace the range of a misspelt word with the suggestion picked, as Paste inserts its text: the
+ * range is selected and the replacement typed over it, so the box's own undo history and its input
+ * event follow. A range that does not hold the word, because the box changed after the
+ * right-click, changes nothing.
+ */
+function replaceWord(box: Box, range: WordRange, replacement: string): void {
+    if (box.value.slice(range.start, range.end) !== range.word) return;
+    box.focus();
+    box.setSelectionRange(range.start, range.end);
+    command('insertText', replacement);
+}
+
+/** Run a pick from a box's menu on the box; `range` is the word a suggestion would replace. */
+export function textPicked(box: Box, pick: string, range: WordRange | null = null): void {
+    if (pick.startsWith(SPELL_PICK)) {
+        if (range !== null) replaceWord(box, range, pick.slice(SPELL_PICK.length));
+        return;
+    }
     box.focus();
     if (pick === TEXT_UNDO) command('undo');
     else if (pick === TEXT_REDO) command('redo');

@@ -116,21 +116,31 @@ const listAnswerShape = z.object({
 /** The action field of a request body, which is how `postTerminal` knows a start from the rest. */
 const actionShape = z.object({ action: z.string() });
 
+/** The write token of the page, and the call that renews it (WritesStore). */
+export type TokenSource = { writeToken: () => string; renewToken: () => Promise<void> };
+
 /**
- * Post one action with the write token. A page rendered on the server has no fetch and posts
- * nothing. A refusal is told in the catalog's sentence for its word, with the names the answer
- * carried (state/shared/answers/answers.ts), never in the server's own text. An answer at 200 is ok
- * whatever it names, except for a start: a terminal started with no id is one the page cannot
- * attach to, so a start whose answer names no terminal with an id is a failed start.
+ * Post one action with the write token. A 403 renews the token and posts once more. A page
+ * rendered on the server has no fetch and posts nothing. A refusal is told in the catalog's
+ * sentence for its word, with the names the answer carried (state/shared/answers/answers.ts),
+ * never in the server's own text. An answer at 200 is ok whatever it names, except for a start: a
+ * terminal started with no id is one the page cannot attach to, so a start whose answer names no
+ * terminal with an id is a failed start.
  */
-export async function postTerminal(body: unknown, token: string): Promise<TerminalAnswer> {
+export async function postTerminal(body: unknown, writes: TokenSource): Promise<TerminalAnswer> {
     if (typeof fetch !== 'function') return { ok: false, id: '', error: '' };
-    try {
-        const response = await fetch('/api/terminal', {
+    const send = (): Promise<Response> =>
+        fetch('/api/terminal', {
             method: 'POST',
-            headers: { 'content-type': 'application/json', 'x-oculus-token': token },
+            headers: { 'content-type': 'application/json', 'x-oculus-token': writes.writeToken() },
             body: JSON.stringify(body)
         });
+    try {
+        let response = await send();
+        if (response.status === 403) {
+            await writes.renewToken();
+            response = await send();
+        }
         const raw = await readJson(response);
         if (raw === undefined)
             return { ok: false, id: '', error: unreadableAnswer(response.status) };

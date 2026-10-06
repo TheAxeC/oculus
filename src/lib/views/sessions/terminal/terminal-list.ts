@@ -195,8 +195,9 @@ export function armKept(armed: string, stop: string): boolean {
 
 /**
  * The number of lines a paste holds when it holds a line break, which is the paste the grid asks
- * about before sending, or null for a paste of one line, which goes through. A line break that ends
- * the text closes its last line rather than opening another.
+ * about before sending since a line break runs what comes before it, or null for a paste with no
+ * line break, which goes through. A line break that ends the text closes its last line rather than
+ * opening another, so one line ending in one is a paste of 1 line.
  */
 export function pasteLines(text: string): number | null {
     if (!/[\r\n]/.test(text)) return null;
@@ -211,10 +212,10 @@ export function fileOver(event: DragEvent): void {
 }
 
 /**
- * Hold every paste of several lines into a grid until it is answered. xterm takes a paste from the
- * browser's own paste event on its hidden textarea; this listener sits above it in the capture
- * phase, so a paste of several lines is stopped before xterm sees it and handed to `held`, and a
- * paste of one line goes on to xterm untouched. The returned function takes the listener off.
+ * Hold every paste that holds a line break into a grid until it is answered. xterm takes a paste
+ * from the browser's own paste event on its hidden textarea; this listener sits above it in the
+ * capture phase, so such a paste is stopped before xterm sees it and handed to `held`, and a paste
+ * with no line break goes on to xterm untouched. The returned function takes the listener off.
  */
 export function holdPastes(
     host: HTMLElement,

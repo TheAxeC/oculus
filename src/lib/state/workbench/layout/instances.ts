@@ -17,7 +17,7 @@ import {
 } from './instance.ts';
 import type { LayoutAccess } from './access.ts';
 import type { Attention } from './open/attention.ts';
-import { dropInstance, writeHost } from './open/floats.ts';
+import { dropInstance, writeHost } from './open/float/pages.ts';
 import {
     hostsOf,
     isPage,

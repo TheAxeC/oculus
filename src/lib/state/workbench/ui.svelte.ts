@@ -25,9 +25,8 @@ import { followKey } from '../shared/stores/storage-events.ts';
 import {
     codeThemeDefault,
     crtDefault,
-    defaultTheme,
     isCodeTheme,
-    themes,
+    themeFor,
     wallpaperOnTheme
 } from '../shared/words/appearance.ts';
 
@@ -203,20 +202,21 @@ export type PaneStripKey = 'show_tabs' | 'editor_actions';
  */
 export function createUi(
     writeConfigKey: (file: string, key: string, value: unknown) => Promise<unknown> = () =>
-        Promise.resolve(null)
+        Promise.resolve(null),
+    inApp = false
 ): UiStore {
     /**
      * What a browser that has saved nothing starts on. Two of the seven come from
-     * config/appearance.yml rather than from a literal here: the theme is the first of its list and
-     * the overlay is its `crt.default`. The wallpaper starts on none, which wallpaper() answers
-     * from the theme in force, so it shows wherever one is configured until the toggle says
-     * otherwise, and the code theme starts on none the same way, answered by codeTheme() from the
-     * config's `code_theme:` until a pick is made. The glyphs start as the theme's own, which is
-     * the ASCII stand-ins on a terminal palette; `icons` is what turns that off and keeps the
-     * icons.
+     * config/appearance.yml rather than from a literal here: the theme is the first of its list
+     * (the app's dark theme in the desktop app) and the overlay is its `crt.default`. The wallpaper
+     * starts on none, which wallpaper() answers from the theme in force, so it shows wherever one
+     * is configured until the toggle says otherwise, and the code theme starts on none the same
+     * way, answered by codeTheme() from the config's `code_theme:` until a pick is made. The glyphs
+     * start as the theme's own, which is the ASCII stand-ins on a terminal palette; `icons` is what
+     * turns that off and keeps the icons.
      */
     function defaultUi(): Ui {
-        const theme = defaultTheme();
+        const theme = themeFor(null, inApp);
         return {
             theme,
             crt: crtDefault(),
@@ -400,10 +400,9 @@ export function createUi(
         return held !== null && held.instance === instance ? held : null;
     }
 
-    /** A theme name config/appearance.yml lists, and the default for one it does not. */
+    /** A theme name config/appearance.yml lists, and the start for one it does not. */
     function known(name: unknown): string {
-        if (typeof name !== 'string') return defaultTheme();
-        return themes().some((entry) => entry.name === name) ? name : defaultTheme();
+        return themeFor(name, inApp);
     }
 
     /**

@@ -6,7 +6,7 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import { t } from '$lib/state/shared/words/text';
-import type { Instance } from '$lib/state/workbench/layout';
+import type { Instance, WindowBounds } from '$lib/state/workbench/layout';
 import {
     bookmarkTabFile,
     fileOfTab,
@@ -27,6 +27,8 @@ export type TabMenuDeps = {
     path: () => number[];
     /** The roots the server serves; a file under another is not offered the file items. */
     roots: () => TabRoot[];
+    /** The pane's place on the screen, which a new window opens at; the app's panes give it. */
+    windowBounds?: () => WindowBounds;
     /** The strip's own menu, for a right-click that lands on no tab. */
     stripItems: () => MenuItem[];
     /** A pick of the strip's menu. */
@@ -82,6 +84,8 @@ export function createTabMenu(deps: TabMenuDeps) {
                 tabs: instances.length,
                 right: instances.length - at - 1,
                 compareWith: other !== null,
+                windows: deps.client.desktop !== undefined,
+                copyable: layout.copiesToWindow(found.id),
                 ...facts
             },
             t
@@ -159,7 +163,15 @@ export function createTabMenu(deps: TabMenuDeps) {
             keepOpen: () => layout.keepPreview(tab),
             pin: () => layout.pinTab(tab),
             unpin: () => layout.unpinTab(tab),
-            split: (edge) => layout.splitInstance(tab, deps.path(), edge, deps.page())
+            split: (edge) => layout.splitInstance(tab, deps.path(), edge, deps.page()),
+            moveToWindow: () => {
+                const at = deps.windowBounds?.();
+                if (at !== undefined) layout.windowTab(tab, at);
+            },
+            copyToWindow: () => {
+                const at = deps.windowBounds?.();
+                if (at !== undefined) layout.copyTabToWindow(tab, at);
+            }
         });
     }
 

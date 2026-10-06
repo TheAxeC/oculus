@@ -32,9 +32,10 @@ import {
  * Under lib, the layer is the longest row of the boundary test the path opens with, as the test's
  * own `layerOf` decides for `server/transcripts`, and the node is the layer's folder one level
  * down, or the layer itself for a file that sits in it. A route is drawn by its group under api/
- * (`routes/api/(docs)`), the root of routes by itself, and a module directly under src (the server
- * entry and the hooks) in a group named src. Anything else under lib has no row and is drawn in the
- * group of what no rule placed.
+ * (`routes/api/(docs)`), the root of routes by itself, a module under src/desktop (the app's main
+ * process) in a group named desktop, and a module directly under src (the server entry and the
+ * hooks) in a group named src. Anything else under lib has no row and is drawn in the group of what
+ * no rule placed.
  *
  * @param {string} path Relative to src.
  * @param {string[]} layers
@@ -47,6 +48,7 @@ export function placeOf(path, layers) {
         const node = ['routes', ...folders.slice(0, 2)].join('/');
         return { layer: 'routes', node };
     }
+    if (parts[0] === 'desktop') return { layer: 'desktop', node: 'desktop' };
     if (parts[0] !== 'lib') return { layer: 'src', node: 'src' };
     const rel = parts.slice(1).join('/');
     const layer = layers
@@ -148,14 +150,15 @@ export function runtimeImports(sources, end, read = parseReader()) {
 
 /**
  * The overview: one node per layer that imports or is imported (the server's transcripts row drawn
- * with the server), routes as one node and the entry modules directly under src (the Node entry,
- * the hooks) as one node named entry, and one arrow per ordered pair of them that imports,
- * labelled with how many runtime imports it carries. The entry's load of the built app is its
- * arrow to routes. A file outside every layer that is no module (the favicon a page links to) is
- * drawn as a node named by its folder under lib, as `assets`. A module no layer row places is
- * drawn, only when an import joins it, in the dashed group of what is not placed. An import the
- * reader cannot follow is a dashed node naming its file and line, with a dashed arrow from the node
- * of the module that makes it.
+ * with the server), routes as one node, the modules under src/desktop (the app's main process) as
+ * one node named desktop, and the entry modules directly under src (the Node entry, the hooks) as
+ * one node named entry, and one arrow per ordered pair of them that imports, labelled with how many
+ * runtime imports it carries. The entry's load of the built app is its arrow to routes. A file
+ * outside every layer that is no module (the favicon a page links to) is drawn as a node named by
+ * its folder under lib, as `assets`. A module no layer row places is drawn, only when an import
+ * joins it, in the dashed group of what is not placed. An import the reader cannot follow is a
+ * dashed node naming its file and line, with a dashed arrow from the node of the module that makes
+ * it.
  *
  * @param {Sources} sources
  * @param {string[]} layers
@@ -178,7 +181,7 @@ export function layersDot(sources, layers, read = parseReader()) {
     const joined = [...edges.keys()].flatMap((key) => key.split('\n'));
     const nodes = new Set([...joined, ...lost.map((one) => String(one.from))]);
     const lines = header('layers', 'rankdir=TB, newrank=true');
-    const order = [...new Set(layers.map((layer) => layer.split('/')[0])), 'routes'];
+    const order = [...new Set(layers.map((layer) => layer.split('/')[0])), 'routes', 'desktop'];
     for (const node of order.filter((one) => nodes.has(one))) lines.push(`    ${quote(node)};`);
     if (nodes.has('src')) lines.push(`    ${quote('src')} [label=${quote('entry')}];`);
     for (const node of sorted([...nodes].filter((one) => one.startsWith(filePrefix)))) {

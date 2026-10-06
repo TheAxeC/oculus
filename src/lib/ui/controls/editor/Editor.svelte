@@ -54,7 +54,7 @@
         type EditorMark
     } from './gutter/gutter';
     import { tabOut } from './tab-out';
-    import { runCommand } from './commands';
+    import { followFirstLine, runCommand, type FirstLine } from './commands';
     import { applyIndent, applyOptions, monacoOptions } from './options';
     import type { EditorOptions } from './options';
     import { lineBars } from './bars/zones';
@@ -106,6 +106,10 @@
         onselect?: (text: string) => void;
         /** How far the text is scrolled, 0 at the top and 1 at the bottom. */
         onscroll?: (fraction: number) => void;
+        /** The first line the editor shows, from one, said when the reader changes it. */
+        onfirst?: (line: number) => void;
+        /** The line the text first shows at the top, from one. */
+        startLine?: number;
         onmark?: (mark: EditorMark) => void;
         onblame?: (row: EditorBlame) => void;
         onglyph?: (line: number) => void;
@@ -142,6 +146,8 @@
         oncaret,
         onselect,
         onscroll,
+        onfirst,
+        startLine = 1,
         onmark,
         onblame,
         onglyph,
@@ -167,6 +173,7 @@
     /** The asks made before the editor loaded, performed once it has. */
     let waiting: EditorCommand[] = [];
     let alive = true;
+    let firstLine: FirstLine | null = null;
     /** The look and code theme the editor's theme and font were last read under. */
     let painted: string | null = null;
     /** What the paint depends on besides the tokens: the look and the code theme. */
@@ -208,12 +215,14 @@
             highlights: made.createDecorationsCollection()
         };
         placed.mount(made, made.getOption(loaded.monaco.editor.EditorOption.lineHeight));
+        firstLine = followFirstLine(made, (line) => onfirst?.(line));
         listeners.push(
             made.onDidChangeCursorSelection((event) => caretMoved(event.selection)),
             made.onDidScrollChange((event) => {
                 const room = event.scrollHeight - made.getLayoutInfo().height;
                 onscroll?.(room > 0 ? Math.min(1, event.scrollTop / room) : 0);
             }),
+            firstLine.listener,
             made.onMouseDown((event) => pressed(loaded, event.target))
         );
         editor = made;
@@ -318,6 +327,8 @@
         made.setModel(created);
         model = created;
         untrack(flush);
+        const start = untrack(() => startLine);
+        firstLine?.settle(loaded.monaco, created, start);
         return () => {
             changes.dispose();
             // An editor already disposed with the component holds no model to take away.

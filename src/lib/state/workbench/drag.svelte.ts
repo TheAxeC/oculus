@@ -6,6 +6,11 @@
 // this is a module and not a component's state: the control that started the drag and the pane the
 // pointer ended over never meet.
 //
+// In the desktop app a tab let go outside the window, over no pane, is handed to the host with the
+// point it was let go at (`outside` of the sink): another window of the app under that point takes
+// the tab, and none opens a new window there. A window handed a tab by the host performs the drop
+// it would have performed had the pointer come up over it (`receive`).
+//
 // Nothing here reads the layout tree. A Drop names a pane's path and how the instance lands there;
 // the operation that carries it out is state/workbench/layout.svelte.ts's, and it is reached
 // through a sink so that a test can watch what a drag performs without a store or a DOM.
@@ -14,8 +19,9 @@
 // removed by end() and cancel(), so a page nobody is dragging on carries none, and a drag survives
 // the pointer leaving the control it began in, which is the whole reason they are on the document.
 
+import type { Desktop } from '../shared/stores/desktop.ts';
 import type { LayoutStore } from './layout.svelte.ts';
-import type { Edge } from './layout/index.ts';
+import { WINDOW_START, type Edge } from './layout/index.ts';
 
 /** A point in the viewport, which is what getBoundingClientRect is measured in. */
 export type Point = { x: number; y: number };
@@ -52,6 +58,11 @@ export type DragSink = {
     embed: (nested: string, path: number[], edge: Edge, page?: string) => void;
     /** Put a tab over every page as a float whose corner is this point of the viewport. */
     float: (id: string, at: Point) => void;
+    /**
+     * Hand a tab let go outside the window to the app, at this point of the screen. Absent in a
+     * browser, where such a drop performs nothing.
+     */
+    outside?: (id: string, at: Point) => void;
 };
 
 /**
@@ -83,6 +94,16 @@ export type Dragging = {
     alt: boolean;
 };
 
+/** Whether a point of the viewport is inside the window. */
+function inside(point: Point): boolean {
+    return (
+        point.x >= 0 &&
+        point.y >= 0 &&
+        point.x <= window.innerWidth &&
+        point.y <= window.innerHeight
+    );
+}
+
 /** An index past every tab, which the pane's own clamp turns into the end of the strip. */
 export const AT_END = Number.MAX_SAFE_INTEGER;
 
@@ -91,7 +112,12 @@ export const AT_END = Number.MAX_SAFE_INTEGER;
  */
 export const THRESHOLD = 6;
 
-type Held = Dragging & { origin: Point; armed: boolean };
+type Held = Dragging & {
+    origin: Point;
+    armed: boolean;
+    /** Where the pointer last was on the screen, which the app places a window by. */
+    screen: Point | null;
+};
 
 function far(origin: Point, point: Point): boolean {
     return Math.hypot(point.x - origin.x, point.y - origin.y) >= THRESHOLD;
@@ -143,13 +169,20 @@ export type DragStore = {
     start: (id: string, label: string, point: Point) => void;
     startPage: (id: string, label: string, point: Point) => void;
     startView: (view: string, state: unknown, label: string, point: Point, from?: string) => void;
-    move: (point: Point, alt?: boolean) => void;
+    move: (point: Point, alt?: boolean, screen?: Point) => void;
     hover: (drop: Drop | null, rect?: Rect | null, refused?: boolean) => void;
     end: () => void;
     cancel: () => void;
+    /**
+     * Perform the drop of a tab another window of the app handed this one, at a point of this
+     * window's viewport: the pointer is reported over what is under the point, as it would have
+     * been, and the drop it lands on is performed. Nothing happens over no pane. Answers whether
+     * a drop was performed.
+     */
+    receive: (id: string, at: Point) => boolean;
 };
 
-export function createDrag(layout: LayoutStore): DragStore {
+export function createDrag(layout: LayoutStore, desktop?: Desktop): DragStore {
     const store: { current: Held | null } = $state({ current: null });
 
     const storeSink: DragSink = {
@@ -162,7 +195,18 @@ export function createDrag(layout: LayoutStore): DragStore {
         split: (id, path, edge, page) => layout.splitInstance(id, path, edge, page),
         embed: (nested, path, edge, page) => layout.embedPage(nested, path, edge, page),
         float: (id, at) =>
-            layout.floatTab(id, { x: at.x / window.innerWidth, y: at.y / window.innerHeight })
+            layout.floatTab(id, { x: at.x / window.innerWidth, y: at.y / window.innerHeight }),
+        outside:
+            desktop === undefined
+                ? undefined
+                : (id, at) => {
+                      // The point is read out of the drag's reactive state: an IPC message carries
+                      // plain data, and a reactive object cannot be cloned.
+                      const point = { x: at.x, y: at.y };
+                      void desktop.bridge.dropOutside({ tab: id, at: point }).then((taken) => {
+                          if (!taken) layout.windowTab(id, { ...at, ...WINDOW_START });
+                      });
+                  }
     };
 
     let sink: DragSink = storeSink;
@@ -200,7 +244,8 @@ export function createDrag(layout: LayoutStore): DragStore {
             alt: false,
             kind: 'tab',
             origin: point,
-            armed: false
+            armed: false,
+            screen: null
         };
         listen(true);
     }
@@ -221,7 +266,8 @@ export function createDrag(layout: LayoutStore): DragStore {
             alt: false,
             kind: 'page',
             origin: point,
-            armed: true
+            armed: true,
+            screen: null
         };
         listen(true);
     }
@@ -249,7 +295,8 @@ export function createDrag(layout: LayoutStore): DragStore {
             alt: false,
             kind: 'view',
             origin: point,
-            armed: false
+            armed: false,
+            screen: null
         };
         listen(true);
     }
@@ -258,11 +305,17 @@ export function createDrag(layout: LayoutStore): DragStore {
      * The pointer moved. Past the threshold the drag is armed and stays armed. Alt means something
      * to a tab only: a page and a view are never floated.
      */
-    function move(point: Point, alt = false): void {
+    function move(point: Point, alt = false, screen?: Point): void {
         const held = store.current;
         if (held === null) return;
         const armed = held.armed || far(held.origin, point);
-        store.current = { ...held, point, armed, alt: held.kind === 'tab' && alt };
+        store.current = {
+            ...held,
+            point,
+            armed,
+            alt: held.kind === 'tab' && alt,
+            screen: screen ?? held.screen
+        };
     }
 
     /**
@@ -292,7 +345,12 @@ export function createDrag(layout: LayoutStore): DragStore {
             return;
         }
         const drop = held.drop;
-        if (drop === null) return;
+        if (drop === null) {
+            if (held.kind === 'tab' && held.screen !== null && !inside(held.point)) {
+                sink.outside?.(held.id, held.screen);
+            }
+            return;
+        }
         if (held.kind === 'page') {
             if (drop.kind === 'edge') sink.embed(held.id, drop.path, drop.edge, drop.page);
             return;
@@ -320,11 +378,42 @@ export function createDrag(layout: LayoutStore): DragStore {
     }
 
     function onPointerMove(event: PointerEvent): void {
-        move({ x: event.clientX, y: event.clientY }, event.altKey);
+        move({ x: event.clientX, y: event.clientY }, event.altKey, {
+            x: event.screenX,
+            y: event.screenY
+        });
     }
 
-    function onPointerUp(): void {
+    function onPointerUp(event: PointerEvent): void {
+        move({ x: event.clientX, y: event.clientY }, event.altKey, {
+            x: event.screenX,
+            y: event.screenY
+        });
         end();
+    }
+
+    function receive(id: string, at: Point): boolean {
+        store.current = {
+            id,
+            label: '',
+            point: at,
+            drop: null,
+            rect: null,
+            refused: false,
+            alt: false,
+            kind: 'tab',
+            origin: at,
+            armed: true,
+            screen: null
+        };
+        const under =
+            typeof document === 'undefined' ? null : document.elementFromPoint(at.x, at.y);
+        under?.dispatchEvent(
+            new PointerEvent('pointermove', { clientX: at.x, clientY: at.y, bubbles: true })
+        );
+        const taken = (dragging()?.drop ?? null) !== null;
+        end();
+        return taken;
     }
 
     function onKeyDown(event: KeyboardEvent): void {
@@ -372,5 +461,16 @@ export function createDrag(layout: LayoutStore): DragStore {
         document.body.style.userSelect = '';
     }
 
-    return { setDragSink, dragging, start, startPage, startView, move, hover, end, cancel };
+    return {
+        setDragSink,
+        dragging,
+        start,
+        startPage,
+        startView,
+        move,
+        hover,
+        end,
+        cancel,
+        receive
+    };
 }

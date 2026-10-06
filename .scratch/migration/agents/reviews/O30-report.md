@@ -32,7 +32,7 @@ No case turned out to be wrong in the rule the brief gives for it.
 | 17, one lane of check, build, slow tests | DONE | `tests/tiers/landing.mjs:25-30`; `grep -n "test:slow" tests/tiers/landing.mjs` prints only the lane name (:25) and the shell line (:29), so no entry of its own names it |
 | 17.1 | DONE | the lane's line: `npm run check; c=$?; npm run build; b=$?; npm run test:slow; s=$?; [ $c -eq 0 ] && [ $b -eq 0 ] && [ $s -eq 0 ]`, one entry, no other entry names `test:slow` |
 | 17.2 | DONE | scratch `npm`, the lane's line run with `sh -c`: only `run test:slow` failing gives `exit 1`, calls `run check,run build,run test:slow`; none failing gives `exit 0`; `run check` failing gives `exit 1`, calls `run check,run build,run test:slow` |
-| 18, `printed()` fails at once on a dialog | DONE | `tests/server/desktop/start.test.ts:165-209`, the head comment (:165-172) says both rules |
+| 18, `printed()` fails at once on a dialog | DONE | `tests/server/desktop/start.test.ts:165-204`, the head comment (:165-171) says the rule by order (see Repair round 1) |
 | 18.1 | DONE | `18.1 ...: rejected after 26 ms: a dialog before "oculus on http://127.0.0.1:8817"; the output was: // [screen] dialog //` |
 | 18.2 | DONE | `18.2 ...: settled after 27 ms` |
 | 18.3 | DONE | `18.3 ...: settled after 25 ms` |
@@ -115,9 +115,9 @@ The dry run printed the same lines, exit 0. Every hunk was read before it was ap
 
 ## Files changed by items 17 to 20, line counts
 
-Items 17 to 19 (`wc -l`): `tests/tiers/landing.mjs` 54, `tests/server/desktop/start.test.ts` 338, `src/desktop/server/error-line.ts` 31 (new), `src/desktop/server/build.ts` 51, `src/desktop/server/process.ts` 142, `src/desktop/app.ts` 323. Item 20: the 28 files of the table above, as in the landing's state.
+Items 17 to 19 (`wc -l`): `tests/tiers/landing.mjs` 54, `tests/server/desktop/start.test.ts` 333, `src/desktop/server/error-line.ts` 31 (new), `src/desktop/server/build.ts` 51, `src/desktop/server/process.ts` 142, `src/desktop/app.ts` 323. Item 20: the 28 files of the table above, as in the landing's state.
 
-Edits to existing assertions, allow lists and predicates: none. `diff` of `start.test.ts` against the landing's copy changes the doc comment of `printed()` and the body of `printed()` only (adds `asked`, `refused`, the early `asked()` check, and the `else if (asked())` branch in `heard`); no `it` title or `expect` changes. The failing line of the changed helper on the unchanged tree is case 18.1's first run: `no answer within 2000 ms`.
+Edits to existing assertions, allow lists and predicates: none. `diff` of `start.test.ts` against the landing's copy changes the doc comment and the body of `printed()` only (Repair round 1 gives its final form); no `it` title or `expect` changes. The failing line of the changed helper on the unchanged tree is case 18.1's first run: `no answer within 2000 ms`.
 
 Repeated names: `grep -rn "lastError\|errorLine\|names an error" src` before the change found `errorLine` in `src/lib/data/sources/yaml-file.ts:15`, which returns an exception's message and is a different rule, and no helper to reuse. The unused-exports comparison (`sh utils/unused-exports.sh` against `O30-base/unused-exports.txt`) shows no line for `error-line.ts`. It lists lines the step as built added and this round did not touch: `src/lib/server/root/process/parent.ts: parentOf, askParentToPick` and `ParentPort`, which `src/server.ts:16,45,58` imports; why the tool reports them is not investigated. It lists fewer lines than the base for `config.ts`, `local.ts` and `ssh.ts`, where the step's code now uses the names.
 
@@ -144,3 +144,137 @@ Nothing in the brief was wrong or impossible.
 | Item 20, as the landing's fixes | none of B2-1 to B2-4, Z612, Z619 present | a restart onto another port moves every window and carries its arrangement, settings and unsaved text; a drop onto a loading or crashed window answers false; a one-line paste ending in a line break asks `Paste 1 line into the terminal?`; a terminal shown again keeps the modes its program set |
 
 The look of the dialogs is the orchestrator's: put the app in a build failure (a failing `vite build` in the checkout) and read the dialog's reason; the app was not started by this step.
+
+## Repair round 1
+
+Everything in the round brief is done. Nothing I ran starts the Electron app, imports or runs `tests/tiers/landing.mjs`, or runs a git command.
+
+### Finding 1: `printed()` decides by order
+
+`tests/server/desktop/start.test.ts:165-204`. The wait settles only when the first line holding `text` comes before the first line opening `[screen] dialog`, and fails at once when a dialog line comes first, at the call and on each chunk.
+
+```ts
+const decided = (): boolean => {
+    const said = lines.findIndex((line) => line.includes(text));
+    const asked = lines.findIndex((line) => line.startsWith('[screen] dialog'));
+    if (said !== -1 && (asked === -1 || said < asked)) {
+        done();
+        return true;
+    }
+    if (asked === -1) return false;
+    fail(new Error(`a dialog before "${text}"; the output was:\n${lines.join('\n')}`));
+    return true;
+};
+...
+if (decided()) return;
+for (const stream of streams) stream?.on('data', heard);
+```
+
+`heard` calls `decided()` on each chunk and removes the listeners when it returns true; the `close` path still fails with `no line with "<text>"`. The head comment states the rule by order. Cases, each run on a verbatim copy of the changed `printed()` (copied by the scratch `extract.mjs` from the test file's lines 173 to 204) in a scratch module with a `node -e` child, the child ended after, the scratch files removed after:
+
+```
+18.1 (dialog line before the awaited text): rejected after 23 ms: a dialog before "oculus on http://127.0.0.1:8817"; the output was: // [screen] dialog //
+18.2 (awaited text, then a dialog line): settled after 27 ms
+18.3 (a dialog message, then its recorder line): settled after 27 ms
+18.4 (neither, child exits): rejected after 28 ms: no line with "oculus on http://127.0.0.1:8817"; the output was: // something else //
+18.5 (one write, dialog line then the text): rejected after 30 ms: a dialog before "oculus on http://127.0.0.1:8817"; the output was: // [screen] dialog // oculus on http://127.0.0.1:8817 //
+18.6 (both lines printed before the call, dialog first): rejected after 1 ms: a dialog before "oculus on http://127.0.0.1:8817"; the output was: // [screen] dialog // oculus on http://127.0.0.1:8817 //
+18.7 (one write, the text then the dialog line): settled after 40 ms
+```
+
+18.5 and 18.6 are the two inputs the review named.
+
+### Finding 2: a dialog's message is printed before the recorder's line, on one stream
+
+```
+$ grep -n "log(\`dialog\|showMessageBox" src/desktop/dialogs.ts
+24:    log(`dialog: ${options.message}`);
+34:            ? await dialog.showMessageBox(box)
+35:            : await dialog.showMessageBox(options.window, box);
+$ sed -n 51,54p src/desktop/app.ts
+function print(line: string, error = false): void {
+    if (error) console.error(line);
+    else console.log(line);
+}
+$ sed -n 107,108p src/desktop/app.ts
+    const say = (message: string, buttons: string[]): Promise<number> =>
+        showDialog({ message, buttons }, print);
+$ sed -n 12,14p tests/server/desktop/app-harness.ts
+function record(what: string): void {
+    process.stdout.write(`[screen] ${what}\n`);
+}
+$ sed -n 22,25p tests/server/desktop/app-harness.ts
+dialog.showMessageBox = (): Promise<never> => {
+    record('dialog');
+    return new Promise<never>(() => undefined);
+};
+```
+
+`say` logs the message through `print` (line 24), which writes a non-error line with `console.log`, then calls `dialog.showMessageBox` (lines 34 and 35), which the harness replaces with the recorder. The recorder writes `[screen] dialog` with `process.stdout.write`. Both reach the app's stdout, the message first, so a row waiting for the message of the dialog it expects settles on it before the recorder's line (case 18.3).
+
+### Finding 3: why `unused-exports.sh` lists the `parent.ts` names
+
+```
+$ grep -n '"main"' package.json
+6:    "main": "src/desktop/main.ts",
+$ sed -n 23p utils/unused-exports.sh
+node_modules/.bin/knip --production --include exports,types --reporter compact --no-progress
+$ grep -n "parentOf\|askParentToPick\|ParentPort" src/server.ts
+16:import { askParentToPick, parentOf, type ParentPort } from './lib/server/root/process/parent.ts';
+45:const parent = parentOf((process as { parentPort?: ParentPort }).parentPort);
+58:if (parent !== null) context.folderPicker.ask = askParentToPick(parent);
+```
+
+The tool runs knip in production mode with no configuration file (`ls -a | grep -i knip` finds none, and `knip` appears in `package.json` only as the devDependency at line 41), so its entries come from `package.json`: `main`, the scripts and the SvelteKit routes. `src/server.ts` is none of them (the app forks it by path, `src/desktop/app.ts`), so the three names count as unused although `src/server.ts` imports and uses them. The base list shows the same effect: it already flags `engineDir`, which `src/server.ts:11` imports. The three names are used and stay.
+
+### Finding 4: the two greps
+
+The history-word grep of `agents/spec.md`, over the lines this preparation added or changed in the six files (a `diff` against the landing's copy, 94 lines):
+
+```
+$ grep -n -i -E "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands" added-lines.txt
+18:tests/server/desktop/start.test.ts:  * fail at once when a line opening `[screen] dialog` comes before it, at the call and on each
+20:tests/server/desktop/start.test.ts:  * limit. The app prints a dialog's message before the recorder's line, so a row that waits for the
+32:tests/server/desktop/start.test.ts:             fail(new Error(`a dialog before "${text}"; the output was:\n${lines.join('\n')}`));
+```
+
+All three hits name the order of lines in one output stream; none compares with an earlier state of the code. `npx vitest run tests/checks/source/history.test.ts` passes (below).
+
+The renamed `last` field:
+
+```
+$ grep -rn -E "\.last\b|\blast:|started\.last|built\.last" src/desktop tests/server/desktop tests/tiers config HELP.md DESIGN.md README.md --exclude=local.yml
+HELP.md:202: ... a tab whose editor had the focus last: `${file}` ...
+```
+
+The one hit is prose about a focus, not the field. Over the whole `src` the same grep also finds only unrelated `last` fields of other modules (`UpdateTray.svelte`, `sessions/record.ts`, `sessions/group.ts`, and similar), none in `src/desktop` and none read from a build result or a server start.
+
+### Finding 5: comment wrapping
+
+`printed()`'s doc comment (`start.test.ts:165-171`) and `landing.mjs`'s head comment (:1-14) are rewrapped as whole paragraphs at 100 columns. A script over both comments found the longest line at 100 columns and no line inside a paragraph that ends where the next word would still fit (its only hits were the paragraph breaks `//` and `/**`).
+
+### Verify, from the worktree's `tools/oculus`, after the last change
+
+```
+$ npx prettier --check tests/server/desktop/start.test.ts tests/tiers/landing.mjs
+All matched files use Prettier code style!     (exit 0)
+$ npx eslint tests/server/desktop/start.test.ts tests/tiers/landing.mjs
+(no output, exit 0)
+$ LC_ALL=C grep -n '[^ -~]' tests/server/desktop/start.test.ts tests/tiers/landing.mjs
+(no output, exit 1)
+$ npx vitest run tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+$ sh ~/.claude-work/skills/land/templates/checks.sh .../orchestrator-state.md
+ok      prettier (1.4 s): All matched files use Prettier code style!
+ok      svelte-kit sync (1.7 s)
+ok      eslint (7.3 s)
+ok      svelte-check (6.6 s): 1791263570285 COMPLETED 379 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (12.1 s): Duration  9.13s (transform 13.07s, setup 0ms, import 21.01s, tests 12.88s, environment 401ms)
+test:quick: 12.6 s (limit 45.0 s); every command passed
+checks: 1 commands passed     (exit 0)
+```
+
+`diff -rq` of `src`, `tests` and `config` against gate-O30 still lists only `app.ts`, `build.ts`, `process.ts`, `error-line.ts` (new), `start.test.ts` and `landing.mjs`. Line counts: `start.test.ts` 333, `landing.mjs` 54. `pgrep -fl 'Electron|src/server.ts'` with Visual Studio Code's crashpad handler (pid 943, running before this step) removed prints nothing.
+
+Not covered: `start.test.ts` was not run (its rows start the app); `printed()` ran as a verbatim copy in a scratch module.

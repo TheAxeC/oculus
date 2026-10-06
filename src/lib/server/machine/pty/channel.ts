@@ -38,6 +38,7 @@ import {
     cursorArgs,
     isTerminalId,
     listArgs,
+    modesAt,
     parseTerminals,
     serverPid,
     resizeArgs,
@@ -610,7 +611,9 @@ export class Terminals {
         // capture-pane writes one line per row with a bare newline between them; a terminal moves
         // down without returning to the left on a bare newline, so the rows would step across the
         // grid (seen in Chrome as a staircase). Every line break goes out as CR LF.
-        const screen = placed.replace(/\r?\n/g, '\r\n');
+        // The modes the pane's program set go after the screen, since the page resets its grid
+        // before writing it.
+        const screen = placed.replace(/\r?\n/g, '\r\n') + modesAt(cursor);
         const message = {
             channel: ptyChannel(id),
             // The scrollback is not a chunk, so it carries no chunk number; the chunks count from

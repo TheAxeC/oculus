@@ -725,15 +725,56 @@ export async function scrollback(
     return (options.run ?? run)(captureArgs(id, lines), options);
 }
 
-/** The arguments that read where tmux has a pane's cursor, and how many rows the pane has. */
+/**
+ * The modes a pane's program sets that the capture does not hold, as tmux names each one's flag,
+ * the flag's value that differs from a grid just reset, and the sequence that sets that value in
+ * the grid. The grid is reset before the capture is written into it, on a new grid and on a
+ * reconnect alike, and a shell sets its modes only when it draws its prompt, so without these a
+ * page that attaches to a waiting shell sends a paste without the bracketed-paste markers, and one
+ * that attaches to an editor sends the arrow keys and the mouse in forms the editor did not ask
+ * for. Origin mode is left out: setting it moves the cursor to the top of a scroll region the
+ * capture does not carry.
+ */
+const PANE_MODES: readonly (readonly [flag: string, value: '0' | '1', sequence: string])[] = [
+    ['bracket_paste_flag', '1', '\u001b[?2004h'],
+    ['keypad_cursor_flag', '1', '\u001b[?1h'],
+    ['keypad_flag', '1', '\u001b='],
+    ['mouse_standard_flag', '1', '\u001b[?1000h'],
+    ['mouse_button_flag', '1', '\u001b[?1002h'],
+    ['mouse_all_flag', '1', '\u001b[?1003h'],
+    ['mouse_utf8_flag', '1', '\u001b[?1005h'],
+    ['mouse_sgr_flag', '1', '\u001b[?1006h'],
+    ['insert_flag', '1', '\u001b[4h'],
+    ['wrap_flag', '0', '\u001b[?7l'],
+    ['cursor_flag', '0', '\u001b[?25l']
+];
+
+/**
+ * The arguments that read where tmux has a pane's cursor, how many rows the pane has, and then the
+ * flag of each of PANE_MODES, in its order.
+ */
 export function cursorArgs(id: string): string[] {
+    const flags = PANE_MODES.map(([flag]) => `#{${flag}}`).join(' ');
     return [
         'display-message',
         '-p',
         '-t',
         sessionName(id),
-        '#{cursor_x} #{cursor_y} #{pane_height}'
+        `#{cursor_x} #{cursor_y} #{pane_height} ${flags}`
     ];
+}
+
+/**
+ * The sequences that set in a grid just reset the modes the pane's program has set, read from what
+ * cursorArgs answered: empty when that answer does not hold a flag for each of PANE_MODES.
+ */
+export function modesAt(cursor: string): string {
+    const found = /^\d+ \d+ \d+((?: [01])*)\s*$/.exec(cursor);
+    const flags = found === null ? [] : found[1].trim().split(' ');
+    if (flags.length !== PANE_MODES.length) return '';
+    return PANE_MODES.filter(([, value], at) => flags[at] === value)
+        .map(([, , sequence]) => sequence)
+        .join('');
 }
 
 /**
@@ -741,10 +782,11 @@ export function cursorArgs(id: string): string[] {
  * cursor put where tmux has it. Written into a grid as high as the pane, the capture's last rows
  * are the pane's rows, so a new shell's prompt sits on its own row at the top rather than under
  * the capture's blank rows, and the rows under a prompt's cursor stay drawn. A cursor that does not
- * read as three whole numbers, or whose row is outside the pane, leaves the capture as it is.
+ * read as three whole numbers, with the flags of modesAt after them or not, or whose row is outside
+ * the pane, leaves the capture as it is.
  */
 export function screenAt(capture: string, cursor: string): string {
-    const found = /^(\d+) (\d+) (\d+)\s*$/.exec(cursor);
+    const found = /^(\d+) (\d+) (\d+)(?: [01])*\s*$/.exec(cursor);
     if (found === null) return capture;
     const [column, row, height] = [Number(found[1]), Number(found[2]), Number(found[3])];
     if (row >= height) return capture;

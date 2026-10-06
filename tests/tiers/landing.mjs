@@ -1,12 +1,15 @@
 // Layer 4, test tool. npm run test:landing: the commands the orchestrator runs on main at each
 // landing, all at the same time, every one run to its end so that one red does not hide another.
-// The type check and the build run one after the other in one lane, since both write the generated
-// files under .svelte-kit. The lint keeps its cache in node_modules/.cache/eslint/, the one
-// npm run test:quick keeps.
+// The type check, the build and the slow tests run one after the other in one lane, since each
+// writes under .svelte-kit: the slow tests start the app, and every start of the app from the
+// checkout builds the server into .svelte-kit/output and build/, which a build running beside it
+// empties. The lint keeps its cache in node_modules/.cache/eslint/, the one npm run test:quick
+// keeps.
 //
-// The list is the unit suite, the tree checks, the type check, the build, the format check, the
-// lint over the whole tree, the ASCII gate and the slow tests. The type check and the ASCII gate
-// are in it because npm run test:quick holds them and nothing else in this list does.
+// The list is the unit suite, the tree checks, the type check, the build and the slow tests (one
+// lane, in that order), the format check, the lint over the whole tree and the ASCII gate. The type
+// check and the ASCII gate are in it because npm run test:quick holds them and nothing else in this
+// list does.
 //
 // Each command prints its line when it ends, and its whole output when it failed. The last line
 // names the commands that failed, and the exit code is 1 when there is one.
@@ -19,9 +22,13 @@ const LIST = [
     ['npm test', NPM, ['test']],
     ['npm run test:checks', NPM, ['run', 'test:checks']],
     [
-        'npm run check, then npm run build',
+        'npm run check, then npm run build, then npm run test:slow',
         'sh',
-        ['-c', 'npm run check; c=$?; npm run build; b=$?; [ $c -eq 0 ] && [ $b -eq 0 ]']
+        [
+            '-c',
+            'npm run check; c=$?; npm run build; b=$?; npm run test:slow; s=$?; ' +
+                '[ $c -eq 0 ] && [ $b -eq 0 ] && [ $s -eq 0 ]'
+        ]
     ],
     ['npm run format:check', NPM, ['run', 'format:check']],
     [
@@ -29,8 +36,7 @@ const LIST = [
         NPM,
         ['run', 'lint', '--', '--cache', '--cache-location', 'node_modules/.cache/eslint/']
     ],
-    ['ASCII gate', 'sh', ['-c', ASCII_GATE], judgeAscii],
-    ['npm run test:slow', NPM, ['run', 'test:slow']]
+    ['ASCII gate', 'sh', ['-c', ASCII_GATE], judgeAscii]
 ];
 
 const started = Date.now();

@@ -11,7 +11,13 @@ import {
     withCardCursor
 } from '$lib/state/workbench/layout';
 import type { UiStore } from '$lib/state/workbench/ui.svelte';
-import { activateCursor, focusSearch, scrollContainer, scrollRegion } from './key-dom';
+import {
+    activateCursor,
+    focusSearch,
+    PANE_COMMAND,
+    scrollContainer,
+    scrollRegion
+} from './key-dom';
 import {
     horizontalCursor,
     initialKeyState,
@@ -53,6 +59,10 @@ type Options = {
     saveSource: () => void;
     /** Whether the command modifier is Cmd (macOS) and not Ctrl. */
     mac: boolean;
+    /** Whether the page is in the desktop app, which delivers Cmd+W, Cmd+N, Cmd+F and Ctrl+Tab. */
+    app?: boolean;
+    /** Open the find bar of the app's window. */
+    find?: () => void;
 };
 
 export type WorkbenchKeys = {
@@ -126,7 +136,8 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
                 paletteOpen: options.paletteOpen(),
                 trayOpen: options.updateOpen(),
                 confirmOpen: dialogShown(),
-                mac: options.mac
+                mac: options.mac,
+                app: options.app
             },
             keyState,
             Date.now()
@@ -197,6 +208,13 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             // The key is taken from the browser under an overlay too, but saves nothing then.
             const covered = options.paletteOpen() || options.updateOpen() || dialogShown();
             if (!covered) options.saveSource();
+        } else if (action.kind === 'close-tab' || action.kind === 'new-text-file') {
+            if (pane === null) return false;
+            clearCursor();
+            pane.dispatchEvent(new CustomEvent(PANE_COMMAND, { detail: action.kind }));
+        } else if (action.kind === 'find') {
+            clearCursor();
+            options.find?.();
         } else if (action.kind === 'new-session') {
             clearCursor();
             options.composeIn(pageOf());

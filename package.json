@@ -3,6 +3,7 @@
     "private": true,
     "version": "0.0.1",
     "type": "module",
+    "main": "src/desktop/main.ts",
     "scripts": {
         "dev": "vite dev",
         "build": "vite build",
@@ -17,9 +18,12 @@
         "test:slow": "vitest run --tagsFilter slow --testTimeout 20000",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "diagrams": "node utils/diagrams/diagrams.mjs"
+        "diagrams": "node utils/diagrams/diagrams.mjs",
+        "app": "electron .",
+        "app:package": "node src/desktop/package.ts"
     },
     "devDependencies": {
+        "@electron/packager": "20.3.0",
         "@eslint/js": "^10.0.1",
         "@sveltejs/adapter-node": "^5.5.7",
         "@sveltejs/kit": "^2.63.0",
@@ -29,6 +33,7 @@
         "@types/lodash-es": "^4.17.12",
         "@types/node": "^24.13.4",
         "@types/ws": "^8.18.1",
+        "electron": "44.5.1",
         "eslint": "^10.10.0",
         "eslint-plugin-svelte": "^3.23.0",
         "globals": "^17.12.0",
@@ -86,6 +91,7 @@
         "nodemailer": "^10.0.12",
         "seti-ui": "1.11.0",
         "sh-syntax": "0.7.0",
+        "shell-env": "4.0.3",
         "shiki": "4.4.3",
         "smol-toml": "^1.9.0",
         "trash": "^10.1.1",

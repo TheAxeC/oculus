@@ -7,6 +7,27 @@
 // and never at a hidden one: a search box or a card of a tab the reader is not looking at is not
 // one a key acts on.
 
+/**
+ * The event a key sends the focused pane when the pane's own close question or opener is what the
+ * key means (Cmd+W closes its active tab, Cmd+N opens a text file in it): the pane component holds
+ * both, and the key handler holds neither. The detail is the command.
+ */
+export const PANE_COMMAND = 'oculus-pane-command';
+
+/** The commands a pane answers on PANE_COMMAND. */
+export type PaneCommand = 'close-tab' | 'new-text-file';
+
+/** The attachment that makes a pane answer PANE_COMMAND with `answer`. */
+export function answersCommands(
+    answer: (command: PaneCommand) => void
+): (node: HTMLElement) => () => void {
+    return (node) => {
+        const heard = (event: Event): void => answer((event as CustomEvent<PaneCommand>).detail);
+        node.addEventListener(PANE_COMMAND, heard);
+        return () => node.removeEventListener(PANE_COMMAND, heard);
+    };
+}
+
 /** The selector of the view a pane shows, among the tab views it keeps mounted. */
 export const SHOWN_VIEW = '[data-tab-view]:not([hidden])';
 

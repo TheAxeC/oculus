@@ -97,7 +97,12 @@ const ORDER: Record<string, string[]> = {
  * as ORDER is one level down.
  */
 const INNER: Record<string, string[]> = {
-    'state/shared': ['state/shared/answers', 'state/shared/words', 'state/shared/stores']
+    'state/shared': [
+        'state/shared/answers',
+        'state/shared/page',
+        'state/shared/words',
+        'state/shared/stores'
+    ]
 };
 
 /** The folder a lib-relative module sits in: its layer and first sub-folder, or its layer alone. */

@@ -312,7 +312,7 @@ export function createTerminals(
             if (isTerminalId(selected)) held.push(selected);
             const ended = endedTerminals(seen, now, first, held);
             for (const id of ended) viewports.drop(id);
-            closeEnded(workbench, terminalTabs(), ended);
+            if (workbench.upkeep !== false) closeEnded(workbench, terminalTabs(), ended);
         }
         for (const id of now) {
             seen.add(id);
@@ -421,7 +421,7 @@ export function createTerminals(
     }
 
     function post(body: unknown): Promise<TerminalAnswer> {
-        return postTerminal(body, writes.writeToken());
+        return postTerminal(body, writes);
     }
 
     const opening = createComposerOpening({

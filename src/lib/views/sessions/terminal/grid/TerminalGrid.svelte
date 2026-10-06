@@ -488,7 +488,9 @@
 
 {#if pasting !== null}
     <Confirm
-        message={t('sessions.paste_confirm', pasting.lines)}
+        message={pasting.lines === 1
+            ? t('sessions.paste_confirm_one')
+            : t('sessions.paste_confirm', pasting.lines)}
         confirm={t('sessions.paste_ok')}
         cancel={t('ui.confirm_cancel')}
         onconfirm={() => answerPaste(true)}

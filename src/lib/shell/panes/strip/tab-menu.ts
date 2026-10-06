@@ -1,7 +1,8 @@
 // Layer 3, shell. The right-click menu of one tab, VS Code's tab context menu in its groups and
-// words, less what oculus has no part for (Share and the moves into a new window): the closes, the
-// two copies of a file's path, Reveal in Finder, Show in Files and Open Timeline, the bookmark,
-// browser tab and program items, the two compare items, Keep Open and Pin or Unpin, and the splits.
+// words, less what oculus has no part for (Share): the closes, the two copies of a file's path,
+// Reveal in Finder, Show in Files and Open Timeline, the bookmark, browser tab and program items,
+// the two compare items, Keep Open and Pin or Unpin, the splits, and in the desktop app Move into
+// New Window and Copy into New Window.
 // Apart from the component so the items, the tabs each close closes and the path copies can be read
 // without a DOM.
 
@@ -33,6 +34,10 @@ export type TabFacts = {
     browser: boolean;
     /** Whether `open.program_ext` names an application for the tab's file. */
     program: boolean;
+    /** Whether the page is in the desktop app, which offers the moves into a new window. */
+    windows?: boolean;
+    /** Whether the tab may be copied into a new window: a Terminal tab may not, it has one tab. */
+    copyable?: boolean;
 };
 
 export const TAB_CLOSE = 'close';
@@ -55,6 +60,8 @@ export const TAB_KEEP_OPEN = 'keep-open';
 export const TAB_PIN = 'pin';
 export const TAB_UNPIN = 'unpin';
 export const TAB_SPLIT_RIGHT = 'split-right';
+const TAB_WINDOW_MOVE = 'window-move';
+const TAB_WINDOW_COPY = 'window-copy';
 const SPLIT_MOVE = 'split-move';
 
 /** Each split of the Split & Move submenu, by item id, and the edge the tab goes to. */
@@ -74,8 +81,9 @@ function tabEdge(id: string): Edge | null {
 /**
  * The menu of one tab, in VS Code's groups: the closes; the path copies; Reveal in Finder, Show in
  * Files and Open Timeline, which shows the file's history in the Files view; the bookmark, Open in
- * Browser Tab and Open in Program items; the compare items; Keep Open and Pin or Unpin; the splits.
- * The file groups are offered for a tab showing a file only. Close Others needs a second tab and
+ * Browser Tab and Open in Program items; the compare items; Keep Open and Pin or Unpin; the splits;
+ * in the desktop app, Move into New Window and, off a Terminal tab, Copy into New Window. The file
+ * groups are offered for a tab showing a file only. Close Others needs a second tab and
  * Close to the Right a tab to the right; Keep Open is drawn on every tab and enabled on a preview.
  */
 export function tabMenu(facts: TabFacts, t: Words): MenuItem[] {
@@ -140,7 +148,13 @@ export function tabMenu(facts: TabFacts, t: Words): MenuItem[] {
                     { id: 'split-move-right', label: t('ui.tab_split_right') }
                 ]
             }
-        ]
+        ],
+        facts.windows === true
+            ? [
+                  item(TAB_WINDOW_MOVE, t('ui.window_move')),
+                  ...(facts.copyable === false ? [] : [item(TAB_WINDOW_COPY, t('ui.window_copy'))])
+              ]
+            : []
     ]);
 }
 
@@ -236,6 +250,8 @@ export type TabPickDeps = {
     pin: () => void;
     unpin: () => void;
     split: (edge: Edge) => void;
+    moveToWindow: () => void;
+    copyToWindow: () => void;
 };
 
 /** Run a pick of the tab menu. */
@@ -258,4 +274,6 @@ export function tabPicked(id: string, deps: TabPickDeps): void {
     else if (id === TAB_KEEP_OPEN) deps.keepOpen();
     else if (id === TAB_PIN) deps.pin();
     else if (id === TAB_UNPIN) deps.unpin();
+    else if (id === TAB_WINDOW_MOVE) deps.moveToWindow();
+    else if (id === TAB_WINDOW_COPY) deps.copyToWindow();
 }

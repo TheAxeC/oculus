@@ -88,6 +88,11 @@ export type SourceDraft = {
      * it (`resolveEditor`).
      */
     wrap: string | null;
+    /**
+     * The first line the editor shows, from one: where a copy of the tab, or the tab in another
+     * window, opens the text.
+     */
+    first: number;
 };
 
 /**
@@ -120,7 +125,8 @@ const draftShape = z
         file: z.string().catch(''),
         language: z.string().catch(''),
         indent: indentShape.nullable().catch(null),
-        wrap: z.string().nullable().catch(null)
+        wrap: z.string().nullable().catch(null),
+        first: z.int().min(1).catch(1)
         // A draft always carries `readIn`, with undefined when the state names none.
     })
     .transform((draft) => ({ readIn: undefined, ...draft })) satisfies z.ZodType<SourceDraft>;
@@ -241,6 +247,8 @@ export type SourceStore = {
     setSourceLanguage: (id: string, language: string) => void;
     setSourceIndent: (id: string, indent: Indent | null) => void;
     setSourceWrap: (id: string, wrap: WordWrap | null) => void;
+    /** Keep the first line the tab's editor shows, so a copy of the tab opens at it. */
+    setSourceFirst: (id: string, line: number) => void;
     saveSource: (root: string, path: string, content: string) => Promise<WriteAnswer>;
 };
 
@@ -300,11 +308,13 @@ export function createSource(
         if (held.readIn === LIFETIME && held.file === file) return;
         const pending = reading.get(id);
         if (pending?.file === file) return pending.request;
-        // A tab pointed at another file drops the language, the indentation and the word wrap
-        // chosen for the last, since the choice was about that file's text.
+        // A tab pointed at another file drops the language, the indentation, the word wrap and
+        // the scroll chosen for the last, since the choice was about that file's text.
         updateDraft(
             id,
-            held.file === file ? { file } : { file, language: '', indent: null, wrap: null }
+            held.file === file
+                ? { file }
+                : { file, language: '', indent: null, wrap: null, first: 1 }
         );
         // A version at HEAD or in the index is read from the git route and is never written.
         const reads: Promise<[SourceLoad, boolean]> =
@@ -411,6 +421,10 @@ export function createSource(
         updateDraft(id, { wrap });
     }
 
+    function setSourceFirst(id: string, line: number): void {
+        if (line !== sourceDraft(id).first) updateDraft(id, { first: line });
+    }
+
     /**
      * A save acknowledges the exact sent copy, even if more typing follows while it is pending. A
      * draft the tab holds no complete file for is never sent: the file on disk would lose whatever
@@ -485,6 +499,7 @@ export function createSource(
         setSourceLanguage,
         setSourceIndent,
         setSourceWrap,
+        setSourceFirst,
         saveSource
     };
 }

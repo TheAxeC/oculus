@@ -8,6 +8,8 @@
     // so the tab strip, the menus, the keyboard and the drops reach it as they reach the pane of a
     // page.
     //
+    // A float placed in a window of the desktop app is left out: that window's page draws it.
+    //
     // One keyed block draws every float and its place is a class and a style, so docking or
     // freeing a float changes the class and mounts no PaneView again. This is mounted once, outside
     // the block the workbench keys by the page, so a switch of page never mounts a float's views
@@ -21,7 +23,7 @@
     // bottom edge docks there.
 
     import Sash from '$lib/ui/frame/Sash.svelte';
-    import { START_DOCK, type DockEdge, type Float } from '$lib/state/workbench/layout';
+    import { START_DOCK, type DockEdge } from '$lib/state/workbench/layout';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import PaneView from '../PaneView.svelte';
@@ -33,6 +35,7 @@
         raised,
         snapEdge,
         stackOf,
+        type DrawnFloat,
         type FreePlace
     } from './float-geometry';
 
@@ -51,11 +54,12 @@
 
     let { area, onpalette = () => undefined }: Props = $props();
 
-    const free = $derived(
-        floats()
-            .filter((one) => one.place.kind === 'free')
-            .map((one) => one.id)
+    /** The floats this layer draws: every one not placed in a window of the app. */
+    const drawn = $derived(
+        floats().filter((one): one is DrawnFloat => one.place.kind !== 'window')
     );
+
+    const free = $derived(drawn.filter((one) => one.place.kind === 'free').map((one) => one.id));
 
     /** The place a running gesture has reached, for the one float it is on. */
     let draft: { id: string; place: FreePlace } | null = $state(null);
@@ -65,7 +69,7 @@
 
     const stack = $derived(stackOf(order, free));
 
-    function style(float: Float): string {
+    function style(float: DrawnFloat): string {
         const place = draft?.id === float.id ? draft.place : float.place;
         if (place.kind === 'dock') return floatStyle(place);
         return `${floatStyle(place)}; z-index: ${depthOf(stack, float.id)}`;
@@ -76,7 +80,7 @@
     }
 
     /** A gesture on a free float: what it reads and where it reports. */
-    function gestureOf(float: Float, place: FreePlace) {
+    function gestureOf(float: DrawnFloat, place: FreePlace) {
         return {
             place: () => place,
             raise: () => raise(float.id),
@@ -104,14 +108,14 @@
         return edge === 'bottom' ? window.innerHeight : window.innerWidth;
     }
 
-    function sized(float: Float, delta: number): void {
+    function sized(float: DrawnFloat, delta: number): void {
         const place = float.place;
         if (place.kind !== 'dock') return;
         const size = dockedSize(place.edge, place.size, delta, extent(place.edge));
         placeFloat(float.id, { kind: 'dock', edge: place.edge, size });
     }
 
-    function reset(float: Float): void {
+    function reset(float: DrawnFloat): void {
         const place = float.place;
         if (place.kind === 'dock') {
             placeFloat(float.id, { kind: 'dock', edge: place.edge, size: START_DOCK });
@@ -119,7 +123,7 @@
     }
 </script>
 
-{#each floats() as float (float.id)}
+{#each drawn as float (float.id)}
     {@const place = float.place}
     <!-- The press only brings a free float in front of the others; the float is no control. -->
     <div

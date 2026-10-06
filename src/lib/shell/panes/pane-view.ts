@@ -7,6 +7,8 @@ import { grouped, type MenuItem as Item } from '$lib/ui/menu/menu-items';
 import type { EditorActions, TabBar } from '$lib/state/shared/words/appearance';
 import {
     fold,
+    instanceLabel,
+    panes,
     showable,
     type DockEdge,
     type Edge,
@@ -130,10 +132,14 @@ export function paneMenu(
         maximised: boolean;
         foldable: boolean;
         holdsTab: boolean;
+        /** Whether the page is in the desktop app, which offers the moves into a new window. */
+        windows?: boolean;
     },
     t: (key: string, ...args: (string | number)[]) => string
 ): Item[] {
-    if (facts.float !== undefined) return floatMenu(facts.float, facts.pages, t);
+    if (facts.float !== undefined) {
+        return floatMenu(facts.float, facts.pages, t, facts.windows === true);
+    }
     return [
         { id: 'close', label: t('ui.pane_close') },
         facts.maximised
@@ -145,7 +151,10 @@ export function paneMenu(
         ...pageListItems(facts.pages, facts.screen, facts.host, t),
         { id: 'split_right', label: t('ui.split_right') },
         { id: 'split_down', label: t('ui.split_down') },
-        ...(facts.holdsTab ? [{ id: FLOAT_PANE, label: t('ui.float') }] : [])
+        ...(facts.holdsTab ? [{ id: FLOAT_PANE, label: t('ui.float') }] : []),
+        ...(facts.holdsTab && facts.windows === true
+            ? [{ id: WINDOW_PANE, label: t('ui.window_move') }]
+            : [])
     ];
 }
 
@@ -181,6 +190,15 @@ export const FLOAT_FREE = 'float-free';
 /** The item that puts a float's tabs back into the page on screen. */
 export const FLOAT_RETURN = 'float-return';
 
+/**
+ * The items of the desktop app: Move into New Window on a pane of a page and on a float, Restore
+ * into Main Window on a float in a window of its own, and Switch to Main Window.
+ */
+const WINDOW_PANE = 'window-pane';
+const WINDOW_FLOAT = 'window-float';
+const FLOAT_RESTORE = 'float-restore';
+const SWITCH_MAIN = 'switch-main';
+
 /** Each dock item of a float's menu, by its item id, and the edge it docks on. */
 const FLOAT_DOCKS: readonly { id: string; edge: DockEdge }[] = [
     { id: 'dock-left', edge: 'left' },
@@ -209,16 +227,30 @@ const STRIP_SPLITS: readonly { id: string; edge: Edge }[] = [
  * What a float's menus offer in place of the splits: a dock for every edge the float is not docked
  * on, Float on a docked float, which floats it again, and Return to Page, which puts its tabs back
  * into the page on screen. A float is a pane alone, so it has no split, no fold and no maximise.
+ * In the desktop app (`windows`) a float also offers Move into New Window; a float already in a
+ * window of its own offers Restore into Main Window, Return to Page, the three docks and Switch to
+ * Main Window.
  */
 export function floatItems(
     place: FloatPlace,
-    t: (key: string, ...args: (string | number)[]) => string
+    t: (key: string, ...args: (string | number)[]) => string,
+    windows = false
 ): Item[] {
+    const docks = FLOAT_DOCKS.filter(
+        (dock) => place.kind !== 'dock' || place.edge !== dock.edge
+    ).map((dock) => ({ id: dock.id, label: dockWords(dock.edge, t) }));
+    if (place.kind === 'window') {
+        return [
+            { id: FLOAT_RESTORE, label: t('ui.window_restore') },
+            { id: FLOAT_RETURN, label: t('ui.float_return') },
+            ...docks,
+            { id: SWITCH_MAIN, label: t('ui.window_switch_main') }
+        ];
+    }
     return [
-        ...FLOAT_DOCKS.filter((dock) => place.kind !== 'dock' || place.edge !== dock.edge).map(
-            (dock) => ({ id: dock.id, label: dockWords(dock.edge, t) })
-        ),
+        ...docks,
         ...(place.kind === 'dock' ? [{ id: FLOAT_FREE, label: t('ui.float') }] : []),
+        ...(windows ? [{ id: WINDOW_FLOAT, label: t('ui.window_move') }] : []),
         { id: FLOAT_RETURN, label: t('ui.float_return') }
     ];
 }
@@ -229,6 +261,10 @@ export function isFloatItem(id: string): boolean {
         id === FLOAT_PANE ||
         id === FLOAT_FREE ||
         id === FLOAT_RETURN ||
+        id === WINDOW_PANE ||
+        id === WINDOW_FLOAT ||
+        id === FLOAT_RESTORE ||
+        id === SWITCH_MAIN ||
         FLOAT_DOCKS.some((dock) => dock.id === id)
     );
 }
@@ -240,11 +276,12 @@ export function isFloatItem(id: string): boolean {
 export function floatMenu(
     place: FloatPlace,
     pages: readonly Page[],
-    t: (key: string, ...args: (string | number)[]) => string
+    t: (key: string, ...args: (string | number)[]) => string,
+    windows = false
 ): Item[] {
     return [
         { id: 'close', label: t('ui.pane_close') },
-        ...floatItems(place, t),
+        ...floatItems(place, t, windows),
         ...moveChoice(pages, '', t)
     ];
 }
@@ -270,6 +307,8 @@ export function stripMenu(
         tabBar?: TabBar;
         actions?: EditorActions;
         paneItems?: readonly Item[];
+        /** Whether the page is in the desktop app, which offers the moves into a new window. */
+        windows?: boolean;
     },
     t: (key: string, ...args: (string | number)[]) => string
 ): Item[] {
@@ -298,14 +337,17 @@ export function stripMenu(
             { id: STRIP_NEW_TEXT_FILE, label: t('ui.strip_new_text_file') }
         ],
         facts.float !== undefined
-            ? floatItems(facts.float, t)
+            ? floatItems(facts.float, t, facts.windows === true)
             : facts.holdsTab
               ? [
                     { id: 'split-up', label: t('ui.strip_split_up') },
                     { id: 'split-down', label: t('ui.strip_split_down') },
                     { id: 'split-left', label: t('ui.strip_split_left') },
                     { id: 'split-right', label: t('ui.strip_split_right') },
-                    { id: FLOAT_PANE, label: t('ui.float') }
+                    { id: FLOAT_PANE, label: t('ui.float') },
+                    ...(facts.windows === true
+                        ? [{ id: WINDOW_PANE, label: t('ui.window_move') }]
+                        : [])
                 ]
               : [],
         [...paneOnly],
@@ -367,6 +409,12 @@ export type StripDeps = {
     freeFloat: (id: string) => void;
     /** Return to Page: the float's tabs go back into the page on screen. */
     returnFloat: (id: string) => void;
+    /** Move into New Window: the pane of a page becomes a float in a window of its own. */
+    windowPane: (path: number[], page: string) => void;
+    /** Move into New Window on a float. */
+    windowFloat: (id: string) => void;
+    /** Switch to Main Window. */
+    switchMain: () => void;
     /** New Text File: an untitled text file opened in a source tab of the pane the menu was on. */
     newTextFileIn: (page: string, path: number[]) => void;
     /** Lock Group and Unlock Group: the pane at `path` of the page. */
@@ -386,7 +434,10 @@ export function stripPicked(
     if (edge !== null) {
         if (pane.active !== '') deps.splitInstance(pane.active, pane.path, edge, pane.page);
     } else if (id === FLOAT_PANE) deps.floatPane(pane.path, pane.page);
-    else if (id === FLOAT_FREE) deps.freeFloat(pane.page);
+    else if (id === WINDOW_PANE) deps.windowPane(pane.path, pane.page);
+    else if (id === WINDOW_FLOAT) deps.windowFloat(pane.page);
+    else if (id === SWITCH_MAIN) deps.switchMain();
+    else if (id === FLOAT_FREE || id === FLOAT_RESTORE) deps.freeFloat(pane.page);
     else if (id === FLOAT_RETURN) deps.returnFloat(pane.page);
     else if (dock !== undefined) deps.dockFloat(pane.page, dock.edge);
     else if (id === STRIP_OPEN_FILE) deps.openPalette('');
@@ -438,4 +489,16 @@ export function shownTabPath(
     const file = fileOfTab(tab);
     const root = roots.find((one) => one.key === file?.root);
     return file === null || root === undefined ? null : shownPath(root.dir, file.path, home);
+}
+
+/** The labels of the tabs open on every page, which an untitled text file is named past. */
+export function openLabels(
+    pages: readonly Page[],
+    layout: (page: string) => Layout
+): readonly string[] {
+    return pages.flatMap((one) =>
+        panes(layout(one.id)).flatMap(({ pane }) =>
+            pane.tabs.flatMap((tab) => instanceLabel(tab.state) ?? [])
+        )
+    );
 }

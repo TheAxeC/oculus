@@ -66,6 +66,7 @@ import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
 import { tabsOf } from '../workbench/layout/instance.ts';
 import { paneAt } from '../workbench/layout/index.ts';
 import { createLatex, type LatexStore } from '../sessions/latex.svelte.ts';
+import type { Desktop } from '../shared/stores/desktop.ts';
 import { createLayout, type LayoutStore } from '../workbench/layout.svelte.ts';
 import { createLines, type LinesStore } from '../system/lines.svelte.ts';
 import { createManifestDraft, type ManifestDraftStore } from '../forms/manifest-draft.ts';
@@ -123,6 +124,8 @@ export type TabScopeStore = {
 
 /** Every store one client holds, one instance of each. */
 export type ClientState = {
+    /** What the app gave this page: its bridge and the float it draws; undefined in a browser. */
+    desktop: Desktop | undefined;
     graphviz: GraphvizLoader;
     /** The LaTeX reader the Files Outline reads with, which loads the parser on its first call. */
     latexReader: LatexReader;
@@ -207,7 +210,7 @@ function scopedStore(
  * One client's stores, built in dependency order: a store is made after everything it reads, and is
  * handed those instances here. Nothing else wires one store to another.
  */
-export function createClientState(): ClientState {
+export function createClientState(desktop?: Desktop): ClientState {
     // Every store that fetches an answer holds it in this one query client.
     const queries = createQueries();
     // The stores handed the query client, by their name in the client object, which is what a tab's
@@ -223,7 +226,7 @@ export function createClientState(): ClientState {
     const entities = createEntities();
     const writes = createWrites(() => entities.config()?.config ?? null);
     const socket = createSocket(entities, writes);
-    const ui = createUi(writes.writeConfigKey);
+    const ui = createUi(writes.writeConfigKey, desktop !== undefined);
     const formDrafts = createFormDrafts(ui, snapshotEntries(entities.portfolio));
     // A tab's close, a pane's close and a page's close forget the state of every instance they take
     // away, and the layout is the one store that knows an instance closed. The entry forms of an
@@ -231,18 +234,21 @@ export function createClientState(): ClientState {
     // it draws keep their file trees in records under its id, so the layout is handed a forget
     // that takes all of them, with the entries its add forms made and the mark saying
     // a save from one of its forms is out, and the Search store lets go of a closed tab's requests.
-    const layout = createLayout({
-        ...ui,
-        clearInstanceState: (id: string) => {
-            ui.clearInstanceState(id);
-            ui.clearInstanceState(formsKey(id));
-            ui.clearInstanceState(addedKey(id));
-            ui.clearInstanceStates(cardTreePrefix(id));
-            formDrafts.forgetForms(id);
-            search.forgetSearch(id);
-        }
-    });
-    const drag = createDrag(layout);
+    const layout = createLayout(
+        {
+            ...ui,
+            clearInstanceState: (id: string) => {
+                ui.clearInstanceState(id);
+                ui.clearInstanceState(formsKey(id));
+                ui.clearInstanceState(addedKey(id));
+                ui.clearInstanceStates(cardTreePrefix(id));
+                formDrafts.forgetForms(id);
+                search.forgetSearch(id);
+            }
+        },
+        desktop === undefined ? undefined : { turn: desktop.bridge.saveLayout }
+    );
+    const drag = createDrag(layout, desktop);
     const clock = createClock();
     const changes = withQueries('changes', createChanges(queries));
     const selection = createSelection();
@@ -251,8 +257,10 @@ export function createClientState(): ClientState {
     // and float and the layout's ways to change them, and keeps the ownership itself: a terminal
     // shown, moved or ended changes the tabs of any page. A tab it opens is opened on the page it
     // names; its state carries an identity of its own, so the layout opens it rather than
-    // activating another Terminal tab.
+    // activating another Terminal tab. The page of a popped-out window closes no tab for an ended
+    // terminal: the main window's page does, once for every tab.
     const terminals = createTerminals(entities, socket, writes, {
+        upkeep: (desktop?.float ?? null) === null,
         tabs: () =>
             layout.hosts().flatMap((host) =>
                 tabsOf(host.workbench.root)
@@ -456,6 +464,7 @@ export function createClientState(): ClientState {
             )
     };
     return {
+        desktop,
         graphviz: createGraphviz(),
         latexReader: createLatexReader(),
         entities,

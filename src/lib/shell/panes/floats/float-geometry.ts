@@ -17,6 +17,16 @@ import {
 /** How near a free float's pointer must come to an edge of the area, in pixels, to dock there. */
 export const SNAP_PX = 24;
 
+/**
+ * The places this layer draws: a free float's and a dock's. A float placed in a window of the app
+ * is drawn by that window's page, so the layer leaves it out before it styles one and
+ * `floatStyle` never receives its place.
+ */
+export type DrawnPlace = Exclude<FloatPlace, { kind: 'window' }>;
+
+/** A float this layer draws. */
+export type DrawnFloat = Float & { place: DrawnPlace };
+
 /** A free float's place, which is the only kind a gesture moves. */
 export type FreePlace = Extract<FloatPlace, { kind: 'free' }>;
 
@@ -35,9 +45,10 @@ function viewport(fraction: number, unit: 'vw' | 'vh'): string {
 
 /**
  * The style a float is drawn with. A free float is placed by its fractions of the window; a docked
- * float is placed by the grid track it sits in (bodyTracks), so it carries the border alone.
+ * float is placed by the grid track it sits in (bodyTracks), so it carries the border alone. A
+ * float in a window of its own is drawn by no one here, so it has no style.
  */
-export function floatStyle(place: FloatPlace): string {
+export function floatStyle(place: DrawnPlace): string {
     if (place.kind === 'dock') return BORDER;
     return [
         `left: ${viewport(place.x, 'vw')}`,

@@ -337,7 +337,9 @@ const FROZEN = [
  * pane in focus for the cursor through `search`, the default build and test keys in shell/keys run
  * a project command through `commands`, CommandAsk.svelte and CommandForm.svelte in shell/commands
  * draw the question and the form `commands` holds, and the tab menu reveals a file and opens it in
- * a program through `writes` and offers Open in Program from the programs `selectors` reads.
+ * a program through `writes` and offers Open in Program from the programs `selectors` reads, and
+ * the panes, the tab menu and the windows of the desktop app ask the app's host for a window, the
+ * find bar and the arrangement's save turn through `desktop`.
  */
 const SHELL_STORES = [
     'commands',
@@ -354,7 +356,8 @@ const SHELL_STORES = [
     'notices',
     'registry',
     'writes',
-    'selectors'
+    'selectors',
+    'desktop'
 ];
 
 /**

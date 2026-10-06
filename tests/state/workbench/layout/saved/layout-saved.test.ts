@@ -5,7 +5,8 @@
 // Nothing here touches localStorage or the DOM: every case reads a hand-built envelope.
 
 import { describe, expect, it } from 'vitest';
-import { PAGES_VERSION, parseLayout } from '../../../../../src/lib/state/workbench/layout/index.ts';
+import { PAGES_VERSION } from '../../../../../src/lib/state/workbench/layout/index.ts';
+import { parseLayout } from '../../../../../src/lib/state/workbench/layout/saved/saved.ts';
 import { bench, docked, pane, split } from '../layout-fixture.ts';
 
 describe('the version 3 envelope, read as pages of one tree', () => {

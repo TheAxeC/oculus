@@ -12,6 +12,8 @@
     // opening that control's tooltip. A pick is answered once the focus is back, so a dialog the
     // pick raises keeps the focus it takes.
     //
+    // Choices that arrive after the list opened (`lead`) are drawn at its top.
+    //
     // A menu whose items depend on the moment of the right-click (what is selected, what is under
     // the pointer) reads them from the right-click itself, through `read`, as it arrives. A menu
     // that is `own` keeps its right-click from every menu around it, so a text box inside a row
@@ -30,6 +32,11 @@
         items?: MenuItem[];
         /** The items read from the right-click as it arrives, in place of `items`. */
         read?: (event: MouseEvent) => MenuItem[];
+        /**
+         * Choices a caller learns only after the right-click, drawn first, above the rest and a
+         * rule. They are state: choices that arrive while the list is open appear at its top.
+         */
+        lead?: MenuItem[];
         /** Keep the right-click from the menus around this one. */
         own?: boolean;
         /** A pick, with the pointer event, so a caller can read its modifiers. */
@@ -37,13 +44,18 @@
         children: Snippet;
     };
 
-    let { label, items = [], read, onpick, children, own = false }: Props = $props();
+    let { label, items = [], read, lead = [], onpick, children, own = false }: Props = $props();
 
     let open = $state(false);
 
     /** What the last right-click read, for a menu that reads its items then. */
     let heard: MenuItem[] = $state([]);
-    const shown = $derived(read === undefined ? items : heard);
+    const rest = $derived(read === undefined ? items : heard);
+    const shown = $derived(
+        lead.length === 0 || rest.length === 0
+            ? [...lead, ...rest]
+            : [...lead, ...rest.map((item, at) => (at === 0 ? { ...item, rule: true } : item))]
+    );
 
     /** The control the menu was opened on, which takes the focus back when it closes. */
     let origin: HTMLElement | null = null;

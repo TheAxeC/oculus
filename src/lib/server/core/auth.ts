@@ -10,9 +10,10 @@
 // request. `handle` in src/hooks.server.ts applies the rule to every request under /api/ before a
 // route sees it, except the two OAuth callbacks (`/api/calendar/callback`, `/api/mail/callback`),
 // which a provider's redirect reaches cross-site and which the `state` this process minted guards.
-// Its HEADERLESS list names the four paths that admit a request with neither header: the hook,
-// which Claude Code's `curl` posts, and the three picture routes the command line fetches. The
-// socket checks `allowedOrigin` on its upgrade, which does not pass through `handle`.
+// Its HEADERLESS list names the five paths that admit a request with neither header: the hook,
+// which Claude Code's `curl` posts, the three picture routes the command line fetches, and the
+// health route the desktop host asks. The socket checks `allowedOrigin` on its upgrade, which does
+// not pass through `handle`.
 //
 // The token is minted once per process and delivered to the page as its data. It is not a secret
 // against the machine's owner; it is what stops another page in the same browser from posting a

@@ -224,6 +224,7 @@ describe("oculus's own config directory", () => {
 
     const CATALOG_FILES = [
         'app.yml',
+        'desktop.yml',
         'findings.yml',
         'server.yml',
         'statusbar.yml',

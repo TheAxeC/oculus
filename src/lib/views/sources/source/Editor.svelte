@@ -86,6 +86,9 @@
         blame?: EditorBlame[];
         /** What the tab's language adds to the editor, such as LaTeX's markers and preview. */
         extension?: EditorExtension;
+        /** The first line the editor opens showing, from one; `onfirst` says each change of it. */
+        first?: number;
+        onfirst?: (line: number) => void;
         /** Every change of the text, in the line ending the editor holds it in. */
         oninput: (value: string) => void;
         /** Where the caret is now, said on every move. */
@@ -103,6 +106,8 @@
         text,
         instance = 'tab',
         line = 0,
+        first = 1,
+        onfirst,
         language: chosen,
         indent = null,
         ending = 'LF',
@@ -229,6 +234,8 @@
                 model={instance}
                 onchange={oninput}
                 onscroll={(next: number) => (fraction = next)}
+                startLine={line === 0 ? first : 1}
+                {onfirst}
             />
         </div>
         {#if split}

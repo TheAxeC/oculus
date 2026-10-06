@@ -48,9 +48,9 @@
     // the tab on screen to save. The save outcome while the text may be written, and what the tab
     // said, stay in view under the editor (save/SourceNote.svelte): an alert for a refused first
     // Save, LaTeX action or Submit, a status for Submit's progress and success. A file that could
-    // not be read is the message box with a control that reads it again (read-again.ts), which
-    // opens what the file is when it is back as something other than text. A file the route says is
-    // gone opens here too, so this is the tab that says it cannot be opened.
+    // not be read is the message box with a control that reads it again (actions/read-again.ts),
+    // which opens what the file is when it is back as something other than text. A file the route
+    // says is gone opens here too, so this is the tab that says it cannot be opened.
     //
     // Submit Job, on a .slurm file on disk under a served root, saves the unsaved text, asks the
     // server for the plan, puts it to the reader as one confirm and on a yes runs it; the flow is
@@ -99,7 +99,6 @@
     import { servedFile } from '$lib/views/shared/links/file-bar';
     import { ownListing } from '$lib/ui/controls/editor/chords';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Editor from './Editor.svelte';
     import BarActions from './actions/BarActions.svelte';
     import Gutter from './Gutter.svelte';
@@ -112,7 +111,7 @@
     import { connectSourceStatus } from './status/source-status.svelte';
     import { createTabFile } from './status/tab-file.svelte';
     import { createSubmitJob, isJobScript } from './actions/submit-job.svelte';
-    import { readAgain } from './read-again';
+    import ReadAgainButton from './actions/ReadAgainButton.svelte';
     import { createTabSave } from './save/tab-save.svelte';
     import { latexEditor } from './latex-editor';
     import { createSourceGutter } from './source-gutter.svelte';
@@ -155,6 +154,7 @@
             setSourceIndent,
             setSourceLanguage,
             setSourceWrap,
+            setSourceFirst,
             toggleSourceRendered,
             toggleSourceBlame,
             sourceDirty,
@@ -413,17 +413,8 @@
 {/snippet}
 
 {#snippet again()}
-    <ToolButton
-        small
-        label={t('source.retry')}
-        onclick={() =>
-            void readAgain(client, {
-                id: instance.id,
-                preview: instance.preview === true,
-                root,
-                path,
-                head
-            })}
+    <ReadAgainButton
+        tab={{ id: instance.id, preview: instance.preview === true, root, path, head }}
     />
 {/snippet}
 
@@ -458,6 +449,8 @@
                 bind:this={editor}
                 {path}
                 {line}
+                first={draft.first}
+                onfirst={(shown: number) => setSourceFirst(instance.id, shown)}
                 {language}
                 {indent}
                 {ending}

@@ -15,6 +15,11 @@ export type TerminalTab = { id: string; page: string; view: string; state: unkno
  * tab closed, and the selection as it stands.
  */
 export type TerminalTabs = {
+    /**
+     * Whether this client closes the Terminal tabs of terminals that ended. The page of a window
+     * that draws one float leaves it to the main window's page, which sees every tab.
+     */
+    upkeep?: boolean;
     tabs: () => TerminalTab[];
     restate: (id: string, page: string, state: TerminalTabState) => void;
     activate: (id: string, page: string) => void;

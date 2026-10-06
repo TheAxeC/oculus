@@ -15,7 +15,6 @@ export {
     emptyPane,
     floatHost,
     hostsOf,
-    isPage,
     newPage,
     pageLeaf,
     samePath
@@ -69,17 +68,14 @@ export {
     START_H,
     START_W,
     adoptFloats,
-    dockFloat,
-    floatPane,
-    floatTab,
+    centred,
     floatsFrom,
-    freeFloat,
     placeFits,
-    placeFloat,
-    returnFloat,
     writeHost
-} from './open/floats.ts';
-export type { FloatSpec } from './open/floats.ts';
+} from './open/float/pages.ts';
+export { WINDOW_START, createFloatOps } from './open/float/store.ts';
+export type { FloatOps, WindowBounds } from './open/float/store.ts';
+export type { FloatSpec } from './open/float/pages.ts';
 export { newTextFileOpener, untitledLabel } from './open/new-text-file.ts';
 export {
     asPreview,
@@ -106,15 +102,14 @@ export {
     checkLayout,
     checkPages,
     checkWorkbench,
-    needsFloats,
-    parseLayout,
-    parseWorkbench,
     serialiseFloatless,
     serialiseLayout
 } from './saved/saved.ts';
 export type { LayoutAccess } from './access.ts';
-export { LAYOUT_KEY, PREVIOUS_KEY, UNREAD_KEY, createStorage } from './saved/storage.ts';
-export type { LayoutStorage, Storable } from './saved/storage.ts';
+export { LAYOUT_KEY, PREVIOUS_KEY, createStorage } from './saved/storage.ts';
+export type { LayoutStorage, SaveTurn, Storable } from './saved/storage.ts';
+export { createLoad } from './saved/load.ts';
+export { carryWorkbench } from './saved/carry.ts';
 export { createAttention } from './open/attention.ts';
 export type { Attention, Beside, Touched } from './open/attention.ts';
 export { createInstances } from './instances.ts';

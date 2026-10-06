@@ -83,6 +83,7 @@ text:
         terminal_kill_armed: Press again to kill this terminal
         terminal_bell: Bell
         paste_confirm: Paste {0} lines into the terminal?
+        paste_confirm_one: Paste 1 line into the terminal?
         paste_ok: Paste
         terminals: Terminals
         view_terminal: Terminal

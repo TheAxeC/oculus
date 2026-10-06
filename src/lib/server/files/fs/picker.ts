@@ -1,6 +1,8 @@
 // Layer 2, server. The folder panel of POST /api/folders/pick: macOS's own panel for choosing
 // folders (NSOpenPanel), opened by a JavaScript for Automation script that `osascript -l
-// JavaScript` runs, so there is no build step and no native module.
+// JavaScript` runs, so there is no build step and no native module. A server started by the
+// desktop host has a parent that shows the panel instead, as a sheet on the window the reader is
+// in: the state then holds `ask`, and the script is not run.
 //
 // The panel lists and serves nothing. It answers the paths the reader chose, and a path becomes a
 // root only through the add of a root (server/edit/writes/config/roots.ts or POST /api/fs), so
@@ -12,8 +14,9 @@
 // is a field of the ServerContext, so two servers in one process hold two panels.
 //
 // The answers, each with no-store headers: `{ ok: true, paths }` (an empty list when the panel was
-// cancelled), `{ error: 'unsupported' }` off macOS, `{ error: 'failed' }` when the script exits
-// with a non-zero status, and `{ error: 'busy' }`.
+// cancelled), `{ error: 'unsupported' }` off macOS when there is no parent to ask, `{ error:
+// 'failed' }` when the script exits with a non-zero status or the parent's panel fails, and
+// `{ error: 'busy' }`.
 
 import { execFile } from 'node:child_process';
 import { json } from '@sveltejs/kit';
@@ -47,8 +50,17 @@ export type PickRun = { code: number | null; out: string };
 /** Run the script and say what it printed, with no timeout: the panel waits for the reader. */
 export type PickRunner = (script: string) => Promise<PickRun>;
 
-/** Whether a panel is open now, held by one ServerContext. */
-export type PickerState = { open: boolean };
+/**
+ * The panel as the parent process shows it: the chosen paths, null when the reader cancelled, and
+ * a rejection when it failed.
+ */
+type PickAsk = () => Promise<string[] | null>;
+
+/**
+ * Whether a panel is open now, held by one ServerContext, and the parent's panel when the server
+ * has a parent.
+ */
+export type PickerState = { open: boolean; ask?: PickAsk };
 
 /** A state with no panel open, for a ServerContext being built. */
 export function pickerState(): PickerState {
@@ -85,8 +97,8 @@ function pathsOf(out: string): string[] {
 
 /**
  * POST /api/folders/pick: open the folder panel and answer the folders the reader chose. The order
- * is the order of the refusals: the token, the platform, a panel already open, and only then the
- * panel.
+ * is the order of the refusals: the token, the platform (any platform with a parent to ask), a
+ * panel already open, and only then the panel.
  */
 export async function handlePick(
     request: Request,
@@ -99,12 +111,16 @@ export async function handlePick(
         words: { token: 'token', json: 'not-json' }
     });
     if (read instanceof Response) return read;
-    if ((deps.platform ?? process.platform) !== 'darwin') {
+    if (state.ask === undefined && (deps.platform ?? process.platform) !== 'darwin') {
         return json({ error: 'unsupported' }, { status: 400, headers: NO_STORE });
     }
     if (state.open) return json({ error: 'busy' }, { status: 409, headers: NO_STORE });
     state.open = true;
     try {
+        if (state.ask !== undefined) {
+            const chosen = await state.ask();
+            return json({ ok: true, paths: chosen ?? [] }, { headers: NO_STORE });
+        }
         const done = await (deps.run ?? osascript)(PICKER_SCRIPT);
         if (done.code !== 0) return json({ error: 'failed' }, { status: 500, headers: NO_STORE });
         return json({ ok: true, paths: pathsOf(done.out) }, { headers: NO_STORE });

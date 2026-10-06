@@ -49,19 +49,18 @@
         EMBED,
         PAGE,
         foldable,
+        openLabels,
         isFloatItem,
         isPaneItem,
         paneMenu,
-        stripMark,
         stripMenu,
         shownTabPath,
-        stripPicked,
-        tabHint
+        stripPicked
     } from '$lib/shell/panes/pane-view';
     import { createCloseQuestion } from './strip/close-question.svelte';
+    import { stripTab } from './strip/strip-tab';
     import { createTabMenu } from './strip/tab-menu-state.svelte';
     import { crumbPicked, tabCrumbs, type Crumb } from './strip/tab-crumbs';
-    import { shownFileOfTab } from '$lib/state/workbench/navigation/pages';
     import { provideTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
@@ -69,23 +68,20 @@
     import type { Tab } from '$lib/ui/tabs/tab-strip';
     import { markAt, withoutOwn } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import {
-        badgeOf,
-        registrationGlyph,
-        registrationLabel
-    } from '$lib/state/workbench/navigation/registry';
     import PaneBody from './PaneBody.svelte';
     import PaneStrip from './strip/PaneStrip.svelte';
     import { editorActions, showTabs } from '$lib/state/shared/words/appearance';
     import {
-        instanceLabel,
         newTextFileOpener,
         panes,
         setLocked,
         type Instance,
-        type Layout
+        type Layout,
+        type WindowBounds
     } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
+    import { answersCommands, type PaneCommand } from '../keys/key-dom';
+    import { windowBoundsOfPane } from './floats/window-bounds';
 
     const client = useState();
 
@@ -115,7 +111,9 @@
             showInFiles,
             splitInstance,
             touchPane,
-            unpinTab
+            unpinTab,
+            windowFloat,
+            windowPane
         },
         drag: { dragging, hover, start },
         fs: { roots: servedRoots, workspaces },
@@ -178,43 +176,11 @@
     const pathOf = (instance: Instance): string | null =>
         shownTabPath(instance, roots, served.home);
 
-    /**
-     * A tab per instance: the registry's words and glyph, or the view's own id when it has none. A
-     * state carrying a `label` shows that instead of the view's name, so two documents read as two.
-     * A tab showing a file carries its path, which the strip draws the file's icon for.
-     */
+    /** A tab per instance (strip/strip-tab.ts). */
     const tabs = $derived<Tab[]>(
-        instances.map((instance) => {
-            const found = viewFor(instance.view);
-            if (found === undefined) {
-                return { id: instance.id, label: t('ui.unknown_view', instance.view) };
-            }
-            const own = instanceLabel(instance.state);
-            const badge = badgeOf(found, client);
-            const preview = instance.preview === true;
-            return {
-                id: instance.id,
-                label: own ?? registrationLabel(found),
-                ...stripMark(registrationGlyph(found), tabMark(instance)),
-                file: shownFileOfTab(instance)?.path,
-                preview,
-                pinned: instance.pinned === true,
-                hint: tabHint(
-                    {
-                        preview,
-                        path: pathOf(instance),
-                        viewWords: own === null ? undefined : registrationLabel(found)
-                    },
-                    t
-                ),
-                badge: badge.tabText,
-                badgeGlyph: badge.glyph,
-                badgeTone: badge.tone,
-                badgeTitle: badge.title,
-                cells: badge.text === '' ? undefined : badge.cells,
-                dirty: unsaved(instance.id)
-            };
-        })
+        instances.map((instance) =>
+            stripTab(instance, { viewFor, client, mark: tabMark, pathOf, dirty: unsaved }, t)
+        )
     );
 
     /**
@@ -244,7 +210,8 @@
                 host: page,
                 maximised,
                 foldable: foldable(layout(page), path),
-                holdsTab: active !== ''
+                holdsTab: active !== '',
+                windows: client.desktop !== undefined
             },
             t
         )
@@ -260,11 +227,14 @@
                 locked: node.kind === 'pane' && node.locked === true,
                 tabBar: showTabs(),
                 actions: editorActions(),
-                paneItems: items
+                paneItems: items,
+                windows: client.desktop !== undefined
             },
             t
         )
     );
+
+    const openText = newTextFileOpener(openInPane, () => openLabels(pages(), layout));
 
     function stripPick(id: string): void {
         if (isPaneItem(id)) {
@@ -283,13 +253,10 @@
                 dockFloat,
                 freeFloat,
                 returnFloat,
-                newTextFileIn: newTextFileOpener(openInPane, () =>
-                    pages().flatMap((one) =>
-                        panes(layout(one.id)).flatMap(({ pane }) =>
-                            pane.tabs.flatMap((tab) => instanceLabel(tab.state) ?? [])
-                        )
-                    )
-                ),
+                windowPane: (at, host) => windowPane(at, windowBounds(), host),
+                windowFloat: (id) => windowFloat(id, windowBounds()),
+                switchMain: () => client.desktop?.bridge.focusMain(),
+                newTextFileIn: openText,
                 setLocked: (at, where, locked) =>
                     change((tree) => setLocked(tree, where, locked), at),
                 setAppearance: setPaneStrip
@@ -305,8 +272,21 @@
     });
     const { askAndClose, closeTab } = question;
 
+    /** The pane's element, whose place on the screen a new window opens at. */
+    let element: HTMLElement | undefined = $state();
+
+    /** Cmd+W and Cmd+N arrive as commands (keys/key-dom.ts); the close question is this pane's. */
+    function paneCommand(command: PaneCommand): void {
+        if (command === 'close-tab' && active !== '') closeTab(active);
+        else if (command === 'new-text-file') openText(page, path);
+    }
+
+    /** Where a new window made from this pane, or from the float it is, opens on the screen. */
+    const windowBounds = (): WindowBounds => windowBoundsOfPane(element, float?.place);
+
     const tabMenu = createTabMenu({
         client,
+        windowBounds,
         instances: () => instances,
         page: () => page,
         path: () => path,
@@ -407,6 +387,8 @@
      page a view opens into is this pane's page from the first press. -->
 <div
     class="pane"
+    bind:this={element}
+    {@attach answersCommands(paneCommand)}
     class:floated={float !== undefined}
     data-pane
     data-pane-path={path.join('.')}

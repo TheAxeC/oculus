@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>oculus</title>
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262626" />
+      <stop offset="1" stop-color="#181818" />
+    </linearGradient>
+    <radialGradient id="light" cx="512" cy="512" r="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9cdcfe" stop-opacity="0.55" />
+      <stop offset="1" stop-color="#9cdcfe" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#ground)" />
+  <circle cx="512" cy="512" r="300" fill="url(#light)" />
+  <circle cx="512" cy="512" r="218" fill="none" stroke="#569cd6" stroke-width="64" />
+  <circle cx="512" cy="512" r="218" fill="none" stroke="#9cdcfe" stroke-width="12" stroke-opacity="0.8" />
+  <circle cx="512" cy="512" r="58" fill="#9cdcfe" />
+</svg>

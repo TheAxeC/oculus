@@ -27,7 +27,7 @@ import {
     type Pane,
     type Workbench
 } from '../model.ts';
-import { placeFits } from '../open/floats.ts';
+import { placeFits } from '../open/float/pages.ts';
 import { withInfoFolded, withSystemLabel } from './fold.ts';
 import { treeWithoutConfig, withoutConfigTabs } from './migrate.ts';
 import { refusedLeaves, settlePageLeaves, type Refusal } from '../nested.ts';
@@ -121,10 +121,20 @@ const savedFloatShape = z.object({
     place: z.unknown().optional()
 });
 
-/** A saved place: a free rectangle or a dock; whether it fits the window is placeFits'. */
+/**
+ * A saved place: a free rectangle, a dock, or the bounds of a window of the app; whether it fits
+ * is placeFits'.
+ */
 const placeShape = z.union([
     z.object({
         kind: z.literal('free'),
+        x: z.number(),
+        y: z.number(),
+        w: z.number(),
+        h: z.number()
+    }),
+    z.object({
+        kind: z.literal('window'),
         x: z.number(),
         y: z.number(),
         w: z.number(),

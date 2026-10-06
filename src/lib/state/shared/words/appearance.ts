@@ -79,6 +79,25 @@ const RICE = 'rice';
 /** The theme a browser starts on when config/appearance.yml lists none at all. */
 const FALLBACK_THEME = 'light';
 
+/** The theme a page in the desktop app's window starts on when no theme is saved. */
+const APP_THEME = 'vscode-dark-modern';
+
+/**
+ * The theme a page shows: the saved one when the list holds it, else the start. The start is the
+ * app's dark theme for a page in the desktop app's window when the list holds it, and the
+ * `fallback` (the first theme listed) for a browser tab, which keeps its own start. A pure
+ * function of its arguments.
+ */
+function chosenTheme(
+    saved: unknown,
+    inApp: boolean,
+    listed: readonly string[],
+    fallback: string
+): string {
+    if (typeof saved === 'string' && listed.includes(saved)) return saved;
+    return inApp && listed.includes(APP_THEME) ? APP_THEME : fallback;
+}
+
 let list: Theme[] = [];
 let byName: Record<string, Theme | undefined> = {};
 let paper: Wallpaper | null = null;
@@ -256,9 +275,40 @@ export function themeLabel(name: string): string {
 }
 
 /** The theme a browser that has saved none starts on: the first the config lists. */
-export function defaultTheme(): string {
+function defaultTheme(): string {
     configGeneration();
     return list[0]?.name ?? FALLBACK_THEME;
+}
+
+/**
+ * The theme a page shows given the name it saved (any value, since the saved record is read
+ * untrusted) and whether the page is in the desktop app's window: `chosenTheme` over the list the
+ * config installed.
+ */
+export function themeFor(saved: unknown, inApp: boolean): string {
+    configGeneration();
+    return chosenTheme(
+        saved,
+        inApp,
+        list.map((theme) => theme.name),
+        defaultTheme()
+    );
+}
+
+/**
+ * The theme a saved record of the page's view settings names, or the app's start when the record
+ * is missing, does not parse or names a theme the config does not list. The desktop app's find bar
+ * has no store of its own and takes the window's theme from the record the window's page saved.
+ */
+export function savedTheme(raw: string | null): string {
+    let named: unknown = null;
+    try {
+        const held: unknown = raw === null ? null : JSON.parse(raw);
+        named = readAs(z.object({ theme: z.string() }), held)?.theme;
+    } catch {
+        // A record that does not parse names no theme.
+    }
+    return themeFor(named, true);
 }
 
 /** What the CRT overlay starts as, the `crt.default` of config/appearance.yml. */

@@ -1,7 +1,8 @@
 // Layer 3, primitive. What a parent asks the text editor to do through `perform` (types.ts's
 // `EditorCommand`), done on the editor and its model: go to a line, set or convert the
 // indentation, set the line ending, set the language (and load its grammar when it has not loaded),
-// or run one of the editor's actions.
+// or run one of the editor's actions; and the first line the editor shows, which the parent keeps
+// so that a copy of the tab opens at it.
 
 import type * as Monaco from 'monaco-editor';
 import { eolOf, type EditorKit } from './kit/load';
@@ -37,4 +38,76 @@ export function runCommand(
         made.focus();
         void made.getAction(command.id)?.run();
     }
+}
+
+/** The line the top edge of the text is in, from one: the first line with a pixel shown. */
+function lineAtTop(made: Monaco.editor.IStandaloneCodeEditor, scrollTop: number): number {
+    let low = 1;
+    let high = made.getModel()?.getLineCount() ?? 1;
+    while (low < high) {
+        const mid = Math.ceil((low + high) / 2);
+        if (made.getTopForLineNumber(mid) <= scrollTop) low = mid;
+        else high = mid - 1;
+    }
+    return low;
+}
+
+/** What follows the first line an editor shows. */
+export type FirstLine = {
+    /** The scroll listener, to dispose with the editor's other listeners. */
+    listener: Monaco.IDisposable;
+    /** A model was set: put `start` at the top once it is laid out, then say every change. */
+    settle: (
+        monaco: Pick<EditorKit['monaco'], 'editor'>,
+        held: Monaco.editor.ITextModel,
+        start: number
+    ) => void;
+};
+
+/** How long the scroll rests before the first line it rests on is said. */
+const SCROLL_REST_MS = 200;
+
+/**
+ * Say the first line the editor shows once the scroll has rested on it, not on each line a scroll
+ * passes: the line is written into the tab's saved state, which a fast scroll would write over
+ * and over.
+ */
+export function followFirstLine(
+    made: Monaco.editor.IStandaloneCodeEditor,
+    say: (line: number) => void
+): FirstLine {
+    let reporting = false;
+    let said = 0;
+    let rest: ReturnType<typeof setTimeout> | undefined;
+    const scrolled = made.onDidScrollChange((event) => {
+        if (!reporting) return;
+        const first = lineAtTop(made, event.scrollTop);
+        clearTimeout(rest);
+        rest = setTimeout(() => {
+            if (first === said) return;
+            said = first;
+            say(first);
+        }, SCROLL_REST_MS);
+    });
+    return {
+        listener: {
+            dispose: () => {
+                clearTimeout(rest);
+                scrolled.dispose();
+            }
+        },
+        settle: (monaco, held, start) => {
+            reporting = false;
+            clearTimeout(rest);
+            requestAnimationFrame(() => {
+                if (made.getModel() !== held) return;
+                if (start > 1) {
+                    const top = made.getTopForLineNumber(Math.min(start, held.getLineCount()));
+                    made.setScrollTop(top, monaco.editor.ScrollType.Immediate);
+                }
+                said = lineAtTop(made, made.getScrollTop());
+                reporting = true;
+            });
+        }
+    };
 }

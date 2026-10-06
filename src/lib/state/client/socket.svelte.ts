@@ -107,6 +107,8 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     let seededThrough = -1;
     /** Whether a socket of this page has opened before, so the next open is a reconnect. */
     let opened = false;
+    /** The token the last subscribe message carried to the server. */
+    let sentToken = '';
 
     let retry: ReturnType<typeof setTimeout> | null = null;
 
@@ -151,8 +153,18 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     // The token goes with the subscription rather than with each message: the server remembers
     // which socket carried it, and a socket without it reads every channel and writes to none.
     function subscription(): Subscription {
-        return { type: 'subscribe', channels, token: writes.writeToken() };
+        sentToken = writes.writeToken();
+        return { type: 'subscribe', channels, token: sentToken };
     }
+
+    // A token installed after the socket subscribed (the page's load run again after a restart or
+    // a 403) goes to the server in a subscribe message of no channels, which admits the socket to
+    // write without attaching its terminals again.
+    writes.onToken(() => {
+        if (live?.readyState !== WebSocket.OPEN || writes.writeToken() === sentToken) return;
+        sentToken = writes.writeToken();
+        live.send(JSON.stringify({ type: 'subscribe', channels: [], token: sentToken }));
+    });
 
     /**
      * Write one message on the open socket: the terminal input and resize, and nothing else the
@@ -212,12 +224,16 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
             // The seed's bound names a version of the hub the page was built against. A reconnect
             // may reach a restarted server, whose hub numbers its pushes from the start again, so
             // after the first open every push is taken.
-            if (opened) {
+            const reconnected = opened;
+            if (reconnected) {
                 seededThrough = -1;
                 entities.reconnected();
             }
             opened = true;
             ws.send(JSON.stringify(subscription()));
+            // A restarted server minted a new write token. The page's load hands it over, so a
+            // reconnect runs the load again, and a token that changed goes out through onToken.
+            if (reconnected) void writes.renewToken().catch(() => undefined);
         });
         ws.addEventListener('message', (event: MessageEvent) => {
             handle(String(event.data));

@@ -30,7 +30,10 @@
     import { bookmarkRows, HUB_ROOT } from '$lib/state/sources/fs';
     import { takeCarried } from '$lib/state/workbench/layout/saved/carry';
     import { createClientState } from '$lib/state/client/context';
+    import { useDesktopWindows } from '$lib/shell/desktop-windows.svelte';
+    import { desktopOf } from '$lib/state/shared/stores/desktop';
     import { provideState } from '$lib/state/client/use';
+    import { provideSpelling } from '$lib/ui/controls/text/spelling';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
     import { pushedCollections, registerAll, registerCollections } from './views.ts';
     import type { PageData } from './$types';
@@ -41,9 +44,15 @@
     // nothing under this component reaches a store through a module. The tooltip counter the
     // primitives number their bubbles with is made here beside it, since it is `ui/`'s own and the
     // state layer imports nothing of `ui/`.
-    const client = createClientState();
+    // In the desktop app the page holds the bridge its host gave it, read here once, and a window
+    // of a popped-out float carries the float's id in its address; in a browser there is neither.
+    const desktop =
+        typeof window === 'undefined' ? undefined : desktopOf(window, window.location.search);
+    const client = createClientState(desktop);
     provideState(client);
+    useDesktopWindows(client);
     provideTipIds(createTipIds());
+    provideSpelling(desktop?.bridge.spelling);
     const {
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
         fs: { bookmarks: savedBookmarks, workspaces },

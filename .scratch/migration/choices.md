@@ -2,6 +2,60 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z629 (2026-10-06, step O30)
+
+The question: O30, O30's landing look runs the unpackaged app from the gate on a scratch hub, a scratch HOME and a scratch tmux socket, on port 8817, photographs each window with `screencapture -o -l <window id>` and reads each photograph, then quits the app; no window is driven through the remote debugging port, which the runner refused. The cases that need a press, a drag or a key are booked as not looked at.
+
+- Chosen: (a) the look by photographs of the windows.
+- Not chosen: (b) no look, the lazy one.
+
+Where it is built: O30's landing. Booked in `plan.md` Rulings.
+
+## Z628 (2026-10-06, step O30)
+
+The question: O30, the three per-case limits of `tests/checks/diagrams/diagrams.test.ts` (:85, :111, :826) are dropped, so the tree checks follow their documented no-limit rule (`vite.config.ts:34-36`, README.md:17) and a red there is a finding of the tree, never machine load; built by step Q124.
+
+- Chosen: (a) drop the three limits.
+- Not chosen: (b) keep them and rerun the tree checks alone after a red from load, the lazy one.
+
+Where it is built: step Q124. Booked in `plan.md` Rulings.
+
+## Z627 (2026-10-06, step O30)
+
+The question: O30, the app's build from the checkout writes into folders of its own (an `outDir` and an adapter `out` the app passes to `vite build`, the server told where its handler is by a flag), listed in `.gitignore` and DESIGN.md's tree, so a start never meets another build in the same checkout; built by step O30b after O30 lands. The folder names and the flag are chosen in O30b's brief and listed under its decisions.
+
+- Chosen: (a) folders of the app's own.
+- Not chosen: (b) leave it and rely on the landing's lane order, the lazy one.
+
+Where it is built: step O30b. Booked in `plan.md` Rulings.
+
+## Z624 (2026-10-06, step A3)
+
+The question: A3, the entry G31 gains "or whose lock stays taken" (a save whose record lock is held past its wait is refused with the reason and writes nothing), and the test 'refuses a rename or a drop while the lock is held, committing nothing' is rewritten at A3's landing under fake timers with one row through the route, so it stands under G31 and waits on no real time. Fixed at A3's landing.
+
+- Chosen: (a) G31 widened and the test folded under fake timers.
+- Not chosen: (b) no entry, the test does not land, the lazy one.
+
+Where it is built: A3's landing; `agents/guarded.md` G31. Booked in `plan.md` Rulings.
+
+## Z621 (2026-10-06, step O30)
+
+The question: O30, a pane in an editor's alternate screen is given to an attaching page in the grid's alternate buffer, the normal buffer keeping the shell's text, so the editor draws full screen and leaving it brings the shell's text back; built by step Q123.
+
+- Chosen: (a) switch to the alternate buffer and keep the normal buffer's capture.
+- Not chosen: (b) the alternate buffer only, which loses the shell's text when the editor exits; (c) leave it, the lazy one.
+
+Where it is built: step Q123. Booked in `plan.md` Rulings.
+
+## Z620 (2026-10-06, step O30)
+
+The question: O30, a new guarded entry G51: "A page that attaches to a terminal pane is given the terminal modes the pane's program set (bracketed paste, application cursor keys, mouse reporting), so a paste or a key reaches the program as it asked for it.", with its test written by step Q123.
+
+- Chosen: (a) the entry and its test.
+- Not chosen: (b) no entry, the diagnosis's runs stand as the proof.
+
+Where it is built: step Q123; `agents/guarded.md` G51, written at Q123's preparation. Booked in `plan.md` Rulings.
+
 ## Z626 (2026-10-06, step A3)
 
 The question: A3, the commit inside the record's lock reads `schedules.yml` again and refuses 409 `entry-changed` when its text differs from the text the save planned from, so a hand edit made during the lock wait is never overwritten.
