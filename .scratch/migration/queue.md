@@ -2,9 +2,9 @@ In flight (1 of 6 slots):
 - PR3 (Present decks edited and generated, PDF export): builder running, base 272f60b4 (Z667 ruled (a), sent to the builder).
 
 Queued, in order (24 steps):
-- D23c (library definitions read-only, the symbol's column on open; Z669 (a), Z670 (a)): brief written, its brief check running.
-- D45 (LaTeX as VS Code's LaTeX Workshop): stopped at /spec on Z671, two choices for Axel.
-- X3e (Files lists reordered by drag): to be prepared again under Z635 (a); ready to prepare.
+- D23c (library definitions read-only, the symbol's column on open; Z669 (a), Z670 (a)): brief checked and its findings closed; worktree and builder next.
+- D45 (LaTeX as VS Code's LaTeX Workshop): stopped at /spec on Z671; (2) ruled (a), the names and (1) still open.
+- X3e (Files lists reordered by drag): being prepared again under Z635 (a), its premise recheck running.
 - PR4 (Present's presenter screen): once PR3 has landed.
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.
@@ -12,10 +12,10 @@ Queued, in order (24 steps):
 - D15 (PDF reading): once D45 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D41 (links in Markdown checked): once M7 has landed.
-- M8 (the hub's YAML checked in the editor): ready to prepare.
-- D43 (LaTeX navigation): ready to prepare.
-- D23b (cross-file language features): ready to prepare.
-- D33 (the Problems view): ready to prepare.
+- M8 (the hub's YAML checked in the editor): being prepared, its premise survey running.
+- D43 (LaTeX navigation): being prepared, its premise survey running.
+- D23b (cross-file language features): being prepared again, its premise recheck running.
+- D33 (the Problems view): being prepared, its premise survey and its diagnosis of the card cursor after a reload running.
 - D39 (hub keys as links): once M8 and D23b have landed.
 - D36 (linters on save): once D33 has landed.
 - D40 (the writing rules as editor marks): once D36 has landed.
