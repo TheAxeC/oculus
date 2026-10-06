@@ -1285,6 +1285,8 @@ Files BASE/config/behavior.yml and ./config/behavior.yml differ
 Files BASE/config/catalogs/options.yml and ./config/catalogs/options.yml differ
 Files BASE/config/text/app.yml and ./config/text/app.yml differ
 Files BASE/config/text/findings.yml and ./config/text/findings.yml differ
+Files BASE/config/text/ui.yml and ./config/text/ui.yml differ   <- OUTSIDE THE LIST: `ui.answer_unreachable`, the sentence `unreachableAnswer()` says, beside `ui.answer_refused` and `ui.answer_unreadable`
+Files BASE/config/text/views/shared/commands.yml and ./config/text/views/shared/commands.yml differ   <- OUTSIDE THE LIST: `unreachable` is removed, `ui.answer_unreachable` says it
 Files BASE/config/text/views/system/workbench.yml and ./config/text/views/system/workbench.yml differ
 Files BASE/docs/diagrams/channels.dot and ./docs/diagrams/channels.dot differ
 Files BASE/docs/diagrams/channels.svg and ./docs/diagrams/channels.svg differ
@@ -1323,11 +1325,14 @@ Files BASE/src/lib/shell/rail/UpdateTray.svelte and ./src/lib/shell/rail/UpdateT
 Files BASE/src/lib/state/client/context.ts and ./src/lib/state/client/context.ts differ
 Files BASE/src/lib/state/client/entities.svelte.ts and ./src/lib/state/client/entities.svelte.ts differ
 Files BASE/src/lib/state/client/payloads.ts and ./src/lib/state/client/payloads.ts differ
+Files BASE/src/lib/state/client/writes.svelte.ts and ./src/lib/state/client/writes.svelte.ts differ   <- OUTSIDE THE LIST: `postCommand` answers the HTTP status as `Posted.status` (0 when no answer came), which `failedAnswer` needs to word a refusal or an unreadable answer by its status
+Files BASE/src/lib/state/sessions/terminal/commands.svelte.ts and ./src/lib/state/sessions/terminal/commands.svelte.ts differ   <- OUTSIDE THE LIST: reads `unreachableAnswer()` in place of its own key `commands.unreachable`, so the sentence exists once
 Files BASE/src/lib/state/sessions/terminals.svelte.ts and ./src/lib/state/sessions/terminals.svelte.ts differ
-Files BASE/src/lib/state/shared/stores/shapes.ts and ./src/lib/state/shared/stores/shapes.ts differ
+Files BASE/src/lib/state/shared/answers/answers.ts and ./src/lib/state/shared/answers/answers.ts differ   <- OUTSIDE THE LIST: `unreachableAnswer()` is the one sentence for a request that got no answer, read by the schedule store and the command bar store
+Files BASE/src/lib/state/shared/stores/shapes.ts and ./src/lib/state/shared/stores/shapes.ts differ   <- OUTSIDE THE LIST: the `Posted` type gains `status`
 Files BASE/src/lib/state/shared/words/format.ts and ./src/lib/state/shared/words/format.ts differ
 Only in ./src/lib/state/system/machine: schedule-when.ts
-Only in ./src/lib/state/system/machine: schedule-words.ts   <- OUTSIDE THE LIST (new): the sentence for each of the 24 schedule words, kept apart so `schedule.svelte.ts` stays under 880 lines and the key gate reads literal keys
+Only in ./src/lib/state/system/machine: schedule-words.ts   <- OUTSIDE THE LIST (new): the sentence for each schedule word, kept apart so `schedule.svelte.ts` stays under 880 lines and the key gate reads literal keys
 Only in ./src/lib/state/system/machine: schedule.svelte.ts
 Files BASE/src/lib/ui/controls/Confirm.svelte and ./src/lib/ui/controls/Confirm.svelte differ   <- OUTSIDE THE LIST: the tray delete confirmation must stand above the tray, and a `Confirm` is drawn at the dialog level (60), under the tray ground (65); the optional `level` prop passes `sheet`
 Files BASE/src/lib/views/shared/sessions/CommandBar.svelte and ./src/lib/views/shared/sessions/CommandBar.svelte differ
@@ -1345,21 +1350,19 @@ Files BASE/tests/server/root/context-fixture.ts and ./tests/server/root/context-
 
 Files inside the new folders (diff -rq lists the folder; `wc -l`):
 ```
-
-```
-     447 src/lib/server/machine/schedules/file.ts
-     329 src/lib/server/machine/schedules/record.ts
-     223 src/lib/server/machine/schedules/routes.ts
+     682 src/lib/server/machine/schedules/file.ts
+     339 src/lib/server/machine/schedules/record.ts
+     267 src/lib/server/machine/schedules/routes.ts
       86 src/lib/server/machine/schedules/run.ts
       71 src/lib/server/machine/schedules/task.ts
-     709 src/lib/server/machine/schedules/watch.ts
-      57 tests/server/machine/schedules/file.test.ts
-      48 tests/server/machine/schedules/record.test.ts
+     734 src/lib/server/machine/schedules/watch.ts
+      89 tests/server/machine/schedules/file.test.ts
+      82 tests/server/machine/schedules/record.test.ts
      164 tests/server/machine/schedules/run.test.ts
      114 tests/server/machine/schedules/schedules-fixture.ts
-     346 tests/server/machine/schedules/watch.test.ts
+     386 tests/server/machine/schedules/watch.test.ts
       33 src/routes/api/(machine)/schedules/+server.ts
-    2627 total
+    3047 total
 ```
 
 Files in the new folders that the brief's write list does not name: `tests/server/machine/schedules/schedules-fixture.ts` (the shared scratch world of the five tests, a helper) and `src/lib/state/system/machine/schedule-words.ts` (the sentences of the schedule words, kept apart so `schedule.svelte.ts` stays at 553 lines and the key gate reads literal keys). Edits outside the line ranges the list gives: `config/catalogs/options.yml:1239-1241` (the `claude_bin` description names the prompts of schedules) and `README.md:11`, the same fact.
@@ -3113,4 +3116,203 @@ Verify item 2 as the round brief words it, `npx vitest run tests/server/machine/
 Also run once after the last change: `npx svelte-check --threshold error` (0 errors, 0 warnings), `npx eslint .` (no output), `npx prettier --check src tests config` (all files formatted), `sh utils/unused-exports.sh | wc -l` (378, the baseline), `npx tsc --noEmit -p .` (only the two `CardAction` lines of `task-card.ts` and `card.ts`, which `svelte-check` does not report).
 
 What these do not cover: the tray's DOM (the look is the orchestrator's at landing), a due time of a command or a task entry whose folder or command is gone (S6 and S26 were run before this round), and a close of the server at any point other than between the claim and the launch.
+
+# Repair round 2
+
+Not done: nothing. Every item of `A3-round2.md` is done. The rows are below, each with the command or run that shows it; the decisions the round took that the brief did not name follow them. One correction to round 1 is in the last section.
+
+## DONE / NOT DONE
+
+| Item | State | Command or run |
+|---|---|---|
+| 1 Behaviour 1, G46: a close during the earlier terminal's stop | DONE | `watch.ts` `launch` checks `stopped()` after the stop of the earlier idle terminal, settles the run `failed` with `server-stopped` through `settleStopped` (shared with the claim-to-launch window) and answers `{ refused: 'server-stopped' }` without asking for the run. Row in `watch.test.ts` (below): failing run on the tree as round 1 left it, passing run after. |
+| 2 Spec 1, an alias entry | DONE | `file.ts` `changedEntry` builds the rendered text only inside a `try`; `planEdit` refuses `entry-unwritable` (409, names the entry) when no text holds. Probe `records.probe.ts`, 'an alias entry' (below): the Pause and the Save of B write, Pause then Resume is byte-equal with `&r` intact; deleting the anchor holder A is refused `entry-unwritable`. |
+| 3 Z613, a field that carries a problem | DONE | `unchosenKeys` (`data/helpers/run/schedules.ts`) names the keys whose value does not read; the row carries them as `unchosen`; the dialog opens the task Select and the Run unattended box with no value chosen and `check(draft)` asks; `changesOf` (`file.ts`) writes a key that is `unchosen` whatever it was sent as. Probe `unchosen.svelte-probe.ts` over the real store and the real route (below). |
+| 4 Z614, the record's lock across the commit | DONE | `moveRecord` (`record.ts`) holds the lock across `commit`; `routes.ts` `write` commits inside it for a rename, a new entry and a delete. A held lock answers 409 `record-locked`, a record that does not read 409 `record-unread`, both before anything is written; a failed commit 500 `schedules-unwritten` with the record as it was; a record that cannot be written 500 `record-unwritten`. `grep -n "'record-unread'" routes.ts` finds one use, before the plan (`:195`), and the `RECORD_WORDS` table (`:160-162`) for the reasons `moveRecord` answers. Row under G31 in `record.test.ts` (below); probes S19 and the held lock through the route (below). |
+| 5 Z616, a reason this version does not name | DONE | `schedule.svelte.ts:251` and `:270` say `app.schedules.outcome_failed_unknown` (`config/text/app.yml:62`); `grep -rn outcome_failed_unknown src config` finds those three lines and no raw word is shown. |
+| 6 Behaviour 4, CRLF | DONE | `file.ts` `inLineEnds` ends every line of the text a write gives in `\r\n` when all lines of the file do; probe `records.probe.ts`, 'a CRLF file' (below): Pause, Resume, a Save adding a key and a new entry leave no bare `\n`. |
+| 7 Standards 1, G31's title | DONE | `file.test.ts:41` reads 'refuses a write over a schedules file it cannot read, leaving it' (`grep -n "it('refuses" tests/server/machine/schedules/*.test.ts`). |
+| 8 Standards 2, one sentence under one key | DONE | `commands.svelte.ts:317` and `:389` read `unreachableAnswer()`; `config/text/views/shared/commands.yml` no longer holds `unreachable` (`grep -rn "commands.unreachable" src tests config DESIGN.md HELP.md` finds none); DESIGN.md's "Untyped input" names `ui.answer_unreachable` beside `ui.answer_refused` and `ui.answer_unreadable`. |
+| 9 Standards 3 and the flow map | DONE | The report's "Files" section is regenerated from `diff -rq` with a reason on each path outside the write list, `writes.svelte.ts`, `answers.ts`, `ui.yml`, `shapes.ts`, `commands.svelte.ts` and `commands.yml` among them. A flow-map entry (`{name: A, ...}`) comes back with the library's spacing (`{ name: A, ... }`), its keys, order and values kept, as `file.ts:18-20` says. |
+| 10 The words in the docs | DONE | `DESIGN.md:138` names `schedules-unwritten`, `entry-unwritable`, `record-locked`, `record-unread` and `record-unwritten` with each sentence, and the `server-stopped` run line; `HELP.md:25` gives each sentence to a reader, without the machine word, and the unchosen task and flag. |
+
+## Tests added or changed
+
+- `tests/server/machine/schedules/watch.test.ts`, G46's table 'starts a schedule once per due time': a scenario closes the watcher while the earlier idle terminal's stop is pending and asserts no run is asked, no timer is left and the record reads `failed` with `server-stopped`. Its run on the tree as round 1 left it (the test written first, then the fix):
+
+```
+ RUN  v4.1.11 /Users/axelfaes/workspace/research-hub/.agents/worktrees/A3/tools/oculus
+ * |unit| tests/server/machine/schedules/watch.test.ts (1 test | 1 failed) 668ms
+     * starts a schedule once per due time 649ms
+******* Failed Tests 1 *******
+ FAIL  |unit| tests/server/machine/schedules/watch.test.ts > watchSchedules > starts a schedule once per due time
+AssertionError: stop pending: expected [ Array(1) ] to have a length of +0 but got 1
+- Expected
++ Received
+- 0
++ 1
+ * tests/server/machine/schedules/watch.test.ts:377:56
+    375|         await vi.advanceTimersByTimeAsync(24 * 3_600_000);
+    376|         expect(vi.getTimerCount(), 'stop pending').toBe(0);
+    377|         expect(started(ending.driver), 'stop pending').toHaveLength(0);
+       |                                                        ^
+    378|         expect(runsOf(ending.w)[0], 'stop pending').toMatchObject({
+    379|             trigger: 'schedule',
+************************[1/1]*
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  04:30:39
+   Duration  2.81s (transform 641ms, setup 0ms, import 2.05s, tests 668ms, environment 0ms)
+```
+
+- `tests/server/machine/schedules/record.test.ts`, G31's record: 'refuses a rename or a drop while the lock is held, committing nothing' is new and tagged `slow` (two real waits of the record's 2 s lock time); 'refuses a write over a schedule record it cannot read, leaving it' now calls `moveRecord` in place of `renameRecord` and `dropRecord` and asserts the commit callback was never called. The new row has no failing run on the earlier tree: it tests `moveRecord`, which did not exist there.
+- `tests/server/machine/schedules/file.test.ts`: the title is G31's ruled title again (item 7); no row changed.
+- No other test. Items 2, 3, 5, 6 and 8 have no guarded entry; the runs below show them.
+
+## Runs
+
+### Item 2, an alias entry (`records.probe.ts`, 'an alias entry'; file `- name: A / runs: &r { task: litwatch } / ...` and `- name: B / runs: *r / ...`)
+
+```
+alias Pause of B (runs: *r): writes:
+- name: A
+  runs: &r { task: litwatch }
+  when: "0 7 * * 1"
+- name: B
+  runs: *r
+  when: "0 8 * * 1"
+  paused: true
+
+alias Save of B changing when: writes:
+- name: A
+  runs: &r { task: litwatch }
+  when: "0 7 * * 1"
+- name: B
+  runs: *r
+  when: "0 9 * * 1"
+
+alias Pause then Resume of B: file byte-equal=true, anchor kept=true
+alias Save of B changing runs: writes:
+- name: A
+  runs: &r { task: litwatch }
+  when: "0 7 * * 1"
+- name: B
+  runs: { task: scout }
+  when: "0 8 * * 1"
+
+alias Delete of A (the anchor holder): refused 409 entry-unwritable ["A"]
+```
+
+A Save of B that changes `runs` writes `runs: { task: scout }` on B, so B no longer aliases A's map; A's anchor is intact. A change the file's bytes cannot carry and the library cannot render alone is refused as `entry-unwritable`.
+
+### Item 3, a task and a flag that do not read (`unchosen.svelte-probe.ts`, real `createSchedule`, real `handleSchedules`, scratch file)
+
+```
+file before:
+- name: Weekly radar
+  runs: { task: litwach }
+  when: "0 7 * * 1"
+- name: Daily scout
+  runs: { task: scout }
+  unattended: 1
+  when: "0 9 * * *"
+
+rows: [{"name":"Weekly radar","problem":"update-task-unknown","unchosen":["task"]},{"name":"Daily scout","problem":"flag-wrong","unchosen":["unattended"]}]
+row 0 opened: task="" unattended=false
+row 0 Save with no task chosen: check=["Choose a task."]
+row 0 task chosen: check=[]
+row 0 save: {"ok":true,"terminal":null,"skipped":""}
+row 1 opened: task="scout" unattended=null
+row 1 Save with no choice for Run unattended: check=["Choose whether it runs unattended."]
+row 1 Run unattended chosen Off: check=[]
+row 1 save: {"ok":true,"terminal":null,"skipped":""}
+file after:
+- name: Weekly radar
+  runs: { task: litwatch }
+  when: "0 7 * * 1"
+- name: Daily scout
+  runs: { task: scout }
+  when: "0 9 * * *"
+
+rows after: [{"name":"Weekly radar","unchosen":[]},{"name":"Daily scout","unchosen":[]}]
+row 1 chosen On: {"ok":true,"terminal":null,"skipped":""}
+file after (On):
+- name: Daily scout
+  runs: { task: scout }
+  unattended: true
+  when: "0 9 * * *"
+```
+
+Row 0 (`task: litwach`) and row 1 (`unattended: 1`) each open with no value chosen, Save asks for one, and the file line is `task: litwach` before and `task: litwatch` after for row 0, and `unattended: 1` before and no `unattended` key after (Off chosen) or `unattended: true` (On chosen, shown from the original file) for row 1; every other line of both entries keeps its bytes.
+
+### Item 4, S19 and a held lock (`records.probe.ts`)
+
+```
+S19 a new entry 'Stale name' (0 7 * * *) saved at 07:30 over a record entry handled yesterday: 200 {"ok":true}; run starts=0; runs=none; record entry={"pattern":"0 7 * * *","since":"<now>","handled":null,"runs":[]}
+lock the record's lock held: rename-save 409 {"error":"record-locked","names":[]}; delete 409 {"error":"record-locked","names":[]}; waited 4 s over both; schedules.yml byte-equal=true; record byte-equal=true; lock still held=true
+```
+
+The first line is S19: the new entry's record entry has `handled: null`, so no catch-up started (`run starts=0`). The second line is the route over a held lock: both writes answer 409 `record-locked`, `schedules.yml` and the record are byte-equal after, and the lock file is still there.
+
+### Item 6, a CRLF file (`records.probe.ts`, 'a CRLF file')
+
+```
+crlf after Pause: bare LF=false; "# top\r\n- name: A\r\n  runs: { task: litwatch }\r\n  when: \"0 7 * * 1\"\r\n  paused: true\r\n- name: B\r\n  runs: { task: scout }\r\n"
+crlf after Resume: bare LF=false; byte-equal to the start=true
+crlf after a Save adding unattended: bare LF=false; "# top\r\n- name: A\r\n  runs: { task: litwatch }\r\n  when: \"0 7 * * 1\"\r\n- name: B\r\n  runs: { task: scout }\r\n  unattended: true\r\n"
+crlf after a new entry: bare LF=false; "# top\r\n- name: A\r\n  runs: { task: litwatch }\r\n  when: \"0 7 * * 1\"\r\n- name: B\r\n  runs: { task: scout }\r\n  unattended: true\r\n- name: C\r\n  runs: { task: inbox }\r\n  when: \"0 6 * * *\"\r\n"
+```
+
+## Decisions the round took that the brief did not name
+
+- `record-unwritten` is a new `SCHEDULE_WORDS` word, 500, sentence "The run record could not be written; check ~/.oculus/schedule.json and try again." (`app.schedules.problem_record_unwritten`). It answers a record that could not be written: the record's folder or lock file could not be created (refused before the commit, `record.ts:121-126` and `:178-182`) or the record write failed after the commit (`:198`). The orchestrator rules on it; the alternative is to reuse `record-unread`, whose sentence says a different thing.
+- `ScheduleRow` gains `unchosen` (`UnchosenKey[]`, `data/model/model-processes.ts`), a field of the `schedule` channel's rows. The dialog needs it because `row.problem` names only the first problem of an entry.
+- The dialog's task Select gets an empty choice with the words "Choose a task." and the Run unattended box a third state with the words "not chosen", each only for an entry whose value does not read (`app.schedules.refused_task`, `refused_unattended`, `unattended_unset`).
+- `dropRecord` and `renameRecord` are replaced by `moveRecord`, whose commit callback runs inside the lock; nothing else called them.
+- A line count: `file.ts` is 682 lines, `watch.ts` 734, under the 880 limit.
+
+## Correction to round 1
+
+The round 1 report said a record change that failed after the commit "is reached only by a record that went unreadable in between". It was also reached by a lock that stayed taken and by a record that could not be written, and it answered `record-unread` for all three. Round 2 ends the path: a lock or a record that does not read refuses before the commit, and no answer is `record-unread` after it.
+
+## Verify lines
+
+`checks.sh` over `orchestrator-state.md` (`checks.log`):
+
+```
+test:quick: 79 changed file(s), from git since HEAD
+test:quick: 83 test file(s), 10 essential
+ok      ASCII gate (0.5 s)
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      svelte-kit sync (1.8 s)
+ok      eslint (7.5 s)
+ok      svelte-check (6.5 s): 1791254729260 COMPLETED 376 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (13.4 s): Duration  10.09s (transform 15.27s, setup 0ms, import 26.20s, tests 12.18s, environment 93ms)
+test:quick: 14.0 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+```
+
+`npm run test:checks` (`npm run diagrams` was run first: the state layer's imports changed, so `docs/diagrams/layer-state.*` and the layer files moved):
+
+```
+ Test Files  15 passed | 1 skipped (16)
+      Tests  227 passed | 3 skipped (230)
+```
+
+`npx vitest run tests/server/machine/schedules tests/routes/machine/schedules.test.ts --reporter=verbose`:
+
+```
+(pass) |unit| tests/server/machine/schedules/file.test.ts > the schedules file > refuses a write over a schedules file it cannot read, leaving it 48ms
+(pass) |unit| tests/routes/machine/schedules.test.ts > POST /api/schedules > refuses a request without the write token 14ms
+(pass) |unit| tests/server/machine/schedules/run.test.ts > runEntry > starts what a schedule runs, or refuses it with its word 76ms
+(pass) |unit| tests/server/machine/schedules/watch.test.ts > watchSchedules > starts a schedule once per due time 816ms
+(pass) |unit| tests/server/machine/schedules/record.test.ts > the run record > refuses a write over a schedule record it cannot read, leaving it 19ms
+(pass) |unit| tests/server/machine/schedules/record.test.ts > the run record > refuses a rename or a drop while the lock is held, committing nothing 4253ms
+Test Files  5 passed (5)
+Tests  6 passed (6)
+```
+
+Also after the last change: `npx tsc --noEmit -p .` (only the two `CardAction` lines), `npx eslint src tests` (no output), `npx prettier --check src tests config DESIGN.md HELP.md` (all formatted), `sh utils/unused-exports.sh | wc -l` (378, the baseline), the ASCII gate over `src tests config DESIGN.md HELP.md README.md` (no hit outside `config/present.yml`, which this step did not touch).
+
+What these do not cover: the dialog's DOM (the three-state box and the empty task choice are drawn, not rendered here; the look is the orchestrator's), a lock that goes stale during a save, and a record whose write fails after the commit (answered by reading `routes.ts`, no run).
 
