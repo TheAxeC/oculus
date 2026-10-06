@@ -36,9 +36,9 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/E4g-report.md
   brief_check: agents/reviews/E4g-brief-check.md (a0be667a081a9ab33, claude-opus-5-5, 205,592 tokens, 78 tool uses, 8.8 min)
   shared_paths: with O30b: DESIGN.md's file tree (E4g adds docs/apps.md under docs/ at :79-80, O30b adds its build folders higher in the same block; both lines kept) and HELP.md (E4g :21, :82 and :210-221, O30b :186, :365 and :367, disjoint); so the merge is simple
+  builder_usage: 154,994 tokens, 322 tool uses, 82.4 min; repair round 1 204,902 tokens, 167 tool uses, 60.1 min; its reviewer over round 1 not dispatched (the pause)
   landing: not-started
   round: 1 (sent 2026-10-06 to a0af7bce29bac6fa9 over the worktree as the reviewer left it; widened to apps.svelte.ts getState, the apps.write words, the question's tab selected, DESIGN.md's terminal sentence)
-  builder_usage: 154,994 tokens, 322 tool uses, 82.4 min
   reviewer_report: agents/reviews/E4g-refuter.md (a1387d637f72b6115, claude-opus-5-5, 338,187 tokens, 107 tool uses, 19.9 min)
 - step: D23
   executor: agent
@@ -78,8 +78,8 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/PR1-report.md
   brief_check: agents/reviews/PR1-brief-check.md (a6a8c0abc5e9e3d71, claude-opus-5-5, 176,558 tokens, 48 tool uses, 9.3 min)
   shared_paths: with E4g, O30b, Q124 and D23: HELP.md and DESIGN.md (PR1 writes HELP.md:139 and DESIGN.md:382 and :436, disjoint from E4g's, Q124's and D23's lines; O30b also writes :436, so the second to land adds its sentence to that item); with Q125 (queued): HELP.md and DESIGN.md under Z642; docs/diagrams regenerated at landing; so the merge is simple
-  builder_usage: 201,688 tokens, 52 tool uses, 26.8 min
-  reviewer_report: agents/reviews/PR1-refuter.md (aed7391d3da51eb81, claude-opus-5-5, 224,203 tokens, 61 tool uses, 21.3 min)
+  builder_usage: 201,688 tokens, 52 tool uses, 26.8 min; repair round 1 263,934 tokens, 28 tool uses, 11.3 min
+  reviewer_report: agents/reviews/PR1-refuter.md (aed7391d3da51eb81, claude-opus-5-5, 224,203 tokens, 61 tool uses, 21.3 min); over round 1: a99e636de1d29873b, claude-opus-5-5, running
   landing: not-started
   round: 1 (sent 2026-10-06 to a9144e12c4f81cb07: G53's test (Z644 (a)), B1 the keys in full screen, B2 the float's bounds, the pending-request paths, St1 to St5, P1 to P3)
 - step: O30b
@@ -204,6 +204,8 @@ dispatch:   # steps in flight, up to six (Z632)
 
 ## The pause
 
+In force from 2026-10-06, Axel: "Once the current agents are done, dont launch new ones". The agents running then (Q124's builder over its round, O30b's reviewer, D23's and Q125's builders, PR1's reviewer over its round) run to their end; no builder, reviewer, brief check or diagnosis agent is started after that, and E4g's reviewer over its round 1 is not dispatched. Reports that arrive are saved and booked; nothing new is launched until he says go.
+
 Lifted 2026-10-03 by Axel (Z367 to Z369): the four test sweeps run, then T1a, then the queue resumes with five steps in flight; the loop stops only at a stop, at Axel's word, or when only O33 to O36 (paused) remain.
 
 In force from 2026-10-03 15:30, Axel: "Pause after the next landing (instead of just before T1)" (Z360). D25 has landed; nothing is dispatched, refuted, landed or prepared until he says go. Q116 is built and waits for its review; X3c waits for its round's dispositions and landing.
@@ -278,6 +280,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-06 (before Axel's restart of his machine). The pause is in force (see "The pause"). In flight when he restarted: Q124 (builder over repair round 1), O30b (reviewer, first run), D23 (builder), Q125 (builder, resumed with the cases ruling Z646), PR1 (reviewer over round 1, a99e636de1d29873b); E4g built through repair round 1, its reviewer over the round not dispatched. A restart ends every running agent: after it, each of those five is read from its worktree and report on disk (`git -C`-free reads from inside each worktree), and a step whose agent ended without a report is booked as such; nothing is relaunched until Axel says go.
 - 2026-10-06 12:55. Q123 landed (a terminal pane attached as its program left it; booking in plan.md; `agents/reviews/Q123-landing.md`) with five fixes at landing, B1 the top row's shift among them. In flight: E4g (repair round 1), Q124 (under review), O30b (under review), D23 and PR1 (building). Open items Z644 and Z645 raised. Next: Q125 into the free slot, then each landing as its review closes.
 - 2026-10-06 09:30. E4 landed (apps added while oculus runs; booking in plan.md; `agents/reviews/E4-landing.md`) after its look on TEST, which Axel's dev-server restart (Z631) made possible. Axel ruled Z630 (G51's words, written into guarded.md), Z632 (`workers_at_once` 6 in both files) and Z633 (step E4g, the apps guide in `tools/oculus/docs/apps.md`, first in the queue). Nothing in flight. Next: /spec for E4g, O30b, Q123, Q124, D23 and X3e, the six slots.
 - 2026-10-06 08:35. E4 staged on main, not committed: gate-E4 passed `npm run test:landing` (6 of 6), main's staged diff `cmp`-equal to the gate's, penpal and the Electron binary installed in main's node_modules, guarded.md names E4's tests (G1, G8, G9, G31, G49, G50). The look waits on Z631 (Axel's dev server needs a restart to resolve penpal); `~/.oculus/approvals.json` and `workspaces.json` back at their shasums, the scratch apps kept in the session scratchpad. Next: the look, the booking, the commit, then O30b, Q123, Q124 prepared.
