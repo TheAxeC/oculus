@@ -1871,3 +1871,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z663 (2026-10-06): automode, the default-port start test red on main: cause found read-only, fix at D23's landing or in the next desktop step's brief.
 - Z664 (2026-10-06): Axel, (a): the carried spaced hyphens reworded in PR3.
 - Z665 (2026-10-06): Axel, (a): PDF export through print and Electron's printToPDF.
+- Z666 (2026-10-06): automode, PR3's brief choices (the slide menu, `deck-edit`, the multi-list `deck-slides`, the drafts POST, the names, the PDF through the upload).

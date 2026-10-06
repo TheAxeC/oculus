@@ -1,11 +1,13 @@
 In flight (1 of 6 slots):
 - D23 (language servers): repair round 1 running, base 465efcdfb.
 
-Queued, in order (25 steps):
-- Q126 (DESIGN.md reduced where Q125 left it short, Z654): ready to prepare (Q125 has landed).
+Being prepared (2):
+- PR3 (Present decks edited and generated, PDF export): ruled (Z664, Z665, Z666), brief check running.
+- Q126 (DESIGN.md reduced where Q125 left it short, Z654): brief written, brief check running.
+
+Queued, in order (23 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
 - X3e (Files lists reordered by drag): prepared again under Z635 (a); once D23 has landed (both split Palette.svelte).
-- PR3 (Present decks edited and generated, PDF export): ruled (Z664, Z665), being prepared.
 - PR4 (Present's presenter screen): once PR3 has landed.
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.

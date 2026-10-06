@@ -11,6 +11,10 @@ The question: the transition slide's hint belongs in the foot with no lede (brie
 - Chosen: (d) a section slide may carry `foot:` in its front matter, the key the summary and grid entries of `order:` already use; the transition carries its hint there with no cards, which draws the old slide exactly.
 - Not chosen: (a) four numbered cards the builder wrote (words the deck never had, repeating the foot); (b) the hint as the lede (the foot unmet); (c) a text slide (the legend lost).
 
+## Z666 (2026-10-06, step PR3, the orchestrator, automode)
+
+PR3's brief takes six choices, each its recommendation: the slide actions in a slide's right-click menu and the palette, Export to PDF the one new toolbar control; one write kind `deck-edit`, one record per file with its text before and after, undone as one step; `deck-slides` carries several lists and `order:` in one request applied as one edit, so a move across groups is never half done; the live drawing is a POST of the drafts to the deck route, read on the server; the names `slide-<n>.md`, `<stem>-copy.md`, an image's own name then `-2`, `<stem>-slides/`, `<deck folder name>.pdf`; the PDF written through the ops upload, recorded and undone. Not chosen: a toolbar button per act (crowds the reader's controls); a write per file (an act could leave a file and its `order:` entry out of step); one write per group (the lazy option: the existing write kept unchanged, and a move across groups could be half done); a second slide builder in the page (it would draw differently from the server); a file written by the desktop host (outside the change log).
+
 ## Z665 (2026-10-06, step PR3, Axel)
 
 PDF export with no new dependency: the slides printed through the browser, the desktop app writing the file with Electron's `printToPDF`. Not chosen: a driven Chromium (playwright-core, puppeteer-core); rasterised pages (modern-screenshot with jsPDF, the lazy option).
