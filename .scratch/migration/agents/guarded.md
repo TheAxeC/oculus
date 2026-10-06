@@ -104,6 +104,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G52. A page that attaches to a terminal pane whose program is in its alternate screen is given the shell's text in the grid's normal buffer and the program's screen in its alternate buffer, so the program draws full screen and leaving it shows the shell's text again with the cursor where the shell left it.
   Code: the pane's attach under `src/lib/server/machine/pty/`.
   Test: written by Q123, its file and title named in `agents/briefs/Q123.md`.
+- G53. The desktop app's window file keeps the window's own state: a full screen a page asked for is never written as the window's full screen, and a full screen the reader set before is kept.
+  Code: `recordWindow` in `src/desktop/decide/window-file.ts` and its wiring in `src/desktop/windows/windows.ts`.
+  Test: written by PR1, a table over the event orders of a page's full screen, its file and title named in PR1's landing report.
 
 ## It starts, and configuration is checked
 
@@ -128,6 +131,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G48. The app runs one server and ends it: a second start brings the first forward and starts nothing, a port in use starts no second server and says so with the port, and Quit stops the server process and leaves every tmux session running.
   Code: `src/desktop/`, the start and the server process; `src/server.ts`.
   Test: written by O30, its file and titles named in `agents/briefs/O30.md` (Z518).
+- G54. Every page arrangement in `config/layout.yml` parses, so every rail page opens what its arrangement names.
+  Code: `config/layout.yml`'s page arrangements and `parseArrangement` in `src/lib/state/workbench/navigation/arrangement.ts`.
+  Test: written by Q125, one row per page, its file and title named in Q125's landing report.
 
 ## The repository's rules, checked by a machine
 

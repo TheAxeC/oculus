@@ -65,7 +65,7 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/Q125-brief-check.md (a401d3fdf1183fba1, claude-opus-5-5, 223,091 tokens, 83 tool uses, 12.3 min)
   shared_paths: HELP.md, DESIGN.md and README.md with E4g, O30b, Q124, D23 and PR1, and config/layout.yml with E4g and D23, under Z642: the second to land carries the other's text; docs/diagrams regenerated at landing
   landing: not-started
-  round: 0
+  round: 0 (G54's test, Z645 (a), added to the brief by message to the builder: tests/checks/config/arrangements.test.ts)
 - step: PR1
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -80,7 +80,7 @@ dispatch:   # steps in flight, up to six (Z632)
   builder_usage: 201,688 tokens, 52 tool uses, 26.8 min
   reviewer_report: agents/reviews/PR1-refuter.md (aed7391d3da51eb81, claude-opus-5-5, running)
   landing: not-started
-  round: 0
+  round: 0 (G53's test, Z644 (a), goes to PR1's builder with the review's findings in repair round 1)
 - step: O30b
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -217,9 +217,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Z644 (2026-10-06, raised from PR1's brief check): does the desktop app's window-file rule get a guarded entry and a test? PR1 makes the main window never keep a page's full screen as its own, so `~/.oculus/window.json` is written with the window's state from before a deck went full screen. If that rule is wrong, the window reopens in full screen at every start, or loses the full screen the reader set. PR1 writes the rule as a pure function in `src/desktop/decide/window-file.ts` (the event order to the recorded state), which a unit table can test for both macOS event orders. (a) A new entry G53 in `agents/guarded.md`: "The desktop app's window file keeps the window's own state: a full screen a page asked for is never written as the window's full screen, and a full screen the reader set before is kept." PR1 writes its test, a table over the event orders of cases 15, 16 and 21. Pros: the rule is checked on every run, and its failure is seen at every start of the app. Cons: one more test file. (b) No entry: the rule is checked by reading and at the landing look only. Pros: nothing added. Cons: a later change to `keepState` can break it unseen until a start opens the window wrong. (b) is the lazy option. Recommendation: (a). PR1 is dispatched with (b)'s scope and gains the test on a ruling of (a), at its landing or in a repair round.
 
-- Z645 (2026-10-06, raised from E4g's review): does every page arrangement shipped in `config/layout.yml` get a guarded entry and a test that parses it? On main the Help page's arrangement is a split with one child, which `parseArrangement` refuses, so the Help page opens nothing, and no check saw it (`grep -rn parseArrangement tests` prints nothing); E4g makes it one pane. (a) A new entry G54: "Every page arrangement in config/layout.yml parses, so every rail page opens what its arrangement names." Q125, which edits that file next, writes its test: one row per page, each parsed by `parseArrangement`. Pros: a broken arrangement fails the checks the day it is written. Cons: one more test. (b) No entry: arrangements are seen only at a look. Cons: a page that opens nothing ships unseen, as this one did. (b) is the lazy option. Recommendation: (a).
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
