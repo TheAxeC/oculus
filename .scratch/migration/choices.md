@@ -2,6 +2,24 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z643 (2026-10-06, step Q125)
+
+The question: Q125 moves HELP.md's developer sections, which hold the nine diagrams, into README.md and DESIGN.md. The Help view draws diagrams only for the manual (`server/content/docs.ts`, `renderManualParts`; `views/system/help/Diagram.svelte`), so the diagrams would leave oculus, and the guides under `docs/` need a place to be opened.
+
+- Chosen: (a) the Help group lists the Configuration guide (h8), the Source Control guide (h9) and DESIGN.md as Design (from the catalogue, no chord, a chord holding one digit), and the doc view draws DESIGN.md's diagrams in the page's text colour as the manual's are drawn now.
+- Not chosen: (b) the diagrams leave the Help view and the code that drew them is removed, which drops a view of the architecture Axel has in oculus; (c) the diagram code kept with nothing using it, the lazy one.
+
+Where it is built: Q125. Booked in `plan.md` Rulings.
+
+## Z641 (2026-10-06, step PR1)
+
+The question: PR1's step line asks for "a key" and a control, and names no key, no label and no time for the pointer.
+
+- Chosen: (a) `F` toggles full screen and Esc leaves it; the control is labelled Present; Space, Page Down and the right arrow move on, Shift+Space, Page Up and the left arrow move back; a click on the slide moves on, a click on a link or a control does not; the pointer hides after 2 s at rest.
+- Not chosen: (b) F5, PowerPoint's key, which a browser tab takes as a reload when the deck does not hold the focus; (c) Cmd+Enter, Google Slides' key, a chord where the deck's other keys are single letters. No option was the lazy one.
+
+Where it is built: PR1. Booked in `plan.md` Rulings.
+
 ## Z629 (2026-10-06, step O30)
 
 The question: O30, O30's landing look runs the unpackaged app from the gate on a scratch hub, a scratch HOME and a scratch tmux socket, on port 8817, photographs each window with `screencapture -o -l <window id>` and reads each photograph, then quits the app; no window is driven through the remote debugging port, which the runner refused. The cases that need a press, a drag or a key are booked as not looked at.

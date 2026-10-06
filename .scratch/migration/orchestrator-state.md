@@ -39,7 +39,7 @@ dispatch:   # steps in flight, up to six (Z632)
   landing: not-started
   round: 0
   builder_usage: 154,994 tokens, 322 tool uses, 82.4 min
-  reviewer_report: agents/reviews/E4g-refuter.md (a1387d637f72b6115, claude-opus-5-5, running)
+  reviewer_report: agents/reviews/E4g-refuter.md (a1387d637f72b6115, claude-opus-5-5, 338,187 tokens, 107 tool uses, 19.9 min)
 - step: D23
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -66,7 +66,8 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with Q124: vite.config.ts (O30b's function form, Q124's few-line cache setting carried by hand at the second landing), tests/tiers/landing.mjs (head comment, both), tests/checks/diagrams/diagrams.test.ts (O30b :170-184, Q124 the per-case limits, disjoint), .gitignore (both add lines), README.md and HELP.md (disjoint lines); with E4g: DESIGN.md's tree (both lines kept) and HELP.md (disjoint); with Q123: DESIGN.md (:375 against the tree and :436) and HELP.md (disjoint); docs/diagrams regenerated at landing; so the merge is simple
   landing: not-started
   round: 0 (cases ruling agents/briefs/O30b-cases.md, rulings A1 and B1 on the hand-back; builder resumed)
-  builder_usage: hand-back 279,639 tokens, 76 tool uses, 35.7 min
+  builder_usage: hand-back 279,639 tokens, 76 tool uses, 35.7 min; final run 208,577 tokens, 129 tool uses, 87.1 min
+  reviewer_report: agents/reviews/O30b-refuter.md (a1d5134e2f2e837cf, claude-opus-5-5, running)
 - step: Q123
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -78,10 +79,10 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/Q123-report.md
   brief_check: agents/reviews/Q123-brief-check.md (aa96e2257854c7ff2, claude-opus-5-5, 181,338 tokens, 47 tool uses, 9.0 min), closed in the brief by a8ea7076e2eefc9f5 (claude-opus-5-5; 146,933 tokens, 29 tool uses, 6.8 min)
   shared_paths: with E4g and O30b: DESIGN.md (Q123 :375, E4g :79-80 and :83, O30b's tree and :436, disjoint) and HELP.md (Q123 :147, E4g :21, :82, :210-221, O30b :186, :365, :367, Q124 :371-373, disjoint); docs/diagrams regenerated at landing; so the merge is simple. D23's channel.ts and channel.test.ts are judged at D23's /spec. G52 ruled (Z634 (a)).
-  landing: not-started
+  landing: cherry-picking
   round: 0 (cases ruling agents/briefs/Q123-cases.md, rulings A and B on the hand-back; builder resumed)
   builder_usage: hand-back 165,442 tokens, 30 tool uses, 9.0 min; final run after the cases ruling: no completion notice arrived, so not recorded
-  reviewer_report: agents/reviews/Q123-refuter.md (a4d132c79107eead5, claude-opus-5-5, running)
+  reviewer_report: agents/reviews/Q123-refuter.md (a4d132c79107eead5, claude-opus-5-5, 210,694 tokens, 59 tool uses, 18.6 min)
 - step: Q124
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -202,6 +203,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Z644 (2026-10-06, raised from PR1's brief check): does the desktop app's window-file rule get a guarded entry and a test? PR1 makes the main window never keep a page's full screen as its own, so `~/.oculus/window.json` is written with the window's state from before a deck went full screen. If that rule is wrong, the window reopens in full screen at every start, or loses the full screen the reader set. PR1 writes the rule as a pure function in `src/desktop/decide/window-file.ts` (the event order to the recorded state), which a unit table can test for both macOS event orders. (a) A new entry G53 in `agents/guarded.md`: "The desktop app's window file keeps the window's own state: a full screen a page asked for is never written as the window's full screen, and a full screen the reader set before is kept." PR1 writes its test, a table over the event orders of cases 15, 16 and 21. Pros: the rule is checked on every run, and its failure is seen at every start of the app. Cons: one more test file. (b) No entry: the rule is checked by reading and at the landing look only. Pros: nothing added. Cons: a later change to `keepState` can break it unseen until a start opens the window wrong. (b) is the lazy option. Recommendation: (a). PR1 is dispatched with (b)'s scope and gains the test on a ruling of (a), at its landing or in a repair round.
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
