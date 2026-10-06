@@ -1,296 +1,218 @@
-# Step A3 refuter report (on .agents/worktrees/A3, base 6044d753c)
+# Step A3 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/A3, base 995e6dfad)
 
-Open items for the orchestrator before the verdicts, each argued under its heading below:
-- A scheduled run on the spring daylight-saving day starts up to 59 minutes before its due time (Behaviour 4.1). Item 5 is violated and C17 is partial.
-- Item 8 is violated in three places: the HELP.md:25 risk sentence, the DESIGN.md:157 Processes sentence and DESIGN.md:416 (Spec 1.1 to 1.3).
-- `UPDATE_TASKS` lives in model-processes.ts, not tasks.ts. The order check forces this, so the brief's premise is wrong, and the placement needs a ruling (Spec 1.5).
+Not met: verify item 8 (unmet, as instructed). Findings that need a repair round: Spec 1 (Pause and Resume rewrite an entry from its normalised form, so `task: radar` becomes `task: litwatch`), Proof 2 (the G31 test of the schedules file cannot see a write) and Proof 3 (one unexplained red run of verify item 2 in 46). The DOM cases are declined to judge.
 
 ## Verification (rerun by the reviewer)
 
-All runs were made from the worktree's tools/oculus, or on the reviewer's scratch copy `scratchpad/a3-refute/oc` where the run writes files.
-
 ```
-PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh .../land/templates/checks.sh .../orchestrator-state.md
-  -> "checks: 1 commands passed"
-     prettier, ASCII gate, eslint and svelte-check: 0 errors; vitest passed
-     test:quick took 55.5 s; the limit printed is 45 s
-     config.test.ts and boundaries.test.ts: "changed, run by npm run test:checks or test:slow"
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude-work/skills/land/templates/checks.sh .../orchestrator-state.md   (from the worktree's tools/oculus)
+test:quick: 74 changed file(s), from git since HEAD
+test:quick: 83 test file(s), 10 essential
+ok prettier (0.4 s) | ok ASCII gate (0.4 s) | ok svelte-kit sync | ok eslint (2.3 s)
+ok svelte-check (7.3 s): ... 376 FILES 0 ERRORS 0 WARNINGS
+ok vitest (16.8 s)
+test:quick: 17.3 s (limit 45.0 s); every command passed
+checks: 1 commands passed            (exit 0)
 
-npx vitest run <the brief's six files>
-  -> Test Files 6 passed (6) | Tests 105 passed (105)
+$ npm run test:checks
+ Test Files  15 passed | 1 skipped (16)
+      Tests  227 passed | 3 skipped (230)            (exit 0; the report's line 790 says the same)
 
-npx vitest run tests/checks --testTimeout 120000
-  -> 228 passed, 1 failed (diagrams, its own 60_000 timeout)
-npx vitest run <diagrams test alone>
-  -> Test Files 1 passed (1) | Tests 45 passed (45)
+$ npx vitest run <verify item 2's seven paths>      46 runs in total:
+  run 1 of this turn:   Tests  1 failed | 86 passed (87)     (the failing test was not captured)
+  45 later runs (6 + 12 sequential, 9 three-at-a-time, 15 sequential, plus 1 verbose earlier): Tests  87 passed (87)
 
-utils/unused-exports.sh, on the base copy and on the worktree
-  -> 379 lines each, no difference
+ASCII gate of spec.md (perl over src tests config): prints nothing; LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md README.md A3-report.md: exit 1, no hits
+$ sh utils/unused-exports.sh | wc -l      378   (base 378; none of the step's names in it)
+wc -l: every written file under its limit (largest: watch.ts 709, terminals.svelte.ts 830, context.ts 813; components 245/221/262)
+ls | wc -l: state/system/machine 10, tests/server/machine/schedules 5, server/machine/schedules 6, the others at or under 10
+$ ls src/lib/server/machine/tasks tests/server/machine/tasks    fails (both gone)
+$ ls -d .agents/worktrees/A3-base     No such file or directory
 
-LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md A3-report.md
-  -> exit 1, no match
+The builder's final probes, copied to $SP/a3-rv0/final with only their output paths moved, rerun on the final tree:
+$ TZ=Europe/Brussels npx vitest run -c $SP/a3-rv0/final/vitest.config.ts engine engine2 entries     exit 0
+  engine.out and engine2.out: identical to the report's after masking terminal ids
+  entries.out: identical except scratch paths and the time stamps of S19 and S16
+$ npx vitest run -c $SP/a3-rv0/final/vitest.svelte.config.mjs store     8 passed; store.out identical to the report's
+$ npx tsx $SP/a3-rv0/final/misc.mts      (over my own rsync of config/ with --exclude=local.yml)   identical to the report's misc.out
+$ npx tsx $SP/a3-rv0/final/tmux.mts      (scratch socket under /private/tmp/claude-502/a3rv, the builder's stub copied, server killed at the end)
+  C1 pane pid equals the printed pid: true; C20, C35 and C36 lines identical to the report's apart from pids, ids and times
 
-Changed tests run on the base copy (the step's code absent)
-  -> Tests 15 failed | 83 passed (98)
-     every new taskSchedules row, P1, 'the shipped files',
-     'the synthetic catalog', settingFindings and the value-rule table fail;
-     terminal-actions.test.ts (G35) passes
+My own probe ($SP/a3-rv0/final/pause.probe.ts; scratch files only), planEdit then commitText:
+task radar   | pause: file after="- name: A\n  runs: { task: litwatch }\n  when: \"0 7 * * *\"\n  paused: true\n" | problem before=update-task-unknown | problem after=null
+unknown key at | pause: file after="...  when: \"0 7 * * *\"\n  paused: true\n" (the `at: 7` line gone) | problem after=null
+when 5       | pause: file after="...  when: \"5\"\n  paused: true\n"
+unattended 1 | pause: (the `unattended: 1` line gone) | problem after=null
+key order    | pause: "- when: \"0 7 * * *\"  # daily\n  name: A\n ..." becomes "- name: A\n  runs: { task: scout }\n  when: \"0 7 * * *\"\n  paused: true\n"
 
-npx vitest run tests/server/machine/tasks/schedule.test.ts
-  -> Tests 6 passed (6)
-     on the copy, verbose, stderr of the catch-up test:
-     "schedule record: took over .../schedule.json.lock, which was 137273536.41137695 ms old" (three lines)
-
-Builder probes s1, s2 and s5, repointed at the copy
-  -> Test Files 3 passed (3) | Tests 20 passed (20)
-     each C line matches the report's quote:
-     C2, C3, C4/C5, C10, C11, C13 to C16, C18 to C21, C23, C28 to C31, C33 to C35
-
-Tray render probe, rerun
-  -> before any schedule message: the rows as on the base
-     after one: "Next: 10-06 07:00", five run rows, the record_unread line
-
-C36 probe on a scratch tmux socket (-S /private/tmp/claude-502/a3r/c36b.sock), stub claude
-  -> busy:  runs = ["schedule/skipped/d52d3f-claude","hand/started/d52d3f-claude"]
-     idle:  runs = ["schedule/started/e080dd-claude",...]
-            terminals now = ["e080dd-claude"]
-     tmux -S ... ls afterwards: "no server running"
-
-C1 probe on a scratch socket
-  -> "pane_pid 97927 listed pid 97927 printed $$ 97927" | "equal: true"
-
-C6 probe, TZ=Europe/Brussels
-  -> "0 0 29 2 *" next Tue Feb 29 2028 00:00
-     "0 0 31 2 *" null
-     the seven C6 patterns each construct
-
-writeConfigKey probe, with inputs {hub, projects}
-  -> refuses "61 * * * *", "*/0", "* * * * * *" and "nonsense" with not_cron
-     refuses "0 0 31 2 *" with cron_never, and 5 with not_text
-     writes "0 7 * * 1" and ""
-
-Mutations, rerun on the copy (catch-up, working, idle, handled, clearInterval,
-close-jobs, unread, cron_never, heldAt-walk)
-  -> each fails its kept test
-
-grep -rn "research-cockpit" tests
-  -> feeds.test.ts:43-45 and terminal-actions.test.ts:82 only
-grep -n "spawn\|execFile\|exec(\|tmux\|claude" tests/server/machine/tasks/*.ts
-  -> only comments, the tmux() recorder import and the EARLIER id
-
-grep for history words over the added comments and test titles
-  (previously|used to|no longer|renamed|this step|A3|Z5nn|reverted|legacy|after X3f...)
-  -> no match
-
-npx vite build, on the copy and on the base copy
-  -> croner is inlined in .svelte-kit/output/client/_app/immutable/nodes/2.*.js
-     raw:  2,704,919 to 2,734,757 bytes (+29,838)
-     gzip: 815,830 to 824,371 bytes (+8,541)
-     the step's client code is included in both deltas
-
-Look-at-a-second probe (edge.mjs), TZ=Europe/Brussels, an ordinary day, "0 7 * * *"
-  -> 06:59:59.900 answers yesterday's 07:00; 07:00:00.000 answers today's 07:00
-
-Spring probe (spring2.mjs), "30 2 * * *"
-  -> "first instant the look answers the 03:30 due time: 2026-03-29 01:59:59 GMT+01:00"
-
-Watcher probe on the copy, fake clock
-  -> "30 2": "start called at 2026-03-29 03:00:00 GMT+02:00 for due 03:30"
-     "59 2": start called at 03:00 for due 03:59
-
-Autumn probe (dst.mjs)
-  -> "0 * * * *", "30 2 * * *", "0 2 * * *", "*/30" and "0,30 2": no second run in the repeated hour
+Greps:
+- diff plus untracked files for mutation, mutant, revert, breakage, inject, stryker: no harness. The only hits are the report's NOT DONE line, its C26 wording "injects `run`" (a test double) and plan text.
+- added src, tests and config lines for history words: four hits, each describing behaviour at run time, not history (watch.ts "replaced by a rename", record.ts "is replaced", file.ts "replaced by `node`", run.test title "no longer a served root").
+- grep -rn "research-cockpit" tests: only argv assertions (run.test.ts:46, :55; terminal-actions.test.ts:79) and feeds.test.ts fixture text.
+- step tests for spawn, execFile, homedir(), local.yml, ~/.oculus, claude: comments and the CLAUDE stub path only (schedules-fixture.ts:23 '/stub/claude', run.test.ts:142, schedules-fixture.ts:105).
+- the top level of the new modules for module-level `let` or a mutable Map, Set, array or object: none (grep exit 1).
+- git's changed-file list compared with the report's file table: equal (diff lists only the report itself and schedule.svelte.ts, which the report lists as "Only in").
 ```
 
 ## Verdicts
 
 Items of the brief's "What to build":
 
-- 1: holds. behavior.yml has the four empty entries and the comment, and options.yml has the four leaf entries; the 'shipped files' and settingFindings rows pass on the worktree and fail on the base copy.
-- 2: holds. croner 10.0.1 is pinned in package-lock.json; value-rule.ts:69 constructs `new Cron(text, { paused: true, mode: '5-part' })`; the C4 and C5 refusals were rerun; the heldAt walk mutation fails P1; options.yml:11, options.ts:104 and DESIGN.md:85 name `cron` and the text under `empty`; `hasForm` taking `Exclude<Form,'cron'>` is reported in judgment call 11, and formProblem decides cron.
-- 3: violated in placement only. The kinds are in model-processes.ts, and tasks.ts imports and re-exports them (Spec 1.5).
-- 4: holds, except that context-fixture does not use `scratchDir` (Spec 1.7). G35 passes on both trees, and C15 and C33 were rerun.
-- 5: violated. The 30 s look starts a spring-day run early (Behaviour 4.1). Everything else was rerun and holds: catch-up, the one-run rule, the wait for the sessions payload, close(), skip under the awaited start, and publish.
-- 6: holds. G31, C20, C21, C28 and C34 were rerun; the mode is 600 as approvals.ts and saved.ts use.
-- 7: holds. Render probe rerun; the store, the channel and the run rows open the terminal. The tray has no kept test (Proof 2.4).
-- 8: violated (Spec 1.1, 1.2 and 1.3).
-- 9: not applicable. The look is the orchestrator's at landing; the report carries the before and after section.
+- 0: holds. The two `tasks` folders are gone, and the file table agrees with `git diff 995e6dfad --name-only`. `.agents/worktrees/A3-base` does not exist (it is the orchestrator's to make), so the builder diffed against its own copy `$SP/a3/base`.
+- 1: violated, Spec 1.
+- 2: holds (entries.out S5 to S14, S36 to S40, S48; engine.out C4 to C6, all rerun).
+- 3: holds (C7 to C10, C20 to C22, C28, C34 rerun; record.test.ts read). See Behaviour 1 for the order of the record move and the commit.
+- 4: holds (C2 to C31 and C35 rerun; no module-level state). See Behaviour 2.
+- 5: holds (C16 and run.test.ts; run.ts read: argv `[claudeBin, ...flags, '--', prompt]`, no shell).
+- 6: holds (svelte-check 0 errors).
+- 7: holds (S24, S25, S43 to S47 rerun; schedules.test.ts; `claude_bin` is read at the call in `context.ts:416-419`). See Standards 3 for the 500 answer.
+- 8: holds; see Standards 3 for the extra keys.
+- 9: holds (misc.out S34; config.test.ts rows pass).
+- 10: holds (store.out S10, S27 to S32).
+- 11: holds by server render. The DOM parts are declined to judge.
+- 12: holds. The allow-list rows are needed: `schedule.svelte.ts:14-15` imports `cron` and `schedules`.
+- 13: violated, Standards 2.
+- 14: not applicable. E4 is not on main; the brief gives the item to the landing.
 
 Cases:
 
-- C1 met (pane pid equals printed `$$`). C2 met (probe s1). C3 met (G13 first row, probe C3). C4 met (G13 it.each rows, config.test.ts toContain lines, writeConfigKey probe). C5 met (G13 row; writeConfigKey refuses with cron_never; `0 0 29 2 *` next 2028-02-29 00:00). C6 met (c6 probe, G13 first row for `@weekly`, `MON` and the padded pattern).
-- C7 met (G46 test 1, row 1). C8 met (G46 test 1, row 2). C9 met (G46 test 4). C10 met (probe). C11 met (probe: set, emptied, push with behavior.yml dropped). C12 met (G46 test 2, rows busy, waiting and no session matched). C13 to C15 met (probe).
-- C16 met for the argv: equal with and without the flag (probe). The press's question was not rerun; it is look case 6.
-- C17 partial. The autumn half is met (dst.mjs and the builder's s3). The spring half is unmet: the run starts at 03:00 +0200, not 03:30 (Behaviour 4.1, Proof 2.1).
-- C18 met (probe). C19 met (probe: largest timer 30000 ms; fires once at 2027-01-01 local). C20 met (G31, probe). C21 met (probe). C22 met (G46 test 4, second watcher). C23 met (probe, route and watcher). C24 met (G46 test 5; clearInterval and close-jobs mutations fail it). C25 met (G13 row). C26 met (greps above). C27 met (render probe before any message). C28, C29 met (probe). C30 met (busy half by probe, idle half by G46 test 3). C31 met (G46 test 3; probe: six hourly due times, at most one open). C32 met for the findings (G13 row); that `taskSkipPermissions` is off for `tasks: []` was not rerun. C33 to C35 met (probe). C36 met (probe on a scratch socket with the stub).
+- C1: met (tmux.mts rerun: the pane pid equals the printed pid).
+- C2: met.
+- C3: met, and the S16 render shows "Off: it runs only from Run now".
+- C4: met.
+- C5: met.
+- C6: met.
+- C7: met.
+- C8: met.
+- C9: met.
+- C10: met.
+- C11: met.
+- C12: met.
+- C13: met.
+- C14: met.
+- C15: met.
+- C16: met.
+- C17: met (03:30 +0200 on 03-29; 02:30 +0200 once on 10-25; 01:00, 02:00, 03:00 with no second 02:00).
+- C18: met.
+- C19: met (longest timer asked 30000 ms; one start at 2027-01-01).
+- C20: met (tmux.mts gives the press).
+- C21: met.
+- C22: met.
+- C23: met.
+- C24: met.
+- C26: met, by reading. run.test.ts:140-145 injects `run`, `claudeBin`, `commands` and `approvalsFor`, and the fixture does the same (schedules-fixture.ts:23, :105). No `homedir()` and no `local.yml` in the step's tests.
+- C27: met (store.out C27).
+- C28: met.
+- C29: met.
+- C30: met.
+- C31: met.
+- C34: met for the value (equal before and after). The file bytes were not compared.
+- C35: met.
+- C36: met.
+- S1, S2, S3, S4: met.
+- S5: met for the reading. Pause on that row changes what it runs; see Spec 1.
+- S6 to S15: met.
+- S16: server part met. The tray's said line and closing are declined to judge.
+- S17 to S22: met.
+- S23: met by reading (`file.ts:418` refuses with `entry-changed`). For pause and resume, though, the check compares against the normalised entry; see Spec 1.
+- S24 to S29: met.
+- S30, S31: met by server render.
+- S32: met for the store and render. The menu and Save in a browser are declined.
+- S33: declined to judge.
+- S34, S35: met.
+- S36 to S41: met.
+- S42: met. The unquoted-`when` file is unread at line 3, which is the parser's line for the builder's text, where `when` sits on line 3.
+- S43 to S50: met.
+- S51: partial, Proof 4.
+- S52: met.
+- Verify item 8: unmet, Proof 1.
 
 ## 1. Spec
 
-- 1.1. HELP.md:25: "while it is on, a press asks for a confirmation first, and a scheduled run starts without one, so a scheduled task then lets an agent edit files and run commands with nobody asked." The brief requires the risk sentence "in these words": "With it on, a scheduled run lets an agent edit files and run commands with nobody asked, on a timer." HELP.md carries a variant without "on a timer", placed before the paragraph says tasks can run on a timer; options.yml:389 carries the brief's words. Failure: a HELP reader reads the risk before learning a timer exists, and a grep for the agreed sentence finds only options.yml. Item 8 violated.
-- 1.2. DESIGN.md:157, Processes: the exception sentence for a scheduled run's idle terminal is there; the sentence that an update task's line is oculus's own text, so a scheduled run asks no approval, and runs in a listed terminal the reader can open, is missing, and the paragraph still says such processes run "in a pane the reader can see, never in the background". Failure: a reader has no statement of why a timer-started agent needs no approval or where it runs. Item 8 violated.
-- 1.3. DESIGN.md:416: "`taskSkipPermissions` reads the `tasks:` block as it stands with no catalog rule for that key, so a value of any other shape reads as off". The brief asks the clause to say that the schedules are read through the options catalog's rule, and the paragraph to say where `UPDATE_TASKS` lives. Neither is there. Failure: a reader concludes the whole `tasks:` block is unchecked and does not find the four kinds. Item 8 violated.
-- 1.4. tests/server/machine/tasks/schedule.test.ts, sixth test 'starts the run of a daily 02:30 on the day the clocks skip it, once, at 03:30': named in neither guarded.md nor the brief, and its title claims what it does not assert (Proof 2.1). C17 partial.
-- 1.5. src/lib/data/model/model-processes.ts holds `UPDATE_TASKS`, `UpdateTask`; the brief places them in data/helpers/run/tasks.ts. tests/checks/imports/order.ts puts `data/model` at the foot of the data layer, so model-processes.ts, which needs `UpdateTask` for `SchedulePayload`, cannot import data/helpers. A brief premise found wrong; the builder reported it as judgment call 1 and did not stop. Item 3 violated in placement; the orchestrator rules.
-- 1.6. tests/checks/tree/boundaries.test.ts:358 adds `'schedule'` to an allow-list; the file is not on the write list, and the report gives no before and after list as spec.md asks for an allow-list edit.
-- 1.7. tests/server/root/context-fixture.ts: `join(tmpdir(), 'oculus-fixture-schedule', 'schedule.json')`, a fixed path shared by every test file and run; the brief says `scratchDir`. Failure: the first test that presses a task through contextFixture writes a record that outlives the run. Item 4 partial.
-- 1.8. tests/data/sources/config/settings.test.ts, the taskSchedules describe: the first title reads "...for a missing or {} entry" (the brief: "missing, empty or {} entry"); the it.each rows `[bad, kind]` under 'answers the default and a %s problem for %j' print "answers the default and a 5 problem for "text""; the `[]` row prints "a  problem". Titles only.
+- `src/lib/server/machine/schedules/file.ts:408-414` and `:365`: `const held = readEntry(raw); ... entry = { ...held.entry, paused }; text = withEntry(parsed, edit.at, entry);` and `next[edit.at] = entryObject(entry)`.
+  - What is wrong: Pause and Resume render the whole entry again from `readEntry`'s normalised entry. `readEntry` replaces an unknown task with `UPDATE_TASKS[0]` (`data/helpers/run/schedules.ts:128`), drops unknown keys and a flag of the wrong type, and turns `when: 5` into `"5"`. The re-parse check compares against that same normalised entry, so it passes.
+  - The brief, item 1, "Writing": "a pause sets `paused: true` and a resume drops it", and the re-parse is "compared with the list as asked (the old list with the one change)". The rows that carry these problems still offer Pause (`ScheduleList.svelte:104`, `readable` is `entry !== null`).
+  - Failure scenario: the reader typed `runs: { task: radar }`. The row shows the `update-task-unknown` sentence beside the label "Lit Watch". The reader presses Pause, then Resume. The file now holds `task: litwatch` with no problem, and Lit Watch starts at every due time. The reader never chose it, and that may be unattended. My probe: problem before `update-task-unknown`, problem after null. On a readable hand-written entry, Pause also drops its inline comment and reorders its keys (the "key order" probe line).
+  - Verdict: item 1 violated; S5 and S23 carry the note.
 
 ## 2. Proof
 
-- 2.1. schedule.test.ts, sixth test "once, at 03:30" asserts the run's `due`, not when the start happens. The watcher probe printed "start called at 2026-03-29 03:00:00 GMT+02:00 for due 03:30" (for "59 2": 03:00 for due 03:59); spring2.mjs printed that the look answers the 03:30 due time from 01:59:59 +0100. The report's judgment call 3 presents the look as the fix for the spring day. C17 partial.
-- 2.2. schedule.test.ts:3-4: "The clock is set to the day before the real one, so a lock file's real modification time is never older than the fake `now`." Row 2 of the catch-up test sets `local(3, 9)`, two days after the real day; the rerun prints three "took over ... schedule.json.lock, which was 137273536 ms old" lines, so in that row a concurrent change takes over a live lock (record.ts:127 compares the fake `Date.now()` with the real mtime). The comment is false and the row needs a clock before the real one.
-- 2.3. The report omits: the verify item 6 grep of changed names; the history-word grep spec.md requires; the croner chunk sizes "Libraries checked" requires; the verify item 8 reading of list items and sentence length. Its item 7 grep (report line 309) covers only `spawn|execFile|exec(` and leaves out tmux and claude, and the probes.
-- 2.4. UpdateTray.svelte has no kept test; no guarded.md entry calls for one. The layout is look cases 1 and 2.
+1. Verify item 8, for the five new test files.
+   - What is wrong: no run of any new test is quoted with its module present and the behaviour missing. The report says so in its first line, and its handed-tree run stops at import, which item 8 says does not count. Running such a test now with code removed is banned, so I judged each new test by reading. These would fail if the behaviour were absent:
+     - watch.test.ts: the start counts, `skipped` records, kill-before-new-session order, one start from two watchers, no timer after close.
+     - run.test.ts: the exact argv, cwd, terminal name, refusal word and zero `new-session`.
+     - record.test.ts: `ok:false why:unread`, the file byte-equal and no lock left, against functions that do write.
+     - schedules.test.ts: 403, the file unchanged, `reload` and `runNow` not called.
+     - file.test.ts: only partly; see Proof 2.
+   - Failure scenario: the orchestrator lands tests whose red run on the behaviour was never seen.
+   - Verdict: verify item 8 unmet.
+2. `tests/server/machine/schedules/file.test.ts:54`: `expect(readFileSync(file, 'utf8'), name).toBe(held);`
+   - What is wrong: the test calls only `planEdit`, which writes nothing (`file.ts:388-430`; the write is `commitText`, which the route calls at `routes.ts:176`). The "leaving it" half of the G31 title holds by construction. Only the 409 `schedules-unread` assertion can fail.
+   - The route's path over an unread file, which is what G31 guards, is shown only by the scratch probe S3, not by a test.
+   - Failure scenario: a later change makes the route commit before it checks `planned.ok`, or commit a rebuilt text over an unread file. file.test.ts stays green, and the G31 entry names it as the guard.
+   - Verdict: G31's added test does not cover the overwrite it is named for. A route-level row (save, delete, pause and resume through `handleSchedules` over the three unread texts, with the file byte-equal after) would.
+3. Verify item 2, the step's seven paths.
+   - What is wrong: one of my 46 runs printed `Tests  1 failed | 86 passed (87)`. My command kept only the summary line, so the failing test is not known. The 45 later runs passed, including 15 sequential runs that kept the full output and 9 runs three at a time. The O30 builder was running in another worktree at the time.
+   - Failure scenario: an intermittent red in watch.test.ts or another of the seven at landing, with no known cause.
+   - Not settled. It is settled by running the set in a loop with the full output kept until it fails, then reading the named test.
+4. Report, "Engine cases, second part", S51.
+   - What is wrong: the line printed is `runs=; row now: problem={"word":"folder-not-served",...}`. The brief's S51 expects "the run recorded `failed` with `why: { word: 'folder-not-served' }`". In the probe, a delayed `fs.watch` event on `schedules.yml` reloaded the file after `rootsFor()` emptied, so the job stopped before 07:00 (`watch.ts:613-621`). The due-time refusal path was never reached. The report counts S51 under item 1 DONE without naming the difference.
+   - The refusal path itself (`runEntry` refusing, then `settleRun` recording `failed` with `why`) is the one C23, S6 and S26 show.
+   - Failure scenario: the orchestrator reads S51 as met.
+   - Verdict: S51 partial.
+5. Report, "Host- or user-visible changes": "`schedules.yml` and `schedule.json` are new files under `~/.oculus`; both are written with mode 0600".
+   - What is wrong: `writeAtomic` (`core/json.ts:112-113`) applies the mode only to a file that does not exist yet. A `schedules.yml` the reader makes by hand, which HELP invites, keeps its mode, for example 0644. `~/.oculus` itself is created with the default mode.
+   - This matches the brief's `writeTextAtomic(path, text, 0o600)`. The report's sentence overstates it.
+   - Failure scenario: the look or the orchestrator takes every schedules file to be private when a hand-made one is not.
 
 ## 3. Standards
 
-- 3.1. Hard-wrap defects in edited head comments (spec.md: an edited comment is rewrapped at 100 columns with no short line inside a sentence): src/lib/server/root/watch/pollers.ts:3 ("// changed key of local.yml" alone); src/lib/data/sources/config/settings.ts:5 ("// pattern of each update task. Each reads"); tests/data/sources/config/settings.test.ts:5 ("// patterns). Each reader is run over a").
+1. `tests/checks/config/config.test.ts:378`: `'names the key that replaced a retired one, against behavior.yml: %s'`
+   - What is wrong: no key replaces the two retired keys any more. The sentence now names the Run unattended choice. The title says something the test no longer checks. The brief (item 9) kept this title, so the wording traces to the brief.
+   - Failure scenario: a reader of the G12/G13 test list looks for a replacing key that does not exist.
+2. Sentences the diff makes false.
+   - DESIGN.md:138 says the route "edits the file as text with the library's document so comments and the order of keys stay". For the entry being edited, both are lost (my "key order" probe).
+   - DESIGN.md:138 also says "the route refuses a save, delete, pause or resume with `schedules-unread` or `record-unread` (409) before it touches either file". A pause or resume while the record does not read answers 200 and writes `schedules.yml` (entries.out S43: "pause (not a record write)=200").
+   - HELP.md:25: "The file is YAML that the dialog writes with its comments kept". A comment inside an edited entry is dropped.
+   - Failure scenario: a reader keeps notes as comments inside an entry, presses Pause, and the note is gone.
+   - Verdict: item 13 violated.
+3. `src/lib/state/system/machine/schedule.svelte.ts:246`, `:490`, `:493`, `:501`, and `routes.ts:177`: `t('app.schedules.unreachable')`, `t('app.schedules.unreadable')`, `t('app.schedules.refused')`, `refuse(done.reason, [], 500)`.
+   - What is wrong: DESIGN.md "Untyped input" says a failed read is worded by `failedAnswer` of `state/shared/answers/answers.ts`, and otherwise by `ui.answer_refused` or `ui.answer_unreadable` with the status in parentheses. The store adds three keys of its own that repeat these sentences and drop the status.
+   - The route's commit failure answers the operating system's English message as `error`, which the page then cannot word. Item 12 gives `{ error: word, names }`.
+   - Failure scenario: a save into a read-only `~/.oculus` shows "The server refused the request." with no status and no reason.
+
+No history in comments, no non-ASCII, no file over its limit, no secret in a quoted line.
 
 ## 4. Behaviour
 
-- 4.1. src/lib/server/machine/tasks/schedule.ts:82: `return job.previousRuns(1, new Date(Math.floor(now.getTime() / 1000) * 1000 + 1000))[0];`, used by `consider` every 30 s. Under TZ=Europe/Brussels on 2026-03-29, croner's `previousRuns` answers the skipped-hour due time (moved to 03:30 +0200) from 01:59:59 +0100 onwards. `consider` checks only `due > seen`, never `due <= now`, so the first look after 02:00 +0100 (03:00 +0200) starts the run: "30 2 * * *" at 03:00 for due 03:30, "59 2 * * *" at 03:00 for due 03:59, with the record's `at` (01:00Z) before its `due` (01:30Z). On an ordinary day the look is exact. DESIGN.md:139 says "a daily 02:30 starts at 03:30 on that day", and the tray's Next line shows 03:30. Failure: every task with a pattern in the 02:00 hour starts up to 59 minutes early once a year. Fix: `consider` starts only a due time not later than now; a test asserting the time of the `new-session` call fails without it. Item 5 violated, C17 partial.
+1. `src/lib/server/machine/schedules/routes.ts:163-177`: the record rename or drop (`renameRecord` :169, `dropRecord` :167 and :173) runs before `commitText` (:176).
+   - What is wrong: when the commit fails (disk full, a read-only file, a failed read-back), the record has already moved or dropped while `schedules.yml` still holds the old name. The schedule loses its 20 runs and its `handled` time. The report does not state it.
+   - It does not double-start: a fresh record entry starts with `since` set to now.
+   - Failure scenario: a rename that returns 500 leaves the old-named row with an empty run history.
+2. `src/lib/server/machine/schedules/watch.ts:487-491`: `const claimed = await claimDue(...); ... if (claimed.value === 'handled' || working !== null) return; if (stopped()) return;`
+   - What is wrong: a `close()` (a server stop, or a rebuild after a `local.yml` change) between the claim and the launch leaves a run recorded `started` with `terminal: null`. Nothing started, and that due time is handled, so it never catches up. The report does not state it.
+   - Failure scenario: the server stops in the milliseconds after a 07:00 claim. The row lists "07:00 scheduled started", and no run happened that day.
+3. Security, reported as found, no defect against the brief (Z586, Z590):
+   - `schedules.yml` and `schedule.json` can be written by any process of the user. A new file is 0600 and a hand-made one keeps its mode (Proof 5).
+   - The route needs the write token (`tokenedBody`; schedules.test.ts), and every `/api/` request passes `sameOrigin` in `hooks.server.ts`.
+   - A prompt runs only when its folder's real path lies in or under the hub or a served root. This is checked at read (`file.ts` `promptFolder`) and again at start (`run.ts`), with no shell (`argv` to tmux; run.test.ts row "shell text ... stays one argument").
+   - Run unattended adds `--dangerously-skip-permissions` to a task or a prompt only.
+   - No privilege beyond what the terminal route already gives a token holder.
+
+The six paths outside the write list:
+- `Confirm.svelte` (`level` prop, default `dialog`): inside the step's part. The tray's ground is 65 and a Confirm at 60 would sit under it. Sound.
+- `config-folder.test.ts` (drops `tasks`): inside, since `behavior.yml` loses the block. Held whole under G12/G13 (guarded.md:143). Sound.
+- `commands/list.ts` (`savedFile = savedPath()`): inside, so the route's chain check reads the watcher's file. The default is unchanged. Sound.
+- `schedule-words.ts`: inside (the store's wording). Sound.
+- `schedules-fixture.ts`: a test helper. Sound.
+- `README.md:11` (`claude_bin` sentence): inside, and true. `context.ts:416-419` hands `local.claudeBin` to `runEntry`, whose prompt argv starts with it (`run.ts`).
+
+The tray, the rows and the dialog against the mock-up and Z569 to Z588 match by server render (store.out S16, S1, S3, C27, S28 to S32). The dialog opening with When Off is what the brief's look step 2 asks.
 
 ## Declined to judge
 
-- That a scheduled run ends an idle terminal the reader started by hand: ruled Z545 (b).
-- Look cases 1 to 11 and the tray's layout: the orchestrator's at landing.
-- Look case 10 / C36 with the real `claude`: the stub run was reproduced; the real one is the look's.
-- test:quick at 55.5 s against the 45 s limit: one run does not settle whether the step or machine load causes it.
-- A host with no tmux: not run.
+- What needs a DOM: S16's run line and Run now closing the tray, S30 to S33 in a browser, the delete Confirm's z-order over the tray, the Escape order, and the tray's scrolling. I ran no scratch oculus with headless Chrome. They belong to the look.
+- The builder's base copy `$SP/a3/base` against main at 995e6dfad: not compared byte for byte, since the git commands that would show it are outside what this review may run. The changed-file lists agree.
+- The cause of the one red run (Proof 3): not found.
 
-Usage from the completion notice: a8202593373720c47, claude-opus-5-5, 146,318 tokens, 117 tool uses, 28.9 min.
-
-## Repair round 1, refuted
-
-Reviewer aa2f8d687b0b0cfac, claude-opus-5-5, ordo-high: 337,571 tokens, 85 tool uses, 19.3 min (completion notice). Reruns from the worktree's `tools/oculus`, base `6044d753c`; the report read is byte-identical to the worktree copy.
-
-### Verification
-
-```
-$ sh /Users/axelfaes/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
-$ npm run test:quick
-test:quick: 61 changed file(s), from git since HEAD
-test:quick: 81 test file(s), 10 essential
-ok      prettier (0.5 s): All matched files use Prettier code style!
-ok      ASCII gate (0.5 s)
-ok      svelte-kit sync (2.1 s)
-ok      eslint (2.4 s)
-ok      svelte-check (13.1 s): 1791225076930 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (27.6 s): Duration  24.02s (transform 34.48s, setup 0ms, import 61.46s, tests 28.33s, environment 147ms)
-test:quick: 28.2 s (limit 45.0 s); every command passed
-checks: 1 commands passed
-$ npx vitest run <schedule, record, settings, value-rule, config, terminal-actions>: Test Files 6 passed (6) | Tests 105 passed (105)
-$ npx vitest run tests/checks --testTimeout 120000 --reporter=dot: Test Files 16 passed (16) | Tests 229 passed (229)
-$ npx vitest run tests/server/machine/tasks/schedule.test.ts --reporter=verbose: 6 passed; no stderr line; sixth test 1217 ms (alone 2728 ms, then 1959 ms)
-ASCII gate over src tests config: nothing printed; HELP.md, DESIGN.md, A3-report.md: 0 non-ASCII lines
-sh utils/unused-exports.sh | wc -l: 379, diff against the base empty
-greps of TASKS|isTask|TaskKind|taskCommand|processesText: 24 lines, as the report; the risk sentence 1 in HELP.md and options.yml; "so a scheduled task then" 0
-builder probes s1, s2, s5: 3 files, 20 tests passed; s3 (C17 autumn) and s4 (C36) and c1.mts and the tray probe as quoted
-reviewer probes (real modules, nothing copied or edited):
-TZ=Europe/Brussels node prev.mjs: "* 2 * * *" at 01:00:30Z: 59 of 61 due times later than now; previousRuns(2): 01:59Z, 01:58Z
-TZ=Europe/Brussels node prev3.mjs: 0 0 29 2 *, 0 7 29 2 *, 0 0 30 1-2 *: previousRuns THROWS
-TZ=Europe/Brussels node leap.mjs (real watchSchedules, litwatch "0 0 29 2 *"): process exit code 1, TypeError: Cannot read properties of undefined (reading '0') at E.previousRuns at dueAt (schedule.ts:89:16) at apply (schedule.ts:332:24)
-race.probe.ts ("* * * * *", no sessions payload until 07:02:10): record 05:02Z skipped and 05:01Z skipped, terminal null; after the payload starts []
-npx vitest run tests/routes/git/deposit.test.ts -t zzzz-no-such-case: oculus-fixture-schedule-* folders in the temp folder before 0, after 1
-```
-
-### Verdicts
-
-Rulings of the round: 1 to 9 and 11 closed; 10 closed except the probe half of its item 7 (Proof 2.2). Ruling 1: `dueAt` (schedule.ts:87-90) passes over every due time later than now with `LOOKBACK = 61`, which `prev.mjs` shows is needed (croner gives 59 of 61 due times later than now for `* 2 * * *` at 01:00:30Z); the test is titled 'starts each run of a pattern inside the hour the clocks skip once, when it is due and not before', the title to name under G46. Ruling 7 closed with the fix reaching beyond the finding (Standards 3.2).
-
-Items of A3.md over the whole diff: 1, 2, 3, 4, 6, 7, 8 hold; 5 violated (Behaviour 4.1 and 4.2), the spring early start fixed; 9 not applicable (the look at landing).
-
-Cases: C1 to C4 met; C5 partial (Behaviour 4.1); C6 to C29, C31 to C36 met as the probes and tests above show; C30 met for one due time, two due times before the payload is Behaviour 4.2.
-
-### Findings
-
-#### 1. Spec
-
-None.
-
-#### 2. Proof
-
-- 2.1. A3-report.md, ruling 1: the failing run is quoted under a title that is neither the first run's nor the final one, so no failure is quoted for the test in its final form. By reading, its first row `expect(times, pattern).toEqual([])` fails on the first run's `previousRuns(1, ask)[0]`, which answers 01:30Z at 01:00Z.
-- 2.2. A3-report.md, ruling 10 item 7: the grep `spawn|execFile|exec(|tmux|claude` is quoted over the tests only. `probes/first-run-route.mts` also starts tmux (on the stub socket), besides s4.probe.ts and c1.mts; no real `claude` is reached.
-- 2.3. A3-refuter.md, the first run's verdicts of item 2 and C24 cite mutation runs, which are breakage runs under Axel's standing rule and are not used. Those verdicts stand on reading and on the G46 and G13 runs. The builder's report quotes no such run.
-
-#### 3. Standards
-
-- 3.1. tests/server/machine/tasks/schedule.test.ts:328, the sixth test takes 1.2 to 2.7 s and is not tagged slow (agents/spec.md: a test runs well under a second, or is tagged slow). It steps the fake clock 60 s at a time over about 4 h for three patterns.
-- 3.2. tests/server/root/context-fixture.ts:93-95, `scratchDir('oculus-fixture-schedule-')` runs when `contextFixture` is called, which three modules do while they load (terminal-fixture.ts:19, deposit.test.ts:18, git.test.ts:25), against tests/fixtures/scratch.ts:9-10; a fully skipped run of those files leaves one folder in the temp folder. The fix also reaches git.test.ts and hpc.test.ts, outside the write list.
-- 3.3. DESIGN.md:139: "Croner skips a due time inside the hour the clocks skip, so a daily 02:30 starts at 03:30" credits croner with the 03:30 start, which the half-minute look gives (schedule.ts:12-15, :293-299). A maintainer could remove the half-minute check.
-- 3.4. A3-report.md opening: two read-only git commands ran, against agents/spec.md "Where you work"; disclosed, nothing written.
-
-#### 4. Behaviour
-
-- 4.1. schedule.ts:87-90, `job.previousRuns(LOOKBACK, ask)`, called uncaught from `apply` (:332, inside `void apply(...)` at :365 and :372) and from `consider` (:303). Croner 10.0.1 throws for `0 0 29 2 *`, `0 7 29 2 *` and `0 0 30 1-2 *`, which the value rule accepts (C5 names `0 0 29 2 *` a job). With that pattern the server process exits with code 1, and again at every start until behavior.yml is edited by hand. Present since the first run. Item 5 violated, C5 partial.
-- 4.2. schedule.ts:228-239 with :242 and :252-268: a due time arriving while `deciding` holds the task is claimed at once as `skipped`, moving `handled` past the waiting decision's due time; once the `sessions` payload arrives that decision's `claimDue` answers `handled` and nothing starts. The server started at 06:59:50 with yesterday's 07:00 missed and a first sessions payload later than 10 s: today's 07:00 is recorded skipped, the catch-up dropped, nothing runs that day. Item 5 violated.
-
-### Declined to judge
-
-- The croner chunk sizes (+29,838 raw, +8,545 gzip): not rebuilt; needs a second build of a base copy.
-- The report's line counts of schedule.ts and schedule.test.ts (380 and 370 against 387 and 379): no decision rests on them.
-- Look cases 1 to 11 and `npm run test:landing`: the orchestrator's at landing.
-- Whether the half-minute look starts a spring-day run up to 30 s after its due time on a live server: not run.
-- Probe side effects, outside the repository: one empty `oculus-fixture-schedule-*` folder and `a3race-*` in the temp folder, `scratchpad/probe/rec29`.
-
-## Repair round 2, refuted
-
-Reviewer a27a399928a3abcf5, claude-opus-5-5, ordo-high: 290,335 tokens, 77 tool uses, 37.2 min (completion notice). Reruns from the worktree's `tools/oculus`, base 6044d753c; nothing in the worktree changed (`git status --short | wc -l` 56 before and after).
-
-### Verification
-
-```
-$ sh /Users/axelfaes/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (exit 0)
-ok      ASCII gate (0.4 s)
-ok      prettier (0.4 s): All matched files use Prettier code style!
-ok      svelte-kit sync (1.4 s)
-ok      eslint (1.7 s)
-ok      svelte-check (4.9 s): 1791227949878 COMPLETED 372 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (11.5 s): Duration  8.72s (transform 12.64s, setup 0ms, import 21.82s, tests 10.93s, environment 143ms)
-test:quick: 12.0 s (limit 45.0 s); every command passed
-checks: 1 commands passed
-$ npx vitest run <the brief's six files>: Test Files 6 passed (6) | Tests 107 passed (107)
-$ npx vitest run tests/server/machine/tasks --reporter=verbose: 9 passed; sixth test 245 to 850 ms over six runs
-$ npx vitest run tests/checks --testTimeout 120000 --reporter=dot: Test Files 16 passed (16) | Tests 229 passed (229)
-$ sh utils/unused-exports.sh | wc -l: 379, diff against the base empty
-$ npx tsc --noEmit -p .: 2 errors, task-card.ts(10,15) and card.ts(9,15), TS2614, files the step does not change
-fixture folders in the temp folder: 0 before, 0 after the skipped and the full runs
-reviewer probes (real, unchanged modules): rule.mts: "0 0 31 4,6,9,11 *", "0 0 15W * +0", "0 0 LW * +0" -> the value rule THROWS RangeError: Maximum call stack size exceeded; fuzz.mts (3087 patterns): accepted 3007, refused 64, rule threw 16, croner's forward walk never throws for an accepted pattern; never2.mts "0 0 31 4,6,9,11 *": taskSchedules THROWS, settingProblems [], writeConfigKey THROWS; R1 the round-1 race case: 1 start for today's 07:00, no skipped row; R2 "0 0 29 2 *": new-session at 2028-02-28T23:00:00.000Z; R3 a half-minute look of "* * * 2 *" outside February 273 to 324 ms, "0 7 * * *" 0 ms; R4 a pattern emptied while its decision waits: the run starts after the payload
-```
-
-### Verdicts
-
-Rulings of the round: 1 to 6 closed (no finding closed by removing a check; no fix reaching beyond its finding). The builder's judgment that older held due times leave no record row is accepted (item 5's catch-up rule).
-
-Items of A3.md over the whole diff: 1, 3, 4, 6, 7 hold; 8 holds except the DESIGN.md Schedules sentence made false by 4.1; 2 violated (Behaviour 4.1); 5 violated (Behaviour 4.2, with 4.3 a cost in the same place); 9 violated (Spec 1.1).
-
-Cases: C1 to C4, C6 to C10, C12 to C36 met; C5 met for `0 0 31 2 *` and `0 0 29 2 *`, the overflowing class is 4.1; C11 partial (4.2).
-
-### Findings
-
-#### 1. Spec
-
-- 1.1. A3-report.md: rewritten for round 2, it holds only the six rulings and the verify lines; the cases' first run C1 to C36, the DONE / NOT DONE table, the final runs per case, the look's stub, the files with line counts, the judgment calls and the before-and-after section of item 9 are gone (they stand in the builder's scratch `a3-builder/A3-report.prev.md`, 914 lines). Item 9 violated.
-
-#### 2. Proof
-
-- 2.1. A3-report.md "Verify lines" says `tsc --noEmit` prints 0 errors; it prints 2, in files the step does not change. No decision rests on it.
-- 2.2. schedule.test.ts:427-439 plants `handled: local(-1, 7)`, so nothing is missed and the row named `missed` is not the catch-up race; `local(-2, 7)` makes it that case.
-
-#### 3. Standards
-
-None.
-
-#### 4. Behaviour
-
-- 4.1. value-rule.ts `formProblem`: `job.nextRun()` runs outside `cronOf`'s try; croner overflows the stack for `0 0 31 4,6,9,11 *`, `0 0 15W * +0`, `0 0 LW * +0`. `taskSchedules` throws, `createServerContext` calls it without a try (context.ts:302), so such a pattern in behavior.yml stops the server at every start; `settingProblems` swallows it (no finding); `writeConfigKey` throws in place of refusing with `cron_never`. Fix: the rule answers `cron_never` when `nextRun()` throws, with a G13 row for `0 0 31 4,6,9,11 *`; the DESIGN.md Schedules sentence then holds. Item 2 violated.
-- 4.2. schedule.ts:302-367: `decide` keeps the pattern it started with; a pattern emptied or changed by `set` while the decision waits for the first `sessions` payload still starts the old due time (probe R4). Fix: after the awaits, a decision whose job is no longer `jobs[kind]` or whose pattern changed decides nothing and drops its held due time. Item 5 violated (narrow), C11 partial.
-- 4.3. schedule.ts:94-105 `walkedDueAt` walks every run from the start of its span up to now; for minute-level patterns limited to some months a half-minute look takes about 0.3 s outside those months, stalling the server's event loop. Fix: bisection over `nextRun` inside the found span.
-
-### Declined to judge
-
-- Look cases 1 to 11 and `npm run test:landing`: the orchestrator's at landing.
-- A real server started with a pattern of 4.1: not run (ports); read from context.ts:302 and src/server.ts:41.
-- What the Settings view draws when its text field throws: the look's.
-- The spring-day start up to 30 s after its due time on a live server; the sixth test's timing under heavier load.
+Reviewer usage: agent id not visible to the reviewer, served model claude-opus-5-5, tokens, tool uses and minutes not measured by the reviewer.

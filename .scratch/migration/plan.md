@@ -1388,6 +1388,10 @@ Independent of each other; two may run side by side under R9's rule when their b
 - a6b4415611d2a417e: reviewer of step D42, claude-opus-5-5
 - a98bacc4b6be077d1: reviewer of step D42 over round 1, claude-opus-5-5
 
+Agents in no role the cost script prices:
+
+1. acb1bb1231865e0e6: diagnosis of step A3, claude-opus-5-5
+
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
 - O30: decided after O19 from experience, by design.
