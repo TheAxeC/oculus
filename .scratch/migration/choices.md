@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z654 (2026-10-06, step Q125)
+
+The question: after its last repair round, Q125's review still finds about 60 DESIGN.md items outside Apps that repeat a guide, a head comment or another item, so item 5 (DESIGN.md states each decision with its reason, in a few sentences) is short. The round cap allows no further round.
+
+- Chosen: (a) Q125 lands after Axel's read, its small findings fixed at landing, and a new step Q126, next after it, reduces the listed items from the review's per-item list.
+- Not chosen: (b) a third round (the cap forbids it); (c) the reduction done by the orchestrator at landing (a builder's work, not a fix); (d) Q125 landed with the repeats left (the lazy option).
+
 ## Z653 (2026-10-06, step PR2)
 
 The question: brief item 5 puts a Present deck's `root` and `path` in the pane's instance state, and item 6 says Open Presentation opens a deck "as Open LaTeX does", which gives each file its own tab through `{ root, path, label }` in the tab's layout state. Built to item 5, a second Open Presentation re-points the pane's one Present tab (the review over PR2's round 1, Behaviour 1).

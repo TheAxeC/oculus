@@ -387,3 +387,241 @@ Cases of the brief's "Cases":
 - **`npm run diagrams`:** not run, since it writes into the worktree. The diagram tree check passes.
 
 Reviewer usage: a87f63d952b088f27 (as the state file records the run), claude-opus-5-5, about 330,000 tokens, 68 tool uses, about 18 minutes.
+
+## Repair round 2, refuted
+
+Item 5 is still not met, and the report's first line ("all eleven items of 'Repair round 1, refuted' are done") does not hold up. When I go through every DESIGN.md item outside Apps, about 60 of them still repeat a guide under `docs/`, a head comment or another DESIGN.md item. Some repeat it nearly word for word, and several are behaviour lists with no decision in them. Three more problems:
+
+- Case 8's table has wrong destinations. One names a section that does not exist, and three name the wrong file.
+- Four DESIGN.md cites name a file or section that does not hold what the sentence says.
+- The builder ran one git command after the round's message forbade any git command. The builder disclosed it.
+
+Everything else in the round reproduces.
+
+All commands below ran from `.agents/worktrees/Q125/tools/oculus` unless another folder is named. Scratch harnesses ran from the session scratchpad.
+
+### Verify before you report, rerun
+
+- `npm run test:quick`: "ok ASCII gate (0.5 s) / ok prettier (2.2 s) / ok svelte-kit sync (14.7 s) / ok eslint (32.9 s) / ok svelte-check (31.3 s): ... 390 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS / ok vitest (51.3 s): Duration 36.20s / test:quick: 51.8 s (limit 45.0 s); every command passed / test:quick: over the time limit".
+  - Every command passed. The 45 s time limit was missed, and my reading is that machine load caused it: the builder's run of the same tree printed 16.5 s.
+- `npx vitest run` over the six named files (history, boundaries, size, diagrams, config-folder, arrangements) `--reporter=dot`: "Test Files 6 passed (6) / Tests 101 passed (101)", Duration 57.71s.
+- `sh utils/folder-check.sh`: exit 0, printed nothing.
+- The ASCII gate (the brief's perl line over src, tests, config with `! -name local.yml`, plus HELP.md, DESIGN.md, README.md and docs/*.md): printed nothing, exit 0.
+- `wc -l HELP.md DESIGN.md README.md docs/*.md`: 159, 574, 48, 64, 91, 67, 69, 231, 82, total 1385.
+  - `awk 'length>1500' DESIGN.md | wc -l`: 0.
+  - Longest line: 1495.
+- `sh utils/unused-exports.sh`: exit 0. Diffed against `Q125-base/unused-exports.txt`, the only difference is `40c40`, where `renderManualParts` is gone from the docs.ts line.
+- `npm run diagrams`: not run, because it writes into the worktree.
+- Verify 8, the names comments cite:
+  - Command: `grep -rhno 'DESIGN\.md[^"]\{0,30\}"[^"]\{2,60\}"' src tests utils config --exclude=local.yml`, then each name looked up as a heading or opening bold label.
+  - The grep gives 16 distinct names, and every one opens a paragraph or heading: Approval 406, Apps added while oculus runs 265, Auth 159, Boundaries 177, Client state 165, Configuration 86, Decisions taken 448, Git 133, Hot reload 249, Layer 1, data 92, Normalise 100, PTY 151, Sessions 125, sessions are six views, not one 464, The socket 119, Watchers 121.
+  - Names that comments cite outside that grep's pattern also resolve: Fixed git choices 135, Git writes and the deposit 459, Unsaved form input is instance state 551, Wire model 455, Untyped input 161, Opening things in oculus 394, Sessions cover two agents and a shell 461, Live data 453.
+- The report's size claims, rechecked:
+  - `awk '/^## Decisions taken/{f=1} f' DESIGN.md | wc -c`: 65705. The report says 65,560 or 65,686; this is close, and no decision rests on it.
+  - The non-Apps non-blank lines over 1000 characters: 33. Over 1400: 3. Both reproduce the report.
+  - The report's file table gives DESIGN.md as 571 lines; `wc -l` prints 574. That row is stale.
+
+### Closures of round 2, each against my rerun
+
+1. **Spec 1, every DESIGN.md item outside Apps:** not reproduced. The per-item results are under Spec below.
+2. **Spec 2, case 8's destinations:** partly reproduced.
+   - Row 429 is closed: `docs/views.md:7` carries "Run green, Push blue, ... Build teal", and the hex values are in `config/catalogs/vocab.yml` `focus_lanes`.
+   - Rows 250, 405, 124, 402 and 415 have wrong destinations; see Proof 2.
+3. **Spec 3, no `file:line` cites, and every cite holds what its sentence says:** partly reproduced.
+   - The first half reproduces: `grep -cE '\.(ts|svelte|mjs|css|js|yml|md|json|sh):[0-9]+' DESIGN.md` prints 0.
+   - The second half does not. I checked about 115 of the roughly 218 cites. Four are wrong (Standards 1), and one is unsupported (Standards 2).
+4. **Spec 4, the four comments name a DESIGN.md section:**
+   - `root/hooks.ts:1-3` ("Auth": the hook carries neither header) is true; DESIGN:159 says it.
+   - `deposit-git.ts:16-19` cites "Git", "Fixed git choices", which is true; DESIGN:135 holds the forced push.
+   - `deposit-git.ts:300` cites "Decisions taken": "Git writes and the deposit" for the snapshot and the forced push. DESIGN:459 says neither, so the cite is false (Standards 3).
+   - `Editor.svelte:15-18` cites "Configuration" for "the edit form is data in config/catalogs/manifest-schema.yml". The Configuration section at :88 does not name that file, which appears only in the layout block at :44. This is weak but not false in substance.
+5. **Standards 1, the autofetch default:** reproduced. DESIGN:133 reads "(its default is 0)".
+6. **Standards 2, the `docs/*.md` row:** reproduced. DESIGN:81 is its own row. The report quotes lines 44 and 46, but the file has it at 79 and 81.
+7. **Standards 3, the Apps splits:** reproduced.
+   - The two cut sentences are joined again at :299 and :335.
+   - Every other split ends at a sentence end, and my awk check for adjacent prose lines printed nothing.
+8. **Standards 4:** reproduced. DESIGN:193 reads "The layers diagram and the diagram of each layer follow.", and that is what follows it.
+9. **Standards 5 and Proof 1, the writes image as the ninth diagram part:** reproduced by my own run.
+   - Harness: a node run of `renderHubDoc` and `renderManual` from `src/lib/server/content/docs.ts` over a scratch hub, with the engine at `<hub>/tools/oculus`.
+   - Output for DESIGN: "DESIGN 200 | html,diagram:channels,html,diagram:writes,html,diagram:layers,html,diagram:layer-data,diagram:layer-server,diagram:layer-state,diagram:layer-ui,diagram:layer-shell,diagram:layer-views,html". That is nine diagram parts, writes included.
+10. **Proof 2, the history-word grep:** reproduced. The grep over the added comment lines gives 4 hits ("before it draws it", "before the figures pass", "before git has exited", "before git runs"). All four are present-tense ordering, not history.
+11. **Proof 3, the git disclosure:** reproduced.
+    - I scanned every Bash call of `subagents/agent-a53eac68600a643ef.jsonl` and quote the command text it found:
+      - 12:18:50 `git log --oneline -8 -- tools/oculus/docs/apps.md tools/oculus/config/layout.yml`
+      - 13:23:41 `git -C . log -1 --format=%h`
+      - 13:24:32 `git -C /Users/axelfaes/workspace/research-hub status --short -- .agents`
+      - 14:17:28 `git -C . status >/dev/null 2>`
+      - 14:47:39 `git diff --stat`
+      - 14:59:32 `git -C . rev-parse`
+      - 16:29:53 `git -C . log -0` (this one is in round 2)
+      - Line 918 is prose, not a command.
+    - The round-2 message is at line 4833, 15:25:21Z, and forbids any git command, so 16:29:53 is a breach. The report discloses all seven.
+    - The 12 Agent calls (lines 570-581) are all at 11:25:31 to 11:26:18, before round 1, as disclosed.
+
+### Verdicts over the whole diff
+
+Brief items:
+
+| Item | Verdict | Evidence |
+|---|---|---|
+| 1, HELP.md as the user's guide | holds | 159 lines; Apps kept by ruling A |
+| 2, `docs/configuration.md` | holds | |
+| 3, `docs/source-control.md` | holds | |
+| 4, the developer sections | holds | |
+| 5, DESIGN.md rewritten to its decisions | **violated** | Spec below |
+| 6, the Help group | holds | `config/layout.yml:172-183` order matches ruling C; `HELP.md:51` and `config/text/app.yml:12` read `h1-h9` |
+| 7, diagram parts | holds | my harness run |
+| 8, the Help view and links | holds by reading | the press is not verifiable in a page |
+| 9, `history.test.ts` | holds | passes in the six-file run |
+| 10, every sentence the move makes false | **violated** | `deposit-git.ts:300`, DESIGN:514, the stale 571 |
+| 11, the Doc text | holds | it cites a comment's file, never a line |
+
+Cases:
+
+| Case | Verdict | Evidence |
+|---|---|---|
+| 1 | met | `HELP.md:94` links `docs/views.md#repositories` |
+| 2 | met | `docs/source-control.md:17` |
+| 3 | met | `docs/configuration.md:30` "## `local.yml`" |
+| 4 | met | `grep -rn "npm run\|npm test\|node src/server" HELP.md DESIGN.md docs/*.md \| wc -l` gives 0; each command once in README.md, test:checks twice as the report explains |
+| 5 | met | |
+| 6 | met | my diff of the key-table first columns prints only `h1-h6` -> `h1-h9`; 45 rows each |
+| 7 | met | views-table first columns diff empty, 49 rows each |
+| 8 | **partial** | Proof 2 |
+| 9 | met | my run; with the engine outside the hub, "OUT DESIGN 404 the document is not inside the hub", the manual 200 with path null, RESEARCH 200 through the file route; this matches ruling D |
+| 10 | met | my run of a guide holding `diagrams/layers.svg`, `diagrams/nonesuch.svg`, `../secrets.svg`, `diagrams/Layers.svg` and `docs/diagrams/../x.svg` gives parts for layers and nonesuch only |
+| 11 | met | read from `config/layout.yml`; I did not rerun the builder's vitest harness |
+| 12 | met | |
+| 13 | met by reading | |
+| G54 | met | arrangements.test.ts, 12 rows, in the six-file run |
+
+- My run of the same docs-route harness also gives: views.md and the manual "none" parts; RESEARCH-APPROACH 200 with one image at `/api/file/hub/tools/figures/a.svg`; and DESIGN answers 304 when asked again with its etag.
+
+### Spec
+
+1. **Item 5, which is closure 1 of round 2, is not met.** The brief says "The step-by-step behaviour ... moves to the guide that owns it ... or is dropped where the code's head comment already says it." Ruling B says one home per fact. I read every item outside Apps (:3-263 and :430-574) against the six guides, README.md and the head comments.
+   - Judged a decision with its reason (acceptable):
+     - :3-34, the layout block :38-82, :88, :90, :94-113, :119, :121, :125-131
+     - :133, except its repeat in :445
+     - :151, :155, :159, :161, :163, :167, :171-217, :231, :233, :241, :247, :251-261, :432-446 (except :445), :450-457, :461, :462, :464, :465, :467, :477, :486, :488, :497, :502, :504, :518, :528, :535, :536, :538, :543, :551, :554-557, :560, :569
+   - Judged a repeat or a behaviour list, each naming the place it repeats:
+     - **:135 Fixed git choices**, which the builder calls a decision. It is nearly the same sentences as `docs/source-control.md:55`, reasons included. :135: "Signing is left to git's own `commit.gpgsign` and a pull is a plain `git pull`, so the repository's own configuration decides". :55: "These git choices have no setting. Untracked files are their own group ... Signing is left to git's own `comm...". It also repeats :133 ("no form carries --force"), and :445 repeats :133 and `source-control.md:27`.
+     - :137 Search vs `files-and-search.md:73`, `:81`, `:91` and DESIGN:522.
+     - :139 vs `configuration.md:46`.
+     - :141 Live HPC vs `views.md:163` (scancel, Submit Job, never --delete).
+     - :143 vs `views.md:197`, with no reason of its own.
+     - :145 vs `window.md:29`.
+     - :147 vs `configuration.md:58` and DESIGN:540 (PKCE, state minted once).
+     - :149 vs `configuration.md:50`, `:52` and DESIGN:541.
+     - :153 vs DESIGN:495.
+     - :98 vs :557 and :543.
+     - :84 vs :440.
+     - :235 vs `window.md:41`.
+     - :237 vs `window.md:52` and DESIGN:471.
+     - :243, a control behaviour about the wallpaper toggle.
+     - :245 vs :482 and :483.
+     - :263 vs `configuration.md:32`.
+     - :459 vs `source-control.md:15` and the `parse.ts` head.
+     - **:463 Docking**, a pure behaviour list ("tabs drag between panes and across pages, a drop on a pane's edge splits it, a tab dragged with Alt held floats at the pointer ...") vs `window.md:47-51`.
+     - :469 vs README:7, README:13 and `configuration.md:32`.
+     - :470 and :476 vs `window.md:41`.
+     - :472 vs `window.md:21` and `window.md:33`.
+     - :474 vs `window.md:37`, `:41` and `:54`.
+     - :479 vs `terminals.md:7` and `:13`.
+     - :481 vs `terminals.md:45` and `files-and-search.md:55`.
+     - :490 vs `window.md:15`.
+     - :492 vs `views.md:95`.
+     - :493 vs `views.md:35`.
+     - :495 vs `configuration.md:64`.
+     - :499 vs `views.md:181`.
+     - :501 vs `views.md:175`.
+     - :505 vs `window.md:25` and `:78`.
+     - :507 vs README:11 and README:13.
+     - :509 vs `files-and-search.md:25`.
+     - :511 vs `files-and-search.md:59`, `:61` and `views.md:217`.
+     - :513 vs `files-and-search.md:65`.
+     - **:514**, nearly verbatim the `ops.ts` head comment, and round 1 already named this place. ops.ts head: "A path that is a symbolic link is acted on as the link ... local.yml". DESIGN:514: "a write chain of its own, so a long copy holds up another file operation and nothing else. Every path is resolved by real path ... a path that is a symbolic link is acted on as the link". It also overlaps `files-and-search.md:47`.
+     - :516 vs `files-and-search.md:51`.
+     - :519 vs `views.md:107`.
+     - :520 vs `views.md:37`.
+     - :521 vs `configuration.md:32`.
+     - :522 vs `files-and-search.md:77` and DESIGN:137.
+     - :523 vs `views.md:103` and `configuration.md:46`.
+     - :524 vs `source-control.md:9` and `:21`.
+     - **:526 Worktrees** vs `source-control.md:63` and `:67`. Both describe `<root>/.agents/worktrees/<name>` on a new branch, the shell started in it, and the removal refused over uncommitted work.
+     - **:527** vs `window.md:66`, which round 1 named. DESIGN: "Tab and Shift+Tab stay the browser's, with the source tab's editor as the one exception". window.md: "Tab and Shift-Tab are the browser's ... except in the source tab's editor". The rail and strip stop facts repeat too.
+     - :529 vs `configuration.md:38`.
+     - :530 vs `views.md:115`.
+     - :531 and :533 vs `views.md:231`.
+     - :537 vs `window.md:29`.
+     - :540 vs `views.md:185` and DESIGN:147.
+     - :541 vs DESIGN:149 and `configuration.md:50`, `:52`.
+     - :542 vs `configuration.md:32` and DESIGN:263.
+     - :544 restates :163.
+     - :545 vs `views.md:217`.
+     - **:546** vs `window.md:70`. DESIGN: "One tooltip is open at a time ... so a bubble opening closes the one that was open". window.md: "One tooltip is open at a time: a bubble opening closes the one that was open."
+     - :548 vs `window.md:15`, `:25` and `:54`.
+     - :549 Focus board, a pure behaviour list, vs `views.md:7` and DESIGN:559.
+     - :550 vs `configuration.md:36` and `views.md:23`.
+     - :553 vs `window.md:66`.
+     - :558 and :559 vs `views.md:11` and `:7`.
+     - :561 vs `window.md:60`.
+     - :563 vs `window.md:54`.
+     - :565 vs `window.md:54`, `:58` and `:59`.
+     - :567 vs `terminals.md:25`, the `context-guard.ts` head and `window.md:54`.
+     - :568 vs `window.md:66`.
+     - :570 is mostly a file map.
+     - :571 vs `files-and-search.md:25`.
+     - :572 vs README:9 and `window.md:7`.
+     - :574 vs `window.md:7` and `:54`.
+   - Failure scenario: someone changes the tooltip rule or the worktree path and edits `docs/window.md` or `docs/source-control.md` only. DESIGN.md then states the old behaviour, and nothing flags it, because no check compares the two.
+   - The report backs its closure with a 5-word-run overlap score at 0.45, which only flags :135. That is a script standing in for a judgment, and it cannot see paraphrase.
+
+### Proof
+
+1. **The report claims closure 1, "DONE outside Apps", and every item outside Apps reduced. My item-by-item read above does not reproduce this.**
+2. **Case 8's table names wrong destinations, so Spec 2 is not fully closed.**
+   - Rows 250 and 405 give "docs/configuration.md Configuration files". `grep -n "^## " docs/configuration.md` shows no such section; its sections are The files of `config/`, The text of the interface, `local.yml`, The hub's files, What is kept outside the hub, The Literature search's keys, Mail accounts and the Inbox, Calendar accounts, The change log.
+   - Row 124 gives the `background.ts` head for "A first read of a file above 256 MB". `head -40 | grep -c 256` prints 0 for background.ts, transcript-routes.ts and turns.ts. The fact is `MAX_FIRST_READ_BYTES = 256 * 1024 * 1024` in `src/lib/server/sessions/cache.ts:32`.
+   - Row 402 gives the `kit/theme.ts` head for "builds its look again one frame after". The only file holding it is `ui/controls/editor/kit/look.ts:4`.
+   - Row 415 gives "the findings of src/lib/data/sources/config/settings.ts" for `skip_permissions`. settings.ts holds no `skip_permissions`; it is in `src/lib/data/sources/config/catalogs.ts:160-172`.
+   - Failure scenario: a lander following row 250 to find the dropped watcher-error text finds no section, and concludes the fact was lost or that the table is not to be trusted.
+   - The report itself says 66 automatic destinations are not verified, and I found errors among those I checked.
+3. **The report gives the docs row's place as DESIGN.md lines 44/46; it is at 79/81. The file table gives DESIGN.md 571 lines; `wc -l` prints 574.** No verdict rests on either, but both are claims the file contradicts.
+
+### Standards
+
+1. Wrong cites in DESIGN.md:
+   - **:514** cites `src/lib/server/files/fs/replace.ts` for "a move onto a taken name ... `replace: true`, which sends the taken item to the Trash first". `replace.ts` is the Search Replace writer; that text is in the `ops.ts` head (around :41).
+   - **:263** and **:461** cite "docs/configuration.md, Configuration files", a section that does not exist.
+   - **:507** cites "README.md, Running it and checking it" for `--engine` and `--default-port`. Both are at README:11, above that heading at :17.
+   - Failure scenario: a reader following any of these lands on a file or section that does not say the sentence.
+2. **:540**: "the Keychain is never read (`src/lib/server/accounts/connect/store.ts`)". No file under `server/` contains "keychain", so the cite proves nothing; the sentence is an absence claim with no holder.
+3. **`deposit-git.ts:300-303`.**
+   - The JSDoc cites "Decisions taken": "Git writes and the deposit" for the snapshot and "the one call in oculus that forces a push". DESIGN:459 says neither; DESIGN:135 does.
+   - Line 302 is 52 characters, "was there is gone. This is the one call in oculus", followed by "that forces a push." at 22, a short line inside a sentence. That breaks spec.md's 100-column rewrap rule.
+4. Typos and doubled cites:
+   - :502 ends "paints with it too.." with a double period.
+   - :504 has "`file-git.ts` ;", a space before the semicolon.
+   - :513 has "`resolveEditor` of `src/lib/data/helpers/editor.ts` (`src/lib/data/helpers/editor.ts`)".
+   - :518 cites `kit/theme.ts` twice, and :540 cites `oauth.ts` twice.
+
+### Behaviour
+
+None. The docs route, the 304, the engine-outside-hub 404 and the image handling behave as the report says in my harness run.
+
+**Process.** The builder ran `git -C . log -0 2>/dev/null | head -0` at 16:29:53Z, after the round-2 message (15:25:21Z) forbade any git command "in any form". It is disclosed and read-only, and no result depends on it.
+
+**Paths outside the brief's list.** The edited head comments outside the brief's list are tokens.css, Chip.svelte, Glyph.svelte, running.ts, saved.ts, ops.ts, task.ts, context-guard.ts, PaneStrip.svelte, tab-crumbs.ts, tab-menu.ts, terminal-lists.ts, themes.css, TabFace.svelte, ask-perform.ts, entries.ts, status-items.ts, repositories.ts, notice-sources.ts, status.ts, EntryForm.svelte, roving.ts, `pty/sessions.ts` and `stores/turns.ts`. The report's file table lists them with one blanket reason, "the head comments that ruling B names", and no reason for each path. Ruling B lets a head comment serve as a destination; it does not name these files.
+
+### Declined to judge
+
+- Anything in a page: the press on a relative `.md` link, the scroll to a fragment and the unlisted doc tab. No browser was allowed.
+- Whether `npm run diagrams` leaves `docs/diagrams/` unchanged. Not run, because it writes into the worktree.
+- Case 11 by the builder's vitest harness. I checked it by reading `config/layout.yml` and the two `h1-h9` strings.
+- The 115 or so cites I did not check out of about 218.
+- The head comments of the edited out-of-list files beyond the ones checked above.
+
+Usage: about 0.49 M tokens by the session's token counter (15,000,000 at start, 14,504,749 left); wall time not measured.
+
+Files: `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q125/tools/oculus/DESIGN.md`, `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q125/tools/oculus/src/lib/server/git/deposit-git.ts`, `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/reviews/Q125-report.md`.

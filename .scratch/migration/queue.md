@@ -1,9 +1,10 @@
 In flight (3 of 6 slots):
 - D23 (language servers): built, under review, base 465efcdfb.
-- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): repair round 2 returned, under review, base 02ac124ec; Axel reads the new HELP.md and DESIGN.md before it lands.
+- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): rounds done, base 02ac124ec; waits for Axel's read, then lands; Axel reads the new HELP.md and DESIGN.md before it lands.
 - PR2 (Present decks from any folder): repair round 2 returned, under review, base 7e1d73675.
 
-Queued, in order (24 steps):
+Queued, in order (25 steps):
+- Q126 (DESIGN.md reduced where Q125 left it short, Z654): once Q125 has landed.
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
 - X3e (Files lists reordered by drag): prepared again under Z635 (a); once D23 has landed (both split Palette.svelte).
 - PR3 (Present decks edited and generated, PDF export): once PR2 has landed.
