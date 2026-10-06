@@ -1,6 +1,6 @@
 In flight (3 of 6 slots):
 - D23 (language servers): building.
-- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): building, base cfc9e60d9; Axel reads the new HELP.md and DESIGN.md before it lands.
+- Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): repair round 1, base cfc9e60d9; Axel reads the new HELP.md and DESIGN.md before it lands.
 - PR2 (Present decks from any folder): building, base 6fb105892.
 
 Queued, in order (24 steps):

@@ -62,9 +62,10 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/Q125-report.md
   brief_check: agents/reviews/Q125-brief-check.md (a401d3fdf1183fba1, claude-opus-5-5, 223,091 tokens, 83 tool uses, 12.3 min)
   shared_paths: HELP.md, DESIGN.md and README.md with E4g, O30b, Q124, D23 and PR1, and config/layout.yml with E4g and D23, under Z642: the second to land carries the other's text; docs/diagrams regenerated at landing
-  builder_usage: hand-back 286,831 tokens, 65 tool uses, 16.5 min
+  builder_usage: hand-back 286,831 tokens, 65 tool uses, 16.5 min; final run 268,409 tokens, 689 tool uses, 122.6 min (it started twelve general-purpose agents against spec.md:36, all stopped, their output not used, their usage not in this figure)
+  reviewer_report: agents/reviews/Q125-refuter.md (a592538c261dc0fa4, claude-opus-5-5, 282,071 tokens, 92 tool uses, 14.4 min)
   landing: not-started
-  round: 0 (cases ruling agents/briefs/Q125-cases.md, rulings A to E (Z646) on the hand-back; builder resumed; G54's test, Z645 (a), added to the brief by message to the builder: tests/checks/config/arrangements.test.ts)
+  round: 1 (sent 2026-10-06 to a53eac68600a643ef: item 5 done whole, Spec 1 to 3, Proof 1 to 3, Standards 1 to 5, Behaviour 1 and 2 of the review); before it, round 0 (cases ruling agents/briefs/Q125-cases.md, rulings A to E (Z646) on the hand-back; builder resumed; G54's test, Z645 (a), added to the brief by message to the builder: tests/checks/config/arrangements.test.ts)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -235,7 +236,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-06. Q124 landed (tree checks with no limit, the vitest races), after O30b and E4g; PR2 is building with Z650 (b) and Z652. In flight: PR2 (building), D23 (building), Q125 (building).
+- 2026-10-06. Q124 landed (tree checks with no limit, the vitest races), after O30b and E4g; PR2 is building with Z650 (b) and Z652. In flight: PR2 (building), D23 (building), Q125 (repair round 1).
 - 2026-10-06 12:55. Q123 landed (a terminal pane attached as its program left it; booking in plan.md; `agents/reviews/Q123-landing.md`) with five fixes at landing, B1 the top row's shift among them. In flight: E4g (repair round 1), Q124 (under review), O30b (under review), D23 and PR1 (building). Open items Z644 and Z645 raised. Next: Q125 into the free slot, then each landing as its review closes.
 - 2026-10-06 09:30. E4 landed (apps added while oculus runs; booking in plan.md; `agents/reviews/E4-landing.md`) after its look on TEST, which Axel's dev-server restart (Z631) made possible. Axel ruled Z630 (G51's words, written into guarded.md), Z632 (`workers_at_once` 6 in both files) and Z633 (step E4g, the apps guide in `tools/oculus/docs/apps.md`, first in the queue). Nothing in flight. Next: /spec for E4g, O30b, Q123, Q124, D23 and X3e, the six slots.
 - 2026-10-06 08:35. E4 staged on main, not committed: gate-E4 passed `npm run test:landing` (6 of 6), main's staged diff `cmp`-equal to the gate's, penpal and the Electron binary installed in main's node_modules, guarded.md names E4's tests (G1, G8, G9, G31, G49, G50). The look waits on Z631 (Axel's dev server needs a restart to resolve penpal); `~/.oculus/approvals.json` and `workspaces.json` back at their shasums, the scratch apps kept in the session scratchpad. Next: the look, the booking, the commit, then O30b, Q123, Q124 prepared.
