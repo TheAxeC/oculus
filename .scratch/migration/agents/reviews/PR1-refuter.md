@@ -220,3 +220,236 @@ aed7391d3da51eb81, claude-opus-5-5; tokens and minutes as the state file records
 - B1, B2, the two pending-request paths of P2, St1, St2, St3, St5, P1 to P3: sent to the builder in repair round 1, with G53's test (Z644 (a)).
 - St4: closed in the same round, the title slide's key hint in `config/present.yml` names `F` (the write list widened by that one line).
 - P4: closed by the reviewer's reading in 3.1.
+
+## Repair round 1, refuted (PR1, worktree `.agents/worktrees/PR1`, base 628ac4b01)
+
+**What is not closed:** two behaviour findings and one gap in G53's test.
+- **B3:** B1 is closed only for unmodified keys. Cmd+Shift+F or Cmd+Shift+H can still move the keyboard out of the full-screen box while the slide stays on screen. The builder's report names this hazard and leaves it: "This is stated, not fixed".
+- **B4:** the B1 fix swallows more than B1 asked. In full screen, Tab, the overview grid's card-cursor keys (ArrowUp, ArrowDown, j, k, i) and Enter on the cursor tile now do nothing.
+- **Pr1:** G53's table has no row for re-entering full screen while a hold is leaving. It covers case 16's window-menu exit only in the order macOS does not emit, and not in the order it does.
+
+Everything else the round was sent to close is closed, and every check is green.
+
+I changed no file. The only git commands I ran were `git diff 628ac4b01` (with `--stat`, `--word-diff` and `-U0`) and `git status --short`. `git status --short` printed the same ten lines before and after my runs.
+
+## 1. The brief's checks, rerun from `tools/oculus` in the worktree
+
+1. **`npm run test:quick`**, output and exit status written to the scratchpad: `exit=0`.
+   - `test:quick: 10 changed file(s), from git since HEAD`, `13 test file(s), 10 essential`
+   - `ok prettier (6.1 s)`, `ok ASCII gate (6.5 s)`, `ok eslint (21.0 s)`, `ok vitest (34.0 s)`
+   - `ok svelte-check (35.3 s): ... 390 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+   - `test:quick: 46.1 s (limit 45.0 s); every command passed` / `test:quick: over the time limit`
+   - An earlier run in the same session printed the same `ok` lines and `115.6 s`. The selection lists `tests/server/desktop/window-file.test.ts: changed`, plus `options.test.ts` and `present.test.ts` "named for a changed file".
+2. **ASCII gate:** the rules file's perl command over `src tests config` printed nothing (`gate-exit=0`). The same command over `src tests bin config` printed 0 lines.
+   - `LC_ALL=C grep -n '[^ -~]'` over HELP.md, DESIGN.md, `config/present.yml`, `options.yml` and the new test printed one line, `config/present.yml:252` "Linköping". That line is not in the diff and is allowed under `config/`.
+3. **`sh utils/unused-exports.sh`:** `ue-exit=0`. `diff` against `PR1-base/unused-exports.txt` printed nothing (`ue-diff=0`).
+4. **`wc -l`:**
+
+   | File | Lines | Limit |
+   |---|---|---|
+   | `Present.svelte` | 458 | 520 |
+   | `windows.ts` | 445 | 880 |
+   | `window-file.ts` | 107 | 880 |
+   | `present.yml` (text) | 28 | 880 |
+   | `window-file.test.ts` | 131 | 880 |
+   | `config/present.yml` | 273 | 880 |
+   | `options.yml` | 1354 | not a source file |
+
+5. **Tests:** `diff -rq PR1-base/tools/oculus/tests tests` printed `Only in tests/server/desktop: window-file.test.ts`. That is G53's test under Z644 (a), and no other test changed.
+6. **Docs:** the rules file has no rule on list items or sentence length, as the first review found. The sentences are read in section 3.
+
+**G53's test:** `npx vitest run tests/server/desktop/window-file.test.ts --reporter=verbose` gave `g53-exit=0`, ten `✓ ... keeps the window own state: ...` lines, `Test Files 1 passed (1)` and `Tests 10 passed (10)`.
+
+**Other checks:**
+- `npx vitest run tests/checks/diagrams/diagrams.test.ts` gave `diag-exit=0` and `Tests 45 passed (45)`.
+- `sh utils/folder-check.sh` gave `folder-exit=0` with no output.
+- `diff -rq` against the base over `src` and `config`, excluding `local.yml`, lists only the six expected files.
+
+## 2. The round's closures
+
+The round's change set, from the whole diff read against the first report's quoted hunks:
+- `export` was dropped from `Recorded`.
+- `.present:fullscreen` padding is now `10px 12px`.
+- The `default:` branch of `keys` now prevents every unowned key in full screen.
+- New in `enterFull`: the `entering` and `unmounted` flags.
+- New in `tellBounds`: `windowWasFull` and the `leave-full-screen` release.
+- `DESIGN.md:436` was reworded, and `present_tip` reworded.
+- The F hint was added in `config/present.yml:22` and `options.yml:1007`.
+- The new test file.
+
+| Closure | Verdict | Evidence |
+|---|---|---|
+| G53's test | closed, with gaps (Pr1, St6) | The file passes 10/10. See "Reading G53's test" below the table. |
+| B1 | closed for unmodified keys; open for modified keys (B3); reaches beyond the finding (B4) | `Present.svelte:262-269`: `if (full && !(event.key === 'Enter' && inControl(event.target))) { event.preventDefault(); }`. The shell listens at `<svelte:window onkeydown={keyboard.keys}>` (`Workbench.svelte:317-318`), in the bubble phase after the box's handler, so the prevented default reaches `resolveKey`. |
+| B2 | closed | `windows.ts:259-290`. `windowWasFull` is read at `enter-html-full-screen`; on macOS that is before the toggle starts (first report, 3.1), so it is false for a windowed float. `leave-html` releases the flag only when the window was full screen before or is already out; otherwise the window's own `leave-full-screen` releases it. `tell` returns early, and the timer callback checks again. |
+| Pending paths (P2) | closed | Unmount while a request is pending: the teardown sets `unmounted` (`:206`), and the `.then` exits when the element became the full-screen element (`:153-157`). A second press while a request is pending: `if (box === null \|\| entering) return;` (`:148`), with `entering` cleared in `.finally` (`:159`). |
+| St1 | closed | `type Recorded = ...` with no `export` (`window-file.ts:81`). |
+| St2 | closed | `padding: 10px 12px;` in `.present:fullscreen`. |
+| St3 | closed | `DESIGN.md:436`: "until the page has left full screen and, for a window that was not in full screen before, until the window is out of it too". This matches `recordWindow` (lines 102-105). |
+| St4 | closed | `config/present.yml:22` names `<b>F</b> for full screen`. |
+| St5 | closed | `present_tip: Show the deck on the whole screen (F, while the deck has the focus)`. |
+| P1 | closed | The report's unused-exports row now says `Recorded` is local, and my `ue-diff=0` reproduces the export side. |
+| P2 statements | closed | Reuse grep, changed-names grep, catalog keys and async paths are in report section 7. |
+| P3 | closed | `TabView.svelte:36` holds `provideTabState(() => shown);` and `:41` holds `hidden={!shown}`, as the report now says. `disabled={rows.length === 0}` is at `Present.svelte:314`. The import is at `windows.ts:16-22`. |
+
+**Reading G53's test** (by reading, never by changing code):
+- **If `recordWindow` were reduced to the base's live write (`{ hold: null, state: now }`):**
+  - Rows 1 to 8 and row 10 fail at their first step: `page-enter` expects `null` and would get `now`.
+  - Row 9 passes by design: it is the row with no page in full screen.
+- **If a single branch were removed instead:**
+  - Without the `hold.own.fullScreen` release (`:102`), row 6's `page-leave` would give `null` against the expected `FULL`.
+  - Without `leaving` (`:103`, `:105`), row 5's `page-leave(FULL)` would write `FULL` against the expected `null`.
+  - Without the zoom merge (`:106`), row 10 fails.
+  - Removing `hold?.own ??` (`:98`) makes no row fail. See Pr1.
+- **Coverage of the macOS orders in the first report's 3.1:**
+  - Enter order: rows 1-5, 8 and 10.
+  - Leave by Esc or F: row 1.
+  - Windowed window, left from the menu with the window already out: row 2.
+  - A close between the events: rows 4 and 5.
+  - Case 16 by Esc: row 6.
+  - Case 21: row 8.
+  - Case 16 left from the window menu: the order macOS emits is not covered (Pr1).
+
+## 3. The two things the builder added on its own
+
+**`config/catalogs/options.yml:1007`.** The change is needed and correct.
+- The catalog's head (`options.yml:3`) says `default` is "the value the Settings view's Reset writes and its Modified filter compares with".
+- With `config/present.yml:22` changed and this default left as it was, Settings would list `deck.meta.hint` as Modified on a shipped file, and Reset would write the hint without `F`.
+- The path is outside the write list. The round widened the list only by `config/present.yml`, per the first report's Closed section. The builder named the path in its report with the reason, as the rules file requires.
+- For the orchestrator: PR2 converts `config/present.yml`'s portfolio content (`plan.md:647`), so PR2 has to carry both lines.
+
+**The modified keys that still reach the shell in full screen.**
+- `keys` returns at `:220` for Alt, Ctrl and Meta.
+- These keys end the full screen through the tab-hidden or unmount path, so they are harmless:
+  - Ctrl+1 to 9 (`resolveKey`, `keys.ts:160-162`)
+  - Ctrl+[ and Ctrl+]
+  - Ctrl+Tab in the app
+  - Cmd+W
+  - Cmd+N, which opens a text file in the focused pane, hiding the deck's tab
+- Cmd+F in the app shows the find bar, a `WebContentsView` laid over the window (`find-bar.ts:1-5`), which finds in the page. That fits a slide.
+- Cmd+S saves a source tab. That is the reader's intent, and focus stays put.
+- Cmd+Shift+F and Cmd+Shift+H are the defect (B3). `workbench-keys.svelte.ts:193-197` runs `options.layout.openView('search', ...)` and then `options.focusSearchBox(id, ...)`, and `openView` "activates the instance already open" where it is (`opening.ts:63-64`).
+- The builder's own text, report section 2: "Search, save and the other app keys act on a pane outside the box and are not stopped. This is stated, not fixed: the brief and the repair order name unmodified keys." B1's finding was that keyboard focus can leave the box while the slide stays on screen, whatever the key. Reading it as unmodified keys only is the narrower reading.
+
+## 4. Verdicts over the whole diff
+
+### Items of "What to build"
+
+1. **Item 1: holds.** `requestFullscreen` is called on `div.present` (`:147-160`, `:335`). `.present:fullscreen` sets `background: var(--bg); overflow: auto; padding: 10px 12px`. `.framed` sets `overflow: hidden; padding: 0`. The frame has `border: none; border-radius: 0`. `syncFull` focuses the box (`:174-177`).
+2. **Item 2: holds.** The control is a `ToolButton` after the Chip (`:308-315`), with `pressed={full}` and `disabled={rows.length === 0}`.
+3. **Item 3: violated in part (B4).**
+   - `f`/`F`, Space with Shift, the repeat guard, the control guard, Escape and the deck's own arrows and Page keys hold (`:219-261`).
+   - The up and down arrows do not "keep their meaning, in and out of full screen". In the pane they reach the shell's card cursor over the grid (`keys.ts`: `ArrowUp` gives cursor up, `ArrowDown` gives cursor down). In full screen they are now swallowed.
+4. **Item 4: holds.** `advance` (`:274-278`) skips the grid, controls and a selection, and is bound on the box (`:350`).
+5. **Item 5: holds.** `rouse` and the effect (`:180-195`), and `.present.resting :global(*) { cursor: none; }`.
+6. **Item 6: holds.** `<svelte:document onfullscreenchange={syncFull} />` (`:329`).
+7. **Item 7: holds.** `.catch(ignore)` on both promises, the hidden-tab and empty-deck effect (`:198-200`), and the unmount teardown (`:202-209`).
+8. **Item 8: holds.** `recordWindow` (`window-file.ts:92-107`) is wired in `record` (`windows.ts:223-229`). `enter-html-full-screen` and `leave-html-full-screen` are registered on the `BrowserWindow`, which declares them (`electron.d.ts:4216`, `:4417`, `:4473`). `remember` goes through `record`, and the float bounds through `tellBounds`.
+9. **Item 9: holds.** `HELP.md:139`, `DESIGN.md:382`, `DESIGN.md:436` and the head comment (`Present.svelte:15-50`) are all written.
+
+**File limits: hold** (section 1).
+
+### Cases
+
+None of the cases can be run here, so every verdict is by reading.
+
+| Case | Verdict | Evidence |
+|---|---|---|
+| 1 | met | `:313` calls `toggleFull`, which calls `requestFullscreen` on the box |
+| 2 | met | `:222-231`, `:251-256` |
+| 3 | met | `:274-278`, `:350` |
+| 4 | met | `:180-184`, the `resting` CSS |
+| 5 | met | Esc is taken by the browser (premise); `:329` |
+| 6 | met | `:245-250`, `:168-171` |
+| 7 | met | `permissions.ts:7`; same code path as cases 1-6 |
+| 8 | met | the `:fullscreen` CSS; `pick` (`:281-284`). Keyboard use of the grid is lost in full screen (B4) |
+| 9 | met | `full` is per instance (`:175`) |
+| 10 | met | `:329`; the effect clears `resting` |
+| 11 | met | `inControl` (`:138-142`), `:252`, `:267`, `:275-276` |
+| 12 | met | `:247`, `:314` |
+| 13 | met | `:220` |
+| 14 | met | `.catch(ignore)` (`:158`, `:164`) |
+| 15 | met | `recordWindow`; test rows 1-5 |
+| 16 | met | `:98`, `:102`; test row 6. The menu-exit order is not in the table (Pr1) |
+| 17 | met | `:198-200`, `:202-209` |
+| 18 | met | `:249`, `:148` |
+| 19 | met | `:199`, `:314` |
+| 20 | met | `:188-189` |
+| 21 | met | `:98`; test row 8 |
+| 22 | met | `windows.ts:259-290` |
+
+## 5. Findings
+
+### Spec
+
+None against the brief's items beyond B4's effect on item 3, which is listed under Behaviour.
+
+### Proof
+
+- **Pr1. G53's table leaves one branch of the rule and one macOS order without a row.**
+  - **The re-entry branch.** The hunk at `window-file.ts:97-99`:
+    `if (change === 'page-enter') { return { hold: { own: hold?.own ?? now, leaving: false }, state: null }; }`
+    - No row has a second `page-enter` while a hold exists, so `hold?.own ??` could be dropped without a row failing.
+    - The rules file asks for "one row per input that gives a different outcome".
+    - Failure scenario: a presenter presses F out and F in again during macOS's exit animation, giving `page-leave(FULL)`, then `page-enter(FULL)`. A later change that holds `now` there writes `fullScreen: true`, the next start opens the window in full screen, and the test stays green.
+  - **Case 16 left from the window menu.**
+    - Electron v44.5.1 `electron_api_browser_window.cc:221-227` (fetched with curl, `curl=0`) reads: `void BrowserWindow::OnWindowLeaveFullScreen() { #if BUILDFLAG(IS_MAC) if (web_contents()->IsFullscreen()) web_contents()->ExitFullscreen(true); #endif BaseWindow::OnWindowLeaveFullScreen(); }`.
+    - So on macOS the page's exit runs before `leave-full-screen` is emitted, with the window already out. Row 7 encodes the reverse: `['other', WINDOWED, FULL], ['page-leave', WINDOWED, WINDOWED]`.
+    - The order that does occur, `page-leave(WINDOWED)` with `hold.own.fullScreen` true followed by `other(WINDOWED)`, has no row.
+    - By reading `recordWindow`, that order gives `WINDOWED`, `WINDOWED`, which is correct. The gap is in the proof, not the code.
+    - This also corrects the first report's 3.1, which gave the reverse order for this path.
+    - I did not trace whether `ExitFullscreen` emits `leave-html-full-screen` synchronously inside that call.
+  - Fix: add the two rows.
+- **Pr2. The report's open items are the worktree's copy from before the ruling.**
+  - Main's `orchestrator-state.md:219-225` "Open items" list is now empty (`awk` over the section).
+  - The report quotes Z644 as open and says so itself (report line 9).
+  - The round order (state file :201) says to "Copy the open items from the state file at the moment you write it". This is minor and changes nothing at landing.
+
+### Standards
+
+- **St6. The test head comment names a ledger id, and its title drops the possessive.**
+  - `tests/server/desktop/window-file.test.ts:1-2`: `// Layer 4, server test. What ~/.oculus/window.json keeps of the main window while a page in it is` / `// in full screen (G53): ...`.
+  - A grep over `src` and `tests` for `\bG[0-9][0-9]?\b` outside this file printed nothing, so no other file names a guarded entry. `guarded.md` names the test, not the reverse, and the rules file treats a plan id in a comment as a defect.
+  - Title `:128`: `'keeps the window own state: $title'` should read "the window's own state". The `title` field quoting needs care if the apostrophe is added.
+  - The test must still be named in `agents/guarded.md` under G53 by file and title. That is the orchestrator's booking.
+- History words: `git diff 628ac4b01 -U0 | grep '^+'` over `src` and `config`, plus the test file, hit "before" and "still" five times. Each describes an order of events or a state, so none is a finding.
+
+### Behaviour
+
+- **B3. Cmd+Shift+F or Cmd+Shift+H moves the keyboard out of the full-screen box.**
+  - Place: `Present.svelte:220`, `if (event.altKey || event.ctrlKey || event.metaKey) return;`, with the shell's `find-in-files` branch (`workbench-keys.svelte.ts:193-197`).
+  - Failure scenario: a Search view is open in another pane of the page, and the presenter in full screen presses Cmd+Shift+F.
+    1. `openView` activates that Search view where it is (`opening.ts:63-64`), so the deck's tab stays shown and full screen stays.
+    2. `focusSearchBox` focuses an input outside the full-screen element, so nothing visible changes.
+    3. The next Right, Space or PageDown types into the hidden search box, and the deck does not move until a click on the slide.
+  - Cmd+Shift+B and Cmd+Alt+T (`runDefault`) may move focus the same way. Not verified.
+  - Fix, ending the cause for every path including programmatic focus: while `full`, a `focusout` from the box whose `relatedTarget` is a non-null element outside the box leaves full screen. Or `keys` prevents the default of modified keys in full screen except those that already end it.
+- **B4. The B1 fix makes the full-screen grid and the slide's links unreachable by keyboard.**
+  - Place: `Present.svelte:262-269`, the `default:` branch quoted above.
+  - Failure scenarios:
+    - In full screen the presenter opens the grid with `O` and presses ArrowDown or `j` to move the card cursor, then Enter. Nothing happens. In the pane the same keys reach `resolveKey` (cursor up, down, left, right, and `activate` on Enter with `cursorActive`, `keys.ts`) and work.
+    - Tab and Shift+Tab are swallowed, so neither a tile title nor a link in a slide can be reached by keyboard in full screen. Enter and Space are kept for a focused control (`:252`, `:267`), but that focus can only come from a pointer.
+    - Item 3's "the arrows ... keep their meaning, in and out of full screen" fails for the up and down arrows over the grid.
+  - The fix is the one the first report proposed, so the overreach is in the finding's suggestion as well as the build.
+  - Fix:
+    - In full screen, let through the card-cursor keys (`j`, `k`, `i`, `J`, `K`, ArrowUp, ArrowDown, and Enter while the cursor is active) when the grid is open, since they act on cards inside the box.
+    - Keep Tab inside the box: wrap from the last focusable element to the first, instead of swallowing it.
+  - Not verified by a run.
+
+## 6. Declined to judge
+
+- **Behaviours only a browser or the app shows:** focus, `cursor: none` over a scrollbar, the frame size under `:fullscreen`, the B2 timing during the macOS exit animation, and whether `runDefault` moves focus. None may be run here; the landing look settles them.
+- **Whether `ExitFullscreen(true)` emits `leave-html-full-screen` synchronously** inside `OnWindowLeaveFullScreen`: not traced past the quoted function.
+- **Event order on platforms other than macOS:** the app is packaged for darwin only.
+
+## Usage
+
+Reviewer over round 1: a99e636de1d29873b (per `orchestrator-state.md:82`), claude-opus-5-5. Tokens and minutes are not known to me; use the completion notice's figures.
+
+### Closed (round 1 was the last round; fixed at landing, inside the brief)
+
+- B3: fixed at landing, while `full` a `focusout` from the box to an element outside it leaves full screen.
+- B4: fixed at landing, the card-cursor keys pass while the grid is open and Tab stays inside the box.
+- Pr1: fixed at landing, the two rows added to G53's table.
+- St6: fixed at landing, the ledger id out of the test's head comment and the title's possessive.
+- Pr2: closed, the open item Z644 was ruled before the round's report; nothing to change.

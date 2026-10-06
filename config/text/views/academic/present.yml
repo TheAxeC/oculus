@@ -17,6 +17,8 @@ text:
         next: Next
         overview: Overview
         overview_glyph: cards
+        present: Present
+        present_tip: Show the deck on the whole screen (F, while the deck has the focus)
         previous: Previous
         results: Results
         title: Present

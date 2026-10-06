@@ -1,15 +1,14 @@
-In flight (6 of 6 slots):
-- E4g (the apps guide in docs/apps.md): repair round 1, base 31068a9de.
+In flight (5 of 6 slots):
+- E4g (the apps guide in docs/apps.md): refuted over round 1, landing next, base 31068a9de.
 - Q124 (every tree check with no limit, and the landing's vitest cache race): repair round 1 (the .svelte-kit/types race), base ba6a995f2.
 - O30b (the app's own build folders): built, under review, base dff7539f4.
 - D23 (language servers): building.
 - Q125 (HELP.md and DESIGN.md rewritten, the guides under docs/): building, base cfc9e60d9; Axel reads the new HELP.md and DESIGN.md before it lands.
-- PR1 (Present full screen): repair round 1 (the review's findings and G53's test), base 628ac4b01.
 
 Queued, in order (25 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
 - X3e (Files lists reordered by drag): prepared again under Z635 (a); once D23 has landed (both split Palette.svelte).
-- PR2 (Present decks from any folder): once PR1 has landed.
+- PR2 (Present decks from any folder): ready, PR1 has landed.
 - PR3 (Present decks edited and generated, PDF export): once PR2 has landed.
 - PR4 (Present's presenter screen): once PR3 has landed.
 - D28 (saving a file as VS Code does): once X3e has landed.
@@ -36,7 +35,8 @@ Queued, in order (25 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- E4 (the apps), 2026-10-06, the commit of this landing.
+- PR1 (Present full screen), 2026-10-06, the commit of this landing.
+- E4 (the apps), 2026-10-06.
 - A3 (scheduled runs), 2026-10-06, af7d8df07.
 - O30 (the native window in Electron), 2026-10-06, 8ed2d1f5a.
 - D44 (Submit on a .slurm file), 2026-10-05, 297349683.

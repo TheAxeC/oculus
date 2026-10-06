@@ -13,7 +13,8 @@
 
 <script lang="ts">
     // Layer 3, view. The public slide deck, live: one slide filling the pane, the arrow keys and
-    // the toolbar to move through it, and `O` for the grid of the whole deck.
+    // the toolbar to move through it, `O` for the grid of the whole deck, and the Present control
+    // or `F` for the slide on the whole monitor.
     //
     // A slide is drawn in a frame of 1280 by 720 px, the size its parts are laid out for, scaled
     // uniformly by `fit` to the pane and centred in it, so a slide keeps its proportions and its
@@ -34,7 +35,22 @@
     // owns the digits and the chords, and a deck that swallowed an arrow key wherever the reader
     // was looking would take the pane strip's own keys with it. The box takes the focus when the
     // view is mounted and on a press inside it, so the arrows work from the moment the deck is
-    // opened.
+    // opened. The keys are the arrows, Page Up and Page Down, Home and End, Space (the next slide,
+    // Shift+Space the previous one), `O` for the grid, `F` for full screen and Escape to close the
+    // grid.
+    //
+    // Full screen is the box's own: the browser draws the box alone, so the rail, the tabs and the
+    // toolbar are gone with no change to the shell, and leaving it puts the pane back as it was.
+    // Whether this box is the full-screen element is read from the document on every
+    // `fullscreenchange`, so a way out the page does not control (a browser tab's Esc, the app
+    // window's menu) is seen too. In full screen the box fills the screen on the page's background
+    // colour with the frame centred and edge to edge, a click on the slide moves to the next one,
+    // and the pointer hides after it has rested. The box leaves full screen when its tab is hidden,
+    // when the deck holds no slides and when the view unmounts, so a full screen never shows a
+    // hidden or an empty box. In full screen the shell's keys are held back, since what they open
+    // is drawn outside the box: the deck's keys, the card cursor's keys over the grid and Enter on
+    // a control act, Tab wraps inside the box, and the focus leaving for an element outside the
+    // box (a modified key such as Cmd+Shift+F) ends the full screen.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -52,7 +68,7 @@
         type PresentState
     } from '$lib/state/life/present';
     import { t } from '$lib/state/shared/words/text';
-    import { useState } from '$lib/state/client/use';
+    import { useShown, useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     const {
@@ -63,7 +79,32 @@
 
     let { instance }: ViewProps = $props();
 
+    /** How long the pointer rests over the box in full screen before it is hidden. */
+    const POINTER_REST_MS = 2000;
+
+    /** What a press or a click inside the slide is left to: the control's own action. */
+    const CONTROLS =
+        'a[href], button, input, select, textarea, summary, [contenteditable], [role="button"], [role="link"]';
+
+    /** What Tab stops at inside the box in full screen. */
+    const FOCUSABLE = `${CONTROLS}, [tabindex]`;
+
+    /** The card cursor's keys, which act on the overview grid's tiles inside the box. */
+    const GRID_KEYS = new Set(['j', 'k', 'i', 'J', 'K', 'ArrowUp', 'ArrowDown']);
+
+    const tabShown = useShown();
+
     let box = $state<HTMLElement | null>(null);
+
+    /** Whether this box is the document's full-screen element. */
+    let full = $state(false);
+    /** Whether the pointer has rested long enough in full screen to be hidden. */
+    let resting = $state(false);
+    let restTimer: ReturnType<typeof setTimeout> | undefined;
+    /** Whether a full-screen request is on its way, so a second press does not ask again. */
+    let entering = false;
+    /** Whether the view has gone, so a request that resolves after it leaves again. */
+    let unmounted = false;
 
     /** The deck box's measured size, 0 until it has been laid out and while its tab is hidden. */
     let width = $state(0);
@@ -102,6 +143,80 @@
         if (!held) box.focus();
     });
 
+    /** Whether `target` is, or is inside, a control of the slide that acts on a press itself. */
+    function inControl(target: EventTarget | null): boolean {
+        if (!(target instanceof Element) || box === null) return false;
+        const control = target.closest(CONTROLS);
+        return control !== null && box.contains(control);
+    }
+
+    /** A refused or superseded full-screen request leaves the pane as it is. */
+    const ignore = (): undefined => undefined;
+
+    function enterFull(): void {
+        if (box === null || entering) return;
+        const element = box;
+        entering = true;
+        element
+            .requestFullscreen()
+            .then(() => {
+                if (unmounted && document.fullscreenElement === element) {
+                    document.exitFullscreen().catch(ignore);
+                }
+            })
+            .catch(ignore)
+            .finally(() => (entering = false));
+    }
+
+    function leaveFull(): void {
+        if (box !== null && document.fullscreenElement === box) {
+            document.exitFullscreen().catch(ignore);
+        }
+    }
+
+    function toggleFull(): void {
+        if (box !== null && document.fullscreenElement === box) leaveFull();
+        else enterFull();
+    }
+
+    /** Follow the document's full-screen element; the box takes the focus when it becomes it. */
+    function syncFull(): void {
+        full = box !== null && document.fullscreenElement === box;
+        if (full) box?.focus();
+    }
+
+    /** The pointer moved over the box: show it, and hide it again once it has rested. */
+    function rouse(): void {
+        clearTimeout(restTimer);
+        resting = false;
+        if (full) restTimer = setTimeout(() => (resting = true), POINTER_REST_MS);
+    }
+
+    // The pointer's rest starts when full screen is entered, whether or not the pointer moves, and
+    // ends with it.
+    $effect(() => {
+        if (full) rouse();
+        else {
+            clearTimeout(restTimer);
+            resting = false;
+        }
+        return () => clearTimeout(restTimer);
+    });
+
+    // A full screen never outlives what it shows: a hidden tab, an empty deck or the view going.
+    $effect(() => {
+        if (full && (!tabShown() || rows.length === 0)) leaveFull();
+    });
+
+    $effect(() => {
+        const element = box;
+        if (element === null) return;
+        return () => {
+            unmounted = true;
+            if (document.fullscreenElement === element) document.exitFullscreen().catch(ignore);
+        };
+    });
+
     /**
      * Move, and put the keys in force, so the next arrow key reaches this pane and not the shell.
      */
@@ -136,13 +251,73 @@
                 event.preventDefault();
                 write({ overview: !grid });
                 return;
+            case 'f':
+            case 'F':
+                if (rows.length === 0) return;
+                event.preventDefault();
+                if (!event.repeat) toggleFull();
+                return;
+            case ' ':
+                if (inControl(event.target)) return;
+                event.preventDefault();
+                if (!event.repeat)
+                    write({ slide: event.shiftKey ? previous(held.slide) : next(held.slide) });
+                return;
             case 'Escape':
                 if (!grid) return;
                 event.preventDefault();
                 write({ overview: false });
                 return;
+            case 'Tab':
+                if (full) keepTab(event);
+                return;
             default:
+                // A key the deck does not own is not left to the shell in full screen: its keys
+                // open sheets, search and chords that are drawn outside the full-screen element,
+                // so the keyboard would be lost with the slide in view. The card cursor's keys act
+                // on the grid's tiles inside the box and pass while the grid is open, and a
+                // control inside the slide keeps Enter, which activates it.
+                if (!full) return;
+                if (grid && GRID_KEYS.has(event.key)) return;
+                if (event.key === 'Enter' && (inControl(event.target) || (grid && cursor !== null)))
+                    return;
+                event.preventDefault();
         }
+    }
+
+    /** Tab and Shift+Tab move through the slide's controls and wrap inside the box. */
+    function keepTab(event: KeyboardEvent): void {
+        if (box === null) return;
+        const stops = [...box.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+            (element) => element.tabIndex >= 0 && element.getClientRects().length > 0
+        );
+        const at = document.activeElement;
+        const first = stops.at(0);
+        const final = stops.at(-1);
+        if (first === undefined || final === undefined) {
+            event.preventDefault();
+            return;
+        }
+        if (event.shiftKey && (at === first || at === box)) {
+            event.preventDefault();
+            final.focus();
+        } else if (!event.shiftKey && at === final) {
+            event.preventDefault();
+            first.focus();
+        }
+    }
+
+    /** In full screen the focus leaving for an element outside the box ends the full screen. */
+    function focusLeft(event: FocusEvent): void {
+        const to = event.relatedTarget;
+        if (full && box !== null && to instanceof Node && !box.contains(to)) leaveFull();
+    }
+
+    /** In full screen a click on the slide, or on the letterbox around it, shows the next one. */
+    function advance(event: MouseEvent): void {
+        if (!full || grid || shown === null || inControl(event.target)) return;
+        if (window.getSelection()?.isCollapsed === false) return;
+        write({ slide: next(held.slide) });
     }
 
     /** Show a slide picked in the grid, and close the grid over it. */
@@ -174,6 +349,14 @@
             }}
         />
         <ToolButton
+            label={t('present.present')}
+            title={rows.length === 0 ? t('present.empty') : t('present.present_tip')}
+            pressed={full}
+            active={full}
+            onclick={toggleFull}
+            disabled={rows.length === 0}
+        />
+        <ToolButton
             label={t('slides.open')}
             title={t('slides.open_tip')}
             onclick={() => {
@@ -186,6 +369,8 @@
     </Toolbar>
 {/snippet}
 
+<svelte:document onfullscreenchange={syncFull} />
+
 <Pane title={t('present.title')} {bar}>
     <!-- The box is the deck's own key surface: it is focusable and named as a region, and the keys
          it takes move the reader through the deck rather than acting on the box itself. -->
@@ -193,6 +378,7 @@
     <div
         class="present"
         class:framed={!grid && shown !== null}
+        class:resting
         data-instance={instance.id}
         data-slide-key={shown?.key ?? ''}
         role="region"
@@ -202,7 +388,10 @@
         bind:clientWidth={width}
         bind:clientHeight={height}
         onkeydown={keys}
+        onfocusout={focusLeft}
         onpointerdown={() => box?.focus()}
+        onpointermove={rouse}
+        onclick={advance}
     >
         {#if rows.length === 0}
             <Empty message={t('present.empty')} glyph={t('present.empty_glyph')} />
@@ -243,6 +432,31 @@
         justify-content: center;
         height: 100%;
         overflow: hidden;
+    }
+
+    /* In full screen the box is the screen, drawn on the page's background colour, which stands in
+       for the wallpaper the shell draws outside the box. What is taller than the screen scrolls,
+       and the frame goes edge to edge, centred, with no border and no corner. */
+    .present:fullscreen {
+        background: var(--bg);
+        overflow: auto;
+        padding: 10px 12px;
+    }
+
+    .present.framed:fullscreen {
+        overflow: hidden;
+        padding: 0;
+    }
+
+    .present:fullscreen .frame {
+        border: none;
+        border-radius: 0;
+    }
+
+    /* A pointer that has rested in full screen is hidden over every part of the box. */
+    .present.resting,
+    .present.resting :global(*) {
+        cursor: none;
     }
 
     /* The box the scaled frame occupies on screen: the frame's transform does not change its layout

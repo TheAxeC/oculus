@@ -2,6 +2,15 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z647 (2026-10-06, step E4g)
+
+The question: E4g's round fix selects an asking app's tab in its pane, but a tab on a page not on screen stays unseen while the app's call waits, and DESIGN.md and the apps guide say the reader sees it.
+
+- Chosen: (a) the question switches to the page that holds the tab before selecting it, as the status bar's jump to an unsaved file does.
+- Not chosen: (b) DESIGN.md and the guide narrowed to "selected in its pane", leaving the question unseen, the lazy option.
+
+Where it is built: E4g's landing. Booked in `plan.md` Rulings.
+
 ## Z646 (2026-10-06, step Q125)
 
 The question: Q125's builder handed back at its first run: the brief named three guides, so about 100,000 of HELP.md's 165,450 characters (the window, the views table's detail, files and search, terminals and commands) had no destination, and HELP.md and DESIGN.md would each have been cut because the other said a behaviour, leaving it only in code comments.

@@ -13,7 +13,13 @@ import { BrowserWindow, screen, shell, type WebContents } from 'electron';
 import { linkDecision, movedPort } from '../decide/links.ts';
 import { placeWindow, rectOf, type Rect } from '../decide/place.ts';
 import { WINDOW_BACKGROUND, windowPreferences } from '../decide/window-options.ts';
-import { NO_ZOOM, type WindowState } from '../decide/window-file.ts';
+import {
+    NO_ZOOM,
+    recordWindow,
+    type PageFullScreen,
+    type WindowChange,
+    type WindowState
+} from '../decide/window-file.ts';
 import { EVENT } from '../decide/channels.ts';
 import { oculusAnswers } from '../server/health.ts';
 import { createFindBar, type FindBar } from './find-bar.ts';
@@ -210,11 +216,26 @@ export function createWindows(deps: WindowsDeps): Windows {
         };
     }
 
-    function remember(entry: Entry): void {
-        if (entry.kind === 'main' && !entry.win.isDestroyed()) deps.store.keep(stateOf(entry));
+    /** The window's own state of each main window whose page is in full screen. */
+    const held = new WeakMap<Entry, PageFullScreen>();
+
+    /** Keep what a change of a main window leaves the file holding (decide/window-file.ts). */
+    function record(entry: Entry, change: WindowChange): void {
+        if (entry.kind !== 'main' || entry.win.isDestroyed()) return;
+        const recorded = recordWindow(held.get(entry) ?? null, change, stateOf(entry));
+        if (recorded.hold === null) held.delete(entry);
+        else held.set(entry, recorded.hold);
+        if (recorded.state !== null) deps.store.keep(recorded.state);
     }
 
-    /** Keep a main window's state when it moves, resizes, changes state or closes. */
+    function remember(entry: Entry): void {
+        record(entry, 'other');
+    }
+
+    /**
+     * Keep a main window's state when it moves, resizes, changes state or closes, and when its page
+     * enters or leaves full screen.
+     */
     function keepState(entry: Entry): void {
         for (const event of [
             'moved',
@@ -224,10 +245,12 @@ export function createWindows(deps: WindowsDeps): Windows {
             'enter-full-screen',
             'leave-full-screen'
         ] as const) {
-            entry.win.on(event as 'moved', () => remember(entry));
+            entry.win.on(event as 'moved', () => record(entry, 'other'));
         }
+        entry.win.on('enter-html-full-screen', () => record(entry, 'page-enter'));
+        entry.win.on('leave-html-full-screen', () => record(entry, 'page-leave'));
         entry.win.on('close', () => {
-            remember(entry);
+            record(entry, 'other');
             deps.store.flush();
         });
     }
@@ -235,15 +258,33 @@ export function createWindows(deps: WindowsDeps): Windows {
     /** Tell a popped-out window's page where its window is, once it stops moving. */
     function tellBounds(entry: Entry): void {
         let timer: NodeJS.Timeout | undefined;
+        // While the page is in full screen the window is the size of the monitor, and those are not
+        // the bounds the float is kept at. On macOS the page's leave comes before the window has
+        // left its own full screen, so a window that was not in full screen before is let go by its
+        // own `leave-full-screen`.
+        let pageFullScreen = false;
+        let windowWasFull = false;
         const tell = (): void => {
             clearTimeout(timer);
+            if (pageFullScreen) return;
             timer = setTimeout(() => {
-                if (entry.win.isDestroyed()) return;
+                if (entry.win.isDestroyed() || pageFullScreen) return;
                 entry.win.webContents.send(EVENT, 'bounds', rectOf(entry.win.getContentBounds()));
             }, 500);
         };
         entry.win.on('moved', tell);
         entry.win.on('resized', tell);
+        entry.win.on('enter-html-full-screen', () => {
+            pageFullScreen = true;
+            windowWasFull = entry.win.isFullScreen();
+            clearTimeout(timer);
+        });
+        entry.win.on('leave-html-full-screen', () => {
+            if (windowWasFull || !entry.win.isFullScreen()) pageFullScreen = false;
+        });
+        entry.win.on('leave-full-screen', () => {
+            pageFullScreen = false;
+        });
         entry.win.on('closed', () => clearTimeout(timer));
     }
 

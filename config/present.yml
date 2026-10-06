@@ -19,7 +19,7 @@ deck:
             - { label: 'Privacy / federated', color: '#2563eb' }
             - { label: 'Heart | ECG', color: '#e2374d' }
             - { label: 'Methods frontier', color: '#ea580c' }
-        hint: 'left / right to move | <b>O</b> for the overview | each project slide: equation | specs | method | results'
+        hint: 'left / right to move | <b>O</b> for the overview | <b>F</b> for full screen | each project slide: equation | specs | method | results'
         closing_kicker: 'Thank you'
         closing_title_html: 'Questions &amp;<br>collaborations welcome'
         closing_lede: 'Happy to go deeper on any one: the clinical motivation, the optimization and theory, or the data pipeline. Several are open to collaborators across computer science, psychology, and medicine.'

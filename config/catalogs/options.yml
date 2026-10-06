@@ -1004,7 +1004,7 @@ options:
             heading: presentation
             section: Title slide
             description: The line of keyboard hints at the foot of the title slide.
-            default: 'left / right to move | <b>O</b> for the overview | each project slide: equation | specs | method | results'
+            default: 'left / right to move | <b>O</b> for the overview | <b>F</b> for full screen | each project slide: equation | specs | method | results'
             control: text
         deck.meta.closing_kicker:
             heading: presentation
