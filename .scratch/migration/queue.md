@@ -12,7 +12,7 @@ Queued, in order (23 steps):
 - D15 (PDF reading): once D45 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D41 (links in Markdown checked): once M7 has landed.
-- M8 (the hub's YAML checked in the editor): being prepared, its premise survey running.
+- M8 (the hub's YAML checked in the editor): stopped at /spec on Z672 (eight choices for Axel); after his rulings it waits for D23c to land.
 - D43 (LaTeX navigation): being prepared, its premise survey running.
 - D23b (cross-file language features): waits until D23c lands (both restructure `server/machine/lsp/`, `relay.ts` and `transport.ts`; not a simple merge); its recheck (`agents/reviews/D23b-premise-recheck.md`) names nine choices for Axel, raised at its /spec.
 - D33 (the Problems view): being prepared, its premise survey and its diagnosis of the card cursor after a reload running.
