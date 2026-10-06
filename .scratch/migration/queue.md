@@ -1,9 +1,9 @@
-In flight (1 of 6 slots):
+In flight (2 of 6 slots):
 - D23 (language servers): repair round 1 running, base 465efcdfb.
+- Q126 (DESIGN.md reduced where Q125 left it short, Z654): builder running, base 60263c8d.
 
-Being prepared (2):
-- PR3 (Present decks edited and generated, PDF export): ruled (Z664, Z665, Z666), brief check running.
-- Q126 (DESIGN.md reduced where Q125 left it short, Z654): brief written, brief check running.
+Being prepared (1):
+- PR3 (Present decks edited and generated, PDF export): ruled (Z664, Z665, Z666), brief check done, its findings being closed.
 
 Queued, in order (23 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).

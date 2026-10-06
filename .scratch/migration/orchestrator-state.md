@@ -40,6 +40,19 @@ dispatch:   # steps in flight, up to six (Z632)
   reviewer_report: agents/reviews/D23-refuter.md (a0a498ede0a9659bb, claude-opus-5-5, 238,723 tokens, 126 tool uses, 22.5 min)
   landing: not-started
   round: 1 (sent 2026-10-06 to a4832e8f1d3fc04a3: agents/briefs/D23-round1.md, 17 items, rulings Z657 to Z661)
+- step: Q126
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: afcd520222de3ff13 (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/Q126
+  base: 60263c8d
+  launched: 2026-10-06
+  report: agents/reviews/Q126-report.md
+  brief_check: agents/reviews/Q126-brief-check.md (a184d66639bbbd679, claude-opus-5-5, 193,539 tokens, 55 tool uses, 8.1 min)
+  shared_paths: with D23: tools/oculus/DESIGN.md (D23 writes the socket, Hot reload, Processes, the editor theme and status bar paragraphs on a pre-Q125 base; item-level edits, whichever lands second carries the other's text into the item as the other left it, Z642's rule); with PR3 (being prepared): DESIGN.md's Present items, docs/views.md and docs/files-and-search.md (the same rule)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
