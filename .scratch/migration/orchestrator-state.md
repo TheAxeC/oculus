@@ -40,6 +40,19 @@ dispatch:   # steps in flight, up to six (Z632)
   round: 0
   builder_usage: 154,994 tokens, 322 tool uses, 82.4 min
   reviewer_report: agents/reviews/E4g-refuter.md (a1387d637f72b6115, claude-opus-5-5, running)
+- step: D23
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a4832e8f1d3fc04a3 (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/D23
+  base: f0ee4b30e
+  launched: 2026-10-06
+  report: agents/reviews/D23-report.md
+  brief_check: agents/reviews/D23-brief-check.md (its agent id and usage are not in the ledger); the brief corrected to main at a564e4e29 by a3954c49b6f0bf078 (claude-opus-5-5; usage not recorded: no completion notice was read)
+  shared_paths: with E4g: config/text/app.yml:12 (the key sheet line, the second landing writes both changes), HELP.md and DESIGN.md (disjoint lines); with O30b: DESIGN.md (D23's decision after O30b's :436, the second puts its item after the other's), HELP.md (disjoint); with Q123: pty/channel.ts (disjoint hunks), pty/routes.ts (adjacent imports), tests/routes/sessions/terminal-actions.test.ts (adjacent imports), tests/server/machine/pty/channel.test.ts (the second to land rewrites the other's subscribed() calls to its form), DESIGN.md:375 (one line, both edits kept); with Q124: package.json (disjoint lines); docs/diagrams regenerated at landing; so the merge is simple
+  landing: not-started
+  round: 0
 - step: O30b
   executor: agent
   worker: claude:sonnet at ordo-high
