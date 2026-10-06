@@ -38,6 +38,19 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with O30b: DESIGN.md's file tree (E4g adds docs/apps.md under docs/ at :79-80, O30b adds its build folders higher in the same block; both lines kept) and HELP.md (E4g :21, :82 and :210-221, O30b :186, :365 and :367, disjoint); so the merge is simple
   landing: not-started
   round: 0
+- step: Q123
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: aaad76d3aba1c8ed9 (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/Q123
+  base: a686df2ad
+  launched: 2026-10-06
+  report: agents/reviews/Q123-report.md
+  brief_check: agents/reviews/Q123-brief-check.md (aa96e2257854c7ff2, claude-opus-5-5, 181,338 tokens, 47 tool uses, 9.0 min), closed in the brief by a8ea7076e2eefc9f5 (claude-opus-5-5; 146,933 tokens, 29 tool uses, 6.8 min)
+  shared_paths: with E4g and O30b: DESIGN.md (Q123 :375, E4g :79-80 and :83, O30b's tree and :436, disjoint) and HELP.md (Q123 :147, E4g :21, :82, :210-221, O30b :186, :365, :367, Q124 :371-373, disjoint); docs/diagrams regenerated at landing; so the merge is simple. D23's channel.ts and channel.test.ts are judged at D23's /spec. Landing waits on Z634.
+  landing: not-started
+  round: 0
 - step: Q124
   executor: agent
   worker: claude:sonnet at ordo-high
