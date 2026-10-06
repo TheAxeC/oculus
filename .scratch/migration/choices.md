@@ -25,19 +25,9 @@ The question: three points the builder proposed, none visible to the reader.
 - Chosen: `held.ts` and `watch.ts` move into a subfolder `server/machine/lsp/held/`, since the language server folder is at its 10-item limit; the page learns which folder and language a library file belongs to from its own request, so no new message between server and page is added; a small editor command selects the word at the position a file is opened at.
 - Not chosen: a new message from the server naming the folder and language of each library file (more protocol for a fact the page already has).
 
-## Z671 (1) (2026-10-07, step D45, Axel): clicking in the PDF jumps to the .tex line, also in the desktop app
+## Z671 (2026-10-07, step D45, Axel)
 
-The question: D45's "view the PDF in the browser" opens a separate browser tab. When oculus runs as the desktop app, that tab opens in Chrome while the editor is in the app, and the planned browser feature that passes the click between the two cannot cross between two programs, so the click would not reach the editor.
-
-- Ruled (a) by Axel: the click goes through oculus's server, which both the PDF tab and the editor are connected to, so it works in Chrome and in the app alike, as LaTeX Workshop's browser viewer talks to VS Code through its local server.
-- Not chosen: (b) opening that PDF tab in an app window (changes the guarded rule that an app window shows only oculus's page); (c) no jump from the browser tab in the app (the lazy option).
-
-## Z671 (2) (2026-10-07, step D45, the orchestrator, automode): the names of a file's two "open in a browser" items
-
-The question: Axel ruled both items kept and "Open in Browser Tab" a garbage name, since it does not say whether the tab is Chrome's or oculus's.
-
-- Chosen: "Open in Default Browser" for the existing item on every file that has it (the file itself, shown by the browser), and "View LaTeX PDF in Default Browser" for D45's oculus PDF viewer with the jump to the `.tex`; both renames built in D45.
-- Not chosen: "Open in Browser" and "Open Linked to Source in Browser" (still does not say which program); the current names (the lazy option).
+Ruled by Axel, so not an automode choice: a PDF opens four ways. "Open in New Tab" (a new OculusTab with oculus's PDF viewer); "Open in New Window" (a new oculus window holding that OculusTab: a ChromeTab with oculus in Chrome, a new oculus desktop window with the oculus desktop window); "Open in Browser" (a ChromeTab with Chrome's PDF viewer, the existing "Open in Browser Tab" renamed); the Preview program. A click on a word in oculus's PDF viewer opens the `.tex` at that line in oculus. Replaces the automode names "Open in Default Browser" and "View LaTeX PDF in Default Browser" and the ChromeTab-only viewer page.
 
 ## Z672 (1) (2026-10-07, step M8, the orchestrator, automode): one name for a reference to another file
 

@@ -37,7 +37,7 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/PR3-brief-check.md (a8ea4645a98e6dde0, claude-opus-5-5, 218,976 tokens, 88 tool uses, 12.1 min)
   shared_paths: with Q126 and D23: tools/oculus/DESIGN.md, docs/views.md, docs/files-and-search.md, docs/configuration.md, HELP.md (item- and paragraph-level edits; whichever lands second carries the other's text, Z642's rule); part 8 waits for Axel's ruling Z667, sent to the builder by message
   builder_usage: a348cc74b67ed634e, 200,916 tokens, 54 tool uses, 30.0 min (report agents/reviews/PR3-report.md)
-  reviewer_report: running (aa378ab34c21e2821, claude-opus-5-5)
+  reviewer_report: agents/reviews/PR3-refuter.md (aa378ab34c21e2821, claude-opus-5-5, 126,998 tokens, 108 tool uses, 15.8 min)
   landing: not-started
   round: 0
 - step: D23c

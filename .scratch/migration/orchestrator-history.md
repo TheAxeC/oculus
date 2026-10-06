@@ -5,7 +5,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
 - Z672 (2026-10-07): automode, M8's eight choices, each its recommendation.
-- Z671 (2026-10-07): (1) Axel (a), the jump over the server socket; (2) the names in automode, "Open in Default Browser" and "View LaTeX PDF in Default Browser".
+- Z671 (2026-10-07): Axel, the four ways to open a PDF: Open in New Tab, Open in New Window (a new oculus window), Open in Browser (Chrome's viewer, the existing item renamed), Preview.
 - Z673 (2026-10-07): automode, D23c's handed-back cases (case 1 on `idlelib`, the interpreter-prefix exception to the dot rule, the `held/` folder, the library address's root from its request, the `word` command).
 - Z643 (2026-10-06, step Q125): Q125's diagrams and guides in the Help group: (a) the Help group lists the new guides and DESIGN.md as documents (Configuration guide, Source Control guide, Design, after E4g's Apps guide; the first two take h8 and h9, Design is opened from the catalogue with no chord, since a chord holds one digit), and DESIGN.md's diagrams are drawn in the doc view as the manual's are now, cut into diagram parts in the page's text colour, so the diagrams the developer sections took out of HELP.md stay readable in oculus; the manual keeps no diagram. Closed by the orchestrator in automode, 2026-10-06; in `choices.md`.
 - Z642 (2026-10-06, step Q125): whether Q125 waits for the steps writing HELP.md or DESIGN.md to land. Closed by Axel, 2026-10-06: "It does though", "Q125 is very clear on what it does, thus the merge should be simple"; Q125 runs beside them.
