@@ -32,7 +32,7 @@ Queued, in order (24 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- Q124 (every tree check with no limit, and the vitest races), 2026-10-06, a350a2dc5.
+- Q124 (every tree check with no limit, and the vitest races), 2026-10-06, d163a606c.
 - O30b (the app's own build folders), 2026-10-06, 4f97e9fad.
 - E4g (the apps guide), 2026-10-06, 7e6c14d8c.
 - PR1 (Present full screen), 2026-10-06, 1c36ba0c6.
