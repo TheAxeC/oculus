@@ -1,8 +1,8 @@
-In flight (1 of 6 slots):
+In flight (2 of 6 slots):
 - PR3 (Present decks edited and generated, PDF export): builder running, base 272f60b4 (Z667 ruled (a), sent to the builder).
+- D23c (library definitions read-only, the symbol selected on open): builder running, base 951b61e3.
 
-Queued, in order (24 steps):
-- D23c (library definitions read-only, the symbol's column on open; Z669 (a), Z670 (a)): brief checked and its findings closed; worktree and builder next.
+Queued, in order (23 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): stopped at /spec on Z671; (2) ruled (a), the names and (1) still open.
 - X3e (Files lists reordered by drag): being prepared again under Z635 (a), its premise recheck running.
 - PR4 (Present's presenter screen): once PR3 has landed.

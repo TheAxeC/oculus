@@ -38,6 +38,19 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with Q126 and D23: tools/oculus/DESIGN.md, docs/views.md, docs/files-and-search.md, docs/configuration.md, HELP.md (item- and paragraph-level edits; whichever lands second carries the other's text, Z642's rule); part 8 waits for Axel's ruling Z667, sent to the builder by message
   landing: not-started
   round: 0
+- step: D23c
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a80adc4082930a5ef (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/D23c
+  base: 951b61e3
+  launched: 2026-10-06
+  report: agents/reviews/D23c-report.md
+  brief_check: agents/reviews/D23c-brief-check.md (a81066bbccca96733, claude-opus-5-5, 188,115 tokens, 51 tool uses, 7.8 min)
+  shared_paths: with PR3: tools/oculus/DESIGN.md, docs/views.md, docs/files-and-search.md (sentence-level edits in different items: D23c's language server, References and locked-file items, PR3's Present items; whichever lands second carries the other's text, Z642)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
