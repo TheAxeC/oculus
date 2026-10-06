@@ -533,3 +533,239 @@ Cases marked "not verifiable" need the app's windows, so they cite the report's 
 
 ## Usage
 Served model claude-opus-5-5; my tokens, tool uses and time are not known to me.
+
+# Repair round 2, refuted
+
+**Repair round 2, refuted.** I changed nothing in the worktree or the ledger, invoked no skill and started no agent. The only git commands I ran were `git diff b5299f4e5` and `git status --short`, from inside the worktree. I never started the app and never took focus. I ran no curl, touched neither port 8787 nor port 8790, and never opened `config/local.yml`.
+
+One command I meant to run in the foreground (a `find` over `/private/tmp/claude-502`) went over the 120 s limit and was moved to the background. I stopped it with TaskStop. Its partial output gave the builder's run folder, which sits in this session's scratchpad (`scratchpad/cases/r27.*`, `scratchpad/o30-look/app.log`). I read those files and did not change them.
+
+## Summary
+- **Item 5 (Source.svelte) is not met once the step lands.** The two files the builder split out, `save/LockedCode.svelte` and `save/locked-words.ts`, are byte for byte the files D44 already landed on main. A three-way merge of the file, computed in my scratchpad, gives 523 lines on main. The limit for a component is 520.
+- **Z606 is built on the page side, with no bridge event.** The socket's reconnect re-runs the page load before it subscribes again, and `postTerminal` and `postCommand` re-run the load and retry once after a 403. A Chrome tab therefore recovers the same way the app's windows do.
+- **Three behaviour defects come with Z606 (B2-1 to B2-3).**
+  - Two token renewals that overlap can resolve without the new token being installed. The socket's subscription then carries the stale token, and the socket stays unable to write until the next reconnect.
+  - Every reconnect now holds its subscription back for the length of a page load, so keys typed in that gap are lost without any sign.
+  - After a Restart on another port, `moveTo` loads each window at the new address without carrying the arrangement or the unsaved text.
+- **The typed line in an open terminal after a Restart is still unexplained.** The app's own log rules out the token check as the place it was dropped in run r27.
+- **Two document sentences are now false.** One is at `appearance.ts:89`, the other at `DESIGN.md:396`.
+
+## Verification (rerun by the reviewer, from the worktree's tools/oculus)
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH bash ~/.claude-work/skills/land/templates/checks.sh .../orchestrator-state.md
+ok      ASCII gate (0.6 s)
+ok      prettier (1.4 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.0 s)
+ok      eslint (7.5 s)
+ok      svelte-check (95.4 s): 1791247179507 COMPLETED 378 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (242.6 s): Duration  239.12s (...)
+test:quick: 243.3 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+checks: 1 commands passed
+(uptime at the end: load averages 56.54 41.18 26.78; another agent's vitest and a diagnose tree were running)
+
+$ npx vitest run tests/checks            (the round brief's form, default 5 s limit)
+Test Files  4 failed | 12 passed (16) / Tests  7 failed | 222 passed (229)
+every failure "Test timed out in 5000ms" (html-sites, size and order rows among them)
+
+$ npx vitest run tests/checks --tagsFilter '!slow' --testTimeout 0 --hookTimeout 0   (test:checks' own flags)
+Test Files  1 failed | 14 passed | 1 skipped (16) / Tests  2 failed | 224 passed | 3 skipped (229)
+FAIL diagrams.test.ts > ... are named stale, every one at once ... : Test timed out in 60000ms
+FAIL diagrams.test.ts > ... reads a label node by the box Graphviz drew ... : Test timed out in 30000ms
+
+$ npx vitest run tests/checks/imports/order.test.ts tests/checks/diagrams/diagrams.test.ts --testTimeout 0 --hookTimeout 0
+Test Files  1 failed | 1 passed (2) / Tests  2 failed | 56 passed (58); the same two diagrams rows, timed out at their own 60 s and 30 s limits; order.test.ts all 13 pass (load 28 to 46)
+
+start.test.ts: not run (it starts Electron).
+sh utils/folder-check.sh: no output, exit 0
+node --check src/desktop/preload.cjs: exit 0
+perl ASCII gate over src tests config: prints nothing, exit 0; LC_ALL=C grep over HELP/README/DESIGN/package.json/graphs.mjs/app-icon.svg: exit 1
+awk 'length>100' src/desktop/decide/window-file.ts: nothing
+sh utils/unused-exports.sh vs O30-base/unused-exports.txt: "Unused exports (256)" vs 255; added parent.ts: parentOf, askParentToPick and type ParentPort; engineDir and DEFAULT_PORT gone. Matches the report.
+wc -l src/lib/views/sources/source/Source.svelte: 509 (worktree); main's: 520
+```
+
+The diagrams rows are in `diagrams.test.ts`, a file the step does not change. Under spec.md "Verify before you report" they are not counted against the step. Its other 43 rows, the committed-diagrams match among them, pass.
+
+## Verdicts per round 2 item
+1. **Z607, start.test.ts: holds, by reading.**
+   - The harness (`app-harness.ts:16-25`) replaces `show`, `showInactive`, `focus` and `moveTop` on `BrowserWindow.prototype`, and replaces `dialog.showMessageBox` with a promise that never resolves.
+   - Windows are made with `show: false` (`windows.ts:271`).
+   - The cleanup waits on `exit`, then after `GRACE_MS` ends the servers and the app by their pids (`start.test.ts:132-146`).
+   - The Quit row reads the server pid before Quit (`:274-276`) and checks `ESRCH` after `exit` (`:281`).
+   - The `slow` tag is at `:13`.
+   - I did not run the file.
+2. **Z606: partial.**
+   - What is built is the page-side mechanism, with no bridge event: `socket.svelte.ts:215-229`, `writes.svelte.ts:159-163,177-186,523`, `pty-io.ts:130-143`, and `app.ts:234-241`, which reloads no window.
+   - The typed line is not shown (P2-1).
+   - Defects B2-1, B2-2 and B2-3 come with it.
+3. **S-a: holds, by reading.** `windows.ts:57-58,142`; `app.ts:123-125`. Not run.
+4. **P-a: holds.** `window-file.ts` has no line over 100 columns; `state/shared/page/install.ts` exists; `order.ts:100-105`; the order check passes with test:checks' flags.
+5. **St-a: violated.** See S2-1.
+6. **B-a: holds.** `bridge.ts:142` uses `getContentBounds()`; the target answers through `DROP_TAKEN` (`bridge.ts:166-170`, `desktop-windows.svelte.ts:31`); the drop and the title-bar release are in r27.out. B2-4 remains.
+7. **B-b: holds, by reading.** `commands.ts:68-113` uses a trailing timer of `SCROLL_REST_MS = 200`.
+8. **St-c: holds.** HELP.md:353.
+9. **P-c and P-d: holds as reported, for the part I checked.**
+   - r27.out shows the punctuation outcome: `["receive","relieve",...]`.
+   - The apostrophe and space outcomes are quoted from r28 and r29, which I did not open.
+   - Cmd+X and Cmd+Z are reported as observed, not as a pass.
+10. **P-e and P-f: partial.** The first line and the before/after row (report :639) are current. Two stale lines are left (P2-3).
+
+## The points the brief asked me to check
+- **Z606.**
+  - The builder built the page-side form. `grep` of `src/desktop` finds no restart event.
+  - A Chrome tab runs the same `socket.svelte.ts`, `writes.svelte.ts` and `pty-io.ts`, so by reading it recovers its token on any reconnect, with B2-1 and B2-2.
+  - The new shapes: `renewToken` is an internal method of the writes store. `DROP_TAKEN` and `answerDrop` are a channel between the app's own preload and its host, as `SAVE_LAYOUT` is. `Windows.moveTo` and `WindowsDeps.followed` are internal to the host. None is a user-visible shape. The 200 ms rest and the harness, which the report lists as "wire shapes", are not shapes at all.
+- **The typed line after a Restart.** P2-1 below gives what a read settles and what it does not.
+- **start.test.ts.**
+  - No window can show through any call the app makes in the five rows. `maximize` and `setFullScreen` (`windows.ts:326-327`) run only with a saved `window.json`, and the scratch HOME has none.
+  - The cleanup has its fallback.
+  - The Quit row checks the pid.
+  - The `process.stderr.write` at `:156` prints the recorder's record once per app run and asserts nothing. It carries the record that item 1 asked the report to quote. It shows only which recorded calls were made; it cannot see a path the recorder does not replace.
+  - Each app start runs `vite build` (`app.ts:284-294`), so the file rebuilds `build/` four times per run. That cost is known; I raise no finding on it.
+- **The 200 ms timer.** It is product code, a trailing debounce of a scroll that has no "scroll ended" event. No test exists for it (`grep -rn followFirstLine tests` prints nothing), and no test waits on it. It is not the case spec.md's rule on test timing covers.
+- **The Source.svelte split.** It is sound as a split: the derived value, the markup and the style moved together, and Svelte draws the two elements straight into the parent grid. In the worktree the file is 509 lines. On main the split already exists, so it removes nothing there (S2-1).
+- **The order-check timeouts.**
+  - No slow tag is needed.
+  - `test:checks` and the landing list run `tests/checks` with `--testTimeout 0 --hookTimeout 0` (`package.json:14`).
+  - `order.test.ts` passes under those flags in my run.
+  - The 5 s timeouts come only from the round brief's own form, `npx vitest run tests/checks` without those flags.
+  - The rule at `orchestrator-state.md:108` is for a red at landing, which this form never produces.
+- **Breakage code.** I grepped every added line of the diff and every untracked file under src, tests and config for `mutat|revert|inject|sabotag|\bfault|break(ing)? (the|it)|remove(d)? the (code|check)`: 0 hits. The hits on `default` from a first, looser pattern were false.
+
+## Verdicts per O30.md item (the whole diff)
+- **1:** violated by B2-3 (Restart onto another port) and P2-1 (typing after a Restart unverified).
+  - 1.1 holds: `login-env.ts`, `app.ts:300-306`.
+  - 1.2 holds: `health.ts`, `app.ts:250-272`.
+  - 1.3 holds: `args.ts:12-37` follows Z598.
+- **2:** holds (`app.ts:64-68,161-167`).
+- **3:** holds. G47's window options row; `windows.ts:174-191`.
+- **4:** holds by reading.
+- **5:** holds. G47 row 1; `windows.ts:104-110`.
+- **6:** holds by reading; the full-screen role is not verified.
+- **7:** holds.
+- **8:** holds, with B2-4.
+- **9:** holds by reading; the real sheet goes to the look.
+- **10:** holds, as the cases ruling's item 1 rules.
+- **11:** holds, as the cases ruling's item 2 rules.
+- **12:** holds.
+- **13:** holds.
+- **14:** holds per the earlier packaging runs; not rerun this round.
+- **15:** holds by the files being present; the drawing goes to the look.
+- **16:** violated by St2-2 (DESIGN.md:396).
+
+## Verdicts per case
+- **Not verifiable without the app's windows** (the report's runs stand):
+  - 1, 3, 6, 8, 10, 11, 13, 15, 22, 23, 26, 28, 34, 36, 38, 40, 42 to 44: the report's runs.
+  - 4, 5, 7, 32, 33: G48 rows, read and not run by me; the report quotes 5 passed.
+  - 20, 31, 39: the look.
+- **Met:**
+  - 2, 9, 12, 14, 16, 17, 35, 41: met per the earlier runs (unchanged this round).
+  - 18, 29, 30: met (G47 rows, in the checks run).
+  - 25: met by reading.
+  - 27: met per r27.out (Search moved into the popped-out window; the title-bar release opened window 3).
+  - 37: met (the callers are green in the checks run).
+- **Partial:**
+  - 19: as in the earlier reviews.
+  - 21: Monaco's edit keys, full screen, and the terminal's Cmd+X and Cmd+Z are not shown.
+  - 24: Restart is shown without a reload, but typing after it is not (P2-1).
+
+## Findings
+
+### Spec
+- **S2-1. Source.svelte is 523 lines once the step lands; item 5 is unmet.**
+  - **Where:** `src/lib/views/sources/source/Source.svelte:99-100,154,467-468` in the worktree, against main's `Source.svelte` at 520 lines.
+  - **The hunks:** `+ import LockedCode from './save/LockedCode.svelte'; + import { lockedWords } from './save/locked-words';`, then `+ setSourceFirst,`, `+ first={draft.first}` and `+ onfirst=...`.
+  - **The evidence:**
+    - `diff` of main's `save/LockedCode.svelte` and `save/locked-words.ts` against the worktree's prints nothing; both came in with D44 (297349683).
+    - `git merge-file -p` (ours = main, base = O30-base, theirs = worktree) gives one conflict, at those two imports, and 528 lines. Resolved to main's side, that is 523.
+  - **What is wrong:** the round brief asked for "at or under 520 lines with this step's lines in it". Main is 520 before the step's three lines.
+  - **Failure:** the size rule (spec.md, "What every package obeys") is broken on main.
+  - **Size:** not small. At landing, one more concern has to move out of main's `Source.svelte`, by the orchestrator's judgment, or this is raised. Verdict: item 5 violated.
+
+### Proof
+- **P2-1. The typed line after a Restart is not shown, and the run cannot tell where it was lost.**
+  - **The run:** `cases/r27.sh` pastes with `keys.mjs ... "cmd+v=paste"` after the Restart. r27.out shows `pane:  words|kept words|axelfaes@YQ530VVFGK hub %|`. The `kept words` line came from `tmux send-keys`, not from the page.
+  - **The control exists from round 1.** r12.out shows the same paste route putting `hello world` in a pane, on the round 1 tree.
+  - **What a read settles: the drop was not at the token check.**
+    - A keystroke from a socket that never carried the token is dropped at `channel.ts:497-499`, which prints `pty: input on <channel> from a socket without the write token`.
+    - Server stderr reaches the app's log (`process.ts:94`, and the log's `[server] sessions watch` lines are stderr).
+    - `grep -c "pty" scratchpad/o30-look/app.log` prints 1, a build line. No such refusal follows the second `[server] oculus on http://127.0.0.1:8819` line.
+  - **The places that remain.** The keystroke was either:
+    - never sent by the page: `socket.send` returning false (`socket.svelte.ts:163-166`), `order.hold` holding it behind a grid attach (`pty-wire.ts:39-40`), or xterm producing no `onData`; or
+    - dropped without a log at `channel.ts:501`, because the new socket was not attached to that terminal's channel. That happens when the channel left `channels` through `unsubscribePty` on a grid close (`TerminalGrid.svelte:386`).
+  - **A lead in the run's own output.** The page's shell tabs read `["7d3624-shell"]` before the Restart and `["44e39f-shell"]` after New Terminal, while tmux still lists `oculus-7d3624-shell`. Whether the focused `.xterm-helper-textarea` at the paste belonged to 7d3624's grid is not recorded.
+  - **The probe that settles it**, in one start:
+    1. After the Restart, read in the page which terminal the focused grid shows, its `pty:` channel, and `socket.status()`.
+    2. Paste once.
+    3. grep the app log for `pty: input on`.
+    4. If nothing is logged, compare the server's attached set for that terminal, or read whether the page's reconnect subscription named that channel.
+  - **Size:** cause unknown, so not a landing fix. HELP.md:13 says the open windows keep "their running terminals" after a Restart, and a reader will take that to include typing into them.
+  - **Verdict:** item 2 partial, case 24 partial.
+- **P2-3. Two report lines contradict the end state.**
+  - `O30-report.md:645` still marks cases 14, 17, 21 and 41 "not verified". Rounds 1 and 2 ran 14, 17 and 41, and parts of 21.
+  - `:649` still says "Case 12's scroll clause cannot be met ... (open decision, first line)".
+  - **Failure:** a reader of the "wrong or impossible" section takes S1 as open.
+  - **Size:** small; fix when the orchestrator saves the report. Verdict: item 10 partial.
+
+### Standards
+- **St2-1. A doc comment names a test that no longer exists.**
+  - **Where:** `src/lib/state/shared/words/appearance.ts:89`: " * function of its arguments; tests/server/desktop/window-guard.test.ts reads it through `themeFor`."
+  - **What is wrong:** that test was deleted under Z597. `grep -rn themeFor tests` prints nothing, and window-guard's four `it(` titles do not touch it.
+  - **Failure:** a reader believes the app's dark start is guarded by a test.
+  - **Size:** small, landing fix: drop the clause.
+- **St2-2. DESIGN.md:396 says something false about the built server's arguments.**
+  - **Where:** DESIGN.md:396: "the built server takes `--engine <dir>` ... and any other argument is refused naming it."
+  - **What is wrong:** `--default-port` is accepted (`process/args.ts:19,52`). Z596 named it in HELP.md:353 and README.md:11, and this paragraph, which the step itself rewrote, still says otherwise.
+  - **Failure:** a reader of DESIGN thinks `--default-port` is refused.
+  - **Size:** small, landing fix: one clause naming `--default-port <n>`. Verdict: item 16 violated.
+
+### Behaviour
+- **B2-1. Two overlapping token renewals can leave the socket unable to write.**
+  - **Where:** `socket.svelte.ts:223-229` and `writes.svelte.ts:159-163`.
+  - **What is wrong:**
+    - `renewToken` is `invalidateAll(); tick()`.
+    - Kit's `_invalidate` (`node_modules/@sveltejs/kit/src/runtime/client/client.js:417-423`) returns at once for a second call batched into the same microtask.
+    - At `:453` it returns without applying the data when a later invalidation took the token.
+    - In both cases the caller resolves with the old token still installed. The `.catch(() => undefined)` path does the same.
+  - **The consequence:**
+    - The socket's subscription then carries the stale token, and the server never adds that socket to `#writable` (`channel.ts:482`).
+    - Every keystroke is refused with the log line until the next reconnect.
+    - Nothing sends the subscription again when the token changes later: only `+page.svelte:84-86` sets it.
+  - **Failure:** the server restarts while the page also renews from a 403, for example New Terminal or a `capture` posted as the `sessions` push arrives. New Terminal works, but typing into every open terminal of that page is refused. This is not the cause in r27 (P2-1).
+  - **Size:** small, landing fix. The socket sends its subscription again whenever the token it last sent differs from `writes.writeToken()`, after any `setToken`. That is about ten lines in `socket.svelte.ts`, with the run at the look. Verdict: item 2 partial.
+- **B2-2. Every reconnect holds its subscription back for a page load, and keys typed meanwhile are lost.**
+  - **Where:** `socket.svelte.ts:211` sets `status = 'open'`; the subscription goes out only after `renewToken` (`:223-229`), and `send` returns true in between (`:163-166`).
+  - **Before:** the subscription went out in the `open` handler itself.
+  - **The consequence:**
+    - Every reconnect, a reconnect to the same server process included (dev reload, sleep and wake), now waits a whole page-data load before subscribing.
+    - Keystrokes in that gap reach a socket the server has not admitted, and are refused with a log line while the page shows nothing.
+    - Each reconnect also re-runs `installPageConfig`, which raises the config generation, so every catalog reader draws again.
+    - Z606 asks for the renewal "on reconnecting to a new server process".
+  - **Failure:** the laptop wakes, the reader types at once into a terminal, and the first characters are gone.
+  - **Size:** small, landing fix: send the subscription in the `open` handler as before, and send it again after the renewal only when the token changed. That is the same change as B2-1. Verdict: item 2 partial.
+- **B2-3. A Restart onto another port loads windows without their arrangement and unsaved text.**
+  - **Where:** `windows.ts:146-152` (`moveTo`) and `app.ts:239`: `void entry.win.webContents.loadURL(\`${origin}/${searchOf(entry)}\`)`.
+  - **What is wrong:**
+    - Storage is per origin. A page that follows a port move itself writes `LAYOUT_KEY` and `UI_KEY` into `window.name` first (`carry.ts:1-24`, `socket.svelte.ts:275-287`).
+    - `moveTo` loads the new origin from the host, so nothing is carried.
+    - HELP.md:13 says the windows keep "their unsaved text" and that a window on another port "loads its page from the new one".
+  - **Failure:** the server dies, the port changes (a `local.yml` edit, or `local.yml` removed so the default port applies), and the reader presses Restart.
+    - The main window opens on the new origin's empty storage: the shipped arrangement, with no unsaved drafts shown.
+    - Each popped-out `?float=<id>` window finds no float and asks to be closed.
+  - **Size:** medium. The host would send the page an event so the page carries its storage and then goes there, or the page follows on its own. Not a one-line landing fix; raise it or fix it at landing as the orchestrator judges. Verdict: item 1 violated.
+- **B2-4. A drop handed to a window that does not answer is never settled.**
+  - **Where:** `bridge.ts:152-163`. The promise settles only on `DROP_TAKEN` or on the target's `closed`.
+  - **Failure:** a target page that is still loading has no `drop-here` listener yet (`desktop-windows.svelte.ts:28-33`), and a page that reloads or crashes never answers either. A tab released over such a window stays where it was, no new window opens, and the `waiting` entry is held until the target closes. Round 2's item 6 said the tab is never left where it was.
+  - **Size:** small, landing fix: settle `false` when `webContents.isLoading()` at send time, and on the target's `did-start-navigation` and `render-process-gone`. Verdict: item 8 holds with this finding.
+
+## Declined to judge
+- `npx vitest run tests/server/desktop/start.test.ts`: it starts Electron. Whether macOS activates an Electron process that hides its Dock icon at `app-harness.ts:27` before `ready` can only be seen with the app running.
+- Whether `process.kill(pid, 0)` can see a not-yet-reaped zombie of the server after the main exits (start.test.ts:281). That needs runs.
+- Every case that needs the app's windows (listed above), the zoom conversion of a drop point, the full-screen role, Monaco's edit keys, and the real folder sheet.
+- Why window 3 opened at 912,382 for a release at 980,282 (r27.out). It is likely the work-area clamp of `placeWindow`; settling it needs the display's work area.
+- The two `diagrams.test.ts` timeouts. The file is unchanged by the step, and the load stayed between 28 and 56 throughout.
+- Whether the time a test takes counts as cost under the rule that a test exists only where its failure costs something. That is the user's call.
+
+Reviewer usage: agent id not known to me, claude-opus-5-5, tokens, tool uses and minutes not known to me.

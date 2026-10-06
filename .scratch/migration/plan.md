@@ -1393,6 +1393,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 Agents in no role the cost script prices:
 
 1. acb1bb1231865e0e6: diagnosis of step A3, claude-opus-5-5
+2. ae831f63ce80bd34e: diagnosis of step O30, claude-opus-5-5
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
