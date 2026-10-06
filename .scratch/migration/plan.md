@@ -1340,6 +1340,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z609 (2026-10-06): A3, a Pause, a Resume and a Save edit the entry's node in the YAML document in place, setting or removing only the keys they change, so the reader's other keys, their order, comments and values `readEntry` would normalise stay; the re-parse compares raw lists. A pause or resume refuses only on `schedules-unread`, since it writes no record; DESIGN.md:138 says so. (the orchestrator, automode)
 - Z610 (2026-10-06): A3, a server stop between a schedule's claim and its launch records that run `failed` with `why: { word: 'server-stopped' }`, so the row shows the due time did not run; the due time stays handled. (the orchestrator, automode)
 - Z611 (2026-10-06): A3, Proof 3 diagnosed as a tree check timing out at vitest's default 5000 ms under load when started by a direct `npx vitest run`; a brief runs tree checks inside `npm run test:checks`, which sets no time limit, and never names a file of `tests/checks` in a direct `vitest run`. A3's verify item 2 is split so. No time limit is changed in `vite.config.ts`. (the orchestrator, automode)
+- Z612 (2026-10-06): O30, a terminal paste that holds a line break, a single line closed by one included, keeps asking before it is sent, since the line runs the moment it is sent; the question gets a singular form for one line and HELP.md says "a paste that holds a line break asks before it is sent". A fix at O30's landing, outside its brief, as the review of its Restart found it. (the orchestrator, automode)
 
 ## Agents
 
@@ -1395,6 +1396,7 @@ Agents in no role the cost script prices:
 
 1. acb1bb1231865e0e6: diagnosis of step A3, claude-opus-5-5
 2. ae831f63ce80bd34e: diagnosis of step O30, claude-opus-5-5
+3. adfea7fe3bb4905aa: diagnosis of step O30 (the paste mode lost after a restart), claude-opus-5-5
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

@@ -39,6 +39,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   builder_usage: first run handed back items 10 and 11, 189,328 tokens, 44 tool uses, 19.6 min; the build, 317,725 tokens, 666 tool uses, 138.7 min (stopped once at 2026-10-05 for rerunning case 13 and taking focus, then resumed)
   cases_ruling: agents/briefs/O30-cases.md (round 0)
   reviewer_report: agents/reviews/O30-refuter.md (a566f8df9598698f1, claude-opus-5-5, 161,018 tokens, 101 tool uses, 16.2 min); over round 1: a73f7225903b3e5ad, claude-opus-5-5, 314,580 tokens, 89 tool uses, 17.4 min; over round 2: a2b8e6b2948c401a3, claude-opus-5-5, 344,029 tokens, 98 tool uses, 44.1 min
+  diagnosis: agents/reviews/O30-diagnosis.md (ae831f63ce80bd34e, claude-opus-5-5, 281,869 tokens, 108 tool uses, 53.1 min), round 2 P2-1: the run's paste ended in a line break and the terminal's paste question went unanswered; no defect of the Restart
   landing: not-started
   round: 2 (agents/briefs/O30-round2.md, sent 2026-10-06, the plan's extra round: G48's test cannot run without showing windows and is unverified, too large for landing); round 1 agents/briefs/O30-round1.md, sent 2026-10-06
   round_1_usage: 195,639 tokens, 254 tool uses, 50.2 min (the app started seven times where the round brief said once; one read-only git command)
@@ -53,9 +54,10 @@ dispatch:   # steps in flight, up to seven (Z423)
   launched: 2026-10-06
   report: agents/reviews/A3-report.md
   builder_usage: 271,977 tokens, 452 tool uses, 109.7 min (verify item 8 not met: the modules were written before their tests, so no run with the module present and the behaviour missing exists, and none is made by removing code)
+  round_1_usage: 199,526 tokens, 94 tool uses, 22.3 min
   brief_check: agents/reviews/A3-brief-check.md (a48d9494f333f3e40, claude-opus-5-5, 268,096 tokens, 87 tool uses, 13.9 min), closed in the brief by a42ad450094192df4 (claude-opus-5-5; 213,493 tokens, 44 tool uses, 10.9 min)
   shared_paths: with E4: +page.svelte's connect list, DESIGN.md:114, HELP.md:269 (one line, each step's clause), server context.ts's close() list (both-add, both kept), catalogs.ts (A3's behaviorFindings beside E4's closed_paths_shape), local.ts, local.test.ts, options.yml, behavior.yml, findings.yml, workbench.yml, boundaries.test.ts, context-fixture.ts, client payloads, entities and context, model index (separate hunks); with O30: +page.svelte and client context.ts (separate hunks), package.json (one dependency each, the lockfile regenerated at landing); the second of A3 and E4 adds schedule to the closed channels in A3's item 14 wording; so the merge is simple
-  reviewer_report: agents/reviews/A3-refuter.md (a239b2d8b039c975e, claude-opus-5-5, 268,520 tokens, 153 tool uses, 23.9 min)
+  reviewer_report: agents/reviews/A3-refuter.md (a239b2d8b039c975e, claude-opus-5-5, 268,520 tokens, 153 tool uses, 23.9 min); over round 1: a1226d68c43be5990, claude-opus-5-5, running since 2026-10-06
   diagnosis: agents/reviews/A3-diagnosis.md (acb1bb1231865e0e6, claude-opus-5-5), Proof 3: a tree check timing out under load in a direct vitest run (Z611)
   landing: not-started
   round: 1 (agents/briefs/A3-rebuild-round1.md, sent 2026-10-06)

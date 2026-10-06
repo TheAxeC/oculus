@@ -1433,7 +1433,7 @@ Documents (a `diff` of each against the base copy lists the changed lines): `HEL
 - The command bar. Before: a saved command's menu held Edit and Delete. After: Edit, Schedule... and Delete, in the overflow's Manage submenu too; Schedule... opens the tray with the dialog over it.
 - The Findings view. Before: `chat.skip_permissions` said the key was `tasks.skip_permissions`, and `tasks.skip_permissions` had no finding. After: each of the two gets one finding saying the key is not read and that a schedule runs unattended through Run unattended (`misc.out` S34).
 - `local.yml` gains `schedules` and `schedule_record`; absent they are `~/.oculus/schedules.yml` and `~/.oculus/schedule.json` (`misc.out` S52).
-- `schedules.yml` and `schedule.json` are new files under `~/.oculus`; both are written with mode 0600 (`FILE_MODE = 0o600` in `file.ts:49` and `record.ts:26`).
+- `schedules.yml` and `schedule.json` are new files under `~/.oculus`. A file oculus creates is mode 0600 (`FILE_MODE = 0o600` in `file.ts:55` and `record.ts:26`, passed as the new-file mode to `writeTextAtomic`); a file the reader made keeps its mode, since `writeTextAtomic` (`core/json.ts:71-72`) applies that mode only to a file that does not exist.
 - A scheduled run with Run unattended is the only start that carries `--dangerously-skip-permissions` (`engine.out` C16).
 
 ## Anything in the brief that was wrong or impossible
@@ -2852,3 +2852,265 @@ writeFileSync(`${SP}/final/misc.out`, out.join('\n') + '\n');
 ```
 
 ASCII gate over this report: `LC_ALL=C grep -n '[^ -~]' A3-report.md` printed nothing, exit 1 (1 is no match), run before this line was added.
+
+# Repair round 1
+
+Not done: nothing. Every item of `A3-rebuild-round1.md` is done; the rows are below, each with the command or run that shows it. Open decisions for the orchestrator are listed after the rows.
+
+## DONE / NOT DONE
+
+| Item | State | Command or run |
+|---|---|---|
+| 1 Spec 1, Pause, Resume and Save edit the entry's node | DONE | `file.ts` `changesOf`, `patchedText`, `changedNode`, `drafted`, `planEdit` (:376, :447, :504, :576, :614). Probe `pair.probe.ts` over the five reviewer lines, Pause then Resume, byte-equal after the pair on all five (output below). Probe `save.probe.ts` for a save that changes `when`, clears `when`, turns `unattended` off, sets `paused` with a changed `runs`, and renames (output below). The re-parse check compares the raw list read back with the raw list asked for (`planEdit`, `isDeepStrictEqual(holds, plan.asked)`). A row whose entry reads with a problem keeps Pause and Resume: `ScheduleList.svelte:104` shows them for `row.readable` (entry not null), and `drafted` changes only the `paused` key. |
+| 2 Proof 2, route rows in G31's table | DONE | `tests/server/machine/schedules/file.test.ts`, 'refuses an edit over a schedules file it cannot read, leaving it': 5 edits over 3 unread texts through `handleSchedules`, each 409 `{ error: 'schedules-unread', names: [] }` with the file byte-equal after and no `reload`. Run below. |
+| 3 Standards 2 and Z610, DESIGN.md and HELP.md | DONE | `DESIGN.md:138` (save and delete refuse with `schedules-unread` or `record-unread`, pause and resume with `schedules-unread`, before they write; the node edit; the commit order; 500 `schedules-unwritten`; the `server-stopped` run), `HELP.md:25` (the dialog, Pause and Resume keep every other key, its order and every comment). `grep -n 'schedules-unwritten\|server-stopped' DESIGN.md` and `grep -n 'every other key, its order' HELP.md` find them. |
+| 4 Standards 3, `failedAnswer` | DONE | `schedule.svelte.ts` `send` words an unread answer by `unreadableAnswer(posted.status)`, an unanswered request by `unreachableAnswer()` and any refusal that is not a schedule or terminal word by `failedAnswer(posted, posted.body)`. `Posted` gains `status` (`shapes.ts`, `writes.svelte.ts`). `app.schedules.unreachable`, `unreadable` and `refused` are gone from `config/text/app.yml`; `grep -rn "app.schedules.\(refused\|unreachable\|unreadable\)'" src tests` finds nothing. The route's commit failure answers `{ error: 'schedules-unwritten', names: [] }` with 500, never the system's message (`routes.ts:165-169`); the system's reason goes to the server log. |
+| 5 Standards 1, the title | DONE | `tests/checks/config/config.test.ts:379`. Old: `names the key that replaced a retired one, against behavior.yml: %s`. New: `says a retired key is not read and names the Run unattended choice, against behavior.yml: %s`. |
+| 6 Behaviour 1, commit first | DONE | `routes.ts:165-183`: `commitText` runs first and `dropRecord` or `renameRecord` run after it succeeded. Probe `commit.probe.ts` (the schedules file's folder read-only, a save that renames `Weekly radar` to `Daily radar`): `status=500 body={"error":"schedules-unwritten","names":[]}`, `schedules.yml unchanged=true`, `record unchanged=true`. |
+| 7 Behaviour 2, server closes after the claim | DONE | `watch.ts:491-505`: a close between `claimDue` and the launch settles that run `failed` with `why: { word: 'server-stopped' }`. Probe `stop.probe.ts` (output below). |
+| 8 Proof 4, S51 reaches the due-time refusal | DONE | Probe `s51.probe.ts`, run four times with the same refusal each time (the last run is quoted below): the run is recorded `failed` with `why: { word: 'folder-not-served' }` and runEntry was asked once. |
+| 9 Proof 5, file modes | DONE | The report's sentence in 'Host- or user-visible changes' now reads as the item words it (`grep -n 'A file oculus creates is mode 0600' A3-report.md`). |
+| 10 Proof 3, diagnosed | DONE | No code changed. Verify item 2 was run as the item words it (below), and the tree checks ran inside `npm run test:checks`. |
+
+## Runs
+
+### Item 1, Pause then Resume on the five lines (`pair.probe.ts`)
+
+```
+## task: radar
+--- before
+- name: Weekly radar
+  runs: { task: radar }
+  when: "0 7 * * 1"
+--- after Pause
+- name: Weekly radar
+  runs: { task: radar }
+  when: "0 7 * * 1"
+  paused: true
+--- after Resume
+- name: Weekly radar
+  runs: { task: radar }
+  when: "0 7 * * 1"
+byte-equal after the pair: true
+
+## unknown key at
+--- before
+- name: Weekly radar
+  runs: { task: litwatch }
+  at: 7
+  when: "0 7 * * 1"
+--- after Pause
+- name: Weekly radar
+  runs: { task: litwatch }
+  at: 7
+  when: "0 7 * * 1"
+  paused: true
+--- after Resume
+- name: Weekly radar
+  runs: { task: litwatch }
+  at: 7
+  when: "0 7 * * 1"
+byte-equal after the pair: true
+
+## when: 5
+--- before
+- name: Weekly radar
+  runs: { task: litwatch }
+  when: 5
+--- after Pause
+- name: Weekly radar
+  runs: { task: litwatch }
+  when: 5
+  paused: true
+--- after Resume
+- name: Weekly radar
+  runs: { task: litwatch }
+  when: 5
+byte-equal after the pair: true
+
+## unattended: 1
+--- before
+- name: Weekly radar
+  runs: { task: litwatch }
+  unattended: 1
+  when: "0 7 * * 1"
+--- after Pause
+- name: Weekly radar
+  runs: { task: litwatch }
+  unattended: 1
+  when: "0 7 * * 1"
+  paused: true
+--- after Resume
+- name: Weekly radar
+  runs: { task: litwatch }
+  unattended: 1
+  when: "0 7 * * 1"
+byte-equal after the pair: true
+
+## order and comment
+--- before
+# top
+- when: "0 7 * * 1"  # weekly
+  name: Weekly radar
+  # the task
+  runs: {task: litwatch}
+
+- name: Other
+  runs: { task: litwatch }
+--- after Pause
+# top
+- when: "0 7 * * 1"  # weekly
+  name: Weekly radar
+  # the task
+  runs: {task: litwatch}
+  paused: true
+
+- name: Other
+  runs: { task: litwatch }
+--- after Resume
+# top
+- when: "0 7 * * 1"  # weekly
+  name: Weekly radar
+  # the task
+  runs: {task: litwatch}
+
+- name: Other
+  runs: { task: litwatch }
+byte-equal after the pair: true
+```
+
+### Item 1, saves (`save.probe.ts`, file `# top` / `- name: Weekly radar # n` with `at: 7`, comments on `name`, `runs` and `when`)
+
+```
+## when changed
+# top
+- name: Weekly radar # n
+  runs: { task: litwatch }   # r
+  at: 7
+  when: "0 8 * * 1"  # w
+  unattended: true
+- name: Other
+  runs: {task: litwatch}
+
+## when cleared
+# top
+- name: Weekly radar # n
+  runs: { task: litwatch }   # r
+  at: 7
+  unattended: true
+- name: Other
+  runs: {task: litwatch}
+
+## unattended off
+# top
+- name: Weekly radar # n
+  runs: { task: litwatch }   # r
+  at: 7
+  when: "0 7 * * 1"  # w
+- name: Other
+  runs: {task: litwatch}
+
+## paused on + runs changed
+# top
+- name: Weekly radar # n
+  runs: { task: scout }   # r
+  at: 7
+  when: "0 7 * * 1"  # w
+  unattended: true
+  paused: true
+- name: Other
+  runs: {task: litwatch}
+
+## name changed
+# top
+- name: Radar 2 # n
+  runs: { task: litwatch }   # r
+  at: 7
+  when: "0 7 * * 1"  # w
+  unattended: true
+- name: Other
+  runs: {task: litwatch}
+```
+
+### Item 2, G31's table (`npx vitest run tests/server/machine/schedules/file.test.ts --reporter=verbose`)
+
+```
+ RUN  v4.1.11 /Users/axelfaes/workspace/research-hub/.agents/worktrees/A3/tools/oculus
+ * |unit| tests/server/machine/schedules/file.test.ts > the schedules file > refuses an edit over a schedules file it cannot read, leaving it 34ms
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  04:12:45
+   Duration  878ms (transform 215ms, setup 0ms, import 757ms, tests 37ms, environment 0ms)
+```
+
+### Item 6, a commit that fails (`commit.probe.ts`)
+
+```
+status=500 body={"error":"schedules-unwritten","names":[]}
+schedules.yml unchanged=true
+record unchanged=true
+```
+
+### Item 7, the server closes right after the claim (`stop.probe.ts`)
+
+```
+stop the server closed right after the 07:00 claim was written: starts asked=0 new-session calls=0 runs={schedule due=07:00 failed terminal=null why={"word":"server-stopped","names":[]}}
+stop record file: {"Weekly radar":{"pattern":"0 7 * * *","since":"2026-09-29T04:59:50.000Z","handled":"2026-09-29T05:00:00.000Z","runs":[{"trigger":"schedule","due":"2026-09-29T05:00:00.000Z","at":"2026-09-29T05:00:00.000Z","outcome":"failed","terminal":null,"why":{"word":"server-stopped","names":[]}}]}}
+```
+
+### Item 8, S51 (`s51.probe.ts`; the schedules file lives in a folder of its own and is written 1.5 s before the watcher starts, so no event of the file reloads it before the due time)
+
+```
+S51 row before: problem=null next set=true
+S51 at 06:59:59, root no longer served: row problem=null (the file was not read again) runs=0
+S51 at 07:00:10: new-session calls=0; starts asked of runEntry=1; runs={schedule due=07:00 failed terminal=null why={"word":"folder-not-served","names":["<repo>"]}}
+S51 record file: {"Weekly radar":{"pattern":"0 7 * * *","since":"2026-09-29T04:59:50.000Z","handled":"2026-09-29T05:00:00.000Z","runs":[{"trigger":"schedule","due":"2026-09-29T05:00:00.000Z","at":"2026-09-29T05:00:00.000Z","outcome":"failed","terminal":null,"why":{"word":"folder-not-served","names":["<repo>"]}}]}}
+S51 row now: runs=[{"outcome":"failed","why":{"word":"folder-not-served","names":["<repo>"]}}] problem=null
+```
+
+The row at 06:59:59 shows `problem=null`: the file was not read again after the root left the served set. The due-time refusal is `runEntry`'s `folder-not-served`, recorded in the record file shown. This probe covers the refusal of one prompt entry; it does not cover a command or a task entry at a due time.
+
+## Tests added or changed
+
+- `tests/server/machine/schedules/file.test.ts`: 'refuses a write over a schedules file it cannot read, leaving it' is now 'refuses an edit over a schedules file it cannot read, leaving it' and gains the route rows of item 2 (the title is the one the round brief names).
+- `tests/checks/config/config.test.ts`: the `behaviorFindings` it.each title of item 5.
+- No other test added or changed.
+
+## Decisions the round made that the brief did not name
+
+- Two words join `SCHEDULE_WORDS` (`data/model/model-processes.ts`): `schedules-unwritten` (the route's 500 for a schedules file that could not be written, sentence `app.schedules.problem_schedules_unwritten`) and `server-stopped` (a run claimed while the server closed, sentence `app.schedules.problem_server_stopped`). They are user-visible vocabulary, so the orchestrator rules on them.
+- A request that got no answer is said by a new shared sentence `ui.answer_unreachable` through `unreachableAnswer()` in `state/shared/answers/answers.ts`, since `failedAnswer` needs a status and an unanswered request has none. `Posted.status` is 0 for it. The other callers of `postCommand` keep their own sentences.
+- A failed run with no recorded reason reads `failed` (`app.schedules.outcome_failed_bare`), and a word this build has no sentence for is shown as the word itself, in a row's problem and in a run's reason.
+- When the schedules file was committed and the record change after it then failed, the route reloads the watcher, writes the change-log line and answers 409 `record-unread`; the file keeps the change. The record was checked readable before the write, so this is reached only by a record that went unreadable in between.
+- A save whose entry equals the entry as the page read it changes no byte and answers `{ ok: true }` without writing.
+
+## Verify lines
+
+`checks.sh` over `orchestrator-state.md` (`checks.log`):
+
+```
+$ npm run test:quick
+test:quick: 42.0 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+exit 0
+```
+
+`npm run test:checks` (`test-checks.log`; `npm run diagrams` was run first because `schedule.svelte.ts` now imports `answers.ts`, which changes `docs/diagrams/layer-state.*`):
+
+```
+ Test Files  15 passed | 1 skipped (16)
+      Tests  227 passed | 3 skipped (230)
+   Duration  49.71s (transform 15.96s, setup 0ms, import 48.70s, tests 84.01s, environment 3ms)
+```
+
+Verify item 2 as the round brief words it, `npx vitest run tests/server/machine/schedules tests/routes/machine/schedules.test.ts tests/routes/sessions/terminal-actions.test.ts tests/server/machine/commands/run.test.ts tests/data/sources/config/local.test.ts` (`verify2.log`):
+
+```
+ Test Files  8 passed (8)
+      Tests  45 passed (45)
+```
+
+Also run once after the last change: `npx svelte-check --threshold error` (0 errors, 0 warnings), `npx eslint .` (no output), `npx prettier --check src tests config` (all files formatted), `sh utils/unused-exports.sh | wc -l` (378, the baseline), `npx tsc --noEmit -p .` (only the two `CardAction` lines of `task-card.ts` and `card.ts`, which `svelte-check` does not report).
+
+What these do not cover: the tray's DOM (the look is the orchestrator's at landing), a due time of a command or a task entry whose folder or command is gone (S6 and S26 were run before this round), and a close of the server at any point other than between the claim and the launch.
+
