@@ -15,7 +15,7 @@
         stateTone,
         walltimeFraction,
         type HpcJob
-    } from '$lib/state/system/machine/hpc';
+    } from '$lib/state/system/machine/hpc/hpc';
     import { t } from '$lib/state/shared/words/text';
     let {
         rows,

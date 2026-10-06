@@ -64,6 +64,10 @@ The Repositories view is VS Code's Source Control over every repository oculus k
 
 A pattern across the files of one served root or of all of them, the hits grouped by file, each match one row opening its file in a source tab at that line, and, with the replace row shown, a replace over those matches as the editor's Search view replaces.
 
+## References
+
+The locations a language server found for Find All References (Shift+Alt+F12) or, where the server offers it, Find All Implementations in a source tab, under a count, one row per file and one per location with the match marked. A press opens the location at its line, and F4 and Shift+F4 step through the latest result. The pane's actions refresh, clear, clear the history of the last ten searches and collapse all.
+
 ## Funding
 
 The funding schemes, their stage and the statement each grant requires.

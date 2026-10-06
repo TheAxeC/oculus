@@ -6,7 +6,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { clock } from '$lib/state/shared/words/format';
-    import type { HpcPayload } from '$lib/state/system/machine/hpc';
+    import type { HpcPayload } from '$lib/state/system/machine/hpc/hpc';
     import { useState } from '$lib/state/client/use';
 
     /**

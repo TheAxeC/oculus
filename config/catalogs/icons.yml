@@ -193,3 +193,44 @@ icons:
     clear_all: list-x
     app: blocks
     app_view: layout-panel-top
+    # language servers
+    symbol_file: file
+    symbol_module: braces
+    symbol_namespace: braces
+    symbol_package: braces
+    symbol_class: network
+    symbol_method: box
+    symbol_property: wrench
+    symbol_field: tag
+    symbol_constructor: box
+    symbol_enum: list-ordered
+    symbol_interface: git-commit-horizontal
+    symbol_function: box
+    symbol_variable: variable
+    symbol_constant: square-equal
+    symbol_string: quote
+    symbol_number: hash
+    symbol_boolean: toggle-left
+    symbol_array: brackets
+    symbol_object: braces
+    symbol_key: key
+    symbol_null: toggle-left
+    symbol_enum_member: list
+    symbol_struct: layout-grid
+    symbol_event: zap
+    symbol_operator: diff
+    symbol_type_parameter: type
+    ast_type: shapes
+    ast_expression: dot
+    ast_specifier: list-tree
+    ast_compound: braces
+    ast_recovery: circle-alert
+    ast_unit: file-code
+    ast_pack: ellipsis
+    memory_leaf: circle
+    language_server: server-cog
+    interpreter: square-terminal
+    compile_database: database
+    references: list-tree
+    lsp_output: scroll-text
+    history: history

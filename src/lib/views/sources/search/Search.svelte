@@ -19,8 +19,9 @@
     // is reachable, since the server refuses a root that is not on that list.
     //
     // A hit opens the file in a source tab at its line, which is what makes this the answer to
-    // "where else is this named": the word toggle over an identifier in a code root is the whole of
-    // "find all references", with no language server and no index of its own.
+    // "where else is this named": the word toggle over an identifier finds the name in every file
+    // of the root. The uses of one symbol of a Python, C or C++ file, and no other word of the same
+    // spelling, are the References view's (References.svelte), which a language server answers.
     //
     // The query, the root, the toggles, the replace row and the last answer belong to the instance,
     // so a saved page draws the results it had without running anything, and two tabs are two

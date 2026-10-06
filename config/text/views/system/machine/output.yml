@@ -1,0 +1,8 @@
+# Oculus text owned by the language server output view.
+text:
+    output:
+        empty: The server has written nothing yet.
+        tab: 'Output: {0} ({1})'
+    views:
+        lsp_output: Language Server Output
+        lsp_output_glyph: lsp_output

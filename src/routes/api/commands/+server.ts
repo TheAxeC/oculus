@@ -1,5 +1,5 @@
 // The project commands endpoint. A route module may export only its verbs, so everything it does
-// lives in lib/server/machine/commands/routes.ts and this is the lines that join them. The GET
+// lives in lib/server/machine/runs/commands/routes.ts and this is the lines that join them. The GET
 // lists a repository's commands and is same-origin only; the POST approves, saves and removes and
 // carries the token ServerContext minted.
 //
@@ -9,7 +9,7 @@
 import { defaultApprovalsPath } from '$lib/server/machine/approvals/approvals';
 import { target } from '$lib/server/edit/writes';
 import { repositoryRoots } from '$lib/server/files/roots';
-import { handleCommandsGet, handleCommandsPost } from '$lib/server/machine/commands/routes';
+import { handleCommandsGet, handleCommandsPost } from '$lib/server/machine/runs/commands/routes';
 import type { RequestHandler } from './$types';
 
 const options = (locals: App.Locals) => {

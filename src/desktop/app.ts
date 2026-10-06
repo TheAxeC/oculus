@@ -243,15 +243,19 @@ async function run(
                 if (windows.lastMain() === null) windows.openMain(origin);
             }
         } else if (started.kind === 'failed') {
-            await refused(started.reason, started.port);
+            await refused(forked, started.reason, started.port);
         } else {
             await ended(started.code, started.reason, env);
         }
     }
 
-    /** A first listen that failed: name the port, or offer a window onto the oculus holding it. */
-    async function refused(reason: string, port: number): Promise<void> {
+    /**
+     * A first listen that failed: name the port, or offer a window onto the oculus holding it. The
+     * server process is waited out first, so no second server runs while the dialog is open.
+     */
+    async function refused(forked: ServerProcess, reason: string, port: number): Promise<void> {
         server = null;
+        await forked.stop(STOP_WAIT_MS);
         if (reason !== 'EADDRINUSE') {
             await say(t('desktop.dialog.server_failed', reason), [t('desktop.dialog.quit')]);
             app.quit();

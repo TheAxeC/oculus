@@ -13,22 +13,22 @@
 // theme files it points at are not. Monaco finds its workers through `self.MonacoEnvironment`, the
 // one hook its worker loading reads.
 //
-// Monaco holds one theme for the whole page, and so does this module: `paint` builds the theme
-// from the tokens in force and the code theme chosen (`tokens`, or the id of a Shiki theme whose
-// scoped syntax rules replace the tokens' rules, kit/theme.ts's `codeRules`) and sets it on every
+// Monaco holds one theme for the whole page, and so does this module: `paint` builds the theme from
+// the tokens in force and the code theme chosen (`tokens`, or the id of a Shiki theme whose scoped
+// syntax rules replace the tokens' rules, kit/theme/theme.ts's `codeRules`) and sets it on every
 // editor, doing nothing when neither has moved, so each editor may call it on every theme change.
-// Shiki's bridge (`shikiToMonaco`) defines a Monaco theme for each theme a highlighter holds,
-// wraps Monaco's `setTheme` and `create` to keep its tokens coloured by the theme set, and gives
-// each language a tokens provider over that highlighter, for the languages the highlighter has
-// loaded and Monaco lists at the moment of the call. Shiki caches a theme by its name inside one
-// highlighter, so a changed theme under the same name would keep the old colours there: each
-// paint makes a new highlighter holding the one theme `oculus` and every grammar loaded so far,
-// bridges it over the calls as Monaco made them (so the wraps never stack), and disposes the
-// highlighter before it. Monaco's `defineTheme` replaces the theme of that name and redraws it
-// where it is in force, and each language's new provider replaces its old one, so a session of
-// theme switches holds one theme and one highlighter. A paint of a code theme awaits its file, so
-// the paints are queued and the last one asked is the one in force; a file that fails to load
-// rejects that paint and leaves the theme before it in force.
+// Shiki's bridge (`shikiToMonaco`) defines a Monaco theme for each theme a highlighter holds, wraps
+// Monaco's `setTheme` and `create` to keep its tokens coloured by the theme set, and gives each
+// language a tokens provider over that highlighter, for the languages the highlighter has loaded
+// and Monaco lists at the moment of the call. Shiki caches a theme by its name inside one
+// highlighter, so a changed theme under the same name would keep the old colours there: each paint
+// makes a new highlighter holding the one theme `oculus` and every grammar loaded so far, bridges
+// it over the calls as Monaco made them (so the wraps never stack), and disposes the highlighter
+// before it. Monaco's `defineTheme` replaces the theme of that name and redraws it where it is in
+// force, and each language's new provider replaces its old one, so a session of theme switches
+// holds one theme and one highlighter. A paint of a code theme awaits its file, so the paints are
+// queued and the last one asked is the one in force; a file that fails to load rejects that paint
+// and leaves the theme before it in force.
 //
 // The eighteen first languages load with the first editor. Every language of grammars.ts is
 // registered with Monaco at the start, so a model can be made under any of them, and the others'
@@ -46,7 +46,14 @@
 // model it is asked about to the formatter the model's owner gave.
 //
 // The languages whose blocks are braces and that Monaco has no language service for are folded by
-// their braces, by the providers `registerFolding` registers (folding.ts).
+// their braces, by the providers `registerFolding` registers (folding.ts), which leave a model to a
+// language server's folding ranges while one serves it.
+//
+// Semantic tokens (a language server's, lsp/semantic.ts) are coloured by rules of the Monaco theme
+// beside the TextMate rules (theme/semantic.ts): after each paint the theme is defined again with
+// one rule per row of VS Code's default table the theme colours, since a token no rule matches
+// would take the root rule's foreground over Shiki's colour. The language server clients live in
+// `lsp` (lsp/hosts.ts).
 //
 // Monaco's TypeScript service checks a file against the files of its project, which an editor
 // holding one file has none of, so its semantic check is off and its syntax check stays on.
@@ -57,7 +64,10 @@ import { freedKeys } from '../chords';
 import { RITE_GRAMMAR } from './rite/rite';
 import { registerSettings } from './rite/settings';
 import { registerFolding } from './folding';
-import { codeRules, editorTheme } from './theme';
+import { createLspKit, type LspKit } from './lsp/hosts';
+import { Signal } from './lsp/signal';
+import { semanticRules } from './theme/semantic';
+import { codeRules, editorTheme } from './theme/theme';
 import type { EditorEnding, KeyPress } from '../types';
 import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
 import type { BundledLanguage, BundledTheme, LanguageRegistration, ThemeRegistration } from 'shiki';
@@ -137,6 +147,8 @@ export type EditorKit = {
     ensureLanguage: (name: string) => Promise<void>;
     /** Which models of the page Format Document answers for, through one provider a language. */
     formatting: Formatting;
+    /** The language server clients of the page, one per language a server serves. */
+    lsp: LspKit;
 };
 
 /** The one load of the page, started by the first editor that mounts. */
@@ -208,20 +220,46 @@ async function start(): Promise<EditorKit> {
         if (!known.has(id)) monaco.languages.register({ id });
     }
     registerSettings(monaco);
-    registerFolding(monaco);
-    const { paint, ensureLanguage, close } = painter({
+    // The kit asks the painting for the theme's semantic rules and for the languages' grammars, and
+    // the painting is made after it, so each is read through a call made when it is needed.
+    const painting: { current: Painting | null } = { current: null };
+    const lsp = createLspKit(monaco, {
+        ensureLanguage: (name) => painting.current?.ensureLanguage(name) ?? Promise.resolve(),
+        ruled: () => painting.current?.ruled() ?? new Set(),
+        onPainted: (listener) =>
+            painting.current?.onPainted(listener) ?? { dispose: () => undefined }
+    });
+    registerFolding(monaco, lsp.served);
+    const made = painter({
         monaco,
         createHighlighter: shiki.createHighlighter,
         shikiToMonaco: bridge.shikiToMonaco,
         langs: FIRST_LANGUAGES,
         source: (id) => (id === 'rite' ? RITE_GRAMMAR : (id as BundledLanguage)),
         codeIds: bundledThemesInfo.map((info) => info.id),
-        loadTheme: async (id) => (await bundledThemes[id as BundledTheme]()).default
+        loadTheme: async (id) => (await bundledThemes[id as BundledTheme]()).default,
+        semantic: (highlighter) => {
+            const resolved = highlighter.getTheme(THEME);
+            const rules = semanticRules(resolved.tokenColors ?? resolved.settings);
+            const data = bridge.textmateThemeToMonacoTheme(resolved) as MonacoThemeData;
+            return {
+                data: { ...data, rules: [...data.rules, ...rules] },
+                ruled: new Set(rules.map((rule) => rule.token))
+            };
+        }
     });
+    painting.current = made;
     self.addEventListener('pagehide', (event) => {
-        if (!event.persisted) close();
+        if (!event.persisted) made.close();
     });
-    return { monaco, mac, paint, ensureLanguage, formatting: createFormatting(monaco) };
+    return {
+        monaco,
+        mac,
+        paint: made.paint,
+        ensureLanguage: made.ensureLanguage,
+        formatting: createFormatting(monaco),
+        lsp
+    };
 }
 
 /** The page's one theme name, in Shiki and in Monaco. */
@@ -232,6 +270,9 @@ type Grammar = BundledLanguage | LanguageRegistration;
 
 /** A highlighter as painting holds it: something to bridge, load grammars into and dispose. */
 type Held = { dispose: () => void; loadLanguage: (grammar: Grammar) => Promise<void> };
+
+/** The data of a Monaco theme, as `defineTheme` takes it. */
+type MonacoThemeData = Parameters<typeof Monaco.editor.defineTheme>[1];
 
 /** What a paint needs: Monaco, Shiki's highlighter maker, the bridge and the grammars to load. */
 export type PaintParts<H extends Held> = {
@@ -249,12 +290,24 @@ export type PaintParts<H extends Held> = {
     codeIds: readonly string[];
     /** One Shiki theme's registration, loaded from its file. */
     loadTheme: (id: string) => Promise<ThemeRegistration>;
+    /**
+     * The Monaco theme a paint is defined again as once its colours are bridged, with the rules of
+     * semantic tokens added, and the lookup strings those rules are for.
+     */
+    semantic?: (highlighter: H) => {
+        data: MonacoThemeData;
+        ruled: ReadonlySet<string>;
+    };
 };
 
 /** What the page holds of the editor's highlighting: the theme paint and the grammar loads. */
 export type Painting = {
     paint: Paint;
     ensureLanguage: (name: string) => Promise<void>;
+    /** The lookup strings of the semantic tokens the theme in force colours. */
+    ruled: () => ReadonlySet<string>;
+    /** Hear every paint that changed the theme; the call it answers stops hearing. */
+    onPainted: (listener: () => void) => { dispose(): void };
     /** End the page's highlighting: dispose the highlighter and load nothing more. */
     close: () => void;
 };
@@ -281,6 +334,8 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
     const loads = new Map<string, Promise<void>>();
     const loaded: string[] = [];
     let painted = '';
+    let ruled: ReadonlySet<string> = new Set();
+    const repainted = new Signal();
     let held: H | null = null;
     let closed = false;
     /** Whether `close` has been called, read through a call so a wait does not narrow it. */
@@ -337,10 +392,16 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
             return THEME;
         }
         bridge(next);
+        const semantic = parts.semantic?.(next);
+        if (semantic !== undefined) {
+            editor.defineTheme(THEME, semantic.data);
+            ruled = semantic.ruled;
+        }
         held?.dispose();
         held = next;
         painted = signature;
         opened();
+        repainted.fire();
         return THEME;
     }
 
@@ -380,6 +441,8 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
     return {
         paint: (read, code = '') => enqueue(() => paintNow(read, code)),
         ensureLanguage,
+        ruled: () => ruled,
+        onPainted: repainted.event,
         close
     };
 }

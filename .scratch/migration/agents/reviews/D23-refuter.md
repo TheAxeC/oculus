@@ -291,3 +291,56 @@ after a didChange: processes 0 | diagnostics frames 0
 - Most case scripts were not rerun. The reviewer reran `f1-config.mjs`, plus the reviewer's own probes `rss47.mjs`, `counts.sh` and `gone.mjs`.
 
 Reviewer usage: agent id not known to the reviewer, claude-opus-5-5, tokens not known to the reviewer, tool uses not known to the reviewer, minutes not known to the reviewer.
+
+## Repair round 1, refuted
+
+A fresh reviewer over round 1 (a024bbd7dac672561, claude-opus-5-5). It wrote no file in either worktree; its probe and logs are in the session scratchpad under `review-r1/`.
+
+### Verification lines
+
+- `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` from `tools/oculus`: svelte-check "COMPLETED 398 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS", vitest 17.7 s, "test:quick: 18.3 s (limit 45.0 s); every command passed", "checks: 1 commands passed", exit 0.
+- `npm run test:quick -- --base 465efcdfb` three times: exit 0 each, svelte-check "398 FILES 0 ERRORS" each, 16.0 s, 16.1 s, 14.7 s. The builder's svelte-check flake did not occur in four runs.
+- The ASCII gate over `src tests config` (`! -name local.yml`) and over `HELP.md DESIGN.md README.md`: no output, exit 0.
+- `npx vitest run tests/server/machine/lsp tests/server/machine/pty/channel.test.ts tests/data/sources/config/local.test.ts`: "Test Files 8 passed (8) | Tests 100 passed (100)"; the boundaries, config and checks suites: "Test Files 12 passed (12) | Tests 151 passed (151)"; `folder-check` and `size-check` exit 0.
+- Process counts on a dev server at port 8795 with its own HOME: 0 before any page, 2 with both pages, 2 at 50 s after page A closed, 1 at 65 s, 0 at 70 s after both closed, no pyright or clangd left.
+- Rerun of the report's evidence: the pre-round failing run (8 failed, 69 passed, the same assertions), B3's capability probe (`implementationProvider` undefined for pyright, present for clangd), case 45's `f1-config.mjs` block; all as the report says. `sh utils/unused-exports.sh` prints 382 lines against the base's 381: added `src/lib/server/core/auth.ts: TOKEN_HEADER, carriesToken` (the base had `TOKEN_HEADER`) and `src/lib/server/machine/lsp/held.ts: Open`.
+
+### Verdicts
+
+- Round items: 1 S1 met; 2 S3/B2 met; 3 S4 met; 4 S5 met; 5 S6 met; 6 case 46 met; 7 case 47 met; 8 S2 met; 9 P1 met in form, its claim contradicted by B-a; 10 P2 met; 11 P3 met; 12 St1 met; 13 St2 met; 14 St3 met; 15 St4 met; 16 B1 partial (B-a); 17 B3 met.
+- What to build: 1 holds; 2 holds; 3 violated in one window (B-a); 4 holds; 5 holds as far as the report shows.
+- Cases: all met but 11, 24, 26, 44, 50, 51 and 53, not verifiable without the page's Monaco in a browser (the landing look).
+
+### Spec
+
+None.
+
+### Proof
+
+None beyond B-a's effect on the report's first line.
+
+### Standards
+
+- St-1 (`agents/spec.md:83`): the two added unused-export lines are neither quoted nor handled. `export type Open = { held: Held; doc: Doc };` at `src/lib/server/machine/lsp/held.ts:561` is used only at `:570` and should be local; `carriesToken` (`auth.ts:73`) is imported by `socket.ts:29` yet listed. The report's quote of the command shows 5 lines where it prints 382.
+- St-2: the round's builder ran `git diff --stat HEAD -- tools/oculus/HELP.md` on the main checkout (transcript entry 6845), against the round brief's git ban; read only, no file changed. The first dispatch's part of the transcript holds 14 git commands.
+
+### Behaviour
+
+- B-a: a root served again while its ended server is still stopping. `reconcile()` calls `held.lose()` and sends `starting` at once (`relay.ts:229-231`); `page.docs` keeps the lost server's entries until `#gone` (`relay.ts:838-852`), which runs after `#stop()` (up to `KILL_MS`, 5 s, `process.ts:25-26,158-159`); the page re-sends `didOpen` once (`transport.ts:563-566`) and `#didOpen` drops it (`relay.ts:492`, `page.docs.has(uri)`). The tab stays without a server until closed and reopened, against DESIGN.md:438. Reproduced with a stub server that ignores `shutdown`: "re-sent didOpen at 0.55 s: spawns 1 | hover answer undefined".
+- B-b: `followRoots` is built once with the startup workspaces file (`context.ts:344`) and never rebuilt; after a `workspaces` key change it watches the old file while the workspace routes write the new one (`context.ts:391,418`), so a root removed in the Files view keeps its servers and the page is not told `root_gone` until the next config push. From reading.
+- B-c, minor: `Held.reload(false)` sets `this.state = { state: 'starting' }` directly, not through `#set` (`held.ts:216`), so the status item of a blocked or not-found server keeps its old words after an `lsp` key change until the next document. From reading.
+
+### Declined to judge
+
+Verify item 6 (sentence length, needs a sentence-level diff); the first-run scripts and the B3 client-runtime file (not rerun); the test:quick flake (not seen); the seven cases that need the page in a browser.
+
+Usage: a024bbd7dac672561, claude-opus-5-5, 206,427 tokens, 108 tool uses, 17.2 min (from its completion notice).
+
+### Closed
+
+The run over the last round: its findings are not sent to the builder (repair_rounds 1). Each is small and inside the brief and is fixed on main at landing:
+- B-a: the lost server's `page.docs` and `page.opened` entries leave synchronously when the server is lost, so the re-sent `didOpen` starts the new server; a lifetime row with a slow stop.
+- B-b: `followRoots` follows the workspaces file the configuration names now, rebuilt on a `workspaces` key change.
+- B-c: `reload` sets the state through `#set`, so the page hears it.
+- St-1: `Open` made local; `carriesToken` handled so the list returns to the base's line, or the line quoted with its reason in the landing report.
+- St-2: recorded in the booking; nothing to fix in the tree.

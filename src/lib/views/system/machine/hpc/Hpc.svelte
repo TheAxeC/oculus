@@ -31,7 +31,7 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import { parseHpcState, type HpcViewState } from '$lib/state/system/machine/hpc';
+    import { parseHpcState, type HpcViewState } from '$lib/state/system/machine/hpc/hpc';
 
     const {
         hpc: { command, jobLog, queue },

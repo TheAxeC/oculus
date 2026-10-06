@@ -1,22 +1,22 @@
-In flight (3 of 6 slots):
-- D23 (language servers): repair round 1 done, its review running, base 465efcdfb.
-- Q126 (DESIGN.md reduced where Q125 left it short, Z654): builder running, base 60263c8d.
+In flight (2 of 6 slots):
+- Q126 (DESIGN.md reduced where Q125 left it short, Z654): refuted over round 1, ready to land, base 60263c8d.
 - PR3 (Present decks edited and generated, PDF export): builder running, base 272f60b4 (Z667 ruled (a), sent to the builder).
 
-Queued, in order (23 steps):
-- D45 (LaTeX as VS Code's LaTeX Workshop): once D23 has landed (both split Source.svelte).
-- X3e (Files lists reordered by drag): prepared again under Z635 (a); once D23 has landed (both split Palette.svelte).
+Queued, in order (24 steps):
+- D23c (library definitions read-only, the symbol's column on open; Z669 (a), Z670 (a)): ready to prepare.
+- D45 (LaTeX as VS Code's LaTeX Workshop): ready to prepare.
+- X3e (Files lists reordered by drag): to be prepared again under Z635 (a); ready to prepare.
 - PR4 (Present's presenter screen): once PR3 has landed.
 - D28 (saving a file as VS Code does): once X3e has landed.
 - M6 (the collection forms removed): once X3e and D28 have landed.
-- D11 (the debug client for rite): once D45 and D23 have landed.
+- D11 (the debug client for rite): once D45 has landed.
 - D15 (PDF reading): once D45 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D41 (links in Markdown checked): once M7 has landed.
-- M8 (the hub's YAML checked in the editor): once D23 has landed.
-- D43 (LaTeX navigation): once D23 has landed.
-- D23b (cross-file language features): once D23 has landed.
-- D33 (the Problems view): once D23 has landed.
+- M8 (the hub's YAML checked in the editor): ready to prepare.
+- D43 (LaTeX navigation): ready to prepare.
+- D23b (cross-file language features): ready to prepare.
+- D33 (the Problems view): ready to prepare.
 - D39 (hub keys as links): once M8 and D23b have landed.
 - D36 (linters on save): once D33 has landed.
 - D40 (the writing rules as editor marks): once D36 has landed.
@@ -31,6 +31,7 @@ Queued, in order (23 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D23 (the language server client), 2026-10-06.
 - Q125 (the user's guide, the design document and the guides), 2026-10-06.
 - PR2 (Present decks from any folder), 2026-10-06, 548004bc.
 - Q124 (every tree check with no limit, and the vitest races), 2026-10-06, abf4356cf.

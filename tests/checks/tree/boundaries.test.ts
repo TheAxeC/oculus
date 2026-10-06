@@ -129,6 +129,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // take out of the object are SHELL_STORES below, and the second rule checks each destructuring
 // against that list.
 //
+// `state/system/machine/lsp/lsp.svelte` and `state/system/machine/lsp/symbols` are in the shell's
+// row because the status bar's language server items and the palette's choice rows draw the
+// server states and the choices the relay sends, and the pane strip's breadcrumb draws the symbols
+// around the caret that the symbols module orders.
+//
 // `state/client/context` is where the client's stores are wired together, and it names nothing of
 // layer 3: the view registry is a state module, and the page root makes the primitives' tooltip
 // counter beside the client object, so the state row reaches no layer above it.
@@ -149,6 +154,8 @@ const ALLOWED: Record<string, string[]> = {
         'state/workbench/palette-source',
         'state/workbench/selection',
         'state/workbench/navigation/**',
+        'state/system/machine/lsp/lsp.svelte',
+        'state/system/machine/lsp/symbols',
         'state/sessions/terminals',
         'data/shapes/shapes'
     ],
@@ -348,7 +355,9 @@ const FROZEN = [
  * a program through `writes` and offers Open in Program from the programs `selectors` reads, and
  * the panes, the tab menu and the windows of the desktop app ask the app's host for a window, the
  * find bar and the arrangement's save turn through `desktop`, and the update tray and its schedule
- * list and dialog read and write the schedules through `schedule`.
+ * list and dialog read and write the schedules through `schedule`, and the status bar's language
+ * server items and the palette's choice rows read the servers' states and choices through `lsp`,
+ * while the pane strip's breadcrumb reads the symbols of the file in view through `documents`.
  */
 const SHELL_STORES = [
     'commands',
@@ -367,7 +376,9 @@ const SHELL_STORES = [
     'writes',
     'selectors',
     'desktop',
-    'schedule'
+    'schedule',
+    'lsp',
+    'documents'
 ];
 
 /**

@@ -61,6 +61,8 @@ export type ToolButtonProps = {
      * tooltip over it rather than under, since the bar is the window's foot.
      */
     status?: boolean;
+    /** A status bar item in the warning tone: its words and glyph in the amber of a warning. */
+    warning?: boolean;
     /**
      * A cell of a grid it sits in, a gutter's line number or change mark: no border, fill,
      * padding or brackets of its own, the size, colour and alignment of the cell around it,

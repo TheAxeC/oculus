@@ -1,0 +1,897 @@
+// Layer 3, primitive. The transport one language's Monaco LSP client runs over: it carries the
+// client's messages to the page's port and the port's to the client, and owns which models the
+// server sees, which Monaco's client leaves to its host. It is written over a minimal model
+// interface and a port, with no DOM, so its document set and its rewriting of addresses run in the
+// unit suite's client runtime without a Monaco.
+//
+// A model is registered with the file it shows. The transport sends its own `didOpen` with the
+// text and version 1, numbers every later `didChange` of the file, and sends `didClose` when the
+// last model of the file goes. The client's synchroniser opens every model of the page, whatever
+// its language or owner, so every `didOpen`, `didChange` and `didClose` the client sends is
+// dropped here. A feature request from a model that is not registered (a diff side, a merge pane,
+// a model of another language) is answered at once with an empty result and never reaches the
+// port. Two models of one file are one document: the server follows the first registered model,
+// and a request from either is sent for the file.
+//
+// The client names a document by its model's `inmemory:` address and the relay by the page's
+// address (uris.ts); the transport turns each into the other, in every field that holds one. A
+// location in a file no model holds is answered with a peek model the host reads and makes
+// (`TransportHost.peek`), and a location the host cannot make a model of is dropped from the
+// answer. The client finds a model by its address lower-cased, so two models whose addresses
+// differ only in case are given addresses that do not.
+//
+// What the client has no handler for is the transport's own: `publishDiagnostics` and
+// `inactiveRegions` go to the host, the server's `workspace/applyEdit` is applied to the model of
+// the document it names when it names that document alone, and `workspace/semanticTokens/refresh`
+// is answered and told to the host. A code action is offered only when its edit names only the
+// asking document, or when it carries a command. A request of the client the relay could not pass
+// on to a server is answered with no result. The host's own questions to the server (the
+// symbols, the semantic tokens, the formatting) go through `ask`, which answers the protocol's
+// result as the relay sent it, addresses in the page's form.
+//
+// The messages the relay adds to the channel (those with an `oculus` field) belong to the state
+// side and are ignored here, but for the `state` of a root that is served again after `root_gone`,
+// which puts the open documents under it on the server again. Messages are handled one at a time
+// in the order they arrived, so a peek read in the middle of one answer never lets a later one
+// overtake it.
+
+import type { LspDiagnostic, LspFrame, LspPort, PortState } from './services';
+import { pageUri, placeOf, type Place } from './uris';
+
+/** One change of a model's text, as Monaco reports it. */
+export type ModelChange = {
+    range: {
+        startLineNumber: number;
+        startColumn: number;
+        endLineNumber: number;
+        endColumn: number;
+    };
+    rangeLength: number;
+    text: string;
+};
+
+/** What the transport reads of a Monaco model. */
+export type LspModel = {
+    readonly uri: { toString(skipEncoding?: boolean): string };
+    getValue(): string;
+    getVersionId(): number;
+    getLanguageId(): string;
+    onDidChangeContent(listener: (event: { changes: readonly ModelChange[] }) => void): {
+        dispose(): void;
+    };
+};
+
+/** A range in the protocol's form: lines and characters from zero. */
+export type LspRange = {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+};
+
+/** One edit of the protocol. */
+export type TextEdit = { range: LspRange; newText: string };
+
+/** What the host does for the transport. */
+export type TransportHost = {
+    /**
+     * Make a read-only model of a file no tab holds, under the page's address of it, `spelling`
+     * naming the variant of the address to use when the plain one differs from another model's only
+     * by case (0 for the plain one). Null when the file cannot be read.
+     */
+    peek(place: Place, page: string, spelling: number): Promise<LspModel | null>;
+    /** Dispose a peek model the transport has no use for. */
+    drop(model: LspModel): void;
+    /** Apply edits to a registered model as one undo stop; false when it could not be. */
+    apply(model: LspModel, edits: readonly TextEdit[]): boolean;
+    /** A server's diagnostics for one file, whether or not a model holds it. */
+    diagnostics(place: Place, items: readonly LspDiagnostic[]): void;
+    /** The regions of a file clangd found inactive. */
+    inactive(place: Place, regions: readonly LspRange[]): void;
+    /** The server asks for its semantic tokens again. */
+    refreshTokens(): void;
+    /** The capabilities the server's `initialize` answer declared. */
+    declared(capabilities: Record<string, unknown>): void;
+    /** Shows a notice by its catalog key. */
+    notice(key: string): void;
+};
+
+/** A JSON-RPC message as the client and the relay write it. */
+type Rpc = {
+    jsonrpc: '2.0';
+    id?: number | string | null;
+    method?: string;
+    params?: unknown;
+    result?: unknown;
+    error?: { code: number; message: string; data?: unknown };
+};
+
+/** The message the client's synchroniser sends for every model of the page, never passed on. */
+const SYNC: readonly string[] = [
+    'textDocument/didOpen',
+    'textDocument/didChange',
+    'textDocument/didClose'
+];
+
+/** The fields of a message that hold the address of a document. */
+const ADDRESSES: readonly string[] = ['uri', 'targetUri', 'file'];
+
+/**
+ * The prefix of an id the transport gives its own requests, which the client's counter cannot make.
+ */
+const OWN = 'own:';
+
+/**
+ * The requests whose parameters are the document's identifier itself, `{ uri }`, as clangd's
+ * `textDocument/switchSourceHeader` reads them; every other request names it as `textDocument`.
+ */
+const BARE_DOCUMENT: readonly string[] = ['textDocument/switchSourceHeader'];
+
+/** The error code the relay answers a request with when no server is running to take it. */
+const REQUEST_CANCELLED = -32800;
+
+/** How many variants of an address are tried before a peek is given up. */
+const SPELLINGS = 8;
+
+/** The kind a code action of Organize Imports has, and the command pyright runs for it. */
+const ORGANIZE = 'source.organizeImports';
+const ORGANIZE_COMMAND = 'pyright.organizeimports';
+
+/** What `ask` rejects with when the port is closed or the transport ended. */
+export class Closed extends Error {
+    constructor() {
+        super('the language server channel is closed');
+    }
+}
+
+/** A document the server holds: the file, its models, the version last sent. */
+type Doc = {
+    place: Place;
+    page: string;
+    language: string;
+    models: LspModel[];
+    version: number;
+};
+
+/** A request of the client that waits for its answer. */
+type Waiting = { method: string; params: unknown; asking: string | null };
+
+/** A request of the host that waits for its answer. */
+type Own = { resolve: (value: unknown) => void; reject: (reason: Error) => void };
+
+/** A peek model and when it was made. */
+type Peek = { model: LspModel; page: string; made: number };
+
+/** A value that stands for a location the page cannot be given, dropped with what holds it. */
+const DROP = Symbol('dropped');
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** The key a model is known by in the client's address. */
+function keyOf(model: LspModel): string {
+    return model.uri.toString(true);
+}
+
+/** The edits of the protocol a model's change event makes. */
+function changesOf(changes: readonly ModelChange[]): unknown[] {
+    return changes.map((change) => ({
+        range: {
+            start: {
+                line: change.range.startLineNumber - 1,
+                character: change.range.startColumn - 1
+            },
+            end: { line: change.range.endLineNumber - 1, character: change.range.endColumn - 1 }
+        },
+        rangeLength: change.rangeLength,
+        text: change.text
+    }));
+}
+
+/** The place a code action's edit touches: every address it names, as the relay wrote it. */
+function touched(edit: unknown): string[] | null {
+    if (!isRecord(edit)) return [];
+    const named: string[] = [];
+    if (isRecord(edit.changes)) named.push(...Object.keys(edit.changes));
+    if (Array.isArray(edit.documentChanges)) {
+        for (const change of edit.documentChanges as unknown[]) {
+            const document = isRecord(change) ? change.textDocument : null;
+            if (!isRecord(document) || typeof document.uri !== 'string') return null;
+            named.push(document.uri);
+        }
+    }
+    return named;
+}
+
+/** Whether a code action request asks for Organize Imports. */
+function asksOrganize(params: unknown): boolean {
+    const context = isRecord(params) ? params.context : null;
+    const only = isRecord(context) ? context.only : null;
+    return Array.isArray(only) && only.some((kind) => kind === ORGANIZE || kind === 'source');
+}
+
+/** The connection state the client reads, with the change event it listens on. */
+/** What the client reads of the connection. */
+type ConnectionValue =
+    { state: 'open' } | { state: 'connecting' } | { state: 'closed'; error: undefined };
+
+class Connection {
+    #value: ConnectionValue = { state: 'connecting' };
+    #listeners = new Set<(value: ConnectionValue) => void>();
+
+    get value(): ConnectionValue {
+        return this.#value;
+    }
+
+    onChange = (listener: (value: ConnectionValue) => void): { dispose(): void } => {
+        this.#listeners.add(listener);
+        return { dispose: () => this.#listeners.delete(listener) };
+    };
+
+    set(state: PortState): void {
+        const next: ConnectionValue =
+            state === 'open'
+                ? { state: 'open' }
+                : state === 'connecting'
+                  ? { state: 'connecting' }
+                  : { state: 'closed', error: undefined };
+        if (next.state === this.#value.state) return;
+        this.#value = next;
+        for (const listener of [...this.#listeners]) listener(next);
+    }
+}
+
+/** The transport of one language over one open period of its port. */
+export class LspTransport {
+    readonly state = new Connection();
+    #port: LspPort;
+    #host: TransportHost;
+    #language: string;
+    #now: () => number;
+    #listener: ((message: Rpc) => void) | undefined;
+    #early: Rpc[] = [];
+    #docs = new Map<string, Doc>();
+    #byModel = new Map<LspModel, Doc>();
+    #watching = new Map<LspModel, { dispose(): void }>();
+    /** The client's address of every model it may name, by that address, to the page's address. */
+    #addresses = new Map<string, string>();
+    /** The same addresses lower-cased, which is how the client looks a model up. */
+    #lowered = new Map<string, string>();
+    #peeks = new Map<string, Peek>();
+    /** The root keys whose server ended because the root stopped being served. */
+    #gone = new Set<string>();
+    #waiting = new Map<number | string, Waiting>();
+    #own = new Map<string, Own>();
+    #next = 0;
+    #chain: Promise<void> = Promise.resolve();
+    #closed = false;
+    #stops: (() => void)[] = [];
+
+    constructor(port: LspPort, language: string, host: TransportHost, now: () => number) {
+        this.#port = port;
+        this.#language = language;
+        this.#host = host;
+        this.#now = now;
+        this.state.set(port.state.value);
+        this.#stops.push(
+            port.state.onChange((value) => {
+                this.state.set(value);
+                if (value === 'closed') this.close();
+            }),
+            port.listen((frame) => this.#enqueue(() => this.#handle(frame)))
+        );
+    }
+
+    toString(): string {
+        return `oculus lsp:${this.#language}`;
+    }
+
+    /** The client's listener for what comes from the relay; messages that came before it wait. */
+    setListener(listener: ((message: Rpc) => void) | undefined): void {
+        this.#listener = listener;
+        if (listener === undefined) return;
+        for (const message of this.#early.splice(0)) listener(message);
+    }
+
+    /** Whether the transport ended: its port closed, or the host ended it. */
+    get closed(): boolean {
+        return this.#closed;
+    }
+
+    // ------------------------------------------------------------------ documents
+
+    /** Whether a model is registered. */
+    has(model: LspModel): boolean {
+        return this.#byModel.has(model);
+    }
+
+    /** The models of every registered document. */
+    registered(): LspModel[] {
+        return [...this.#byModel.keys()];
+    }
+
+    /** Register a model with the file it shows, and open the file on the server when it is new. */
+    register(model: LspModel, place: Place): void {
+        if (this.#closed || this.#byModel.has(model)) return;
+        const page = pageUri(place);
+        let doc = this.#docs.get(page);
+        const first = doc === undefined;
+        if (doc === undefined) {
+            doc = { place, page, language: model.getLanguageId(), models: [], version: 1 };
+            this.#docs.set(page, doc);
+        }
+        doc.models.push(model);
+        this.#byModel.set(model, doc);
+        this.#name(model, page);
+        this.#watching.set(
+            model,
+            model.onDidChangeContent((event) => this.#changed(model, doc, event.changes))
+        );
+        this.#retire(page);
+        if (first) this.#sendOpen(doc);
+    }
+
+    /** The `didOpen` that puts a document on the server, with the text of its first model. */
+    #sendOpen(doc: Doc): void {
+        this.#write({
+            jsonrpc: '2.0',
+            method: 'textDocument/didOpen',
+            params: {
+                textDocument: {
+                    uri: doc.page,
+                    languageId: doc.language,
+                    version: doc.version,
+                    text: doc.models[0].getValue()
+                }
+            }
+        });
+    }
+
+    /** Take a model away; the file is closed on the server with its last model. */
+    unregister(model: LspModel): void {
+        const doc = this.#byModel.get(model);
+        if (doc === undefined) return;
+        this.#byModel.delete(model);
+        this.#watching.get(model)?.dispose();
+        this.#watching.delete(model);
+        this.#forget(keyOf(model));
+        const wasPrimary = doc.models[0] === model;
+        doc.models = doc.models.filter((one) => one !== model);
+        if (doc.models.length === 0) {
+            this.#docs.delete(doc.page);
+            this.#write({
+                jsonrpc: '2.0',
+                method: 'textDocument/didClose',
+                params: { textDocument: { uri: doc.page } }
+            });
+            return;
+        }
+        if (!wasPrimary) return;
+        // The server follows the first model, so the new first model's whole text replaces it.
+        doc.version += 1;
+        this.#write({
+            jsonrpc: '2.0',
+            method: 'textDocument/didChange',
+            params: {
+                textDocument: { uri: doc.page, version: doc.version },
+                contentChanges: [{ text: doc.models[0].getValue() }]
+            }
+        });
+    }
+
+    /** One change of a model: sent for the file when the model is the one the server follows. */
+    #changed(model: LspModel, doc: Doc, changes: readonly ModelChange[]): void {
+        if (this.#closed || doc.models[0] !== model) return;
+        doc.version += 1;
+        this.#write({
+            jsonrpc: '2.0',
+            method: 'textDocument/didChange',
+            params: {
+                textDocument: { uri: doc.page, version: doc.version },
+                contentChanges: changesOf(changes)
+            }
+        });
+    }
+
+    /** Remember a model's address in the client's form, and that it names the page's. */
+    #name(model: LspModel, page: string): void {
+        const key = keyOf(model);
+        this.#addresses.set(key, page);
+        this.#lowered.set(key.toLowerCase(), key);
+    }
+
+    #forget(key: string): void {
+        this.#addresses.delete(key);
+        this.#lowered.delete(key.toLowerCase());
+    }
+
+    /** A peek model of a file a tab opened is not needed: the tab's model answers. */
+    #retire(page: string): void {
+        const peek = this.#peeks.get(page);
+        if (peek === undefined) return;
+        this.#peeks.delete(page);
+        this.#forget(keyOf(peek.model));
+        this.#host.drop(peek.model);
+    }
+
+    /** Peek models no editor shows, past the seconds a new one is given to be shown. */
+    sweep(shown: (model: LspModel) => boolean, graceMs: number): void {
+        for (const [page, peek] of this.#peeks) {
+            if (this.#now() - peek.made < graceMs || shown(peek.model)) continue;
+            this.#peeks.delete(page);
+            this.#forget(keyOf(peek.model));
+            this.#host.drop(peek.model);
+        }
+    }
+
+    // ------------------------------------------------------------------ to the server
+
+    /** What the client sends: the one method of the client's transport. */
+    send(message: Rpc): Promise<void> {
+        if (this.#closed) return Promise.resolve();
+        const method = message.method;
+        if (method === undefined) {
+            this.#write(message);
+            return Promise.resolve();
+        }
+        if (message.id === undefined || message.id === null) {
+            if (!SYNC.includes(method)) this.#write(message);
+            return Promise.resolve();
+        }
+        const id = message.id;
+        if (method === 'initialize') {
+            this.#waiting.set(id, { method, params: message.params, asking: null });
+            this.#write(message);
+            return Promise.resolve();
+        }
+        const asking = this.#askingOf(message.params);
+        const params = this.#out(message.params);
+        if (params === null) {
+            this.#enqueue(() => this.#deliver({ jsonrpc: '2.0', id, result: null }));
+            return Promise.resolve();
+        }
+        this.#waiting.set(id, { method, params: message.params, asking });
+        this.#write({ jsonrpc: '2.0', id, method, params: params.value });
+        return Promise.resolve();
+    }
+
+    /** The client's address of the document a request is made for, or null for none. */
+    #askingOf(params: unknown): string | null {
+        const document = isRecord(params) ? params.textDocument : null;
+        return isRecord(document) && typeof document.uri === 'string' ? document.uri : null;
+    }
+
+    /** Write a message to the port; one that cannot be sent is dropped, never queued. */
+    #write(message: Rpc): boolean {
+        if (this.#closed) return false;
+        return this.#port.send(message);
+    }
+
+    /**
+     * A message for the server with every address turned from the client's form into the page's,
+     * or null when an address names no registered model.
+     */
+    #out(value: unknown): { value: unknown } | null {
+        const missing: string[] = [];
+        const page = (address: string): string => {
+            const found = this.#addresses.get(address);
+            if (found === undefined) {
+                missing.push(address);
+                return '';
+            }
+            return found;
+        };
+        const walk = (item: unknown): unknown => {
+            if (Array.isArray(item)) return item.map(walk);
+            if (!isRecord(item)) return item;
+            const copy: Record<string, unknown> = {};
+            for (const [key, inner] of Object.entries(item)) {
+                if (ADDRESSES.includes(key) && typeof inner === 'string') copy[key] = page(inner);
+                else if (key === 'changes' && isRecord(inner)) {
+                    const changes: Record<string, unknown> = {};
+                    for (const [address, edits] of Object.entries(inner)) {
+                        changes[page(address)] = walk(edits);
+                    }
+                    copy[key] = changes;
+                } else if (key === 'arguments' && Array.isArray(inner)) {
+                    copy[key] = inner.map((one) =>
+                        typeof one === 'string' && this.#addresses.has(one) ? page(one) : walk(one)
+                    );
+                } else copy[key] = walk(inner);
+            }
+            return copy;
+        };
+        const walked = walk(value);
+        return missing.length > 0 ? null : { value: walked };
+    }
+
+    /**
+     * Ask the server about a registered model's file and answer the protocol's result, addresses in
+     * the page's form. Rejects with `Closed` when the port is closed or the transport ended, and
+     * with the server's own error otherwise.
+     */
+    ask(model: LspModel, method: string, params: Record<string, unknown> = {}): Promise<unknown> {
+        const doc = this.#byModel.get(model);
+        if (this.#closed || doc === undefined) return Promise.reject(new Closed());
+        return this.#askAbout(doc.page, method, params);
+    }
+
+    /**
+     * Run a command of the server; the addresses of its arguments are turned as a request's are.
+     * Null when an argument names no registered model or the transport has ended, so another
+     * language's transport may be asked.
+     */
+    command(command: string, args: readonly unknown[]): Promise<unknown> | null {
+        if (this.#closed) return null;
+        const turned = this.#out({ arguments: args });
+        if (turned === null) return null;
+        const { arguments: given } = turned.value as { arguments: unknown[] };
+        return this.#request({ command, arguments: given }, 'workspace/executeCommand');
+    }
+
+    #askAbout(page: string, method: string, params: Record<string, unknown>): Promise<unknown> {
+        const document = BARE_DOCUMENT.includes(method)
+            ? { uri: page }
+            : { textDocument: { uri: page } };
+        return this.#request({ ...params, ...document }, method);
+    }
+
+    /** One request of the host's own, under an id the client's counter cannot make. */
+    #request(params: Record<string, unknown>, method: string): Promise<unknown> {
+        const id = `${OWN}${(this.#next += 1)}`;
+        return new Promise<unknown>((resolve, reject) => {
+            this.#own.set(id, { resolve, reject });
+            if (!this.#write({ jsonrpc: '2.0', id, method, params })) {
+                this.#own.delete(id);
+                reject(new Closed());
+            }
+        });
+    }
+
+    // ------------------------------------------------------------------ from the server
+
+    #enqueue(job: () => void | Promise<void>): void {
+        this.#chain = this.#chain
+            .then(() => (this.#closed ? undefined : job()))
+            .catch(() => undefined);
+    }
+
+    #deliver(message: Rpc): void {
+        if (this.#closed) return;
+        if (this.#listener === undefined) this.#early.push(message);
+        else this.#listener(message);
+    }
+
+    /**
+     * The relay's `state` of a root. A root whose server ended because the root stopped being
+     * served (`failed` with the code `root_gone`) is remembered; the next state of that root says
+     * it is served again, and the open documents under it are put on the server again.
+     */
+    #rootState(frame: LspFrame): void {
+        const root = frame.root;
+        if (frame.oculus !== 'state' || typeof root !== 'string') return;
+        if (frame.state === 'failed' && frame.code === 'root_gone') {
+            this.#gone.add(root);
+            return;
+        }
+        if (!this.#gone.delete(root)) return;
+        for (const doc of this.#docs.values()) {
+            if (doc.place.root === root) this.#sendOpen(doc);
+        }
+    }
+
+    async #handle(frame: LspFrame): Promise<void> {
+        if ('oculus' in frame) {
+            this.#rootState(frame);
+            return;
+        }
+        const message = frame as Rpc;
+        if (message.method === undefined) {
+            await this.#response(message);
+            return;
+        }
+        if (message.id !== undefined && message.id !== null) {
+            this.#serverRequest(message);
+            return;
+        }
+        this.#notification(message);
+    }
+
+    async #response(message: Rpc): Promise<void> {
+        const id = message.id;
+        if (id === undefined || id === null) return;
+        if (typeof id === 'string' && id.startsWith(OWN)) {
+            const own = this.#own.get(id);
+            this.#own.delete(id);
+            if (own === undefined) return;
+            if (message.error !== undefined) own.reject(new Error(message.error.message));
+            else own.resolve(message.result ?? null);
+            return;
+        }
+        const waiting = this.#waiting.get(id);
+        if (waiting === undefined) return;
+        this.#waiting.delete(id);
+        // A request the relay could not pass on, as while its server restarts, is answered with no
+        // result: the Monaco client turns an error into a provider's rejection, which Monaco throws
+        // to the page as an uncaught error.
+        if (message.error?.code === REQUEST_CANCELLED) {
+            this.#deliver({ jsonrpc: '2.0', id, result: null });
+            return;
+        }
+        if (message.error !== undefined) {
+            this.#deliver({ jsonrpc: '2.0', id, error: message.error });
+            return;
+        }
+        if (waiting.method === 'initialize') {
+            this.#declared(message.result);
+            this.#deliver({ jsonrpc: '2.0', id, result: message.result ?? null });
+            return;
+        }
+        // The model the request was made for went before the answer came: nothing is made for it.
+        if (waiting.asking !== null && !this.#addresses.has(waiting.asking)) {
+            this.#deliver({ jsonrpc: '2.0', id, result: null });
+            return;
+        }
+        let result: unknown = message.result ?? null;
+        if (waiting.method === 'textDocument/codeAction') {
+            result = this.#codeActions(waiting, result);
+        }
+        const turned = await this.#in(result, waiting.asking);
+        this.#deliver({ jsonrpc: '2.0', id, result: turned === DROP ? null : turned });
+    }
+
+    /** The capabilities the server declared at `initialize`, told to the host. */
+    #declared(result: unknown): void {
+        const capabilities = isRecord(result) ? result.capabilities : null;
+        if (isRecord(capabilities)) this.#host.declared(capabilities);
+    }
+
+    /**
+     * The answer to a code action request: an action whose edit names a file other than the asking
+     * one is offered only when it carries a command, without the edit, and Organize Imports is
+     * added for Python when it was asked for and the server gave none.
+     */
+    #codeActions(waiting: Waiting, result: unknown): unknown {
+        const doc = this.#docOf(waiting.asking);
+        const given = Array.isArray(result) ? (result as unknown[]) : [];
+        const kept: unknown[] = [];
+        for (const action of given) {
+            if (!isRecord(action) || action.edit === undefined) {
+                kept.push(action);
+                continue;
+            }
+            const names = touched(action.edit);
+            const own = names?.every((name) => name === doc?.page) === true;
+            if (own) kept.push(action);
+            else if (action.command !== undefined) kept.push({ ...action, edit: undefined });
+        }
+        const asked = asksOrganize(waiting.params);
+        const hasOrganize = kept.some((one) => isRecord(one) && one.kind === ORGANIZE);
+        if (doc?.language === 'python' && asked && !hasOrganize) {
+            kept.push({
+                title: 'Organize Imports',
+                kind: ORGANIZE,
+                command: {
+                    title: 'Organize Imports',
+                    command: ORGANIZE_COMMAND,
+                    arguments: [doc.page]
+                }
+            });
+        }
+        return result === null && kept.length === 0 ? null : kept;
+    }
+
+    /** The document a client address names, when it is registered. */
+    #docOf(address: string | null): Doc | undefined {
+        if (address === null) return undefined;
+        const page = this.#addresses.get(address);
+        return page === undefined ? undefined : this.#docs.get(page);
+    }
+
+    /** A request of the server's the relay passed on. */
+    #serverRequest(message: Rpc): void {
+        const id = message.id ?? null;
+        const reply = (result: unknown): void => void this.#write({ jsonrpc: '2.0', id, result });
+        switch (message.method) {
+            case 'workspace/applyEdit':
+                reply({ applied: this.#applyEdit(message.params) });
+                return;
+            case 'workspace/semanticTokens/refresh':
+                reply(null);
+                this.#host.refreshTokens();
+                return;
+            case 'workspace/inlayHint/refresh':
+                this.#deliver(message);
+                return;
+            default:
+                void this.#write({
+                    jsonrpc: '2.0',
+                    id,
+                    error: { code: -32601, message: `${message.method ?? ''} is not handled` }
+                });
+        }
+    }
+
+    /**
+     * Apply a server's edit when it names registered documents alone, each as one undo stop. An
+     * edit that names a file no model holds, or creates, renames or deletes one, is refused with a
+     * notice, and nothing is applied.
+     */
+    #applyEdit(params: unknown): boolean {
+        const edit = isRecord(params) ? params.edit : null;
+        const edits = new Map<string, TextEdit[]>();
+        if (!isRecord(edit)) return false;
+        if (isRecord(edit.changes)) {
+            for (const [page, list] of Object.entries(edit.changes)) {
+                edits.set(page, [...(edits.get(page) ?? []), ...(list as TextEdit[])]);
+            }
+        }
+        if (Array.isArray(edit.documentChanges)) {
+            for (const change of edit.documentChanges as unknown[]) {
+                const document = isRecord(change) ? change.textDocument : null;
+                if (!isRecord(document) || typeof document.uri !== 'string') {
+                    this.#host.notice('lsp_other_files');
+                    return false;
+                }
+                const list = isRecord(change) ? (change.edits as TextEdit[]) : [];
+                edits.set(document.uri, [...(edits.get(document.uri) ?? []), ...list]);
+            }
+        }
+        const docs = [...edits.keys()].map((page) => this.#docs.get(page));
+        if (edits.size === 0 || docs.some((doc) => doc === undefined)) {
+            this.#host.notice('lsp_other_files');
+            return false;
+        }
+        let applied = true;
+        for (const [page, list] of edits) {
+            const doc = this.#docs.get(page);
+            if (doc !== undefined && !this.#host.apply(doc.models[0], list)) applied = false;
+        }
+        return applied;
+    }
+
+    #notification(message: Rpc): void {
+        const params = isRecord(message.params) ? message.params : {};
+        if (message.method === 'textDocument/publishDiagnostics') {
+            const place = typeof params.uri === 'string' ? placeOf(params.uri) : null;
+            if (place === null || !Array.isArray(params.diagnostics)) return;
+            this.#host.diagnostics(place, params.diagnostics as LspDiagnostic[]);
+        } else if (message.method === 'textDocument/inactiveRegions') {
+            const document = params.textDocument;
+            const place =
+                isRecord(document) && typeof document.uri === 'string'
+                    ? placeOf(document.uri)
+                    : null;
+            if (place === null || !Array.isArray(params.regions)) return;
+            this.#host.inactive(place, params.regions as LspRange[]);
+        }
+    }
+
+    // ------------------------------------------------------------------ addresses in answers
+
+    /**
+     * An answer for the client: every address of the page's form turned into the client's, the
+     * address of a registered model, or of a peek model made for a file no tab holds. A location
+     * that names a file that gets no model is dropped with the entry that holds it, and the answer
+     * is the symbol `DROP` when the whole answer was one.
+     */
+    async #in(value: unknown, asking: string | null): Promise<unknown> {
+        const wanted = new Set<string>();
+        const collect = (item: unknown): void => {
+            if (Array.isArray(item)) {
+                for (const one of item) collect(one);
+                return;
+            }
+            if (!isRecord(item)) return;
+            for (const [key, inner] of Object.entries(item)) {
+                if (ADDRESSES.includes(key) && typeof inner === 'string') wanted.add(inner);
+                else if (key === 'changes' && isRecord(inner)) {
+                    for (const address of Object.keys(inner)) wanted.add(address);
+                } else collect(inner);
+            }
+        };
+        collect(value);
+        const models = new Map<string, string | null>();
+        for (const page of wanted) {
+            if (placeOf(page) === null) continue;
+            models.set(page, await this.#modelFor(page, asking));
+        }
+        const address = (page: string): string | null | undefined => {
+            if (!models.has(page)) return undefined;
+            return models.get(page) ?? null;
+        };
+        const walk = (item: unknown): unknown => {
+            if (Array.isArray(item)) return item.map(walk).filter((one) => one !== DROP);
+            if (!isRecord(item)) return item;
+            const copy: Record<string, unknown> = {};
+            for (const [key, inner] of Object.entries(item)) {
+                if (ADDRESSES.includes(key) && typeof inner === 'string') {
+                    const turned = address(inner);
+                    if (turned === null) return DROP;
+                    copy[key] = turned ?? inner;
+                } else if (key === 'changes' && isRecord(inner)) {
+                    const changes: Record<string, unknown> = {};
+                    for (const [page, edits] of Object.entries(inner)) {
+                        const turned = address(page);
+                        if (turned === null) return DROP;
+                        changes[turned ?? page] = walk(edits);
+                    }
+                    copy[key] = changes;
+                } else if (key === 'arguments' && Array.isArray(inner)) {
+                    copy[key] = inner.map((one) => {
+                        const turned = typeof one === 'string' ? address(one) : undefined;
+                        return typeof one === 'string' ? (turned ?? one) : walk(one);
+                    });
+                } else {
+                    const walked = walk(inner);
+                    if (walked === DROP) return DROP;
+                    copy[key] = walked;
+                }
+            }
+            return copy;
+        };
+        return walk(value);
+    }
+
+    /**
+     * The client's address for a file named by the page's address: the asking model's when the file
+     * is the asking one's, else the first model of a registered file, else a peek model the host
+     * reads, or null when there is none to be had.
+     */
+    async #modelFor(page: string, asking: string | null): Promise<string | null> {
+        const doc = this.#docs.get(page);
+        if (doc !== undefined) {
+            if (asking !== null && this.#addresses.get(asking) === page) return asking;
+            return keyOf(doc.models[0]);
+        }
+        const kept = this.#peeks.get(page);
+        if (kept !== undefined) return keyOf(kept.model);
+        const place = placeOf(page);
+        if (place === null) return null;
+        for (let spelling = 0; spelling < SPELLINGS; spelling += 1) {
+            const model = await this.#host.peek(place, page, spelling);
+            if (model === null) return null;
+            // While the file was read, a tab may have opened it or an answer may have made its
+            // peek.
+            if (this.#closed || this.#docs.has(page) || this.#peeks.has(page)) {
+                this.#host.drop(model);
+                return this.#closed ? null : await this.#modelFor(page, asking);
+            }
+            const key = keyOf(model);
+            const clash = this.#lowered.get(key.toLowerCase());
+            if (clash !== undefined && clash !== key) {
+                this.#host.drop(model);
+                continue;
+            }
+            this.#peeks.set(page, { model, page, made: this.#now() });
+            this.#name(model, page);
+            return key;
+        }
+        return null;
+    }
+
+    // ------------------------------------------------------------------ the end
+
+    /** End the transport: nothing more is sent, and what waits is rejected. */
+    close(): void {
+        if (this.#closed) return;
+        this.#closed = true;
+        this.state.set('closed');
+        for (const stop of this.#stops.splice(0)) stop();
+        for (const watch of this.#watching.values()) watch.dispose();
+        this.#watching.clear();
+        for (const own of this.#own.values()) own.reject(new Closed());
+        this.#own.clear();
+        this.#waiting.clear();
+        for (const peek of this.#peeks.values()) this.#host.drop(peek.model);
+        this.#peeks.clear();
+        this.#docs.clear();
+        this.#byModel.clear();
+        this.#addresses.clear();
+        this.#lowered.clear();
+    }
+
+    /** The page's address of a model's file, for the host's own use. */
+    pageOf(model: LspModel): string | null {
+        return this.#byModel.get(model)?.page ?? null;
+    }
+}

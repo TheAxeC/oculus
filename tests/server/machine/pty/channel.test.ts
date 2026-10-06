@@ -2,8 +2,12 @@
 // driver records the argument list every channel operation built, which is what makes "the input
 // reached send-keys" an assertion rather than a process.
 
-import { afterEach, describe, expect } from 'vitest';
+import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { afterEach, describe, expect, vi } from 'vitest';
+import { WebSocket } from 'ws';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
+import { attachSocket } from '../../../../src/lib/server/root/socket.ts';
 import type { Sink } from '../../../../src/lib/server/core/channels.ts';
 import {
     Terminals,
@@ -127,17 +131,69 @@ function encode(text: string): string {
     return Buffer.from(text, 'utf8').toString('base64');
 }
 
+/** A real socket server over `held`, which records whether each message was let write. */
+async function socketOver(
+    held: Terminals,
+    hub: Hub
+): Promise<{ port: number; writable: boolean[] }> {
+    const server: Server = createServer();
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const writable: boolean[] = [];
+    let canWrite: (sink: Sink) => boolean = () => false;
+    const attached = attachSocket(server, hub, {
+        path: '/ws',
+        token: TOKEN,
+        terminals: {
+            gate: (given) => {
+                canWrite = given;
+                held.gate(given);
+            },
+            subscribed: (sink, channels) => held.subscribed(sink, channels),
+            inbound: (sink, data) => {
+                if (data.includes('"input"')) writable.push(canWrite(sink));
+                return held.inbound(sink, data);
+            },
+            remove: (sink) => held.remove(sink)
+        }
+    });
+    closers.push(() => {
+        attached.close();
+        server.close();
+    });
+    return { port: (server.address() as AddressInfo).port, writable };
+}
+
+const closers: (() => void)[] = [];
+const clients: WebSocket[] = [];
+
+afterEach(() => {
+    while (clients.length > 0) clients.pop()?.close();
+    while (closers.length > 0) closers.pop()?.();
+});
+
+/** A page's socket: its subscribe message, sent once the socket is open. */
+async function pageOn(port: number, subscribe: object): Promise<WebSocket> {
+    const client = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
+        headers: { origin: `http://127.0.0.1:${port}` }
+    });
+    clients.push(client);
+    await new Promise((resolve) => client.once('open', resolve));
+    client.send(JSON.stringify(subscribe));
+    return client;
+}
+
 describe('what the page may send back', () => {
     it('refuses input from a socket that carried no token', async () => {
-        const { held, driver: record } = terminals();
-        const page = recorder();
-        held.subscribed(page.sink, [CHANNEL], undefined, TOKEN);
+        const { held, hub, driver: record } = terminals();
+        const { port, writable } = await socketOver(held, hub);
+        const client = await pageOn(port, { type: 'subscribe', channels: [CHANNEL] });
+        await vi.waitFor(() => expect(record.attached()).toEqual([ID]));
         await settle();
         record.calls.length = 0;
-        held.inbound(
-            page.sink,
+        client.send(
             JSON.stringify({ type: 'input', channel: CHANNEL, bytes: encode('rm -rf .\r') })
         );
+        await vi.waitFor(() => expect(writable).toEqual([false]));
         await settle();
         expect(record.calls).toEqual([]);
     });
@@ -147,7 +203,7 @@ describe('a socket that closed', () => {
     it('stops the delivery and leaves the tmux session alone', async () => {
         const { held, hub, driver: record } = terminals();
         const page = recorder();
-        held.subscribed(page.sink, [CHANNEL], TOKEN, TOKEN);
+        held.subscribed(page.sink, [CHANNEL]);
         await settle();
         const before = page.messages.length;
 
@@ -218,7 +274,7 @@ async function attachedWith(record: ReturnType<typeof driver>): Promise<string> 
         },
         close: noop
     };
-    held.subscribed(sink, [CHANNEL], TOKEN, TOKEN);
+    held.subscribed(sink, [CHANNEL]);
     const message = await first;
     expect(message.version).toBe(0);
     return Buffer.from((message.payload as { bytes: string }).bytes, 'base64').toString('utf8');

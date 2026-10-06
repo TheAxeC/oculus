@@ -87,6 +87,7 @@ const FIELDS: (keyof LocalConfig)[] = [
     'changes',
     'history',
     'approvals',
+    'lsp',
     'schedules',
     'scheduleRecord',
     'claudeBin',

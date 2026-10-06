@@ -60,6 +60,7 @@
         label,
         name,
         glyph,
+        glyphStyle,
         file,
         depth = 0,
         level,
@@ -139,6 +140,8 @@
     </span>
     {#if file !== undefined}
         <FileIcon name={file} />
+    {:else if glyph !== undefined && glyphStyle !== undefined}
+        <span class="tint" style={glyphStyle}><Glyph name={glyph} /></span>
     {:else if glyph !== undefined}
         <Glyph name={glyph} />
     {/if}
@@ -233,6 +236,11 @@
 </div>
 
 <style>
+    /* A glyph given its own colour sits in a box that takes no place of its own. */
+    .tint {
+        display: contents;
+    }
+
     /* The row's height, one level's indent and the two type sizes are the tokens of
        themes/tokens.css, which an ancestor may set for a tree of its own, each multiplied here by
        the text size. */

@@ -86,6 +86,13 @@ export type Status = 'connecting' | 'open' | 'closed';
 /** One client's end of the one WebSocket. */
 export type SocketStore = {
     status: () => Status;
+    /**
+     * Whether the open socket's subscription carries the token the server holds. After a reconnect
+     * it is false until the page has renewed its token, since a frame written before is refused.
+     */
+    admitted: () => boolean;
+    /** Hear every change of the status or the admission; the call it returns stops hearing. */
+    onLink: (fn: () => void) => () => void;
     connect: (names: string[]) => void;
     disconnect: () => void;
     send: (message: unknown) => boolean;

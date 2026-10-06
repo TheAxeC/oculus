@@ -13,7 +13,11 @@
 // Cmd+S is the shell key action `save` (shell/keys/keys.ts), performed in workbench-keys.svelte.ts
 // by an ask to the source tab on screen, and Alt+Z is the key of word wrap in the editor.
 
-import { SAVE_ACTION, type EditorAsk } from '$lib/state/workbench/navigation/editor-status.svelte';
+import {
+    SAVE_ACTION,
+    type EditorAsk,
+    type SelectRange
+} from '$lib/state/workbench/navigation/editor-status.svelte';
 import type { Indent } from '$lib/state/workbench/navigation/editor-text';
 import { WRAP_ACTION } from '$lib/ui/controls/editor/options';
 import type { EditorHandle, EditorOwnAction } from '$lib/ui/controls/editor/types';
@@ -38,6 +42,8 @@ export type TabActionDeps = {
     previewSide: () => void;
     submit: () => void;
     toggleBlame: () => void;
+    /** The actions a language server adds, which follow the tab's own in the palette. */
+    language: EditorOwnAction[];
 };
 
 /** The actions of the tab that apply now, in the order the palette lists them. */
@@ -75,13 +81,15 @@ export function tabActions(deps: TabActionDeps): EditorOwnAction[] {
     if (deps.blameable) {
         listed.push({ id: 'oculus.blame', label: t('source.cmd_blame'), run: deps.toggleBlame });
     }
-    return listed;
+    return [...listed, ...deps.language];
 }
 
 /** What performing an ask reads of the tab and calls on it. */
 export type AskDeps = {
-    /** Whether the text may be written, which is when the editor is asked anything. */
+    /** Whether the text may be written, which is when its indentation and ending change. */
     editing: boolean;
+    /** Whether the editor is drawn, which is when it is asked to go to a line or to select. */
+    drawn: boolean;
     /**
      * The indentation the text is shown in, whose size a conversion keeps; null before it is known.
      */
@@ -92,6 +100,8 @@ export type AskDeps = {
     openCommit: () => void;
     setLanguage: (language: string) => void;
     setIndent: (indent: Indent) => void;
+    /** Select a range of the text, which a press on a node of the Files view's AST asks. */
+    select: (range: SelectRange) => void;
 };
 
 /** Perform one ask on the tab. */
@@ -105,12 +115,16 @@ export function performAsk(ask: EditorAsk, deps: AskDeps): void {
         deps.setLanguage(ask.language);
     } else if (ask.kind === 'indent') {
         deps.setIndent(ask.indent);
-    } else if (!deps.editing) {
+    } else if (ask.kind === 'select') {
+        deps.select(ask.range);
+    } else if (!deps.drawn) {
         return;
     } else if (ask.kind === 'convert') {
-        if (deps.indent === null) return;
+        if (!deps.editing || deps.indent === null) return;
         deps.setIndent({ tabs: ask.tabs, size: deps.indent.size });
         deps.editor?.perform(ask);
+    } else if (ask.kind === 'ending') {
+        if (deps.editing) deps.editor?.perform(ask);
     } else {
         deps.editor?.perform(ask);
     }

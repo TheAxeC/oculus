@@ -1,8 +1,13 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/files/Files.svelte. The sections under the trees: the
-    // outline and the timeline of the file tab the reader looked at last, then the reader's own
+    // outline, clangd's AST and Memory Usage (each drawn only while it holds an answer) and the
+    // timeline of the file tab the reader looked at last, then the reader's own
     // bookmarks and the scratch notes, each in the same row style and each drawn in every state its
     // read can be in, so a head and its control are there whatever the read said.
+    //
+    // The file tab the reader looked at last on the page (followedTab in
+    // state/sources/explorer/sections/followed-tab.ts) is chosen here and handed to the Outline
+    // and to clangd's AST and Memory Usage sections, which read the same tab.
     //
     // The bookmarks and the notes are read here rather than handed down, because this is what draws
     // what each one answered: the list, the one muted row of a list that is empty, or the sentence
@@ -23,6 +28,8 @@
     import { untrack } from 'svelte';
     import Bookmarks from './Bookmarks.svelte';
     import Notes from './Notes.svelte';
+    import Ast from './clangd/Ast.svelte';
+    import MemoryUsage from './clangd/MemoryUsage.svelte';
     import Outline from './Outline.svelte';
     import Timeline from './Timeline.svelte';
     import type { Entry } from '$lib/state/boards/collection';
@@ -30,12 +37,25 @@
     import { noteId } from '$lib/state/life/notes';
     import { refusal } from '$lib/state/sources/explorer/acts/refusal';
     import { sectionOpen } from '$lib/state/sources/explorer/sections/section-state';
+    import { followedTab } from '$lib/state/sources/explorer/sections/followed-tab';
+    import { fileOfTab } from '$lib/state/workbench/navigation/pages';
+    import { panes } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
     const {
         fs: { bookmarks, deleteNote, notes, retryBookmarks, retryNotes },
-        layout: { closeRecord, openView }
+        layout: { activeInstance, closeRecord, currentPage, layout, openView }
     } = useState();
+
+    const page = $derived(currentPage().id);
+    /** The file tab the reader looked at last on the page. */
+    const followed = $derived(
+        followedTab(
+            panes(layout(page)).map((held) => held.pane),
+            activeInstance(page)?.id ?? null,
+            (one) => fileOfTab(one) !== null
+        )
+    );
 
     type Props = {
         /** The instance id of the file browser on screen. */
@@ -94,7 +114,13 @@
     }
 </script>
 
-<Outline open={sectionOpen(view, 'outline')} ontoggle={() => onsection('outline')} />
+<Outline open={sectionOpen(view, 'outline')} ontoggle={() => onsection('outline')} tab={followed} />
+<Ast open={sectionOpen(view, 'ast')} ontoggle={() => onsection('ast')} tab={followed} />
+<MemoryUsage
+    open={sectionOpen(view, 'memory')}
+    ontoggle={() => onsection('memory')}
+    tab={followed}
+/>
 <Timeline
     open={sectionOpen(view, 'timeline')}
     ontoggle={() => onsection('timeline')}

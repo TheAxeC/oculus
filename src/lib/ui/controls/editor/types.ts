@@ -38,16 +38,23 @@ export type KeyPress = {
 /**
  * An action the parent owns and hands the editor: the editor binds `key` to it, when it has one,
  * and lists it to the palette with the key as its hint. The parent lists the same actions to the
- * palette itself while it draws no editor.
+ * palette itself while it draws no editor. An action with a `menu` is also in the editor's
+ * right-click menu, in the group of that name.
  */
-export type EditorOwnAction = { id: string; label: string; key?: KeyPress; run: () => void };
+export type EditorOwnAction = {
+    id: string;
+    label: string;
+    key?: KeyPress;
+    menu?: string;
+    run: () => void;
+};
 
 /** The labels of the editor's three actions over the quick diff marks, in the parent's words. */
 export type EditorChangeWords = { next: string; previous: string; open: string };
 
 /** What the parent asks the editor to do through `perform`. */
 export type EditorCommand =
-    | { kind: 'goto'; line: number }
+    | { kind: 'goto'; line: number; column?: number }
     | { kind: 'indent'; indent: EditorIndent }
     | { kind: 'convert'; tabs: boolean }
     | { kind: 'ending'; ending: EditorEnding }

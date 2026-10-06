@@ -61,9 +61,12 @@ import {
     patchedFilesView,
     type FilesForms
 } from '../sources/fs.ts';
-import { createHpc, type HpcStore } from '../system/machine/hpc.svelte.ts';
-import { createProcesses, type ProcessesStore } from '../system/machine/processes.svelte.ts';
-import { createSchedule, type ScheduleStore } from '../system/machine/schedule.svelte.ts';
+import { createHpc, type HpcStore } from '../system/machine/hpc/hpc.svelte.ts';
+import {
+    createProcesses,
+    type ProcessesStore
+} from '../system/machine/processes/processes.svelte.ts';
+import { createSchedule, type ScheduleStore } from '../system/machine/schedules/schedule.svelte.ts';
 import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
 import { tabsOf } from '../workbench/layout/instance.ts';
 import { paneAt } from '../workbench/layout/index.ts';
@@ -93,6 +96,10 @@ import { heldDiff } from '../sources/repositories/repositories.ts';
 import { createSelection, type SelectionStore } from '../workbench/selection.svelte.ts';
 import { createExplorer, type ExplorerStore } from '../sources/explorer/ops.svelte.ts';
 import { createSearch, type SearchStore } from '../sources/search/search.svelte.ts';
+import { createClangd, type ClangdStore } from '../system/machine/lsp/clangd.svelte.ts';
+import { createDocuments, type DocumentsStore } from '../system/machine/lsp/documents.svelte.ts';
+import { createLsp, type LspStore } from '../system/machine/lsp/lsp.svelte.ts';
+import { createReferences, type ReferencesStore } from '../system/machine/lsp/references.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
 import { createSource, sourceTabState, type SourceStore } from '../sessions/source.svelte.ts';
@@ -108,7 +115,7 @@ import { createUi, type UiStore } from '../workbench/ui.svelte.ts';
 import {
     createUsageRefresh,
     type UsageRefreshStore
-} from '../system/machine/usage-refresh.svelte.ts';
+} from '../system/machine/usage/usage-refresh.svelte.ts';
 import { createQueries } from './queries.svelte.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { createWrites, type WritesStore } from './writes.svelte.ts';
@@ -180,6 +187,14 @@ export type ClientState = {
     editorStatus: EditorStatusStore;
     /** The headings a rendered tab shows, for the Outline, and the Outline's presses on them. */
     headings: HeadingsStore;
+    /** The language servers: their channels, states, choices and logs. */
+    lsp: LspStore;
+    /** The diagnostics of the files and the document symbols of the source tabs. */
+    documents: DocumentsStore;
+    /** The References view's results, history and walk. */
+    references: ReferencesStore;
+    /** What clangd answered a tab for the Files view's AST and Memory Usage sections. */
+    clangd: ClangdStore;
     /** The notifications the status bar's bell counts and its centre lists. */
     notices: NoticesStore;
     registry: RegistryStore;
@@ -433,6 +448,10 @@ export function createClientState(desktop?: Desktop): ClientState {
     });
     const editorStatus = createEditorStatus();
     const headings = createHeadings();
+    const lsp = createLsp(socket);
+    const documents = createDocuments();
+    const references = createReferences(ui);
+    const clangd = createClangd();
     const notices = createNotices(ui);
     const commands = withQueries(
         'commands',
@@ -534,6 +553,10 @@ export function createClientState(desktop?: Desktop): ClientState {
         paletteSource,
         editorStatus,
         headings,
+        lsp,
+        documents,
+        references,
+        clangd,
         notices,
         registry,
         apps,

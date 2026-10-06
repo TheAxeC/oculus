@@ -30,7 +30,7 @@ import { glyphCatalog, loadLocal, textCatalog } from '../../../data/sources/conf
 import { MANUSCRIPT, isMainOf, programOf } from '../../content/latex.ts';
 import type { Program } from '../../../data/prose/latex.ts';
 import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
-import { captureTask, restartTask, rerunTask, startCommand } from '../commands/run.ts';
+import { captureTask, restartTask, rerunTask, startCommand } from '../runs/commands/run.ts';
 import { startChat, type ChatOptions } from './start/chat.ts';
 import { defaultApprovalsPath } from '../approvals/approvals.ts';
 import {
@@ -39,7 +39,7 @@ import {
     seedFacts,
     taskPrompt,
     type SeedSource
-} from '../seeds/task-start.ts';
+} from '../runs/seeds/task-start.ts';
 import { words } from '../../core/words.ts';
 import {
     accountEnv,
@@ -75,7 +75,7 @@ import {
 } from './sessions.ts';
 import { TmuxFailed, TerminalRefused, refusal, refusalFor } from './refusal.ts';
 import { shellWord } from './shell-word.ts';
-import { startUpdateTask } from '../schedules/task.ts';
+import { startUpdateTask } from '../runs/schedules/task.ts';
 import { run } from './tmux.ts';
 import type {
     SessionRecord,

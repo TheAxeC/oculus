@@ -8,7 +8,9 @@
     // unlocks the group. With `wrap_tabs` and `show_tabs: multiple` the tabs wrap onto rows.
     //
     // The path of the active file tab is a breadcrumb: under the strip, or, when the strip shows
-    // the active tab alone, in the strip's own row beside the tab. The file tab's own actions
+    // the active tab alone, in the strip's own row beside the tab. After the file it goes on with
+    // the symbols that hold the caret, when a language server has answered the file's symbols, each
+    // with its kind's icon. The file tab's own actions
     // (Save, Revert File, the star, Open in Program, Open Preview, Open Preview to the Side, Open
     // Source and Toggle Blame, handed in as `barActions`) stand at the right end of that same bar,
     // whole, while the path is cut from the left when the two do not fit. A tab naming no file
@@ -29,6 +31,7 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Breadcrumb from '$lib/ui/tabs/Breadcrumb.svelte';
     import type { Crumb } from './tab-crumbs';
+    import { colourOf } from '$lib/ui/controls/editor/kit/theme/colours';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Tabs from '$lib/ui/tabs/Tabs.svelte';
     import type { Tab } from '$lib/ui/tabs/tab-strip';
@@ -154,7 +157,15 @@
     {#if crumbs.length > 0}
         <Breadcrumb
             label={t('ui.tab_path')}
-            segments={crumbs.map((crumb, at) => ({ id: String(at), label: crumb.label }))}
+            segments={crumbs.map((crumb, at) => ({
+                id: String(at),
+                label: crumb.label,
+                glyph: crumb.symbol?.glyph,
+                glyphStyle:
+                    crumb.symbol === undefined
+                        ? undefined
+                        : `color: ${colourOf(crumb.symbol.colour)}`
+            }))}
             onselect={(id: string) => oncrumb?.(crumbs[Number(id)])}
         />
     {/if}

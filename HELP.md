@@ -43,7 +43,7 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | m1-m7 | open a view of the Sessions page's group |
 | p1-p4 | open a view of the Projects page's group |
 | e1-e6 | open a view of the Incoming page's group |
-| s1-s3 | open a view of the Explorer page's group |
+| s1-s4 | open a view of the Explorer page's group |
 | c1-c6 | open a view of the Academic Life page's group |
 | l1-l3 | open a view of the Pillars page's group |
 | r1-r4 | open a view of the References page's group |
@@ -93,6 +93,7 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `files` | [Files](docs/views.md#files) | The file browser over the hub, the engine config folder and the configured roots, read like an editor's explorer. |
 | `repositories` | [Repositories](docs/views.md#repositories) | VS Code's Source Control over every repository oculus knows, with the commit box, the changes, the graph, stashes, tags and worktrees. |
 | `search` | [Search](docs/views.md#search) | A pattern across the files of one root or of all of them, the hits grouped by file, with an optional replace. |
+| `references` | [References](docs/views.md#references) | The locations a language server found for Find All References or Find All Implementations in a source tab. |
 | `funding` | [Funding](docs/views.md#funding) | The funding schemes, their stage and the statement each grant requires. |
 | `events` | [Talks & Events](docs/views.md#talks--events) | Talks, events and what is coming. |
 | `education` | [Education & Service](docs/views.md#education--service) | Teaching and service entries. |

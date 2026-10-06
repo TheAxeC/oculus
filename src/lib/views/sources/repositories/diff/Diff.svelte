@@ -330,7 +330,8 @@
             blame: '',
             actions,
             file: '',
-            selection: ''
+            selection: '',
+            served: null
         });
     });
 

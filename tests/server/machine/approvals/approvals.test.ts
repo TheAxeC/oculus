@@ -14,7 +14,7 @@ import {
     isApproved,
     revokeApp
 } from '../../../../src/lib/server/machine/approvals/approvals.ts';
-import { enterHome, leaveHome } from '../commands/commands-fixture.ts';
+import { enterHome, leaveHome } from '../runs/commands/commands-fixture.ts';
 
 let home = '';
 let file = '';

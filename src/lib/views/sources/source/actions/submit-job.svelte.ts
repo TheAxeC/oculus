@@ -12,8 +12,8 @@
 
 import { humanSize } from '$lib/state/boards/board/stats';
 import { t } from '$lib/state/shared/words/text';
-import type { HpcStore } from '$lib/state/system/machine/hpc.svelte';
-import { refusalSentence, type SubmitPlan } from '$lib/state/system/machine/submit';
+import type { HpcStore } from '$lib/state/system/machine/hpc/hpc.svelte';
+import { refusalSentence, type SubmitPlan } from '$lib/state/system/machine/hpc/submit';
 import type { Ask } from '$lib/views/shared/writes/ask';
 import type { SaidTone } from '../save/said-tone';
 

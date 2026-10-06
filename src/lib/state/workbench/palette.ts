@@ -59,6 +59,8 @@ export type PaletteCommand = {
         | 'tab'
         | 'goto'
         | 'language'
+        | 'interpreter'
+        | 'compile-database'
         | 'help'
         | 'update'
         | 'workspace'
@@ -270,11 +272,19 @@ export function lineQuery(parsed: ParsedCommand | null): number | null {
     return Number.isSafeInteger(line) && line > 0 ? line : null;
 }
 
+/** The languages whose servers have a compile database to choose. */
+const DATABASE_LANGUAGES = ['c', 'cpp'];
+
 /**
- * The command vocabulary and its argument hints, over the current theme and view configuration and
- * whether a source tab is on screen, which is what `language` changes.
+ * The command vocabulary and its argument hints, over the current theme and view configuration,
+ * whether a source tab is on screen, which is what `language` changes, and the language a server
+ * serves the tab in (empty for none), which is what `interpreter` and `compile-database` change.
  */
-export function commands(config: Record<string, unknown>, source = false): PaletteCommand[] {
+export function commands(
+    config: Record<string, unknown>,
+    source = false,
+    served = ''
+): PaletteCommand[] {
     const themes = readAs(themeNamesShape, config.themes) ?? [];
     return [
         { name: 'theme', hint: `<${themes.join(' | ')}>`, available: themes.length > 0 },
@@ -283,6 +293,12 @@ export function commands(config: Record<string, unknown>, source = false): Palet
         { name: 'tab', hint: '<view id>', available: true },
         { name: 'goto', hint: '<project id>', available: true },
         { name: 'language', hint: '<language>', available: source },
+        { name: 'interpreter', hint: '<path>', available: served === 'python' },
+        {
+            name: 'compile-database',
+            hint: '<name>',
+            available: DATABASE_LANGUAGES.includes(served)
+        },
         { name: 'help', hint: '', available: false },
         { name: 'update', hint: '', available: true },
         { name: 'workspace', hint: '<workspace>', available: true },

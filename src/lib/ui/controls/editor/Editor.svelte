@@ -24,11 +24,14 @@
     //
     // The keyboard reaches the quick diff marks through three editor actions, which the palette
     // lists while the text holds a mark (gutter/gutter.ts `changeActions`): Next, Previous, Open
-    // Change. The `actions` prop adds the actions the parent owns (Alt+Z's toggle of word wrap),
-    // each bound to its key when it has one and listed to the palette. A parent may also tint runs
-    // of lines (`highlights`, the merge editor's conflicts) and draw bars of its own above lines
-    // (`bars`, rendered by its `bar` snippet, placed by bars/zones.ts), and add to the model what
-    // it needs once the model exists (`extension`, types.ts).
+    // Change. The decorations of the marks, the breakpoints and the blame, the press in the gutter
+    // and the action over the marks from the caret's line are gutter/editor-gutter.ts's, which this
+    // file calls with the editor, the model and the values it holds. The `actions` prop adds the
+    // actions the parent owns (Alt+Z's toggle of word wrap), each bound to its key when it has one
+    // and listed to the palette. A parent may also tint runs of lines (`highlights`, the merge
+    // editor's conflicts) and draw bars of its own above lines (`bars`, rendered by its `bar`
+    // snippet, placed by bars/zones.ts), and add to the model what it needs once the model exists
+    // (`extension`, types.ts).
     //
     // Tab inserts indentation. An Escape Monaco did not take arms the next Tab to move the focus
     // on (tab-out.ts): the key is read before Monaco, where a Tab that leaves is kept from it, and
@@ -41,18 +44,8 @@
     import { shikiId } from './kit/grammars';
     import { font, paintCode, repaint } from './kit/look';
     import { chordActions, ownListing } from './chords';
-    import {
-        blameDecorations,
-        blameNumbers,
-        blameWidth,
-        breakpointDecorations,
-        changeActions,
-        markAction,
-        markDecorations,
-        type ChangeAction,
-        type EditorBlame,
-        type EditorMark
-    } from './gutter/gutter';
+    import { changeActions, type EditorBlame, type EditorMark } from './gutter/gutter';
+    import { actOnMarks, drawGutter, pressInGutter } from './gutter/editor-gutter';
     import { tabOut } from './tab-out';
     import { followFirstLine, runCommand, type FirstLine } from './commands';
     import { applyIndent, applyOptions, monacoOptions } from './options';
@@ -223,7 +216,15 @@
                 onscroll?.(room > 0 ? Math.min(1, event.scrollTop / room) : 0);
             }),
             firstLine.listener,
-            made.onMouseDown((event) => pressed(loaded, event.target))
+            made.onMouseDown((event) =>
+                pressInGutter(
+                    loaded.monaco,
+                    event.target,
+                    { marks, blame, breakpoints },
+                    model?.getLineCount() ?? lines,
+                    { onmark, onblame, onglyph }
+                )
+            )
         );
         editor = made;
         kit = loaded;
@@ -236,8 +237,9 @@
     const marked = $derived(marks.length > 0);
 
     // The actions over the marks, added under the parent's labels while the text holds a mark, and
-    // the actions the parent owns, added again when the labels, the mark state or the parent's
-    // actions change, and said to the palette.
+    // the actions the parent owns (in the right-click menu too, when one names a group), added
+    // again when the labels, the mark state or the parent's actions change, and said to the
+    // palette.
     $effect(() => {
         const loaded = kit;
         const made = editor;
@@ -246,12 +248,18 @@
         const listed = words === undefined ? [] : changeActions(words, loaded.mac, marked);
         const added = listed.map(({ id, label, press, does }) => {
             const keybindings = press === null ? [] : [keyCode(loaded.monaco, press)];
-            return made.addAction({ id, label, keybindings, run: () => act(made, does) });
+            return made.addAction({
+                id,
+                label,
+                keybindings,
+                run: () => actOnMarks(made, does, marks, model?.getLineCount() ?? lines, onmark)
+            });
         });
         const said = listed.map(({ id, label, hint }): EditorAction => ({ id, label, hint }));
-        for (const { id, label, key, run } of actions) {
+        for (const { id, label, key, menu, run } of actions) {
             const keybindings = key === undefined ? [] : [keyCode(loaded.monaco, key)];
-            added.push(made.addAction({ id, label, keybindings, run: () => run() }));
+            const group = menu === undefined ? {} : { contextMenuGroupId: menu };
+            added.push(made.addAction({ id, label, keybindings, ...group, run: () => run() }));
         }
         said.push(...ownListing(actions, loaded.mac));
         untrack(() => onactions?.([...said, ...chordActions(made, loaded.mac)]));
@@ -259,16 +267,6 @@
             for (const action of added) action.dispose();
         };
     });
-
-    /** An action over the marks, from the caret's line: the mark opened, or the caret moved. */
-    function act(made: Monaco.editor.IStandaloneCodeEditor, does: ChangeAction['does']): void {
-        const line = made.getPosition()?.lineNumber ?? 1;
-        const done = markAction(does, marks, line, model?.getLineCount() ?? lines);
-        if (done?.mark !== undefined) onmark?.(done.mark);
-        if (done?.line === undefined) return;
-        made.setPosition({ lineNumber: done.line, column: 1 });
-        made.revealLineInCenterIfOutsideViewport(done.line);
-    }
 
     function caretMoved(selection: Monaco.Selection): void {
         const held = model;
@@ -281,22 +279,6 @@
         });
         const length = held.getValueLengthInRange(selection, LF);
         onselect?.(length > 0 && length <= SELECTED_MAX ? held.getValueInRange(selection, LF) : '');
-    }
-
-    /** A press in the gutter: a quick diff mark, a blamed line number, or the glyph margin. */
-    function pressed(loaded: EditorKit, target: Monaco.editor.IMouseTarget): void {
-        const line = target.position?.lineNumber;
-        if (line === undefined) return;
-        const { MouseTargetType } = loaded.monaco.editor;
-        if (target.type === MouseTargetType.GUTTER_LINE_DECORATIONS) {
-            const done = markAction('open', marks, line, model?.getLineCount() ?? lines);
-            if (done?.mark !== undefined) onmark?.(done.mark);
-        } else if (target.type === MouseTargetType.GUTTER_LINE_NUMBERS) {
-            const row = blame.find((one) => one.line === line);
-            if (row !== undefined && row.commit !== '') onblame?.(row);
-        } else if (target.type === MouseTargetType.GUTTER_GLYPH_MARGIN) {
-            onglyph?.(line);
-        }
     }
 
     // The values that name the model, held as values: a prop handed in as a member of an object (a
@@ -387,22 +369,17 @@
     // The gutter: the marks and the breakpoints as decorations, the blame in the number column.
     $effect(() => {
         const count = lines;
-        const held = [marks, blame, breakpoints] as const;
+        const held = { marks, blame, breakpoints };
         if (editor === null || model === null || collections === null) return;
-        collections.marks.set(markDecorations(held[0], model.getLineCount()));
-        collections.breakpoints.set(breakpointDecorations(held[2]));
-        collections.blame.set(blameDecorations(held[1]));
-        editor.updateOptions({
-            lineNumbers: held[1].length === 0 ? 'on' : blameNumbers(held[1], count),
-            lineNumbersMinChars: blameWidth(held[1], count)
-        });
+        drawGutter(editor, model, collections, held, count);
     });
 
     // The parent's extension, added to the model and taken away with it or when another is given.
+    // What the extension reads while it adds itself is not a reason to add it again.
     $effect(() => {
         const [add, loaded, made, held] = [extension, kit, editor, model];
         if (add === undefined || loaded === null || made === null || held === null) return;
-        return add(loaded, made, held);
+        return untrack(() => add(loaded, made, held));
     });
 
     $effect(() => {

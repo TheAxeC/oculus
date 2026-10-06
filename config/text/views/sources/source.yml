@@ -9,13 +9,28 @@ text:
         binary: This file is not text on disk; the editor saves nothing over it.
         cannot_open: 'Cannot open: {0}'
         cmd_blame: 'Git: Toggle Git Blame Editor Decoration'
+        cmd_clangd_ast: 'clangd: Show AST'
+        cmd_clangd_database: 'clangd: Select Compile Database'
+        cmd_clangd_header: 'clangd: Switch Between Source/Header'
+        cmd_clangd_memory: 'clangd: Show memory usage'
+        cmd_clangd_output: 'clangd: Show Language Server Output'
+        cmd_clangd_restart: 'clangd: Restart language server'
+        cmd_find_implementations: 'References: Find All Implementations'
+        cmd_find_references: 'References: Find All References'
+        cmd_next_reference: Go to Next Reference
         cmd_preview_side: 'Markdown: Open Preview to the Side'
+        cmd_previous_reference: Go to Previous Reference
+        cmd_python_interpreter: 'Python: Select Interpreter'
+        cmd_python_output: 'Python: Show Language Server Output'
+        cmd_python_restart: 'Python: Restart Language Server'
         cmd_rendered: 'Markdown: Toggle Rendered Half'
         cmd_revert: 'File: Revert File'
         cmd_save: 'File: Save'
         cmd_submit: 'Slurm: Submit Job'
         code: '{0}, read only'
         failed: failed
+        format_failed: 'Saved without formatting: {0}'
+        format_timeout: 'Saved without formatting: the language server did not answer within 60 seconds.'
         head_binary: This version of the file is not text, so it cannot be shown here.
         head_label: '{0} (HEAD)'
         head_locked: This is the file as the last commit holds it; it cannot be edited.
@@ -23,6 +38,9 @@ text:
         index_label: '{0} (Index)'
         index_locked: This is the file as the index holds it; it cannot be edited.
         locked_glyph: lock
+        lsp_choices_unread: 'The interpreter and compile database choices of this repository could not be read: {0}'
+        lsp_choices_write: 'The choice could not be kept: {0}'
+        lsp_other_files: This change edits other files too; open them to apply it there.
         next_change: Go to Next Change
         open_change: Open Change
         preview_side: Open Preview to the Side

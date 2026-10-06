@@ -6,6 +6,11 @@
 // comments are not counted, by each language's own rules. In C++ a line holding only `public:`,
 // `protected:` or `private:` opens a range to the line before the next such label of the same
 // block, or before the block's closing brace.
+//
+// While a language server serves a model its folding ranges are the ones used (clangd's), and the
+// braces answer nothing for it: Monaco joins the ranges of every provider of a language, so two
+// answers for one block would be drawn twice. Monaco is told to ask again when what is served
+// changes.
 
 import type * as Monaco from 'monaco-editor';
 
@@ -109,13 +114,29 @@ export function foldingRanges(language: string, lines: readonly string[]): Foldi
     return ranges.sort((one, two) => one.start - two.start || two.end - one.end);
 }
 
+/** Which models a language server serves, and the call that hears it change. */
+export type FoldingServed = {
+    has(model: Monaco.editor.ITextModel): boolean;
+    onChange(listener: () => void): { dispose(): void };
+};
+
 /** Register the folding of each language of `FOLDING_LANGUAGES` with Monaco. */
-export function registerFolding(monaco: Pick<typeof Monaco, 'languages'>): Monaco.IDisposable {
-    const registered = FOLDING_LANGUAGES.map((language) =>
-        monaco.languages.registerFoldingRangeProvider(language, {
+export function registerFolding(
+    monaco: Pick<typeof Monaco, 'languages'>,
+    served?: FoldingServed
+): Monaco.IDisposable {
+    const registered = FOLDING_LANGUAGES.map((language) => {
+        const provider: Monaco.languages.FoldingRangeProvider = {
+            onDidChange: (listener) =>
+                served?.onChange(() => {
+                    listener(provider);
+                }) ?? { dispose: () => undefined },
             provideFoldingRanges: (model) =>
-                foldingRanges(model.getLanguageId(), model.getLinesContent())
-        })
-    );
+                served?.has(model) === true
+                    ? []
+                    : foldingRanges(model.getLanguageId(), model.getLinesContent())
+        };
+        return monaco.languages.registerFoldingRangeProvider(language, provider);
+    });
     return { dispose: () => registered.forEach((one) => one.dispose()) };
 }

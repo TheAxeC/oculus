@@ -42,7 +42,7 @@
         usageRows,
         type UsageAccount,
         type UsageWindow
-    } from '$lib/state/system/machine/usage';
+    } from '$lib/state/system/machine/usage/usage';
     import { useState } from '$lib/state/client/use';
 
     const {

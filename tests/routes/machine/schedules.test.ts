@@ -7,11 +7,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, vi } from 'vitest';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { handleSchedules } from '../../../src/lib/server/machine/schedules/routes.ts';
-import type { SchedulesWatcher } from '../../../src/lib/server/machine/schedules/watch.ts';
+import { handleSchedules } from '../../../src/lib/server/machine/runs/schedules/routes.ts';
+import type { SchedulesWatcher } from '../../../src/lib/server/machine/runs/schedules/watch.ts';
 import { pagePost } from '../../fixtures/doubles.ts';
 import { it } from '../../fixtures/scratch.ts';
-import { entryText, world } from '../../server/machine/schedules/schedules-fixture.ts';
+import { entryText, world } from '../../server/machine/runs/schedules/schedules-fixture.ts';
 
 const TOKEN = 'the write token of this test';
 const HOST = 'http://127.0.0.1:8791';

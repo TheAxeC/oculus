@@ -54,6 +54,8 @@ import {
 import { docFindings, layoutFile } from '../content/docs.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
 import { Hub } from '../core/channels.ts';
+import { target } from '../edit/writes.ts';
+import { expandHome } from '../files/files.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
 import type { LogPaths } from '../machine/hpc/actions.ts';
@@ -70,7 +72,11 @@ import { browserRoots, repositoryRoots } from '../files/roots.ts';
 import { wallpaperMemory, type WallpaperMemory } from '../content/wallpaper.ts';
 import { hostWordsOf, hpcSettingsOf, latestResources } from '../machine/hpc/host.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.ts';
-import { savedPath } from '../machine/commands/saved.ts';
+import { savedPath } from '../machine/runs/commands/saved.ts';
+import { defaultLspPath } from '../machine/lsp/choices.ts';
+import { createRelay, type Relay, type RelayOptions } from '../machine/lsp/relay.ts';
+import { followRoots } from '../machine/lsp/watch.ts';
+import { ownFolder } from '../machine/lsp/servers.ts';
 import { Terminals } from '../machine/pty/channel.ts';
 import { stopTerminal } from '../machine/pty/sessions.ts';
 import {
@@ -79,14 +85,14 @@ import {
     type ProcessesWatcher
 } from '../machine/processes/watch.ts';
 import { readTable } from '../machine/processes/ps.ts';
-import { defaultSchedulesPath } from '../machine/schedules/file.ts';
-import { defaultRecordPath } from '../machine/schedules/record.ts';
-import { runEntry } from '../machine/schedules/run.ts';
+import { defaultSchedulesPath } from '../machine/runs/schedules/file.ts';
+import { defaultRecordPath } from '../machine/runs/schedules/record.ts';
+import { runEntry } from '../machine/runs/schedules/run.ts';
 import {
     watchSchedules,
     type SchedulesOptions,
     type SchedulesWatcher
-} from '../machine/schedules/watch.ts';
+} from '../machine/runs/schedules/watch.ts';
 import { projectFolders } from '../sessions/index.ts';
 import { HookStore, sessionRecord } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
@@ -120,6 +126,8 @@ export function hostInfo(port: number): HostInfo {
 export type ServerContext = {
     hub: Hub;
     terminals: Terminals;
+    /** The language servers behind the `lsp:` channels of the socket. */
+    relay: Relay;
     hooks: HookTarget;
     git: GitWatcher;
     hpc: HpcWatcher;
@@ -229,6 +237,7 @@ export type ContextDependencies = {
     mintToken: typeof mintToken;
     createHub: () => Hub;
     createTerminals: (hub: Hub) => Terminals;
+    createRelay: (options: RelayOptions) => Relay;
     watchPortfolio: typeof watchPortfolio;
     watchSessions: typeof watchSessions;
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
@@ -251,6 +260,7 @@ const dependencies: ContextDependencies = {
     mintToken,
     createHub: () => new Hub(),
     createTerminals: (hub) => new Terminals(hub),
+    createRelay,
     watchPortfolio,
     watchSessions,
     watchGit: (hub, options) => watchGit(hub, options),
@@ -324,6 +334,15 @@ export function createServerContext(
     const hub = make.createHub();
     registerFilesChannel(hub);
     const terminals = make.createTerminals(hub);
+    const relay = make.createRelay({
+        oculus: ownFolder(),
+        node: process.execPath,
+        roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local }),
+        lspFolder: () => expandHome(local.lsp ?? defaultLspPath()),
+        approvals: () => local.approvals ?? defaultApprovalsPath(),
+        changes: () => target(engine, make.loadConfig(engine).config, context).changes
+    });
+    let followed = followRoots(relay, hub, local.workspaces ?? defaultWorkspacesPath());
     const token = make.mintToken();
     const appsSecret = make.mintToken();
     const store = new HookStore();
@@ -523,6 +542,7 @@ export function createServerContext(
     const context: ServerContext = {
         hub,
         terminals,
+        relay,
         hooks,
         get git() {
             return owned().git;
@@ -588,6 +608,8 @@ export function createServerContext(
             held.sessions.close();
             held.portfolio.close();
             terminals.close();
+            followed.close();
+            void relay.close();
         }
     };
 
@@ -790,6 +812,12 @@ export function createServerContext(
             );
         }
         rebuild(rebuiltBy(changed), previous);
+        if (changed.includes('lsp')) relay.reload();
+        if (changed.includes('workspaces')) {
+            followed.close();
+            followed = followRoots(relay, hub, local.workspaces ?? defaultWorkspacesPath());
+            relay.reconcile();
+        }
         if (changed.includes('openBin')) context.opener = openerOf(local);
         if (changed.includes('hpcHost')) built.live?.hostChanged();
         if (changed.includes('calendars') || changed.includes('calendarDir')) {

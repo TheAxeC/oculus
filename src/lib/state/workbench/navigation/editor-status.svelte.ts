@@ -45,16 +45,29 @@ export type EditorStatus = {
     file: string;
     /** The text selected in the editor, empty when none is or when it is too long to carry. */
     selection: string;
+    /**
+     * The root and language a language server serves the tab by, null for a tab no server serves.
+     * The status bar's language server, interpreter and compile database items read the server
+     * of this root.
+     */
+    served: { root: string; language: string } | null;
+};
+
+/** A range of a text, lines and characters counted from zero as a language server counts them. */
+export type SelectRange = {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
 };
 
 /** One change the status bar asks of a source tab. */
 export type EditorAsk =
-    | { kind: 'goto'; line: number }
+    | { kind: 'goto'; line: number; column?: number }
     | { kind: 'indent'; indent: Indent }
     | { kind: 'convert'; tabs: boolean }
     | { kind: 'ending'; ending: LineEnding }
     | { kind: 'language'; language: string }
     | { kind: 'commit' }
+    | { kind: 'select'; range: SelectRange }
     | { kind: 'action'; id: string };
 
 /** The id of the tab action Cmd+S asks of the source tab on screen. */

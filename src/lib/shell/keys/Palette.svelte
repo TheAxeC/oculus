@@ -28,15 +28,22 @@
     //
     // It is also where the Files view's workspace commands run: `:workspace` lists the default
     // workspace and the saved ones, the one in force marked, and a pick switches in place;
-    // `:workspace-save <name>` saves the folders in force under the name; `:folder` opens the
-    // folder panel and shows the folder chosen. A refusal of any of them is said in the palette,
-    // which stays open, and a success closes it.
+    // `:workspace-save <name>` saves the folders in force under the name (WorkspaceRows.svelte);
+    // `:folder` opens the folder panel and shows the folder chosen. A refusal of any of them is
+    // said in the palette, which stays open, and a success closes it.
+    //
+    // While a language server serves the source tab on screen, `:interpreter` (a Python tab) and
+    // `:compile-database` (a C or C++ tab) list the choices of the tab's root, the one in force
+    // marked (ChoiceRows.svelte; which commands open a list is shell/keys/palette-modes.ts).
 
     import { Command } from 'bits-ui';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import LanguageRows from '$lib/shell/keys/LanguageRows.svelte';
+    import ChoiceRows from '$lib/shell/keys/ChoiceRows.svelte';
+    import WorkspaceRows from '$lib/shell/keys/WorkspaceRows.svelte';
+    import { choiceModeOf, choiceRows, opensAsMode } from '$lib/shell/keys/palette-modes';
     import { focusQuietly } from '$lib/ui/frame/quiet-focus';
     import { configuredThemes, openPaletteItem } from '$lib/shell/keys/palette-open';
     import {
@@ -50,8 +57,6 @@
         parseCommand,
         ranked,
         workspaceChoicesOf,
-        workspaceCommand,
-        type CommandOutcome,
         type PaletteCommand,
         type PaletteItem
     } from '$lib/state/workbench/palette';
@@ -75,8 +80,9 @@
     const {
         editorStatus: { ask, statusOf },
         explorer,
-        fs: { saveWorkspace, selectWorkspace, workspaces },
+        fs: { workspaces },
         layout: { activeInstance, openView },
+        lsp,
         paletteSource: { paletteSource },
         ui: { setCrt, setTheme, crt },
         registry: { views }
@@ -142,6 +148,14 @@
             ? languageActions(source.status.file, source.status.language)
             : []
     );
+    /** The root and language a server serves the tab on screen by, when one does. */
+    const served = $derived(source?.status.served ?? null);
+    /** The interpreter or compile database list the query is, and its rows. */
+    const choiceMode = $derived(choiceModeOf(parsed, served?.language ?? ''));
+    const choiceView = $derived(served === null ? null : lsp.choices(served.root, served.language));
+    const choiceList = $derived(
+        choiceMode === null ? [] : choiceRows(choiceMode, choiceView, parsed?.argument ?? '')
+    );
     /** Whether the query is the workspace list, and whether it is the save command. */
     const workspaceMode = $derived(parsed !== null && parsed.name === 'workspace');
     const saveMode = $derived(parsed !== null && parsed.name === 'workspace-save');
@@ -150,9 +164,9 @@
         workspaceMode ? workspaceChoicesOf(parsed?.argument ?? '', saved) : []
     );
     const commandList = $derived(
-        parsed === null || line !== null || languageMode || workspaceMode || saveMode
+        parsed === null || line !== null || languageMode || workspaceMode || saveMode || choiceMode
             ? []
-            : commands(current.config, source !== null).filter((command) =>
+            : commands(current.config, source !== null, served?.language ?? '').filter((command) =>
                   command.name.startsWith(parsed.name)
               )
     );
@@ -170,7 +184,9 @@
                   ? choices.length
                   : saveMode
                     ? 1
-                    : commandList.length
+                    : choiceMode === null
+                      ? commandList.length
+                      : choiceList.length
     );
 
     /** The value of each row the list draws, in its order, a row that cannot be run left out. */
@@ -190,9 +206,11 @@
                   ? choices.map((choice) => `workspace:${choice.name}`)
                   : saveMode
                     ? ['workspace-save']
-                    : commandList
-                          .filter((command) => command.available)
-                          .map((command) => `command:${command.name}`)
+                    : choiceMode === null
+                      ? commandList
+                            .filter((command) => command.available)
+                            .map((command) => `command:${command.name}`)
+                      : choiceList.map((row) => row.value)
     );
 
     // Each opening starts from its prefill; what is typed after that is read untracked, so typing
@@ -251,26 +269,11 @@
         onclose();
     }
 
-    /** Close the palette when a command went through; otherwise keep it open saying why. */
-    async function settled(outcome: Promise<CommandOutcome>): Promise<void> {
-        const result = await outcome;
+    /** Open Folder: the folder panel, then the folder shown; a panel that did not open is said. */
+    async function openFolder(): Promise<void> {
+        const result = await folderCommand(explorer.openFolder);
         if (result.closed) onclose();
         else said = result.said;
-    }
-
-    /** Switch to a workspace in place; a refusal is said here and the palette stays open. */
-    function switchTo(name: string): Promise<void> {
-        return settled(workspaceCommand(selectWorkspace, name));
-    }
-
-    /** Save the folders in force under the name typed after the command. */
-    function saveAs(name: string): Promise<void> {
-        return settled(workspaceCommand(saveWorkspace, name));
-    }
-
-    /** Open Folder: the folder panel, then the folder shown; a panel that did not open is said. */
-    function openFolder(): Promise<void> {
-        return settled(folderCommand(explorer.openFolder));
     }
 
     function run(command: PaletteCommand): void {
@@ -278,13 +281,8 @@
         const argument = parsed.argument;
         // The instance a command showed, when it showed a tab.
         let shown = '';
-        // The language list is a mode of its own: choosing the command opens it.
-        if (command.name === 'language') {
-            typed(':language ');
-            return;
-        }
-        // The workspace commands are modes of their own as well.
-        if (command.name === 'workspace' || command.name === 'workspace-save') {
+        // The commands that list choices are modes of their own: choosing one opens its list.
+        if (opensAsMode(command.name)) {
             typed(`:${command.name} `);
             return;
         }
@@ -392,37 +390,21 @@
                                                                 (said = words)}
                                                         />
                                                     {/if}
-                                                {:else if workspaceMode}
-                                                    {#each choices as choice (choice.name)}
-                                                        <PaletteRow
-                                                            row={{
-                                                                value: `workspace:${choice.name}`,
-                                                                kind: t(
-                                                                    'app.palette.kind_workspace'
-                                                                ),
-                                                                label: choice.label,
-                                                                active: choice.current,
-                                                                pick: () =>
-                                                                    void switchTo(choice.name)
-                                                            }}
-                                                        />
-                                                    {/each}
-                                                {:else if saveMode}
-                                                    <PaletteRow
-                                                        row={{
-                                                            value: 'workspace-save',
-                                                            kind: t('app.palette.kind_workspace'),
-                                                            label:
-                                                                parsed.argument === ''
-                                                                    ? t(
-                                                                          'app.palette.workspace_save_name'
-                                                                      )
-                                                                    : t(
-                                                                          'app.palette.workspace_save',
-                                                                          parsed.argument
-                                                                      ),
-                                                            pick: () => void saveAs(parsed.argument)
-                                                        }}
+                                                {:else if workspaceMode || saveMode}
+                                                    <WorkspaceRows
+                                                        choices={workspaceMode ? choices : null}
+                                                        name={parsed.argument}
+                                                        {onclose}
+                                                        onsaid={(words: string) => (said = words)}
+                                                    />
+                                                {:else if choiceMode !== null && served !== null}
+                                                    <ChoiceRows
+                                                        mode={choiceMode}
+                                                        {served}
+                                                        rows={choiceList}
+                                                        loading={choiceView === null}
+                                                        {onclose}
+                                                        onsaid={(words: string) => (said = words)}
                                                     />
                                                 {:else}
                                                     {#if parsed.name === '' && caret !== null && source !== null}
@@ -453,7 +435,7 @@
                                                 {#if said !== ''}
                                                     <p class="empty" data-palette-said>{said}</p>
                                                 {/if}
-                                                {#if count === 0 && line === null && !languageMode && !workspaceMode}
+                                                {#if count === 0 && line === null && !languageMode && !workspaceMode && choiceMode === null}
                                                     <p class="empty">
                                                         {parsed === null
                                                             ? t('app.palette_empty')

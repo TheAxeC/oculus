@@ -61,6 +61,7 @@
     import { stripTab } from './strip/strip-tab';
     import { createTabMenu } from './strip/tab-menu-state.svelte';
     import { crumbPicked, tabCrumbs, type Crumb } from './strip/tab-crumbs';
+    import { symbolsAround } from '$lib/state/system/machine/lsp/symbols';
     import { provideTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
@@ -117,6 +118,8 @@
         },
         drag: { dragging, hover, start },
         fs: { roots: servedRoots, workspaces },
+        documents,
+        editorStatus,
         registry: { viewFor },
         terminals: { newTerminalIn, tabMark },
         ui: { unsaved, setPaneStrip }
@@ -297,13 +300,23 @@
         askAndClose
     });
 
+    /** The symbols of the active tab's file that hold its caret, outermost first. */
+    const around = $derived.by(() => {
+        if (shown === undefined) return [];
+        const tree = documents.symbolsOf(shown.id);
+        const caret = editorStatus.statusOf(shown.id)?.caret ?? null;
+        if (tree === null || typeof tree === 'string' || caret === null) return [];
+        return symbolsAround(tree, caret.line, caret.column);
+    });
+
     /** The breadcrumb of the active tab's path, empty for a tab naming no file. */
     const crumbs = $derived(
         shown === undefined
             ? []
             : tabCrumbs(
                   shown,
-                  roots.map((one) => one.key)
+                  roots.map((one) => one.key),
+                  around
               )
     );
 
@@ -407,7 +420,12 @@
             {items}
             {crumbs}
             barActions={tabActions.of(active)}
-            oncrumb={(crumb: Crumb) => crumbPicked(crumb, { showFolderInFiles, showInFiles })}
+            oncrumb={(crumb: Crumb) =>
+                crumbPicked(crumb, {
+                    showFolderInFiles,
+                    showInFiles,
+                    goTo: (line, column) => editorStatus.ask(active, { kind: 'goto', line, column })
+                })}
             onunpin={unpinTab}
             {dropIndex}
             focused={activePane}

@@ -10,6 +10,8 @@ export type TabSaveDeps = Omit<UntitledDeps, 'ask'> & {
     untitled: () => boolean;
     root: () => string;
     path: () => string;
+    /** What a save does to the text first, such as formatting it with a language server. */
+    prepare: () => Promise<void>;
 };
 
 /** The Save of one tab, and the question its first Save asks when the text is untitled. */
@@ -19,6 +21,7 @@ export function createTabSave(deps: TabSaveDeps) {
 
     async function save(): Promise<void> {
         if (!deps.untitled()) {
+            await deps.prepare();
             await deps.saveDraft(deps.id, deps.root(), deps.path());
             return;
         }

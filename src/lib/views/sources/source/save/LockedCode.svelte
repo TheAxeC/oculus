@@ -1,19 +1,21 @@
 <script lang="ts">
     // Layer 3, view partial of Source.svelte. A file the tab holds but may not write, drawn as the
-    // line saying why over the read-only code window, rather than as an editor that would take
-    // typing and refuse every save: a file this machine's mode locks, a file too long to have been
-    // read whole, and a version at HEAD or in the index. The window carries the tab's own gutter,
-    // and the tab is told every scroll so the gutter's lines follow. The line and the window are
-    // two rows of the tab's grid (Source.svelte).
+    // line saying why. A file too long to have been read whole and a version at HEAD or in the
+    // index are drawn by the line over the read-only code window, which carries the tab's own
+    // gutter, and the tab is told every scroll so the gutter's lines follow. A file this machine's
+    // mode locks is drawn by the line alone, over the tab's editor in its read-only form
+    // (Source.svelte draws the editor), so the editor is never replaced when the mode changes. The
+    // line and the window are two rows of the tab's grid (Source.svelte).
 
     import type { Snippet } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import { t } from '$lib/state/shared/words/text';
     import Code from '../../../shared/prose/Code.svelte';
+    import type { Locked } from './locked-words';
 
     type Props = {
-        /** Why the file may not be written. */
-        locked: string;
+        /** Why the file may not be written, and whether the code window draws the text under it. */
+        lock: Locked;
         text: string;
         language: string;
         path: string;
@@ -22,14 +24,16 @@
         onscrolled: (top: number) => void;
     };
 
-    let { locked, text, language, path, gutter, onscrolled }: Props = $props();
+    let { lock, text, language, path, gutter, onscrolled }: Props = $props();
 </script>
 
 <p class="locked" data-source-locked={path}>
     <Glyph name={t('source.locked_glyph')} />
-    {locked}
+    {lock.words}
 </p>
-<Code {text} {language} {path} {gutter} {onscrolled} />
+{#if lock.window}
+    <Code {text} {language} {path} {gutter} {onscrolled} />
+{/if}
 
 <style>
     .locked {

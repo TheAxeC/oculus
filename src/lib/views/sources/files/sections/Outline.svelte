@@ -6,16 +6,23 @@
     //
     // A source tab is read from the text the tab holds (so it follows what is typed, saved or
     // not), as the headings of a Markdown file and the sectioning commands of a LaTeX file nested
-    // by level; a press moves the tab's editor to the line. A Doc tab and a Markdown preview tab
-    // hold no text here: they say which headings they draw (state/sources/explorer/sections/
-    // headings.svelte.ts), and a press scrolls that tab to the heading. A source tab in another
-    // language says it has no symbols yet, and a page whose followed tab shows no editor, or has
-    // no file tab, says the active editor cannot provide outline information.
+    // by level; a press moves the tab's editor to the line. A Python, C or C++ tab a language
+    // server serves lists the symbols the server answered for it (state/system/machine/lsp/
+    // symbols.ts) as a tree: each row with its kind's icon coloured as VS Code's `symbolIcon.*`
+    // keys colour it, its detail beside it, and its name in the colour of the worst problem its
+    // range holds, as `outline.problems.colors` does. While the server has not answered the
+    // section says so, and a file with no server to answer says it has no symbols yet. A Doc tab
+    // and a Markdown preview tab hold no text here: they say which headings they draw
+    // (state/sources/explorer/sections/headings.svelte.ts), and a press scrolls that tab to the
+    // heading. A source tab in another language says it has no symbols yet, and a page whose
+    // followed tab shows no editor, or has no file tab, says the active editor cannot provide
+    // outline information.
     //
-    // The source reading is outlineOf in state/sources/explorer/sections/outline.ts. A LaTeX
-    // file's outline arrives after the parser is loaded and after each change of the text, through
-    // outlineFollower over the client state's LaTeX reader, and the list of the last one stays
-    // drawn while the next is read.
+    // The followed tab is chosen by Sections.svelte, which hands it down with the AST and Memory
+    // Usage sections that read the same tab. The source reading is outlineOf in
+    // state/sources/explorer/sections/outline.ts. A LaTeX file's outline arrives after the parser
+    // is loaded and after each change of the text, through outlineFollower over the client state's
+    // LaTeX reader, and the list of the last one stays drawn while the next is read.
 
     import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
@@ -23,8 +30,9 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { languageOf, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';
     import { fileOfTab } from '$lib/state/workbench/navigation/pages';
-    import { panes } from '$lib/state/workbench/layout';
-    import { followedTab } from '$lib/state/sources/explorer/sections/followed-tab';
+    import type { FollowTab } from '$lib/state/sources/explorer/sections/followed-tab';
+    import { symbolRows, type SymbolProblem } from '$lib/state/system/machine/lsp/symbols';
+    import { colourOf } from '$lib/ui/controls/editor/kit/theme/colours';
     import {
         headingOutline,
         outlineFollower,
@@ -37,30 +45,35 @@
     type Props = {
         open: boolean;
         ontoggle: () => void;
+        /** The file tab the reader looked at last on the page, or null for none. */
+        tab: FollowTab | null;
     };
 
     /** One row: a source line to go to, or the id of a heading of a rendered tab. */
-    type Row = { key: string; title: string; depth: number; line: number; id: string };
+    type Row = {
+        key: string;
+        title: string;
+        depth: number;
+        line: number;
+        id: string;
+        /** A symbol's glyph, icon colour, detail and problem; empty for a heading. */
+        glyph: string;
+        colour: string;
+        detail: string;
+        problem: SymbolProblem;
+    };
 
-    let { open, ontoggle }: Props = $props();
+    let { open, ontoggle, tab }: Props = $props();
 
     const {
-        layout: { activeInstance, currentPage, layout },
         source: { sourceDraft },
         selectors: { languages },
         editorStatus: { ask },
+        documents,
         headings,
         latexReader
     } = useState();
 
-    const page = $derived(currentPage().id);
-    const tab = $derived(
-        followedTab(
-            panes(layout(page)).map((held) => held.pane),
-            activeInstance(page)?.id ?? null,
-            (one) => fileOfTab(one) !== null
-        )
-    );
     const file = $derived(tab === null ? null : fileOfTab(tab));
     const draft = $derived(tab?.view === 'source' ? sourceDraft(tab.id) : null);
     /** Whether the followed tab draws a document it publishes the headings of. */
@@ -95,6 +108,24 @@
     /** Whether a LaTeX outline has been asked for and has not arrived for this tab. */
     const waiting = $derived(latexText !== null && (arrived === null || arrived.tab !== tab?.id));
 
+    /** What the language server answered for the followed tab, or null for a tab none serves. */
+    const served = $derived(draft === null || tab === null ? null : documents.symbolsOf(tab.id));
+    /** The symbol rows of the followed tab's server, with the problems of its file in them. */
+    const symbols = $derived.by<Row[]>(() => {
+        if (served === null || typeof served === 'string' || file === null) return [];
+        return symbolRows(served, documents.diagnosticsOf(file.root, file.path)).map((one) => ({
+            key: `outline:${one.key}`,
+            title: one.title,
+            depth: one.depth,
+            line: one.line,
+            id: '',
+            glyph: one.glyph,
+            colour: colourOf(one.colour),
+            detail: one.detail,
+            problem: one.problem
+        }));
+    });
+
     /** The symbols of the followed source tab: null for a tab with none to read, else the list. */
     const items = $derived.by<OutlineItem[] | null>(() => {
         if (latexText !== null) return waiting ? [] : (arrived?.items ?? []);
@@ -117,11 +148,17 @@
                   : ''
               : draft !== null && !draft.loaded
                 ? ''
-                : items === null
-                  ? t('files.outline_none')
-                  : items.length === 0 && !waiting
-                    ? t('files.outline_empty')
-                    : ''
+                : served === 'loading'
+                  ? t('files.outline_loading')
+                  : served !== null
+                    ? symbols.length === 0
+                        ? t('files.outline_none')
+                        : ''
+                    : items === null
+                      ? t('files.outline_none')
+                      : items.length === 0 && !waiting
+                        ? t('files.outline_empty')
+                        : ''
     );
 
     const rows = $derived.by<Row[]>(() => {
@@ -131,15 +168,24 @@
                 title: one.title,
                 depth: one.depth,
                 line: 0,
-                id: one.id
+                id: one.id,
+                glyph: '',
+                colour: '',
+                detail: '',
+                problem: null
             }));
         }
+        if (served !== null) return symbols;
         return (items ?? []).map((one) => ({
             key: `outline:${String(one.line)}:${one.title}`,
             title: one.title,
             depth: one.depth,
             line: one.line,
-            id: ''
+            id: '',
+            glyph: '',
+            colour: '',
+            detail: '',
+            problem: null
         }));
     });
     const keyRows = $derived([
@@ -171,13 +217,21 @@
                             {nav}
                             level={row.depth + 2}
                             depth={row.depth}
+                            glyph={row.glyph === '' ? undefined : row.glyph}
+                            glyphStyle={row.colour === '' ? undefined : `color: ${row.colour}`}
+                            tone={row.problem === 'error'
+                                ? 'error'
+                                : row.problem === 'warning'
+                                  ? 'warn'
+                                  : undefined}
                             title={rendered
                                 ? t('files.outline_go_heading_title', row.title)
                                 : t('files.outline_go_title', row.title, row.line)}
                             onclick={() => goTo(row)}
                         >
                             {#snippet detail()}
-                                {#if !rendered}{row.line}{/if}
+                                {#if row.detail !== ''}{row.detail}
+                                {:else if !rendered}{row.line}{/if}
                             {/snippet}
                         </TreeItem>
                     </li>

@@ -88,6 +88,9 @@ function readRecord(
                     record.rulers = value.filter((one): one is number => typeof one === 'number');
                 }
                 break;
+            case 'format_on_save':
+                if (typeof value === 'boolean') record.formatOnSave = value;
+                break;
             default:
                 problems.push({ key: at, where: 'unknown-field' });
         }

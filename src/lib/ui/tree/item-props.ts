@@ -12,6 +12,8 @@ export type TreeItemProps = {
     label: string;
     /** A name in `glyphs:`, drawn before the name. */
     glyph?: string;
+    /** Declarations set on the glyph, as the colour a symbol's kind draws its icon in. */
+    glyphStyle?: string;
     /** A file's name or path, drawn before the name as its Seti icon (display/FileIcon). */
     file?: string;
     /** How many indent guides the row draws. */

@@ -6,7 +6,9 @@
 // and how far it is from its upstream, the findings), then the extensions' items oculus keeps (the
 // HPC poll, the usage refreshers, the server connection); on the right the editor's own items for
 // the source tab on screen (the caret line's blame in a file of a repository, then the caret and
-// the text's own items), then the live sessions and the unsaved tabs, and the bell last.
+// the text's own items, then the three items of a language server: its state, the Python
+// interpreter and the compile database, each drawn only for the language it belongs to, before
+// the language itself), then the live sessions and the unsaved tabs, and the bell last.
 //
 // The host item is the server's `os.hostname()` on the `config` channel's `ConfigPayload.host`,
 // with its address. Branch and sync are the repository holding the active tab's file
@@ -21,6 +23,7 @@
 // The findings item counts the Findings view's list, the snapshot's findings and the config
 // channel's, and opens that view.
 
+import type { EditorStatus } from '$lib/state/workbench/navigation/editor-status.svelte';
 import { t } from '$lib/state/shared/words/text';
 
 /** The left group, in the order it is drawn. */
@@ -33,6 +36,9 @@ export const RIGHT_ITEMS = [
     'indent',
     'encoding',
     'line_ending',
+    'language_server',
+    'interpreter',
+    'compile_database',
     'language',
     'sessions',
     'unsaved',
@@ -72,6 +78,12 @@ export function itemName(item: StatusItem): string {
             return t('statusbar.item_encoding');
         case 'line_ending':
             return t('statusbar.item_line_ending');
+        case 'language_server':
+            return t('statusbar.item_language_server');
+        case 'interpreter':
+            return t('statusbar.item_interpreter');
+        case 'compile_database':
+            return t('statusbar.item_compile_database');
         case 'language':
             return t('statusbar.item_language');
         case 'sessions':
@@ -94,3 +106,14 @@ export function clockOf(at: number): string {
     const pad = (value: number): string => String(value).padStart(2, '0');
     return `${pad(when.getHours())}:${pad(when.getMinutes())}`;
 }
+
+/** What a component drawing a part of the right group is given by the status bar. */
+export type ItemsProps = {
+    /** The source tab on screen, by its instance id. */
+    instance: string;
+    status: EditorStatus;
+    /** Whether an item is drawn, the reader having not hidden it. */
+    shown: (item: StatusItem) => boolean;
+    /** Open the palette on a query. */
+    onpalette: (prefill: string) => void;
+};

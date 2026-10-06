@@ -86,6 +86,13 @@ export type LocalConfig = {
      */
     approvals?: string;
     /**
+     * Where the language servers keep this machine's state, `lsp` in the file: a folder per served
+     * root holding clangd's index, and `choices.json`, the interpreter and compile database chosen
+     * for each repository. Absent unless the machine sets it, and the language servers then use
+     * ~/.oculus/lsp.
+     */
+    lsp?: string;
+    /**
      * Where the schedules live, `schedules` in the file. Absent unless the machine sets it, and the
      * schedule watcher then uses ~/.oculus/schedules.yml.
      */
@@ -154,6 +161,7 @@ export const LOCAL_KEYS = [
     'changes',
     'history',
     'approvals',
+    'lsp',
     'schedules',
     'schedule_record',
     'claude_bin',
@@ -395,6 +403,7 @@ const STATE_PATHS = [
     ['changes', 'changes'],
     ['history', 'history'],
     ['approvals', 'approvals'],
+    ['lsp', 'lsp'],
     ['schedules', 'schedules'],
     ['schedule_record', 'scheduleRecord'],
     ['calendar_dir', 'calendarDir'],

@@ -15,7 +15,7 @@
         ProcessGroup,
         ProcessRow,
         ProcessesSort
-    } from '$lib/state/system/machine/processes';
+    } from '$lib/state/system/machine/processes/processes';
 
     type Props = {
         arranged: Arranged;

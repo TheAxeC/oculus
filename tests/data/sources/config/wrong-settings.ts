@@ -31,5 +31,10 @@ export const WRONG_EDITOR: Record<string, unknown> = {
     paint_limit_kb: 0,
     tab_size: 9,
     word_wrap: 'wrap',
-    languages: { cobolx: { tab_size: 2 }, python: { tab_size: 99 }, markdown: 5 }
+    languages: {
+        cobolx: { tab_size: 2 },
+        python: { tab_size: 99 },
+        cpp: { format_on_save: 'yes' },
+        markdown: 5
+    }
 };

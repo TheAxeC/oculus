@@ -13,7 +13,7 @@
 # are a source file several times over the 1000-line rule.
 src/lib/data/sources/config/merge.ts src/lib/server/transcripts/stores.ts 6ba7db2c1596 the same 10 lines at 81 and 51, to fold into one place
 src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts 1910d33ebbe8 the same 27 lines at 99 and 20, to fold into one place
-src/lib/server/machine/hpc/parse.ts src/lib/state/system/machine/hpc.ts 8ead1c0cdafe the same 7 lines at 25 and 20, to fold into one place
+src/lib/server/machine/hpc/parse.ts src/lib/state/system/machine/hpc/hpc.ts 8ead1c0cdafe the same 7 lines at 25 and 20, to fold into one place
 src/lib/state/feeds/leads.ts src/lib/state/feeds/radar.ts c0785dd03b7f the same 12 lines at 145 and 82, to fold into one place
 src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/open/away.ts ec8245497946 the same 9 lines at 141 and 20, to fold into one place
 src/lib/state/workbench/layout/instance.ts src/lib/state/workbench/layout/tree.ts cb7b0e6155d3 the same 12 lines at 132 and 58, to fold into one place

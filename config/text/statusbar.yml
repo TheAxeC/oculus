@@ -15,6 +15,9 @@ text:
         item_indent: Indentation
         item_encoding: Encoding
         item_line_ending: End of line sequence
+        item_language_server: Language Server
+        item_interpreter: Python Interpreter
+        item_compile_database: Compile Database
         item_language: Language mode
         item_sessions: Live sessions
         item_unsaved: Unsaved tabs
@@ -70,6 +73,36 @@ text:
         line_ending_tip: Select end of line sequence
         line_ending_readonly: This file is read only, so its line endings are not changed here.
         language_tip: Select language mode
+        server_pyright: pyright
+        server_clangd: clangd
+        ls_waiting: '{0}'
+        ls_starting: '{0}: starting'
+        ls_indexing: '{0}: indexing {1} of {2}'
+        ls_ready: '{0}: ready'
+        ls_not_found: '{0}: not found'
+        ls_failed: '{0}: failed'
+        ls_root_gone: '{0}: root not served'
+        ls_tip_starting: '{0} is starting for {1}.'
+        ls_tip_indexing: '{0} is indexing {1}: {2} of {3} files.'
+        ls_tip_ready: '{0} serves {1}.'
+        ls_tip_waiting: '{0} serves {1} once this file is open.'
+        ls_tip_not_found: '{0} was not found for {1}. Install it, then restart the language server.'
+        ls_tip_exited: '{0} exited for {1}. Restart Language Server starts it again.'
+        ls_tip_refused: '{0} refused to start for {1}. Its output says why.'
+        ls_tip_no_answer: '{0} did not answer within 30 seconds for {1}. Its output says why.'
+        ls_tip_lsp_folder: 'The folder for the language servers cannot be written, so {0} cannot start for {1}. Set the lsp key to a folder that can be.'
+        ls_tip_root_gone: '{1} is no longer served, so {0} ended. It starts again when {1} is served again.'
+        ls_restart: Restart Language Server
+        ls_output: Show Language Server Output
+        interpreter_none: Select Interpreter
+        interpreter_tip: 'Python interpreter: {0}. Select another.'
+        interpreter_none_tip: No Python interpreter is chosen for this repository. Select one.
+        interpreter_unapproved_tip: 'The interpreter {0} of this repository is not approved on this machine. Select it to approve it.'
+        interpreter_unapproved: '{0} not approved'
+        database_none: No compile database
+        database_tip: 'Compile database: {0}. Select another.'
+        database_findings_tip: 'The .oculus/cpp.yml of this repository has findings, which head the Select Compile Database list:'
+        database_none_tip: This repository has no compile database and no .oculus/cpp.yml. Select one.
         language_bash: Shell Script
         language_c: C
         language_cmake: CMake

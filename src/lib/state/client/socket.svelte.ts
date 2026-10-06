@@ -23,6 +23,13 @@
 // port is that address's port (a page opened at `localhost` has the port, and one reached through a
 // forwarded port of another number does not), and only once the new address answers, so a page
 // forwarded under the same number, whose new port its own machine does not serve, stays put.
+//
+// A socket is admitted to write when the token its subscription carries is the server's. The first
+// open is admitted by the token the page was loaded with. After a reconnect the server may be a
+// restarted one that minted another token, so the socket is admitted once the page's load has run
+// again (`writes.renewToken`) and a changed token has gone out in a subscribe of no channels, since
+// a frame written before that is refused. A holder of a channel that must not lose its first
+// message to the refusal, as a language server's initialize would be, waits for `admitted`.
 
 import { z } from 'zod';
 import {
@@ -91,7 +98,18 @@ function portOf(address: string): string | null {
 }
 
 export function createSocket(entities: EntitiesStore, writes: WritesStore): SocketStore {
-    const socket: { status: Status } = $state({ status: 'closed' });
+    const socket: { status: Status; admitted: boolean } = $state({
+        status: 'closed',
+        admitted: false
+    });
+
+    /** Called whenever the status or the admission changes. */
+    const linked = new Set<() => void>();
+
+    function link(change: () => void): void {
+        change();
+        for (const fn of [...linked]) fn();
+    }
 
     let live: WebSocket | null = null;
 
@@ -128,6 +146,17 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         return socket.status;
     }
 
+    /** Whether the open socket's subscription carries the token the server holds. */
+    function admitted(): boolean {
+        return socket.admitted;
+    }
+
+    /** Hear every change of the status or the admission; the call it returns stops hearing. */
+    function onLink(fn: () => void): () => void {
+        linked.add(fn);
+        return () => linked.delete(fn);
+    }
+
     /**
      * Open the socket and subscribe to these channels, reconnecting until disconnect() is called.
      */
@@ -154,7 +183,10 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         backoff = FIRST;
         const current = live;
         live = null;
-        socket.status = 'closed';
+        link(() => {
+            socket.status = 'closed';
+            socket.admitted = false;
+        });
         if (current !== null) current.close();
     }
 
@@ -172,6 +204,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         if (live?.readyState !== WebSocket.OPEN || writes.writeToken() === sentToken) return;
         sentToken = writes.writeToken();
         live.send(JSON.stringify({ type: 'subscribe', channels: [], token: sentToken }));
+        if (!socket.admitted) link(() => (socket.admitted = true));
     });
 
     /**
@@ -222,17 +255,16 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     }
 
     function open(): void {
-        socket.status = 'connecting';
+        link(() => (socket.status = 'connecting'));
         const ws = new WebSocket(`ws://${location.host}/ws`);
         live = ws;
 
         ws.addEventListener('open', () => {
             backoff = FIRST;
-            socket.status = 'open';
+            const reconnected = opened;
             // The seed's bound names a version of the hub the page was built against. A reconnect
             // may reach a restarted server, whose hub numbers its pushes from the start again, so
             // after the first open every push is taken.
-            const reconnected = opened;
             if (reconnected) {
                 seededThrough = -1;
                 seededApps = -1;
@@ -240,9 +272,22 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
             }
             opened = true;
             ws.send(JSON.stringify(subscription()));
+            // The listeners hear the open after the subscription is written, so a frame they
+            // write follows the token on the wire.
+            link(() => {
+                socket.status = 'open';
+                socket.admitted = !reconnected;
+            });
             // A restarted server minted a new write token. The page's load hands it over, so a
             // reconnect runs the load again, and a token that changed goes out through onToken.
-            if (reconnected) void writes.renewToken().catch(() => undefined);
+            if (reconnected) {
+                void writes
+                    .renewToken()
+                    .then(() => {
+                        if (live === ws && !socket.admitted) link(() => (socket.admitted = true));
+                    })
+                    .catch(() => undefined);
+            }
         });
         ws.addEventListener('message', (event: MessageEvent) => {
             handle(String(event.data));
@@ -255,7 +300,10 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         ws.addEventListener('close', () => {
             if (live !== ws) return;
             live = null;
-            socket.status = 'closed';
+            link(() => {
+                socket.status = 'closed';
+                socket.admitted = false;
+            });
             if (!wanted) return;
             retry = setTimeout(() => {
                 retry = null;
@@ -382,6 +430,8 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
 
     return {
         status,
+        admitted,
+        onLink,
         connect,
         disconnect,
         send,

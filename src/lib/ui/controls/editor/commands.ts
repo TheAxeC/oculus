@@ -18,7 +18,8 @@ export function runCommand(
 ): void {
     if (command.kind === 'goto') {
         const line = Math.min(Math.max(1, command.line), held.getLineCount());
-        made.setPosition({ lineNumber: line, column: 1 });
+        const column = Math.min(Math.max(1, command.column ?? 1), held.getLineMaxColumn(line));
+        made.setPosition({ lineNumber: line, column });
         made.revealLineInCenter(line);
         made.focus();
     } else if (command.kind === 'indent') {

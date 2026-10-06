@@ -57,6 +57,8 @@ export type SourceOptions = {
     readonly rulers: number[] | null;
     /** The word wrap after Alt+Z, or null when it returns to the configured one. */
     readonly toggled: WordWrap | null;
+    /** Whether a save first formats the document with its language server. */
+    readonly formatOnSave: boolean;
 };
 
 /** Make the options of one tab over what it is handed. */
@@ -136,6 +138,9 @@ export function createSourceOptions(input: SourceOptionsInput): SourceOptions {
         get toggled() {
             const one = resolved();
             return one === null ? null : toggleWrap(one.wordWrap, one.configuredWrap);
+        },
+        get formatOnSave() {
+            return resolved()?.formatOnSave ?? false;
         }
     };
 }

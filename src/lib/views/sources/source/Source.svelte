@@ -25,18 +25,17 @@
     // written, keeps working and saved copies in its instance's ui state across tab switches, and
     // writes through api/source.
     //
-    // A file it holds but may not write is drawn by the code window under a line saying why, rather
-    // than by an editor that would take typing and refuse every save: a file this machine's mode
-    // locks, and a file too long to have been read whole, where writing the copy back would take
-    // the rest of the file off the disk.
+    // A file it holds but may not write is drawn under a line saying why. One too long to have been
+    // read whole is drawn by the code window; one this machine's mode locks is drawn by the editor
+    // in its read-only form, which a mode change toggles (save/locked-words.ts).
     //
     // A tab over the file at HEAD or in the index (Open File (HEAD)) is read from the git route
     // and is never written: it is drawn as a locked file, has no gutter marks, carries the blame
     // of that version (Toggle Blame is the one action it offers), and offers no preview, since its
     // root is a repository's own directory and not a served root.
     //
-    // A keystroke keeps a preview tab. A file opened by a single click is the tab the next single
-    // click replaces, and typing into it is a reader saying they are working in it.
+    // A keystroke keeps a preview tab: typing into the tab a single click opened, which the next
+    // single click replaces, says the reader is working in it.
     //
     // The tab draws no title row and no row of controls: its path is the breadcrumb the pane draws
     // under the strip. It hands up to the pane through ui/tabs/tab-actions.svelte.ts its actions
@@ -45,12 +44,12 @@
     // each where it applies, and nothing for the tab row. Word wrap and the rendered half are the
     // palette's, which lists Save, Revert File, word wrap, the rendered half, Open Preview to the
     // Side, Submit Job and Toggle Blame while each applies (status/ask-perform.ts), and Cmd+S asks
-    // the tab on screen to save. The save outcome while the text may be written, and what the tab
-    // said, stay in view under the editor (save/SourceNote.svelte): an alert for a refused first
-    // Save, LaTeX action or Submit, a status for Submit's progress and success. A file that could
-    // not be read is the message box with a control that reads it again (actions/read-again.ts),
-    // which opens what the file is when it is back as something other than text. A file the route
-    // says is gone opens here too, so this is the tab that says it cannot be opened.
+    // the tab on screen to save. The save outcome and what the tab said stay under the editor
+    // (save/SourceNote.svelte): an alert for a refusal, a status for Submit's progress. A file that
+    // could not be read is the message box with a control that reads it again
+    // (actions/read-again.ts), which opens what the file is when it is back as something other than
+    // text. A file the route says is gone opens here too, so this is the tab that says it cannot be
+    // opened.
     //
     // Submit Job, on a .slurm file on disk under a served root, saves the unsaved text, asks the
     // server for the plan, puts it to the reader as one confirm and on a yes runs it; the flow is
@@ -85,11 +84,9 @@
     // opens the file's diff at its change and a press on a line's blame opens its commit in the
     // Repositories view's graph.
     //
-    // A Markdown or LaTeX file adds the headings of its text as document symbols (`symbols.ts`),
-    // which sticky scroll pins at the top of the editor. A LaTeX file adds to its editor the
-    // problems of its latest build as markers, the preview of math and pictures under the pointer
-    // and Format Document (`latex-editor.ts`); a save of it builds its main file when
-    // `latex.auto_build` says so (state/sessions/latex.svelte.ts).
+    // What a language adds to the editor (Markdown headings, LaTeX's build, a language server's
+    // registration and actions, and the format before a save when the language's `format_on_save`
+    // is on) is made by language/tab-language.svelte.ts.
 
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -113,13 +110,11 @@
     import { createSubmitJob, isJobScript } from './actions/submit-job.svelte';
     import ReadAgainButton from './actions/ReadAgainButton.svelte';
     import { createTabSave } from './save/tab-save.svelte';
-    import { latexEditor } from './latex-editor';
+    import { createTabLanguage } from './language/tab-language.svelte';
     import { createSourceGutter } from './source-gutter.svelte';
     import { createSourceOptions } from '$lib/views/shared/prose/source-options';
-    import { symbolsExtension } from './symbols';
     import { readAs } from '$lib/data/shapes/shapes';
     import { markdownPreviewState, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';
-    import { markdownOutline } from '$lib/state/sources/explorer/sections/outline';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { headOf } from '$lib/state/sessions/source.svelte';
     import { blameStatus } from '$lib/state/sources/repositories/file-git';
@@ -180,18 +175,19 @@
     const note = createSaid();
     const error = $derived(blocked && !untitled ? t('source.cannot_open', path) : draft.error);
     /** The line a tab that may not write its file draws, and the empty string for one that may. */
-    const locked = $derived(lockedWords(head, draft));
+    const lock = $derived(lockedWords(head, draft));
     /**
      * Whether the tab holds the file's text: read, and not refused since. A draft read once keeps
      * its text when a later read fails, so `draft.loaded` alone stays true for a file now gone.
      */
     const read = $derived(error === '' && draft.loaded);
-    /** Whether the editor is drawn, which is when the text controls have text to act on. */
-    const editing = $derived(read && locked === '');
+    /** Whether the text may be written, which is when the text controls have text to act on. */
+    const editing = $derived(read && lock.words === '');
+    /** Whether the editor is drawn: the text may be written, or only the mode locks it. */
+    const drawn = $derived(read && !lock.window);
 
-    /** The save outcome the row under the editor shows: only while the text may be written. */
+    /** The save outcome the row under the editor shows, only while the text may be written. */
     const saveMessage = $derived(editing ? draft.message : '');
-
     /** Whether the row under the editor is drawn: a save outcome or a sentence the tab said. */
     const noted = $derived(saveMessage !== '' || note.words !== '');
 
@@ -211,17 +207,19 @@
     /** The indentation Tab inserts: the tab's choice, the file's own, or the configured one. */
     const indent = $derived(options.indent);
     const ending = $derived(lineEnding(draft.text));
-    /** What a LaTeX file adds to the editor: its build's markers, the preview and the formatter. */
-    const extension = $derived(
-        language === 'latex' && head === undefined
-            ? latexEditor(client, { root, path }, (words: string) => note.say(words))
-            : language === 'markdown'
-              ? symbolsExtension(markdownOutline)
-              : undefined
-    );
+    /** What the language adds to the editor: LaTeX's build, Markdown's headings or a server. */
+    const tabLanguage = createTabLanguage({
+        client,
+        instance: () => instance.id,
+        language: () => language,
+        shown: () => options.shown,
+        root: () => root,
+        path: () => path,
+        version: () => head !== undefined,
+        say: (words: string) => note.say(words)
+    });
     /** Whether the file has a rendered half, which is what a Markdown file has. */
     const markdown = $derived(language === 'markdown');
-
     /** Where the file is on disk and in which repository, and what that allows the tab. */
     const file = createTabFile({
         workspaces,
@@ -246,6 +244,7 @@
         roots: currentRoots,
         create: explorer.create,
         saveDraft: saveSourceDraft,
+        prepare: () => (options.formatOnSave ? tabLanguage.lsp.formatForSave() : Promise.resolve()),
         restate: restateInstance,
         said: (words) => note.say(words)
     });
@@ -303,13 +302,14 @@
             toggleRendered: () => toggleSourceRendered(instance.id),
             submit: () => void submit.press(),
             previewSide: () => openBeside(MARKDOWN_PREVIEW_VIEW, markdownPreviewState(root, path)),
-            toggleBlame: () => toggleSourceBlame(instance.id)
+            toggleBlame: () => toggleSourceBlame(instance.id),
+            language: drawn ? tabLanguage.lsp.actions(options.shown, { root, path }) : []
         })
     );
     /** What the palette lists: the tab's actions, then the editor's while it is drawn. */
     const listed = $derived([
         ...ownListing(own, onMac()),
-        ...(editing ? actions.filter((one) => !own.some((mine) => mine.id === one.id)) : [])
+        ...(drawn ? actions.filter((one) => !own.some((mine) => mine.id === one.id)) : [])
     ]);
     // What the status bar draws for this tab, said again whenever any of it changes, and the asks
     // of the bar and the palette. A tab with no text yet says nothing, so the bar draws no source
@@ -322,7 +322,7 @@
             error !== '' || !draft.loaded || indent === null
                 ? null
                 : {
-                      caret: editing ? caret : null,
+                      caret: drawn ? caret : null,
                       lines: lineCount(draft.text),
                       indent,
                       ending,
@@ -331,17 +331,20 @@
                       blame: editing ? blameStatus(blameMap.get(caret.line), gutter.readAt) : '',
                       actions: listed,
                       file: file.wholeFile,
-                      selection: editing ? selection : ''
+                      selection: drawn ? selection : '',
+                      served: tabLanguage.lsp.served(options.shown, { root, path }, drawn)
                   },
         perform: (ask) =>
             performAsk(ask, {
                 editing,
+                drawn,
                 indent,
                 editor,
                 actions: own,
                 openCommit: () => gutter.openBlamed(blameMap.get(caret.line)),
                 setLanguage: (next) => setSourceLanguage(instance.id, next),
-                setIndent: (next) => setSourceIndent(instance.id, next)
+                setIndent: (next) => setSourceIndent(instance.id, next),
+                select: tabLanguage.lsp.select
             })
     });
 
@@ -422,7 +425,7 @@
     <!-- Focus in the tab makes it the source a command run from another view reads. -->
     <div
         class="source"
-        class:lined={locked !== '' && error === '' && draft.loaded}
+        class:lined={lock.words !== '' && error === '' && draft.loaded}
         class:noted
         data-instance={instance.id}
         data-root={root}
@@ -435,41 +438,45 @@
             </div>
         {:else if !draft.loaded}
             <Empty message={t('app.waiting')} glyph="edit" />
-        {:else if locked !== ''}
-            <LockedCode
-                {locked}
-                text={draft.text}
-                {language}
-                {path}
-                gutter={margin}
-                onscrolled={(next: number) => (top = next)}
-            />
         {:else}
-            <Editor
-                bind:this={editor}
-                {path}
-                {line}
-                first={draft.first}
-                onfirst={(shown: number) => setSourceFirst(instance.id, shown)}
-                {language}
-                {indent}
-                {ending}
-                wrap={options.wrap}
-                rulers={options.rulers}
-                actions={own}
-                instance={instance.id}
-                text={draft.text}
-                rendered={draft.rendered}
-                marks={gutter.editorMarks}
-                blame={gutter.editorBlame}
-                {extension}
-                oninput={typed}
-                oncaret={(at: Caret) => (caret = at)}
-                onselect={(text: string) => (selection = text)}
-                onmark={(mark: EditorMark) => gutter.openMark(mark.line)}
-                onblame={(row: EditorBlame) => gutter.openBlamed(blameMap.get(row.line))}
-                onactions={(offered: EditorAction[]) => (actions = offered)}
-            />
+            {#if lock.words !== ''}
+                <LockedCode
+                    {lock}
+                    text={draft.text}
+                    {language}
+                    {path}
+                    gutter={margin}
+                    onscrolled={(next: number) => (top = next)}
+                />
+            {/if}
+            {#if !lock.window}
+                <Editor
+                    bind:this={editor}
+                    {path}
+                    {line}
+                    first={draft.first}
+                    onfirst={(shown: number) => setSourceFirst(instance.id, shown)}
+                    {language}
+                    {indent}
+                    {ending}
+                    wrap={options.wrap}
+                    rulers={options.rulers}
+                    actions={own}
+                    instance={instance.id}
+                    text={draft.text}
+                    rendered={draft.rendered}
+                    marks={gutter.editorMarks}
+                    blame={gutter.editorBlame}
+                    extension={tabLanguage.extension}
+                    writable={lock.words === ''}
+                    oninput={typed}
+                    oncaret={(at: Caret) => (caret = at)}
+                    onselect={(text: string) => (selection = text)}
+                    onmark={(mark: EditorMark) => gutter.openMark(mark.line)}
+                    onblame={(row: EditorBlame) => gutter.openBlamed(blameMap.get(row.line))}
+                    onactions={(offered: EditorAction[]) => (actions = offered)}
+                />
+            {/if}
         {/if}
         {#if noted}
             <SourceNote

@@ -8,19 +8,20 @@
     // is asked of the tab through the same store, since the tab holds the text and the shell does
     // not.
     //
-    // The blame item opens the commit that last changed the caret's line in the Repositories
-    // view's graph, which the tab does, since it holds the blame. The caret item and the language
-    // item open the palette, the one quick input oculus has: on a go-to-line query, a colon, and on
-    // the language list. The other three open a list over the item. A tab that may not write its
-    // file draws no caret and offers no change of its text: its indentation list offers no
+    // The blame item opens the commit that last changed the caret's line in the Repositories view's
+    // graph, which the tab does, since it holds the blame. The caret item and the language item
+    // open the palette, the one quick input oculus has: on a go-to-line query, a colon, and on the
+    // language list. A file a language server serves also draws its three items before the language
+    // (LanguageItems.svelte). The other three open a list over the item. A tab that may not write
+    // its file draws no caret and offers no change of its text: its indentation list offers no
     // conversion, its line endings list holds the one the file has, and each item's tooltip says
     // why.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import type { StatusItem } from './status-items';
-    import type { EditorStatus } from '$lib/state/workbench/navigation/editor-status.svelte';
+    import LanguageItems from './LanguageItems.svelte';
+    import type { ItemsProps } from './status-items';
     import { INDENT_SIZES, type LineEnding } from '$lib/state/workbench/navigation/editor-text';
     import { caretWords, indentWords, languageName } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/shared/words/text';
@@ -30,17 +31,7 @@
         editorStatus: { ask }
     } = useState();
 
-    type Props = {
-        /** The source tab on screen, by its instance id. */
-        instance: string;
-        status: EditorStatus;
-        /** Whether an item is drawn, the reader having not hidden it. */
-        shown: (item: StatusItem) => boolean;
-        /** Open the palette on a query. */
-        onpalette: (prefill: string) => void;
-    };
-
-    let { instance, status, shown, onpalette }: Props = $props();
+    let { instance, status, shown, onpalette }: ItemsProps = $props();
 
     const endings: LineEnding[] = ['LF', 'CRLF'];
 
@@ -182,6 +173,7 @@
         />
     </span>
 {/if}
+<LanguageItems {instance} {status} {shown} {onpalette} />
 {#if shown('language')}
     <span data-status="language">
         <ToolButton

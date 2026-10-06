@@ -1,7 +1,7 @@
 // Layer 2, server. A collection file read for a lookup: which file a collection key names, how an
 // entry is addressed inside it, and the entry an identity value names. The write path in
-// server/edit/writes/entries.ts and the seed of a task in server/machine/seeds/task-seed.ts read a
-// collection through this module, so neither imports the other.
+// server/edit/writes/entries.ts and the seed of a task in server/machine/runs/seeds/task-seed.ts
+// read a collection through this module, so neither imports the other.
 //
 // An entry is addressed by its identity value, not by its id. funding.yml's schema opens with
 // `title` while three of its entries carry a `key`, and the id the reader made is that key, so

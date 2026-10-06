@@ -418,6 +418,7 @@ describe('settingFindings', () => {
                 'calendar.poll_min',
                 'changes.keep',
                 'editor.languages.cobolx',
+                'editor.languages.cpp.format_on_save',
                 'editor.languages.markdown',
                 'editor.languages.python.tab_size',
                 'editor.paint_limit_kb',
@@ -460,6 +461,9 @@ describe('settingFindings', () => {
         );
         expect(lines).toContain(
             'editor.languages.cobolx: editor.languages.cobolx is not a language the editor colours; its record is not read'
+        );
+        expect(lines).toContain(
+            'editor.languages.cpp.format_on_save: editor.languages.cpp.format_on_save must be true or false; the field is not read'
         );
         expect(lines).toContain(
             'open.program_ext.pdf: open.program_ext.pdf must be an extension with its dot; the entry is not read'

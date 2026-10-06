@@ -23,7 +23,8 @@ export const attachAtWs: AttachSocket = (server, context) =>
     attachSocket(server, context.hub, {
         path: '/ws',
         token: context.token,
-        terminals: context.terminals
+        terminals: context.terminals,
+        relay: context.relay
     });
 
 /**

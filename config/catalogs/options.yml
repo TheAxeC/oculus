@@ -490,7 +490,7 @@ options:
         editor.sticky_scroll:
             heading: editor
             section: Source editor
-            description: Whether the editor keeps the headings and blocks that contain the first visible line at the top of the view, VS Code's editor.stickyScroll.enabled. The structure comes from the headings of a Markdown or LaTeX file, from the language service of TypeScript, JavaScript, JSON, CSS, SCSS, Less and HTML, and from the braces of C, C++, Java, Dart, R and Rite.
+            description: Whether the editor keeps the headings and blocks that contain the first visible line at the top of the view, VS Code's editor.stickyScroll.enabled. The structure comes from the headings of a Markdown or LaTeX file, from the language service of TypeScript, JavaScript, JSON, CSS, SCSS, Less and HTML, from the symbols pyright and clangd answer for a Python, C or C++ file they serve, and from the braces of Java, Dart, R and Rite, and of C and C++ while no language server serves the file.
             default: true
             control: toggle
         editor.languages:
@@ -521,6 +521,9 @@ options:
                     items: number
                     min: 1
                     whole: true
+                format_on_save:
+                    description: true formats the document with the language server before each save, false saves it as typed; a language whose server does not format, Python among them, saves as typed either way
+                    control: toggle
         latex.auto_build:
             heading: editor
             section: LaTeX
@@ -1141,6 +1144,9 @@ options:
         approvals:
             section: Saved files
             description: Where the approvals live, the texts of the project commands a reader approved to run, each under a key made from its text. Without it the file is ~/.oculus/approvals.json, mode 0600, in ~/.oculus, which each write makes mode 0700 when it is looser; a file named here leaves the mode of its folder as it is. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+        lsp:
+            section: Saved files
+            description: Where the language servers keep this machine's state, a folder per served root named by a hash of the root's real path, holding the index clangd writes there instead of into the repository, and choices.json, the interpreter and the compile database chosen for each repository. Without it the folder is ~/.oculus/lsp. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change ends every language server, and each starts again on its next document under the new folder; the old folder is left as it was.
         schedules:
             section: Saved files
             description: Where the schedules live, the entries the update tray's Schedules section lists and a reader may write by hand. Without it the file is ~/.oculus/schedules.yml. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.

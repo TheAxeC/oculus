@@ -30,7 +30,7 @@
         pressed,
         type ProcessGroup,
         type ProcessesSort
-    } from '$lib/state/system/machine/processes';
+    } from '$lib/state/system/machine/processes/processes';
     import ProcessTable from './ProcessTable.svelte';
 
     const {

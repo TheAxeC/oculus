@@ -26,6 +26,7 @@
         rail = false,
         bare = false,
         status = false,
+        warning = false,
         cell = false,
         plain = false,
         primary = false,
@@ -66,6 +67,7 @@
         class:rail-control={rail}
         class:bare
         class:status
+        class:warning
         class:cell
         class:plain
         class:primary
@@ -229,6 +231,10 @@
     .tool.status:hover:not(:disabled),
     .tool.status[aria-expanded='true'] {
         background: var(--chip);
+    }
+
+    .tool.status.warning {
+        color: var(--c-amber-txt);
     }
 
     /* Its icon at the size VS Code draws a status bar icon, and a stand-in at the words' size. */

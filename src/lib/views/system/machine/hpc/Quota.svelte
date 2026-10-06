@@ -3,7 +3,7 @@
     // used by other capacity gauges.
     import Meter from '$lib/ui/display/Meter.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import type { HpcQuotaItem } from '$lib/state/system/machine/hpc';
+    import type { HpcQuotaItem } from '$lib/state/system/machine/hpc/hpc';
     let { rows }: { rows: HpcQuotaItem[] } = $props();
     const tone = (pct: number): string => (pct >= 90 ? 'red' : pct >= 75 ? 'amber' : 'green');
 </script>

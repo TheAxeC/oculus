@@ -4,7 +4,8 @@
 // data/sources/config/editor-options.ts.
 //
 // A value is taken from the first layer that sets it: the tab's own choice, the file's own
-// indentation, the repository's record, `editor.languages`, then the global key (`resolveEditor`).
+// indentation, the repository's record, `editor.languages`, then the global key (`resolveEditor`);
+// `format_on_save` has no global key, so it is the record's or off.
 // A tab's own indentation or word wrap is taken only when the catalog's entry for the key takes it
 // too, which the options carry as `fitsTabSize` and `fitsWrap`.
 
@@ -22,6 +23,7 @@ export type LanguageRecord = {
     insertSpaces?: boolean;
     wordWrap?: WordWrap;
     rulers?: number[];
+    formatOnSave?: boolean;
 };
 
 /** The records of a configuration or of a repository, by language, in a map with no prototype. */
@@ -69,6 +71,8 @@ export type EditorResolved = {
     /** The word wrap without the tab's own choice, which Alt+Z returns to. */
     configuredWrap: WordWrap;
     rulers: number[];
+    /** Whether a save first formats the document with its language server. */
+    formatOnSave: boolean;
 };
 
 /**
@@ -109,7 +113,8 @@ export function resolveEditor(ask: EditorAsk): EditorResolved {
         indent,
         wordWrap: tab.wrap !== null && options.fitsWrap(tab.wrap) ? tab.wrap : configuredWrap,
         configuredWrap,
-        rulers: [...layered(ask, 'rulers', [] as number[])]
+        rulers: [...layered(ask, 'rulers', [] as number[])],
+        formatOnSave: layered(ask, 'formatOnSave', false)
     };
 }
 

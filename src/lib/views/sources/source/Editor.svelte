@@ -86,6 +86,8 @@
         blame?: EditorBlame[];
         /** What the tab's language adds to the editor, such as LaTeX's markers and preview. */
         extension?: EditorExtension;
+        /** Whether the editor takes typing; false for a file this machine's mode locks. */
+        writable?: boolean;
         /** The first line the editor opens showing, from one; `onfirst` says each change of it. */
         first?: number;
         onfirst?: (line: number) => void;
@@ -118,6 +120,7 @@
         marks = [],
         blame = [],
         extension,
+        writable = true,
         oninput,
         oncaret,
         onselect,
@@ -220,6 +223,7 @@
                 {marks}
                 {blame}
                 {extension}
+                {writable}
                 {oncaret}
                 {onselect}
                 {onmark}

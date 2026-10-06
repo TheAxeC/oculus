@@ -1,11 +1,15 @@
-// Layer 2, server. The `pty:<id>` channels of DESIGN.md's "The socket", and the only place the
-// socket accepts anything from the page beyond a subscription.
+// Layer 2, server. The `pty:<id>` channels of DESIGN.md's "The socket", and with the language
+// server relay (server/machine/lsp/relay.ts) the only place the socket accepts anything from the
+// page beyond a subscription.
 //
 // A page subscribes to `pty:<id>`, gets what the pane already shows as its first message, and then
 // one message per chunk tmux reports for that pane. It sends back `input` and `resize`, and both
-// are accepted only on a socket whose subscribe message carried the write token; a socket without
-// the token reads every channel and writes to none. That is DESIGN.md's "The socket accepts nothing
-// from the page except subscriptions and, later, terminal input", made concrete.
+// are accepted only from a socket the socket module found carrying the write token (server/root/
+// socket.ts, which hands `gate` the `canWrite(sink)` that `inbound` asks); a socket without the
+// token reads every channel and writes to none. That is DESIGN.md's "The socket accepts nothing
+// from the page except subscriptions and, from a socket whose subscription carried the write
+// token, terminal input and the frames of an `lsp:<language>` channel", made concrete for the
+// terminals.
 //
 // A control client is opened per attached terminal and closed a minute after nothing is attached
 // to that terminal, so a machine with no terminal open runs no tmux child. While one is open,
@@ -324,7 +328,6 @@ export class Terminals {
     #lines: number;
     #attached = new Map<string, Set<Sink>>();
     #held = new Map<Sink, Set<string>>();
-    #writable = new WeakSet<Sink>();
     /** The tail of each terminal's command chain, so its keystrokes reach tmux in order. */
     #queue = new Map<string, Promise<void>>();
     /** The last list tmux gave, or null before it has given one. */
@@ -339,6 +342,7 @@ export class Terminals {
      */
     #period = 0;
     #closed = false;
+    #canWrite: (sink: Sink) => boolean = () => false;
     /** The turn of the read that started last, and of the newest read whose answer was taken. */
     #issued = 0;
     #applied = 0;
@@ -489,13 +493,13 @@ export class Terminals {
         });
     }
 
-    /**
-     * A subscribe message: the pty channels in it are attached, and the token in it is what lets
-     * this socket write. A socket that never carried the token can read every channel and write to
-     * none, so a page of another origin that got past the handshake still types nothing.
-     */
-    subscribed(sink: Sink, channels: string[], token: unknown, expectedToken: string): void {
-        if (expectedToken !== '' && token === expectedToken) this.#writable.add(sink);
+    /** The socket's answer to whether a sink carried the write token; until given, none did. */
+    gate(canWrite: (sink: Sink) => boolean): void {
+        this.#canWrite = canWrite;
+    }
+
+    /** A subscribe message: the pty channels in it are attached to the sink. */
+    subscribed(sink: Sink, channels: string[]): void {
         for (const channel of channels) {
             const id = channelTerminal(channel);
             if (id !== null) void this.#attach(sink, id);
@@ -504,14 +508,16 @@ export class Terminals {
 
     /**
      * One message from the page that was not a subscription. True when it was a terminal message,
-     * which is what tells the socket the message was accounted for.
+     * which is what tells the socket the message was accounted for. A socket that did not carry
+     * the write token can read every channel and write to none, so a page of another origin that
+     * got past the handshake types nothing.
      */
     inbound(sink: Sink, data: string): boolean {
         const message = terminalMessage(data);
         if (message === null) return false;
         const id = channelTerminal(message.channel);
         if (id === null) return true;
-        if (!this.#writable.has(sink)) {
+        if (!this.#canWrite(sink)) {
             console.error(`pty: input on ${message.channel} from a socket without the write token`);
             return true;
         }

@@ -4,8 +4,11 @@
 // project command is approved by is the whole chain a press runs, with the repository's path.
 //
 // The shape is the one every user of the processes rule shares, `{ version: 1, approved: { "<kind>:
-// <sha256>": { label, at, folder? } } }`. An app is approved under `app:<sha256>` of its content,
-// with the real path of its folder, and at most one `app` entry is live per folder; an entry of a
+// <sha256>": { label, at, folder? } } }`. There are three kinds of key. A command is approved under
+// `command:<sha256>` of its chain text. An app is approved under `app:<sha256>` of its content,
+// with the real path of its folder, and at most one `app` entry is live per folder. A Python
+// interpreter a repository holds is approved under `interpreter:<sha256>` of the JSON `[repository
+// real path, interpreter path]`, so a changed path or another repository asks again. An entry of a
 // kind a call does not write is kept as it stood. The file is private to its owner (mode 0600), and
 // the default file's folder, `~/.oculus`, is made mode 0700 when it is looser; the file is written
 // whole by a rename and read back to check the write. A file that is not JSON, or not that shape,
@@ -140,6 +143,43 @@ export function approveTexts(file: string, texts: string[], now: Date = new Date
         const key = commandKey(text);
         if (!(key in approved)) approved[key] = { label: text, at: now.toISOString() };
     }
+    return store(file, approved);
+}
+
+/**
+ * The text an interpreter is approved by: the repository's real path and the interpreter's path.
+ */
+function interpreterText(repo: string, interpreter: string): string {
+    return JSON.stringify([repo, interpreter]);
+}
+
+/** The key of an interpreter: `interpreter:` and the SHA-256 of its text as hex. */
+function interpreterKey(repo: string, interpreter: string): string {
+    const hash = createHash('sha256').update(interpreterText(repo, interpreter), 'utf8');
+    return `interpreter:${hash.digest('hex')}`;
+}
+
+/** Whether the reader approved this repository's interpreter on this machine. */
+export function isInterpreterApproved(file: string, repo: string, interpreter: string): boolean {
+    return interpreterKey(repo, interpreter) in readApprovals(file).approved;
+}
+
+/**
+ * Approve a repository's interpreter: one entry for the pair, none added for a pair already held.
+ * Answers `{ ok: true }`, or the reason the file was left as it was.
+ */
+export function approveInterpreter(
+    file: string,
+    repo: string,
+    interpreter: string,
+    now: Date = new Date()
+): ApprovalWrite {
+    const loaded = load(file);
+    if (!loaded.ok) return loaded;
+    const key = interpreterKey(repo, interpreter);
+    if (key in loaded.approvals.approved) return { ok: true };
+    const approved = { ...loaded.approvals.approved };
+    approved[key] = { label: interpreterText(repo, interpreter), at: now.toISOString() };
     return store(file, approved);
 }
 

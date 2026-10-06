@@ -66,10 +66,17 @@ export function mintToken(): string {
     return randomBytes(32).toString('hex');
 }
 
+/**
+ * Whether a value is the process's token, the one comparison both the routes and the socket make.
+ * An empty expected token never matches, whatever the value is.
+ */
+export function carriesToken(token: unknown, expected: string): boolean {
+    return expected !== '' && token === expected;
+}
+
 /** Whether a request carries the process's token. An empty token is never accepted. */
 export function hasToken(request: Request, token: string): boolean {
-    if (token === '') return false;
-    return request.headers.get(TOKEN_HEADER) === token;
+    return carriesToken(request.headers.get(TOKEN_HEADER), token);
 }
 
 /**

@@ -6,7 +6,7 @@
     import Table from '$lib/ui/display/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { efficiencyTone, type HpcRecent } from '$lib/state/system/machine/hpc';
+    import { efficiencyTone, type HpcRecent } from '$lib/state/system/machine/hpc/hpc';
     import { t } from '$lib/state/shared/words/text';
     let {
         rows,

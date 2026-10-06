@@ -1,5 +1,28 @@
 # Oculus text owned by the Search view: the query row, the count line and the results grouped by file.
 text:
+    references:
+        actions: References actions
+        clear: Clear
+        clear_all_history: Clear History
+        collapse_all: Collapse All
+        copy: Copy
+        copy_all: Copy All
+        copy_path: Copy Path
+        count: '{0} results in {1} files'
+        count_one: 1 result in 1 file
+        count_one_file: '{0} results in 1 file'
+        count_one_result: '1 result in {0} files'
+        dismiss: Dismiss
+        empty: No results.
+        empty_history: 'No results. Try running a previous search again:'
+        file_title: '{0}'
+        history_row: '{0}: {1}'
+        history_title: 'Run {0} of {1} again'
+        line_title: '{0}:{1}'
+        refresh: Refresh
+        results: References
+        title_implementations: Implementations
+        title_references: References
     search:
         actions: Search actions
         capped: cut at {0}
@@ -88,5 +111,7 @@ text:
         word: word
         word_title: Match whole words only, which is how an identifier is found without its neighbours
     views:
+        references: References
+        references_glyph: references
         search: Search
         search_glyph: search

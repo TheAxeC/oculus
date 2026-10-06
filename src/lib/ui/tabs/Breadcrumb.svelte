@@ -5,15 +5,19 @@
     // row: 22px high, the arrow in a box 16px wide, the words at 12px, the step of the type scale
     // nearest VS Code's 0.9em of 13px (themes/tokens.css, `--crumb-row` and `--crumb-icon`). Every
     // item keeps its whole name; the row takes the room its neighbours leave, and a path longer
-    // than that room is cut from the left, so the file's name stays in view.
+    // than that room is cut from the left, so the file's name stays in view. A segment that is a
+    // symbol of the file draws the glyph of its kind before its name.
 
     import Glyph from '../display/Glyph.svelte';
 
     type Props = {
         /** The strip's accessible name, already translated. */
         label: string;
-        /** The segments from the outermost in, each with the id picking it hands back. */
-        segments: { id: string; label: string }[];
+        /**
+         * The segments from the outermost in, each with the id picking it hands back, and for a
+         * symbol of the file the glyph of its kind and the declarations that colour it.
+         */
+        segments: { id: string; label: string; glyph?: string; glyphStyle?: string }[];
         onselect: (id: string) => void;
     };
 
@@ -35,6 +39,11 @@
                     aria-current={at === segments.length - 1 ? 'location' : undefined}
                     onclick={() => onselect(segment.id)}
                 >
+                    {#if segment.glyph !== undefined}
+                        <span class="kind" style={segment.glyphStyle}>
+                            <Glyph name={segment.glyph} />
+                        </span>
+                    {/if}
                     {segment.label}
                 </button>
             </li>
@@ -84,6 +93,13 @@
         height: 100%;
         color: var(--muted-txt, var(--muted));
         font-size: 0.9em;
+    }
+
+    .kind {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 2px;
+        vertical-align: middle;
     }
 
     .crumb {

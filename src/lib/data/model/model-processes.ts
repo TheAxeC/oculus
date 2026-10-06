@@ -1,6 +1,7 @@
 // Layer 1, data. What the machine views read: the Processes view's rows and the payload of one read
-// of the machine's process table, and the update tray's schedules: the entries of
-// `~/.oculus/schedules.yml` with their problems, next runs and latest runs.
+// of the machine's process table, the update tray's schedules (the entries of
+// `~/.oculus/schedules.yml` with their problems, next runs and latest runs), and the messages the
+// page and the language server relay exchange besides JSON-RPC.
 
 /** The four update tasks, in the order the tray lists them. */
 export const UPDATE_TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
@@ -148,4 +149,101 @@ export type SchedulePayload = {
     folders: string[];
     /** The files that do not read, with the parser's line when it gave one. */
     unread: { file: 'schedules' | 'record' | 'commands'; line: number | null }[];
+};
+
+// ------------------------------------------------------------------ language servers
+// What the page and the language server relay (server/machine/lsp/) say to each other on a
+// language's `lsp:<language>` channel beside the JSON-RPC messages of the protocol: the oculus
+// messages, told apart from a JSON-RPC message by their `oculus` field. The relay sends codes and
+// the page words them from its catalogs.
+
+/** The states of one root's language server, as the status bar says them. */
+export type LspState = 'starting' | 'indexing' | 'ready' | 'not_found' | 'failed';
+
+/** Why a server is `not_found` or `failed`; `root_gone` is one ended as its root is not served. */
+export type LspCode = 'not_found' | 'exited' | 'refused' | 'no_answer' | 'lsp_folder' | 'root_gone';
+
+/** Why a choice was not written. */
+export type LspRefusal = 'choices_unread' | 'choices_write';
+
+/** One Python interpreter a root can use, as the picker lists it. */
+export type LspInterpreter = {
+    /** The path as found or typed, never resolved through a link. */
+    path: string;
+    /** `3.13.4`; the interpreter's `sys.version_info[:3]`. */
+    version: string;
+    /** The folder name of the virtual environment, null for an interpreter outside one. */
+    venv: string | null;
+    /** Where it came from: the repository's own `.venv` or `venv`, the PATH, or a typed path. */
+    found: 'venv' | 'path' | 'typed';
+    /** False for a repository's own interpreter its reader has not approved on this machine. */
+    approved: boolean;
+};
+
+/** One compile database a root can use, as the picker lists it. */
+export type LspDatabase = {
+    /** The configuration's name, or the database's folder under the repository for a found one. */
+    key: string;
+    /** What the status bar and the picker show: the key. */
+    name: string;
+    /** True for a configuration of `.oculus/cpp.yml`, false for a database oculus found. */
+    configuration: boolean;
+    /** The folder holding `compile_commands.json`, relative to the repository; empty for none. */
+    folder: string;
+};
+
+/** A page's message to the relay, besides the JSON-RPC ones. */
+export type LspToServer =
+    | { oculus: 'restart'; root: string }
+    | { oculus: 'output'; root: string }
+    | { oculus: 'output_off'; root: string }
+    | { oculus: 'choices'; root: string }
+    | { oculus: 'choose'; root: string; interpreter?: string; database?: string }
+    | { oculus: 'approve'; root: string; interpreter: string };
+
+/** The relay's message to a page, besides the JSON-RPC ones. */
+export type LspToPage =
+    | {
+          oculus: 'state';
+          root: string;
+          state: LspState;
+          /** The files indexed and the files to index, while `indexing`. */
+          done?: number;
+          total?: number;
+          code?: LspCode;
+          /** The program that was not found, for the code `not_found`. */
+          program?: string;
+      }
+    | { oculus: 'output'; root: string; lines: string[]; append: boolean }
+    | {
+          oculus: 'choices';
+          root: string;
+          interpreters: LspInterpreter[];
+          /** The path of the interpreter in force, null when there is none. */
+          interpreter: string | null;
+          databases: LspDatabase[];
+          /** The key of the database in force, null when there is none. */
+          database: string | null;
+          findings: { file: string; field: string; message: string }[];
+      }
+    | { oculus: 'refused'; root: string; code: LspRefusal }
+    | {
+          oculus: 'legend';
+          root: string;
+          /**
+           * The token types of the server's semantic tokens, in the order its answers index them.
+           */
+          types: string[];
+          /** The token modifiers, by the bit each one is. */
+          modifiers: string[];
+      };
+
+/** A JSON-RPC message of the protocol, carried as the payload of a frame. */
+export type LspRpc = {
+    jsonrpc: '2.0';
+    id?: number | string | null;
+    method?: string;
+    params?: unknown;
+    result?: unknown;
+    error?: { code: number; message: string; data?: unknown };
 };

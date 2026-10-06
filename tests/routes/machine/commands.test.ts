@@ -12,7 +12,7 @@ import { it } from '../../fixtures/scratch.ts';
 import {
     handleCommandsPost,
     type CommandsOptions
-} from '../../../src/lib/server/machine/commands/routes.ts';
+} from '../../../src/lib/server/machine/runs/commands/routes.ts';
 import {
     chainText,
     defaultApprovalsPath,
@@ -28,7 +28,7 @@ import {
     leaveHome,
     plant,
     plantRepo
-} from '../../server/machine/commands/commands-fixture.ts';
+} from '../../server/machine/runs/commands/commands-fixture.ts';
 
 const TOKEN = 'the write token of this test';
 const HOST = 'http://127.0.0.1:8791';

@@ -577,6 +577,14 @@ export {
 } from './model-search.ts';
 export { SCHEDULE_WORDS, UPDATE_TASKS } from './model-processes.ts';
 export type {
+    LspCode,
+    LspDatabase,
+    LspInterpreter,
+    LspRefusal,
+    LspRpc,
+    LspState,
+    LspToPage,
+    LspToServer,
     ProcessesPayload,
     ProcessRow,
     ScheduleEntry,
