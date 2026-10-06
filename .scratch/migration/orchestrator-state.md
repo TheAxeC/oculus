@@ -63,7 +63,8 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/Q123-brief-check.md (aa96e2257854c7ff2, claude-opus-5-5, 181,338 tokens, 47 tool uses, 9.0 min), closed in the brief by a8ea7076e2eefc9f5 (claude-opus-5-5; 146,933 tokens, 29 tool uses, 6.8 min)
   shared_paths: with E4g and O30b: DESIGN.md (Q123 :375, E4g :79-80 and :83, O30b's tree and :436, disjoint) and HELP.md (Q123 :147, E4g :21, :82, :210-221, O30b :186, :365, :367, Q124 :371-373, disjoint); docs/diagrams regenerated at landing; so the merge is simple. D23's channel.ts and channel.test.ts are judged at D23's /spec. Landing waits on Z634.
   landing: not-started
-  round: 0
+  round: 0 (cases ruling agents/briefs/Q123-cases.md, rulings A and B on the hand-back; builder resumed)
+  builder_usage: hand-back 165,442 tokens, 30 tool uses, 9.0 min
 - step: Q124
   executor: agent
   worker: claude:sonnet at ordo-high
