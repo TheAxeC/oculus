@@ -2,6 +2,24 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z610 (2026-10-06, step A3)
+
+The question: a server stop between a schedule's claim and its launch leaves the run `started` with no terminal, and that due time never runs.
+
+- Chosen: (a) record the run `failed` with `server-stopped`, the due time handled.
+- Not chosen: (b) release the claim so the due time runs at the next start, which can start a run hours late; (c) leave it. The lazy one was (c).
+
+Where it is built: A3's repair round 1 (`agents/briefs/A3-rebuild-round1.md`). Booked in `plan.md` Rulings.
+
+## Z609 (2026-10-06, step A3)
+
+The question: Pause and Resume rewrite a whole entry from its normalised reading, turning `task: radar` into `task: litwatch` and dropping comments and unknown keys; DESIGN says a pause or resume refuses on `record-unread` though it writes no record.
+
+- Chosen: (a) edit the entry's node in place, compare raw lists; pause and resume refuse only on `schedules-unread`, and DESIGN says so.
+- Not chosen: (b) hide Pause on a row with a problem, which leaves comments and key order lost on every other row. The lazy one was (b).
+
+Where it is built: A3's repair round 1 (`agents/briefs/A3-rebuild-round1.md`). Booked in `plan.md` Rulings.
+
 ## Z608 (2026-10-06, step O30)
 
 The question: O30 put `install.ts` directly in `state/shared`, which the import order check does not place.
