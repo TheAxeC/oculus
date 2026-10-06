@@ -60,6 +60,22 @@ dispatch:   # steps in flight, up to seven (Z423)
   round: 2 (agents/briefs/E4-round2.md, sent 2026-10-06, the plan's extra round for Z599); round 1 agents/briefs/E4-round1.md, sent 2026-10-05
   round_1_usage: 133,019 tokens, 281 tool uses, 68.6 min
   round_2_usage: 118,930 tokens, 107 tool uses, 28.6 min
+- step: O30
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a5e1b0c7f9cadbc75 (builder, launched 2026-10-06)
+  worktree: .agents/worktrees/O30
+  base: a977b2448
+  launched: 2026-10-06
+  report: agents/reviews/O30-report.md
+  brief_check: agents/reviews/O30-brief-check.md (abeb3af4ed6c02ba7, claude-opus-5-5, 284,824 tokens, 94 tool uses, 16.0 min), closed in the brief by a2a980c5ef0d5bddb (claude-opus-5-5; 291,743 tokens, 64 tool uses, 17.4 min; case 7 265,250 tokens, 69 tool uses, 18.6 min); not run again on the brief prepared after the back-out, as the spec skill's Steps 5 says
+  builders_before: a9657bc7866b03a87 (claude-sonnet-5-5), the build backed out at its landing
+  patch: agents/reviews/O30-backed-out.patch applied with --3way (7 files with conflict markers); agents/reviews/O30-landing-fixes.diff for item 20
+  diagnosis: agents/reviews/O30-diagnosis.md, three headings (ae831f63ce80bd34e, adfea7fe3bb4905aa, adb7a3d3f5225357b); the third is the landing red line, fixed by items 17 to 19
+  shared_paths: with E4: package.json and the lockfile (each its own dependency, the lockfile regenerated), hooks.server.ts (E4 in handle, O30 HEADERLESS), +page.svelte (separate lines), context.ts (separate lines), writes.svelte.ts (E4 one function for an app's write, O30 the token listeners), read-again.ts (E4 its tabForKind call, O30 its move to actions/ with that call unchanged, a rename git carries the edit into), boundaries.test.ts (separate rows), HELP.md and DESIGN.md disjoint lines, the diagrams regenerated; with A3: package.json and the lockfile, server.yml (:19-49 vs :97-99), context.ts (separate lines), terminals.svelte.ts and shapes.ts (each adds its own member), +page.svelte (separate lines), boundaries.test.ts, HELP.md and DESIGN.md disjoint lines, the diagrams regenerated; each both-add or separate, so the merge is simple
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

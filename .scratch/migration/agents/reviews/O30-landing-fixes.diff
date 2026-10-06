@@ -1,0 +1,815 @@
+--- a/tools/oculus/config/text/views/sessions/terminal.yml
++++ b/tools/oculus/config/text/views/sessions/terminal.yml
+@@ -83,6 +83,7 @@
+         terminal_kill_armed: Press again to kill this terminal
+         terminal_bell: Bell
+         paste_confirm: Paste {0} lines into the terminal?
++        paste_confirm_one: Paste 1 line into the terminal?
+         paste_ok: Paste
+         terminals: Terminals
+         view_terminal: Terminal
+--- a/tools/oculus/DESIGN.md
++++ b/tools/oculus/DESIGN.md
+@@ -372,7 +372,7 @@
+ - Docking: tabs drag between panes and across pages, a drop on a pane's edge splits it, a tab dragged with Alt held floats at the pointer, a pane can be closed whole, maximised and floated, all with keyboard equivalents.
+ - Sessions are six views, not one.
+ - Tmux is the session backend (installed, 3.7c); migration of a running session is explicit and per session.
+-- The pty bridge is tmux control mode and no native pty module: a terminal is a tmux session `oculus-<id>`, and the server holds one `tmux -C attach-session` client per attached terminal, since tmux streams `%output` only for the panes of the session a control client is attached to. Terminal input and resizes are accepted only on a socket whose subscription carried the write token. What the page types reaches the pane as the bytes it is, through `send-keys -H`, in pieces of at most 996 bytes (tmux's command-line client refuses a command of more than 1000 words) cut only between characters and between escape sequences (`inputChunks` of `server/machine/pty/tmux.ts`), so a mouse report or a focus report reaches the program in one write and never as a lone Escape, and a paste longer than 996 bytes arrives in several writes, in order, its opening and closing markers each whole. A steer is typed the same way (`inputArgs` of `server/machine/pty/sessions.ts`), then Enter. A page that attaches is given the pane's whole capture followed by a move to tmux's own cursor (`screenAt` of `server/machine/pty/sessions.ts`), which lands right once the page's grid and the pane are the same height, as they are once the page's resize has answered; after `RESIZE_WAIT` (2 s) with no answer the channel is asked for anyway, and the first lines can land at the old height (`subscribePty` of `state/sessions/terminals.svelte.ts`). The `sessions` payload carries no terminal list until tmux has answered once, and a failed `list-sessions` keeps the last list, except that "no server running" or a missing tmux socket is taken as the empty list only when the read and the `NO_SERVER_CONFIRMS` reads after it, `NO_SERVER_CONFIRM_MS` apart, all say it, no control client runs then and no kept server pid is a running tmux (a control client's process ends with the tmux server, and the list read also names the pid of the server that answered, which `kill -0` and `ps` know while its socket cannot be reached, so with either the answer is given up and the last list stands), and reads that answer out of order never put an older list back (`refresh` of `server/machine/pty/channel.ts`), so a restart or a slow tmux never reads as every terminal having ended. Every terminal `startTerminal` starts carries `CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1` (the `GRID_ENV` pair of `server/machine/pty/sessions.ts`, placed by `startArgs` after the account pairs), so Claude Code draws in its scrolling renderer and the grid keeps its scrollback; the usage refresh's own Claude, started by `refresh.ts` without it, keeps the renderer it has. A terminal that ends leaves the list, except a task terminal, which tmux keeps with `remain-on-exit` and the option `@oculus_task` (the repository, the command's name, its source, the token its line prints before each command's name, and the chain with each command's folder) until it is closed and which the channel polls at `POLL_MS` while its line runs; the diagnostics of a task terminal that ended with no grid showing it are read from one `capture` action of the terminal route, the whole text of its pane (`capture-pane -p -J -S -`, `captureTask` of `server/machine/commands/run.ts`), refused for a name oculus does not list; the page takes an ended terminal out of the Terminal tab that owned it, on any page, closes a tab left owning no terminal unless the reader is composing in it, and clears a selection that was that terminal; a tab that never held a terminal, or one showing the composer when its last terminal ends, shows the composer and stays (`endedTerminals` of `state/sessions/terminal/terminal-lists.ts` and `createTerminals` of `state/sessions/terminals.svelte.ts`, wired in `state/client/context.ts`). Attach to Session, a submenu of a Terminal tab's New Terminal menu and of the empty area of its list, names the terminals no Terminal tab owns (`unownedTerminals` and `terminalLabel` of `state/sessions/terminal/terminal-lists.ts`; built by `kindsMenu` and `emptyListMenu` of `views/sessions/terminal/terminal-list.ts`) and a pick puts the one chosen at the end of that tab's order, shown alone, and shows the tab (`attachTerminal` of `createTerminals`). `POST /api/terminal` answers every refusal as a word of `TERMINAL_REFUSALS` with the names its sentence needs (`server/machine/pty/refusal.ts`), and a failed tmux call as `terminal-ended` when the list no longer holds the terminal and `terminal-failed` when it does (a start whose session is not listed afterwards is `terminal-not-started`), so no text of tmux or of a validator reaches the page, which says the catalog sentence of the word (`state/shared/answers/terminal-words.ts`); a refused resize is said on the bar of the tab that owns the terminal. A start sets the session's name, its resume mark and a task's mark in the `new-session` invocation itself, joined by tmux's `;`, so a command that ends at once still leaves a named, marked session. The list the `sessions` payload carries is republished when a terminal's name, title, icon, colour, task mark, exit status or pane process changes (`#took` in `server/machine/pty/channel.ts`), so a task terminal run again that ends with the status it ended with before is a change the pages are told of.
++- The pty bridge is tmux control mode and no native pty module: a terminal is a tmux session `oculus-<id>`, and the server holds one `tmux -C attach-session` client per attached terminal, since tmux streams `%output` only for the panes of the session a control client is attached to. Terminal input and resizes are accepted only on a socket whose subscription carried the write token. What the page types reaches the pane as the bytes it is, through `send-keys -H`, in pieces of at most 996 bytes (tmux's command-line client refuses a command of more than 1000 words) cut only between characters and between escape sequences (`inputChunks` of `server/machine/pty/tmux.ts`), so a mouse report or a focus report reaches the program in one write and never as a lone Escape, and a paste longer than 996 bytes arrives in several writes, in order, its opening and closing markers each whole. A steer is typed the same way (`inputArgs` of `server/machine/pty/sessions.ts`), then Enter. A page that attaches is given the pane's whole capture followed by a move to tmux's own cursor (`screenAt` of `server/machine/pty/sessions.ts`) and by the modes the pane's program set that a capture does not hold, read from tmux's flags in the same `display-message` (bracketed paste, the cursor and keypad keys, the mouse reports, insert, wrap and a hidden cursor; `modesAt` of the same file), since the page resets its grid before it writes the capture, on a new grid and on a reconnect alike; the cursor move lands right once the page's grid and the pane are the same height, as they are once the page's resize has answered; after `RESIZE_WAIT` (2 s) with no answer the channel is asked for anyway, and the first lines can land at the old height (`subscribePty` of `state/sessions/terminals.svelte.ts`). The `sessions` payload carries no terminal list until tmux has answered once, and a failed `list-sessions` keeps the last list, except that "no server running" or a missing tmux socket is taken as the empty list only when the read and the `NO_SERVER_CONFIRMS` reads after it, `NO_SERVER_CONFIRM_MS` apart, all say it, no control client runs then and no kept server pid is a running tmux (a control client's process ends with the tmux server, and the list read also names the pid of the server that answered, which `kill -0` and `ps` know while its socket cannot be reached, so with either the answer is given up and the last list stands), and reads that answer out of order never put an older list back (`refresh` of `server/machine/pty/channel.ts`), so a restart or a slow tmux never reads as every terminal having ended. Every terminal `startTerminal` starts carries `CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1` (the `GRID_ENV` pair of `server/machine/pty/sessions.ts`, placed by `startArgs` after the account pairs), so Claude Code draws in its scrolling renderer and the grid keeps its scrollback; the usage refresh's own Claude, started by `refresh.ts` without it, keeps the renderer it has. A terminal that ends leaves the list, except a task terminal, which tmux keeps with `remain-on-exit` and the option `@oculus_task` (the repository, the command's name, its source, the token its line prints before each command's name, and the chain with each command's folder) until it is closed and which the channel polls at `POLL_MS` while its line runs; the diagnostics of a task terminal that ended with no grid showing it are read from one `capture` action of the terminal route, the whole text of its pane (`capture-pane -p -J -S -`, `captureTask` of `server/machine/commands/run.ts`), refused for a name oculus does not list; the page takes an ended terminal out of the Terminal tab that owned it, on any page, closes a tab left owning no terminal unless the reader is composing in it, and clears a selection that was that terminal; a tab that never held a terminal, or one showing the composer when its last terminal ends, shows the composer and stays (`endedTerminals` of `state/sessions/terminal/terminal-lists.ts` and `createTerminals` of `state/sessions/terminals.svelte.ts`, wired in `state/client/context.ts`). Attach to Session, a submenu of a Terminal tab's New Terminal menu and of the empty area of its list, names the terminals no Terminal tab owns (`unownedTerminals` and `terminalLabel` of `state/sessions/terminal/terminal-lists.ts`; built by `kindsMenu` and `emptyListMenu` of `views/sessions/terminal/terminal-list.ts`) and a pick puts the one chosen at the end of that tab's order, shown alone, and shows the tab (`attachTerminal` of `createTerminals`). `POST /api/terminal` answers every refusal as a word of `TERMINAL_REFUSALS` with the names its sentence needs (`server/machine/pty/refusal.ts`), and a failed tmux call as `terminal-ended` when the list no longer holds the terminal and `terminal-failed` when it does (a start whose session is not listed afterwards is `terminal-not-started`), so no text of tmux or of a validator reaches the page, which says the catalog sentence of the word (`state/shared/answers/terminal-words.ts`); a refused resize is said on the bar of the tab that owns the terminal. A start sets the session's name, its resume mark and a task's mark in the `new-session` invocation itself, joined by tmux's `;`, so a command that ends at once still leaves a named, marked session. The list the `sessions` payload carries is republished when a terminal's name, title, icon, colour, task mark, exit status or pane process changes (`#took` in `server/machine/pty/channel.ts`), so a task terminal run again that ends with the status it ended with before is a change the pages are told of.
+ - `local.yml` carries `hub` (the research hub's absolute path, default two directories above `tools/oculus`) and `port` (default 8790; 8787 is the cockpit's and is never used). The text catalog reaches the browser as the page's data at first load and afterwards by push over the socket like every other YAML (the portfolio watcher covers `config/` as well as the hub); the browser never fetches the YAML as a file.
+ - One tree per page, every split child foldable to its edge through one control and expandable again, the folded state saved with the layout. There is no panel beside the tree: what a side panel would hold (shift-click in the Views catalogue, a session detail opened from a card, a project's editor and deposit opened from its card) opens in a new pane to the right of the active one, and the next one joins that pane as a tab while it is still open, so opening the editor from five cards is one pane of five tabs rather than five panes. A saved layout of two trees is read as one: a page keeps its main area as the root when the panel holds nothing, and otherwise is a split of the two at the shares the panel had, with the panel child folded when the panel was hidden.
+ - A page shows other pages. A leaf of a page's tree is another page, drawn where it sits with a header naming it and the one control that stops showing it there; it is the same page and never a copy, so a tab opened in it is open wherever that page shows and switching to it shows the same arrangement. A page never contains itself, directly or through another page, and is drawn at most once on a screen; a drop or a menu item that would break either rule is not offered, and a page taken out, or closed from the Pages view, gives its space back to the neighbour it was split from. Two page leaves side by side show two pages next to each other. A nested page is reached by focus and not by a digit: a bare digit is the rail page of its place. Every store operation that names a path names the page it addresses, the page on screen when it names none, so a pane carries the page it belongs to beside its path and a view opened while reading inside a shown page lands in that page. The pane menu is the keyboard path to showing a page and a page's row dragged from the Pages view onto a pane's edge is the pointer path.
+@@ -393,7 +393,7 @@
+ - The Memories wall and the Audit. `memories` is a listed view of the Help page's group, reached by its chord `h`: the pictures of the folder `config/appearance.yml` names, drawn as a column wall of tiles, one of them enlarged in the view's own overlay, and a control that posts a JPEG or PNG to `POST /api/memories`, which lands a picture in the wall's folder; the Files view's Upload... is the other write that lands bytes (`api/ops`), and the two share one size, `MAX_UPLOAD_BYTES` of `data/file-ops.ts`, which the page checks before it reads a file. The folder is served by `api/memories` under the rules `api/wallpaper` obeys, which live in `server/content/images.ts` so the two routes share them; a tile whose picture failed asks for it again at `&again=<n>` on the same address, which the server ignores and the browser reads as another picture, so a file rewritten under its name is fetched rather than taken from the browser's cache. `audit` is a listed view of the System group after Findings, with the open count as its badge: the six sections of `server/content/audit.ts` and the modules of `server/content/audit/`, which scans the hub on disk once per rebuild in the portfolio watcher and publishes `{ findings, muted }` on a channel of its own. Its rules: the open markers of a project's README, `code/README.md` and PRESENT.md and of every collection entry, the manifest gaps of a live project, the tier-conformance rules, the status guardrails a project's tier and type put on its chips (the vocabularies in `config/catalogs/vocab.yml` `lifecycle`), the readability limits of `read_limits`, and the public website's publication list against the portfolio. The manifest schema errors and the broken references stay the Findings view's and are not scanned twice, and the view carries a control that opens Findings for them. Each section is a list of rows drawn as the Findings view's rows are, the mute control at the row's end, and every row carries `data-card` so the arrow keys step through the findings. A finding carries a twelve-hex signature over its scope, its place, its kind, the catalog key of its message and the arguments that fill it, so rewording a message keeps every mute; the mute control writes it into the `audit_ignore:` list of `config/behavior.yml` through the `audit-mute` write, over the bytes with the deck write's re-parse guard, both edits sharing the line edit of `server/edit/list-edit.ts`. The watcher counts an event on any document or folder the scan reads under a scan tier, not only a `.yml`, so a marker added to a README reaches the open view; the upload checks the first bytes against the extension and a size the page checks first, and `src/server.ts` tells the built handler's request parser the same size, since its own default refuses any photograph.
+ - The code window's languages and the source tab's preview. A file's language is read from the `languages:` map of `sources.yml` (`data/helpers/files/languages.ts`): a language's name against the endings it claims, an entry starting with a dot being an extension and any other entry a whole file name, both compared lowercased. A file's whole name is matched first and its extension second, so `CMakeLists.txt` is cmake before its `.txt` is read; a file no entry matches, a dotfile included, is plain text. The map holds thirty-one languages and plaintext, and every file is plain text until the page has received the configuration. A language the highlighter has not registered, an entry that is not an extension or a file name, and an ending two languages claim are dropped with a finding, the first claimant keeping the ending; the findings come from the same read the page uses (`languageFindings` of `data/sources/config/languages.ts`), and no write of a single value can change the map, so a hand edit of the file is where one comes from. `.pyi` is Python, `.h` is cpp, and Wren and Graphviz files (`.wren`, `.dot`, `.gv`) stay plain text. The highlighter registers the map's languages from highlight.js's own grammars, none of them a new dependency: the grammars of c, cpp, cmake, lua, ruby, scss, java, dart and fortran under their own names, django's under `jinja`, and under `svelte`, `rite` and `fortran-fixed` the grammars of xml, plaintext and fortran wrapped so that they bring no aliases, which keeps `html`, `svg` and `f90` with their owners. The fence lookup of a Markdown render keeps highlight.js's names and aliases, so a fence of `h` is c, one of `django` or `rite` is plain, and one of `svelte` is painted with xml's grammar, which is also how the read-only code window paints a Svelte file: the markup and the style block colour, a script block without a `lang` attribute colours as JavaScript, and the `lang="ts"` block every component here writes does not. The editor colours a Svelte file with Shiki's own Svelte grammar, `lang="ts"` blocks included. A source tab over a Markdown file splits under the pane's bar into the editor and `views/shared/prose/RenderedMarkdown.svelte`, which renders the working text on the client through the one marked-and-sanitise call of `ui/html.ts` and draws it with the document styles `views/shared/prose/Markdown.svelte` carries, so the rendered half never asks the server and never waits for a save; a relative image address is left as the file wrote it, because the preview is the text of one file. The file browser's Open Preview opens the same rendering alone in a tab of the `markdown-preview` view (`views/sources/doc/MarkdownPreview.svelte`, state `{ root, path, label }`, label `Preview <name>`): it draws the file as saved, read through the file store's text query that a save from a source tab marks, so a save redraws it, and a change made outside oculus is seen when the tab is opened again; a file that cannot be read says `source.cannot_open`, a rename of the file restates the tab, and it hands nothing to the strip. `ui/frame/Sash.svelte` is the handle between the two halves and the share is the editor's own, reset by a double click; the palette's Markdown: Toggle Rendered Half decides whether the half is drawn at all and is kept per instance in its ui state, off for a Markdown file until a reader turns it on; the editor keeps at least half the row, so the rendered half takes at most half (`draggedShare` of `ui/frame/sash-size.ts`), and a table in it keeps its first column at its longest word and scrolls sideways inside its box (`views/shared/prose/Markdown.svelte`). The rendered half follows the editor's position through its text as a fraction, since the two halves hold the same text at different heights. Every text file opens in the source tab, whose editor is Monaco through the `ui/controls/editor/` primitive, coloured by Shiki's TextMate grammars under the same language names (`ui/controls/editor/kit/grammars.ts` answers each name's Shiki id: `bash` is `shellscript`, `lisp` is `common-lisp`, `makefile` is `make`, `fortran` is `fortran-free-form`, `fortran-fixed` is `fortran-fixed-form`, the rest their own, and plaintext is Monaco's own; rite is the one grammar Shiki does not bundle, and it is carried with its language settings in `ui/controls/editor/kit/rite/` from the files of cathedra's VS Code extension for rite, so nothing is read from cathedra at run time), one model per tab instance on an `inmemory://oculus/<instance>/<path>` URI. The eighteen languages of the first set load their grammars with the first editor, every language is registered with Monaco at that point, and the others load when the first model of their language is made, set or picked (`ensureLanguage` of `kit/load.ts`, through the queue the theme paints run in), so a page that opens no Lua file never fetches Lua's grammar; until a grammar has loaded, a model of c, cpp, lua, ruby, scss, java or dart draws Monaco's own colours and a model of the others draws plain, and a grammar that fails to load leaves its files as they were. Loading Svelte or Jinja brings in the grammars they embed (javascript, typescript, css and postcss, or javascript, css, html and jinja-html), and loading SCSS brings in css, so Shiki's tokens then replace Monaco's for those languages' models too. The highlight.js highlighter, which sits in `data/prose/languages.ts` so the server paints with it too and reaches the page layers through `state/shared/words/languages.ts`, paints the read-only code window, which `Source.svelte` draws for a file it may not write, and the fenced code of every Markdown render, a document, the source tab's preview and a transcript turn, through the marked extension `codeColour`, coloured by `themes/code.css`. Inside the editor Cmd+K and Ctrl+K reach the shell and open the palette: the editor gives up every chord Monaco binds under Cmd+K and, on macOS, Ctrl+K (`ui/controls/editor/chords.ts`), and while a source tab is on screen the palette lists those chords' actions as items of kind Editor, under Monaco's own labels with the old chord as the hint, and runs the chosen one on the tab through the editor status store's `action` ask. Pin Editor and Unpin Editor are Editor items too, listed with Cmd+K Shift+Enter, VS Code's chord, whenever the pane that last held the focus has a tab; each acts on that pane's active tab (`pinItems` of `state/workbench/palette.ts`). A palette row is one line: a title longer than the row is cut with an ellipsis (`shell/keys/PaletteRow.svelte`) and the whole title is the row's tooltip. The palette lists three more Editor items while the tab's text holds a quick diff mark: Go to Next Change on Alt+F5 and Go to Previous Change on Shift+Alt+F5, VS Code's keys, which put the caret on the next or previous mark and go round at the ends, and Open Change, which opens the diff at the mark on the caret's line; like VS Code, a file with no mark offers none of the three. The editor keeps Monaco's own right-click menu, VS Code's editor menu, in the tokens' colours. A source tab over a file of a repository draws VS Code's quick diff in its gutter, from the marks and blame words of `state/sources/repositories/file-git.ts`: in the editor as Monaco line decorations in the lane beside the line numbers (`ui/controls/editor/gutter/gutter.ts`), and in the read-only code window through `views/sources/source/Gutter.svelte`. An added run, a modified run and the place a deletion took lines out, each against the index and read again on a save and whenever the repository's state moves, and a press on a mark opens the file's diff at that change. The Toggle Blame button of the breadcrumb bar and the palette's Git: Toggle Git Blame Editor Decoration, kept with the draft, add who last changed each line of the saved file and when to the line-number column, on the first line of each run from one commit (in the editor through Monaco's `lineNumbers` function, the column widened to hold it), with the commit and its subject on hover and Not Committed Yet for a line no commit holds, and a press on a blamed line opens its commit in the Repositories view's graph. The blame is read whenever the file is in a repository and its text was read, since the status bar says the caret line's blame whether or not the column draws it; a file a read refused asks for no blame. A tab over the file at HEAD or in the index reads the blame of that version through `GET /api/git?blame=<root>&path=<path>&stage=head|index` (any other `stage` is answered 400) and no marks, and offers Toggle Blame as its one action.
+ - A group's documents join its chord after its views, so a digit reaches a configured document as it reaches a view, and the rail's Bookmarks menu at its foot lists the reader's own bookmarks by name. Two fixes of delivered work, made on main.
+-- The server reads no environment variable of its own, and the app hands it the environment of the reader's login shell, resolved with `shell-env` when the app is started from the Dock (the inherited one when it is started from a terminal, or when the shell does not answer within 10 seconds, which a dialog says once). The one it reads is the operating system's `SHELL`, the command a plain terminal starts (`server/machine/pty/sessions.ts`), `/bin/zsh` when the environment names none. `OCULUS_CONFIG` and `OCULUS_LOCAL` are gone, and the built server takes `--engine <dir>` (`--engine=<dir>` too, a relative path resolved against the working directory) naming the directory that holds `config/`, which is where `local.yml` sits, what the engine root serves and what a write from the Settings view changes, and the `HELP.md` the help view draws; without the flag it is `tools/oculus` itself and the development server takes no flag. A directory holding no `config/` is refused at start with the path, and any other argument is refused naming it. The argument rules are a pure function in `server/root/process/args.ts`; the engine threads down from the server context, so `engineDir()` is called in `src/server.ts` and `vite.config.ts` alone and every route hands its readers `locals.server.engine`.
++- The server reads no environment variable of its own, and the app hands it the environment of the reader's login shell, resolved with `shell-env` when the app is started from the Dock (the inherited one when it is started from a terminal, or when the shell does not answer within 10 seconds, which a dialog says once). The one it reads is the operating system's `SHELL`, the command a plain terminal starts (`server/machine/pty/sessions.ts`), `/bin/zsh` when the environment names none. `OCULUS_CONFIG` and `OCULUS_LOCAL` are gone, and the built server takes `--engine <dir>` (`--engine=<dir>` too, a relative path resolved against the working directory) naming the directory that holds `config/`, which is where `local.yml` sits, what the engine root serves and what a write from the Settings view changes, and the `HELP.md` the help view draws; without the flag it is `tools/oculus` itself and the development server takes no flag. It also takes `--default-port <n>`, the port a missing `local.yml` means, which the desktop host passes so the server takes the port the host expects it on. A directory holding no `config/` is refused at start with the path, and any other argument is refused naming it. The argument rules are a pure function in `server/root/process/args.ts`; the engine threads down from the server context, so `engineDir()` is called in `src/server.ts` and `vite.config.ts` alone and every route hands its readers `locals.server.engine`.
+ - The file browser's box and its scratch notes: the Files view asks `ui/frame/Pane.svelte` for the tint, since its trees and its sections draw straight into the box, and it renders `shared/forms/EntryForm.svelte` with `surface={false}`, a variant of the one form component that keeps the border and the padding and paints no box, so the form is not a second translucent layer inside a tinted one. A note's file is made by the first keystroke into it rather than by the control that opens the tab: the tab carries `fresh` until the file is there, that first keystroke writes at once instead of behind the autosave wait, and nothing is deleted on leaving, so a tab left with nothing typed into it stays open and empty and the Notes list's delete control is the one way a note goes.
+ - Files open as an editor opens them: every text file from the file browser opens in the source tab, the file view stays for what an editor cannot show (images, PDFs, a download for the rest), no extension list decides what is text (the content does), a file the file route says is not there (a 404 on its head) opens in the source tab, which says it cannot be opened and reads again on Read again, and read-only comes from the file mode alone; a single click opens a replaceable preview tab, a double click or a keystroke pins it (in one pane the first click has replaced the tree with the file, so the second press lands on the tab, in an editor or a frame, and a press on the tab within 500 ms of the click that opened it keeps it: the tree arms a keep for the preview tab it opened (`state/workbench/layout/open/armed-keep.svelte.ts`), the pane showing the tab draws a transparent layer over its body while the keep is armed (`shell/panes/PaneBody.svelte`), and the layer keeps the tab on the press and stops the press, so the editor selects no word and a frame gets no click, and then asks for the keyboard (`askFocus` in `state/workbench/layout/open/armed-keep.svelte.ts`), as the row's second press does when it goes down after the file was read (`openRow`); the pane answers the ask once the tab has drawn again by focusing the tab's editor input, its frame, or the box a picture, a download, a Doc tab or a preview marks with `data-tab-focus` (`inputOf` in `PaneBody.svelte`); the keep ends with the window, with any press outside the layer, with any key, when the tab stops being the pane's active one and when the Files tab closes; a read that lands after the tab was pointed at another file is thrown away, and a save that lands after its tab closed or was pointed at another file writes nothing and shows no message). The editor colours a file under `editor.paint_limit_kb` of `config/behavior.yml`, 20480 by default, and opens a larger one as plaintext, since its grammars run over the text in the page as it is typed; the read-only code window colours every size, being painted once. The editor reads that key through `paintLimit` of `data/sources/config/settings.ts`, by the rule every setting of `behavior.yml` is read by: a value its catalog entry refuses is the entry's `default` and a finding naming the key, and the editor opens every file as plaintext until a configuration carrying the catalog has arrived.
+ - The editor's options. The configured values are read out of the configuration by `readEditorOptions` (`data/sources/config/editor-options.ts`, by the rule of each key's catalog entry: a value the entry refuses is the entry's `default` and a finding, and the page holds no options until the config channel has sent the catalog), a repository's `.oculus/settings.yml` by `parseRepoSettings` of the same module (a `languages:` map of the same records and no other key, a file that does not parse is not read and says why), and `resolveEditor` (`data/helpers/editor.ts`) takes one value in a fixed order: the tab's own choice, the file's own indentation, the root's record, `editor.languages`, the global key. `views/shared/prose/source-options.ts` feeds that function from the tab's draft, its language in force, its root's file read through the file store and the configuration, and the diff sections use it for the word wrap and rulers of their file. `ui/controls/editor/options.ts` maps the resolved options to Monaco's names and applies a change to a live editor, and adds the Alt+Z action that toggles the tab's word wrap (kept in the tab's draft as `wrap`, null for the configured value). The Settings view lists, under the `editor.languages` row, what each served root's `.oculus/settings.yml` sets (`state/system/config/editors/origins.ts`). Sticky scroll takes its structure from document symbols: Monaco's language services for TypeScript, JavaScript, JSON, CSS, SCSS, Less and HTML, the headings of a Markdown or LaTeX file (`views/sources/source/symbols.ts`, over the same outline reader as the Outline section) and the brace ranges that `ui/controls/editor/kit/folding.ts` registers for C, C++, Java, Dart, R and Rite. The diff editor falls back to the inline layout under 900 px, and the comment sides follow the layout drawn (`commentSides` in `ui/controls/editor/gutter/gutter.ts`). Every Monaco option outside these keys stays at Monaco's default.
+--- a/tools/oculus/docs/diagrams/layer-shell.dot
++++ b/tools/oculus/docs/diagrams/layer-shell.dot
+@@ -15,7 +15,7 @@
+         "folder shell to folder shell/panes" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder shell to folder shell/rail" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder shell to folder shell/status" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+-        "folder shell to layer state" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
++        "folder shell to layer state" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder shell to layer ui" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder shell/rail to layer state" [label="15", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder shell/rail to layer ui" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+--- a/tools/oculus/docs/diagrams/layer-shell.svg
++++ b/tools/oculus/docs/diagrams/layer-shell.svg
+@@ -80,7 +80,7 @@
+ <g id="node12" class="node">
+ <title>folder shell to layer state</title>
+ <polygon fill="none" stroke="none" points="143.88,-950.6 134.12,-950.6 134.12,-938.12 143.88,-938.12 143.88,-950.6"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="139" y="-941.96" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
++<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="139" y="-941.96" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
+ </g>
+ <!-- folder shell&#45;&gt;folder shell to layer state -->
+ <g id="edge16" class="edge">
+--- a/tools/oculus/docs/diagrams/layer-views.dot
++++ b/tools/oculus/docs/diagrams/layer-views.dot
+@@ -33,11 +33,7 @@
+         "folder views/sessions to layer ui" [label="84", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder views/sources to folder views/shared" [label="63", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder views/sources to layer data" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+-<<<<<<< ours
+-        "folder views/sources to layer state" [label="230", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+-=======
+-        "folder views/sources to layer state" [label="226", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+->>>>>>> theirs
++        "folder views/sources to layer state" [label="232", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder views/sources to layer ui" [label="193", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder views/structure to folder views/shared" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+         "folder views/structure to layer data" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+--- a/tools/oculus/docs/diagrams/layer-views.svg
++++ b/tools/oculus/docs/diagrams/layer-views.svg
+@@ -280,11 +280,7 @@
+ <g id="node30" class="node">
+ <title>folder views/sources to layer state</title>
+ <polygon fill="none" stroke="none" points="103.88,-634.72 86.12,-634.72 86.12,-622.24 103.88,-622.24 103.88,-634.72"/>
+-<<<<<<< ours
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="95" y="-626.08" font-family="Helvetica,Arial,sans-serif" font-size="8.00">230</text>
+-=======
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="95" y="-626.08" font-family="Helvetica,Arial,sans-serif" font-size="8.00">226</text>
+->>>>>>> theirs
++<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="95" y="-626.08" font-family="Helvetica,Arial,sans-serif" font-size="8.00">232</text>
+ </g>
+ <!-- folder views/sources&#45;&gt;folder views/sources to layer state -->
+ <g id="edge49" class="edge">
+--- a/tools/oculus/docs/diagrams/layers.dot
++++ b/tools/oculus/docs/diagrams/layers.dot
+@@ -13,26 +13,19 @@
+     "desktop";
+     "src" [label="entry"];
+     "files: assets" [label="assets"];
+-<<<<<<< ours
+-=======
+     "desktop to data" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "desktop" -> "desktop to data" [arrowhead=none];
+     "desktop to data" -> "data" [];
+     "desktop to server" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "desktop" -> "desktop to server" [arrowhead=none];
+     "desktop to server" -> "server" [];
+->>>>>>> theirs
+-    "routes to data" [label="15", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
++    "routes to data" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "routes" -> "routes to data" [arrowhead=none];
+     "routes to data" -> "data" [];
+     "routes to files: assets" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "routes" -> "routes to files: assets" [arrowhead=none];
+     "routes to files: assets" -> "files: assets" [];
+-<<<<<<< ours
+-    "routes to server" [label="73", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+-=======
+-    "routes to server" [label="69", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+->>>>>>> theirs
++    "routes to server" [label="74", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "routes" -> "routes to server" [arrowhead=none];
+     "routes to server" -> "server" [];
+     "routes to shell" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+@@ -50,17 +43,13 @@
+     "routes to views" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "routes" -> "routes to views" [arrowhead=none];
+     "routes to views" -> "views" [];
+-<<<<<<< ours
+-    "server to data" [label="200", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+-=======
+-    "server to data" [label="197", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+->>>>>>> theirs
++    "server to data" [label="202", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "server" -> "server to data" [arrowhead=none];
+     "server to data" -> "data" [];
+     "shell to data" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "shell" -> "shell to data" [arrowhead=none];
+     "shell to data" -> "data" [];
+-    "shell to state" [label="100", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
++    "shell to state" [label="101", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "shell" -> "shell to state" [arrowhead=none];
+     "shell to state" -> "state" [];
+     "shell to ui" [label="59", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+@@ -90,11 +79,7 @@
+     "views to data" [label="15", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "views" -> "views to data" [arrowhead=none];
+     "views to data" -> "data" [];
+-<<<<<<< ours
+-    "views to state" [label="899", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+-=======
+-    "views to state" [label="895", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+->>>>>>> theirs
++    "views to state" [label="901", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+     "views" -> "views to state" [arrowhead=none];
+     "views to state" -> "state" [];
+     "views to ui" [label="751", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+--- a/tools/oculus/docs/diagrams/layers.svg
++++ b/tools/oculus/docs/diagrams/layers.svg
+@@ -18,13 +18,8 @@
+ <!-- server to data -->
+ <g id="node22" class="node">
+ <title>server to data</title>
+-<<<<<<< ours
+-<polygon fill="none" stroke="none" points="366.88,-70.08 349.12,-70.08 349.12,-57.6 366.88,-57.6 366.88,-70.08"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="358" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">200</text>
+-=======
+ <polygon fill="none" stroke="none" points="91.88,-70.08 74.12,-70.08 74.12,-57.6 91.88,-57.6 91.88,-70.08"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="83" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">197</text>
+->>>>>>> theirs
++<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="83" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">202</text>
+ </g>
+ <!-- server&#45;&gt;server to data -->
+ <g id="edge21" class="edge">
+@@ -40,13 +35,8 @@
+ <!-- state to data -->
+ <g id="node29" class="node">
+ <title>state to data</title>
+-<<<<<<< ours
+-<polygon fill="none" stroke="none" points="167.88,-70.08 150.12,-70.08 150.12,-57.6 167.88,-57.6 167.88,-70.08"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="159" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">222</text>
+-=======
+ <polygon fill="none" stroke="none" points="323.88,-70.08 306.12,-70.08 306.12,-57.6 323.88,-57.6 323.88,-70.08"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="315" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">221</text>
+->>>>>>> theirs
++<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="315" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">222</text>
+ </g>
+ <!-- state&#45;&gt;state to data -->
+ <g id="edge35" class="edge">
+@@ -113,7 +103,7 @@
+ <g id="node24" class="node">
+ <title>shell to state</title>
+ <polygon fill="none" stroke="none" points="388.88,-229.2 371.12,-229.2 371.12,-216.72 388.88,-216.72 388.88,-229.2"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="380" y="-220.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">100</text>
++<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="380" y="-220.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">101</text>
+ </g>
+ <!-- shell&#45;&gt;shell to state -->
+ <g id="edge25" class="edge">
+@@ -151,13 +141,8 @@
+ <!-- views to state -->
+ <g id="node34" class="node">
+ <title>views to state</title>
+-<<<<<<< ours
+-<polygon fill="none" stroke="none" points="85.88,-229.2 68.12,-229.2 68.12,-216.72 85.88,-216.72 85.88,-229.2"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="77" y="-220.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">899</text>
+-=======
+ <polygon fill="none" stroke="none" points="343.88,-282.24 326.12,-282.24 326.12,-269.76 343.88,-269.76 343.88,-282.24"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="335" y="-273.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">895</text>
+->>>>>>> theirs
++<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="335" y="-273.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">901</text>
+ </g>
+ <!-- views&#45;&gt;views to state -->
+ <g id="edge45" class="edge">
+@@ -190,13 +175,8 @@
+ <!-- routes to data -->
+ <g id="node14" class="node">
+ <title>routes to data</title>
+-<<<<<<< ours
+-<polygon fill="none" stroke="none" points="329.88,-70.08 316.12,-70.08 316.12,-57.6 329.88,-57.6 329.88,-70.08"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="323" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">15</text>
+-=======
+ <polygon fill="none" stroke="none" points="159.88,-123.12 146.12,-123.12 146.12,-110.64 159.88,-110.64 159.88,-123.12"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="153" y="-114.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">15</text>
+->>>>>>> theirs
++<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="153" y="-114.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">16</text>
+ </g>
+ <!-- routes&#45;&gt;routes to data -->
+ <g id="edge5" class="edge">
+@@ -217,13 +197,8 @@
+ <!-- routes to server -->
+ <g id="node16" class="node">
+ <title>routes to server</title>
+-<<<<<<< ours
+-<polygon fill="none" stroke="none" points="359.88,-388.32 346.12,-388.32 346.12,-375.84 359.88,-375.84 359.88,-388.32"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="353" y="-379.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">73</text>
+-=======
+ <polygon fill="none" stroke="none" points="143.88,-388.32 130.12,-388.32 130.12,-375.84 143.88,-375.84 143.88,-388.32"/>
+-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="137" y="-379.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">69</text>
+->>>>>>> theirs
++<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="137" y="-379.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">74</text>
+ </g>
+ <!-- routes&#45;&gt;routes to server -->
+ <g id="edge9" class="edge">
+--- a/tools/oculus/HELP.md
++++ b/tools/oculus/HELP.md
+@@ -10,7 +10,7 @@
+ 
+ ## The window
+ 
+-oculus runs in a browser tab or in its own app. The app (`npm run app` from the checkout, or the `oculus.app` that `npm run app:package` makes) is Electron: it starts the server itself, shows the page in a window of its own with a Dock icon, and ends the server when it quits, leaving the tmux sessions running. It adds what a browser tab cannot give the page: windows that remember where they were, a floating pane that becomes a window of its own (Move into New Window in the pane's and the tab's menus, Copy into New Window in the tab's, Restore into Main Window and Switch to Main Window in a popped-out window), the keys Cmd+W, Ctrl+Tab and Ctrl+Shift+Tab, Cmd+N, Cmd+Shift+N, Cmd+Shift+W, Cmd+, (settings), Cmd+R (reload the window) and Cmd+F, a find bar, a folder sheet for Add Folder to Workspace, spelling suggestions in the text menu, and a dark window frame; a page in the app with no stored theme starts on vscode dark modern. The windows of the app share one arrangement as the browser tabs do. When the server ends on its own, a dialog quotes why and offers Restart, which starts the server again; the open windows keep their pages, their unsaved text and their running terminals, reconnect to the new server on their own and take its new write token, and a window on another port than the new server's loads its page from the new one. A link to another site opens in the default browser. Started again, the app opens its windows where they were; a second start brings the running app forward. Everything else on this page is the same in both.
++oculus runs in a browser tab or in its own app. The app (`npm run app` from the checkout, or the `oculus.app` that `npm run app:package` makes) is Electron: it starts the server itself, shows the page in a window of its own with a Dock icon, and ends the server when it quits, leaving the tmux sessions running. It adds what a browser tab cannot give the page: windows that remember where they were, a floating pane that becomes a window of its own (Move into New Window in the pane's and the tab's menus, Copy into New Window in the tab's, Restore into Main Window and Switch to Main Window in a popped-out window), the keys Cmd+W, Ctrl+Tab and Ctrl+Shift+Tab, Cmd+N, Cmd+Shift+N, Cmd+Shift+W, Cmd+, (settings), Cmd+R (reload the window) and Cmd+F, a find bar, a folder sheet for Add Folder to Workspace, spelling suggestions in the text menu, and a dark window frame; a page in the app with no stored theme starts on vscode dark modern. The windows of the app share one arrangement as the browser tabs do. When the server ends on its own, a dialog quotes why and offers Restart, which starts the server again; the open windows keep their pages, their unsaved text and their running terminals, reconnect to the new server on their own and take its new write token, and a window on another port than the new server's goes to the new one, taking its arrangement, its settings and its unsaved text with it. A link to another site opens in the default browser. Started again, the app opens its windows where they were; a second start brings the running app forward. Everything else on this page is the same in both.
+ 
+ Down the left is the rail, and along the bottom is the status bar. Everything else is the pane tree: one tree per page, made of splits and panes, each pane a stack of tabs, each tab one view.
+ 
+@@ -144,7 +144,7 @@
+ | `linkedin` | LinkedIn | The posts pipeline: what is posted and what is still an idea. It is drawn from a folder of one file per post rather than from one file, so the way into the text is each card's own control. |
+ | `session-list` | Sessions | Every agent session on this machine. The sessions list groups sessions by workspace and orders each group pinned first, then those that need input, then newest first. Archived sessions are hidden until the filter asks for them; Archive is offered on ended sessions only. New shows the composer in the page's Terminal tab, or a new one. Below the sessions every terminal oculus runs is listed, those no Terminal tab owns among them: pressing one shows it in the Terminal tab that owns it, or takes it into the page's Terminal tab, and its menu's Open in its own pane moves it into a new Terminal tab. |
+ | `session-detail` | Session | One session in a tab of its own: what it is doing, its model, its workspace and its controls. |
+-| `terminal` | Terminal | A terminal panel of its own: each Terminal tab owns one or more terminals running Claude, Codex or a shell inside tmux, and shows only those; a terminal belongs to one tab. A new Terminal tab shows the composer, where you pick the workspace, agent, account and options and write the first prompt; while the shell, Claude or Codex that New Terminal asks for is starting, the tab says "Starting Shell..." (or Claude, or Codex) in its place. A start whose options make the agent ask less (Claude's Accept edits, Auto and Bypass permissions, Codex's Full access and a Never approval) asks first, at every start, what the option changes, and No starts nothing; the server refuses such a start that did not come from that question. The header's `new terminal` control starts a shell at once in the folder of the terminal shown here (else the first terminal's, else the hub), and the arrow beside it starts a Shell, Claude or Codex the same way; its items are Shell, Claude and Codex, then With a Prompt, which shows the composer for the first message, then Attach to Session. New Terminal in a pane's tab menu starts a shell in a Terminal tab of that pane. A start that is refused is said on the bar and changes nothing. A task's `agent` button, Start Agent and the worktree controls that start an agent open the composer in the page's Terminal tab (or a new one) in the folder they name, with that agent and every option at its default, so Permissions reads Manual permissions whatever the tab's last start used. With a task, the folder is the project's, the funding scheme's `link:` folder, the one project an entry relates to, or else the hub; the composer shows the task's text read-only under Task, only Claude and Codex are offered, Remove the task makes the start an ordinary one, and what you type is added after the task's text. The first start of a task's text for an agent in a folder shows the text and asks Approve and Start; the approval is kept in `~/.oculus/approvals.json` for that agent, that real folder and that text, so a changed text asks again, and a task whose text changed since it was shown replaces the shown text with the new one and starts nothing. A task the hub does not hold, a text longer than a prompt may be, and an approvals file that cannot be written are said and start nothing. Every terminal oculus starts runs Claude's classic renderer (`CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1`), so Claude's output keeps its scrollback in the grid; a Claude already running keeps its renderer until it is started again. Once Claude or Codex runs, the steer box below the grid sends more text, and Stop interrupts; a shell has no steer box and is typed into at the grid. From two terminals on, a list on the right names each terminal of this tab by the title you gave it, else after what runs in it (Claude, Codex, the project command's name for a task terminal, or the shell's running command, the word shell when none is reported) with its session or folder after it, and a Terminal tab's title in the strip follows the same rule; press a row, or move with the arrow keys and press Enter, to show it here, hover a row for Split (a new terminal of its kind starts right of it, in its folder; Shift+Enter on the row, or the header's Split) and Kill (press twice; Delete or Backspace on the row, twice), and double-click a row's name to rename it. A row of terminals holds any number side by side, at least 80 px each, and scrolls sideways when they do not fit; drag the handle between two to resize them and double-click it to even them; pressing a terminal outside the row shows it alone. Drag a row within the list to reorder this tab, or onto another Terminal tab's list (or its body, when it shows a single terminal) to move it there; a tab left with no terminal closes, unless it shows the composer, which stays with what you typed. A tab showing the composer lists a single terminal too, so it can be shown, split or killed from there; a tab showing its only terminal names it on the bar instead. A right-click on that name on the bar opens the menu of a list row (Split Terminal, Kill Terminal, Rename, Change Icon, Change Color, Clear, and Join Terminals while another Terminal tab owns a terminal), which acts on that terminal as the row's menu does. A terminal started elsewhere (an update task, a resume or fork, a dataset recovery, a project chat, a LaTeX build, a Repositories shell) shows in the tab that owns it, or in the page's Terminal tab, or a new one. Floating a pane and returning it to a page keep where each terminal's scrollback was scrolled to, or at the end when it was there. A Terminal tab's tab in the strip is drawn with the icon and colour of the terminal it shows (the view's own glyph and the default colour when that terminal has none). A task terminal, which a project command starts (see Project commands), whose line ended is drawn with a green check for exit code 0 and a red cross for any other, on the strip, on its row and on the bar, in place of its icon and colour. A right-click on the grid offers Copy and Copy as HTML over a selection, Paste, Select All, Clear, Rerun and Restart on a task terminal, Split Terminal, Rename, Change Icon, Change Color and Kill Terminal (picked twice, as a row's Kill is pressed twice: the first pick arms the terminal and the item then reads "Press again to kill this terminal", with the row's Kill shown armed, in the accent's colours, when the tab lists its terminals; a pressed toggle button anywhere is drawn the same way; a terminal joining or leaving the tab takes the arm off); on a row of the list Rerun (a task terminal whose line ended) and Restart (a task terminal), Split Terminal, Kill Terminal, Rename, Change Icon, Change Color, Clear, Unsplit Terminal on a terminal of a row of more than one, and Join Terminals, which lists the terminals other Terminal tabs own by name and moves the one you pick into this tab, split beside the row; and on the list below its rows New Terminal, New Terminal With Profile (Shell, Claude or Codex, each started at once) and Attach to Session. Attach to Session, in the arrow's menu and in the menu of the list's empty area, lists by name the terminals no Terminal tab owns (a session started in tmux by hand is not one of them) and moves the one you pick into this tab, at the end of its order and shown alone; it is absent when there is none. Shift-F10 or the context menu key in the grid opens its menu at the cursor rather than reaching the program. Cmd+F (Ctrl+F off macOS) in the grid opens the find bar over its top right, as VS Code's terminal find: the text, Match Case, Match Whole Word and Use Regular Expression, the count of matches ("3 of 12"), Previous, Next and Close; every match is marked in the accent's surface and the one found in the accent, and Escape closes the bar and gives the grid the keys back. A web address in the output is underlined under the pointer and opens in a new browser tab on Cmd+click (Ctrl+click off macOS); a plain click stays the program's. An emoji or a wide character takes two cells, as the shell counts it. A paste of several lines asks before it is sent, from the menu as from the keyboard, and a file dropped from Files types its quoted path. What you type, click, scroll or paste reaches the program as the bytes the grid sends, so a click, a scroll or a focus change arrives in one write and never as a lone Escape followed by text, and a long paste arrives in several writes, in order, its opening and closing markers each whole. A terminal opened again shows its screen with the cursor where the program left it, so a new shell's prompt is at the top. When a terminal ends (`exit` in a shell, or it is killed), its row leaves its tab, except a task terminal, which stays after its line ends until it is closed, and a tab whose last terminal ended closes, on every page, unless it shows the composer, which stays with what you typed. Closing a tab, a pane or a page, or resetting a page, ends the terminals it owns, after asking when one of them runs a program other than its shell (the question names each, and unsaved text first); a task terminal whose line ended is not asked about, and one whose line runs is; closing a task terminal ends its session; moving a tab, splitting and reloading end none. A terminal's line height, letter spacing, weight and ligatures are fixed and have no setting. |
++| `terminal` | Terminal | A terminal panel of its own: each Terminal tab owns one or more terminals running Claude, Codex or a shell inside tmux, and shows only those; a terminal belongs to one tab. A new Terminal tab shows the composer, where you pick the workspace, agent, account and options and write the first prompt; while the shell, Claude or Codex that New Terminal asks for is starting, the tab says "Starting Shell..." (or Claude, or Codex) in its place. A start whose options make the agent ask less (Claude's Accept edits, Auto and Bypass permissions, Codex's Full access and a Never approval) asks first, at every start, what the option changes, and No starts nothing; the server refuses such a start that did not come from that question. The header's `new terminal` control starts a shell at once in the folder of the terminal shown here (else the first terminal's, else the hub), and the arrow beside it starts a Shell, Claude or Codex the same way; its items are Shell, Claude and Codex, then With a Prompt, which shows the composer for the first message, then Attach to Session. New Terminal in a pane's tab menu starts a shell in a Terminal tab of that pane. A start that is refused is said on the bar and changes nothing. A task's `agent` button, Start Agent and the worktree controls that start an agent open the composer in the page's Terminal tab (or a new one) in the folder they name, with that agent and every option at its default, so Permissions reads Manual permissions whatever the tab's last start used. With a task, the folder is the project's, the funding scheme's `link:` folder, the one project an entry relates to, or else the hub; the composer shows the task's text read-only under Task, only Claude and Codex are offered, Remove the task makes the start an ordinary one, and what you type is added after the task's text. The first start of a task's text for an agent in a folder shows the text and asks Approve and Start; the approval is kept in `~/.oculus/approvals.json` for that agent, that real folder and that text, so a changed text asks again, and a task whose text changed since it was shown replaces the shown text with the new one and starts nothing. A task the hub does not hold, a text longer than a prompt may be, and an approvals file that cannot be written are said and start nothing. Every terminal oculus starts runs Claude's classic renderer (`CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1`), so Claude's output keeps its scrollback in the grid; a Claude already running keeps its renderer until it is started again. Once Claude or Codex runs, the steer box below the grid sends more text, and Stop interrupts; a shell has no steer box and is typed into at the grid. From two terminals on, a list on the right names each terminal of this tab by the title you gave it, else after what runs in it (Claude, Codex, the project command's name for a task terminal, or the shell's running command, the word shell when none is reported) with its session or folder after it, and a Terminal tab's title in the strip follows the same rule; press a row, or move with the arrow keys and press Enter, to show it here, hover a row for Split (a new terminal of its kind starts right of it, in its folder; Shift+Enter on the row, or the header's Split) and Kill (press twice; Delete or Backspace on the row, twice), and double-click a row's name to rename it. A row of terminals holds any number side by side, at least 80 px each, and scrolls sideways when they do not fit; drag the handle between two to resize them and double-click it to even them; pressing a terminal outside the row shows it alone. Drag a row within the list to reorder this tab, or onto another Terminal tab's list (or its body, when it shows a single terminal) to move it there; a tab left with no terminal closes, unless it shows the composer, which stays with what you typed. A tab showing the composer lists a single terminal too, so it can be shown, split or killed from there; a tab showing its only terminal names it on the bar instead. A right-click on that name on the bar opens the menu of a list row (Split Terminal, Kill Terminal, Rename, Change Icon, Change Color, Clear, and Join Terminals while another Terminal tab owns a terminal), which acts on that terminal as the row's menu does. A terminal started elsewhere (an update task, a resume or fork, a dataset recovery, a project chat, a LaTeX build, a Repositories shell) shows in the tab that owns it, or in the page's Terminal tab, or a new one. Floating a pane and returning it to a page keep where each terminal's scrollback was scrolled to, or at the end when it was there. A Terminal tab's tab in the strip is drawn with the icon and colour of the terminal it shows (the view's own glyph and the default colour when that terminal has none). A task terminal, which a project command starts (see Project commands), whose line ended is drawn with a green check for exit code 0 and a red cross for any other, on the strip, on its row and on the bar, in place of its icon and colour. A right-click on the grid offers Copy and Copy as HTML over a selection, Paste, Select All, Clear, Rerun and Restart on a task terminal, Split Terminal, Rename, Change Icon, Change Color and Kill Terminal (picked twice, as a row's Kill is pressed twice: the first pick arms the terminal and the item then reads "Press again to kill this terminal", with the row's Kill shown armed, in the accent's colours, when the tab lists its terminals; a pressed toggle button anywhere is drawn the same way; a terminal joining or leaving the tab takes the arm off); on a row of the list Rerun (a task terminal whose line ended) and Restart (a task terminal), Split Terminal, Kill Terminal, Rename, Change Icon, Change Color, Clear, Unsplit Terminal on a terminal of a row of more than one, and Join Terminals, which lists the terminals other Terminal tabs own by name and moves the one you pick into this tab, split beside the row; and on the list below its rows New Terminal, New Terminal With Profile (Shell, Claude or Codex, each started at once) and Attach to Session. Attach to Session, in the arrow's menu and in the menu of the list's empty area, lists by name the terminals no Terminal tab owns (a session started in tmux by hand is not one of them) and moves the one you pick into this tab, at the end of its order and shown alone; it is absent when there is none. Shift-F10 or the context menu key in the grid opens its menu at the cursor rather than reaching the program. Cmd+F (Ctrl+F off macOS) in the grid opens the find bar over its top right, as VS Code's terminal find: the text, Match Case, Match Whole Word and Use Regular Expression, the count of matches ("3 of 12"), Previous, Next and Close; every match is marked in the accent's surface and the one found in the accent, and Escape closes the bar and gives the grid the keys back. A web address in the output is underlined under the pointer and opens in a new browser tab on Cmd+click (Ctrl+click off macOS); a plain click stays the program's. An emoji or a wide character takes two cells, as the shell counts it. A paste that holds a line break, a single line ending in one included, asks before it is sent, since the line would run at once, from the menu as from the keyboard, and a file dropped from Files types its quoted path. What you type, click, scroll or paste reaches the program as the bytes the grid sends, so a click, a scroll or a focus change arrives in one write and never as a lone Escape followed by text, and a long paste arrives in several writes, in order, its opening and closing markers each whole. A terminal opened again, or shown again after the server restarted, shows its screen with the cursor where the program left it, so a new shell's prompt is at the top, and keeps the modes the program set, so a paste into a waiting shell still reaches it as a paste and the arrow keys and the mouse reach an editor as it asked. When a terminal ends (`exit` in a shell, or it is killed), its row leaves its tab, except a task terminal, which stays after its line ends until it is closed, and a tab whose last terminal ended closes, on every page, unless it shows the composer, which stays with what you typed. Closing a tab, a pane or a page, or resetting a page, ends the terminals it owns, after asking when one of them runs a program other than its shell (the question names each, and unsaved text first); a task terminal whose line ended is not asked about, and one whose line runs is; closing a task terminal ends its session; moving a tab, splitting and reloading end none. A terminal's line height, letter spacing, weight and ligatures are fixed and have no setting. |
+ | `transcript` | Transcript | One session's turns as they were written, one tab per session. |
+ | `timeline` | Timeline | One session's turns over time. |
+ | `changes` | Changes | The git state of the workspace a session works in (a path is shown whole in one line and cut at its end when the pane is narrow, and the verb and the count of the files the session touched line up in columns): its branch, the same commit box as the Repositories view, and its changes with Stage All, Unstage All and Discard All on the group heads (its commit box says Sync Changes or Publish Branch where there is nothing to commit, which is how the panel pushes) and each row opening its own diff tab for the session, a conflicted path the merge editor; in that tab a `+` beside a line (or Add Comment on Line in the line's menu) opens a comment box after it, and Send hands the comment to the session as a prompt naming the file and line, typed into its terminal when oculus runs it and copied to the clipboard otherwise, with a line saying which; a repository with no commit yet included; or one line saying the session names no workspace folder, that the workspace folder is not there, that the folder is not a git repository, that git could not read the repository and why, or that git has not read the workspace yet. |
+--- a/tools/oculus/package-lock.json
++++ b/tools/oculus/package-lock.json
+@@ -48,11 +48,8 @@
+                 "node-diff3": "3.2.1",
+                 "nodemailer": "^10.0.12",
+                 "seti-ui": "1.11.0",
+-<<<<<<< ours
+                 "sh-syntax": "0.7.0",
+-=======
+                 "shell-env": "4.0.3",
+->>>>>>> theirs
+                 "shiki": "4.4.3",
+                 "smol-toml": "^1.9.0",
+                 "trash": "^10.1.1",
+--- a/tools/oculus/package.json
++++ b/tools/oculus/package.json
+@@ -90,11 +90,8 @@
+         "node-diff3": "3.2.1",
+         "nodemailer": "^10.0.12",
+         "seti-ui": "1.11.0",
+-<<<<<<< ours
+         "sh-syntax": "0.7.0",
+-=======
+         "shell-env": "4.0.3",
+->>>>>>> theirs
+         "shiki": "4.4.3",
+         "smol-toml": "^1.9.0",
+         "trash": "^10.1.1",
+--- a/tools/oculus/src/desktop/windows/bridge.ts
++++ b/tools/oculus/src/desktop/windows/bridge.ts
+@@ -147,18 +147,29 @@
+         if (target === undefined) return false;
+         // Let go over its own window's content: nothing is moved.
+         if (target === caller.entry) return true;
+-        const request = (requests += 1);
+         const { webContents } = target.win;
++        // A page still loading has no listener for the drop yet, so it is answered as not taken,
++        // and the source opens a window of its own.
++        if (webContents.isLoading()) return false;
++        const request = (requests += 1);
+         return new Promise<boolean>((resolve) => {
+             const settle = (taken: boolean): void => {
+                 waiting.delete(request);
+                 target.win.off('closed', gone);
++                webContents.off('did-start-navigation', moved);
++                webContents.off('render-process-gone', gone);
+                 if (taken && !target.win.isDestroyed()) target.win.show();
+                 resolve(taken);
+             };
++            // A target that closes, crashes or loads its page again never answers.
+             const gone = (): void => settle(false);
++            const moved = (details: { isMainFrame: boolean; isSameDocument: boolean }): void => {
++                if (details.isMainFrame && !details.isSameDocument) settle(false);
++            };
+             waiting.set(request, { contents: webContents, settle });
+             target.win.once('closed', gone);
++            webContents.on('did-start-navigation', moved);
++            webContents.once('render-process-gone', gone);
+             webContents.send(EVENT, 'drop-here', { ...drop, request });
+         });
+     });
+--- a/tools/oculus/src/desktop/windows/windows.ts
++++ b/tools/oculus/src/desktop/windows/windows.ts
+@@ -143,11 +143,20 @@
+         await entry.win.webContents.loadURL(url);
+     }
+ 
++    /**
++     * Send every window to the server's new origin. A page that runs goes there itself, carrying
++     * its arrangement and settings across the change of origin as a page that follows its server
++     * does (workbench/layout/saved/carry.ts); a page that is loading or has crashed cannot, and is
++     * loaded at the new origin.
++     */
+     function moveTo(origin: string): void {
+         for (const entry of list) {
+             if (entry.origin === origin || entry.win.isDestroyed()) continue;
+             entry.origin = origin;
+-            void entry.win.webContents.loadURL(`${origin}/${searchOf(entry)}`);
++            const contents = entry.win.webContents;
++            if (contents.isLoading() || contents.isCrashed()) {
++                void contents.loadURL(`${origin}/${searchOf(entry)}`);
++            } else contents.send(EVENT, 'move-to', origin);
+         }
+     }
+ 
+--- a/tools/oculus/src/lib/server/machine/pty/channel.ts
++++ b/tools/oculus/src/lib/server/machine/pty/channel.ts
+@@ -38,6 +38,7 @@
+     cursorArgs,
+     isTerminalId,
+     listArgs,
++    modesAt,
+     parseTerminals,
+     serverPid,
+     resizeArgs,
+@@ -610,7 +611,9 @@
+         // capture-pane writes one line per row with a bare newline between them; a terminal moves
+         // down without returning to the left on a bare newline, so the rows would step across the
+         // grid (seen in Chrome as a staircase). Every line break goes out as CR LF.
+-        const screen = placed.replace(/\r?\n/g, '\r\n');
++        // The modes the pane's program set go after the screen, since the page resets its grid
++        // before writing it.
++        const screen = placed.replace(/\r?\n/g, '\r\n') + modesAt(cursor);
+         const message = {
+             channel: ptyChannel(id),
+             // The scrollback is not a chunk, so it carries no chunk number; the chunks count from
+--- a/tools/oculus/src/lib/server/machine/pty/sessions.ts
++++ b/tools/oculus/src/lib/server/machine/pty/sessions.ts
+@@ -725,26 +725,68 @@
+     return (options.run ?? run)(captureArgs(id, lines), options);
+ }
+ 
+-/** The arguments that read where tmux has a pane's cursor, and how many rows the pane has. */
++/**
++ * The modes a pane's program sets that the capture does not hold, as tmux names each one's flag,
++ * the flag's value that differs from a grid just reset, and the sequence that sets that value in
++ * the grid. The grid is reset before the capture is written into it, on a new grid and on a
++ * reconnect alike, and a shell sets its modes only when it draws its prompt, so without these a
++ * page that attaches to a waiting shell sends a paste without the bracketed-paste markers, and one
++ * that attaches to an editor sends the arrow keys and the mouse in forms the editor did not ask
++ * for. Origin mode is left out: setting it moves the cursor to the top of a scroll region the
++ * capture does not carry.
++ */
++const PANE_MODES: readonly (readonly [flag: string, value: '0' | '1', sequence: string])[] = [
++    ['bracket_paste_flag', '1', '\u001b[?2004h'],
++    ['keypad_cursor_flag', '1', '\u001b[?1h'],
++    ['keypad_flag', '1', '\u001b='],
++    ['mouse_standard_flag', '1', '\u001b[?1000h'],
++    ['mouse_button_flag', '1', '\u001b[?1002h'],
++    ['mouse_all_flag', '1', '\u001b[?1003h'],
++    ['mouse_utf8_flag', '1', '\u001b[?1005h'],
++    ['mouse_sgr_flag', '1', '\u001b[?1006h'],
++    ['insert_flag', '1', '\u001b[4h'],
++    ['wrap_flag', '0', '\u001b[?7l'],
++    ['cursor_flag', '0', '\u001b[?25l']
++];
++
++/**
++ * The arguments that read where tmux has a pane's cursor, how many rows the pane has, and then the
++ * flag of each of PANE_MODES, in its order.
++ */
+ export function cursorArgs(id: string): string[] {
++    const flags = PANE_MODES.map(([flag]) => `#{${flag}}`).join(' ');
+     return [
+         'display-message',
+         '-p',
+         '-t',
+         sessionName(id),
+-        '#{cursor_x} #{cursor_y} #{pane_height}'
++        `#{cursor_x} #{cursor_y} #{pane_height} ${flags}`
+     ];
+ }
+ 
+ /**
++ * The sequences that set in a grid just reset the modes the pane's program has set, read from what
++ * cursorArgs answered: empty when that answer does not hold a flag for each of PANE_MODES.
++ */
++export function modesAt(cursor: string): string {
++    const found = /^\d+ \d+ \d+((?: [01])*)\s*$/.exec(cursor);
++    const flags = found === null ? [] : found[1].trim().split(' ');
++    if (flags.length !== PANE_MODES.length) return '';
++    return PANE_MODES.filter(([, value], at) => flags[at] === value)
++        .map(([, , sequence]) => sequence)
++        .join('');
++}
++
++/**
+  * The screen an attaching page is given: the whole capture without its final newline, then the
+  * cursor put where tmux has it. Written into a grid as high as the pane, the capture's last rows
+  * are the pane's rows, so a new shell's prompt sits on its own row at the top rather than under
+  * the capture's blank rows, and the rows under a prompt's cursor stay drawn. A cursor that does not
+- * read as three whole numbers, or whose row is outside the pane, leaves the capture as it is.
++ * read as three whole numbers, with the flags of modesAt after them or not, or whose row is outside
++ * the pane, leaves the capture as it is.
+  */
+ export function screenAt(capture: string, cursor: string): string {
+-    const found = /^(\d+) (\d+) (\d+)\s*$/.exec(cursor);
++    const found = /^(\d+) (\d+) (\d+)(?: [01])*\s*$/.exec(cursor);
+     if (found === null) return capture;
+     const [column, row, height] = [Number(found[1]), Number(found[2]), Number(found[3])];
+     if (row >= height) return capture;
+--- a/tools/oculus/src/lib/shell/desktop-windows.svelte.ts
++++ b/tools/oculus/src/lib/shell/desktop-windows.svelte.ts
+@@ -8,10 +8,12 @@
+ // start; answers the menu's Settings and Help; and performs the drop of a tab another window
+ // handed it. A popped-out page writes its window's place when the host reports the window moved or
+ // resized, puts its tabs back in the main window when the reader closes the window, and has the
+-// host close the window when its float stops being one placed in a window.
++// host close the window when its float stops being one placed in a window. Every window, sent to
++// the server's new origin after a restart, carries the arrangement there and goes.
+ 
+ import type { ClientState } from '../state/client/context.ts';
+ import { SETTINGS_VIEW } from '../state/workbench/navigation/rail.ts';
++import { carryWorkbench } from '../state/workbench/layout/index.ts';
+ 
+ /** The bar a window's title takes above its content, which a screen point is moved by. */
+ function titleBar(): number {
+@@ -32,6 +34,19 @@
+         })
+     );
+ 
++    // A restart onto another port: the page takes its arrangement and settings to the new origin,
++    // whose storage holds none of them, and goes to its own address there.
++    $effect(() =>
++        bridge.on('move-to', (origin) => {
++            try {
++                carryWorkbench(localStorage, window, origin);
++            } catch {
++                // A page without storage moves without the arrangement.
++            }
++            location.assign(`${origin}${location.pathname}${location.search}${location.hash}`);
++        })
++    );
++
+     if (float === null) {
+         $effect(() => {
+             if (!layout.loaded()) return;
+--- a/tools/oculus/src/lib/state/client/socket.svelte.ts
++++ b/tools/oculus/src/lib/state/client/socket.svelte.ts
+@@ -107,6 +107,8 @@
+     let seededThrough = -1;
+     /** Whether a socket of this page has opened before, so the next open is a reconnect. */
+     let opened = false;
++    /** The token the last subscribe message carried to the server. */
++    let sentToken = '';
+ 
+     let retry: ReturnType<typeof setTimeout> | null = null;
+ 
+@@ -151,9 +153,19 @@
+     // The token goes with the subscription rather than with each message: the server remembers
+     // which socket carried it, and a socket without it reads every channel and writes to none.
+     function subscription(): Subscription {
+-        return { type: 'subscribe', channels, token: writes.writeToken() };
++        sentToken = writes.writeToken();
++        return { type: 'subscribe', channels, token: sentToken };
+     }
+ 
++    // A token installed after the socket subscribed (the page's load run again after a restart or
++    // a 403) goes to the server in a subscribe message of no channels, which admits the socket to
++    // write without attaching its terminals again.
++    writes.onToken(() => {
++        if (live?.readyState !== WebSocket.OPEN || writes.writeToken() === sentToken) return;
++        sentToken = writes.writeToken();
++        live.send(JSON.stringify({ type: 'subscribe', channels: [], token: sentToken }));
++    });
++
+     /**
+      * Write one message on the open socket: the terminal input and resize, and nothing else the
+      * server accepts from a page. False when there is no open socket, which a caller shows rather
+@@ -218,15 +230,10 @@
+                 entities.reconnected();
+             }
+             opened = true;
++            ws.send(JSON.stringify(subscription()));
+             // A restarted server minted a new write token. The page's load hands it over, so a
+-            // reconnect runs the load again and subscribes with the token the page then holds.
+-            void (
+-                reconnected ? writes.renewToken().catch(() => undefined) : Promise.resolve()
+-            ).then(() => {
+-                if (live === ws && ws.readyState === WebSocket.OPEN) {
+-                    ws.send(JSON.stringify(subscription()));
+-                }
+-            });
++            // reconnect runs the load again, and a token that changed goes out through onToken.
++            if (reconnected) void writes.renewToken().catch(() => undefined);
+         });
+         ws.addEventListener('message', (event: MessageEvent) => {
+             handle(String(event.data));
+--- a/tools/oculus/src/lib/state/client/writes.svelte.ts
++++ b/tools/oculus/src/lib/state/client/writes.svelte.ts
+@@ -136,9 +136,28 @@
+         return answer;
+     }
+ 
+-    /** Install the token the page was given. Called from the page's load, on every load. */
++    /** What registered to hear the token change: the socket, which carries it to the server. */
++    const tokenListeners: (() => void)[] = [];
++
++    function onToken(listener: () => void): void {
++        tokenListeners.push(listener);
++    }
++
++    /**
++     * Install the token the page was given. Called from the page's load, on every load; a token
++     * that differs from the one held is told to every listener.
++     */
+     function setToken(next: string): void {
+-        token = typeof next === 'string' ? next : '';
++        const given = typeof next === 'string' ? next : '';
++        if (given === token) return;
++        token = given;
++        for (const listener of tokenListeners) {
++            try {
++                listener();
++            } catch {
++                continue;
++            }
++        }
+     }
+ 
+     /**
+@@ -570,6 +589,7 @@
+ 
+     return {
+         setToken,
++        onToken,
+         writeToken,
+         renewToken,
+         postCommand,
+--- a/tools/oculus/src/lib/state/shared/stores/desktop.ts
++++ b/tools/oculus/src/lib/state/shared/stores/desktop.ts
+@@ -51,6 +51,8 @@
+     shown: null;
+     /** The reader closed a popped-out window, whose tabs go back to the main window. */
+     restore: null;
++    /** The server listens at another origin after a restart; the page goes there itself. */
++    'move-to': string;
+ };
+ 
+ /** The bridge. */
+--- a/tools/oculus/src/lib/state/shared/stores/shapes.ts
++++ b/tools/oculus/src/lib/state/shared/stores/shapes.ts
+@@ -154,6 +154,7 @@
+ /** The page's end of the write endpoint, one per client. */
+ export type WritesStore = {
+     setToken: (next: string) => void;
++    onToken: (listener: () => void) => void;
+     writeToken: () => string;
+     /**
+      * Run the page's load again and wait until the page holds the token it handed over: a server
+--- a/tools/oculus/src/lib/state/shared/words/appearance.ts
++++ b/tools/oculus/src/lib/state/shared/words/appearance.ts
+@@ -86,7 +86,7 @@
+  * The theme a page shows: the saved one when the list holds it, else the start. The start is the
+  * app's dark theme for a page in the desktop app's window when the list holds it, and the
+  * `fallback` (the first theme listed) for a browser tab, which keeps its own start. A pure
+- * function of its arguments; tests/server/desktop/window-guard.test.ts reads it through `themeFor`.
++ * function of its arguments.
+  */
+ function chosenTheme(
+     saved: unknown,
+--- a/tools/oculus/src/lib/state/workbench/layout/index.ts
++++ b/tools/oculus/src/lib/state/workbench/layout/index.ts
+@@ -109,6 +109,7 @@
+ export { LAYOUT_KEY, PREVIOUS_KEY, createStorage } from './saved/storage.ts';
+ export type { LayoutStorage, SaveTurn, Storable } from './saved/storage.ts';
+ export { createLoad } from './saved/load.ts';
++export { carryWorkbench } from './saved/carry.ts';
+ export { createAttention } from './open/attention.ts';
+ export type { Attention, Beside, Touched } from './open/attention.ts';
+ export { createInstances } from './instances.ts';
+--- a/tools/oculus/src/lib/views/sessions/terminal/grid/TerminalGrid.svelte
++++ b/tools/oculus/src/lib/views/sessions/terminal/grid/TerminalGrid.svelte
+@@ -488,7 +488,9 @@
+ 
+ {#if pasting !== null}
+     <Confirm
+-        message={t('sessions.paste_confirm', pasting.lines)}
++        message={pasting.lines === 1
++            ? t('sessions.paste_confirm_one')
++            : t('sessions.paste_confirm', pasting.lines)}
+         confirm={t('sessions.paste_ok')}
+         cancel={t('ui.confirm_cancel')}
+         onconfirm={() => answerPaste(true)}
+--- a/tools/oculus/src/lib/views/sessions/terminal/terminal-list.ts
++++ b/tools/oculus/src/lib/views/sessions/terminal/terminal-list.ts
+@@ -195,8 +195,9 @@
+ 
+ /**
+  * The number of lines a paste holds when it holds a line break, which is the paste the grid asks
+- * about before sending, or null for a paste of one line, which goes through. A line break that ends
+- * the text closes its last line rather than opening another.
++ * about before sending since a line break runs what comes before it, or null for a paste with no
++ * line break, which goes through. A line break that ends the text closes its last line rather than
++ * opening another, so one line ending in one is a paste of 1 line.
+  */
+ export function pasteLines(text: string): number | null {
+     if (!/[\r\n]/.test(text)) return null;
+@@ -211,10 +212,10 @@
+ }
+ 
+ /**
+- * Hold every paste of several lines into a grid until it is answered. xterm takes a paste from the
+- * browser's own paste event on its hidden textarea; this listener sits above it in the capture
+- * phase, so a paste of several lines is stopped before xterm sees it and handed to `held`, and a
+- * paste of one line goes on to xterm untouched. The returned function takes the listener off.
++ * Hold every paste that holds a line break into a grid until it is answered. xterm takes a paste
++ * from the browser's own paste event on its hidden textarea; this listener sits above it in the
++ * capture phase, so such a paste is stopped before xterm sees it and handed to `held`, and a paste
++ * with no line break goes on to xterm untouched. The returned function takes the listener off.
+  */
+ export function holdPastes(
+     host: HTMLElement,
+--- a/tools/oculus/src/lib/views/sources/source/actions/read-again.ts
++++ b/tools/oculus/src/lib/views/sources/source/actions/read-again.ts
+@@ -0,0 +1,45 @@
++// Layer 3, view partial of Source.svelte. Reading again a file the tab could not open. A file that
++// was gone when the tab opened may be back as something other than text, so the tab asks what the
++// file is before it reads: a text file, or one still gone, is read into the tab again, and any
++// other kind opens in the view that shows it, taking this tab's place (a preview tab keeps its
++// place in the strip) or closing this tab when the file was already open there. An answer that
++// lands after the tab closed or was pointed at another file changes nothing.
++
++import type { ClientState } from '$lib/state/client/context';
++import type { HeadStage } from '$lib/state/sources/repositories/file-git';
++import { instanceText } from '$lib/state/workbench/layout/instance';
++import { tabForKind } from '../../../shared/explorer/opening';
++
++/** The tab being read again: its instance, whether it is a preview tab, and its file. */
++export type ReadAgain = {
++    id: string;
++    preview: boolean;
++    root: string;
++    path: string;
++    /** The version a tab over the file at HEAD or in the index holds. */
++    head: HeadStage | undefined;
++};
++
++export async function readAgain(client: ClientState, tab: ReadAgain): Promise<void> {
++    const {
++        fs: { readFileKind },
++        layout: { closeInstance, instanceLayoutState, instanceView, openView },
++        source: { loadSourceDraft }
++    } = client;
++    if (tab.head === undefined) {
++        const found = await readFileKind(tab.root, tab.path);
++        const state = instanceLayoutState(tab.id);
++        const here =
++            instanceView(tab.id) === 'source' &&
++            instanceText(state, 'root') === tab.root &&
++            instanceText(state, 'path') === tab.path;
++        if (!here) return;
++        if (found.kind !== 'text' && found.kind !== 'missing') {
++            const next = tabForKind(found.kind, tab.root, tab.path);
++            const opened = openView(next.view, next.state, undefined, { preview: tab.preview });
++            if (opened !== tab.id) closeInstance(tab.id);
++            return;
++        }
++    }
++    await loadSourceDraft(tab.id, tab.root, tab.path, tab.head);
++}
+--- a/tools/oculus/src/lib/views/sources/source/actions/ReadAgainButton.svelte
++++ b/tools/oculus/src/lib/views/sources/source/actions/ReadAgainButton.svelte
+@@ -0,0 +1,14 @@
++<script lang="ts">
++    // Layer 3, partial of views/sources/source/Source.svelte. The button a tab that could not open
++    // its file offers, which reads the file again (read-again.ts).
++    import { useState } from '$lib/state/client/use';
++    import { t } from '$lib/state/shared/words/text';
++    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
++    import { readAgain, type ReadAgain } from './read-again';
++
++    let { tab }: { tab: ReadAgain } = $props();
++
++    const client = useState();
++</script>
++
++<ToolButton small label={t('source.retry')} onclick={() => void readAgain(client, tab)} />
+--- a/tools/oculus/src/lib/views/sources/source/read-again.ts
++++ b/tools/oculus/src/lib/views/sources/source/read-again.ts
+@@ -1,45 +0,0 @@
+-// Layer 3, view partial of Source.svelte. Reading again a file the tab could not open. A file that
+-// was gone when the tab opened may be back as something other than text, so the tab asks what the
+-// file is before it reads: a text file, or one still gone, is read into the tab again, and any
+-// other kind opens in the view that shows it, taking this tab's place (a preview tab keeps its
+-// place in the strip) or closing this tab when the file was already open there. An answer that
+-// lands after the tab closed or was pointed at another file changes nothing.
+-
+-import type { ClientState } from '$lib/state/client/context';
+-import type { HeadStage } from '$lib/state/sources/repositories/file-git';
+-import { instanceText } from '$lib/state/workbench/layout/instance';
+-import { tabForKind } from '../../shared/explorer/opening';
+-
+-/** The tab being read again: its instance, whether it is a preview tab, and its file. */
+-export type ReadAgain = {
+-    id: string;
+-    preview: boolean;
+-    root: string;
+-    path: string;
+-    /** The version a tab over the file at HEAD or in the index holds. */
+-    head: HeadStage | undefined;
+-};
+-
+-export async function readAgain(client: ClientState, tab: ReadAgain): Promise<void> {
+-    const {
+-        fs: { readFileKind },
+-        layout: { closeInstance, instanceLayoutState, instanceView, openView },
+-        source: { loadSourceDraft }
+-    } = client;
+-    if (tab.head === undefined) {
+-        const found = await readFileKind(tab.root, tab.path);
+-        const state = instanceLayoutState(tab.id);
+-        const here =
+-            instanceView(tab.id) === 'source' &&
+-            instanceText(state, 'root') === tab.root &&
+-            instanceText(state, 'path') === tab.path;
+-        if (!here) return;
+-        if (found.kind !== 'text' && found.kind !== 'missing') {
+-            const next = tabForKind(found.kind, tab.root, tab.path);
+-            const opened = openView(next.view, next.state, undefined, { preview: tab.preview });
+-            if (opened !== tab.id) closeInstance(tab.id);
+-            return;
+-        }
+-    }
+-    await loadSourceDraft(tab.id, tab.root, tab.path, tab.head);
+-}
+--- a/tools/oculus/src/lib/views/sources/source/Source.svelte
++++ b/tools/oculus/src/lib/views/sources/source/Source.svelte
+@@ -48,9 +48,9 @@
+     // the tab on screen to save. The save outcome while the text may be written, and what the tab
+     // said, stay in view under the editor (save/SourceNote.svelte): an alert for a refused first
+     // Save, LaTeX action or Submit, a status for Submit's progress and success. A file that could
+-    // not be read is the message box with a control that reads it again (read-again.ts), which
+-    // opens what the file is when it is back as something other than text. A file the route says is
+-    // gone opens here too, so this is the tab that says it cannot be opened.
++    // not be read is the message box with a control that reads it again (actions/read-again.ts),
++    // which opens what the file is when it is back as something other than text. A file the route
++    // says is gone opens here too, so this is the tab that says it cannot be opened.
+     //
+     // Submit Job, on a .slurm file on disk under a served root, saves the unsaved text, asks the
+     // server for the plan, puts it to the reader as one confirm and on a yes runs it; the flow is
+@@ -99,12 +99,6 @@
+     import { servedFile } from '$lib/views/shared/links/file-bar';
+     import { ownListing } from '$lib/ui/controls/editor/chords';
+     import { onMac } from '$lib/ui/controls/editor/kit/load';
+-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+-<<<<<<< ours
+-=======
+-    import LockedCode from './save/LockedCode.svelte';
+-    import { lockedWords } from './save/locked-words';
+->>>>>>> theirs
+     import Editor from './Editor.svelte';
+     import BarActions from './actions/BarActions.svelte';
+     import Gutter from './Gutter.svelte';
+@@ -117,7 +111,7 @@
+     import { connectSourceStatus } from './status/source-status.svelte';
+     import { createTabFile } from './status/tab-file.svelte';
+     import { createSubmitJob, isJobScript } from './actions/submit-job.svelte';
+-    import { readAgain } from './read-again';
++    import ReadAgainButton from './actions/ReadAgainButton.svelte';
+     import { createTabSave } from './save/tab-save.svelte';
+     import { latexEditor } from './latex-editor';
+     import { createSourceGutter } from './source-gutter.svelte';
+@@ -419,17 +413,8 @@
+ {/snippet}
+ 
+ {#snippet again()}
+-    <ToolButton
+-        small
+-        label={t('source.retry')}
+-        onclick={() =>
+-            void readAgain(client, {
+-                id: instance.id,
+-                preview: instance.preview === true,
+-                root,
+-                path,
+-                head
+-            })}
++    <ReadAgainButton
++        tab={{ id: instance.id, preview: instance.preview === true, root, path, head }}
+     />
+ {/snippet}
+ 
