@@ -2,6 +2,15 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z619 (2026-10-06, step O30)
+
+The question: the paste mode, and every other mode a program sets, is lost on each new attach of a terminal grid (a reconnect after a Restart, or a page switch), a defect on main before O30. Where is it fixed?
+
+- Chosen: (a) at O30's landing, with the diagnosis's fix in `sessions.ts` and `channel.ts` and its two doc sentences, since O30's HELP.md promises running terminals survive a Restart.
+- Not chosen: (b) a step of its own after O30, which ships O30's promise broken until then, the lazy one.
+
+Where it is built: O30's landing. Booked in `plan.md` Rulings.
+
 ## Z618 (2026-10-06, step A3)
 
 The question: A3 gets the plan's extra repair round: A3.md item 4 (G46, close() starts nothing) is violated in `launch` and item 3's S19 window stays open through Z614, both too large for landing; the review's other findings go in the same round.

@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z619 (2026-10-06): O30, the terminal modes a pane's program set (bracketed paste, cursor and keypad keys, mouse reports, insert, wrap, a hidden cursor) are sent after the scrollback on every attach (`modesAt` and `cursorArgs` of `sessions.ts`, `channel.ts` `#attach`, DESIGN.md:374, HELP.md:138), as the second diagnosis of O30 wrote it; fixed at O30's landing, since O30's HELP.md:13 says open windows keep their running terminals after a Restart and a paste into one would otherwise run as typed keys. (the orchestrator, automode)
 - Z618 (2026-10-06): A3 gets the plan's extra repair round: A3.md item 4 (G46, close() starts nothing) is violated in `launch` and item 3's S19 window stays open through Z614, both too large for landing; the review's other findings go in the same round. (the orchestrator, automode)
 - Z617 (2026-10-06): A3, the builder's words stand: `schedules-unwritten` for a schedules file that could not be written, and the sentence of `server-stopped`; `ui.answer_unreachable` becomes the one key for "The server did not answer.", read by the command bar too. (the orchestrator, automode)
 - Z616 (2026-10-06): A3, a run record naming a reason this version does not know shows the catalog sentence `outcome_failed_unknown` instead of the raw word; `outcome_failed_bare` stays for a run with no reason. (the orchestrator, automode)
