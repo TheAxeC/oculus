@@ -34,7 +34,9 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 9d698263c
   launched: 2026-10-07
   report: agents/reviews/D15-report.md
+  builder_usage: first run handed back with two cases (221,087 tokens, 33 tool uses, 8.0 min)
   brief_check: agents/reviews/D15-brief-check.md (a9240828824e6638a, claude-opus-5-5, 255,080 tokens, 78 tool uses, 11.2 min)
+  cases_ruling: agents/briefs/D15-cases.md
   landing: not-started
   round: 0
 - step: D11
