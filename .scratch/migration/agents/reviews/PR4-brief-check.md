@@ -236,3 +236,8 @@
 Usage: agent id not known, claude-opus-5-5, about 218,000 tokens, about 61 tool uses, minutes not measured.
 
 Agent: adc90b337fe7ebaaa, claude-opus-5-5, 229,636 tokens, 65 tool uses, 10.4 min.
+
+## Closed
+
+Every finding is closed in `agents/briefs/PR4.md` by the orchestrator, with the choices among them ruled as Z685 (automode): Names 1 to 11 (the route branch, the head comments, `mayCall` refusing with no list, the permission handlers, Close Window, the key hint and the tips, P's `preventDefault`, `docs/window.md:7`); the step line's click on the presenter's slide (part 4); Premises 18 and 19 (the base copy and the copy of `deck/`); Cases and checks 2 (the standalone Electron script, hidden and unthrottled), 4 (case 16 rewritten), 5 and 6 (the host makes the window, dedupes it and routes its navigations), 7 to 12 (verify rewritten, the read list, case 6's form control, case 11's wrong field type); the question's findings through parts 2, 4 and 6 and cases 3, 7, 8, 12, 16, 21 and 22; Implied inputs 1 to 14 (the window name's encoding, the hand-opened address, a removed deck, the Web Lock in place of the silence timer, the asking window, Esc in full screen, two panes, a deck switched, a restart, simple full screen, the key hint, Close Window, the formats); Dictated text 1, 6 and 7. Names 12 and Implied inputs 13 need no change: the ledger files are history, and P while presenting brings the audience window forward as part 1 and case 7 say.
+

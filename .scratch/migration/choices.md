@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z685 (2026-10-07, step PR4, the orchestrator, automode): how the presenter screen holds up
+
+- Chosen: presenting survives switching tabs and pages and ends only on End, Esc, closing the audience window or the tab; the audience window notices the presenter page has gone at once, not by a timer, so a hidden presenter never ends the talk; one presenter per deck, a second Presenter press takes the audience over; switching deck ends the presentation; in the desktop app the audience window fills its display without blanking the others, is not opened twice, closes with the window that opened it, gets full screen, and Close Window closes it; P is named on the Presenter control and the first-slide hint, never on the projector; a click on the current slide moves on.
+- Not chosen: the state kept only in the view (a page switch would end the talk), the 5-second silence rule, native full screen, leaving the desktop app's half to the landing look (the lazy options).
+
 ## Z684 (2026-10-07, step X3e, the orchestrator, automode): eight choices in the Files lists step
 
 - Chosen: the desktop app's folder sheet ends when the page goes away, with its own test; the C++ AST and memory sections can be dragged like the other Files sections; every reader of the file-change notice skips folder-only changes; apps get the new fields and their guide says so; palette descriptions with no new file; refusal sentences keep their no-full-stop form; a folder that was missing is watched once it appears; the guide text goes to the `docs/` pages.

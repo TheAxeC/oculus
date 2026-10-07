@@ -1,10 +1,9 @@
-In flight (0 of 6 slots):
-- none.
+In flight (2 of 6 slots):
+- D45 (LaTeX as VS Code's LaTeX Workshop): building.
+- PR4 (Present's presenter screen): building.
 
-Queued, in order (23 steps):
-- D45 (LaTeX as VS Code's LaTeX Workshop): preparing the builder.
+Queued, in order (21 steps):
 - X3e (Files lists reordered by drag): after D45.
-- PR4 (Present's presenter screen): closing its brief check's findings.
 - D28 (saving a file as VS Code does): after X3e.
 - M6 (the collection forms removed): after X3e and D28.
 - D11 (the debug client for rite): after D45.
