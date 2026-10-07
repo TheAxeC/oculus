@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z687 (2026-10-07, step D23b, the orchestrator, automode): Organize Imports
+
+- Chosen: Organize Imports made to work for every language server that offers it; today it never reaches pyright or clangd, because the editor's built-in client does not ask for it.
+- Not chosen: leaving it as it is (the lazy option), which leaves the command dead in every language.
+
 ## Z686 (2026-10-07, step D23b, the orchestrator, automode): the TypeScript and Svelte servers and the cross-file edit
 
 - Chosen: the Svelte server runs at once in its safe mode and gets its full features only after you approve the repository's Svelte and Vite config files, asked again when they change; a new guarded rule that no repository code runs before that approval, with its test; renames in TypeScript reach the `.svelte` files through the Svelte team's TypeScript plugin; no background `npm` installs and no server logs in repositories; one shared list of what each server offers; History names an edit made by a language server, in the singular for one file.
