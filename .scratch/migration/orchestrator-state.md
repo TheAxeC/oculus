@@ -133,6 +133,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Z699 (2026-10-07, D45's look on TEST, the orchestrator): the PDF viewer drew no pages. The frame layer shows a frame by setting its inline `display: block` (`src/lib/shell/frames/FrameLayer.svelte:89`), and the viewer used that frame as its flex box (`viewer.svelte.ts:157`, `root.classList.add('oc-pdf')`), so the scroll box `.oc-pdf-container` had a height of 0 and PDF.js drew nothing. The fix gives the viewer its own `.oc-pdf` box inside the frame; it is `agents/reviews/D45-pdf-height.patch` (one file, `git apply --check` passes on main at 40451030), the gate at 40451030 with it printed "test:landing: 287.3 s; every command passed", and the same layout made by hand in the page on TEST drew the pages. Copying it into main was refused by the session's permission check, so it is not on main. Options: (a) Axel applies it with `git -C ~/workspace/research-hub apply --index tools/oculus/.scratch/migration/agents/reviews/D45-pdf-height.patch` and the orchestrator commits it with its booking; (b) Axel allows the orchestrator to apply it. Recommended: (a), one command. The lazy option is leaving the viewer blank until D15 touches the file.
+
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
