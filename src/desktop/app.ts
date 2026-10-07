@@ -141,17 +141,15 @@ async function run(
         }
     };
     ses.setPermissionRequestHandler((contents, permission, callback, details) => {
-        const found = windows.entryOf(contents);
+        const served = windows.serverOriginOf(contents);
         callback(
-            found !== null &&
-                permissionGranted(permission, originOf(details.requestingUrl), found.entry.origin)
+            served !== null &&
+                permissionGranted(permission, originOf(details.requestingUrl), served)
         );
     });
     ses.setPermissionCheckHandler((contents, permission, requestingOrigin) => {
-        const found = contents === null ? null : windows.entryOf(contents);
-        return (
-            found !== null && permissionGranted(permission, requestingOrigin, found.entry.origin)
-        );
+        const served = contents === null ? null : windows.serverOriginOf(contents);
+        return served !== null && permissionGranted(permission, requestingOrigin, served);
     });
 
     /** Bring a window forward. */
@@ -189,7 +187,7 @@ async function run(
             newWindow: () => {
                 if (origin !== null) windows.openMain(origin);
             },
-            closeWindow: () => windows.focused()?.win.close(),
+            closeWindow: windows.closeFocused,
             command: (name) => {
                 const main = windows.lastMain();
                 if (main === null) return;

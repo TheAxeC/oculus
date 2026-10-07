@@ -1,10 +1,12 @@
 // Layer 2, server (the desktop host). Who may call the bridge. A call is answered when it comes
 // from the top frame of a page of the server's origin: the window's own page, the find bar's
-// view, which is the server's `/find` route in a view of its own, or the hidden window that prints
-// a deck, which is the server's print route. A subframe is never answered, whatever its origin,
-// and neither is a frame of any other origin. The find bar and the print window are told apart by
-// their addresses; the find bar may call only the find channels and the print window none. Pure
-// functions, read by tests/server/desktop/window-guard.test.ts.
+// view, which is the server's `/find` route in a view of its own, the hidden window that prints
+// a deck, which is the server's print route, or the audience window of a presentation, which is
+// the server's `/present/show` route. A subframe is never answered, whatever its origin, and
+// neither is a frame of any other origin. The find bar, the print window and the audience window
+// are told apart by their addresses; the find bar may call only the find channels, and the print
+// window and the audience window none. Pure functions, read by
+// tests/server/desktop/window-guard.test.ts.
 
 import { BAR_CHANNELS, PRINT_CHANNELS } from './channels.ts';
 
@@ -12,9 +14,10 @@ import { BAR_CHANNELS, PRINT_CHANNELS } from './channels.ts';
 export type SenderFrame = { origin: string; isTop: boolean; pathname: string };
 
 /**
- * Who the sender is: a window's page, the find bar, the print window, or no one the bridge answers.
+ * Who the sender is: a window's page, the find bar, the print window, the audience window, or no
+ * one the bridge answers.
  */
-export type Sender = 'page' | 'find-bar' | 'print' | null;
+export type Sender = 'page' | 'find-bar' | 'print' | 'audience' | null;
 
 /** The path the find bar's view loads. */
 export const FIND_PATH = '/find';
@@ -22,16 +25,20 @@ export const FIND_PATH = '/find';
 /** The path the print window loads, and the only address the host prints. */
 const PRINT_PATH = '/present/print';
 
+/** The path the audience window loads. */
+export const AUDIENCE_PATH = '/present/show';
+
 /** Who `frame` is, given the origin of the server the window shows. */
 export function senderOf(frame: SenderFrame, serverOrigin: string): Sender {
     if (!frame.isTop || frame.origin !== serverOrigin) return null;
     if (frame.pathname === FIND_PATH) return 'find-bar';
+    if (frame.pathname === AUDIENCE_PATH) return 'audience';
     return frame.pathname === PRINT_PATH ? 'print' : 'page';
 }
 
 /**
  * Whether a sender may call a channel: a window's page any, the find bar the find channels, the
- * print window the print channels.
+ * print window the print channels, and the audience window none.
  */
 export function mayCall(who: Sender, channel: string): boolean {
     if (who === 'page') return true;

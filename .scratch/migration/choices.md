@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z689 (2026-10-07, step PR4, the orchestrator, automode): Presenter pressed again during a talk
+
+- Chosen: in the oculus desktop window, pressing Presenter again reloads the audience window only when it shows that the presentation ended; during a live talk it only brings the window forward.
+- Not chosen: reloading the projector's page on every press, which flashes the slide and drops full screen (the lazy option).
+
 ## Z688 (2026-10-07, step PR4, the orchestrator, automode): the audience window after a reload
 
 - Chosen: in the oculus desktop window, pressing Presenter again always brings back a live audience window, even after the presenter screen was reloaded; reloading the audience window itself keeps the talk going, and only closing it ends the presentation.

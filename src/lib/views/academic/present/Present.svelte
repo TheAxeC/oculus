@@ -13,15 +13,13 @@
 
 <script lang="ts">
     // Layer 3, view. The public slide deck, live: one slide filling the pane, the arrow keys and
-    // the toolbar to move through it, `O` for the grid of the whole deck, and the Present control
-    // or `F` for the slide on the whole monitor.
+    // the toolbar to move through it, `O` for the grid of the whole deck, the Present control or
+    // `F` for the slide on the whole monitor, and the Presenter control or `P` for the presenter
+    // screen.
     //
-    // A slide is drawn in a frame of 1280 by 720 px, the size its parts are laid out for, scaled
-    // uniformly by `fit` to the pane and centred in it, so a slide keeps its proportions and its
-    // words shrink or grow with the pane as a slide program's do. The frame draws its own surface
-    // (the card colour, translucent over a wallpaper) and carries the slide type scale, in px at
-    // the design size and multiplied by the text size. A slide taller than the frame scrolls
-    // inside it. The overview grid and the empty state are not scaled and keep the UI's tokens.
+    // A slide is drawn in a frame of 1280 by 720 px, scaled uniformly to the pane and centred in it
+    // (screen/Stage.svelte). The overview grid and the empty state are not scaled and keep the
+    // UI's tokens.
     //
     // The deck is a folder the server reads (api/deck): `present.yml` and the Markdown slide files,
     // so a slide edited on disk is the slide on screen at the next push. A pane shows the portfolio
@@ -37,15 +35,22 @@
     // was looking would take the pane strip's own keys with it. The box takes the focus when the
     // view is mounted and on a press inside it, so the arrows work from the moment the deck is
     // opened. The keys are the arrows, Page Up and Page Down, Home and End, Space (the next slide,
-    // Shift+Space the previous one), `O` for the grid, `F` for full screen and Escape to close the
-    // grid.
+    // Shift+Space the previous one), `O` for the grid, `F` for full screen, `P` for the presenter
+    // screen and Escape to close the grid, and then to end the presentation.
     //
-    // Full screen is the box's own (fullscreen.svelte.ts): the browser draws the box alone, so the
-    // rail, the tabs and the toolbar are gone with no change to the shell. In full screen the box
-    // fills the screen on the page's background colour with the frame centred and edge to edge, a
-    // click on the slide moves to the next one, and the pointer hides after it has rested. In full
-    // screen the shell's keys are held back, since what they open is drawn outside the box: the
-    // deck's keys, the card cursor's keys over the grid and Enter on a control act, Tab wraps
+    // The presenter screen (presenter/Presenter.svelte) takes the place of the slide in the pane:
+    // the slide, the next one, the slide's notes, the time and a timer, while the audience sees
+    // the slide alone in a window of its own (routes/present/show). The presentation is the
+    // page's, not the component's (state/life/present.svelte.ts), so it goes on while the pane is
+    // not drawn. While it is on, the slides are the deck as saved: an editor's unsaved text
+    // changes neither window until it is saved.
+    //
+    // Full screen is the box's own (screen/fullscreen.svelte.ts): the browser draws the box alone,
+    // so the rail, the tabs and the toolbar are gone with no change to the shell. In full screen
+    // the box fills the screen on the page's background colour with the frame centred and edge to
+    // edge, a click on the slide moves to the next one, and the pointer hides after it has rested.
+    // In full screen the shell's keys are held back, since what they open is drawn outside the box:
+    // the deck's keys, the card cursor's keys over the grid and Enter on a control act, Tab wraps
     // inside the box, and the focus leaving for an element outside the box (a modified key such as
     // Cmd+Shift+F) ends the full screen.
     //
@@ -53,8 +58,8 @@
     // Edit Slide, New Slide, Duplicate Slide and Delete Slide, which are also commands in the
     // palette for the slide on screen. An image dropped on a slide of the deck's own files is added
     // to it. While a source tab of the same page holds text its file does not, the slide is drawn
-    // from that text (acts/live.svelte.ts). The pane's status line, at the end of the toolbar, says
-    // what an act came to.
+    // from that text (acts/live.svelte.ts), except while the presenter screen is on. The pane's
+    // status line, at the end of the toolbar, says what an act came to.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -64,22 +69,22 @@
     import { createActs } from './acts/acts.svelte';
     import { createLive } from './acts/live.svelte';
     import { slideMenu } from './acts/menu';
-    import { createFullscreen } from './fullscreen.svelte';
     import Overview from './Overview.svelte';
+    import Presenter from './presenter/Presenter.svelte';
+    import { createFullscreen } from './screen/fullscreen.svelte';
+    import { CONTROLS, keepTab, moveOf } from './screen/keys';
     import Slide from './Slide.svelte';
-    import { CONTROLS, keepTab } from './keys';
+    import Stage from './screen/Stage.svelte';
     import { cardCursor, tabsOf } from '$lib/state/workbench/layout/instance';
     import {
-        FRAME_HEIGHT,
-        FRAME_WIDTH,
         deckChoices,
         deckRefOf,
         deckState,
         deckLabel,
-        fit,
         indexOf,
         labelOf,
         leftDeck,
+        movedKey,
         nothingToShow,
         pageDrafts,
         parsePresentState,
@@ -88,10 +93,12 @@
         stepKey,
         tabDeck,
         withLabel,
+        type Deck,
         type DeckRef,
         type DeckSlide,
         type PresentState
     } from '$lib/state/life/present';
+    import type { PresentLink } from '$lib/state/life/present.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useShown, useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -101,7 +108,7 @@
         explorer,
         layout: { holding, hosts, openBeside, pointInstance, restateInstance },
         paletteSource: { offer, withdraw },
-        present: { deck: deckOf, drawn, portfolio, projectDecks, shown: shownDeck },
+        present: { deck: deckOf, drawn, portfolio, presenting, projectDecks, shown: shownDeck },
         source: { reloadSource, sourceDirty, sourceDraft },
         ui: { instanceState, setInstanceState },
         writes: { writeDeckEdit }
@@ -116,11 +123,6 @@
 
     let box = $state<HTMLElement | null>(null);
 
-    /** The deck box's measured size, 0 until it has been laid out and while its tab is hidden. */
-    let width = $state(0);
-    let height = $state(0);
-    const scale = $derived(fit(width, height));
-
     const held = $derived(parsePresentState(instanceState(instance.id)));
     const ref = $derived(shownDeck(deckRefOf(instance.state)));
     const answer = $derived(ref === null ? null : deckOf(ref));
@@ -133,16 +135,19 @@
             sourceDraft
         )
     );
+    /** Whether this pane shows the presenter screen, which draws the deck as the files hold it. */
+    const presented = $derived(presenting.on(instance.id));
     const liveDeck = createLive({
         ref: () => ref,
-        drafts: () => drafts,
+        drafts: () => (presented ? [] : drafts),
         files: () => filesDeck,
         drawn
     });
-    const deck = $derived(liveDeck() ?? filesDeck);
+    const deck = $derived(presented ? filesDeck : (liveDeck() ?? filesDeck));
     const rows = $derived(deck?.slides ?? []);
     const shown = $derived(slideAt(rows, held.slide));
     const at = $derived(indexOf(rows, held.slide));
+    const next = $derived(rows.at(at + 1) ?? null);
     const grid = $derived(held.overview);
 
     const screen = createFullscreen({
@@ -185,6 +190,21 @@
         setInstanceState(instance.id, { ...held, ...changes });
     }
 
+    // While the presenter screen is on, the audience window is told which slide is on and when
+    // the deck was read again, and the presentation ends with the deck's last slide gone.
+    $effect(() => {
+        if (presented && shown !== null) presenting.send(instance.id, shown.key);
+    });
+    let sentDeck: Deck | null = null;
+    $effect(() => {
+        const read = filesDeck;
+        if (presented && sentDeck !== null && read !== sentDeck) presenting.changed(instance.id);
+        sentDeck = read;
+    });
+    $effect(() => {
+        if (presented && rows.length === 0) presenting.end(instance.id);
+    });
+
     /** The deck menu: the deck on screen, the portfolio deck, the projects' decks, recent ones. */
     const choices = $derived(
         deckChoices(
@@ -202,15 +222,17 @@
     );
 
     /**
-     * Point the pane at another deck, remembering the one it leaves, or bring forward the tab that
-     * already shows it. The deck is named in the tab's layout state, as an opener names it
-     * (layout/open/show.ts), and the place in it is the pane's.
+     * End the pane's presentation if it runs, then point the pane at another deck, remembering the
+     * one it leaves, or bring forward the tab that already shows it. The deck is named in the
+     * tab's layout state, as an opener names it (layout/open/show.ts), and the place in it is the
+     * pane's.
      */
-    function open(next: DeckRef): void {
-        if (!pointInstance(instance.id, deckState(instance.state, tabDeck(next, portfolio())))) {
+    function open(target: DeckRef): void {
+        presenting.end(instance.id);
+        if (!pointInstance(instance.id, deckState(instance.state, tabDeck(target, portfolio())))) {
             return;
         }
-        setInstanceState(instance.id, leftDeck(held, ref, next));
+        setInstanceState(instance.id, leftDeck(held, ref, target));
         box?.focus();
     }
 
@@ -262,27 +284,31 @@
         box?.focus();
     }
 
+    /** Start the presenter screen over the deck as saved, and the audience window beside it. */
+    function present(): void {
+        if (ref === null || rows.length === 0) return;
+        const id = instance.id;
+        const link: PresentLink = {
+            current: () => parsePresentState(instanceState(id)).slide,
+            show: (key) =>
+                setInstanceState(id, { ...parsePresentState(instanceState(id)), slide: key }),
+            held: () => holding(id) !== null
+        };
+        presenting.start(id, ref, link);
+        box?.focus();
+    }
+
     function keys(event: KeyboardEvent): void {
         if (event.altKey || event.ctrlKey || event.metaKey) return;
+        const move = moveOf(event);
+        if (move !== null && (event.key !== ' ' || !inControl(event.target))) {
+            event.preventDefault();
+            if (event.key !== ' ' || !event.repeat) {
+                write({ slide: movedKey(rows, held.slide, move) });
+            }
+            return;
+        }
         switch (event.key) {
-            case 'ArrowRight':
-            case 'PageDown':
-                event.preventDefault();
-                write({ slide: stepKey(rows, held.slide, 1) });
-                return;
-            case 'ArrowLeft':
-            case 'PageUp':
-                event.preventDefault();
-                write({ slide: stepKey(rows, held.slide, -1) });
-                return;
-            case 'Home':
-                event.preventDefault();
-                write({ slide: rows.at(0)?.key ?? '' });
-                return;
-            case 'End':
-                event.preventDefault();
-                write({ slide: rows.at(-1)?.key ?? '' });
-                return;
             case 'o':
             case 'O':
                 event.preventDefault();
@@ -294,16 +320,22 @@
                 event.preventDefault();
                 if (!event.repeat) screen.toggle();
                 return;
-            case ' ':
-                if (inControl(event.target)) return;
+            case 'p':
+            case 'P':
                 event.preventDefault();
-                if (!event.repeat)
-                    write({ slide: stepKey(rows, held.slide, event.shiftKey ? -1 : 1) });
+                if (!event.repeat) present();
                 return;
             case 'Escape':
-                if (!grid) return;
-                event.preventDefault();
-                write({ overview: false });
+                if (grid) {
+                    event.preventDefault();
+                    write({ overview: false });
+                } else if (presented) {
+                    event.preventDefault();
+                    presenting.end(instance.id);
+                }
+                return;
+            case ' ':
+                // Space on a control of the slide acts on the control.
                 return;
             case 'Tab':
                 if (full && box !== null) keepTab(event, box);
@@ -328,11 +360,19 @@
         if (full && box !== null && to instanceof Node && !box.contains(to)) screen.leave();
     }
 
-    /** In full screen a click on the slide, or on the letterbox around it, shows the next one. */
+    /**
+     * A click on the slide shows the next one: in full screen on the letterbox around it too, and
+     * on the presenter screen on the current slide alone.
+     */
     function advance(event: MouseEvent): void {
-        if (!full || grid || shown === null || inControl(event.target)) return;
+        if (grid || shown === null || inControl(event.target)) return;
         if (window.getSelection()?.isCollapsed === false) return;
         write({ slide: stepKey(rows, held.slide, 1) });
+    }
+
+    /** The click on the pane's box: in full screen it moves on, except on the presenter screen. */
+    function boxClicked(event: MouseEvent): void {
+        if (full && !presented) advance(event);
     }
 
     /** Show a slide picked in the grid, and close the grid over it. */
@@ -357,6 +397,8 @@
             box?.focus();
         }}
         onpresent={screen.toggle}
+        presenting={presented}
+        onpresenter={present}
         onslides={() => {
             openBeside('slides', deckState({}, deckRefOf(instance.state)));
         }}
@@ -381,13 +423,11 @@
         aria-label={t('present.title')}
         tabindex="-1"
         bind:this={box}
-        bind:clientWidth={width}
-        bind:clientHeight={height}
         onkeydown={keys}
         onfocusout={focusLeft}
         onpointerdown={() => box?.focus()}
         onpointermove={screen.rouse}
-        onclick={advance}
+        onclick={boxClicked}
         ondragover={(event: DragEvent) => acts.carriesFiles(event) && event.preventDefault()}
         ondrop={acts.dropped}
     >
@@ -412,23 +452,25 @@
                 items={slideMenu(deck, shown)}
                 onpick={(id: string) => acts.act(id, shown)}
             >
-                <div
-                    class="stage"
-                    style:width="{FRAME_WIDTH * scale}px"
-                    style:height="{FRAME_HEIGHT * scale}px"
-                >
-                    <div
-                        class="frame slide-frame"
-                        data-frame
-                        data-scroll
-                        style:width="{FRAME_WIDTH}px"
-                        style:height="{FRAME_HEIGHT}px"
-                        style:transform="scale({scale})"
-                        style:visibility={scale === 0 ? 'hidden' : undefined}
-                    >
+                {#if presented}
+                    <Presenter
+                        row={shown}
+                        {next}
+                        {deck}
+                        at={at + 1}
+                        count={rows.length}
+                        timer={presenting.timer(instance.id)}
+                        onadvance={advance}
+                        onpause={() => presenting.pause(instance.id)}
+                        onresume={() => presenting.resume(instance.id)}
+                        onreset={() => presenting.reset(instance.id)}
+                        onend={() => presenting.end(instance.id)}
+                    />
+                {:else}
+                    <Stage bare={full}>
                         <Slide row={shown} {deck} first={at === 0} />
-                    </div>
-                </div>
+                    </Stage>
+                {/if}
             </ContextMenu>
         {/if}
     </div>
@@ -465,33 +507,9 @@
         padding: 0;
     }
 
-    .present:fullscreen .frame {
-        border: none;
-        border-radius: 0;
-    }
-
     /* A pointer that has rested in full screen is hidden over every part of the box. */
     .present.resting,
     .present.resting :global(*) {
         cursor: none;
-    }
-
-    /* The box the scaled frame occupies on screen: the frame's transform does not change its layout
-       size, so this box is the one that takes room. */
-    .stage {
-        flex: 0 0 auto;
-    }
-
-    /* The frame is laid out at the design size (themes/slide.css) and scaled from its top left
-       corner. */
-    .frame {
-        overflow-y: auto;
-        transform-origin: 0 0;
-    }
-
-    /* Over a wallpaper the surface goes translucent, as every other card surface does. */
-    :global(body.wall) .frame {
-        background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
     }
 </style>

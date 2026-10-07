@@ -1,4 +1,5 @@
-// Layer 2, client state. Which decks the Present view can open, and the deck a pane shows.
+// Layer 2, client state. Which decks the Present view can open, the deck a pane shows, and the
+// presentations a page holds.
 //
 // What is held here is where decks are: the portfolio deck (`portfolio_deck` of the merged config,
 // a folder of the hub) and the deck of every project that has one (the snapshot's `project.deck`),
@@ -17,14 +18,33 @@
 // Where a reader is in the deck is not here. It belongs to the pane, in the instance state of
 // state/workbench/ui.svelte.ts, so two Present panes hold two positions, a pane is on its slide
 // when its page comes back, and the slide a project card opens the deck at is the same key.
+//
+// A presentation is what a pane holds while it shows the presenter screen: its audience window, the
+// channel the two windows keep one slide over, the lock that tells the audience window the
+// presenter screen is gone, and the timer. It belongs to the page and is keyed by the pane's
+// instance id, so it outlives the pane's component: a tab switch, a page switch and any redraw of
+// the panes leave it on, and it ends when the instance leaves the layout.
 
+import { SvelteMap } from 'svelte/reactivity';
 import { str } from '../../data/helpers/guards.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
 import type { Deck } from '../../data/model/index.ts';
 import { readAnswer } from '../sources/fs-transport.ts';
 import { HUB_ROOT } from '../sources/fs.ts';
 import type { EntitiesStore, Queries } from '../shared/stores/shapes.ts';
-import { deckShape, type DeckDraft, type DeckRef } from './present.ts';
+import {
+    audienceAddress,
+    deckShape,
+    parseMessage,
+    pausedTimer,
+    presentName,
+    resetTimer,
+    resumedTimer,
+    startedTimer,
+    type DeckDraft,
+    type DeckRef,
+    type Timer
+} from './present.ts';
 
 /** One deck as the pane reads it. */
 type DeckAnswer = {
@@ -37,6 +57,70 @@ type DeckAnswer = {
 
 /** One project's deck as the deck menu lists it. */
 type ProjectDeck = { ref: DeckRef; id: string; title: string };
+
+/**
+ * What a presentation reads of the pane that holds it. The pane's component may not be drawn (its
+ * tab is behind another, its page is not shown), so each is a read of the page's stores.
+ */
+export type PresentLink = {
+    /** The key of the slide the pane is on; empty for the deck's first. */
+    current: () => string;
+    /** Show the slide a key names in the pane. */
+    show: (key: string) => void;
+    /** Whether the pane's instance is still in the layout. */
+    held: () => boolean;
+};
+
+/** The presentations of a page. */
+type Presenting = {
+    /** Whether the pane `instance` presents. */
+    on: (instance: string) => boolean;
+    /** The pane's timer, null while it does not present. */
+    timer: (instance: string) => Timer | null;
+    /**
+     * Start the pane's presentation of the deck `ref` and open the audience window, which a second
+     * press brings back. A pane already presenting the same deck hands its window over and ends.
+     * It opens a window, so it is called from a press.
+     */
+    start: (instance: string, ref: DeckRef, link: PresentLink) => void;
+    /** End the pane's presentation: the audience window is told and closes itself. */
+    end: (instance: string) => void;
+    /** Tell the audience window which slide is on. */
+    send: (instance: string, key: string) => void;
+    /** Tell the audience window the deck was read again. */
+    changed: (instance: string) => void;
+    pause: (instance: string) => void;
+    resume: (instance: string) => void;
+    reset: (instance: string) => void;
+};
+
+/** The features of the audience window when a browser opens it. */
+const AUDIENCE_FEATURES = 'popup,width=1280,height=720';
+
+/**
+ * How long the presenter screen waits, after the audience page says it closed, for a page of the
+ * same window to say it opened. A reload of the audience window closes and opens it, and the
+ * presentation goes on; a window that is closed stays closed, and the presentation ends.
+ */
+const RETURN_WAIT_MS = 3000;
+
+/** One presentation's parts that are not drawn: its windows, its channel and its lock. */
+type Held = {
+    ref: DeckRef;
+    link: PresentLink;
+    channel: BroadcastChannel;
+    /** The audience window a browser gave back; the desktop host gives none. */
+    audience: Window | null;
+    /** Whether an audience page has said it opened, so a page closing is the audience going. */
+    heard: boolean;
+    /** The wait for the audience page to open again after it closed; null when none runs. */
+    returning: ReturnType<typeof setTimeout> | null;
+    /** Lets go of the lock; null until the lock is granted. */
+    unlock: (() => void) | null;
+    /** Stops the watch over the pane's instance. */
+    stop: () => void;
+    ended: boolean;
+};
 
 export type PresentStore = {
     /** The portfolio deck, null when the configuration names none. */
@@ -53,6 +137,7 @@ export type PresentStore = {
      * draws from the drafts holds it.
      */
     drawn: (ref: DeckRef, drafts: DeckDraft[]) => Promise<DeckAnswer>;
+    presenting: Presenting;
 };
 
 /** What every deck's query key opens with. */
@@ -63,6 +148,28 @@ const PENDING: DeckAnswer = { deck: null, error: '', loading: true };
 
 /** What no deck at all reads as: no reference asks nothing and waits for nothing. */
 const NOTHING: DeckAnswer = { deck: null, error: '', loading: false };
+
+/** The deck a request answers, or what it failed with. */
+async function deckOf(ask: () => Promise<Response>): Promise<Deck | string> {
+    try {
+        const answer = await readAnswer(await ask());
+        if (!answer.ok) return answer.error;
+        return readAs(deckShape, answer.body) ?? 'deck';
+    } catch (error) {
+        return error instanceof Error ? error.message : String(error);
+    }
+}
+
+/**
+ * The deck a reference names as the deck route answers it for a page with no store (the print and
+ * audience routes): the deck, or what the request failed with.
+ */
+export function readDeck(ref: DeckRef, token: string): Promise<Deck | string> {
+    const query = new URLSearchParams({ root: ref.root, path: ref.path });
+    return deckOf(() =>
+        fetch(`/api/deck?${query.toString()}`, { headers: { 'x-oculus-token': token } })
+    );
+}
 
 export function createPresent(
     entities: EntitiesStore,
@@ -108,17 +215,10 @@ export function createPresent(
 
     /** The deck a request answers, or what it failed with. */
     async function answered(ask: () => Promise<Response>): Promise<DeckAnswer> {
-        try {
-            const answer = await readAnswer(await ask());
-            if (!answer.ok) return { deck: null, error: answer.error, loading: false };
-            const held = readAs(deckShape, answer.body);
-            return held === null
-                ? { deck: null, error: 'deck', loading: false }
-                : { deck: held, error: '', loading: false };
-        } catch (error) {
-            const reason = error instanceof Error ? error.message : String(error);
-            return { deck: null, error: reason, loading: false };
-        }
+        const held = await deckOf(ask);
+        return typeof held === 'string'
+            ? { deck: null, error: held, loading: false }
+            : { deck: held, error: '', loading: false };
     }
 
     const path = $derived(str(entities.config()?.config.portfolio_deck) ?? '');
@@ -151,6 +251,152 @@ export function createPresent(
         projectDecks: () => projectDecks,
         shown,
         deck,
-        drawn
+        drawn,
+        presenting: createPresenting()
+    };
+}
+
+/** The page's presentations, one per pane that presents. */
+function createPresenting(): Presenting {
+    const lives = new Map<string, Held>();
+    const timers = new SvelteMap<string, Timer>();
+    let listening = false;
+
+    /**
+     * Let go of a presentation. It tells the audience window what `announce` names, and frees the
+     * lock.
+     */
+    function finish(
+        instance: string,
+        held: Held,
+        announce: 'end' | 'left' | null,
+        unlock: boolean
+    ): void {
+        if (lives.get(instance) !== held) return;
+        lives.delete(instance);
+        timers.delete(instance);
+        held.ended = true;
+        if (held.returning !== null) clearTimeout(held.returning);
+        if (announce !== null) held.channel.postMessage({ kind: announce });
+        held.channel.close();
+        held.stop();
+        if (unlock) held.unlock?.();
+    }
+
+    function end(instance: string): void {
+        const held = lives.get(instance);
+        if (held !== undefined) finish(instance, held, 'end', true);
+    }
+
+    /** The page is going away: the audience window is told, and left open to say so. */
+    function leave(instance: string): void {
+        const held = lives.get(instance);
+        if (held !== undefined) finish(instance, held, 'left', true);
+    }
+
+    /** What the audience window says: it opened, its reader moved, it closed. */
+    function hear(instance: string, held: Held, data: unknown): void {
+        const message = parseMessage(data);
+        if (message === null || held.ended) return;
+        if (message.kind === 'opened') {
+            held.heard = true;
+            if (held.returning !== null) clearTimeout(held.returning);
+            held.returning = null;
+            held.channel.postMessage({ kind: 'slide', key: held.link.current() });
+        } else if (message.kind === 'move') held.link.show(message.key);
+        else if (message.kind === 'closed' && held.heard && held.returning === null) {
+            held.returning = setTimeout(() => end(instance), RETURN_WAIT_MS);
+        }
+    }
+
+    /** The audience window of a presentation, brought back or opened again. */
+    function raise(held: Held): void {
+        if (held.audience !== null && !held.audience.closed) held.audience.focus();
+        else {
+            held.audience = window.open(
+                audienceAddress(held.ref),
+                presentName(held.ref),
+                AUDIENCE_FEATURES
+            );
+        }
+    }
+
+    /**
+     * Take the lock of the deck's presentation from whoever holds it, and keep it until the
+     * presentation ends. The audience window asks for the same lock and is granted it only when it
+     * is free, so it learns the presenter screen is gone from a reload or a crash too.
+     */
+    function hold(instance: string, held: Held): void {
+        const name = presentName(held.ref);
+        const keep = (): Promise<void> =>
+            new Promise((release) => {
+                if (held.ended) release();
+                else held.unlock = release;
+            });
+        // A lock taken from this one by another presenter screen leaves the audience window with
+        // that screen, so this presentation ends without telling it.
+        navigator.locks
+            .request(name, { steal: true }, keep)
+            .catch(() => finish(instance, held, null, false));
+    }
+
+    function start(instance: string, ref: DeckRef, link: PresentLink): void {
+        const open = lives.get(instance);
+        if (open !== undefined) {
+            raise(open);
+            return;
+        }
+        const name = presentName(ref);
+        const held: Held = {
+            ref,
+            link,
+            channel: new BroadcastChannel(name),
+            audience: null,
+            heard: false,
+            returning: null,
+            unlock: null,
+            stop: () => undefined,
+            ended: false
+        };
+        // The lock is taken before any other holder lets go, since the audience window's request is
+        // queued ahead of this one and would be granted the lock a release left free.
+        hold(instance, held);
+        for (const [other, previous] of lives) {
+            if (presentName(previous.ref) !== name) continue;
+            held.audience = previous.audience;
+            held.heard = previous.heard;
+            finish(other, previous, null, false);
+        }
+        held.channel.onmessage = (event: MessageEvent<unknown>) => hear(instance, held, event.data);
+        lives.set(instance, held);
+        timers.set(instance, startedTimer(Date.now()));
+        held.stop = $effect.root(() => {
+            $effect(() => {
+                if (!link.held()) end(instance);
+            });
+        });
+        if (!listening) {
+            listening = true;
+            window.addEventListener('pagehide', () => [...lives.keys()].forEach(leave));
+        }
+        raise(held);
+    }
+
+    /** Change the pane's timer by `change`, when the pane presents. */
+    function retime(instance: string, change: (timer: Timer, now: number) => Timer): void {
+        const timer = timers.get(instance);
+        if (timer !== undefined) timers.set(instance, change(timer, Date.now()));
+    }
+
+    return {
+        on: (instance) => timers.has(instance),
+        timer: (instance) => timers.get(instance) ?? null,
+        start,
+        end,
+        send: (instance, key) => lives.get(instance)?.channel.postMessage({ kind: 'slide', key }),
+        changed: (instance) => lives.get(instance)?.channel.postMessage({ kind: 'changed' }),
+        pause: (instance) => retime(instance, pausedTimer),
+        resume: (instance) => retime(instance, resumedTimer),
+        reset: (instance) => retime(instance, resetTimer)
     };
 }

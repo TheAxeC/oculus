@@ -5,13 +5,20 @@
 //
 // An app window shows only its own server's page. That page at `/` opens in an app window: a main
 // window, or the window of a popped-out float when the address carries `?float=<id>` and nothing
-// else. Any other http, https or mailto address, the server's own file addresses included, goes to
-// the default browser. Every other scheme is refused, since handing a `file:` or `javascript:`
-// address to the operating system would run it.
+// else. The audience route, `/present/show` with the params `root` and `path` and nothing else,
+// opens the audience window of a presentation. Any other http, https or mailto address, the
+// server's own file addresses included, goes to the default browser. Every other scheme is
+// refused, since handing a `file:` or `javascript:` address to the operating system would run it.
+
+import { AUDIENCE_PATH } from './sender.ts';
 
 /** Where an address goes. */
 export type Where =
-    { kind: 'main' } | { kind: 'float'; id: string } | { kind: 'browser' } | { kind: 'refused' };
+    | { kind: 'main' }
+    | { kind: 'float'; id: string }
+    | { kind: 'audience'; root: string; path: string }
+    | { kind: 'browser' }
+    | { kind: 'refused' };
 
 /** The address read, or null for text that is no address. */
 function parsed(address: string): URL | null {
@@ -40,12 +47,25 @@ function serverPage(url: URL, origin: string): { id: string | null } | null {
     return floatOf(url);
 }
 
+/**
+ * The deck an address of the audience route names: the server's origin, the path, no hash, a
+ * filled `root` and a `path`, and no other param. Null for any other address.
+ */
+function audienceDeck(url: URL, origin: string): { root: string; path: string } | null {
+    if (url.origin !== origin || url.pathname !== AUDIENCE_PATH || url.hash !== '') return null;
+    if ([...url.searchParams.keys()].sort().join(',') !== 'path,root') return null;
+    const root = url.searchParams.get('root') ?? '';
+    return root === '' ? null : { root, path: url.searchParams.get('path') ?? '' };
+}
+
 /** Where `address` goes, given the origin of the window's server. */
 export function linkDecision(address: string, origin: string): Where {
     const url = parsed(address);
     if (url === null) return { kind: 'refused' };
     const page = serverPage(url, origin);
     if (page !== null) return page.id === null ? { kind: 'main' } : { kind: 'float', id: page.id };
+    const audience = audienceDeck(url, origin);
+    if (audience !== null) return { kind: 'audience', ...audience };
     if (url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'mailto:') {
         return { kind: 'browser' };
     }

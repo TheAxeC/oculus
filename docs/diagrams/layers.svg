@@ -154,7 +154,7 @@
 <g id="node35" class="node">
 <title>views to state</title>
 <polygon fill="none" stroke="none" points="623.88,-286.8 606.12,-286.8 606.12,-274.32 623.88,-274.32 623.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="615" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">952</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="615" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">955</text>
 </g>
 <!-- views&#45;&gt;views to state -->
 <g id="edge45" class="edge">
@@ -165,7 +165,7 @@
 <g id="node36" class="node">
 <title>views to ui</title>
 <polygon fill="none" stroke="none" points="713.88,-286.8 696.12,-286.8 696.12,-274.32 713.88,-274.32 713.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="705" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">785</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="705" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">786</text>
 </g>
 <!-- views&#45;&gt;views to ui -->
 <g id="edge47" class="edge">
@@ -232,7 +232,7 @@
 <g id="node19" class="node">
 <title>routes to state</title>
 <polygon fill="none" stroke="none" points="590.88,-229.2 577.12,-229.2 577.12,-216.72 590.88,-216.72 590.88,-229.2"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="584" y="-220.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">22</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="584" y="-220.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">27</text>
 </g>
 <!-- routes&#45;&gt;routes to state -->
 <g id="edge13" class="edge">
@@ -248,24 +248,24 @@
 <!-- routes&#45;&gt;routes to themes -->
 <g id="edge15" class="edge">
 <title>routes&#45;&gt;routes to themes</title>
-<path fill="none" stroke="currentColor" d="M647.1,-433.05C673.56,-418.42 719.15,-388.8 740,-348.96 761.99,-306.93 765.39,-247.82 765.91,-229.56"/>
+<path fill="none" stroke="currentColor" d="M648.12,-432.96C675.36,-418.42 721.77,-389.11 743,-348.96 765.07,-307.21 766.31,-247.91 766.13,-229.58"/>
 </g>
 <!-- routes to ui -->
 <g id="node21" class="node">
 <title>routes to ui</title>
-<polygon fill="none" stroke="none" points="732.88,-344.4 723.12,-344.4 723.12,-331.92 732.88,-331.92 732.88,-344.4"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="728" y="-335.76" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
+<polygon fill="none" stroke="none" points="735.88,-344.4 722.12,-344.4 722.12,-331.92 735.88,-331.92 735.88,-344.4"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="729" y="-335.76" font-family="Helvetica,Arial,sans-serif" font-size="8.00">12</text>
 </g>
 <!-- routes&#45;&gt;routes to ui -->
 <g id="edge17" class="edge">
 <title>routes&#45;&gt;routes to ui</title>
-<path fill="none" stroke="currentColor" d="M638.86,-433.04C649.21,-423.98 664.49,-410.24 677,-397.44 695.05,-378.98 714.71,-355.43 723.41,-344.81"/>
+<path fill="none" stroke="currentColor" d="M638.83,-433.01C649.16,-423.93 664.43,-410.17 677,-397.44 695.29,-378.91 715.39,-355.39 724.3,-344.79"/>
 </g>
 <!-- routes to views -->
 <g id="node22" class="node">
 <title>routes to views</title>
 <polygon fill="none" stroke="none" points="669.88,-397.44 660.12,-397.44 660.12,-384.96 669.88,-384.96 669.88,-397.44"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="665" y="-388.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="665" y="-388.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">5</text>
 </g>
 <!-- routes&#45;&gt;routes to views -->
 <g id="edge19" class="edge">
@@ -396,8 +396,8 @@
 <!-- routes to ui&#45;&gt;ui -->
 <g id="edge18" class="edge">
 <title>routes to ui&#45;&gt;ui</title>
-<path fill="none" stroke="currentColor" d="M727.51,-331.56C726.48,-319.99 723.93,-292.63 721,-269.76 719.79,-260.35 718.21,-249.9 716.86,-241.35"/>
-<polygon fill="currentColor" stroke="currentColor" points="718.96,-241.21 715.94,-235.62 714.82,-241.88 718.96,-241.21"/>
+<path fill="none" stroke="currentColor" d="M728.4,-331.56C727.15,-320 724.11,-292.65 721,-269.76 719.72,-260.36 718.14,-249.91 716.8,-241.36"/>
+<polygon fill="currentColor" stroke="currentColor" points="718.9,-241.23 715.89,-235.63 714.76,-241.88 718.9,-241.23"/>
 </g>
 <!-- routes to views&#45;&gt;views -->
 <g id="edge20" class="edge">

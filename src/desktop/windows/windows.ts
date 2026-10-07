@@ -3,6 +3,8 @@
 // them, keeps them, and decides what each does with an address, a crash and a close; what a page
 // may ask of the host over the bridge is bridge.ts, and the menu is menu.ts.
 //
+// The audience window of a presentation is made by show.ts and is not one of these entries.
+//
 // A main window closed leaves the app and the server running; the popped-out windows close with
 // the last main window and keep their places in the arrangement, so they open again with the next
 // main window. A popped-out window closed by the reader is asked to put its tabs back in the main
@@ -23,6 +25,7 @@ import {
 import { EVENT } from '../decide/channels.ts';
 import { oculusAnswers } from '../server/health.ts';
 import { createFindBar, type FindBar } from './find-bar.ts';
+import { createAudience } from './show.ts';
 import type { WindowStore } from './window-state.ts';
 
 /** How far each further main window is moved from the one before, in points. */
@@ -80,6 +83,15 @@ export type Windows = {
     lastMain: () => Entry | null;
     /** The window the reader is in, or the main window focused last. */
     focused: () => Entry | null;
+    /**
+     * Close the window the reader is in: an audience window, else the window `focused` names.
+     */
+    closeFocused: () => void;
+    /**
+     * The origin of the server the page of `contents` was loaded from, for any window the app
+     * made, the audience windows included; null for any other contents.
+     */
+    serverOriginOf: (contents: WebContents) => string | null;
     /** Close every window without the popped-out windows asking their pages first. */
     closeAll: () => void;
     /** Mark the app as quitting, so no window asks anything on its way out; keep the state. */
@@ -100,6 +112,11 @@ export function createWindows(deps: WindowsDeps): Windows {
     const list: Entry[] = [];
     let clock = 0;
     let quit = false;
+    const audience = createAudience({
+        preload: deps.preload,
+        areas: () => displays().areas,
+        route: (from, url) => route(from, url)
+    });
 
     /** Print the refusal of an address and do nothing else with it. */
     function refuse(url: string): void {
@@ -111,6 +128,7 @@ export function createWindows(deps: WindowsDeps): Windows {
         const where = linkDecision(url, from.origin);
         if (where.kind === 'main') openMain(from.origin);
         else if (where.kind === 'float') openFloat(where.id, null, from.origin);
+        else if (where.kind === 'audience') audience.open(from, url, where);
         else if (where.kind === 'browser') void shell.openExternal(url);
         else refuse(url);
     }
@@ -344,6 +362,7 @@ export function createWindows(deps: WindowsDeps): Windows {
         win.on('closed', () => {
             list.splice(list.indexOf(entry), 1);
             entry.bar.dispose();
+            audience.closeFor(entry);
             if (kind === 'main' && !list.some((one) => one.kind === 'main')) closeFloats();
         });
         return entry;
@@ -411,24 +430,36 @@ export function createWindows(deps: WindowsDeps): Windows {
         );
     }
 
+    /** The window a web contents belongs to, and whether it is its page or its find bar. */
+    function entryOf(contents: WebContents): { entry: Entry; who: 'page' | 'find-bar' } | null {
+        for (const entry of list) {
+            if (entry.win.webContents === contents) return { entry, who: 'page' };
+            if (entry.bar.contents() === contents) return { entry, who: 'find-bar' };
+        }
+        return null;
+    }
+
+    /** The window the reader is in, or the main window focused last. */
+    function focused(): Entry | null {
+        const focus = BrowserWindow.getFocusedWindow();
+        return list.find((one) => one.win === focus) ?? lastMain();
+    }
+
     return {
         openMain,
         openFloat,
         entries: () => [...list],
-        entryOf: (contents) => {
-            for (const entry of list) {
-                if (entry.win.webContents === contents) return { entry, who: 'page' };
-                if (entry.bar.contents() === contents) return { entry, who: 'find-bar' };
-            }
-            return null;
-        },
+        entryOf,
         moveTo,
         lastMain,
-        focused: () => {
-            const focus = BrowserWindow.getFocusedWindow();
-            return list.find((one) => one.win === focus) ?? lastMain();
+        focused,
+        closeFocused: () => {
+            if (!audience.closeFocused()) focused()?.win.close();
         },
+        serverOriginOf: (contents) =>
+            entryOf(contents)?.entry.origin ?? audience.originOf(contents),
         closeAll: () => {
+            audience.closeAll();
             for (const one of [...list]) {
                 one.allowClose = true;
                 one.win.close();

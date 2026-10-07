@@ -5,7 +5,9 @@
 // with their words, the groups with their members. What is here is the pane's own state (the
 // slide it is on, whether its grid is open and the decks it has shown), the deck a tab's layout
 // state names, the moves over a deck's slides, the frame the slides are laid out in, and the one
-// hue a slide's status tag wears.
+// hue a slide's status tag wears. A presentation adds the names its two windows share (the audience
+// address, and the window, channel and lock name), the messages they send each other, and the
+// presenter screen's timer and clock text.
 //
 // Nothing here reads a store or a file.
 
@@ -220,6 +222,15 @@ export function slideAt(slides: DeckSlide[], key: string): DeckSlide | null {
 export function stepKey(slides: DeckSlide[], key: string, by: number): string {
     const next = Math.min(Math.max(indexOf(slides, key) + by, 0), slides.length - 1);
     return item(slides, next)?.key ?? key;
+}
+
+/** Where a move goes in a deck: some slides on (negative for back), or to either end. */
+export type Move = { by: number } | { to: 'first' | 'last' };
+
+/** The key a move from `key` comes to, the key itself for an empty deck. */
+export function movedKey(slides: DeckSlide[], key: string, move: Move): string {
+    if ('by' in move) return stepKey(slides, key, move.by);
+    return (move.to === 'first' ? slides.at(0) : slides.at(-1))?.key ?? key;
 }
 
 /**
@@ -440,12 +451,102 @@ export function deckFile(ref: DeckRef): string {
     return ref.path === '' ? 'present.yml' : `${ref.path}/present.yml`;
 }
 
+/** A deck's `root` and `path` written as a query is, so no two decks give the same text. */
+function deckQuery(ref: DeckRef): string {
+    return new URLSearchParams({ root: ref.root, path: ref.path }).toString();
+}
+
 /** The path of the print route, which draws every slide of one deck for the PDF. */
 const PRINT_ROUTE = '/present/print';
 
 /** The address of the print route for a deck, relative to the server it is asked of. */
 export function printAddress(ref: DeckRef): string {
-    return `${PRINT_ROUTE}?${new URLSearchParams({ root: ref.root, path: ref.path }).toString()}`;
+    return `${PRINT_ROUTE}?${deckQuery(ref)}`;
+}
+
+/** The path of the audience route, which draws the slide on show and nothing else. */
+const AUDIENCE_ROUTE = '/present/show';
+
+/** The address of the audience route for a deck, relative to the server it is asked of. */
+export function audienceAddress(ref: DeckRef): string {
+    return `${AUDIENCE_ROUTE}?${deckQuery(ref)}`;
+}
+
+/**
+ * What names one deck's presentation: the audience window, the channel its page and the presenter
+ * screen talk over, and the lock the presenter screen holds while it presents.
+ */
+export function presentName(ref: DeckRef): string {
+    return `oculus-present-${deckQuery(ref)}`;
+}
+
+/**
+ * What the two windows of a presentation say to each other over the channel. The presenter screen
+ * says which slide is on (`slide`), that its deck was read again (`changed`), that it ended
+ * (`end`, after which the audience window closes itself where it can) and that its page is going
+ * away (`left`, after which the audience window says the screen has ended and offers to close, as
+ * it does when the lock tells it). The audience window says that it opened, which slide its
+ * reader moved to (`move`) and that it closed. Each key is the key a slide of the deck carries.
+ */
+const messageShape = z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('slide'), key: z.string() }),
+    z.object({ kind: z.literal('changed') }),
+    z.object({ kind: z.literal('end') }),
+    z.object({ kind: z.literal('left') }),
+    z.object({ kind: z.literal('opened') }),
+    z.object({ kind: z.literal('move'), key: z.string() }),
+    z.object({ kind: z.literal('closed') })
+]);
+
+export type PresentMessage = z.infer<typeof messageShape>;
+
+/** The message a value on the channel is, or null for anything else. */
+export function parseMessage(value: unknown): PresentMessage | null {
+    return readAs(messageShape, value);
+}
+
+/**
+ * The timer of a presenter screen: the time spent up to the last start or resume, and when it last
+ * started, null while it is paused.
+ */
+export type Timer = { spent: number; since: number | null };
+
+/** A timer that starts counting at `now`. */
+export function startedTimer(now: number): Timer {
+    return { spent: 0, since: now };
+}
+
+/** The milliseconds a timer has counted at `now`. */
+export function timerElapsed(timer: Timer, now: number): number {
+    return timer.spent + (timer.since === null ? 0 : Math.max(0, now - timer.since));
+}
+
+/** The timer stopped at `now`, holding what it counted. */
+export function pausedTimer(timer: Timer, now: number): Timer {
+    return { spent: timerElapsed(timer, now), since: null };
+}
+
+/** The timer counting again from `now`, a running one as it is. */
+export function resumedTimer(timer: Timer, now: number): Timer {
+    return timer.since === null ? { spent: timer.spent, since: now } : timer;
+}
+
+/** The timer back at nothing: counting from `now` when it was running, still paused when not. */
+export function resetTimer(timer: Timer, now: number): Timer {
+    return { spent: 0, since: timer.since === null ? null : now };
+}
+
+/** A count of milliseconds as `H:MM:SS`. */
+export function timerText(ms: number): string {
+    const seconds = Math.floor(Math.max(0, ms) / 1000);
+    const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+    return `${Math.floor(seconds / 3600)}:${minutes}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+/** The time of day as `HH:MM` on a 24-hour clock. */
+export function clockText(at: Date): string {
+    const pad = (n: number): string => String(n).padStart(2, '0');
+    return `${pad(at.getHours())}:${pad(at.getMinutes())}`;
 }
 
 export { MAX_UPLOAD_MB };

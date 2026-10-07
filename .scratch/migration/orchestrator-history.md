@@ -1894,3 +1894,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-07. PR4 dispatched (base 70b68cca, builder on claude-sonnet-5-5); D23b's brief check closed in its brief (Z686, G55) and D23b dispatched (base 8d9cdd60, builder on claude-sonnet-5-5). Running: D45's, PR4's and D23b's builders. Every queued step waits on one of them or on Axel.
 - Z687 (2026-10-07): automode, D23b's case 17, Organize Imports made reachable for every server that offers it; D23b's builder resumed with the ruling.
 - 2026-10-07. PR4 built (244,067 tokens, 196 tool uses, 55.5 min) and refuted by a65731dee140e3b13 (claude-opus-5-5, 275,449 tokens, 72 tool uses, 17.4 min); Z688 rules the two behaviour findings; repair round 1 sent to the builder.
+- 2026-10-07. PR4's round 1 refuted by a2951440a5a116e09 (claude-opus-5-5, 212,724 tokens, 53 tool uses, 13.2 min): five findings, each fixed at landing; Z689 narrows Z688 (1).
+- 2026-10-07 07:30. PR4 landed; six fixes at landing; the gate worktree `.agents/worktrees/gate` made again (sparse paths now include `deck`).

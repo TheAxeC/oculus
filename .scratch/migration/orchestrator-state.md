@@ -37,21 +37,6 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D45-brief-check.md (a32b5474d92306805, claude-opus-5-5, 324,219 tokens, 91 tool uses, 17.2 min; the brief rewritten since from agents/reviews/D45-premise-recheck-2.md, a0dc73f3ef96a19bb, claude-opus-5-5, 263,515 tokens, 119 tool uses, 12.1 min)
   landing: not-started
   round: 0
-- step: PR4
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: aae584457c255ee97 (builder, launched 2026-10-07)
-  worktree: .agents/worktrees/PR4
-  base: 70b68cca
-  launched: 2026-10-07
-  report: agents/reviews/PR4-report.md
-  brief_check: agents/reviews/PR4-brief-check.md (adc90b337fe7ebaaa, claude-opus-5-5, 229,636 tokens, 65 tool uses, 10.4 min)
-  shared_paths: with D45: tools/oculus/DESIGN.md (PR4 :478 and the windows bullet at :570-574, D45 :531-535 and :570-574 only where the float window in a browser makes it false), docs/window.md (PR4 :7, D45 :15, :41, :58-59, :82), docs/views.md (PR4 :95-107, D45 :67-75, :229, :241-243), HELP.md (PR4 :103, D45 :23-73, :96, :132), src/desktop/decide/links.ts and src/desktop/windows/windows.ts (D45 only if the desktop float window needs a change); sentence-level edits in different places, whichever lands second carries the other's text
-  builder_usage: 244,067 tokens, 196 tool uses, 55.5 min (claude-sonnet-5-5)
-  reviewer_report: agents/reviews/PR4-refuter.md (a65731dee140e3b13, claude-opus-5-5, 275,449 tokens, 72 tool uses, 17.4 min)
-  landing: not-started
-  round: 1 (sent 2026-10-07: Behaviour 1 and 2 under Z688, the comment lines over 100 columns, `open`'s doc comment, a final test:quick on the last tree)
 - step: D23b
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -236,6 +221,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-07 07:30. PR4 landed (Present's presenter screen; booking in plan.md; `agents/reviews/PR4-landing.md`) with six fixes at landing, five from the review over round 1 (Z689 among them) and one from its look on TEST. In flight: D45 and D23b (builders running). Every queued step waits on D45, D23b or Axel's ruling Z681. Next: D23b's and D45's reports, their reviews and landings.
 - 2026-10-07 04:20. D23c landed (library definitions open read-only, the symbol selected on open; booking in plan.md; `agents/reviews/D23c-landing.md`) with Z679, the read.ts comment, the report's timing and G2 and G3 fixed at landing, and one fix from its look on a scratch oculus: a tab over a served root's file passed an empty library address and so had no language features. In flight: none. Next: prepare PR4, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-07 03:30. PR3 landed (the Present view edits and generates decks; booking in plan.md; `agents/reviews/PR3-landing.md`) with the merge conflicts, R1 to R6, Z675 and four fixes from its look on a scratch oculus fixed at landing. D23c reviewed over round 1, all 14 items closed; Z679 in automode. In flight: D23c (lands next). Next: land D23c, then prepare PR4, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-06 23:55. Q126 landed (DESIGN.md reduced to its decisions; booking in plan.md; `agents/reviews/Q126-landing.md`), merged with D23 by Z642's rule, with the round-1 refutation's five findings fixed at landing. In flight: PR3 (builder running). Next: prepare D23c, D45, X3e, M8, D43, D23b and D33 into the free slots.

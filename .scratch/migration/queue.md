@@ -1,6 +1,5 @@
-In flight (3 of 6 slots):
+In flight (2 of 6 slots):
 - D45 (LaTeX as VS Code's LaTeX Workshop): building.
-- PR4 (Present's presenter screen): repair round 1.
 - D23b (cross-file language features, TypeScript and Svelte servers): building.
 
 Queued, in order (20 steps):
@@ -28,6 +27,7 @@ Queued, in order (20 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- PR4 (Present's presenter screen), 2026-10-07.
 - D23c (library definitions read-only, the symbol selected on open), 2026-10-07, c0a4af9c.
 - PR3 (Present decks edited and generated), 2026-10-07, a2901490.
 - Q126 (DESIGN.md reduced where Q125 left it short), 2026-10-06.

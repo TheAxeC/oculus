@@ -188,3 +188,207 @@ Cases of the brief's "Cases":
 Reviewer usage: agent id not known to me (read it from the runner's record), claude-opus-5-5, tokens not known to me (read them from the completion notice), about 55 tool uses, about 20 minutes (not verified).
 
 Agent: a65731dee140e3b13, claude-opus-5-5.
+
+## Repair round 1, refuted
+
+Every command below was run from `tools/oculus` in `.agents/worktrees/PR4`, on Node v24.21.0. The browser cases ran in a standalone Electron process with every window created `show: false`. That process loaded only my own scratch server on 127.0.0.1:8798, which had a scratch HOME and a scratch hub under `scratchpad/rev-pr4-r1/`, and `userData` was set to a folder under the scratchpad for each run. The scripts were the builder's own, unchanged apart from the port and the `userData` line. After the runs the server was stopped by its pid: `lsof -iTCP:8798 -sTCP:LISTEN` prints nothing, and `ps -p 75748` shows no process. No tree state was recorded when the round was sent, so the round's delta is the set of files and hunks its report section names, each read against `git diff 70b68cca`.
+
+```
+$ npm run diagrams   (afterwards `git diff 70b68cca --stat -- tools/oculus/docs/diagrams` still lists the same 4 files, 19+/19-)
+$ npm run test:quick -- --base 70b68cca
+test:quick: 31 changed file(s), from git since 70b68cca
+test:quick: 14 test file(s), 10 essential
+ok      prettier (0.4 s): All matched files use Prettier code style!
+ok      ASCII gate (0.4 s)
+ok      svelte-kit sync (1.7 s)
+ok      eslint (1.6 s)
+ok      svelte-check (10.3 s): 1791343310167 COMPLETED 410 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (14.0 s): Duration  9.60s (transform 18.47s, setup 0ms, import 22.90s, tests 1.56s, environment 5ms)
+test:quick: 14.5 s (limit 45.0 s); every command passed
+
+$ npx vitest run tests/server/desktop/window-guard.test.ts tests/server/desktop/window-file.test.ts
+ Test Files  2 passed (2)
+      Tests  18 passed (18)
+$ sh utils/folder-check.sh                                   -> no output, exit 0
+$ sh utils/unused-exports.sh | sort, diffed with the sorted PR4-base unused-exports.txt -> no difference, exit 0
+$ the ASCII gate of agents/spec.md over src tests config     -> prints nothing
+$ LC_ALL=C grep -n '[^ -~]' DESIGN.md HELP.md docs/views.md docs/window.md -> nothing (exit 1)
+$ wc -l: Present.svelte 515, present.svelte.ts 402, present.ts 557, show.ts 136, windows.ts 476, show/+page.svelte 288, Presenter.svelte 207
+$ awk 'length($0)>100 && ($0 ~ /^[ ]*(\/\/|\*|\/\*\*|<!--)/)' over src/desktop, present.ts, present.svelte.ts, src/lib/views/academic/present, src/routes/present, window-guard.test.ts
+  Panel.svelte:36, parts/Equation.svelte:47, parts/Words.svelte:27 and :30 (none of these files is in the diff),
+  routes/present/show/+page.svelte:236 (101; the `<!-- svelte-ignore ... -->` directive, which must stay on one line)
+$ grep over the added comment lines and test titles for before|used to|no longer|still|always has|always had|as before|previously|now|PRn|Znnn|dates
+  -> 10 hits, each a description of present behaviour ("still in the layout", "taken before any other holder lets go", "at `now`"); none is history
+
+r1.cjs (the round's own script):
+repair 2: audience reloaded (+1504 ms): presenter mode presenter, key engine.md#0; audience {"mode":"audience","key":"engine.md#0","ended":false,...}
+repair 2: next slide after the reload: presenter key summary:pillars; audience key summary:pillars; windows alive 2
+repair 2: 4 s later: presenter mode presenter; audience ended false
+repair 2: audience closed (+1.0 s): presenter mode presenter
+repair 2: audience closed: pane back to the view after 3047 ms
+repair 1: presenter page reloaded: audience "{\"ended\":true,\"text\":\"The presenter screen has ended. Close\"}"
+repair 1: Presenter again, the existing window's address loaded again (what show.ts open does): audience {"mode":"audience","key":"transition.md#0","ended":false,...}; presenter key transition.md#0
+c2.cjs:
+case 8: End control: pane view at title.md#0; audience destroyed true
+case 8: Esc in the presenter: pane view at summary:pillars; audience destroyed true
+case 8: audience closed by hand: pane view at summary:pillars
+case 8: presenter tab closed: audience destroyed true
+c7.cjs:
+case 7: pane 1 pressed Presenter: pane0 view@engine.md#0, pane1 presenter@title.md#0; audience windows 1; first audience window destroyed false; audience shows {"mode":"audience","key":"title.md#0",...}
+case 7: pane 1 moved once: pane1 presenter@engine.md#0; audience engine.md#0
+case 7: later: audience window alive true; pane0 view@engine.md#0; pane1 presenter@engine.md#0
+c1.cjs, c10.cjs, c12.cjs, c22.cjs (rerun for the verdicts over the whole diff): every line matches the first review's quotes, e.g.
+case 7: Presenter pressed again: windows 2 -> 2; focus asked of the audience window 1 time(s); presenter still presenter
+case 21: after the switch: pane0 view@, pane1 presenter@b2.md#0; audience A destroyed true, B destroyed false
+case 12: presenter page reloaded: audience {"ended":true,"text":"The presenter screen has ended. Close","buttons":["Close"]}
+case 22: address opened directly (no opener): {"ended":true,"text":"The presenter screen has ended. Close this tab to leave.","buttons":[],"opener":false,"bridge":"undefined"}
+p1.cjs (my probe: the desktop host emulated. Every window.open is answered deny, so the page gets null. The first address makes a hidden window, and a later address is loaded again into that window, which is what show.ts `open` does. The second Presenter press comes while the audience is live):
+probe: before the second press: loads 1; audience buttons []; audience key engine.md#0
+probe: 0.7 s after the second press: loads 2; presenter mode presenter; audience {"mode":"audience","key":"engine.md#0","ended":false,...}; audience buttons ["Full Screen"]
+probe: 4.7 s after: presenter mode presenter key engine.md#0; audience key engine.md#0 ended false
+probe: messages the presenter's page heard, ms from the press: [[75,"closed"],[286,"opened"],[286,"slide"]]
+```
+
+Closures the round claims:
+- **Behaviour 1 (Z688 (1)): closed.**
+  - In `show.ts:109-120`, `open` calls `loadURL` on an existing window and then `bringForward`.
+  - r1 reproduces the result: after a presenter reload, the ended audience page comes back live and follows the slide.
+  - The host's own call is still a landing look.
+  - The fix does more than the finding needed; see Finding 1.
+- **Behaviour 2 (Z688 (2)): closed.**
+  - In `present.svelte.ts:298-310`, a `closed` heard after `opened` starts the 3 s wait.
+  - `opened` clears the wait (:301-304), and `finish` clears it too (:279).
+  - r1 reproduces both halves: the reload keeps the talk, and a close ends it after 3047 ms.
+- **The comment lines over 100 columns: closed.** The awk above finds no comment line over 100 columns in a file of the diff, except the svelte-ignore directive.
+- **`open`'s doc comment: closed.** `Present.svelte:224-228` now begins "End the pane's presentation if it runs, then point the pane at another deck".
+- **Final test:quick on the last tree: closed.** My rerun above passes.
+
+No closure was made by removing a check.
+
+The questions put to this run:
+- **Can the 3 s wait leave a presentation running with no audience window forever?** No path through the wait does.
+  - `held.returning` is cleared only by an `opened` (:301-304) and by `finish` (:279), and `finish` ends the presentation.
+  - So a wait that started always ends the presentation, unless some page with that channel name posts `opened`.
+  - The paths that leave the presenter with no window do not go through the wait. They are Finding 5 below, which the first round's code already had.
+- **Does a real close still end?** Yes: r1 shows the pane back to the view after 3047 ms.
+- **Do End, Esc and the presenter tab closed still end at once?** Yes.
+  - c2 shows the audience window destroyed within 1.5 s for each of the three.
+  - End and Esc call `presenting.end`, and the closed tab calls `end` through the `link.held()` effect. None of the three goes through the wait.
+- **Can `loadURL` then `bringForward` race the old page's `pagehide` `closed` into ending the new presentation?** Not in the state Z688 (1) is for.
+  - After a presenter reload, the old audience page is already `ended`, so its `pagehide` sends nothing (`show/+page.svelte:197`).
+  - Even if it did send `closed`, the new presenter's `heard` is false and it would ignore it (:307).
+  - When the audience is live (a second press, or a takeover from another pane or window), `closed` starts the wait and the reloaded page's `opened` clears it. p1 measured `closed` at 75 ms and `opened` at 286 ms.
+  - The presentation ends only if the reloaded page takes more than 3 s to post `opened`. That message is posted in `onMount`, before the deck read (:194).
+  - Not measured in the packaged app.
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1 (Start): holds.
+  - Behaviour 1 is closed: r1 item 1, and `show.ts:116-119`.
+  - Evidence: c1, c7 and r1, plus the first review's c6 and c6b, whose code the round does not touch.
+  - Finding 1 states the visible cost of the fix.
+- 2 (The audience window): violated in one state of the desktop app (Finding 4). Otherwise it holds: c1, c22 and r1 rerun, c18 from the first review, and the desktop half read in `show.ts`, `windows.ts` and `app.ts`.
+- 3 (Kept in step): holds. c1 cases 2 and 3 and c10 rerun, c11 from the first review; `parseMessage` is unchanged in the round.
+- 4 (The presenter screen): holds (c1, and c10's case 21 lines, rerun).
+- 5 (The saved deck): holds. c9 and c9b from the first review; the round does not touch `drafts` or `deck` in `Present.svelte:142-146`.
+- 6 (End): holds.
+  - c2, r1 and c12 rerun.
+  - A close by hand, and Close Window in the app, now end after 3 s, as Z688 rules.
+  - HELP, docs/views.md and DESIGN.md state the delay.
+- 7 (Text and docs): violated in one sentence of docs/views.md (Finding 2). Otherwise it holds: HELP.md:103, DESIGN.md:478, the windows bullet and docs/window.md:7 are true of the tree.
+
+Cases of the brief's "Cases":
+
+- 1: met (c1 rerun).
+- 2: met (c1 rerun).
+- 3: met (c1 rerun).
+- 4: met (c1 rerun).
+- 5: met (c1 rerun).
+- 6: met. c6 and c6b from the first review; the key handling is not in the round's delta.
+- 7: met in a browser (c1 and c7 rerun). In the app, by reading and the p1 emulation: one window, brought forward, its page loaded again (Finding 1).
+- 8: met. c1 and c2 rerun; a close by hand ends after about 3 s (r1, 3047 ms).
+- 9: met (first review's c9 and c9b; not in the round's delta).
+- 10: met (c10 rerun).
+- 11: met (first review's c11; the message shapes are unchanged in the round).
+- 12: met (c12 rerun). The hidden half has the first review's caveat: the window still reads `visibilityState` "visible".
+- 13: met (the window-guard test run above).
+- 14: met (the window-guard test run above).
+- 15: met by the first review's `place-case.mjs` run. Not rerun this round: the round section names no change to `place.ts`.
+- 16: not verifiable here. It is the landing look, which should also cover a second press while presenting (Finding 1) and a takeover from a second window (Finding 4).
+- 17: met by reading (first review); the look at landing.
+- 18: the rest half met (first review's c18); the full-screen half is the look.
+- 19: not verifiable here; the look in light and dark.
+- 20: met (c1 rerun).
+- 21: met (c10 rerun, its case 21 lines).
+- 22: met (c22 rerun).
+
+### Findings
+
+1. **Behaviour.** `src/desktop/windows/show.ts:116-119`: "`void open.win.webContents.loadURL(url); bringForward(open.win);`".
+   - **What is wrong.** Every Presenter press that finds an existing audience window in the app now reloads its page. That includes a second press during a live presentation, where nothing had ended.
+     - The finding only needed an ended page reloaded. Z688 (1) ruled the reload for every existing window, and the builder followed that ruling.
+     - In a browser, a second press during a live presentation only calls `focus()` on the handle (`present.svelte.ts:313-314`, and c1 "focus asked ... 1 time(s)"), so the two hosts now differ.
+   - **What the reader sees in the app.** p1 shows these (loads 1 to 2, buttons [] to ["Full Screen"]):
+     - the projector's page reloads, and the slide is replaced by the loading line until the deck arrives;
+     - the Full Screen control comes back for 2 s whenever the window does not fill the screen (the one-display case);
+     - the talk passes through `closed` and then `opened`, so it ends if the reloaded page takes more than 3 s to post `opened`;
+     - a document full screen the reader entered with F in a one-display audience window is left on the reload (read from the code, not run, since a hidden window shows no real full screen).
+   - **Where it should have been stated.** The round's report gives no before and after for this.
+   - **Failure scenario.** A speaker on one display has put the audience window in full screen with F. They press Presenter to bring the window back in front. The projector reloads, leaves full screen, and shows the Full Screen control.
+   - **Fix direction.** Reload only an ended page: the host reads `[data-ended]` through `executeJavaScript` before `loadURL`. Alternatively, the ended audience page keeps its channel and re-arms on a new presenter's `slide`. Either one reverses part of Z688 (1), so it is the orchestrator's to rule. Stating the reload as accepted would be the lazy option.
+   - **Verdict:** none (cases 7 and 16 hold as written).
+2. **Standards.** docs/views.md, the Present section, the new paragraph: "Presenter pressed again loads the audience window's page again and brings it forward".
+   - **What is wrong.** The sentence is true in the app. In a browser it is false for a live presentation: `raise` (`present.svelte.ts:313-321`) focuses the open handle, and c1 shows "windows 2 -> 2; focus asked of the audience window 1 time(s)" with no load. The page describes both hosts.
+   - **Failure scenario.** A reader in a browser expects a second press to refresh the audience page, and it does not.
+   - **Fix.** Small, at landing: "in the desktop app it loads the audience window's page again; in a browser it brings it forward".
+   - **Verdict:** item 7 violated in this sentence.
+3. **Standards.** `src/lib/views/academic/present/Present.svelte:48`: "Full screen is the box's own (fullscreen.svelte.ts):".
+   - **What is wrong.** The diff moved the file to `screen/fullscreen.svelte.ts` (the import at :74). The same head comment names `screen/Stage.svelte` and `presenter/Presenter.svelte` with their folders. The round rewrapped this head comment and left the path as it was.
+   - **Failure scenario.** A maintainer looks for `present/fullscreen.svelte.ts` and does not find it.
+   - **Fix.** Small, at landing.
+   - **Verdict:** none.
+4. **Behaviour.** This is in the whole diff, not the round's delta. `src/desktop/windows/show.ts:109-119`: "`const open = list.find((one) => one.key === key); ... bringForward(open.win);`".
+   - **What is wrong.** When another window asks for an existing audience window, `Shown.from` stays the first window. Brief item 2 and Z685 (6) say the audience window is placed against the window that asked and closes with it.
+   - **Failure scenario.** In the app, with two main windows (Cmd+N), window B's pane takes over a deck that window A presented. The lock is stolen, A's presentation ends quietly, and the host reuses the window. When the reader closes window A, `closeFor(A)` closes the audience window, and B's presentation ends 3 s later. The audience window's links are also routed from A.
+   - **Fix.** Small, at landing: set `open.from = from` on reuse (the key already pins the origin).
+   - **Verdict:** item 2 violated in this state. Read against the code only; it is a look at landing.
+5. **Behaviour.** This is in the whole diff, from the first round's code, and it answers the "forever" question. `src/routes/present/show/+page.svelte:119-136` and `:196-198`: "`} else if (reloaded()) { finish(); }`" and "`if (!leaving && !ended) channel?.postMessage({ kind: 'closed' });`".
+   - **What is wrong.** An audience page whose deck read fails twice ends itself without telling the presenter screen.
+     - It shows "The presenter screen has ended." while the presenter screen is still running.
+     - Its Close then sends no `closed`, because `ended` is true and the channel is closed.
+     - The presenter screen goes on presenting to no window until End.
+     - A crashed audience renderer, which fires no `pagehide`, leaves the presenter in the same state. After this round, a Presenter press recovers that state in the app.
+   - **Failure scenario.** A read fails twice in a row while presenting, for example across a server restart. The speaker reads "The presenter screen has ended." on the projector, presses Close, and the presenter screen keeps counting with nothing on the projector.
+   - **Fix.** Small: post `closed` before `finish` on that path. The presenter then ends after the 3 s wait.
+   - **Verdict:** none. Item 2's "reloads once, then shows the end sentence" holds as written.
+
+Proof: none. Spec: none, beyond Finding 1, where the fix does more than the finding needed but stays inside Z688 (1)'s text.
+
+### Declined to judge
+
+- **The host's runtime of `open`, not checked.** This covers `loadURL` on a real audience window, simple full screen kept across the reload, a document full screen lost on it, and how long a reloaded page takes to post `opened` in the packaged app compared with 3 s. These need the desktop app, which may not be started; they are the landing look. p1 only emulates the host in a plain Electron process.
+- **The round's delta, not cut exactly.** No tree state was recorded when the round was sent. I read the files the round section names against the whole diff, so a change in another file during the round would show only in the whole-diff verdicts.
+- **Cases 6, 9, 11, 15 and 18, not rerun this round.** Their code is outside what the round section names. Their verdicts rest on the first review's runs.
+- **The builder's case harness sets no `userData`.** So its round runs (r1, c2, c7) used Electron's default folder `~/Library/Application Support/Electron`, as the first review noted. The brief binds the builder to no such rule; my runs set `userData` under my scratchpad.
+- **Esc in the pane's full screen (the first Esc leaves, the next ends).** Unchanged from the first review: a hidden window shows no real full screen, so this is the landing look.
+
+Reviewer usage: agent id not known to me (read it from the runner's record), claude-opus-5-5, tokens not known to me (read them from the completion notice), about 40 tool uses, about 25 minutes (not verified).
+
+Agent: x.
+
+## Closed
+
+- First review, Spec 1 (the print page outside the write list): accepted, the deck read kept in one place.
+- First review, Spec 2 (the message kind `left`): accepted as the orchestrator's decision on the wire shape; the brief contradicted itself between item 6 and case 12.
+- First review, Proof 1 (the quoted run not the final tree's): closed in round 1, the final run quoted, rerun green by the round's reviewer.
+- First review, Standards 1 and 2 (comment lines, `open`'s doc comment): closed in round 1.
+- First review, Standards 3 (two read-only git commands by the builder): noted, no change to the tree.
+- First review, Behaviour 1 and 2: closed in round 1 under Z688.
+- Round 1, Finding 1 (every press reloads the audience page in the app): fixed at landing under Z689, the host loads the address again only when the page shows `data-ended`.
+- Round 1, Finding 2 (docs/views.md's sentence on a second press): fixed at landing, both hosts named.
+- Round 1, Finding 3 (`Present.svelte`'s head comment path): fixed at landing, `screen/fullscreen.svelte.ts`.
+- Round 1, Finding 4 (`Shown.from` kept on reuse): fixed at landing, `open.from = from` on reuse.
+- Round 1, Finding 5 (an audience page that ends after two failed reads tells no one): fixed at landing, `closed` posted before `finish` on that path.
+

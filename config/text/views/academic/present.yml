@@ -2,6 +2,12 @@
 text:
     present:
         at: '{0}'
+        audience_close: Close
+        audience_close_tab: Close this tab to leave.
+        audience_ended: The presenter screen has ended.
+        audience_full: Full Screen
+        audience_full_tip: Show the slide on the whole screen (F)
+        audience_title: 'Presenting: {0}'
         col_field: Field
         col_headline: Headline result
         col_mechanism: Core mechanism
@@ -36,7 +42,7 @@ text:
         failed_network: The change did not reach the server.
         figure_alt: A figure of the project
         figure_missing: 'missing figure: {0}'
-        key_hint: Arrow keys or Space move through the deck | O opens the overview | F shows it full screen
+        key_hint: Arrow keys or Space move through the deck | O opens the overview | F shows it full screen | P opens the presenter screen
         loading: Reading the deck ...
         menu_delete: Delete Slide
         menu_duplicate: Duplicate Slide
@@ -49,6 +55,19 @@ text:
         overview_glyph: cards
         present: Present
         present_tip: Show the deck on the whole screen (F, while the deck has the focus)
+        presenter: Presenter
+        presenter_clock: Time of day
+        presenter_end: End
+        presenter_end_of_deck: End of the deck.
+        presenter_end_tip: End the presentation and close the audience window (Esc)
+        presenter_next: Next slide
+        presenter_no_notes: No notes for this slide.
+        presenter_notes: Notes
+        presenter_pause: Pause
+        presenter_reset: Reset
+        presenter_resume: Resume
+        presenter_timer: Timer
+        presenter_tip: Show the presenter screen here and the slide alone in a window for the audience (P, while the deck has the focus)
         previous: Previous
         read_failed: 'The file of the slide could not be read: {0}'
         results: Results

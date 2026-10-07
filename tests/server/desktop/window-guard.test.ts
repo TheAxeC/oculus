@@ -8,6 +8,7 @@ import { linkDecision, movedPort } from '../../../src/desktop/decide/links.ts';
 import { permissionGranted } from '../../../src/desktop/decide/permissions.ts';
 import { mayCall, printTarget, senderOf } from '../../../src/desktop/decide/sender.ts';
 import { windowPreferences } from '../../../src/desktop/decide/window-options.ts';
+import * as channels from '../../../src/desktop/decide/channels.ts';
 import {
     CLOSE_FIND,
     FIND,
@@ -87,6 +88,53 @@ describe('the desktop host decisions', () => {
             'not an address'
         ]) {
             expect(printTarget(refused, ORIGIN), refused).toBeNull();
+        }
+    });
+
+    it('sends the audience route of its own server, named by a root and a path and nothing else, to an app window of its own', () => {
+        const route = `${ORIGIN}/present/show`;
+        const where = (address: string) => linkDecision(address, ORIGIN);
+        expect(where(`${route}?root=hub&path=deck`)).toEqual({
+            kind: 'audience',
+            root: 'hub',
+            path: 'deck'
+        });
+        expect(where(`${route}?path=talks%2Fa&root=hub`)).toEqual({
+            kind: 'audience',
+            root: 'hub',
+            path: 'talks/a'
+        });
+        expect(where(`${route}?root=hub&path=`)).toEqual({
+            kind: 'audience',
+            root: 'hub',
+            path: ''
+        });
+        for (const other of [
+            `${route}?root=hub`,
+            `${route}?path=deck`,
+            `${route}?root=&path=deck`,
+            `${route}?root=hub&path=deck&x=1`,
+            `${route}?root=hub&path=deck#top`,
+            route,
+            `${ORIGIN}/present/print?root=hub&path=deck`,
+            `${ORIGIN}/present/show/?root=hub&path=deck`,
+            `http://127.0.0.1:8790/present/show?root=hub&path=deck`,
+            `https://example.org/present/show?root=hub&path=deck`
+        ]) {
+            expect(where(other), other).toEqual({ kind: 'browser' });
+        }
+        expect(where('file:///present/show?root=hub&path=deck')).toEqual({ kind: 'refused' });
+    });
+
+    it("answers no bridge channel to the audience window's page", () => {
+        const top = { origin: ORIGIN, isTop: true, pathname: '/present/show' };
+        expect(senderOf(top, ORIGIN)).toBe('audience');
+        expect(senderOf({ ...top, isTop: false }, ORIGIN)).toBeNull();
+        expect(senderOf({ ...top, origin: 'https://example.org' }, ORIGIN)).toBeNull();
+        const named = Object.values(channels).filter((value) => typeof value === 'string');
+        expect(named).toContain(SAVE_LAYOUT);
+        for (const channel of named) {
+            expect(mayCall('audience', channel), channel).toBe(false);
         }
     });
 

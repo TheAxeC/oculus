@@ -16,9 +16,8 @@
 
     import { onMount, tick } from 'svelte';
     import Slide from '$lib/views/academic/present/Slide.svelte';
-    import { deckShape, type Deck } from '$lib/state/life/present';
-    import { readAnswer } from '$lib/state/sources/fs-transport';
-    import { readAs } from '$lib/data/shapes/shapes';
+    import type { Deck } from '$lib/state/life/present';
+    import { readDeck } from '$lib/state/life/present.svelte';
     import { savedTheme, themeClass } from '$lib/state/shared/words/appearance';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
     import { t } from '$lib/state/shared/words/text';
@@ -62,22 +61,12 @@
     }
 
     /** Read the deck the address names. */
-    async function read(): Promise<Deck | string> {
+    function read(): Promise<Deck | string> {
         const asked = new URLSearchParams(window.location.search);
-        const query = new URLSearchParams({
-            root: asked.get('root') ?? '',
-            path: asked.get('path') ?? ''
-        });
-        try {
-            const response = await fetch(`/api/deck?${query.toString()}`, {
-                headers: { 'x-oculus-token': data.token }
-            });
-            const answer = await readAnswer(response);
-            if (!answer.ok) return answer.error;
-            return readAs(deckShape, answer.body) ?? 'deck';
-        } catch (error) {
-            return error instanceof Error ? error.message : String(error);
-        }
+        return readDeck(
+            { root: asked.get('root') ?? '', path: asked.get('path') ?? '' },
+            data.token
+        );
     }
 
     onMount(() => {
