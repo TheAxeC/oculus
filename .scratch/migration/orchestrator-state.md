@@ -51,9 +51,9 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D23b-brief-check.md (a87b263e7d9067812, claude-opus-5-5, 231,512 tokens, 94 tool uses, 13.2 min)
   shared_paths: with D45: src/lib/shell/keys/keys.ts and workbench-keys.svelte.ts (each adds its own bindings; D23b moves no file D45 edits), src/lib/views/sources/source/language/ (D45 the LaTeX files, D23b lsp.ts), config/text/statusbar.yml and app.yml (different keys), DESIGN.md:571-572, HELP.md, docs/views.md and docs/window.md (different rows and lines); with PR4: DESIGN.md:570-574 and docs/window.md:7; sentence-level edits in different places, whichever lands second carries the other's text
   builder_usage: 140,021 tokens, 148 tool uses, 28.2 min before Z687; 313,076 tokens, 896 tool uses, 247.6 min in all (claude-sonnet-5-5)
-  reviewer_report: (a4154cbe655a3b836, claude-opus-5-5, running)
+  reviewer_report: agents/reviews/D23b-refuter.md (a4154cbe655a3b836, claude-opus-5-5, 138,932 tokens, 133 tool uses, 23.8 min)
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-10-07: agents/briefs/D23b-round1.md, 16 items)
 ```
 
 ## The standing demands (from Axel, in force)

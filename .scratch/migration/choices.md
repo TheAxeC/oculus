@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z692 (2026-10-07, step D23b, the orchestrator, automode): the Svelte plugin of the TypeScript server
+
+- Chosen: the plugin that lets a rename in a `.ts` file reach the `.svelte` files is loaded only after the repository's Svelte config is approved, since it loads the repository's own Svelte, which oculus never runs unapproved; the tooltip and the docs say so.
+- Not chosen: loading it always (it would run the repository's code unapproved), or patching the plugin.
+
 ## Z691 (2026-10-07, step D23b, the orchestrator, automode): hierarchy items a server does not offer
 
 - Chosen: Show Call Hierarchy and Show Type Hierarchy are left out of the editor's right-click menu and the palette when the file's language server cannot answer them, as VS Code does.
