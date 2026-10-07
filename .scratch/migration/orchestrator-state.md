@@ -38,7 +38,7 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with Q126 and D23: tools/oculus/DESIGN.md, docs/views.md, docs/files-and-search.md, docs/configuration.md, HELP.md (item- and paragraph-level edits; whichever lands second carries the other's text, Z642's rule); part 8 waits for Axel's ruling Z667, sent to the builder by message
   builder_usage: a348cc74b67ed634e, 200,916 tokens, 54 tool uses, 30.0 min (report agents/reviews/PR3-report.md); round 1: 309,126 tokens, 179 tool uses, 27.0 min (report rewritten; its guarded.md lines saved as agents/reviews/PR3-guarded.diff)
   reviewer_report: agents/reviews/PR3-refuter.md (aa378ab34c21e2821, claude-opus-5-5, 126,998 tokens, 108 tool uses, 15.8 min); over round 1: a22d168bb7ca66506, claude-opus-5-5, 261,986 tokens, 75 tool uses, 16.6 min (section 'Repair round 1, refuted'; R1 to R7 and Z675 closed at landing)
-  landing: not-started
+  landing: cherry-picking
   round: 1
   round_sent: 2026-10-07, agents/briefs/PR3-round1.md (Z674); the tree at sending: `git diff --binary 272f60b4 | shasum` d692b4109f37, 26 untracked files
 - step: D23c
@@ -54,9 +54,10 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D23c-brief-check.md (a81066bbccca96733, claude-opus-5-5, 188,115 tokens, 51 tool uses, 7.8 min)
   shared_paths: with PR3: tools/oculus/DESIGN.md, docs/views.md, docs/files-and-search.md (sentence-level edits in different items: D23c's language server, References and locked-file items, PR3's Present items; whichever lands second carries the other's text, Z642)
   builder_usage: a12b39260f0c0a455, 184,970 tokens, 194 tool uses, 46.1 min (report agents/reviews/D23c-report.md); a80adc4082930a5ef before it, stopped mid-build, its usage not recorded
-  reviewer_report: agents/reviews/D23c-refuter.md (af53f7cfd7795c93a, claude-opus-5-5, running)
+  reviewer_report: agents/reviews/D23c-refuter.md (af53f7cfd7795c93a, claude-opus-5-5, 323,026 tokens, 109 tool uses, 18.8 min)
   landing: not-started
-  round: 0
+  round: 1
+  round_sent: 2026-10-07, agents/briefs/D23c-round1.md (Z676, Z678); the tree at sending: `git diff --binary 951b61e3 | shasum` 8758cd15fbe8, 13 untracked files
 ```
 
 ## The standing demands (from Axel, in force)

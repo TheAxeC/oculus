@@ -1,6 +1,6 @@
 In flight (2 of 6 slots):
 - PR3 (Present decks edited and generated, PDF export): reviewed; landing next.
-- D23c (library definitions read-only, the symbol selected on open): review.
+- D23c (library definitions read-only, the symbol selected on open): repair round 1.
 
 Queued, in order (23 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): after D23c.

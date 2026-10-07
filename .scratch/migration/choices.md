@@ -4,6 +4,41 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z678 (1) (2026-10-07, step D23c, the orchestrator, automode): a remembered cursor past the end of its line
+
+- Chosen: the cursor goes to the end of the line with nothing selected; the word under it is selected only when the remembered column lies inside the line.
+- Not chosen: selecting the word that ends the line (the lazy option, it selects text the reader never pointed at).
+
+## Z678 (2) (2026-10-07, step D23c, the orchestrator, automode): a library file reached through a link that is later pointed elsewhere
+
+- Chosen: keep it as built. The library tab reads the file the link pointed to when the language server named it, and never any other file.
+- Not chosen: refusing the read once the link points elsewhere, which refuses a file that is still exactly what the server named.
+
+## Z678 (3) (2026-10-07, step D23c, the orchestrator, automode): the source tab's head comment, cut to fit the size limit
+
+- Chosen: the comment gets back every sentence D23c removed, and code moves out of `Source.svelte` into a file beside it to stay within 520 lines.
+- Not chosen: leaving the comment shortened (the lazy option, and against the rule that comments are never cut to fit a limit).
+
+## Z678 (4) (2026-10-07, step D23c, the orchestrator, automode): what a link press selects in the file it opens
+
+- Chosen: nothing, as before D23c. Only an open that names a symbol (go to definition, the Outline, References) selects its name.
+- Not chosen: selecting the file's first word on every link press (the lazy option, a change nobody asked for).
+
+## Z678 (5) (2026-10-07, step D23c, the orchestrator, automode): F4 and Shift+F4 through References results
+
+- Chosen: each location opens with its word selected, the same as a press on the References row.
+- Not chosen: going to the line only, which makes the key and the press differ.
+
+## Z678 (6) (2026-10-07, step D23c, the orchestrator, automode): F12 into a library file too large or binary to show
+
+- Chosen: F12 opens the read-only tab, which says why it cannot show the file.
+- Not chosen: F12 doing nothing and saying nothing (the lazy option, as built).
+
+## Z678 (7) (2026-10-07, step D23c, the orchestrator, automode): the exception to the dot-folder rule for Python's own install
+
+- Chosen: the exception never applies when the Python install reports the home folder, the filesystem root or a folder holding the home folder, so `~/.ssh` and every other dot folder stay refused whatever the interpreter reports.
+- Not chosen: leaving it as built, where an interpreter whose install is the home folder would open every dot folder in it (the lazy option).
+
 ## Z676 (2026-10-07, step D23c, the orchestrator, automode): where the keyboard goes after a press in the Outline
 
 The question: D23c makes a press on a symbol in the Files view's Outline select the symbol's name in the editor. As built, the keyboard then stays in the Outline, where before D23c it moved into the editor.
