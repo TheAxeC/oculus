@@ -1,5 +1,5 @@
 In flight (1 of 6 slots):
-- X3e (Files lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop): repair round 1 building (Z711 taken in automode).
+- X3e (Files lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop): round 1 built and refuted (four findings); landing next, after D11's look fixes (Axel's list, state file 21:45).
 
 No step can be prepared now: M8 waits for X3e and D11 to land; D43 waits for M8; D33 waits for D11 and D28; D28 waits for X3e. The other four slots stay empty until one of these lands.
 
@@ -25,7 +25,7 @@ Queued, in order (17 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D11 (the debug client for rite), 2026-10-07; the look on TEST owed.
+- D11 (the debug client for rite), 2026-10-07; looked at on the 8796 scratch oculus; four look fixes in the gate and four more in work (Axel's list, state file 21:45).
 - D15 (PDF reading), 2026-10-07, a84214da; looked at on TEST, two fixes from the look.
 - D45 (LaTeX as VS Code's LaTeX Workshop), 2026-10-07, 0753a5e7.
 - D23b (rename, workspace symbols, hierarchies, the TypeScript and Svelte servers), 2026-10-07, 639820b9.

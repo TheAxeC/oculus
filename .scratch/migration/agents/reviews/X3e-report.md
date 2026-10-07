@@ -1,19 +1,33 @@
-Not done: cases 121, 125 and 126, the application half of case 134 and the answer half of case 124 are not verified (each needs the running page, the real folder panel or the desktop app, and goes to the orchestrator's look on TEST); `tests/checks/config/integrity.test.ts` fails 2 of its 8 tests in this worktree because the worktree has no `deck/` folder; every other item of the brief is built and checked as the table in part 4 shows.
+Not done: verify 12a and 12b (the Delete and Graph records, cases 104 to 107) were not run in this round, because their fixtures are git clones and worktrees and this round's rule is that the builder runs no git command (the clash is item 1 of part 2); cases 121, 125 and 126, the application half of case 134 and the answer half of case 124 are not verified (each needs the running page, the real folder panel or the desktop app, and goes to the orchestrator's look on TEST); `tests/checks/config/integrity.test.ts` fails 2 of its 8 tests in this worktree because the worktree has no `deck/` folder; every other item of the brief and the eight items of round 1 is built and checked as part 4 shows.
 
 # X3e report: the Files view's lists reordered by drag and by key, the tree following the disk, nested repositories, the Source Control defects, the git reads off the event loop and the folder panel
 
-The builder worked only in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3e` and ran no git command. "Base" below is `.agents/worktrees/X3e-base/tools/oculus`. The scratch files of the runs are in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad` (named `x3e-*`).
+The builder worked only in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/X3e` and ran no git command. "Base" below is `.agents/worktrees/X3e-base/tools/oculus`. The scratch files of the runs are under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad`. Files named `x3e-*` in the parts that describe round 0 were written then and are no longer on disk; the files of round 1 there are `x3e-r1-after-final.out`, `x3e-proof/tests/proof/` (the three proof tests), `v4-results.txt` and the `f*.out` files of the final pass.
 
 ## 1. What does not reproduce or is not verified
 
-- Case 121 (the hub Graph, a Delete and the other reads under builder load on TEST), case 125 (the real panel and a page reload), case 126 (Cancel and Escape on the real panel), the desktop-app half of case 134 and the answer half of case 124 (the next press after the Vite restart was started and its answer was not awaited, because the fake waits 60 s and the request was cut at 20 s): not verified here. What each look should see is in part 7.
-- `tests/checks/config/integrity.test.ts`: 2 failed, 6 passed. The messages are `deck folder deck is not in /Users/axelfaes/workspace/research-hub/.agents/worktrees/X3e` (`grep -E "FAIL|deck" x3e-r11-integrity.out`). `ls deck` in the worktree fails; the worktree holds no `deck/` folder, and the step changes nothing about it. It was not run where `deck/` exists because that is the main checkout.
-- Under this machine's load (load average 6 to 16) the tree checks and the git tests run past the 5 s vitest default; the tree checks and the guarded set were run with `--testTimeout 0 --hookTimeout 0`. In run 10 one test of `tests/checks/imports/cycles.test.ts` timed out at 5000 ms inside the guarded set and passed alone (`Tests 7 passed (7)`, 3.76 s); run 11 passed whole.
-- No premise of the brief gave a wrong result in the first run; the line drifts and the three small differences are in part 10.
+- Verify 12a (the Delete, cases 104 and 105) and 12b (the Graph, cases 106 and 107) were not run in round 1. The brief builds their fixtures with `git clone --shared`, `git worktree add` and `git checkout`, and the rule of this round is that the builder runs no git command of any kind. Round 0 ran both (the rows in part 4 give the numbers), and the reviewer reran both on the round-0 tree and found them green (`agents/reviews/X3e-refuter.md`, "Verify 12a" and "Verify 12b"). The files changed since round 0 handed back are listed in part 4 (row 12); none is under `src/lib/server`, `src/lib/data` or `config`, which is where the two records read. They are not verified on the tree as it stands now.
+- Verify 12c (the folder panel, case 122) was rebuilt without git (a copy of the base code and a link to the worktree) and run in round 1: base P1b, P2a and P3a fail, the worktree passes all six parts (part 4). The folders `tree` and `green` of that run were removed afterwards, so the orchestrator's `git worktree add` finds no folder in its way; `$TMPDIR/x3e-red` now holds `red.mjs`, `bin/osascript`, `home` and `fake.log` (`ls -la` run after the removal).
+- Case 121 (the hub Graph, a Delete and the other reads under builder load on TEST), case 125 (the real panel and a page reload), case 126 (Cancel and Escape on the real panel), the desktop-app half of case 134 and the answer half of case 124 (the next press after the Vite restart was started in round 0 and its answer was not awaited, because the fake waits 60 s and the request was cut at 20 s): not verified here. What each look should see is in part 7.
+- The browser parts of round 1 (a root dragged from one tab over another tab's tree, the head pill drawn on a branch and detached, the tab mark of a deleted file) are the orchestrator's look on TEST at landing. The quoted runs of part 3b cover the controller, the pill builder and the request count.
+- The proofs of the server-side cases in part 4b were run in round 0 (run 11) and not run again in round 1; the scratch copy that held them was not kept. The server files they read are unchanged since (part 4, row 12).
+- `tests/checks/config/integrity.test.ts`: 2 failed, 6 passed (part 4, row int). The finding is `deck folder deck is not in /Users/axelfaes/workspace/research-hub/.agents/worktrees/X3e`. `ls deck` in the worktree fails; the worktree holds no `deck/` folder, and the step changes nothing about it. It was not run where `deck/` exists because that is the main checkout.
+- Under this machine's load the tree checks, the guarded set and the verify 4 files ran past the 5 s vitest default; they were run with `--testTimeout 0 --hookTimeout 0`.
+- No premise of the brief gave a wrong result in the first run; the line drifts and the small differences are in part 10.
 
 ## 2. Open items of the state file
 
-none. `sed -n 155,170p .scratch/migration/orchestrator-state.md` shows the heading "Open items (only what Axel must rule on; ...)" followed by no entry before the next heading.
+The state file's section, copied at the time of writing (`sed -n 150,154p tools/oculus/.scratch/migration/orchestrator-state.md`); it holds no entry:
+
+```
+## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
+
+An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+```
+
+Raised by this report for the orchestrator, because the state file does not list it:
+
+1. **Verify 12a and 12b against the rule of no git command (a clash between two established rules).** The brief's verify 12 builds `$TMPDIR/x3e-red` with `git clone`, `git worktree add` and `git checkout`, and the round's rule is that the builder runs no git command at all. Options: (a) the orchestrator builds the fixtures as the brief says and the two records are run on the tree as it stands, which ends the cause; (b) the round-0 results and the reviewer's green rerun on the round-0 tree stand, which costs nothing and leaves the two records unrun on the tree that lands. Recommendation: (a). Option (b) is the lazy one. The harnesses `red2.mjs`, `loop-red.mjs` and `writer1.sh` are written from the records and need only their fixtures.
 
 ## 3. The first run of the 141 cases on the unchanged tree
 
@@ -180,35 +194,367 @@ Base-copy red runs (verify 12, first run, before any change), quoted as printed:
 
 The rows added to guarded tests, run on a scratch copy of the base (`x3e-basecopy`, `node_modules` linked, the new test files overlaid, the `TEXT` arguments removed from the git tests) before the change (`x3e-guarded-base.out`): 7 files, 30 failed | 66 passed. By file: `roots.test.ts` 7 rows fail; `notes.test.ts` 5 rows fail (`writeNoteOrder is not a function`); `picker.test.ts` 5 rows fail (its `-128` row passes on the base and is judged by reading); `workspaces.test.ts` 3 rows fail (`not-an-action`); `git-write.test.ts` 2 rows fail (`x3e-gw-base.out`: the untracked row `expected false to be true` at :159, the modified row `expected 'the working tree is dirty...' to be 'The working tree is dirty...'` at :160); `settings.test.ts` 7 `repositoryScanDepth` rows fail; `detached.test.ts` 1 row fails. The token rows of `write.test.ts`, `git.test.ts` and `auth.test.ts` with the capitalised sentence: 5 failed | 3 passed on the base.
 
+### 3b. Round 1: the review's findings, the eight items and the six cases
+
+"Round 0" below is the tree as the first hand-back left it; the review of it is `agents/reviews/X3e-refuter.md`. Each case was run first on the round-0 code and then on the tree now. The runs are proof tests in a scratch copy of the worktree (`x3e-proof/tests/proof/round1.test.ts`, `pills.test.ts` and `gone.client.test.ts`, with `requireAssertions` set to false in that copy only because the files print results); the round-0 lines were printed by those files on the round-0 code and the lines after by `npx vitest run tests/proof --testTimeout 0 --hookTimeout 0` on the tree now (`Test Files 3 passed (3)`, `Tests 6 passed (6)`). The round-0 pill expression in case 4 is a copy of the round-0 `CommitRow.svelte` expression inside `pills.test.ts`.
+
+**Every finding of the review and the line that answers it**
+
+| Finding | What changed | File and line |
+|---|---|---|
+| S1 (item A1, case 10) | A tree that did not start the root drag holds no roots in `carried`; it answers `dropEffect = 'none'` and draws no line over a row and below the last row, and a drop writes nothing | `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts:167` (`overRoot`), `:182` (`overTail`), `:206` (`droppedRoot`) |
+| T2 | The head comment says what the code does: a tree that did not start the drag answers no drop and draws nothing | `dragging.svelte.ts:10-15` |
+| P1 | `active` is a local of `createListDrag`, one per list. Each list also puts a type of its own on the drag it starts, and a drag is read as that list's only when it carries that type; the `scope` option of the round-0 version is gone from the three callers | `src/lib/views/sources/files/sections/list-drag.svelte.ts:31` (`active`), `:34` (`mine`), `:40-42` (`ours`), `:47-48` (`start`); callers `Files.svelte:155`, `sections/Notes.svelte:51`, `sections/Bookmarks.svelte:77` |
+| S2 | Each test the review lists is a row of the test its entry names (case 3 below) | `tests/routes/edit/roots.test.ts:93,158`, `tests/server/files/workspaces.test.ts:70`, `tests/server/files/notes.test.ts:53`, `tests/server/git/git-write.test.ts:155`, `tests/server/git/refs/detached.test.ts:27` |
+| S3 | Nothing in the code; the report names what G41 needs (below) | `agents/guarded.md:89-91` (the orchestrator's) |
+| S4 | Case 26 is stated as ruled (below) | part 4b, CASE 26a and CASE 26b |
+| S5 | The paths outside the write list are named with their reasons (3c); `disk.ts` is in `explorer/view/`; the entries for D27-3 and Q88c-22 are in 3d | `src/lib/state/sources/explorer/view/disk.ts`; `src/lib/state/sources/fs.svelte.ts:97` (import) |
+| T1 | The "One token per page lifetime" comment is directly above `LIFETIME` and `HEAD_STAGES` keeps its own | `src/lib/state/sessions/source.svelte.ts:166-170` |
+| B1 | `gone()` sends no request when a listing of the folder in any form is held, current, read without error, and names the file | `src/lib/state/sources/fs.svelte.ts:483-500` (the doc comment and `gone`); `src/lib/state/sources/fs-transport.ts:297-308` (`HeldListing`, `heldListings`) |
+| B2 (Z711) | The head pill names the checked-out branch, and the short hash only while HEAD is detached; the branch is not drawn a second time among the local names | `src/lib/views/sources/repositories/graph/pills.ts:12-34`; `CommitRow.svelte:40,85,119`; `docs/source-control.md:39` |
+
+**Case 1.** Two trees (two `createDragging` instances, rows `ordo` and `cath`); a root dragged from tree 1, over `cath` in tree 2 and then below tree 2's last row, then dropped there.
+
+Round 0:
+
+```
+CASE 1 tab 2 over cathedra :: {"dropEffect":"move","preventDefault":1,"lineEdge":"after"}
+CASE 1 tab 2 below the last row :: {"dropEffect":"move","preventDefault":1,"lineEdge":"after"}
+CASE 1 tab 2 writes after a drop :: []
+CASE 1 the starting tree over cathedra :: {"dropEffect":"move","lineEdge":"after"}
+CASE 1 the starting tree writes after the drop :: [["cath","ordo"]]
+```
+
+After:
+
+```
+CASE 1 tab 2 over cathedra :: {"dropEffect":"none","preventDefault":0,"lineEdge":null}
+CASE 1 tab 2 below the last row :: {"dropEffect":"none","preventDefault":0,"lineEdge":null}
+CASE 1 tab 2 writes after a drop :: []
+CASE 1 the starting tree over cathedra :: {"dropEffect":"move","lineEdge":"after"}
+CASE 1 the starting tree writes after the drop :: [["cath","ordo"]]
+```
+
+**Case 2.** Two `createListDrag` instances; a drag started in the first list and its source removed with no `dragend`; then a drag that is not that list's over the second list (`text/plain` only), and a same-type drag started in another list over a list that holds a stale item.
+
+Round 0 (the module-level `active`, shared by every list):
+
+```
+CASE 2 foreign drag over a list whose earlier drag never ended :: {"dropEffect":"move","preventDefault":1,"place":"after"}
+CASE 2 writes :: [["b","a","c"]]
+```
+
+After:
+
+```
+CASE 2 foreign drag over a list whose earlier drag never ended :: {"dropEffect":"unset","preventDefault":0,"place":null}
+CASE 2 writes :: []
+CASE 2 a same-type drag from another list over a list with a stale item :: {"dropEffect":"unset","preventDefault":0,"place":null,"writes":[]}
+CASE 2 the list's own drag still lands :: {"dropEffect":"move","writes":[["b","c","a"]]}
+```
+
+The first two lines of the after-run are the round-0 pair; the last two were added to the proof after round 0 and have no round-0 line. The last line shows the list's own drag still lands: the item `a` dropped after `c` writes `["b","c","a"]`.
+
+**Case 3.** Every test the review lists runs as a row of the test its entry names, and passes: `npx vitest run tests/routes/edit/roots.test.ts tests/server/files/workspaces.test.ts tests/server/files/notes.test.ts tests/server/git/git-write.test.ts tests/server/git/refs/detached.test.ts --testTimeout 0 --hookTimeout 0 --reporter=verbose` printed `Test Files 5 passed (5)` and `Tests 16 passed (16)`. The `grep -cF "<title>" agents/guarded.md` of each title, and the number of test files that hold the title (`grep -rlF "<title>" tests`):
+
+| Entry | Title | Test | grep -c in guarded.md, files in tests/ |
+|---|---|---|---|
+| G8 | `appends the folder as an entry under a key made from its name, keeping every other line` | `tests/routes/edit/roots.test.ts:93` | 1 in guarded.md, 1 test file |
+| G9 | `records the add and the remove, and the undo of each puts the list back` | `tests/routes/edit/roots.test.ts:158` | 1 in guarded.md, 1 test file |
+| G31 | `writes a missing file and refuses one that does not read, leaving it as is` | `tests/server/files/workspaces.test.ts:70` | 1 in guarded.md, 1 test file |
+| G31 | `refuses a write over an order file it cannot read, leaving it` | `tests/server/files/notes.test.ts:53` | 1 in guarded.md, 1 test file |
+| G33 | `switches to another branch` | `tests/server/git/git-write.test.ts:155` | 1 in guarded.md, 1 test file |
+| G33 | `detaches HEAD at a hash on a clean tree` | `tests/server/git/refs/detached.test.ts:27` | 1 in guarded.md, 1 test file |
+
+Every row joined its named test; none needed a title `agents/guarded.md` lacks. The roots test holds the order rows (a permutation, the wrong keys, the comment-line refusals) inside G8's and G9's titles; the workspaces test holds the order-roots write inside G31's; `notes.test.ts` holds the missing-file write and the unreadable-file rows inside G31's 'refuses a write over an order file it cannot read, leaving it'.
+
+What `agents/guarded.md` needs, for the orchestrator to write at landing: G41 (`agents/guarded.md:89-91`) names `failureText` in `src/lib/server/git/git-routes.ts` and the describe 'failureText'. The function is `failureLine` in `src/lib/server/core/git/failure.ts` and the describe in `tests/server/core/git-failure.test.ts` is 'failureLine'. The Code line becomes `classifyFailure` in `src/lib/server/core/git/parse.ts` and `failureLine` in `src/lib/server/core/git/failure.ts`, read by `src/lib/server/git/git-write.ts` and `src/lib/server/git/deposit-git.ts`, and the Test line 'classifyFailure' and 'failureLine'.
+
+**Case 4.** HEAD's graph row for a commit with refs `main`, `work/one`, `origin/main` and the tag `v1`, on branch `main` and detached.
+
+Round 0 (a copy of the round-0 expression, `commit.head ? [{ name: commit.short, kind: 'head' }]`):
+
+```
+CASE 4 round 0, on branch main :: [{"name":"a1b2c3d4","kind":"head"},{"name":"main","kind":"local"},{"name":"work/one","kind":"local"},{"name":"origin/main","kind":"remote"},{"name":"v1","kind":"tag"}]
+CASE 4 round 0, detached at the commit :: [{"name":"a1b2c3d4","kind":"head"},{"name":"work/one","kind":"local"},{"name":"v1","kind":"tag"}]
+```
+
+After (`commitPills(commit, branches, here)`):
+
+```
+CASE 4 after, on branch main :: [{"name":"main","kind":"head"},{"name":"work/one","kind":"local"},{"name":"origin/main","kind":"remote"},{"name":"v1","kind":"tag"}]
+CASE 4 after, detached at the commit :: [{"name":"a1b2c3d4","kind":"head"},{"name":"work/one","kind":"local"},{"name":"v1","kind":"tag"}]
+CASE 4 after, another commit (not HEAD) :: [{"name":"main","kind":"local"},{"name":"work/one","kind":"local"},{"name":"origin/main","kind":"remote"},{"name":"v1","kind":"tag"}]
+```
+
+On the branch the head pill reads `main` and `main` is gone from the local names; detached it reads the 8-character hash; a commit that is not HEAD has no head pill.
+
+**Case 5.** A page with tabs on 3 files in 3 folders whose listings are loaded and on 1 file in a folder never listed, and a page with 20 tabs on files in 20 listed folders; `fs.gone(root, path)` asked for every tab; the requests counted from a fake `fetch`.
+
+Round 0:
+
+```
+CASE 5 listing requests the four tabs add :: {"tree":3,"added":4,"urls":["root=r&path=a&hidden=1&ignored=1","root=r&path=b&hidden=1&ignored=1","root=r&path=c&hidden=1&ignored=1","root=r&path=d&hidden=1&ignored=1"],"goneAtOnce":[false,false,false,false],"goneAfterAnswers":false}
+CASE 5 twenty tabs, twenty listed folders: requests added :: 20
+CASE 5 gone before and after the file leaves the folder :: {"before":false,"after":true,"requests":2}
+```
+
+After:
+
+```
+CASE 5 listing requests the four tabs add :: {"tree":3,"added":1,"urls":["root=r&path=d&hidden=1&ignored=1"],"goneAtOnce":[false,false,false,false],"goneAfterAnswers":false}
+CASE 5 twenty tabs, twenty listed folders: requests added :: 0
+CASE 5 gone before and after the file leaves the folder :: {"before":false,"afterMark":false,"afterAnswer":true,"requests":2}
+```
+
+The requests at load fall from 4 to 1 (only the folder never listed is read) and from 20 to 0. The third line shows the price: when the file leaves the folder and the held listing is read again, the first `gone()` answer is still false (the listing is current and lacks the name, so the tab asks for the everything listing, which is loading), and the next one is true. Round 0 answered true on the first call because it had asked for the everything listing at load. The number of requests in that run is 2 in both.
+
+**Case 6.** The comment line directly above `const LIFETIME` in `src/lib/state/sessions/source.svelte.ts`.
+
+Round 0 (as the review quotes it, `X3e-refuter.md` T1, lines 165-170 of the round-0 tree): the line above `const LIFETIME` was a blank line, and the comment "One token per page lifetime" sat above the `HEAD_STAGES` doc comment.
+
+After (`grep -n -B1 "const LIFETIME" src/lib/state/sessions/source.svelte.ts`):
+
+```
+169-/** One token per page lifetime: a draft carrying it was read from disk since the page loaded. */
+170:const LIFETIME = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+```
+
+**Case 26 as ruled.** A missing notes folder holds no note, so an order over it names no note and is refused `no-such-note` (item A4's rule). Case 26's "made, then written" holds for the order file only: the order file does not exist before the first reorder, and the first reorder over notes that exist makes it. The lines are from the round-0 run of part 4b, on server code that has not changed since (part 4, row 12): CASE 26a is the order over the missing folder, CASE 26b is the order file before any reorder, and the CASE 25 line that follows is the first reorder over two notes, which answers 200 and leaves `order.json` holding `{"version":1,"order":["two","one"]}` beside `one.md` and `two.md`:
+
+```
+CASE 26a order-notes with the notes folder missing :: [{"status":400,"body":{"error":"no-such-note"}},false]
+CASE 26b order file before :: false
+CASE 25 94 :: [{"status":200,"body":{"ok":true,"changed":["note"],"refused":[]}},{"version":1,"order":["two","one"]},["one.md","order.json","two.md"]]
+```
+
+### 3c. Paths outside the brief's write list, each with its reason (Spec S5)
+
+The review (`X3e-refuter.md`, S5) lists 35 paths that `diff -rq` shows and the brief's "Paths this step writes" does not name. Round 1 moves `disk.ts` into `explorer/view/` (one of the 35, at its new path) and adds `graph/pills.ts`, so the table names 36 paths. Each is needed by the item named beside it.
+
+| Path | Item | Reason |
+|---|---|---|
+| `src/lib/data/helpers/worktrees.ts` | D11 to D13 | `worktreesDir` is read only inside the file once `repositories.ts` is split into `worktrees.ts`, so its `export` is dropped (part 13) |
+| `src/lib/data/sources/config.ts` | E1 | re-exports `repositoryScanDepth`, which `src/lib/server/root/watch/git-start.ts` imports from the barrel |
+| `src/lib/shell/keys/palette-modes.ts` | F3 | `listedRows` gives the row count and the value of each row of the palette in one place, which `Palette.svelte:194` reads, so the rows that now show a description and a hint are counted by one function |
+| `src/lib/state/client/context.ts` | C1 (Z684 (3)) | passes the hub root to `createFiles` (its `files` follower joins a project card's folder to the hub, `files.svelte.ts:98-105`) and the served roots to `createPresent` (its `files` follower) |
+| `src/lib/state/sources/search/keys.ts` and `src/lib/views/sources/search/Search.svelte` | D16 | `searchPlan` takes any action name and answers `pass` for one it does not own, so Select All reaches the tree; `Search.svelte` follows the signature |
+| `src/lib/ui/tree/TreeItem.svelte` and `src/lib/ui/tree/item-props.ts` | A3, A4, A5 | the `drag` member of a row's props (draggable, the drag events, the drop edge as `data-drop-place`) for the Bookmarks and Notes rows and the section heads |
+| `src/lib/views/sessions/changes/Changes.svelte`, `ChangesRepo.svelte` and `src/lib/views/shared/changes/change-actions.ts` | D14 | the `onopenfile` action: the row's press opens the file, the diff or the merge editor |
+| `src/lib/views/shared/explorer/tree/menu/row-menu.ts` | H2, D16 | `panelOpen` disables Add Folder to Workspace while the folder panel is open; the `open-side` mapping lets Cmd+Enter (`explorer/acts/keys.ts:47`) run the menu's Open to the Side |
+| `src/lib/views/sources/files/header/WorkspaceHeader.svelte` | H2, A5 | `panelOpen` disables the two items that open the panel; `drag` lets the header be dragged over the other sections' heads |
+| `src/lib/views/sources/files/sections/clangd/Ast.svelte`, `MemoryUsage.svelte` and `props.ts` | A5, A6 | the `move` prop: the AST and Memory Usage heads drag and take Alt+Up and Alt+Down like the other sections (Z684 (2)) |
+| `src/lib/views/sources/repositories/changes/ChangeRow.svelte` and `menus/change-menu.ts` | D14, D16 | the row's controls act on the selected rows (`actedPaths`), and `askDiscardPaths` asks once for several paths; `askDiscard` becomes private |
+| `src/lib/views/sources/source/status/tab-file.svelte.ts` | D2 | `headSignature`: what the repository says that a HEAD or index tab shows, so the tab reads again when it changes |
+| `src/routes/api/(machine)/lines/+server.ts` | D5, H1.4 | passes the text catalog to `countLines`, which now takes it to word the failure of `trackedFiles` |
+| `tests/checks/config/config-folder.test.ts` | E1 | the expected key list gains `repository_scan_depth` |
+| `tests/routes/apps/apps-fixture.ts`, `tests/routes/machine/hpc.test.ts`, `tests/routes/sessions/terminal.test.ts` | D5, H1.4 | the options a handler now takes (`text`, an awaited `kept`, the engine directory's configuration); no assertion changes |
+| `tests/server/core/git-failure.test.ts` | D5 | follows `failureText` to `failureLine` in `core/git/failure.ts` |
+| `tests/server/machine/runs/schedules/file.test.ts`, `record.test.ts`, `schedules-fixture.ts` | D5 | `routeOptions` builds the options the schedules route now needs (`text`) once, in place of three inline objects |
+| new `src/lib/server/core/git/failure.ts` | D5, H1.1 | `failureLine`, the sentence of a git command that ended with no reason of its own, read by the write routes and by `run.ts`'s `reasonOf`; below every folder that words a git failure |
+| new `src/lib/state/shared/answers/files-named.ts` | C1, C2 | the test every follower of the `files` channel applies to a message (decision 32) |
+| new `src/lib/state/sources/explorer/view/disk.ts` | C2 | `diskPlan`: which served roots a `files` message concerns and which of their folders to list again; placed in `explorer/view/`, which holds 8 items and which the write list names (`files-view.ts`, `place.ts`, `reveal.ts`); the full folder `state/sources/explorer/` is left at 8 items (`acts`, `file-type.ts`, `follow.ts`, `naming.ts`, `ops.svelte.ts`, `rows`, `sections`, `view`), so D15's `pdf-place.ts` makes 9 |
+| new `src/lib/views/sources/files/MessageLine.svelte` | C4 | the one overlay line at the foot of the Files view |
+| new `src/lib/views/sources/files/sections/list-drag.svelte.ts` | A3, A4, A5, A6 | the list drag and the Alt+Up and Alt+Down steps |
+| new `src/lib/views/sources/repositories/changes/picking.ts` | D16 | the selection of the change rows |
+| new `src/lib/views/sources/repositories/graph/pills.ts` | D7, D9, B2 | `commitPills`, the names of one commit in the order the row draws them, in one function that `CommitRow.svelte` and the case 4 run both read |
+| new `tests/server/text.ts` | D5 | `TEXT`, the catalog of the checkout's own `config/text` for the tests that word a refusal |
+
+The first column groups paths that share a reason, so the table has 25 rows over the 36 paths.
+
+### 3d. The items of section G that this step does not build (one line each)
+
+- D27-3 (two single presses on `notes.txt` selected the row and opened nothing): the press path is X3f's, so it is read at X3f's landing look, not in this step.
+- Q88c-22 (empty folders named `config/behavior.yml`, `config/layout.yml` and `config/sources.yml` at the hub root): closed; `ls /Users/axelfaes/workspace/research-hub/config` prints `No such file or directory`, and `grep -c '"file":"config/' ~/.oculus/changes.jsonl` prints 0: the four records that name `behavior.yml`, `layout.yml` or `sources.yml` all name `tools/oculus/config/...`, none a `config/` folder at the hub root.
+
+
 ## 4. DONE / NOT DONE, with the output of each check
 
-Full runs of the verify list: **11**. Runs 1 to 5 covered the building; runs 6 to 11 each followed comment or documentation edits only (head and doc comments, one comma in `docs/source-control.md`, one sentence in `DESIGN.md`, a rewrap of the head of `Source.svelte` to bring it to 520 lines). Verify 12 and the proofs of the server cases were last run in run 7, on the code that runs 8 to 11 left unchanged. The guarded set of verify 4 was run as one `vitest run` over its files (`x3e-guarded-files.txt`), not one invocation per file as the brief words it.
+Full runs of the verify list: **13**, 11 in round 0 and 2 in round 1. The outputs below are those of the last run, made after the last change to any source or test file. Verify 4 ran each listed test file alone, one `npx vitest run <file> --testTimeout 0 --hookTimeout 0` per file.
 
 | # | Check | Result | Status |
 |---|---|---|---|
-| 1 | `npm run diagrams`, then `npm run test:quick` | diagrams exit 0. test:quick exit 0: `ok ASCII gate (0.8 s)`, `ok prettier (2.9 s): All matched files use Prettier code style!`, `ok svelte-kit sync (3.0 s)`, `ok svelte-check (25.6 s): ... COMPLETED 422 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok eslint (30.3 s)`, `ok vitest (32.1 s)`, last line `test:quick: 33.0 s (limit 45.0 s); every command passed` (`x3e-r11-quick.out`) | DONE |
-| 2 | tree checks (boundaries, size, duplication, config, keys, imports order) | exit 0, `Test Files 6 passed (6)`, `Tests 91 passed (91)` (`x3e-r11-tree.out`); with `comment-width` and `diagrams`: exit 0, `Test Files 2 passed (2)`, `Tests 48 passed (48)` | DONE |
-| 3 | guarded tests on the unchanged tree (failing rows quoted) and after | before: 7 files, 30 failed / 66 passed, and the token rows 5 failed / 3 passed (part 3). After: in the verify 4 row | DONE |
-| 4 | test file of each guarded entry whose Code line is in the write list | exit 0, `Test Files 140 passed (140)`, `Tests 1045 passed (1045)` (`x3e-r11-guarded.out`), one invocation over the 140 files of `x3e-guarded-files.txt` minus `checks/diagrams`, `checks/imports/order`, `checks/source/comment-width` and `checks/config/integrity`, which row 2 and the integrity line below run | DONE, with the single invocation disclosed |
+| 1 | `npm run diagrams`, then `npm run test:quick` | diagrams: exit 0, and `shasum docs/diagrams/*` before and after is the same (`diff` exit 0). test:quick: exit 0; lines: `ok ASCII gate (1.1 s)`; `ok svelte-kit sync (2.9 s)`; `ok prettier (3.4 s): All matched files use Prettier code style!`; `ok eslint (9.9 s)`; `ok svelte-check (8.4 s): 1791400202054 COMPLETED 422 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`; `ok vitest (24.1 s): Duration 19.74s (transform 20.85s, setup 0ms, import 37.12s, tests 38.86s, environment 176ms)`; `test:quick: 25.4 s (limit 45.0 s); every command passed` | DONE |
+| 2 | tree checks (boundaries, size, duplication, config, keys, imports order) | exit 0; `Test Files  6 passed (6)`, `Tests  91 passed (91)`. With `comment-width` and `diagrams`: exit 0; `Test Files  2 passed (2)`, `Tests  48 passed (48)` | DONE |
+| 3 | guarded tests on the unchanged tree (failing rows quoted) and after | before: 7 files, 30 failed / 66 passed, and the token rows 5 failed / 3 passed (part 3, round 0). After: row 4. The six folded tests of round 1 are in part 3b, case 3 | DONE |
+| 4 | test file of each guarded entry whose Code line names a changed path | 105 files, each run alone: 105 exit 0 and 0 not, 578 tests passed in all (`v4-results.txt`: one line per file, its exit status, `Test Files` and `Tests`). The list is the brief's 46 files plus the files of every entry whose Code line names a path that differs from the base. The three paths the brief writes bare (`rail.test.ts`, `config-key.test.ts`, `config-value.test.ts`) resolve to a file under `tests/routes/edit/` and one under `tests/server/edit/` (and `tests/data/sources/config/rail.test.ts`); all were run | DONE |
 | 5 | each added row judged by reading | read in full; no code was broken to watch a row fail | DONE |
-| 6 | ASCII gate (`LC_ALL=C perl ...` over `src tests bin config`, `local.yml` excluded) | exit 0, 0 lines printed (`x3e-r11-ascii.out`). `LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md docs/*.md / wc -l` prints 0 | DONE |
-| 7 | `sh utils/folder-check.sh` | exit 0, no output | DONE |
+| 6 | ASCII gate (the `LC_ALL=C perl` command of `agents/spec.md:97` over `src tests config`, `local.yml` excluded; `bin` does not exist) | exit 0, 0 lines printed. `LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md docs/*.md` piped to `wc -l` prints 0 | DONE |
+| 7 | `sh utils/folder-check.sh` | exit 0, no other output | DONE |
 | 8 | `sh utils/unused-exports.sh` against the base list | exit 0; three lines differ, see part 13 | DONE |
-| 9 | the `grep -rnE` over `server/git`, `server/core/git`, `auth.ts` | 12 lines, all named in the next paragraph; the three catalog groups are in part 14b below | DONE |
-| 10 | `grep -rn "ch_group_empty" src config --exclude=local.yml` | 0 lines | DONE |
-| 11 | `grep -rn "background: currentColor" src` | 0 lines | DONE |
-| 12a | Delete record, shrunk case (104) | base `RED: answer mean 3168 ms over 1000 ms`, exit 1; worktree `GREEN: answer mean 64 ms within 1000 ms`, exit 0 (`x3e-v104.out`) | DONE |
-| 12a | Delete record, original case (105) | base `RED: answer mean 9589 ms over 1000 ms`, exit 1; worktree `GREEN: answer mean 115 ms within 1000 ms`, exit 0 (`x3e-v105.out`) | DONE |
-| 12b | Graph record, shrunk case (106) | base `waitMeanMs` 865, `red:true`, `loopMaxMs` 5205; worktree `{"watch":true,"n":13,"rows":[50],...,"waitMeanMs":2,...,"red":false...}`, exit 0 (`x3e-v106.out`) | DONE |
-| 12b | Graph record, original case (107) | base `"red":false`, `waitMeanMs` 3 (quoted as it came, not counted as the red); worktree the same shape with `"rows":[50]` and `"red":false`, exit 0 (`x3e-v107.out`) | DONE |
-| 12c | folder panel record (122) | base P1b, P2a, P3a FAIL, `exit=1`; worktree P1a, P1b, P2a, P2b, P3a, P3b all PASS, `panels left running=0`, `exit=0` (`x3e-v122.out`) | DONE |
-| 13 | `grep -rn "spawnSync" src/lib/server/core/git` | 0 lines (base: 2 lines, run.ts:82 and run.ts:159) | DONE |
+| 9 | the `grep -rnE` over `server/git`, `server/core/git`, `auth.ts` | 12 lines, all named in the next paragraph; the three catalog groups are in part 14 below, unchanged in round 1 (`config/` has no file newer than the round-0 report) | DONE |
+| 10 | `grep -rn "ch_group_empty" src config --exclude=local.yml` | exit 1, 0 lines | DONE |
+| 11 | `grep -rn "background: currentColor" src` | exit 1, 0 lines | DONE |
+| 12a | Delete record, shrunk case (104) | NOT RUN in round 1 (part 1). Round 0: base `RED: answer mean 3168 ms over 1000 ms`, exit 1; worktree `GREEN: answer mean 64 ms within 1000 ms`, exit 0. Reviewer's rerun on the round-0 tree: base `RED: answer mean 3225 ms over 1000 ms`, worktree `GREEN: answer mean 48 ms within 1000 ms` | NOT DONE in round 1 |
+| 12a | Delete record, original case (105) | NOT RUN in round 1. Round 0: base `RED: answer mean 9589 ms over 1000 ms`, exit 1; worktree `GREEN: answer mean 115 ms within 1000 ms`, exit 0. Reviewer's rerun: base `RED: answer mean 7053 ms`, worktree `GREEN: answer mean 123 ms` | NOT DONE in round 1 |
+| 12b | Graph record, shrunk case (106) | NOT RUN in round 1. Round 0: base `waitMeanMs` 865, `red:true`; worktree `waitMeanMs` 2, `red:false`, `rows:[50]`. Reviewer's rerun: base `waitMeanMs` 352, `red:true`; worktree `waitMeanMs` 6, `red:false` | NOT DONE in round 1 |
+| 12b | Graph record, original case (107) | NOT RUN in round 1. Round 0: base `"red":false`, `waitMeanMs` 3 (quoted as it came, not counted as the red); worktree `"rows":[50]`, `"red":false`. Reviewer's rerun on the worktree: `"red":false`, `waitMeanMs` 3 | NOT DONE in round 1 |
+| 12c | folder panel record (122), run in round 1 | base P1b, P2a and P3a FAIL, `exit=1`; worktree P1a, P1b, P2a, P2b, P3a and P3b all PASS, `panels left running=0`, `exit=0`; the last line of the output under this table counts the fakes still inside their 20 s sleep 22 s after the runs (2), and the same `ps -axo command` piped to `grep -cE '[o]sascript or [s]leep 20'` printed 0 when run again afterwards | DONE |
+| 12 | files changed since round 0 handed back (`find src tests config docs utils DESIGN.md HELP.md -type f -newer <the round-0 report> ! -name local.yml ! -path 'docs/diagrams/*'`) | 17 paths, 0 of them under `src/lib/server`, `src/lib/data`, `config` or `src/routes`: none | DONE |
+| 13 | `grep -rn "spawnSync" src/lib/server/core/git` | exit 1, 0 lines (base: 2 lines, run.ts:82 and run.ts:159) | DONE |
+| int | `tests/checks/config/integrity.test.ts` | exit 1; `Test Files  1 failed (1)`, `Tests  2 failed, 6 passed (8)`, `deck folder deck is not in /Users/axelfaes/workspace/research-hub/.agents/worktrees/X3e` | NOT DONE (environmental, part 1) |
+
+The files changed since round 0 handed back:
+
+```
+docs/source-control.md
+src/lib/state/sessions/source.svelte.ts
+src/lib/state/sources/explorer/view/disk.ts
+src/lib/state/sources/fs-transport.ts
+src/lib/state/sources/fs.svelte.ts
+src/lib/views/shared/explorer/tree/control/dragging.svelte.ts
+src/lib/views/sources/files/Files.svelte
+src/lib/views/sources/files/sections/Bookmarks.svelte
+src/lib/views/sources/files/sections/list-drag.svelte.ts
+src/lib/views/sources/files/sections/Notes.svelte
+src/lib/views/sources/repositories/graph/CommitRow.svelte
+src/lib/views/sources/repositories/graph/pills.ts
+tests/routes/edit/roots.test.ts
+tests/server/files/notes.test.ts
+tests/server/files/workspaces.test.ts
+tests/server/git/git-write.test.ts
+tests/server/git/refs/detached.test.ts
+```
+
+Verify 12c, the full output of the round-1 run (base, then worktree):
+
+```
+== red
+P1a one server, second press while open: PASS second=409 {"error":"busy"} panels started=1
+P1b second press after a dev-server restart: FAIL first press answered: no answer TypeError; panels started=2, open at once=2
+P2a panel after its page went away: FAIL panels still running 1 s after the connection closed=1
+P2b panel whose page still waits, after 2 s: PASS panels running=1
+P3a cancel reported as -128: FAIL answer=500 {"error":"failed"}
+P3b cancel button, exit 0 with an empty line: PASS answer=200 {"ok":true,"paths":[]}
+panels left running=0
+exit=1
+== green
+P1a one server, second press while open: PASS second=409 {"error":"busy"} panels started=1
+P1b second press after a dev-server restart: PASS first press answered: no answer TypeError; panels started=2, open at once=1
+P2a panel after its page went away: PASS panels still running 1 s after the connection closed=0
+P2b panel whose page still waits, after 2 s: PASS panels running=1
+P3a cancel reported as -128: PASS answer=200 {"ok":true,"paths":[]}
+P3b cancel button, exit 0 with an empty line: PASS answer=200 {"ok":true,"paths":[]}
+panels left running=0
+exit=0
+leftover osascript or sleep 20 processes: 2
+```
+
+Verify 4, one line per file (`path | exit | Test Files | Tests`):
+
+```
+tests/routes/edit/write.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/routes/files/fs.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/routes/files/open.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/routes/files/source.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/server/files/picker.test.ts | exit 0 | Test Files  1 passed (1) | Tests  7 passed (7)
+tests/routes/git/git.test.ts | exit 0 | Test Files  1 passed (1) | Tests  5 passed (5)
+tests/routes/git/deposit.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/routes/sessions/terminal.test.ts | exit 0 | Test Files  1 passed (1) | Tests  4 passed (4)
+tests/routes/sessions/latex.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/routes/machine/commands.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/routes/docs/memories.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/files/fs.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/routes/files/history.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/routes/git/untracked.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/routes/edit/roots.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/server/core/changes.test.ts | exit 0 | Test Files  1 passed (1) | Tests  8 passed (8)
+tests/routes/edit/undo/undo.test.ts | exit 0 | Test Files  1 passed (1) | Tests  11 passed (11)
+tests/data/sources/config/rail.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/routes/edit/rail.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/server/edit/config-key.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/routes/edit/config-key.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/edit/config-value.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/routes/edit/config-value.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/routes/files/file-undo.test.ts | exit 0 | Test Files  1 passed (1) | Tests  9 passed (9)
+tests/data/sources/config/settings.test.ts | exit 0 | Test Files  1 passed (1) | Tests  57 passed (57)
+tests/server/git/deposit.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/files/workspaces.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/files/notes.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/git/git-write.test.ts | exit 0 | Test Files  1 passed (1) | Tests  11 passed (11)
+tests/server/git/git-ops.test.ts | exit 0 | Test Files  1 passed (1) | Tests  16 passed (16)
+tests/server/git/refs/cherry-pick.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/git/refs/delete-branch.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/server/git/refs/detached.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/git/untracked/ignore.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/git/untracked/trash.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/server/core/git-failure.test.ts | exit 0 | Test Files  1 passed (1) | Tests  23 passed (23)
+tests/server/machine/hpc/submit.test.ts | exit 0 | Test Files  1 passed (1) | Tests  29 passed (29)
+tests/server/machine/hpc/submit-files.test.ts | exit 0 | Test Files  1 passed (1) | Tests  4 passed (4)
+tests/state/sessions/source.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/shell/panes/strip/tab-menu.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/routes/sessions/compose.test.ts | exit 0 | Test Files  1 passed (1) | Tests  16 passed (16)
+tests/routes/sessions/terminal-actions.test.ts | exit 0 | Test Files  1 passed (1) | Tests  20 passed (20)
+tests/routes/sessions/terminal-edit.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/state/system/apps/store-cache.test.ts | exit 0 | Test Files  1 passed (1) | Tests  12 passed (12)
+tests/server/files/ops.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/routes/files/file.test.ts | exit 0 | Test Files  1 passed (1) | Tests  5 passed (5)
+tests/server/machine/pty/channel.test.ts | exit 0 | Test Files  1 passed (1) | Tests  12 passed (12)
+tests/server/accounts/mail/routes.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/server/accounts/connect/oauth.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/server/machine/usage/refresh.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/accounts/connect/accounts.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/routes/files/search.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/routes/docs/literature.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/routes/apps/approve.test.ts | exit 0 | Test Files  1 passed (1) | Tests  10 passed (10)
+tests/server/machine/lsp/relay.test.ts | exit 0 | Test Files  1 passed (1) | Tests  5 passed (5)
+tests/server/files/search.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/routes/files/project-files.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/machine/lsp/uris.test.ts | exit 0 | Test Files  1 passed (1) | Tests  29 passed (29)
+tests/routes/docs/deck.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/routes/edit/deck-slides.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/server/edit/deck-acts.test.ts | exit 0 | Test Files  1 passed (1) | Tests  7 passed (7)
+tests/server/machine/lsp/library.test.ts | exit 0 | Test Files  1 passed (1) | Tests  36 passed (36)
+tests/routes/replace/lsp-edit.test.ts | exit 0 | Test Files  1 passed (1) | Tests  6 passed (6)
+tests/state/system/lsp/edits.test.ts | exit 0 | Test Files  1 passed (1) | Tests  4 passed (4)
+tests/server/machine/runs/commands/placeholders.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/server/machine/hpc/actions.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/routes/files/open-program.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/machine/lsp/servers.test.ts | exit 0 | Test Files  1 passed (1) | Tests  4 passed (4)
+tests/server/edit/writes.test.ts | exit 0 | Test Files  1 passed (1) | Tests  5 passed (5)
+tests/server/edit/writes-collection.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/server/edit/feeds.test.ts | exit 0 | Test Files  1 passed (1) | Tests  6 passed (6)
+tests/server/sessions/overrides.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/server/edit/deck-edit.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/routes/edit/audit-mute.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/edit/app-store.test.ts | exit 0 | Test Files  1 passed (1) | Tests  11 passed (11)
+tests/routes/replace/replace-undo.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/routes/replace/ops-replace.test.ts | exit 0 | Test Files  1 passed (1) | Tests  4 passed (4)
+tests/state/forms/form-drafts.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/state/forms/manifest-draft.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/state/sources/repositories/diff/comment-draft.client.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/state/client/terminal/terminal-close.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/server/machine/runs/commands/run.test.ts | exit 0 | Test Files  1 passed (1) | Tests  6 passed (6)
+tests/server/machine/pty/tmux.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/machine/pty/sessions.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/server/machine/approvals/approvals.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/server/core/json-checked.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/state/workbench/layout/saved/layout-unread.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/server/machine/runs/schedules/record.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/server/machine/lsp/choices.test.ts | exit 0 | Test Files  1 passed (1) | Tests  3 passed (3)
+tests/data/sources/agents-catalog.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/data/helpers/files/nesting.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/data/sources/config/catalog/options.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/data/sources/config/languages.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/data/sources/config/local.test.ts | exit 0 | Test Files  1 passed (1) | Tests  23 passed (23)
+tests/checks/config/config.test.ts | exit 0 | Test Files  1 passed (1) | Tests  31 passed (31)
+tests/server/machine/lsp/cpp-file.test.ts | exit 0 | Test Files  1 passed (1) | Tests  18 passed (18)
+tests/data/sources/manifests.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/data/sources/registries.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/data/sources/collections.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/data/sources/career.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/data/sources/feeds.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+tests/data/sources/docs.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/data/sources/present.test.ts | exit 0 | Test Files  1 passed (1) | Tests  4 passed (4)
+tests/data/sources/personal.test.ts | exit 0 | Test Files  1 passed (1) | Tests  2 passed (2)
+tests/data/snapshot/normalise.test.ts | exit 0 | Test Files  1 passed (1) | Tests  1 passed (1)
+```
 
 Verify 9, the 12 lines: `git-routes.ts:292` a developer `Error` text for a missing catalog key; `compare.ts:137` a match on git's stderr (`not a git repository`); `git-refs.ts:194` a git stderr code (`is not fully merged`); `deposit.ts:189` a developer `Error` for a missing option; `parse.ts:592,593,598,599` diff header prefixes (`rename from `, `rename to `, `new file mode `, `deleted file mode `); `files.ts:146` a match on git's stderr (`does not have any commits`); `run.ts:106` the constant `NO_REPOSITORY`; `auth.ts:140` and `:143` the error codes `forbidden` and `bad body` that the shape reads. None is a sentence a reader sees. The `git-routes.ts`, `deposit.ts` and `auth.ts` lines were also in the base (`:266`, `:188`, `:123` and `:126`).
 
-### 4b. Proofs of the server-side cases, run on the final tree
+### 4b. Proofs of the server-side cases (run 11 of round 0)
 
-Run 11, from a scratch copy of the worktree (`x3e-proof`, `src`, `config` and `tests` synced from the worktree before the run, `requireAssertions` set to false in that copy only because the proof tests print results and assert nothing): `npx vitest run tests/proof --reporter=verbose`, `Test Files 4 passed (4)`, `Tests 15 passed (15)`, output `x3e-r11-proof.out`. The printed lines, one per case (the git log tail of case 109 is left out):
+Run 11 of round 0, from a scratch copy of the worktree (`src`, `config` and `tests` synced from the worktree before the run, `requireAssertions` set to false in that copy only because the proof tests print results and assert nothing): `npx vitest run tests/proof --reporter=verbose`, `Test Files 4 passed (4)`, `Tests 15 passed (15)`. Round 1 changed no server file (part 4, row 12), the reviewer reran these files on the round-0 tree and every CASE line matched, and they were not run again in round 1. The printed lines, one per case (the git log tail of case 109 is left out):
 
 ```
 CASE 99 version 5 {"root":"/hub","folders":["src"]} -> ["fs/history replace"]
@@ -285,7 +631,7 @@ Other runs: the base copy run of case 117 and 115 to 118 was repeated for this r
 
 ## 5. Files with line counts
 
-`diff -rq` of the worktree's `tools/oculus` against the base (excluding `node_modules`, `.svelte-kit`, `.scratch`, `deck`, `local.yml`): 200 files, 189 changed and 11 new; 53983 lines in the base versions and 57670 now. No source file passes 880 lines and no component passes 520 (`find src -name "*.svelte" | xargs wc -l` prints one component over 520, `src/lib/views/structure/map/Graph.svelte` at 524, which is identical to the base). The only files over 880 lines are `config/catalogs/options.yml` (1295) and the two `docs/diagrams/*.svg`, which the size rule does not cover.
+`diff -rq` of the worktree's `tools/oculus` against the base (the entries the base holds: `DESIGN.md`, `HELP.md`, `config`, `docs`, `package.json`, `src`, `tests`, `tsconfig.json` and `utils`; excluding `node_modules`, `.svelte-kit`, `.scratch`, `deck`, `local.yml`): 201 files, 189 changed and 12 new; 53983 lines in the base versions and 57711 now. The largest `.ts` file is `879 src/lib/state/sources/fs.svelte.ts` and the largest component is `524 src/lib/views/structure/map/Graph.svelte` (`find src -name "*.ts"` and `-name "*.svelte"` through `wc -l`); `src/lib/views/structure/map/Graph.svelte` is over 520 lines and identical to the base.
 
 | File | Base | Now | |
 |---|---|---|---|
@@ -379,14 +725,14 @@ Other runs: the base copy run of case 117 and 115 to 118 was repeated for this r
 | `src/lib/state/sources/explorer/acts/keys.ts` | 192 | 211 | changed |
 | `src/lib/state/sources/explorer/acts/refusal.ts` | 24 | 27 | changed |
 | `src/lib/state/sources/explorer/acts/reorder.ts` | - | 79 | new |
-| `src/lib/state/sources/explorer/disk.ts` | - | 61 | new |
 | `src/lib/state/sources/explorer/ops.svelte.ts` | 652 | 669 | changed |
+| `src/lib/state/sources/explorer/view/disk.ts` | - | 61 | new |
 | `src/lib/state/sources/explorer/view/files-view.ts` | 249 | 280 | changed |
 | `src/lib/state/sources/explorer/view/place.ts` | 181 | 221 | changed |
 | `src/lib/state/sources/explorer/view/reveal.ts` | 134 | 163 | changed |
 | `src/lib/state/sources/files.svelte.ts` | 132 | 154 | changed |
-| `src/lib/state/sources/fs-transport.ts` | 388 | 450 | changed |
-| `src/lib/state/sources/fs.svelte.ts` | 840 | 878 | changed |
+| `src/lib/state/sources/fs-transport.ts` | 388 | 465 | changed |
+| `src/lib/state/sources/fs.svelte.ts` | 840 | 879 | changed |
 | `src/lib/state/sources/repositories/change-tree.ts` | 322 | 322 | changed |
 | `src/lib/state/sources/repositories/repositories.svelte.ts` | 528 | 539 | changed |
 | `src/lib/state/sources/repositories/repositories.ts` | 875 | 843 | changed |
@@ -413,7 +759,7 @@ Other runs: the base copy run of case 117 and 115 to 118 was repeated for this r
 | `src/lib/views/shared/explorer/control/tab-actions.ts` | 124 | 136 | changed |
 | `src/lib/views/shared/explorer/tree/ShowPath.svelte` | 148 | 116 | changed |
 | `src/lib/views/shared/explorer/tree/Tree.svelte` | 385 | 418 | changed |
-| `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts` | 135 | 281 | changed |
+| `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts` | 135 | 289 | changed |
 | `src/lib/views/shared/explorer/tree/control/keyed.ts` | 117 | 134 | changed |
 | `src/lib/views/shared/explorer/tree/menu/row-menu.ts` | 576 | 584 | changed |
 | `src/lib/views/sources/files/Files.svelte` | 324 | 406 | changed |
@@ -430,15 +776,16 @@ Other runs: the base copy run of case 117 and 115 to 118 was repeated for this r
 | `src/lib/views/sources/files/sections/clangd/ClangdSection.svelte` | 69 | 76 | changed |
 | `src/lib/views/sources/files/sections/clangd/MemoryUsage.svelte` | 117 | 118 | changed |
 | `src/lib/views/sources/files/sections/clangd/props.ts` | 11 | 14 | changed |
-| `src/lib/views/sources/files/sections/list-drag.svelte.ts` | - | 151 | new |
+| `src/lib/views/sources/files/sections/list-drag.svelte.ts` | - | 153 | new |
 | `src/lib/views/sources/repositories/Repo.svelte` | 377 | 470 | changed |
 | `src/lib/views/sources/repositories/RepoList.svelte` | 252 | 262 | changed |
 | `src/lib/views/sources/repositories/Repositories.svelte` | 489 | 497 | changed |
 | `src/lib/views/sources/repositories/changes/ChangeRow.svelte` | 252 | 287 | changed |
 | `src/lib/views/sources/repositories/changes/Changes.svelte` | 338 | 353 | changed |
 | `src/lib/views/sources/repositories/changes/picking.ts` | - | 116 | new |
-| `src/lib/views/sources/repositories/graph/CommitRow.svelte` | 241 | 299 | changed |
+| `src/lib/views/sources/repositories/graph/CommitRow.svelte` | 241 | 289 | changed |
 | `src/lib/views/sources/repositories/graph/Graph.svelte` | 477 | 482 | changed |
+| `src/lib/views/sources/repositories/graph/pills.ts` | - | 35 | new |
 | `src/lib/views/sources/repositories/menus/change-menu.ts` | 254 | 278 | changed |
 | `src/lib/views/sources/repositories/menus/graph-menu.ts` | 262 | 280 | changed |
 | `src/lib/views/sources/repositories/refs/Worktrees.svelte` | 262 | 269 | changed |
@@ -458,7 +805,7 @@ Other runs: the base copy run of case 117 and 115 to 118 was repeated for this r
 | `tests/data/sources/config/settings.test.ts` | 642 | 672 | changed |
 | `tests/routes/apps/apps-fixture.ts` | 139 | 141 | changed |
 | `tests/routes/docs/memories.test.ts` | 48 | 54 | changed |
-| `tests/routes/edit/roots.test.ts` | 130 | 207 | changed |
+| `tests/routes/edit/roots.test.ts` | 130 | 203 | changed |
 | `tests/routes/edit/write.test.ts` | 47 | 47 | changed |
 | `tests/routes/files/history.test.ts` | 99 | 102 | changed |
 | `tests/routes/files/open.test.ts` | 43 | 46 | changed |
@@ -472,12 +819,12 @@ Other runs: the base copy run of case 117 and 115 to 118 was repeated for this r
 | `tests/routes/sessions/terminal.test.ts` | 151 | 152 | changed |
 | `tests/server/core/auth.test.ts` | 31 | 36 | changed |
 | `tests/server/core/git-failure.test.ts` | 173 | 171 | changed |
-| `tests/server/files/notes.test.ts` | - | 81 | new |
+| `tests/server/files/notes.test.ts` | - | 78 | new |
 | `tests/server/files/picker.test.ts` | 53 | 174 | changed |
-| `tests/server/files/workspaces.test.ts` | 77 | 98 | changed |
+| `tests/server/files/workspaces.test.ts` | 77 | 94 | changed |
 | `tests/server/git/deposit.test.ts` | 144 | 145 | changed |
 | `tests/server/git/git-ops.test.ts` | 415 | 418 | changed |
-| `tests/server/git/git-write.test.ts` | 261 | 289 | changed |
+| `tests/server/git/git-write.test.ts` | 261 | 290 | changed |
 | `tests/server/git/refs/cherry-pick.test.ts` | 40 | 41 | changed |
 | `tests/server/git/refs/delete-branch.test.ts` | 36 | 37 | changed |
 | `tests/server/git/refs/detached.test.ts` | 31 | 43 | changed |
@@ -493,7 +840,7 @@ Other runs: the base copy run of case 117 and 115 to 118 was repeated for this r
 ## 6. Judgment calls the brief left open (the orchestrator may reverse any)
 
 1. `ReadOptions.config` is optional (`src/lib/server/git/git-reads.ts:69`). The harness of verify 12b calls `handleGitGet(request, { rootsFor })` with no config, so a caller that names none gets an empty catalog and a read that has a sentence to say then fails on the missing catalog key (`git-reads.ts:215`). Reversal: make it required and pass the config in the harness.
-2. The head pill's glyph name is held in a constant `HEAD_GLYPH` in `CommitRow.svelte`. Reversal: write the glyph name at its use.
+2. The head pill's glyph name is held in a constant `HEAD_GLYPH` in `CommitRow.svelte:125`. Reversal: write the glyph name at its use.
 3. `PickConnection` (the type of the request's connection that `handlePick` takes) stays exported in `picker.ts`: the new test imports it, as it imports `PickRun` and `PickRunner`, which the base list already holds. The unused-exports list therefore has one added line (part 13).
 4. `tests/server/text.ts` (8 lines) is a new test helper exporting `TEXT`, the catalog of the checkout's own `config/text`, so a test words a refusal as a reader would read it instead of copying the sentence into the test. The git, deposit and auth tests pass it to the functions that now take `text`.
 5. `routeOptions` in `tests/routes/machine/schedules/schedules-fixture.ts` replaces three inline option objects that each needed the new `text` member.
@@ -505,8 +852,13 @@ Other runs: the base copy run of case 117 and 115 to 118 was repeated for this r
 11. The test every follower of the `files` channel applies to a message (which files and folders it names) is in the new `src/lib/state/shared/answers/files-named.ts` (decision 32), one module for all followers.
 12. `startGit` and `startAutofetch` moved out of `context.ts` to `src/lib/server/root/watch/git-start.ts` (Z705 (I1)); `repositories.ts` is split with `worktrees.ts` as D13 says.
 13. `repository_scan_depth` is 1 in `config/sources.yml`, range 0 to 3; a Settings write of 4, -1, 1.5 or "one" is refused at the key ("This option takes a number from 0 to 3", "a whole number", "a finite number"), and 2 is written (case 81, proved on a scratch copy).
-14. Verify 4 was run as one invocation over the guarded files (part 4); the tree checks and the guarded set ran with `--testTimeout 0 --hookTimeout 0` because the machine's load made the default 5 s fail.
-15. The brief's 41 numbered decisions were taken as written; the calls above are the ones it did not settle.
+14. Verify 4 was run one file at a time (part 4); the tree checks, the guarded set and the per-file runs used `--testTimeout 0 --hookTimeout 0` because the machine's load made the default 5 s fail.
+15. The brief's 41 numbered decisions were taken as written; the calls above and the ones below are the ones it did not settle.
+16. `heldListings(peek, root, path)` in `fs-transport.ts:300` returns what every form of one folder's listing holds, read through `queries.peek`; `gone()` counts a held listing only when it is current (`stale` false) and was read without error. A marked listing falls through to the request, so a folder whose listing is being read again is asked about with everything shown. Reversal: count a marked listing, which answers from stale data and saves that request.
+17. A list drag marks its own drag with a type that only that list's instance reads (`list-drag.svelte.ts:34`), so a bookmark dragged from one Files tab is no drop in the Bookmarks list of another tab. Reversal: a shared drag type, which brings back the shared stale item.
+18. The head pill on a branch opens the checked-out branch's menu (Checkout and Delete Branch disabled with their reasons); while HEAD is detached it has no menu (`CommitRow.svelte:119`).
+19. `disk.ts` is in `state/sources/explorer/view/` (the write list names that folder), which keeps `state/sources/explorer/` at 8 items.
+20. A tree that did not start a root drag answers no drop through an empty `carried` (`dragging.svelte.ts:167`), so no drag-state value is shared between trees.
 
 ## 7. Visible changes, before and after, with what the look should see
 
@@ -522,7 +874,7 @@ Put the look on a workbench page named TEST. "Before" is what the base showed (p
 | A6 | a focused bookmark, note, movable root or section head | no key | Alt+Up and Alt+Down move the row one place and keep the focus; at the end nothing happens; an open editor row is not moved |
 | B1 | folders open under two roots | Collapse Folders closes folders only and a second press changes nothing | the first press closes the folders, the second closes the roots; with no folder open one press closes the roots |
 | C1, C2 | Files tree open with a folder expanded; make, move or delete a file there from a terminal | changes show only after Refresh or a close and open | the change shows within about two seconds with no Refresh, including a write under `node_modules` with Show Hidden Files on; an undone delete shows |
-| C3 | a file tab open, then delete the file outside oculus | tab label unchanged | the tab label is struck through in red with a tooltip ending "Deleted", and the Open Editors row is struck through in red; putting the file back clears it; a `.gitignore` that exists is not marked |
+| C3 | a file tab open, then delete the file outside oculus | tab label unchanged | the tab label is struck through in red with a tooltip ending "Deleted", and the Open Editors row is struck through in red, one listing round trip after the folder's held listing is read again; putting the file back clears it; a `.gitignore` that exists is not marked |
 | C4 | cancel the folder panel, fail an add, Show in Files on a missing part | a line above the tree that pushes the rows down | one line over the foot of the view with a close control; closes with the control, Escape or the next action; no row moves |
 | C5 | Show in Files on a folder the tree has not read (untracked folder in Changes) | could answer that a part is missing | the folder shows and is selected |
 | C6 | remove a root from `sources.yml` or the saved workspaces file by hand | stays until a Refresh | leaves at the next config push or poll |
@@ -532,8 +884,8 @@ Put the look on a workbench page named TEST. "Before" is what the base showed (p
 | D4 | cherry-pick a conflicting commit, then Abort | commit box keeps the prepared text | the box is empty after Abort; an edited text stays |
 | D5, G1 | any refused git, deposit or write request | lower-case literal sentences | capitalised catalog sentences with no full stop; "1 file is in conflict" and "2 files are in conflict"; the token refusal reads "The write token is missing or stale" |
 | D6 | a clean repository | empty groups and a "nothing" row | Changes head with no rows; no Untracked, Staged or Merge head; no "nothing" row |
-| D7, D8 | a commit with three branches and two tags in the Graph | every pill whole; head count | the first name whole (cut at 100 px), then one branch glyph with 2 and one tag glyph with 2, names in the tooltips; the subject readable; the Graph head shows no count |
-| D9 | detached HEAD; HEAD on a branch | repository row named the detached state only; no head pill | the row shows the first 8 characters of HEAD's commit; HEAD's graph row carries a head pill and short hash first among its pills, on a branch as well |
+| D7, D8 | a commit with three branches and two tags in the Graph | every pill whole; head count | the first name whole (cut at 100 px), then one branch glyph with 2 and one tag glyph with 2, names in the tooltips; the subject readable; the Graph head shows no count. On HEAD's own commit the first name is the head pill (item D9 below), so the checked-out branch is not among the glyph names |
+| D9 | detached HEAD; HEAD on a branch | repository row named the detached state only; no head pill | the row shows the first 8 characters of HEAD's commit; HEAD's graph row carries the head pill first among its pills, with the checked-out branch's name on a branch (`main`, and `main` is not drawn again among the other names) and the 8-character hash only while HEAD is detached (Z711) |
 | D10 | menus in the Graph log | Cherry Pick and Checkout (Detached) everywhere | no Cherry Pick on a commit HEAD contains; Cherry Pick on an incoming commit; no Checkout (Detached) on HEAD's own commit while detached |
 | D11 | Worktrees section with a worktree outside the worktrees folder; New worktree field | whole path; Enter did nothing | the folder's last name with the whole path as tooltip; Enter in the field makes the worktree |
 | D12 | a session workspace deleted from disk; a configured root deleted | both listed | the session workspace is not listed; the configured root is listed as missing |
@@ -557,15 +909,26 @@ Put the look on a workbench page named TEST. "Before" is what the base showed (p
 | `tests/routes/git/git.test.ts:72,151`, `tests/routes/git/untracked.test.ts:56`, `tests/routes/git/deposit.test.ts:74` | `'this action needs the page to confirm it'` | `'This action needs the page to confirm it'` |
 | `tests/server/git/deposit.test.ts` | `'the scan found something'`; `adopt`, `sync` and `commit` called without a catalog | `'The scan found something'`; each of the three gains `TEXT` |
 | `tests/server/git/git-ops.test.ts` | `'no merge is in progress'`, `'still conflicted'`; git write calls without a catalog | `'No merge is in progress'`, `'Still in conflict'`; every git write call gains `TEXT` |
-| `tests/server/git/git-write.test.ts` | `'switches to another branch'` as one case; `stoppedOn(here, stopped, 'the merge')` | an `it.each` table (an untracked file only switches and the file stays; a modified tracked file is refused with `'The working tree is dirty, so switching would carry the changes across'`); `stoppedOn(here, stopped, TEXT, 'merge')` |
+| `tests/server/git/git-write.test.ts:155` | `'switches to another branch'` as one case; `stoppedOn(here, stopped, 'the merge')` | the same title (G33's) with a `SWITCHES` table of rows (an untracked file only switches and the file stays; a modified tracked file is refused with `'The working tree is dirty, so switching would carry the changes across'`); `stoppedOn(here, stopped, TEXT, 'merge')` |
 | `tests/server/core/git-failure.test.ts` | `failureText(failure, config)` | `failureLine(failure, TEXT)` |
 | `tests/server/git/refs/cherry-pick.test.ts:38`, `tests/data/real-hub.probe.ts:128` | `statusFor(...)` used as a value | `await statusFor(...)` |
 | `tests/server/root/context-fixture.ts:71` | a `refresh` stand-in returning nothing | a `refresh` answering a settled promise |
 | `tests/server/machine/hpc/submit-world.ts:39`, `submit-files.test.ts:72` | `keptFiles(...)` used as a value | `await keptFiles(...)` |
 | `tests/server/files/picker.test.ts` (`printing` helper) | `{ code, out }` | `{ code, out, err: '' }`; six G42 rows added |
 | `tests/data/sources/config/settings.test.ts` | no `repository_scan_depth` | the `repositoryScanDepth` table (0, 3, 4, -1, 1.5, "one", missing) and its catalog `options` |
-| `tests/server/files/workspaces.test.ts` | no `order-roots` | 3 `order-roots` rows |
+| `tests/server/files/workspaces.test.ts:70` | no `order-roots` | G31's test 'writes a missing file and refuses one that does not read, leaving it as is' loops over the save and the order-roots writes |
 | `tests/checks/config/config-folder.test.ts` | EXPECTED without the key | EXPECTED gains `'repository_scan_depth'` |
+
+Round 1 folded the review's new tests into the named tests as rows. The assertions of each moved with it and none was weakened:
+
+| Where | Before round 1 | After |
+|---|---|---|
+| `tests/routes/edit/roots.test.ts:93` | G8 'appends the folder as an entry under a key made from its name, keeping every other line' plus four separate tests | the same title, with the order write, the wrong-keys refusals (`roots-changed`, nothing written) and the comment-line refusals (`invalid`, file as it was) as rows inside it |
+| `tests/routes/edit/roots.test.ts:158` | G9 'records the add and the remove, and the undo of each puts the list back' | the same title, with the order write's record and its undo as a row |
+| `tests/server/files/workspaces.test.ts:70` | G31 'writes a missing file and refuses one that does not read, leaving it as is' plus a test for the order | the same title, looping over the save and the order-roots writes |
+| `tests/server/files/notes.test.ts:53` | two tests | one test, G31's 'refuses a write over an order file it cannot read, leaving it', with the missing-file write and each unreadable-file row |
+| `tests/server/git/git-write.test.ts:155` | 'switches to another branch over %s, and refuses it only for a change to a tracked file' | G33's 'switches to another branch' with the `SWITCHES` rows |
+| `tests/server/git/refs/detached.test.ts:27` | 'detaches HEAD at a hash with an untracked file only in the tree, and keeps the file' | G33's 'detaches HEAD at a hash on a clean tree' with the untracked-only row |
 
 Other test files changed to follow a changed signature (an awaited `statusFor`, `keptFiles` or `refresh` stand-in, and `TEXT` passed where a function now takes `text`) assert what they asserted before; their edits are in the file table of part 5 (the 36 paths under `tests/`).
 
@@ -573,11 +936,13 @@ Other test files changed to follow a changed signature (an awaited `statusFor`, 
 
 Rewritten head comments (49 files), each read against the new behaviour after the edit:
 
-`src/lib/data/sources/config/settings.ts`, `src/lib/server/core/git/reads.ts`, `src/lib/server/core/git/run.ts`, `src/lib/server/core/git/state.ts`, `src/lib/server/edit/writes/config/roots.ts`, `src/lib/server/files/files-channel.ts`, `src/lib/server/files/fs/notes.ts`, `src/lib/server/files/fs/picker.ts`, `src/lib/server/git/deposit-routes.ts`, `src/lib/server/git/git-routes.ts`, `src/lib/server/root/watch/git.ts`, `src/lib/shell/keys/Palette.svelte`, `src/lib/state/sources/files.svelte.ts`, `src/lib/state/sources/fs.svelte.ts`, `src/lib/state/sources/repositories/repositories.ts`, `src/lib/state/system/docs.svelte.ts`, `src/lib/ui/display/Ticker.svelte`, `src/lib/ui/tabs/TabFace.svelte`, `src/lib/ui/tree/TreeItem.svelte`, `src/lib/ui/tree/TreeView.svelte`, `src/lib/views/sessions/changes/ChangesTouched.svelte`, `src/lib/views/shared/changes/ChangeGroups.svelte`, `src/lib/views/shared/explorer/control/tab-actions.ts`, `src/lib/views/shared/explorer/tree/ShowPath.svelte`, `src/lib/views/shared/explorer/tree/Tree.svelte`, `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts`, `src/lib/views/sources/files/Files.svelte`, `src/lib/views/sources/files/sections/Bookmarks.svelte`, `src/lib/views/sources/files/sections/Notes.svelte`, `src/lib/views/sources/files/sections/Sections.svelte`, `src/lib/views/sources/repositories/changes/Changes.svelte`, `src/lib/views/sources/repositories/graph/CommitRow.svelte`, `src/lib/views/sources/repositories/menus/graph-menu.ts`, `src/routes/api/(files)/folders/pick/+server.ts`, `src/lib/views/sources/files/sections/Section.svelte`, `src/lib/views/sources/files/sections/OpenEditors.svelte`, `src/lib/views/sources/repositories/Repositories.svelte`, `src/lib/views/sources/repositories/menus/change-menu.ts`, `src/lib/views/sources/repositories/RepoList.svelte`, `src/lib/views/sources/repositories/graph/Graph.svelte`, `src/lib/views/sources/source/Source.svelte`, `src/lib/views/sources/source/save/tab-draft.svelte.ts`, `src/lib/state/sessions/source.svelte.ts`, `src/lib/views/shared/changes/CommitBox.svelte`, `src/lib/views/sources/repositories/refs/Worktrees.svelte`, `src/lib/shell/panes/strip/strip-tab.ts`, `src/lib/state/sessions/terminal/commands.svelte.ts`, `src/lib/state/life/present.svelte.ts`, `src/lib/server/files/fs.ts`.
+`src/lib/data/sources/config/settings.ts`, `src/lib/server/core/git/reads.ts`, `src/lib/server/core/git/run.ts`, `src/lib/server/core/git/state.ts`, `src/lib/server/edit/writes/config/roots.ts`, `src/lib/server/files/files-channel.ts`, `src/lib/server/files/fs/notes.ts`, `src/lib/server/files/fs/picker.ts`, `src/lib/server/git/deposit-routes.ts`, `src/lib/server/git/git-routes.ts`, `src/lib/server/root/watch/git.ts`, `src/lib/shell/keys/Palette.svelte`, `src/lib/state/sources/files.svelte.ts`, `src/lib/state/sources/fs.svelte.ts`, `src/lib/state/sources/repositories/repositories.ts`, `src/lib/state/system/docs.svelte.ts`, `src/lib/ui/display/Ticker.svelte`, `src/lib/ui/tabs/TabFace.svelte`, `src/lib/ui/tree/TreeItem.svelte`, `src/lib/ui/tree/TreeView.svelte`, `src/lib/views/sessions/changes/ChangesTouched.svelte`, `src/lib/views/shared/changes/ChangeGroups.svelte`, `src/lib/views/shared/explorer/control/tab-actions.ts`, `src/lib/views/shared/explorer/tree/ShowPath.svelte`, `src/lib/views/shared/explorer/tree/Tree.svelte`, `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts`, `src/lib/views/sources/files/Files.svelte`, `src/lib/views/sources/files/sections/Bookmarks.svelte`, `src/lib/views/sources/files/sections/Notes.svelte`, `src/lib/views/sources/files/sections/Sections.svelte`, `src/lib/views/sources/repositories/changes/Changes.svelte`, `src/lib/views/sources/repositories/graph/CommitRow.svelte`, `src/lib/views/sources/repositories/menus/graph-menu.ts`, `src/routes/api/(files)/folders/pick/+server.ts`, `src/lib/views/sources/files/sections/Section.svelte`, `src/lib/views/sources/files/sections/OpenEditors.svelte`, `src/lib/views/sources/repositories/Repositories.svelte`, `src/lib/views/sources/repositories/menus/change-menu.ts`, `src/lib/views/sources/repositories/RepoList.svelte`, `src/lib/views/sources/repositories/graph/Graph.svelte`, `src/lib/views/sources/source/Source.svelte`, `src/lib/views/sources/source/save/tab-draft.svelte.ts`, `src/lib/state/sessions/source.svelte.ts`, `src/lib/state/sources/fs-transport.ts`, `src/lib/state/sources/explorer/view/disk.ts`, `src/lib/views/sources/files/sections/list-drag.svelte.ts`, `src/lib/views/sources/repositories/graph/pills.ts`, `src/lib/views/shared/changes/CommitBox.svelte`, `src/lib/views/sources/repositories/refs/Worktrees.svelte`, `src/lib/shell/panes/strip/strip-tab.ts`, `src/lib/state/sessions/terminal/commands.svelte.ts`, `src/lib/state/life/present.svelte.ts`, `src/lib/server/files/fs.ts`.
 
 Read and still true (77 files, heads that mention the changed behaviour or sit in a changed file):
 
 `src/lib/data/helpers/worktrees.ts`, `src/lib/data/model/model-sessions.ts`, `src/lib/data/prose/lsp-servers.ts`, `src/lib/data/sources/config.ts`, `src/lib/data/sources/config/catalogs.ts`, `src/lib/server/content/latex/endpoint.ts`, `src/lib/server/content/memories.ts`, `src/lib/server/core/auth.ts`, `src/lib/server/core/git/compare.ts`, `src/lib/server/core/git/files.ts`, `src/lib/server/edit/writes.ts`, `src/lib/server/edit/writes/bodies.ts`, `src/lib/server/edit/writes/config/config-write.ts`, `src/lib/server/files/open.ts`, `src/lib/server/files/source.ts`, `src/lib/server/git/deposit-git.ts`, `src/lib/server/git/deposit.ts`, `src/lib/server/git/git-index.ts`, `src/lib/server/git/git-message.ts`, `src/lib/server/git/git-reads.ts`, `src/lib/server/git/git-refs.ts`, `src/lib/server/git/git-remote.ts`, `src/lib/server/git/git-write.ts`, `src/lib/server/machine/apps/routes.ts`, `src/lib/server/machine/hpc/submit.ts`, `src/lib/server/machine/lines.ts`, `src/lib/server/machine/pty/routes.ts`, `src/lib/server/machine/runs/commands/routes.ts`, `src/lib/server/machine/runs/schedules/routes.ts`, `src/lib/server/root/context.ts`, `src/lib/server/root/watch/autofetch.ts`, `src/lib/shell/keys/palette-modes.ts`, `src/lib/shell/panes/PaneView.svelte`, `src/lib/shell/panes/pane-view.ts`, `src/lib/state/client/context.ts`, `src/lib/state/client/payloads.ts`, `src/lib/state/sessions/latex/builds.ts`, `src/lib/state/sessions/latex/latex.svelte.ts`, `src/lib/state/sources/explorer/acts/keys.ts`, `src/lib/state/sources/explorer/acts/refusal.ts`, `src/lib/state/sources/explorer/ops.svelte.ts`, `src/lib/state/sources/explorer/view/files-view.ts`, `src/lib/state/sources/explorer/view/place.ts`, `src/lib/state/sources/explorer/view/reveal.ts`, `src/lib/state/sources/fs-transport.ts`, `src/lib/state/sources/repositories/change-tree.ts`, `src/lib/state/sources/repositories/repositories.svelte.ts`, `src/lib/state/sources/search/keys.ts`, `src/lib/state/system/apps/rules.ts`, `src/lib/state/workbench/palette.ts`, `src/lib/ui/tabs/tab-strip.ts`, `src/lib/ui/tree/TreeSection.svelte`, `src/lib/ui/tree/item-props.ts`, `src/lib/ui/tree/tree-keys.ts`, `src/lib/views/sessions/changes/Changes.svelte`, `src/lib/views/sessions/changes/ChangesRepo.svelte`, `src/lib/views/shared/changes/change-actions.ts`, `src/lib/views/shared/explorer/RootedTree.svelte`, `src/lib/views/shared/explorer/tree/control/keyed.ts`, `src/lib/views/shared/explorer/tree/menu/row-menu.ts`, `src/lib/views/sources/files/header/WorkspaceHeader.svelte`, `src/lib/views/sources/files/sections/Outline.svelte`, `src/lib/views/sources/files/sections/Timeline.svelte`, `src/lib/views/sources/files/sections/clangd/Ast.svelte`, `src/lib/views/sources/files/sections/clangd/ClangdSection.svelte`, `src/lib/views/sources/files/sections/clangd/MemoryUsage.svelte`, `src/lib/views/sources/files/sections/clangd/props.ts`, `src/lib/views/sources/repositories/Repo.svelte`, `src/lib/views/sources/repositories/changes/ChangeRow.svelte`, `src/lib/views/sources/search/Search.svelte`, `src/lib/views/sources/source/status/tab-file.svelte.ts`, `src/routes/api/(docs)/memories/+server.ts`, `src/routes/api/(files)/open/+server.ts`, `src/routes/api/(files)/source/+server.ts`, `src/routes/api/(machine)/lines/+server.ts`, `src/routes/api/(machine)/schedules/+server.ts`, `src/routes/api/(sessions)/latex/+server.ts`.
+
+Round 1 heads, each read against the code after the edit: `dragging.svelte.ts` (lines 10-15: a tree that did not start the drag answers no drop and draws nothing), `list-drag.svelte.ts` (lines 1-6: a list holds the item its own drag carries and marks that drag with a type of its own), `pills.ts` (lines 1-5, new), `explorer/view/disk.ts` (moved, its head unchanged), `fs-transport.ts` (read, still true), `fs.svelte.ts` (the head names `explorer/view/disk.ts`; 879 lines) and `CommitRow.svelte` (the head names the head pill as the checked-out branch's). The doc comment of `gone` (`fs.svelte.ts:483-487`) says a held listing that names the file answers no and asks nothing. The doc comment of `LIFETIME` (`source.svelte.ts:169`) sits directly above its constant.
 
 Function doc comments: a scripted list of the functions whose body changed and whose doc comment was not edited (`x3e-docfuncs.tsv`, 202 rows, the doc printed beside the declaration) was read in full. Most bodies changed in a signature only (a `text` parameter, `async`). Doc comments rewritten after that reading: `tokenedBody` (`auth.ts`), `writeRoots` (`roots.ts`), `handlePick` (`picker.ts`), `watchGit` and `readRoots` (`root/watch/git.ts`), `partOf` (`state/system/apps/rules.ts`), `commitMenu` (`graph-menu.ts`), `readListing` (`fs.svelte.ts`), `createTabDraft` (`tab-draft.svelte.ts`) and the drag handlers `createDragging`, `started`, `over` and `ended` (`dragging.svelte.ts`). The head of `Source.svelte` is 520 lines with its paragraphs rewrapped to 100 columns.
 
@@ -585,10 +950,11 @@ Function doc comments: a scripted list of the functions whose body changed and w
 
 - Line drifts: item A2 cites `writes.ts:524` for the route's answer to a body it does not know; on the base that answer is `src/lib/server/edit/writes.ts:589` (`grep -rn "not a write this route knows" src` on the base prints `writes.ts:589`; case 91 cites :589 correctly). The brief cites `ops.svelte.ts:569` for the call that marks the listings; `grep -n "invalidate()" src/lib/state/sources/explorer/ops.svelte.ts` on the base prints `584`. No behaviour differs.
 - Case 107's base-copy run came out `"red":false` with `waitMeanMs` 3, which the brief said it might; it is quoted as it came and not counted as the red.
-- The brief's size rule (880 lines, 520 for a component) is stricter than `tests/checks/tree/size.test.ts` (900 and 540). `Source.svelte` was 521 lines after the step's edits and `size.test.ts` passed; it is 520 now.
-- Verify 4 words a run of each test file alone; a loaded machine made the per-file default timeout fail, so the set was run in one invocation with the timeout off (part 4).
+- The brief's size rule (880 lines, 520 for a component) is stricter than `tests/checks/tree/size.test.ts` (900 and 540). `Source.svelte` is 520 lines and `fs.svelte.ts` is 879 (`wc -l`); `src/lib/views/structure/map/Graph.svelte` is 524 lines and is identical to the base.
+- Verify 4 words a run of each test file alone; the files were run one at a time with `--testTimeout 0 --hookTimeout 0`, because this machine's load ends a run on the 5 s default (part 4).
 - The step cannot run `tests/checks/config/integrity.test.ts` green in a worktree that has no `deck/` folder; the check passes in a checkout that has one.
 - The brief says the group `server.git` is new; on the base `config/text/server.yml` already holds a `server.git` group of 11 values (the failure sentences of `core/git`), which the step kept and extended to 101 values. `server.deposit` (22) and `server.auth` (2) are new.
+- Case 26 ("made, then written") for `order-notes` over a missing notes folder: the brief's own rule (item A4) refuses a list that names no note, and a missing folder holds no note, so the answer is `no-such-note` and the folder is not made. The order file is made at the first reorder over notes that exist (CASE 26b). The ruling of round 1 states it this way (part 3b).
 - Case 58 premises "verify 9's grep prints no line that words a sentence": on the base it prints 145 lines; on the worktree it prints 12, none a sentence (part 4).
 
 ## 11. Doc text
@@ -737,7 +1103,7 @@ For each paragraph the step makes false: the base line as printed by `grep -n` (
 
 - `grep -n` on the base prints: `` 39:The Graph section draws the checked-out branch's history fifty commits at a time, Load More reading the next fifty, each commit with its lanes, a circ ... ``
 - Base: The Graph section draws the checked-out branch's history fifty commits at a time, Load More reading the next fifty, each commit with its lanes, a circle that is larger for a merge and larger still with a ring for the checked-out commit, the branch and tag names on it as pills, and the checked-out commit's subject in bold.
-- Now: The Graph section draws the checked-out branch's history fifty commits at a time, Load More reading the next fifty, each commit with its lanes, a circle that is larger for a merge and larger still with a ring for the checked-out commit, the names on it as pills, and the checked-out commit's subject in bold. The first pill of a commit keeps its name, cut at its end; the others are glyphs only, grouped as local branches, remote branches and tags with a count when a kind holds more than one, and the names of a group are its tooltip. The checked-out commit carries a pill with the head glyph and its short hash first among its pills, on a branch as well as on a detached HEAD. The Graph head shows no count.
+- Now: The Graph section draws the checked-out branch's history fifty commits at a time, Load More reading the next fifty, each commit with its lanes, a circle that is larger for a merge and larger still with a ring for the checked-out commit, the names on it as pills, and the checked-out commit's subject in bold. The first pill of a commit keeps its name, cut at its end; the others are glyphs only, grouped as local branches, remote branches and tags with a count when a kind holds more than one, and the names of a group are its tooltip. The checked-out commit carries a pill with the head glyph first among its pills, named by the checked-out branch, or by the commit's short hash while HEAD is detached; the branch it names is not drawn a second time among the other names. The Graph head shows no count.
 
 **docs/source-control.md:43**
 
@@ -784,17 +1150,23 @@ Other paragraphs the grep for the changed words hit and that stay true: `docs/ap
 - Case 124 was run on a `vite dev` server on port 8795 with the fake `osascript`: a press started the fake (`start 58920`); a second press answered `{"error":"busy"}` HTTP 409; saving `picker.ts` restarted Vite (`[vite] server restarted`) and the fake logged `term`; the next press started a new fake (`start 63345`); its answer was not awaited. No fake remains and port 8795 is closed. Port 8787 was never used.
 - The integrity test failure in part 1 stays until the step runs in a checkout with `deck/`.
 - Cases 121, 125, 126, the application half of 134 and the answer half of 124 are not verified.
+- A tab's deleted-file mark now lags the disk by one extra listing round trip: when a file leaves a folder whose listing the tree holds, the held listing is read again and lacks the name, and the first `gone()` that finds so asks for the everything listing, which answers on its next call (part 3b, case 5, third line). The request count in that run is 2 before and after; the count at load is 4 to 1 and 20 to 0.
+- A bookmark or a note dragged from one Files tab is no drop in the list of another Files tab (part 6, item 17).
+- Verify 12a and 12b are not run in round 1 (part 1, part 2).
+- The head pill of a detached HEAD has no menu; on a branch it opens the branch's own menu (part 6, item 18).
 - Under load the 5 s vitest default fails slow tests (part 1).
 
 ## 13. Exports added, and what was done with each (the unused-exports diff)
 
-`diff <base>/unused-exports.txt <(sh utils/unused-exports.sh)` prints three lines different (run 11):
+`diff <(sh utils/unused-exports.sh) <base>/unused-exports.txt` prints three lines different (round 1 full run):
 
 - `src/lib/server/git/git-write.ts`: `OUTSIDE_WORKTREES` left the list (it is used only inside the file, so its `export` was dropped).
 - `src/lib/state/sources/repositories/repositories.ts`: `worktreesDir` left the list (moved to `worktrees.ts` and un-exported there).
 - `src/lib/server/files/fs/picker.ts`: `PickConnection` joined the list (`PickRun, PickRunner, PickConnection`). It is a type the test imports; it stays exported like `PickRun` and `PickRunner`, which the base list already holds.
 
-Every other new top-level export is imported by a module or a test (159 top-level names were added; each name was grepped for a same-name definition in other files).
+`heldListings` and `HeldListing` (round 1, `fs-transport.ts`) and `commitPills` and `Pill` (round 1, `graph/pills.ts`) are imported by `fs.svelte.ts` and `CommitRow.svelte` and do not appear in the list. `LISTING_FORMS` is a constant of `fs-transport.ts` that nothing outside the file reads, so it is not exported.
+
+Every other new top-level export is imported by a module or a test (159 top-level names were added in round 0; each name was grepped for a same-name definition in other files).
 
 ## 14. The greps
 
@@ -937,5 +1309,5 @@ token_refused: The write token is missing or stale
 
 ## 15. Slips
 
-One `git -C /dev/null` and one `git status` were run by slip, against the rule of no git command; both are read-only and no other git command was run.
+One `git -C /dev/null` and one `git status` were run by slip, against the rule of no git command; both are read-only and no other git command was run. Round 1 ran no git command.
 

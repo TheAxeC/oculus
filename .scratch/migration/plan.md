@@ -1597,6 +1597,8 @@ Agents in no role the cost script prices:
 4. adb7a3d3f5225357b: diagnosis of step O30 (red line at its landing), claude-opus-5-5
 5. ad0e3246971001565: diagnosis of step D33 (the card cursor after a reload), claude-opus-5-5
 6. a4bd31dbca0cc079c: diagnosis of step PR3 (the intermittent `serversOf` rows of `start.test.ts`, Z674 (6)), claude-opus-5-5, stopped (Z677)
+7. a7623ed3f99278c82: diagnosis of step D11 (the Debug Console's suggestion list drawn off screen, found in its look), claude-opus-5-5, stopped (Axel)
+8. a4457988faeb61026: diagnosis of step D11 (the unserved notice and the lost repository after a reload while paused, found in its look), claude-opus-5-5, stopped (Axel)
 - a0af7bce29bac6fa9: builder of step E4g, claude-sonnet-5-5
 - a0be667a081a9ab33: brief check of step E4g, claude-opus-5-5
 - a1387d637f72b6115: reviewer of step E4g, claude-opus-5-5

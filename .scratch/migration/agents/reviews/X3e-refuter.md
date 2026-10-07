@@ -523,3 +523,84 @@ Other scratch work:
 - `git status --short` in the worktree lists the step's own 201 changed paths, and `shasum docs/diagrams/*` matches the hashes taken before.
 
 Usage: a428b4ea21e9a98c7, claude-opus-5-5, 130,768 tokens, 214 tool uses, 40.0 min.
+
+## Repair round 1, refuted
+
+Reviewer over round 1: ad7f07abd9fb019bb, claude-opus-5-5, 366,125 tokens, 88 tool uses, 17.9 min. On the worktree `.agents/worktrees/X3e`, base e1a75b8e1. Every command ran with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`; "review copy" is an rsync of the worktree's `tools/oculus` under the session scratchpad with `node_modules` linked. The only git run was `git diff e1a75b8e1` and `git status --short` in the worktree.
+
+### Verification
+
+```
+Verify 1, diagrams (review copy): npm run diagrams exit 0; diff -rq docs/diagrams against the worktree: identical
+Verify 1, worktree: npm run test:quick -- --base e1a75b8e1
+  test:quick: 202 changed file(s), from git since e1a75b8e1
+  ok ASCII gate (2.0 s); ok prettier (4.7 s); ok svelte-kit sync (4.9 s); ok eslint (12.9 s)
+  ok svelte-check (18.0 s): COMPLETED 422 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok vitest (28.6 s); test:quick: 30.2 s (limit 45.0 s); every command passed
+Verify 2: the six tree checks: Test Files 6 passed (6), Tests 91 passed (91)
+Verify 4: the 48 guarded test files each run alone, every one exit 0
+  tests/checks/config/integrity.test.ts: exit 1, 2 failed | 6 passed (8), "deck folder deck is not in .../worktrees/X3e" (environmental)
+Verify 6 ASCII gate: nothing, exit 0; LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md docs/*.md | wc -l: 0
+Verify 7 folder-check: exit 0
+Verify 8 unused-exports against X3e-base: three lines differ (git-write.ts loses OUTSIDE_WORKTREES, repositories.ts loses worktreesDir, picker.ts gains PickConnection)
+Verify 9: 12 lines, none a sentence a reader sees
+Verify 10, 11, 13: each prints nothing, exit 1
+Verify 12c: base: P1a PASS, P1b FAIL (panels started=2, open at once=2), P2a FAIL (still running 1 s after the connection closed=1), P2b PASS, P3a FAIL (answer=500 {"error":"failed"}), P3b PASS, exit=1
+  worktree: P1a to P3b PASS, panels left running=0, exit=0
+  after both runs 8 orphaned `sleep 20` (parent pid 1), 3 a few seconds later: the fake's children after the harness's SIGKILL (red.mjs:46)
+Builder's round-1 proofs (review copy, src identical by diff -rq): Test Files 3 passed (3), Tests 6 passed (6); every CASE line matches report part 3b
+Case 3 folded titles: each 1 in guarded.md and 1 test file; the 5 files pass alone, 16 tests
+Case 6: source.svelte.ts:169-170, the LIFETIME comment directly above `const LIFETIME`
+Section G: ls <hub>/config: No such file or directory; grep -c '"file":"config/' ~/.oculus/changes.jsonl: 0
+Round delta, approximated: find -newer X3e-round1.md (19:56): the 17 paths of report part 4 row 12, none under src/lib/server, src/lib/data, config or src/routes
+```
+
+### Closures of the first review's findings
+
+- S1: closed (`dragging.svelte.ts:167`, `:182` answer `dropEffect = 'none'` when `carried` is empty; `:206` writes nothing; CASE 1 reproduces). The edge left is S-R1.
+- T2: closed (`dragging.svelte.ts:13-14`).
+- P1: closed (`list-drag.svelte.ts:31` per-instance `active`, `:34` a drag type per list; CASE 2 reproduces).
+- S2: closed (every test a row of its entry's named test).
+- S3: open for the orchestrator: G41 in `agents/guarded.md:89-91` still names `failureText`; the new Code and Test lines are in report part 3b.
+- S4: closed as ruled (CASE 26a, 26b).
+- S5: closed (part 3c names the 36 paths; `disk.ts` in `explorer/view/`; part 3d holds D27-3 and Q88c-22).
+- T1: closed (case 6).
+- B1: closed (`gone()` at `fs.svelte.ts:488-500`; CASE 5: 4 requests to 1, 20 to 0; the one-round-trip lag stated in parts 7 and 12).
+- B2: closed under Z711 (`pills.ts:13-34`; `docs/source-control.md:39`).
+
+The 36 paths outside the write list: each reason in report part 3c was read against the diff and holds; the reviewer's own count is 36. `row-menu.ts` is labelled "H2, D16" in part 3c where the client half is D17.
+
+### Verdicts (the whole diff since the base)
+
+Items: A1 holds (except the state of S-R1); A2, A3, A4, A5 hold; A6, A7 hold by reading; B1 holds by reading; C0, C1, C2, C6, C3 hold; C4, C5 hold by reading; D1 to D17 hold (D8: the remaining `count={commits.length}` at `Graph.svelte:424` is `VirtualRows`', see S-R2); E1, E2, E3 hold; F1 holds by reading; F2, F3 hold; H1 (H1.1 to H1.8), H2, H3 hold; G (not built) holds.
+
+Cases: met by a test or a run quoted above: 1, 11, 92, 13, 23, 24, 95, 52, 53, 101, 81, 96, 122, 123, 127, 134's test half, 141, 139, 10 (for a tree whose last root drag ended with `dragend`, see S-R1), 63 under Z711. Met by the report's quoted runs on files unchanged in round 1, reproduced by the first review: 12, 14, 18, 25, 26 (as ruled), 41, 54, 58, 80, 82 to 86, 90, 91, 93, 94, 97, 98, 99, 108 to 120, 128, 138, 140. Met by reading: 33 to 36, 43, and the implied inputs `folders` `''`, 65 folders, `{ root: '', workspaces: true }`, `folders: []`, `ast` twice. Not verifiable here (verify 12a and 12b): 104 to 107. Not verifiable here (the look on TEST): 2 to 9, 15 to 17, 19 to 22, 27, 29 to 32, 37 to 40, 42, 44 to 51, 55 to 57, 59 to 62, 64 to 79, 87 to 89, 100, 102, 103, 121, 124's answer half, 125, 126, 129 to 133, 134's application half, 135 to 137, the implied `repository_scan_depth: 3` on the hub.
+
+### Findings
+
+**Spec**
+
+- S-R1. `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts:71`, read at `:167` and `:182`: `let carried: string[] = [];` and `if (carried.length === 0 || !movable(row) || carried.includes(row.root) || rect === null) {`. Round item 1 asked for the drag state held per drag by the tree that started it, and item 2 that a drag ending without `dragend` leaves nothing a later drag is read against. The lists meet item 2 with a random drag type per list (`list-drag.svelte.ts:34`, `:40-42`); the tree relies on `carried`, cleared only by `ended` or `droppedRoot`, and every tree answers the same `ROOT_DRAG` type. Failure: tab 1 drags `ordo`, the row leaves `VirtualRows` so `dragend` never reaches it, tab 1 keeps `carried = ['ordo']`; a later drag of `cathedra` from tab 2 over tab 1 gets `dropEffect = 'move'` and a line, and a drop writes tab 1's stale order, moving `ordo`. Fix at landing: a per-tree drag type, as `list-drag.svelte.ts:34`, tested in `carriesRoot`.
+- S-R2. The brief's D8 says "`count` is removed from the two heads at `Graph.svelte:359` and `:419`"; on the base `:419` is `VirtualRows`' `count={commits.length}` (the base's `grep -n "count="` prints :359, :397, :404, :419). The builder rightly left it (now `:424`), but report part 1 says no premise gave a wrong result and part 10 does not name this one. Failure: a later reader of the brief removes the `VirtualRows` count and the Graph draws no rows.
+
+**Proof**
+
+- P-R1. Report part 8's row "`tests/server/machine/hpc/submit-world.ts:39`, `submit-files.test.ts:72` | `keptFiles(...)` used as a value | `await keptFiles(...)`" is wrong: the diff makes `listed` in `submit-world.ts:22` and `:32` return `Promise.resolve(...)`, and `submit-files.test.ts` is not in the diff. Failure: the audit of edits to existing tests looks for an `await keptFiles` that does not exist and leaves the real edit, a helper's return type, unread.
+
+**Standards**
+
+- T-R1. `dragging.svelte.ts:89-92`: `/** Whether a drag carries a root of this tree. */ function carriesRoot(...) { return (event.dataTransfer?.types ?? []).includes(ROOT_DRAG);` answers true for a root drag from any tree; the doc comment is false (spec.md's rule on a comment the change makes false). Failure: a later change gates a write on `carriesRoot` alone and writes a reorder for another tab's drag.
+
+**Behaviour**
+
+None; the head pill on a branch, the deleted file's tab mark one listing round trip later, and a bookmark or note drag from another tab being no drop are stated with before and after in report part 7.
+
+### Declined to judge
+
+- The exact delta of round 1: no copy of the round-0 tree was kept; judged against the whole diff, the eight round items and the first findings, and the files newer than X3e-round1.md. `git diff e1a75b8e1 | shasum` is now 156e2ee8c78e for the tracked files.
+- Verify 12a and 12b (cases 104 to 107): their fixtures need git clones and worktrees; the orchestrator runs them at landing. `red2.mjs`, `loop-red.mjs` and `writer1.sh` are not in `$TMPDIR/x3e-red` (only `bin`, `fake.log`, `home`, `red.mjs`), so they are written again from the records first.
+- Cases 108 to 120 and the other server runs of part 4b: not rerun; they rest on the round-0 runs and the first review's reproduction, over server files no later than the round.
+- The builder's statements that round 1 ran no git command, and its slips (part 15).
+- The look cases.
+- integrity.test.ts: environmental, the missing `deck/` in the worktree.
+- S3: the G41 text is the orchestrator's to write at landing, from report part 3b.
