@@ -1,5 +1,5 @@
 In flight (2 of 6 slots):
-- PR3 (Present decks edited and generated, PDF export): reviewed; lands when the diagnosis of `start.test.ts` is in.
+- PR3 (Present decks edited and generated, PDF export): reviewed; landing next.
 - D23c (library definitions read-only, the symbol selected on open): review.
 
 Queued, in order (23 steps):

@@ -49,13 +49,6 @@ The question: one slide action (New Slide, Delete, an image drop) writes several
 - Chosen: the row reads "order" beside the kind "deck order", in place of "order / order".
 - Not chosen: naming it by the deck's file, which the kind column already says.
 
-## Z674 (6) (2026-10-07, step PR3, the orchestrator, automode): the desktop start test that fails now and then
-
-The question: two rows of `tests/server/desktop/start.test.ts`, which count the server processes the desktop window started, fail now and then on main as on PR3. PR3 did not cause it, but an earlier ruling puts such a fix in the next step that changes the desktop code, which is PR3.
-
-- Chosen: its cause is found with the diagnose skill while PR3's repair round runs, and the fix lands with PR3 when it is small.
-- Not chosen: rerunning the test at every landing until it passes (the lazy option).
-
 ## Z674 (7) (2026-10-07, step PR3, the orchestrator, automode): three fields PR3 added to the deck data the page receives
 
 - Chosen: keep them as built. A slide's source carries the entry and the line it comes from, and a deck carries its `order:` list; only the Present view reads them, for Edit Slide and the order rows.
