@@ -34,7 +34,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 9d698263c
   launched: 2026-10-07
   report: agents/reviews/D15-report.md
-  builder_usage: first run handed back with two cases (221,087 tokens, 33 tool uses, 8.0 min)
+  builder_usage: first run handed back with two cases (221,087 tokens, 33 tool uses, 8.0 min); round 0 after the cases ruling (307,479 tokens, 42 tool uses, 13.3 min)
   brief_check: agents/reviews/D15-brief-check.md (a9240828824e6638a, claude-opus-5-5, 255,080 tokens, 78 tool uses, 11.2 min)
   cases_ruling: agents/briefs/D15-cases.md
   landing: not-started
@@ -176,6 +176,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Z707 (2026-10-07, M8's brief check, F26 and F30): M8 replaces `validate.ts`'s hand-written reference checks with ajv over the generated schemas, and nothing guards what those checks find. G14 ("The real hub builds with no findings") passes on a clean hub even when a check is dropped, and `agents/spec.md:57` says a new guarded entry is Axel's. Proposed words: "G56. Each rule a hub schema states gives its finding naming the file and the line: a reference to a key that does not exist, a key that exists twice in the referenced file, a value outside its options, a field outside its `when:`, a required field missing, and a field no schema declares." Its test is one table over the validation function, one row per rule. (a) Add G56 with these words, and M8 writes its test. Pro: a dropped or weakened check fails a test; con: one more test file to keep. (b) No new entry, G14 alone. Pro: nothing added; con: a check that stops finding anything passes unseen. Recommendation (a); (b) is the lazy option. M8 is not dispatched before this is ruled.
+- Z708 (2026-10-07, M8's brief check, F17 to F19): your Z650 says the cockpit is not updated, since it is to be deleted; `CLAUDE.md`'s "Verify before done" says `python3 tools/cockpit/build.py --selftest` passes; and my Z672 (1) renamed the cockpit's reader. The selftest is red on main since PR2 (32 errors: the idea statuses `nascent` x25, `scoping` x5, `de-risking` x2 are missing from `tools/cockpit/data/config/vocab.yml`'s `status_legend`), and M8 adds three more (the venue categories `thesis` and `meeting`); M8's rename of `options_from` also leaves the cockpit's registry dropdowns (`page.py:706-709`) with no options. (a) M8 leaves the cockpit untouched as Z650 says; the selftest stays red until the cockpit is deleted, and M8's brief drops the cockpit check. Pro: no work on a tool being retired; con: the hub rule's check stays red. (b) M8 adds the three statuses and two categories to the cockpit's vocab and strips the `vocab.` prefix in `page.py`, so the selftest is green. Pro: the hub rule holds; con: it updates the cockpit you said not to update. Recommendation (a), since Z650 is your most specific word on the cockpit; neither is the lazy option. M8 is not dispatched before this is ruled.
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)

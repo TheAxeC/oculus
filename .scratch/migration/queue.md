@@ -1,16 +1,16 @@
 In flight (3 of 6 slots):
-- D15 (PDF reading): building, its first-run cases ruled.
+- D15 (PDF reading): built, its report saved, under review.
 - D11 (the debug client for rite): building.
 - X3e (Files lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop): building.
 
-Being prepared: M8 (brief check done, its findings being closed); D43 and D33 (briefs to write).
+No step can be prepared now: M8 waits for X3e and D11 to land and for Axel's Z707 and Z708; D43 waits for M8; D33 waits for D11 and D28; D28 waits for X3e. The other three slots stay empty until one of these lands.
 
 Queued, in order (17 steps):
 - D28 (saving a file as VS Code does): after X3e.
 - M6 (the collection forms removed): after X3e and D28.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
-- M8 (the hub's YAML checked in the editor): ready.
+- M8 (the hub's YAML checked in the editor): brief check closed (Z706); after X3e and D11, and Axel's rulings on Z707 and Z708.
 - D43 (LaTeX navigation through texlab): after M8.
 - D33 (the Problems view): after D11 and D28.
 - D39 (hub keys as links): after M8.

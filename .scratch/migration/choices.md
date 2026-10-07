@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z706 (2026-10-07, step M8, the orchestrator, automode): how the hub's YAML reaches the editor, and the brief check's other choices
+
+- Chosen: the schemas come to the YAML server from the same snapshot build the hub's validation uses, so M8 waits for X3e and D11 to make room in the server's start file; oculus answers which schema each file gets; the YAML server cannot read any file on disk outside oculus's packages; oculus's own catalogs, text files, `.oculus/settings.yml` and apps' `app.yml` are checked through their own readers; career's sections are `type: records`; `suggest_from` and `values_by` become forms of `from:`; the help line is `help` in the code as in the files; the moved manifest schema stays listed in Settings; the hub's existing accented names and glyphs stay; the YAML server's own words in the editor, as pyright's; integer years, career's free keys and the radar's `new-idea-candidate` pass.
+- Not chosen: a second reader of the hub in the adapter, globs handed to the server, the disk left readable, hand-written JSON Schemas, a second meaning for `metalist`, two more reference keys, a half rename, settings and app files left unchecked (the lazy options).
+
 ## Z705 (2026-10-07, step X3e, the orchestrator, automode): the Files view's choices left by the fourth recheck
 
 - Chosen: HEAD's graph mark keeps the target icon as VS Code's; an empty folder list in a files notice concerns nothing; the repository scan walks folders in oculus's own code; the server's start file split by moving the git watcher's start beside the watcher; the desktop folder sheet stops waiting when its page goes; the palette hints of the language-server commands in the text catalog; a LaTeX build follows the folders of its inputs; the delete measurement awaits the listing; hidden sections keep their place in the order.
