@@ -129,6 +129,11 @@ export class PdfViewer {
     hooks: ViewerHooks;
 
     readonly #root: HTMLDivElement;
+    /**
+     * The viewer's own box inside the root. The frame layer owns the root's inline `display`, so
+     * the side panel and the pages are laid out in this box instead.
+     */
+    readonly #box: HTMLDivElement;
     readonly #container: HTMLDivElement;
     readonly #viewerEl: HTMLDivElement;
     readonly #main: HTMLDivElement;
@@ -154,7 +159,8 @@ export class PdfViewer {
     constructor(root: HTMLDivElement, hooks: ViewerHooks) {
         this.hooks = hooks;
         this.#root = root;
-        root.classList.add('oc-pdf');
+        this.#box = document.createElement('div');
+        this.#box.className = 'oc-pdf';
         const side = document.createElement('div');
         side.className = 'oc-pdf-side';
         this.#main = document.createElement('div');
@@ -175,7 +181,8 @@ export class PdfViewer {
         actions.append(this.#retry, this.#builds);
         this.#note.append(this.#message, actions);
         this.#main.append(this.#container, this.#note);
-        root.append(side, this.#main);
+        this.#box.append(side, this.#main);
+        root.append(this.#box);
         this.#side = new SidePanel(side, {
             goTo: (dest) => void this.#goTo(dest),
             goPage: (page) => this.goToPage(page),
@@ -277,7 +284,7 @@ export class PdfViewer {
 
     toggleInvert(): void {
         this.invert = !this.invert;
-        this.#root.classList.toggle('invert', this.invert);
+        this.#box.classList.toggle('invert', this.invert);
     }
 
     showSide(kind: SidePanelKind): void {

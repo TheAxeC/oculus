@@ -133,7 +133,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Z699 (2026-10-07, D45's look on TEST, the orchestrator): the PDF viewer drew no pages. The frame layer shows a frame by setting its inline `display: block` (`src/lib/shell/frames/FrameLayer.svelte:89`), and the viewer used that frame as its flex box (`viewer.svelte.ts:157`, `root.classList.add('oc-pdf')`), so the scroll box `.oc-pdf-container` had a height of 0 and PDF.js drew nothing. The fix gives the viewer its own `.oc-pdf` box inside the frame; it is `agents/reviews/D45-pdf-height.patch` (one file, `git apply --check` passes on main at 40451030), the gate at 40451030 with it printed "test:landing: 287.3 s; every command passed", and the same layout made by hand in the page on TEST drew the pages. Copying it into main was refused by the session's permission check, so it is not on main. Options: (a) Axel applies it with `git -C ~/workspace/research-hub apply --index tools/oculus/.scratch/migration/agents/reviews/D45-pdf-height.patch` and the orchestrator commits it with its booking; (b) Axel allows the orchestrator to apply it. Recommended: (a), one command. The lazy option is leaving the viewer blank until D15 touches the file.
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -155,6 +154,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The fixture exports the four test sweeps leave unused (T1c's report names `ClientState` in `tests/fixtures/client.ts`, `sweepingOnError` in `scratch.ts` and `gitPayload` in `sessions-fixture.ts`; T1b, T1d and T1e name theirs): removed by the orchestrator at the landing of the last of T1b to T1e, after `sh utils/unused-exports.sh` and a grep of each name over `tests` and `src`, since each is unused only once all four have landed (T1e's brief, item 6).
 
 ## Closed items
+- Z699 (2026-10-07), the PDF viewer drew no pages: ruled (a) by Axel, who applied `agents/reviews/D45-pdf-height.patch` to main; committed with its booking, the pages drawn on TEST after a reload.
 - Z697 (2026-10-07), the second repair rounds of D23b and D45: ruled (a) by Axel, the fixes of both rounds are kept; from now on no exception round is granted for a finding the last review raised first, which is fixed at landing or raised as an open item.
 - Z681 (2026-10-07), `DESIGN.md:24` against Z672's changes to the hub's YAML: ruled (a) by Axel, the sentence is reworded so the `schema:` blocks may change; M8 does it.
 - Z669 (2026-10-06), F12 into the standard library: ruled (a) by Axel, a definition outside every root opens read-only for paths a server named; built in D23c.
@@ -199,6 +199,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-07 15:10. Axel: "continue with the full orchestration, automode, fill all open slots as far as is possible, keep queue.md up to date". Z699 ruled (a): Axel applied the PDF viewer fix, committed on main. Premise rechecks on main at 8bd2070c running for X3e, D11, D15, M8, D43 and D33 (Agents section of plan.md); each is then prepared by /spec. Nothing dispatched.
 - 2026-10-07 13:40. D45 landed (LaTeX as VS Code's LaTeX Workshop; booking in plan.md; `agents/reviews/D45-landing.md`) with the review over round 2's nine findings fixed at landing; automode Z698 kept round 2's three choices. No open item. Nothing in flight. Ready: X3e, D11, D15, M8, D43, D33. Orchestration stops here for Axel, who has not given leave to go on; M8 and D11 get fresh premise checks at /spec.
 - 2026-10-07 07:30. PR4 landed (Present's presenter screen; booking in plan.md; `agents/reviews/PR4-landing.md`) with six fixes at landing, five from the review over round 1 (Z689 among them) and one from its look on TEST. In flight: D45 and D23b (builders running). Every queued step waits on D45, D23b or Axel's ruling Z681. Next: D23b's and D45's reports, their reviews and landings.
 - 2026-10-07 04:20. D23c landed (library definitions open read-only, the symbol selected on open; booking in plan.md; `agents/reviews/D23c-landing.md`) with Z679, the read.ts comment, the report's timing and G2 and G3 fixed at landing, and one fix from its look on a scratch oculus: a tab over a served root's file passed an empty library address and so had no language features. In flight: none. Next: prepare PR4, D45, X3e, M8, D43, D23b and D33 into the free slots.
