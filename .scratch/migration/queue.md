@@ -1,13 +1,13 @@
-In flight (1 of 6 slots):
+In flight (2 of 6 slots):
 - D15 (PDF reading): building.
+- D11 (the debug client for rite): building.
 
-Being prepared: M8 (brief check running); D11 and X3e (briefs being corrected from their rechecks); D43 and D33 (briefs to write).
+Being prepared: M8 (brief check running); X3e (brief being corrected from its recheck); D43 and D33 (briefs to write).
 
-Queued, in order (19 steps):
+Queued, in order (18 steps):
 - X3e (Files lists reordered by drag): ready.
 - D28 (saving a file as VS Code does): after X3e.
 - M6 (the collection forms removed): after X3e and D28.
-- D11 (the debug client for rite): ready.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
 - M8 (the hub's YAML checked in the editor): ready.

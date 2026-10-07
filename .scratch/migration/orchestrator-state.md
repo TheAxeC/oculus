@@ -37,6 +37,19 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D15-brief-check.md (a9240828824e6638a, claude-opus-5-5, 255,080 tokens, 78 tool uses, 11.2 min)
   landing: not-started
   round: 0
+- step: D11
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a9e3866bea9c8baf8 (builder, launched 2026-10-07)
+  worktree: .agents/worktrees/D11
+  base: 5308e806e
+  launched: 2026-10-07
+  report: agents/reviews/D11-report.md
+  brief_check: agents/reviews/D11-brief-check.md (a0e68a55e2b7c6f81, claude-opus-5-5, 338,752 tokens, 125 tool uses, 18.5 min; the brief corrected since from agents/reviews/D11-premise-recheck-2.md)
+  shared_paths: DESIGN.md and docs/views.md with D15 (D15 writes DESIGN.md:169 and :533 and docs/views.md:239 and :259; D11 writes DESIGN.md:121, :165, :410, :568 and a new decisions entry, and a section after docs/views.md:71), different lines, so the merge at the second landing is simple
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
