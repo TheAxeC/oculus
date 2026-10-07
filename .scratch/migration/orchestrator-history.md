@@ -1906,3 +1906,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-07. D45 round 1 back (276,096 tokens, 379 tool uses, 146.4 min); Z695 rules its three choices; its review over round 1 dispatched.
 - 2026-10-07. D45 refuted over round 1 by afa4681f60c7525d3 (claude-opus-5-5, 121,820 tokens, 153 tool uses, 38.6 min): items 11, 14, 19 violated; Z696 grants round 2 under the round cap's exception (`agents/briefs/D45-round2.md`, 12 items).
 - Z697 (2026-10-07): open item, D23b's and D45's second rounds granted for findings the review over round 1 raised first.
+- 2026-10-07. D23b round 2 back (287,265 tokens, 120 tool uses, 54.2 min); its review over round 2 dispatched.
