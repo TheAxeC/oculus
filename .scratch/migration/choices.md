@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z696 (2026-10-07, step D45, the orchestrator, automode): a second repair round for LaTeX
+
+- Chosen: one more repair round, since a failed build still replaces a PDF window's document, one save can start several LaTeX builds in one folder, a Cmd+click in the desktop window can raise the wrong window, and the status item hides during a build; the fixes are too large to make at landing.
+- Not chosen: landing it with those defects booked for later (the lazy option).
+
 ## Z695 (2026-10-07, step D45, the orchestrator, automode): three choices of the LaTeX repair
 
 - Chosen: a PDF window whose ChromeTab is missing waits up to 10 seconds, then comes back into the main page as a free float; a duplicated ChromeTab of oculus gets its own identity, so a Cmd+click in a PDF window opens the source in the right page; a PDF window shows notices, so a jump that fails says so.

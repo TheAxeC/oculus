@@ -279,3 +279,263 @@ Cases of the brief's "Cases":
 Reviewer usage: agent-aafbba4d13fda558e, claude-opus-5-5, tokens not measured (about 640k of the context budget used across the run, including before compaction), about 110 tool uses (not counted exactly), minutes not measured.
 
 Agent: x.
+
+## Repair round 1, refuted
+
+The round leaves seven defects open. Three are unmet behaviours I reproduced with my own runs:
+- a failed build reloads the PDF in a float;
+- one external write started three `latexmk` processes in one folder;
+- in the desktop app, the jump brings the window focused last to the front, which need not be the window the float belongs to.
+
+The other four:
+- a jump from a float whose owner page has closed does nothing and shows no notice;
+- the status item no longer shows while a build runs;
+- one hard-coded `#fff` colour;
+- a third copy of the bounded read in `bib.ts`.
+
+Case 5 is not reproduced. The section below follows the template's shape.
+
+```
+# from the worktree's tools/oculus, PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH
+npm run diagrams
+  exit 0; md5 of `git status --short` and of the diagrams diff identical before and after
+npm run test:quick -- --base f8e54615
+  190 changed file(s); 106 test file(s), 10 essential; ascii, prettier, eslint ok; svelte-check "415 FILES 0 ERRORS 0 WARNINGS"; vitest ok
+  "test:quick: 29.0 s (limit 45.0 s); every command passed" (second run 19.8 s)
+npm run test:checks
+  "Tests 2 failed | 241 passed (243)"; both failures are integrity.test.ts "deck folder deck is not in .../worktrees/D45" (the worktree has no deck/)
+npx vitest run tests/server/desktop --tagsFilter '!slow'
+  "Test Files 2 passed | 1 skipped (3)", "Tests 16 passed | 5 skipped (21)"
+npx vitest run tests/routes/sessions/terminal-actions.test.ts tests/routes/sessions/latex.test.ts tests/data/sources/config/settings.test.ts
+  "Test Files 3 passed (3)", "Tests 69 passed (69)"            (G35, G13)
+npx vitest run tests/state/workbench/layout/saved/layout-saved.test.ts tests/views/sources/bar-actions.test.ts tests/ui/tabs/tab-actions.client.test.ts
+  "Test Files 3 passed (3)", "Tests 18 passed (18)"            (G29, G37)
+sh utils/folder-check.sh -> exit 0; sh utils/size-check.sh -> exit 0
+sh utils/unused-exports.sh against the base listing: added names [], 11 names fewer
+ASCII gate over src tests config (local.yml excluded): 0 lines; LC_ALL=C grep '[^ -~]' DESIGN.md HELP.md docs/*.md: 0
+grep -rIn --exclude=local.yml -E "fileUrl\b|file-url|sourceFileUrl|fileAddress|ROW_LATEX|menu_latex|autoBuildShape|Open in Browser Tab" src tests config docs HELP.md DESIGN.md | wc -l -> 0
+grep -rIl isEvalSupported node_modules/pdfjs-dist | wc -l -> 0 (pdfjs-dist "version": "6.4.299")
+node_modules/pdfjs-dist/web/pdf_viewer.mjs:8013 "this._scriptingManager = options.scriptingManager || null;"; viewer.svelte.ts names no scriptingManager
+
+# G35 stop row on the unchanged tree (base copy with the current test file copied in)
+npx vitest run tests/routes/sessions/terminal-actions.test.ts -> "Tests 7 failed | 11 passed (18)"; the stop row "expected 400 to be 404"
+
+# Electron probes: scratch server on 8799, HOME and hub under $TMPDIR (path resolved by pwd -P), windows show:false
+probe.cjs float dup (the builder's, rerun):
+  owner A focusCalls:1, B focusCalls:0; the only layout write is A's openView
+  float page with no owner: notice shown, no frame sent
+  float viewer: 3 pages -> 4 after a build, scrollTop 1331 -> 1330, pageWidth 1037 unchanged
+  float in window place while its page lives; lock pending in the mains; float free after its page closed
+  duplicated tab takes a new id (7bvfbw against xezrx9)
+  side result: one external write to main.tex -> three tmux build sessions oculus-a20e2e-shell, oculus-d88b46-shell, oculus-f64d81-shell created 10:38:09; latexmk pids 65307, 65308, 65317
+probe.cjs status pdfui menu (rerun):
+  status item: main.tex drawn true, loose.tex false, main.pdf true, unrelated.pdf false
+  note over an unbuilt PDF: plainButtons 0, toolButtons ["Read again","Build"]
+  outline: entries First, Second, Third, One, plainButtons 0; thumbnails 3, withCanvas 3, plainButtons 0, current ["1"] -> ["2"] after pressing 2
+  context_menu false: no Build/SyncTeX entries
+probe.cjs menu with latex.context_menu: true in the scratch behavior.yml:
+  ["Build LaTeX project","Show the PDF at the caret (SyncTeX)","Go to Symbol...", ...]
+probe2.cjs (mine):
+  main page id before and after three reloads: ["6fjmqj","6fjmqj","6fjmqj","6fjmqj"]
+  float place before the float tab reload [["fl1","window"]]; 9 s after it [["fl1","free"]]; the float tab then: {"closes":1,"drawn":true}
+probe3.cjs (mine; one main with main.tex open, one float with the PDF, external write of a document with \undefinedcmd):
+  most latexmk at once: 1; main page showed "The LaTeX build of main.tex failed.": true
+  float viewer page counts seen: [3,4]; at the end: 4; tmux pane of the build: dead=1 status=12; pdfinfo main.pdf Pages: 4
+probe4.cjs (mine; owner A opens float, main B opens, A closed, Ctrl-click in the float):
+  B heard {"owner":"7nnhoa",...,"line":6}; B focusCalls 0; layout writes []; float notice false
+
+# failed build writes a PDF (scratch folder, real HOME): latexmk exit 12, main.pdf 12487 bytes
+
+# case 5 (scratchpad refute-d45-r1/), load average about 6
+  rootOf first touch, max per run (ms): 296.0, 126.3, 114.2, 157.6, 8.1, 278.8
+  control, plain cold read, max single (ms): 131.6, 102.6, 0.4; warmed rootOf 7.8 to 8.1
+  look files, three runs: every file at or under 28.0 ms; the round's r21-final.txt reads "slowest ms over 0 look files"
+# item 17: r17.probe.ts -> state.dir projects/manuscripts/alpha/manuscript, problem file exists under the hub: true, pdfPath .../out/main.pdf true
+```
+
+The scratch-HOME pdflatex hang has an environmental cause and is not a D45 defect. `$TMPDIR` ends in `/`, so `$TMPDIR/x` gives a HOME containing `//`. With such a HOME, kpathsea spins. With the same empty HOME resolved through `pwd -P`, `kpsewhich article.cls` answers in 0.11 s and `pdflatex main.tex` exits 0. All probe3 and probe4 runs used the resolved path.
+
+### Verdicts
+
+Items, over the whole diff since f8e54615. "Carried" means the first report's verdict stands and I did not rerun it in this round.
+
+- 1: holds. Cases 1 to 4 rerun (`final.ts`).
+- 2: holds. G35 passes (rerun); the build line is the `latexmkLine()` table.
+- 3: holds. The item 17 probe was rerun: `dir` and the problem files are relative to the main's folder, and the PDF is under `out/`.
+- 4: holds. G35 passes. The stop row now starts a build of `main.tex`, a build of `second.tex` and a checkcites terminal, and asserts that only the build of main.tex gets `C-c`. Its failure on the unchanged tree is my run (Findings, Proof 2).
+- 5: holds by reading `cleanBeforeRetry`. Its `building` status during a retry feeds Findings, Behaviour 1.
+- 6: holds (carried). See Findings, Behaviour 2 on concurrent auto builds.
+- 7: holds (carried).
+- 8: holds. `builds.ts:424-427` and `:472` send `force`.
+- 9: holds (carried).
+- 10: holds. No `isEvalSupported` in pdfjs-dist 6.4.299 (grep 0 files). No scripting manager is passed (`pdf_viewer.mjs:8013`). Controls, outline and thumbnails have 0 plain buttons (pdfui probe).
+- 11: violated, Findings Behaviour 1. A float reloads the PDF of a failed build.
+- 12: holds (carried).
+- 13: holds. The notice's Build passes `{ force: true }` and `force` reaches the server.
+- 14: violated, Findings Behaviour 3 and Behaviour 4.
+  - Between two browser pages the owner check holds (rerun).
+  - In the app, the window focused last is brought forward.
+  - With the owner closed, a jump does nothing and says nothing.
+- 15: holds by reading and G47 passing. Findings Behaviour 5 covers a float tab's reload.
+- 16: holds. `bar-actions.test.ts` passes (rerun).
+- 17: holds. The context-menu entries appear with `latex.context_menu` true and are absent with false (rerun both).
+- 18: holds (carried).
+- 19: violated, Findings Spec 1. The item is not drawn while a build runs and another tab is active.
+- 20: holds. The text "The LaTeX build of main.tex failed." was seen in probe3. `open_compiler_log` and `show_problems` are at `config/text/views/academic/latex.yml:89,145`. I did not reread that the notice's actions use these two strings.
+- 21: holds (carried).
+- 22: holds as ruled (Z690).
+- 23: holds (carried).
+- 24: holds (carried).
+- 25: holds (carried).
+- 26: holds (carried). Findings Standards 2 covers `bib.ts`'s own read.
+- 27: holds (carried).
+- 28: holds (carried).
+- 29: holds. `docs.ts` `routeUrl` goes through `fileBytesUrl`; the grep prints 0 lines.
+- 30: holds. The grep prints 0 lines.
+- 31: holds. `context_menu` works both ways (rerun). The `texcount_autorun` text at `config/behavior.yml:133` and in `options.yml` now says "after each save of a LaTeX file".
+- 32: holds for `DESIGN.md:121` and `:574` (read). `docs/window.md:82` keeps "or while a build runs", which the code no longer does; that is the item 19 defect (Findings Spec 1).
+
+Cases:
+
+- 1 to 4: met, rerun (`final.ts`).
+- 5: unmet, Findings Proof 1.
+- 6: met. G35 passes.
+- 7, 8: met (carried).
+- 9: partial (carried). Stop and the clean refusal are tested; the spinner, the x and the 2 s end are not run.
+- 10: met (carried).
+- 11: met. In probe3 one write with one following page started one `latexmk`.
+- 12: unmet, Findings Behaviour 1. After a successful build the float keeps its place (rerun: scrollTop 1331 to 1330, pageWidth unchanged). After a failed build the float draws the failed PDF ([3,4]).
+- 13: met (carried).
+- 14, 15: met (carried).
+- 16: met (carried).
+- 17: not verifiable (carried). It needs a page run on a folder added to the workspace.
+- 18: not verifiable (carried).
+- 19: met. G35 passes.
+- 20: unmet, Findings Behaviour 2.
+- 21, 22, 23: met (carried).
+- 24: met. G13 passes (rerun).
+- 25: met. The grep prints 0.
+- 26: partial.
+  - The ChromeTab float now runs: lock, return after close, owner jump.
+  - Findings Behaviour 3 to 5 apply.
+  - The desktop app's float window was not run.
+- 27, 28: met (carried).
+
+### Findings
+
+**Spec 1.** `src/lib/shell/status/LatexItem.svelte:57`:
+```
+const drawn = $derived(root !== null && (latexTab || pdfTab));
+```
+- What is wrong: the brief's item 19 says the item "shows while the active tab is a LaTeX source or a PDF of a build, or a build runs". The round dropped the third clause. Round item 18 asked only that a LaTeX file with no root, or another PDF, hide the item, so this change goes beyond the finding.
+- `docs/window.md:82` still says "or while a build runs, as a spinner", which is now false.
+- Failure scenario: the reader starts a build and switches to a Markdown tab. The spinner and the failure x are gone from the status bar until a LaTeX tab is active again.
+- Verdict: item 19 violated.
+
+**Proof 1.** Case 5, the round's section on round item 21 ("met in the five final runs", "`rootOf` stays at or under the control's max"):
+- Not reproduced. Two of my six runs have a first touch of 278.8 and 296.0 ms. The control's largest single cold read is 131.6 ms, so the excess is not the first read alone.
+- The round's final runs timed no look files (`r21-final.txt`: "slowest ms over 0 look files"). My look run has every file at or under 28.0 ms.
+- Decision that rests on it: whether case 5's 200 ms bound is met. It is not met on this machine under load (load average about 6). The round's claim that a cold read alone explains the excess is contradicted by the control.
+- Verdict: case 5 unmet.
+
+**Proof 2.** G35 stop row (`tests/routes/sessions/terminal-actions.test.ts`, the stop row of `LATEX_ROWS`):
+- The round did not quote the row's failure on the unchanged tree, which spec.md's guarded-test rule asks for.
+- My run of the current file on the base copy gives "Tests 7 failed | 11 passed (18)", with the stop row at "expected 400 to be 404". The row reads correctly.
+- No item's verdict changes.
+
+**Proof 3.** `tests/server/desktop/window-guard.test.ts:26-37` against `src/desktop/decide/links.ts:30-38`:
+- `floatOf` now accepts `owner` beside `float`, and `?float=f1&x=1` is still refused.
+- The G47 table has no row for `?float=f1&owner=<id>`. No test in `tests/` names the jump's `owner`: `grep -rln owner tests` lists only config, boundaries and layout files, which use the word in other senses.
+- Failure scenario: a later edit that drops `owner` from `floatOf` sends every float window's address to the browser. No test fails.
+- Verdict: item 14's proof is partial.
+
+**Standards 1.** `src/lib/views/sources/file/pdf/PdfControl.svelte:111-114`:
+```
+canvas { display: block; background: #fff; }
+```
+- What is wrong: spec.md's rule that colours come from `themes/tokens.css`. This is the only raw hex in a component under `src/lib` (grep from the previous part of this run).
+- Failure scenario: a theme with its own page colour still draws white thumbnails.
+- Verdict: item 10 holds in substance; this is a standards finding.
+
+**Standards 2.** `src/lib/server/content/latex/bib.ts:16` and `:25-31`:
+```
+const BIB_MAX_BYTES = 8 * 1024 * 1024; ... function readBib(path) { ... statSync(path).size > BIB_MAX_BYTES ? null : readFileSync(path, 'utf8') ... }
+```
+- What is wrong: round item 13 asked for one bounded read with one byte limit. `reader.ts:21-24` holds `readBounded` with 2 MB, used by `root.ts`, `outline.ts` and `texdoc.ts`. `bib.ts` keeps its own copy with 8 MB.
+- Failure scenario: a change to how an oversized or unreadable file is answered reaches three readers and misses the citation browser.
+- Verdict: round item 13 partial.
+
+**Behaviour 1.** `src/lib/state/sessions/latex/latex.svelte.ts:353-361`:
+```
+const status = builds.buildOf({ root: next.root, path: next.dir }, main.main).status;
+if (status === 'failed' || status === 'stopped') continue;
+fs.bump(next.root, main.pdfPath);
+```
+- What is wrong: `buildOf` reads only this page's own builds, so a page that did not start the build (a float page, another tab) reads IDLE and bumps.
+- latexmk writes a PDF on failure (exit 12, 12487 bytes). probe3 shows the float viewer going from 3 to 4 pages on a build that failed (tmux pane status 12).
+- By reading, in the page that started the build, `clean_and_retry` keeps the status `building` during the retry, so a `files` message there bumps too.
+- Brief decision 5 and case 12 say a failed build leaves the old document shown.
+- Failure scenario: a typo that breaks the build replaces the reader's last good PDF in a float window with a partial one.
+- Verdict: item 11 violated, case 12 unmet.
+
+**Behaviour 2.** `src/lib/server/machine/pty/latex.ts:250-263`:
+```
+const kept = await keptLatex(folder.dir, name, options);
+if (kept !== null) { ... }
+const terminal = await startTerminal(...)
+```
+- What is wrong: check-then-start with nothing in between that serialises concurrent requests. The same pattern was in `routes.ts` at the base.
+- In the float-dup probe, one external write to `main.tex`, with three pages following the root under `on_file_change`, created three tmux build sessions in the same second and three `latexmk` (pids 65307, 65308, 65317) in one folder.
+- Case 20 says "never two `latexmk` at once in one folder (the server's kept terminal answers the running build)". The brief's "one terminal per main file and step" is broken too.
+- Failure scenario: two oculus tabs on one manuscript. Every save from another editor runs two latexmk processes that write the same `.aux` and PDF.
+- Verdict: case 20 unmet (the first report met it by reading).
+
+**Behaviour 3.** `src/desktop/windows/bridge.ts:142-149`:
+```
+ipcMain.on(FOCUS_MAIN, (event) => { ... const main = windows.lastMain(); if (main !== null) { main.win.show(); main.win.focus(); } });
+```
+- What is wrong: the owner's page opens the source, but the window brought forward is the main window focused last (`windows.ts:417`), not the owner's window. The app has New Window (`app.ts` `newWindow`).
+- Brief item 14: "that window is brought to the front where the host allows it". I checked this path by reading only; the app was not started.
+- Failure scenario: two app windows, the float opened from window 1, window 2 focused last. A Ctrl-click opens the source in window 1 and raises window 2.
+- Verdict: item 14 violated on the app path.
+
+**Behaviour 4.** `src/lib/state/sessions/latex/actions.ts` `inverse` together with the main page's `jump` listener (`if (place?.owner !== pageId) return;`):
+- What is wrong: probe4 opens main A, then the float with `owner` A, then main B, and closes A. A Ctrl-click in the float is heard by B, ignored by B (focusCalls 0, no layout write), and the float shows no notice. The `latex.jump_failed` text is said only when `owner` is null or the send fails.
+- Failure scenario: the reader closes the tab that opened the float and keeps working in another oculus tab. Ctrl-click in the float does nothing, with no explanation.
+- The reader's own reload keeps the id (probe2: 6fjmqj across three reloads), so a reload does not cause this.
+- Verdict: item 14 partial on this path.
+
+**Behaviour 5.** `src/lib/shell/browser-windows.svelte.ts` (the main page takes the lock `oculus-float:<id>` and calls `layout.freeFloat(id)`) and `FloatWindow.svelte`'s `window.close()`:
+- What is wrong: probe2 reloads the float's browser tab. Within 9 s the float's place goes from `window` to `free` in the main page, and the reloaded float page calls `window.close()` (closes:1). The lock is free between unload and load, and a main page whose request is already pending takes it at once.
+- Z695 (1) ruled a float's absence of up to 10 s after it opens. Nothing in the report or `DESIGN.md:574` states that a reload returns the float.
+- Failure scenario: Cmd-R in the PDF's ChromeTab closes that tab and puts the PDF back into the main page.
+- Verdict: case 26 partial. This is a user-visible behaviour the report should have stated, or the code should keep the window through a reload.
+
+What holds, checked this round:
+- Web Lock design, float-dup probe rerun: lock pending while the float lives, return after close, the duplicated tab takes a new id.
+- `holdBrowserTabId` keeps the id across three reloads (probe2).
+- Z695 (1): `floats()` returns the stored floats unmapped, and `FloatLayer` draws only those not in `window`.
+- `jump` is parsed through `payloadShapes` (`payloads.ts:120`, `:147`).
+- `ask.force` (`builds.ts:424-427`, `:472`).
+- `routeUrl` through `address.ts`.
+- Project panel paths with `out_dir: out` (r17 probe).
+- PDF viewer `ui/` primitives (pdfui probe).
+- G35 table test; the test-edit table: every removed assertion (`latexmk -pdf ...` in `lineOf` and `respawns`, `latexAutoBuild` in settings) is replaced by an assertion of equal strength against `latexmkLine()` or a `toStrictEqual` with `BUILD_DEFAULTS`.
+- `agents/guarded.md` G35 text is unchanged in the main checkout. The proposed text is in the round report's item 11, for the orchestrator.
+- `model-sessions.ts` 714 lines (876 at the base) and `model-processes.ts` 438. The terminal types moved between the two. I did not judge whether the report names this move.
+
+### Declined to judge
+
+- The desktop app paths (focus, a float window's owner, item 26 in the app) were checked by reading only. The standing rules forbid starting oculus's desktop app.
+- Cases 17 and 18 still need a page run, on a folder added to the workspace and on a 21 MB file. Not run.
+- The notice's two actions were not reread against `latex.yml:89,145`.
+- Whether `model-sessions.ts` to `model-processes.ts` is a size split named in the report was not checked against the report.
+- Everything I started is stopped:
+  - the scratch server on 8799 (`lsof -nP -iTCP:8799 -sTCP:LISTEN` prints nothing);
+  - the scratch tmux servers;
+  - no process matches `pgrep -lf "d45rv|latexmk|pdflatex|kpsewhich"`;
+  - `$TMPDIR/d45rv*` is removed (`ls` finds none).
+
+Reviewer usage: afa4681f60c7525d3, claude-opus-5-5, about 480k tokens by the session's counter (15,000,000 to 14,515,950), tool uses not counted across the context compaction (about 30 in the second part), minutes not verified.
+
+Agent: x.
