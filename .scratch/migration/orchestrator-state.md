@@ -35,10 +35,11 @@ dispatch:   # steps in flight, up to six (Z632)
   launched: 2026-10-07
   report: agents/reviews/D15-report.md
   builder_usage: first run handed back with two cases (221,087 tokens, 33 tool uses, 8.0 min); round 0 after the cases ruling (307,479 tokens, 42 tool uses, 13.3 min)
+  reviewer_report: agents/reviews/D15-refuter.md (a2c8b12f9b29ab61c, claude-opus-5-5, 235,936 tokens, 64 tool uses, 13.6 min)
   brief_check: agents/reviews/D15-brief-check.md (a9240828824e6638a, claude-opus-5-5, 255,080 tokens, 78 tool uses, 11.2 min)
   cases_ruling: agents/briefs/D15-cases.md
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/D15-round1.md, sent on the round-0 tree)
 - step: D11
   executor: agent
   worker: claude:sonnet at ordo-high

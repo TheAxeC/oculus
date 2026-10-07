@@ -1,5 +1,5 @@
 In flight (3 of 6 slots):
-- D15 (PDF reading): built, its report saved, under review.
+- D15 (PDF reading): reviewed; repair round 1 sent (the place sent at every close, copy and return).
 - D11 (the debug client for rite): building.
 - X3e (Files lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop): building.
 
