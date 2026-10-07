@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z693 (2026-10-07, step D23b, the orchestrator, automode): three choices of the language-features repair
+
+- Chosen: the refusal of an edit to a file open in another oculus page keeps its automatic test, since without it one page's save can overwrite the other's; a file named twice in one edit gets the existing "could not be made" notice; an approval of a Svelte config that changed since you looked approves nothing and shows the new text.
+- Not chosen: relying on one live run for the two-page refusal (the lazy option); new notice words for the other two.
+
 ## Z692 (2026-10-07, step D23b, the orchestrator, automode): the Svelte plugin of the TypeScript server
 
 - Chosen: the plugin that lets a rename in a `.ts` file reach the `.svelte` files is loaded only after the repository's Svelte config is approved, since it loads the repository's own Svelte, which oculus never runs unapproved; the tooltip and the docs say so.

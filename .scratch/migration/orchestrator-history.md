@@ -1901,3 +1901,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-07. D23b built (313,076 tokens, 896 tool uses, 247.6 min); Z691 rules part 8's hidden hierarchy items; its review dispatched.
 - 2026-10-07. Z681 ruled (a) by Axel; M8 prepared after D23b lands.
 - 2026-10-07. D23b refuted by a4154cbe655a3b836 (claude-opus-5-5, 138,932 tokens, 133 tool uses, 23.8 min); Z692 narrows Z686 (8); repair round 1 sent (`agents/briefs/D23b-round1.md`, 16 items).
+- 2026-10-07. D23b round 1 back (334,314 tokens, 168 tool uses, 73.2 min); Z693 rules its three choices; its review over round 1 dispatched.
