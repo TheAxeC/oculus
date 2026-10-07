@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z705 (2026-10-07, step X3e, the orchestrator, automode): the Files view's choices left by the fourth recheck
+
+- Chosen: HEAD's graph mark keeps the target icon as VS Code's; an empty folder list in a files notice concerns nothing; the repository scan walks folders in oculus's own code; the server's start file split by moving the git watcher's start beside the watcher; the desktop folder sheet stops waiting when its page goes; the palette hints of the language-server commands in the text catalog; a LaTeX build follows the folders of its inputs; the delete measurement awaits the listing; hidden sections keep their place in the order.
+- Not chosen: a second icon for HEAD, an empty list read as the whole root, the fdir library, the hints kept in code (the lazy option).
+
 ## Z704 (2026-10-07, step D11, the orchestrator, automode): the rite debugger's places, approval, framing and keys
 
 - Chosen: Debug and Debug Console after the TeX view (s6, s7), no shipped chord moved; a debug launch approved as a `command`; a short HELP section and a Debugging guide; the debug messages framed by the library the language servers already use; `~/` read as the home folder in `rite_dap_bin`; a guarded test that a debug launch runs only after approval; a frame outside the roots listed but not opened; the debug keys reach the debugger even from a terminal; breakpoints shared across tabs.

@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z705 (2026-10-07): automode, X3e's nine choices (the `head` glyph on lucide `target`, `folders: []` concerns nothing, a hand-written depth walk, `startGit` moved into `root/watch/`, the desktop sheet's cancel raced against abort, the palette hints in the catalog, the LaTeX follower's folder test, `red2.mjs` awaits, hidden sections keep their order).
 - Z704 (2026-10-07): automode, D11's nine choices (orders 6 and 7, `command` approval, a Debugging guide, Z448 replaced by vscode-jsonrpc's framing, `~/` expanded, G38 widened, outside frames listed, debug keys from a terminal, breakpoints shared across tabs).
 - Z703 (2026-10-07): automode, D43's choices (a latexmkrc approval for texlab and the LaTeX build, brew install named, `latex.texlab_path`, a `bibtex` language, two keys, every texlab feature but formatting and build, build errors once, the Outline fallback).
 - Z702 (2026-10-07): automode, D33's fourteen choices (Problems at s8 with no chord moved, Cmd+Shift+M, VS Code's defaults, its own status item, ranges after D28, command marks, decorations, outside rows, `source(code)`, the TeX view's list removed, the cards' cursor, no guarded entry, per page, F8 across files).
