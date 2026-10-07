@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z697 (2026-10-07): Axel, (a): the fixes of D23b's and D45's second repair rounds are kept; no exception round for a finding the last review raised first.
 - Z679 (2026-10-07): automode, D23c's round review: the word is selected only for a column inside it; fixed at landing.
 - Z678 (2026-10-07): automode, D23c's review findings (the clamped column, case 12d as built, Source.svelte's comment restored, no column on a positionless open, F4 selecting the word, a refused library file kept with its sentence, the dot-rule exception closed for a home-folder prefix); repair round 1 sent (`agents/briefs/D23c-round1.md`).
 - Z677 (2026-10-07): Axel, `start.test.ts` keeps all five rows and its diagnosis is dropped (replaces Z674 (6)); the diagnosis agent stopped, its scratch worktrees removed.
@@ -1907,3 +1908,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-07. D45 refuted over round 1 by afa4681f60c7525d3 (claude-opus-5-5, 121,820 tokens, 153 tool uses, 38.6 min): items 11, 14, 19 violated; Z696 grants round 2 under the round cap's exception (`agents/briefs/D45-round2.md`, 12 items).
 - Z697 (2026-10-07): open item, D23b's and D45's second rounds granted for findings the review over round 1 raised first.
 - 2026-10-07. D23b round 2 back (287,265 tokens, 120 tool uses, 54.2 min); its review over round 2 dispatched.
+- 2026-10-07. Z697 ruled (a) by Axel.
