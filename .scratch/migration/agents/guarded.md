@@ -128,6 +128,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G14. The real hub builds with no findings, read only.
   Code: `src/lib/data/index.ts`.
   Test: `tests/checks/config/integrity.test.ts`, held whole.
+- G56. Each rule a hub schema states gives its finding naming the file and the line: a reference to a key that does not exist, a key that exists twice in the referenced file, a value outside its options, a field outside its `when:`, a required field missing, and a field no schema declares.
+  Code: the hub validation through the generated schemas (`src/lib/data/snapshot/validate.ts` and the generator folder M8 adds under `src/lib/data/snapshot/`).
+  Test: written by M8, one table over the validation function with one row per rule, its file and title named in M8's landing report.
 - G15. A manifest with a broken field still shows its project, with a finding.
   Code: `src/lib/data/snapshot/`.
   Test: `tests/data/snapshot/resources.test.ts`, 'answers a scalar compute: with the list-shape finding and reads it as none'; `tests/data/snapshot/cluster-folder.test.ts`, "a manifest's paths.cluster".
