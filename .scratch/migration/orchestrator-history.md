@@ -1898,3 +1898,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-07 07:30. PR4 landed; six fixes at landing; the gate worktree `.agents/worktrees/gate` made again (sparse paths now include `deck`).
 - 2026-10-07. D45 built (234,542 tokens, 1213 tool uses, 211.0 min); Z690 rules its three open items in automode; its review dispatched.
 - 2026-10-07. D45 refuted by aafbba4d13fda558e (claude-opus-5-5, 285,900 tokens, 188 tool uses, 25.9 min); repair round 1 sent (`agents/briefs/D45-round1.md`, 22 items).
+- 2026-10-07. D23b built (313,076 tokens, 896 tool uses, 247.6 min); Z691 rules part 8's hidden hierarchy items; its review dispatched.

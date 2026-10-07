@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z691 (2026-10-07, step D23b, the orchestrator, automode): hierarchy items a server does not offer
+
+- Chosen: Show Call Hierarchy and Show Type Hierarchy are left out of the editor's right-click menu and the palette when the file's language server cannot answer them, as VS Code does.
+- Not chosen: greyed-out items, which VS Code does not show.
+
 ## Z690 (2026-10-07, step D45, the orchestrator, automode): LaTeX hovers, two extras, the status item's reads
 
 - Chosen: both hovers kept where oculus's LaTeX support and the texlab language server each answer, since they show different things; the picture preview while typing `\includegraphics` and the Unicode math symbol completion built with texlab (D43), the symbols off by default as LaTeX Workshop ships them; the status bar's LaTeX item allowed to read the build and the file's root.
