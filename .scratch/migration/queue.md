@@ -26,7 +26,7 @@ Queued, in order (17 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D15 (PDF reading), 2026-10-07; the look on TEST owed.
+- D15 (PDF reading), 2026-10-07, a84214da; looked at on TEST, two fixes from the look.
 - D45 (LaTeX as VS Code's LaTeX Workshop), 2026-10-07, 0753a5e7.
 - D23b (rename, workspace symbols, hierarchies, the TypeScript and Svelte servers), 2026-10-07, 639820b9.
 - PR4 (Present's presenter screen), 2026-10-07, eede4598.

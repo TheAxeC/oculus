@@ -29,7 +29,8 @@
 // window's page is hidden, and when the page is about to put the tab in a window or copy it
 // there, move a float or hand the tab to another window. The viewer takes its place when the box
 // loses its size and scrolls back to it when the box has a size again, since a hidden box loses its
-// scroll offset.
+// scroll offset. A box that changes size goes back to the place last reported, and the scroll a new
+// size forces (a maximised pane in which every page fits) is not reported until the reader moves.
 //
 // The libraries load on the first `open`, as a chunk of their own, so a page that never shows a PDF
 // carries none of PDF.js. The worker is built by Vite from a URL import, and the character maps,
@@ -54,6 +55,7 @@ import { mount, unmount, type ComponentProps } from 'svelte';
 import type { TipIds } from '$lib/ui/menu/tip-ids';
 import PdfControl from './PdfControl.svelte';
 import { SidePanel } from './side-panel';
+import { markPlace, pageViewOf, pointOn, type Mark } from './page-points';
 import {
     readPdfPlace,
     type PdfPlace,
@@ -61,15 +63,6 @@ import {
     type SidePanelKind,
     type SpreadName
 } from '$lib/state/sources/explorer/pdf-place';
-
-/** What the viewer reads of one page's view: its element and the scale it is drawn at. */
-type PageView = { div: HTMLElement; viewport: { scale: number } };
-
-/** The view of a page (from 0) of a PDF.js viewer, whose typings leave it untyped, or null. */
-function pageViewOf(viewer: PDFViewer | null, index: number): PageView | null {
-    if (viewer === null) return null;
-    return (viewer.getPageView(index) as PageView | null | undefined) ?? null;
-}
 
 /** What the viewer asks of the view that mounted it. */
 export type ViewerHooks = {
@@ -181,6 +174,13 @@ export class PdfViewer {
     #applied = false;
     /** The place to scroll back to when the box has a size again, while it has none. */
     #away: PdfPlace | null = null;
+    /**
+     * The place the reader chose before the box changed size, which a scroll the new size forces
+     * does not replace: the viewer goes back to it at each new size until the reader moves.
+     */
+    #held: PdfPlace | null = null;
+    /** Whether the viewer is scrolling back to `#held` itself, so a page change is no reader's. */
+    #own = false;
     #disposed = false;
     #pending = false;
     #timer: ReturnType<typeof setTimeout> | null = null;
@@ -192,7 +192,7 @@ export class PdfViewer {
     #sent: PdfPlace | null = null;
     /** The place the page last handed `open`, for the same reload when nothing was reported. */
     #saved: PdfPlace | null = null;
-    #reveal: { page: number; left: number; top: number; w: number; h: number } | null = null;
+    #reveal: Mark | null = null;
     #trail: Position[] = [];
 
     constructor(root: HTMLDivElement, hooks: ViewerHooks) {
@@ -254,6 +254,12 @@ export class PdfViewer {
             },
             { signal, passive: true }
         );
+        for (const kind of ['wheel', 'keydown', 'pointerdown', 'touchstart']) {
+            this.#container.addEventListener(kind, () => (this.#held = null), {
+                signal,
+                passive: true
+            });
+        }
         window.addEventListener('pagehide', () => this.flush(), { signal });
         this.#sizes = new ResizeObserver(() => this.#resized());
         this.#sizes.observe(this.#box);
@@ -340,14 +346,17 @@ export class PdfViewer {
 
     goToPage(page: number): void {
         if (this.#viewer === null || !Number.isFinite(page)) return;
+        this.#held = null;
         this.#viewer.currentPageNumber = Math.min(Math.max(1, Math.round(page)), this.pages);
     }
 
     next(): void {
+        this.#held = null;
         this.#viewer?.nextPage();
     }
 
     previous(): void {
+        this.#held = null;
         this.#viewer?.previousPage();
     }
 
@@ -355,12 +364,14 @@ export class PdfViewer {
     setScroll(mode: ScrollName): void {
         this.scroll = mode;
         if (this.#viewer !== null) this.#viewer.scrollMode = SCROLL[mode];
+        this.#unseen();
     }
 
     /** Pair the pages into spreads, or none. */
     setSpread(mode: SpreadName): void {
         this.spread = mode;
         if (this.#viewer !== null) this.#viewer.spreadMode = SPREAD[mode];
+        this.#unseen();
     }
 
     toggleInvert(): void {
@@ -369,10 +380,19 @@ export class PdfViewer {
     }
 
     showSide(kind: SidePanelKind): void {
+        const next = this.sidebar === kind ? '' : kind;
+        if (this.#away !== null) {
+            // The panel leaves the pages no width, so the place is held aside: it takes the panel.
+            this.#setSide(next);
+            this.#away = { ...this.#away, sidebar: next };
+            if (this.#sendable()) this.#send(this.#away);
+            return;
+        }
         // Asked first, so that the view update made by laying the pages out beside the panel
         // sends it.
         this.#changed(true);
-        this.#setSide(this.sidebar === kind ? '' : kind);
+        this.#setSide(next);
+        this.#unseen();
     }
 
     /** Show the panel of a kind, or none, and lay the pages out beside it. */
@@ -405,6 +425,7 @@ export class PdfViewer {
     /** Return to the place the last link left. */
     back(): void {
         const place = this.#trail.pop();
+        this.#held = null;
         this.canBack = this.#trail.length > 0;
         if (place !== undefined) this.#scrollTo(place);
     }
@@ -414,27 +435,14 @@ export class PdfViewer {
      * draw a rectangle over it that fades. A place asked for before the pages are laid out is drawn
      * when they are.
      */
-    reveal(place: { page: number; left: number; top: number; w: number; h: number }): void {
+    reveal(place: Mark): void {
         this.#reveal = place;
         void this.#settle();
     }
 
     /** The place a Cmd or Ctrl click, or a double click, hit, in PDF points; null off a page. */
     pointOf(event: MouseEvent): { page: number; x: number; y: number } | null {
-        const target = event.target;
-        const page = target instanceof Element ? target.closest<HTMLElement>('.page') : null;
-        const number = Number(page?.dataset.pageNumber);
-        const view = pageViewOf(this.#viewer, number - 1);
-        if (page === null || view === null) return null;
-        const wrap = page.querySelector('.canvasWrapper') ?? page;
-        const box = wrap.getBoundingClientRect();
-        const scale = view.viewport.scale;
-        if (!(scale > 0)) return null;
-        return {
-            page: number,
-            x: (event.clientX - box.left) / scale,
-            y: (event.clientY - box.top) / scale
-        };
+        return pointOn(this.#viewer, event);
     }
 
     async #library(): Promise<void> {
@@ -618,7 +626,7 @@ export class PdfViewer {
     #paged(page: number): void {
         this.page = page;
         this.#side.current(page);
-        this.#changed(Date.now() - this.#scrolledAt > SCROLLING_MS);
+        this.#changed(!this.#own && Date.now() - this.#scrolledAt > SCROLLING_MS);
     }
 
     /**
@@ -663,16 +671,43 @@ export class PdfViewer {
     /** The box lost its size or has one again. */
     #resized(): void {
         const sized = this.#hasSize();
+        if (sized && this.#sized) {
+            this.#keepThroughSize();
+            return;
+        }
         if (sized === this.#sized) return;
         this.#sized = sized;
         if (!sized) {
-            if (this.#applied && this.#away === null) this.#away = this.#place();
+            if (this.#applied && this.#away === null) this.#away = this.#held ?? this.#place();
             this.flush();
             return;
         }
         const place = this.#away;
         this.#away = null;
         if (place !== null) this.#scrollTo(place);
+    }
+
+    /**
+     * The box has a new size: a wider box can push the scroll back, as a maximised pane does when
+     * every page fits in it, and that is no move of the reader's. The scroll it forces is not
+     * reported, and the viewer goes back to the place last reported.
+     */
+    #keepThroughSize(): void {
+        if (!this.#applied) return;
+        if (this.#pending && !this.#awaiting) {
+            if (this.#timer !== null) clearTimeout(this.#timer);
+            this.#timer = null;
+            this.#pending = false;
+        }
+        this.#held ??= this.#sent;
+        if (this.#held === null) return;
+        // The page change PDF.js announces for this scroll is the viewer's own, no reader's.
+        this.#own = true;
+        try {
+            this.#scrollTo(this.#held);
+        } finally {
+            this.#own = false;
+        }
     }
 
     /** Whether a place may be reported now. */
@@ -692,6 +727,8 @@ export class PdfViewer {
      */
     #changed(discrete: boolean): void {
         if (!this.#sendable() || this.#away !== null || !this.#hasSize()) return;
+        if (discrete) this.#held = null;
+        else if (this.#held !== null) return;
         this.#pending = true;
         if (discrete) {
             this.#awaiting = true;
@@ -703,6 +740,15 @@ export class PdfViewer {
             this.#timer = null;
             this.flush();
         }, wait);
+    }
+
+    /**
+     * Send a change that no view update followed, which is the case when the pages have no width
+     * left beside the panel: PDF.js then updates nothing, and the place it holds is the one to
+     * keep.
+     */
+    #unseen(): void {
+        if (this.#awaiting) this.flush();
     }
 
     /** PDF.js has updated its place: send the change that waited for it. */
@@ -807,20 +853,7 @@ export class PdfViewer {
         const view = pageViewOf(viewer, place.page - 1);
         if (view === null) return;
         viewer.currentPageNumber = place.page;
-        const wrap = view.div.querySelector<HTMLElement>('.canvasWrapper');
-        if (wrap === null) return;
-        const scale = view.viewport.scale;
-        const around = this.#container.getBoundingClientRect();
-        const top = wrap.getBoundingClientRect().top - around.top + this.#container.scrollTop;
-        this.#container.scrollTop = top + place.top * scale - this.#container.clientHeight * 0.4;
-        const mark = document.createElement('div');
-        mark.className = 'oc-pdf-indicator';
-        mark.style.left = `${place.left * scale}px`;
-        mark.style.top = `${place.top * scale}px`;
-        mark.style.width = `${Math.max(place.w * scale, 6)}px`;
-        mark.style.height = `${Math.max(place.h * scale, 6)}px`;
-        mark.addEventListener('animationend', () => mark.remove());
-        wrap.append(mark);
+        markPlace(this.#container, view, place);
     }
 }
 
