@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z690 (2026-10-07, step D45, the orchestrator, automode): LaTeX hovers, two extras, the status item's reads
+
+- Chosen: both hovers kept where oculus's LaTeX support and the texlab language server each answer, since they show different things; the picture preview while typing `\includegraphics` and the Unicode math symbol completion built with texlab (D43), the symbols off by default as LaTeX Workshop ships them; the status bar's LaTeX item allowed to read the build and the file's root.
+- Not chosen: dropping one hover, or leaving the two extras unbuilt (the lazy options).
+
 ## Z689 (2026-10-07, step PR4, the orchestrator, automode): Presenter pressed again during a talk
 
 - Chosen: in the oculus desktop window, pressing Presenter again reloads the audience window only when it shows that the presentation ended; during a live talk it only brings the window forward.
