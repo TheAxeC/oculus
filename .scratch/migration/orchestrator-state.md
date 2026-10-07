@@ -52,6 +52,20 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: DESIGN.md and docs/views.md with D15 (D15 writes DESIGN.md:169 and :533 and docs/views.md:239 and :259; D11 writes DESIGN.md:121, :165, :410, :568 and a new decisions entry, and a section after docs/views.md:71), different lines, so the merge at the second landing is simple
   landing: not-started
   round: 0
+- step: X3e
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a92e4feff93b8e90c (builder, launched 2026-10-07)
+  worktree: .agents/worktrees/X3e
+  base: e1a75b8e1
+  launched: 2026-10-07
+  report: agents/reviews/X3e-report.md
+  brief_check: agents/reviews/X3e-brief-check.md (the brief corrected since from agents/reviews/X3e-premise-recheck-4.md)
+  fixtures: $TMPDIR/x3e-red (verify 12: a detached worktree of the hub at the base, four clones, a scratch hub with two worktrees, the harnesses), removed at landing
+  shared_paths: with D15, docs/views.md and DESIGN.md at different lines, simple; with D11, server/root/context.ts (D11 moves the ServerContext type to server/root/process/, X3e moves startGit to server/root/watch/, Z705 (I1); the folderPicker doc and one close() line each carried by the second landing), Source.svelte (one dependency line), model-sessions.ts, payloads.ts, commands.svelte.ts, options.yml, glyphs.yml, icons.yml, server.yml, app.yml, HELP.md, DESIGN.md, docs/views.md and docs/configuration.md at different lines; each merge simple, judged on both diffs at the second landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

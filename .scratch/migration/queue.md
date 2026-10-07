@@ -1,11 +1,11 @@
-In flight (2 of 6 slots):
-- D15 (PDF reading): building.
+In flight (3 of 6 slots):
+- D15 (PDF reading): building, its first-run cases ruled.
 - D11 (the debug client for rite): building.
+- X3e (Files lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop): building.
 
-Being prepared: M8 (brief check running); X3e (brief being corrected from its recheck); D43 and D33 (briefs to write).
+Being prepared: M8 (brief check done, its findings being closed); D43 and D33 (briefs to write).
 
-Queued, in order (18 steps):
-- X3e (Files lists reordered by drag): ready.
+Queued, in order (17 steps):
 - D28 (saving a file as VS Code does): after X3e.
 - M6 (the collection forms removed): after X3e and D28.
 - M7 (a project folder moved in Files): after M6.
