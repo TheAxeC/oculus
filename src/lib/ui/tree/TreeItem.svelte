@@ -24,6 +24,10 @@
     // otherwise. A row given a `level` outside a tree is a treeitem at that level, with the open
     // state its `expanded` says.
     //
+    // A row given `drag` can be picked up and dropped on within its list: the row spreads the
+    // browser's drag events the caller hands it, and draws a 2px line in the accent on the edge a
+    // drop would land on (`drag.place`).
+    //
     // A row given `onpressagain` reports the second press of a double click when the button goes
     // down. The browser's dblclick never reaches a row that what its first press opened has
     // covered.
@@ -87,7 +91,8 @@
         field,
         actions,
         showActions = false,
-        end
+        end,
+        drag
     }: TreeItemProps = $props();
 
     const guides = $derived(Array.from({ length: Math.max(0, depth) }, (_, at) => at));
@@ -178,6 +183,13 @@
     aria-selected={level === undefined ? undefined : selected}
     aria-current={current ? 'true' : undefined}
     {...fromTree}
+    draggable={drag?.draggable === true ? 'true' : undefined}
+    data-drop-place={drag?.place}
+    ondragstart={drag?.ondragstart}
+    ondragover={drag?.ondragover}
+    ondragleave={drag?.ondragleave}
+    ondrop={drag?.ondrop}
+    ondragend={drag?.ondragend}
     bind:this={box}
     onclick={pressedRow}
     onkeydown={keyed}
@@ -259,6 +271,15 @@
     .item:not(.muted, .warn, .error):hover {
         --row-bg: var(--chip);
         background: var(--chip);
+    }
+
+    /* Where a dragged item would land in the row's list: a 2px line on that edge of the row. */
+    .item[data-drop-place='before'] {
+        box-shadow: inset 0 2px 0 var(--accent);
+    }
+
+    .item[data-drop-place='after'] {
+        box-shadow: inset 0 -2px 0 var(--accent);
     }
 
     /* The controls are shown while the pointer is over the row or the focus is inside it. */

@@ -8,15 +8,25 @@
 // root only through the add of a root (server/edit/writes/config/roots.ts or POST /api/fs), so
 // nothing outside a root is served because a panel returned it.
 //
+// The panel lives only while someone waits for its answer. Each press makes an AbortController,
+// which the state holds as `panel` while the panel is open, and the runner is given its signal, so
+// an abort ends osascript. It is aborted when the connection the request came on closes (the page
+// went away, or a restart of the dev server destroyed the socket), at once when that connection is
+// already gone, and by `closePicker` when the server that owns the state closes. With the desktop
+// sheet the wait is raced against the same controller: the handler stops waiting and the sheet's
+// late answer is read by nobody, so it adds no folder. There is no time limit, since a limit would
+// end a panel the page still waits on.
+//
 // The subprocess is one injectable runner, so a test hands in one that prints what a panel would
 // and no test opens a panel. One panel is open at a time: a request that arrives while one is open
-// is answered `busy`, since a second window over the first would answer to nobody. The open state
+// is answered `busy`, since a second window over the first would answer to nobody. The open panel
 // is a field of the ServerContext, so two servers in one process hold two panels.
 //
-// The answers, each with no-store headers: `{ ok: true, paths }` (an empty list when the panel was
-// cancelled), `{ error: 'unsupported' }` off macOS when there is no parent to ask, `{ error:
-// 'failed' }` when the script exits with a non-zero status or the parent's panel fails, and
-// `{ error: 'busy' }`.
+// The answers, each with no-store headers: `{ ok: true, paths }` (an empty list when the reader
+// cancelled the panel, which osascript reports as error -128, or the sheet), `{ error:
+// 'unsupported' }` off macOS when there is no parent to ask, `{ error: 'failed' }` when the script
+// exits with another non-zero status, the parent's panel fails, or the connection or the server
+// ended the panel (which no page reads), and `{ error: 'busy' }`.
 
 import { execFile } from 'node:child_process';
 import { json } from '@sveltejs/kit';
@@ -44,11 +54,14 @@ export const PICKER_SCRIPT = [
     "chosen.join('\\n');"
 ].join('\n');
 
-/** What the script came to: its exit status, and what it printed. */
-export type PickRun = { code: number | null; out: string };
+/** What the script came to: its exit status, what it printed and what it wrote to stderr. */
+export type PickRun = { code: number | null; out: string; err: string };
 
-/** Run the script and say what it printed, with no timeout: the panel waits for the reader. */
-export type PickRunner = (script: string) => Promise<PickRun>;
+/**
+ * Run the script and say what it printed, with no timeout: the panel waits for the reader, and
+ * the signal ends it. A signal that is aborted already starts nothing.
+ */
+export type PickRunner = (script: string, signal: AbortSignal) => Promise<PickRun>;
 
 /**
  * The panel as the parent process shows it: the chosen paths, null when the reader cancelled, and
@@ -57,38 +70,68 @@ export type PickRunner = (script: string) => Promise<PickRun>;
 type PickAsk = () => Promise<string[] | null>;
 
 /**
- * Whether a panel is open now, held by one ServerContext, and the parent's panel when the server
- * has a parent.
+ * The panel open now, as the controller that ends it, or null with none; held by one
+ * ServerContext, together with the parent's panel when the server has a parent.
  */
-export type PickerState = { open: boolean; ask?: PickAsk };
+export type PickerState = { panel: AbortController | null; ask?: PickAsk };
 
 /** A state with no panel open, for a ServerContext being built. */
 export function pickerState(): PickerState {
-    return { open: false };
+    return { panel: null };
 }
 
-/** The two calls a test replaces: the platform the server runs on, and the script's runner. */
+/** Close the panel the state holds open, as a closing server does: the run is ended. */
+export function closePicker(state: PickerState): void {
+    state.panel?.abort();
+}
+
+/** The part of a node Socket the handler reads: whether it is gone, and its `close` event. */
+export type PickConnection = {
+    destroyed: boolean;
+    once(event: 'close', listener: () => void): unknown;
+    off(event: 'close', listener: () => void): unknown;
+};
+
+/**
+ * The three things a test replaces: the platform the server runs on, the script's runner and the
+ * connection the request came on.
+ */
 export type PickDeps = {
     platform?: NodeJS.Platform;
     run?: PickRunner;
+    connection?: PickConnection;
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
 
 /** The real runner: `osascript -l JavaScript -e <script>`. */
-const osascript: PickRunner = (script) =>
+const osascript: PickRunner = (script, signal) =>
     new Promise((resolve) => {
         execFile(
             'osascript',
             ['-l', 'JavaScript', '-e', script],
-            { encoding: 'utf8' },
-            (error, stdout) => {
+            { encoding: 'utf8', signal },
+            (error, stdout, stderr) => {
                 const code = error === null ? 0 : typeof error.code === 'number' ? error.code : 1;
-                resolve({ code, out: stdout });
+                resolve({ code, out: stdout, err: stderr });
             }
         );
     });
+
+/** Whether a run is the reader's Cancel: osascript's error -128 on the last line of its stderr. */
+function cancelled(run: PickRun): boolean {
+    return run.code !== 0 && run.err.trimEnd().endsWith('(-128)');
+}
+
+/** A promise that rejects when the signal aborts, for a wait that must end with the panel. */
+function endsWith(signal: AbortSignal): Promise<never> {
+    return new Promise((_, reject) => {
+        const stop = (): void => reject(new Error('the panel was ended'));
+        if (signal.aborted) stop();
+        else signal.addEventListener('abort', stop, { once: true });
+    });
+}
 
 /** The paths a run printed, one a line, the empty lines dropped. */
 function pathsOf(out: string): string[] {
@@ -98,7 +141,8 @@ function pathsOf(out: string): string[] {
 /**
  * POST /api/folders/pick: open the folder panel and answer the folders the reader chose. The order
  * is the order of the refusals: the token, the platform (any platform with a parent to ask), a
- * panel already open, and only then the panel.
+ * panel already open, and only then the panel. The panel ends with the request's connection and
+ * with the server's close, and a cancel by the reader answers no folders.
  */
 export async function handlePick(
     request: Request,
@@ -114,19 +158,27 @@ export async function handlePick(
     if (state.ask === undefined && (deps.platform ?? process.platform) !== 'darwin') {
         return json({ error: 'unsupported' }, { status: 400, headers: NO_STORE });
     }
-    if (state.open) return json({ error: 'busy' }, { status: 409, headers: NO_STORE });
-    state.open = true;
+    if (state.panel !== null) return json({ error: 'busy' }, { status: 409, headers: NO_STORE });
+    const panel = new AbortController();
+    const end = (): void => panel.abort();
+    state.panel = panel;
+    deps.connection?.once('close', end);
+    if (deps.connection?.destroyed === true) end();
     try {
         if (state.ask !== undefined) {
-            const chosen = await state.ask();
+            const chosen = await Promise.race([state.ask(), endsWith(panel.signal)]);
             return json({ ok: true, paths: chosen ?? [] }, { headers: NO_STORE });
         }
-        const done = await (deps.run ?? osascript)(PICKER_SCRIPT);
-        if (done.code !== 0) return json({ error: 'failed' }, { status: 500, headers: NO_STORE });
+        const done = await (deps.run ?? osascript)(PICKER_SCRIPT, panel.signal);
+        if (cancelled(done)) return json({ ok: true, paths: [] }, { headers: NO_STORE });
+        if (done.code !== 0 || panel.signal.aborted) {
+            return json({ error: 'failed' }, { status: 500, headers: NO_STORE });
+        }
         return json({ ok: true, paths: pathsOf(done.out) }, { headers: NO_STORE });
     } catch {
         return json({ error: 'failed' }, { status: 500, headers: NO_STORE });
     } finally {
-        state.open = false;
+        deps.connection?.off('close', end);
+        state.panel = null;
     }
 }

@@ -401,7 +401,10 @@ export async function handleTerminal(
     token: string,
     options: TerminalOptions
 ): Promise<Response> {
-    const read = await tokenedBody(request, token, { headers: NO_STORE });
+    const read = await tokenedBody(request, token, {
+        headers: NO_STORE,
+        text: () => textCatalog(options.configFor())
+    });
     if (read instanceof Response) return read;
     const body = read.body;
     if (!isMap(body)) return refusal('not-an-action');

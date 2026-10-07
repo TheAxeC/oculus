@@ -76,7 +76,7 @@ digraph writes {
         "? src/lib/data/sources/config/catalog/latex-tables.ts:65" [label="src/lib/data/sources/config/catalog/latex-tables.ts:65 optionalTextShape.transform("];
         "? src/lib/data/sources/config/catalog/latex-tables.ts:85" [label="src/lib/data/sources/config/catalog/latex-tables.ts:85 mapShape.safeParse("];
         "? src/lib/server/edit/writes/config/audit-mute.ts:65" [label="src/lib/server/edit/writes/config/audit-mute.ts:65 SIGNATURE.test("];
-        "? src/lib/server/files/fs.ts:223" [label="src/lib/server/files/fs.ts:223 rootShape.safeParse("];
+        "? src/lib/server/files/fs.ts:227" [label="src/lib/server/files/fs.ts:227 rootShape.safeParse("];
     }
     "file on disk" [shape=cylinder];
     "lib/data/sources/config/catalog/latex-editing.ts" -> "lib/data/sources/config/catalog/latex-tables.ts" [tooltip="readLatexEditing"];
@@ -146,7 +146,7 @@ refusedBy, refusing, written"];
     "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/config-value.ts" [tooltip="writeConfigValue"];
     "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/deck/deck.ts" [tooltip="writeDeckSlides"];
     "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/rail.ts" [tooltip="writeRail"];
-    "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/roots.ts" [tooltip="addRootTo, removeRootFrom"];
+    "lib/server/edit/writes/config/config-write.ts" -> "lib/server/edit/writes/config/roots.ts" [tooltip="addRootTo, orderRootsIn, removeRootFrom"];
     "lib/server/edit/writes/config/deck/deck-acts.ts" -> "lib/server/edit/writes/config/deck/deck-files.ts" [tooltip="duplicate, image, newSlide
 openDeck, remove"];
     "lib/server/edit/writes/config/deck/deck-acts.ts" -> "lib/server/edit/writes/config/deck/deck-new.ts" [tooltip="createDeck, outlineDeck"];
@@ -211,7 +211,7 @@ removeEntry, reorderCollection, writeEntry"];
 writeHost, writeSubtask, writeSubtaskAdd"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/files/fs/collections.ts" [tooltip="entryOf, readCollection"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/sessions/overrides.ts" [tooltip="overrides, setFlag, setOverride"];
-    "lib/server/files/fs.ts" -> "? src/lib/server/files/fs.ts:223" [style=dashed];
+    "lib/server/files/fs.ts" -> "? src/lib/server/files/fs.ts:227" [style=dashed];
     "lib/server/files/fs.ts" -> "lib/server/core/json.ts" [headport=nw, tooltip="readJson"];
     "lib/server/files/fs/bookmarks.ts" -> "lib/server/core/json.ts" [tailport=n, tooltip="writeTextAtomic"];
     "lib/server/files/fs/collections.ts" -> "lib/server/files/fs/bookmarks.ts" [tooltip="ensureBookmarksFile"];

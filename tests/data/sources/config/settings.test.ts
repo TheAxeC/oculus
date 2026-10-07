@@ -1,11 +1,12 @@
 // Layer 1, data tests. The typed readers of single settings out of the merged map (slurm, calendar,
 // search, literature search, open, mail, the change log's length, the usage tiers, the Processes
 // view's program names, the LaTeX formatter and its auto build, the usage refresh, the automatic
-// fetch, the editor's paint limit, the Files view's delete prompt and the apps' limits and closed
-// folders). Each reader is run over a map that carries its own options catalog, whose every default
-// differs from the shipped one, so a default written in code instead of read from the entry fails a
-// row. A wrong value answers the entry's default and a problem naming the key; a missing key
-// answers the default and no problem; a catalog with no entry for a key throws.
+// fetch, the editor's paint limit, the Files view's delete prompt, the apps' limits and closed
+// folders and the Repositories view's scan depth of sources.yml). Each reader is run over a map
+// that carries its own options catalog, whose every default differs from the shipped one, so a
+// default written in code instead of read from the entry fails a row. A wrong value answers the
+// entry's default and a problem naming the key; a missing key answers the default and no problem; a
+// catalog with no entry for a key throws.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -21,6 +22,7 @@ import {
     openSettings,
     processesSettings,
     refreshSettings,
+    repositoryScanDepth,
     searchSettings,
     slurmSettings,
     usageTiers,
@@ -40,6 +42,11 @@ type Entries = Record<string, Record<string, unknown>>;
 const SHIPPED: Entries = (loadConfig(engineDir()).config.options as Record<string, Entries>)[
     'behavior.yml'
 ];
+
+/** The shipped entry of sources.yml that the scan depth is read by. */
+const SCAN_DEPTH = (loadConfig(engineDir()).config.options as Record<string, Entries>)[
+    'sources.yml'
+].repository_scan_depth;
 
 /** The default each synthetic entry answers, every one different from the shipped default. */
 const DEFAULTS: Record<string, unknown> = {
@@ -98,7 +105,10 @@ function mapWith(held: Record<string, unknown> = {}, drop: string[] = []): Recor
         Object.entries(all).filter(([key]) => !drop.includes(key))
     );
     return {
-        options: { 'behavior.yml': entries },
+        options: {
+            'behavior.yml': entries,
+            'sources.yml': { repository_scan_depth: { ...SCAN_DEPTH, default: 2 } }
+        },
         agents: {
             claude: {
                 lists: {
@@ -639,4 +649,24 @@ describe('appsSettings', () => {
     ] as [string, () => unknown, unknown][])('reads %s', (_row, observe, expected) => {
         expect(observe()).toStrictEqual(expected);
     });
+});
+
+describe('repositoryScanDepth', () => {
+    const read = (held: Record<string, unknown>) =>
+        outcome((p) => repositoryScanDepth(mapWith(held), p));
+
+    it.each([
+        ['0', { repository_scan_depth: 0 }, 0, []],
+        ['3', { repository_scan_depth: 3 }, 3, []],
+        ['the key missing', {}, 2, []],
+        ['4', { repository_scan_depth: 4 }, 2, ['repository_scan_depth: range']],
+        ['-1', { repository_scan_depth: -1 }, 2, ['repository_scan_depth: range']],
+        ['1.5', { repository_scan_depth: 1.5 }, 2, ['repository_scan_depth: whole']],
+        ['"one"', { repository_scan_depth: 'one' }, 2, ['repository_scan_depth: number']]
+    ])(
+        'answers for %s the depth the entry allows, or its default and a problem',
+        (_row, held, value, problems) => {
+            expect(read(held)).toStrictEqual({ value, problems });
+        }
+    );
 });

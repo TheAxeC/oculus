@@ -12,6 +12,7 @@ import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { add } from '../../../src/lib/server/content/memories.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { pagePost } from '../../fixtures/doubles.ts';
+import { TEXT } from '../../server/text.ts';
 
 const TOKEN = mintToken();
 
@@ -41,7 +42,12 @@ const PIXEL =
 describe('the endpoint of an upload', () => {
     it('refuses a request without the token, and writes nothing', async () => {
         const dir = pictures([]);
-        const response = await add(dir, request({ name: 'one.png', data: PIXEL }, 'stale'), TOKEN);
+        const response = await add(
+            dir,
+            request({ name: 'one.png', data: PIXEL }, 'stale'),
+            TOKEN,
+            () => TEXT
+        );
         expect(response.status).toBe(403);
         expect(existsSync(join(dir, 'one.png'))).toBe(false);
     });

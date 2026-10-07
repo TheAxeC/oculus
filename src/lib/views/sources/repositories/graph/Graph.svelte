@@ -2,8 +2,9 @@
     // Layer 3, partial of views/sources/repositories/Repo.svelte. VS Code's Source Control Graph:
     // Incoming and Outgoing first when the branch has an upstream (what the upstream holds that
     // HEAD does not, and the other way round), then one row per commit of the checked-out branch's
-    // history with its lanes drawn from its parents, the branch and tag names on it as pills and
-    // the head's subject in bold, fifty at a time with a Load More row after them.
+    // history with its lanes drawn from its parents, the names on it as pills (the first whole, the
+    // rest as glyphs grouped by kind, and a head pill on HEAD's commit) and the head's subject in
+    // bold, fifty at a time with a Load More row after them.
     //
     // While the section is open its head carries, on hover, Go to Current (HEAD's row scrolled into
     // view with the focus on it; not drawn for a repository with no commit), Fetch, Pull and Push
@@ -51,7 +52,7 @@
     import type { PromptRequest } from '$lib/ui/forms/prompt';
     import QuickPick from '$lib/ui/forms/choice/QuickPick.svelte';
     import type { Choice } from '$lib/ui/forms/choice/quick-pick';
-    import type { BranchFacts, GraphPick } from '../menus/graph-menu';
+    import type { BranchFacts, GraphPick, HeadFacts } from '../menus/graph-menu';
     import { askPick, namePrompt } from './graph-picks';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import type { Attachment } from 'svelte/attachments';
@@ -275,6 +276,11 @@
     /** The refs the compare items name: the upstream and the merge base. */
     const compare = $derived({ upstream: upstreamOf(git), base });
 
+    /** What HEAD says of a commit of a list: the log and the outgoing commits are HEAD's own. */
+    function hereOf(place: string): HeadFacts {
+        return { contained: place !== 'in', detached: git.detached };
+    }
+
     /** Open the refs git lists in a quick pick, to compare the commit with the one chosen. */
     async function graphCompareWith(hash: string): Promise<void> {
         try {
@@ -322,6 +328,7 @@
         open={commit === one.hash}
         {branches}
         {compare}
+        here={hereOf(place)}
         {busy}
         {onpick}
         {onswitch}
@@ -356,8 +363,6 @@
         label={t('repositories.graph')}
         id="graph"
         {nav}
-        count={commits.length}
-        badge
         {open}
         {ontoggle}
         actions={headActions}

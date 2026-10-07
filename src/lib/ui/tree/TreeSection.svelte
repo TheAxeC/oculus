@@ -7,6 +7,7 @@
 
     import type { Snippet } from 'svelte';
     import TreeItem from './TreeItem.svelte';
+    import type { ItemDrag } from './item-props.ts';
     import type { TreeNav } from './tree-keys.ts';
 
     type Props = {
@@ -32,6 +33,8 @@
          * the head: for a control that adds to the section, which a reader looks for first.
          */
         showActions?: boolean;
+        /** What lets the head be dragged over the heads of the other sections of its view. */
+        drag?: ItemDrag;
         /** The rows, each an `li` with role none around a row of level 2. */
         children?: Snippet;
     };
@@ -48,6 +51,7 @@
         title,
         actions,
         showActions = false,
+        drag,
         children
     }: Props = $props();
 </script>
@@ -67,6 +71,7 @@
         onclick={ontoggle}
         {actions}
         {showActions}
+        {drag}
     />
     {#if open && children !== undefined}
         <ul class="list" role="group" aria-label={label}>

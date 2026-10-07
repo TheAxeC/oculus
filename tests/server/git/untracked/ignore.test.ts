@@ -10,6 +10,7 @@ import { describe, expect } from 'vitest';
 import { addToGitignore } from '../../../../src/lib/server/git/git-index.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import { isolateGit, scratchRepo } from '../refs/repo.ts';
+import { TEXT } from '../../text.ts';
 
 isolateGit();
 
@@ -18,7 +19,7 @@ const read = (root: string): string => readFileSync(join(root, '.gitignore'), 'u
 describe('addToGitignore', () => {
     it('appends a path relative to the root, made when the file is missing', async () => {
         const root = scratchRepo();
-        const answer = await addToGitignore(root, ['a/b.txt'], [root]);
+        const answer = await addToGitignore(root, ['a/b.txt'], TEXT, [root]);
         expect(answer.ok).toBe(true);
         expect(read(root)).toBe('a/b.txt\n');
     });

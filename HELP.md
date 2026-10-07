@@ -37,7 +37,7 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | Cmd+R | reload the window (in the app) |
 | arrows | along the rail or a tab strip, when one holds the focus |
 | Home / End | first / last control of the rail or a tab strip |
-| arrows, Home / End, a letter | in a tree (Files, Repositories and the other explorers): up and down a row, into and out of a folder, the first and last row, and the next row whose name starts with that letter (Cmd or Ctrl with a letter is the browser's, so Cmd+A still selects all) |
+| arrows, Home / End, a letter | in a tree (Files, Repositories and the other explorers): up and down a row, into and out of a folder, the first and last row, and the next row whose name starts with that letter (Cmd or Ctrl with a letter is the browser's, except Cmd+A, which selects every row of the tree and never page text; Cmd+Enter opens the file beside the pane) |
 | Delete | close the focused tab, asking first when it holds unsaved text; a pinned tab is not closed, the first tab that is not pinned is shown |
 | f1-f3 | open a view of the Focus page's group |
 | m1-m7 | open a view of the Sessions page's group |
@@ -108,8 +108,8 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `data` | [Data](docs/views.md#data) | The dataset registry: where each set came from and how it is recovered. |
 | `code` | [Code](docs/views.md#code) | The repositories registry and the software projects with the papers each one names. |
 | `statements` | [Statements](docs/views.md#statements) | The reusable boilerplate paragraphs. |
-| `files` | [Files](docs/views.md#files) | The file browser over the hub, the engine config folder and the configured roots, read like an editor's explorer. |
-| `repositories` | [Repositories](docs/views.md#repositories) | VS Code's Source Control over every repository oculus knows, with the commit box, the changes, the graph, stashes, tags and worktrees. |
+| `files` | [Files](docs/views.md#files) | The file browser over the hub, the engine config folder and the configured roots, read like an editor's explorer: it follows the disk, roots, bookmarks, notes and sections reorder by drag and by Alt+Up and Alt+Down, and a second Collapse Folders press closes the roots. |
+| `repositories` | [Repositories](docs/views.md#repositories) | VS Code's Source Control over every repository oculus knows, with the commit box, the changes, the graph, stashes, tags and worktrees, repositories below a root down to `repository_scan_depth` included, and a changed file's name pressed to open it. |
 | `search` | [Search](docs/views.md#search) | A pattern across the files of one root or of all of them, the hits grouped by file, with an optional replace. |
 | `references` | [References](docs/views.md#references) | The locations a language server found for Find All References or Find All Implementations in a source tab, and the call and type hierarchies of a symbol. |
 | `latex` | [TeX view](docs/views.md#tex-view) | LaTeX Workshop's side bar for the root of the LaTeX file in front: Commands, Structure, Problems and Math Symbols. |
@@ -132,7 +132,7 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `terminal` | [Terminal](docs/views.md#terminal) | A terminal panel of its own: each Terminal tab owns one or more terminals running Claude, Codex or a shell inside tmux. |
 | `transcript` | [Transcript](docs/views.md#transcript) | One session's turns as they were written, one tab per session. |
 | `timeline` | [Timeline](docs/views.md#timeline) | One session's turns over time. |
-| `changes` | [Changes](docs/views.md#changes) | The git state of the workspace a session works in: its branch, the files the session touched and the commit box. |
+| `changes` | [Changes](docs/views.md#changes) | The git state of the workspace a session works in: its branch, the files the session touched (each with its name first and its folder after it) and the commit box. |
 | `agents` | [Agents](docs/views.md#agents) | The agents a session has running under it: the subagents its transcript names. |
 | `status` | [Status](docs/views.md#status) | Whether the socket is up, which snapshot the page holds, and the line counts of oculus's own files. |
 | `findings` | [Findings](docs/views.md#findings) | Every problem the data layer found in the hub's files, each naming its file and key. |

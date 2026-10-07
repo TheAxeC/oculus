@@ -82,7 +82,10 @@ export type ServerContext = {
     gitRunning: RunningGit;
     /** The ignored names the file browser's listings asked git for lately. */
     ignoredCache: IgnoredCache;
-    /** Whether the folder panel is open, so a second request while it is open is answered busy. */
+    /**
+     * The folder panel open now, as the controller that ends it, so a second request while it is
+     * open is answered busy and `close` ends it.
+     */
     folderPicker: PickerState;
     /** The log path found per HPC job id. */
     hpcLogPaths: LogPaths;

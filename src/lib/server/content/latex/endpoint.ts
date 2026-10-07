@@ -70,6 +70,8 @@ export type LatexTarget = {
      * is named for the folder by, and the main file: no oculus terminal built it when it is absent.
      */
     outcome?: (dir: string, label: string, main: string) => BuildOutcome;
+    /** The text catalog the token refusal is worded from, read when a refusal is made. */
+    text: () => Record<string, string>;
 };
 
 /** One main file of an answer: what its last build left, and how that build ended. */
@@ -576,7 +578,7 @@ export async function handleLatexPost(
     token: string,
     into: LatexTarget
 ): Promise<Response> {
-    const read = await tokenedBody(request, token, { headers: NO_STORE });
+    const read = await tokenedBody(request, token, { headers: NO_STORE, text: into.text });
     if (read instanceof Response) return read;
     const asked = actionShape.safeParse(read.body);
     if (!asked.success) return refuse(400, 'not-an-action');

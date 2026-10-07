@@ -470,11 +470,19 @@ export function stripMark(
  * the words of its view when its own label differs from them.
  */
 export function tabHint(
-    facts: { preview: boolean; path: string | null; viewWords: string | undefined },
+    facts: { preview: boolean; path: string | null; viewWords: string | undefined; gone?: boolean },
     t: (key: string) => string
 ): string | undefined {
-    if (facts.path === null) return facts.preview ? t('ui.preview_tab') : facts.viewWords;
-    return facts.preview ? `${facts.path}\n${t('ui.preview_tab')}` : facts.path;
+    const said =
+        facts.path === null
+            ? facts.preview
+                ? t('ui.preview_tab')
+                : facts.viewWords
+            : facts.preview
+              ? `${facts.path}\n${t('ui.preview_tab')}`
+              : facts.path;
+    if (facts.gone !== true) return said;
+    return said === undefined ? t('ui.tab_deleted') : `${said}\n${t('ui.tab_deleted')}`;
 }
 
 /**

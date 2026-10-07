@@ -154,8 +154,12 @@
 
     function commitIt(): void {
         if (why !== '' || message.trim() === '') return;
+        const count = plan?.changes.length ?? 0;
+        const branch = plan?.branch ?? '';
         ask(
-            t('deposit.commit_confirm', plan?.changes.length ?? 0, plan?.branch ?? ''),
+            count === 1
+                ? t('deposit.commit_confirm_one', branch)
+                : t('deposit.commit_confirm', count, branch),
             t('deposit.commit_detail'),
             async () => {
                 const answer = await act('commit', { message }, true);

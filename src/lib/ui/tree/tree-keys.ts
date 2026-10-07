@@ -102,9 +102,11 @@ export function pressOf(event: KeyboardEvent): Press {
 }
 
 /**
- * Where one key pressed on a row goes. A character with Meta or Ctrl held is withheld, so the page
- * keeps Cmd+A and the other shortcuts, while a named key with them (Enter, an arrow) is still the
- * machine's; `*` (open every sibling) is withheld, and so is Space unless a
+ * Where one key pressed on a row goes. Cmd+A (Ctrl+A off macOS) is `select-all`: the caller is
+ * asked to select its rows and the page never selects its text from a tree. Any other character
+ * with Meta or Ctrl held is withheld, so the page keeps the other shortcuts, while a named key with
+ * them (Enter, an arrow) is still the machine's; `*` (open every sibling) is withheld, and so is
+ * Space unless a
  * type-ahead is running, since neither is a key of this tree. A lowercase `a` is sent as a
  * type-ahead letter, since the machine's own map reads `a` as select-all and drops it otherwise.
  * Every other key is the machine's. A press matching a chord of the caller's `keymap` is
@@ -115,7 +117,7 @@ export function keyRoute(
     held: { meta: boolean; ctrl: boolean; alt?: boolean; shift?: boolean; code?: string },
     typingAhead: boolean,
     keymap: readonly Chord[] = []
-): 'withhold' | 'type-ahead' | 'machine' | 'bound' {
+): 'withhold' | 'type-ahead' | 'machine' | 'bound' | 'select-all' {
     const code = held.code ?? '';
     const press = {
         code,
@@ -127,6 +129,9 @@ export function keyRoute(
     // A bound chord is the caller's; Space is bound only while no type-ahead is running, since a
     // space then belongs to the word being typed.
     if (boundAction(keymap, press) !== null && !(code === 'Space' && typingAhead)) return 'bound';
+    if ((held.meta || held.ctrl) && !press.alt && !press.shift && code === 'KeyA') {
+        return 'select-all';
+    }
     if ((held.meta || held.ctrl) && key.length === 1) return 'withhold';
     if (key === '*') return 'withhold';
     if (key === ' ') return typingAhead ? 'machine' : 'withhold';

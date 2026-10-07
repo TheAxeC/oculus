@@ -1,11 +1,12 @@
 // Layer 1, data. The typed readers of single settings out of the merged map: the cluster, the
 // calendar, the search, the Literature search, the open list, the mail, the change log's length,
 // the usage tiers and the refresh, the Processes view's program names, the LaTeX formatter and its
-// auto build, the automatic fetch, the Trash confirmation and the editor's paint limit. Each reads
-// a key by the rule of its entry in the options catalog (catalog/value-rule.ts), the same rule the
-// Settings view and the server's write refuse a value by: a key that is missing is the entry's
-// `default`, and a key whose value the rule refuses is the `default` too and comes back as a
-// problem naming the key, so a typo costs one setting and the server starts. A reader throws only
+// auto build, the automatic fetch, the Trash confirmation and the editor's paint limit, and the
+// repository scan depth of sources.yml, the one setting here that lives outside behavior.yml. Each
+// reads a key by the rule of its entry in the options catalog (catalog/value-rule.ts), the same
+// rule the Settings view and the server's write refuse a value by: a key that is missing is the
+// entry's `default`, and a key whose value the rule refuses is the `default` too and comes back as
+// a problem naming the key, so a typo costs one setting and the server starts. A reader throws only
 // when the catalog holds no rule for a key it reads, or no default that reads, since without one no
 // value can be read.
 
@@ -36,7 +37,8 @@ import { valueProblem, type RuleLists, type ValueProblem } from './catalog/value
  * read; `spec` is the entry or field that holds the rule. `block` is a block that is not a map,
  * whose keys all take their defaults, and `family` a family that is not a map, none of whose
  * entries is read. `repeat` is a row of a list of records whose name an earlier row already took,
- * and `unnamed` a row with no name; neither is read.
+ * and `unnamed` a row with no name; neither is read. A `value` problem of a key outside
+ * behavior.yml names its `file`.
  */
 export type SettingProblem =
     | { key: string; where: 'block' | 'family' }
@@ -47,6 +49,7 @@ export type SettingProblem =
           where: 'value' | 'entry' | 'field';
           problem: ValueProblem;
           spec: CatalogEntry;
+          file?: string;
       };
 
 /** The value at a key of the merged map, if the file holds one. */
@@ -102,20 +105,28 @@ function heldAt(config: Record<string, unknown>, key: string, problems: SettingP
     return value === undefined ? { present: false } : { present: true, value };
 }
 
+/** The file the settings of the merged map are read from unless a reader names another. */
+const BEHAVIOR = 'behavior.yml';
+
 /** The entry of a key of config/behavior.yml in the merged map's catalog; throws without one. */
 export function settingEntry(config: Record<string, unknown>, key: string): CatalogEntry {
-    const entries = byKey(catalogOf(config), 'behavior.yml');
+    const entries = byKey(catalogOf(config), BEHAVIOR);
     const entry = entries === undefined ? undefined : byKey(entries, key);
     if (entry === undefined) throw noRule(key);
     return entry;
 }
 
-/** A reader over the merged map, pushing what it finds wrong to `problems`. */
+/**
+ * A reader over the merged map, pushing what it finds wrong to `problems`. It reads the entries of
+ * `file` in the options catalog, behavior.yml unless the caller names another, and a problem of a
+ * leaf names that file when it is not behavior.yml.
+ */
 export function settingReader(
     config: Record<string, unknown>,
-    problems: SettingProblem[] = []
+    problems: SettingProblem[] = [],
+    file: string = BEHAVIOR
 ): SettingReader {
-    const entries = byKey(catalogOf(config), 'behavior.yml');
+    const entries = byKey(catalogOf(config), file);
     const entryOf = (key: string): CatalogEntry => {
         const entry = entries === undefined ? undefined : byKey(entries, key);
         if (entry === undefined) throw noRule(key);
@@ -133,7 +144,11 @@ export function settingReader(
         if (!held.present) return defaultOf(entry, key);
         const problem = valueProblem(entry, held.value, listsOf(entry, config));
         if (problem === null) return held.value;
-        problems.push({ key, where: 'value', problem, spec: entry });
+        problems.push(
+            file === BEHAVIOR
+                ? { key, where: 'value', problem, spec: entry }
+                : { key, where: 'value', problem, spec: entry, file }
+        );
         return defaultOf(entry, key);
     };
     const family = (key: string): [string, unknown][] => {
@@ -450,6 +465,17 @@ export function autofetchMin(
 }
 
 /**
+ * Read `repository_scan_depth` of config/sources.yml: how many folder levels below a root the
+ * Repositories view looks for repositories, 1 when the key is missing or wrong.
+ */
+export function repositoryScanDepth(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): number {
+    return settingReader(config, problems, 'sources.yml').number('repository_scan_depth');
+}
+
+/**
  * The size in bytes above which the source editor opens a file as plaintext, and null for a
  * configuration that holds no catalog yet, which is what the page holds until the config channel's
  * first message lands; the editor paints plain over that.
@@ -747,6 +773,7 @@ const PROBLEM_READERS: ((
     usageTiers,
     refreshSettings,
     autofetchMin,
+    repositoryScanDepth,
     paintLimit,
     processesSettings,
     latexFormatting,

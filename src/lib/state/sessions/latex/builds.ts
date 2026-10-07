@@ -174,8 +174,12 @@ export type BuildsStore = {
     onSaved: (root: string, path: string) => Promise<void>;
     /** The `sessions` list moved: end the runs whose terminals ended. */
     sessionsMoved: () => void;
-    /** A `files` message came: ask for the dependencies of the roots it concerns. */
-    filesMoved: (concerned: (root: string, dir: string) => boolean) => void;
+    /**
+     * A `files` message came: ask for the dependencies of the followed mains it concerns. The test
+     * is handed each main's root key and folder and the dependency files last read for it, each
+     * against the root's own directory.
+     */
+    filesMoved: (concerned: (root: string, dir: string, files: string[]) => boolean) => void;
 };
 
 export function createBuilds(deps: BuildDeps): BuildsStore {
@@ -583,10 +587,11 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         };
     }
 
-    function filesMoved(concerned: (root: string, dir: string) => boolean): void {
+    function filesMoved(concerned: (root: string, dir: string, files: string[]) => boolean): void {
         for (const entry of entries.values()) {
             const target = entry.target;
-            if (entry.follows > 0 && 'root' in target && concerned(target.root, target.path)) {
+            if (entry.follows === 0 || !('root' in target)) continue;
+            if (concerned(target.root, target.path, [...(entry.times?.keys() ?? [])])) {
                 void poll(entry);
             }
         }

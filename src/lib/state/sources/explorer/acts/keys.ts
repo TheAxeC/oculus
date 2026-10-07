@@ -13,6 +13,7 @@
 export type FilesAction =
     | 'rename'
     | 'open'
+    | 'open-side'
     | 'delete'
     | 'copy'
     | 'cut'
@@ -25,7 +26,9 @@ export type FilesAction =
     | 'redo'
     | 'select-all'
     | 'extend-up'
-    | 'extend-down';
+    | 'extend-down'
+    | 'move-up'
+    | 'move-down';
 
 /** One chord as the table below writes it: Cmd stands for the platform's command key. */
 type Entry = {
@@ -41,6 +44,7 @@ const ENTRIES: readonly Entry[] = [
     { code: 'Enter', action: 'rename' },
     { code: 'F2', action: 'rename' },
     { code: 'ArrowDown', cmd: true, action: 'open' },
+    { code: 'Enter', cmd: true, action: 'open-side' },
     { code: 'Backspace', cmd: true, action: 'delete' },
     { code: 'KeyC', cmd: true, action: 'copy' },
     { code: 'KeyX', cmd: true, action: 'cut' },
@@ -53,7 +57,9 @@ const ENTRIES: readonly Entry[] = [
     { code: 'KeyZ', cmd: true, shift: true, action: 'redo' },
     { code: 'KeyA', cmd: true, action: 'select-all' },
     { code: 'ArrowUp', shift: true, action: 'extend-up' },
-    { code: 'ArrowDown', shift: true, action: 'extend-down' }
+    { code: 'ArrowDown', shift: true, action: 'extend-down' },
+    { code: 'ArrowUp', alt: true, action: 'move-up' },
+    { code: 'ArrowDown', alt: true, action: 'move-down' }
 ];
 
 /** One chord of the keymap: the physical key, the modifiers held and the action it asks for. */
@@ -65,6 +71,14 @@ export type FilesChord = {
     shift: boolean;
     action: FilesAction;
 };
+
+/**
+ * The two chords that move a row one place within its list (Alt+Up, Alt+Down), which the lists
+ * under the tree (the section heads, the bookmarks, the notes) take in their own trees.
+ */
+export const MOVE_KEYMAP: readonly FilesChord[] = filesKeymap(false).filter(
+    (one) => one.action === 'move-up' || one.action === 'move-down'
+);
 
 /** The keymap of the file browser's tree on a platform: Cmd is Meta on macOS and Ctrl elsewhere. */
 export function filesKeymap(mac: boolean): FilesChord[] {
@@ -151,6 +165,7 @@ export type KeyPlan =
     | 'pass'
     | 'rename'
     | 'open-preview'
+    | 'open-side'
     | 'toggle'
     | 'delete'
     | 'copy'
@@ -164,13 +179,15 @@ export type KeyPlan =
     | 'redo'
     | 'select-all'
     | 'extend-up'
-    | 'extend-down';
+    | 'extend-down'
+    | 'move-up'
+    | 'move-down';
 
 /**
  * What an action does on the focused row. Rename needs one row that is not a root; delete, cut and
  * copy need at least one row that is not a root; Cmd+Down opens a file as the preview tab and
- * toggles a folder; Escape cancels a cut only while there is one; Space opens a file in the
- * background and leaves a folder alone.
+ * toggles a folder; Cmd+Enter opens a file to the side and leaves a folder alone; Escape cancels a
+ * cut only while there is one; Space opens a file in the background and leaves a folder alone.
  */
 export function keyPlan(action: FilesAction, row: KeyRow): KeyPlan {
     switch (action) {
@@ -178,6 +195,8 @@ export function keyPlan(action: FilesAction, row: KeyRow): KeyPlan {
             return row.root || row.acting > 1 ? 'nothing' : 'rename';
         case 'open':
             return row.kind === 'file' && !row.root ? 'open-preview' : 'toggle';
+        case 'open-side':
+            return row.kind === 'file' && !row.root ? 'open-side' : 'pass';
         case 'delete':
         case 'cut':
         case 'copy':

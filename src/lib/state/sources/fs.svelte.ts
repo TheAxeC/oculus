@@ -14,9 +14,12 @@
 // rather than here, since it is a collection entry, so that write marks everything too. What is
 // held stays drawn until the fresh answer lands, so a tree does not blink out on every add or
 // removal, and a request still out when its key is marked is cancelled, so an answer from before
-// the mark is never held and a listing fetched before a removal cannot reappear after it. A folder
-// whose contents changed on disk is re-read by closing it and opening it, since a poller over an
-// open tree would read the disk for a reader who is looking at one line of it.
+// the mark is never held and a listing fetched before a removal cannot reappear after it.
+//
+// The disk is followed through the `files` channel, which is why no poller is needed:
+// `afterReceive` below lists the folders a message names again (explorer/view/disk.ts maps the
+// message onto the served roots), reads a whole root again for a message that names none, and
+// everything again after a gap in the versions.
 //
 // A read of the workspaces, the bookmarks or the notes that ended in an error is held as the
 // answer, with the sentence saying why, and a held answer is asked for once until it is marked:
@@ -24,18 +27,16 @@
 // the answer of the round. The view's own control marks it again, and so does mounting the view,
 // which is the reader coming back to it.
 //
-// The bookmarks file is also read again when it changes on the disk. The `files` channel carries a
-// message for it, published by the watcher over ~/.oculus, and that message marks the bookmarks: a
-// bookmark added by hand or by another tool reaches an open page without a write from it.
+// A bookmark added by hand or by another tool reaches an open page through the `files` message the
+// watcher over ~/.oculus publishes, with no write from the page.
 //
-// One root alone is re-read by refresh(root, version): it marks the listings, texts and file kinds
-// held under that root, so a view watching a channel (the Settings view watching the config one)
-// asks again for that root's listings and texts and for nothing under any other root. A refresh at
-// a version already seen marks nothing.
+// One root alone is re-read by refresh(root, version), which the `files` channel's messages call:
+// it marks the listings, texts and file kinds held under that root, so the page asks again for that
+// root's listings and texts and for nothing under any other root. A refresh at a version already
+// seen marks nothing.
 //
 // A folder can also be read awaited (readListing), which is how the Files view reads the folders on
-// the way to a path it was asked to show, one after the other; that read and a render's read of the
-// same folder are one request.
+// the way to a path it was asked to show; that read and a render's read of one folder are one.
 //
 // A folder is listed under a pair of toggles, whether hidden files and the files git ignores are
 // asked for, and each pair is an answer of its own, held under its own key, since two file
@@ -57,21 +58,14 @@
 // byte it tells a cut by, and the answer is held until it is marked, so the tree, the tab it opens
 // and a second click on the same row ask the server once.
 
-import { z } from 'zod';
-import type { SchemaField } from '../../data/model/index.ts';
 import { TEXT_SNIFF_READ } from '../../data/helpers/files/text-kind.ts';
-import {
-    anyNumberShape,
-    mapShape,
-    readAs,
-    survivorsShape,
-    unchanged
-} from '../../data/shapes/shapes.ts';
+import { readAs } from '../../data/shapes/shapes.ts';
 import type { EntitiesStore, WriteAnswer, WritesStore } from '../shared/stores/shapes.ts';
 import type { Fetcher, Fetching, Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 import {
-    LISTING_FORMS,
+    heldListings,
+    type HeldListing,
     NO_BOOKMARKS,
     NO_LISTING,
     NO_NOTE,
@@ -81,23 +75,26 @@ import {
     currentWorkspace,
     fileBytesUrl,
     FS_PATH,
+    bookmarksShape,
     listingAnswer,
     listingForm,
     listingKey as keyOfListing,
     listingUrl,
+    noteShape,
+    notesShape,
     noteUrl,
     readAnswer,
     readCappedBytes,
     readText,
-    type BookmarkEntry,
     type BookmarksState,
     type FileText,
     type Listing,
-    type NoteRow,
     type NoteState,
     type NotesState,
-    type WorkspacesState
+    type WorkspacesState,
+    workspacesShape
 } from './fs-transport.ts';
+import { diskPlan } from './explorer/view/disk.ts';
 import {
     SHOWN_DEFAULT,
     editShown,
@@ -169,69 +166,11 @@ const ALL = ['fs'];
 
 const NOTE = ['fs', 'note'];
 
+/** The pair of toggles that asks a folder for every entry it holds. */
+const EVERYTHING: ListingShown = { hidden: true, ignored: true };
+
 /** The status the file route answers for a file that is not there. */
 const NOT_FOUND = 404;
-
-/** One root of a workspace, and one workspace, answered as the endpoint sent them. */
-const fsRootShape = z.object({ key: z.string(), dir: z.string(), fixed: z.boolean() });
-
-const workspaceShape = unchanged(
-    z.object({ name: z.string(), roots: z.array(fsRootShape) })
-) satisfies z.ZodType<{ name: string; roots: FsRoot[] }>;
-
-/** The workspaces answer: the current one's name, every workspace, the keys the server dropped. */
-const workspacesShape = z.object({
-    home: z.string().catch(''),
-    current: z.string().catch(''),
-    workspaces: survivorsShape(workspaceShape).catch([]),
-    dropped: survivorsShape(z.string()).catch([])
-});
-
-/** One bookmark, answered as the endpoint sent it. */
-const bookmarkShape = unchanged(
-    z.object({
-        id: z.string(),
-        title: z.string(),
-        fields: mapShape,
-        file: z.string(),
-        index: anyNumberShape,
-        kind: z.enum(['file', 'folder', 'missing']).optional().catch(undefined)
-    })
-) satisfies z.ZodType<BookmarkEntry>;
-
-/** One field of the bookmarks file's own schema, answered as the endpoint sent it. */
-const schemaFieldShape = unchanged(
-    z.object({
-        field: z.string(),
-        type: z.string(),
-        label: z.string().optional(),
-        options: z.array(z.string()).optional(),
-        optionsFrom: z.string().optional(),
-        required: z.boolean().optional(),
-        help: z.string().optional()
-    })
-) satisfies z.ZodType<SchemaField>;
-
-/** The bookmarks answer: the well-formed entries and the well-formed fields of the schema. */
-const bookmarksShape = z.object({
-    entries: survivorsShape(bookmarkShape).catch([]),
-    schema: survivorsShape(schemaFieldShape).catch([])
-});
-
-/** One note of the list, answered as the endpoint sent it. */
-const noteRowShape = unchanged(
-    z.object({ id: z.string(), title: z.string(), modified: anyNumberShape })
-) satisfies z.ZodType<NoteRow>;
-
-/** The notes answer: the well-formed notes. */
-const notesShape = z.object({ notes: survivorsShape(noteRowShape).catch([]) });
-
-/** One note's own answer: its title, its text and when it was written. */
-const noteShape = z.object({
-    title: z.string().catch(''),
-    body: z.string().catch(''),
-    modified: anyNumberShape.catch(0)
-});
 
 /** The file browser's fetched state, one per client. */
 export type FsStore = {
@@ -247,9 +186,21 @@ export type FsStore = {
      * One directory once it is answered: what is held for the round without a request, or the
      * answer of the one request the round makes for it, shared with every other caller asking
      * meanwhile. It is what a caller that has to know what a folder holds before its next step
-     * awaits.
+     * awaits. With `fresh` a held answer is not taken: the folder is read from the server, which is
+     * how a path is looked for before it is said to be missing.
      */
-    readListing: (root: string, path: string, shown?: ListingShown) => Promise<Listing>;
+    readListing: (
+        root: string,
+        path: string,
+        shown?: ListingShown,
+        fresh?: boolean
+    ) => Promise<Listing>;
+    /**
+     * Whether a file has been taken off the disk: its folder, listed with the hidden and the
+     * ignored entries, answered without error and holds no entry of its name, or answered that the
+     * folder is not there. A folder not yet answered says the file is still there.
+     */
+    gone: (root: string, path: string) => boolean;
     /** Ask again, on the next read of each, for every folder held under one pair of toggles. */
     relist: (shown: ListingShown) => void;
     /**
@@ -258,6 +209,8 @@ export type FsStore = {
      */
     relistFolder: (root: string, path: string, below?: boolean) => void;
     workspaces: () => WorkspacesState;
+    /** The workspaces as the server holds them now: read again when they are stale. */
+    workspacesNow: () => Promise<WorkspacesState>;
     /** The roots of the workspace the saved state names as current. */
     roots: () => FsRoot[];
     fileText: (root: string, path: string) => FileText;
@@ -318,6 +271,15 @@ export type FsStore = {
     note: (id: string) => NoteState;
     addRoot: (dir: string) => Promise<WriteAnswer>;
     removeRoot: (key: string) => Promise<WriteAnswer>;
+    /**
+     * Put the roots the reader can move in the order the keys name: the `roots:` list of
+     * config/sources.yml in the default workspace, the workspace's own roots in a named one. The
+     * workspaces are read again after the answer, whatever it was, so a refused order is drawn as
+     * the server holds it.
+     */
+    orderRoots: (keys: string[]) => Promise<WriteAnswer>;
+    /** Put the notes in the order the ids name, newest first for any a list leaves out. */
+    orderNotes: (ids: string[]) => Promise<WriteAnswer>;
     saveWorkspace: (name: string) => Promise<WriteAnswer>;
     selectWorkspace: (name: string) => Promise<WriteAnswer>;
     /** Add one bookmark through the collection write path, and ask for them again. */
@@ -355,7 +317,7 @@ export function createFs(
      * The notes this page deleted. A deleted note is never asked for again and never written again,
      * which is what keeps a wait that was still running from putting one back on the disk.
      */
-    const gone = new Set<string>();
+    const deleted = new Set<string>();
 
     /** The version one root was last refreshed at, by root key. */
     const refreshed = new Map<string, number>();
@@ -386,19 +348,62 @@ export function createFs(
     }
 
     /**
-     * How far the disk has moved the bookmarks on: the version of the newest `files` message that
-     * named the bookmarks file. The channel holds one message, and on a busy hub the next write
-     * under a root replaces that one before anything reads the bookmarks, so every message is heard
-     * as it is kept rather than the channel read when the menu opens. A newer one marks the
-     * bookmarks, and a request still out for them is cancelled.
+     * What a `files` or a `config` message says about the disk. Each message is heard as it is
+     * kept, since the next write replaces it before anything reads. `bookmarks` marks the
+     * bookmarks; `workspaces` and every `config` message (a root added to or taken out of
+     * sources.yml) mark the workspaces and the bookmarks. The folders a message names are listed
+     * again with the texts and kinds of the files in them; a message naming none reads each served
+     * root it concerns again, every root after a gap in the versions (messages merged or missed).
      */
-    let onDisk = 0;
+    let heard: number | null = null;
     entities.afterReceive((message) => {
-        const named = entities.payloadOf(message, 'files')?.bookmarks;
-        if (named !== true || message.version <= onDisk) return;
-        onDisk = message.version;
-        queries.mark(BOOKMARKS, 'replace');
+        if (message.channel === 'config') {
+            queries.mark(WORKSPACES, 'replace');
+            queries.mark(BOOKMARKS, 'replace');
+            return;
+        }
+        if (message.channel !== 'files' || (heard !== null && message.version <= heard)) return;
+        const gap = heard !== null && message.version !== heard + 1;
+        heard = message.version;
+        const payload = entities.payloadOf(message, 'files');
+        if (gap) {
+            queries.mark(WORKSPACES, 'replace');
+            queries.mark(BOOKMARKS, 'replace');
+            for (const one of heldRoots()) refresh(one.key, message.version);
+        }
+        if (payload === null) return;
+        if (payload.workspaces === true) queries.mark(WORKSPACES, 'replace');
+        if (payload.bookmarks === true || payload.workspaces === true) {
+            queries.mark(BOOKMARKS, 'replace');
+        }
+        const plan = diskPlan(payload, heldRoots());
+        for (const key of plan.roots) refresh(key, message.version);
+        for (const folder of plan.folders) relistFiles(folder.root, folder.path);
     });
+
+    /** The roots of the workspace as far as they have been read; asks the server for nothing. */
+    function heldRoots(): FsRoot[] {
+        const held = queries.peek<WorkspacesState>(WORKSPACES).data;
+        return held === undefined ? [] : currentWorkspace(held).roots;
+    }
+
+    /**
+     * List one folder again, and with it the text and the kind of each file held in it, since a
+     * file written in a folder is what a message naming the folder says.
+     */
+    function relistFiles(root: string, path: string): void {
+        relistFolder(root, path);
+        for (const kind of ['text', 'kind']) {
+            for (const one of queries.entries(['fs', kind, root])) {
+                const at = one.key[3];
+                if (typeof at !== 'string') continue;
+                const file = at.slice(root.length + 1);
+                const slash = file.lastIndexOf('/');
+                if ((slash < 0 ? '' : file.slice(0, slash)) === path)
+                    queries.mark(one.key, 'replace');
+            }
+        }
+    }
 
     /** The query key of one folder under one pair of toggles. */
     function listingQuery(root: string, path: string, shown: ListingShown): string[] {
@@ -421,14 +426,11 @@ export function createFs(
         return data ?? otherForm(root, path) ?? NO_LISTING;
     }
 
+    const peekListing = (key: string[]): HeldListing => queries.peek<Listing>(key);
+
     /** What any pair of toggles holds of one folder, for a pair whose answer has not landed. */
     function otherForm(root: string, path: string): Listing | undefined {
-        for (const form of LISTING_FORMS) {
-            const key = ['fs', 'listing', root, `${form}${treeKey(root, path)}`];
-            const held = queries.peek<Listing>(key).data;
-            if (held !== undefined) return held;
-        }
-        return undefined;
+        return heldListings(peekListing, root, path).find((one) => one.data !== undefined)?.data;
     }
 
     function relist(shown: ListingShown): void {
@@ -459,22 +461,42 @@ export function createFs(
     }
 
     /**
-     * One directory, awaited. A folder held and not marked is answered as held; otherwise the
-     * request is made or joined, and its answer is what comes back even when the key is marked
-     * meanwhile and the store did not keep it. Where there is no page nothing is asked, and the
-     * answer says so.
+     * One directory, awaited. A folder held and not marked is answered as held (unless `fresh` asks
+     * for the server's); otherwise the request is made or joined, and its answer is what comes back
+     * even when the key is marked meanwhile and the store did not keep it. Where there is no page
+     * nothing is asked, and the answer says so.
      */
     async function readListing(
         root: string,
         path: string,
-        shown = SHOWN_DEFAULT
+        shown = SHOWN_DEFAULT,
+        fresh = false
     ): Promise<Listing> {
         if (root === '') return { entries: [], error: '', loading: false };
         const key = listingQuery(root, path, shown);
         const found = queries.peek<Listing>(key);
-        if (found.data !== undefined && !found.stale) return found.data;
+        if (!fresh && found.data !== undefined && !found.stale) return found.data;
         if (!inBrowser()) return { entries: [], error: t('files.read_offline'), loading: false };
         return queries.fetch(key, listingFetcher(root, path, shown));
+    }
+
+    /**
+     * Whether one file is off the disk. A listing of its folder that is held in any form, current,
+     * and names the file answers no and asks nothing; any other folder is read with everything
+     * shown, the one listing that holds a hidden or an ignored file.
+     */
+    function gone(root: string, path: string): boolean {
+        if (root === '' || path === '') return false;
+        const at = path.lastIndexOf('/');
+        const folder = at < 0 ? '' : path.slice(0, at);
+        const name = path.slice(at + 1);
+        const named = (one: HeldListing): boolean =>
+            !one.stale && one.data?.error === '' && one.data.entries.some((e) => e.name === name);
+        if (heldListings(peekListing, root, folder).some(named)) return false;
+        const found = listing(root, folder, EVERYTHING);
+        if (found.loading) return false;
+        if (found.error === t('files.refused_missing')) return true;
+        return found.error === '' && !found.entries.some((one) => one.name === name);
     }
 
     /** The entries of one folder, which is what the tree walks. */
@@ -490,6 +512,12 @@ export function createFs(
     function workspaces(): WorkspacesState {
         const { data } = queries.read(WORKSPACES, readWorkspaces, { enabled: inBrowser() });
         return data ?? NO_WORKSPACES;
+    }
+
+    async function workspacesNow(): Promise<WorkspacesState> {
+        const found = queries.peek<WorkspacesState>(WORKSPACES);
+        if (found.data !== undefined && !found.stale && !found.data.loading) return found.data;
+        return inBrowser() ? queries.fetch(WORKSPACES, readWorkspaces) : NO_WORKSPACES;
     }
 
     /** The roots of the current workspace, which are none while the workspaces are being read. */
@@ -666,7 +694,7 @@ export function createFs(
     function note(id: string): NoteState {
         if (id === '') return { ...NO_NOTE, loading: false };
         const { data } = queries.read([...NOTE, id], () => readNote(id), {
-            enabled: inBrowser() && !gone.has(id)
+            enabled: inBrowser() && !deleted.has(id)
         });
         return data ?? NO_NOTE;
     }
@@ -707,8 +735,9 @@ export function createFs(
 
     /**
      * Ask again for the listings, the texts and the file kinds held under one root, and for nothing
-     * under any other. The version is whatever said the root had changed, the config channel's for
-     * the engine's own folder; a version already refreshed at marks nothing.
+     * under any other. The version is that of the `files` message that said the root had changed
+     * (this store's own `afterReceive` is its caller); a version already refreshed at marks
+     * nothing.
      */
     function refresh(root: string, version: number): void {
         if (root === '' || refreshed.get(root) === version) return;
@@ -736,7 +765,7 @@ export function createFs(
      * the refusal is answered here rather than sent, since the endpoint would write the file again.
      */
     async function saveNote(id: string, title: string, body: string): Promise<WriteAnswer> {
-        if (gone.has(id)) {
+        if (deleted.has(id)) {
             return { ok: false, changed: [], refused: [], error: NOTE_GONE };
         }
         const answer = await noteAct({ action: 'note-save', id, title, body });
@@ -760,7 +789,7 @@ export function createFs(
     /** Take one note off the disk, and remember that this page did so. */
     async function deleteNote(id: string): Promise<WriteAnswer> {
         const answer = await noteAct({ action: 'note-delete', id });
-        if (answer.ok) gone.add(id);
+        if (answer.ok) deleted.add(id);
         return answer;
     }
 
@@ -793,9 +822,11 @@ export function createFs(
         entries,
         heldEntries,
         readListing,
+        gone,
         relist,
         relistFolder,
         workspaces,
+        workspacesNow,
         roots,
         fileText,
         markText,
@@ -821,6 +852,14 @@ export function createFs(
             inDefault()
                 ? rootsWrite({ kind: 'roots', action: 'remove', key })
                 : act({ action: 'remove-root', key }),
+        orderRoots: async (keys: string[]) => {
+            const answer = await (inDefault()
+                ? rootsWrite({ kind: 'roots', action: 'order', keys })
+                : act({ action: 'order-roots', keys }));
+            queries.mark(WORKSPACES, 'replace');
+            return answer;
+        },
+        orderNotes: (ids: string[]) => noteAct({ action: 'order-notes', ids }),
         saveWorkspace: (name: string) => act({ action: 'save-workspace', name }),
         selectWorkspace: (name: string) => act({ action: 'select-workspace', name }),
         addBookmark: (fields: Record<string, unknown>) =>
@@ -834,7 +873,7 @@ export function createFs(
         shiftForms: forms.shift,
         saveNote,
         deleteNote,
-        noteDeleted: (id: string) => gone.has(id),
+        noteDeleted: (id: string) => deleted.has(id),
         invalidate
     };
 }

@@ -54,11 +54,11 @@ The reusable boilerplate paragraphs.
 
 ## Files
 
-The Files view is the file browser over the hub, the engine config folder and the configured roots, with Open Editors, Outline, Timeline, Bookmarks and Notes under its tree; its tree, menus, file operations and local history are in the [Files and search guide](files-and-search.md#the-files-view).
+The Files view is the file browser over the hub, the engine config folder and the configured roots, with Open Editors, Outline, Timeline, Bookmarks and Notes under its tree, which follows the disk and whose roots, bookmarks, notes and sections reorder by drag and by Alt+Up and Alt+Down; its tree, menus, file operations and local history are in the [Files and search guide](files-and-search.md#the-files-view).
 
 ## Repositories
 
-The Repositories view is VS Code's Source Control over every repository oculus knows, with the commit box, the changes, the graph, stashes, tags, branches and worktrees; the whole view is in the [Source Control guide](source-control.md#the-repositories-view).
+The Repositories view is VS Code's Source Control over every repository oculus knows, with the commit box, the changes, the graph, stashes, tags, branches and worktrees, over the repositories below a root as well as the roots down to `repository_scan_depth` levels; a changed file's name is a press that opens it, with Open File beside it, and the rows are selected by press, Cmd+press, Shift+press and Cmd+A and opened beside the pane with Cmd+Enter; the whole view is in the [Source Control guide](source-control.md#the-repositories-view).
 
 ## Search
 
@@ -166,7 +166,7 @@ One session's turns over time.
 
 ## Changes
 
-The git state of the workspace a session works in (a path is shown whole in one line and cut at its end when the pane is narrow, and the verb and the count of the files the session touched line up in columns): its branch, the same commit box as the Repositories view, and its changes with Stage All, Unstage All and Discard All on the group heads (its commit box says Sync Changes or Publish Branch where there is nothing to commit, which is how the panel pushes) and each row opening its own diff tab for the session, a conflicted path the merge editor; in that tab a `+` beside a line (or Add Comment on Line in the line's menu) opens a comment box after it, and Send hands the comment to the session as a prompt naming the file and line, typed into its terminal when oculus runs it and copied to the clipboard otherwise, with a line saying which; a repository with no commit yet included; or one line saying the session names no workspace folder, that the workspace folder is not there, that the folder is not a git repository, that git could not read the repository and why, or that git has not read the workspace yet.
+The git state of the workspace a session works in (a file is shown as its name followed by its folder, dimmed and cut at its end when the pane is narrow, with the whole path as the tooltip, and the verb and the count of the files the session touched line up in columns): its branch, the same commit box as the Repositories view, and its changes with Stage All, Unstage All and Discard All on the group heads (its commit box says Sync Changes or Publish Branch where there is nothing to commit, which is how the panel pushes) and each row opening its own diff tab for the session, a conflicted path the merge editor; in that tab a `+` beside a line (or Add Comment on Line in the line's menu) opens a comment box after it, and Send hands the comment to the session as a prompt naming the file and line, typed into its terminal when oculus runs it and copied to the clipboard otherwise, with a line saying which; a repository with no commit yet included; or one line saying the session names no workspace folder, that the workspace folder is not there, that the folder is not a git repository, that git could not read the repository and why, or that git has not read the workspace yet.
 
 ## Agents
 

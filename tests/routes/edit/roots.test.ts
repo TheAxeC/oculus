@@ -68,8 +68,26 @@ const send = (into: WriteTarget, body: unknown) => handleWrite(request(body), TO
 const add = (into: WriteTarget, dir: string) => send(into, { kind: 'roots', action: 'add', dir });
 const remove = (into: WriteTarget, key: string) =>
     send(into, { kind: 'roots', action: 'remove', key });
+const order = (into: WriteTarget, keys: string[]) =>
+    send(into, { kind: 'roots', action: 'order', keys });
+
+/** The same list with a comment line between its two entries, which no rewrite may drop. */
+const COMMENTED = SOURCES.replace(
+    '  - { key: cathedra,    dir: ~/workspace/cathedra }\n',
+    '  - { key: cathedra,    dir: ~/workspace/cathedra }\n  # the engine of the games\n'
+);
 
 test.beforeAll(warmConfig);
+
+/**
+ * The writes a list that names the keys wrongly is refused for, each with the file left as it was.
+ */
+const WRONG_KEYS: [string, string[]][] = [
+    ['a key twice', ['cathedra', 'cathedra']],
+    ['a key missing', ['cathedra']],
+    ['a key the list does not hold', ['cathedra', 'game-engine', 'thesis']],
+    ['a key in place of another', ['cathedra', 'thesis']]
+];
 
 describe('the roots write', () => {
     it('appends the folder as an entry under a key made from its name, keeping every other line', async () => {
@@ -94,6 +112,47 @@ describe('the roots write', () => {
         expect(written).toContain('  - { key: cathedra,    dir: ~/workspace/cathedra }\n');
         expect(written).toContain('# The language each file name opens in.\n');
         expect(written).toContain('  bash:          [.sh, .bash]\n');
+
+        // The order row: the keys name a permutation, and only the two entry lines change places.
+        const ordered = rootsTarget();
+        const reordered = await order(ordered, ['game-engine', 'cathedra']);
+        expect(reordered.status, 'a permutation').toBe(200);
+        expect(await reordered.json()).toMatchObject({ ok: true, changed: ['roots'] });
+        expect(rootsOf(ordered)).toEqual([
+            { key: 'game-engine', dir: '~/workspace/game-engine' },
+            { key: 'cathedra', dir: '~/workspace/cathedra' }
+        ]);
+        expect(sourcesOf(ordered)).toBe(
+            SOURCES.replace(
+                '  - { key: cathedra,    dir: ~/workspace/cathedra }\n  - { key: game-engine, dir: ~/workspace/game-engine }\n',
+                '  - { key: game-engine, dir: ~/workspace/game-engine }\n  - { key: cathedra,    dir: ~/workspace/cathedra }\n'
+            )
+        );
+
+        // The refused-order rows: a list that names the keys wrongly writes nothing.
+        for (const [row, keys] of WRONG_KEYS) {
+            const wrong = rootsTarget();
+            const refused = await order(wrong, keys);
+            expect(refused.status, row).toBe(400);
+            expect(await refused.json(), row).toEqual({ error: 'roots-changed' });
+            expect(sourcesOf(wrong), row).toBe(SOURCES);
+            expect(changesOf(wrong), row).toEqual([]);
+        }
+
+        // The comment-line rows: an add, a remove and an order over a list holding a comment line
+        // between two entries are each refused `invalid`, with the file as it was.
+        const commented = rootsTarget(COMMENTED);
+        const answers: [string, Response][] = [
+            ['an add', await add(commented, folderNamed('thesis'))],
+            ['a remove', await remove(commented, 'cathedra')],
+            ['an order', await order(commented, ['game-engine', 'cathedra'])]
+        ];
+        for (const [row, answer] of answers) {
+            expect(answer.status, row).toBe(400);
+            expect(await answer.json(), row).toEqual({ error: 'invalid' });
+        }
+        expect(sourcesOf(commented)).toBe(COMMENTED);
+        expect(changesOf(commented)).toEqual([]);
     });
 
     it('records the add and the remove, and the undo of each puts the list back', async () => {
@@ -126,5 +185,19 @@ describe('the roots write', () => {
         ]);
         expect(sourcesOf(into)).toContain('# Roots the server may serve local files from.\n');
         expect(sourcesOf(into)).toContain('  bash:          [.sh, .bash]\n');
+
+        // The order row: the write is logged as a roots change, and its undo puts the list back.
+        const ordered = rootsTarget();
+        await order(ordered, ['game-engine', 'cathedra']);
+        const [reorder] = changesOf(ordered);
+        expect(reorder).toMatchObject({
+            kind: 'roots',
+            key: 'roots',
+            field: 'roots',
+            undo: 'field'
+        });
+        const undone = await send(ordered, { kind: 'undo', at: reorder.at });
+        expect(undone.status).toBe(200);
+        expect(sourcesOf(ordered)).toBe(SOURCES);
     });
 });

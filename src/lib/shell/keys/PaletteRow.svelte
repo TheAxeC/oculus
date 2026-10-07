@@ -66,8 +66,12 @@
                     onclick={pressed}
                 />
             {/if}
-            {#if row.hint !== undefined}<span class="hint">{row.hint}</span>{/if}
-            {#if row.note !== undefined}<span class="unavailable">{row.note}</span>{/if}
+            {#if row.hint !== undefined || row.note !== undefined}
+                <span class="end">
+                    {#if row.hint !== undefined}<span class="hint">{row.hint}</span>{/if}
+                    {#if row.note !== undefined}<span class="unavailable">{row.note}</span>{/if}
+                </span>
+            {/if}
         </div>
     {/snippet}
 </Command.Item>
@@ -111,6 +115,14 @@
         background: none;
         color: var(--accent-txt, var(--accent));
         font-weight: 700;
+    }
+
+    /* The hint and the unavailable mark share the row's last column, so a row with both stays one
+       line. */
+    .end {
+        display: inline-flex;
+        gap: 6px;
+        white-space: nowrap;
     }
 
     .kind,

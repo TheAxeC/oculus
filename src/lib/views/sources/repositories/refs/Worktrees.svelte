@@ -15,13 +15,14 @@
     // diff of. The merge back is offered only while the repository has a branch checked out, since
     // a detached HEAD has nothing to merge into.
     //
-    // The new-worktree row makes the worktree and opens a shell in it (Create), or opens the
+    // The new-worktree row makes the worktree and opens a shell in it (Create, or Enter in the
+    // name field), or opens the
     // composer there for Claude or Codex (Create with Claude, Create with Codex). A worktree row
     // opens a right-click menu (menus/repo-menu.ts) of its shell, Start Claude Here, Start Codex
     // Here, Open Worktree, Open Worktree in New Window and Delete Worktree. The shell and the
     // removal run the row's own terminal and removal controls, the removal behind its question.
     // Open Worktree adds the worktree's folder as a root of the workspace and shows it in the Files
-    // view (state/sources/repositories/repositories.ts's openWorktree), and the new-window form
+    // view (state/sources/repositories/worktrees.ts's openWorktree), and the new-window form
     // opens this page's address again as well; a folder the workspace refuses is said in one muted
     // row under the section's rows until the next open.
 
@@ -40,13 +41,14 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import type { DiffSubject } from '$lib/state/sources/repositories/repositories';
     import {
         linkedWorktrees,
         openWorktree,
         plannedPath,
-        worktreeLabel,
-        type DiffSubject
-    } from '$lib/state/sources/repositories/repositories';
+        worktreeLabel
+    } from '$lib/state/sources/repositories/worktrees';
+    import { refusal } from '$lib/state/sources/explorer/acts/refusal';
     import type { WorktreeStart } from '$lib/state/sources/repositories/repositories.svelte';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -84,7 +86,7 @@
     }: Props = $props();
 
     const {
-        fs: { addRoot },
+        fs: { addRoot, workspacesNow },
         layout: { showInFiles }
     } = useState();
 
@@ -117,11 +119,15 @@
         refused = '';
         const answer = await openWorktree(path, newWindow, {
             addRoot,
-            showInFiles: (dir: string) => showInFiles(dir),
+            rootOf: async (dir: string) =>
+                (await workspacesNow()).workspaces
+                    .flatMap((one) => one.roots)
+                    .find((root) => root.dir === dir)?.key ?? null,
+            showInFiles: (path: string, key?: string) => showInFiles(path, key),
             openWindow: (address: string) => void window.open(address, '_blank'),
             address: () => window.location.href
         });
-        if (answer !== '') refused = t('repositories.worktree_open_failed', answer);
+        if (answer !== '') refused = t('repositories.worktree_open_failed', refusal(answer));
     }
 
     function diff(path: string, label: string): void {
@@ -155,7 +161,7 @@
             </li>
         {/if}
         {#each others as tree (tree.path)}
-            {@const label = worktreeLabel(root, tree.path)}
+            {@const label = worktreeLabel(tree.path)}
             <li role="none" data-entry={tree.path}>
                 <ContextMenu
                     {label}
@@ -223,6 +229,7 @@
                         value={name}
                         label={t('repositories.worktree_new')}
                         oninput={(next: string) => (name = next)}
+                        onenter={() => made('shell')}
                     />
                     <ToolButton
                         label={t('repositories.worktree_new_create')}

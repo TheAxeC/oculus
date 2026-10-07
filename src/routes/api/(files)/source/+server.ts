@@ -6,6 +6,7 @@
 // that opens for editing is a file that saves. The configuration is the request's own read and the
 // hub comes off its ServerContext, so one request reads the workspaces file once.
 
+import { textCatalog } from '$lib/data/sources/config';
 import { browserRoots } from '$lib/server/files/roots';
 import { defaultHistoryDir } from '$lib/server/files/fs/history';
 import { handleSource, handleSourceInfo } from '$lib/server/files/source';
@@ -26,6 +27,7 @@ export const POST: RequestHandler = ({ request, locals }) =>
     handleSource(
         request,
         locals.token,
+        () => textCatalog(locals.config().config),
         roots(locals),
         locals.server.local.history ?? defaultHistoryDir()
     );

@@ -87,8 +87,8 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Code: `src/lib/server/sessions/stores/transcripts.ts`, `src/lib/server/sessions/stores/turns.ts`.
   Test: `tests/server/sessions/transcripts.test.ts`, 'foldFrom' (pieces far smaller than the file, a line longer than the limit skipped, and a sparse transcript longer than Node's longest string, tagged slow) and 'readTurns'.
 - G41. A git command that fails says why: timed out, ended by a signal, an exit status with no output, or too much output.
-  Code: `classifyFailure` in `src/lib/server/core/git/parse.ts`, read by `src/lib/server/git/git-write.ts` and `src/lib/server/git/deposit-git.ts`; `failureText` in `src/lib/server/git/git-routes.ts`, which says each code in the catalog's words.
-  Test: `tests/server/core/git-failure.test.ts`, 'classifyFailure' and 'failureText'.
+  Code: `classifyFailure` in `src/lib/server/core/git/parse.ts` and `failureLine` in `src/lib/server/core/git/failure.ts`, which says each code in the catalog's words, read by `src/lib/server/git/git-write.ts` and `src/lib/server/git/deposit-git.ts`.
+  Test: `tests/server/core/git-failure.test.ts`, 'classifyFailure' and 'failureLine'.
 - G43. Submit runs only the plan the reader confirmed, equal to the plan the server computes at the press, and a job script whose code and sourced files never name `/local/$SLURM_JOB_ID` gets the warning before Submit.
   Code: `src/lib/server/machine/hpc/submit.ts`, `src/lib/server/machine/hpc/scratch.ts`, `keptFiles` in `src/lib/server/core/git/files.ts`.
   Test: `tests/server/machine/hpc/submit.test.ts`, 'the run of a confirmed plan' and 'the scratch rule'; `tests/server/machine/hpc/submit-files.test.ts`, 'the files Submit sends from a code folder'.

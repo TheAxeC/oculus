@@ -104,6 +104,8 @@ export type RowMenuFacts = {
     path: string;
     removable: boolean;
     addable: boolean;
+    /** The folder panel is open already, so Add Folder to Workspace is drawn disabled. */
+    panelOpen: boolean;
     clipboard: boolean;
     compareWith: string | null;
     selection: number;
@@ -147,6 +149,7 @@ export type MenuSelection = { size: number; files: number };
 
 /** The menu items that show a key, and the action whose first chord is the key they show. */
 const HINTED: readonly (readonly [string, FilesAction])[] = [
+    [ROW_OPEN_SIDE, 'open-side'],
     [ROW_RENAME, 'rename'],
     [ROW_DELETE, 'delete'],
     [ROW_CUT, 'cut'],
@@ -163,6 +166,8 @@ export function pickOfKey(plan: KeyPlan): string | null {
     switch (plan) {
         case 'rename':
             return ROW_RENAME;
+        case 'open-side':
+            return ROW_OPEN_SIDE;
         case 'delete':
             return ROW_DELETE;
         case 'cut':
@@ -201,7 +206,7 @@ export function rowFacts(
     row: TreeRow,
     fixed: readonly string[],
     addable: boolean,
-    explorer: Pick<ExplorerStore, 'clipboard' | 'compareFile'>,
+    explorer: Pick<ExplorerStore, 'clipboard' | 'compareFile' | 'panelOpen'>,
     languages: LanguageMap,
     selection: MenuSelection = { size: 1, files: row.kind === 'file' ? 1 : 0 },
     hints: Readonly<Record<string, string>> = {},
@@ -219,6 +224,7 @@ export function rowFacts(
         path: row.path,
         removable,
         addable,
+        panelOpen: explorer.panelOpen(),
         clipboard: explorer.clipboard() !== null,
         compareWith: other ? nameOf(held.path) : null,
         selection: selection.size,
@@ -380,7 +386,9 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         upload,
         copies,
         [
-            ...(facts.addable ? [item(ROW_ADD_ROOT, t('files.menu_add_root'))] : []),
+            ...(facts.addable
+                ? [{ ...item(ROW_ADD_ROOT, t('files.menu_add_root')), disabled: facts.panelOpen }]
+                : []),
             ...(facts.removable ? [item(ROW_REMOVE_ROOT, t('files.menu_remove_root'))] : [])
         ]
     ]);

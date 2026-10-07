@@ -778,7 +778,7 @@
 </g>
 <!-- lib/server/edit/writes/config/config&#45;write.ts&#45;&gt;lib/server/edit/writes/config/roots.ts -->
 <g id="edge55" class="edge">
-<title>lib/server/edit/writes/config/config&#45;write.ts&#45;&gt;lib/server/edit/writes/config/roots.ts: addRootTo, removeRootFrom</title>
+<title>lib/server/edit/writes/config/config&#45;write.ts&#45;&gt;lib/server/edit/writes/config/roots.ts: addRootTo, orderRootsIn, removeRootFrom</title>
 <path fill="none" stroke="currentColor" d="M309.29,-934.46C327.62,-946.12 357.88,-964.51 385.57,-977.33 391.1,-979.88 397.1,-982.31 402.96,-984.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="401.98,-986.38 408.33,-986.45 403.41,-982.43 401.98,-986.38"/>
 </g>
@@ -941,15 +941,15 @@
 <path fill="none" stroke="currentColor" d="M739.8,-1088.22C749.6,-1079.33 762.22,-1065.98 768.7,-1051.33 818.38,-939.04 744.46,-593.54 825.02,-496.62"/>
 <polygon fill="currentColor" stroke="currentColor" points="826.51,-498.1 829,-492.25 823.41,-495.27 826.51,-498.1"/>
 </g>
-<!-- ? src/lib/server/files/fs.ts:223 -->
+<!-- ? src/lib/server/files/fs.ts:227 -->
 <g id="node43" class="node">
-<title>? src/lib/server/files/fs.ts:223</title>
+<title>? src/lib/server/files/fs.ts:227</title>
 <polygon fill="none" stroke="currentColor" points="1232.82,-1106.13 1019.76,-1106.13 1019.76,-1084.53 1232.82,-1084.53 1232.82,-1106.13"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1126.29" y="-1092.33" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/files/fs.ts:223 rootShape.safeParse(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1126.29" y="-1092.33" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/files/fs.ts:227 rootShape.safeParse(</text>
 </g>
-<!-- lib/server/files/fs.ts&#45;&gt;? src/lib/server/files/fs.ts:223 -->
+<!-- lib/server/files/fs.ts&#45;&gt;? src/lib/server/files/fs.ts:227 -->
 <g id="edge108" class="edge">
-<title>lib/server/files/fs.ts&#45;&gt;? src/lib/server/files/fs.ts:223</title>
+<title>lib/server/files/fs.ts&#45;&gt;? src/lib/server/files/fs.ts:227</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M752.74,-1099.06C804.72,-1098.54 922.79,-1097.36 1012.18,-1096.46"/>
 <polygon fill="currentColor" stroke="currentColor" points="1012.15,-1098.56 1018.13,-1096.4 1012.11,-1094.36 1012.15,-1098.56"/>
 </g>

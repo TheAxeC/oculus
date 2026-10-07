@@ -53,7 +53,7 @@ describe('trashUntracked', () => {
         );
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({
-            error: 'this action needs the page to confirm it'
+            error: 'This action needs the page to confirm it'
         });
         expect(trash).not.toHaveBeenCalled();
     });

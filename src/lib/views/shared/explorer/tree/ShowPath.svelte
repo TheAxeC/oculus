@@ -7,8 +7,11 @@
     // drawn it and takes the keyboard, and the outcome line says when the path was not found as
     // asked. An ask for the Timeline (showTimeline) also opens that section; its scroll is the
     // section's head brought to the top of the pane in place of the row's, so each ask scrolls
-    // once, and an ask whose outcome has no row scrolls nothing, which keeps the outcome line in
-    // view.
+    // once, and an ask whose outcome has no row scrolls nothing. The outcome is kept in the
+    // instance's state and the Files view's message line says it (revealLine). A folder whose held
+    // listing lacks the next name is read from the server once more before the path is called
+    // missing, and a root the held roots lack is looked for in a fresh read of the workspaces
+    // before the root is called missing, since a root added a moment ago reaches them later.
     //
     // Every step goes through the instance's state and is written only while that state still holds
     // the ask it was made for (state/sources/fs.ts's revealSettled and revealScrolled): an answer
@@ -27,15 +30,13 @@
         rowKey,
         shownOf,
         type FilesView,
-        type RevealOutcome,
-        type RowRef,
         type TreeRow
     } from '$lib/state/sources/fs';
-    import { t } from '$lib/state/shared/words/text';
+    import { rootKeysOf } from '$lib/state/sources/fs-transport';
     import { useState } from '$lib/state/client/use';
 
     const {
-        fs: { readListing },
+        fs: { readListing, workspacesNow },
         ui: { instanceState }
     } = useState();
 
@@ -84,12 +85,34 @@
         const from = owner;
         // The reads answer from the store's own state, which this effect must not come to depend
         // on.
-        const read = (root: string, path: string) => readListing(root, path, shownOf(view));
-        void untrack(() => resolveReveal(ask, held, read)).then((outcome) => {
+        const read = (root: string, path: string, fresh?: boolean) =>
+            readListing(root, path, shownOf(view), fresh);
+        const known = async (): Promise<string[]> =>
+            held.includes(ask.root) ? held : (rootKeysOf(await workspacesNow()) ?? held);
+        void untrack(async () => resolveReveal(ask, await known(), read)).then((outcome) => {
             const next = revealSettled(filesViewOf(instanceState(from)), ask, outcome);
             if (next !== null) onpatch(from, next);
         });
     });
+
+    /**
+     * Scroll a settled ask's row into view and give it the keyboard, once the tree has drawn it,
+     * and say whether it was drawn.
+     */
+    function reach(from: string, ask: NonNullable<FilesView['reveal']>, key: string): boolean {
+        const tree = document.querySelector(`[data-instance="${CSS.escape(from)}"]`);
+        const node = tree?.querySelector(`[data-fs-row="${CSS.escape(key)}"]`) ?? null;
+        if (tree === null || node === null) return false;
+        const head = ask.timeline === true ? tree.querySelector('[data-fs-timeline]') : null;
+        (head ?? node).scrollIntoView({ block: head === null ? 'center' : 'start' });
+        // The reader asked to be taken to the path, so the keyboard goes there too: the arrow keys
+        // then move from the row that was shown rather than from the control that asked.
+        const item = node.querySelector('[role="treeitem"]');
+        if (item instanceof HTMLElement) item.focus({ preventScroll: true });
+        const next = revealScrolled(filesViewOf(instanceState(from)), ask);
+        if (next !== null) onpatch(from, next);
+        return true;
+    }
 
     $effect(() => {
         const ask = view.reveal;
@@ -97,52 +120,16 @@
         if (ask === null || !ask.settled || selected === null) return;
         const key = rowKey(selected);
         if (!rows.some((row) => rowKey(row) === key)) return;
-        const node = document.querySelector(
-            `[data-instance="${CSS.escape(owner)}"] [data-fs-row="${CSS.escape(key)}"]`
-        );
-        if (node === null) return;
-        const timeline = ask.timeline === true;
-        const head = timeline
-            ? document.querySelector(`[data-instance="${CSS.escape(owner)}"] [data-fs-timeline]`)
-            : null;
-        (head ?? node).scrollIntoView({ block: head === null ? 'center' : 'start' });
-        // The reader asked to be taken to the path, so the keyboard goes there too: the arrow keys
-        // then move from the row that was shown rather than from the control that asked.
-        const item = node.querySelector('[role="treeitem"]');
-        if (item instanceof HTMLElement) item.focus({ preventScroll: true });
-        const next = revealScrolled(view, ask);
-        if (next !== null) onpatch(owner, next);
+        const from = owner;
+        if (untrack(() => reach(from, ask, key))) return;
+        const tree = document.querySelector(`[data-instance="${CSS.escape(from)}"]`);
+        if (tree === null) return;
+        // The list draws only the rows in view, and a tab just brought forward has drawn none yet:
+        // the row is looked for again each time the view draws, until it is there.
+        const watch = new MutationObserver(() => {
+            if (reach(from, ask, key)) watch.disconnect();
+        });
+        watch.observe(tree, { childList: true, subtree: true });
+        return () => watch.disconnect();
     });
-
-    /** A row as the outcome line names it: the root, then the path under it. */
-    function placeOf(row: RowRef): string {
-        return row.path === '' ? row.root : t('files.reveal_place', row.root, row.path);
-    }
-
-    /** What one outcome says, or the empty string for a path found as asked. */
-    function lineOf(outcome: RevealOutcome | null): string {
-        if (outcome === null || outcome.kind === 'found') return '';
-        const asked = placeOf(outcome.asked);
-        if (outcome.kind === 'no-roots') return t('files.reveal_no_roots', asked, outcome.error);
-        if (outcome.kind === 'no-root' || outcome.shown === null) {
-            return t('files.reveal_no_root', asked, outcome.asked.root);
-        }
-        const shown = placeOf(outcome.shown);
-        if (outcome.kind === 'unread') return t('files.reveal_unread', asked, shown, outcome.error);
-        return t('files.reveal_missing', asked, shown);
-    }
-
-    const line = $derived(lineOf(view.revealed));
 </script>
-
-{#if line !== ''}
-    <p class="said" aria-live="polite" data-fs-revealed>{line}</p>
-{/if}
-
-<style>
-    .said {
-        margin: 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-</style>

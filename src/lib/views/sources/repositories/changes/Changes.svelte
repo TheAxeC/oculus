@@ -22,6 +22,10 @@
     // height of the rest; a key moving to a row not drawn has it scrolled in first, and the
     // type-ahead reads every row's name.
     //
+    // A press with Cmd (Ctrl off macOS) held adds the row to a selection or takes it out, a press
+    // with Shift held selects the rows from the last one pressed (picking.ts), and the Stage,
+    // Unstage and Discard controls of a selected row act on every selected row of its group.
+    //
     // A group's head opens a right-click menu of what its controls do (menus/change-menu.ts), with
     // Reveal in Explorer View on a file row; the merge group keeps its own controls and has none.
     //
@@ -76,9 +80,23 @@
         ask: (message: string, detail: string, act: () => void, confirm?: string) => void;
         /** Whether the groups list their files or draw them as folders. */
         mode?: 'list' | 'tree';
+        /** The ids of the rows the reader selected, which the rows' controls act on together. */
+        picked: readonly string[];
+        /** A press on a row: true when it only changed the selection, so the row does not open. */
+        onpress: (id: string, event: MouseEvent) => boolean;
     };
 
-    let { root, git, nav, collapsed, ontoggle, ask, mode = 'list' }: Props = $props();
+    let {
+        root,
+        git,
+        nav,
+        collapsed,
+        ontoggle,
+        ask,
+        mode = 'list',
+        picked,
+        onpress
+    }: Props = $props();
 
     const { repositories } = useState();
 
@@ -210,11 +228,6 @@
                     <TreeItem label={t('git.cut_warning')} tone="warn" depth={1} />
                 </li>
             {/if}
-            {#if open && group.entries.length === 0}
-                <li role="none">
-                    <TreeItem label={t('sessions.ch_group_empty')} depth={1} tone="muted" />
-                </li>
-            {/if}
             {#if open}
                 <VirtualRows
                     count={group.rows.length}
@@ -257,6 +270,8 @@
                                 {busy}
                                 {ask}
                                 {linked}
+                                {picked}
+                                {onpress}
                                 {measure}
                             />
                         {/if}

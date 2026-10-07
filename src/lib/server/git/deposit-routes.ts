@@ -10,7 +10,7 @@
 //
 // The action `cancel` (behind the token, with no confirm) aborts the write in flight on the
 // project it names, through the registry of server/core/git/running.ts, and the write answers in
-// the words of `failureText` of git-routes.ts.
+// the words of `failureLine` of server/core/git/failure.ts.
 //
 // The ids a deposit may name are the hub's own project manifests and the projects the last
 // published `portfolio` payload holds; anything else is a 404, before any command is run.
@@ -20,10 +20,12 @@
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
-import { tokenedBody } from '../core/auth.ts';
 import { createRunningGit, type RunningGit } from '../core/git/running.ts';
-import { failureText, unconfirmed } from './git-routes.ts';
-import { byKey, isMap } from '../../data/helpers/guards.ts';
+import { failureLine } from '../core/git/failure.ts';
+import { shapedBody, unconfirmed } from './git-routes.ts';
+import { byKey } from '../../data/helpers/guards.ts';
+import { textCatalog } from '../../data/sources/config.ts';
+import { words } from '../core/words.ts';
 import {
     adopt,
     branches,
@@ -101,37 +103,64 @@ const depositBodyShape = z.looseObject({
 
 type DepositBody = z.output<typeof depositBodyShape>;
 
+/** The catalog the request's sentences are worded from, read at the call. */
+function textOf(options: DepositOptions): Record<string, string> {
+    const held = options.deposit;
+    if (held?.config !== undefined) return textCatalog(held.config);
+    return held?.into?.config.text ?? {};
+}
+
 /** The refusal of a body that is no deposit action, answered before anything else is read. */
-function notAnAction(): Response {
-    return json({ error: 'the body is not a deposit action' }, { status: 400, headers: NO_STORE });
+function notAnAction(text: Record<string, string>): Response {
+    return json(
+        { error: words(text, 'server.deposit.not_an_action') },
+        { status: 400, headers: NO_STORE }
+    );
+}
+
+/** The answer to an id the portfolio holds no project for. */
+function noProject(text: Record<string, string>): Response {
+    return json(
+        { error: words(text, 'server.deposit.portfolio_no_project') },
+        { status: 404, headers: NO_STORE }
+    );
 }
 
 /** The real operations, one per action. */
 const OPERATIONS: Record<
     string,
-    (id: string, fields: DepositBody, with_: ServerDepositOptions) => Promise<DepositAnswer>
+    (
+        id: string,
+        fields: DepositBody,
+        text: Record<string, string>,
+        with_: ServerDepositOptions
+    ) => Promise<DepositAnswer>
 > = {
-    adopt: (id, _fields, with_) => adopt(id, with_),
-    plan: (id, _fields, with_) => sync(id, with_),
-    commit: (id, fields, with_) => commit(id, fields.message, with_),
-    push: (id, _fields, with_) => push(id, with_),
-    snapshot: (id, fields, with_) => snapshot(id, fields.message, with_),
-    branches: (id, _fields, with_) => branches(id, with_),
-    createBranch: (id, fields, with_) => createBranch(id, fields.name, with_),
-    switchBranch: (id, fields, with_) => switchBranch(id, fields.name, with_)
+    adopt: (id, _fields, text, with_) => adopt(id, text, with_),
+    plan: (id, _fields, text, with_) => sync(id, text, with_),
+    commit: (id, fields, text, with_) => commit(id, fields.message, text, with_),
+    push: (id, _fields, text, with_) => push(id, text, with_),
+    snapshot: (id, fields, text, with_) => snapshot(id, fields.message, text, with_),
+    branches: (id, _fields, text, with_) => branches(id, text, with_),
+    createBranch: (id, fields, text, with_) => createBranch(id, fields.name, text, with_),
+    switchBranch: (id, fields, text, with_) => switchBranch(id, fields.name, text, with_)
 };
 
-function operate(with_: ServerDepositOptions, parsed: DepositBody): DepositRun {
+function operate(
+    with_: ServerDepositOptions,
+    parsed: DepositBody,
+    text: Record<string, string>
+): DepositRun {
     return (action, id, _fields, signal) => {
         const operation = byKey(OPERATIONS, action);
         if (operation === undefined) {
             return Promise.resolve({
                 ok: false,
                 output: '',
-                error: `no deposit action named ${action}`
+                error: words(text, 'server.deposit.no_action_named', action)
             });
         }
-        return operation(id, parsed, signal === undefined ? with_ : { ...with_, signal });
+        return operation(id, parsed, text, signal === undefined ? with_ : { ...with_, signal });
     };
 }
 
@@ -164,18 +193,10 @@ export async function handleDepositState(
     options: DepositOptions = {}
 ): Promise<Response> {
     const id = new URL(request.url).searchParams.get('id') ?? '';
-    if (!(options.idsFor ?? knownIds)().includes(id)) {
-        return json(
-            { error: 'the portfolio holds no project with that id' },
-            { status: 404, headers: NO_STORE }
-        );
-    }
+    const text = textOf(options);
+    if (!(options.idsFor ?? knownIds)().includes(id)) return noProject(text);
     const answer = await (options.stateFor ?? ((held) => state(held, options.deposit)))(id);
-    if (answer === null)
-        return json(
-            { error: 'the portfolio holds no project with that id' },
-            { status: 404, headers: NO_STORE }
-        );
+    if (answer === null) return noProject(text);
     return json({ ok: true, state: answer }, { headers: NO_STORE });
 }
 
@@ -188,20 +209,15 @@ export async function handleDeposit(
     token: string,
     options: DepositOptions = {}
 ): Promise<Response> {
-    const read = await tokenedBody(request, token, { headers: NO_STORE });
-    if (read instanceof Response) return read;
-    const body = read.body;
-    if (!isMap(body)) return notAnAction();
-    const parsed = depositBodyShape.safeParse(body);
-    if (!parsed.success) return notAnAction();
-    const { action, id } = parsed.data;
-    if (!(options.idsFor ?? knownIds)().includes(id)) {
-        return json(
-            { error: 'the portfolio holds no project with that id' },
-            { status: 404, headers: NO_STORE }
-        );
-    }
-    const refused = unconfirmed(CONFIRMED, action, body);
+    const text = textOf(options);
+    const shaped = await shapedBody(request, token, depositBodyShape, text, () =>
+        notAnAction(text)
+    );
+    if (shaped instanceof Response) return shaped;
+    const { body } = shaped;
+    const { action, id } = shaped.read;
+    if (!(options.idsFor ?? knownIds)().includes(id)) return noProject(text);
+    const refused = unconfirmed(CONFIRMED, action, body, text);
     if (refused !== null) return refused;
 
     // A deposit is keyed apart from a root, so one registry holds both.
@@ -214,7 +230,7 @@ export async function handleDeposit(
     const signal = running.begin(key);
     let outcome: DepositAnswer;
     try {
-        outcome = await (options.run ?? operate(options.deposit ?? {}, parsed.data))(
+        outcome = await (options.run ?? operate(options.deposit ?? {}, shaped.read, text))(
             action,
             id,
             body,
@@ -224,11 +240,8 @@ export async function handleDeposit(
         running.end(key, signal);
     }
     if (!outcome.ok) {
-        const config = options.deposit?.config;
         const error =
-            outcome.failure === undefined || config === undefined
-                ? outcome.error
-                : failureText(outcome.failure, config);
+            outcome.failure === undefined ? outcome.error : failureLine(outcome.failure, text);
         return json({ error, plan: outcome.plan ?? null }, { status: 400, headers: NO_STORE });
     }
     return json(

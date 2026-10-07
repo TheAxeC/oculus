@@ -27,10 +27,11 @@
     // The work behind the rows is in tree/control/: keyed.ts is what the keys of acts/keys.ts do,
     // picks.svelte.ts what the menu's and the keys' picks run (and the name being typed),
     // pressing.ts what a press does, row-index.ts the rows by key and the labels the type-ahead
-    // reads, dragging.svelte.ts the drags and drops, asking.svelte.ts the questions and the file
-    // dialog they wait on, view-access.ts the tab's state. A row on the clipboard as Cut is drawn
-    // faded, and a row marked `editing` by treeRows() is drawn as an input (tree/NameInput.svelte)
-    // in place of its name.
+    // reads, dragging.svelte.ts the drags and drops (the files and folders moved, and the movable
+    // roots reordered, which Alt+Up and Alt+Down do through keyed.ts as well), asking.svelte.ts the
+    // questions and the file dialog they wait on, view-access.ts the tab's state. A row on the
+    // clipboard as Cut is drawn faded, and a row marked `editing` by treeRows() is drawn as an
+    // input (tree/NameInput.svelte) in place of its name.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
@@ -111,6 +112,19 @@
          * Folder to Workspace...; none when the item is not offered.
          */
         onaddroot?: () => void;
+        /**
+         * The keys of the roots the reader may move, in the order written, and the write of a new
+         * order of them; a tree given none moves no root.
+         */
+        order?: string[];
+        onreorder?: (keys: string[]) => void;
+        /** Alt+Up or Alt+Down on the workspace header row moves the tree's section. */
+        onmoveheader?: (direction: 'up' | 'down') => void;
+        /**
+         * Say a pick's refusal on the caller's own line, the empty text when it ends; a tree given
+         * none says it above its rows.
+         */
+        onrefused?: (note: string) => void;
     };
 
     let {
@@ -130,7 +144,11 @@
         onremove,
         onbookmark,
         onup,
-        onaddroot
+        onaddroot,
+        order = [],
+        onreorder,
+        onmoveheader,
+        onrefused
     }: Props = $props();
 
     const client = useState();
@@ -175,7 +193,8 @@
         isMarked: (row: TreeRow) => marked.includes(rowKey(row)),
         hints: menuHints(keymap, keyWords(t, mac)),
         isSelected,
-        select: (row: TreeRow) => onselect(row)
+        select: (row: TreeRow) => onselect(row),
+        onrefused: (note: string) => onrefused?.(note)
     });
     const naming = picks.naming;
 
@@ -204,7 +223,9 @@
         roots: () => roots,
         picked: view.picked,
         drawn: () => drawn,
-        dropper: picks.dropper
+        dropper: picks.dropper,
+        order: () => order,
+        onreorder: (keys) => onreorder?.(keys)
     });
 
     const keyed = createKeyed({
@@ -217,7 +238,10 @@
         roots: () => roots,
         onopen: (row, preview) => onopen(row, preview),
         ontoggle: (row) => ontoggle(row),
-        onup: (to) => onup?.(to)
+        onup: (to) => onup?.(to),
+        order: () => order,
+        onreorder: (keys) => onreorder?.(keys),
+        onmoveheader: (direction) => onmoveheader?.(direction)
     });
 
     // The log is read again whenever a file operation was answered, so the next Cmd+Z is the
@@ -237,7 +261,7 @@
     }
 </script>
 
-{#if picks.refused() !== ''}
+{#if onrefused === undefined && picks.refused() !== ''}
     <Empty error message={picks.refused()} />
 {/if}
 
@@ -268,7 +292,13 @@
         {#if header !== undefined}
             {@render header(nav)}
         {/if}
-        <ul class="rows" role="none" ondragleave={dragger.left}>
+        <ul
+            class="rows"
+            role="none"
+            ondragleave={dragger.left}
+            ondragover={dragger.overTail}
+            ondrop={dragger.droppedRoot}
+        >
             <VirtualRows
                 count={drawn.length}
                 key={(at: number) => rowKey(drawn[at])}
@@ -284,6 +314,7 @@
                         data-fs-row={rowKey(row)}
                         data-cut={isCut(row) ? '' : undefined}
                         data-drop={dragger.tinted(row) ? '' : undefined}
+                        data-drop-place={dragger.dropEdge(row)}
                         draggable={dragger.draggable(row) ? 'true' : undefined}
                         ondragstart={(event) => dragger.started(event, row)}
                         ondragover={(event) => dragger.over(event, row)}
@@ -381,5 +412,14 @@
     /* The folder a drop would land in, and the rows open under it, are tinted. */
     .row[data-drop] {
         background: var(--accent-bg);
+    }
+
+    /* Where a dragged root would land: a 2px line on that edge of the row. */
+    .row[data-drop-place] {
+        box-shadow: inset 0 2px 0 var(--accent);
+    }
+
+    .row[data-drop-place='after'] {
+        box-shadow: inset 0 -2px 0 var(--accent);
     }
 </style>

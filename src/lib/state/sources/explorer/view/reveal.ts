@@ -7,6 +7,7 @@
 // another.
 
 import { isMap } from '../../../../data/helpers/guards.ts';
+import { t } from '../../../shared/words/text.ts';
 import { sectionOpened } from '../sections/section-state.ts';
 import { filesViewOf, type FilesView, type RevealAsk, type RevealOutcome } from './files-view.ts';
 import {
@@ -51,27 +52,37 @@ export function revealAsked(
 /**
  * Read the folders on the way to one path, outermost first, each only after the one above it said
  * the next name is a folder, and say what the path came to. The reader is the store's own listing
- * read, which answers a folder already read without a request.
+ * read, which answers a folder already read without a request. A folder whose held answer lacks
+ * the next name is read from the server once more, with `fresh`, before the path is said to be
+ * missing, since the held answer may be from before the name was made.
  */
 export async function resolveReveal(
     ask: RowRef,
     roots: string[],
-    read: (root: string, path: string) => Promise<{ entries: FsEntry[]; error: string }>
+    read: (
+        root: string,
+        path: string,
+        fresh?: boolean
+    ) => Promise<{ entries: FsEntry[]; error: string }>
 ): Promise<RevealOutcome> {
     const asked = { root: ask.root, path: ask.path };
     if (!roots.includes(ask.root)) return { kind: 'no-root', asked, shown: null, error: '' };
     const parts = ask.path.split('/').filter((part) => part !== '');
     for (let at = 0; at < parts.length; at += 1) {
         const folder = { root: ask.root, path: parts.slice(0, at).join('/') };
-        const listing = await read(folder.root, folder.path);
+        const last = at === parts.length - 1;
+        const there = (entries: FsEntry[]): boolean => {
+            const entry = entries.find((one) => one.name === parts[at]);
+            return entry !== undefined && (last || entry.kind === 'dir');
+        };
+        let listing = await read(folder.root, folder.path);
+        if (listing.error === '' && !there(listing.entries)) {
+            listing = await read(folder.root, folder.path, true);
+        }
         if (listing.error !== '') {
             return { kind: 'unread', asked, shown: folder, error: listing.error };
         }
-        const entry = listing.entries.find((one) => one.name === parts[at]);
-        const last = at === parts.length - 1;
-        if (entry === undefined || (!last && entry.kind !== 'dir')) {
-            return { kind: 'missing', asked, shown: folder, error: '' };
-        }
+        if (!there(listing.entries)) return { kind: 'missing', asked, shown: folder, error: '' };
     }
     return { kind: 'found', asked, shown: asked, error: '' };
 }
@@ -131,4 +142,22 @@ export function revealSettled(
 /** What the scroll to a settled ask writes, or null when the instance holds another ask. */
 export function revealScrolled(now: FilesView, ask: RevealAsk): Partial<FilesView> | null {
     return ask.settled && sameAsk(now.reveal, ask) ? { reveal: null } : null;
+}
+
+/** A row as the outcome line names it: the root, then the path under it. */
+function placeOf(row: RowRef): string {
+    return row.path === '' ? row.root : t('files.reveal_place', row.root, row.path);
+}
+
+/** What one outcome says, or the empty string for a path found as asked or no outcome. */
+export function revealLine(outcome: RevealOutcome | null): string {
+    if (outcome === null || outcome.kind === 'found') return '';
+    const asked = placeOf(outcome.asked);
+    if (outcome.kind === 'no-roots') return t('files.reveal_no_roots', asked, outcome.error);
+    if (outcome.kind === 'no-root' || outcome.shown === null) {
+        return t('files.reveal_no_root', asked, outcome.asked.root);
+    }
+    const shown = placeOf(outcome.shown);
+    if (outcome.kind === 'unread') return t('files.reveal_unread', asked, shown, outcome.error);
+    return t('files.reveal_missing', asked, shown);
 }

@@ -4,7 +4,7 @@
 // newest file operation of the change log back, or the newest undo.
 
 import type { ClientState } from '$lib/state/client/context';
-import type { FsRoot, RowRef, TreeRow } from '$lib/state/sources/fs';
+import { HEADER_ID, type FsRoot, type RowRef, type TreeRow } from '$lib/state/sources/fs';
 import {
     actable,
     rowAt,
@@ -12,6 +12,7 @@ import {
     selectExtended
 } from '$lib/state/sources/explorer/acts/selection';
 import { keyPlan, type FilesAction } from '$lib/state/sources/explorer/acts/keys';
+import { steppedKeys } from '$lib/state/sources/explorer/acts/reorder';
 import { undoPlan } from '$lib/state/sources/explorer/acts/undo';
 import { undoSaid } from '$lib/views/shared/writes/undo-said';
 import { pickOfKey } from '../menu/row-menu';
@@ -30,6 +31,12 @@ export type KeyedDeps = {
     onopen: (row: TreeRow, preview: boolean) => void;
     ontoggle: (row: TreeRow) => void;
     onup: (to: RowRef) => void;
+    /** The keys of the roots the reader may move, in the order written; empty when none may. */
+    order: () => string[];
+    /** Write the new order of the movable roots. */
+    onreorder: (keys: string[]) => void;
+    /** Alt+Up or Alt+Down on the workspace header row, which moves the tree's section. */
+    onmoveheader: (direction: 'up' | 'down') => void;
 };
 
 /** The key handler of the tree: true when the key was the tree's, false to leave it to the page. */
@@ -55,7 +62,7 @@ export function createKeyed(
 
     /**
      * Take the newest file operation of the change log back, or the newest undo. The undo of a
-     * delete asks first; a refusal of the endpoint's check is said above the rows.
+     * delete asks first; a refusal of the endpoint's check is said on the tree's refusal line.
      */
     async function undone(redo: boolean): Promise<void> {
         picks.clear();
@@ -74,6 +81,10 @@ export function createKeyed(
         const cutting = explorer.clipboard()?.mode === 'cut';
         const found = deps.rowOf(id);
         if (found === undefined) {
+            if ((action === 'move-up' || action === 'move-down') && id === HEADER_ID) {
+                deps.onmoveheader(action === 'move-up' ? 'up' : 'down');
+                return true;
+            }
             return (
                 keyPlan(action as FilesAction, {
                     root: true,
@@ -104,7 +115,13 @@ export function createKeyed(
             deps.onopen(row, false);
             keepFocus(event);
         } else if (plan === 'cancel-cut') explorer.clearClipboard();
-        else if (plan === 'undo') void undone(false);
+        else if (plan === 'move-up' || plan === 'move-down') {
+            const order = deps.order();
+            if (row.depth === 0 && row.path === '' && order.includes(row.root)) {
+                const next = steppedKeys(order, row.root, plan === 'move-up' ? 'up' : 'down');
+                if (next !== order) deps.onreorder(next);
+            }
+        } else if (plan === 'undo') void undone(false);
         else if (plan === 'redo') void undone(true);
         else if (plan === 'select-all') view.select(selectEvery(view.picked(), deps.drawn()));
         else if (plan === 'extend-up') {

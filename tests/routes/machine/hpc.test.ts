@@ -17,7 +17,7 @@ const target = (over: Partial<HpcTarget> = {}): HpcTarget => {
         projects: () => [],
         hub: '/fixture/hub',
         catalog: () => ({}),
-        kept: vi.fn(() => ({ ok: false as const, error: 'unused' })),
+        kept: vi.fn(() => Promise.resolve({ ok: false as const, error: 'unused' })),
         copy: vi.fn(() => Promise.resolve({ stdout: '', stderr: '', code: 0 })),
         ssh: vi.fn(() => Promise.resolve({ stdout: '', stderr: '', code: 0 })),
         submits: submitState(),

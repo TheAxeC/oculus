@@ -15,6 +15,7 @@ import { diskFs } from '../../../src/lib/server/machine/apps/open.ts';
 import type { AppsRouteOptions } from '../../../src/lib/server/machine/apps/routes.ts';
 import type { ServeInput } from '../../../src/lib/server/machine/apps/serve.ts';
 import { plantScratch } from '../../fixtures/scratch.ts';
+import { TEXT } from '../../server/text.ts';
 
 export const PORT = 8787;
 
@@ -127,6 +128,7 @@ export function routeSetup(planted: Planted, over: Partial<AppsRouteOptions> = {
             unkeep: (id) => kept.splice(0, kept.length, ...kept.filter((one) => one !== id))
         },
         approvalsFile: () => approvals,
+        text: () => TEXT,
         writes: fsWrites(),
         storeMaxKb: () => settings.storeMaxKb,
         roots: () => fixture.roots,

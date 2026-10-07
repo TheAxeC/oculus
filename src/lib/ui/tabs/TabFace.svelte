@@ -26,6 +26,9 @@
     // at half strength, as VS Code draws an editor group that is not the active one. A tab is never
     // wider than the strip: its label is cut with an ellipsis and its close control keeps its room.
     //
+    // A tab whose file is off the disk (`Tab.gone`) has its label struck through in the error
+    // colour.
+    //
     // A tab holding text no save has taken (`Tab.dirty`, set from `ui.unsaved` for a pane tab)
     // shows the `bullet` glyph in the close control's place and is named `ui.tab_unsaved`.
 
@@ -101,6 +104,7 @@
             type="button"
             class="face"
             class:preview={tab.preview === true}
+            class:gone={tab.gone === true}
             role="tab"
             aria-selected={current}
             aria-label={tab.dirty === true ? t('ui.tab_unsaved', tab.label) : undefined}
@@ -364,6 +368,12 @@
        tab is provisional without taking a hue that stands for a status somewhere else. */
     .face.preview .label {
         font-style: italic;
+    }
+
+    /* A tab whose file is off the disk: its name struck through in the error colour. */
+    .face.gone .label {
+        color: var(--c-red-txt);
+        text-decoration: line-through;
     }
 
     .face:focus-visible {

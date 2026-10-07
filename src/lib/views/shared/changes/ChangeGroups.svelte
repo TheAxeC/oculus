@@ -1,10 +1,11 @@
 <script lang="ts">
     // Layer 3, shared view partial. A repository's changes as the Changes panel of the session
     // views draws them: Merge Changes while a merge left paths in conflict, then staged, changed
-    // and untracked, each row its letter, its path, its line counts and the controls that act on
-    // it, and each group head the actions VS Code puts on it (Unstage All, Discard All Changes,
-    // Stage All Changes). What a row offers beyond these is the caller's: the "also open" mark is a
-    // snippet the session views supply.
+    // and untracked, each group drawn only while it holds an entry but for Changes, which keeps its
+    // head with no rows, as VS Code's does; each row its letter, its path, its line counts and the
+    // controls that act on it, and each group head the actions VS Code puts on it (Unstage All,
+    // Discard All Changes, Stage All Changes). What a row offers beyond these is the caller's: the
+    // "also open" mark is a snippet the session views supply.
     //
     // A group whose list git cut at 200 entries (GitState.held holds the count git reported) says
     // so in one line under its head, as the Repositories view does.
@@ -14,9 +15,12 @@
     // counts and the controls start at one x in every row of the group. A path is drawn whole in
     // one line and cut at its end by the stylesheet.
     //
-    // A row's Open control opens what the Repositories view opens for the same row, through
+    // A press on a row's path opens what the Repositories view opens for the same row, through
     // state/sources/repositories/repositories.svelte.ts's openChange: the merge editor for a
-    // conflict, the file itself for an untracked path, and the diff for the rest.
+    // conflict, the file itself for an untracked path, and the diff for the rest. The path is the
+    // file's name first and its folder after it, dimmed and cut at its end, the whole path in the
+    // tooltip, as the Repositories view's rows draw it. The controls are VS Code's, in its order:
+    // Open File, Discard (on a changed path), then Stage, Unstage or Mark Resolved.
     //
     // The Repositories view draws the same changes as explorer rows of its own, and takes what
     // both must agree on from one place each: the colour of a status letter from
@@ -25,10 +29,10 @@
     // the glyphs stage, unstage and note_back in both.
 
     import type { Snippet } from 'svelte';
-    import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ChangeCounts from './ChangeCounts.svelte';
     import type { ChangeActions } from './change-actions';
+    import { dirOf, leafOf } from '$lib/state/sources/repositories/change-tree';
     import { statusStyle } from '$lib/state/sources/repositories/repositories';
     import type { GitEntry } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -61,6 +65,7 @@
         onresolve,
         ongroup,
         onopen,
+        onopenfile,
         beside,
         marked
     }: Props = $props();
@@ -76,11 +81,11 @@
         return reported[kind as keyof typeof reported] > entries.length;
     }
 
-    /** The words of a row's Open control, which say what it opens. */
-    function openWords(kind: string): string {
-        if (kind === 'merge') return t('repositories.merge_open');
-        if (kind === 'untracked') return t('repositories.open_file');
-        return t('repositories.diff_open');
+    /** What pressing a row's path opens, as its hover words. */
+    function openTitle(kind: string, path: string): string {
+        if (kind === 'merge') return `${path}\n${t('repositories.merge_open_title')}`;
+        if (kind === 'untracked') return `${path}\n${t('repositories.open_file_title')}`;
+        return `${path}\n${kind === 'staged' ? t('repositories.diff_staged_title') : t('repositories.diff_title')}`;
     }
 </script>
 
@@ -132,9 +137,7 @@
         {#if cut(kind, entries)}
             <p class="cut" data-cut={kind}>{t('git.cut_warning')}</p>
         {/if}
-        {#if entries.length === 0}
-            <Empty message={t('sessions.ch_group_empty')} />
-        {:else}
+        {#if entries.length > 0}
             <div class="rows">
                 {#each entries as entry (entry.path)}
                     <div
@@ -143,7 +146,19 @@
                         data-entry={entry.path}
                     >
                         <span class="st" style={statusStyle(entry.status)}>{entry.status}</span>
-                        <span class="pa" title={entry.path}>{entry.path}</span>
+                        <span class="pa">
+                            <ToolButton
+                                label={entry.path}
+                                title={openTitle(kind, entry.path)}
+                                cell
+                                onclick={() => onopen(entry.path, kind)}
+                            >
+                                <span>{leafOf(entry.path)}</span>
+                                {#if dirOf(entry.path) !== ''}
+                                    <span class="dir">{dirOf(entry.path)}</span>
+                                {/if}
+                            </ToolButton>
+                        </span>
                         {#if beside}
                             <span class="beside">
                                 {@render beside(entry, kind)}
@@ -154,15 +169,21 @@
                         </span>
                         <span class="acts">
                             <ToolButton
-                                label={openWords(kind)}
-                                glyph={kind === 'merge'
-                                    ? 'merge'
-                                    : kind === 'untracked'
-                                      ? 'open_file'
-                                      : 'diff'}
+                                label={t('repositories.open_file')}
+                                glyph="open_file"
                                 compact
-                                onclick={() => onopen(entry.path, kind)}
+                                onclick={() => onopenfile(entry.path)}
                             />
+                            {#if kind === 'changed'}
+                                <ToolButton
+                                    label={t('git.discard')}
+                                    title={t('git.discard_title')}
+                                    glyph="note_back"
+                                    compact
+                                    disabled={busy}
+                                    onclick={() => ondiscard(entry.path)}
+                                />
+                            {/if}
                             {#if kind === 'staged'}
                                 <ToolButton
                                     label={t('git.unstage')}
@@ -190,16 +211,6 @@
                                     onclick={() => onstage(entry.path)}
                                 />
                             {/if}
-                            {#if kind === 'changed'}
-                                <ToolButton
-                                    label={t('git.discard')}
-                                    title={t('git.discard_title')}
-                                    glyph="note_back"
-                                    compact
-                                    disabled={busy}
-                                    onclick={() => ondiscard(entry.path)}
-                                />
-                            {/if}
                         </span>
                     </div>
                 {/each}
@@ -212,12 +223,16 @@
     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
     {@render group(t('repositories.merge_changes'), conflicted, 'merge')}
 {/if}
-<!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-{@render group(t('sessions.ch_staged'), staged, 'staged')}
+{#if staged.length > 0}
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+    {@render group(t('sessions.ch_staged'), staged, 'staged')}
+{/if}
 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
 {@render group(t('sessions.ch_changed'), unstaged, 'changed')}
-<!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-{@render group(t('sessions.ch_untracked'), untracked, 'untracked')}
+{#if untracked.length > 0}
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+    {@render group(t('sessions.ch_untracked'), untracked, 'untracked')}
+{/if}
 
 <style>
     /* A group head and a file row are one line of the tree's row height. Their controls are drawn
@@ -303,6 +318,12 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+    /* The folder after the file's name: 0.9 of the row's size, dimmed, cut at its end. */
+    .dir {
+        margin-left: 0.5em;
+        font-size: 0.9em;
+        color: var(--muted-txt, var(--muted));
     }
     .beside {
         grid-column: 3;

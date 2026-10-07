@@ -6,6 +6,21 @@
 import type { Snippet } from 'svelte';
 import type { TreeNav } from './tree-keys.ts';
 
+/**
+ * What a row takes to be dragged and dropped on within its list: whether it can be picked up, the
+ * browser's drag events, and the edge the drop line is drawn on while a drag is over it.
+ */
+export type ItemDrag = {
+    draggable: boolean;
+    ondragstart?: (event: DragEvent) => void;
+    ondragover?: (event: DragEvent) => void;
+    ondragleave?: (event: DragEvent) => void;
+    ondrop?: (event: DragEvent) => void;
+    ondragend?: (event: DragEvent) => void;
+    /** The edge of the row a dragged item would land on, drawn as a line; none for no line. */
+    place?: 'before' | 'after';
+};
+
 /** The props of one row. */
 export type TreeItemProps = {
     /** The row's name, already translated; also the row's and the button's accessible name. */
@@ -80,4 +95,6 @@ export type TreeItemProps = {
     showActions?: boolean;
     /** Drawn at the right edge after the controls: a status letter. */
     end?: Snippet;
+    /** What lets the row be dragged within its list, and where a drop on it would land. */
+    drag?: ItemDrag;
 };

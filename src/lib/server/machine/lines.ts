@@ -246,9 +246,13 @@ function folders(byFolder: Map<string, Map<string, LineTally>>): FolderLines[] {
  * a cloc that fails, an answer that is not cloc's and a file that cannot be read for its TODOs
  * each answer one sentence naming what failed.
  */
-export async function countLines(engine: string, options: LinesOptions = {}): Promise<LinesAnswer> {
+export async function countLines(
+    engine: string,
+    text: Record<string, string>,
+    options: LinesOptions = {}
+): Promise<LinesAnswer> {
     try {
-        const tracked = trackedFiles(engine);
+        const tracked = await trackedFiles(engine, text);
         if (!tracked.ok)
             return { error: `git could not list the tracked files: ${tracked.error}.` };
         // cloc reads one path per line, so a path holding a line break cannot be handed to it.

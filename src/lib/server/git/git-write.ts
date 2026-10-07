@@ -90,6 +90,7 @@ import {
 import { endWith } from '../core/git/running.ts';
 import { GIT, pathInside } from '../core/git/run.ts';
 import { permitted, realPath } from '../core/paths.ts';
+import { words } from '../core/words.ts';
 
 export { parseBranches };
 
@@ -208,13 +209,18 @@ export function allowedRoots(workspaces: string[] = [], hub?: string): string[] 
     return [...roots].filter((root) => root !== '');
 }
 
-export function checkPaths(root: string, paths: unknown[], roots: string[]): string {
-    if (!permitted(root, roots)) return 'that directory is not a workspace oculus knows';
-    if (!Array.isArray(paths) || paths.length === 0) return 'no path was given';
+export function checkPaths(
+    root: string,
+    paths: unknown[],
+    text: Record<string, string>,
+    roots: string[]
+): string {
+    if (!permitted(root, roots)) return words(text, 'server.git.unknown_directory');
+    if (!Array.isArray(paths) || paths.length === 0) return words(text, 'server.git.no_path');
     for (const path of paths) {
         const one = scalar(path);
         if (one === '' || !pathInside(root, one)) {
-            return `the path ${one} is not inside the workspace`;
+            return words(text, 'server.git.path_outside_workspace', one);
         }
     }
     return '';
@@ -226,9 +232,10 @@ export function checkPaths(root: string, paths: unknown[], roots: string[]): str
 export async function stage(
     root: string,
     paths: string[],
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const wrong = checkPaths(root, paths, roots);
+    const wrong = checkPaths(root, paths, text, roots);
     if (wrong !== '') return failed(wrong);
     return addTo(root, ['--', ...paths]);
 }
@@ -237,9 +244,10 @@ export async function stage(
 export async function unstage(
     root: string,
     paths: string[],
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const wrong = checkPaths(root, paths, roots);
+    const wrong = checkPaths(root, paths, text, roots);
     if (wrong !== '') return failed(wrong);
     return restore(root, paths, true);
 }
@@ -252,13 +260,14 @@ export async function unstage(
 export async function discard(
     root: string,
     paths: string[],
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const loose = await untrackedAmong(root, paths, roots);
+    const loose = await untrackedAmong(root, paths, text, roots);
     if (!(loose instanceof Set)) return loose;
     const refused = paths.filter((path) => loose.has(path));
     if (refused.length > 0) {
-        return failed(`git does not track ${refused[0]}, so there is nothing to restore it to`);
+        return failed(words(text, 'server.git.not_tracked', refused[0]));
     }
     return restore(root, paths, false);
 }
@@ -274,23 +283,20 @@ export async function discard(
 export async function commit(
     root: string,
     message: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     amend = false,
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
-    const text = typeof message === 'string' ? message : '';
-    if (!amend && text.trim() === '') return failed('a commit needs a message');
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    const body = typeof message === 'string' ? message : '';
+    if (!amend && body.trim() === '') return failed(words(text, 'server.git.commit_needs_message'));
     if (amend) {
         const pushed = await pushedAlready(root);
-        if (pushed) {
-            return failed(
-                'the upstream already holds this commit, so amending it would need a forced push'
-            );
-        }
-        if (text.trim() === '') return commitWith(root, ['--amend', '--no-edit'], signal);
+        if (pushed) return failed(words(text, 'server.git.amend_pushed'));
+        if (body.trim() === '') return commitWith(root, ['--amend', '--no-edit'], signal);
     }
-    return withFile('oculus-commit-', text, (file) =>
+    return withFile('oculus-commit-', body, (file) =>
         commitWith(root, [...(amend ? ['--amend'] : []), '-F', file], signal)
     );
 }
@@ -336,18 +342,23 @@ async function pushedAlready(root: string): Promise<boolean> {
  */
 export async function push(
     root: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const up = await upstream(root);
-    if (!up.ok) return failed('this branch has no upstream, so there is nowhere to push it');
+    if (!up.ok) return failed(words(text, 'server.git.push_no_upstream'));
     return pushTo(root, [], signal);
 }
 
 /** Every branch, with its upstream and which one is checked out. A read, and the only one here. */
-export async function branches(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
+export async function branches(
+    root: string,
+    text: Record<string, string>,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     return branch(root, [REFS_FORMAT]);
 }
 
@@ -358,10 +369,10 @@ export async function branches(root: string, roots: string[] = allowedRoots()): 
 const START = /^[0-9a-f]{4,64}$/;
 
 /** Why a start point is refused, or the empty string when it is a hash. Checked before git runs. */
-export function checkStart(start: string): string {
+export function checkStart(start: string, text: Record<string, string>): string {
     return typeof start === 'string' && START.test(start)
         ? ''
-        : `${typeof start === 'string' ? start : ''} is not a commit hash`;
+        : words(text, 'server.git.not_a_hash', typeof start === 'string' ? start : '');
 }
 
 /**
@@ -371,61 +382,88 @@ export function checkStart(start: string): string {
 export async function createBranch(
     root: string,
     name: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     start?: string,
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const wrong = await checkName(root, name, roots);
+    const wrong = await checkName(root, name, text, roots);
     if (wrong !== '') return failed(wrong);
     if (start === undefined) return switchTo(root, ['-c', name], signal);
-    const refusal = checkStart(start);
+    const refusal = checkStart(start, text);
     if (refusal !== '') return failed(refusal);
     return switchTo(root, ['-c', name, start], signal);
 }
 
 /**
- * Check a branch out. A dirty tree is refused: git carries uncommitted changes across a switch, and
- * a change carried onto another branch by a click is the way this panel would lose work.
+ * Whether the porcelain reports a change of the repository's own content. An untracked file is not
+ * one: git carries it across a switch or a merge and never overwrites it, so refusing over one
+ * would refuse every repository with a build folder in it. A switch that would overwrite an
+ * untracked file is git's own refusal, which `switched` words.
+ */
+export function trackedChange(output: string): boolean {
+    return statusRecords(output).some((record) => record.code !== '??');
+}
+
+/**
+ * A switch's answer: a refusal of git's own is worded from the catalog with git's line after it,
+ * and a command that ended with no reason of git's own keeps its failure code.
+ */
+async function switched(run: Promise<Outcome>, text: Record<string, string>): Promise<Outcome> {
+    const done = await run;
+    if (done.ok || done.failure !== undefined) return done;
+    return failed(
+        words(text, 'server.git.git_said', words(text, 'server.git.switch_refused'), done.error)
+    );
+}
+
+/**
+ * Check a branch out. A tree with a change to a tracked path is refused: git carries uncommitted
+ * changes across a switch, and a change carried onto another branch by a click is the way this
+ * panel would lose work. An untracked file does not stop the switch; git refuses it itself when it
+ * would be overwritten.
  */
 export async function switchBranch(
     root: string,
     name: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const wrong = await checkName(root, name, roots);
+    const wrong = await checkName(root, name, text, roots);
     if (wrong !== '') return failed(wrong);
     const state = await porcelain(root);
     if (!state.ok) return state;
-    if (state.output.trim() !== '') {
-        return failed('the working tree is dirty, so switching would carry the changes across');
-    }
-    return switchTo(root, [name], signal);
+    if (trackedChange(state.output)) return failed(words(text, 'server.git.dirty_switch'));
+    return switched(switchTo(root, [name], signal), text);
 }
 
 /**
- * Detach HEAD at a commit or a remote branch. Refused on a dirty tree like `switchBranch`, for the
- * same reason: git carries uncommitted changes across a switch.
+ * Detach HEAD at a commit or a remote branch. Refused over a change to a tracked path like
+ * `switchBranch`, for the same reason: git carries uncommitted changes across a switch.
  */
 export async function switchDetached(
     root: string,
     ref: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const wrong = await checkName(root, ref, roots);
+    const wrong = await checkName(root, ref, text, roots);
     if (wrong !== '') return failed(wrong);
     const state = await porcelain(root);
     if (!state.ok) return state;
-    if (state.output.trim() !== '') {
-        return failed('the working tree is dirty, so switching would carry the changes across');
-    }
-    return switchTo(root, ['--detach', ref], signal);
+    if (trackedChange(state.output)) return failed(words(text, 'server.git.dirty_switch'));
+    return switched(switchTo(root, ['--detach', ref], signal), text);
 }
 
 /** What is staged right now, which is what the suggested message is written from. */
-export async function stagedDiff(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
+export async function stagedDiff(
+    root: string,
+    text: Record<string, string>,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     return diff(root, ['--cached']);
 }
 
@@ -441,9 +479,10 @@ export async function fileDiff(
     root: string,
     path: string,
     staged: boolean,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome & { ours: boolean }> {
-    const wrong = checkPaths(root, [path], roots);
+    const wrong = checkPaths(root, [path], text, roots);
     if (wrong !== '') return { ...failed(wrong), ours: false };
     const flags = ['--no-color', '--no-ext-diff', NO_CONTEXT, '--', path];
     const read = await diff(root, [...(staged ? ['--cached'] : []), ...flags]);
@@ -464,10 +503,11 @@ export async function fileDiff(
 export async function worktreeFrom(
     root: string,
     path: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
-    if (!worktreeUnder(root, path)) return failed(OUTSIDE_WORKTREES);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (!worktreeUnder(root, path)) return failed(words(text, 'server.git.outside_worktrees'));
     const head = await revParse(root, ['--abbrev-ref', 'HEAD']);
     if (!head.ok) return head;
     const name = head.output.trim();
@@ -479,9 +519,10 @@ export async function worktreeFrom(
 export async function worktreeDiff(
     root: string,
     path: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const from = await worktreeFrom(root, path, roots);
+    const from = await worktreeFrom(root, path, text, roots);
     return from.ok ? worktreeRange(path, from.output) : from;
 }
 
@@ -491,9 +532,6 @@ export function worktreeRange(path: string, from: string): Promise<Outcome> {
 }
 
 // ---------------------------------------------------------------- worktrees and the merge back
-
-/** What a request naming a path outside the root's worktrees folder is refused with. */
-export const OUTSIDE_WORKTREES = 'that path is not a worktree oculus made under this repository';
 
 /**
  * Whether the path is a worktree this tool made under the root. Both sides go through realpath
@@ -519,14 +557,15 @@ function worktreeUnder(root: string, path: string): boolean {
 export async function createWorktree(
     root: string,
     name: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const wrong = await checkName(root, name, roots);
+    const wrong = await checkName(root, name, text, roots);
     if (wrong !== '') return failed(wrong);
-    if (!validName(name)) return failed(`${name} is not a name one worktree folder can carry`);
+    if (!validName(name)) return failed(words(text, 'server.git.worktree_name', name));
     const path = worktreePath(root, name);
-    if (existsSync(path)) return failed(`there is already something at ${path}`);
+    if (existsSync(path)) return failed(words(text, 'server.git.already_something', path));
     return worktree(root, ['add', '-b', name, path, 'HEAD'], signal);
 }
 
@@ -539,20 +578,17 @@ export async function createWorktree(
 export async function removeWorktree(
     root: string,
     path: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
-    if (!worktreeUnder(root, path)) return failed(OUTSIDE_WORKTREES);
-    if (!existsSync(path)) return failed(`there is no worktree at ${path}`);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (!worktreeUnder(root, path)) return failed(words(text, 'server.git.outside_worktrees'));
+    if (!existsSync(path)) return failed(words(text, 'server.git.no_worktree_at', path));
     const state = await porcelain(path);
     if (!state.ok) return state;
     // Untracked files count here, unlike the merge: `git worktree remove` would take the folder and
     // them with it, and a file git never saw is a file nobody can get back.
-    if (state.output.trim() !== '') {
-        return failed(
-            'that worktree holds uncommitted changes or untracked files, so it is not taken away'
-        );
-    }
+    if (state.output.trim() !== '') return failed(words(text, 'server.git.worktree_dirty'));
     const head = await revParse(path, ['--abbrev-ref', 'HEAD']);
     const name = head.ok ? head.output.trim() : '';
     const gone = await worktree(root, ['remove', path]);
@@ -562,7 +598,7 @@ export async function removeWorktree(
     if (dropped.ok) return { ok: true, output: `${gone.output}${dropped.output}`, error: '' };
     return {
         ok: true,
-        output: `${gone.output}the branch ${name} was kept: ${dropped.error}`,
+        output: `${gone.output}${words(text, 'server.git.branch_kept', name, dropped.error)}`,
         error: ''
     };
 }
@@ -757,12 +793,19 @@ export function mergeIn(root: string, args: string[], signal?: AbortSignal): Pro
 }
 
 /** Whether a name is a branch name git accepts, judged by git, or the empty string when it is. */
-export async function checkName(root: string, name: string, roots: string[]): Promise<string> {
-    if (!permitted(root, roots)) return 'that directory is not a workspace oculus knows';
-    if (typeof name !== 'string' || name.trim() === '') return 'a branch needs a name';
-    if (name.startsWith('-')) return `${name} is not a branch name git accepts`;
+export async function checkName(
+    root: string,
+    name: string,
+    text: Record<string, string>,
+    roots: string[]
+): Promise<string> {
+    if (!permitted(root, roots)) return words(text, 'server.git.unknown_directory');
+    if (typeof name !== 'string' || name.trim() === '') {
+        return words(text, 'server.git.branch_needs_name');
+    }
+    if (name.startsWith('-')) return words(text, 'server.git.not_branch_name', name);
     const judged = await refFormat(root, ['--branch', name]);
-    return judged.ok ? '' : `${name} is not a branch name git accepts`;
+    return judged.ok ? '' : words(text, 'server.git.not_branch_name', name);
 }
 
 /** The one `check-ref-format` call site: git's own answer on a branch name or a whole ref. */
@@ -788,9 +831,10 @@ export function untrackedIn(output: string): Set<string> {
 export async function untrackedAmong(
     root: string,
     paths: string[],
+    text: Record<string, string>,
     roots: string[]
 ): Promise<Set<string> | Outcome> {
-    const wrong = checkPaths(root, paths, roots);
+    const wrong = checkPaths(root, paths, text, roots);
     if (wrong !== '') return failed(wrong);
     const state = await porcelain(root);
     return state.ok ? untrackedIn(state.output) : state;

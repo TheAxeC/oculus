@@ -159,10 +159,44 @@ export function ancestorsOf(row: RowRef): RowRef[] {
  * with `from`, only the folders under that folder of the root, the folder's own line left as it
  * was.
  */
-export function collapseRoot(expanded: string[], root: string, from = ''): string[] {
+function collapseRoot(expanded: string[], root: string, from = ''): string[] {
     const own = treeKey(root, from);
     const under = from === '' ? own : `${own}/`;
     return expanded.filter((key) => key === own || !key.startsWith(under));
+}
+
+/**
+ * Whether a folder is open below one root, as the tree draws it: a folder whose key is in the open
+ * set and whose root and every folder above it are open too. A root's remembered folders under a
+ * closed root are not drawn, so they are not open.
+ */
+function openBelow(expanded: string[], root: string): boolean {
+    const held = new Set(expanded);
+    if (!held.has(treeKey(root, ''))) return false;
+    return expanded.some((key) => {
+        if (!key.startsWith(treeKey(root, '')) || key === treeKey(root, '')) return false;
+        const path = key.slice(treeKey(root, '').length);
+        return ancestorsOf({ root, path }).every((above) => held.has(rowKey(above)));
+    });
+}
+
+/**
+ * What Collapse Folders leaves open. Every folder below each root is closed, each root's own row
+ * kept open. When no folder was open below any of the roots before the press, the roots close as
+ * well, which is how VS Code's collapse behaves on a second press; a tab drawn from one folder
+ * (`from`) has no root row to close, and a filter draws its own rows, so neither takes the second
+ * step.
+ */
+export function collapsedAll(
+    expanded: string[],
+    roots: string[],
+    from: string | undefined,
+    filtering: boolean
+): string[] {
+    const closed = roots.reduce((kept, root) => collapseRoot(kept, root, from), expanded);
+    if (from !== undefined || filtering) return closed;
+    if (roots.some((root) => openBelow(expanded, root))) return closed;
+    return closed.filter((key) => !roots.some((root) => key === treeKey(root, '')));
 }
 
 /**
@@ -170,6 +204,12 @@ export function collapseRoot(expanded: string[], root: string, from = ''): strin
  * name its head row shows.
  */
 export type TreeTop = { path: string; name: string };
+
+/**
+ * The drag type a movable root row carries: the keys of the roots dragged, one a line, which only
+ * the Files tree takes. The row's `text/plain` holds the roots' directories.
+ */
+export const ROOT_DRAG = 'application/x-oculus-root';
 
 /** The drag type a file row carries: its absolute path, for a drop target that takes a file. */
 export const FILE_DRAG = 'application/x-oculus-file';

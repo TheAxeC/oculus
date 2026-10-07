@@ -1,6 +1,6 @@
 // Layer 3, view partial of Source.svelte. The draft of a source tab: read in when the tab names a
-// file (or made empty for an untitled text), and what the editor does to it: the text typed and
-// the word wrap toggled.
+// file (or made empty for an untitled text), read again for a HEAD or index tab when the version
+// git holds moves, and what the editor does to it: the text typed and the word wrap toggled.
 
 import { untrack } from 'svelte';
 import type { createSourceOptions } from '$lib/views/shared/prose/source-options';
@@ -26,9 +26,16 @@ export type TabDraftDeps = {
     wrap: (id: string, wrap: Wrap) => void;
     /** Typing keeps a preview tab. */
     keepPreview: (id: string) => void;
+    /** What git says that a HEAD or index tab shows, which moves when the version moves. */
+    headSignature: () => string;
+    /** Read the version a HEAD or index tab holds again. */
+    reloadHead: (id: string, root: string, path: string, stage: HeadStage) => Promise<void>;
 };
 
-/** Read the tab's draft in whenever the file it names changes, and give the editor's calls. */
+/**
+ * Read the tab's draft in whenever the file it names changes, read a HEAD or index tab again when
+ * the version git holds moves, and give the editor's calls.
+ */
 export function createTabDraft(deps: TabDraftDeps) {
     $effect(() => {
         const id = deps.id();
@@ -38,6 +45,20 @@ export function createTabDraft(deps: TabDraftDeps) {
         const path = deps.path();
         const stage = deps.head();
         untrack(() => void deps.load(id, root, path, stage));
+    });
+
+    // A HEAD or index tab follows git: when what git says of its file moves, the version is read
+    // again. The first run for a tab only notes the signature, since the load above reads it.
+    let seen: { id: string; stage: HeadStage; signature: string } | null = null;
+    $effect(() => {
+        const id = deps.id();
+        const stage = deps.head();
+        const signature = deps.headSignature();
+        const before = seen;
+        seen = stage === undefined ? null : { id, stage, signature };
+        if (before === null || stage === undefined) return;
+        if (before.id !== id || before.stage !== stage || before.signature === signature) return;
+        untrack(() => void deps.reloadHead(id, deps.root(), deps.path(), stage));
     });
 
     return {

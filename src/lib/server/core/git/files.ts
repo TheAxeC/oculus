@@ -4,6 +4,7 @@
 // touched one file. Every command goes through run.ts.
 
 import type { GitFilePage } from '../../../data/model/index.ts';
+import { words } from '../words.ts';
 import { FILE_LOG_FORMAT, parseFileLog } from './parse.ts';
 import {
     HASH,
@@ -11,6 +12,7 @@ import {
     TIMEOUT_MS,
     milliseconds,
     pathInside,
+    reasonOf,
     refused,
     run,
     type Read
@@ -28,15 +30,15 @@ export const FILE_LOG_ENTRIES = 50;
  * trailing slash would make git refuse the whole run over a link to a folder. A tracked file is
  * never named, since git does not ignore what it already tracks.
  */
-export function ignoredIn(
+export async function ignoredIn(
     root: string,
     names: string[],
     timeout: number = TIMEOUT_MS
-): Set<string> {
+): Promise<Set<string>> {
     const none = new Set<string>();
     if (names.length === 0) return none;
     const input = names.map((name) => `${name}\0`).join('');
-    const done = run(root, ['check-ignore', '--stdin', '-z'], milliseconds(timeout), input);
+    const done = await run(root, ['check-ignore', '--stdin', '-z'], milliseconds(timeout), input);
     if (!done.ok) return none;
     const said = new Set(done.text.split('\0').filter((one) => one !== ''));
     return new Set(names.filter((name) => said.has(name)));
@@ -48,9 +50,13 @@ export function ignoredIn(
  * accented letter comes back as it is on disk. A folder in no repository, a git that is missing and
  * a run that timed out answer why instead.
  */
-export function trackedFiles(root: string, timeout: number = TIMEOUT_MS): Read<string[]> {
-    const done = run(root, ['ls-files', '-z'], milliseconds(timeout));
-    if (!done.ok) return refused(done.text);
+export async function trackedFiles(
+    root: string,
+    text: Record<string, string>,
+    timeout: number = TIMEOUT_MS
+): Promise<Read<string[]>> {
+    const done = await run(root, ['ls-files', '-z'], milliseconds(timeout));
+    if (!done.ok) return refused(reasonOf(done, text));
     return { ok: true, value: done.text.split('\0').filter((path) => path !== '') };
 }
 
@@ -61,13 +67,17 @@ export function trackedFiles(root: string, timeout: number = TIMEOUT_MS): Read<s
  * path unquoted. A folder in no repository, a git that is missing and a run that timed out answer
  * why instead.
  */
-export function keptFiles(root: string, timeout: number = TIMEOUT_MS): Read<string[]> {
-    const done = run(
+export async function keptFiles(
+    root: string,
+    text: Record<string, string>,
+    timeout: number = TIMEOUT_MS
+): Promise<Read<string[]>> {
+    const done = await run(
         root,
         ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],
         milliseconds(timeout)
     );
-    if (!done.ok) return refused(done.text);
+    if (!done.ok) return refused(reasonOf(done, text));
     return { ok: true, value: done.text.split('\0').filter((path) => path !== '') };
 }
 
@@ -87,15 +97,18 @@ export function keptFiles(root: string, timeout: number = TIMEOUT_MS): Read<stri
  * repository with no commit yet have no commits to list and answer an empty page; any other refusal
  * of git answers its reason.
  */
-export function fileLog(
+export async function fileLog(
     root: string,
     path: string,
+    text: Record<string, string>,
     before?: string,
     timeout: number = TIMEOUT_MS
-): Read<GitFilePage> {
-    if (!pathInside(root, path)) return refused(`the path ${path} is not inside the repository`);
-    if (before !== undefined && !HASH.test(before)) return refused('that is not a commit');
-    const done = run(
+): Promise<Read<GitFilePage>> {
+    if (!pathInside(root, path)) return refused(words(text, 'server.git.path_outside', path));
+    if (before !== undefined && !HASH.test(before)) {
+        return refused(words(text, 'server.git.not_a_commit'));
+    }
+    const done = await run(
         root,
         [
             'log',
@@ -117,7 +130,9 @@ export function fileLog(
         const listed = parseFileLog(done.text, path);
         const at =
             before === undefined ? -1 : listed.findIndex((row) => row.hash.startsWith(before));
-        if (before !== undefined && at < 0) return refused('that commit is not in the history');
+        if (before !== undefined && at < 0) {
+            return refused(words(text, 'server.git.commit_not_in_history'));
+        }
         const rows = listed.slice(at + 1);
         return {
             ok: true,
@@ -131,5 +146,5 @@ export function fileLog(
         done.text.includes(NO_REPOSITORY) || done.text.includes('does not have any commits');
     return empty
         ? { ok: true, value: { commits: [], more: false } }
-        : refused(done.text || 'git log failed');
+        : refused(reasonOf(done, text));
 }

@@ -1,6 +1,7 @@
 // Layer 2, client state. The source tab's file address, its initial whole-text read, the read again
-// of a tab with no unsaved text after its file was written, whether this machine's mode lets it be
-// written, and the whole-text save through the shared authenticated write sender.
+// of a tab with no unsaved text after its file was written, the read again of a HEAD or index tab
+// after the version git holds moved, whether this machine's mode lets it be written, and the
+// whole-text save through the shared authenticated write sender.
 //
 // Whether a file may be saved is the file's own mode, asked of the source route when the tab opens
 // and held with the draft: no list of extensions decides it, so a tab over a file this machine
@@ -286,6 +287,15 @@ export type SourceStore = {
     /** Read a tab's file again when the tab holds no unsaved text; a tab with some keeps it. */
     reloadSource: (id: string) => Promise<void>;
     /**
+     * Read the version a HEAD or index tab holds from git again, for a repository whose HEAD or
+     * index has moved, or when the reader asks to read it again. The repository's folder, the path
+     * and the stage are the tab's own, never parsed back out of the draft's file key, since a
+     * repository's folder is an absolute path. The tab's text is never edited, so the new version
+     * replaces the old, and a version the stage no longer has says so in the tab's error line. A
+     * tab whose first read failed is read as on opening.
+     */
+    reloadHead: (id: string, root: string, path: string, stage: HeadStage) => Promise<void>;
+    /**
      * Replace a tab's text. `edits` are the text edits the new text was made by, from the text the
      * tab held: the editor makes them in its model as they are, which keeps its selections, its
      * decorations and its folds.
@@ -476,6 +486,24 @@ export function createSource(
         });
     }
 
+    async function reloadHead(
+        id: string,
+        root: string,
+        path: string,
+        stage: HeadStage
+    ): Promise<void> {
+        const file = `${stage}:${root}/${path}`;
+        const draft = sourceDraft(id);
+        if (!draft.loaded || draft.file !== file) return loadSourceDraft(id, root, path, stage);
+        const answer = await loadHeadFile(root, path, stage);
+        if (ui.instanceState(id) === undefined || sourceDraft(id).file !== file) return;
+        if (answer.ok) {
+            updateDraft(id, { text: answer.content, saved: answer.content, error: '' });
+        } else {
+            updateDraft(id, { error: t('source.cannot_open', answer.error) });
+        }
+    }
+
     /** Keep typing local to this instance until the user saves. */
     function editSourceDraft(id: string, text: string, edits?: TextEdit[]): void {
         // Set before the text, which the editor reads the edits at when the text reaches it.
@@ -592,6 +620,7 @@ export function createSource(
         loadLibraryDraft,
         loadUntitledDraft,
         reloadSource,
+        reloadHead,
         editSourceDraft,
         sourceReach,
         revertSourceDraft,

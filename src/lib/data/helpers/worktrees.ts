@@ -22,7 +22,7 @@ function trimmed(root: string): string {
 }
 
 /** The worktrees folder of one repository, absolute when the root is. */
-export function worktreesDir(root: string): string {
+function worktreesDir(root: string): string {
     return `${trimmed(root)}/${WORKTREES_DIR}`;
 }
 

@@ -22,10 +22,11 @@ function fresh(): string {
     return dir;
 }
 
-/** One save-workspace write over the workspaces file `file` in `dir`, with no root of its own. */
-async function save(
+/** One write of `action` over the workspaces file `file` in `dir`, with no root of its own. */
+async function write(
     dir: string,
-    file: string
+    file: string,
+    action: Record<string, unknown>
 ): Promise<{ status: number; body: Record<string, unknown> }> {
     const host = '127.0.0.1:8791';
     const request = new Request(`http://${host}/api/fs`, {
@@ -36,7 +37,7 @@ async function save(
             'content-type': 'application/json',
             'x-oculus-token': TOKEN
         },
-        body: JSON.stringify({ action: 'save-workspace', name: 'second' })
+        body: JSON.stringify(action)
     });
     const response = await handleFsWrite(request, TOKEN, {
         file,
@@ -49,29 +50,45 @@ async function save(
     return { status: response.status, body: (await response.json()) as Record<string, unknown> };
 }
 
+const SAVE = { action: 'save-workspace', name: 'second' };
+const ORDER = { action: 'order-roots', keys: ['a', 'b'] };
+
+/** The workspaces files that do not read, with the reason the refusal gives. */
+const UNREADABLE: [string, string | null][] = [
+    ['is not JSON', '{"current": '],
+    ['is not the shape', '["a", "list"]'],
+    ['cannot be read', null]
+];
+
+/** The writes a workspaces file that does not read refuses, whichever the write. */
+const WRITES: [string, Record<string, unknown>][] = [
+    ['saves a workspace', SAVE],
+    ['orders the roots', ORDER]
+];
+
 describe('a write over the workspaces file', () => {
     it('writes a missing file and refuses one that does not read, leaving it as is', async () => {
         const home = fresh();
         const missing = join(home, 'workspaces.json');
-        const written = await save(home, missing);
+        const written = await write(home, missing, SAVE);
         expect(written.status).toBe(200);
         expect(JSON.parse(readFileSync(missing, 'utf8'))).toMatchObject({ current: 'second' });
 
-        const cases: [string | null, string][] = [
-            ['{"current": ', 'is not JSON'],
-            ['["a", "list"]', 'is not the shape'],
-            [null, 'cannot be read']
-        ];
-        for (const [body, reason] of cases) {
-            const dir = fresh();
-            const file = join(dir, 'workspaces.json');
-            if (body === null) mkdirSync(file);
-            else writeFileSync(file, body);
-            const refused = await save(dir, file);
-            expect(refused.status).toBe(400);
-            expect(refused.body).toEqual({ error: `${basename(file)} ${reason}: ${file}` });
-            if (body === null) expect(statSync(file).isDirectory()).toBe(true);
-            else expect(readFileSync(file, 'utf8')).toBe(body);
+        for (const [what, action] of WRITES) {
+            for (const [reason, body] of UNREADABLE) {
+                const dir = fresh();
+                const file = join(dir, 'workspaces.json');
+                if (body === null) mkdirSync(file);
+                else writeFileSync(file, body);
+                const refused = await write(dir, file, action);
+                const row = `${what}, a file that ${reason}`;
+                expect(refused.status, row).toBe(400);
+                expect(refused.body, row).toEqual({
+                    error: `${basename(file)} ${reason}: ${file}`
+                });
+                if (body === null) expect(statSync(file).isDirectory(), row).toBe(true);
+                else expect(readFileSync(file, 'utf8'), row).toBe(body);
+            }
         }
     });
 });

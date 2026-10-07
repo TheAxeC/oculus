@@ -5,7 +5,7 @@
 // the context's own, so a test hands in one that opens nothing. The server module validates all of
 // it before invoking the opener; no GET causes an operating-system action.
 
-import { openSettings } from '$lib/data/sources/config';
+import { openSettings, textCatalog } from '$lib/data/sources/config';
 import { handleOpen } from '$lib/server/files/open';
 import { browserRoots } from '$lib/server/files/roots';
 import type { RequestHandler } from './$types';
@@ -15,6 +15,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
     return handleOpen(
         request,
         locals.token,
+        () => textCatalog(config),
         browserRoots({ config, engine: locals.server.engine, local: locals.server.local }),
         () => openSettings(config).programApps,
         locals.server.openPath

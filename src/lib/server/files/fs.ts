@@ -19,14 +19,15 @@
 // under the same rule the file route serves one by: inside the root it is an ordinary entry, and
 // pointing out of the root it is left out.
 //
-// A workspace is a name and a list of roots, saved at ~/.oculus/workspaces.json. The hub key and
-// the keys the configuration names are reserved: a saved root carrying one is dropped on the read
-// and named back to the page, so a saved file can only ever add a root and never redirect one the
-// rest of the application reads. The file is written whole and atomically, as the other two
-// ~/.oculus files are, because it holds work the reader did by hand, and the writes of one process
-// are chained so two requests in flight cannot lose one another's change. A file that is there and
-// does not read is never written over: a write is refused with the reason, as the saved commands
-// file refuses one, and the file is left as it was.
+// A workspace is a name and a list of roots, saved at ~/.oculus/workspaces.json, and its roots and
+// the notes are written in a new order through the same route (`order-roots`, `order-notes`). The
+// hub key and the keys the configuration names are reserved: a saved root carrying one is dropped
+// on the read and named back to the page, so a saved file can only ever add a root and never
+// redirect one the rest of the application reads. The file is written whole and atomically, as the
+// other two ~/.oculus files are, because it holds work the reader did by hand, and the writes of
+// one process are chained so two requests in flight cannot lose one another's change. A file that
+// is there and does not read is never written over: a write is refused with the reason, as the
+// saved commands file refuses one, and the file is left as it was.
 //
 // The fold from a saved file to the roots on screen is pure: workspaceRoots takes the configured
 // roots and the object the file parsed to, and reads nothing. The reading is readSaved's, for a
@@ -48,7 +49,7 @@ import { tokenedBody } from '../core/auth.ts';
 import { expandHome, HUB_ROOT, resolveRootPath, rootShape, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
 import { ignoredIn } from '../core/git/files.ts';
-import { deleteNote, listNotes, readNote, saveNote } from './fs/notes.ts';
+import { deleteNote, listNotes, readNote, saveNote, writeNoteOrder } from './fs/notes.ts';
 import {
     chained,
     readJson,
@@ -138,24 +139,27 @@ export function ignoredCache(): IgnoredCache {
 
 /**
  * The names of a folder's entries that git ignores, asked of `ask` unless the same folder with the
- * same entries was asked within IGNORED_REUSE_MS. An entry added or removed since makes the key
- * differ, so an answer is never reused for a listing it was not given.
+ * same entries was asked within IGNORED_REUSE_MS of the moment its answer came. An entry added or
+ * removed since makes the key differ, so an answer is never reused for a listing it was not given.
+ * Two listings of one folder asked at once may each ask git; the event loop is free while git
+ * answers.
  */
-export function cachedIgnored(
+export async function cachedIgnored(
     cache: IgnoredCache,
     folder: string,
     names: string[],
-    ask: (folder: string, names: string[]) => Set<string> = ignoredIn,
-    now: number = Date.now()
-): Set<string> {
+    ask: (folder: string, names: string[]) => Promise<Set<string>> = ignoredIn,
+    now: () => number = Date.now
+): Promise<Set<string>> {
     const key = `${folder}\0${names.join('\0')}`;
     const held = cache.held.get(key);
-    if (held !== undefined && now - held.at < IGNORED_REUSE_MS) return held.ignored;
-    const ignored = ask(folder, names);
+    if (held !== undefined && now() - held.at < IGNORED_REUSE_MS) return held.ignored;
+    const ignored = await ask(folder, names);
+    const at = now();
     for (const [one, entry] of cache.held) {
-        if (now - entry.at >= IGNORED_REUSE_MS) cache.held.delete(one);
+        if (at - entry.at >= IGNORED_REUSE_MS) cache.held.delete(one);
     }
-    cache.held.set(key, { at: now, ignored });
+    cache.held.set(key, { at, ignored });
     return ignored;
 }
 
@@ -391,16 +395,16 @@ export function listDir(
  * One directory as a listing request asks for it: listDir's entries, without the ones git ignores
  * there unless the request asks for those too, in which case each of them carries `ignored: true`.
  */
-export function listShown(
+export async function listShown(
     list: Root[],
     key: string,
     path: string,
     shown: Shown = DEFAULT_SHOWN,
     cache: IgnoredCache = ignoredCache()
-): { entries: Entry[] } | { error: 'outside' | 'missing' } {
+): Promise<{ entries: Entry[] } | { error: 'outside' | 'missing' }> {
     const found = listDir(list, key, path, shown.hidden);
     if ('error' in found) return found;
-    const ignored = cachedIgnored(
+    const ignored = await cachedIgnored(
         cache,
         found.at,
         found.entries.map((one) => one.name)
@@ -454,7 +458,7 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
  * another origin, since any page open in the browser can address this server. One file is read,
  * whichever answer is given.
  */
-export function handleFs(request: Request, into: FsTarget): Response {
+export async function handleFs(request: Request, into: FsTarget): Promise<Response> {
     const url = new URL(request.url);
     if (url.searchParams.get('bookmarks') !== null)
         return json(
@@ -478,7 +482,7 @@ export function handleFs(request: Request, into: FsTarget): Response {
     const saved = readSaved(into.file, reservedKeys(into.fixed));
     if (key === '') return json(workspacesAnswer(into, saved), { headers: NO_STORE });
     const roots = [...into.fixed, ...addedRoots(into.fixed, saved)];
-    const found = listShown(roots, key, path, shownOf(url.searchParams), into.ignored);
+    const found = await listShown(roots, key, path, shownOf(url.searchParams), into.ignored);
     if ('error' in found) return json({ error: found.error }, { status: 404, headers: NO_STORE });
     return json({ root: key, path, entries: found.entries }, { headers: NO_STORE });
 }
@@ -487,10 +491,12 @@ export function handleFs(request: Request, into: FsTarget): Response {
 export const ACTIONS = [
     'add-root',
     'remove-root',
+    'order-roots',
     'save-workspace',
     'select-workspace',
     'note-save',
-    'note-delete'
+    'note-delete',
+    'order-notes'
 ] as const;
 
 /**
@@ -504,7 +510,9 @@ const fsBodyShape = z.object({
     name: textShape,
     id: textShape,
     title: textShape,
-    body: textShape
+    body: textShape,
+    keys: z.array(z.string()).catch([]),
+    ids: z.array(z.string()).catch([])
 });
 
 type FsFields = z.output<typeof fsBodyShape>;
@@ -581,6 +589,29 @@ function removeRoot(saved: Saved, fields: FsFields, into: FsTarget): Response {
     return written(saved, into);
 }
 
+/**
+ * Put the roots the workspace in force holds in the order the body's keys name. A body that does
+ * not name each of them exactly once is refused `roots-changed`, and with no named workspace in
+ * force there is no workspace of its own to order: `no-such-workspace`.
+ */
+function orderRoots(saved: Saved, fields: FsFields, into: FsTarget): Response {
+    const workspace = saved.workspaces.find((one) => one.name === saved.current);
+    if (saved.current === DEFAULT_WORKSPACE || workspace === undefined) {
+        return json({ error: 'no-such-workspace' }, { status: 400, headers: NO_STORE });
+    }
+    const keys = fields.keys;
+    const held = new Set(workspace.roots.map((one) => one.key));
+    if (
+        keys.length !== workspace.roots.length ||
+        new Set(keys).size !== keys.length ||
+        !keys.every((key) => held.has(key))
+    ) {
+        return json({ error: 'roots-changed' }, { status: 400, headers: NO_STORE });
+    }
+    workspace.roots = keys.flatMap((key) => workspace.roots.filter((one) => one.key === key));
+    return written(saved, into);
+}
+
 /** Save the roots in force under a new name, and make that workspace the current one. */
 function saveWorkspace(saved: Saved, fields: FsFields, into: FsTarget): Response {
     const name = fields.name.trim();
@@ -618,6 +649,13 @@ function removeNote(fields: FsFields, into: FsTarget): Response {
     return json({ ok: true, changed: ['note'], refused: [] }, { headers: NO_STORE });
 }
 
+/** Write the order the notes are listed in. */
+function orderNotes(fields: FsFields, into: FsTarget): Response {
+    const refused = writeNoteOrder(into.notes, fields.ids);
+    if (refused !== null) return json({ error: refused }, { status: 400, headers: NO_STORE });
+    return json({ ok: true, changed: ['note'], refused: [] }, { headers: NO_STORE });
+}
+
 /**
  * One action, read and written behind the process's chain so no change is lost to another's write.
  */
@@ -625,11 +663,13 @@ function act(fields: FsFields, into: FsTarget): Response {
     const action = fields.action;
     if (action === 'note-save') return writeNote(fields, into);
     if (action === 'note-delete') return removeNote(fields, into);
+    if (action === 'order-notes') return orderNotes(fields, into);
     const loaded = loadSaved(into.file, reservedKeys(into.fixed));
     if (!loaded.ok) return json({ error: loaded.error }, { status: 400, headers: NO_STORE });
     const saved = loaded.saved;
     if (action === 'add-root') return addRoot(saved, fields, into);
     if (action === 'remove-root') return removeRoot(saved, fields, into);
+    if (action === 'order-roots') return orderRoots(saved, fields, into);
     if (action === 'save-workspace') return saveWorkspace(saved, fields, into);
     return selectWorkspace(saved, fields, into);
 }

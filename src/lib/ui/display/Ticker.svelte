@@ -23,6 +23,10 @@
     // `kept` names, the one the row exists for, is drawn all the time, where the caller lists it,
     // on a plain row too, and the button holding the keyboard is never taken back.
     //
+    // A row whose name is cut says the whole line as its hover words: the label and the tail, set
+    // when the pointer or the focus arrives, since only then is the room the name has known. A
+    // name that fits has no hover words.
+    //
     // A finger opens a row before it presses anything in it. On a device that also has a pointer
     // the buttons of a closed row are not in the page, so a tap that pressed straight through would
     // reach none of them: the first tap in a row opens it and presses nothing, the next tap presses
@@ -80,12 +84,26 @@
     let pointed = $state<Open | null>(null);
     let keyed = $state<Open | null>(null);
     let tapped = $state<Tapped | null>(null);
+    /** The row whose name is cut as the pointer or the focus last arrived, and its whole line. */
+    let cut = $state<{ id: string; text: string } | null>(null);
 
     /** Where the row a tap opened is drawn now, and -1 once the list holds no row of that id. */
     const tappedAt = $derived.by(() => {
         const held = tapped;
         return held === null ? -1 : rows.findIndex((row) => row.id === held.id);
     });
+
+    /** Whether the name of a row is cut, read on the row as the pointer or the focus arrives. */
+    function measureCut(event: Event, row: TickerRow): void {
+        const li = event.currentTarget;
+        const name = li instanceof Element ? li.querySelector('.name') : null;
+        if (name === null || name.scrollWidth <= name.clientWidth) {
+            if (cut?.id === row.id) cut = null;
+            return;
+        }
+        const tail = row.tail ?? '';
+        cut = { id: row.id, text: tail === '' ? row.label : `${row.label} ${tail}` };
+    }
 
     function toneStyle(tone: string | undefined): string | undefined {
         return tone === undefined ? undefined : `--tone-txt: var(--c-${tone}-txt)`;
@@ -298,7 +316,12 @@
 >
     {#each rows as row, at (`${at}:${row.id}`)}
         {@const here = opened(at)}
-        <li class:open={here !== null}>
+        <li
+            class:open={here !== null}
+            title={cut?.id === row.id ? cut.text : undefined}
+            onpointerenter={(event) => measureCut(event, row)}
+            onfocusin={(event) => measureCut(event, row)}
+        >
             <Glyph name={row.glyph} />
             {#if onpick !== undefined && row.id !== '' && row.plain !== true}
                 <button

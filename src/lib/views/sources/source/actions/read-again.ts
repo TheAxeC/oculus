@@ -2,7 +2,8 @@
 // was gone when the tab opened may be back as something other than text, so the tab asks what the
 // file is before it reads: a text file, or one still gone, is read into the tab again, and any
 // other kind opens in the view that shows it, taking this tab's place (a preview tab keeps its
-// place in the strip) or closing this tab when the file was already open there. An answer that
+// place in the strip) or closing this tab when the file was already open there. A tab over a file
+// at HEAD or in the index reads that version from git again. An answer that
 // lands after the tab closed or was pointed at another file changes nothing.
 
 import type { ClientState } from '$lib/state/client/context';
@@ -25,22 +26,24 @@ export async function readAgain(client: ClientState, tab: ReadAgain): Promise<vo
         apps: { holds },
         fs: { readFileKind },
         layout: { closeInstance, instanceLayoutState, instanceView, openView },
-        source: { loadSourceDraft }
+        source: { loadSourceDraft, reloadHead }
     } = client;
-    if (tab.head === undefined) {
-        const found = await readFileKind(tab.root, tab.path);
-        const state = instanceLayoutState(tab.id);
-        const here =
-            instanceView(tab.id) === 'source' &&
-            instanceText(state, 'root') === tab.root &&
-            instanceText(state, 'path') === tab.path;
-        if (!here) return;
-        if (found.kind !== 'text' && found.kind !== 'missing') {
-            const next = tabForKind(found.kind, tab.root, tab.path, undefined, holds);
-            const opened = openView(next.view, next.state, undefined, { preview: tab.preview });
-            if (opened !== tab.id) closeInstance(tab.id);
-            return;
-        }
+    if (tab.head !== undefined) {
+        await reloadHead(tab.id, tab.root, tab.path, tab.head);
+        return;
     }
-    await loadSourceDraft(tab.id, tab.root, tab.path, tab.head);
+    const found = await readFileKind(tab.root, tab.path);
+    const state = instanceLayoutState(tab.id);
+    const here =
+        instanceView(tab.id) === 'source' &&
+        instanceText(state, 'root') === tab.root &&
+        instanceText(state, 'path') === tab.path;
+    if (!here) return;
+    if (found.kind !== 'text' && found.kind !== 'missing') {
+        const next = tabForKind(found.kind, tab.root, tab.path, undefined, holds);
+        const opened = openView(next.view, next.state, undefined, { preview: tab.preview });
+        if (opened !== tab.id) closeInstance(tab.id);
+        return;
+    }
+    await loadSourceDraft(tab.id, tab.root, tab.path);
 }

@@ -9,6 +9,8 @@
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
+    import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
+    import { headKeys, type SectionMove } from '../list-drag.svelte';
 
     type Props = {
         /** The section's name, already translated. */
@@ -31,18 +33,23 @@
         close: { label: string; title: string; run: () => void };
         /** The rows, each an `li` with role none around a row of level 2. */
         rows: Snippet<[TreeNav]>;
+        /** What lets the head be dragged and moved by Alt+Up/Down. */
+        move?: SectionMove;
     };
 
-    let { label, keyRows, count, open, ontoggle, onrow, refresh, close, rows }: Props = $props();
+    let { label, keyRows, count, open, ontoggle, onrow, refresh, close, rows, move }: Props =
+        $props();
 </script>
 
 <TreeView
     {label}
     rows={keyRows}
     ontoggle={(id: string) => (id === 'head' ? ontoggle() : onrow?.(id))}
+    keymap={MOVE_KEYMAP}
+    onkey={headKeys(move)}
 >
     {#snippet children(nav: TreeNav)}
-        <Section {label} {nav} {count} {open} {ontoggle} {more}>
+        <Section {label} {nav} {count} {open} {ontoggle} {more} drag={move?.drag}>
             {@render rows(nav)}
         </Section>
     {/snippet}

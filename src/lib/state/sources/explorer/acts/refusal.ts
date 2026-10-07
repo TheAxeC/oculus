@@ -20,5 +20,8 @@ export function refusal(code: string): string {
     if (code === 'name-held') return t('files.refused_name_held');
     if (code === 'no-such-workspace') return t('files.refused_no_such_workspace');
     if (code === 'no-such-note') return t('files.refused_no_such_note');
+    if (code === 'notes-order-unreadable') return t('files.refused_notes_order_unreadable');
+    if (code === 'roots-changed') return t('files.refused_roots_changed');
+    if (code === 'invalid') return t('files.refused_roots_invalid');
     return t('files.refused_other', code);
 }

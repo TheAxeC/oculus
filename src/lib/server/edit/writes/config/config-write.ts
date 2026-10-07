@@ -23,7 +23,7 @@ import type { SourceInputs } from './config-sources.ts';
 import { writeConfigValue } from './config-value.ts';
 import { writeDeckSlides } from './deck/deck.ts';
 import { writeRail } from './rail.ts';
-import { addRootTo, removeRootFrom } from './roots.ts';
+import { addRootTo, orderRootsIn, removeRootFrom } from './roots.ts';
 
 /** A configuration write done, with the kind it is logged as, or the refusal and its status. */
 export type ConfigAnswer =
@@ -90,11 +90,11 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
     if (roots !== null) {
         const sources = into.sources;
         if (sources === undefined) return UNWRITABLE;
-        return settled('roots', () =>
-            roots.action === 'add'
-                ? addRootTo(sources.file, roots.dir, sources.held)
-                : removeRootFrom(sources.file, roots.key)
-        );
+        return settled('roots', () => {
+            if (roots.action === 'add') return addRootTo(sources.file, roots.dir, sources.held);
+            if (roots.action === 'remove') return removeRootFrom(sources.file, roots.key);
+            return orderRootsIn(sources.file, roots.keys);
+        });
     }
     return null;
 }

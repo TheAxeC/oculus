@@ -3,8 +3,11 @@
 // folder this request's server runs from, with the request's signal so a closed request stops the
 // count.
 
+import { textCatalog } from '$lib/data/sources/config';
 import { countLines, handleLines } from '$lib/server/machine/lines';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ request, locals }) =>
-    handleLines(request, (signal) => countLines(locals.server.engine, { signal }));
+    handleLines(request, (signal) =>
+        countLines(locals.server.engine, textCatalog(locals.config().config), { signal })
+    );

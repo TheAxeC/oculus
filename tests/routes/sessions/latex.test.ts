@@ -15,6 +15,7 @@ import type { Formatter } from '../../../src/lib/data/prose/latex.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { latexBuild, type LatexFormatting } from '../../../src/lib/data/sources/config/settings.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
+import { TEXT } from '../../server/text.ts';
 
 const HOST = '127.0.0.1:8791';
 const TOKEN = 'token-of-the-case';
@@ -45,6 +46,7 @@ const TARGET: LatexTarget = {
         return id === 'gamma' ? { folder: OUTLINED } : null;
     },
     roots: () => [{ key: 'docs', dir: join(HUB, 'docs') }],
+    text: () => TEXT,
     formatting: formatting('tex-fmt'),
     building: () => latexBuild(loadConfig(engineDir()).config)
 };

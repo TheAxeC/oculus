@@ -19,6 +19,7 @@ text:
         changes_none: Nothing changed since the mirror's last commit.
         commit: commit
         commit_confirm: Commit {0} changed paths on {1}?
+        commit_confirm_one: Commit 1 changed path on {0}?
         commit_detail: The message is committed in the mirror. Nothing is sent to GitHub.
         commit_label: Commit message
         done: Done.

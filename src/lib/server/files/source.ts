@@ -144,10 +144,11 @@ export function handleSourceInfo(request: Request, url: URL, rootList: Root[]): 
 export async function handleSource(
     request: Request,
     token: string,
+    text: () => Record<string, string>,
     rootList: Root[],
     history?: string
 ): Promise<Response> {
-    const read = await tokenedBody(request, token, { fields: { ok: false } });
+    const read = await tokenedBody(request, token, { fields: { ok: false }, text });
     if (read instanceof Response) return read;
     const body = sourceBody(read.body);
     if (body === null) {

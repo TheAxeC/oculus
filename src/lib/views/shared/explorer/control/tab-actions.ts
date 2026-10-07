@@ -1,12 +1,12 @@
 // Layer 3, view partial of rooted-tree.svelte.ts. What a press on an explorer tree writes into the
 // tree's own record (a Files tab's instance state, or the record a project card keeps): part of the
 // record written for this tree or for the one an answer was sent from, a folder opened or closed, a
-// row selected, one of the tree's toggles flipped, a section opened or closed, every folder closed,
-// and the name of a new file or folder started.
+// row selected, one of the tree's toggles flipped, a section opened or closed, every folder closed
+// (and, when none is open, every root), and the name of a new file or folder started.
 
 import type { ClientState } from '$lib/state/client/context';
 import {
-    collapseRoot,
+    collapsedAll,
     patchedFilesView,
     rowKey,
     setExpanded,
@@ -35,6 +35,9 @@ export type TabActionsDeps = {
 };
 
 export type TabActions = ReturnType<typeof tabActions>;
+
+/** What every press that acts clears: the refusal line and the bookmark form's outcome. */
+const LINES_CLEARED = { note: '', said: '' } as const;
 
 export function tabActions(deps: TabActionsDeps) {
     const { client } = deps;
@@ -67,7 +70,10 @@ export function tabActions(deps: TabActionsDeps) {
      */
     function toggle(row: TreeRow): void {
         if (deps.filtering()) return;
-        patch({ expanded: setExpanded(deps.view().expanded, rowKey(row), !row.open) });
+        patch({
+            expanded: setExpanded(deps.view().expanded, rowKey(row), !row.open),
+            ...LINES_CLEARED
+        });
     }
 
     /** Select one row; the outcome line of an ask to show a path is about the row it selected. */
@@ -78,27 +84,33 @@ export function tabActions(deps: TabActionsDeps) {
     /** Flip one of the tab's toggles, and read every folder held under the pair it now names. */
     function flip(which: 'hidden' | 'ignored' | 'nesting'): void {
         if (which === 'nesting') {
-            patch({ nesting: !deps.view().nesting });
+            patch({ nesting: !deps.view().nesting, ...LINES_CLEARED });
             return;
         }
         const listed = deps.listed();
         const next = { ...listed, [which]: !listed[which] };
         client.fs.relist(next);
-        patch(next);
+        patch({ ...next, ...LINES_CLEARED });
     }
 
     /** Open or close one section, or the workspace header's roots. */
     function toggleSection(id: string): void {
-        patch(sectionFlipped(deps.view(), id));
+        patch({ ...sectionFlipped(deps.view(), id), ...LINES_CLEARED });
     }
 
-    /** Close every folder under the roots the tree draws, leaving each root's own row open. */
+    /**
+     * Close every folder under the roots the tree draws, leaving each root's own row open; with
+     * none open to close, the roots close too (place.ts's collapsedAll).
+     */
     function collapseAll(): void {
-        const from = deps.top()?.path;
         patch({
-            expanded: deps
-                .shownRoots()
-                .reduce((kept, root) => collapseRoot(kept, root.key, from), deps.view().expanded)
+            expanded: collapsedAll(
+                deps.view().expanded,
+                deps.shownRoots().map((root) => root.key),
+                deps.top()?.path,
+                deps.filtering()
+            ),
+            ...LINES_CLEARED
         });
     }
 
@@ -107,7 +119,7 @@ export function tabActions(deps: TabActionsDeps) {
         const view = deps.view();
         const into = newItemFolder(deps.rows(), view.selected, deps.shownRoots());
         if (into === null) return;
-        patch({ ...namingStarted(view.expanded, mode, into), note: '' });
+        patch({ ...namingStarted(view.expanded, mode, into), ...LINES_CLEARED });
     }
 
     return {

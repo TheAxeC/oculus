@@ -15,12 +15,11 @@ import {
     settleRun
 } from '../../../../../src/lib/server/machine/runs/schedules/record.ts';
 import type { ScheduleRun } from '../../../../../src/lib/data/model/index.ts';
-import { fsWrites } from '../../../../../src/lib/server/core/json.ts';
 import { handleSchedules } from '../../../../../src/lib/server/machine/runs/schedules/routes.ts';
 import type { SchedulesWatcher } from '../../../../../src/lib/server/machine/runs/schedules/watch.ts';
 import { pagePost } from '../../../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../../../fixtures/scratch.ts';
-import { entryText, plantSchedules, world } from './schedules-fixture.ts';
+import { entryText, plantSchedules, routeOptions, world } from './schedules-fixture.ts';
 
 const RUN: ScheduleRun = {
     trigger: 'schedule',
@@ -96,13 +95,7 @@ describe('the run record', () => {
                     TOKEN
                 ),
                 TOKEN,
-                {
-                    files: () => w.files,
-                    rootsFor: () => [w.repo],
-                    hubFor: () => w.hub,
-                    writes: fsWrites(),
-                    schedules
-                }
+                routeOptions(w, schedules)
             );
             await vi.advanceTimersByTimeAsync(PAST_THE_WAIT_MS);
             const response = await answered;

@@ -33,6 +33,7 @@ import { isAbsolute, join } from 'node:path';
 import { endWith } from '../core/git/running.ts';
 import { GIT } from '../core/git/run.ts';
 import { inside } from '../core/paths.ts';
+import { words } from '../core/words.ts';
 import {
     NO_TIME_LIMIT,
     classifyFailure,
@@ -67,12 +68,19 @@ export type Outcome = { ok: boolean; output: string; error: string; failure?: Co
 export type Branch = { name: string; upstream: string; current: boolean };
 
 /**
- * Where a command runs: the directory git is pointed at, the mirrors root it must stay under, how
- * git itself is run, and the signal that ends a run when Cancel aborts it. server/git/deposit.ts
- * puts its own runner here so a test can fail one command without a repository in that state;
- * without one the real git below is used.
+ * Where a command runs: the directory git is pointed at, the mirrors root it must stay under, the
+ * text catalog its refusal is worded from, how git itself is run, and the signal that ends a run
+ * when Cancel aborts it. server/git/deposit.ts puts its own runner here so a test can fail one
+ * command without a repository in that state; without one the real git below is used.
  */
-export type Where = { dir: string; mirrors: string; git?: GitRunner; signal?: AbortSignal };
+export type Where = {
+    dir: string;
+    mirrors: string;
+    /** The text catalog the refusal of a directory outside the mirrors folder is worded from. */
+    text: Record<string, string>;
+    git?: GitRunner;
+    signal?: AbortSignal;
+};
 
 /**
  * How `gh` is run. server/git/deposit.ts takes it as an option so a test never runs the real one.
@@ -134,7 +142,7 @@ function git(args: string[], timeout: number, signal?: AbortSignal): Promise<Out
  */
 function run(at: Where, args: string[], timeout: number = TIMEOUT_MS): Promise<Outcome> {
     if (!underMirrors(at.dir, at.mirrors)) {
-        return Promise.resolve(failed('that directory is not a deposit mirror'));
+        return Promise.resolve(failed(words(at.text, 'server.deposit.not_a_mirror')));
     }
     const argv = ['-C', at.dir, ...args];
     return (at.git ?? git)(argv, timeout, at.signal);

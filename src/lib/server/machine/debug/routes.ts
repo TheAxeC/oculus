@@ -214,9 +214,9 @@ export async function handleDebugPost(
     token: string,
     options: DebugRouteOptions
 ): Promise<Response> {
-    const read = await tokenedBody(request, token, { headers: NO_STORE });
-    if (read instanceof Response) return read;
     const catalog = textCatalog(options.configFor());
+    const read = await tokenedBody(request, token, { headers: NO_STORE, text: () => catalog });
+    if (read instanceof Response) return read;
     const parsed = bodyShape.safeParse(read.body);
     if (!parsed.success) return refuse(words(catalog, 'server.debug.bad_action'));
     const body = parsed.data;

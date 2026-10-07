@@ -9,10 +9,9 @@
 // The merge group keeps its own controls and gets no menu. Discard Changes on an untracked path is
 // not a restore, which git has no form for: the path goes to the Trash (`trashUntracked`) behind
 // the question VS Code asks, and a tracked path is restored as before. Open File (HEAD) offers the
-// version a Staged row compares against, and the index's for a Changes row; an untracked path has
-// neither. Compare with Workspace is offered on a linked worktree's rows and is a read. While a
-// write is in flight on the repository its controls are disabled, so the menus offer no write
-// either.
+// version HEAD holds, for a Staged row and a Changes row alike; an untracked path has none. Compare
+// with Workspace is offered on a linked worktree's rows and is a read. While a write is in flight
+// on the repository its controls are disabled, so the menus offer no write either.
 //
 // The items are pure functions of the group, so which items a row offers is asserted without a DOM,
 // and the words come in as `t` so every label is a catalog key.
@@ -222,7 +221,7 @@ export type ChangeDeps = {
 };
 
 /** Ask before throwing one path's change away, as the row's Discard control asks. */
-export function askDiscard(
+function askDiscard(
     root: string,
     path: string,
     deps: Pick<ChangeDeps, 'ask' | 'discard'>,
@@ -230,6 +229,31 @@ export function askDiscard(
 ): void {
     deps.ask(t('git.discard_confirm', path), t('git.discard_detail'), () => {
         deps.discard(root, path);
+    });
+}
+
+/**
+ * Ask before throwing away the changes to some paths, as the row's Discard control asks: the
+ * question of one path when there is one, the question of Discard All Changes with the count when
+ * there are several.
+ */
+export function askDiscardPaths(
+    root: string,
+    paths: readonly string[],
+    deps: Pick<FolderDeps, 'ask' | 'discardPaths'>,
+    t: Words
+): void {
+    if (paths.length === 1) {
+        askDiscard(
+            root,
+            paths[0],
+            { ask: deps.ask, discard: (at, path) => deps.discardPaths(at, [path]) },
+            t
+        );
+        return;
+    }
+    deps.ask(t('git.discard_all_confirm', paths.length), t('git.discard_detail'), () => {
+        deps.discardPaths(root, paths);
     });
 }
 

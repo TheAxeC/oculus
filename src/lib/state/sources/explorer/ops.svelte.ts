@@ -170,6 +170,12 @@ export type ExplorerStore = {
      */
     addFolders: () => Promise<FoldersAdded>;
     /**
+     * Whether the page's request for the folder panel is out. While it is, Add Folder to Workspace
+     * and Open Folder are disabled where they are drawn, the Files view's message line says so, and
+     * a call of either does nothing instead of asking for a second panel.
+     */
+    panelOpen: () => boolean;
+    /**
      * Open Folder: open the folder panel and show its first folder as a Files tab rooted at it
      * when a served root holds it; a folder outside every root is said on the page's Files tab,
      * which offers Add Folder to Workspace.
@@ -586,13 +592,22 @@ export function createExplorer(
         return answer;
     }
 
+    /** Whether the request for the folder panel is out. */
+    let panel = $state(false);
+
     /** Open the folder panel and read what it came to. */
     async function pick(): Promise<ReturnType<typeof pickedOf>> {
-        const posted = await writes.postCommand(PICK_PATH, {});
-        return pickedOf(posted.body, posted.failed);
+        panel = true;
+        try {
+            const posted = await writes.postCommand(PICK_PATH, {});
+            return pickedOf(posted.body, posted.failed);
+        } finally {
+            panel = false;
+        }
     }
 
     async function addFolders(): Promise<FoldersAdded> {
+        if (panel) return { ok: true, added: 0, skipped: [], refused: '' };
         const picked = await pick();
         if (!picked.ok) return { ok: false, picker: picked.error };
         const current = fs.workspaces();
@@ -609,6 +624,7 @@ export function createExplorer(
     }
 
     async function openFolder(): Promise<FolderOpened> {
+        if (panel) return { ok: true, choice: { kind: 'none' } };
         const picked = await pick();
         if (!picked.ok) return { ok: false, picker: picked.error };
         const current = fs.workspaces();
@@ -647,6 +663,7 @@ export function createExplorer(
         replace,
         lspEdit,
         addFolders,
+        panelOpen: () => panel,
         openFolder
     };
 }

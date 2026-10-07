@@ -204,7 +204,8 @@ export function prunedCollapsed(
 
 /**
  * The change groups in the order they are drawn, with the entries each holds: Merge Changes first,
- * as VS Code draws it, then staged, changed and untracked.
+ * as VS Code draws it, then staged, changed and untracked. Only Changes is drawn while it holds no
+ * entry.
  */
 export function changeGroups(git: GitState): { id: string; entries: GitEntry[] }[] {
     const groups = [
@@ -213,10 +214,9 @@ export function changeGroups(git: GitState): { id: string; entries: GitEntry[] }
         { id: 'changed', entries: git.unstaged },
         { id: 'untracked', entries: git.untracked }
     ];
-    // An empty merge or staged group says nothing a reader acts on, so it is not drawn.
-    return groups.filter(
-        (group) => (group.id !== 'staged' && group.id !== 'merge') || group.entries.length > 0
-    );
+    // An empty merge, staged or untracked group says nothing a reader acts on, so it is not drawn;
+    // Changes keeps its head with no rows, as VS Code's does.
+    return groups.filter((group) => group.id === 'changed' || group.entries.length > 0);
 }
 
 /**

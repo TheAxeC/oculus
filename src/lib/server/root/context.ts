@@ -58,7 +58,7 @@ import { RateLimiter, type HookTarget } from './hooks.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { defaultApprovalsPath } from '../machine/approvals/approvals.ts';
 import { defaultWorkspacesPath, ignoredCache } from '../files/fs.ts';
-import { pickerState } from '../files/fs/picker.ts';
+import { closePicker, pickerState } from '../files/fs/picker.ts';
 import { submitState } from '../machine/hpc/submit.ts';
 import { fsWrites } from '../core/json.ts';
 import { createRunningGit } from '../core/git/running.ts';
@@ -104,6 +104,7 @@ import { watchApps, type AppsWatcher, type AppsWatchOptions } from './watch/apps
 import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
 import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
 import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
+import { startAutofetch, startGit } from './watch/git-start.ts';
 import {
     WATCHERS,
     changedKeys,
@@ -323,20 +324,9 @@ export function createServerContext(
             terminals,
             hooks: store
         });
-    // Every root the file browser serves is on the `git` channel, so the Repositories view is over
-    // the repositories the reader configured and not only the ones a session is working in. The
-    // configuration is read at the call and not taken from the copy above, so a root added to
-    // sources.yml while the server runs is watched when the config push follows the save.
-    const startGit = (): GitWatcher =>
-        make.watchGit(hub, {
-            always: local.hub,
-            roots: () => repositoryRoots({ config: make.loadConfig(engine).config, engine, local }),
-            workspacesFile: local.workspaces ?? defaultWorkspacesPath()
-        });
-    // The timer reads the `config` and `git` channels, so it is started after the git watcher has
-    // its roots, and re-reads a root's state through the git watcher in force after each fetch.
-    const startAutofetch = (): AutofetchWatcher =>
-        make.watchAutofetch(hub, { refresh: (root) => owned().git.refresh(root) });
+    const startGitWatcher = (): GitWatcher => startGit(make, hub, engine, local);
+    const startAutofetchWatcher = (): AutofetchWatcher =>
+        startAutofetch(make, hub, () => owned().git);
     // The reader's own bookmarks lie under no root, so the git watcher's handles say nothing about
     // them: this one carries a bookmark written outside oculus to every open page.
     const startBookmarks = (): Watcher =>
@@ -393,8 +383,8 @@ export function createServerContext(
     );
     const usageRefresh = startUsageRefresh();
     const usage = startUsage({ sessions, usageRefresh });
-    const git = startGit();
-    const autofetch = startAutofetch();
+    const git = startGitWatcher();
+    const autofetch = startAutofetchWatcher();
     const bookmarks = startBookmarks();
     const schedules = startSchedules();
     const hostWords = hostWordsOf(config);
@@ -526,6 +516,7 @@ export function createServerContext(
             terminals.close();
             followed.close();
             debug.close();
+            closePicker(context.folderPicker);
             void relay.close();
         }
     };
@@ -545,10 +536,10 @@ export function createServerContext(
             held.usage = startUsage(held);
         },
         git: (held) => {
-            held.git = startGit();
+            held.git = startGitWatcher();
         },
         autofetch: (held) => {
-            held.autofetch = startAutofetch();
+            held.autofetch = startAutofetchWatcher();
         },
         bookmarks: (held) => {
             held.bookmarks = startBookmarks();

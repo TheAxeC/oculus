@@ -8,12 +8,13 @@
 // client state's query client by its root and folder.
 //
 // The deck is read by the server from files and from the portfolio, so three things make a held
-// answer stale: a slide file or `present.yml` written under a watched root (the `files` channel), a
-// manifest changed, which moves a chip or a name on a card (the `portfolio` channel), and a colour
-// or tag tone changed in the configuration (the `config` channel, which carries `defaults`). Each
-// new version marks every held deck, and the next read asks again from a tab that is shown while
-// what is held keeps drawing, so a slide saved in an editor reaches the open pane at the next push.
-// The request carries the page's token, as the search does.
+// answer stale: a slide file or `present.yml` written under a watched root (the `files` channel,
+// for a message that names the folder of a deck file or names none), a manifest changed, which
+// moves a chip or a name on a card (the `portfolio` channel), and a colour or tag tone changed in
+// the configuration (the `config` channel, which carries `defaults`). Each new version marks every
+// held deck, and the next read asks again from a tab that is shown while what is held keeps
+// drawing, so a slide saved in an editor reaches the open pane at the next push. The request
+// carries the page's token, as the search does.
 //
 // Where a reader is in the deck is not here. It belongs to the pane, in the instance state of
 // state/workbench/ui.svelte.ts, so two Present panes hold two positions, a pane is on its slide
@@ -27,10 +28,12 @@
 
 import { SvelteMap } from 'svelte/reactivity';
 import { str } from '../../data/helpers/guards.ts';
+import { joinPath } from '../../data/helpers/files/paths.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
 import type { Deck } from '../../data/model/index.ts';
 import { readAnswer } from '../sources/fs-transport.ts';
-import { HUB_ROOT } from '../sources/fs.ts';
+import { HUB_ROOT, type FsRoot } from '../sources/fs.ts';
+import { filesNamed, folderNamed } from '../shared/answers/files-named.ts';
 import type { EntitiesStore, Queries } from '../shared/stores/shapes.ts';
 import {
     audienceAddress,
@@ -174,15 +177,59 @@ export function readDeck(ref: DeckRef, token: string): Promise<Deck | string> {
 export function createPresent(
     entities: EntitiesStore,
     queries: Queries,
-    token: () => string
+    token: () => string,
+    roots: () => FsRoot[]
 ): PresentStore {
     const heard: Record<string, number | undefined> = {};
 
+    /**
+     * Whether a `files` message concerns one held deck: it names the deck's folder, or the folder
+     * of a file a slide is read from. A deck whose root the page has no directory for cannot be
+     * placed, so it is concerned.
+     */
+    function deckConcerned(
+        held: { ref: DeckRef; data: DeckAnswer | undefined },
+        root: string,
+        folders: string[] | undefined
+    ): boolean {
+        const dirOf = (key: string): string | undefined =>
+            roots().find((one) => one.key === key)?.dir;
+        const base = dirOf(held.ref.root);
+        if (base === undefined) return true;
+        if (folderNamed(root, folders, joinPath(base, held.ref.path))) return true;
+        for (const slide of held.data?.deck?.slides ?? []) {
+            const from = slide.source;
+            const dir = from === undefined ? undefined : dirOf(from.root);
+            if (from !== undefined && dir !== undefined) {
+                if (filesNamed(root, folders, joinPath(dir, from.path))) return true;
+            }
+        }
+        return false;
+    }
+
     entities.afterReceive((message) => {
         if (!['files', 'portfolio', 'config'].includes(message.channel)) return;
-        if (message.version === heard[message.channel]) return;
+        const before = heard[message.channel];
+        if (message.version === before) return;
+        const gap = before === undefined || message.version !== before + 1;
         heard[message.channel] = message.version;
-        queries.mark([KIND], 'wait');
+        if (message.channel !== 'files' || gap) {
+            queries.mark([KIND], 'wait');
+            return;
+        }
+        const payload = entities.payloadOf(message, 'files');
+        if (payload === null) {
+            queries.mark([KIND], 'wait');
+            return;
+        }
+        if (payload.root === '') return;
+        for (const one of queries.entries<DeckAnswer>([KIND])) {
+            const [, root, path] = one.key;
+            const ref = { root: String(root), path: String(path) };
+            if (deckConcerned({ ref, data: one.data }, payload.root, payload.folders)) {
+                queries.mark(one.key, 'wait');
+            }
+        }
     });
 
     /** The deck a reference names. The first call asks the server; what is held keeps showing. */

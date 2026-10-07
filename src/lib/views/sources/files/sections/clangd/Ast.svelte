@@ -21,7 +21,7 @@
     /** One row of the tree: a node, the key it is told apart by and how deep it is. */
     type Row = { key: string; node: AstNode; depth: number; parent: string | null };
 
-    let { open, ontoggle, tab }: ClangdProps = $props();
+    let { open, ontoggle, tab, move }: ClangdProps = $props();
 
     const { clangd, editorStatus } = useState();
 
@@ -52,6 +52,7 @@
 {#if answer !== null}
     <div class="ast" data-fs-ast>
         <ClangdSection
+            {move}
             label={t('files.ast')}
             {keyRows}
             count={nodes.length}

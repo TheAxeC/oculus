@@ -202,6 +202,7 @@
                     ongroup={groupAct}
                     onopen={(path: string, kind: string) =>
                         repositories.openChange(workspace, kind, path, record?.id)}
+                    onopenfile={(path: string) => void repositories.openFile(workspace, path)}
                     oncancel={repositories.suggesting(workspace)
                         ? undefined
                         : () => void repositories.cancel(workspace)}

@@ -324,7 +324,7 @@ A map from a repository's folder to its state. Every state is:
 
 #### `files`
 
-`{ root: text, bookmarks?: boolean }`. `root` is the folder of the root that changed. A notice with `bookmarks` names no root: it says the reader's bookmarks file changed.
+`{ root: text, folders?: list of text, bookmarks?: boolean, workspaces?: boolean }`. `root` is the folder of the root that changed. `folders` names the folders of that root the writes landed in, each relative to the root and `''` for the root's own top; a notice without it concerns the whole root, and one whose list is empty concerns nothing. A notice with `bookmarks` names no root: it says the reader's bookmarks file changed. A notice with `workspaces` names no root either: it says the roots the file browser serves may have changed. An app of a root receives only the notices whose `root` is its root's folder, and none whose `folders` list is empty; the bookmarks and workspaces notices reach machine apps only.
 
 #### `inbox`
 

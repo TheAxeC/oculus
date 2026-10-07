@@ -70,6 +70,22 @@ export function createTabFile(deps: TabFileDeps) {
         get blameable() {
             return inRepo !== null && deps.read();
         },
+        /**
+         * What the repository says that a HEAD or index tab shows: HEAD's commit for a HEAD tab,
+         * and the file's staged and unstaged entries for an index tab; the empty text for any other
+         * tab. A change of it is a new version for the tab to read.
+         */
+        get headSignature(): string {
+            const stage = deps.head();
+            const state = inRepo === null ? null : deps.gitFor(inRepo.root);
+            if (stage === undefined || state === null) return '';
+            if (stage === 'head') return state.log[0]?.hash ?? '';
+            const path = deps.path();
+            return [
+                ...state.staged.filter((one) => one.path === path).map((one) => `s${one.status}`),
+                ...state.unstaged.filter((one) => one.path === path).map((one) => `u${one.status}`)
+            ].join(',');
+        },
         /** The repository's state, whose every move is a new read of the gutter. */
         get repoState() {
             return inRepo === null ? null : deps.gitFor(inRepo.root);

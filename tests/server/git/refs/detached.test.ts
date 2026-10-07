@@ -5,10 +5,13 @@
 // (tests/routes/git/git.test.ts).
 // @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { switchDetached } from '../../../../src/lib/server/git/git-write.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import { commitFile, git, isolateGit, scratchRepo } from './repo.ts';
+import { TEXT } from '../../text.ts';
 
 isolateGit();
 
@@ -22,10 +25,19 @@ function twoCommits(): { root: string; first: string; second: string } {
 
 describe('switchDetached', () => {
     it('detaches HEAD at a hash on a clean tree', async () => {
-        const { root, first } = twoCommits();
-        const answer = await switchDetached(root, first, [root]);
-        expect(answer.ok).toBe(true);
-        expect(git(root, 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe('HEAD');
-        expect(git(root, 'rev-parse', 'HEAD').trim()).toBe(first);
+        for (const [row, untracked] of [
+            ['a clean tree', null],
+            ['an untracked file only, which stays', 'untracked.txt']
+        ] as const) {
+            const { root, first } = twoCommits();
+            if (untracked !== null) writeFileSync(join(root, untracked), 'carried\n');
+            const answer = await switchDetached(root, first, TEXT, [root]);
+            expect(answer.ok, row).toBe(true);
+            expect(git(root, 'rev-parse', '--abbrev-ref', 'HEAD').trim(), row).toBe('HEAD');
+            expect(git(root, 'rev-parse', 'HEAD').trim(), row).toBe(first);
+            if (untracked !== null) {
+                expect(readFileSync(join(root, untracked), 'utf8'), row).toBe('carried\n');
+            }
+        }
     });
 });

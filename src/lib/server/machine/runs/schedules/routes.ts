@@ -55,6 +55,8 @@ export type SchedulesRouteOptions = {
     rootsFor: () => string[];
     /** The hub folder, read at the request. */
     hubFor: () => string;
+    /** The text catalog the token refusal is worded from, read when a refusal is made. */
+    text: () => Record<string, string>;
     /** The write chain the schedules file and the record are written behind. */
     writes: FsWrites;
     /** The change log a write is recorded in. */
@@ -246,7 +248,7 @@ export async function handleSchedules(
     token: string,
     options: SchedulesRouteOptions
 ): Promise<Response> {
-    const read = await tokenedBody(request, token, { headers: NO_STORE });
+    const read = await tokenedBody(request, token, { headers: NO_STORE, text: options.text });
     if (read instanceof Response) return read;
     const body = bodyShape.safeParse(read.body);
     if (!body.success) {

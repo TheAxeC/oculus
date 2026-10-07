@@ -51,8 +51,10 @@ export type AutofetchOptions = {
     now?: () => number;
     /** Milliseconds between two looks. */
     tick?: number;
-    /** Re-read one root's git state at once, after a fetch has changed its refs. */
-    refresh: (root: string) => void;
+    /**
+     * Re-read one root's git state at once, after a fetch has changed its refs; settles when done.
+     */
+    refresh: (root: string) => Promise<void>;
     /** The remotes of a repository, one name a line; `git remote` when absent. */
     remotes?: (root: string) => Promise<Answer>;
     /** The fetch of a repository; an unattended `git fetch --prune` when absent. */
@@ -110,7 +112,7 @@ function hasRemote(output: string): boolean {
  */
 async function unattendedFetch(root: string): Promise<Answer> {
     const named = (process.env.GIT_SSH_COMMAND ?? '') !== '';
-    const configured = named ? '' : sshCommand(root);
+    const configured = named ? '' : await sshCommand(root);
     if (configured === null) throw new Error(`core.sshCommand could not be read: ${UNREADABLE}`);
     return fetchIn(root, {
         unattended: true,
@@ -203,7 +205,7 @@ export function watchAutofetch(hub: Hub, options: AutofetchOptions): AutofetchWa
             const fetched = await fetch(root);
             if (stopped()) return;
             if (!fetched.ok) log(`autofetch: ${root}: ${fetched.error}`);
-            options.refresh(root);
+            await options.refresh(root);
         } catch (error) {
             if (!stopped()) log(`autofetch: ${root}: ${reason(error)}`);
         }

@@ -9,6 +9,7 @@
 import { describe, expect } from 'vitest';
 import { it, test } from '../../fixtures/scratch.ts';
 import { handleTerminal, handleTerminalList } from '../../../src/lib/server/machine/pty/routes.ts';
+import { engineDir } from '../../../src/lib/data/sources/config.ts';
 import { record } from '../../fixtures/sessions-fixture.ts';
 import {
     HOST,
@@ -114,7 +115,7 @@ describe('POST /api/terminal, the resume action', () => {
             TOKEN,
             {
                 engine: task.engine,
-                configFor: configOf(task.engine),
+                configFor: configOf(engineDir()),
                 run: driver.run,
                 recordFor: source(record(SESSION, { cwd: HERE }))
             }

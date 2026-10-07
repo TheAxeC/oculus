@@ -8,6 +8,10 @@
 // original before anything is written. A named workspace keeps its folders in workspaces.json
 // instead, through POST /api/fs.
 //
+// The roots are put in a new order by the same rewrite: `order` names every key the list holds
+// once. A rewrite that would drop a line of the list the reader wrote (a comment between two
+// entries, an entry that is no key and dir pair) is refused `invalid` and writes nothing.
+//
 // A new root is filed under a key made from the folder's name, taken against every key in force
 // (the hub, the engine's config folder, the configured roots and every saved workspace's roots), so
 // switching workspaces never meets a second root under one key. Its dir is written as `~/...` when
@@ -52,7 +56,15 @@ export type RootsHeld = {
  */
 export type RootsOutcome =
     | { changed: string[]; refused: []; records?: ChangeRecord[]; id?: string }
-    | { error: FolderRefusal | 'root-fixed' | 'no-such-root' | 'invalid' | 'unwritable' };
+    | {
+          error:
+              | FolderRefusal
+              | 'root-fixed'
+              | 'no-such-root'
+              | 'roots-changed'
+              | 'invalid'
+              | 'unwritable';
+      };
 
 /** One entry of the list: a key and the dir as the file writes it. */
 export type RootItem = { key: string; dir: string };
@@ -105,6 +117,32 @@ function writtenItems(source: string): Map<string, string> {
     return kept;
 }
 
+/**
+ * Whether the source lines of the list hold nothing but its entries: what lies in the list's span
+ * outside the entries' own text is dashes, list brackets, commas and white space. A comment line
+ * between two entries, a comment after an entry and an entry that is no key and dir pair are
+ * something else, and a rewrite of the list would lose them.
+ */
+function onlyEntries(source: string): boolean {
+    const root = parseDocument(source).contents;
+    if (!isYamlMap(root)) return true;
+    const list = root.get(ROOTS, true);
+    if (!isSeq(list)) return true;
+    const span = (list as { range?: [number, number, number] | null }).range;
+    if (span === undefined || span === null) return true;
+    let rest = '';
+    let at = span[0];
+    for (const node of list.items) {
+        const range = (node as { range?: [number, number, number] | null } | null)?.range;
+        const item = itemShape.safeParse((node as { toJSON?: () => unknown } | null)?.toJSON?.());
+        if (range === undefined || range === null || !item.success) return false;
+        rest += source.slice(at, range[0]);
+        at = range[1];
+    }
+    rest += source.slice(at, span[1]);
+    return /^[\s,[\]-]*$/.test(rest);
+}
+
 /** A dir written plainly where that reads back as itself, and quoted otherwise. */
 function dirText(dir: string): string {
     return /^[A-Za-z0-9_./~-]+$/.test(dir) && dir !== '~' ? dir : JSON.stringify(dir);
@@ -135,7 +173,8 @@ function kept(source: string, edited: string, wanted: RootItem[]): boolean {
 
 /**
  * Write the list as `wanted`. Entries already in the file keep their text. A list the file already
- * holds writes nothing and answers so.
+ * holds writes nothing and answers so, and a list that holds anything but key and dir entries (a
+ * comment line between two of them) is refused `invalid` and left as it is.
  */
 export function writeRoots(file: string, wanted: RootItem[], id?: string): RootsOutcome {
     let source: string;
@@ -144,6 +183,7 @@ export function writeRoots(file: string, wanted: RootItem[], id?: string): Roots
     } catch {
         return { error: 'unwritable' };
     }
+    if (!onlyEntries(source)) return { error: 'invalid' };
     const before = rootsOf(source);
     const written = writtenItems(source);
     const items = wanted.map((one) => {
@@ -189,6 +229,24 @@ export function removeRootFrom(file: string, key: string): RootsOutcome {
     return writeRoots(
         file,
         list.filter((one) => one.key !== key)
+    );
+}
+
+/**
+ * Put the list's roots in the order `keys` names, which must name each listed key exactly once:
+ * a list that has changed since the caller read it is refused `roots-changed` and written nowhere.
+ */
+export function orderRootsIn(file: string, keys: string[]): RootsOutcome {
+    const list = rootsNow(file);
+    if (list === null) return { error: 'unwritable' };
+    const held = new Set(list.map((one) => one.key));
+    if (keys.length !== held.size || new Set(keys).size !== keys.length) {
+        return { error: 'roots-changed' };
+    }
+    if (!keys.every((key) => held.has(key))) return { error: 'roots-changed' };
+    return writeRoots(
+        file,
+        keys.flatMap((key) => list.filter((one) => one.key === key))
     );
 }
 

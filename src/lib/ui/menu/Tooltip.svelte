@@ -327,7 +327,8 @@
         color: var(--ink-txt, var(--ink));
         font-size: var(--fs-xs);
         line-height: 1.3;
-        white-space: normal;
+        /* A caller's line break is a line of the words: a path and what a press opens, a list. */
+        white-space: pre-line;
         pointer-events: none;
     }
 

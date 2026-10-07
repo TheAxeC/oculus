@@ -7,6 +7,7 @@ import { describe, expect, vi } from 'vitest';
 import { handleOpen } from '../../../src/lib/server/files/open.ts';
 import { TOKEN, checkedIn, fixture, request, scratch } from './open-fixture.ts';
 import { it } from '../../fixtures/scratch.ts';
+import { TEXT } from '../../server/text.ts';
 
 describe('the open endpoint', () => {
     it('requires the write token', async () => {
@@ -14,6 +15,7 @@ describe('the open endpoint', () => {
         const response = await handleOpen(
             request({ path: folder }, ''),
             TOKEN,
+            () => TEXT,
             roots,
             checkedIn,
             vi.fn()
@@ -30,6 +32,7 @@ describe('the open endpoint', () => {
         const response = await handleOpen(
             request({ path: outside }),
             TOKEN,
+            () => TEXT,
             roots,
             checkedIn,
             vi.fn()

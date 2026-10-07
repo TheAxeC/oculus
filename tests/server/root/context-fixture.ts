@@ -81,7 +81,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         relay,
         debug,
         hooks,
-        git: { refresh: noop, close: noop },
+        git: { refresh: () => Promise.resolve(), close: noop },
         hpc: { refresh: () => Promise.resolve(), set: noop, close: noop },
         calendar: {
             refresh: () => Promise.resolve(),

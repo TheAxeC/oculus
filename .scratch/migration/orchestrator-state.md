@@ -24,23 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:   # steps in flight, up to six (Z632)
-- step: X3e
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a92e4feff93b8e90c (builder, launched 2026-10-07)
-  worktree: .agents/worktrees/X3e
-  base: e1a75b8e1
-  launched: 2026-10-07
-  report: agents/reviews/X3e-report.md
-  builder_usage: 242,603 tokens, 1,064 tool uses, 247.4 min; round 1 (resumed after the crash): 327,785 tokens, 127 tool uses, 47.3 min
-  reviewer_report: agents/reviews/X3e-refuter.md (a428b4ea21e9a98c7, claude-opus-5-5, 130,768 tokens, 214 tool uses, 40.0 min); over round 1: ad7f07abd9fb019bb, claude-opus-5-5, 366,125 tokens, 88 tool uses, 17.9 min
-  brief_check: agents/reviews/X3e-brief-check.md (the brief corrected since from agents/reviews/X3e-premise-recheck-4.md)
-  fixtures: $TMPDIR/x3e-red (verify 12: a detached worktree of the hub at the base, four clones, a scratch hub with two worktrees, the harnesses), removed at landing
-  shared_paths: with D15, docs/views.md and DESIGN.md at different lines, simple; with D11, server/root/context.ts (D11 moves the ServerContext type to server/root/process/, X3e moves startGit to server/root/watch/, Z705 (I1); the folderPicker doc and one close() line each carried by the second landing), Source.svelte (one dependency line), model-sessions.ts, payloads.ts, commands.svelte.ts, options.yml, glyphs.yml, icons.yml, server.yml, app.yml, HELP.md, DESIGN.md, docs/views.md and docs/configuration.md at different lines; each merge simple, judged on both diffs at the second landing
-  landing: not-started
-  round: 1 (agents/briefs/X3e-round1.md; sent over the round-0 tree whose `git diff e1a75b8e1 | shasum` begins 9c96cab3ae20)
+dispatch: []   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -153,7 +137,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 
-- Open item 4 (2026-10-07, D11's look): Debug Anyway pressed at about the moment a 15 s `before` command ended gave no launch, no question and no notice at the look, and the session stayed ended. Not reproduced: nine runs on the scratch oculus each gave one launch POST answered ok (`plan.md`, D11's look bullet). Reading `checkWaiting` and the notice's action in `debug.svelte.ts` finds no path where both skip the launch. Options: (a) leave it until it is seen again, with the scratch harness kept in the D11 look notes; (b) a diagnosis of its own. Recommended (a): no cause is known to fix and a diagnosis costs an agent run on a symptom nine runs did not show; (b) is the costlier option, not the lazy one.
+
+- Open item 5 (2026-10-08, X3e's landing): the root drag of the Files tree has no guarded entry, so the test written for S-R1 (`tests/views/shared/explorer/root-drag.test.ts`: a drop over a tree whose own drag never ended, from a drag of another tab, writes no order; the tree's own drag still drops) is not landed and is kept as `agents/reviews/X3e-root-drag-test.patch`. A wrong drop writes the order of the roots into `sources.yml` or the workspace in force, a wrong configuration written. Options: (a) a new entry G57, "A root dropped on a Files tree reorders only that tree's roots: a drag from another tab, or one whose start was in another tree, writes no order", Code `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts`, Test the patch's file with its two titles, landed in the next step that touches the tree (D28); (b) no entry, the fix kept and the look the check, as for every view. Recommended (a): the failure writes the reader's configuration, the kind of cost spec.md names for a test, and the test runs in well under a second; (b) is the lazy option, since it leaves a configuration write with no check that runs.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -174,6 +159,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The fixture exports the four test sweeps leave unused (T1c's report names `ClientState` in `tests/fixtures/client.ts`, `sweepingOnError` in `scratch.ts` and `gitPayload` in `sessions-fixture.ts`; T1b, T1d and T1e name theirs): removed by the orchestrator at the landing of the last of T1b to T1e, after `sh utils/unused-exports.sh` and a grep of each name over `tests` and `src`, since each is unused only once all four have landed (T1e's brief, item 6).
 
 ## Closed items
+- 2026-10-07: open item 4 (Debug Anyway as the `before` command ends gave no launch at D11's look, not reproduced in nine runs) ruled (a) by Axel: left until it is seen again.
 - 2026-10-07: open item 1 (D11 case 40, Step Into in cathedra's rite_dap) ruled (a) by Axel as Z710: D11 stays as landed and the fault is fixed in cathedra as a step of its own; its description is `~/workspace/cathedra/.scratch/38-4-what-the-split-left/bug.md`.
 - 2026-10-07: open item 2 (`rite_dap_bin` for D11's look) closed: Axel set `rite_dap_bin: ~/workspace/cathedra/bin/debug/rite_dap` in `local.yml`.
 - 2026-10-07: open item 3 (the Vite dev server on port 8790 stale after `npm ci`) closed: Axel restarted the server; the page on 8790 loads again with its status items.
@@ -226,6 +212,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 01:55. X3e landed (the Files view's lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop; booking in plan.md; `agents/reviews/X3e-landing.md`). Axel's list of 21:45 is done: items 9 and 10 with it. The landing gate ran green in `.agents/worktrees/gate`; the look ran on the 8796 scratch oculus; the defect it found (a repository unreadable for good after a start) diagnosed by a9c92f106b8cabbf3 and fixed at landing. Open item 5 (the root drag's guarded entry). Nothing in flight. Next, at Axel's order to go on: the queue, D28 first (it waited for X3e), then M8 once its premises are checked again on main.
 - 2026-10-07 22:45. Axel's list: items 1 to 4, 6 and 7 done (bug.md; D11's look fixes on main with the gate's checks); item 5 not reproduced, open item 4. Next: item 8 (the 8796 server and its worktree), then X3e (items 9 and 10). Axel asked for a report after item 7.
 - 2026-10-07 21:45. Axel's work list (green light; report and wait when done and X3e has landed, unless he says to go on): (1) both rite_dap faults (a breakpoint set while paused stays pending; no `breakpoint` event when a pending one binds) added to cathedra's `.scratch/38-4-what-the-split-left/bug.md`; (2) D11: the Debug Console's suggestion list placed under its input; (3) D11: the paused frame opened once the served roots have loaded after a reload; (4) D11: Start falls back to a `.rite` tab on screen; (5) D11: Debug Anyway at the command's end reproduced and fixed; (6) D11: the adapter's `breakpoint` event handled; (7) D11: gate in `.agents/worktrees/gate`, checked on the 8796 scratch oculus, landed with the four look fixes already in the gate (paused arrow, hint over a breakpoint, status opener hover, the second tab's repost); (8) the 8796 server stopped and its worktree removed; (9) X3e: S-R1 and T-R1 fixed, G41 in guarded.md and the S-R2 and P-R1 records corrected; (10) X3e: verify 12a and 12b, gate, look on TEST, land. Axel ruled (d): the four unknown causes fixed in this session without the diagnose skill. The two D11 diagnosis agents (a7623ed3f99278c82, a4457988faeb61026) were stopped by Axel with no result.
 - 2026-10-07 20:31. VS Code crashed at about 20:00 and ended the session with X3e's builder in round 1, partway: thirteen files changed, the report not rewritten, the `$TMPDIR/x3e-red` fixtures gone. The builder was resumed on its agent id with that state. D11's look on TEST not done. D15's and D11's landing gates ran in main's checkout, against Z492, and D11's `npm ci` ran in main's `node_modules`, which left the 8790 dev server stale until Axel restarted it; every later landing runs the gate in `.agents/worktrees/gate`. No open item.

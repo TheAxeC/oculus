@@ -49,6 +49,7 @@
         onresolve,
         ongroup,
         onopen,
+        onopenfile,
         oncancel
     }: Props = $props();
 </script>
@@ -90,6 +91,7 @@
         {onresolve}
         {ongroup}
         {onopen}
+        {onopenfile}
         beside={mark}
         marked={(entry: GitEntry) => shared(entry.path).length > 0}
     />

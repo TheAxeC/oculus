@@ -363,7 +363,10 @@ export function createClientState(
         end: terminals.endTerminals
     });
     const agents = withQueries('agents', createAgents(queries));
-    const files = withQueries('files', createFiles(entities, queries));
+    const files = withQueries(
+        'files',
+        createFiles(entities, queries, () => selectors.hubRoot())
+    );
     // The file browser's bookmark forms are the fs store's to close: it is what learns that a
     // bookmark has left the file, and a form over one that is gone has nothing to draw and nothing
     // to save into. Which file browsers there are, what each one has open and how one is moved are
@@ -465,7 +468,10 @@ export function createClientState(
     const audit = createAudit(entities);
     const memories = withQueries('memories', createMemories(queries));
     const lines = withQueries('lines', createLines(queries));
-    const present = withQueries('present', createPresent(entities, queries, writes.writeToken));
+    const present = withQueries(
+        'present',
+        createPresent(entities, queries, writes.writeToken, fs.roots)
+    );
     // The Source Control views open a repository's file in a source tab by the root the file routes
     // serve it under, and point the Repositories view at a commit through its remembered state.
     const repositories = createRepositories(writes, terminals, layout, {

@@ -28,13 +28,13 @@ import type {
     DebugStatus,
     Terminal
 } from '../../../../data/model/index.ts';
-import { deepestHolding } from '../../../../data/helpers/files/paths.ts';
+import { deepestHolding, joinPath } from '../../../../data/helpers/files/paths.ts';
 import type { EntitiesStore, Queries, WritesStore } from '../../../shared/stores/shapes.ts';
 import { followKey } from '../../../shared/stores/storage-events.ts';
 import { t } from '../../../shared/words/text.ts';
 import type { Outcome } from '../../../sources/explorer/ops.svelte.ts';
 import type { ServedRoot } from '../../../sources/repositories/file-git.ts';
-import { holds } from '../../docs.svelte.ts';
+import { filesNamed } from '../../../shared/answers/files-named.ts';
 import { postDebug, readConsole, readLaunches, type DebugAnswer } from './debug-io.ts';
 import { addConfiguration, LAUNCH_FILE } from './debug-file.ts';
 import { createLists } from './debug-lists.ts';
@@ -230,9 +230,13 @@ export function createDebug(deps: DebugDeps) {
             return;
         }
         if (message.channel === 'files') {
-            const root = entities.payloadOf(message, 'files')?.root ?? '';
+            const payload = entities.payloadOf(message, 'files');
+            const root = payload?.root ?? '';
             for (const one of queries.entries<DebugLaunches>(['debug'])) {
-                if (holds(root, String(one.key[1]))) queries.mark(['debug', one.key[1]], 'replace');
+                const file = joinPath(String(one.key[1]), LAUNCH_FILE);
+                if (filesNamed(root, payload?.folders, file)) {
+                    queries.mark(['debug', one.key[1]], 'replace');
+                }
             }
             return;
         }

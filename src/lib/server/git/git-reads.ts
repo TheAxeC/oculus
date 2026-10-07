@@ -16,7 +16,9 @@
 // without git.
 
 import { permitted } from '../core/paths.ts';
+import { words } from '../core/words.ts';
 import { json } from '@sveltejs/kit';
+import { textCatalog } from '../../data/sources/config.ts';
 import type { DiffAttributes, DiffSides, GitBlameLine } from '../../data/model/index.ts';
 import {
     attributesOf,
@@ -59,6 +61,12 @@ export type FileDiff = { files: DiffSides[]; attributes: DiffAttributes; conflic
 
 /** The reads a GET may be answered by, each the real one when the option is absent. */
 export type ReadOptions = {
+    /**
+     * The request's merged configuration, which holds the text catalog the sentences come from; a
+     * caller that names none words no sentence, and a read that has one to say then fails on the
+     * missing catalog key.
+     */
+    config?: Record<string, unknown>;
     /** Which roots a request may name; the published workspaces and the hub when absent. */
     rootsFor?: () => string[];
     /** One file's diff; the real `git diff` and `show` when absent. */
@@ -66,10 +74,16 @@ export type ReadOptions = {
         root: string,
         path: string,
         staged: boolean,
+        text: Record<string, string>,
         roots: string[]
     ) => Promise<Read<FileDiff>>;
     /** A worktree's diff against its repository's branch; the real one when absent. */
-    worktree?: (root: string, path: string, roots: string[]) => Promise<Read<DiffSides[]>>;
+    worktree?: (
+        root: string,
+        path: string,
+        text: Record<string, string>,
+        roots: string[]
+    ) => Promise<Read<DiffSides[]>>;
     /** The on-demand reads of server/core/git/, by name; the real ones when absent. */
     reads?: Partial<CoreReads>;
 };
@@ -79,7 +93,12 @@ export type CoreReads = {
     graph: typeof graphPage;
     files: typeof commitFiles;
     commit: typeof commitDiff;
-    blame: (root: string, path: string, stage?: HeadStage) => Read<GitBlameLine[]>;
+    blame: (
+        root: string,
+        path: string,
+        text: Record<string, string>,
+        stage?: HeadStage
+    ) => Promise<Read<GitBlameLine[]>>;
     marks: typeof lineMarks;
     sides: typeof mergeSides;
     stash: typeof stashDiff;
@@ -96,8 +115,8 @@ const REAL: CoreReads = {
     graph: graphPage,
     files: commitFiles,
     commit: commitDiff,
-    blame: (root, path, stage) =>
-        stage === undefined ? blameOf(root, path) : blameAt(root, path, stage),
+    blame: (root, path, text, stage) =>
+        stage === undefined ? blameOf(root, path, text) : blameAt(root, path, stage, text),
     marks: lineMarks,
     sides: mergeSides,
     stash: stashDiff,
@@ -113,11 +132,20 @@ const REAL: CoreReads = {
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
 
-const UNKNOWN = { error: 'that directory is not a workspace oculus knows' };
+/** The answer to a root this server has not published. */
+function unknown(text: Record<string, string>): Response {
+    return json(
+        { error: words(text, 'server.git.unknown_directory') },
+        { status: 400, headers: NO_STORE }
+    );
+}
 
 /** The answer to a `stage` that names neither side a file is read at. */
-function notASide(): Response {
-    return json({ error: 'that is not a side of a file' }, { status: 400, headers: NO_STORE });
+function notASide(text: Record<string, string>): Response {
+    return json(
+        { error: words(text, 'server.git.not_a_side') },
+        { status: 400, headers: NO_STORE }
+    );
 }
 
 /** A read of the read-only module, answered as the endpoint answers every read. */
@@ -134,14 +162,15 @@ export async function fileSides(
     root: string,
     path: string,
     staged: boolean,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Read<FileDiff>> {
-    const read = await fileDiff(root, path, staged, roots);
+    const read = await fileDiff(root, path, staged, text, roots);
     if (!read.ok) return { ok: false, error: read.error };
     const before = staged ? 'HEAD:' : read.ours ? ':2:' : ':';
-    const files = sidesOf(root, read.output, before, staged ? ':' : null);
+    const files = await sidesOf(root, read.output, before, staged ? ':' : null, text);
     if (!files.ok) return files;
-    const attributes = attributesOf(root, path);
+    const attributes = await attributesOf(root, path, text);
     if (!attributes.ok) return attributes;
     return {
         ok: true,
@@ -153,15 +182,16 @@ export async function fileSides(
 export async function worktreeSides(
     root: string,
     path: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Read<DiffSides[]>> {
-    const from = await worktreeFrom(root, path, roots);
+    const from = await worktreeFrom(root, path, text, roots);
     if (!from.ok) return { ok: false, error: from.error };
     const read = await worktreeRange(path, from.output);
     if (!read.ok) return { ok: false, error: read.error };
-    const base = mergeBase(path, from.output);
+    const base = await mergeBase(path, from.output, text);
     if (!base.ok) return base;
-    return sidesOf(path, read.output, `${base.value}:`, 'HEAD:');
+    return sidesOf(path, read.output, `${base.value}:`, 'HEAD:', text);
 }
 
 /**
@@ -182,6 +212,7 @@ export async function worktreeSides(
 export async function handleGitGet(request: Request, options: ReadOptions): Promise<Response> {
     const parameters = new URL(request.url).searchParams;
     const roots = (options.rootsFor ?? allowedRoots)();
+    const text = options.config === undefined ? {} : textCatalog(options.config);
     const reads = { ...REAL, ...options.reads };
     const path = parameters.get('path') ?? '';
     const named = (key: string): string | null => {
@@ -191,92 +222,92 @@ export async function handleGitGet(request: Request, options: ReadOptions): Prom
 
     if (parameters.has('diff')) {
         const root = named('diff');
-        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        if (root === null) return unknown(text);
         const staged = parameters.get('staged') === '1';
-        const read = await (options.diff ?? fileSides)(root, path, staged, roots);
+        const read = await (options.diff ?? fileSides)(root, path, staged, text, roots);
         if (!read.ok) return json({ error: read.error }, { status: 400, headers: NO_STORE });
         return json({ ok: true, ...read.value }, { headers: NO_STORE });
     }
     if (parameters.has('worktree')) {
         const root = named('root');
-        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        if (root === null) return unknown(text);
         const tree = parameters.get('worktree') ?? '';
-        return answer(await (options.worktree ?? worktreeSides)(root, tree, roots), 'files');
+        return answer(await (options.worktree ?? worktreeSides)(root, tree, text, roots), 'files');
     }
     if (parameters.has('graph')) {
         const root = named('graph');
-        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        if (root === null) return unknown(text);
         const skip = Number.parseInt(parameters.get('skip') ?? '0', 10);
         const first = !Number.isInteger(skip) || skip <= 0;
-        const page = reads.graph(root, first ? 0 : skip);
+        const page = await reads.graph(root, first ? 0 : skip, text);
         // The base is the first page's alone: it belongs to the branch, not to a stretch of
         // history.
         return answer(
             page.ok && first
-                ? { ok: true, value: { ...page.value, base: reads.base(root) } }
+                ? { ok: true, value: { ...page.value, base: await reads.base(root, text) } }
                 : page,
             'page'
         );
     }
     if (parameters.has('head')) {
         const root = named('head');
-        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        if (root === null) return unknown(text);
         const stage = parameters.get('stage');
-        if (stage !== 'head' && stage !== 'index') return notASide();
-        const read = reads.head(root, stage, path);
+        if (stage !== 'head' && stage !== 'index') return notASide(text);
+        const read = await reads.head(root, stage, path, text);
         if (!read.ok) return json({ error: read.error }, { status: 400, headers: NO_STORE });
         return json({ ok: true, ...read.value }, { headers: NO_STORE });
     }
     if (parameters.has('compare')) {
         const root = named('compare');
-        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        if (root === null) return unknown(text);
         const [from, to] = [parameters.get('from') ?? '', parameters.get('to') ?? ''];
-        if (path === '') return answer(reads.compareFiles(root, from, to), 'files');
-        return answer(reads.compareSides(root, from, to, path), 'files');
+        if (path === '') return answer(await reads.compareFiles(root, from, to, text), 'files');
+        return answer(await reads.compareSides(root, from, to, path, text), 'files');
     }
     if (parameters.has('refs')) {
         const root = named('refs');
-        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
-        return answer(reads.refs(root), 'refs');
+        if (root === null) return unknown(text);
+        return answer(await reads.refs(root, text), 'refs');
     }
     if (parameters.has('workspace')) {
         const root = named('workspace');
-        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
-        return answer(reads.workspace(root, path, roots), 'files');
+        if (root === null) return unknown(text);
+        return answer(await reads.workspace(root, path, roots, text), 'files');
     }
     if (parameters.has('commit')) {
         const root = named('root');
-        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        if (root === null) return unknown(text);
         const hash = parameters.get('commit') ?? '';
-        if (path === '') return answer(reads.files(root, hash), 'files');
-        return answer(reads.commit(root, hash, path), 'files');
+        if (path === '') return answer(await reads.files(root, hash, text), 'files');
+        return answer(await reads.commit(root, hash, path, text), 'files');
     }
     if (parameters.has('stash')) {
         const root = named('root');
-        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
-        return answer(reads.stash(root, parameters.get('stash') ?? ''), 'files');
+        if (root === null) return unknown(text);
+        return answer(await reads.stash(root, parameters.get('stash') ?? '', text), 'files');
     }
     for (const key of ['blame', 'marks', 'sides', 'log'] as const) {
         if (!parameters.has(key)) continue;
         const root = named(key);
-        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        if (root === null) return unknown(text);
         if (key === 'blame') {
             const stage = parameters.get('stage');
-            if (stage !== null && stage !== 'head' && stage !== 'index') return notASide();
-            return answer(reads.blame(root, path, stage ?? undefined), 'lines');
+            if (stage !== null && stage !== 'head' && stage !== 'index') return notASide(text);
+            return answer(await reads.blame(root, path, text, stage ?? undefined), 'lines');
         }
         if (key === 'log') {
             const before = parameters.has('before') ? (parameters.get('before') ?? '') : undefined;
-            const page = reads.log(root, path, before);
+            const page = await reads.log(root, path, text, before);
             if (!page.ok) return json({ error: page.error }, { status: 400, headers: NO_STORE });
             return json({ ok: true, ...page.value }, { headers: NO_STORE });
         }
-        if (key === 'marks') return answer(reads.marks(root, path), 'marks');
-        return answer(reads.sides(root, path), 'sides');
+        if (key === 'marks') return answer(await reads.marks(root, path, text), 'marks');
+        return answer(await reads.sides(root, path, text), 'sides');
     }
     const root = named('root');
-    if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
-    const listed = await branches(root, roots);
+    if (root === null) return unknown(text);
+    const listed = await branches(root, text, roots);
     if (!listed.ok) return json({ error: listed.error }, { status: 400, headers: NO_STORE });
     return json({ ok: true, branches: parseBranches(listed.output) }, { headers: NO_STORE });
 }

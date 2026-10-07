@@ -3,8 +3,12 @@
 // the stashes, the worktrees and the sequencer the `git` channel carries. Every command goes
 // through run.ts; this file only decides which to ask and how to read the answers.
 //
-// A repository on a slow mount must not stall a watcher: a read that fails is collapsed into the
-// empty shape with a short reason, and nothing here throws.
+// A state read asks git for about a dozen commands one after another, each awaited, so the event
+// loop serves requests between them and one read runs one git process at a time. A repository on a
+// slow mount must not stall a watcher: a read that fails is collapsed into the empty shape with a
+// short reason, and nothing here rejects. `readState` also says whether every command of the read
+// finished within its time limit, since a state read from a git that ran out of time is a state
+// nobody saw, which the git watcher reads again.
 
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, sep } from 'node:path';
@@ -35,11 +39,14 @@ import {
     directory,
     exists,
     milliseconds,
+    reasonOf,
     run,
     seen,
     short,
-    whole
+    whole,
+    type Outcome
 } from './run.ts';
+import { words } from '../words.ts';
 
 /** One workspace with 4000 untracked files, or 4000 branches, must not become the payload. */
 export const MAX_ENTRIES = 200;
@@ -47,6 +54,12 @@ export const MAX_ENTRIES = 200;
  * How many commits the log carries: the view is a glance, and a terminal reads a longer history.
  */
 export const LOG_ENTRIES = 20;
+
+/** One root's state, and whether every git command of its read finished within its time limit. */
+export type StateRead = { state: GitState; finished: boolean };
+
+/** One read's git: a command run in the read's root under the read's time limit. */
+type Git = (args: string[]) => Promise<Outcome>;
 
 /** The shape every caller can count on, with nothing in it. */
 export function empty(error: string | null = null): GitState {
@@ -82,39 +95,46 @@ export function empty(error: string | null = null): GitState {
 }
 
 /**
- * Read-only git state for each root, keyed by root. Never throws. A root with nothing at its path,
- * or that git answered is not a repository, comes back as the empty shape with `error` set and
- * `repository` false; `present` is false for the first of those two alone, read at the path each
- * time the answer is made, so a caller can say the folder is not there rather than that it is no
+ * Read-only git state for one root, and whether every git command of the read finished within its
+ * time limit. A command whose limit ran out is the one that did not: its answer was never seen, so
+ * the state stands only until a read that finishes. Never rejects, and `text` is the catalog a
+ * failure with no reason of git's own is worded from. A root with nothing at its path, or that git
+ * answered is not a repository, comes back as the empty shape with `error` set and `repository`
+ * false; `present` is false for the first of those two alone, read at the path each time the
+ * answer is made, so a caller can say the folder is not there rather than that it is no
  * repository. A root whose check did not answer (a timeout, a git that would not start), a root git
  * refused for a reason other than holding no repository, and a repository where a later read fails
  * all keep `repository` true and say why in `error`, so neither a slow mount nor an unreadable
- * config makes a repository disappear. A caller renders every workspace without a special case. A
- * repeated root is read once.
+ * config makes a repository disappear. A caller renders every workspace without a special case.
  */
-export function statusFor(roots: string[], timeout: number = TIMEOUT_MS): Record<string, GitState> {
-    const out: Record<string, GitState> = {};
-    if (!Array.isArray(roots)) return out;
+export async function readState(
+    root: string,
+    text: Record<string, string>,
+    timeout: number = TIMEOUT_MS
+): Promise<StateRead> {
     const ms = milliseconds(timeout);
-    for (const root of roots) {
-        if (typeof root !== 'string' || root === '' || root in out) continue;
-        try {
-            out[root] = state(root, ms);
-        } catch (error) {
-            out[root] = empty(short(error));
-        }
+    let finished = true;
+    const git: Git = async (args) => {
+        const done = await run(root, args, ms);
+        if (!done.answered) finished = false;
+        return done;
+    };
+    try {
+        const found = await state(root, text, git);
+        return { state: found, finished };
+    } catch (error) {
+        return { state: empty(short(error)), finished };
     }
-    return out;
 }
 
 // ---------------------------------------------------------------- one root
 
-function state(root: string, timeout: number): GitState {
+async function state(root: string, text: Record<string, string>, git: Git): Promise<GitState> {
     // A path with nothing at it is the one root git is never asked about. A path that is there and
     // is no directory, and one nothing may enter, are handed to git like any other, so the reader
     // gets git's own reason for them instead of being told the folder is gone.
     if (!directory(root) && !exists(root)) {
-        const gone = empty('no such directory');
+        const gone = empty(words(text, 'server.git.no_directory'));
         gone.present = false;
         return gone;
     }
@@ -122,9 +142,9 @@ function state(root: string, timeout: number): GitState {
     // none yet answers it like any other. Only a check that timed out says nothing about the root,
     // which is then kept as the repository it was taken for; a git that cannot start or is killed
     // is taken at its word, so a plain folder never becomes a repository because git is missing.
-    const gitDir = run(root, ['rev-parse', '--git-dir'], timeout);
+    const gitDir = await git(['rev-parse', '--git-dir']);
     if (!gitDir.ok && gitDir.answered) {
-        const reason = gitDir.text || NO_REPOSITORY;
+        const reason = reasonOf(gitDir, text);
         const refused = empty(reason);
         // The root may have gone between the check above and this answer, and then git refused it
         // for being gone rather than for being no repository. The path is read again here, so the
@@ -136,40 +156,42 @@ function state(root: string, timeout: number): GitState {
         // reader is told the read failed rather than that there is no repository here. Every other
         // refusal (no `.git` to be seen, a `.git` naming a gitdir that is gone, a git that could
         // not start) leaves `repository` false.
-        const ownRefusal = gitDir.ran && !reason.includes(NO_REPOSITORY);
+        const ownRefusal = gitDir.ran && !gitDir.text.includes(NO_REPOSITORY);
         refused.repository = ownRefusal && seen(join(root, '.git'));
         return refused;
     }
     const found = empty(null);
     found.repository = true;
     if (!gitDir.ok) {
-        found.error = gitDir.text || 'git failed';
+        found.error = reasonOf(gitDir, text);
         return found;
     }
-    if (!checkedOut(root, found, timeout)) return found;
-    upstream(root, found, timeout);
-    found.log = log(root, timeout);
-    const listed = refs(root, timeout);
+    if (!(await checkedOut(found, text, git))) return found;
+    await upstream(found, git);
+    found.log = await log(git);
+    const listed = await refs(git);
     found.branches = listed.branches;
     found.tags = listed.tags;
     // The reflog is walked only where a stash is kept, and the remotes are read only where Publish
     // Branch can be offered, a branch that tracks nothing; either read is a process per root on
     // every event, which the repositories that have no use for it do not pay.
-    found.stashes = listed.stash ? stashes(root, timeout) : [];
-    found.remotes = found.upstream || found.detached ? [] : remotes(root, timeout);
-    found.worktrees = worktrees(root, timeout);
+    found.stashes = listed.stash ? await stashes(git) : [];
+    found.remotes = found.upstream || found.detached ? [] : await remotes(git);
+    found.worktrees = await worktreesOf(root, git);
     found.ignoresWorktrees = ignored(root);
     sequenceOf(root, gitDir.text.trim(), found);
-    const listing = run(
-        root,
-        ['status', '--porcelain=v1', '-z', '--untracked-files=normal', '--renames'],
-        timeout
-    );
+    const listing = await git([
+        'status',
+        '--porcelain=v1',
+        '-z',
+        '--untracked-files=normal',
+        '--renames'
+    ]);
     if (!listing.ok) {
-        found.error = listing.text || 'git status failed';
+        found.error = reasonOf(listing, text);
         return found;
     }
-    const counts = run(root, ['diff', '--numstat', '-z'], timeout);
+    const counts = await git(['diff', '--numstat', '-z']);
     const lines = parseNumstat(counts.ok ? counts.text : '');
     Object.assign(found, statusLists(statusRecords(listing.text), lines, MAX_ENTRIES));
     return found;
@@ -180,19 +202,23 @@ function state(root: string, timeout: number): GitState {
  * when nothing is checked out. A repository with no commit yet has a HEAD that resolves to nothing,
  * so the branch it will make is read from HEAD itself: that repository is ordinary, not an error.
  */
-function checkedOut(root: string, found: GitState, timeout: number): boolean {
-    const head = run(root, ['rev-parse', '--abbrev-ref', 'HEAD'], timeout);
+async function checkedOut(
+    found: GitState,
+    text: Record<string, string>,
+    git: Git
+): Promise<boolean> {
+    const head = await git(['rev-parse', '--abbrev-ref', 'HEAD']);
     if (head.ok) {
         found.branch = head.text.trim();
         found.detached = found.branch === 'HEAD';
         return true;
     }
-    const unborn = run(root, ['symbolic-ref', '--short', 'HEAD'], timeout);
+    const unborn = await git(['symbolic-ref', '--short', 'HEAD']);
     if (unborn.ok) {
         found.branch = unborn.text.trim();
         return true;
     }
-    found.error = head.text || 'git named no branch';
+    found.error = reasonOf(head, text);
     return false;
 }
 
@@ -201,8 +227,8 @@ function checkedOut(root: string, found: GitState, timeout: number): boolean {
  * failure rather than an empty log, which is an empty list here like every other unreadable list:
  * the branch line above it is what says the repository is there.
  */
-function log(root: string, timeout: number): GitCommit[] {
-    const done = run(root, ['log', `-${LOG_ENTRIES}`, LOG_FORMAT], timeout);
+async function log(git: Git): Promise<GitCommit[]> {
+    const done = await git(['log', `-${LOG_ENTRIES}`, LOG_FORMAT]);
     return done.ok ? parseLog(done.text) : [];
 }
 
@@ -217,12 +243,8 @@ export function capped<Row>(rows: Row[]): Row[] {
  * list capped like the change lists. One process reads all three, where a listing each would be
  * three processes per root on every event.
  */
-function refs(root: string, timeout: number): RefRows {
-    const done = run(
-        root,
-        ['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash'],
-        timeout
-    );
+async function refs(git: Git): Promise<RefRows> {
+    const done = await git(['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash']);
     if (!done.ok) return { branches: [], tags: [], stash: false };
     const read = parseRefs(done.text);
     return { branches: capped(read.branches), tags: capped(read.tags), stash: read.stash };
@@ -232,14 +254,14 @@ function refs(root: string, timeout: number): RefRows {
  * Every stash, newest first, read from the stash's reflog as `stash list` reads it. A repository
  * with no stash has no such reflog and answers with a failure, which is the empty list.
  */
-function stashes(root: string, timeout: number): GitStash[] {
-    const done = run(root, ['log', '--walk-reflogs', STASH_FORMAT, 'refs/stash', '--'], timeout);
+async function stashes(git: Git): Promise<GitStash[]> {
+    const done = await git(['log', '--walk-reflogs', STASH_FORMAT, 'refs/stash', '--']);
     return done.ok ? capped(parseStashes(done.text)) : [];
 }
 
 /** The repository's remotes by name. */
-function remotes(root: string, timeout: number): string[] {
-    const done = run(root, ['remote'], timeout);
+async function remotes(git: Git): Promise<string[]> {
+    const done = await git(['remote']);
     return done.ok ? capped(done.text.split('\n').filter((one) => one.trim() !== '')) : [];
 }
 
@@ -280,8 +302,16 @@ function sequenceOf(root: string, gitDir: string, found: GitState): void {
  * the file browser use. Each path under the real root is put back under the root as asked for, so
  * one vocabulary reaches the page and the checks a write makes.
  */
-export function worktrees(root: string, timeout: number = TIMEOUT_MS): GitWorktree[] {
-    const done = run(root, ['worktree', 'list', '--porcelain'], timeout);
+export async function worktrees(
+    root: string,
+    timeout: number = TIMEOUT_MS
+): Promise<GitWorktree[]> {
+    return worktreesOf(root, (args) => run(root, args, timeout));
+}
+
+/** The worktrees of the repository at `root`, listed through the git of one read. */
+async function worktreesOf(root: string, git: Git): Promise<GitWorktree[]> {
+    const done = await git(['worktree', 'list', '--porcelain']);
     if (!done.ok) return [];
     const real = realpath(root);
     return capped(parseWorktrees(done.text)).map((one) => ({
@@ -322,8 +352,8 @@ function ignored(root: string): boolean {
  * Distance from the tracking branch. `--left-right --count` prints behind, then ahead. A branch
  * with no upstream is ordinary, not an error, and leaves both counts at zero.
  */
-function upstream(root: string, found: GitState, timeout: number): void {
-    const done = run(root, ['rev-list', '--left-right', '--count', '@{upstream}...HEAD'], timeout);
+async function upstream(found: GitState, git: Git): Promise<void> {
+    const done = await git(['rev-list', '--left-right', '--count', '@{upstream}...HEAD']);
     // The command git answers here is the one that knows: it resolves @{upstream}, so a failure is
     // the branch having none. That fact travels with the state, which is on the page before the
     // branch listing is, so the push control never has to read a listing that has not answered as

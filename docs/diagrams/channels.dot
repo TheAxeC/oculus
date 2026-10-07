@@ -71,7 +71,7 @@ digraph channels {
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
         "? src/lib/server/machine/runs/schedules/watch.ts:290" [label="src/lib/server/machine/runs/schedules/watch.ts:290 publish(CHANNEL)"];
-        "? src/lib/shell/panes/PaneView.svelte:457" [label="src/lib/shell/panes/PaneView.svelte:457 message()"];
+        "? src/lib/shell/panes/PaneView.svelte:468" [label="src/lib/shell/panes/PaneView.svelte:468 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
         "? src/lib/state/system/apps/apps.svelte.ts:293" [label="src/lib/state/system/apps/apps.svelte.ts:293 message(channel)"];
@@ -101,8 +101,9 @@ digraph channels {
         "? src/lib/state/system/config/write.ts:38" [label="src/lib/state/system/config/write.ts:38 message('refused', answer.refused.map((one)"];
         "? src/lib/state/system/config/write.ts:43" [label="src/lib/state/system/config/write.ts:43 message('unwritable', row.file)"];
         "? src/lib/state/system/config/write.ts:44" [label="src/lib/state/system/config/write.ts:44 message('failed', answer.error ?? '')"];
-        "? src/lib/views/shared/changes/CommitBox.svelte:55" [label="src/lib/views/shared/changes/CommitBox.svelte:55 message(root)"];
-        "? src/lib/views/shared/changes/CommitBox.svelte:72" [label="src/lib/views/shared/changes/CommitBox.svelte:72 message(root)"];
+        "? src/lib/views/shared/changes/CommitBox.svelte:57" [label="src/lib/views/shared/changes/CommitBox.svelte:57 message(root)"];
+        "? src/lib/views/shared/changes/CommitBox.svelte:76" [label="src/lib/views/shared/changes/CommitBox.svelte:76 message(root)"];
+        "? src/lib/views/shared/changes/CommitBox.svelte:83" [label="src/lib/views/shared/changes/CommitBox.svelte:83 message(root)"];
         "? src/lib/views/system/workbench/editors/Editor.svelte:132" [label="src/lib/views/system/workbench/editors/Editor.svelte:132 message('changedSince', row.file)"];
         "? src/lib/views/system/workbench/settings/Item.svelte:108" [label="src/lib/views/system/workbench/settings/Item.svelte:108 message('missing', row.file)"];
     }
@@ -123,6 +124,7 @@ digraph channels {
         "state/sessions/terminal/commands";
         "state/sessions/terminal/pty/pty-wire";
         "state/sessions/terminals";
+        "state/sources/fs";
         "state/sources/search/search";
         "state/system/apps/apps";
         "state/system/apps/rules";
@@ -178,7 +180,7 @@ digraph channels {
         label="routes"; style=solid;
         "routes/+page";
     }
-    "? src/lib/shell/panes/PaneView.svelte:457" -> "shell/panes/PaneView";
+    "? src/lib/shell/panes/PaneView.svelte:468" -> "shell/panes/PaneView";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
     "? src/lib/state/client/queries.svelte.ts:79" -> "state/client/queries";
     "? src/lib/state/system/apps/apps.svelte.ts:293" -> "state/system/apps/apps";
@@ -208,8 +210,9 @@ digraph channels {
     "? src/lib/state/system/config/write.ts:38" -> "state/system/config/write";
     "? src/lib/state/system/config/write.ts:43" -> "state/system/config/write";
     "? src/lib/state/system/config/write.ts:44" -> "state/system/config/write";
-    "? src/lib/views/shared/changes/CommitBox.svelte:55" -> "views/shared/changes";
-    "? src/lib/views/shared/changes/CommitBox.svelte:72" -> "views/shared/changes";
+    "? src/lib/views/shared/changes/CommitBox.svelte:57" -> "views/shared/changes";
+    "? src/lib/views/shared/changes/CommitBox.svelte:76" -> "views/shared/changes";
+    "? src/lib/views/shared/changes/CommitBox.svelte:83" -> "views/shared/changes";
     "? src/lib/views/system/workbench/editors/Editor.svelte:132" -> "views/system/workbench";
     "? src/lib/views/system/workbench/settings/Item.svelte:108" -> "views/system/workbench";
     "ch ${path.split('/').slice(-2).join('/')}:*" -> "ui/controls/editor/kit/lsp/transport";
@@ -229,6 +232,7 @@ digraph channels {
     "ch config" -> "state/client/socket";
     "ch config" -> "state/life/present";
     "ch config" -> "state/sessions/latex/latex";
+    "ch config" -> "state/sources/fs";
     "ch config" -> "state/sources/search/search";
     "ch config" -> "state/workbench/palette-source";
     "ch config" -> "views/feeds/leads";

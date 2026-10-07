@@ -5,14 +5,16 @@
 // A commit offers Open Changes (its files, as a press opens them), Copy Commit ID and Copy Commit
 // Message, then a Checkout submenu of the local branches named on it, Checkout (Detached), Create
 // Branch..., Create Tag... and a Delete Tag submenu of its tags, then Cherry Pick, then the compare
-// items: Compare with Remote when the checked-out branch has an upstream, Compare with Merge Base
-// when git names a base for it, and Compare with... for any ref. A branch checked out already is
-// left out of Checkout, as the Branches section offers no switch on it. A name on a commit has its
-// own menu: a local branch not checked out offers Checkout and Delete Branch, the branch checked
-// out offers the same two drawn disabled, each with the reason in its hover words, a remote branch
-// Checkout (Detached), a tag Delete Tag. Every write goes through the question the matching
-// section asks, and none is offered while a write is in flight on the repository; the compare
-// items are reads and stay.
+// items. Cherry Pick is left out of a commit HEAD contains (a row of the log or of the outgoing
+// list), and Checkout (Detached) out of HEAD's own commit while HEAD is detached; VS Code offers
+// both everywhere, and this is kept as an improvement. The compare items: Compare with Remote when
+// the checked-out branch has an upstream, Compare with Merge Base when git names a base for it, and
+// Compare with... for any ref. A branch checked out already is left out of Checkout, as the
+// Branches section offers no switch on it. A name on a commit has its own menu: a local branch not
+// checked out offers Checkout and Delete Branch, the branch checked out offers the same two drawn
+// disabled, each with the reason in its hover words, a remote branch Checkout (Detached), a tag
+// Delete Tag. Every write goes through the question the matching section asks, and none is offered
+// while a write is in flight on the repository; the compare items are reads and stay.
 //
 // The items are pure functions of the commit, so which items a commit offers is asserted without a
 // DOM, and the words come in as `t` so every label is a catalog key. A branch or tag name is the
@@ -54,6 +56,16 @@ export type BranchFacts = {
 export type CompareFacts = { upstream: string; base: string };
 
 /**
+ * What the repository's HEAD says of one commit: whether HEAD contains it, and HEAD's own state.
+ */
+export type HeadFacts = {
+    /** HEAD contains the commit, so a cherry pick of it would pick nothing. */
+    contained: boolean;
+    /** HEAD is not on a branch. */
+    detached: boolean;
+};
+
+/**
  * What a name on a commit offers: a checkout and a removal, the same two for the branch checked out
  * (drawn disabled), a detached checkout, a tag's removal, or nothing.
  */
@@ -77,13 +89,17 @@ function tagItem(name: string): MenuItem {
     return { id: `${DELETE_TAG}${name}`, label: name };
 }
 
-/** A commit's items, its Checkout and Delete Tag submenus only where they hold a name. */
+/**
+ * A commit's items, its Checkout and Delete Tag submenus only where they hold a name, and Cherry
+ * Pick and Checkout (Detached) only where they do something.
+ */
 export function commitMenu(
-    commit: { refs: readonly string[]; tags: readonly string[] },
+    commit: { refs: readonly string[]; tags: readonly string[]; head: boolean },
     branches: BranchFacts,
     busy: boolean,
     t: Words,
-    compare: CompareFacts
+    compare: CompareFacts,
+    here: HeadFacts
 ): MenuItem[] {
     const checkouts = busy
         ? []
@@ -108,14 +124,16 @@ export function commitMenu(
                             }
                         ]
                       : []),
-                  item(GRAPH_DETACH, t('repositories.menu_checkout_detached')),
+                  ...(commit.head && here.detached
+                      ? []
+                      : [item(GRAPH_DETACH, t('repositories.menu_checkout_detached'))]),
                   item(GRAPH_CREATE_BRANCH, t('repositories.menu_create_branch')),
                   item(GRAPH_CREATE_TAG, t('repositories.menu_create_tag')),
                   ...(tags.length > 0
                       ? [{ id: TAG_LIST, label: t('repositories.tag_delete'), items: tags }]
                       : [])
               ],
-        busy ? [] : [item(GRAPH_CHERRY_PICK, t('repositories.menu_cherry_pick'))],
+        busy || here.contained ? [] : [item(GRAPH_CHERRY_PICK, t('repositories.menu_cherry_pick'))],
         [
             ...(compare.upstream === ''
                 ? []

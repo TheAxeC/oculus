@@ -22,10 +22,11 @@
     // read whole is drawn by the code window; one this machine's mode locks is drawn by the editor
     // in its read-only form, which a mode change toggles (save/locked-words.ts).
     //
-    // A tab over the file at HEAD or in the index (Open File (HEAD)) is read from the git route
-    // and is never written: it is drawn as a locked file, has no gutter marks, carries the blame
-    // of that version (Toggle Blame is the one action it offers), and offers no preview, since its
-    // root is a repository's own directory and not a served root.
+    // A tab over the file at HEAD or in the index (Open File (HEAD)) is read from the git route,
+    // read again when HEAD's commit (a HEAD tab) or the file's staged or unstaged entry (an index
+    // tab) moves, and is never written: it is drawn as a locked file, has no gutter marks, carries
+    // the blame of that version (Toggle Blame is the one action it offers), and offers no preview,
+    // since its root is a repository's own directory and not a served root.
     //
     // A keystroke keeps a preview tab: typing into the tab a single click opened, which the next
     // single click replaces, says the reader is working in it.
@@ -37,13 +38,12 @@
     // for a LaTeX file, Build, View PDF and Build Log, each where it applies, and nothing for the
     // tab row. Word wrap and the rendered half are the palette's, which lists Save, Revert File,
     // word wrap, the rendered half, Open Preview to the Side, Submit Job, Toggle Blame and the
-    // LaTeX actions while each applies (status/ask-perform.ts), and Cmd+S asks
-    // the tab on screen to save. The save outcome and what the tab said stay under the editor
-    // (save/SourceNote.svelte): an alert for a refusal, a status for Submit's progress. A file that
-    // could not be read is the message box with a control that reads it again
-    // (actions/read-again.ts), which opens what the file is when it is back as something other than
-    // text. A file the route says is gone opens here too, so this is the tab that says it cannot be
-    // opened.
+    // LaTeX actions while each applies (status/ask-perform.ts), and Cmd+S asks the tab on screen to
+    // save. The save outcome and what the tab said stay under the editor (save/SourceNote.svelte):
+    // an alert for a refusal, a status for Submit's progress. A file that could not be read is the
+    // message box with a control that reads it again (actions/read-again.ts), which opens what the
+    // file is when it is back as something other than text. A file the route says is gone opens
+    // here too, so this is the tab that says it cannot be opened.
     //
     // Submit Job, on a .slurm file on disk under a served root, is actions/submit-job.svelte.ts.
     //
@@ -127,6 +127,7 @@
             editSourceDraft,
             sourceReach,
             loadSourceDraft,
+            reloadHead,
             loadUntitledDraft,
             saveSourceDraft,
             setSourceIndent,
@@ -206,7 +207,9 @@
         loadUntitled: loadUntitledDraft,
         edit: editSourceDraft,
         wrap: setSourceWrap,
-        keepPreview
+        keepPreview,
+        headSignature: () => file.headSignature,
+        reloadHead
     });
     /** What the language adds to the editor: LaTeX's build, Markdown's headings or a server. */
     const tabLanguage = createTabLanguage({

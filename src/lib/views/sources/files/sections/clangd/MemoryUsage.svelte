@@ -23,7 +23,7 @@
     /** One row of the tree with the key it is told apart by. */
     type Row = { key: string; row: MemoryRow; depth: number; parent: string | null };
 
-    let { open, ontoggle, tab }: ClangdProps = $props();
+    let { open, ontoggle, tab, move }: ClangdProps = $props();
 
     const {
         clangd,
@@ -76,6 +76,7 @@
 {#if answer !== null}
     <div class="memory" data-fs-memory>
         <ClangdSection
+            {move}
             label={t('files.memory')}
             {keyRows}
             count={nodes.length}

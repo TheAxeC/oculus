@@ -10,9 +10,10 @@
     // Layer 3, partial of views/sources/files/Files.svelte. The reader's own bookmarks as a section
     // under the trees: a head that opens and closes it and carries the control that adds one, and
     // one explorer row per bookmark, opening the file or showing the folder it names, with the
-    // control that opens the shared entry form over it. The bookmark the form is open for is drawn
-    // as the one in force; a folder has the folder glyph, and a path that is gone is drawn muted
-    // and struck through.
+    // control that opens the shared entry form over it. A row drags to another place and moves with
+    // Alt+Up and Alt+Down, which write the bookmarks file in the new order. The bookmark the form
+    // is open for is drawn as the one in force; a folder has the folder glyph, and a path that is
+    // gone is drawn muted and struck through.
     //
     // The head is drawn in every state, since it is where a bookmark is added: with no bookmark the
     // section says so in one muted row, and with a bookmarks file that could not be read it says
@@ -29,6 +30,8 @@
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
+    import { createListDrag, listKeys, type SectionMove } from './list-drag.svelte';
     import type { BookmarkEntry } from '$lib/state/sources/fs.svelte';
     import { readOr } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
@@ -49,10 +52,34 @@
         onedit: (id: string) => void;
         /** Ask for the bookmarks again, which the failed line's own control offers. */
         onretry: () => void;
+        /** What lets the head be dragged and moved by Alt+Up/Down. */
+        move?: SectionMove;
+        /** Put the bookmarks in the order the ids name, after a drop or Alt+Up/Down on a row. */
+        onorder: (ids: string[]) => void;
     };
 
-    let { rows, error, open, editing, adding, ontoggle, onadd, onopen, onedit, onretry }: Props =
-        $props();
+    let {
+        rows,
+        error,
+        open,
+        editing,
+        adding,
+        ontoggle,
+        onadd,
+        onopen,
+        onedit,
+        onretry,
+        move,
+        onorder
+    }: Props = $props();
+
+    /** The drags of the bookmark rows over each other. */
+    const list = createListDrag({
+        type: 'application/x-oculus-bookmark',
+        order: () => rows.map((row) => row.id),
+        drawn: () => rows.map((row) => row.id),
+        write: (ids) => onorder(ids)
+    });
 
     const keyRows = $derived([
         { id: 'head', parent: null, open },
@@ -67,7 +94,13 @@
 </script>
 
 <div class="marks" data-fs-bookmarks>
-    <TreeView label={t('files.bookmarks')} rows={keyRows} {ontoggle}>
+    <TreeView
+        label={t('files.bookmarks')}
+        rows={keyRows}
+        {ontoggle}
+        keymap={MOVE_KEYMAP}
+        onkey={listKeys(move, list, 'mark:')}
+    >
         {#snippet children(nav: TreeNav)}
             <Section
                 label={t('files.bookmarks')}
@@ -83,6 +116,7 @@
                 {adding}
                 {onadd}
                 showActions
+                drag={move?.drag}
             >
                 {#if error !== ''}
                     <li role="none">
@@ -114,6 +148,7 @@
                                 : t('files.bookmark_open_title', whereOf(row))}
                             current={editing === row.id}
                             onclick={() => onopen(row)}
+                            drag={list.row(row.id)}
                         >
                             {#snippet detail()}
                                 {whereOf(row)}

@@ -1,17 +1,17 @@
 // Layer 2, server tests. classifyFailure of core/git/parse.ts reads a failed git or gh command: the
 // codes in their order (Cancel, the time limit, the output limit, a signal), then git's own text,
-// then an exit status with nothing written. failureText of git/git-routes.ts says each code in the
-// catalog's words, with the program first and the operation a run left unfinished after it. One
+// then an exit status with nothing written. failureLine of core/git/failure.ts says each code in
+// the catalog's words, with the program first and the operation a run left unfinished after it. One
 // row per input that gives a different outcome.
 
 import { describe, expect, it } from 'vitest';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     classifyFailure,
     type Classified,
     type CommandFailure
 } from '../../../src/lib/server/core/git/parse.ts';
-import { failureText } from '../../../src/lib/server/git/git-routes.ts';
+import { failureLine } from '../../../src/lib/server/core/git/failure.ts';
+import { TEXT } from '../text.ts';
 
 const LIMITS = { timeoutMs: 10000, maxBytes: 8 * 1024 * 1024 };
 
@@ -131,8 +131,6 @@ describe('classifyFailure', () => {
     });
 });
 
-const { config } = loadConfig(engineDir());
-
 const SENTENCES: [CommandFailure, string][] = [
     [{ code: 'cancelled', detail: '', program: 'git' }, 'Git was stopped by Cancel'],
     [
@@ -166,8 +164,8 @@ const SENTENCES: [CommandFailure, string][] = [
     ]
 ];
 
-describe('failureText', () => {
+describe('failureLine', () => {
     it.each(SENTENCES)('says %j as its sentence', (failure, sentence) => {
-        expect(failureText(failure, config)).toBe(sentence);
+        expect(failureLine(failure, TEXT)).toBe(sentence);
     });
 });

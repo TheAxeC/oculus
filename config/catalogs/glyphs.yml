@@ -50,6 +50,7 @@ glyphs:
   branch: "[Y]"
   merge: "><"
   commit: "o"
+  head: "@"
   worktree: "[w]"
   # Source Control: the remote actions, stashes, tags, blame and the diff pane
   pull: "v|"

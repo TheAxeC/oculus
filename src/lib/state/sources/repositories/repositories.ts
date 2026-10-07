@@ -1,19 +1,19 @@
 // Layer 2, client state. What the Repositories view computes rather than draws: the addresses of
 // the reads it asks for on demand (a diff, a Replace Preview, a page of the graph, a commit's
 // files, a blame, the gutter marks, the three versions of a conflict), the identity of a diff pane,
-// the worktree rule the view and the write share, which repository one view shows with which of its
-// sections closed and in which mode, the rows its keyboard moves along, the colour and word of a
-// status letter both change lists draw, what the commit box's one button is, and the words of the
-// questions the sync, pull, push and publish controls ask.
+// which repository one view shows with which of its sections closed and in which mode, the rows its
+// keyboard moves along, the colour and word of a status letter both change lists draw, what the
+// commit box's one button is, and the words of the questions the sync, pull, push and publish
+// controls ask.
 //
-// The worktree rule comes from data/helpers/worktrees.ts, the one place it lives, so the path the
-// view shows before a worktree is made is the path the write makes. Nothing here fetches: the view
-// owns its own requests, and these are the strings they are made from.
+// The worktrees' names, planned paths and Open Worktree are worktrees.ts's. Nothing here fetches:
+// the view owns its own requests, and these are the strings they are made from.
 //
 // `repoShape` answers which of six shapes a root is (`unplaced`, `reading`, `missing`, `none`,
 // `failed`, `readable`) for the Changes panel and the Repositories view alike. The Repositories
 // list is over every root the `git` channel carries a state for (`pickerRoots`), the file browser's
-// roots and every session's workspace, not the repositories among them.
+// roots, the repositories below them down to `repository_scan_depth` levels and every session's
+// workspace, not only the repositories among them.
 
 import type {
     DiffAttributes,
@@ -26,8 +26,7 @@ import type {
     GitMergeSides,
     GitStash,
     GitState,
-    GitTag,
-    GitWorktree
+    GitTag
 } from '../../../data/model/index.ts';
 import { z } from 'zod';
 import { compareUrl, savedUrl, type ReplacePreview } from '../../../data/file-ops.ts';
@@ -38,12 +37,11 @@ import {
     mapShape,
     readAs
 } from '../../../data/shapes/shapes.ts';
-import { worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
 import { t } from '../../shared/words/text.ts';
 import { refCompareUrl, workspaceUrl } from './diff/compare.ts';
 import { replacePreviewShape } from './replace-preview.ts';
 
-export { validName, worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
+export { validName, worktreePath } from '../../../data/helpers/worktrees.ts';
 
 export type {
     DiffAttributes,
@@ -486,24 +484,14 @@ export function sameFiles(a: readonly DiffSides[], b: readonly DiffSides[]): boo
     );
 }
 
-/** The name a worktree is shown under: its folder name, which is the branch it was made on. */
-export function worktreeLabel(root: string, path: string): string {
-    const folder = `${worktreesDir(root)}/`;
-    return path.startsWith(folder) ? path.slice(folder.length) : path;
-}
-
-/** Where the worktree of this name will go, which the view says before the write is made. */
-export function plannedPath(root: string, name: string): string {
-    return worktreePath(root, name.trim());
-}
-
 /**
  * What one Repositories view keeps about itself across a tab switch and a saved page: the
  * repository it shows, the sections and folders the reader closed, the commit of the graph whose
  * files are open (the empty string for none), whether the change groups are lists or trees, a
  * request to open the Branches section, which the repository answers and clears, and the roots the
  * reader closed (Close Repository), which this view's list leaves out and Reopen Closed
- * Repositories brings back.
+ * Repositories brings back, and the change rows the reader selected, whose controls act on them
+ * together.
  */
 export type RepositoriesView = {
     root: string;
@@ -512,6 +500,8 @@ export type RepositoriesView = {
     mode: 'list' | 'tree';
     reveal: '' | 'branches';
     closed: string[];
+    /** The ids of the change rows selected, `change:<group>:<path>`. */
+    picked: string[];
 };
 
 const repositoriesViewShape = z.object({
@@ -520,7 +510,8 @@ const repositoriesViewShape = z.object({
     commit: z.string().catch(''),
     mode: z.enum(['list', 'tree']).catch('list'),
     reveal: z.enum(['', 'branches']).catch(''),
-    closed: fieldItemsShape
+    closed: fieldItemsShape,
+    picked: fieldItemsShape
 }) satisfies z.ZodType<RepositoriesView>;
 
 /**
@@ -534,7 +525,8 @@ export function repositoriesViewOf(state: unknown): RepositoriesView {
             commit: '',
             mode: 'list',
             reveal: '',
-            closed: []
+            closed: [],
+            picked: []
         }
     );
 }
@@ -567,13 +559,23 @@ export function reopenRepositories(view: RepositoriesView, root: string): Reposi
 
 /**
  * The roots the picker offers: every root the `git` channel carries a state for, in the channel's
- * order. A folder of notes, a data folder, a repository whose read failed and a folder the reader
- * has deleted are all offered, each row saying what its state is, so a root never leaves the picker
- * for being quiet and the reader is told why rather than handed another repository. A root the
- * channel names with no state at all is the one thing dropped: there is nothing for a row to say.
+ * order. A folder of notes, a data folder and a repository whose read failed are offered, each row
+ * saying what its state is, so a root never leaves the picker for being quiet and the reader is
+ * told why rather than handed another repository. A root that is gone or is no repository is
+ * offered only while it is a served root's folder (`served`, the `dir` of each root the server
+ * serves): a session's workspace that was deleted or never was a repository is not listed. A root
+ * the channel names with no state at all is dropped: there is nothing for a row to say.
  */
-export function pickerRoots(roots: string[], stateOf: (root: string) => GitState | null): string[] {
-    return roots.filter((root) => stateOf(root) !== null);
+export function pickerRoots(
+    roots: string[],
+    stateOf: (root: string) => GitState | null,
+    served: readonly string[]
+): string[] {
+    return roots.filter((root) => {
+        const shape = repoShape(root, stateOf(root));
+        if (shape === 'reading') return false;
+        return (shape !== 'missing' && shape !== 'none') || served.includes(root);
+    });
 }
 
 /**
@@ -703,11 +705,6 @@ export const RENAMED = 'R';
 export function statusStyle(status: string): string {
     const tone = isConflict(status) ? 'scm-conflict' : (STATUS_TONES[status] ?? 'grey');
     return `--tone-txt: var(--c-${tone}-txt)`;
-}
-
-/** The worktrees of a repository other than its main checkout, in the order git lists them. */
-export function linkedWorktrees(git: GitState): GitWorktree[] {
-    return git.worktrees.filter((one) => !one.main);
 }
 
 /** How many workspaces the `git` channel's payload names. */
@@ -843,33 +840,4 @@ export function publishWords(git: GitState, remote: string): Words {
         message: t('repositories.publish_confirm', git.branch, remote),
         detail: t('repositories.publish_detail')
     };
-}
-
-/**
- * What Open Worktree needs: the write that adds a folder to the workspace's roots, Files showing
- * it, the window opener, and the address of this page.
- */
-export type WorktreeOpening = {
-    addRoot: (dir: string) => Promise<{ ok: boolean; error?: string }>;
-    showInFiles: (path: string) => string;
-    openWindow: (address: string) => void;
-    address: () => string;
-};
-
-/**
- * Open a worktree as a root of the workspace and show it in Files; in a new window as well, when
- * asked, which is this page's own address opened again. A folder that is a root already is opened
- * as it stands. The answer is the reason the root was refused, and the empty string for an opened
- * worktree; a refused root opens nothing.
- */
-export async function openWorktree(
-    dir: string,
-    newWindow: boolean,
-    opening: WorktreeOpening
-): Promise<string> {
-    const added = await opening.addRoot(dir);
-    if (!added.ok && added.error !== 'root-held') return added.error ?? '';
-    opening.showInFiles(dir);
-    if (newWindow) opening.openWindow(opening.address());
-    return '';
 }

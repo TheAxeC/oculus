@@ -18,7 +18,30 @@ text:
             approve_ask: Run this Python interpreter for this repository?
             approve_yes: Approve and Select
             choices_loading: Reading the choices of this repository...
+            cmd_accent: Set the accent colour
+            cmd_accent_hint: '<name | #hex | reset>'
+            cmd_compile_database: Choose the compile database of the repository
+            cmd_compile_database_hint: '<name>'
+            cmd_crt: Turn the CRT overlay on or off
+            cmd_folder: Open a folder in the Files view
+            cmd_goto: Open a project in a tab
+            cmd_goto_hint: '<project id>'
+            cmd_help: Show the help
+            cmd_interpreter: Choose the Python interpreter of the repository
+            cmd_interpreter_hint: '<path>'
+            cmd_language: Set the language of the source tab
+            cmd_language_hint: '<language>'
+            cmd_svelte_config: Approve or stop running the Svelte configuration of the repository
+            cmd_tab: Open a view in a tab
+            cmd_tab_hint: '<view id>'
+            cmd_theme: Switch the theme
+            cmd_theme_hint: '<{0}>'
             cmd_unknown: '# unknown command'
+            cmd_update: Open the update tasks
+            cmd_workspace: Switch to a workspace
+            cmd_workspace_hint: '<workspace>'
+            cmd_workspace_save: Save the folders in force as a workspace
+            cmd_workspace_save_hint: '<name>'
             cmdk_placeholder: Search projects, entries, tabs...
             config_approve: Approve and run this repository's Svelte and Vite configuration
             config_ask: Run the Svelte and Vite configuration of this repository? The Svelte server then runs these files and the repository's own Svelte, Prettier and preprocessors, which can run any code they hold.

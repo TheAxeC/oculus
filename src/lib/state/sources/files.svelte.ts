@@ -9,16 +9,19 @@
 // than run inside the call, so reading this from a $derived never writes state while a derived is
 // running.
 //
-// The `files` channel's version is what makes a listing stale. The git watcher publishes on it each
-// time it re-reads a root, which is every write under a folder it watches, so a file written inside
-// a project folder is a new version, every held listing is marked, and the next call for that id
-// fetches again, from a tab that is shown or when a hidden one is shown. The portfolio's version
-// cannot answer this: the snapshot is rebuilt only for a file the config names.
+// The `files` channel is what makes a listing stale. The git watcher publishes on it when a window
+// of writes under a folder it watches ends, naming the root and the folders written in it. A
+// listing is marked when a named folder is its project's folder or lies under it (every listing is
+// marked by a message that names no folders, or after a gap in the versions), and the next call for
+// that id fetches again, from a tab that is shown or when a hidden one is shown. The portfolio's
+// version cannot answer this: the snapshot is rebuilt only for a file the config names.
 
 import { z } from 'zod';
 import { anyNumberShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
+import { joinPath } from '../../data/helpers/files/paths.ts';
 import type { EntitiesStore } from '../shared/stores/shapes.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
+import { foldersNamedUnder } from '../shared/answers/files-named.ts';
 import { byScore, fuzzyMatches } from '../shared/words/fuzzy.ts';
 import { readAnswer } from './fs-transport.ts';
 
@@ -78,14 +81,33 @@ export type FilesStore = {
 /** What every project's query key opens with. */
 const KIND = 'files';
 
-export function createFiles(entities: EntitiesStore, queries: Queries): FilesStore {
+export function createFiles(
+    entities: EntitiesStore,
+    queries: Queries,
+    hubRoot: () => string
+): FilesStore {
     /** The version of the last `files` message heard, or null before the first. */
     let heard: number | null = null;
 
     entities.afterReceive((message) => {
         if (message.channel !== 'files' || message.version === heard) return;
+        const gap = heard === null || message.version !== heard + 1;
         heard = message.version;
-        queries.mark([KIND], 'wait');
+        const payload = entities.payloadOf(message, 'files');
+        const root = payload?.root ?? '';
+        const hub = hubRoot();
+        if (gap || hub === '' || payload === null) {
+            queries.mark([KIND], 'wait');
+            return;
+        }
+        if (root === '') return;
+        // A listing's `folder` is its project's folder against the hub.
+        for (const one of queries.entries<FilesState>([KIND])) {
+            const folder = joinPath(hub, one.data?.folder ?? '');
+            if (one.data === undefined || foldersNamedUnder(root, payload.folders, folder)) {
+                queries.mark(one.key, 'wait');
+            }
+        }
     });
 
     /**

@@ -9,6 +9,7 @@ import { fileBytesUrl } from '../../data/helpers/files/address.ts';
 import type { BookmarkKind } from './explorer/view/bookmark-rows.ts';
 import {
     anyNumberShape,
+    mapShape,
     readAs,
     readJson,
     survivorsShape,
@@ -19,6 +20,7 @@ import type { WriteAnswer } from '../shared/stores/shapes.ts';
 import {
     SHOWN_DEFAULT,
     TEXT_LIMIT,
+    treeKey,
     type FsEntry,
     type FsRoot,
     type ListingShown,
@@ -198,6 +200,67 @@ export const NO_NOTE: NoteState = {
 
 export { fileBytesUrl };
 
+/** One root of a workspace, and one workspace, answered as the endpoint sent them. */
+const fsRootShape = z.object({ key: z.string(), dir: z.string(), fixed: z.boolean() });
+
+const workspaceShape = unchanged(
+    z.object({ name: z.string(), roots: z.array(fsRootShape) })
+) satisfies z.ZodType<{ name: string; roots: FsRoot[] }>;
+
+/** The workspaces answer: the current one's name, every workspace, the keys the server dropped. */
+export const workspacesShape = z.object({
+    home: z.string().catch(''),
+    current: z.string().catch(''),
+    workspaces: survivorsShape(workspaceShape).catch([]),
+    dropped: survivorsShape(z.string()).catch([])
+});
+
+/** One bookmark, answered as the endpoint sent it. */
+const bookmarkShape = unchanged(
+    z.object({
+        id: z.string(),
+        title: z.string(),
+        fields: mapShape,
+        file: z.string(),
+        index: anyNumberShape,
+        kind: z.enum(['file', 'folder', 'missing']).optional().catch(undefined)
+    })
+) satisfies z.ZodType<BookmarkEntry>;
+
+/** One field of the bookmarks file's own schema, answered as the endpoint sent it. */
+const schemaFieldShape = unchanged(
+    z.object({
+        field: z.string(),
+        type: z.string(),
+        label: z.string().optional(),
+        options: z.array(z.string()).optional(),
+        optionsFrom: z.string().optional(),
+        required: z.boolean().optional(),
+        help: z.string().optional()
+    })
+) satisfies z.ZodType<SchemaField>;
+
+/** The bookmarks answer: the well-formed entries and the well-formed fields of the schema. */
+export const bookmarksShape = z.object({
+    entries: survivorsShape(bookmarkShape).catch([]),
+    schema: survivorsShape(schemaFieldShape).catch([])
+});
+
+/** One note of the list, answered as the endpoint sent it. */
+const noteRowShape = unchanged(
+    z.object({ id: z.string(), title: z.string(), modified: anyNumberShape })
+) satisfies z.ZodType<NoteRow>;
+
+/** The notes answer: the well-formed notes. */
+export const notesShape = z.object({ notes: survivorsShape(noteRowShape).catch([]) });
+
+/** One note's own answer: its title, its text and when it was written. */
+export const noteShape = z.object({
+    title: z.string().catch(''),
+    body: z.string().catch(''),
+    modified: anyNumberShape.catch(0)
+});
+
 /** The endpoint the tree reads and the workspace actions write. */
 export const FS_PATH = '/api/fs';
 
@@ -226,9 +289,23 @@ export function listingForm(shown: ListingShown): string {
 /**
  * Every mark a listing key can open with, which is where a listing of another pair is looked for.
  */
-export const LISTING_FORMS = [false, true].flatMap((hidden) =>
+const LISTING_FORMS = [false, true].flatMap((hidden) =>
     [false, true].map((ignored) => listingForm({ hidden, ignored }))
 );
+
+/** A listing held for one folder in one form, and whether it is marked to be read again. */
+export type HeldListing = { data: Listing | undefined; stale: boolean };
+
+/** What every form of one folder's listing holds now, read through the store's `peek`. */
+export function heldListings(
+    peek: (key: string[]) => HeldListing,
+    root: string,
+    path: string
+): HeldListing[] {
+    return LISTING_FORMS.map((form) =>
+        peek(['fs', 'listing', root, `${form}${treeKey(root, path)}`])
+    );
+}
 
 /** What a read of an endpoint came to: the body of a successful answer, or why the read failed. */
 export type Answered = { ok: true; body: unknown } | { ok: false; error: string };

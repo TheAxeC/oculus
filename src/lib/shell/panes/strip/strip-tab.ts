@@ -1,7 +1,7 @@
 // Layer 3, shell. The strip's tab for one instance: the registry's words and glyph, or the view's
 // own id when it has none. A state carrying a `label` shows that instead of the view's name, so two
 // documents read as two. A tab showing a file carries its path, which the strip draws the file's
-// icon for.
+// icon for, and whether that file is gone from the disk.
 
 import type { ClientState } from '$lib/state/client/context';
 import type { Instance } from '$lib/state/workbench/layout';
@@ -25,6 +25,8 @@ export type StripTabFacts = {
     mark: (instance: Instance) => { glyph?: string; token?: string };
     pathOf: (instance: Instance) => string | null;
     dirty: (id: string) => boolean;
+    /** Whether a file is off the disk, read from the listing of its folder. */
+    gone: (file: { root: string; path: string }) => boolean;
 };
 
 export function stripTab(instance: Instance, facts: StripTabFacts, t: Words): Tab {
@@ -35,17 +37,21 @@ export function stripTab(instance: Instance, facts: StripTabFacts, t: Words): Ta
     const own = instanceLabel(instance.state);
     const badge = badgeOf(found, facts.client);
     const preview = instance.preview === true;
+    const shown = shownFileOfTab(instance);
+    const gone = shown !== null && facts.gone(shown);
     return {
         id: instance.id,
         label: own ?? registrationLabel(found),
         ...stripMark(registrationGlyph(found), facts.mark(instance)),
-        file: shownFileOfTab(instance)?.path,
+        file: shown?.path,
+        gone,
         preview,
         pinned: instance.pinned === true,
         hint: tabHint(
             {
                 preview,
                 path: facts.pathOf(instance),
+                gone,
                 viewWords: own === null ? undefined : registrationLabel(found)
             },
             t

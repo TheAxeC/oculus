@@ -73,6 +73,9 @@ export type PaletteCommand = {
         | 'workspace'
         | 'workspace-save'
         | 'folder';
+    /** What the command does, drawn beside it in the list. */
+    description: string;
+    /** What follows the name when the command takes an argument; empty when it takes none. */
     hint: string;
     available: boolean;
 };
@@ -305,9 +308,20 @@ export function lineQuery(parsed: ParsedCommand | null): number | null {
  */
 function choiceCommands(served: string): PaletteCommand[] {
     const asked = choicesOfLanguage(served);
+    const words: Record<LspChoiceKind, { description: string; hint: string }> = {
+        interpreter: {
+            description: t('app.palette.cmd_interpreter'),
+            hint: t('app.palette.cmd_interpreter_hint')
+        },
+        database: {
+            description: t('app.palette.cmd_compile_database'),
+            hint: t('app.palette.cmd_compile_database_hint')
+        },
+        config: { description: t('app.palette.cmd_svelte_config'), hint: '' }
+    };
     return (Object.keys(LSP_CHOICES) as LspChoiceKind[]).map((kind) => ({
         name: LSP_CHOICES[kind].command,
-        hint: LSP_CHOICES[kind].hint,
+        ...words[kind],
         available: asked.includes(kind)
     }));
 }
@@ -315,27 +329,69 @@ function choiceCommands(served: string): PaletteCommand[] {
 /**
  * The command vocabulary and its argument hints, over the current theme and view configuration,
  * whether a source tab is on screen, which is what `language` changes, and the language a server
- * serves the tab in (empty for none), which is what `interpreter` and `compile-database` change.
+ * serves the tab in (empty for none), which is what `interpreter` and `compile-database` change,
+ * and whether the folder panel is open, which leaves `folder` unavailable.
  */
 export function commands(
     config: Record<string, unknown>,
     source = false,
-    served = ''
+    served = '',
+    panelOpen = false
 ): PaletteCommand[] {
     const themes = readAs(themeNamesShape, config.themes) ?? [];
     return [
-        { name: 'theme', hint: `<${themes.join(' | ')}>`, available: themes.length > 0 },
-        { name: 'crt', hint: '', available: true },
-        { name: 'accent', hint: '<name | #hex | reset>', available: false },
-        { name: 'tab', hint: '<view id>', available: true },
-        { name: 'goto', hint: '<project id>', available: true },
-        { name: 'language', hint: '<language>', available: source },
+        {
+            name: 'theme',
+            description: t('app.palette.cmd_theme'),
+            hint: t('app.palette.cmd_theme_hint', themes.join(' | ')),
+            available: themes.length > 0
+        },
+        { name: 'crt', description: t('app.palette.cmd_crt'), hint: '', available: true },
+        {
+            name: 'accent',
+            description: t('app.palette.cmd_accent'),
+            hint: t('app.palette.cmd_accent_hint'),
+            available: false
+        },
+        {
+            name: 'tab',
+            description: t('app.palette.cmd_tab'),
+            hint: t('app.palette.cmd_tab_hint'),
+            available: true
+        },
+        {
+            name: 'goto',
+            description: t('app.palette.cmd_goto'),
+            hint: t('app.palette.cmd_goto_hint'),
+            available: true
+        },
+        {
+            name: 'language',
+            description: t('app.palette.cmd_language'),
+            hint: t('app.palette.cmd_language_hint'),
+            available: source
+        },
         ...choiceCommands(served),
-        { name: 'help', hint: '', available: false },
-        { name: 'update', hint: '', available: true },
-        { name: 'workspace', hint: '<workspace>', available: true },
-        { name: 'workspace-save', hint: '<name>', available: true },
-        { name: 'folder', hint: '', available: true }
+        { name: 'help', description: t('app.palette.cmd_help'), hint: '', available: false },
+        { name: 'update', description: t('app.palette.cmd_update'), hint: '', available: true },
+        {
+            name: 'workspace',
+            description: t('app.palette.cmd_workspace'),
+            hint: t('app.palette.cmd_workspace_hint'),
+            available: true
+        },
+        {
+            name: 'workspace-save',
+            description: t('app.palette.cmd_workspace_save'),
+            hint: t('app.palette.cmd_workspace_save_hint'),
+            available: true
+        },
+        {
+            name: 'folder',
+            description: t('app.palette.cmd_folder'),
+            hint: '',
+            available: !panelOpen
+        }
     ];
 }
 

@@ -4,9 +4,11 @@
     // along the rows by the machine's keys. Up and Down step a row, Home and End go to the ends,
     // Right opens a closed row and steps into an open one, Left closes an open row and steps out to
     // its parent, and a letter moves to the next row whose label starts with it. A character with
-    // Meta or Ctrl held never reaches the machine, so Cmd+A and Ctrl+A stay the browser's, and a
-    // lowercase `a`, which the machine's key map reads as select-all and drops, is sent to it as a
-    // type-ahead letter (ui/tree/tree-keys.ts's keyRoute).
+    // Meta or Ctrl held never reaches the machine, except Cmd+A (Ctrl+A off macOS), which is handed
+    // to the caller's `onkey` as `select-all` and always prevented, so the page never selects its
+    // text from a tree whether or not the caller selects rows. A lowercase `a`, which the machine's
+    // key map reads as select-all and drops, is sent to it as a type-ahead letter
+    // (ui/tree/tree-keys.ts's keyRoute).
     //
     // The caller hands the rows as the keyboard reads them and draws them with the `nav` this
     // passes to its snippet, so a caller's rows remain the one statement of what is drawn: the
@@ -212,6 +214,11 @@
         const held = pressOf(event);
         const route = keyRoute(event.key, held, service.computed('isTypingAhead'), keymap);
         if (route === 'withhold') return;
+        if (route === 'select-all') {
+            event.preventDefault();
+            onkey?.('select-all', row.id, event);
+            return;
+        }
         if (route === 'bound') {
             const action = boundAction(keymap ?? [], pressOf(event));
             if (action === null) return;

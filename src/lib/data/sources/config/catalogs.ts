@@ -235,13 +235,14 @@ function settingText(catalog: TextCatalog, problem: EditorProblem): string {
 
 /**
  * One finding for each setting of `behavior.yml`, and each option of the editor, whose value the
- * options catalog's rule refuses: it names the file and the key, and the reader uses the entry's
- * default. A key the catalog holds no entry for gives none (options.yml's own findings name that
- * file), and neither does a configuration whose merge dropped behavior.yml, which holds no key to
- * be wrong. They are worded from the merged catalog, as iconFindings' are.
+ * options catalog's rule refuses (and the repository scan depth of sources.yml, which names that
+ * file): it names the file and the key, and the reader uses the entry's default. A key the catalog
+ * holds no entry for gives none (options.yml's own findings name that file), and neither does a
+ * configuration whose merge dropped behavior.yml, which holds no key to be wrong. They are worded
+ * from the merged catalog, as iconFindings' are.
  */
 export function settingFindings(engine: string, config: Record<string, unknown>): Finding[] {
-    const file = join(configDir(engine), 'behavior.yml');
+    const dir = configDir(engine);
     const catalog = textCatalog(config);
     const problems: EditorProblem[] = settingProblems(config);
     try {
@@ -254,6 +255,8 @@ export function settingFindings(engine: string, config: Record<string, unknown>)
         const once = `${problem.where}:${problem.key}${problem.where === 'repeat' ? problem.name : ''}`;
         if (named.has(once)) return [];
         named.add(once);
+        const held = problem.where === 'value' ? problem.file : undefined;
+        const file = join(dir, held ?? 'behavior.yml');
         return [{ file, key: problem.key, message: settingText(catalog, problem) }];
     });
 }

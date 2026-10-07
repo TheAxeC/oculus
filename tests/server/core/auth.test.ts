@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { TOKEN_HEADER, tokenedBody } from '../../../src/lib/server/core/auth.ts';
+import { TEXT } from '../text.ts';
 
 const TOKEN = 'the-token-of-this-process';
 
@@ -11,7 +12,11 @@ function write(headers: Record<string, string>, body = '{"kind":"one"}'): Reques
 }
 
 describe('tokenedBody', () => {
-    const SHAPE = { headers: { 'cache-control': 'no-store' }, fields: { ok: false } };
+    const SHAPE = {
+        headers: { 'cache-control': 'no-store' },
+        fields: { ok: false },
+        text: () => TEXT
+    };
 
     it('refuses an empty process token, a missing one and a wrong one, in the route shape', async () => {
         for (const [asked, held] of [
@@ -24,7 +29,7 @@ describe('tokenedBody', () => {
             expect(answer.headers.get('cache-control')).toBe('no-store');
             expect(await answer.json()).toEqual({
                 ok: false,
-                error: 'the write token is missing or stale'
+                error: 'The write token is missing or stale'
             });
         }
     });

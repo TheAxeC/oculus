@@ -3,7 +3,8 @@
 // name being typed (menu/row-ops.ts's rowNaming) and the drops (menu/row-drop.ts), all over the
 // explorer store.
 //
-// It holds the refusal line a pick said, until the next pick, and the row a menu or a key was
+// It holds the refusal line a pick said, until the next pick, and hands it to the caller's
+// `onrefused` when the caller says refusals on a line of its own, and the row a menu or a key was
 // opened on, which the pick the menu hands back acts on.
 
 import type { ClientState } from '$lib/state/client/context';
@@ -44,6 +45,8 @@ export type PicksDeps = {
     isSelected: (row: TreeRow) => boolean;
     /** A plain press moved the cursor to a row. */
     select: (row: TreeRow) => void;
+    /** Say a refusal, or its end with the empty text, on the caller's own line. */
+    onrefused?: (note: string) => void;
 };
 
 export type Picks = ReturnType<typeof createPicks>;
@@ -52,14 +55,17 @@ export function createPicks(deps: PicksDeps) {
     const { client, view, asking } = deps;
     const { explorer } = client;
 
-    /** A pick the server refused, said above the rows until the next pick. */
+    /** A pick the server refused, said until the next pick. */
     let refused = $state('');
 
     /** The row a menu or a key acts on; a segment of a folder chain when one was pressed. */
     let target: TreeRow | null = null;
 
+    /** Set the refusal line and hand it to the caller; the end of no line is not handed on. */
     const say = (note: string): void => {
+        if (note === '' && refused === '') return;
         refused = note;
+        deps.onrefused?.(note);
     };
 
     /** The absolute folder of a root or folder row that is a repository, else null. */
@@ -150,7 +156,7 @@ export function createPicks(deps: PicksDeps) {
 
     /** Run a pick on a row: the menu's, then the file operations'. */
     function run(row: TreeRow, pick: string): void {
-        refused = '';
+        say('');
         target = row;
         menuPicked(row, pick);
         opsPicked(row, pick);
@@ -222,9 +228,7 @@ export function createPicks(deps: PicksDeps) {
 
     return {
         refused: () => refused,
-        clear: () => {
-            refused = '';
-        },
+        clear: () => say(''),
         say,
         acted,
         naming,

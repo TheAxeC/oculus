@@ -339,12 +339,13 @@ const openBodyShape = z.looseObject({ path: z.string().refine((path) => path.tri
 export async function handleOpen(
     request: Request,
     token: string,
+    text: () => Record<string, string>,
     roots: Root[],
     appsFor: () => ProgramApps,
     opener: PathOpener = macOpenPath,
     reader: FinderInfoReader = readFinderInfo
 ): Promise<Response> {
-    const read = await tokenedBody(request, token);
+    const read = await tokenedBody(request, token, { text });
     if (read instanceof Response) return read;
     const named = openBodyShape.safeParse(read.body);
     if (!isMap(read.body) || !named.success) {

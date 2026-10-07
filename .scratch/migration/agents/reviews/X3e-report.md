@@ -13,7 +13,7 @@ The builder worked only in `/Users/axelfaes/workspace/research-hub/.agents/workt
 - The proofs of the server-side cases in part 4b were run in round 0 (run 11) and not run again in round 1; the scratch copy that held them was not kept. The server files they read are unchanged since (part 4, row 12).
 - `tests/checks/config/integrity.test.ts`: 2 failed, 6 passed (part 4, row int). The finding is `deck folder deck is not in /Users/axelfaes/workspace/research-hub/.agents/worktrees/X3e`. `ls deck` in the worktree fails; the worktree holds no `deck/` folder, and the step changes nothing about it. It was not run where `deck/` exists because that is the main checkout.
 - Under this machine's load the tree checks, the guarded set and the verify 4 files ran past the 5 s vitest default; they were run with `--testTimeout 0 --hookTimeout 0`.
-- No premise of the brief gave a wrong result in the first run; the line drifts and the small differences are in part 10.
+- No premise of the brief gave a wrong result in the first run; the line drifts and the small differences are in part 10. Corrected at X3e's landing (finding S-R2 of the review over round 1): item D8's premise that `Graph.svelte:419` is a head's `count` was wrong, as part 10 now says.
 
 ## 2. Open items of the state file
 
@@ -913,7 +913,7 @@ Put the look on a workbench page named TEST. "Before" is what the base showed (p
 | `tests/server/core/git-failure.test.ts` | `failureText(failure, config)` | `failureLine(failure, TEXT)` |
 | `tests/server/git/refs/cherry-pick.test.ts:38`, `tests/data/real-hub.probe.ts:128` | `statusFor(...)` used as a value | `await statusFor(...)` |
 | `tests/server/root/context-fixture.ts:71` | a `refresh` stand-in returning nothing | a `refresh` answering a settled promise |
-| `tests/server/machine/hpc/submit-world.ts:39`, `submit-files.test.ts:72` | `keptFiles(...)` used as a value | `await keptFiles(...)` |
+| `tests/server/machine/hpc/submit-world.ts:22` and `:32` (corrected at X3e's landing, finding P-R1 of the review over round 1; `submit-files.test.ts` is not in the diff) | `listed` returns `{ ok: true; value: string[] }` and `return { ok: true, value: found }` | `listed` returns `Promise<{ ok: true; value: string[] }>` and `return Promise.resolve({ ok: true, value: found })` |
 | `tests/server/files/picker.test.ts` (`printing` helper) | `{ code, out }` | `{ code, out, err: '' }`; six G42 rows added |
 | `tests/data/sources/config/settings.test.ts` | no `repository_scan_depth` | the `repositoryScanDepth` table (0, 3, 4, -1, 1.5, "one", missing) and its catalog `options` |
 | `tests/server/files/workspaces.test.ts:70` | no `order-roots` | G31's test 'writes a missing file and refuses one that does not read, leaving it as is' loops over the save and the order-roots writes |
@@ -948,6 +948,7 @@ Function doc comments: a scripted list of the functions whose body changed and w
 
 ## 10. What in the brief was wrong or impossible, with the evidence
 
+- Item D8 (added at X3e's landing, finding S-R2 of the review over round 1): the brief names `Graph.svelte:359` and `:419` as the two heads' `count`; on the base `:419` is `VirtualRows`' `count={commits.length}`, the number of rows it draws (`grep -n "count=" src/lib/views/sources/repositories/graph/Graph.svelte` on the base prints :359, :397, :404, :419). Only the head's `count` at :359 was removed; `VirtualRows`' (now :424) stays, since the Graph draws no row without it.
 - Line drifts: item A2 cites `writes.ts:524` for the route's answer to a body it does not know; on the base that answer is `src/lib/server/edit/writes.ts:589` (`grep -rn "not a write this route knows" src` on the base prints `writes.ts:589`; case 91 cites :589 correctly). The brief cites `ops.svelte.ts:569` for the call that marks the listings; `grep -n "invalidate()" src/lib/state/sources/explorer/ops.svelte.ts` on the base prints `584`. No behaviour differs.
 - Case 107's base-copy run came out `"red":false` with `waitMeanMs` 3, which the brief said it might; it is quoted as it came and not counted as the red.
 - The brief's size rule (880 lines, 520 for a component) is stricter than `tests/checks/tree/size.test.ts` (900 and 540). `Source.svelte` is 520 lines and `fs.svelte.ts` is 879 (`wc -l`); `src/lib/views/structure/map/Graph.svelte` is 524 lines and is identical to the base.

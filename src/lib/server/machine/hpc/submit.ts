@@ -96,8 +96,8 @@ export type PlanDeps = {
     catalog: () => TextCatalog;
     /** The ssh alias to run against, or none and the sentence for why (host.ts). */
     where: () => { host: string; missing?: string };
-    /** The paths git keeps under a folder (`keptFiles`). */
-    kept: (code: string) => Read<string[]>;
+    /** The paths git keeps under a folder (`keptFiles`), its refusals worded from the catalog. */
+    kept: (code: string, text: TextCatalog) => Promise<Read<string[]>>;
 };
 
 /** What a run adds: the two runners, the state, the poll to follow with and the console line. */
@@ -212,7 +212,7 @@ async function compute(input: { root: string; path: string }, deps: PlanDeps): P
     if ('status' in cluster) return cluster;
     const { host, missing } = deps.where();
     if (host === '') return refuse('no-host', missing);
-    const listed = deps.kept(code);
+    const listed = await deps.kept(code, deps.catalog());
     if (!listed.ok) return refuse('no-files', listed.error);
     const { files, bytes } = sentFiles(code, listed.value);
     const script = file.slice(code.length + 1);

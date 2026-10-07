@@ -7,8 +7,10 @@
     //
     // A file opens through opening.ts, the bookmark star writes through the model's bookmark
     // actions, and the root menu's Remove asks first (the confirm below) before it takes a root out
-    // of the workspace. The header, the `..` row and the Add Folder control are the caller's:
-    // a tree given none draws none.
+    // of the workspace. A refusal of a pick or of the removal is said on the tab's own note line
+    // (`answerAt`), which the Files view lays over its foot and a project card draws above its
+    // tree, so the tree draws no refusal line of its own. The header, the `..` row and the Add
+    // Folder control are the caller's: a tree given none draws none.
 
     import type { Snippet } from 'svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
@@ -34,9 +36,35 @@
         headerOpen?: boolean;
         /** The `..` row was pressed: show this folder as the top. */
         onup?: (to: RowRef) => void;
+        /**
+         * Write the new order of the roots the reader may move; none for a tree that reorders no
+         * root (a rooted or following tab, a project card). A tree whose filter is typed moves
+         * none either.
+         */
+        onreorder?: (keys: string[]) => void;
+        /** Alt+Up or Alt+Down on the workspace header row moves the tree's section. */
+        onmoveheader?: (direction: 'up' | 'down') => void;
     };
 
-    let { tree, workspace, owner, header, headerOpen = true, onup }: Props = $props();
+    let {
+        tree,
+        workspace,
+        owner,
+        header,
+        headerOpen = true,
+        onup,
+        onreorder,
+        onmoveheader
+    }: Props = $props();
+
+    /** The roots the reader may move, in the order the workspace writes them. */
+    const movable = $derived(
+        onreorder === undefined || tree.filtering
+            ? []
+            : workspace.current.roots
+                  .filter((one) => !tree.fixed.includes(one.key))
+                  .map((one) => one.key)
+    );
 
     const {
         fs: { removeRoot }
@@ -73,6 +101,10 @@
     onbookmark={(row: TreeRow) => void tree.marking.bookmark(row)}
     onup={onup ?? ((to: RowRef) => tree.tab.patchAt(owner, { top: to }))}
     onaddroot={() => void tree.addFolders()}
+    order={movable}
+    {onreorder}
+    {onmoveheader}
+    onrefused={(note: string) => tree.tab.answerAt(owner, { note })}
 />
 {#if tree.filtering && matchedNothing(tree.shown)}
     <Empty message={t('files.filter_none')} glyph={t('files.none_glyph')} />

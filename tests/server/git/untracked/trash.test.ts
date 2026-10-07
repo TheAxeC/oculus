@@ -16,6 +16,7 @@ import { ENGINE_ROOT } from '../../../../src/lib/server/files/files.ts';
 
 import { it } from '../../../fixtures/scratch.ts';
 import { isolateGit, put, scratchRepo } from '../refs/repo.ts';
+import { TEXT } from '../../text.ts';
 
 isolateGit();
 
@@ -41,7 +42,7 @@ describe('trashUntracked', () => {
         const root = scratchRepo();
         put(root, 'u.txt', 'loose\n');
         const { spy, into } = deps();
-        const answer = await trashUntracked(root, ['u.txt'], into, [root]);
+        const answer = await trashUntracked(root, ['u.txt'], into, TEXT, [root]);
         expect(answer.ok).toBe(true);
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy).toHaveBeenCalledWith(join(realpathSync(root), 'u.txt'), { glob: false });
@@ -51,7 +52,7 @@ describe('trashUntracked', () => {
         const root = scratchRepo();
         put(root, 'local.yml', 'port: 1\n');
         const { spy, into } = deps(root);
-        const answer = await trashUntracked(root, ['local.yml'], into, [root]);
+        const answer = await trashUntracked(root, ['local.yml'], into, TEXT, [root]);
         expect(answer.ok).toBe(false);
         expect(spy).not.toHaveBeenCalled();
     });

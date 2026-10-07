@@ -5,10 +5,12 @@
     // The list is one grid of four columns (the mark of a file another session holds open, the
     // path, the tool's verb and the count) and each row takes the list's columns by subgrid, so a
     // verb and a count start at one x in every row whatever the length of the path before them. A
-    // path is drawn whole in one line and cut at its end by the stylesheet.
+    // path is the file's name first and its folder after it, dimmed, in one line cut at its end by
+    // the stylesheet, and the whole path is the tooltip.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import { relativeTo } from '$lib/state/shared/words/format';
+    import { dirOf, leafOf } from '$lib/state/sources/repositories/change-tree';
     import type { SessionFile } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -19,6 +21,12 @@
 
     type Props = { recordId: string; files: SessionFile[]; workspace: string };
     let { recordId, files, workspace }: Props = $props();
+
+    /** A path as the row says it: the file's name, then the folder it is in. */
+    function split(path: string): { name: string; dir: string } {
+        const shown = relativeTo(path, workspace);
+        return { name: leafOf(shown), dir: dirOf(shown) };
+    }
 
     /** Other live sessions holding one path open, by title. */
     function shared(path: string): string[] {
@@ -45,10 +53,16 @@
         <div class="files">
             {#each files as file (file.path)}
                 {@const also = shared(file.path)}
+                {@const parts = split(file.path)}
                 <div class="file" class:shared={also.length > 0}>
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render mark(also)}
-                    <span class="pa" title={file.path}>{relativeTo(file.path, workspace)}</span>
+                    <span class="pa" title={file.path}>
+                        <span>{parts.name}</span>
+                        {#if parts.dir !== ''}
+                            <span class="dir">{parts.dir}</span>
+                        {/if}
+                    </span>
                     <span class="to">{file.tool}</span>
                     <span class="ct">{t('sessions.ch_times', file.count)}</span>
                 </div>
@@ -98,6 +112,12 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+    /* The folder after the file's name: 0.9 of the row's size, dimmed, cut at its end. */
+    .dir {
+        margin-left: 0.5em;
+        font-size: 0.9em;
+        color: var(--muted-txt, var(--muted));
     }
     .ct,
     .to {

@@ -1,14 +1,13 @@
-In flight (1 of 6 slots):
-- X3e (Files lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop): round 1 built and refuted (four findings); landing next, after D11's look fixes (Axel's list, state file 21:45).
+In flight (0 of 6 slots): none.
 
-No step can be prepared now: M8 waits for X3e and D11 to land; D43 waits for M8; D33 waits for D11 and D28; D28 waits for X3e. The other four slots stay empty until one of these lands.
+Ready to prepare: D28 (X3e has landed) and M8 (X3e and D11 have landed). D43 waits for M8; D33 waits for D28.
 
 Queued, in order (17 steps):
-- D28 (saving a file as VS Code does): after X3e.
+- D28 (saving a file as VS Code does): ready.
 - M6 (the collection forms removed): after X3e and D28.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
-- M8 (the hub's YAML checked in the editor): brief check closed (Z706), G56 and the cockpit ruled (Z707, Z708); after X3e and D11.
+- M8 (the hub's YAML checked in the editor): brief check closed (Z706), G56 and the cockpit ruled (Z707, Z708); ready.
 - D43 (LaTeX navigation through texlab): after M8.
 - D33 (the Problems view): after D11 and D28.
 - D39 (hub keys as links): after M8.
@@ -25,7 +24,8 @@ Queued, in order (17 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D11 (the debug client for rite), 2026-10-07; looked at on a scratch oculus, the look's fixes on main; open item 4 (Debug Anyway at the command's end) for Axel.
+- X3e (the Files view's lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop), 2026-10-08; looked at on a scratch oculus, its fixes at landing; open item 5 (the root drag's guarded entry) for Axel.
+- D11 (the debug client for rite), 2026-10-07; looked at on a scratch oculus, the look's fixes on main.
 - D15 (PDF reading), 2026-10-07, a84214da; looked at on TEST, two fixes from the look.
 - D45 (LaTeX as VS Code's LaTeX Workshop), 2026-10-07, 0753a5e7.
 - D23b (rename, workspace symbols, hierarchies, the TypeScript and Svelte servers), 2026-10-07, 639820b9.

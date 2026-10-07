@@ -17,7 +17,8 @@
 // terminals, panes and roots, and no component is mounted.
 
 import { BRANCH_NOT_MERGED } from '../../../data/model/index.ts';
-import { diffState, plannedPath, repositoriesViewOf, type DiffSubject } from './repositories.ts';
+import { diffState, repositoriesViewOf, type DiffSubject } from './repositories.ts';
+import { plannedPath } from './worktrees.ts';
 import { isFolderPath, withoutClosedCommits } from './change-tree.ts';
 import { headTabState, tabOfFile, type ServedRoot, type TabFile } from './file-git.ts';
 import type { PatchMode } from './diff/diff-patch.ts';
@@ -51,6 +52,8 @@ export type RepositoriesStore = {
     busy: (root: string) => boolean;
     /** What the last write on this root answered, or the empty string. */
     outcome: (root: string) => string;
+    /** Clear what the last write on this root answered. */
+    clearOutcome: (root: string) => void;
     /** End the write in flight on this root; nothing is posted when none is. */
     cancel: (root: string) => Promise<void>;
     /** The commit message being written for this root. */
@@ -140,8 +143,13 @@ export type RepositoriesStore = {
      */
     openChange: (root: string, group: string, path: string, session?: string) => void;
     /**
-     * Open a tracked file as HEAD or the index holds it, in a read-only source tab: HEAD for a
-     * staged row and the index for a changed one. An untracked row has no such version.
+     * Open what a change row stands for to the side of the pane the reader is in, which is where
+     * the diff and the merge editor already open: an untracked row's file opens beside too.
+     */
+    openChangeBeside: (root: string, group: string, path: string) => void;
+    /**
+     * Open a tracked file as HEAD holds it, in a read-only source tab, for a staged row and for a
+     * changed one. An untracked row has no such version.
      */
     openHead: (root: string, group: string, path: string) => void;
     /** Open the files between a ref and a commit in a diff pane of its own. */
@@ -302,7 +310,7 @@ export function createRepositories(
         return tabOfFile(served, { root, path });
     }
 
-    function openFile(root: string, path: string, line?: number): boolean {
+    function openFile(root: string, path: string, line?: number, beside = false): boolean {
         // A folder (an untracked directory) has no source tab; the Files view shows it.
         if (isFolderPath(path)) return revealFile(root, path);
         const tab = tabOf(root, path);
@@ -311,8 +319,19 @@ export function createRepositories(
             return false;
         }
         const state = { root: tab.root, path: tab.path, label: nameOf(path) };
-        layout.openView('source', line === undefined || line <= 0 ? state : { ...state, line });
+        const shown = line === undefined || line <= 0 ? state : { ...state, line };
+        if (beside) layout.openBeside('source', shown);
+        else layout.openView('source', shown);
         return true;
+    }
+
+    function openChange(root: string, group: string, path: string, session?: string): void {
+        if (group === 'merge') openMerge(root, path);
+        else if (group === 'untracked') openFile(root, path);
+        else {
+            const subject = { root, path, staged: group === 'staged', worktree: false };
+            openDiff(session === undefined ? subject : { ...subject, session }, path);
+        }
     }
 
     function revealFile(root: string, path: string): boolean {
@@ -370,6 +389,7 @@ export function createRepositories(
     return {
         busy,
         outcome,
+        clearOutcome: (root) => say(root, ''),
         cancel,
         message: (root) => state.messages[root] ?? '',
         setMessage,
@@ -472,20 +492,14 @@ export function createRepositories(
         shellIn,
         agentIn,
         openDiff,
-        openChange(root, group, path, session) {
-            if (group === 'merge') openMerge(root, path);
-            else if (group === 'untracked') openFile(root, path);
-            else {
-                const subject = { root, path, staged: group === 'staged', worktree: false };
-                openDiff(session === undefined ? subject : { ...subject, session }, path);
-            }
+        openChangeBeside(root, group, path) {
+            if (group === 'untracked') openFile(root, path, undefined, true);
+            else openChange(root, group, path);
         },
+        openChange,
         openHead(root, group, path) {
             if (group !== 'staged' && group !== 'changed') return;
-            layout.openView(
-                'source',
-                headTabState(root, path, group === 'staged' ? 'head' : 'index')
-            );
+            layout.openView('source', headTabState(root, path, 'head'));
         },
         openCompare(root, from, to) {
             const subject = {

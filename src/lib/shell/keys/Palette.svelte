@@ -1,7 +1,8 @@
 <script lang="ts">
     // Layer 3, shell. The Cmd-K overlay over the workbench, on the modal ground
     // ui/frame/Modal.svelte draws, its list bits-ui's Command. It builds a fresh pure index
-    // whenever it opens, then either matches the query fuzzily or lists the colon commands;
+    // whenever it opens, then either matches the query fuzzily or lists the colon commands, each
+    // with its argument hint after its name and what it does at the end of the row;
     // choosing a result changes layout or appearance state and never mounts a view of its own.
     // Every row is one grid line: what it is in words, then the control that opens it filling the
     // rest, its matched letters marked.
@@ -47,7 +48,12 @@
     import ChoiceRows from '$lib/shell/keys/rows/ChoiceRows.svelte';
     import SymbolRows from '$lib/shell/keys/rows/SymbolRows.svelte';
     import WorkspaceRows from '$lib/shell/keys/rows/WorkspaceRows.svelte';
-    import { choiceModeOf, choiceRows, opensAsMode } from '$lib/shell/keys/palette-modes';
+    import {
+        choiceModeOf,
+        choiceRows,
+        listedRows,
+        opensAsMode
+    } from '$lib/shell/keys/palette-modes';
     import { focusQuietly } from '$lib/ui/frame/quiet-focus';
     import { configuredThemes, openPaletteItem } from '$lib/shell/keys/palette-open';
     import {
@@ -173,54 +179,36 @@
     const commandList = $derived(
         parsed === null || line !== null || languageMode || workspaceMode || saveMode || choiceMode
             ? []
-            : commands(current.config, source !== null, served?.language ?? '').filter((command) =>
-                  command.name.startsWith(parsed.name)
-              )
+            : commands(
+                  current.config,
+                  source !== null,
+                  served?.language ?? '',
+                  explorer.panelOpen()
+              ).filter((command) => command.name.startsWith(parsed.name))
     );
     const matches = $derived(
         parsed === null && !symbolMode ? ranked(index, query).slice(0, 30) : []
     );
-    const count = $derived(
-        parsed === null
-            ? matches.length
-            : line !== null
-              ? caret === null
-                  ? 0
-                  : 1
-              : languageMode
-                ? languageEntries.length + languages.length
-                : workspaceMode
-                  ? choices.length
-                  : saveMode
-                    ? 1
-                    : choiceMode === null
-                      ? commandList.length
-                      : choiceList.length
+    /** How many rows the list draws, and the value of each one a press can run, in its order. */
+    const listed = $derived(
+        listedRows({
+            parsed,
+            matches,
+            line,
+            hasCaret: caret !== null,
+            languageMode,
+            languageEntries,
+            languages,
+            workspaceMode,
+            choices,
+            saveMode,
+            choiceMode,
+            commandList,
+            choiceList
+        })
     );
-
-    /** The value of each row the list draws, in its order, a row that cannot be run left out. */
-    const values = $derived(
-        parsed === null
-            ? matches.map((found) => found.item.id)
-            : line !== null
-              ? caret === null
-                  ? []
-                  : ['line']
-              : languageMode
-                ? [
-                      ...languageEntries.map((one) => `language-action:${one.kind}`),
-                      ...languages.map((found) => `language:${found.choice.name}`)
-                  ]
-                : workspaceMode
-                  ? choices.map((choice) => `workspace:${choice.name}`)
-                  : saveMode
-                    ? ['workspace-save']
-                    : choiceMode === null
-                      ? commandList
-                            .filter((command) => command.available)
-                            .map((command) => `command:${command.name}`)
-                      : choiceList.map((row) => row.value)
-    );
+    const count = $derived(listed.count);
+    const values = $derived(listed.values);
 
     // Each opening starts from its prefill; what is typed after that is read untracked, so typing
     // does not start it again.
@@ -438,6 +426,7 @@
                                                                 value: `command:${command.name}`,
                                                                 kind: ':',
                                                                 label: `${command.name}${command.hint === '' ? '' : ` ${command.hint}`}`,
+                                                                hint: command.description,
                                                                 disabled: !command.available,
                                                                 note: command.available
                                                                     ? undefined

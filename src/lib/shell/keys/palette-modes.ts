@@ -8,7 +8,7 @@
 // configuration files the Svelte server would run, which no press acts on, and one row that
 // approves them or, once approved, takes the approval back.
 
-import type { ParsedCommand } from '$lib/state/workbench/palette';
+import type { PaletteCommand, PaletteMatch, ParsedCommand } from '$lib/state/workbench/palette';
 import {
     databaseInForce,
     findingLine,
@@ -148,4 +148,63 @@ export function choiceRows(
         });
     }
     return rows;
+}
+
+/** What the list of the palette is made of, whichever mode the query puts it in. */
+export type ListedFacts = {
+    parsed: ParsedCommand | null;
+    matches: PaletteMatch[];
+    /** The line a go-to-line query names, or null for another query. */
+    line: number | null;
+    /** Whether the source tab on screen has a caret, which a go-to-line needs. */
+    hasCaret: boolean;
+    languageMode: boolean;
+    languageEntries: { kind: string }[];
+    languages: { choice: { name: string } }[];
+    workspaceMode: boolean;
+    choices: { name: string }[];
+    saveMode: boolean;
+    choiceMode: ChoiceMode | null;
+    commandList: PaletteCommand[];
+    choiceList: { value: string }[];
+};
+
+/**
+ * How many rows the list draws and the value of each row a press can run, in the order drawn: the
+ * fuzzy matches with no command, the go-to-line row, the language entries and languages, the
+ * workspaces, the save row, the choices of a server, else the colon commands, among which one that
+ * is unavailable is drawn and has no value.
+ */
+export function listedRows(facts: ListedFacts): { count: number; values: string[] } {
+    const { parsed, line, languageMode, workspaceMode, saveMode, choiceMode } = facts;
+    if (parsed === null) {
+        return { count: facts.matches.length, values: facts.matches.map((one) => one.item.id) };
+    }
+    if (line !== null)
+        return facts.hasCaret ? { count: 1, values: ['line'] } : { count: 0, values: [] };
+    if (languageMode) {
+        return {
+            count: facts.languageEntries.length + facts.languages.length,
+            values: [
+                ...facts.languageEntries.map((one) => `language-action:${one.kind}`),
+                ...facts.languages.map((one) => `language:${one.choice.name}`)
+            ]
+        };
+    }
+    if (workspaceMode) {
+        return {
+            count: facts.choices.length,
+            values: facts.choices.map((one) => `workspace:${one.name}`)
+        };
+    }
+    if (saveMode) return { count: 1, values: ['workspace-save'] };
+    if (choiceMode !== null) {
+        return { count: facts.choiceList.length, values: facts.choiceList.map((row) => row.value) };
+    }
+    return {
+        count: facts.commandList.length,
+        values: facts.commandList
+            .filter((command) => command.available)
+            .map((command) => `command:${command.name}`)
+    };
 }

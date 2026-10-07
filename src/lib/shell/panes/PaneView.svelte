@@ -182,7 +182,18 @@
     /** A tab per instance (strip/strip-tab.ts). */
     const tabs = $derived<Tab[]>(
         instances.map((instance) =>
-            stripTab(instance, { viewFor, client, mark: tabMark, pathOf, dirty: unsaved }, t)
+            stripTab(
+                instance,
+                {
+                    viewFor,
+                    client,
+                    mark: tabMark,
+                    pathOf,
+                    dirty: unsaved,
+                    gone: (file) => client.fs.gone(file.root, file.path)
+                },
+                t
+            )
         )
     );
 

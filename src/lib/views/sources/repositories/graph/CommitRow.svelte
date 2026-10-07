@@ -1,9 +1,14 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/repositories/graph/Graph.svelte. One commit of the Source
     // Control Graph, drawn from its props alone so a test renders it without the graph's reads: its
-    // lanes and circle, its subject, its author muted after it, and at the right the branch and tag
-    // names on it as pills, then its `...` on hover. The checked-out commit's subject and author
-    // are at weight 600. The short hash and the time are in the row's hover words, not in the row.
+    // lanes and circle, its subject, its author muted after it, and at the right the names on it as
+    // pills, then its `...` on hover. The commit HEAD is on carries a head pill first, named by the
+    // checked-out branch, or by the short hash while HEAD is detached. The first pill keeps its
+    // name, cut at 100 pixels; every other name is drawn as its kind's glyph alone, the names of
+    // one kind (local branch, remote branch, tag) grouped in one pill with their count when there
+    // is more than one, and the names in the pill's tooltip. The subject keeps at least four
+    // characters of the row. The checked-out commit's subject and author are at weight 600. The
+    // short hash and the time are in the row's hover words, not in the row.
     //
     // A commit's menu, opened by a right-click on the row or by its `...`, opens its files, copies
     // its id or its message, checks out a local branch named on it, deletes a tag on it, and
@@ -27,10 +32,12 @@
         refMenu,
         type BranchFacts,
         type CompareFacts,
-        type GraphPick
+        type GraphPick,
+        type HeadFacts
     } from '../menus/graph-menu';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import Lanes from './Lanes.svelte';
+    import { commitPills, type Pill } from './pills';
     import { commitKind, type LaneRow } from '$lib/state/sources/repositories/graph-lanes';
     import type { GitGraphCommit } from '$lib/state/sources/repositories/repositories';
     import { t } from '$lib/state/shared/words/text';
@@ -47,6 +54,8 @@
         branches: BranchFacts;
         /** The refs the compare items name: the upstream and the merge base. */
         compare: CompareFacts;
+        /** Whether HEAD contains the commit, and whether HEAD is detached. */
+        here: HeadFacts;
         /** Whether a write is in flight on the repository, which offers no checkout or removal. */
         busy: boolean;
         onpick: (hash: string) => void;
@@ -64,6 +73,7 @@
         open,
         branches,
         compare,
+        here,
         busy,
         onpick,
         onswitch,
@@ -71,20 +81,26 @@
         ongraph
     }: Props = $props();
 
-    type Pill = { name: string; kind: 'local' | 'remote' | 'tag' };
+    /** The names on the commit: HEAD's pill, local branches, then remote branches, then tags. */
+    const pills = $derived<Pill[]>(commitPills(commit, branches, here));
 
-    /** The names on the commit: local branches first, then remote branches, then tags. */
-    const pills = $derived<Pill[]>([
-        ...commit.refs
-            .filter((name) => branches.local.includes(name))
-            .map((name): Pill => ({ name, kind: 'local' })),
-        ...commit.refs
-            .filter((name) => !branches.local.includes(name))
-            .map((name): Pill => ({ name, kind: 'remote' })),
-        ...commit.tags.map((name): Pill => ({ name, kind: 'tag' }))
-    ]);
+    /** The pill that keeps its name. */
+    const first = $derived<Pill | undefined>(pills.at(0));
 
-    const items = $derived<MenuItem[]>(commitMenu(commit, branches, busy, t, compare));
+    /** The other names, one pill of a kind's glyph for each kind that has any. */
+    const grouped = $derived(
+        (['local', 'remote', 'tag'] as const)
+            .map((kind) => ({
+                kind,
+                names: pills
+                    .slice(1)
+                    .filter((one) => one.kind === kind)
+                    .map((one) => one.name)
+            }))
+            .filter((group) => group.names.length > 0)
+    );
+
+    const items = $derived<MenuItem[]>(commitMenu(commit, branches, busy, t, compare, here));
 
     /** A pick from the commit's menu or from a name's on it. */
     function picked(id: string): void {
@@ -98,18 +114,45 @@
         else ongraph(pick, commit.hash);
     }
 
-    /** The menu of one pill: a local branch's checkout and removal, a remote's, a tag's removal. */
+    /** The menu of one name: a local branch's checkout and removal, a remote's, a tag's removal. */
     function pillMenu(pill: Pill): MenuItem[] {
+        if (pill.kind === 'head' && here.detached) return [];
         if (pill.kind === 'tag') return refMenu(pill.name, 'tag', busy, t);
         return refMenu(pill.name, refKind(pill.name, branches), busy, t);
     }
+
+    /** The glyph of the pill that marks the commit HEAD is at. */
+    const HEAD_GLYPH = 'head';
+
+    /** The glyph of a kind of name. */
+    function glyphOf(kind: Pill['kind']): string {
+        if (kind === 'head') return HEAD_GLYPH;
+        return kind === 'tag' ? 'tag' : 'branch';
+    }
 </script>
 
-{#snippet pillOf(pill: Pill)}
-    <span class="pill" data-pill={pill.kind} title={pill.name}>
-        <Glyph name={pill.kind === 'tag' ? 'tag' : 'branch'} />
-        <span class="pname">{pill.name}</span>
+{#snippet pillOf(kind: Pill['kind'], names: string[], whole: boolean)}
+    <span class="pill" class:alone={!whole} data-pill={kind} title={names.join('\n')}>
+        <Glyph name={glyphOf(kind)} />
+        {#if whole}
+            <span class="pname">{names[0]}</span>
+        {:else if names.length > 1}
+            <span class="pcount">{names.length}</span>
+        {/if}
     </span>
+{/snippet}
+
+{#snippet pillMenued(kind: Pill['kind'], names: string[], whole: boolean)}
+    {@const menu = names.length === 1 ? pillMenu({ name: names[0], kind }) : []}
+    {#if menu.length > 0}
+        <ContextMenu label={names[0]} items={menu} own onpick={picked}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render pillOf(kind, names, whole)}
+        </ContextMenu>
+    {:else}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render pillOf(kind, names, whole)}
+    {/if}
 {/snippet}
 
 <li role="none" class="commit" data-commit={commit.hash}>
@@ -126,6 +169,7 @@
                 strong={commit.head}
                 expanded={open}
                 trailing
+                nameStyle="flex: 1 1 auto; min-width: 4ch"
                 title={t(
                     'repositories.commit_title',
                     commit.short,
@@ -139,17 +183,13 @@
                     <span class="author">{commit.author}</span>
                 {/snippet}
                 {#snippet end()}
-                    {#each pills as pill (`${pill.kind}:${pill.name}`)}
-                        {@const menu = pillMenu(pill)}
-                        {#if menu.length > 0}
-                            <ContextMenu label={pill.name} items={menu} own onpick={picked}>
-                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                {@render pillOf(pill)}
-                            </ContextMenu>
-                        {:else}
-                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                            {@render pillOf(pill)}
-                        {/if}
+                    {#if first !== undefined}
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render pillMenued(first.kind, [first.name], true)}
+                    {/if}
+                    {#each grouped as group (group.kind)}
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render pillMenued(group.kind, group.names, false)}
                     {/each}
                 {/snippet}
                 {#snippet actions(reach: number)}
@@ -230,6 +270,14 @@
     :global(body.wall) .pill[data-pill='local'] {
         background: var(--accent-bg);
         color: var(--on-accent-bg, var(--ink));
+    }
+
+    .pill.alone {
+        gap: 2px;
+    }
+
+    .pcount {
+        font-size: calc(var(--button-font) * var(--text-scale, 1));
     }
 
     .pname {

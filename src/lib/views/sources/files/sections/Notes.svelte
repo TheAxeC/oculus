@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/files/Files.svelte. The scratch notes as a section under
     // the trees: a head that opens and closes it and carries the control that opens a new note, and
-    // one explorer row per note, newest first, with what it is called, when it was last written,
-    // and its removal behind the confirm every write that can lose work sits behind.
+    // one explorer row per note in the order kept in the notes folder (a new note is on top, and a
+    // row drags and moves with Alt+Up and Alt+Down), with what it is called, when it was last
+    // written, and its removal behind the confirm every write that can lose work sits behind.
     //
     // The head is drawn in every state, since it is where a note is started: with no note the
     // section says so in one muted row, and with notes that could not be read it says why in that
@@ -18,6 +19,8 @@
     import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
+    import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
+    import { createListDrag, listKeys, type SectionMove } from './list-drag.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -35,9 +38,22 @@
         onremove: (id: string) => void;
         /** Ask for the notes again, which the failed line's own control offers. */
         onretry: () => void;
+        /** What lets the head be dragged and moved by Alt+Up/Down. */
+        move?: SectionMove;
+        /** Put the notes in the order the ids name, after a drop or Alt+Up/Down on a row. */
+        onorder: (ids: string[]) => void;
     };
 
-    let { rows, error, open, ontoggle, onadd, onopen, onremove, onretry }: Props = $props();
+    let { rows, error, open, ontoggle, onadd, onopen, onremove, onretry, move, onorder }: Props =
+        $props();
+
+    /** The drags of the note rows over each other. */
+    const list = createListDrag({
+        type: 'application/x-oculus-note',
+        order: () => rows.map((row) => row.id),
+        drawn: () => rows.map((row) => row.id),
+        write: (ids) => onorder(ids)
+    });
 
     /** The note the confirm is open for, and the empty string while it is closed. */
     let asked = $state('');
@@ -56,7 +72,13 @@
 </script>
 
 <div class="notes" data-fs-notes>
-    <TreeView label={t('files.notes')} rows={keyRows} {ontoggle}>
+    <TreeView
+        label={t('files.notes')}
+        rows={keyRows}
+        {ontoggle}
+        keymap={MOVE_KEYMAP}
+        onkey={listKeys(move, list, 'note:')}
+    >
         {#snippet children(nav: TreeNav)}
             <Section
                 label={t('files.notes')}
@@ -71,6 +93,7 @@
                 }}
                 {onadd}
                 showActions
+                drag={move?.drag}
             >
                 {#if error !== ''}
                     <li role="none">
@@ -95,6 +118,7 @@
                             glyph={t('files.note_glyph')}
                             title={t('files.note_open_title', nameOf(row))}
                             onclick={() => onopen(row.id)}
+                            drag={list.row(row.id)}
                         >
                             {#snippet detail()}
                                 {stamp(row.modified)}

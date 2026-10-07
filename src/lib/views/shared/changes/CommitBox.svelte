@@ -18,9 +18,11 @@
     // high and grows with its lines to ten and then scrolls.
     //
     // While a merge or a cherry pick is in progress the field starts with the message git prepared
-    // for it, and the commit waits until nothing is unmerged. An amend needs no staged path and no
+    // for it, is emptied again when the operation ends and the field still holds that text, and the
+    // commit waits until nothing is unmerged. An amend needs no staged path and no
     // message: with an empty field it keeps the last commit's message.
 
+    import { untrack } from 'svelte';
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -65,17 +67,29 @@
     );
 
     // A merge or a cherry pick in progress puts git's prepared message in an empty field, once.
+    // When the operation ends and the field still holds the text that was offered, the field is
+    // emptied again; a message the reader changed stays.
     $effect(() => {
         const prepared = preparedMessage(git);
-        if (prepared === '' || prepared === offered) return;
+        if (prepared === '') {
+            if (offered === '') return;
+            const held = untrack(() => repositories.message(root));
+            if (held === offered) repositories.setMessage(root, '');
+            offered = '';
+            return;
+        }
+        if (prepared === offered) return;
         offered = prepared;
-        if (repositories.message(root).trim() === '') repositories.setMessage(root, prepared);
+        if (untrack(() => repositories.message(root)).trim() === '') {
+            repositories.setMessage(root, prepared);
+        }
     });
 
     /** Why a commit made this way cannot be made now, or the empty string when it can. */
     function blocked(how: CommitHow): string {
         if (busy) return t('git.busy');
-        if (unmerged > 0) return t('git.commit_unmerged', unmerged);
+        if (unmerged === 1) return t('git.commit_unmerged_one');
+        if (unmerged > 1) return t('git.commit_unmerged', unmerged);
         if ((how === 'push' || how === 'sync') && !tracked) return t('git.push_none');
         if (how === 'amend') return git.log.length === 0 ? t('git.amend_none') : '';
         if (git.staged.length === 0) return t('git.commit_none');
@@ -103,15 +117,23 @@
     function commit(how: CommitHow): void {
         if (blocked(how) !== '') return;
         const count = git.staged.length;
-        let question = t('git.commit_confirm', count, git.branch);
+        // One path is named in the singular, as the conflict count is.
+        const one = count === 1;
+        let question = one
+            ? t('git.commit_confirm_one', git.branch)
+            : t('git.commit_confirm', count, git.branch);
         let detail = t('git.commit_detail');
         if (how === 'amend') {
             question = t('git.amend_confirm', git.branch);
             detail = message.trim() === '' ? t('git.amend_keep') : t('git.amend_detail');
         } else if (how === 'push') {
-            question = t('git.commit_push_confirm', count, git.branch, upstream);
+            question = one
+                ? t('git.commit_push_confirm_one', git.branch, upstream)
+                : t('git.commit_push_confirm', count, git.branch, upstream);
         } else if (how === 'sync') {
-            question = t('git.commit_sync_confirm', count, git.branch, upstream);
+            question = one
+                ? t('git.commit_sync_confirm_one', git.branch, upstream)
+                : t('git.commit_sync_confirm', count, git.branch, upstream);
         }
         asking = {
             message: question,

@@ -76,6 +76,7 @@ export {
     type SlurmSettings,
     appsSettings,
     autofetchMin,
+    repositoryScanDepth,
     calendarSettings,
     changesKeep,
     closedPaths,

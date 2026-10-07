@@ -160,8 +160,13 @@ export function serve(dir: string | null, name: string | null): Response {
  * process token, the body must be a picture, and only then is a file written. A refusal names what
  * was wrong and the folder is untouched.
  */
-export async function add(dir: string | null, request: Request, token: string): Promise<Response> {
-    const read = await tokenedBody(request, token);
+export async function add(
+    dir: string | null,
+    request: Request,
+    token: string,
+    text: () => Record<string, string>
+): Promise<Response> {
+    const read = await tokenedBody(request, token, { text });
     if (read instanceof Response) return read;
     const body = read.body;
     const asked = upload(body);

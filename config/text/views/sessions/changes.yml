@@ -17,6 +17,7 @@ text:
         commit: Commit
         commit_amend: Commit (Amend)
         commit_confirm: Commit {0} staged paths on {1}?
+        commit_confirm_one: Commit 1 staged path on {0}?
         commit_detail: The message is committed as it stands in the box.
         commit_empty: Write a commit message first.
         commit_label: Commit message
@@ -26,10 +27,13 @@ text:
         commit_placeholder_bare: Message (Ctrl+Enter to commit)
         commit_push: Commit and Push
         commit_push_confirm: Commit {0} staged paths on {1} and push to {2}?
+        commit_push_confirm_one: Commit 1 staged path on {0} and push to {1}?
         commit_sync: Commit and Sync
         commit_sync_confirm: Commit {0} staged paths on {1} and sync with {2}?
+        commit_sync_confirm_one: Commit 1 staged path on {0} and sync with {1}?
         commit_title: Commit what is staged (Ctrl+Enter)
         commit_unmerged: '{0} files are still in conflict; resolve them before committing.'
+        commit_unmerged_one: '1 file is still in conflict; resolve it before committing.'
         discard: Discard
         cut_warning: Too many changes were detected. Only the first 200 changes will be shown below.
         discard_all: Discard All Changes
@@ -69,8 +73,7 @@ text:
         ch_changed: Changed
         ch_deleted: -{0}
         ch_detached: detached
-        ch_failed: 'git could not read this repository: {0}'
-        ch_group_empty: nothing
+        ch_failed: 'Git could not read this repository: {0}'
         ch_insync: in step with the upstream
         ch_nofolder: This workspace folder is not there.
         ch_norepo: This workspace is not a git repository.

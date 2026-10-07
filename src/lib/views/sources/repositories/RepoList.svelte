@@ -5,15 +5,15 @@
     // folds like every other.
     //
     // A readable repository's row carries, always drawn and at its right, the Branch control (the
-    // branch's glyph and name, cut when the row is narrow, the whole name as its hover words), then
-    // the Sync control (the sync glyph, the behind count and the ahead count, each with its arrow
-    // when above 0, and the distance as its hover words) or, for a branch with no upstream that can
-    // be published, Publish Branch, then the `...` menu of the row (the items of its right-click
-    // menu) and the number of changed paths as a badge. The controls give way before the
-    // repository's name does. Sync and Publish ask the question the view's `...` menu asks and
-    // press through the same store call; the Branch control asks the view to show the repository
-    // and open its Branches section. Branch, Sync and Publish are disabled while a write runs on
-    // the repository.
+    // branch's glyph and name, or for a detached HEAD the first 8 characters of HEAD's commit, cut
+    // when the row is narrow, the whole name as its hover words), then the Sync control (the sync
+    // glyph, the behind count and the ahead count, each with its arrow when above 0, and the
+    // distance as its hover words) or, for a branch with no upstream that can be published, Publish
+    // Branch, then the `...` menu of the row (the items of its right-click menu) and the number of
+    // changed paths as a badge. The controls give way before the repository's name does. Sync and
+    // Publish ask the question the view's `...` menu asks and press through the same store call;
+    // the Branch control asks the view to show the repository and open its Branches section.
+    // Branch, Sync and Publish are disabled while a write runs on the repository.
     //
     // A root that is no repository, that is gone or whose read failed keeps its row, with the few
     // words and the tone of views/shared/changes/repo-shape.ts at its end and git's reason as
@@ -100,8 +100,18 @@
 
     const rows = $derived(repoListRows(roots, collapsed));
 
-    /** The branch a row names: the detached sentence for a detached HEAD. */
+    /**
+     * The branch a row names: the first 8 characters of HEAD's commit for a detached HEAD (the
+     * detached sentence when the log is not read), else the branch.
+     */
     function branchOf(git: GitState): string {
+        if (!git.detached) return git.branch;
+        const head = git.log.at(0)?.hash;
+        return head === undefined ? t('sessions.ch_detached') : head.slice(0, 8);
+    }
+
+    /** What the branch control says when pointed at: the detached sentence for a detached HEAD. */
+    function branchTitle(git: GitState): string {
         return git.detached ? t('sessions.ch_detached') : git.branch;
     }
 
@@ -164,7 +174,7 @@
                                         {@const working = repositories.busy(root)}
                                         <ToolButton
                                             label={branchOf(git)}
-                                            title={working ? t('git.busy') : branchOf(git)}
+                                            title={working ? t('git.busy') : branchTitle(git)}
                                             glyph="branch"
                                             small
                                             cut

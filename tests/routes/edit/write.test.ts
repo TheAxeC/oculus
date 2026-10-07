@@ -24,7 +24,7 @@ describe('the write endpoint', () => {
         const into = target();
         const response = await handleWrite(request(GOOD, { 'x-oculus-token': '' }), TOKEN, into);
         expect(response.status).toBe(403);
-        expect(await response.json()).toEqual({ error: 'the write token is missing or stale' });
+        expect(await response.json()).toEqual({ error: 'The write token is missing or stale' });
         expect(manifestOf(into)).toBe(MANIFEST);
     });
 

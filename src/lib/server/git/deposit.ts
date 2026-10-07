@@ -72,6 +72,7 @@ import {
 import { REFS_FORMAT, statusRecords } from '../core/git/parse.ts';
 import { target, writeManifest, type WriteTarget } from '../edit/writes.ts';
 import { below } from '../core/paths.ts';
+import { words } from '../core/words.ts';
 
 /** Names and suffixes that look like a credential, and the size above which a file is flagged. */
 const SECRET_HINTS = ['.secrets', '.env', '.netrc', 'id_rsa', 'credentials'];
@@ -191,7 +192,10 @@ function hubTarget(options: DepositOptions): WriteTarget {
     return target(options.engine, options.config);
 }
 
-function settings(options: DepositOptions): {
+function settings(
+    options: DepositOptions,
+    text?: Record<string, string>
+): {
     mirrors: string;
     into: WriteTarget;
     run: GhRun;
@@ -199,13 +203,15 @@ function settings(options: DepositOptions): {
 } {
     const { git: runner, signal } = options;
     const ghRun = options.gh ?? gh;
+    const into = hubTarget(options);
     return {
         mirrors: options.mirrors ?? defaultMirrorsDir(),
-        into: hubTarget(options),
+        into,
         run: (args, timeout) => ghRun(args, timeout, signal),
         where: (dir, mirrors) => ({
             dir,
             mirrors,
+            text: text ?? into.config.text,
             ...(runner === undefined ? {} : { git: runner }),
             ...(signal === undefined ? {} : { signal })
         })
@@ -233,8 +239,12 @@ const codeFieldsShape = z.object({
 });
 
 /** The deposit of one project, or null when the hub holds no project with that id. */
-function depositFor(id: string, options: DepositOptions): Deposit | null {
-    const { mirrors, into, where } = settings(options);
+function depositFor(
+    id: string,
+    options: DepositOptions,
+    text?: Record<string, string>
+): Deposit | null {
+    const { mirrors, into, where } = settings(options, text);
     const { manifests } = readManifests(into.hub, into.config.scan, into.config.text);
     const manifest = manifests.find((one) => one.id === id);
     if (manifest === undefined) return null;
@@ -288,11 +298,15 @@ function made(at: Where): boolean {
  * Make the mirror. A repository `gh` already knows is cloned, so its history is kept; anything else
  * is an empty repository on `main` with no remote, which `push` turns into a GitHub repository.
  */
-export async function adopt(id: string, options: DepositOptions = {}): Promise<Outcome> {
-    const { mirrors, run, where } = settings(options);
-    const deposit = depositFor(id, options);
-    if (deposit === null) return failed(`the hub holds no project with the id ${id}`);
-    if (made(deposit.at)) return done('the mirror is already there');
+export async function adopt(
+    id: string,
+    text: Record<string, string>,
+    options: DepositOptions = {}
+): Promise<Outcome> {
+    const { mirrors, run, where } = settings(options, text);
+    const deposit = depositFor(id, options, text);
+    if (deposit === null) return failed(words(text, 'server.deposit.no_project', id));
+    if (made(deposit.at)) return done(words(text, 'server.deposit.mirror_present'));
     mkdirSync(mirrors, { recursive: true });
 
     // A manifest that already names where its deposit lives is cloned from there; only a project
@@ -305,14 +319,14 @@ export async function adopt(id: string, options: DepositOptions = {}): Promise<O
     if (url !== '') {
         rmSync(deposit.at.dir, { recursive: true, force: true });
         const cloned = await cloneInto(where(mirrors, mirrors), url, deposit.repo);
-        return cloned.ok ? done(`cloned ${url}`) : cloned;
+        return cloned.ok ? done(words(text, 'server.deposit.cloned', url)) : cloned;
     }
 
     mkdirSync(deposit.at.dir, { recursive: true });
     const started = await initMirror(deposit.at);
     if (!started.ok) return started;
     const head = await setHeadMain(deposit.at);
-    return head.ok ? done('made an empty mirror on main') : head;
+    return head.ok ? done(words(text, 'server.deposit.mirror_made', MAIN)) : head;
 }
 
 /**
@@ -320,14 +334,19 @@ export async function adopt(id: string, options: DepositOptions = {}): Promise<O
  * it stages, so the plan is git's own answer about what would ship, and it writes nothing outside
  * the mirrors folder.
  */
-export async function sync(id: string, options: DepositOptions = {}): Promise<PlanOutcome> {
-    const deposit = depositFor(id, options);
-    if (deposit === null)
-        return { ...failed(`the hub holds no project with the id ${id}`), plan: null };
+export async function sync(
+    id: string,
+    text: Record<string, string>,
+    options: DepositOptions = {}
+): Promise<PlanOutcome> {
+    const deposit = depositFor(id, options, text);
+    if (deposit === null) {
+        return { ...failed(words(text, 'server.deposit.no_project', id)), plan: null };
+    }
     if (!made(deposit.at))
-        return { ...failed('there is no mirror yet; adopt it first'), plan: null };
+        return { ...failed(words(text, 'server.deposit.no_mirror')), plan: null };
     if (!existsSync(deposit.code)) {
-        return { ...failed('the project has no code/ to deposit'), plan: null };
+        return { ...failed(words(text, 'server.deposit.no_code')), plan: null };
     }
 
     const staged = await restage(deposit);
@@ -357,19 +376,24 @@ export async function sync(id: string, options: DepositOptions = {}): Promise<Pl
 export async function commit(
     id: string,
     message: string,
+    text: Record<string, string>,
     options: DepositOptions = {}
 ): Promise<PlanOutcome> {
     if (typeof message !== 'string' || message.trim() === '') {
-        return { ...failed('a commit needs a message'), plan: null };
+        return { ...failed(words(text, 'server.deposit.commit_needs_message')), plan: null };
     }
-    const planned = await sync(id, options);
+    const planned = await sync(id, text, options);
     if (!planned.ok || planned.plan === null) return planned;
     if (planned.plan.findings.length > 0) {
-        return { ...failed('the scan found something; nothing was committed'), plan: planned.plan };
+        return {
+            ...failed(words(text, 'server.deposit.scan_found_commit')),
+            plan: planned.plan
+        };
     }
-    const deposit = depositFor(id, options);
-    if (deposit === null)
-        return { ...failed(`the hub holds no project with the id ${id}`), plan: null };
+    const deposit = depositFor(id, options, text);
+    if (deposit === null) {
+        return { ...failed(words(text, 'server.deposit.no_project', id)), plan: null };
+    }
     const written = await withMessageFile(message, (file) => commitFile(deposit.at, file));
     return { ...written, plan: planned.plan };
 }
@@ -379,11 +403,15 @@ export async function commit(
  * one with a remote is pushed. Then the About is set from the manifest, and the manifest's
  * `code_availability` is written back through the one manifest writer.
  */
-export async function push(id: string, options: DepositOptions = {}): Promise<Outcome> {
-    const { into, run } = settings(options);
-    const deposit = depositFor(id, options);
-    if (deposit === null) return failed(`the hub holds no project with the id ${id}`);
-    if (!made(deposit.at)) return failed('there is no mirror yet; adopt it first');
+export async function push(
+    id: string,
+    text: Record<string, string>,
+    options: DepositOptions = {}
+): Promise<Outcome> {
+    const { into, run } = settings(options, text);
+    const deposit = depositFor(id, options, text);
+    if (deposit === null) return failed(words(text, 'server.deposit.no_project', id));
+    if (!made(deposit.at)) return failed(words(text, 'server.deposit.no_mirror'));
 
     const remote = await remoteUrl(deposit.at);
     const sent =
@@ -409,9 +437,9 @@ export async function push(id: string, options: DepositOptions = {}): Promise<Ou
         'code_availability.url': url,
         'code_availability.date': today()
     });
-    if (!outcome.found) return failed(`the hub holds no project with the id ${id}`);
+    if (!outcome.found) return failed(words(text, 'server.deposit.no_project', id));
     if (outcome.refused.length > 0) {
-        return failed(`pushed, but the manifest refused ${outcome.refused[0].field}`);
+        return failed(words(text, 'server.deposit.manifest_refused', outcome.refused[0].field));
     }
     return done(url);
 }
@@ -423,25 +451,30 @@ export async function push(id: string, options: DepositOptions = {}): Promise<Ou
 export async function snapshot(
     id: string,
     message: string,
+    text: Record<string, string>,
     options: DepositOptions = {}
 ): Promise<PlanOutcome> {
     if (typeof message !== 'string' || message.trim() === '') {
-        return { ...failed('a snapshot needs a message'), plan: null };
+        return { ...failed(words(text, 'server.deposit.snapshot_needs_message')), plan: null };
     }
-    const planned = await sync(id, options);
+    const planned = await sync(id, text, options);
     if (!planned.ok || planned.plan === null) return planned;
     if (planned.plan.findings.length > 0) {
-        return { ...failed('the scan found something; nothing was pushed'), plan: planned.plan };
-    }
-    if (planned.plan.remote === '') {
         return {
-            ...failed('the mirror has no remote yet; push creates the repository'),
+            ...failed(words(text, 'server.deposit.scan_found_push')),
             plan: planned.plan
         };
     }
-    const deposit = depositFor(id, options);
-    if (deposit === null)
-        return { ...failed(`the hub holds no project with the id ${id}`), plan: null };
+    if (planned.plan.remote === '') {
+        return {
+            ...failed(words(text, 'server.deposit.no_remote')),
+            plan: planned.plan
+        };
+    }
+    const deposit = depositFor(id, options, text);
+    if (deposit === null) {
+        return { ...failed(words(text, 'server.deposit.no_project', id)), plan: null };
+    }
 
     // A branch left behind by an interrupted snapshot would make the orphan switch fail, so it goes
     // first. It is the tool's own branch name and holds nothing that was not just re-staged.
@@ -462,25 +495,30 @@ export async function snapshot(
     const back = await switchCmd(deposit.at, [MAIN]);
     if (!back.ok) return { ...back, plan: planned.plan };
     await branchCmd(deposit.at, ['-D', ORPHAN]);
-    const pointed = await pointDefaultAtMain(deposit, settings(options).run);
+    const pointed = await pointDefaultAtMain(deposit, settings(options, text).run);
     return {
         ...done(
             pointed
-                ? 'the remote now holds one commit'
-                : `the remote now holds one commit, and its default branch is not ${MAIN}`
+                ? words(text, 'server.deposit.one_commit')
+                : words(text, 'server.deposit.one_commit_other_default', MAIN)
         ),
         plan: planned.plan
     };
 }
 
 /** Every branch of the mirror, with its upstream and which one is checked out. */
-export async function branches(id: string, options: DepositOptions = {}): Promise<BranchOutcome> {
-    const deposit = depositFor(id, options);
+export async function branches(
+    id: string,
+    text: Record<string, string>,
+    options: DepositOptions = {}
+): Promise<BranchOutcome> {
+    const deposit = depositFor(id, options, text);
     if (deposit === null) {
-        return { ...failed(`the hub holds no project with the id ${id}`), branches: [] };
+        return { ...failed(words(text, 'server.deposit.no_project', id)), branches: [] };
     }
-    if (!made(deposit.at))
-        return { ...failed('there is no mirror yet; adopt it first'), branches: [] };
+    if (!made(deposit.at)) {
+        return { ...failed(words(text, 'server.deposit.no_mirror')), branches: [] };
+    }
     const listed = await branchCmd(deposit.at, [REFS_FORMAT]);
     if (!listed.ok) return { ...listed, branches: [] };
     return { ...listed, branches: parseBranches(listed.output) };
@@ -490,11 +528,12 @@ export async function branches(id: string, options: DepositOptions = {}): Promis
 export async function createBranch(
     id: string,
     name: string,
+    text: Record<string, string>,
     options: DepositOptions = {}
 ): Promise<Outcome> {
-    const deposit = depositFor(id, options);
-    if (deposit === null) return failed(`the hub holds no project with the id ${id}`);
-    const wrong = await checkName(deposit.at, name);
+    const deposit = depositFor(id, options, text);
+    if (deposit === null) return failed(words(text, 'server.deposit.no_project', id));
+    const wrong = await checkName(deposit.at, name, text);
     if (wrong !== '') return failed(wrong);
     return switchCmd(deposit.at, ['-c', name]);
 }
@@ -510,17 +549,16 @@ export async function createBranch(
 export async function switchBranch(
     id: string,
     name: string,
+    text: Record<string, string>,
     options: DepositOptions = {}
 ): Promise<Outcome> {
-    const deposit = depositFor(id, options);
-    if (deposit === null) return failed(`the hub holds no project with the id ${id}`);
-    const wrong = await checkName(deposit.at, name);
+    const deposit = depositFor(id, options, text);
+    if (deposit === null) return failed(words(text, 'server.deposit.no_project', id));
+    const wrong = await checkName(deposit.at, name, text);
     if (wrong !== '') return failed(wrong);
     const state = await porcelain(deposit.at);
     if (!state.ok) return state;
-    if (state.output.trim() !== '') {
-        return failed('the mirror is dirty, so switching would carry the changes across');
-    }
+    if (state.output.trim() !== '') return failed(words(text, 'server.deposit.mirror_dirty'));
     // Both listings are what the deletion is computed from. Without them there is no difference to
     // delete, and copying the new branch on top of what the old one left would leave `code/`
     // holding the union of the two, which is the state the switch is there to avoid: a listing that
@@ -533,7 +571,7 @@ export async function switchBranch(
     if (!after.ok) return after;
     dropGone(deposit, listOf(before.output), listOf(after.output));
     copyBack(deposit);
-    return done(`code/ now holds the files of ${name}`);
+    return done(words(text, 'server.deposit.code_switched', name));
 }
 
 /** Where the mirror is and what state it is in, for the GET. */
@@ -756,12 +794,14 @@ async function ahead(at: Where): Promise<number> {
     return counted.output.split('\n').filter((one) => one !== '').length;
 }
 
-async function checkName(at: Where, name: string): Promise<string> {
-    if (!made(at)) return 'there is no mirror yet; adopt it first';
-    if (typeof name !== 'string' || name.trim() === '') return 'a branch needs a name';
-    if (name.startsWith('-')) return `${name} is not a branch name git accepts`;
+async function checkName(at: Where, name: string, text: Record<string, string>): Promise<string> {
+    if (!made(at)) return words(text, 'server.deposit.no_mirror');
+    if (typeof name !== 'string' || name.trim() === '') {
+        return words(text, 'server.deposit.branch_needs_name');
+    }
+    if (name.startsWith('-')) return words(text, 'server.deposit.not_branch_name', name);
     const judged = await checkRefFormat(at, name);
-    return judged.ok ? '' : `${name} is not a branch name git accepts`;
+    return judged.ok ? '' : words(text, 'server.deposit.not_branch_name', name);
 }
 
 /** The repository's name out of its url: the last segment, without a trailing `.git`. */

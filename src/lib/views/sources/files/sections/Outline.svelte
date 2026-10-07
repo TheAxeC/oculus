@@ -28,6 +28,8 @@
     import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
+    import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
+    import { headKeys, type SectionMove } from './list-drag.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { languageOf, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';
     import { fileOfTab } from '$lib/state/workbench/navigation/pages';
@@ -49,6 +51,8 @@
         ontoggle: () => void;
         /** The file tab the reader looked at last on the page, or null for none. */
         tab: FollowTab | null;
+        /** What lets the head be dragged and moved by Alt+Up/Down. */
+        move?: SectionMove;
     };
 
     /**
@@ -69,7 +73,7 @@
         problem: SymbolProblem;
     };
 
-    let { open, ontoggle, tab }: Props = $props();
+    let { open, ontoggle, tab, move }: Props = $props();
 
     const {
         source: { sourceDraft },
@@ -214,9 +218,22 @@
 </script>
 
 <div class="outline" data-fs-outline>
-    <TreeView label={t('files.outline')} rows={keyRows} {ontoggle}>
+    <TreeView
+        label={t('files.outline')}
+        rows={keyRows}
+        {ontoggle}
+        keymap={MOVE_KEYMAP}
+        onkey={headKeys(move)}
+    >
         {#snippet children(nav: TreeNav)}
-            <Section label={t('files.outline')} {nav} count={rows.length} {open} {ontoggle}>
+            <Section
+                label={t('files.outline')}
+                {nav}
+                count={rows.length}
+                {open}
+                {ontoggle}
+                drag={move?.drag}
+            >
                 {#if empty !== ''}
                     <li role="none">
                         <TreeItem label={empty} tone="muted" />

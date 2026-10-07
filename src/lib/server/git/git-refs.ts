@@ -13,6 +13,7 @@
 // The records of `status --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
 
 import { permitted } from '../core/paths.ts';
+import { words } from '../core/words.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 import { BRANCH_NOT_MERGED } from '../../data/model/index.ts';
 import { REFS_FORMAT, STASH_REF, parseBranches, statusRecords } from '../core/git/parse.ts';
@@ -30,8 +31,6 @@ import {
     type Outcome
 } from './git-write.ts';
 import { stoppedOn } from './git-index.ts';
-
-const UNKNOWN = 'that directory is not a workspace oculus knows';
 
 /** What a stash takes: the tracked changes, those and the untracked files, or what is staged. */
 export type StashMode = 'tracked' | 'untracked' | 'staged';
@@ -59,24 +58,23 @@ export async function stash(
     root: string,
     mode: StashMode,
     message: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const flags = byKey(STASH_FLAGS, mode);
-    if (flags === undefined) return failed('that is not a way to stash');
+    if (flags === undefined) return failed(words(text, 'server.git.not_a_way_to_stash'));
     const state = await porcelain(root);
     if (!state.ok) return state;
-    if (!holds(state.output, mode)) return failed('there is nothing here for that stash to take');
-    const text = typeof message === 'string' ? message.trim() : '';
+    if (!holds(state.output, mode)) return failed(words(text, 'server.git.nothing_to_stash'));
+    const body = typeof message === 'string' ? message.trim() : '';
     const done = await stashIn(root, [
         'push',
         ...flags,
-        ...(text === '' ? [] : [`--message=${text}`])
+        ...(body === '' ? [] : [`--message=${body}`])
     ]);
     if (!done.ok && mode === 'staged' && stagedUnknown(done.error)) {
-        return failed(
-            'this git is older than 2.35, the first git that stashes only what is staged'
-        );
+        return failed(words(text, 'server.git.git_too_old_for_staged'));
     }
     return done;
 }
@@ -91,22 +89,29 @@ export async function stashAct(
     root: string,
     act: 'apply' | 'pop' | 'drop',
     ref: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
-    if (!['apply', 'pop', 'drop'].includes(act)) return failed('that is not a stash action');
-    if (typeof ref !== 'string' || !STASH_REF.test(ref)) return failed('that is not a stash');
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (!['apply', 'pop', 'drop'].includes(act)) {
+        return failed(words(text, 'server.git.not_a_stash_action'));
+    }
+    if (typeof ref !== 'string' || !STASH_REF.test(ref)) {
+        return failed(words(text, 'server.git.not_a_stash'));
+    }
     const done = await stashIn(root, [act, ref]);
     if (done.ok || act === 'drop') return done;
-    return stoppedOn(root, done, act === 'pop' ? 'the pop' : 'the apply');
+    return stoppedOn(root, done, text, act === 'pop' ? 'pop' : 'apply');
 }
 
 /** Whether a name is one git takes for a tag, judged by git over the whole ref. */
-async function tagName(root: string, name: string): Promise<string> {
-    if (typeof name !== 'string' || name.trim() === '') return 'a tag needs a name';
-    if (name.startsWith('-')) return `${name} is not a tag name git accepts`;
+async function tagName(root: string, name: string, text: Record<string, string>): Promise<string> {
+    if (typeof name !== 'string' || name.trim() === '') {
+        return words(text, 'server.git.tag_needs_name');
+    }
+    if (name.startsWith('-')) return words(text, 'server.git.not_tag_name', name);
     const judged = await refFormat(root, [`refs/tags/${name}`]);
-    return judged.ok ? '' : `${name} is not a tag name git accepts`;
+    return judged.ok ? '' : words(text, 'server.git.not_tag_name', name);
 }
 
 /**
@@ -117,31 +122,33 @@ export async function createTag(
     root: string,
     name: string,
     message: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     start?: string
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
-    const wrong = await tagName(root, name);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    const wrong = await tagName(root, name, text);
     if (wrong !== '') return failed(wrong);
     const at: string[] = [];
     if (start !== undefined) {
-        const refusal = checkStart(start);
+        const refusal = checkStart(start, text);
         if (refusal !== '') return failed(refusal);
         at.push(start);
     }
-    const text = typeof message === 'string' ? message.trim() : '';
-    if (text === '') return tagIn(root, [name, ...at]);
-    return withFile('oculus-tag-', text, (file) => tagIn(root, ['-a', name, '-F', file, ...at]));
+    const body = typeof message === 'string' ? message.trim() : '';
+    if (body === '') return tagIn(root, [name, ...at]);
+    return withFile('oculus-tag-', body, (file) => tagIn(root, ['-a', name, '-F', file, ...at]));
 }
 
 /** Delete one tag here; a tag already pushed stays on the remote. */
 export async function deleteTag(
     root: string,
     name: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
-    const wrong = await tagName(root, name);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    const wrong = await tagName(root, name, text);
     if (wrong !== '') return failed(wrong);
     return tagIn(root, ['-d', name]);
 }
@@ -150,14 +157,19 @@ export async function deleteTag(
  * The refusal of a branch that cannot be deleted before git is asked, or null: a name git does not
  * accept, a branch the repository lacks, and the branch checked out here.
  */
-async function undeletable(root: string, name: string, roots: string[]): Promise<Outcome | null> {
-    const wrong = await checkName(root, name, roots);
+async function undeletable(
+    root: string,
+    name: string,
+    text: Record<string, string>,
+    roots: string[]
+): Promise<Outcome | null> {
+    const wrong = await checkName(root, name, text, roots);
     if (wrong !== '') return failed(wrong);
     const listed = await branchIn(root, [REFS_FORMAT]);
     if (!listed.ok) return listed;
     const found = parseBranches(listed.output).find((one) => one.name === name);
-    if (found === undefined) return failed(`${name} is not a branch of this repository`);
-    if (found.current) return failed(`${name} is the branch that is checked out, so it is kept`);
+    if (found === undefined) return failed(words(text, 'server.git.not_a_branch_here', name));
+    if (found.current) return failed(words(text, 'server.git.checked_out_kept', name));
     return null;
 }
 
@@ -172,9 +184,10 @@ async function undeletable(root: string, name: string, roots: string[]): Promise
 export async function deleteBranch(
     root: string,
     name: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const refused = await undeletable(root, name, roots);
+    const refused = await undeletable(root, name, text, roots);
     if (refused !== null) return refused;
     return branchIn(root, ['-d', name], {
         env: { LC_ALL: 'C' },
@@ -190,9 +203,10 @@ export async function deleteBranch(
 export async function deleteBranchAnyway(
     root: string,
     name: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const refused = await undeletable(root, name, roots);
+    const refused = await undeletable(root, name, text, roots);
     if (refused !== null) return refused;
     return branchIn(root, ['-D', name]);
 }

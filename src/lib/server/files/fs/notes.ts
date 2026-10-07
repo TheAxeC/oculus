@@ -13,6 +13,11 @@
 // can land outside the folder, and a link left in the folder pointing somewhere else is refused
 // rather than read through, which is the rule server/files/files.ts applies to a root.
 //
+// The order the Notes section lists the notes in is kept in the folder as `order.json`, `{
+// "version": 1, "order": [ids] }`. A note the file does not name is newer than it and is listed
+// first, so a new note is on top; the named notes follow in the file's order. A file that does not
+// read lists the notes newest first, and only a reorder says so, by refusing to write over it.
+//
 // Nothing here holds state between calls; the folder comes in from the caller.
 //
 // Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
@@ -21,7 +26,8 @@
 import { existsSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { writeTextAtomic } from '../../core/json.ts';
+import { z } from 'zod';
+import { readJsonChecked, writeJsonAtomic, writeTextAtomic } from '../../core/json.ts';
 import { below, realPath } from '../../core/paths.ts';
 
 /** The extension every note is written under. */
@@ -58,6 +64,41 @@ export function noteFile(dir: string, id: string): string | null {
     return below(found, folder) ? path : null;
 }
 
+/** The file that keeps the order of the notes, inside the notes folder. */
+const ORDER_FILE = 'order.json';
+
+/** The order file's content: its version, and the ids in the order the section lists them. */
+const orderShape = z.object({ version: z.literal(1), order: z.array(z.string()) });
+
+/** Why the order of the notes was not written. */
+export type NoteOrderRefusal = 'no-such-note' | 'notes-order-unreadable';
+
+/**
+ * The order file's path inside the folder, or null when what is there is a link out of the folder,
+ * as `noteFile` refuses one.
+ */
+function orderFile(dir: string): string | null {
+    const path = resolve(join(dir, ORDER_FILE));
+    const folder = realPath(dir) ?? resolve(dir);
+    const found = realPath(path);
+    if (found === null) return path;
+    return below(found, folder) ? path : null;
+}
+
+/**
+ * The ids the order file names, in its order; undefined when there is no file, null when the file
+ * does not read or is no order of this version.
+ */
+function readNoteOrder(dir: string): string[] | null | undefined {
+    const file = orderFile(dir);
+    if (file === null) return null;
+    const read = readJsonChecked(file);
+    if (!read.ok) return null;
+    if (read.value === undefined) return undefined;
+    const held = orderShape.safeParse(read.value);
+    return held.success ? held.data.order : null;
+}
+
 /** The title and the body of one note's text: the first line, and everything after it. */
 export function splitNote(text: string): { title: string; body: string } {
     const at = text.indexOf('\n');
@@ -83,8 +124,9 @@ export function readNote(dir: string, id: string): NoteText | null {
 }
 
 /**
- * Every note in the folder, newest first. A folder that is not there is no notes rather than an
- * error: a machine that has written none has no folder.
+ * Every note in the folder: the notes the order file does not name, newest first, then the named
+ * ones in the file's order. A folder that is not there is no notes rather than an error: a machine
+ * that has written none has no folder.
  */
 export function listNotes(dir: string): NoteRow[] {
     let names: string[];
@@ -101,7 +143,32 @@ export function listNotes(dir: string): NoteRow[] {
             rows.push({ id: found.id, title: found.title, modified: found.modified });
     }
     rows.sort((left, right) => right.modified - left.modified);
-    return rows;
+    const named = readNoteOrder(dir) ?? [];
+    const place = (row: NoteRow): number => named.indexOf(row.id);
+    return [
+        ...rows.filter((row) => place(row) < 0),
+        ...rows.filter((row) => place(row) >= 0).sort((left, right) => place(left) - place(right))
+    ];
+}
+
+/**
+ * Write the order the notes are listed in. An id that is no note's, or is named again, is dropped,
+ * and a list that names no note after that is refused `no-such-note` with nothing written. A file
+ * that does not read, or reads as another shape, is refused `notes-order-unreadable` and left as
+ * it is, and so is a link out of the folder at the file's place, as `no-such-note`.
+ */
+export function writeNoteOrder(dir: string, ids: string[]): NoteOrderRefusal | null {
+    const file = orderFile(dir);
+    if (file === null) return 'no-such-note';
+    if (readNoteOrder(dir) === null) return 'notes-order-unreadable';
+    const kept: string[] = [];
+    for (const id of ids) {
+        if (kept.includes(id) || readNote(dir, id) === null) continue;
+        kept.push(id);
+    }
+    if (kept.length === 0) return 'no-such-note';
+    writeJsonAtomic(file, { version: 1, order: kept });
+    return null;
 }
 
 /**

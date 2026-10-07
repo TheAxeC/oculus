@@ -1,7 +1,8 @@
-// Layer 2, server. The one place a git command is run: the call site every read-only git form of
-// this folder goes through (state.ts, reads.ts, files.ts, compare.ts), the outcome it answers with
-// and the small helpers they share. The git watcher, the file browser's listing and the git writes
-// all run git through this folder, so it sits in server/core, below every folder that reads git.
+// Layer 2, server. The one place a read-only git command is run: the call site every read-only git
+// form of this folder goes through (state.ts, reads.ts, files.ts, compare.ts), the outcome it
+// answers with and the small helpers they share. The git watcher, the file browser's listing and
+// the on-demand reads of GET /api/git all run git through this folder, so it sits in server/core,
+// below every folder that reads git.
 //
 // What a session touched comes from its transcript. What the checkout looks like right now only git
 // can say, and that is state.ts: whether the root is a repository at all, the branch, the distance
@@ -71,20 +72,24 @@
 // dashboard watcher must never be the thing that runs one. compare.ts lists its own forms in its
 // head.
 //
-// A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
-// (never a shell string), carries a timeout, and collapses any failure into the empty shape with a
-// short reason. Data only, no rendered strings: the wording comes from the text catalog.
+// A repository on a slow mount must not stall the server, so the one call site runs git as a child
+// process and answers a promise: the event loop goes on serving requests while git works, which a
+// read held on the loop would not let it do. It takes a list argument (never a shell string),
+// carries a timeout, and collapses any failure into an outcome with a short reason. A failure with
+// no reason of git's own is carried as `failure`, a code the reader words from the text catalog
+// (`reasonOf`).
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`); the records of
 // `status --porcelain=v1 -z` are split by parse.ts's `statusRecords` and sorted into the change
 // lists by its `statusLists`.
 
-import { spawnSync } from 'node:child_process';
+import { execFile, type ExecFileException } from 'node:child_process';
 import { isUtf8 } from 'node:buffer';
 import { lstatSync, statSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import { inside } from '../paths.ts';
-import { shortReason } from './parse.ts';
+import { failureLine } from './failure.ts';
+import { classifyFailure, shortReason, type CommandFailure } from './parse.ts';
 
 export const GIT = 'git';
 /** The most output one read takes, which a whole version of a large file read by `show` needs. */
@@ -105,9 +110,18 @@ export const NO_REPOSITORY = 'not a git repository';
  * the outcome: a command that timed out or was killed has not answered anything, while a git that
  * could not start is taken at its word, so that a plain folder never becomes a repository because
  * git is missing. `ran` is the narrower fact, whether git itself executed and set the exit status,
- * which is what tells git's own refusal of a root from this machine having no git to ask.
+ * which is what tells git's own refusal of a root from this machine having no git to ask. `text` is
+ * git's own reason; a command that gave none (it timed out, was ended by a signal, or stopped with
+ * a status and wrote nothing) leaves it empty and carries `failure`, which `reasonOf` words.
  */
-export type Outcome = { ok: boolean; answered: boolean; ran: boolean; text: string; utf8: boolean };
+export type Outcome = {
+    ok: boolean;
+    answered: boolean;
+    ran: boolean;
+    text: string;
+    utf8: boolean;
+    failure?: CommandFailure;
+};
 
 /** What one on-demand read answers: its value, or why it could not be read. */
 export type Read<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -130,20 +144,75 @@ export function pathInside(root: string, path: string): boolean {
 // ---------------------------------------------------------------- git output
 
 /** The one `show` call site: an index stage of a path, and a commit's files and diffs. */
-export function show(root: string, args: string[], timeout: number): Outcome {
+export function show(root: string, args: string[], timeout: number): Promise<Outcome> {
     return run(root, ['show', ...args], timeout);
 }
 
 /** The call site of the diffs read on demand: a file's gutter marks and a stash's changes. */
-export function readDiff(root: string, args: string[], timeout: number): Outcome {
+export function readDiff(root: string, args: string[], timeout: number): Promise<Outcome> {
     return run(root, ['diff', ...args], timeout);
 }
 
 /**
- * One git command, as a list, with a timeout. A non-zero exit, a broken git, or a repository too
- * slow to answer all come back as not ok with a short reason, and only the non-zero exit as
- * answered. The output is read as bytes, `utf8` says whether they were UTF-8, and `text` is them
- * decoded as UTF-8. This is the module's one call site.
+ * What a failed read says: git's own reason, and for a command that gave none the catalog's
+ * sentence for how it ended (server/core/git/failure.ts), so a reader never shows an empty reason.
+ */
+export function reasonOf(done: Outcome, text: Record<string, string>): string {
+    if (done.text !== '' || done.failure === undefined) return done.text;
+    return failureLine(done.failure, text);
+}
+
+/**
+ * One finished git process read into an outcome. The ends are: exit 0, ok with the bytes; a git
+ * that cannot start (`ENOENT` and any other text code) or that wrote past the output limit, not ok,
+ * answered, not run, with a short reason; the time limit, not ok, not answered, not run; a non-zero
+ * exit, or a signal nothing here sent, not ok, answered and run, with git's stderr or, where it
+ * wrote none, the failure `classifyFailure` names.
+ */
+function outcomeOf(
+    error: ExecFileException | null,
+    stdout: Buffer,
+    stderr: Buffer,
+    timeout: number
+): Outcome {
+    if (error === null) {
+        return {
+            ok: true,
+            answered: true,
+            ran: true,
+            text: stdout.toString('utf8'),
+            utf8: isUtf8(stdout)
+        };
+    }
+    if (typeof error.code === 'string') {
+        const text = short(error);
+        return { ok: false, answered: true, ran: false, text, utf8: true };
+    }
+    const failure = classifyFailure(
+        error,
+        '',
+        '',
+        { timeoutMs: timeout, maxBytes: MAX_OUTPUT },
+        REASON_WIDTH,
+        'git'
+    ).failure;
+    if (error.killed === true && failure !== undefined) {
+        return { ok: false, answered: false, ran: false, text: '', utf8: true, failure };
+    }
+    const own = short(stderr.toString('utf8'));
+    if (own !== '' || failure === undefined) {
+        return { ok: false, answered: true, ran: true, text: own, utf8: true };
+    }
+    return { ok: false, answered: true, ran: true, text: '', utf8: true, failure };
+}
+
+/**
+ * One git command, as a list, with a timeout, answered without holding the event loop while git
+ * works. Standard input is given and closed, or closed at once when there is none, so no git waits
+ * on an open one. A non-zero exit, a broken git, or a repository too slow to answer all come back
+ * as not ok with a reason, and only the non-zero exit as answered. The output is read as bytes,
+ * `utf8` says whether they were UTF-8, and `text` is them decoded as UTF-8. This is the module's
+ * one call site.
  */
 export function run(
     root: string,
@@ -151,34 +220,27 @@ export function run(
     timeout: number,
     input?: string,
     env?: Record<string, string>
-): Outcome {
-    // Every read runs without optional locks, so a status refresh never writes .git/index.lock and
-    // never collides with a commit the owner is making in the same repository.
-    const argv = ['-C', root, '--no-optional-locks', ...args];
-    // A list, never a shell, and a timeout: a hung git must not hang a watcher.
-    const done = spawnSync(GIT, argv, {
-        timeout,
-        input,
-        maxBuffer: MAX_OUTPUT,
-        ...(env === undefined ? {} : { env: { ...process.env, ...env } })
+): Promise<Outcome> {
+    return new Promise((answer) => {
+        // Every read runs without optional locks, so a status refresh never writes .git/index.lock
+        // and never collides with a commit the owner is making in the same repository. A list,
+        // never a shell, and a timeout: a hung git must not hang a watcher.
+        const child = execFile(
+            GIT,
+            ['-C', root, '--no-optional-locks', ...args],
+            {
+                timeout,
+                maxBuffer: MAX_OUTPUT,
+                encoding: 'buffer',
+                ...(env === undefined ? {} : { env: { ...process.env, ...env } })
+            },
+            (error, stdout, stderr) =>
+                answer(outcomeOf(error, bytesOf(stdout), bytesOf(stderr), timeout))
+        );
+        // A git that exits before it reads its input is read through its exit status.
+        child.stdin?.on('error', () => undefined);
+        child.stdin?.end(input ?? '');
     });
-    if (done.error !== undefined) {
-        const failure = done.error as NodeJS.ErrnoException;
-        const text = failure.code === 'ETIMEDOUT' ? 'git timed out' : short(failure);
-        return { ok: false, answered: failure.code !== 'ETIMEDOUT', ran: false, text, utf8: true };
-    }
-    if (done.status !== 0) {
-        const text = short(bytesOf(done.stderr).toString('utf8')) || 'git failed';
-        return { ok: false, answered: true, ran: true, text, utf8: true };
-    }
-    const bytes = bytesOf(done.stdout);
-    return {
-        ok: true,
-        answered: true,
-        ran: true,
-        text: bytes.toString('utf8'),
-        utf8: isUtf8(bytes)
-    };
 }
 
 // ---------------------------------------------------------------- small stuff

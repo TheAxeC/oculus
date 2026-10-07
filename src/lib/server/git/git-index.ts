@@ -21,6 +21,7 @@ import { writeBytesAtomic, writeTextAtomic } from '../core/json.ts';
 import { HASH, pathInside } from '../core/git/run.ts';
 import { REFS_FORMAT, parseBranches, statusRecords, type Unfinished } from '../core/git/parse.ts';
 import { inside, permitted, realPath } from '../core/paths.ts';
+import { words } from '../core/words.ts';
 import { guarded, type Guard } from '../files/fs/ops.ts';
 import {
     addTo,
@@ -38,12 +39,11 @@ import {
     restore,
     mergeIn,
     revParse,
+    trackedChange,
     untrackedAmong,
     untrackedIn,
     type Outcome
 } from './git-write.ts';
-
-const UNKNOWN = 'that directory is not a workspace oculus knows';
 
 /** What a patch does, which picks the flags `apply` is given. */
 export type PatchMode = 'stage' | 'unstage' | 'revert';
@@ -91,18 +91,21 @@ export async function applyHunk(
     root: string,
     patch: string,
     mode: PatchMode,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const flags = byKey(FLAGS, mode);
-    if (flags === undefined) return failed('that is not a way to apply a change');
+    if (flags === undefined) return failed(words(text, 'server.git.not_a_way_to_apply'));
     if (typeof patch !== 'string' || !patch.startsWith('diff --git ')) {
-        return failed('that is not a patch git can apply');
+        return failed(words(text, 'server.git.not_a_patch'));
     }
     const paths = patchPaths(patch);
-    if (paths.length === 0) return failed('the patch names no path');
+    if (paths.length === 0) return failed(words(text, 'server.git.patch_names_no_path'));
     const outside = paths.find((path) => !pathInside(root, path));
-    if (outside !== undefined) return failed(`the path ${outside} is not inside the workspace`);
+    if (outside !== undefined) {
+        return failed(words(text, 'server.git.path_outside_workspace', outside));
+    }
     return applyPatch(root, flags, patch.endsWith('\n') ? patch : `${patch}\n`);
 }
 
@@ -113,21 +116,26 @@ export async function applyHunk(
 export async function stageAll(
     root: string,
     group: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     if (group === 'changed') return addTo(root, ['-u', '--', '.']);
-    if (group !== 'untracked') return failed('that is not a group of changes');
+    if (group !== 'untracked') return failed(words(text, 'server.git.not_a_group'));
     const state = await porcelain(root);
     if (!state.ok) return state;
     const loose = [...untrackedIn(state.output)];
-    if (loose.length === 0) return failed('nothing is untracked, so there is nothing to stage');
+    if (loose.length === 0) return failed(words(text, 'server.git.nothing_untracked'));
     return addTo(root, ['--', ...loose]);
 }
 
 /** Take everything back out of the index, leaving the worktree as it is. */
-export async function unstageAll(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+export async function unstageAll(
+    root: string,
+    text: Record<string, string>,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     return restore(root, ['.'], true);
 }
 
@@ -136,8 +144,12 @@ export async function unstageAll(root: string, roots: string[] = allowedRoots())
  * the only command that would take them is `clean`, and a file git never saw is a file nobody can
  * get back.
  */
-export async function discardAll(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+export async function discardAll(
+    root: string,
+    text: Record<string, string>,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     return restore(root, ['.'], false);
 }
 
@@ -150,20 +162,21 @@ export async function resolveMerge(
     root: string,
     path: string,
     content: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     if (typeof path !== 'string' || !pathInside(root, path)) {
-        return failed(`the path ${path} is not inside the workspace`);
+        return failed(words(text, 'server.git.path_outside_workspace', path));
     }
-    if (typeof content !== 'string') return failed('the merge result is not text');
+    if (typeof content !== 'string') return failed(words(text, 'server.git.merge_not_text'));
     if (!(await unmergedPaths(root)).includes(path)) {
-        return failed(`${path} is not in conflict, so there is nothing to resolve`);
+        return failed(words(text, 'server.git.not_in_conflict_resolve', path));
     }
     try {
         writeTextAtomic(join(root, path), content);
     } catch (error) {
-        return failed(`the result could not be written: ${String(error)}`);
+        return failed(words(text, 'server.git.result_unwritable', String(error)));
     }
     return addTo(root, ['--', path]);
 }
@@ -186,14 +199,15 @@ async function pairOf(root: string, path: string): Promise<string> {
 export async function acceptDeletion(
     root: string,
     path: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     if (typeof path !== 'string' || !pathInside(root, path)) {
-        return failed(`the path ${path} is not inside the workspace`);
+        return failed(words(text, 'server.git.path_outside_workspace', path));
     }
     if (!DELETIONS.includes(await pairOf(root, path))) {
-        return failed(`${path} is not a conflict a side deleted, so there is no deletion to take`);
+        return failed(words(text, 'server.git.not_a_deletion', path));
     }
     return removeIn(root, ['--quiet', '--', path]);
 }
@@ -207,26 +221,18 @@ export async function acceptDeletion(
 export async function markResolved(
     root: string,
     path: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     if (typeof path !== 'string' || !pathInside(root, path)) {
-        return failed(`the path ${path} is not inside the workspace`);
+        return failed(words(text, 'server.git.path_outside_workspace', path));
     }
     const unmerged = await unmergedPaths(root);
     if (!unmerged.includes(path)) {
-        return failed(`${path} is not in conflict, so there is nothing to resolve`);
+        return failed(words(text, 'server.git.not_in_conflict_resolve', path));
     }
     return addTo(root, ['--', path]);
-}
-
-/**
- * Whether the porcelain reports a change of the repository's own content. An untracked file is not
- * one: git carries it across a merge and never overwrites it, so refusing a merge over one would
- * refuse every repository with a build folder in it.
- */
-function tracked(output: string): boolean {
-    return statusRecords(output).some((record) => record.code !== '??');
 }
 
 /**
@@ -239,38 +245,34 @@ function tracked(output: string): boolean {
 export async function merge(
     root: string,
     other: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const wrong = await checkName(root, other, roots);
+    const wrong = await checkName(root, other, text, roots);
     if (wrong !== '') return failed(wrong);
     const head = await revParse(root, ['--abbrev-ref', 'HEAD']);
     if (!head.ok) return head;
     const onto = head.output.trim();
-    if (onto === 'HEAD' || onto === '') {
-        return failed(
-            'this repository has no branch checked out, so there is nothing to merge into'
-        );
-    }
-    if (onto === other) {
-        return failed(`${other} is the branch that is checked out, so there is nothing to merge`);
-    }
+    if (onto === 'HEAD' || onto === '') return failed(words(text, 'server.git.merge_no_branch'));
+    if (onto === other) return failed(words(text, 'server.git.checked_out_merge', other));
     // A name git accepts as a reference is not a branch: a tag or a commit id would be merged just
     // as happily, and what this control offers is the branch of a worktree.
     const listed = await branch(root, [REFS_FORMAT]);
     if (!listed.ok) return listed;
     if (!parseBranches(listed.output).some((one) => one.name === other)) {
-        return failed(`${other} is not a branch of this repository`);
+        return failed(words(text, 'server.git.not_a_branch_here', other));
     }
     const state = await porcelain(root);
     if (!state.ok) return state;
-    if (tracked(state.output)) {
-        return failed('the repository has changes of its own, so the merge would carry them in');
-    }
+    if (trackedChange(state.output)) return failed(words(text, 'server.git.dirty_merge'));
     const done = await mergeIn(root, [other], signal);
     if (done.ok) return done;
-    return stoppedOn(root, done, 'the merge');
+    return stoppedOn(root, done, text, 'merge');
 }
+
+/** The writes whose conflicts `stoppedOn` names. */
+export type Stopped = 'merge' | 'pull' | 'cherry-pick' | 'pop' | 'apply';
 
 /**
  * What a write that stopped answers. A command that ended with a code of its own (Cancel, a signal)
@@ -279,13 +281,25 @@ export async function merge(
  * pull, a stash applied or popped all leave their conflicts in the index for the merge editor, so
  * the sentence says where they are.
  */
-export async function stoppedOn(root: string, done: Outcome, what: string): Promise<Outcome> {
+export async function stoppedOn(
+    root: string,
+    done: Outcome,
+    text: Record<string, string>,
+    what: Stopped
+): Promise<Outcome> {
     if (done.failure !== undefined) return leftInProgress(root, done);
     const paths = await unmergedPaths(root);
     if (paths.length === 0) return done;
-    return failed(
-        `${what} stopped on conflicts in ${paths.join(', ')}; they are under Merge Changes`
-    );
+    return failed(words(text, 'server.git.stopped_on', stoppedWord(text, what), paths.join(', ')));
+}
+
+/** The capitalised word a conflict sentence opens with, for the write that stopped. */
+function stoppedWord(text: Record<string, string>, what: Stopped): string {
+    if (what === 'merge') return words(text, 'server.git.stopped_merge');
+    if (what === 'pull') return words(text, 'server.git.stopped_pull');
+    if (what === 'cherry-pick') return words(text, 'server.git.stopped_cherry_pick');
+    if (what === 'pop') return words(text, 'server.git.stopped_pop');
+    return words(text, 'server.git.stopped_apply');
 }
 
 /**
@@ -323,17 +337,18 @@ async function inProgress(root: string): Promise<Unfinished | ''> {
  * Abort Merge: take the merge, the cherry-pick, or the rebase a pull began, back to where it
  * started.
  */
-export async function abortMerge(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+export async function abortMerge(
+    root: string,
+    text: Record<string, string>,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const doing = await inProgress(root);
     if (doing === 'merge') return mergeIn(root, ['--abort']);
     if (doing === 'rebase') return rebaseIn(root, '--abort');
     if (doing === 'cherry-pick') return cherryPickIn(root, ['--abort']);
-    return failed('no merge is in progress here, so there is nothing to abort');
+    return failed(words(text, 'server.git.no_merge_to_abort'));
 }
-
-/** What VS Code says of a pick that changes nothing, which git calls an empty cherry-pick. */
-const ALREADY_PRESENT = 'The changes are already present in the current branch.';
 
 /**
  * Cherry-pick a commit onto the checked-out branch. The commit is a hash, checked before git runs.
@@ -343,18 +358,21 @@ const ALREADY_PRESENT = 'The changes are already present in the current branch.'
 export async function cherryPick(
     root: string,
     hash: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
-    if (typeof hash !== 'string' || !HASH.test(hash)) return failed(`${hash} is not a commit`);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (typeof hash !== 'string' || !HASH.test(hash)) {
+        return failed(words(text, 'server.git.not_a_commit_named', hash));
+    }
     const done = await cherryPickIn(root, [hash], signal);
     if (done.ok) return done;
     if (done.failure !== undefined) return leftInProgress(root, done);
     if ((await inProgress(root)) !== 'cherry-pick') return done;
-    if ((await unmergedPaths(root)).length > 0) return stoppedOn(root, done, 'the cherry-pick');
+    if ((await unmergedPaths(root)).length > 0) return stoppedOn(root, done, text, 'cherry-pick');
     const taken = await cherryPickIn(root, ['--abort']);
-    return taken.ok ? failed(ALREADY_PRESENT) : taken;
+    return taken.ok ? failed(words(text, 'server.git.already_present')) : taken;
 }
 
 /** Whether a symbolic link is at the path, whatever it points at. */
@@ -385,35 +403,38 @@ export async function trashUntracked(
     root: string,
     paths: string[],
     into: TrashInto,
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const loose = await untrackedAmong(root, paths, roots);
+    const loose = await untrackedAmong(root, paths, text, roots);
     if (!(loose instanceof Set)) return loose;
     const top = realPath(root);
-    if (top === null) return failed('the repository could not be found');
+    if (top === null) return failed(words(text, 'server.git.repository_not_found'));
     const items: { path: string; real: string; target: string }[] = [];
     for (const path of paths) {
-        if (!loose.has(path)) return failed(`${path} is not an untracked path, so it is kept`);
+        if (!loose.has(path)) return failed(words(text, 'server.git.not_untracked', path));
         const bare = path.endsWith('/') ? path.slice(0, -1) : path;
         const folder = realPath(dirname(join(root, bare)));
         if (folder === null || !inside(folder, top)) {
-            return failed(`the path ${path} is not inside the workspace`);
+            return failed(words(text, 'server.git.path_outside_workspace', path));
         }
         const real = join(folder, basename(bare));
         // A link whose target is missing is moved as the link, which changes nothing it named.
         const target = realPath(real) ?? (linkAt(real) ? real : null);
-        if (target === null) return failed(`the path ${path} could not be found`);
-        if (!inside(target, top)) return failed(`the path ${path} is not inside the workspace`);
+        if (target === null) return failed(words(text, 'server.git.path_not_found', path));
+        if (!inside(target, top)) {
+            return failed(words(text, 'server.git.path_outside_workspace', path));
+        }
         items.push({ path, real, target });
     }
     const guard = into.guard();
     const kept = items.find((item) => guarded(guard, item.real) || guarded(guard, item.target));
-    if (kept !== undefined) return failed(`${kept.path} is a file this server never changes`);
+    if (kept !== undefined) return failed(words(text, 'server.git.never_changed', kept.path));
     for (const item of items) {
         try {
             await into.trash(item.real, { glob: false });
         } catch {
-            return failed(`${item.path} could not be moved to the Trash`);
+            return failed(words(text, 'server.git.trash_failed', item.path));
         }
     }
     return { ok: true, output: '', error: '' };
@@ -435,32 +456,38 @@ function ignoreLine(path: string): string {
 export function addToGitignore(
     root: string,
     paths: string[],
+    text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    return Promise.resolve(appendIgnored(root, paths, roots));
+    return Promise.resolve(appendIgnored(root, paths, text, roots));
 }
 
 /** The writes of addToGitignore, which read and write the file synchronously. */
-function appendIgnored(root: string, paths: string[], roots: string[]): Outcome {
-    const wrong = checkPaths(root, paths, roots);
+function appendIgnored(
+    root: string,
+    paths: string[],
+    text: Record<string, string>,
+    roots: string[]
+): Outcome {
+    const wrong = checkPaths(root, paths, text, roots);
     if (wrong !== '') return failed(wrong);
     const file = join(root, '.gitignore');
     const top = realPath(root);
-    if (top === null) return failed('the repository could not be found');
+    if (top === null) return failed(words(text, 'server.git.repository_not_found'));
     let current = '';
     try {
         const info = lstatSync(file);
         if (info.isSymbolicLink() || !info.isFile()) {
-            return failed('.gitignore is not a plain file, so nothing is added to it');
+            return failed(words(text, 'server.git.gitignore_not_plain'));
         }
         const real = realPath(file);
         if (real === null || !inside(real, top)) {
-            return failed('.gitignore leaves the repository, so nothing is added to it');
+            return failed(words(text, 'server.git.gitignore_leaves'));
         }
         current = readFileSync(file, 'utf8');
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-            return failed(`.gitignore could not be read: ${String(error)}`);
+            return failed(words(text, 'server.git.gitignore_unreadable', String(error)));
         }
     }
     const eol = current.includes('\r\n') ? '\r\n' : '\n';
@@ -469,10 +496,10 @@ function appendIgnored(root: string, paths: string[], roots: string[]): Outcome 
     try {
         writeBytesAtomic(file, Buffer.from(`${current}${lead}${added}`, 'utf8'));
         if (!readFileSync(file, 'utf8').endsWith(added)) {
-            return failed('.gitignore changed while it was written, so check its last lines');
+            return failed(words(text, 'server.git.gitignore_changed'));
         }
     } catch (error) {
-        return failed(`.gitignore could not be written: ${String(error)}`);
+        return failed(words(text, 'server.git.gitignore_unwritable', String(error)));
     }
     return { ok: true, output: '.gitignore', error: '' };
 }
@@ -483,14 +510,15 @@ function appendIgnored(root: string, paths: string[], roots: string[]): Outcome 
  */
 export async function continueRebase(
     root: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     if ((await inProgress(root)) !== 'rebase') {
-        return failed('no rebase is in progress here, so there is nothing to continue');
+        return failed(words(text, 'server.git.no_rebase_to_continue'));
     }
     const left = await unmergedPaths(root);
-    if (left.length > 0) return failed(`${left.join(', ')} still conflicted`);
+    if (left.length > 0) return failed(words(text, 'server.git.still_conflicted', left.join(', ')));
     return leftInProgress(root, await rebaseIn(root, '--continue', signal));
 }

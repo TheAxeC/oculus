@@ -10,7 +10,10 @@
     // along with the arrow keys over the rows state/sources/repositories/change-tree.ts's
     // repositoryKeyRows() lists, Right and Left opening and closing a head or a group. In the
     // view's tree mode the change groups and the files of the open commit draw folders, and the key
-    // rows list them.
+    // rows list them. A write in flight (with its Cancel) and what the last write answered are said
+    // on one message line laid over the foot of the pane, which takes no room of its own, so no row
+    // moves under the pointer when it shows or clears; its close control clears the answer, and
+    // the next write replaces it.
     //
     // A state with no repository to draw says so as one row in the explorer's row style in place of
     // the sections, which such a state has nothing true to fill: git's reason in the error hue for
@@ -41,6 +44,17 @@
     import Worktrees from './refs/Worktrees.svelte';
     import CommandBar from '$lib/views/shared/sessions/CommandBar.svelte';
     import CommitBox from '$lib/views/shared/changes/CommitBox.svelte';
+    import {
+        drawnChanges,
+        everything,
+        extended,
+        idOfRef,
+        pressed,
+        refOf,
+        type Pick
+    } from './changes/picking';
+    import { filesKeymap } from '$lib/state/sources/explorer/acts/keys';
+    import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { repoShape, type RepoShape } from '$lib/state/sources/repositories/repositories';
     import { repositoryKeyRows } from '$lib/state/sources/repositories/change-tree';
     import type { WorktreeStart } from '$lib/state/sources/repositories/repositories.svelte';
@@ -73,6 +87,10 @@
         onmerge: (branch: string, onto: string) => void;
         onterminal: (path: string, label: string) => void;
         onagent: (path: string, agent: 'claude' | 'codex') => void;
+        /** The ids of the change rows the reader selected, kept in the view's instance state. */
+        picked: string[];
+        /** The selection changed to these rows. */
+        onpicked: (ids: string[]) => void;
     };
 
     let {
@@ -92,7 +110,9 @@
         onremove,
         onmerge,
         onterminal,
-        onagent
+        onagent,
+        picked,
+        onpicked
     }: Props = $props();
 
     const { repositories } = useState();
@@ -103,6 +123,59 @@
     const shape = $derived(repoShape(root, git));
     const busy = $derived(repositories.busy(root));
     const outcome = $derived(repositories.outcome(root));
+
+    /** The keys of the change rows: the selection's two Shift keys and Open to the Side. */
+    const keymap = filesKeymap(onMac()).filter(
+        (one) =>
+            one.action === 'extend-up' || one.action === 'extend-down' || one.action === 'open-side'
+    );
+    /** The change rows drawn now, in the order they are drawn. */
+    const drawnRows = $derived(drawnChanges(keyRows.map((row) => row.id)));
+    /** The selected rows that are still drawn: a row staged away or gone leaves the selection. */
+    const live = $derived.by(() => {
+        const ids = new Set(drawnRows.map(idOfRef));
+        return picked.filter((id) => ids.has(id));
+    });
+    /** The row the last press or key was on, and the row a range grows from. */
+    let cursor = $state('');
+    let anchor = $state('');
+    /** The tree's focus control, held to move the focus with a Shift key. */
+    let treeNav: TreeNav | undefined;
+
+    function take(next: Pick, at: string): void {
+        anchor = next.anchor;
+        cursor = at;
+        onpicked(next.picked);
+    }
+
+    /** A press on a change row; true when it only changed the selection, so the row stays shut. */
+    function pressedRow(id: string, event: MouseEvent): boolean {
+        const kind = event.shiftKey ? 'range' : event.metaKey || event.ctrlKey ? 'toggle' : 'plain';
+        take(pressed({ picked: live, anchor }, cursor, drawnRows, id, kind), id);
+        return kind !== 'plain';
+    }
+
+    /** A key of the change rows: Cmd+A, Shift+Up, Shift+Down and Cmd+Enter. */
+    function keyed(action: string, id: string): boolean {
+        const row = refOf(id);
+        if (row === null) return false;
+        const now = { picked: live, anchor };
+        if (action === 'select-all') take(everything(now, id, drawnRows), id);
+        else if (action === 'extend-up' || action === 'extend-down') {
+            const next = extended(now, id, drawnRows, action === 'extend-up' ? -1 : 1);
+            take(next.pick, next.cursor);
+            treeNav?.focus(next.cursor);
+        } else if (action === 'open-side') {
+            repositories.openChangeBeside(root, row.root, row.path);
+        } else return false;
+        return true;
+    }
+
+    /** Keep the tree's focus control, and hand it on to the rows drawn with it. */
+    function keep(nav: TreeNav): TreeNav {
+        treeNav = nav;
+        return nav;
+    }
 
     /** A key's toggle names a group by its row id; the view keeps it by the group's own id. */
     function toggled(id: string): void {
@@ -130,9 +203,15 @@
     /** The line that says which operation is in progress, with how many files are in conflict. */
     function sequenceWords(held: GitState): string {
         const count = held.conflicted.length;
-        if (held.sequence === 'merging') return t('repositories.merging', count);
-        if (held.sequence === 'cherry-picking') return t('repositories.cherry_picking', count);
-        return t('repositories.rebasing', count);
+        if (held.sequence === 'merging') {
+            return count === 1 ? t('repositories.merging_one') : t('repositories.merging', count);
+        }
+        if (held.sequence === 'cherry-picking') {
+            return count === 1
+                ? t('repositories.cherry_picking_one')
+                : t('repositories.cherry_picking', count);
+        }
+        return count === 1 ? t('repositories.rebasing_one') : t('repositories.rebasing', count);
     }
 
     /** Delete a tag named on a graph commit, through the Tags section's question. */
@@ -175,23 +254,6 @@
         {/if}
         <p class="path" title={root}>{root}</p>
     {/if}
-    {#if busy}
-        <div class="busy">
-            <p class="none">{t('git.busy')}</p>
-            {#if !repositories.suggesting(root)}
-                <ToolButton
-                    small
-                    label={t('git.cancel')}
-                    title={t('git.cancel_title')}
-                    onclick={() => void repositories.cancel(root)}
-                />
-            {/if}
-        </div>
-    {/if}
-    {#if outcome !== ''}
-        <p class="outcome">{outcome}</p>
-    {/if}
-
     {#if shape !== 'readable'}
         <!-- git's reason as the row's hover words, the attribute the Changes panel carries it on:
              ui/tree/TreeItem.svelte draws its own tooltip for a row that is pressed, and this row
@@ -227,9 +289,26 @@
                 />
             </div>
         {/if}
-        <TreeView label={t('views.repositories')} rows={keyRows} ontoggle={toggled}>
-            {#snippet children(nav: TreeNav)}
-                <Changes {root} {git} {nav} {collapsed} {ontoggle} {ask} {mode} />
+        <TreeView
+            label={t('views.repositories')}
+            rows={keyRows}
+            ontoggle={toggled}
+            {keymap}
+            onkey={keyed}
+        >
+            {#snippet children(tree: TreeNav)}
+                {@const nav = keep(tree)}
+                <Changes
+                    {root}
+                    {git}
+                    {nav}
+                    {collapsed}
+                    {ontoggle}
+                    {ask}
+                    {mode}
+                    picked={live}
+                    onpress={pressedRow}
+                />
 
                 <Graph
                     {root}
@@ -297,14 +376,68 @@
             {/snippet}
         </TreeView>
     {/if}
+    {#if busy || outcome !== ''}
+        <div class="anchor">
+            <div class="line" data-repo-message aria-live="polite">
+                {#if busy}
+                    <p class="none">{t('git.busy')}</p>
+                    {#if !repositories.suggesting(root)}
+                        <ToolButton
+                            small
+                            label={t('git.cancel')}
+                            title={t('git.cancel_title')}
+                            onclick={() => void repositories.cancel(root)}
+                        />
+                    {/if}
+                {:else}
+                    <p class="outcome">{outcome}</p>
+                    <ToolButton
+                        label={t('repositories.outcome_close')}
+                        glyph={t('repositories.outcome_close_glyph')}
+                        compact
+                        small
+                        onclick={() => repositories.clearOutcome(root)}
+                    />
+                {/if}
+            </div>
+        </div>
+    {/if}
 </section>
 
 <style>
+    /* The section fills the pane, so the message line at its end sits at the pane's foot. */
     .repo {
         display: flex;
+        flex: 1 0 auto;
         flex-direction: column;
         gap: 6px;
         min-width: 0;
+    }
+
+    /* A zero-height block at the end of the section, pushed to the pane's foot when the rows are
+       shorter than the pane and stuck to the foot of the scrolled pane when they are longer: the
+       line hangs from it upward and over the rows, so no row moves when it shows or clears. The
+       pane's body keeps 10px of padding below the rows (ui/frame/Pane.svelte), and both offsets
+       take the line over it to the pane's edge. */
+    .anchor {
+        position: sticky;
+        bottom: -10px;
+        z-index: 2;
+        height: 0;
+        margin-top: auto;
+        margin-bottom: -10px;
+    }
+
+    .line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        background: var(--panel);
     }
 
     /* The message box and its button, 11px in from the left of the row and 12px from its right. */
@@ -346,12 +479,6 @@
         font-size: var(--fs-sm);
     }
 
-    .busy {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
     .none {
         margin: 0;
         color: var(--muted-txt, var(--muted));
@@ -359,6 +486,8 @@
     }
 
     .outcome {
+        flex: 1 1 auto;
+        min-width: 0;
         margin: 0;
         font-size: var(--fs-md);
     }

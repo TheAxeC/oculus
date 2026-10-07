@@ -11,6 +11,7 @@
 
 import { execFile } from 'node:child_process';
 import { z } from 'zod';
+import { words } from '../core/words.ts';
 import { allowedRoots, MAX_OUTPUT, stagedDiff, type Outcome } from './git-write.ts';
 
 /** The CLI this asks. */
@@ -26,7 +27,7 @@ export type Ask = (prompt: string, model: string, input: string) => Promise<Outc
 
 export type MessageOptions = {
     /** What is staged; server/git/git-write.ts's own reader when absent. */
-    diff?: (root: string, roots: string[]) => Promise<Outcome>;
+    diff?: (root: string, text: Record<string, string>, roots: string[]) => Promise<Outcome>;
     /** How the CLI is asked; the real subprocess when absent. */
     ask?: Ask;
     /** The model to pass, or the empty string for the CLI's default. */
@@ -54,25 +55,26 @@ export function messageModel(config: Record<string, unknown>): string {
 export async function suggestMessage(
     root: string,
     prompt: string,
+    text: Record<string, string>,
     options: MessageOptions = {},
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
     const read = options.diff ?? stagedDiff;
-    const asked = options.ask ?? run;
-    const diff = await read(root, roots);
+    const asked = options.ask ?? ((one, model, input) => run(one, model, input, text));
+    const diff = await read(root, text, roots);
     if (!diff.ok) return diff;
     if (diff.output.trim() === '') {
         return {
             ok: false,
             output: '',
-            error: 'nothing is staged, so there is nothing to describe'
+            error: words(text, 'server.git.nothing_staged')
         };
     }
     if (typeof prompt !== 'string' || prompt.trim() === '') {
         return {
             ok: false,
             output: '',
-            error: 'the message instruction is missing from the catalog'
+            error: words(text, 'server.git.no_message_instruction')
         };
     }
     const answer = await asked(prompt, options.model ?? '', diff.output);
@@ -81,7 +83,12 @@ export async function suggestMessage(
 }
 
 /** The real subprocess: one non-interactive run, the diff on stdin, the text on stdout. */
-function run(prompt: string, model: string, input: string): Promise<Outcome> {
+function run(
+    prompt: string,
+    model: string,
+    input: string,
+    text: Record<string, string>
+): Promise<Outcome> {
     const args = model === '' ? ['-p', prompt] : ['--model', model, '-p', prompt];
     return new Promise((settle) => {
         const child = execFile(
@@ -94,7 +101,7 @@ function run(prompt: string, model: string, input: string): Promise<Outcome> {
                     settle({
                         ok: false,
                         output: '',
-                        error: first.slice(0, 200) || 'claude failed'
+                        error: first.slice(0, 200) || words(text, 'server.git.claude_failed')
                     });
                     return;
                 }

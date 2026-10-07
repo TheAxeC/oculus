@@ -9,9 +9,11 @@
 // a microtask, so reading this from a $derived never writes state while a derived is running.
 //
 // A write is what makes a document stale. The git watcher publishes a `files` message naming the
-// watched root each time it re-reads one, and every answer of api/docs names the absolute file it
-// read, so a document is marked for a re-read only when the message's root holds its file. A
-// message with the empty root (the bookmarks file changed) names no root and marks nothing. A
+// watched root and the folders written in it each time a window of writes ends, and every answer
+// of api/docs names the absolute file it read, so a document is marked for a re-read only when the
+// message's root holds its file and the message names the file's folder (or names no folders,
+// which says the whole root). A message with the empty root (the bookmarks or workspaces file
+// changed) names no root and marks nothing. A
 // message whose version is not the one after the last one heard means messages were merged or
 // missed on the way, and their roots are unknown, so it marks every held document. A document
 // whose answer named no file (a request the endpoint refused before opening anything) is marked by
@@ -29,6 +31,7 @@ import { z } from 'zod';
 import type { DocPart, Message, RenderedHeading } from '../../data/model/index.ts';
 import { mapShape, readJson, rowsShape } from '../../data/shapes/shapes.ts';
 import { failedAnswer } from '../shared/answers/answers.ts';
+import { filesNamed } from '../shared/answers/files-named.ts';
 import type { EntitiesStore, Fetcher, Fetching, Queries } from '../shared/stores/shapes.ts';
 
 export type { DocPart, RenderedHeading };
@@ -134,29 +137,6 @@ const NO_BODY = bodyShape.parse({});
 /** HTTP's answer to a request whose entity tag is still the file's. */
 const NOT_MODIFIED = 304;
 
-/**
- * A path's segments with every doubled separator, `.` and `..` resolved, as a string operation: the
- * watcher's root is not normalised on the way to the page, and the server's file path is.
- */
-function segments(path: string): string[] {
-    const kept: string[] = [];
-    for (const part of path.split(/[/\\]/)) {
-        if (part === '' || part === '.') continue;
-        if (part === '..') kept.pop();
-        else kept.push(part);
-    }
-    return kept;
-}
-
-/** Whether a file lies under a root: the root itself, or a path below it. */
-export function holds(root: string, file: string): boolean {
-    if (root === '' || file === '') return false;
-    const base = segments(root);
-    const inner = segments(file);
-    if (inner.length < base.length) return false;
-    return base.every((part, at) => inner[at] === part);
-}
-
 /** Whether two answers draw the same document. */
 function same(one: DocState, other: DocState): boolean {
     return (
@@ -233,13 +213,19 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
 
     /**
      * Whether one `files` message can concern the document held under a key: a gap in the versions
-     * concerns every document, the empty root none, and a root the ones whose file it holds.
+     * concerns every document, the empty root none, and a root the ones whose file it holds, when
+     * the message names the file's folder or names no folders.
      */
-    function concerns(held: Held | undefined, root: string, gap: boolean): boolean {
+    function concerns(
+        held: Held | undefined,
+        root: string,
+        folders: string[] | undefined,
+        gap: boolean
+    ): boolean {
         if (gap) return true;
         if (root === '') return false;
         if (held === undefined || held.file === '') return true;
-        return holds(root, held.file);
+        return filesNamed(root, folders, held.file);
     }
 
     /** Mark every held or requested document a `files` message concerns. */
@@ -247,9 +233,10 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
         if (heard === message.version) return;
         const gap = heard === null || message.version !== heard + 1;
         heard = message.version;
-        const root = entities.payloadOf(message, 'files')?.root ?? '';
+        const payload = entities.payloadOf(message, 'files');
+        const root = payload?.root ?? '';
         for (const one of queries.entries<Held>([KIND])) {
-            if (concerns(one.data, root, gap)) queries.mark(one.key, 'again');
+            if (concerns(one.data, root, payload?.folders, gap)) queries.mark(one.key, 'again');
         }
     }
 

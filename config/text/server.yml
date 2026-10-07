@@ -5,6 +5,9 @@ text:
         permission_chip: waiting on you
         stop: Session finished
     server:
+        auth:
+            body_not_json: The body is not JSON
+            token_refused: The write token is missing or stale
         chat:
             chat_focus_note: FOCUS - answer specifically about project `{0}` ({1}). Your working directory is the project's own folder `{2}` (absolute); read its files for depth.
             chat_index_note: The portfolio index is the file {0}; read it first.
@@ -127,6 +130,29 @@ text:
             field_problem: 'Entry {0}, field {1}: {2}'
             unsupported: The way this value is written in the file cannot be edited in place, so the file is left as it is
             not_kept: The edit would change more than this value, so the file is left as it is
+        deposit:
+            branch_needs_name: A branch needs a name
+            cloned: Cloned {0}
+            code_switched: The code/ folder now holds the files of {0}
+            commit_needs_message: A commit needs a message
+            manifest_refused: The push was made, but the manifest refused {0}
+            mirror_dirty: The mirror is dirty, so switching would carry the changes across
+            mirror_made: Made an empty mirror on {0}
+            mirror_present: The mirror is already there
+            no_action_named: No deposit action is named {0}
+            no_code: The project has no code/ to deposit
+            no_mirror: There is no mirror yet; adopt it first
+            no_project: The hub holds no project with the id {0}
+            no_remote: The mirror has no remote yet; push creates the repository
+            not_a_mirror: That directory is not a deposit mirror
+            not_an_action: The body is not a deposit action
+            not_branch_name: The name {0} is not a branch name git accepts
+            one_commit: The remote now holds one commit
+            one_commit_other_default: The remote now holds one commit, and its default branch is not {0}
+            portfolio_no_project: The portfolio holds no project with that id
+            scan_found_commit: The scan found something; nothing was committed
+            scan_found_push: The scan found something; nothing was pushed
+            snapshot_needs_message: A snapshot needs a message
         export:
             agent: 'Agent: {0}'
             assistant: Agent
@@ -141,17 +167,107 @@ text:
         fork:
             name: fork of {0}
         git:
+            already_present: The changes are already present in the current branch
+            already_something: There is already something at {0}
+            already_upstream: This branch already has the upstream {0}
+            amend_pushed: The upstream already holds this commit, so amending it would need a forced push
+            branch_kept: 'The branch {0} was kept: {1}'
+            branch_needs_name: A branch needs a name
             cancelled: '{0} was stopped by Cancel'
+            checked_out_kept: The branch {0} is checked out, so it is kept
+            checked_out_merge: The branch {0} is checked out, so there is nothing to merge
+            claude_failed: The claude command failed
+            commit_needs_message: A commit needs a message
+            commit_not_in_history: That commit is not in the history
+            confirm_needed: This action needs the page to confirm it
+            dirty_merge: The repository has changes of its own, so the merge would carry them in
+            dirty_switch: The working tree is dirty, so switching would carry the changes across
             exit_status: '{0} stopped with exit status {1} and gave no reason'
+            git_said: '{0} (Git said: {1})'
+            git_too_old_for_staged: This git is older than 2.35, the first git that stashes only what is staged
+            gitignore_changed: The .gitignore changed while it was written, so check its last lines
+            gitignore_leaves: The .gitignore leaves the repository, so nothing is added to it
+            gitignore_not_plain: The .gitignore is not a plain file, so nothing is added to it
+            gitignore_unreadable: 'The .gitignore could not be read: {0}'
+            gitignore_unwritable: 'The .gitignore could not be written: {0}'
+            is_a_folder: The path {0} is a folder
+            is_main_worktree: This is the main worktree
             kind_cherry_pick: cherry-pick
             kind_merge: merge
             kind_rebase: rebase
             left_in_progress: '{0}; the {1} is left in progress'
+            main_worktree_unknown: The main worktree is not a workspace oculus knows
+            merge_no_branch: This repository has no branch checked out, so there is nothing to merge into
+            merge_not_text: The merge result is not text
+            names_no_commit: The name {0} names no commit
+            never_changed: The path {0} is a file this server never changes
+            no_action_named: No git action is named {0}
+            no_directory: There is no such directory
+            no_guard: Nothing says which files the server must not take
+            no_index_text: The path {0} has no text in the index
+            no_merge_to_abort: No merge is in progress here, so there is nothing to abort
+            no_message_instruction: The message instruction is missing from the catalog
+            no_path: No path was given
+            no_rebase_to_continue: No rebase is in progress here, so there is nothing to continue
+            no_remote_for_tags: This repository has no remote to push tags to
+            no_worktree_at: There is no worktree at {0}
+            no_worktrees: This repository has no worktrees
+            not_a_branch: That is not a branch
+            not_a_branch_here: The name {0} is not a branch of this repository
+            not_a_commit: That is not a commit
+            not_a_commit_named: The value {0} is not a commit
+            not_a_deletion: The path {0} is not a conflict a side deleted, so there is no deletion to take
+            not_a_file: The path {0} is not a file
+            not_a_group: That is not a group of changes
+            not_a_hash: The start point {0} is not a commit hash
+            not_a_patch: That is not a patch git can apply
+            not_a_reference: That is not a reference
+            not_a_remote: The name {0} is not a remote of this repository
+            not_a_side: That is not a side of a file
+            not_a_stash: That is not a stash
+            not_a_stash_action: That is not a stash action
+            not_a_way_to_apply: That is not a way to apply a change
+            not_a_way_to_stash: That is not a way to stash
+            not_an_action: The body is not a git action
+            not_branch_name: The name {0} is not a branch name git accepts
+            not_in_conflict: The path {0} is not in conflict
+            not_in_conflict_resolve: The path {0} is not in conflict, so there is nothing to resolve
+            not_tag_name: The name {0} is not a tag name git accepts
+            not_to_publish: The branch {0} is not one to publish
+            not_tracked: Git does not track {0}, so there is nothing to restore it to
+            not_untracked: The path {0} is not an untracked path, so it is kept
+            nothing_staged: Nothing is staged, so there is nothing to describe
+            nothing_to_stash: There is nothing here for that stash to take
+            nothing_untracked: Nothing is untracked, so there is nothing to stage
+            outside_worktrees: That path is not a worktree oculus made under this repository
+            patch_names_no_path: The patch names no path
+            path_leaves_worktree: The path {0} leaves the worktree
+            path_not_found: The path {0} could not be found
+            path_outside: The path {0} is not inside the repository
+            path_outside_workspace: The path {0} is not inside the workspace
             program_gh: The gh command
             program_git: Git
+            publish_no_branch: This repository has no branch checked out, so there is nothing to publish
+            pull_no_upstream: This branch has no upstream, so there is nothing to pull from
+            push_no_upstream: This branch has no upstream, so there is nowhere to push it
+            repository_not_found: The repository could not be found
+            result_unwritable: 'The result could not be written: {0}'
             signal: '{0} was ended by the signal {1}'
+            still_conflicted: 'Still in conflict: {0}'
+            stopped_apply: The apply
+            stopped_cherry_pick: The cherry-pick
+            stopped_merge: The merge
+            stopped_on: '{0} stopped on conflicts in {1}; they are under Merge Changes'
+            stopped_pop: The pop
+            stopped_pull: The pull
+            switch_refused: Git refused the switch
+            tag_needs_name: A tag needs a name
             timed_out: '{0} did not finish within {1} seconds, so it was stopped'
             too_much_output: '{0} wrote more than {1} MB of output, so it was stopped'
+            trash_failed: The path {0} could not be moved to the Trash
+            unknown_directory: That directory is not a workspace oculus knows
+            worktree_dirty: That worktree holds uncommitted changes or untracked files, so it is not taken away
+            worktree_name: The name {0} is not one a worktree folder can carry
         latex:
             name: latex {0} {1}/{2}
         start:

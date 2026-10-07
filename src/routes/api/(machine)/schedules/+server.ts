@@ -3,6 +3,7 @@
 // carries the token ServerContext minted and writes the machine's schedules file behind the
 // process's write chain; the paths are the ones the context built the schedule watcher over.
 
+import { textCatalog } from '$lib/data/sources/config';
 import { target } from '$lib/server/edit/writes';
 import { repositoryRoots } from '$lib/server/files/roots';
 import { handleSchedules } from '$lib/server/machine/runs/schedules/routes';
@@ -26,6 +27,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
                 local: server.local
             }),
         hubFor: () => server.local.hub,
+        text: () => textCatalog(locals.config().config),
         writes: server.fsWrites,
         changes: target(server.engine, locals.config().config, server).changes,
         schedules: server.schedules

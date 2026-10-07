@@ -5,7 +5,7 @@
 
 import { handleLatex, handleLatexPost, type LatexTarget } from '$lib/server/content/latex/endpoint';
 import { browserRoots } from '$lib/server/files/roots';
-import { latexBuild, latexFormatting } from '$lib/data/sources/config';
+import { latexBuild, latexFormatting, textCatalog } from '$lib/data/sources/config';
 import { buildOutcome } from '$lib/server/machine/pty/latex/latex';
 import { project } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
@@ -19,6 +19,7 @@ const target = (locals: App.Locals): LatexTarget => {
         roots: () => browserRoots({ config, engine: server.engine, local: server.local }),
         formatting: () => latexFormatting(config),
         building: () => latexBuild(config),
+        text: () => textCatalog(config),
         outcome: (dir, label, main) =>
             buildOutcome(server.terminals.list() ?? [], config, dir, label, main)
     };

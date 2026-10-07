@@ -7,11 +7,11 @@
     // or Unstage), and the status letter last. In the merge group the controls are Open in Merge
     // Editor, Open File and Mark Resolved.
     //
-    // Pressing the row opens what it stands for
-    // (state/sources/repositories/repositories.svelte.ts's openChange): the three-way merge editor
-    // for a conflict, the file for an untracked path, and the diff for the rest. A conflict's
-    // status is its unmerged pair, worded and coloured as a conflict. The colour of a status is
-    // state/sources/repositories/repositories.ts's statusStyle() and the line counts are
+    // The row's tooltip is the whole path, then what a press opens. Pressing the row opens what it
+    // stands for (state/sources/repositories/repositories.svelte.ts's openChange): the three-way
+    // merge editor for a conflict, the file for an untracked path, and the diff for the rest. A
+    // conflict's status is its unmerged pair, worded and coloured as a conflict. The colour of a
+    // status is state/sources/repositories/repositories.ts's statusStyle() and the line counts are
     // shared/changes/ChangeCounts.svelte, which the session views' Changes panel draws them with,
     // so the two lists agree.
     //
@@ -33,7 +33,14 @@
     import type { GitEntry } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
-    import { askDiscard, askTrash, changeMenu, changePicked, hasMenu } from '../menus/change-menu';
+    import {
+        askDiscardPaths,
+        askTrash,
+        changeMenu,
+        changePicked,
+        hasMenu
+    } from '../menus/change-menu';
+    import { actedPaths } from './picking';
 
     type Props = {
         root: string;
@@ -51,6 +58,15 @@
         ask: (message: string, detail: string, act: () => void, confirm?: string) => void;
         /** Whether the repository is a linked worktree, whose rows compare with the main one. */
         linked?: boolean;
+        /**
+         * The ids of the rows selected in the view; the controls act on them when this row is one.
+         */
+        picked: readonly string[];
+        /**
+         * A press on the row, told before it opens anything: true when the press only changed the
+         * selection (Cmd or Shift held), so the row does not open.
+         */
+        onpress: (id: string, event: MouseEvent) => boolean;
         /** The row's measuring hook, handed by the list that draws only the rows in view. */
         measure: Attachment<HTMLElement>;
     };
@@ -66,21 +82,27 @@
         busy,
         ask,
         linked = false,
+        picked,
+        onpress,
         measure
     }: Props = $props();
 
     const { repositories } = useState();
 
+    const id = $derived(`change:${group}:${entry.path}`);
+    /** The paths of the row's group the controls act on: the selected ones, or the row's own. */
+    const acted = $derived(actedPaths(picked, id));
+
     /** The folder a path sits in, which a row says after the file's own name. */
     const folder = $derived(dirOf(entry.path));
 
-    /** What pressing the row opens, as its hover words. */
+    /** The whole path, which the row may cut, and what a press opens, as its hover words. */
     const title = $derived.by(() => {
-        if (group === 'merge') return t('repositories.merge_open_title');
-        if (group === 'untracked') return t('repositories.open_file_title');
-        return group === 'staged'
-            ? t('repositories.diff_staged_title')
-            : t('repositories.diff_title');
+        if (group === 'merge') return `${entry.path}\n${t('repositories.merge_open_title')}`;
+        if (group === 'untracked') return `${entry.path}\n${t('repositories.open_file_title')}`;
+        const opens =
+            group === 'staged' ? t('repositories.diff_staged_title') : t('repositories.diff_title');
+        return `${entry.path}\n${opens}`;
     });
 
     /** The calls a pick from the row's menu runs, the row's own controls' among them. */
@@ -127,14 +149,17 @@
         file={isFolderPath(entry.path) ? undefined : entry.path}
         glyph={isFolderPath(entry.path) ? t('files.folder_glyph') : undefined}
         name={t('repositories.change_name', entry.path, t(statusWordKey(entry.status)))}
-        id={`change:${group}:${entry.path}`}
+        {id}
+        selected={picked.length > 1 && picked.includes(id)}
         {nav}
         {level}
         {depth}
         {title}
         struck={entry.status === 'D'}
         nameStyle={statusStyle(entry.status)}
-        onclick={() => repositories.openChange(root, group, entry.path)}
+        onclick={(event: MouseEvent) => {
+            if (!onpress(id, event)) repositories.openChange(root, group, entry.path);
+        }}
     >
         {#snippet detail()}
             {#if showFolder && folder !== ''}
@@ -169,7 +194,17 @@
                     compact
                     tabindex={reach}
                     disabled={busy}
-                    onclick={() => askDiscard(root, entry.path, deps, t)}
+                    onclick={() =>
+                        askDiscardPaths(
+                            root,
+                            acted,
+                            {
+                                ask,
+                                discardPaths: (at, paths) =>
+                                    void repositories.discardPaths(at, paths)
+                            },
+                            t
+                        )}
                 />
             {:else if group === 'untracked'}
                 <ToolButton
@@ -179,7 +214,7 @@
                     compact
                     tabindex={reach}
                     disabled={busy}
-                    onclick={() => askTrash(root, [entry.path], deps, t)}
+                    onclick={() => askTrash(root, acted, deps, t)}
                 />
             {/if}
             {#if group === 'staged'}
@@ -190,7 +225,7 @@
                     compact
                     tabindex={reach}
                     disabled={busy}
-                    onclick={() => void repositories.unstage(root, entry.path)}
+                    onclick={() => void repositories.unstagePaths(root, acted)}
                 />
             {:else if group === 'merge'}
                 <ToolButton
@@ -210,7 +245,7 @@
                     compact
                     tabindex={reach}
                     disabled={busy}
-                    onclick={() => void repositories.stage(root, entry.path)}
+                    onclick={() => void repositories.stagePaths(root, acted)}
                 />
             {/if}
         {/snippet}

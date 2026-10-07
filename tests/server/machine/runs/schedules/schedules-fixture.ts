@@ -7,7 +7,9 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Hub } from '../../../../../src/lib/server/core/channels.ts';
+import { fsWrites } from '../../../../../src/lib/server/core/json.ts';
 import { stopTerminal } from '../../../../../src/lib/server/machine/pty/sessions.ts';
+import type { SchedulesRouteOptions } from '../../../../../src/lib/server/machine/runs/schedules/routes.ts';
 import { runEntry } from '../../../../../src/lib/server/machine/runs/schedules/run.ts';
 import {
     watchSchedules,
@@ -16,6 +18,7 @@ import {
 } from '../../../../../src/lib/server/machine/runs/schedules/watch.ts';
 import { noop } from '../../../../fixtures/doubles.ts';
 import { scratchDir } from '../../../../fixtures/scratch.ts';
+import { TEXT } from '../../../text.ts';
 import { type tmux } from '../../../../routes/sessions/terminal-fixture.ts';
 import { plantRepo } from '../commands/commands-fixture.ts';
 
@@ -33,6 +36,20 @@ export type World = {
     /** The hub folder of every run, a folder of the scratch folder no other path of it lies in. */
     hub: string;
 };
+
+/**
+ * The options the schedules route is called with over a world: its files, its root and the watcher.
+ */
+export function routeOptions(w: World, schedules: SchedulesWatcher): SchedulesRouteOptions {
+    return {
+        files: () => w.files,
+        rootsFor: () => [w.repo],
+        hubFor: () => w.hub,
+        text: () => TEXT,
+        writes: fsWrites(),
+        schedules
+    };
+}
 
 /** A scratch folder with its repository, its saved command and no schedules file. */
 export function world(): World {

@@ -27,6 +27,7 @@ import { worktreePath } from '../../../src/lib/data/helpers/worktrees.ts';
 import { abortMerge, merge, stoppedOn } from '../../../src/lib/server/git/git-index.ts';
 import { pull } from '../../../src/lib/server/git/git-remote.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
+import { TEXT } from '../text.ts';
 
 let dir = '';
 let repo = '';
@@ -80,18 +81,18 @@ describe('staging', () => {
         write(repo, 'kept.txt', 'two\n');
         expect(status()).toContain(' M kept.txt');
 
-        const staged = await stage(repo, ['kept.txt'], ROOTS);
+        const staged = await stage(repo, ['kept.txt'], TEXT, ROOTS);
         expect(staged.ok).toBe(true);
         expect(status()).toContain('M  kept.txt');
 
-        const back = await unstage(repo, ['kept.txt'], ROOTS);
+        const back = await unstage(repo, ['kept.txt'], TEXT, ROOTS);
         expect(back.ok).toBe(true);
         expect(status()).toContain(' M kept.txt');
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toBe('two\n');
     });
 
     it('discards a tracked change', async () => {
-        const answer = await discard(repo, ['kept.txt'], ROOTS);
+        const answer = await discard(repo, ['kept.txt'], TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toBe('one\n');
     });
@@ -100,9 +101,9 @@ describe('staging', () => {
 describe('committing', () => {
     it('commits a multi-line message holding quotes and backticks', async () => {
         write(repo, 'kept.txt', 'three\n');
-        await stage(repo, ['kept.txt'], ROOTS);
+        await stage(repo, ['kept.txt'], TEXT, ROOTS);
         const message = 'Add the "thing"\n\n- Keep `one` and $two\n- Do not break \'quoting\'\n';
-        const answer = await commit(repo, message, ROOTS);
+        const answer = await commit(repo, message, TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(git(repo, 'log', '-1', '--pretty=%B')).toContain('Add the "thing"');
         expect(git(repo, 'log', '-1', '--pretty=%B')).toContain("- Do not break 'quoting'");
@@ -114,9 +115,9 @@ describe('pushing', () => {
         git(repo, 'remote', 'add', 'origin', remote);
         git(repo, 'push', '-q', '-u', 'origin', 'main');
         write(repo, 'kept.txt', 'five\n');
-        await stage(repo, ['kept.txt'], ROOTS);
-        await commit(repo, 'Set it to five\n', ROOTS);
-        const answer = await push(repo, ROOTS);
+        await stage(repo, ['kept.txt'], TEXT, ROOTS);
+        await commit(repo, 'Set it to five\n', TEXT, ROOTS);
+        const answer = await push(repo, TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         // The bare repository's own HEAD is whatever git init made it; the branch that was pushed
         // is the one to read.
@@ -129,15 +130,43 @@ describe('pushing', () => {
 
 describe('branches', () => {
     it('creates one and checks it out', async () => {
-        const answer = await createBranch(repo, 'work/one', ROOTS);
+        const answer = await createBranch(repo, 'work/one', TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(git(repo, 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe('work/one');
     });
 
+    /**
+     * The tree a switch starts from and the branch it goes to: a clean tree, an untracked file
+     * only, which git carries across, and a change to a tracked file, which the switch refuses with
+     * the catalog's sentence. Each row starts from the branch it names.
+     */
+    const SWITCHES: [string, string | null, string, string, string | null][] = [
+        ['a clean tree', null, 'work/one', 'main', null],
+        ['an untracked file only', 'untracked.txt', 'work/one', 'main', null],
+        [
+            'a modified tracked file',
+            'kept.txt',
+            'main',
+            'work/one',
+            'The working tree is dirty, so switching would carry the changes across'
+        ]
+    ];
+
     it('switches to another branch', async () => {
-        const answer = await switchBranch(repo, 'main', ROOTS);
-        expect(answer.ok).toBe(true);
-        expect(git(repo, 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe('main');
+        for (const [row, file, from, to, refusal] of SWITCHES) {
+            git(repo, 'switch', '-q', from);
+            if (file !== null) write(repo, file, 'carried\n');
+            const answer = await switchBranch(repo, to, TEXT, ROOTS);
+            expect(answer.ok, row).toBe(refusal === null);
+            expect(answer.error, row).toBe(refusal ?? '');
+            expect(git(repo, 'rev-parse', '--abbrev-ref', 'HEAD').trim(), row).toBe(
+                refusal === null ? to : from
+            );
+            if (file === null) continue;
+            expect(readFileSync(join(repo, file), 'utf8'), row).toBe('carried\n');
+            if (refusal === null) rmSync(join(repo, file));
+            else git(repo, 'checkout', '--', file);
+        }
     });
 });
 
@@ -148,7 +177,7 @@ describe('worktrees', () => {
 
     it('makes one under the repository worktrees folder, on a branch of its name', async () => {
         const path = where();
-        const answer = await createWorktree(repo, name, ROOTS);
+        const answer = await createWorktree(repo, name, TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(git(path, 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe(name);
         expect(path.endsWith(`.agents/worktrees/${name}`)).toBe(true);
@@ -169,7 +198,7 @@ describe('the merge back', () => {
         git(repo, 'add', 'kept.txt');
         git(repo, 'commit', '-q', '-m', 'Main');
 
-        const answer = await merge(repo, 'other', ROOTS);
+        const answer = await merge(repo, 'other', TEXT, ROOTS);
         expect(answer.ok).toBe(false);
         expect(answer.error).toContain('kept.txt');
         expect(answer.error).toContain('Merge Changes');
@@ -185,7 +214,7 @@ describe('the merge back', () => {
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toContain('<<<<<<<');
 
         // Abort Merge takes it back to main's side, which the cases after this one start from.
-        expect((await abortMerge(repo, ROOTS)).ok).toBe(true);
+        expect((await abortMerge(repo, TEXT, ROOTS)).ok).toBe(true);
         expect(existsSync(join(repo, '.git', 'MERGE_HEAD'))).toBe(false);
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toBe('from main\n');
     });
@@ -229,8 +258,8 @@ describe('the merge back', () => {
             const run = new AbortController();
             const answer =
                 how === 'merge'
-                    ? merge(here, 'other', roots, run.signal)
-                    : pull(here, roots, run.signal);
+                    ? merge(here, 'other', TEXT, roots, run.signal)
+                    : pull(here, TEXT, roots, run.signal);
             await vi.waitUntil(() => existsSync(started), { timeout: 10000, interval: 20 });
             run.abort();
             const done = await answer;
@@ -240,12 +269,12 @@ describe('the merge back', () => {
             expect(git(here, 'rev-parse', '--verify', '--quiet', 'MERGE_HEAD').trim()).toBe(
                 git(here, 'rev-parse', 'other').trim()
             );
-            expect((await abortMerge(here, roots)).ok).toBe(true);
+            expect((await abortMerge(here, TEXT, roots)).ok).toBe(true);
             const stopped = {
                 ...done,
                 failure: { code: 'cancelled' as const, detail: '', program: 'git' }
             };
-            expect((await stoppedOn(here, stopped, 'the merge')).failure?.left).toBeUndefined();
+            expect((await stoppedOn(here, stopped, TEXT, 'merge')).failure?.left).toBeUndefined();
             expect(git(here, 'rev-parse', 'HEAD')).toBe(before);
             expect(git(here, 'status', '--porcelain', '--untracked-files=no')).toBe('');
         }
@@ -253,7 +282,7 @@ describe('the merge back', () => {
 
     it('removes a worktree that is clean, and its branch with it', async () => {
         const path = worktreePath(repo, name);
-        const answer = await removeWorktree(repo, path, ROOTS);
+        const answer = await removeWorktree(repo, path, TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(existsSync(path)).toBe(false);
         expect(git(repo, 'branch', '--list', name).trim()).toBe('');

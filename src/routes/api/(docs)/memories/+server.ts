@@ -2,6 +2,7 @@
 // lives in lib/server/content/memories.ts and these are the two lines that join them: GET answers
 // the list of pictures, or streams the one a `file=` names, and POST adds one.
 
+import { textCatalog } from '$lib/data/sources/config';
 import { add, folder, listing, serve } from '$lib/server/content/memories';
 import type { RequestHandler } from './$types';
 
@@ -15,5 +16,6 @@ export const POST: RequestHandler = ({ request, locals }) =>
     add(
         folder(locals.server.memories, locals.config().config, locals.server.engine),
         request,
-        locals.token
+        locals.token,
+        () => textCatalog(locals.config().config)
     );

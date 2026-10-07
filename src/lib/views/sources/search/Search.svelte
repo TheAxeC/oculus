@@ -67,7 +67,7 @@
         type SearchMode
     } from '$lib/state/sources/search/search';
     import { hitKey, rowFor, totals, type Chosen } from '$lib/state/sources/search/hits';
-    import { searchKeymap, searchPlan, type SearchAction } from '$lib/state/sources/search/keys';
+    import { searchKeymap, searchPlan } from '$lib/state/sources/search/keys';
     import { createWalk } from '$lib/state/sources/search/walk';
     import { currentWorkspace } from '$lib/state/sources/fs-transport';
     import { t } from '$lib/state/shared/words/text';
@@ -183,11 +183,7 @@
         const found = rowFor(held.answer?.files ?? [], id);
         if (found === null) return false;
         const hit = found.hit;
-        const plan = searchPlan(
-            action as SearchAction,
-            hit === null ? 'file' : 'hit',
-            held.replacing
-        );
+        const plan = searchPlan(action, hit === null ? 'file' : 'hit', held.replacing);
         if (plan === 'pass') return false;
         if (plan === 'replace-hit' && hit !== null)
             void replace({ kind: 'hit', file: found.file, hit });

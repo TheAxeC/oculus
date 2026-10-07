@@ -193,6 +193,7 @@ describe("oculus's own config directory", () => {
             'career_file',
             'portfolio_deck',
             'roots',
+            'repository_scan_depth',
             'languages'
         ],
         'catalogs/vocab.yml': [

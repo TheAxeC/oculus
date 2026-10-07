@@ -3,10 +3,10 @@
 // the errors a task terminal printed kept as diagnostics, and the two default keys.
 //
 // A repository's list is held under the key `['commands', repo]` while a view watches it. A `files`
-// message for a folder holding the repository marks it, and the next read asks again with any read
-// still out cancelled, so the later read is the one held. A save or a remove reads it again at
-// once. A view that stops watching the last repository forgets the key, and an answer still out
-// for it is never held.
+// message that names the repository's folder or its `.oculus` folder, or names no folder, marks it,
+// and the next read asks again with any read still out cancelled, so the later read is the one
+// held. A save or a remove reads it again at once. A view that stops watching the last repository
+// forgets the key, and an answer still out for it is never held.
 //
 // A press that needs a decision is held here as the question (`asking`): the lines of the chain a
 // press would run and the reader has not approved, or the process a Restart would stop. A button
@@ -55,7 +55,7 @@ import { tabOfFile, type ServedRoot } from '../../sources/repositories/file-git.
 import { unreachableAnswer } from '../../shared/answers/answers.ts';
 import type { EntitiesStore, Fetcher, Queries, WritesStore } from '../../shared/stores/shapes.ts';
 import { t } from '../../shared/words/text.ts';
-import { holds } from '../../system/docs.svelte.ts';
+import { folderNamed } from '../../shared/answers/files-named.ts';
 import { COLS, ROWS, postTerminal } from './pty/pty-io.ts';
 
 export type {
@@ -341,10 +341,15 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
             if (heard === message.version) return;
             const gap = heard === null || message.version !== heard + 1;
             heard = message.version;
-            const root = entities.payloadOf(message, 'files')?.root ?? '';
+            const payload = entities.payloadOf(message, 'files');
+            const root = payload?.root ?? '';
             for (const one of queries.entries<CommandsAnswer>([KIND])) {
                 const repo = String(one.key[1]);
-                if (gap || holds(root, repo)) queries.mark(keyOf(repo), 'replace');
+                // The commands are read from the repository's own top and its `.oculus` folder.
+                const named =
+                    folderNamed(root, payload?.folders, repo) ||
+                    folderNamed(root, payload?.folders, `${repo}/.oculus`);
+                if (gap || named) queries.mark(keyOf(repo), 'replace');
             }
             return;
         }

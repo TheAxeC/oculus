@@ -1,11 +1,12 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/files/Files.svelte. The Open Editors section: the tabs of
     // the page this view is on that show a file, grouped by the pane that holds them, each row the
-    // file's icon and name with the folder it sits in, the dot of a tab holding unsaved text, and a
-    // close control under the pointer. A press on a row brings its tab forward. The head carries
-    // Save All, which saves every dirty source tab, and Close All, which closes every tab listed
-    // and asks the close question first (state/workbench/navigation/pages.ts's closeAsk) whenever
-    // one of them holds unsaved text.
+    // file's icon and name with the folder it sits in, the dot of a tab holding unsaved text, the
+    // name of a tab whose file was deleted struck through in red, and a close control under the
+    // pointer. A press on a row brings its tab forward. The head carries Save All, which saves
+    // every dirty source tab, and Close All, which closes every tab listed and asks the close
+    // question first (state/workbench/navigation/pages.ts's closeAsk) whenever one of them holds
+    // unsaved text.
     //
     // A row drags onto another row, and the tab moves to the place of the target row's tab in that
     // row's pane (state/sources/explorer/sections/open-editors.ts's editorDrop), through
@@ -19,8 +20,11 @@
     import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
+    import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
+    import { headKeys, type SectionMove } from './list-drag.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
     import {
         dirtyIds,
@@ -38,12 +42,15 @@
     type Props = {
         open: boolean;
         ontoggle: () => void;
+        /** What lets the head be dragged and moved by Alt+Up/Down. */
+        move?: SectionMove;
     };
 
-    let { open, ontoggle }: Props = $props();
+    let { open, ontoggle, move }: Props = $props();
 
     const {
         layout: { activateInstance, closeInstance, currentPage, layout, transferInstance },
+        fs: { gone },
         ui: { unsaved },
         source: { saveSourceDraft }
     } = useState();
@@ -143,9 +150,22 @@
 </script>
 
 <div class="editors" data-fs-editors>
-    <TreeView label={t('files.editors')} rows={keyRows} {ontoggle}>
+    <TreeView
+        label={t('files.editors')}
+        rows={keyRows}
+        {ontoggle}
+        keymap={MOVE_KEYMAP}
+        onkey={headKeys(move)}
+    >
         {#snippet children(nav: TreeNav)}
-            <Section label={t('files.editors')} {nav} count={total} {open} {ontoggle}>
+            <Section
+                label={t('files.editors')}
+                {nav}
+                count={total}
+                {open}
+                {ontoggle}
+                drag={move?.drag}
+            >
                 {#snippet more(reach: number)}
                     <ToolButton
                         label={t('files.editors_save_all')}
@@ -201,7 +221,11 @@
                                 level={several ? 3 : 2}
                                 file={row.file.path}
                                 selected={row.active}
-                                title={t('files.editors_open_title', row.name)}
+                                tone={gone(row.file.root, row.file.path) ? 'error' : undefined}
+                                struck={gone(row.file.root, row.file.path)}
+                                title={gone(row.file.root, row.file.path)
+                                    ? `${t('files.editors_open_title', row.name)}\n${t('ui.tab_deleted')}`
+                                    : t('files.editors_open_title', row.name)}
                                 onclick={() => activateInstance(row.id, page)}
                             >
                                 {#snippet detail()}
@@ -213,7 +237,9 @@
                                             class="dirty"
                                             role="img"
                                             aria-label={t('files.editors_dirty')}
-                                        ></span>
+                                        >
+                                            <Glyph name={t('ui.dirty_glyph')} />
+                                        </span>
                                     {/if}
                                 {/snippet}
                                 {#snippet actions(reach: number)}
@@ -246,13 +272,15 @@
         margin-top: 0;
     }
 
-    /* The unsaved mark: a filled dot in the row's own text colour, 8px, where VS Code draws it. */
+    /* The unsaved mark: the dirty glyph the tab draws, in the row's own text colour, where VS Code
+       draws it. */
     .dirty {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: currentColor;
+        display: inline-flex;
+        align-items: center;
         opacity: 0.8;
+    }
+
+    .dirty :global(svg) {
+        fill: currentColor;
     }
 </style>

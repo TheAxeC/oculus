@@ -122,9 +122,12 @@ text:
         merge_took_incoming: took incoming
         merge_took_none: ignored
         merging: A merge is in progress. {0} files are in conflict.
+        merging_one: A merge is in progress. 1 file is in conflict.
         open_file: Open File
         open_file_title: Open this file in a source tab
         open_unserved: No served folder holds {0}, so it cannot open in a tab.
+        outcome_close: Close
+        outcome_close_glyph: dismiss
         outgoing: Outgoing
         publish: Publish Branch
         publish_confirm: Publish {0} to {1}?
@@ -134,6 +137,7 @@ text:
         pull_confirm: Pull {1} into {0}?
         pull_detail: git fetches the upstream and merges it into the branch. A conflict stops the merge and is shown under Merge Changes.
         rebasing: A rebase is in progress. {0} files are in conflict.
+        rebasing_one: A rebase is in progress. 1 file is in conflict.
         renamed_from: '{0}, renamed from {1}'
         stash_apply: Apply Stash
         stash_do: Stash
@@ -234,6 +238,7 @@ text:
         cherry_pick_confirm: Cherry-pick {0} onto {1}?
         cherry_pick_detail: The commit's changes are applied to the checked-out branch as a new commit. A conflict stops the pick and is shown under Merge Changes; an empty pick is dropped.
         cherry_picking: Cherry-picking. {0} files are in conflict.
+        cherry_picking_one: Cherry-picking. 1 file is in conflict.
         detach_confirm: Check out {0} with a detached HEAD?
         detach_detail: HEAD leaves its branch and points at that commit. The working tree must be clean; a dirty tree is refused.
         compare_label: '{0} compared with {1}'

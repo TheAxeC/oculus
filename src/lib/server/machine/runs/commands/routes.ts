@@ -87,7 +87,10 @@ export async function handleCommandsPost(
     token: string,
     options: CommandsOptions
 ): Promise<Response> {
-    const read = await tokenedBody(request, token, { headers: NO_STORE });
+    const read = await tokenedBody(request, token, {
+        headers: NO_STORE,
+        text: () => textCatalog(options.configFor())
+    });
     if (read instanceof Response) return read;
     const body = bodyShape.safeParse(read.body);
     if (!body.success) {

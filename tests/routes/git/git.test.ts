@@ -57,7 +57,7 @@ describe('the git endpoint', () => {
             into
         );
         expect(response.status).toBe(403);
-        expect(await response.json()).toEqual({ error: 'the write token is missing or stale' });
+        expect(await response.json()).toEqual({ error: 'The write token is missing or stale' });
         expect(ran).toEqual([]);
     });
 
@@ -69,7 +69,7 @@ describe('the git endpoint', () => {
         );
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({
-            error: 'this action needs the page to confirm it'
+            error: 'This action needs the page to confirm it'
         });
         expect(ran).toEqual([]);
     });
@@ -148,7 +148,7 @@ describe('a body of the wrong shape', () => {
         );
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({
-            error: 'this action needs the page to confirm it'
+            error: 'This action needs the page to confirm it'
         });
         expect(ran).toEqual([]);
     });

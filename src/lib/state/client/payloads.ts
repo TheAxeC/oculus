@@ -116,7 +116,12 @@ const auditShape = unchangedAs<Payloads['audit']>(
 );
 
 const filesShape = unchangedAs<Payloads['files']>(
-    z.object({ root: z.string(), bookmarks: z.boolean().optional() })
+    z.object({
+        root: z.string(),
+        folders: z.array(z.string()).optional(),
+        bookmarks: z.boolean().optional(),
+        workspaces: z.boolean().optional()
+    })
 );
 
 const appsShape = unchangedAs<Payloads['apps']>(

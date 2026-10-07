@@ -14,7 +14,7 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { tokenedBody } from '../../core/auth.ts';
 import { chained, type FsWrites } from '../../core/json.ts';
-import { appsSettings, closedPaths, configDir } from '../../../data/sources/config.ts';
+import { appsSettings, closedPaths, configDir, textCatalog } from '../../../data/sources/config.ts';
 import { browserRoots } from '../../files/roots.ts';
 import type { Root } from '../../files/files.ts';
 import { approveApp, defaultApprovalsPath, revokeApp } from '../approvals/approvals.ts';
@@ -46,6 +46,8 @@ export type AppsRouteOptions = {
     configDir: string;
     /** The folders `closed_paths` names, or null while the key is missing or is no list. */
     closedPaths: () => readonly string[] | null;
+    /** The text catalog the token refusal is worded from, read when a refusal is made. */
+    text: () => Record<string, string>;
     fs: OpenFs;
 };
 
@@ -73,6 +75,7 @@ export function routeOptions(
         roots: () => browserRoots({ config: config(), engine: server.engine, local: server.local }),
         configDir: configDir(server.engine),
         closedPaths: () => closedPaths(config()).folders,
+        text: () => textCatalog(config()),
         fs: diskFs
     };
 }
@@ -101,7 +104,7 @@ export async function handleApprovePost(
     token: string,
     options: AppsRouteOptions
 ): Promise<Response> {
-    const read = await tokenedBody(request, token, { headers: NO_STORE });
+    const read = await tokenedBody(request, token, { headers: NO_STORE, text: options.text });
     if (read instanceof Response) return read;
     const body = approveShape.safeParse(read.body);
     if (!body.success) return refuse('action must be approve or revoke, with its fields', 400);

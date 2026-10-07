@@ -312,7 +312,7 @@ export async function handleWrite(
     into: WriteTarget,
     deps: FilesDeps = {}
 ): Promise<Response> {
-    const read = await tokenedBody(request, token);
+    const read = await tokenedBody(request, token, { text: () => into.config.text });
     if (read instanceof Response) return read;
     const body = read.body;
     const gate = gateWrite(request.headers, body, into.apps?.held);

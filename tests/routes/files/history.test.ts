@@ -12,6 +12,7 @@ import { ENGINE_ROOT, engineRoot, type Root } from '../../../src/lib/server/file
 import { handleHistory, readCopy, savesOf } from '../../../src/lib/server/files/fs/history.ts';
 import { handleSource } from '../../../src/lib/server/files/source.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { TEXT } from '../../server/text.ts';
 
 const HOST = '127.0.0.1:8790';
 
@@ -46,6 +47,7 @@ async function save(one: Fixture, content: string, list: Root[] = [one.root], ke
     return handleSource(
         request(token, { root: key, path: 'notes.md', content }),
         token,
+        () => TEXT,
         list,
         one.history
     );
@@ -80,6 +82,7 @@ describe('the copy a save keeps', () => {
         const answer = await handleSource(
             request(token, { root: ENGINE_ROOT, path: 'local.yml', content: 'hub: /srv/x\n' }),
             token,
+            () => TEXT,
             [engineRoot(engine)],
             one.history
         );

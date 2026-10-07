@@ -1196,6 +1196,15 @@ options:
                 dir:
                     description: the directory, absolute or starting with ~/
                     control: path
+        repository_scan_depth:
+            heading: sources
+            section: Roots
+            description: How many folder levels below each root the Repositories view looks for repositories, so a root of clones lists each clone. 0 lists only the roots themselves. A change is read again at once.
+            default: 1
+            control: number
+            min: 0
+            max: 3
+            whole: true
     local.yml:
         hub:
             section: Server

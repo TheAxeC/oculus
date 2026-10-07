@@ -504,10 +504,19 @@ export type GitPayload = Record<string, GitState>;
  * under it may be stale. The portfolio snapshot does not say this: it is rebuilt only for a file
  * the config names, and a file written inside a project folder moves no version of it.
  *
- * A message with `bookmarks` is the reader's own bookmarks file, which lies under no root and is
- * watched on its own; it names no root, and the page reads the bookmarks again for it.
+ * `folders` names the folders of that root the writes landed in, each relative to the root and
+ * `''` for the root's own top; a message without it concerns the whole root, and one whose list is
+ * empty concerns nothing. A message with `bookmarks` is the reader's own bookmarks file, which lies
+ * under no root and is watched on its own, and one with `workspaces` says the roots the file
+ * browser serves may have changed (the saved workspaces file or the configuration moved); both
+ * name no root, and the page reads the bookmarks or the workspaces again for them.
  */
-export type FilesPayload = { root: string; bookmarks?: boolean };
+export type FilesPayload = {
+    root: string;
+    folders?: string[];
+    bookmarks?: boolean;
+    workspaces?: boolean;
+};
 
 // ------------------------------------------------------------------ hpc
 export type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'error';

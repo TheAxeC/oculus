@@ -13,10 +13,11 @@ import { buildPortfolio, portfolioConfigFrom } from '../../src/lib/data/index.ts
 import { ENTITY_KINDS } from '../../src/lib/data/snapshot/normalise.ts';
 import { sessions } from '../../src/lib/server/sessions/index.ts';
 import { sessionFolders } from '../../src/lib/server/sessions/folders.ts';
-import { statusFor } from '../../src/lib/server/core/git/state.ts';
+import { readState } from '../../src/lib/server/core/git/state.ts';
 import type { Finding, RegistryName } from '../../src/lib/data/model/index.ts';
 import { join } from 'node:path';
 import { scratchDir, sweepScratch } from '../fixtures/scratch.ts';
+import { TEXT } from '../server/text.ts';
 
 const REGISTRIES: RegistryName[] = ['venues', 'datasets', 'pillars', 'domains', 'funding'];
 
@@ -125,7 +126,7 @@ for (const workspace of first.workspaces) {
 
 // The hub's own git state, through server/core/git/state.ts's four read-only commands and nothing
 // else. It reads the repository and changes nothing in it, like everything else in this file.
-const state = statusFor([hub])[hub];
+const state = (await readState(hub, TEXT)).state;
 console.log(
     `git ${hub}: branch ${state.branch || '(none)'}, ahead ${state.ahead}, behind ${state.behind}, ` +
         `staged ${state.staged.length}, unstaged ${state.unstaged.length}, ` +

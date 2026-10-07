@@ -38,6 +38,8 @@ export type Tab = {
     dirty?: boolean;
     /** The tab is pinned: a pin stands in the close control's place and presses to unpin. */
     pinned?: boolean;
+    /** The file the tab shows is off the disk: its label is struck through, in the error colour. */
+    gone?: boolean;
 };
 
 /**

@@ -143,12 +143,13 @@ export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string };
 export type AuditMuteWrite = { kind: 'audit-mute'; signature: string; muted: boolean };
 
 /**
- * A folder added to the default workspace, by the path it was chosen as, or a root of
- * config/sources.yml removed by its key.
+ * A folder added to the default workspace, by the path it was chosen as, a root of
+ * config/sources.yml removed by its key, or the list's roots put in the order the keys name.
  */
 export type RootsWrite =
     | { kind: 'roots'; action: 'add'; dir: string }
-    | { kind: 'roots'; action: 'remove'; key: string };
+    | { kind: 'roots'; action: 'remove'; key: string }
+    | { kind: 'roots'; action: 'order'; keys: string[] };
 
 /** The rail's whole list of pages, in order, each entry a label, a glyph name and a page key. */
 export type RailWrite = { kind: 'rail'; rail: { label: string; glyph: string; page: string }[] };
@@ -370,7 +371,8 @@ const railShape = z.object({
 
 const rootsShape = z.discriminatedUnion('action', [
     z.object({ kind: z.literal('roots'), action: z.literal('add'), dir: z.string() }),
-    z.object({ kind: z.literal('roots'), action: z.literal('remove'), key: z.string() })
+    z.object({ kind: z.literal('roots'), action: z.literal('remove'), key: z.string() }),
+    z.object({ kind: z.literal('roots'), action: z.literal('order'), keys: z.array(z.string()) })
 ]) satisfies z.ZodType<RootsWrite>;
 
 /** The `value` key must be there, whatever it holds; an absent one is not a write. */

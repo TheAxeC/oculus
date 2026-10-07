@@ -22,6 +22,7 @@
 import { randomBytes } from 'node:crypto';
 import { json } from '@sveltejs/kit';
 import { isMap } from '../../data/helpers/guards.ts';
+import { words } from './words.ts';
 
 /** The header a write carries the token in. */
 export const TOKEN_HEADER = 'x-oculus-token';
@@ -86,27 +87,43 @@ export function hasToken(request: Request, token: string): boolean {
 export type RefusalShape = {
     headers?: Record<string, string>;
     fields?: Record<string, unknown>;
-    words?: { token?: string; json?: string };
-};
+} & (
+    | { words: { token: string; json: string }; text?: undefined }
+    | { text: () => Record<string, string>; words?: undefined }
+);
 
 /**
  * The parsed body of a write request, or the answer that refuses it: 403 for a request without the
  * process token, 400 for a body that is not JSON, each in the route's words when the shape names
- * them. What the body must hold is the route's own check.
+ * them and in the text catalog's (`server.auth`) when it names the catalog. What the body must hold
+ * is the route's own check.
  */
 export async function tokenedBody(
     request: Request,
     token: string,
-    shape: RefusalShape = {}
+    shape: RefusalShape
 ): Promise<{ body: unknown } | Response> {
     const refuse = (error: string, status: number): Response =>
         json({ ...shape.fields, error }, { status, headers: shape.headers });
-    if (!hasToken(request, token))
-        return refuse(shape.words?.token ?? 'the write token is missing or stale', 403);
+    // A route that names its own words answers them; any other has the sentences worded from the
+    // catalog its `text` reads, and only when a refusal is made.
+    if (!hasToken(request, token)) {
+        return refuse(
+            shape.words === undefined
+                ? words(shape.text(), 'server.auth.token_refused')
+                : shape.words.token,
+            403
+        );
+    }
     try {
         return { body: (await request.json()) as unknown };
     } catch {
-        return refuse(shape.words?.json ?? 'the body is not JSON', 400);
+        return refuse(
+            shape.words === undefined
+                ? words(shape.text(), 'server.auth.body_not_json')
+                : shape.words.json,
+            400
+        );
     }
 }
 

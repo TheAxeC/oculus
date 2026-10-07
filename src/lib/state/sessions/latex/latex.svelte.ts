@@ -41,7 +41,7 @@ import {
     type LatexEditing
 } from '../../../data/sources/config/catalog/latex-tables.ts';
 import { readAs, readJson } from '../../../data/shapes/shapes.ts';
-import { holds } from '../../system/docs.svelte.ts';
+import { filesNamed, folderNamed } from '../../shared/answers/files-named.ts';
 import { failedAnswer } from '../../shared/answers/answers.ts';
 import type { EntitiesStore, Queries, WritesStore } from '../../shared/stores/shapes.ts';
 import type { FsStore } from '../../sources/fs.svelte.ts';
@@ -220,14 +220,22 @@ export function createLatex(
     });
 
     /**
-     * Whether a `files` message can concern a folder: its folder, which is the directory of its
-     * root joined with its own, lies under the root the message names. A folder of a root the page
-     * has no directory for yet cannot be placed, so it is concerned.
+     * Whether a `files` message can concern a folder: the folder, which is the directory of its
+     * root joined with its own, is named by the message (or the message names no folders and its
+     * root holds it), or a file the folder's main depends on is in a folder the message names. A
+     * folder of a root the page has no directory for yet cannot be placed, so it is concerned.
      */
-    function concerns(key: string, dir: string, root: string): boolean {
+    function concerns(
+        key: string,
+        dir: string,
+        root: string,
+        folders: string[] | undefined,
+        files: string[] = []
+    ): boolean {
         const base = fs.roots().find((one) => one.key === key);
         if (base === undefined) return true;
-        return holds(root, joinPath(base.dir, dir));
+        if (folderNamed(root, folders, joinPath(base.dir, dir))) return true;
+        return files.some((file) => filesNamed(root, folders, joinPath(base.dir, file)));
     }
 
     /**
@@ -239,14 +247,20 @@ export function createLatex(
         if (filesHeard === message.version) return;
         const gap = filesHeard === null || message.version !== filesHeard + 1;
         filesHeard = message.version;
-        const root = entities.payloadOf(message, 'files')?.root ?? '';
+        const payload = entities.payloadOf(message, 'files');
+        const root = payload?.root ?? '';
+        const folders = payload?.folders;
         if (root === '' && !gap) return;
         for (const one of queries.entries<LatexState>([KIND])) {
-            if (gap || one.data === undefined || concerns(one.data.root, one.data.dir, root)) {
+            if (
+                gap ||
+                one.data === undefined ||
+                concerns(one.data.root, one.data.dir, root, folders)
+            ) {
                 queries.mark(one.key, 'again');
             }
         }
-        builds.filesMoved((key, dir) => gap || concerns(key, dir, root));
+        builds.filesMoved((key, dir, files) => gap || concerns(key, dir, root, folders, files));
     }
 
     /** Whether one terminal is in the last `sessions` payload's list, its line running. */

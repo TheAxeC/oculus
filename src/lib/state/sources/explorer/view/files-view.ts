@@ -55,9 +55,10 @@ export type RevealOutcome = {
  * that answered its last press, which come back with the form they answered, its toggles (hidden
  * files, the files git ignores, nested files), the folder a rooted tab is drawn from (`top`) and
  * the folder Open Folder found outside every root (`outside`), and the Timeline's pin and the two
- * lists it shows (`timelinePinned`, `timelineGit`, `timelineLocal`). A bookmark form's typed values
- * are not here: they are the form drafts of state/forms/form-drafts.svelte.ts, kept beside this
- * record as every entry form's are.
+ * lists it shows (`timelinePinned`, `timelineGit`, `timelineLocal`), and the order its sections are
+ * drawn in (`sections`, every section's id once, the ones not drawn included). A bookmark form's
+ * typed values are not here: they are the form drafts of state/forms/form-drafts.svelte.ts, kept
+ * beside this record as every entry form's are.
  */
 export type FilesView = FilesForms &
     ListingShown & {
@@ -100,7 +101,34 @@ export type FilesView = FilesForms &
         timelineGit: boolean;
         /** Whether the Timeline lists the copies of its file in the local history. */
         timelineLocal: boolean;
+        /**
+         * The order the sections are drawn in: every id of SECTION_ORDER once. A section that is
+         * not drawn keeps its place here.
+         */
+        sections: string[];
     };
+
+/** The sections of the view in the order a fresh Files tab draws them. */
+const SECTION_ORDER: readonly string[] = [
+    'editors',
+    'files',
+    'outline',
+    'ast',
+    'memory',
+    'timeline',
+    'bookmarks',
+    'notes'
+];
+
+/**
+ * The order a saved record names, read as a whole one: the ids it holds that are sections, each
+ * once at its first place, then every section it lacks in the default order. A record that is no
+ * list reads as the default order.
+ */
+function sectionsOf(held: string[]): string[] {
+    const known = held.filter((id, at) => SECTION_ORDER.includes(id) && held.indexOf(id) === at);
+    return [...known, ...SECTION_ORDER.filter((id) => !known.includes(id))];
+}
 
 /** A count a saved record holds, and 0 for anything that is not a whole number from 0 up. */
 const countShape = z.number().int().min(0).catch(0);
@@ -178,10 +206,12 @@ const filesViewShape = z
         outside: z.string().catch(''),
         timelinePinned: selectedShape.nullable().catch(null),
         timelineGit: z.boolean().catch(true),
-        timelineLocal: z.boolean().catch(true)
+        timelineLocal: z.boolean().catch(true),
+        sections: fieldItemsShape
     })
     .transform((held): FilesView => ({
         ...held,
+        sections: sectionsOf(held.sections),
         editing: held.form === 'bookmark' ? held.editing : '',
         typed: isLineForm(held.form) ? held.typed : '',
         // A rename names the row it renames, so a rename of no path is none.
@@ -221,7 +251,8 @@ function emptyFilesView(): FilesView {
         outside: '',
         timelinePinned: null,
         timelineGit: true,
-        timelineLocal: true
+        timelineLocal: true,
+        sections: [...SECTION_ORDER]
     };
 }
 

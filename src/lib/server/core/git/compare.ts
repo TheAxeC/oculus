@@ -32,6 +32,7 @@ import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import type { DiffSides, GitBlameLine, GitCommitFile } from '../../../data/model/index.ts';
 import { permitted } from '../paths.ts';
+import { words } from '../words.ts';
 import { NO_CONTEXT, parseBlame, parseNameStatus } from './parse.ts';
 import { sidesOf } from './reads.ts';
 import {
@@ -39,6 +40,7 @@ import {
     TIMEOUT_MS,
     milliseconds,
     pathInside,
+    reasonOf,
     refused,
     run,
     type Outcome,
@@ -59,29 +61,33 @@ export type RefName = { name: string; kind: RefKind };
 export type HeadFile = { text: string } | { missing: true } | { binary: true };
 
 /** The one `diff` call site of this module, run with the path rule set to literal. */
-function diff(root: string, args: string[], timeout: number): Outcome {
+function diff(root: string, args: string[], timeout: number): Promise<Outcome> {
     return run(root, ['diff', ...args], timeout, undefined, { GIT_LITERAL_PATHSPECS: '1' });
 }
 
 /** A file as HEAD or the index holds it; a directory is refused and a path git lacks is missing. */
-export function headFile(
+export async function headFile(
     root: string,
     stage: HeadStage,
     path: string,
+    text: Record<string, string>,
     timeout: number = TIMEOUT_MS
-): Read<HeadFile> {
+): Promise<Read<HeadFile>> {
     if (path === '.' || !pathInside(root, path)) {
-        return refused(`the path ${path} is not inside the repository`);
+        return refused(words(text, 'server.git.path_outside', path));
     }
     const ms = milliseconds(timeout);
     const spec = `${stage === 'head' ? 'HEAD' : ':0'}:${path}`;
-    const kind = stage === 'head' ? headKind(root, spec, ms) : indexKind(root, path, ms);
+    const kind =
+        stage === 'head'
+            ? await headKind(root, spec, text, ms)
+            : await indexKind(root, path, text, ms);
     if (!kind.ok) return kind;
     if (kind.value === 'none') return missing();
-    if (kind.value === 'folder') return refused(`${path} is a folder`);
-    if (kind.value === 'other') return refused(`${path} is not a file`);
-    const done = run(root, ['show', '--no-textconv', spec], ms);
-    if (!done.ok) return refused(done.text);
+    if (kind.value === 'folder') return refused(words(text, 'server.git.is_a_folder', path));
+    if (kind.value === 'other') return refused(words(text, 'server.git.not_a_file', path));
+    const done = await run(root, ['show', '--no-textconv', spec], ms);
+    if (!done.ok) return refused(reasonOf(done, text));
     if (isBinary(done.text, done.utf8)) return { ok: true, value: { binary: true } };
     return { ok: true, value: { text: done.text } };
 }
@@ -91,39 +97,45 @@ export function headFile(
  * is handed to `git blame --contents -` as the file's contents, so a staged change to a line shows
  * git's uncommitted author on that line.
  */
-export function blameAt(
+export async function blameAt(
     root: string,
     path: string,
     stage: HeadStage,
+    text: Record<string, string>,
     timeout: number = TIMEOUT_MS
-): Read<GitBlameLine[]> {
-    if (!pathInside(root, path)) return refused(`the path ${path} is not inside the repository`);
+): Promise<Read<GitBlameLine[]>> {
+    if (!pathInside(root, path)) return refused(words(text, 'server.git.path_outside', path));
     const ms = milliseconds(timeout);
     if (stage === 'head') {
-        const done = run(root, ['blame', '--porcelain', 'HEAD', '--', path], ms);
-        return done.ok ? { ok: true, value: parseBlame(done.text) } : refused(done.text);
+        const done = await run(root, ['blame', '--porcelain', 'HEAD', '--', path], ms);
+        return done.ok ? { ok: true, value: parseBlame(done.text) } : refused(reasonOf(done, text));
     }
-    const held = headFile(root, 'index', path, ms);
+    const held = await headFile(root, 'index', path, text, ms);
     if (!held.ok) return held;
-    if (!('text' in held.value)) return refused(`${path} has no text in the index`);
-    const done = run(
+    if (!('text' in held.value)) return refused(words(text, 'server.git.no_index_text', path));
+    const done = await run(
         root,
         ['blame', '--porcelain', '--contents', '-', '--', path],
         ms,
         held.value.text
     );
-    return done.ok ? { ok: true, value: parseBlame(done.text) } : refused(done.text);
+    return done.ok ? { ok: true, value: parseBlame(done.text) } : refused(reasonOf(done, text));
 }
 
 /** What a path is in a commit or the index: a file, a folder, something else, or not there. */
 type Kind = 'file' | 'folder' | 'other' | 'none';
 
 /** The type of the object `HEAD:<path>` names; a path HEAD lacks, or no HEAD at all, is none. */
-function headKind(root: string, spec: string, timeout: number): Read<Kind> {
-    const done = run(root, ['cat-file', '-t', spec], timeout);
+async function headKind(
+    root: string,
+    spec: string,
+    text: Record<string, string>,
+    timeout: number
+): Promise<Read<Kind>> {
+    const done = await run(root, ['cat-file', '-t', spec], timeout);
     if (!done.ok) {
         return done.text.includes('not a git repository')
-            ? refused(done.text)
+            ? refused(reasonOf(done, text))
             : { ok: true, value: 'none' };
     }
     const type = done.text.trim();
@@ -134,11 +146,16 @@ function headKind(root: string, spec: string, timeout: number): Read<Kind> {
  * What the index holds at a path: `ls-files --stage` lists the entry itself for a file and the
  * entries under it for a folder, each as `<mode> <hash> <stage>\t<path>`.
  */
-function indexKind(root: string, path: string, timeout: number): Read<Kind> {
-    const done = run(root, ['ls-files', '--stage', '-z', '--', path], timeout, undefined, {
+async function indexKind(
+    root: string,
+    path: string,
+    text: Record<string, string>,
+    timeout: number
+): Promise<Read<Kind>> {
+    const done = await run(root, ['ls-files', '--stage', '-z', '--', path], timeout, undefined, {
         GIT_LITERAL_PATHSPECS: '1'
     });
-    if (!done.ok) return refused(done.text);
+    if (!done.ok) return refused(reasonOf(done, text));
     const rows = done.text.split('\0').filter((row) => row !== '');
     if (rows.length === 0) return { ok: true, value: 'none' };
     const own = rows.find((row) => row.slice(row.indexOf('\t') + 1) === path);
@@ -157,57 +174,70 @@ function missing(): Read<HeadFile> {
  * The commit a ref names, or why it names none. A ref that starts with a dash is refused before git
  * runs, since it could be an option.
  */
-function commitOf(root: string, ref: string, timeout: number): Read<string> {
+async function commitOf(
+    root: string,
+    ref: string,
+    text: Record<string, string>,
+    timeout: number
+): Promise<Read<string>> {
     if (typeof ref !== 'string' || ref === '' || ref.startsWith('-')) {
-        return refused('that is not a reference');
+        return refused(words(text, 'server.git.not_a_reference'));
     }
-    const done = run(root, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], timeout);
+    const done = await run(root, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], timeout);
     const hash = done.text.trim();
     return done.ok && HASH.test(hash)
         ? { ok: true, value: hash }
-        : refused(`${ref} names no commit`);
+        : refused(words(text, 'server.git.names_no_commit', ref));
 }
 
 /** The files of `git diff <from> <to>`: the from side is any ref, the to side a commit hash. */
-export function compareFiles(
+export async function compareFiles(
     root: string,
     from: string,
     to: string,
+    text: Record<string, string>,
     timeout: number = TIMEOUT_MS
-): Read<GitCommitFile[]> {
-    if (!HASH.test(to)) return refused('that is not a commit');
+): Promise<Read<GitCommitFile[]>> {
+    if (!HASH.test(to)) return refused(words(text, 'server.git.not_a_commit'));
     const ms = milliseconds(timeout);
-    const start = commitOf(root, from, ms);
+    const start = await commitOf(root, from, text, ms);
     if (!start.ok) return start;
-    const done = diff(root, ['--name-status', '-z', '-M', '--end-of-options', start.value, to], ms);
-    return done.ok ? { ok: true, value: parseNameStatus(done.text) } : refused(done.text);
+    const done = await diff(
+        root,
+        ['--name-status', '-z', '-M', '--end-of-options', start.value, to],
+        ms
+    );
+    return done.ok
+        ? { ok: true, value: parseNameStatus(done.text) }
+        : refused(reasonOf(done, text));
 }
 
 /**
  * One file's two sides between a ref and a commit, the ref's on the left. A path the comparison
  * renamed is diffed from its old path, which the comparison's own file list names.
  */
-export function compareSides(
+export async function compareSides(
     root: string,
     from: string,
     to: string,
     path: string,
+    text: Record<string, string>,
     timeout: number = TIMEOUT_MS
-): Read<DiffSides[]> {
-    if (!HASH.test(to)) return refused('that is not a commit');
-    if (!pathInside(root, path)) return refused(`the path ${path} is not inside the repository`);
+): Promise<Read<DiffSides[]>> {
+    if (!HASH.test(to)) return refused(words(text, 'server.git.not_a_commit'));
+    if (!pathInside(root, path)) return refused(words(text, 'server.git.path_outside', path));
     const ms = milliseconds(timeout);
-    const start = commitOf(root, from, ms);
+    const start = await commitOf(root, from, text, ms);
     if (!start.ok) return start;
-    const listed = diff(
+    const listed = await diff(
         root,
         ['--name-status', '-z', '-M', '--end-of-options', start.value, to],
         ms
     );
-    if (!listed.ok) return refused(listed.text);
+    if (!listed.ok) return refused(reasonOf(listed, text));
     const renamed = parseNameStatus(listed.text).find((file) => file.path === path && file.from);
     const paths = renamed ? [renamed.from, path] : [path];
-    const done = diff(
+    const done = await diff(
         root,
         [
             '--no-color',
@@ -222,13 +252,17 @@ export function compareSides(
         ],
         ms
     );
-    if (!done.ok) return refused(done.text);
-    return sidesOf(root, done.text, `${start.value}:`, `${to}:`, ms);
+    if (!done.ok) return refused(reasonOf(done, text));
+    return sidesOf(root, done.text, `${start.value}:`, `${to}:`, text, ms);
 }
 
 /** The refs a picker offers: local branches, remote branches and tags, never a remote's HEAD. */
-export function refNames(root: string, timeout: number = TIMEOUT_MS): Read<RefName[]> {
-    const table = refTable(root, milliseconds(timeout));
+export async function refNames(
+    root: string,
+    text: Record<string, string>,
+    timeout: number = TIMEOUT_MS
+): Promise<Read<RefName[]>> {
+    const table = await refTable(root, text, milliseconds(timeout));
     if (!table.ok) return table;
     const rows: RefName[] = [];
     for (const row of table.value) {
@@ -247,8 +281,12 @@ export function refNames(root: string, timeout: number = TIMEOUT_MS): Read<RefNa
 type RefRow = { name: string; symref: string; upstream: string };
 
 /** The one `for-each-ref` read of this module: the three namespaces with what a base reads. */
-function refTable(root: string, timeout: number): Read<RefRow[]> {
-    const done = run(
+async function refTable(
+    root: string,
+    text: Record<string, string>,
+    timeout: number
+): Promise<Read<RefRow[]>> {
+    const done = await run(
         root,
         [
             'for-each-ref',
@@ -259,7 +297,7 @@ function refTable(root: string, timeout: number): Read<RefRow[]> {
         ],
         timeout
     );
-    if (!done.ok) return refused(done.text);
+    if (!done.ok) return refused(reasonOf(done, text));
     const rows: RefRow[] = [];
     for (const line of done.text.split('\n')) {
         const [name = '', symref = '', upstream = ''] = line.split('\0');
@@ -276,17 +314,21 @@ function refTable(root: string, timeout: number): Read<RefRow[]> {
  * upstream; else the remote's default branch, `refs/remotes/<remote>/HEAD`. Nothing is written
  * back.
  */
-export function branchBase(root: string, timeout: number = TIMEOUT_MS): string {
+export async function branchBase(
+    root: string,
+    text: Record<string, string>,
+    timeout: number = TIMEOUT_MS
+): Promise<string> {
     const ms = milliseconds(timeout);
-    const head = run(root, ['symbolic-ref', '--short', 'HEAD'], ms);
-    const table = refTable(root, ms);
+    const head = await run(root, ['symbolic-ref', '--short', 'HEAD'], ms);
+    const table = await refTable(root, text, ms);
     if (!head.ok || !table.ok) return '';
     const branch = head.text.trim();
     const remote = (name: string): boolean =>
         table.value.some((row) => row.name === `refs/remotes/${name}` && row.symref === '');
-    const configured = mergeBaseSetting(root, branch, ms);
+    const configured = await mergeBaseSetting(root, branch, ms);
     if (configured !== '' && remote(configured)) return configured;
-    const from = createdFrom(root, branch, ms);
+    const from = await createdFrom(root, branch, ms);
     if (from !== '') {
         if (remote(from)) return from;
         const upstream = table.value.find((row) => row.name === `refs/heads/${from}`)?.upstream;
@@ -296,8 +338,8 @@ export function branchBase(root: string, timeout: number = TIMEOUT_MS): string {
 }
 
 /** The value of `branch.<name>.vscode-merge-base`, or the empty string when it is not set. */
-function mergeBaseSetting(root: string, branch: string, timeout: number): string {
-    const done = run(
+async function mergeBaseSetting(root: string, branch: string, timeout: number): Promise<string> {
+    const done = await run(
         root,
         ['config', '--get-regexp', '^branch\\..*\\.vscode-merge-base$'],
         timeout
@@ -313,8 +355,8 @@ function mergeBaseSetting(root: string, branch: string, timeout: number): string
 }
 
 /** The `%gs` subjects of a ref's reflog, newest first; none for a ref with no reflog. */
-function reflogOf(root: string, ref: string, timeout: number): string[] {
-    const done = run(root, ['log', '--walk-reflogs', '--format=%gs', ref, '--'], timeout);
+async function reflogOf(root: string, ref: string, timeout: number): Promise<string[]> {
+    const done = await run(root, ['log', '--walk-reflogs', '--format=%gs', ref, '--'], timeout);
     return done.ok ? done.text.split('\n').filter((line) => line !== '') : [];
 }
 
@@ -323,15 +365,15 @@ function reflogOf(root: string, ref: string, timeout: number): string[] {
  * an X of `HEAD` the branch the oldest `checkout: moving from <X> to <branch>` entry of the HEAD
  * reflog left. The empty string when the reflog says nothing.
  */
-function createdFrom(root: string, branch: string, timeout: number): string {
-    const created = reflogOf(root, `refs/heads/${branch}`, timeout)
+async function createdFrom(root: string, branch: string, timeout: number): Promise<string> {
+    const created = (await reflogOf(root, `refs/heads/${branch}`, timeout))
         .filter((line) => line.startsWith('branch: Created from '))
         .map((line) => line.slice('branch: Created from '.length));
     if (created.length !== 1) return '';
     if (created[0] !== 'HEAD') return created[0];
     const prefix = 'checkout: moving from ';
     const suffix = ` to ${branch}`;
-    const moves = reflogOf(root, 'HEAD', timeout).filter(
+    const moves = (await reflogOf(root, 'HEAD', timeout)).filter(
         (line) => line.startsWith(prefix) && line.endsWith(suffix)
     );
     const last = moves.at(-1);
@@ -364,24 +406,25 @@ function defaultBranchOf(rows: RefRow[], branch: string): string {
  * worktree must lie under one of the roots, both taken by their real paths, before a file is
  * read from it.
  */
-export function workspaceSides(
+export async function workspaceSides(
     root: string,
     path: string,
     roots: string[],
+    text: Record<string, string>,
     timeout: number = TIMEOUT_MS
-): Read<DiffSides[]> {
+): Promise<Read<DiffSides[]>> {
     if (path === '.' || !pathInside(root, path)) {
-        return refused(`the path ${path} is not inside the repository`);
+        return refused(words(text, 'server.git.path_outside', path));
     }
-    const listed = worktrees(root, milliseconds(timeout));
+    const listed = await worktrees(root, milliseconds(timeout));
     const main = listed.at(0)?.path;
-    if (main === undefined) return refused('this repository has no worktrees');
-    if (realOf(main) === realOf(root)) return refused('this is the main worktree');
+    if (main === undefined) return refused(words(text, 'server.git.no_worktrees'));
+    if (realOf(main) === realOf(root)) return refused(words(text, 'server.git.is_main_worktree'));
     if (!permitted(realOf(main), roots.map(realOf)) || !pathInside(main, path)) {
-        return refused('the main worktree is not a workspace oculus knows');
+        return refused(words(text, 'server.git.main_worktree_unknown'));
     }
-    const left = onDisk(main, path);
-    const right = onDisk(root, path);
+    const left = onDisk(main, path, text);
+    const right = onDisk(root, path, text);
     if (!left.ok) return left;
     if (!right.ok) return right;
     const binary = left.value.binary || right.value.binary;
@@ -426,22 +469,22 @@ function isBinary(text: string, utf8: boolean): boolean {
  * that is not there is empty; a folder, and a file whose folder resolves outside the worktree, are
  * refused.
  */
-function onDisk(base: string, path: string): Read<Disk> {
+function onDisk(base: string, path: string, text: Record<string, string>): Read<Disk> {
     const full = join(base, path);
     const folder = realOf(dirname(full));
     const top = realOf(base);
     if (folder !== top && !folder.startsWith(top + sep)) {
-        return refused(`the path ${path} leaves the worktree`);
+        return refused(words(text, 'server.git.path_leaves_worktree', path));
     }
     try {
         const stat = lstatSync(full);
-        if (stat.isDirectory()) return refused(`${path} is a folder`);
+        if (stat.isDirectory()) return refused(words(text, 'server.git.is_a_folder', path));
         const bytes = stat.isSymbolicLink()
             ? readlinkSync(full, { encoding: 'buffer' })
             : readFileSync(full);
-        const text = bytes.toString('utf8');
+        const held = bytes.toString('utf8');
         const utf8 = isUtf8(bytes);
-        return { ok: true, value: { text, utf8, binary: isBinary(text, utf8) } };
+        return { ok: true, value: { text: held, utf8, binary: isBinary(held, utf8) } };
     } catch {
         return { ok: true, value: { text: '', utf8: true, binary: false } };
     }

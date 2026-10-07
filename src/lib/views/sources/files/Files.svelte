@@ -13,10 +13,11 @@
 
 <script lang="ts">
     // Layer 3, view. The workspace in force as an explorer: a header row for the workspace with its
-    // four actions and its menu, every root as a top-level folder row under it, and under the tree
-    // the outline, clangd's AST and Memory Usage while the file tab the reader looked at last holds
-    // an answer, and the timeline of that tab, the bookmarks and the notes, all in the same row
-    // style. The open editors of the page are a section above the tree.
+    // four actions and its menu, every root as a top-level folder row under it, and, in the same
+    // row style, the open editors of the page, the outline, clangd's AST and Memory Usage while the
+    // file tab the reader looked at last holds an answer, the timeline of that tab, the bookmarks
+    // and the notes. The sections are drawn in the order the tab keeps (`sections`, open editors
+    // first and the tree second until the reader drags a head or presses Alt+Up or Alt+Down on it).
     // The view's toolbar holds the follow toggle and the pin, and its bar the filter with the fuzzy
     // toggle. Every control is drawn in every state the view is in: a section whose file could not
     // be read keeps its head and its control and says why in its one row.
@@ -74,6 +75,7 @@
     import BookmarkForm from './sections/BookmarkForm.svelte';
     import Controls from './header/Controls.svelte';
     import Filters from './header/Filters.svelte';
+    import MessageLine from './MessageLine.svelte';
     import OpenEditors from './sections/OpenEditors.svelte';
     import Sections from './sections/Sections.svelte';
     import WorkspaceHeader from './header/WorkspaceHeader.svelte';
@@ -83,9 +85,13 @@
     import ShowPath from '$lib/views/shared/explorer/tree/ShowPath.svelte';
     import { createRootedTree, readWorkspace } from '$lib/views/shared/explorer/rooted-tree.svelte';
     import { openBookmark } from '$lib/views/shared/explorer/opening';
-    import { isLineForm } from '$lib/state/sources/fs';
+    import { isLineForm, revealLine } from '$lib/state/sources/fs';
     import { refusal } from '$lib/state/sources/explorer/acts/refusal';
     import { sectionOpen } from '$lib/state/sources/explorer/sections/section-state';
+    import { followedTab } from '$lib/state/sources/explorer/sections/followed-tab';
+    import { createListDrag } from './sections/list-drag.svelte';
+    import { fileOfTab } from '$lib/state/workbench/navigation/pages';
+    import { panes } from '$lib/state/workbench/layout';
     import type { Entry } from '$lib/state/boards/collection';
     import {
         filesViewOf,
@@ -104,8 +110,10 @@
 
     const client = useState();
     const {
-        fs: { addBookmark, addRoot, bookmarksChanged, invalidate },
-        layout: { instanceLayoutState },
+        explorer: { panelOpen },
+        fs: { addBookmark, addRoot, bookmarksChanged, invalidate, orderRoots },
+        layout: { activeInstance, currentPage, instanceLayoutState, layout },
+        clangd,
         selection: { selected },
         selectors: { sessionById },
         terminals: { terminalById },
@@ -118,6 +126,42 @@
     const workspace = readWorkspace(client);
     const saved = $derived(workspace.saved);
     const current = $derived(workspace.current);
+
+    const page = $derived(currentPage().id);
+    /** The file tab the reader looked at last on the page, which the outline sections read. */
+    const lastFile = $derived(
+        followedTab(
+            panes(layout(page)).map((one) => one.pane),
+            activeInstance(page)?.id ?? null,
+            (one) => fileOfTab(one) !== null
+        )
+    );
+
+    /**
+     * The sections whose heads are drawn, which are the ones a drop may land on: the tree's head
+     * only while the view draws a workspace header, and clangd's two only while the file tab holds
+     * an answer. The ones left out keep their place in `view.sections`.
+     */
+    const drawnSections = $derived(
+        view.sections.filter((id) => {
+            if (id === 'files') return headed;
+            if (id === 'ast') return lastFile !== null && clangd.ast(lastFile.id) !== null;
+            if (id === 'memory') return lastFile !== null && clangd.memory(lastFile.id) !== null;
+            return true;
+        })
+    );
+
+    /** The drags and the Alt+Up and Alt+Down steps of the section heads over each other. */
+    const sectionDrag = createListDrag({
+        type: 'application/x-oculus-section',
+        order: () => view.sections,
+        drawn: () => drawnSections,
+        write: (order: string[]) => patch({ sections: order })
+    });
+    const sectionMove = (id: string) => ({
+        drag: sectionDrag.row(id),
+        step: (direction: 'up' | 'down') => sectionDrag.step(id, direction)
+    });
 
     /** The session or terminal the tab follows: the one it pins, else the selection. */
     const followed = $derived(pinnedSession(instanceLayoutState(instance.id)) ?? selected());
@@ -147,6 +191,32 @@
     });
     const { tab, marking } = tree;
     const { patch, patchAt, answerAt, flip, toggleSection } = tab;
+
+    /**
+     * The one line the view says, laid over its foot: that the folder panel is open while it is,
+     * else the refusal, else the bookmark form's outcome, else the outcome of an ask to show a
+     * path, with what clears it.
+     */
+    const message = $derived.by(() => {
+        if (panelOpen()) return { text: t('files.picker_busy'), error: false, clear: {} };
+        if (view.note !== '') return { text: view.note, error: true, clear: { note: '' } };
+        if (view.said !== '') return { text: view.said, error: false, clear: { said: '' } };
+        const shown = revealLine(view.revealed);
+        return shown === '' ? null : { text: shown, error: false, clear: { revealed: null } };
+    });
+
+    /** Escape in the view takes the line away, unless a control inside it used the key. */
+    function escaped(event: KeyboardEvent): void {
+        if (event.key !== 'Escape' || event.defaultPrevented || message === null) return;
+        patch(message.clear);
+    }
+
+    /** Write the new order of the movable roots, and say a refusal in the message line. */
+    async function reorderRoots(keys: string[]): Promise<void> {
+        const owner = instance.id;
+        const answer = await orderRoots(keys);
+        answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
+    }
 
     /** Add the folder Open Folder found outside every root, and drop the line that offered it. */
     async function addOutside(dir: string): Promise<void> {
@@ -221,83 +291,95 @@
         oncollapse={tab.collapseAll}
         onflip={flip}
         onaddfolder={() => void tree.addFolders()}
+        panelOpen={panelOpen()}
         onswitch={() => requestPalette(':workspace ')}
         onsave={() => requestPalette(':workspace-save ')}
         onopenfolder={() => requestPalette(':folder')}
+        drag={sectionDrag.row('files')}
     />
 {/snippet}
 
-<Pane title={t('views.files')} toolbar={tools} {bar} tinted>
-    <div class="files" data-instance={instance.id}>
-        <OpenEditors
-            open={sectionOpen(view, 'editors')}
-            ontoggle={() => toggleSection('editors')}
+{#snippet editorsSection()}
+    <OpenEditors
+        open={sectionOpen(view, 'editors')}
+        ontoggle={() => toggleSection('editors')}
+        move={sectionMove('editors')}
+    />
+{/snippet}
+
+{#snippet treeSection()}
+    {#if view.outside !== ''}
+        <Outside
+            dir={view.outside}
+            onadd={() => void addOutside(view.outside)}
+            ondismiss={() => patch({ outside: '' })}
         />
-        {#if view.note !== ''}
-            <Empty error message={view.note} />
-        {/if}
-        {#if view.outside !== ''}
-            <Outside
-                dir={view.outside}
-                onadd={() => void addOutside(view.outside)}
-                ondismiss={() => patch({ outside: '' })}
-            />
-        {/if}
-        {#if markForm}
-            {#key `${instance.id} ${view.opening}`}
-                <BookmarkForm
-                    owner={instance.id}
-                    forms={formsOf(view)}
-                    schema={markSchema}
-                    entry={editedMark}
-                    initial={{ root: current.roots[0]?.key ?? '' }}
-                    onadd={addBookmark}
-                    onclose={marking.settle}
-                    onrenamed={marking.renameMark}
-                    onsaid={(owner: string, answer: string) => {
-                        answerAt(owner, { said: answer });
-                        bookmarksChanged();
-                    }}
-                />
-            {/key}
-        {/if}
-        {#if view.said !== ''}
-            <p class="said" aria-live="polite">{view.said}</p>
-        {/if}
-        <ShowPath
-            owner={instance.id}
-            {view}
-            roots={rootKeys}
-            rootsError={saved.error}
-            rows={tree.shown}
-            onpatch={patchAt}
-        />
-        <Follow owner={instance.id} {follow} />
-        {#if saved.error !== ''}
-            <Empty error message={t('files.read_failed', saved.error)} />
-        {:else if saved.loading}
-            <Empty message={t('files.loading')} glyph={t('files.none_glyph')} />
-        {:else if tree.rows.length === 0}
-            <!-- A tab following nothing, or a folder no root serves, has its own line above. -->
-            {#if !follow.following || follow.found !== null}
-                <Empty message={t('files.none')} glyph={t('files.none_glyph')} />
-            {/if}
-        {:else}
-            {#each saved.dropped as key (key)}
-                <Empty error message={t('files.reserved', key)} />
-            {/each}
-            <RootedTree
-                {tree}
-                {workspace}
+    {/if}
+    {#if markForm}
+        {#key `${instance.id} ${view.opening}`}
+            <BookmarkForm
                 owner={instance.id}
-                header={headed ? header : undefined}
-                {headerOpen}
+                forms={formsOf(view)}
+                schema={markSchema}
+                entry={editedMark}
+                initial={{ root: current.roots[0]?.key ?? '' }}
+                onadd={addBookmark}
+                onclose={marking.settle}
+                onrenamed={marking.renameMark}
+                onsaid={(owner: string, answer: string) => {
+                    answerAt(owner, { said: answer });
+                    bookmarksChanged();
+                }}
             />
+        {/key}
+    {/if}
+    <ShowPath
+        owner={instance.id}
+        {view}
+        roots={rootKeys}
+        rootsError={saved.error}
+        rows={tree.shown}
+        onpatch={patchAt}
+    />
+    <Follow owner={instance.id} {follow} />
+    {#if saved.error !== ''}
+        <Empty error message={t('files.read_failed', saved.error)} />
+    {:else if saved.loading}
+        <Empty message={t('files.loading')} glyph={t('files.none_glyph')} />
+    {:else if tree.rows.length === 0}
+        <!-- A tab following nothing, or a folder no root serves, has its own line above. -->
+        {#if !follow.following || follow.found !== null}
+            <Empty message={t('files.none')} glyph={t('files.none_glyph')} />
         {/if}
+    {:else}
+        {#each saved.dropped as key (key)}
+            <Empty error message={t('files.reserved', key)} />
+        {/each}
+        <RootedTree
+            {tree}
+            {workspace}
+            owner={instance.id}
+            header={headed ? header : undefined}
+            {headerOpen}
+            onreorder={headed ? (keys: string[]) => void reorderRoots(keys) : undefined}
+            onmoveheader={(direction: 'up' | 'down') => sectionDrag.step('files', direction)}
+        />
+    {/if}
+{/snippet}
+
+<Pane title={t('views.files')} toolbar={tools} {bar} tinted>
+    <!-- Escape bubbles up from the tree and the sections; the view only reads what they left. -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="files" data-instance={instance.id} onkeydown={escaped}>
         <Sections
             owner={instance.id}
             {view}
             selected={selectedFile}
+            followed={lastFile}
+            order={view.sections}
+            move={sectionMove}
+            editors={editorsSection}
+            files={treeSection}
             onsection={toggleSection}
             onpatch={patch}
             onaddmark={marking.showMarkForm}
@@ -305,20 +387,21 @@
             oneditmark={marking.edit}
             onnote={(owner: string, note: string) => answerAt(owner, { note })}
         />
+        <MessageLine
+            message={message?.text ?? ''}
+            error={message?.error ?? false}
+            onclose={() => patch(message?.clear ?? {})}
+        />
     </div>
 </Pane>
 
 <style>
+    /* The view fills the pane, so the message line at its end sits at the pane's foot. */
     .files {
         display: flex;
         flex-direction: column;
         gap: 4px;
         min-width: 0;
-    }
-
-    .said {
-        margin: 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        min-height: 100%;
     }
 </style>

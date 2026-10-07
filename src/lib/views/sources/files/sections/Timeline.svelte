@@ -38,6 +38,8 @@
     import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
+    import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
+    import { headKeys, type SectionMove } from './list-drag.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { nameOf, type FilesView, type RowRef } from '$lib/state/sources/fs';
     import {
@@ -60,9 +62,11 @@
         view: FilesView;
         /** Write part of the Files tab's own state. */
         onpatch: (part: Partial<FilesView>) => void;
+        /** What lets the head be dragged and moved by Alt+Up/Down. */
+        move?: SectionMove;
     };
 
-    let { open, ontoggle, selected, view, onpatch }: Props = $props();
+    let { open, ontoggle, selected, view, onpatch, move }: Props = $props();
 
     const {
         fs: { commitPage, commits, copies, copyText, refreshFile, roots, workspaces },
@@ -270,9 +274,22 @@
 </script>
 
 <div class="timeline" data-fs-timeline>
-    <TreeView label={t('files.timeline')} rows={keyRows} {ontoggle}>
+    <TreeView
+        label={t('files.timeline')}
+        rows={keyRows}
+        {ontoggle}
+        keymap={MOVE_KEYMAP}
+        onkey={headKeys(move)}
+    >
         {#snippet children(nav: TreeNav)}
-            <Section label={t('files.timeline')} {nav} count={rows.length} {open} {ontoggle}>
+            <Section
+                label={t('files.timeline')}
+                {nav}
+                count={rows.length}
+                {open}
+                {ontoggle}
+                drag={move?.drag}
+            >
                 {#snippet more(reach: number)}
                     <ToolButton
                         label={pinned === null

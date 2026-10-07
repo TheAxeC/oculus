@@ -18,6 +18,7 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
+import { TEXT } from '../text.ts';
 
 /** The repositories the stub knows, by name. A name it does not know does not exist on GitHub. */
 const known = new Map<string, string>();
@@ -132,13 +133,13 @@ test.afterAll(() => {
 
 describe('the plan', () => {
     it('finds a secret and refuses the commit while it stands', async () => {
-        expect((await adopt('alpha', options())).ok).toBe(true);
+        expect((await adopt('alpha', TEXT, options())).ok).toBe(true);
         write(codeOf('alpha'), '.env', 'TOKEN=shhh\n');
-        const planned = await sync('alpha', options());
+        const planned = await sync('alpha', TEXT, options());
         expect(planned.plan?.findings).toEqual([{ kind: 'secret', path: '.env', mb: 0 }]);
-        const written = await commit('alpha', 'Add the first files', options());
+        const written = await commit('alpha', 'Add the first files', TEXT, options());
         expect(written.ok).toBe(false);
-        expect(written.error).toContain('the scan found something');
+        expect(written.error).toContain('The scan found something');
         rmSync(join(codeOf('alpha'), '.env'));
     });
 });

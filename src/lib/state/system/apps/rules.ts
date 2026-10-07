@@ -86,7 +86,8 @@ export function readAccess(row: AppRow, channel: string): 'ok' | 'not_declared' 
 /**
  * The part of a message a root app is given, or the message itself for a machine app. The `git`
  * channel gives the one entry keyed by the root's folder, and the `files` channel only a notice
- * whose root is that folder; the bookmarks notice names no root and reaches machine apps alone.
+ * whose root is that folder and whose `folders`, when it has them, are not an empty list; the
+ * bookmarks and workspaces notices name no root and reach machine apps alone.
  * A message of any other channel is whole, since the manifest reader refused a root app that
  * declares a channel it may not have. `dir` is the root's folder, or null when the file browser
  * shows no root of the app's key.
@@ -100,8 +101,15 @@ export function partOf(row: AppRow, message: Message, dir: string | null): Messa
         return { ...message, payload };
     }
     if (message.channel === 'files') {
-        const notice = message.payload as { root?: string };
-        return dir !== null && notice.root === dir ? message : null;
+        const notice = message.payload as {
+            root?: string;
+            folders?: string[];
+            workspaces?: boolean;
+        };
+        if (dir === null || notice.root !== dir) return null;
+        // A notice naming no folder, and no flag, says nothing changed under the app's root.
+        const empty = Array.isArray(notice.folders) && notice.folders.length === 0;
+        return empty && notice.workspaces !== true ? null : message;
     }
     return message;
 }

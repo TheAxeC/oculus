@@ -15,4 +15,6 @@ export type ChangeActions = {
     ongroup: (act: GroupAction) => void;
     /** Open what a row stands for, by the group it is in. */
     onopen: (path: string, kind: string) => void;
+    /** Open the file of a row itself, whatever group it is in. */
+    onopenfile: (path: string) => void;
 };

@@ -12,12 +12,11 @@ import {
     readSchedules,
     type Edit
 } from '../../../../../src/lib/server/machine/runs/schedules/file.ts';
-import { fsWrites } from '../../../../../src/lib/server/core/json.ts';
 import { handleSchedules } from '../../../../../src/lib/server/machine/runs/schedules/routes.ts';
 import type { SchedulesWatcher } from '../../../../../src/lib/server/machine/runs/schedules/watch.ts';
 import { pagePost } from '../../../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../../../fixtures/scratch.ts';
-import { world } from './schedules-fixture.ts';
+import { routeOptions, world } from './schedules-fixture.ts';
 
 const ENTRY: ScheduleEntry = {
     name: 'Weekly radar',
@@ -67,13 +66,7 @@ describe('the schedules file', () => {
                 const response = await handleSchedules(
                     pagePost('http://127.0.0.1:8791/api/schedules', edit, TOKEN),
                     TOKEN,
-                    {
-                        files: () => w.files,
-                        rootsFor: () => [w.repo],
-                        hubFor: () => w.hub,
-                        writes: fsWrites(),
-                        schedules
-                    }
+                    routeOptions(w, schedules)
                 );
                 const label = `${name}: ${edit.action} through the route`;
                 expect(response.status, label).toBe(409);

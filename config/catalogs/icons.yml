@@ -49,6 +49,7 @@ icons:
     branch: git-branch
     merge: git-merge
     commit: git-commit-horizontal
+    head: target
     worktree: folder-tree
     # Source Control: the remote actions, stashes, tags, blame and the diff pane
     pull: arrow-down-to-line

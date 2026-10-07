@@ -9,6 +9,7 @@
 // What this does NOT cover: the token reaching the page and Kit putting it on the event.
 
 import { describe, expect } from 'vitest';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { handleDeposit } from '../../../src/lib/server/git/deposit-routes.ts';
 import type { DepositOptions } from '../../../src/lib/server/git/deposit-routes.ts';
 import { it } from '../../fixtures/scratch.ts';
@@ -29,6 +30,7 @@ let ran: { action: string; id: string; fields: Record<string, unknown> }[] = [];
 function options(extra: DepositOptions = {}): DepositOptions {
     ran = [];
     return {
+        deposit: { config: loadConfig(engineDir()).config },
         idsFor: () => [ID],
         run: (action, id, fields) => {
             ran.push({ action, id, fields });
@@ -71,7 +73,7 @@ describe('the deposit endpoint', () => {
         const response = await handleDeposit(request({ action: 'push', id: ID }), TOKEN, into);
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({
-            error: 'this action needs the page to confirm it'
+            error: 'This action needs the page to confirm it'
         });
         expect(ran).toEqual([]);
     });

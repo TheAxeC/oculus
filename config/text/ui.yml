@@ -97,6 +97,7 @@ text:
         tab_close_right: Close to the Right
         tab_close_saved: Close Saved
         tab_copy_refused: The clipboard refused the copy.
+        tab_deleted: Deleted
         tab_keep_open: Keep Open
         tab_path: Path of the open file
         tab_pin: Pin

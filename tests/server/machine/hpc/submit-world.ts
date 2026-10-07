@@ -19,7 +19,7 @@ export const SCRIPT = '#!/bin/bash\n#SBATCH --job-name=a\nScratchDir="/local/${S
 export const OK = { stdout: '', stderr: '', code: 0 };
 
 /** The files under a folder, relative to it, as a `kept` list reads them: every file, no git. */
-export function listed(code: string): { ok: true; value: string[] } {
+export function listed(code: string): Promise<{ ok: true; value: string[] }> {
     const found: string[] = [];
     const walk = (dir: string): void => {
         for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -29,7 +29,7 @@ export function listed(code: string): { ok: true; value: string[] } {
         }
     };
     walk(code);
-    return { ok: true, value: found };
+    return Promise.resolve({ ok: true, value: found });
 }
 
 /** A hub with projects `p` and `q`, `p` holding the given files in its code folder, and deps. */

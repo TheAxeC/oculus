@@ -183,17 +183,15 @@ export type LspChoiceCommand = 'interpreter' | 'compile-database' | 'svelte-conf
 export type LspChoiceFacts = {
     /** The palette command that opens the list of the choice. */
     command: LspChoiceCommand;
-    /** What the command is typed with: a hint after its name. */
-    hint: string;
     /** The status bar item of the choice. */
     item: string;
 };
 
 /** The facts of each kind of choice. */
 export const LSP_CHOICES: Record<LspChoiceKind, LspChoiceFacts> = {
-    interpreter: { command: 'interpreter', hint: '<path>', item: 'interpreter' },
-    database: { command: 'compile-database', hint: '<name>', item: 'compile_database' },
-    config: { command: 'svelte-config', hint: '', item: 'svelte_config' }
+    interpreter: { command: 'interpreter', item: 'interpreter' },
+    database: { command: 'compile-database', item: 'compile_database' },
+    config: { command: 'svelte-config', item: 'svelte_config' }
 };
 
 /** The kind of choice a palette command opens the list of, or undefined for another command. */

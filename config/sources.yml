@@ -96,6 +96,8 @@ roots:
   - { key: scotoma,     dir: ~/workspace/scotoma }
   - { key: officium,    dir: ~/workspace/officium }
   - { key: youtube-downloader, dir: ~/workspace/youtube-downloader }
+# How many folder levels below each root the Repositories view looks for repositories, 0 to 3.
+repository_scan_depth: 1
 
 
 # The language each file name opens in, which the editor, the code window and the status bar colour and name it by. One language per line, the editor's own lowercase name, then the endings it claims: an entry that starts with a dot is an extension (.py), any other entry is a whole file name compared lowercased (makefile, cmakelists.txt). A whole name is matched before an extension, and a file no entry matches, a dotfile included, opens as plain text. A language the editor does not colour is refused, and an ending two languages claim belongs to the first one listed.

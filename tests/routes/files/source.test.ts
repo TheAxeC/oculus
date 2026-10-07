@@ -9,6 +9,7 @@ import { mintToken, TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
 import { handleSource } from '../../../src/lib/server/files/source.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { TEXT } from '../../server/text.ts';
 
 const HOST = '127.0.0.1:8790';
 
@@ -44,7 +45,9 @@ describe('POST /api/source', () => {
         const one = fixture();
         const token = mintToken();
         const body = { root: one.root.key, path: 'notes.md', content: 'after\n' };
-        expect((await handleSource(request('stale', body), token, [one.root])).status).toBe(403);
+        expect(
+            (await handleSource(request('stale', body), token, () => TEXT, [one.root])).status
+        ).toBe(403);
         expect(readFileSync(one.file, 'utf8')).toBe('before\n');
     });
 
@@ -54,6 +57,7 @@ describe('POST /api/source', () => {
         const response = await handleSource(
             request(token, { root: one.root.key, path: '../outside.md', content: 'after\n' }),
             token,
+            () => TEXT,
             [one.root]
         );
         expect(response.status).toBe(403);
@@ -77,6 +81,7 @@ describe('POST /api/source', () => {
                 content: 'whole replacement\n'
             }),
             token,
+            () => TEXT,
             [one.root]
         );
         expect(response.status).toBe(200);

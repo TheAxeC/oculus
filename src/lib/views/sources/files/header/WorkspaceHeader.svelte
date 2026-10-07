@@ -12,6 +12,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
+    import type { ItemDrag } from '$lib/ui/tree/item-props';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { HEADER_ID } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
@@ -37,6 +38,10 @@
         onswitch: () => void;
         onsave: () => void;
         onopenfolder: () => void;
+        /** Whether the folder panel is open, which disables the two items that open it. */
+        panelOpen: boolean;
+        /** What lets the header be dragged over the heads of the view's other sections. */
+        drag?: ItemDrag;
     };
 
     let {
@@ -55,15 +60,17 @@
         onaddfolder,
         onswitch,
         onsave,
-        onopenfolder
+        onopenfolder,
+        panelOpen,
+        drag
     }: Props = $props();
 
     /** The menu's items in VS Code's groups, the three toggles drawn checked while on. */
     const items = $derived<MenuItem[]>([
-        { id: 'add-folder', label: t('files.menu_add_root') },
+        { id: 'add-folder', label: t('files.menu_add_root'), disabled: panelOpen },
         { id: 'switch-workspace', label: t('files.menu_switch_workspace'), rule: true },
         { id: 'save-workspace', label: t('files.menu_save_workspace') },
-        { id: 'open-folder', label: t('files.menu_open_folder') },
+        { id: 'open-folder', label: t('files.menu_open_folder'), disabled: panelOpen },
         { id: 'hidden', label: t('files.menu_show_hidden'), active: hidden, rule: true },
         { id: 'ignored', label: t('files.menu_show_ignored'), active: ignored },
         { id: 'nesting', label: t('files.menu_nesting'), active: nesting }
@@ -87,6 +94,7 @@
     expanded={open}
     title={open ? t('files.header_close_title', label) : t('files.header_open_title', label)}
     onclick={ontoggle}
+    {drag}
 >
     {#snippet actions(reach: number)}
         <ToolButton

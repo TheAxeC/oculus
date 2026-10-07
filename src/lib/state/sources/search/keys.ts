@@ -10,7 +10,7 @@
 // that is Cmd+Backspace.
 
 /** What a bound key asks the Search view to do. */
-export type SearchAction = 'replace' | 'replace-file' | 'dismiss';
+type SearchAction = 'replace' | 'replace-file' | 'dismiss';
 
 /** One chord of the keymap: the physical key, the modifiers held and the action it asks for. */
 type SearchChord = {
@@ -60,12 +60,15 @@ type RowKind = 'file' | 'hit';
 export type SearchPlan = 'replace-hit' | 'replace-file' | 'dismiss-hit' | 'dismiss-file' | 'pass';
 
 /**
- * What an action does on a row. Replace is offered only while the replace row is shown, as VS Code
- * offers it only while its replace widget is open; Dismiss is offered on every row.
+ * What an action does on a row, the action being the name a tree hands its caller. Replace is
+ * offered only while the replace row is shown, as VS Code offers it only while its replace widget
+ * is open; Dismiss is offered on every row. Any other action, Select All among them (every tree
+ * hands it to its caller), is left to the page.
  */
-export function searchPlan(action: SearchAction, row: RowKind, replacing: boolean): SearchPlan {
+export function searchPlan(action: string, row: RowKind, replacing: boolean): SearchPlan {
     if (action === 'dismiss') return row === 'hit' ? 'dismiss-hit' : 'dismiss-file';
     if (!replacing) return 'pass';
     if (action === 'replace-file') return row === 'hit' ? 'pass' : 'replace-file';
-    return row === 'hit' ? 'replace-hit' : 'replace-file';
+    if (action === 'replace') return row === 'hit' ? 'replace-hit' : 'replace-file';
+    return 'pass';
 }

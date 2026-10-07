@@ -22,10 +22,11 @@
     //
     // The list offers every root, not the repositories among them, and each row carries the few
     // words and tone its state comes to (views/shared/changes/repo-shape.ts), so a folder of notes,
-    // a repository whose read failed and a folder the reader has deleted all stay in the list and
-    // say which they are. A root that went quiet is a fact about that root, so the view neither
-    // drops it from the list nor hands itself to another one, and repositories/Repo.svelte draws
-    // the one sentence that state comes to in place of the sections.
+    // a repository whose read failed and a configured root the reader has deleted all stay in the
+    // list and say which they are. A session's workspace that is gone or holds no repository is
+    // left out. A root that went quiet is a fact about that root, so the view neither drops it from
+    // the list nor hands itself to another one, and repositories/Repo.svelte draws the one sentence
+    // that state comes to in place of the sections.
     //
     // Which repository is shown, which sections and folders are closed, which commit of the graph
     // is open, the mode and the request the Branch control of a row makes for the Branches section
@@ -77,7 +78,6 @@
         closeOthers,
         closeRepository,
         pickerRoots,
-        plannedPath,
         publishWords,
         pullWords,
         pushWords,
@@ -91,6 +91,7 @@
         visibleRoots,
         type RepositoriesView
     } from '$lib/state/sources/repositories/repositories';
+    import { plannedPath } from '$lib/state/sources/repositories/worktrees';
     import type {
         StashMode,
         WorktreeStart
@@ -101,6 +102,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
+        fs: { workspaces },
         repositories,
         selectors: { gitFor, gitRoots },
         ui: { instanceState, setInstanceState },
@@ -109,7 +111,11 @@
 
     let { instance }: ViewProps = $props();
 
-    const every = $derived(pickerRoots(gitRoots(), gitFor));
+    /** The folder of every root the server serves, which a root that is gone is listed by. */
+    const served = $derived(
+        workspaces().workspaces.flatMap((one) => one.roots.map((root) => root.dir))
+    );
+    const every = $derived(pickerRoots(gitRoots(), gitFor, served));
     const view = $derived(repositoriesViewOf(instanceState(instance.id)));
     const roots = $derived(visibleRoots(every, view.closed));
     const labels = $derived(repositoryLabels(every));
@@ -436,6 +442,8 @@
                         reveal={view.reveal}
                         onrevealed={() => patch({ reveal: '' })}
                         {ask}
+                        picked={view.picked}
+                        onpicked={(ids: string[]) => patch({ picked: ids })}
                         onswitch={(name: string) => switchTo(shown, name)}
                         onbranch={(name: string) => createBranch(shown, name)}
                         onworktree={(name: string, start: WorktreeStart) =>
@@ -477,7 +485,8 @@
 <style>
     /* The icon controls of the rows draw 1px of padding round the 16px icon, and are a 20px box
        because the compact control's min-width and height are `--header-action`, with no border;
-       the last part of a row (its count or status letter) sits 12px from the row's edge. */
+       the last part of a row (its count or status letter) sits 12px from the row's edge. The view
+       fills the pane, so the repository's message line (Repo.svelte) sits at the pane's foot. */
     .repos {
         --tree-end-inset: 12px;
         --action-pad: 1px;
@@ -485,5 +494,6 @@
         flex-direction: column;
         gap: 6px;
         min-width: 0;
+        min-height: 100%;
     }
 </style>

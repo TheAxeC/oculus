@@ -10,6 +10,7 @@
 // upstream on a remote the repository already has, and a branch that has one is refused.
 
 import { permitted } from '../core/paths.ts';
+import { words } from '../core/words.ts';
 import {
     allowedRoots,
     failed,
@@ -24,25 +25,28 @@ import {
 } from './git-write.ts';
 import { stoppedOn } from './git-index.ts';
 
-const UNKNOWN = 'that directory is not a workspace oculus knows';
-
 /** Bring the upstream's commits into the checked-out branch, the repository's own way. */
 export async function pull(
     root: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const up = await upstream(root);
-    if (!up.ok) return failed('this branch has no upstream, so there is nothing to pull from');
+    if (!up.ok) return failed(words(text, 'server.git.pull_no_upstream'));
     const done = await pullIn(root, signal);
     if (done.ok) return done;
-    return stoppedOn(root, done, 'the pull');
+    return stoppedOn(root, done, text, 'pull');
 }
 
 /** Read every remote's branches, taking away the ones the remote no longer has. */
-export async function fetchAll(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+export async function fetchAll(
+    root: string,
+    text: Record<string, string>,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     return fetchIn(root);
 }
 
@@ -52,10 +56,11 @@ export async function fetchAll(root: string, roots: string[] = allowedRoots()): 
  */
 export async function sync(
     root: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const pulled = await pull(root, roots, signal);
+    const pulled = await pull(root, text, roots, signal);
     if (!pulled.ok) return pulled;
     const pushed = await pushTo(root, [], signal);
     if (!pushed.ok) return pushed;
@@ -70,40 +75,44 @@ export async function sync(
 export async function publish(
     root: string,
     remote: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const known = await remoteNames(root);
     if (!known.ok) return known;
     const names = known.output.split('\n').filter((one) => one.trim() !== '');
     if (typeof remote !== 'string' || !names.includes(remote)) {
-        return failed(`${remote} is not a remote of this repository`);
+        return failed(words(text, 'server.git.not_a_remote', remote));
     }
     const head = await revParse(root, ['--abbrev-ref', 'HEAD']);
     if (!head.ok) return head;
     const branch = head.output.trim();
     if (branch === '' || branch === 'HEAD') {
-        return failed('this repository has no branch checked out, so there is nothing to publish');
+        return failed(words(text, 'server.git.publish_no_branch'));
     }
     const up = await upstream(root);
-    if (up.ok) return failed(`this branch already has the upstream ${up.output.trim()}`);
+    if (up.ok) return failed(words(text, 'server.git.already_upstream', up.output.trim()));
     // The branch is git's own name for what is checked out, and git judges it again here, so a
     // name that reads as an option never reaches the push.
     const judged = await refFormat(root, ['--branch', branch]);
-    if (!judged.ok || branch.startsWith('-')) return failed(`${branch} is not a branch to publish`);
+    if (!judged.ok || branch.startsWith('-')) {
+        return failed(words(text, 'server.git.not_to_publish', branch));
+    }
     return pushTo(root, ['--set-upstream', remote, branch], signal);
 }
 
 /** Push every tag to the upstream's remote, git's own `push --tags`. */
 export async function pushTags(
     root: string,
+    text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const known = await remoteNames(root);
     if (!known.ok) return known;
-    if (known.output.trim() === '') return failed('this repository has no remote to push tags to');
+    if (known.output.trim() === '') return failed(words(text, 'server.git.no_remote_for_tags'));
     return pushTo(root, ['--tags'], signal);
 }
