@@ -1884,3 +1884,6 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z667 (2026-10-06): open item, PR3's part 8 against the rules file's script-only rule for hub data.
 - Z668 (2026-10-06): automode, PR3's brief-check choices (the acts, the names, the image folder, the PDF name, G1).
 - Z667 ruled (2026-10-06): Axel (a), PR3's builder rewords the deck lines; spec.md:101 extended.
+- Z680 (2026-10-07): automode, PR4's presenter screen shape (the control and key, the audience window per host, the sync, the screen's parts, the saved deck, the end, the audience window's rights).
+- Z681 (2026-10-07): open item, M8's renames and data changes against DESIGN.md:24.
+- Z682 (2026-10-07): automode, D23b's choices (the write, the refusals, rename, symbols, hierarchies, the two servers, the guarded entry, one entry per server).

@@ -4,6 +4,16 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z682 (2026-10-07, step D23b, the orchestrator, automode): rename, cross-file edits, symbols, hierarchies, TypeScript and Svelte
+
+- Chosen: a language server's edit of files no tab holds is written to disk as one undoable change in History, open tabs edited unsaved; refused whole when another page has one of the files open, or it touches a library file, a file outside the roots, or creates, renames or deletes a file; F2 rename from every server; workspace symbols under `#` and Cmd+T in the palette; call and type hierarchy in the References view (Shift+Alt+H); the TypeScript server on oculus's own TypeScript; the Svelte server only after you approve running the repository's Svelte, as for pyright's interpreter.
+- Not chosen: rename and cross-file actions left refused, or the TypeScript server on a repository's own TypeScript without approval (the lazy options); a new view for hierarchies.
+
+## Z680 (2026-10-07, step PR4, the orchestrator, automode): the presenter screen's shape
+
+- Chosen: a Presenter control and the key P turn the pane into the presenter screen (the slide, the next slide, the notes, the counter, the time of day, a timer with Pause and Reset) and open the audience window, the slide alone; in the desktop app the audience window goes full screen on the second display, in a browser it is a second browser window you move to the projector and press F in; either window's keys and a clicker move both; both draw the saved deck while presenting; End, Esc or closing the audience window ends it.
+- Not chosen: a presenter screen in the browser only, or notes in a separate tab with no sync (the lazy options); a new channel of the desktop app to open the audience window, which a browser lacks; drafts drawn on the presenter only, which shows the presenter a slide the audience does not see.
+
 ## Z679 (2026-10-07, step D23c, the orchestrator, automode): a remembered cursor just after a word
 
 - Chosen: the cursor goes to that place with nothing selected; a word is selected only when the cursor lies inside it.

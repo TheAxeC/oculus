@@ -1,20 +1,20 @@
 In flight (0 of 6 slots):
 - none.
 
-Queued, in order (22 steps):
-- D45 (LaTeX as VS Code's LaTeX Workshop): ready.
-- X3e (Files lists reordered by drag): ready.
-- PR4 (Present's presenter screen): ready.
+Queued, in order (23 steps):
+- D45 (LaTeX as VS Code's LaTeX Workshop): being prepared: its premises rechecked on today's tree.
+- X3e (Files lists reordered by drag): being prepared: its premises rechecked on today's tree.
+- PR4 (Present's presenter screen): brief check running.
 - D28 (saving a file as VS Code does): after X3e.
 - M6 (the collection forms removed): after X3e and D28.
 - D11 (the debug client for rite): after D45.
 - D15 (PDF reading): after D45.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
-- M8 (the hub's YAML checked in the editor): ready.
-- D43 (LaTeX navigation through texlab): ready.
-- D23b (cross-file language features): ready.
-- D33 (the Problems view): ready.
+- M8 (the hub's YAML checked in the editor): waiting for Axel's ruling on the hub YAML's shape.
+- D43 (LaTeX navigation through texlab): after D23b and D45.
+- D23b (cross-file language features): brief check running.
+- D33 (the Problems view): after D45.
 - D39 (hub keys as links): after M8 and D23b.
 - D36 (linters on save): after D33.
 - D40 (the writing rules as editor marks): after D36.
@@ -29,6 +29,8 @@ Queued, in order (22 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D23c (library definitions read-only, the symbol selected on open), 2026-10-07, c0a4af9c.
+- PR3 (Present decks edited and generated), 2026-10-07, a2901490.
 - Q126 (DESIGN.md reduced where Q125 left it short), 2026-10-06.
 - D23 (the language server client), 2026-10-06.
 - Q125 (the user's guide, the design document and the guides), 2026-10-06.
