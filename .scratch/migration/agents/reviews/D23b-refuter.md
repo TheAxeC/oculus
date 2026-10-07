@@ -181,3 +181,192 @@ Cases:
 Reviewer usage: agent id not known to the reviewer, claude-opus-5-5, tokens not measured, tool uses not counted across the context compaction, minutes not measured.
 
 Agent: x.
+
+## Repair round 1, refuted
+
+Summary: the round closes items 1, 3, 4, 5, 9 to 13, 15 and 16 as asked, and every check I reran passes. Item 4 of the brief is still violated:
+- (a) The new check for tabs the server does not hold works per file, not per tab. A second tab over a file the server holds is edited at positions computed from another tab's text, and is corrupted without a notice.
+- (b) The "held" set is the asking transport's, which is one language channel. A tab with unsaved text on the other channel of the same server (a `.c` tab named by clangd's `cpp` rename, a `.js` tab named by the TypeScript server) is now refused with "changed since", although the server computed the edit on that text.
+- (c) The two-page refusal row that Z693 (1) keeps under G2 is not in `edits.test.ts`.
+
+Also: `Source.svelte` is 522 lines, over the 520 limit. The round writes files that D45 also changes, and `shared_paths` does not name them.
+
+```
+npm run diagrams            (worktree tools/oculus)
+  regenerated docs/diagrams/*; `git diff 8d9cdd60 | md5` 04a3d6940e34d20989d8c5efe85a1bfb before and after (no change against the builder's tree)
+
+npm run test:quick -- --base 8d9cdd60
+  test:quick: 119 changed file(s), from git since 8d9cdd60
+  test:quick: 103 test file(s), 10 essential
+  ok      ASCII gate (0.8 s)
+  ok      prettier (2.0 s): All matched files use Prettier code style!
+  ok      svelte-kit sync (2.5 s)
+  ok      eslint (2.5 s)
+  ok      svelte-check (5.8 s): 1791359671301 COMPLETED 406 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok      vitest (21.5 s): Duration  17.23s (transform 22.53s, setup 0ms, import 33.96s, tests 32.79s, environment 141ms)
+  test:quick: 22.3 s (limit 45.0 s); every command passed
+  test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+              build, lint of unchanged files; npm run test:landing runs them
+  -> inside the 45 s limit. The tasks run at once, so the total is the slowest task. In the builder's 47.9 s run eslint ended at 45.0 s and svelte-check at 44.3 s. In mine they took 2.5 s and 5.8 s, and vitest was the slowest at 21.5 s. Why eslint and svelte-check were slow in the builder's run (cold caches, or D45's builder running at the same time) is not verified.
+
+npx vitest run tests/server/machine/lsp tests/server/files/ops.test.ts tests/routes/replace tests/state/system/lsp tests/views/sources
+  Test Files  14 passed (14)
+       Tests  150 passed (150)          (matches the report)
+npx vitest run tests/state/system/lsp/edits.test.ts --reporter=verbose
+  3 rows pass: 'refuses a library file, ...', 'refuses an entry that creates, renames or deletes a file', 'does not overwrite a tab typed into while the edit waited, and writes nothing before it notices'
+npx vitest run tests/server/machine/lsp/svelte-trust.test.ts tests/routes/replace/replace-undo.test.ts --reporter=verbose
+  Test Files  2 passed (2), Tests  4 passed (4); then `ps -axo pid,command | grep -E "tsserver.js|typescript-language-server|svelte-language-server" | grep -v grep | wc -l` -> 0
+
+npm run test:checks
+  Test Files  1 failed | 16 passed (17); Tests  2 failed | 241 passed (243)
+  FAIL tests/checks/config/integrity.test.ts > the real hub > validates with no findings
+  FAIL tests/checks/config/integrity.test.ts > the real hub > reads the portfolio deck with every named deck found   (the two real-hub rows; deck/ is not in the worktree)
+npx eslint src tests                      -> prints nothing
+npx prettier --check src tests docs config/text   -> All matched files use Prettier code style!
+npx svelte-check --threshold error        -> COMPLETED 3202 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npx tsc --noEmit -p .   (worktree)        -> task-card.ts(10,15) and card.ts(10,15) TS2614 'CardAction', nothing else
+npx tsc --noEmit -p .   (D23b-base/tools/oculus)  -> the same two errors: they precede the step (item 16 reproduced)
+
+sh utils/folder-check.sh; echo $?          -> no output, 0
+sh utils/unused-exports.sh vs D23b-base/tools/oculus/unused-exports.txt -> diff prints nothing, exit 0; "Unused exports (250)"
+brief's item 4 grep (entries modules excluded) -> kit/folding.ts:97, kit/lsp/hosts.ts:19,22,148, views/sources/source/language/lsp.ts:36,120 (as reported; none a server branch)
+wc -l: largest .ts kit/lsp/transport.ts 864, ops.ts 849, relay.ts 839; .svelte: Source.svelte 522 (base 520), Palette.svelte 520, ui Editor.svelte 516 (base 496)
+
+grep -rn "ADAPTERS" src/lib/server/machine/lsp; echo $?   -> exit 1
+grep -n "lsp_edit_failed" config/text/views/sources/source.yml -> 61: "The language server's edit to {0} could not be made, so nothing was changed."
+sed -n 49p src/lib/ui/controls/editor/types.ts -> "Not runnable: the action is hidden from the editor's menu and left out of the palette."
+ls tests/state/system/lsp tests/shell tests/ui/controls/editor -> edits.test.ts; fixtures panes rail; monaco-diff.ts
+node $TMPDIR/d23b/probe-edits.mjs   (the builder's probe, item 5)
+  two entries for one file: {"applied":false,"notice":"lsp_edit_failed","words":["hub/a.py"]} calls []
+  changes key and documentChanges entry: {"applied":false,"notice":"lsp_edit_failed","words":["hub/a.py"]} calls []
+
+Reviewer probes of the page function (scripts in my scratchpad, edits.ts imported as it is, recording parts; nothing in the worktree changed):
+  two-tabs.mts: hub/a.py in tabs t1 'old = 1\n' and t2 '# typed\nold = 1\n' (unsaved), held = {a.py}, rename at line 0 chars 0-3 to 'new'
+    outcome {"applied":true}
+    edited [{"id":"t1","text":"new = 1\n"},{"id":"t2","text":"newyped\nold = 1\n"}]
+  other-channel.mts: asking transport holds user.cpp; legacy.c tab holds an unsaved first line the server was told of; rename names both
+    outcome {"applied":false,"notice":"lsp_edit_changed","words":["hub/legacy.c"]}
+    edited []
+```
+
+Not rerun: the live Electron cases the round quotes (cases 18 to 23, and the regression of cases 1, 10, 13b and 13c). Their verdicts below rest on the report's quoted runs and on my reading of the code.
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. `adapter: Adapter` is a field of `ServerEntry` (`servers.ts:130`, entries at :290, :324, :381, :456), and `held/oculus.ts:77` reads `entry.adapter`. `ADAPTERS` is gone (grep exit 1). The head comment `servers.ts:6-8` now names the two places and the entry's adapter. The facts module, the grep and the `COMPUTED_PREFIXES` change stand as they were in the first review.
+- 2: holds.
+  - The Svelte entry's `semanticTokens: true` (`lsp-servers.ts:141`); the report's case 20 shows the tokens asked for and drawn.
+  - The plugin is given only after the approval, as Z692 narrows Z686 (8). `statusbar.yml:110` and `docs/files-and-search.md:71` say that a `.ts` rename reaches `.svelte` files only after the approval.
+  - The trusted tooltip now depends on `hasSvelte` (`LanguageItems.svelte:125-130`, `statusbar.yml:113`).
+  - `svelte-trust.test.ts` passes.
+- 3: holds. The round does not change the server side of `lsp-edit`. `lsp-edit.test.ts` and `replace-undo.test.ts` pass.
+- 4: violated (Findings 1, 2 and 3). What holds:
+  - other pages are asked about every named file (`edits.ts:212`);
+  - a file named twice is refused before any ask (`edits.ts:134`, probe above);
+  - a tab of a file the asking transport does not hold is checked against its saved text and the disk (`edits.ts:223-230`);
+  - the draft is checked before and after the post (`edits.ts:238-248`; the test row passes);
+  - Monaco gets the edit's own ranges (`commands.ts:141` `reachedBy`).
+- 5: holds. The `uris.test.ts` row passes in the covering run.
+- 6: holds. Rename goes through the same page function, and the case 23 run shows the caret and the fold kept.
+- 7: holds. `#` works by the report's case 14 run. Cmd+T, by reading the key table: `keys.ts:150` `if (event.code === 'KeyT') return { kind: 'workspace-symbol' };` and `workbench-keys.svelte.ts:222-224` `options.openPalette('#')`.
+- 8: holds under Z691.
+
+Cases of the brief's "Cases":
+
+- 1: met, per the report's regression run on the final tree.
+- 2: met, per case 19 (a file open on both pages is now refused). Its test row is missing (Finding 3).
+- 3, 7, 8, 9: met. `lsp-edit.test.ts` and `replace-undo.test.ts` pass.
+- 4: met by reading two rows together.
+  - `library.test.ts:646-665` shows that an `oculus-lib:` address reaches the page under that address.
+  - The `edits.test.ts` row 'refuses a library file, ...' shows that the page refuses it with the file's name, with no edit and no write.
+  - No live run reached it: pyright's answer named no library file.
+- 5: met, per the report's clangd run.
+- 6: met. The `uris.test.ts` row passes.
+- 10: met. The report's run, and the first review's probe.
+- 11: met, per the report's run. The tooltip is now true for the no-svelte fixture (case 18).
+- 12: met. The `lifetime.test.ts` and `servers.test.ts` rows pass, and `ps` after the kill is now quoted (round item 12).
+- 13a: met. `svelte-trust.test.ts` passes, and the report now states that the unchanged-tree run stopped at import. The row discriminates by reading.
+- 13b: met under Z692, per the report's trusted run; before the approval, the tooltip and the docs say that the rename stops at `.ts` files.
+- 13c: met as written, with clean tabs, per the report's regression run. With unsaved text in the `.c` tab the edit is now refused (Finding 2).
+- 14: met for `#` with Python, C++ and TypeScript per the report's run, and for Cmd+T by reading the key table.
+- 15, 16, 17: met, per the report's runs, under Z691 and Z687.
+
+Implied inputs:
+
+- A file named twice: met (probe above).
+- A file in two tabs of one page: partial. Both tabs get the edit, but when the second tab's draft differs from the text the server holds, its text is corrupted (Finding 1).
+- Overlapping ranges, and CRLF, BOM and UTF-16: met (`lsp-edit.test.ts`).
+- An answer after the tab closed: met by reading.
+- A revoke restarts untrusted: met per case 11.
+- A killed server leaves no tsserver child: met (round item 12).
+
+Case 22, the partial tab edit: not established. The five reruns did not reproduce it.
+- By the builder's own account of the sequence, both tabs were registered, and nothing was typed while the edit waited. So neither the item 6 mechanism nor the item 7 mechanism applies to it.
+- The item 8 change (applying the edit's ranges) does not explain an occurrence left unrenamed either.
+- Findings 1 and 2 give corrupted or refused edits, not one occurrence left out, so they do not explain it.
+- Five runs that do not recur do not show a cause. The defect stays unexplained.
+
+### Findings
+
+1. Behaviour, `src/lib/state/system/machine/lsp/edits.ts:223-224`: `for (const one of texts) { if (served.has(one.name)) continue;`.
+   - What is wrong: round item 6 asks for "a tab whose draft the asking server does not hold at the draft's version" to be edited only when its draft equals the file on disk. The check skips every tab of a file that is in `held`. The transport keeps one document per file, and the server follows only the first registered model (`transport.ts:13-14`: "Two models of one file are one document: the server follows the first registered model"). Drafts belong to each tab (`source.svelte.ts:331`). So a second tab over a held file whose draft differs from the first one is edited at positions computed for the other text.
+   - Failure scenario (the probe above): `a.py` is open in two tabs of one page, and the second tab holds an unsaved first line. This is the reviewer's reload case with a second, mounted tab of the same file, or a copied tab typed into. A rename from the first tab turns the second tab's `# typed` into `newyped` with `applied: true`, and no notice is shown.
+   - Fix shape: skip the check only for a tab whose draft is the text of the document the transport holds for that file. Otherwise apply the unheld rule, or refuse with `lsp_edit_changed`.
+   - Verdict: item 4 violated; implied input "a file in two tabs" partial.
+
+2. Behaviour and spec, `src/lib/ui/controls/editor/kit/lsp/transport.ts:503`: `return await this.#host.applyEdit(edit, new Set(this.#versions().keys()));`.
+   - What is wrong: `held` holds the documents of the asking transport, and the page makes one transport per language (`client.ts:328`, `new LspTransport(this.#port, language, ...)`). One server serves two channels: clangd serves `c` and `cpp`, and the TypeScript server serves `typescript` and `javascript` (G36). A tab on the other channel of the same server is treated as a tab the server does not hold. Brief item 4 names exactly these tabs ("a header open as `c` named by a `cpp` server, a `.js` tab named by the TypeScript server") as edited in the tab, unsaved.
+   - Failure scenario (the probe above): `legacy.c` has an unsaved line, clangd was told of it through `lsp:c` and computed the rename on it. The rename from `user.cpp` is refused with "hub/legacy.c changed since the language server made this edit, so nothing was changed.", which is false. Before the round the same edit was applied.
+   - Fix shape: `held` is the documents of every transport of a language that the asking server's entry serves (`lsp-servers.ts` languages).
+   - Verdict: item 4 violated.
+
+3. Spec and proof, `tests/state/system/lsp/edits.test.ts` (3 rows; `askHeld` always answers `[]`, :52-55).
+   - What is wrong: round item 2 asked for the row at `edits.test.ts:148` to follow the brief's rule. Z693 (1) keeps the other-page refusal as a G2 row of this file, "restored at landing if the round's review does not find it". The builder removed the row, so the refusal it guarded has no check. This is a check removed instead of a check fixed. The report's "To rule" raises the conflict between items 2 and 14, which Z693 (1) had already settled.
+   - The row at landing: `askHeld` answers `[a]` for a file that a tab of this page also holds; it expects `{ applied: false, notice: 'lsp_edit_elsewhere', words: ['hub/a.py'] }`, no `edit` and no `write`. It is named in G2's Doc text.
+   - Failure scenario: a later change narrows the other-page check again, and nothing fails. Then one page's save overwrites the other page's edit.
+   - Verdict: item 4 violated (its test).
+
+4. Behaviour, `config/text/views/sources/source.yml`, `lsp_edit_partial`: "The language server's edit stopped at {0} after {1} files were written. History undoes them.", used at `edits.ts:247` with the typed tab as {0} and `files.length` as {1}.
+   - What is wrong: in the item 7 case the edit did not stop at {0} because of a write. The tab was typed into, and no tab was edited, the untouched ones included. The sentence says neither. With one disk file it reads "after 1 files". It also gives one key two meanings: a server write that failed partway, and a tab typed into.
+   - Failure scenario: rename from `calc.py`, then typing in that tab during the post. `use.py` is written with `grand_total`, and `calc.py` keeps `total` and the typing. The reader reads "stopped at cathedra/calc.py after 1 files were written", looks for a failed write of `calc.py`, and does not learn that the tabs were left as they are.
+   - Fix shape: a sentence of its own for the typed tab, which says that the tabs were left as they are and how many files were written, with a singular form.
+   - Verdict: none.
+
+5. Standards, `src/lib/views/sources/source/Source.svelte`: 522 lines (`wc -l`; 520 in the base copy; `git diff 8d9cdd60 --stat` shows +2, `sourceReach,` and `reached={() => sourceReach(instance.id)}` from round item 8).
+   - What is wrong: the brief's file constraints and the spec's size rule set 520 for a component, to be split by responsibility before it passes. The report's size row lists `Editor.svelte` (ui) 516 and `Palette.svelte` 520 and leaves this file out, although its file list shows 522.
+   - Failure scenario: the landing takes a component over the limit, and D45, which splits this file because it is at 520, merges against two lines it did not plan for.
+   - Verdict: none (the brief's file constraint).
+
+6. Spec, files outside the brief's "Paths this step writes":
+   - The files are `src/lib/state/sessions/source.svelte.ts`, `views/sources/source/Source.svelte`, `views/sources/source/Editor.svelte`, `ui/controls/editor/commands.ts`, `ui/controls/editor/Editor.svelte`, `ui/controls/editor/types.ts` and `ui/controls/editor/chords.ts`.
+   - Z686 (4) lets the step widen its write list. Round item 8 needs the first five.
+   - What is wrong: D45's worktree (`git status --short` there) changes `source.svelte.ts`, `ui/controls/editor/Editor.svelte`, `chords.ts`, `commands.ts`, `types.ts` and `Source.svelte`. D23b's `shared_paths` in the state file names none of them, so the merge judgement was made without them. The report does not list them as departures from the path list.
+   - Failure scenario: the second of D45 and D23b to land meets conflicts in `commands.ts`, `Editor.svelte` and `Source.svelte` that no one planned for, the last one while D45 splits it.
+   - Verdict: none.
+
+7. Proof, `tests/state/system/lsp/edits.test.ts:127` 'does not overwrite a tab typed into while the edit waited, and writes nothing before it notices'.
+   - What is wrong: the report quotes no unchanged-tree run of this new row, and says such a run would need the repaired code taken out. On the base, `edits.ts` does not exist, so the row stops at import, as G55's did, and the report should say so as round item 13 does for G55.
+   - By reading, both halves discriminate: `held` contains `a`, so the disk check is skipped and only `moved()` can refuse.
+   - The row also has no guarded entry: the Doc text files it as "not G2's". At landing it needs an entry. G8, "a write whose base the file no longer holds is refused", fits.
+   - Failure scenario: the row stays in the suite as a test of no entry.
+   - Verdict: none.
+
+8. Standards, `tests/state/system/lsp/edits.test.ts:10-13`: "the other refusals of the page's function (another page's tab, a file named twice, a tab the server does not hold), which the report's live runs show".
+   - What is wrong: the refusal of a file named twice is shown by `probe-edits.mjs`, not by a live run. Once Z693 (1)'s row is restored, "another page's tab" is no longer outside the file. The comment then says what the file does not do.
+   - Failure scenario: a reader looks in the report's live runs for the refusal of a file named twice and does not find it.
+   - Verdict: none.
+
+### Declined to judge
+
+- The live Electron cases of the round (cases 18 to 23) and the regression reruns. I did not run them. Their verdicts rest on the report's quoted output and my reading of `edits.ts`, `commands.ts`, `ChoiceRows.svelte` and `approval.ts`. Findings 1 and 2 are shown on the page function by my probes, not by a live run.
+- Round item 11, the approval key: it holds by reading. `wire.ts:48` requires the key. `approval.ts:47-49` approves only when `configKey(text) === key`, and `svelte-adapter.ts:38-40` answers no restart for a key that does not match. `applyApprove` sends the choices again, and the page sets the choices before it resolves the answer (`lsp.svelte.ts:220-231`), so `stillAsks()` reads the new rows. Whether the list closes after a successful approval in the live app is not verified, since case 18 does not say.
+- Item 7's choice of applying no tab edit when a tab was typed into after the post, the untouched tabs included: the round's text asks only that the typed tab is not overwritten. Either choice leaves a partial edit that History undoes. I judge the choice acceptable and leave it to the orchestrator; Finding 4 covers only the sentence.
+- Z693 (2) and the brief's implied input refuse a file named in both `changes` and `documentChanges`. The LSP specification prefers `documentChanges` when both are present, so a server that sends both for compatibility would have every edit refused. Whether any of the four servers sends both is not verified. The rule is the brief's and the ruling's, so this is the orchestrator's call, not a finding.
+- The cause of case 22's partial tab edit: not settled by reading. A run that reproduces it would settle it.
+- Whether the base copy's `src` is byte-identical to `8d9cdd60`: not checked. The item 16 conclusion assumes it.
+
+Reviewer usage: agent id not known to the reviewer, claude-opus-5-5, tokens not measured, about 60 tool uses, about 20 minutes.
+
+Agent: x.

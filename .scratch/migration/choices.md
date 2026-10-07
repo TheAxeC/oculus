@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z694 (2026-10-07, step D23b, the orchestrator, automode): a second repair round for the language features
+
+- Chosen: one more repair round, since a rename can still corrupt a second tab of the same file or wrongly refuse a C header or `.js` tab, and the fix is too large to make at landing.
+- Not chosen: landing it with those defects booked for later (the lazy option).
+
 ## Z693 (2026-10-07, step D23b, the orchestrator, automode): three choices of the language-features repair
 
 - Chosen: the refusal of an edit to a file open in another oculus page keeps its automatic test, since without it one page's save can overwrite the other's; a file named twice in one edit gets the existing "could not be made" notice; an approval of a Svelte config that changed since you looked approves nothing and shows the new text.

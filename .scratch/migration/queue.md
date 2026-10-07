@@ -1,6 +1,6 @@
 In flight (2 of 6 slots):
 - D45 (LaTeX as VS Code's LaTeX Workshop): repair round 1.
-- D23b (cross-file language features, TypeScript and Svelte servers): round 1 back; review running.
+- D23b (cross-file language features, TypeScript and Svelte servers): repair round 2.
 
 Queued, in order (20 steps):
 - X3e (Files lists reordered by drag): after D45.

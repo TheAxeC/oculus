@@ -1902,3 +1902,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-07. Z681 ruled (a) by Axel; M8 prepared after D23b lands.
 - 2026-10-07. D23b refuted by a4154cbe655a3b836 (claude-opus-5-5, 138,932 tokens, 133 tool uses, 23.8 min); Z692 narrows Z686 (8); repair round 1 sent (`agents/briefs/D23b-round1.md`, 16 items).
 - 2026-10-07. D23b round 1 back (334,314 tokens, 168 tool uses, 73.2 min); Z693 rules its three choices; its review over round 1 dispatched.
+- 2026-10-07. D23b refuted over round 1 by a12a7cba3671b22e6 (claude-opus-5-5, 255,821 tokens, 86 tool uses, 17.9 min): item 4 still violated; Z694 grants round 2 under the round cap's exception (`agents/briefs/D23b-round2.md`, 9 items).
