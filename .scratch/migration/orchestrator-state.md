@@ -165,7 +165,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- Z677 (2026-10-07), the desktop start test (`tests/server/desktop/start.test.ts`, G48's test, which Axel approved with Z518): keep it, cut it, or delete it. It has five rows, all slow (each starts Electron), and its rows that count server processes through `ps` fail now and then on main and on PR3, while the diagnosis agent a4bd31dbca0cc079c looks for the cause.
+  - (a) Delete the file; G48 stays a guarantee checked by reading and at the looks. Pro: no slow, intermittent test at any landing. Con: nothing then catches Quit killing the tmux sessions (lost work) or a second server starting.
+  - (b) Keep only the rows whose failure costs something: 'stops the server process on Quit and leaves every tmux session running', 'brings the running app forward on a second start and starts no server', and 'asks the default port ... starts no second server'; delete 'starts no server when another program holds the port, and names the port' and 'prints the port in use and exits 1 when the server cannot listen', whose failure is a wrong message; the diagnosed fix goes into the kept rows. Pro: follows the test rule (spec.md:57, a test only where a failure costs something). Con: three slow rows stay, and the count rows still need the diagnosed fix.
+  - (c) Keep all five and fix the intermittent count (the lazy option: two rows the test rule does not allow stay).
+  - Recommended: (b).
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
