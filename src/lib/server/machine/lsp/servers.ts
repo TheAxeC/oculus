@@ -24,6 +24,11 @@ export type Setup = {
     root: string;
     /** The interpreter pyright is answered, null when there is none. */
     interpreter: string | null;
+    /**
+     * The `sys.prefix` and `sys.base_prefix` of that interpreter: the folders a definition may lie
+     * under and be opened as a library file although its path holds a dot segment.
+     */
+    interpreterPrefixes: string[];
     /** The folder holding the link to the chosen `compile_commands.json`, null for none. */
     databaseFolder: string | null;
     /** The flags clangd uses for a file the database has no entry for. */

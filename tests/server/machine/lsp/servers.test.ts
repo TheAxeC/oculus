@@ -76,6 +76,7 @@ const ROWS: Row[] = [
             const setup = {
                 root: AWKWARD,
                 interpreter: null,
+                interpreterPrefixes: [],
                 databaseFolder: `/lsp/${AWKWARD}/build`,
                 fallbackFlags: []
             };

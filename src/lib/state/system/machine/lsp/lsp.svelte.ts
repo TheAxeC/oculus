@@ -10,6 +10,14 @@
 // written) and `output` (a server's log lines). The port hands the client every message, the
 // relay's own included, and the client ignores those.
 //
+// A library file, which a language server named outside every served root in an answer to a
+// request of this page (DESIGN.md, "The language servers"), has an address `oculus-lib:` the relay
+// minted for this connection alone. The editor kit tells the store each address with the root of
+// the document the request was made for and the channel's language (`named`), and the store reads
+// the file over the channel on request (`readLibrary`). The relay forgets every address with the
+// connection, so the store forgets them when the page socket is no longer open: an address the
+// store does not hold is one the page can no longer read.
+//
 // A port is open when the page socket is open and its subscription carries the token the server
 // holds (`socket.admitted`): a frame written before is refused, and a client that sent its
 // `initialize` into a refusal would wait for ever. The store keeps one listener per language on the
@@ -20,11 +28,13 @@ import type {
     LspCode,
     LspDatabase,
     LspInterpreter,
+    LspReadRefusal,
     LspRefusal,
     LspState,
     LspToPage,
     LspToServer
 } from '../../../../data/model/index.ts';
+import { SvelteMap } from 'svelte/reactivity';
 import type { SocketStore } from '../../../shared/stores/shapes.ts';
 
 /** The state of a port: the page socket as a language server client sees it. */
@@ -64,6 +74,12 @@ type LspChoice = { interpreter: string } | { database: string };
  */
 export type LspAnswer = 'chosen' | 'unsent' | LspRefusal;
 
+/** What the page may read of a library file: the root and the language its address was named in. */
+type LibraryFile = { root: string; language: string };
+
+/** How the read of a library file ended: its text, or the code that says why it was not read. */
+type LibraryRead = { text: string } | { code: LspReadRefusal | 'unsent' };
+
 /** The milliseconds an answer to a choice is waited for. */
 const ANSWER_MS = 10_000;
 
@@ -84,6 +100,15 @@ export type LspStore = {
     approve: (root: string, language: string, interpreter: string) => Promise<LspAnswer>;
     /** End a root's server and start it again on its next request. */
     restart: (root: string, language: string) => boolean;
+    /** Record a library file a server named, under the root and language of the request. */
+    named: (address: string, root: string, language: string) => void;
+    /**
+     * What the page knows of a library address, or null for one it was not given on this
+     * connection.
+     */
+    library: (address: string) => LibraryFile | null;
+    /** Read a library file the page was given; the read of an unknown address is `unsent`. */
+    readLibrary: (address: string) => Promise<LibraryRead>;
     /** The lines of a server's log the page last heard, empty before any. */
     output: (root: string, language: string) => readonly string[];
     /**
@@ -116,6 +141,10 @@ export function createLsp(socket: SocketStore): LspStore {
     const links = new Map<string, LspLink>();
     /** The choices and approvals waiting for the relay's answer, by key. */
     const waiting = new Map<string, ((answer: LspAnswer) => void)[]>();
+    /** The reads of library files waiting for the relay's answer, by language, root and address. */
+    const reading = new Map<string, ((read: LibraryRead) => void)[]>();
+    /** The library files named to this connection, by address. */
+    const libraries = new SvelteMap<string, LibraryFile>();
     /** The root and language of every log being watched, by key, with the number watching. */
     const watched = new Map<string, { root: string; language: string; count: number }>();
 
@@ -152,6 +181,12 @@ export function createLsp(socket: SocketStore): LspStore {
         } else if (message.oculus === 'refused') {
             held.refusals[key] = message.code;
             answered(key, message.code);
+        } else if (message.oculus === 'file') {
+            const waits = reading.get(JSON.stringify([language, message.root, message.uri])) ?? [];
+            reading.delete(JSON.stringify([language, message.root, message.uri]));
+            const read: LibraryRead =
+                'text' in message ? { text: message.text } : { code: message.code };
+            for (const resolve of waits) resolve(read);
         } else if (message.oculus === 'output') {
             held.lines[key] = message.append
                 ? [...(held.lines[key] ?? []), ...message.lines]
@@ -228,8 +263,18 @@ export function createLsp(socket: SocketStore): LspStore {
         return own;
     }
 
+    /** Forget every library address and fail the reads waiting for one. */
+    function forgetLibraries(): void {
+        libraries.clear();
+        for (const waits of reading.values()) {
+            for (const resolve of waits) resolve({ code: 'unsent' });
+        }
+        reading.clear();
+    }
+
     // A log being watched is asked for again once the socket is admitted after a drop.
     socket.onLink(() => {
+        if (socket.status() !== 'open') forgetLibraries();
         if (linkState() !== 'open') return;
         for (const one of watched.values()) {
             write(one.language, one.root, { oculus: 'output', root: one.root });
@@ -250,6 +295,32 @@ export function createLsp(socket: SocketStore): LspStore {
 
     function output(root: string, language: string): readonly string[] {
         return held.lines[keyOf(root, language)] ?? [];
+    }
+
+    function readLibrary(address: string): Promise<LibraryRead> {
+        const file = libraries.get(address);
+        if (file === undefined) return Promise.resolve({ code: 'unsent' });
+        const key = JSON.stringify([file.language, file.root, address]);
+        return new Promise<LibraryRead>((resolve) => {
+            if (
+                !write(file.language, file.root, { oculus: 'read', root: file.root, uri: address })
+            ) {
+                resolve({ code: 'unsent' });
+                return;
+            }
+            const answer = (read: LibraryRead): void => {
+                clearTimeout(later);
+                resolve(read);
+            };
+            const later = setTimeout(() => {
+                reading.set(
+                    key,
+                    (reading.get(key) ?? []).filter((one) => one !== answer)
+                );
+                resolve({ code: 'unsent' });
+            }, ANSWER_MS);
+            reading.set(key, [...(reading.get(key) ?? []), answer]);
+        });
     }
 
     function watchOutput(root: string, language: string): () => void {
@@ -282,6 +353,13 @@ export function createLsp(socket: SocketStore): LspStore {
         approve: (root, language, interpreter) =>
             ask(language, root, { oculus: 'approve', root, interpreter }),
         restart: (root, language) => write(language, root, { oculus: 'restart', root }),
+        named: (address, root, language) => {
+            const known = libraries.get(address);
+            if (known?.root === root && known.language === language) return;
+            libraries.set(address, { root, language });
+        },
+        library: (address) => libraries.get(address) ?? null,
+        readLibrary,
         output,
         watchOutput
     };

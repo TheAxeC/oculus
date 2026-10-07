@@ -31,7 +31,7 @@
 <g id="node23" class="node">
 <title>server to data</title>
 <polygon fill="none" stroke="none" points="450.88,-70.08 433.12,-70.08 433.12,-57.6 450.88,-57.6 450.88,-70.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="442" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">239</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="442" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">241</text>
 </g>
 <!-- server&#45;&gt;server to data -->
 <g id="edge21" class="edge">
@@ -154,7 +154,7 @@
 <g id="node35" class="node">
 <title>views to state</title>
 <polygon fill="none" stroke="none" points="623.88,-286.8 606.12,-286.8 606.12,-274.32 623.88,-274.32 623.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="615" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">950</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="615" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">952</text>
 </g>
 <!-- views&#45;&gt;views to state -->
 <g id="edge45" class="edge">

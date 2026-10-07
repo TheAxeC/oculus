@@ -100,8 +100,11 @@ export type AskDeps = {
     openCommit: () => void;
     setLanguage: (language: string) => void;
     setIndent: (indent: Indent) => void;
-    /** Select a range of the text, which a press on a node of the Files view's AST asks. */
-    select: (range: SelectRange) => void;
+    /**
+     * Select a range of the text, which a press on a node of the Files view's AST or on a symbol of
+     * the Outline asks; with `focus` the editor takes the keyboard after the selection.
+     */
+    select: (range: SelectRange, focus: boolean) => void;
 };
 
 /** Perform one ask on the tab. */
@@ -116,7 +119,7 @@ export function performAsk(ask: EditorAsk, deps: AskDeps): void {
     } else if (ask.kind === 'indent') {
         deps.setIndent(ask.indent);
     } else if (ask.kind === 'select') {
-        deps.select(ask.range);
+        deps.select(ask.range, ask.focus === true);
     } else if (!deps.drawn) {
         return;
     } else if (ask.kind === 'convert') {

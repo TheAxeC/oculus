@@ -67,7 +67,7 @@ export type EditorAsk =
     | { kind: 'ending'; ending: LineEnding }
     | { kind: 'language'; language: string }
     | { kind: 'commit' }
-    | { kind: 'select'; range: SelectRange }
+    | { kind: 'select'; range: SelectRange; focus?: boolean }
     | { kind: 'action'; id: string };
 
 /** The id of the tab action Cmd+S asks of the source tab on screen. */

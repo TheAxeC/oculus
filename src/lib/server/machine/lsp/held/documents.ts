@@ -1,0 +1,121 @@
+// Layer 2, server. What the page's `didChange` and `didClose` do to the documents it holds, and a
+// server a closed page left taken over by the page that opens the same root. The relay (relay.ts)
+// routes the messages; these keep the page's table of open documents (held.ts `Page`) and the text
+// each server holds for them in step, whichever address a document was opened under.
+
+import { pathToFileURL } from 'node:url';
+import { isLibraryAddress } from '../library/address.ts';
+import type { ServerEntry } from '../servers.ts';
+import { normal, resolvePageUri, type ServedRoot } from '../uris.ts';
+import { isRecord, languageOf } from '../wire.ts';
+import { Held, applyChanges, docKey, heldKey, type Page } from './held.ts';
+
+/**
+ * What a document address names: the file, the root key the page used, and the root whose server
+ * holds it.
+ */
+export type Target = { root: ServedRoot; real: string; fileUri: string; pageRoot: string };
+
+/**
+ * What the address of a document the page opens names, or null for one that does not resolve. A
+ * library address is the page's own token, for the channel's language and the root of the server
+ * that named the file, and it opens no document on another server.
+ */
+export function openingTarget(
+    roots: readonly ServedRoot[],
+    page: Page,
+    channel: string,
+    entry: ServerEntry,
+    uri: string
+): Target | null {
+    if (!isLibraryAddress(uri)) {
+        const resolved = resolvePageUri(uri, roots);
+        if (resolved === null) return null;
+        const { root, real, fileUri, pageRoot } = resolved;
+        return { root, real, fileUri, pageRoot };
+    }
+    const token = page.library.get(uri);
+    if (token === undefined) return null;
+    if (token.language !== languageOf(channel)) return null;
+    const root = roots.find((one) => heldKey(entry, one) === token.server);
+    if (root === undefined) return null;
+    return {
+        root,
+        real: token.real,
+        fileUri: pathToFileURL(token.real).href,
+        pageRoot: token.root
+    };
+}
+
+/**
+ * The page's `textDocument/didChange`: the text the server holds follows it, and the server is
+ * told.
+ */
+export function changeDocument(page: Page, params: unknown): void {
+    if (!isRecord(params) || !isRecord(params.textDocument)) return;
+    const uri = String(params.textDocument.uri);
+    const open = page.docs.get(uri);
+    const changes = params.contentChanges;
+    if (open === undefined || !Array.isArray(changes)) return;
+    // Only the address the document was opened under edits it; another name for it reads.
+    if (page.opened.get(normal(open.doc.real)) !== uri) return;
+    const version = Number(params.textDocument.version);
+    open.doc.text = applyChanges(open.doc.text, changes);
+    open.doc.version = version;
+    open.held.notify({
+        jsonrpc: '2.0',
+        method: 'textDocument/didChange',
+        params: {
+            textDocument: { uri: open.doc.fileUri, version },
+            contentChanges: changes
+        }
+    });
+}
+
+/** The page's `textDocument/didClose`: the server drops the document with the last name for it. */
+export function closeDocument(page: Page, params: unknown): void {
+    if (!isRecord(params) || !isRecord(params.textDocument)) return;
+    const uri = String(params.textDocument.uri);
+    const open = page.docs.get(uri);
+    if (open === undefined) return;
+    page.docs.delete(uri);
+    const names = [...page.docs].filter(([, one]) => one === open).map(([name]) => name);
+    if (names.length > 0) {
+        // Another name of the document stays open, and takes over its edits.
+        if (page.opened.get(normal(open.doc.real)) === uri)
+            page.opened.set(normal(open.doc.real), names[0]);
+        return;
+    }
+    page.opened.delete(normal(open.doc.real));
+    open.held.docs.delete(docKey(open.doc.fileUri));
+    open.held.notify({
+        jsonrpc: '2.0',
+        method: 'textDocument/didClose',
+        params: { textDocument: { uri: open.doc.fileUri } }
+    });
+    if (open.held.docs.size === 0) open.held.armEnd();
+}
+
+/**
+ * A server whose page closed, taken over by the page that opens the same root: its old page's
+ * documents are closed in it first. The server leaves `orphans`; null when none matches the key.
+ */
+export function adoptHeld(page: Page, key: string, orphans: Set<Held>): Held | null {
+    for (const held of orphans) {
+        if (`${held.entry.id}\0${normal(held.root.real)}` !== key) continue;
+        orphans.delete(held);
+        held.keep();
+        held.owner = page;
+        for (const doc of held.docs.values()) {
+            held.notify({
+                jsonrpc: '2.0',
+                method: 'textDocument/didClose',
+                params: { textDocument: { uri: doc.fileUri } }
+            });
+        }
+        held.docs.clear();
+        page.helds.set(key, held);
+        return held;
+    }
+    return null;
+}

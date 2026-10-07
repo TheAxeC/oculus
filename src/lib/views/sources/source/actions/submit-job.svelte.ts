@@ -14,6 +14,7 @@ import { humanSize } from '$lib/state/boards/board/stats';
 import { t } from '$lib/state/shared/words/text';
 import type { HpcStore } from '$lib/state/system/machine/hpc/hpc.svelte';
 import { refusalSentence, type SubmitPlan } from '$lib/state/system/machine/hpc/submit';
+import { servedFile } from '$lib/views/shared/links/file-bar';
 import type { Ask } from '$lib/views/shared/writes/ask';
 import type { SaidTone } from '../save/said-tone';
 
@@ -21,6 +22,9 @@ import type { SaidTone } from '../save/said-tone';
 export type SubmitJobDeps = {
     root: () => string;
     path: () => string;
+    /** The served roots, and whether the tab's file is on disk, which say where Submit applies. */
+    roots: () => readonly { key: string }[];
+    onDisk: () => boolean;
     /** Whether the tab holds text the file on disk does not. */
     unsaved: () => boolean;
     /** The tab's Save, which leaves the text unsaved when it is refused. */
@@ -37,13 +41,15 @@ export type SubmitJob = {
     readonly busy: boolean;
     /** The confirm held, or null while none is. */
     readonly asking: Ask | null;
+    /** Whether the tab is a .slurm job script on disk under a served root, which Submit acts on. */
+    readonly submittable: boolean;
     press: () => Promise<void>;
     /** Let the confirm go, which a yes and a cancel both do. */
     release: () => void;
 };
 
 /** Whether a path names a Slurm job script, by its extension in any letter case. */
-export function isJobScript(path: string): boolean {
+function isJobScript(path: string): boolean {
     return path.toLowerCase().endsWith('.slurm');
 }
 
@@ -123,6 +129,12 @@ export function createSubmitJob(deps: SubmitJobDeps): SubmitJob {
         },
         get asking() {
             return asking;
+        },
+        get submittable() {
+            return (
+                isJobScript(deps.path()) &&
+                servedFile(deps.roots(), deps.root(), deps.path(), deps.onDisk())
+            );
         },
         press,
         release: () => (asking = null)

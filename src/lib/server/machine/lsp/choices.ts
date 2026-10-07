@@ -16,7 +16,7 @@ import { z } from 'zod';
 import type { LspRefusal, LspToPage, LspToServer } from '../../../data/model/index.ts';
 import { logChanges, type ChangeLog } from '../../core/changes.ts';
 import { readJsonChecked, writeTextAtomic } from '../../core/json.ts';
-import type { Held } from './held.ts';
+import type { Held } from './held/held.ts';
 import type { Adapter, Choice, RootEnv } from './servers.ts';
 
 const choiceShape = z.object({

@@ -55,6 +55,7 @@ export type EditorChangeWords = { next: string; previous: string; open: string }
 /** What the parent asks the editor to do through `perform`. */
 export type EditorCommand =
     | { kind: 'goto'; line: number; column?: number }
+    | { kind: 'word'; line: number; column: number }
     | { kind: 'indent'; indent: EditorIndent }
     | { kind: 'convert'; tabs: boolean }
     | { kind: 'ending'; ending: EditorEnding }

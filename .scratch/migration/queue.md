@@ -1,9 +1,9 @@
-In flight (1 of 6 slots):
-- D23c (library definitions read-only, the symbol selected on open): reviewed; landing next.
+In flight (0 of 6 slots):
+- none.
 
 Queued, in order (22 steps):
-- D45 (LaTeX as VS Code's LaTeX Workshop): after D23c.
-- X3e (Files lists reordered by drag): after D23c.
+- D45 (LaTeX as VS Code's LaTeX Workshop): ready.
+- X3e (Files lists reordered by drag): ready.
 - PR4 (Present's presenter screen): ready.
 - D28 (saving a file as VS Code does): after X3e.
 - M6 (the collection forms removed): after X3e and D28.
@@ -11,10 +11,10 @@ Queued, in order (22 steps):
 - D15 (PDF reading): after D45.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
-- M8 (the hub's YAML checked in the editor): after D23c.
-- D43 (LaTeX navigation through texlab): after D23c.
-- D23b (cross-file language features): after D23c.
-- D33 (the Problems view): after D23c.
+- M8 (the hub's YAML checked in the editor): ready.
+- D43 (LaTeX navigation through texlab): ready.
+- D23b (cross-file language features): ready.
+- D33 (the Problems view): ready.
 - D39 (hub keys as links): after M8 and D23b.
 - D36 (linters on save): after D33.
 - D40 (the writing rules as editor marks): after D36.

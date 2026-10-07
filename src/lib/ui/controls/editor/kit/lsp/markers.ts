@@ -5,7 +5,7 @@
 
 import type * as Monaco from 'monaco-editor';
 import type { LspDiagnostic } from './services';
-import type { LspRange } from './transport';
+import type { LspRange } from './transport/messages';
 
 /** The marker owner of one language's client. */
 export function markerOwner(language: string): string {

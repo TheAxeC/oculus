@@ -3,7 +3,9 @@
 // draws the text. A version at HEAD or in the index, and a file too long to have been read whole,
 // are drawn by the code window; a file this machine's mode alone locks is drawn by the editor in
 // its read-only form, so a language server serves it and a mode change while the tab is open
-// changes the editor's option and never remounts it.
+// changes the editor's option and never remounts it. A tab over a library file a language server
+// named is drawn the same way: the editor in its read-only form under a line saying what the file
+// is.
 
 import type { HeadStage } from '$lib/state/sessions/source.svelte';
 import { t } from '$lib/state/shared/words/text';
@@ -16,8 +18,10 @@ const UNLOCKED: Locked = { words: '', window: false };
 
 export function lockedWords(
     head: HeadStage | undefined,
-    draft: { readonly: boolean; truncated: boolean }
+    draft: { readonly: boolean; truncated: boolean },
+    library = false
 ): Locked {
+    if (library) return { words: t('source.library_locked'), window: false };
     if (head !== undefined) {
         return {
             words: head === 'head' ? t('source.head_locked') : t('source.index_locked'),

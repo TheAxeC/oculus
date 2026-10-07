@@ -16,6 +16,7 @@ import {
 import { vi } from 'vitest';
 import type { Sink } from '../../../../src/lib/server/core/channels.ts';
 import type { LspRpc } from '../../../../src/lib/data/model/index.ts';
+import type { LibraryRules } from '../../../../src/lib/server/machine/lsp/library/rules.ts';
 import { Relay } from '../../../../src/lib/server/machine/lsp/relay.ts';
 import type { Spawn } from '../../../../src/lib/server/machine/lsp/process.ts';
 import { createServers } from '../../../../src/lib/server/machine/lsp/servers.ts';
@@ -164,6 +165,8 @@ export function makeRelay(options: {
     exists?: (path: string) => boolean;
     /** The folder the `lsp` key names, read at each use; a folder of the relay's own by default. */
     lspFolder?: () => string;
+    /** What decides which files outside every root may be named to a page; none by default. */
+    library?: () => LibraryRules;
 }): Relay {
     const home = realpathSync(scratchDir('oculus-lsp-home-'));
     const relay = new Relay({
@@ -175,7 +178,8 @@ export function makeRelay(options: {
         spawn: options.spawn,
         servers: createServers({ oculus: '/oculus', node: '/node', exists: () => true }),
         run: options.run ?? (() => Promise.resolve(null)),
-        exists: options.exists ?? (() => false)
+        exists: options.exists ?? (() => false),
+        library: options.library
     });
     relay.gate(() => true);
     return relay;

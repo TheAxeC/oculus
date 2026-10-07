@@ -581,6 +581,7 @@ export type {
     LspCode,
     LspDatabase,
     LspInterpreter,
+    LspReadRefusal,
     LspRefusal,
     LspRpc,
     LspState,

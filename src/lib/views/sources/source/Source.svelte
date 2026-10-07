@@ -1,13 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. A source file opens from another view and is not listed.
-    import { z } from 'zod';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
-
-    /** The line a tab was opened at: a finite number above zero, and 0 for anything else. */
-    const openedAtShape = z.object({ line: z.number().positive().catch(0) });
-
-    /** A tab over an untitled text: it names no file until its first Save gives it one. */
-    const untitledShape = z.object({ untitled: z.literal(true) });
 
     export const registration: ViewRegistration = {
         id: 'source',
@@ -56,6 +49,9 @@
     // actions/submit-job.svelte.ts, its confirm is drawn by views/shared/writes/AskConfirm.svelte,
     // and the job is then shown in the Live HPC view.
     //
+    // A tab over a library file a language server named is this view too, read-only and with no
+    // root or path (status/library-tab.svelte.ts).
+    //
     // A tab over an untitled text (New Text File) holds an empty draft and no file. Its first Save
     // asks for a served root of the current workspace and a name, makes the file there, writes the
     // text to it and becomes a tab over that file.
@@ -102,18 +98,19 @@
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import LockedCode from './save/LockedCode.svelte';
     import { createSaid } from './save/tab-said.svelte';
-    import { lockedWords } from './save/locked-words';
     import SourceNote from './save/SourceNote.svelte';
     import { performAsk, tabActions } from './status/ask-perform';
     import { connectSourceStatus } from './status/source-status.svelte';
     import { createTabFile } from './status/tab-file.svelte';
-    import { createSubmitJob, isJobScript } from './actions/submit-job.svelte';
+    import { createLibraryTab } from './status/library-tab.svelte';
+    import { isUntitled, openedAt } from './status/tab-state';
+    import { tabShown } from './status/tab-shown';
+    import { createSubmitJob } from './actions/submit-job.svelte';
     import ReadAgainButton from './actions/ReadAgainButton.svelte';
     import { createTabSave } from './save/tab-save.svelte';
     import { createTabLanguage } from './language/tab-language.svelte';
     import { createSourceGutter } from './source-gutter.svelte';
     import { createSourceOptions } from '$lib/views/shared/prose/source-options';
-    import { readAs } from '$lib/data/shapes/shapes';
     import { markdownPreviewState, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { headOf } from '$lib/state/sessions/source.svelte';
@@ -164,32 +161,35 @@
     const label = $derived(instanceText(instance.state, 'label'));
     /** The version of the file the tab holds, when it is the file at HEAD or in the index. */
     const head = $derived(headOf(instance.state));
-    /** The line the tab was opened at, and zero for one opened at the file itself. */
-    const line = $derived(readAs(openedAtShape, instance.state)?.line ?? 0);
+    /** The line and column the tab was opened at, and zero for one opened at the file itself. */
+    const { line, column } = $derived(openedAt(instance.state));
+    const lib = createLibraryTab({
+        client,
+        instance: () => instance.id,
+        state: () => instance.state,
+        name: () => label
+    });
+    /** The file the language server is asked about: the tab's, or the library file's. */
+    const at = $derived(lib.address === '' ? { root, path } : { root: lib.root, path: lib.name });
     const title = $derived(label === '' ? t('views.source') : label);
     const draft = $derived(sourceDraft(instance.id));
     /** Whether the tab names no file: an untitled text, or a state that lost its address. */
     const blocked = $derived(root === '' || path === '');
-    const untitled = $derived(readAs(untitledShape, instance.state) !== null);
+    const untitled = $derived(isUntitled(instance.state));
     /** What the tab says under the editor: a refusal or Submit's status lines. */
     const note = createSaid();
-    const error = $derived(blocked && !untitled ? t('source.cannot_open', path) : draft.error);
-    /** The line a tab that may not write its file draws, and the empty string for one that may. */
-    const lock = $derived(lockedWords(head, draft));
-    /**
-     * Whether the tab holds the file's text: read, and not refused since. A draft read once keeps
-     * its text when a later read fails, so `draft.loaded` alone stays true for a file now gone.
-     */
-    const read = $derived(error === '' && draft.loaded);
-    /** Whether the text may be written, which is when the text controls have text to act on. */
-    const editing = $derived(read && lock.words === '');
-    /** Whether the editor is drawn: the text may be written, or only the mode locks it. */
-    const drawn = $derived(read && !lock.window);
-
-    /** The save outcome the row under the editor shows, only while the text may be written. */
-    const saveMessage = $derived(editing ? draft.message : '');
-    /** Whether the row under the editor is drawn: a save outcome or a sentence the tab said. */
-    const noted = $derived(saveMessage !== '' || note.words !== '');
+    const { error, lock, read, editing, drawn, saveMessage, noted } = $derived(
+        tabShown({
+            head,
+            draft,
+            library: lib.address !== '',
+            gone: lib.gone,
+            blocked,
+            untitled,
+            path,
+            said: note.words
+        })
+    );
 
     /** The indentation, word wrap and rulers of the tab, in the order `resolveEditor` states. */
     const options = createSourceOptions({
@@ -213,8 +213,9 @@
         instance: () => instance.id,
         language: () => language,
         shown: () => options.shown,
-        root: () => root,
-        path: () => path,
+        root: () => at.root,
+        path: () => at.path,
+        library: () => lib.address,
         version: () => head !== undefined,
         say: (words: string) => note.say(words)
     });
@@ -248,14 +249,12 @@
         restate: restateInstance,
         said: (words) => note.say(words)
     });
-    /** Whether the tab is a .slurm job script on disk under a served root, which Submit acts on. */
-    const submittable = $derived(
-        isJobScript(path) && servedFile(currentRoots(), root, path, file.onDisk)
-    );
     /** Submit on the job script: the press that saves, asks and runs, and the confirm it holds. */
     const submit = createSubmitJob({
         root: () => root,
         path: () => path,
+        roots: currentRoots,
+        onDisk: () => file.onDisk,
         unsaved: () => sourceDirty(instance.id),
         save: () => tabSave.save(),
         said: note.say,
@@ -295,7 +294,7 @@
             markdown,
             previewable: file.previewable,
             blameable: file.blameable,
-            submittable,
+            submittable: submit.submittable,
             save: () => void tabSave.save(),
             revert: () => revertSourceDraft(instance.id),
             toggleWrap,
@@ -303,7 +302,7 @@
             submit: () => void submit.press(),
             previewSide: () => openBeside(MARKDOWN_PREVIEW_VIEW, markdownPreviewState(root, path)),
             toggleBlame: () => toggleSourceBlame(instance.id),
-            language: drawn ? tabLanguage.lsp.actions(options.shown, { root, path }) : []
+            language: drawn ? tabLanguage.lsp.actions(options.shown, at) : []
         })
     );
     /** What the palette lists: the tab's actions, then the editor's while it is drawn. */
@@ -319,7 +318,7 @@
         store: editorStatus,
         id: () => instance.id,
         status: () =>
-            error !== '' || !draft.loaded || indent === null
+            !read || indent === null
                 ? null
                 : {
                       caret: drawn ? caret : null,
@@ -332,7 +331,7 @@
                       actions: listed,
                       file: file.wholeFile,
                       selection: drawn ? selection : '',
-                      served: tabLanguage.lsp.served(options.shown, { root, path }, drawn)
+                      served: tabLanguage.lsp.served(options.shown, at, drawn)
                   },
         perform: (ask) =>
             performAsk(ask, {
@@ -408,7 +407,7 @@
         {editing}
         previewable={file.previewable}
         blameable={file.blameable}
-        {submittable}
+        submittable={submit.submittable}
         submitting={submit.busy}
         onsave={() => void tabSave.save()}
         onsubmit={() => void submit.press()}
@@ -434,7 +433,7 @@
     >
         {#if error !== ''}
             <div data-tab-focus tabindex="-1">
-                <Empty error message={error} action={blocked ? undefined : again} />
+                <Empty error={!lib.gone} message={error} action={blocked ? undefined : again} />
             </div>
         {:else if !draft.loaded}
             <Empty message={t('app.waiting')} glyph="edit" />
@@ -452,8 +451,9 @@
             {#if !lock.window}
                 <Editor
                     bind:this={editor}
-                    {path}
+                    path={at.path}
                     {line}
+                    {column}
                     first={draft.first}
                     onfirst={(shown: number) => setSourceFirst(instance.id, shown)}
                     {language}

@@ -18,12 +18,13 @@
 import { basename } from 'node:path';
 import type { watch } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import type { LspCode, LspRpc, LspState } from '../../../data/model/index.ts';
-import { OUTPUT_LINES, ServerProcess, type Spawn } from './process.ts';
-import type { Sink } from '../../core/channels.ts';
-import type { Prepared, ServerEntry, Setup } from './servers.ts';
+import type { LspCode, LspRpc, LspState } from '../../../../data/model/index.ts';
+import { OUTPUT_LINES, ServerProcess, type Spawn } from '../process.ts';
+import type { Sink } from '../../../core/channels.ts';
+import type { Library } from '../library/tokens.ts';
+import type { Prepared, ServerEntry, Setup } from '../servers.ts';
 import { RootWatch, globsOf, type FileChange } from './watch.ts';
-import { normal, type ServedRoot } from './uris.ts';
+import { normal, type ServedRoot } from '../uris.ts';
 
 /** The milliseconds a server outlives its last document or its page. */
 export const LINGER_MS = 60_000;
@@ -573,10 +574,21 @@ export type Page = {
     outputs: Map<Held, { channel: string; root: string }[]>;
     /** The servers ended because their root stopped being served, by `heldKey`. */
     stranded: Map<string, { entry: ServerEntry; roots: Set<string> }>;
+    /** The library files the page was given addresses for, which end with the page. */
+    library: Library;
 };
 
-/** A page's request that is waiting for its server's answer. */
-export type Pending = { page: Page; channel: string; id: number | string | null; held: Held };
+/**
+ * A page's request that is waiting for its server's answer, with the page's address of the document
+ * it was made for, which a library file the answer names is minted under.
+ */
+export type Pending = {
+    page: Page;
+    channel: string;
+    id: number | string | null;
+    held: Held;
+    address: string;
+};
 
 /** A server's request waiting for the page's answer, or one nobody waits for. */
 export type Ask = { held: Held; id: number | string | null };

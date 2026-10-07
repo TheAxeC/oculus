@@ -28,12 +28,25 @@ export type Indent = { tabs: boolean; size: number };
 
 export type SourceLoad =
     { ok: true; content: string; truncated: boolean } | { ok: false; error: string };
+/** What the read of a library file answers: its text and language, or the sentence to say. */
+export type LibraryAnswer =
+    { ok: true; text: string; language: string } | { ok: false; error: string };
 export type SourceTabState = {
     root: string;
     path: string;
     label: string;
     /** The line the tab scrolls to once the draft has loaded, for a tab opened at one. */
     line?: number;
+    /**
+     * The column of the place the tab was opened at, from one: the word there is selected once the
+     * draft has loaded. A state without it, or with anything but a positive number, names none.
+     */
+    column?: number;
+    /**
+     * The library address of a tab over a library file a language server named, which has no root
+     * and no path: `root` and `path` are empty and `id` is the address.
+     */
+    library?: string;
     /** The tab's identity, for a tab that is one of several over the same file. */
     id?: string;
     /** Which version of the file the tab holds, for a tab over the file at HEAD or in the index. */
@@ -145,20 +158,48 @@ const headAnswerShape = z.object({
     binary: z.boolean().optional().catch(undefined)
 });
 
+/** What the `file` of a draft over a library file starts with. */
+const LIBRARY_FILE = 'library:';
+
 /** One token per page lifetime: a draft carrying it was read from disk since the page loaded. */
 const LIFETIME = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
 /**
  * The state that identifies one source tab and labels it with the file name. A caller that knows
- * which line the reader was sent to names it, and the tab scrolls there once its draft has loaded.
+ * which line the reader was sent to names it, and the tab scrolls there once its draft has loaded;
+ * one that knows the column names it too, and the tab selects the word there.
  */
-export function sourceTabState(root: string, path: string, line?: number): SourceTabState {
+export function sourceTabState(
+    root: string,
+    path: string,
+    line?: number,
+    column?: number
+): SourceTabState {
     const state: SourceTabState = {
         root,
         path,
         label: path.split('/').filter(Boolean).at(-1) ?? path
     };
-    return line === undefined ? state : { ...state, line };
+    return placed(state, line, column);
+}
+
+/**
+ * The state of a tab over a library file: the address names it, so a second go to definition into
+ * the same file activates the tab that holds it, and the file's own name is the label.
+ */
+export function libraryTabState(
+    address: string,
+    name: string,
+    line?: number,
+    column?: number
+): SourceTabState {
+    return placed({ root: '', path: '', label: name, id: address, library: address }, line, column);
+}
+
+/** A state opened at a line and, when the line is named, at a column of it. */
+function placed(state: SourceTabState, line?: number, column?: number): SourceTabState {
+    if (line === undefined) return state;
+    return column === undefined ? { ...state, line } : { ...state, line, column };
 }
 
 /** The version a tab's state names, or undefined for a tab over the file on disk. */
@@ -237,6 +278,15 @@ export type SourceStore = {
     sourceDirty: (id: string) => boolean;
     loadSourceDraft: (id: string, root: string, path: string, head?: HeadStage) => Promise<void>;
     /**
+     * Read the text of a tab over a library file with the read the caller makes of the language
+     * server's channel; the draft is read-only.
+     */
+    loadLibraryDraft: (
+        id: string,
+        address: string,
+        read: () => Promise<LibraryAnswer>
+    ) => Promise<void>;
+    /**
      * Give a tab that shows no file yet an empty text to type into: an untitled text file, which
      * the first Save writes to a file of its own. A tab that already holds a text keeps it.
      */
@@ -290,42 +340,19 @@ export function createSource(
         ui.setInstanceState(id, { ...sourceDraft(id), ...changes, ...failed });
     }
 
-    /**
-     * Read once per instance per page lifetime, sharing an unfinished read across tab switches. A
-     * draft restored from the browser's storage after a reload is read again from disk: an unsaved
-     * edit is kept as the working text over the disk's copy, a draft with no edit takes the disk's
-     * text.
-     *
-     * The read belongs to the file it was started for. A preview tab pointed at a second file while
-     * the first file's read is still in flight has its draft cleared and asks for the second file:
-     * that ask starts its own read rather than waiting on the first, and the first, when it lands,
-     * finds the draft is another file's and writes nothing.
-     */
-    async function loadSourceDraft(
+    function loadSourceDraft(
         id: string,
         root: string,
         path: string,
         head?: HeadStage
     ): Promise<void> {
         const file = head === undefined ? `${root}/${path}` : `${head}:${root}/${path}`;
-        const held = sourceDraft(id);
-        if (held.readIn === LIFETIME && held.file === file) return;
-        const pending = reading.get(id);
-        if (pending?.file === file) return pending.request;
-        // A tab pointed at another file drops the language, the indentation, the word wrap and
-        // the scroll chosen for the last, since the choice was about that file's text.
-        updateDraft(
-            id,
-            held.file === file
-                ? { file }
-                : { file, language: '', indent: null, wrap: null, first: 1 }
-        );
-        // A version at HEAD or in the index is read from the git route and is never written.
-        const reads: Promise<[SourceLoad, boolean]> =
-            head === undefined
-                ? Promise.all([loadSource(root, path), loadSourceReadonly(root, path)])
-                : loadHeadFile(root, path, head).then((answer) => [answer, true]);
-        const request = reads.then(([answer, readonly]) => {
+        return readOnce(id, file, async () => {
+            // A version at HEAD or in the index is read from the git route and is never written.
+            const [answer, readonly]: [SourceLoad, boolean] =
+                head === undefined
+                    ? await Promise.all([loadSource(root, path), loadSourceReadonly(root, path)])
+                    : [await loadHeadFile(root, path, head), true];
             if (sourceDraft(id).file !== file) return;
             if (answer.ok) {
                 const held = sourceDraft(id);
@@ -343,6 +370,64 @@ export function createSource(
                 updateDraft(id, { error: t('source.cannot_open', answer.error) });
             }
         });
+    }
+
+    /**
+     * Read the text of a library file for a tab, through the read the caller made of the language
+     * server's channel. The text is never written: the draft is read-only, and it takes the
+     * language of the server that named the file unless the reader chose one.
+     */
+    function loadLibraryDraft(
+        id: string,
+        address: string,
+        read: () => Promise<LibraryAnswer>
+    ): Promise<void> {
+        const file = `${LIBRARY_FILE}${address}`;
+        return readOnce(id, file, async () => {
+            const answer = await read();
+            if (sourceDraft(id).file !== file) return;
+            if (!answer.ok) {
+                updateDraft(id, { error: answer.error });
+                return;
+            }
+            const { language } = sourceDraft(id);
+            updateDraft(id, {
+                text: answer.text,
+                saved: answer.text,
+                loaded: true,
+                readIn: LIFETIME,
+                error: '',
+                readonly: true,
+                truncated: false,
+                language: language === '' ? answer.language : language
+            });
+        });
+    }
+
+    /**
+     * Read once per instance per page lifetime, sharing an unfinished read across tab switches. A
+     * draft restored from the browser's storage after a reload is read again: an unsaved edit is
+     * kept as the working text over the disk's copy, a draft with no edit takes the disk's text.
+     *
+     * The read belongs to the file it was started for. A preview tab pointed at a second file while
+     * the first file's read is still in flight has its draft cleared and asks for the second file:
+     * that ask starts its own read rather than waiting on the first, and the first, when it lands,
+     * finds the draft is another file's and writes nothing.
+     */
+    async function readOnce(id: string, file: string, read: () => Promise<void>): Promise<void> {
+        const held = sourceDraft(id);
+        if (held.readIn === LIFETIME && held.file === file) return;
+        const pending = reading.get(id);
+        if (pending?.file === file) return pending.request;
+        // A tab pointed at another file drops the language, the indentation, the word wrap and
+        // the scroll chosen for the last, since the choice was about that file's text.
+        updateDraft(
+            id,
+            held.file === file
+                ? { file }
+                : { file, language: '', indent: null, wrap: null, first: 1 }
+        );
+        const request = read();
         const entry = { file, request };
         reading.set(id, entry);
         try {
@@ -369,12 +454,15 @@ export function createSource(
 
     /**
      * Show the file as the disk holds it now, for a tab that holds nothing the reader typed. The
-     * answer belongs to the file the draft is of, and text typed while the read was out is kept.
+     * answer belongs to the file the draft is of, and text typed while the read was out is kept. A
+     * tab over a library file is not read again: the relay's address for it lives with the page's
+     * connection.
      */
     async function reloadSource(id: string): Promise<void> {
         const draft = sourceDraft(id);
         const at = draft.file.indexOf('/');
         if (!draft.loaded || draft.text !== draft.saved || at < 0) return;
+        if (draft.file.startsWith(LIBRARY_FILE)) return;
         const answer = await loadSource(draft.file.slice(0, at), draft.file.slice(at + 1));
         if (!answer.ok || ui.instanceState(id) === undefined) return;
         const held = sourceDraft(id);
@@ -493,6 +581,7 @@ export function createSource(
         sourceDraft,
         sourceDirty,
         loadSourceDraft,
+        loadLibraryDraft,
         loadUntitledDraft,
         reloadSource,
         editSourceDraft,

@@ -4,6 +4,14 @@
 // palette or Cmd+S is performed once by the tab, however many times the tab is drawn again: a tab
 // replaced by a copy under the same id, as a keep or a walk does, does not perform the last ask a
 // second time.
+//
+// What the bar draws for the tab, said again whenever any of it changes, is the caret the editor
+// reports, the indentation in force, the line ending of the text, the language (the one chosen
+// from the bar, or the file name's), whether the file may be written, and the editor's actions the
+// palette lists. What the bar and the palette ask of the tab is performed once per ask
+// (ask-perform.ts): an indentation, a language and a word wrap are kept with the draft and handed
+// to the editor, and a line to go to, a conversion of the indentation, a line ending and an editor
+// action are performed by the editor on its model (Editor.svelte's `perform`).
 
 import { onDestroy, untrack } from 'svelte';
 import type {

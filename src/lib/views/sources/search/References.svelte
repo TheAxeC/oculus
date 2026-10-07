@@ -16,7 +16,9 @@
     // Implementations of a source tab's file, as VS Code's References view draws them: the count
     // line ("<n> results in <m> files"), then a tree of one row per file (its icon, its name, its
     // folder and its count) with a row per location under it (its line and its text, the match
-    // marked), a press on a location opening its file in a source tab at the line.
+    // marked), a press on a location opening its file in a source tab at the line with the word at
+    // the match selected. A library file a server named is a row of its own name; its press opens
+    // the read-only library tab, which says the file is no longer open when the page was reloaded.
     //
     // The pane's header holds Refresh, Clear, Clear History and Collapse All. A row's right-click
     // offers Copy, Copy Path and Dismiss, and a right-click on the count line Copy All. A cleared
@@ -38,7 +40,7 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import { openSourceFile } from '../../shared/links/source-file';
+    import { openReference } from '../../shared/links/source-file';
     import { nameOf } from '$lib/state/sources/fs';
     import {
         picks,
@@ -63,6 +65,8 @@
     let closed: string[] = $state([]);
 
     const key = (file: RefFile): string => JSON.stringify([file.root, file.path]);
+    /** The file a row names: a library file by its own name, since its path is an address. */
+    const shown = (file: RefFile): string => file.library ?? file.path;
     const lineKey = (file: RefFile, one: RefLine): string =>
         JSON.stringify([file.root, file.path, one.line, one.start]);
 
@@ -117,13 +121,13 @@
     }
 
     function open(file: RefFile, one: RefLine): void {
-        openSourceFile(client, { root: file.root, path: file.path, line: one.line });
+        openReference(client, file, one.line, one.start + 1);
     }
 
     /** Run a search again through the editor that holds its file. */
     function again(search: RefSearch): void {
         void references.rerun(instance.id, search, {
-            open: (root, path, line) => openSourceFile(client, { root, path, line })
+            open: (file, line, column) => openReference(client, file, line, column)
         });
     }
 
@@ -144,17 +148,17 @@
         if (id === 'copy')
             copy(
                 picks([file])
-                    .map((one) => `${file.path}:${one.line}:${one.column}`)
+                    .map((one) => `${shown(file)}:${one.line}:${one.column}`)
                     .join('\n')
             );
-        else if (id === 'copy_path') copy(file.path);
+        else if (id === 'copy_path') copy(shown(file));
         else references.dismissFile(instance.id, file.root, file.path);
     }
 
     function pickLine(id: string, file: RefFile, one: RefLine): void {
         if (id === 'copy') copy(one.text.trim());
         else if (id === 'copy_path')
-            copy(`${file.path}:${String(one.line)}:${String(one.start + 1)}`);
+            copy(`${shown(file)}:${String(one.line)}:${String(one.start + 1)}`);
         else references.dismissLine(instance.id, file.root, file.path, one.line, one.start);
     }
 </script>
@@ -237,23 +241,23 @@
                                     data-references-file={`${file.root}:${file.path}`}
                                 >
                                     <ContextMenu
-                                        label={nameOf(file.path)}
+                                        label={nameOf(shown(file))}
                                         items={rowMenu()}
                                         onpick={(id: string) => pickFile(id, file)}
                                     >
                                         <TreeItem
-                                            label={nameOf(file.path)}
+                                            label={nameOf(shown(file))}
                                             id={key(file)}
                                             {nav}
                                             level={1}
-                                            file={file.path}
+                                            file={shown(file)}
                                             expanded={!closed.includes(key(file))}
                                             count={file.lines.length}
                                             badge
-                                            title={t('references.file_title', file.path)}
+                                            title={t('references.file_title', shown(file))}
                                             onclick={() => ontoggle(key(file))}
                                         >
-                                            {#snippet detail()}{folderOf(file.path)}{/snippet}
+                                            {#snippet detail()}{folderOf(shown(file))}{/snippet}
                                         </TreeItem>
                                     </ContextMenu>
                                     {#if !closed.includes(key(file))}
@@ -266,20 +270,20 @@
                                                     data-references-line={`${file.path}:${one.line}`}
                                                 >
                                                     <ContextMenu
-                                                        label={`${file.path}:${String(one.line)}`}
+                                                        label={`${shown(file)}:${String(one.line)}`}
                                                         items={rowMenu()}
                                                         onpick={(id: string) =>
                                                             pickLine(id, file, one)}
                                                     >
                                                         <TreeItem
-                                                            label={`${file.path}:${String(one.line)}`}
+                                                            label={`${shown(file)}:${String(one.line)}`}
                                                             id={lineKey(file, one)}
                                                             {nav}
                                                             level={2}
                                                             depth={1}
                                                             title={t(
                                                                 'references.line_title',
-                                                                file.path,
+                                                                shown(file),
                                                                 String(one.line)
                                                             )}
                                                             onclick={() => open(file, one)}

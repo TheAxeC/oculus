@@ -25,9 +25,13 @@ import {
 /** What an editor answers for a search: the files with their lines, or null when it failed. */
 type RefAsker = (search: RefSearch) => Promise<RefFile[] | null>;
 
-/** What the store needs of the page: to open a file at a place. */
+/** What the store needs of the page: to open a file, of a root or a library one, at a place. */
 type RefOpening = {
-    open: (root: string, path: string, line: number, column: number) => void;
+    open: (
+        file: { root: string; path: string; library?: string },
+        line: number,
+        column: number
+    ) => void;
 };
 
 export type ReferencesStore = {
@@ -131,7 +135,7 @@ export function createReferences(ui: InstanceStates): ReferencesStore {
                 return true;
             }
             waiting = { id, search };
-            opening.open(search.root, search.path, search.line, search.column);
+            opening.open(search, search.line, search.column);
             return false;
         }
     };

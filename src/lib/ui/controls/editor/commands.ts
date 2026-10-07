@@ -1,8 +1,8 @@
 // Layer 3, primitive. What a parent asks the text editor to do through `perform` (types.ts's
-// `EditorCommand`), done on the editor and its model: go to a line, set or convert the
-// indentation, set the line ending, set the language (and load its grammar when it has not loaded),
-// or run one of the editor's actions; and the first line the editor shows, which the parent keeps
-// so that a copy of the tab opens at it.
+// `EditorCommand`), done on the editor and its model: go to a line, go to a place and select the
+// word at it, set or convert the indentation, set the line ending, set the language (and load its
+// grammar when it has not loaded), or run one of the editor's actions; and the first line the
+// editor shows, which the parent keeps so that a copy of the tab opens at it.
 
 import type * as Monaco from 'monaco-editor';
 import { eolOf, type EditorKit } from './kit/load';
@@ -20,6 +20,26 @@ export function runCommand(
         const line = Math.min(Math.max(1, command.line), held.getLineCount());
         const column = Math.min(Math.max(1, command.column ?? 1), held.getLineMaxColumn(line));
         made.setPosition({ lineNumber: line, column });
+        made.revealLineInCenter(line);
+        made.focus();
+    } else if (command.kind === 'word') {
+        const line = Math.min(Math.max(1, Math.floor(command.line)), held.getLineCount());
+        const end = held.getLineMaxColumn(line);
+        const column = Math.min(Math.max(1, Math.floor(command.column)), end);
+        // The word is selected only when the column names one of its characters. A column at or
+        // past the line's end, or on a space or other character after a word, names none: the caret
+        // goes there, and the word that ends just before it is not selected.
+        const found = column < end ? held.getWordAtPosition({ lineNumber: line, column }) : null;
+        const word = found !== null && column < found.endColumn ? found : null;
+        if (word === null) made.setPosition({ lineNumber: line, column });
+        else {
+            made.setSelection({
+                startLineNumber: line,
+                startColumn: word.startColumn,
+                endLineNumber: line,
+                endColumn: word.endColumn
+            });
+        }
         made.revealLineInCenter(line);
         made.focus();
     } else if (command.kind === 'indent') {

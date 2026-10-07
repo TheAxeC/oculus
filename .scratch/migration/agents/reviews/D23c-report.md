@@ -173,4 +173,4 @@ Each new or changed sentence of DESIGN.md (lines 123, 510, 522, 571, 572), `docs
 
 - Case 2 expects a header named `string`; clangd answers `string.h` for `std::string` at `mirrors.cpp:47` on this machine. The tab's language is the naming server's (C++), stored with the token (`kit/lsp/uris.ts`, `library/tokens.ts`); the highlighting was not drawn in a browser.
 - The brief's "`relay.ts` is split by concern if it would pass 880": it is 845 after the change (869 before) because `held/documents.ts` and the library folder took the code.
-- The `test:quick` limit line: run 1 took 46.1 s against 45.0 s while every command passed; run 2 took 44.0 s. The list prints no test count.
+- The `test:quick` limit line: in repair round 1, run 1 took 58.9 s against 45.0 s while every command passed; run 2 took 34.1 s. The list prints no test count.

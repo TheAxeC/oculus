@@ -25,23 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D23c
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a12b39260f0c0a455 (builder, launched 2026-10-07 on the worktree's partial changes after the builder before it was stopped by accident; served claude-sonnet-5-5)
-  builders_before: a80adc4082930a5ef (claude-sonnet-5-5, stopped 2026-10-07 mid-build, its partial changes kept in the worktree)
-  worktree: .agents/worktrees/D23c
-  base: 951b61e3
-  launched: 2026-10-06
-  report: agents/reviews/D23c-report.md
-  brief_check: agents/reviews/D23c-brief-check.md (a81066bbccca96733, claude-opus-5-5, 188,115 tokens, 51 tool uses, 7.8 min)
-  shared_paths: with PR3: tools/oculus/DESIGN.md, docs/views.md, docs/files-and-search.md (sentence-level edits in different items: D23c's language server, References and locked-file items, PR3's Present items; whichever lands second carries the other's text, Z642)
-  builder_usage: a12b39260f0c0a455, 184,970 tokens, 194 tool uses, 46.1 min (report agents/reviews/D23c-report.md); a80adc4082930a5ef before it, stopped mid-build, its usage not recorded; round 1: a12b39260f0c0a455, 327,884 tokens, 71 tool uses, 17.0 min
-  reviewer_report: agents/reviews/D23c-refuter.md (af53f7cfd7795c93a, claude-opus-5-5, 323,026 tokens, 109 tool uses, 18.8 min); over round 1: ad7ea502ca23d89b0, claude-opus-5-5, 225,221 tokens, 61 tool uses, 11.5 min
-  landing: not-started
-  round: 1
-  round_sent: 2026-10-07, agents/briefs/D23c-round1.md (Z676, Z678); the tree at sending: `git diff --binary 951b61e3 | shasum` 8758cd15fbe8, 13 untracked files
 ```
 
 ## The standing demands (from Axel, in force)
@@ -213,6 +196,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-07 04:20. D23c landed (library definitions open read-only, the symbol selected on open; booking in plan.md; `agents/reviews/D23c-landing.md`) with Z679, the read.ts comment, the report's timing and G2 and G3 fixed at landing, and one fix from its look on a scratch oculus: a tab over a served root's file passed an empty library address and so had no language features. In flight: none. Next: prepare PR4, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-07 03:30. PR3 landed (the Present view edits and generates decks; booking in plan.md; `agents/reviews/PR3-landing.md`) with the merge conflicts, R1 to R6, Z675 and four fixes from its look on a scratch oculus fixed at landing. D23c reviewed over round 1, all 14 items closed; Z679 in automode. In flight: D23c (lands next). Next: land D23c, then prepare PR4, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-06 23:55. Q126 landed (DESIGN.md reduced to its decisions; booking in plan.md; `agents/reviews/Q126-landing.md`), merged with D23 by Z642's rule, with the round-1 refutation's five findings fixed at landing. In flight: PR3 (builder running). Next: prepare D23c, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-06 23:30. D23 landed (the language server client: pyright and clangd in the source editor; booking in plan.md; `agents/reviews/D23-landing.md`) with 15 fixes at landing, Z663 among them, and its look on a scratch oculus; look item 4 waived by Axel's ruling (b) 'D23 lands before Z669', Z669 (a) and Z670 (a) booked as D23c. In flight: Q126 (lands next), PR3 (builder running). Next: land Q126; prepare D23c, D45, X3e, M8, D43, D23b and D33 into the free slots.

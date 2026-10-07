@@ -37,6 +37,14 @@ text:
         head_missing: The repository does not hold this file at this version.
         index_label: '{0} (Index)'
         index_locked: This is the file as the index holds it; it cannot be edited.
+        library_binary: This library file is not text, so it cannot be shown here.
+        library_gone: The library file is no longer open on this connection. Go to definition opens it again.
+        library_locked: This is a library file a language server named; the editor shows it and saves nothing.
+        library_moved: This library file now resolves to another file, so it cannot be shown here.
+        library_not_file: This library file can no longer be read; it was removed or is not a regular file.
+        library_not_served: The folder this library file was named under is no longer served, so it cannot be read.
+        library_too_large: This library file is too large to show here.
+        library_unsent: The library file could not be read; the language server channel did not answer.
         locked_glyph: lock
         lsp_choices_unread: 'The interpreter and compile database choices of this repository could not be read: {0}'
         lsp_choices_write: 'The choice could not be kept: {0}'

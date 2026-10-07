@@ -29,46 +29,44 @@
 // symbols, the semantic tokens, the formatting) go through `ask`, which answers the protocol's
 // result as the relay sent it, addresses in the page's form.
 //
+// A library file a server names in an answer (`oculus-lib:` in uris.ts) is told to the host with
+// the root of the document the request was made for, and is answered like any other file: the model
+// of the tab that holds it, else a peek model the host reads through the channel. A library address
+// of an answer to a request no document made names no root to read it under, so the location is
+// dropped. A library tab registers its model under the library address, which is then the page's
+// address of the document in every message the transport sends.
+//
 // The messages the relay adds to the channel (those with an `oculus` field) belong to the state
 // side and are ignored here, but for the `state` of a root that is served again after `root_gone`,
 // which puts the open documents under it on the server again. Messages are handled one at a time
 // in the order they arrived, so a peek read in the middle of one answer never lets a later one
 // overtake it.
 
-import type { LspDiagnostic, LspFrame, LspPort, PortState } from './services';
-import { pageUri, placeOf, type Place } from './uris';
-
-/** One change of a model's text, as Monaco reports it. */
-export type ModelChange = {
-    range: {
-        startLineNumber: number;
-        startColumn: number;
-        endLineNumber: number;
-        endColumn: number;
-    };
-    rangeLength: number;
-    text: string;
-};
-
-/** What the transport reads of a Monaco model. */
-export type LspModel = {
-    readonly uri: { toString(skipEncoding?: boolean): string };
-    getValue(): string;
-    getVersionId(): number;
-    getLanguageId(): string;
-    onDidChangeContent(listener: (event: { changes: readonly ModelChange[] }) => void): {
-        dispose(): void;
-    };
-};
-
-/** A range in the protocol's form: lines and characters from zero. */
-export type LspRange = {
-    start: { line: number; character: number };
-    end: { line: number; character: number };
-};
-
-/** One edit of the protocol. */
-export type TextEdit = { range: LspRange; newText: string };
+import type { LspDiagnostic, LspFrame, LspPort } from './services';
+import {
+    ADDRESSES,
+    BARE_DOCUMENT,
+    Closed,
+    DROP,
+    ORGANIZE,
+    ORGANIZE_COMMAND,
+    OWN,
+    REQUEST_CANCELLED,
+    SPELLINGS,
+    SYNC,
+    asksOrganize,
+    changesOf,
+    isRecord,
+    keyOf,
+    touched,
+    type LspModel,
+    type LspRange,
+    type ModelChange,
+    type Rpc,
+    type TextEdit
+} from './transport/messages';
+import { Connection } from './transport/connection';
+import { libraryOf, pageUri, placeOf, type Place, type Target } from './uris';
 
 /** What the host does for the transport. */
 export type TransportHost = {
@@ -77,15 +75,20 @@ export type TransportHost = {
      * naming the variant of the address to use when the plain one differs from another model's only
      * by case (0 for the plain one). Null when the file cannot be read.
      */
-    peek(place: Place, page: string, spelling: number): Promise<LspModel | null>;
+    peek(target: Target, page: string, spelling: number): Promise<LspModel | null>;
     /** Dispose a peek model the transport has no use for. */
     drop(model: LspModel): void;
     /** Apply edits to a registered model as one undo stop; false when it could not be. */
     apply(model: LspModel, edits: readonly TextEdit[]): boolean;
-    /** A server's diagnostics for one file, whether or not a model holds it. */
-    diagnostics(place: Place, items: readonly LspDiagnostic[]): void;
-    /** The regions of a file clangd found inactive. */
-    inactive(place: Place, regions: readonly LspRange[]): void;
+    /**
+     * A server's diagnostics for one file, whether or not a model holds it: the file's address,
+     * and its place when it is a file of a served root.
+     */
+    diagnostics(page: string, place: Place | null, items: readonly LspDiagnostic[]): void;
+    /** The regions of a file clangd found inactive, by the file's address. */
+    inactive(page: string, regions: readonly LspRange[]): void;
+    /** A server named a library file in an answer to a request made for a document of the root. */
+    library(address: string, root: string): void;
     /** The server asks for its semantic tokens again. */
     refreshTokens(): void;
     /** The capabilities the server's `initialize` answer declared. */
@@ -93,54 +96,6 @@ export type TransportHost = {
     /** Shows a notice by its catalog key. */
     notice(key: string): void;
 };
-
-/** A JSON-RPC message as the client and the relay write it. */
-type Rpc = {
-    jsonrpc: '2.0';
-    id?: number | string | null;
-    method?: string;
-    params?: unknown;
-    result?: unknown;
-    error?: { code: number; message: string; data?: unknown };
-};
-
-/** The message the client's synchroniser sends for every model of the page, never passed on. */
-const SYNC: readonly string[] = [
-    'textDocument/didOpen',
-    'textDocument/didChange',
-    'textDocument/didClose'
-];
-
-/** The fields of a message that hold the address of a document. */
-const ADDRESSES: readonly string[] = ['uri', 'targetUri', 'file'];
-
-/**
- * The prefix of an id the transport gives its own requests, which the client's counter cannot make.
- */
-const OWN = 'own:';
-
-/**
- * The requests whose parameters are the document's identifier itself, `{ uri }`, as clangd's
- * `textDocument/switchSourceHeader` reads them; every other request names it as `textDocument`.
- */
-const BARE_DOCUMENT: readonly string[] = ['textDocument/switchSourceHeader'];
-
-/** The error code the relay answers a request with when no server is running to take it. */
-const REQUEST_CANCELLED = -32800;
-
-/** How many variants of an address are tried before a peek is given up. */
-const SPELLINGS = 8;
-
-/** The kind a code action of Organize Imports has, and the command pyright runs for it. */
-const ORGANIZE = 'source.organizeImports';
-const ORGANIZE_COMMAND = 'pyright.organizeimports';
-
-/** What `ask` rejects with when the port is closed or the transport ended. */
-export class Closed extends Error {
-    constructor() {
-        super('the language server channel is closed');
-    }
-}
 
 /** A document the server holds: the file, its models, the version last sent. */
 type Doc = {
@@ -155,90 +110,15 @@ type Doc = {
 type Waiting = { method: string; params: unknown; asking: string | null };
 
 /** A request of the host that waits for its answer. */
-type Own = { resolve: (value: unknown) => void; reject: (reason: Error) => void };
+type Own = {
+    resolve: (value: unknown) => void;
+    reject: (reason: Error) => void;
+    /** The root of the document the request was made for, null for a request of none. */
+    root: string | null;
+};
 
 /** A peek model and when it was made. */
 type Peek = { model: LspModel; page: string; made: number };
-
-/** A value that stands for a location the page cannot be given, dropped with what holds it. */
-const DROP = Symbol('dropped');
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/** The key a model is known by in the client's address. */
-function keyOf(model: LspModel): string {
-    return model.uri.toString(true);
-}
-
-/** The edits of the protocol a model's change event makes. */
-function changesOf(changes: readonly ModelChange[]): unknown[] {
-    return changes.map((change) => ({
-        range: {
-            start: {
-                line: change.range.startLineNumber - 1,
-                character: change.range.startColumn - 1
-            },
-            end: { line: change.range.endLineNumber - 1, character: change.range.endColumn - 1 }
-        },
-        rangeLength: change.rangeLength,
-        text: change.text
-    }));
-}
-
-/** The place a code action's edit touches: every address it names, as the relay wrote it. */
-function touched(edit: unknown): string[] | null {
-    if (!isRecord(edit)) return [];
-    const named: string[] = [];
-    if (isRecord(edit.changes)) named.push(...Object.keys(edit.changes));
-    if (Array.isArray(edit.documentChanges)) {
-        for (const change of edit.documentChanges as unknown[]) {
-            const document = isRecord(change) ? change.textDocument : null;
-            if (!isRecord(document) || typeof document.uri !== 'string') return null;
-            named.push(document.uri);
-        }
-    }
-    return named;
-}
-
-/** Whether a code action request asks for Organize Imports. */
-function asksOrganize(params: unknown): boolean {
-    const context = isRecord(params) ? params.context : null;
-    const only = isRecord(context) ? context.only : null;
-    return Array.isArray(only) && only.some((kind) => kind === ORGANIZE || kind === 'source');
-}
-
-/** The connection state the client reads, with the change event it listens on. */
-/** What the client reads of the connection. */
-type ConnectionValue =
-    { state: 'open' } | { state: 'connecting' } | { state: 'closed'; error: undefined };
-
-class Connection {
-    #value: ConnectionValue = { state: 'connecting' };
-    #listeners = new Set<(value: ConnectionValue) => void>();
-
-    get value(): ConnectionValue {
-        return this.#value;
-    }
-
-    onChange = (listener: (value: ConnectionValue) => void): { dispose(): void } => {
-        this.#listeners.add(listener);
-        return { dispose: () => this.#listeners.delete(listener) };
-    };
-
-    set(state: PortState): void {
-        const next: ConnectionValue =
-            state === 'open'
-                ? { state: 'open' }
-                : state === 'connecting'
-                  ? { state: 'connecting' }
-                  : { state: 'closed', error: undefined };
-        if (next.state === this.#value.state) return;
-        this.#value = next;
-        for (const listener of [...this.#listeners]) listener(next);
-    }
-}
 
 /** The transport of one language over one open period of its port. */
 export class LspTransport {
@@ -309,10 +189,13 @@ export class LspTransport {
         return [...this.#byModel.keys()];
     }
 
-    /** Register a model with the file it shows, and open the file on the server when it is new. */
-    register(model: LspModel, place: Place): void {
+    /**
+     * Register a model with the file it shows, and open the file on the server when it is new. A
+     * library file is registered under its library address, with the root it was named under.
+     */
+    register(model: LspModel, place: Place, address?: string): void {
         if (this.#closed || this.#byModel.has(model)) return;
-        const page = pageUri(place);
+        const page = address ?? pageUri(place);
         let doc = this.#docs.get(page);
         const first = doc === undefined;
         if (doc === undefined) {
@@ -512,7 +395,7 @@ export class LspTransport {
     ask(model: LspModel, method: string, params: Record<string, unknown> = {}): Promise<unknown> {
         const doc = this.#byModel.get(model);
         if (this.#closed || doc === undefined) return Promise.reject(new Closed());
-        return this.#askAbout(doc.page, method, params);
+        return this.#askAbout(doc, method, params);
     }
 
     /**
@@ -525,21 +408,25 @@ export class LspTransport {
         const turned = this.#out({ arguments: args });
         if (turned === null) return null;
         const { arguments: given } = turned.value as { arguments: unknown[] };
-        return this.#request({ command, arguments: given }, 'workspace/executeCommand');
+        return this.#request({ command, arguments: given }, 'workspace/executeCommand', null);
     }
 
-    #askAbout(page: string, method: string, params: Record<string, unknown>): Promise<unknown> {
+    #askAbout(doc: Doc, method: string, params: Record<string, unknown>): Promise<unknown> {
         const document = BARE_DOCUMENT.includes(method)
-            ? { uri: page }
-            : { textDocument: { uri: page } };
-        return this.#request({ ...params, ...document }, method);
+            ? { uri: doc.page }
+            : { textDocument: { uri: doc.page } };
+        return this.#request({ ...params, ...document }, method, doc.place.root);
     }
 
     /** One request of the host's own, under an id the client's counter cannot make. */
-    #request(params: Record<string, unknown>, method: string): Promise<unknown> {
+    #request(
+        params: Record<string, unknown>,
+        method: string,
+        root: string | null
+    ): Promise<unknown> {
         const id = `${OWN}${(this.#next += 1)}`;
         return new Promise<unknown>((resolve, reject) => {
-            this.#own.set(id, { resolve, reject });
+            this.#own.set(id, { resolve, reject, root });
             if (!this.#write({ jsonrpc: '2.0', id, method, params })) {
                 this.#own.delete(id);
                 reject(new Closed());
@@ -604,7 +491,10 @@ export class LspTransport {
             this.#own.delete(id);
             if (own === undefined) return;
             if (message.error !== undefined) own.reject(new Error(message.error.message));
-            else own.resolve(message.result ?? null);
+            else {
+                this.#named(message.result, own.root);
+                own.resolve(message.result ?? null);
+            }
             return;
         }
         const waiting = this.#waiting.get(id);
@@ -752,29 +642,36 @@ export class LspTransport {
     #notification(message: Rpc): void {
         const params = isRecord(message.params) ? message.params : {};
         if (message.method === 'textDocument/publishDiagnostics') {
-            const place = typeof params.uri === 'string' ? placeOf(params.uri) : null;
-            if (place === null || !Array.isArray(params.diagnostics)) return;
-            this.#host.diagnostics(place, params.diagnostics as LspDiagnostic[]);
+            const page = this.#pageOf(params.uri);
+            if (page === null || !Array.isArray(params.diagnostics)) return;
+            const place = placeOf(page);
+            this.#host.diagnostics(
+                place === null ? page : pageUri(place),
+                place,
+                params.diagnostics as LspDiagnostic[]
+            );
         } else if (message.method === 'textDocument/inactiveRegions') {
             const document = params.textDocument;
-            const place =
-                isRecord(document) && typeof document.uri === 'string'
-                    ? placeOf(document.uri)
-                    : null;
-            if (place === null || !Array.isArray(params.regions)) return;
-            this.#host.inactive(place, params.regions as LspRange[]);
+            const page = this.#pageOf(isRecord(document) ? document.uri : undefined);
+            if (page === null || !Array.isArray(params.regions)) return;
+            const place = placeOf(page);
+            this.#host.inactive(
+                place === null ? page : pageUri(place),
+                params.regions as LspRange[]
+            );
         }
+    }
+
+    /** A file's address when it is one of a served root or a library file, else null. */
+    #pageOf(uri: unknown): string | null {
+        if (typeof uri !== 'string') return null;
+        return placeOf(uri) !== null || libraryOf(uri) !== null ? uri : null;
     }
 
     // ------------------------------------------------------------------ addresses in answers
 
-    /**
-     * An answer for the client: every address of the page's form turned into the client's, the
-     * address of a registered model, or of a peek model made for a file no tab holds. A location
-     * that names a file that gets no model is dropped with the entry that holds it, and the answer
-     * is the symbol `DROP` when the whole answer was one.
-     */
-    async #in(value: unknown, asking: string | null): Promise<unknown> {
+    /** The addresses of documents a message names, in every field that holds one. */
+    #addressesIn(value: unknown): Set<string> {
         const wanted = new Set<string>();
         const collect = (item: unknown): void => {
             if (Array.isArray(item)) {
@@ -790,9 +687,34 @@ export class LspTransport {
             }
         };
         collect(value);
+        return wanted;
+    }
+
+    /** Tell the host the library files an answer names, under the root its request was for. */
+    #named(value: unknown, root: string | null): void {
+        if (root === null) return;
+        for (const address of this.#addressesIn(value)) {
+            if (libraryOf(address) !== null) this.#host.library(address, root);
+        }
+    }
+
+    /**
+     * An answer for the client: every address of the page's form turned into the client's, the
+     * address of a registered model, or of a peek model made for a file no tab holds. A location
+     * that names a file that gets no model is dropped with the entry that holds it, and the answer
+     * is the symbol `DROP` when the whole answer was one.
+     */
+    async #in(value: unknown, asking: string | null): Promise<unknown> {
+        const root = this.#docOf(asking)?.place.root ?? null;
         const models = new Map<string, string | null>();
-        for (const page of wanted) {
-            if (placeOf(page) === null) continue;
+        for (const page of this.#addressesIn(value)) {
+            if (libraryOf(page) !== null) {
+                if (root === null) {
+                    models.set(page, null);
+                    continue;
+                }
+                this.#host.library(page, root);
+            } else if (placeOf(page) === null) continue;
             models.set(page, await this.#modelFor(page, asking));
         }
         const address = (page: string): string | null | undefined => {
@@ -845,10 +767,10 @@ export class LspTransport {
         }
         const kept = this.#peeks.get(page);
         if (kept !== undefined) return keyOf(kept.model);
-        const place = placeOf(page);
-        if (place === null) return null;
+        const target: Target | null = placeOf(page) ?? libraryOf(page);
+        if (target === null) return null;
         for (let spelling = 0; spelling < SPELLINGS; spelling += 1) {
-            const model = await this.#host.peek(place, page, spelling);
+            const model = await this.#host.peek(target, page, spelling);
             if (model === null) return null;
             // While the file was read, a tab may have opened it or an answer may have made its
             // peek.

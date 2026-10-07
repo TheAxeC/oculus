@@ -18,13 +18,14 @@
 // declared and assigned by the override that makes them.
 
 import type * as Monaco from 'monaco-editor';
-import { Closed, LspTransport, type TextEdit, type TransportHost } from './transport';
+import { LspTransport, type TransportHost } from './transport';
+import { Closed, type TextEdit } from './transport/messages';
 import { inactiveDecorations, markerOwner, toMarkers } from './markers';
 import type { Peeks } from './peeks';
 import { semanticProvider, type Legend } from './semantic';
 import { Signal } from './signal';
 import type { LspDiagnostic, LspPort, LspServices, LspSymbol, LspSymbols } from './services';
-import { pageUri, type Place } from './uris';
+import { pageUri, type Place, type Target } from './uris';
 
 /** The milliseconds a change waits for its end before the tab's symbols are asked again. */
 const SYMBOLS_QUIET_MS = 300;
@@ -42,8 +43,13 @@ const SEMANTIC_LANGUAGES: readonly string[] = ['c', 'cpp'];
 export type Registration = {
     /** The tab instance, which names the symbols. */
     instance: string;
-    /** The file the model shows. */
+    /**
+     * The file the model shows. A library file's place is the root it was named under and the
+     * file's name, which names no file of the root: its address is `library`.
+     */
     place: Place;
+    /** The library address of the file, for a model of a library file. */
+    library?: string;
     /** The editor showing the model. */
     editor: Monaco.editor.IStandaloneCodeEditor;
 };
@@ -123,6 +129,11 @@ export type HostParts = {
 /** The state of a server, as the relay's `state` messages say it. */
 type ServerState = 'starting' | 'ready' | 'indexing' | 'not_found' | 'failed';
 
+/** The address a registered file has on the channel: its library address, else the page's. */
+function addressOf(reg: Registration): string {
+    return reg.library ?? pageUri(reg.place);
+}
+
 /** The symbols of an answer: the tree, or the flat list of the older form made one. */
 function symbolsOf(answer: unknown): LspSymbol[] {
     if (!Array.isArray(answer)) return [];
@@ -176,9 +187,13 @@ export class LanguageHost {
         return this.#entries.size === 0;
     }
 
-    /** The file a registered model or a peek model of this host shows. */
-    placeOf(model: Monaco.editor.ITextModel): Place | null {
-        return this.#entries.get(model)?.reg.place ?? null;
+    /** The file a registered model of this host shows, of a served root or a library file. */
+    targetOf(model: Monaco.editor.ITextModel): Target | null {
+        const reg = this.#entries.get(model)?.reg;
+        if (reg === undefined) return null;
+        return reg.library === undefined
+            ? reg.place
+            : { library: reg.library, name: reg.place.path };
     }
 
     /** Run a command of the server when its arguments name a document of this host. */
@@ -224,7 +239,7 @@ export class LanguageHost {
         entry.watch.dispose();
         if (entry.timer !== null) clearTimeout(entry.timer);
         this.#unmark(entry);
-        this.#forget(entry.reg.place, null);
+        this.#forget(entry.reg, null);
         this.#transport?.unregister(model);
         this.#release(entry);
         this.#parts.services.symbols(entry.reg.instance, 'none');
@@ -249,8 +264,8 @@ export class LanguageHost {
         this.#connect();
         const transport = this.#transport;
         if (transport === null) return;
-        transport.register(entry.model, entry.reg.place);
-        const held = this.#diagnostics.get(pageUri(entry.reg.place));
+        transport.register(entry.model, entry.reg.place, entry.reg.library);
+        const held = this.#diagnostics.get(addressOf(entry.reg));
         if (held !== undefined) this.#mark(entry, held);
         this.#parts.services.symbols(entry.reg.instance, 'loading');
         this.#symbols(entry, 0);
@@ -318,7 +333,7 @@ export class LanguageHost {
         this.#transport = null;
         for (const entry of this.#entries.values()) {
             this.#unmark(entry);
-            this.#forget(entry.reg.place, null);
+            this.#forget(entry.reg, null);
         }
         if (this.#sweep !== null) clearInterval(this.#sweep);
         this.#sweep = null;
@@ -358,7 +373,7 @@ export class LanguageHost {
             for (const entry of this.#entries.values()) {
                 if (entry.reg.place.root !== root) continue;
                 this.#unmark(entry);
-                this.#forget(entry.reg.place, null);
+                this.#forget(entry.reg, null);
             }
         }
         if (state === 'ready' && before !== 'ready') {
@@ -374,25 +389,26 @@ export class LanguageHost {
     #hosting(): TransportHost {
         const { services, peeks } = this.#parts;
         return {
-            peek: (place, page, spelling) => peeks.acquire(services, place, page, spelling),
+            peek: (target, page, spelling) => peeks.acquire(services, target, page, spelling),
             drop: (model) => peeks.release(model as Monaco.editor.ITextModel),
             apply: (model, edits) => this.#apply(model as Monaco.editor.ITextModel, edits),
-            diagnostics: (place, items) => {
-                const page = pageUri(place);
+            diagnostics: (page, place, items) => {
                 this.#diagnostics.set(page, items);
-                services.diagnostics(place.root, place.path, this.language, items);
+                if (place !== null) {
+                    services.diagnostics(place.root, place.path, this.language, items);
+                }
                 for (const entry of this.#entries.values()) {
-                    if (pageUri(entry.reg.place) === page) this.#mark(entry, items);
+                    if (addressOf(entry.reg) === page) this.#mark(entry, items);
                 }
             },
-            inactive: (place, regions) => {
-                const page = pageUri(place);
+            inactive: (page, regions) => {
                 for (const entry of this.#entries.values()) {
-                    if (pageUri(entry.reg.place) === page) {
+                    if (addressOf(entry.reg) === page) {
                         entry.inactive.set(inactiveDecorations(regions));
                     }
                 }
             },
+            library: (address, root) => services.library(address, root, this.language),
             refreshTokens: () => this.#refreshTokens?.(),
             declared: (capabilities) => {
                 this.#capabilities = capabilities;
@@ -429,13 +445,15 @@ export class LanguageHost {
     }
 
     /** Take a file's diagnostics from the page's store, unless another model shows it. */
-    #forget(place: Place, except: Entry | null): void {
-        const page = pageUri(place);
+    #forget(reg: Registration, except: Entry | null): void {
+        const page = addressOf(reg);
         const held = [...this.#entries.values()].some(
-            (one) => one !== except && pageUri(one.reg.place) === page
+            (one) => one !== except && addressOf(one.reg) === page
         );
         if (held) return;
         this.#diagnostics.delete(page);
+        if (reg.library !== undefined) return;
+        const { place } = reg;
         this.#parts.services.diagnostics(place.root, place.path, this.language, []);
     }
 

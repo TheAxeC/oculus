@@ -30,6 +30,7 @@ export const pyrightAdapter: Adapter = {
         const setup: Setup = {
             root: env.root,
             interpreter: found.effective,
+            interpreterPrefixes: found.prefixes,
             databaseFolder: null,
             fallbackFlags: []
         };
@@ -87,6 +88,7 @@ export const pyrightAdapter: Adapter = {
     },
 
     async settings(env, setup) {
-        return { ...setup, interpreter: (await interpreters(env)).effective };
+        const found = await interpreters(env);
+        return { ...setup, interpreter: found.effective, interpreterPrefixes: found.prefixes };
     }
 };

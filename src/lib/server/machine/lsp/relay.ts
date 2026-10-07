@@ -4,17 +4,21 @@
 // context.
 //
 // Per page it holds one client session for each language the page speaks and, below them, one
-// language server for each served root and registry entry (held.ts), shared by the sessions of the
-// languages the entry serves. It answers the page's `initialize` itself from the registry
+// language server for each served root and registry entry (held/held.ts), shared by the sessions of
+// the languages the entry serves. It answers the page's `initialize` itself from the registry
 // (servers.ts), starts a root's server on the first `didOpen` under that root, routes each message
 // by the document it names, and rewrites the document addresses in both directions (uris.ts): the
 // page speaks `oculus-file:` addresses and a server `file:` ones. Ids are remapped, so a page's ids
 // and each server's own never meet. A frame is read only from a socket whose subscription carried
 // the write token, and every frame goes to the one socket it is for, in order, never merged.
 //
+// A file outside every served root that a server names in an answer reaches the page as a library
+// address, `oculus-lib:///<token>/<file name>` (library/), and the page reads it over the same
+// channel with `{ oculus: 'read' }`; the tokens are the page's, minted only in answers.
+//
 // What a server asks of its client is answered here and not forwarded: `workspace/configuration`
-// from the registry, `client/registerCapability` (the file watchers become watch.ts's), progress
-// as `state` messages. Only `workspace/applyEdit` and the two refreshes reach the page.
+// from the registry, `client/registerCapability` (the file watchers become held/watch.ts's),
+// progress as `state` messages. Only `workspace/applyEdit` and the two refreshes reach the page.
 //
 // A server's page is its owner. A page that closes leaves its servers to end 60 s later unless a
 // page opens the same root and takes them over. A root that is no longer served ends its servers
@@ -30,10 +34,10 @@ import type { ChangeLog } from '../../core/changes.ts';
 import type { Root } from '../../files/files.ts';
 import { clangdAdapter } from './clangd/adapter.ts';
 import { applyApprove, applyChoose, sendChoices } from './choices.ts';
+import { adoptHeld, changeDocument, closeDocument, openingTarget } from './held/documents.ts';
 import {
     Held,
     LINGER_MS,
-    applyChanges,
     docKey,
     heldKey,
     type Ask,
@@ -42,7 +46,11 @@ import {
     type Page,
     type Pending,
     type Session
-} from './held.ts';
+} from './held/held.ts';
+import { libraryAddresses, libraryFile, type LibraryContext } from './library/pages.ts';
+import { readLibrary } from './library/read.ts';
+import type { LibraryRules } from './library/rules.ts';
+import { Library } from './library/tokens.ts';
 import { pyrightAdapter } from './pyright/adapter.ts';
 import type { Run } from './pyright/interpreter.ts';
 import { spawnChild, type Spawn } from './process.ts';
@@ -57,15 +65,7 @@ import {
     type Servers,
     type Setup
 } from './servers.ts';
-import {
-    normal,
-    resolvePageUri,
-    servedRoots,
-    toPage,
-    toServer,
-    type Mapper,
-    type ServedRoot
-} from './uris.ts';
+import { normal, servedRoots, toPage, toServer, type Mapper, type ServedRoot } from './uris.ts';
 import {
     LSP_PREFIX,
     addressOf,
@@ -101,6 +101,11 @@ export type RelayOptions = {
     approvals: () => string;
     /** The change log a choice is recorded in. */
     changes?: () => ChangeLog | undefined;
+    /**
+     * What decides whether a file outside every root may be named to a page, read at each file a
+     * server names; absent, none may.
+     */
+    library?: () => LibraryRules;
     /** How a child is made; the `node:child_process` one unless a test hands a stub. */
     spawn?: Spawn;
     /** The registry; `createServers` over `oculus` and `node` unless a test hands one. */
@@ -127,6 +132,7 @@ export class Relay {
     #next = 0;
     #served: { at: number; roots: ServedRoot[] } | null = null;
     #host: HeldHost;
+    #library: LibraryContext;
     #canWrite: (sink: Sink) => boolean = () => false;
 
     constructor(options: RelayOptions) {
@@ -135,6 +141,7 @@ export class Relay {
             options.servers ?? createServers({ oculus: options.oculus, node: options.node });
         this.#spawn = options.spawn ?? spawnChild;
         this.#now = options.now ?? Date.now;
+        this.#library = { roots: () => this.#roots(), rules: options.library };
         this.#host = {
             spawn: this.#spawn,
             initialize: (held, setup) => this.#initializeParams(held, setup),
@@ -275,7 +282,8 @@ export class Relay {
                 docs: new Map(),
                 opened: new Map(),
                 outputs: new Map(),
-                stranded: new Map()
+                stranded: new Map(),
+                library: new Library()
             };
             this.#pages.set(sink, page);
         }
@@ -291,11 +299,18 @@ export class Relay {
         return this.#served.roots;
     }
 
-    #mapper(page: Page): Mapper {
+    /**
+     * What turns a server's addresses into the page's. For the messages of `held`, a file outside
+     * every root has the address of a token the page holds; when `asked` is the request the
+     * message answers, a token is made for it too if the rules allow.
+     */
+    #mapper(page: Page, held?: Held, asked?: Pending): Mapper {
         return {
             roots: this.#roots(),
             opened: (real) => page.opened.get(normal(real)),
-            alias: (root) => root.key
+            alias: (root) => root.key,
+            library:
+                held === undefined ? undefined : libraryAddresses(this.#library, page, held, asked)
         };
     }
 
@@ -405,10 +420,10 @@ export class Relay {
                 this.#didOpen(page, channel, entry, message.params);
                 return;
             case 'textDocument/didChange':
-                this.#didChange(page, message.params);
+                changeDocument(page, message.params);
                 return;
             case 'textDocument/didClose':
-                this.#didClose(page, message.params);
+                closeDocument(page, message.params);
                 return;
             default:
                 this.#route(page, channel, message);
@@ -448,7 +463,7 @@ export class Relay {
         const isRequest = message.id !== undefined && message.id !== null;
         const address = addressOf(method, message.params);
         const open = address === null ? undefined : page.docs.get(address);
-        if (open === undefined) {
+        if (address === null || open === undefined) {
             if (isRequest) {
                 const text =
                     address === null ? `${method} names no document` : 'the document is not open';
@@ -462,7 +477,9 @@ export class Relay {
             }
             return;
         }
-        const params = toServer(message.params, this.#roots());
+        const params = toServer(message.params, this.#roots(), (uri) =>
+            libraryFile(page, open.held, uri)
+        );
         if (params === null) {
             if (isRequest)
                 this.#fail(page, channel, message.id, INVALID_PARAMS, 'an address is refused');
@@ -483,46 +500,61 @@ export class Relay {
             this.#fail(page, channel, message.id, REQUEST_CANCELLED, 'the server is not running');
             return;
         }
-        this.#pending.set(this.#next, { page, channel, id: message.id ?? null, held: open.held });
+        this.#pending.set(this.#next, {
+            page,
+            channel,
+            id: message.id ?? null,
+            held: open.held,
+            address
+        });
     }
 
-    /** A document opened in a tab: resolved, put on its root's server, which is started. */
+    /**
+     * A document opened in a tab: resolved, put on its root's server, which is started. A library
+     * document is put on the server of the root that named it.
+     */
     #didOpen(page: Page, channel: string, entry: ServerEntry, params: unknown): void {
         const document = isRecord(params) ? params.textDocument : null;
         if (!isRecord(document) || typeof document.uri !== 'string') return;
         const { uri, languageId, version, text } = document;
         if (typeof languageId !== 'string' || typeof version !== 'number') return;
         if (typeof text !== 'string' || page.docs.has(uri)) return;
-        const resolved = resolvePageUri(uri, this.#roots());
-        if (resolved === null) return;
-        const key = heldKey(entry, resolved.root);
-        const old = page.helds.get(key) ?? this.#adopt(page, key);
-        const held = old ?? this.#make(page, entry, resolved.root, key);
-        if (held.docs.has(docKey(resolved.fileUri))) {
-            // The same file under another root key of an overlapping root: one document on the
-            // server, and this address is another name for it.
-            const first = page.opened.get(normal(resolved.real));
-            const known = first === undefined ? undefined : page.docs.get(first);
-            if (known !== undefined) page.docs.set(uri, known);
-            return;
-        }
-        held.keep();
-        const doc: Doc = {
-            real: resolved.real,
-            fileUri: resolved.fileUri,
+        const target = openingTarget(this.#roots(), page, channel, entry, uri);
+        if (target === null) return;
+        const key = heldKey(entry, target.root);
+        const old = page.helds.get(key) ?? adoptHeld(page, key, this.#orphans);
+        const held = old ?? this.#make(page, entry, target.root, key);
+        this.#openOn(page, held, old !== null, {
+            real: target.real,
+            fileUri: target.fileUri,
+            pageRoot: target.pageRoot,
             pageUri: uri,
-            pageRoot: resolved.pageRoot,
             channel,
             languageId,
             version,
             text
-        };
-        page.docs.set(uri, { held, doc });
-        page.opened.set(normal(resolved.real), uri);
+        });
+    }
+
+    /**
+     * Put a document on a server. `existed` is whether the server was there before this document:
+     * one that was says where it stands to the channel and root key the document opens on, and one
+     * made now announces its state as it starts.
+     */
+    #openOn(page: Page, held: Held, existed: boolean, doc: Doc): void {
+        if (held.docs.has(docKey(doc.fileUri))) {
+            // The same file under another root key of an overlapping root: one document on the
+            // server, and this address is another name for it.
+            const first = page.opened.get(normal(doc.real));
+            const known = first === undefined ? undefined : page.docs.get(first);
+            if (known !== undefined) page.docs.set(doc.pageUri, known);
+            return;
+        }
+        held.keep();
+        page.docs.set(doc.pageUri, { held, doc });
+        page.opened.set(normal(doc.real), doc.pageUri);
         held.open(doc);
-        // A server made now announces its state as it starts; one that was there already says
-        // where it stands to the channel and root key this document opens on.
-        if (old !== null) {
+        if (existed) {
             held.legendDue = held.legend !== null;
             this.#publish(held);
         }
@@ -533,72 +565,6 @@ export class Relay {
         page.helds.set(key, held);
         this.#helds.add(held);
         return held;
-    }
-
-    /** A server whose page closed, taken over by the page that opens the same root: its old page's
-     * documents are closed in it first. */
-    #adopt(page: Page, key: string): Held | null {
-        for (const held of this.#orphans) {
-            if (`${held.entry.id}\0${normal(held.root.real)}` !== key) continue;
-            this.#orphans.delete(held);
-            held.keep();
-            held.owner = page;
-            for (const doc of held.docs.values()) {
-                held.notify({
-                    jsonrpc: '2.0',
-                    method: 'textDocument/didClose',
-                    params: { textDocument: { uri: doc.fileUri } }
-                });
-            }
-            held.docs.clear();
-            page.helds.set(key, held);
-            return held;
-        }
-        return null;
-    }
-
-    #didChange(page: Page, params: unknown): void {
-        if (!isRecord(params) || !isRecord(params.textDocument)) return;
-        const uri = String(params.textDocument.uri);
-        const open = page.docs.get(uri);
-        const changes = params.contentChanges;
-        if (open === undefined || !Array.isArray(changes)) return;
-        // Only the address the document was opened under edits it; another name for it reads.
-        if (page.opened.get(normal(open.doc.real)) !== uri) return;
-        const version = Number(params.textDocument.version);
-        open.doc.text = applyChanges(open.doc.text, changes);
-        open.doc.version = version;
-        open.held.notify({
-            jsonrpc: '2.0',
-            method: 'textDocument/didChange',
-            params: {
-                textDocument: { uri: open.doc.fileUri, version },
-                contentChanges: changes
-            }
-        });
-    }
-
-    #didClose(page: Page, params: unknown): void {
-        if (!isRecord(params) || !isRecord(params.textDocument)) return;
-        const uri = String(params.textDocument.uri);
-        const open = page.docs.get(uri);
-        if (open === undefined) return;
-        page.docs.delete(uri);
-        const names = [...page.docs].filter(([, one]) => one === open).map(([name]) => name);
-        if (names.length > 0) {
-            // Another name of the document stays open, and takes over its edits.
-            if (page.opened.get(normal(open.doc.real)) === uri)
-                page.opened.set(normal(open.doc.real), names[0]);
-            return;
-        }
-        page.opened.delete(normal(open.doc.real));
-        open.held.docs.delete(docKey(open.doc.fileUri));
-        open.held.notify({
-            jsonrpc: '2.0',
-            method: 'textDocument/didClose',
-            params: { textDocument: { uri: open.doc.fileUri } }
-        });
-        if (open.held.docs.size === 0) open.held.armEnd();
     }
 
     // ------------------------------------------------------------------ the oculus messages
@@ -622,11 +588,21 @@ export class Relay {
         entry: ServerEntry,
         message: LspToServer
     ): Promise<void> {
+        const send = (payload: LspToPage): void => this.#send(page, channel, payload);
+        if (message.oculus === 'read') {
+            send(
+                await readLibrary(message, {
+                    library: page.library,
+                    language: languageOf(channel) ?? '',
+                    served: (key) => this.#roots().some((one) => one.key === key)
+                })
+            );
+            return;
+        }
         const { root, held } = this.#heldOf(page, entry, message.root);
         if (root === undefined) return;
         const adapter = ADAPTERS[entry.id];
         const env = this.#env(root);
-        const send = (payload: LspToPage): void => this.#send(page, channel, payload);
         switch (message.oculus) {
             case 'restart':
                 await held?.restart();
@@ -713,7 +689,7 @@ export class Relay {
             });
             return;
         }
-        const mapped = toPage(message.result ?? null, this.#mapper(pending.page));
+        const mapped = toPage(message.result ?? null, this.#mapper(pending.page, held, pending));
         this.#reply(
             pending.page,
             pending.channel,
@@ -748,7 +724,7 @@ export class Relay {
                     message.params,
                     page === null
                         ? { roots: [], opened: () => undefined, alias: (root) => root.key }
-                        : this.#mapper(page)
+                        : this.#mapper(page, held)
                 );
                 const uri =
                     isRecord(params.edit) && isRecord(params.edit.changes)
@@ -802,7 +778,7 @@ export class Relay {
         const page = held.owner as Page | null;
         const named = isRecord(params.textDocument) ? params.textDocument.uri : params.uri;
         const doc = held.docs.get(docKey(String(named)));
-        const mapped = page === null ? null : toPage(message.params, this.#mapper(page));
+        const mapped = page === null ? null : toPage(message.params, this.#mapper(page, held));
         if (doc === undefined || page === null || mapped === null) return;
         this.#send(page, doc.channel, {
             jsonrpc: '2.0',

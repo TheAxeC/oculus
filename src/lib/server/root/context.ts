@@ -10,6 +10,8 @@ import { isDeepStrictEqual } from 'node:util';
 import {
     behaviorFindings,
     calendarSettings,
+    closedPaths,
+    configDir,
     iconFindings,
     iconSet,
     type IconMemory,
@@ -75,7 +77,8 @@ import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.
 import { savedPath } from '../machine/runs/commands/saved.ts';
 import { defaultLspPath } from '../machine/lsp/choices.ts';
 import { createRelay, type Relay, type RelayOptions } from '../machine/lsp/relay.ts';
-import { followRoots } from '../machine/lsp/watch.ts';
+import { withheldFolders } from '../machine/lsp/library/rules.ts';
+import { followRoots } from '../machine/lsp/held/watch.ts';
 import { ownFolder } from '../machine/lsp/servers.ts';
 import { Terminals } from '../machine/pty/channel.ts';
 import { stopTerminal } from '../machine/pty/sessions.ts';
@@ -340,7 +343,11 @@ export function createServerContext(
         roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local }),
         lspFolder: () => expandHome(local.lsp ?? defaultLspPath()),
         approvals: () => local.approvals ?? defaultApprovalsPath(),
-        changes: () => target(engine, make.loadConfig(engine).config, context).changes
+        changes: () => target(engine, make.loadConfig(engine).config, context).changes,
+        library: () => ({
+            closed: closedPaths(make.loadConfig(engine).config).folders,
+            withheld: withheldFolders(configDir(engine), local.hub)
+        })
     });
     let followed = followRoots(relay, hub, local.workspaces ?? defaultWorkspacesPath());
     const token = make.mintToken();

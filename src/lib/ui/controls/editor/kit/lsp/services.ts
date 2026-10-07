@@ -8,6 +8,7 @@
 // channel, `lsp:<language>`, and one page socket, so a message is a map and never a string.
 
 import type { Diagnostic, DocumentSymbol } from 'vscode-languageserver-protocol';
+import type { Target } from './uris';
 
 /** The state of the page socket as a port reports it. */
 export type PortState = 'open' | 'connecting' | 'closed';
@@ -41,10 +42,23 @@ export type LspSymbols = readonly LspSymbol[] | 'loading' | 'none';
 export type LspServices = {
     /** The port of a language's channel. */
     port(language: string): LspPort;
-    /** A file's text and language for a peek model; null when the read fails or is truncated. */
-    readFile(root: string, path: string): Promise<{ text: string; language: string } | null>;
-    /** Opens the file in a source tab at the position, the same tab when it is open. */
-    open(root: string, path: string, line: number, column: number): void;
+    /**
+     * A file's text and language for a peek model; null when the read fails or is truncated. A
+     * library file is read through the channel and is the language of the server that named it; one
+     * whose read the relay refuses has an empty text, so the location stays and its tab says why.
+     */
+    readFile(target: Target): Promise<{ text: string; language: string } | null>;
+    /**
+     * Opens the file in a source tab at the line, the same tab when it is open. A column means the
+     * word at it is selected; an open that names no position gives none.
+     */
+    open(target: Target, line: number, column?: number): void;
+    /**
+     * A language server named a library file in an answer to a request made for a document of the
+     * root, on the channel of the language: the page may read it for as long as the connection
+     * lasts.
+     */
+    library(address: string, root: string, language: string): void;
     /** Hands a server's diagnostics for one file to the page's store. */
     diagnostics(
         root: string,

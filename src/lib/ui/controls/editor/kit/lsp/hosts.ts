@@ -4,7 +4,8 @@
 // language's client holds the document the command names), the opener that takes a go-to-definition
 // or a link press to a source tab through the services, and the answer to which models a server
 // serves, which the brace folding of C and C++ reads so that clangd's ranges are used while it
-// serves a model and the braces' while it does not.
+// serves a model and the braces' while it does not. A go to definition into a library file (a
+// resource under the library scheme, uris.ts) opens its tab through the same opener.
 //
 // Pyright serves `python`, clangd `c` and `cpp`; a model of any other language registers with no
 // client and is never sent anywhere.
@@ -14,7 +15,7 @@ import { LanguageHost, clientClassOf, type LspHandle, type Registration } from '
 import { createPeeks } from './peeks';
 import type { LspServices } from './services';
 import { Signal } from './signal';
-import { placeOfResource } from './uris';
+import { libraryOfResource, placeOfResource, type Target } from './uris';
 
 /** The languages a server serves, by the name of the Monaco language a model is made under. */
 export const SERVED_LANGUAGES: readonly string[] = ['python', 'c', 'cpp'];
@@ -95,16 +96,19 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
         };
     }
 
-    /** The file a resource shows: a registered model's, or a peek model's in the page's form. */
-    function placeOf(resource: Monaco.Uri): ReturnType<typeof placeOfResource> {
+    /**
+     * The file a resource shows: a registered model's, or a peek model's in the page's form, of a
+     * served root or a library file.
+     */
+    function targetOf(resource: Monaco.Uri): Target | null {
         const model = monaco.editor.getModel(resource);
         if (model !== null) {
             for (const host of hosts.values()) {
-                const place = host.placeOf(model);
-                if (place !== null) return place;
+                const target = host.targetOf(model);
+                if (target !== null) return target;
             }
         }
-        return placeOfResource(resource);
+        return libraryOfResource(resource) ?? placeOfResource(resource);
     }
 
     monaco.editor.registerEditorOpener({
@@ -112,16 +116,16 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
             if (services === null) return false;
             const own = source.getModel();
             if (own !== null && own.uri.toString() === resource.toString()) return false;
-            const place = placeOf(resource);
-            if (place === null) return false;
+            const target = targetOf(resource);
+            if (target === null) return false;
             const position = at === undefined ? null : 'startLineNumber' in at ? at : null;
             const point = at === undefined ? null : 'lineNumber' in at ? at : null;
-            services.open(
-                place.root,
-                place.path,
-                position?.startLineNumber ?? point?.lineNumber ?? 1,
-                position?.startColumn ?? point?.column ?? 1
-            );
+            // Only an open that names a position passes its column, so one with none opens the file
+            // at its first line with nothing selected.
+            if (position !== null)
+                services.open(target, position.startLineNumber, position.startColumn);
+            else if (point !== null) services.open(target, point.lineNumber, point.column);
+            else services.open(target, 1);
             // The file opens in a tab of its own, so Monaco is told no editor of its own opened it:
             // an opener's true makes Monaco go on in the source editor as if it showed the file,
             // and Next Problem then looks for the next problem from there again, without end.
@@ -130,9 +134,9 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
     });
     monaco.editor.registerLinkOpener({
         open(resource) {
-            const place = placeOfResource(resource);
-            if (place === null || services === null) return false;
-            services.open(place.root, place.path, 1, 1);
+            const target = libraryOfResource(resource) ?? placeOfResource(resource);
+            if (target === null || services === null) return false;
+            services.open(target, 1);
             return true;
         }
     });

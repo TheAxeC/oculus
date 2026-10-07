@@ -4,15 +4,16 @@
     // state/sources/explorer/sections/followed-tab.ts, the order the Timeline follows a file in),
     // so pressing the Files tab does not empty it.
     //
-    // A source tab is read from the text the tab holds (so it follows what is typed, saved or
-    // not), as the headings of a Markdown file and the sectioning commands of a LaTeX file nested
-    // by level; a press moves the tab's editor to the line. A Python, C or C++ tab a language
-    // server serves lists the symbols the server answered for it (state/system/machine/lsp/
-    // symbols.ts) as a tree: each row with its kind's icon coloured as VS Code's `symbolIcon.*`
-    // keys colour it, its detail beside it, and its name in the colour of the worst problem its
-    // range holds, as `outline.problems.colors` does. While the server has not answered the
-    // section says so, and a file with no server to answer says it has no symbols yet. A Doc tab
-    // and a Markdown preview tab hold no text here: they say which headings they draw
+    // A source tab is read from the text the tab holds (so it follows what is typed, saved or not),
+    // as the headings of a Markdown file and the sectioning commands of a LaTeX file nested by
+    // level; a press moves the tab's editor to the line. A Python, C or C++ tab a language server
+    // serves lists the symbols the server answered for it (state/system/machine/lsp/symbols.ts) as
+    // a tree: each row with its kind's icon coloured as VS Code's `symbolIcon.*` keys colour it,
+    // its detail beside it, and its name in the colour of the worst problem its range holds, as
+    // `outline.problems.colors` does. A press on a symbol selects its name in the tab's editor and
+    // gives the editor the keyboard. While the server has not answered the section says so, and a
+    // file with no server to answer says it has no symbols yet. A Doc tab and a Markdown preview
+    // tab hold no text here: they say which headings they draw
     // (state/sources/explorer/sections/headings.svelte.ts), and a press scrolls that tab to the
     // heading. A source tab in another language says it has no symbols yet, and a page whose
     // followed tab shows no editor, or has no file tab, says the active editor cannot provide
@@ -39,6 +40,7 @@
         outlineOf,
         type OutlineItem
     } from '$lib/state/sources/explorer/sections/outline';
+    import type { SelectRange } from '$lib/state/workbench/navigation/editor-status.svelte';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
 
@@ -49,12 +51,16 @@
         tab: FollowTab | null;
     };
 
-    /** One row: a source line to go to, or the id of a heading of a rendered tab. */
+    /**
+     * One row: a source line to go to, or the id of a heading of a rendered tab. A symbol of a
+     * language server also holds the range of its name, which a press selects.
+     */
     type Row = {
         key: string;
         title: string;
         depth: number;
         line: number;
+        range: SelectRange | null;
         id: string;
         /** A symbol's glyph, icon colour, detail and problem; empty for a heading. */
         glyph: string;
@@ -118,6 +124,10 @@
             title: one.title,
             depth: one.depth,
             line: one.line,
+            range: {
+                start: { line: one.line - 1, character: one.column - 1 },
+                end: { line: one.endLine - 1, character: one.endColumn - 1 }
+            },
             id: '',
             glyph: one.glyph,
             colour: colourOf(one.colour),
@@ -168,6 +178,7 @@
                 title: one.title,
                 depth: one.depth,
                 line: 0,
+                range: null,
                 id: one.id,
                 glyph: '',
                 colour: '',
@@ -181,6 +192,7 @@
             title: one.title,
             depth: one.depth,
             line: one.line,
+            range: null,
             id: '',
             glyph: '',
             colour: '',
@@ -196,6 +208,7 @@
     function goTo(row: Row): void {
         if (tab === null) return;
         if (rendered) headings.askHeading(tab.id, row.id);
+        else if (row.range !== null) ask(tab.id, { kind: 'select', range: row.range, focus: true });
         else ask(tab.id, { kind: 'goto', line: row.line });
     }
 </script>

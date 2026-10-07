@@ -37,7 +37,8 @@ const oculusShape = z.discriminatedUnion('oculus', [
         interpreter: z.string().min(1).optional(),
         database: z.string().min(1).optional()
     }),
-    z.object({ oculus: z.literal('approve'), root: rootShape, interpreter: z.string().min(1) })
+    z.object({ oculus: z.literal('approve'), root: rootShape, interpreter: z.string().min(1) }),
+    z.object({ oculus: z.literal('read'), root: rootShape, uri: z.string().min(1) })
 ]) satisfies z.ZodType<LspToServer>;
 
 /** A JSON-RPC message: a request, a notification or a response. */

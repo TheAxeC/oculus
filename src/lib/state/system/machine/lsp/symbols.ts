@@ -61,6 +61,9 @@ export type SymbolRow = {
     line: number;
     /** The column of the name's start, counted from one. */
     column: number;
+    /** The line and column the name ends at, counted from one, the end of its `selectionRange`. */
+    endLine: number;
+    endColumn: number;
     glyph: string;
     colour: string;
     problem: SymbolProblem;
@@ -103,6 +106,8 @@ export function symbolRows(
                 depth,
                 line: one.selectionRange.start.line + 1,
                 column: one.selectionRange.start.character + 1,
+                endLine: one.selectionRange.end.line + 1,
+                endColumn: one.selectionRange.end.character + 1,
                 glyph: kind.glyph,
                 colour: kind.colour,
                 problem: problemIn(one.range, problems)
@@ -142,6 +147,8 @@ export function symbolsAround(
             depth,
             line: one.selectionRange.start.line + 1,
             column: one.selectionRange.start.character + 1,
+            endLine: one.selectionRange.end.line + 1,
+            endColumn: one.selectionRange.end.character + 1,
             glyph: kind.glyph,
             colour: kind.colour,
             problem: null

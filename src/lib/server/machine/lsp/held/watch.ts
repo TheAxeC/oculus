@@ -16,8 +16,8 @@
 import { existsSync, watch, type FSWatcher } from 'node:fs';
 import { join, matchesGlob, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { Hub, Sink } from '../../core/channels.ts';
-import { POLL, pollFile, systemClock, type Clock } from '../../core/file-poll.ts';
+import type { Hub, Sink } from '../../../core/channels.ts';
+import { POLL, pollFile, systemClock, type Clock } from '../../../core/file-poll.ts';
 
 /** The kinds of change a `didChangeWatchedFiles` carries. */
 const CREATED = 1;

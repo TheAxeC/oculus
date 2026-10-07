@@ -22,6 +22,8 @@ export type TabLanguageInput = {
     shown: () => string;
     root: () => string;
     path: () => string;
+    /** The library address of a tab over a library file, the empty string for any other. */
+    library: () => string;
     /** Whether the tab shows a version of the file at a commit. */
     version: () => boolean;
     say: (words: string) => void;
@@ -43,6 +45,7 @@ export function createTabLanguage(input: TabLanguageInput): TabLanguage {
     const shown = $derived(input.shown());
     const root = $derived(input.root());
     const path = $derived(input.path());
+    const library = $derived(input.library());
     const version = $derived(input.version());
     const extension = $derived(
         languageExtension({
@@ -50,7 +53,12 @@ export function createTabLanguage(input: TabLanguageInput): TabLanguage {
             version,
             latex: () => latexEditor(input.client, { root, path }, input.say),
             markdown: () => symbolsExtension(markdownOutline),
-            served: lsp.extension(shown, { root, path }, version)
+            // A tab over a file of a served root has no library address, and its file names none.
+            served: lsp.extension(
+                shown,
+                library === '' ? { root, path } : { root, path, library },
+                version
+            )
         })
     );
     return {

@@ -27,6 +27,7 @@ export const clangdAdapter: Adapter = {
         const setup: Setup = {
             root: env.root,
             interpreter: null,
+            interpreterPrefixes: [],
             databaseFolder: folder,
             fallbackFlags: plan.fallbackFlags
         };

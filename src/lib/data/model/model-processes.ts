@@ -166,6 +166,15 @@ export type LspCode = 'not_found' | 'exited' | 'refused' | 'no_answer' | 'lsp_fo
 /** Why a choice was not written. */
 export type LspRefusal = 'choices_unread' | 'choices_write';
 
+/**
+ * Why a library file was not read: the token is not one this page was given for that root and
+ * language (`unknown`), the root is not served any more (`not_served`), the path is no longer a
+ * regular file (`not_file`) or now resolves to another real path (`moved`), the file is not text
+ * (`binary`), or it is over the limit a source tab reads (`too_large`).
+ */
+export type LspReadRefusal =
+    'unknown' | 'not_served' | 'not_file' | 'moved' | 'binary' | 'too_large';
+
 /** One Python interpreter a root can use, as the picker lists it. */
 export type LspInterpreter = {
     /** The path as found or typed, never resolved through a link. */
@@ -199,7 +208,12 @@ export type LspToServer =
     | { oculus: 'output_off'; root: string }
     | { oculus: 'choices'; root: string }
     | { oculus: 'choose'; root: string; interpreter?: string; database?: string }
-    | { oculus: 'approve'; root: string; interpreter: string };
+    | { oculus: 'approve'; root: string; interpreter: string }
+    /**
+     * Read a library file: `uri` is the `oculus-lib:` address a language server's answer gave this
+     * page, and `root` the root key of the document the request that got it was made for.
+     */
+    | { oculus: 'read'; root: string; uri: string };
 
 /** The relay's message to a page, besides the JSON-RPC ones. */
 export type LspToPage =
@@ -236,7 +250,10 @@ export type LspToPage =
           types: string[];
           /** The token modifiers, by the bit each one is. */
           modifiers: string[];
-      };
+      }
+    /** The answer to a `read`: the file's text, or why it may not be read. */
+    | { oculus: 'file'; root: string; uri: string; text: string }
+    | { oculus: 'file'; root: string; uri: string; code: LspReadRefusal };
 
 /** A JSON-RPC message of the protocol, carried as the payload of a frame. */
 export type LspRpc = {

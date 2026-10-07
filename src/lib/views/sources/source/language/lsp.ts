@@ -4,6 +4,10 @@
 // channel, the reads and opens it needs, the stores it reports to), and the actions the tab lists
 // while a server serves it.
 //
+// A tab over a library file (status/library-tab.svelte.ts) registers its model under the library
+// address, so hover, definitions and diagnostics are answered by the server that named the file.
+// Its searches and the locations they name carry the address in place of a root and a path.
+//
 // The services are made once per tab. The registration is made by the editor extension of a
 // language, a new function whenever the language, the root or the path changes, so the editor ends
 // the old registration and makes the new one (a language changed from the status bar, a file
@@ -25,10 +29,14 @@ import type { EditorExtension, EditorOwnAction, KeyPress } from '$lib/ui/control
 import type { FormatOutcome, LspHandle } from '$lib/ui/controls/editor/kit/lsp/client';
 import type { LspServices } from '$lib/ui/controls/editor/kit/lsp/services';
 import { SERVED_LANGUAGES } from '$lib/ui/controls/editor/kit/lsp/hosts';
-import { placeOf } from '$lib/ui/controls/editor/kit/lsp/uris';
+import { isLibrary, libraryOf, placeOf, type Target } from '$lib/ui/controls/editor/kit/lsp/uris';
 import { readText } from '$lib/state/sources/fs-transport';
 import { languageOf } from '$lib/state/sources/explorer/file-type';
-import { openSourceFile } from '$lib/views/shared/links/source-file';
+import {
+    openLibraryFile,
+    openReference,
+    openSourceFile
+} from '$lib/views/shared/links/source-file';
 import type { RefFile, RefLine, RefSearch } from '$lib/state/system/machine/lsp/references';
 import type { AstNode, MemoryTree } from '$lib/state/system/machine/lsp/clangd';
 import { t } from '$lib/state/shared/words/text';
@@ -48,17 +56,17 @@ export type LspTabInput = {
     say: (words: string) => void;
 };
 
+/** The file a tab's model shows: a file of a served root, or a library file by its address. */
+type LspFile = { root: string; path: string; library?: string };
+
 /** What a tab does with a server. */
 export type LspTab = {
     /**
      * The extension that registers the model of a file under a language, or undefined for a
-     * language no server serves, a tab with no file and a version of a file at a commit.
+     * language no server serves, a tab with no file and a version of a file at a commit. A library
+     * file's root is the one it was named under and its path the file's name.
      */
-    extension: (
-        language: string,
-        file: { root: string; path: string },
-        version: boolean
-    ) => EditorExtension | undefined;
+    extension: (language: string, file: LspFile, version: boolean) => EditorExtension | undefined;
     /**
      * The actions that apply now to a tab of this language, in the order the palette lists them.
      */
@@ -71,8 +79,11 @@ export type LspTab = {
     ) => { root: string; language: string } | null;
     /** Format the document with the server before a save; says why when it did not. */
     formatForSave: () => Promise<void>;
-    /** Select a range of the text, as a press on an AST node does, without taking the focus. */
-    select: (range: AstNode['range']) => void;
+    /**
+     * Select a range of the text, as a press on an AST node does; the editor takes the keyboard
+     * only when `focus` is set, as the Outline's press sets it.
+     */
+    select: (range: AstNode['range'], focus: boolean) => void;
 };
 
 /** The shortcut of an action, with VS Code's keys. */
@@ -140,19 +151,46 @@ export function createLspTab(input: LspTabInput): LspTab {
         handle: LspHandle | null;
         model: Monaco.editor.ITextModel | null;
         editor: Monaco.editor.IStandaloneCodeEditor | null;
-        place: { root: string; path: string } | null;
+        place: LspFile | null;
     } = { handle: null, model: null, editor: null, place: null };
+
+    /** The place in a search or a result a file has: a library file has an address for a path. */
+    const refPlace = (file: LspFile): { root: string; path: string; library?: string } =>
+        file.library === undefined
+            ? { root: file.root, path: file.path }
+            : { root: '', path: file.library, library: file.path };
 
     const services: LspServices = {
         port: (language) => lsp.link(language),
-        readFile: async (root, path) => {
-            const read = await readText(root, path);
+        readFile: async (target) => {
+            if (isLibrary(target)) {
+                const read = await lsp.readLibrary(target.library);
+                const language = lsp.library(target.library)?.language;
+                if (language === undefined) return null;
+                // A refused read leaves the location in the answer with no text: opening it opens
+                // the library tab, which says why the file cannot be shown.
+                return { text: 'text' in read ? read.text : '', language };
+            }
+            const read = await readText(target.root, target.path);
             if (read.error !== '' || read.truncated) return null;
-            return { text: read.text, language: languageOf(path, client.selectors.languages()) };
+            return {
+                text: read.text,
+                language: languageOf(target.path, client.selectors.languages())
+            };
         },
-        open: (root, path, line) => {
-            openSourceFile(client, { root, path, line });
+        open: (target, line, column) => {
+            if (isLibrary(target)) {
+                openLibraryFile(client, {
+                    library: target.library,
+                    name: target.name,
+                    line,
+                    column
+                });
+            } else {
+                openSourceFile(client, { root: target.root, path: target.path, line, column });
+            }
         },
+        library: lsp.named,
         diagnostics: documents.setDiagnostics,
         symbols: documents.setSymbols,
         notice: (key, ...words) => input.say(noticeWords(key, words)),
@@ -160,21 +198,24 @@ export function createLspTab(input: LspTabInput): LspTab {
     };
 
     /** The files of an answer's locations, each with the text of its lines. */
-    async function filesOf(answer: unknown, ownPlace: { root: string; path: string }) {
+    async function filesOf(answer: unknown, own: RefSearch) {
         const locations = (Array.isArray(answer) ? answer : [])
             .map(locationOf)
             .filter((one) => one !== null);
         const texts = new Map<string, string[] | null>();
         const files = new Map<string, RefFile>();
         for (const location of locations) {
-            const place = placeOf(location.uri);
-            if (place === null) continue;
+            const target: Target | null = libraryOf(location.uri) ?? placeOf(location.uri);
+            if (target === null) continue;
+            const place = isLibrary(target)
+                ? { root: '', path: target.library, library: target.name }
+                : { root: target.root, path: target.path };
             const key = JSON.stringify([place.root, place.path]);
             if (!texts.has(key)) {
-                const own = place.root === ownPlace.root && place.path === ownPlace.path;
-                const text = own
+                const same = place.root === own.root && place.path === own.path;
+                const text = same
                     ? held.model?.getValue()
-                    : (await services.readFile(place.root, place.path))?.text;
+                    : (await services.readFile(target))?.text;
                 texts.set(key, text === undefined ? null : linesOf(text));
             }
             const lines = texts.get(key) ?? null;
@@ -188,13 +229,13 @@ export function createLspTab(input: LspTabInput): LspTab {
                 end: sameLine ? location.range.end.character : text.length,
                 text
             };
-            const file = files.get(key) ?? { root: place.root, path: place.path, lines: [] };
+            const file = files.get(key) ?? { ...place, lines: [] };
             file.lines.push(line);
             files.set(key, file);
         }
         return [...files.values()]
             .map((file) => ({ ...file, lines: file.lines.sort((a, b) => a.line - b.line) }))
-            .sort((a, b) => a.path.localeCompare(b.path));
+            .sort((a, b) => (a.library ?? a.path).localeCompare(b.library ?? b.path));
     }
 
     /** Ask the server for a search's locations, grouped by file; null when it could not answer. */
@@ -212,7 +253,7 @@ export function createLspTab(input: LspTabInput): LspTab {
                     : 'textDocument/implementation',
                 params
             );
-            return await filesOf(answer, { root: search.root, path: search.path });
+            return await filesOf(answer, search);
         } catch {
             return null;
         }
@@ -226,8 +267,7 @@ export function createLspTab(input: LspTabInput): LspTab {
         const search: RefSearch = {
             kind,
             word: held.model?.getWordAtPosition(at)?.word ?? '',
-            root: place.root,
-            path: place.path,
+            ...refPlace(place),
             line: at.lineNumber,
             column: at.column
         };
@@ -278,7 +318,7 @@ export function createLspTab(input: LspTabInput): LspTab {
 
     function extension(
         language: string,
-        file: { root: string; path: string },
+        file: LspFile,
         version: boolean
     ): EditorExtension | undefined {
         if (!servedLanguage(language) || file.root === '' || file.path === '' || version) {
@@ -287,7 +327,8 @@ export function createLspTab(input: LspTabInput): LspTab {
         return (kit, editor, model) => {
             const handle = kit.lsp.register(services, model, {
                 instance: input.instance(),
-                place: file,
+                place: { root: file.root, path: file.path },
+                ...(file.library === undefined ? {} : { library: file.library }),
                 editor
             });
             if (handle === null) return () => undefined;
@@ -295,7 +336,8 @@ export function createLspTab(input: LspTabInput): LspTab {
             held.model = model;
             held.editor = editor;
             held.place = file;
-            const asker = references.registerAsker(file.root, file.path, ask);
+            const at = refPlace(file);
+            const asker = references.registerAsker(at.root, at.path, ask);
             return () => {
                 asker();
                 handle.dispose();
@@ -416,8 +458,7 @@ export function createLspTab(input: LspTabInput): LspTab {
     /** Go to the next or previous location of the latest References result. */
     function walk(delta: 1 | -1): void {
         const pick = references.step(delta);
-        if (pick !== null)
-            openSourceFile(client, { root: pick.root, path: pick.path, line: pick.line });
+        if (pick !== null) openReference(client, pick, pick.line, pick.column);
     }
 
     async function formatForSave(): Promise<void> {
@@ -428,7 +469,7 @@ export function createLspTab(input: LspTabInput): LspTab {
         else if (outcome.kind === 'error') input.say(t('source.format_failed', outcome.message));
     }
 
-    function select(range: AstNode['range']): void {
+    function select(range: AstNode['range'], focus: boolean): void {
         const editor = held.editor;
         if (editor === null || range === undefined) return;
         const selected = {
@@ -439,6 +480,7 @@ export function createLspTab(input: LspTabInput): LspTab {
         };
         editor.setSelection(selected);
         editor.revealRangeInCenterIfOutsideViewport(selected);
+        if (focus) editor.focus();
     }
 
     return { extension, actions, served, formatForSave, select };

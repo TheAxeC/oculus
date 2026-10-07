@@ -64,9 +64,12 @@
         instance?: string;
         /**
          * The line the tab was opened at, and zero for one opened at the file itself. It is acted
-         * on once per line the tab is pointed at: every scroll after that is the reader's own.
+         * on once per line and column the tab is pointed at: every scroll after that is the
+         * reader's own.
          */
         line?: number;
+        /** The column of the place the tab was opened at, from one, or 0 for none. */
+        column?: number;
         /**
          * The highlighter's name for the language the text is painted in, the file name's when the
          * tab hands none.
@@ -108,6 +111,7 @@
         text,
         instance = 'tab',
         line = 0,
+        column = 0,
         first = 1,
         onfirst,
         language: chosen,
@@ -131,8 +135,8 @@
 
     let editor: EditorHandle | undefined = $state();
     let box: HTMLDivElement | undefined = $state();
-    /** The line already gone to, so a redraw does not take the reader back to it. */
-    let placed = 0;
+    /** The place already gone to, so a redraw does not take the reader back to it. */
+    let placed = '';
     /** The editor's least and most share of the row; the rendered half takes at most half. */
     const EDITOR_LEAST = 0.5;
     const EDITOR_MOST = 0.9;
@@ -167,15 +171,22 @@
     /** The theme and the text size in force, which the editor's look is built from. */
     const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
 
-    // Go to the line the tab was opened at, once per line it is pointed at.
+    // Go to the place the tab was opened at, once per line and column it is pointed at: the word at
+    // the column is selected, and a line alone is gone to.
     $effect(() => {
         const wanted = line;
+        const at = column;
         const held = editor;
         if (wanted === 0 || held === undefined) return;
         untrack(() => {
-            if (placed === wanted) return;
-            placed = wanted;
-            held.perform({ kind: 'goto', line: wanted });
+            const place = `${String(wanted)}:${String(at)}`;
+            if (placed === place) return;
+            placed = place;
+            held.perform(
+                at === 0
+                    ? { kind: 'goto', line: wanted }
+                    : { kind: 'word', line: wanted, column: at }
+            );
         });
     });
 

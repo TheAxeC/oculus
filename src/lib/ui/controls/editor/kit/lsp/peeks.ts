@@ -2,7 +2,9 @@
 // tab has open (a definition in a header, a reference in another module) needs a model for
 // Monaco's peek and references widgets, which read the target's text through a model. The model is
 // read through the services, made under the file's language and the page's address of it, and
-// never sent to a server. A file that cannot be read, or is truncated, gets no model, and the
+// never sent to a server. A library file is read through the channel and made under the library
+// address, and one the relay refuses to read gets a model with no text, so its location stays and
+// the library tab says why. A file that cannot be read, or is truncated, gets no model, and the
 // location is dropped from the answer.
 //
 // Monaco has no read-only model, so a peek editor that is typed into is put back to the text that
@@ -12,7 +14,7 @@
 import type * as Monaco from 'monaco-editor';
 import { shikiId } from '../grammars';
 import type { LspServices } from './services';
-import type { Place } from './uris';
+import type { Target } from './uris';
 
 /** A model and the clients holding it. */
 type Held = { model: Monaco.editor.ITextModel; holders: number; stop: { dispose(): void } };
@@ -22,7 +24,7 @@ export type Peeks = {
     /** The model of a file, read and made under the address; null when the file cannot be read. */
     acquire(
         services: LspServices,
-        place: Place,
+        target: Target,
         page: string,
         spelling: number
     ): Promise<Monaco.editor.ITextModel | null>;
@@ -43,7 +45,7 @@ export function createPeeks(
 ): Peeks {
     const held = new Map<Monaco.editor.ITextModel, Held>();
     return {
-        async acquire(services, place, page, spelling) {
+        async acquire(services, target, page, spelling) {
             const uri = addressOf(monaco, page, spelling);
             const existing = monaco.editor.getModel(uri);
             const known = existing === null ? undefined : held.get(existing);
@@ -52,7 +54,7 @@ export function createPeeks(
                 return existing;
             }
             if (existing !== null) return null;
-            const read = await services.readFile(place.root, place.path);
+            const read = await services.readFile(target);
             if (read === null) return null;
             const again = monaco.editor.getModel(uri);
             const shared = again === null ? undefined : held.get(again);

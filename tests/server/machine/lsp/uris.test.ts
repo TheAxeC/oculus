@@ -158,8 +158,92 @@ const ROWS: Row[] = [
             toPage(pathToFileURL(world.outside).href, world.mapper)
         ],
         want: () => [[{ uri: 'oculus-file:///repo/src/app.py' }], null, null]
+    },
+    {
+        name: 'gives a location outside every served root the library address the mapper has for it, and drops one it has none for',
+        got: (world) => [
+            toPage(
+                [
+                    { uri: pathToFileURL(world.outside).href },
+                    { uri: pathToFileURL(join(world.outside, '..', 'other.py')).href },
+                    { oldUri: pathToFileURL(world.outside).href },
+                    {
+                        targetUri: pathToFileURL(world.outside).href,
+                        targetSelectionRange: { start: { line: 3, character: 4 } }
+                    }
+                ],
+                lending(world)
+            )?.value,
+            toPage(pathToFileURL(world.outside).href, lending(world))?.value
+        ],
+        want: () => [
+            [
+                { uri: LIBRARY },
+                { oldUri: LIBRARY },
+                { targetUri: LIBRARY, targetSelectionRange: { start: { line: 3, character: 4 } } }
+            ],
+            LIBRARY
+        ]
+    },
+    {
+        name: 'drops a command whose arguments name a file the mapper has no address for, and keeps one whose arguments it can turn',
+        got: (world) => {
+            const outside = pathToFileURL(world.outside).href;
+            const other = pathToFileURL(join(world.outside, '..', 'other.py')).href;
+            const commands = [
+                { title: 'a', command: { command: 'x', arguments: [other] } },
+                { title: 'b', command: { command: 'x', arguments: [outside, null, 3] } }
+            ];
+            return [toPage(commands, world.mapper)?.value, toPage(commands, lending(world))?.value];
+        },
+        want: () => [[], [{ title: 'b', command: { command: 'x', arguments: [LIBRARY, null, 3] } }]]
+    },
+    {
+        name: 'drops a workspace edit whose changes name a file the mapper has no address for, and turns the keys of one it can',
+        got: (world) => {
+            const outside = pathToFileURL(world.outside).href;
+            const app = pathToFileURL(world.app).href;
+            const edit = { edit: { changes: { [app]: [], [outside]: [] } } };
+            return [toPage(edit, world.mapper), toPage(edit, lending(world))?.value];
+        },
+        want: () => [
+            null,
+            { edit: { changes: { 'oculus-file:///repo/src/app.py': [], [LIBRARY]: [] } } }
+        ]
+    },
+    {
+        name: 'turns a library address of a message to a server into the file address its resolver gives, and refuses the message when it gives none',
+        got: (world) => {
+            const real = pathToFileURL(world.outside).href;
+            const message = { textDocument: { uri: LIBRARY }, arguments: [LIBRARY] };
+            return [
+                toServer(message, world.roots, (address) => (address === LIBRARY ? real : null))
+                    ?.value,
+                toServer(message, world.roots, () => null),
+                toServer(message, world.roots)
+            ];
+        },
+        want: (world) => [
+            {
+                textDocument: { uri: pathToFileURL(world.outside).href },
+                arguments: [pathToFileURL(world.outside).href]
+            },
+            null,
+            null
+        ]
     }
 ];
+
+/** The library address the mapper below gives the file outside every root. */
+const LIBRARY = 'oculus-lib:///0b9f6e0e-3c6e-4c0e-9f3a-2f6a4d1c7e11/outside.py';
+
+/** The world's mapper, with an address for the one file outside every served root. */
+function lending(world: World): Mapper {
+    return {
+        ...world.mapper,
+        library: (real) => (real === world.outside ? LIBRARY : null)
+    };
+}
 
 describe('a document address', () => {
     it.each(ROWS)('$name', ({ got, want }) => {

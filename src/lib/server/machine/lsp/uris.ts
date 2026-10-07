@@ -12,19 +12,28 @@
 // own spelling of the real path (clangd answers one location in two spellings, `/var` and
 // `/private/var`, and a file name may be NFD on disk and NFC in the tab).
 //
-// Only the fields that carry an address are rewritten: `uri` and `targetUri` wherever they stand
-// (the document of a request, the two kinds of location, the location of related information, the
-// folders of a workspace), the `file` of a clangd command's argument, the `target` of a document
-// link, the address strings of a command's `arguments` and the keys of a workspace edit's
-// `changes`. A message to a server that holds any other address, or one that does not resolve, is
-// refused whole. A message to the page that holds a location outside every served root drops that
-// location from its answer.
+// Only the fields that carry an address are rewritten: `uri`, `targetUri`, `oldUri` and `newUri`
+// wherever they stand (the document of a request, the two kinds of location, the location of
+// related information, the folders of a workspace, the files a workspace edit renames), the `file`
+// of a clangd command's argument, the `target` of a document link, the address strings of a
+// command's `arguments` and the keys of a workspace edit's `changes`. A message to a server that
+// holds any other address, or one that does not resolve, is refused whole.
+//
+// A file outside every served root that a server names reaches the page as a library address
+// (library/address.ts) when the mapper's `library` gives one, and the page's message about it goes
+// back to the server under the file's own `file://` address through the `library` the call of
+// `toServer` is given. The mapper decides whether an address may be given: the relay mints one
+// only in an answer to a request of the page, for a path library/rules.ts allows, and in every
+// other message it gives only an address the page already holds. A location the mapper gives no
+// address for is dropped from the message to the page, with the list entry, command or workspace
+// edit that holds it, so no `file://` path of the machine reaches the page in any field.
 
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { join, relative, sep } from 'node:path';
 import type { Root } from '../../files/files.ts';
 import { expandHome } from '../../files/files.ts';
 import { inside, realPath } from '../../core/paths.ts';
+import { isLibraryAddress } from './library/address.ts';
 
 /** The scheme the page names a document by. */
 const PAGE_SCHEME = 'oculus-file:';
@@ -164,23 +173,32 @@ export type Mapper = {
     opened(real: string): string | undefined;
     /** The key the page uses for a root, the root's own when the page used none. */
     alias(root: ServedRoot): string;
+    /**
+     * The library address of a file outside every served root, by its real path, or null when the
+     * page may not be given one. Absent, no file outside every root has an address.
+     */
+    library?(real: string): string | null;
 };
 
-/** The page URI of a server's `file://` URI, or null for a file outside every served root. */
+/**
+ * The page URI of a server's `file://` URI: the address the page opened it under, its address under
+ * a served root, or its library address; null for a file the page has no address for.
+ */
 function toPageUri(uri: string, mapper: Mapper): string | null {
     const real = realOfFileUri(uri);
     if (real === null) return null;
     const known = mapper.opened(real);
-    if (known !== undefined) return known;
+    // A library file is given by the mapper, which keeps one address per server that named it.
+    if (known !== undefined && !isLibraryAddress(known)) return known;
     const root = innermost(real, mapper.roots);
-    if (root === null) return null;
+    if (root === null) return mapper.library?.(real) ?? null;
     const under = relative(normal(root.real), normal(real));
     if (under === '' || under.startsWith('..')) return null;
     return pageUri(mapper.alias(root), under.split(sep).join('/'));
 }
 
 /** The fields of a message that hold the address of a document. */
-const URI_FIELDS: readonly string[] = ['uri', 'targetUri'];
+const URI_FIELDS: readonly string[] = ['uri', 'targetUri', 'oldUri', 'newUri'];
 
 /**
  * The field clangd's commands carry a document's address in (`arguments[0].file`). It is turned
@@ -199,19 +217,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Whether a string is in the form of a page's address of a document, of a file or a library. */
+function isPageAddress(value: string): boolean {
+    return value.startsWith(PAGE_SCHEME) || isLibraryAddress(value);
+}
+
 /**
  * A message for a server, every address in it turned into the real `file://` URI of its file, or
- * null when any address is not a page URI that resolves (the whole message is then refused).
+ * null when any address does not resolve (the whole message is then refused). A page URI resolves
+ * against the roots; a library address resolves through `library`, which answers the `file://`
+ * URI of a library file the page holds an address for and null for any other, and without it no
+ * library address resolves.
  */
-export function toServer(value: unknown, roots: readonly ServedRoot[]): { value: unknown } | null {
+export function toServer(
+    value: unknown,
+    roots: readonly ServedRoot[],
+    library?: (address: string) => string | null
+): { value: unknown } | null {
     const outcome = { refused: false };
     const address = (uri: unknown): string => {
-        const resolved = resolvePageUri(uri, roots);
+        const resolved = isLibraryAddress(uri)
+            ? (library?.(uri) ?? null)
+            : (resolvePageUri(uri, roots)?.fileUri ?? null);
         if (resolved === null) {
             outcome.refused = true;
             return '';
         }
-        return resolved.fileUri;
+        return resolved;
     };
     const walk = (item: unknown): unknown => {
         if (Array.isArray(item)) return item.map(walk);
@@ -219,17 +251,11 @@ export function toServer(value: unknown, roots: readonly ServedRoot[]): { value:
         const copy: Record<string, unknown> = {};
         for (const [key, inner] of Object.entries(item)) {
             if (URI_FIELDS.includes(key) && typeof inner === 'string') copy[key] = address(inner);
-            else if (
-                key === FILE_FIELD &&
-                typeof inner === 'string' &&
-                inner.startsWith(PAGE_SCHEME)
-            ) {
+            else if (key === FILE_FIELD && typeof inner === 'string' && isPageAddress(inner)) {
                 copy[key] = address(inner);
             } else if (key === 'arguments' && Array.isArray(inner)) {
                 copy[key] = inner.map((one) =>
-                    typeof one === 'string' && one.startsWith(PAGE_SCHEME)
-                        ? address(one)
-                        : walk(one)
+                    typeof one === 'string' && isPageAddress(one) ? address(one) : walk(one)
                 );
             } else if (key === 'changes' && isRecord(inner)) {
                 const changes: Record<string, unknown> = {};
@@ -246,9 +272,11 @@ export function toServer(value: unknown, roots: readonly ServedRoot[]): { value:
 
 /**
  * A message for the page, every `file://` address in it (or the address alone, as a result may be)
- * turned into the page's form. A location outside every served root is dropped, with the list
- * entry or the message that holds it: the result is null when the dropped location was the whole
- * answer.
+ * turned into the page's form. A location the mapper gives no address for is dropped, with the
+ * list entry, command or workspace edit that holds it: the result is null when the dropped
+ * location was the whole answer. A command whose `arguments` name such a file is dropped whole,
+ * since its arguments are positional, and so is a workspace edit whose `changes` name one, since
+ * part of an edit would be applied without the rest.
  */
 export function toPage(value: unknown, mapper: Mapper): { value: unknown } | null {
     // clangd answers `textDocument/switchSourceHeader` with the file's address alone.
@@ -272,15 +300,20 @@ export function toPage(value: unknown, mapper: Mapper): { value: unknown } | nul
                 if (page === null) return DROP;
                 copy[key] = page;
             } else if (key === 'arguments' && Array.isArray(inner)) {
-                copy[key] = inner.map((one) =>
-                    typeof one === 'string' && one.startsWith('file://')
-                        ? (toPageUri(one, mapper) ?? one)
-                        : walk(one)
-                );
+                const turned: unknown[] = [];
+                for (const one of inner) {
+                    const named = typeof one === 'string' && one.startsWith('file://');
+                    const page = named ? toPageUri(one, mapper) : walk(one);
+                    if (page === DROP || (named && page === null)) return DROP;
+                    turned.push(page);
+                }
+                copy[key] = turned;
             } else if (key === 'changes' && isRecord(inner)) {
                 const changes: Record<string, unknown> = {};
                 for (const [uri, edits] of Object.entries(inner)) {
-                    changes[toPageUri(uri, mapper) ?? uri] = walk(edits);
+                    const page = uri.startsWith('file://') ? toPageUri(uri, mapper) : uri;
+                    if (page === null) return DROP;
+                    changes[page] = walk(edits);
                 }
                 copy[key] = changes;
             } else {

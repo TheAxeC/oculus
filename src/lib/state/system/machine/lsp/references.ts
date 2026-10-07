@@ -3,6 +3,11 @@
 // grouped by file with each location's line text, the history of the last searches, and the
 // numbers and words the view draws from them.
 //
+// A file is one of a served root (`root` and `path`) or a library file a language server named
+// outside every root, which has no root: its `root` is empty, its `path` is the library address
+// the relay gave the page, and `library` is the file's own name. An address lives with the page's
+// connection, so a saved result that names one opens a tab saying the file is no longer open.
+//
 // The state is the instance's own, kept with the layout, so a reloaded page draws the same result
 // without asking the server again. A saved state is read back safely, since a page restored from
 // storage carries whatever was written there.
@@ -20,6 +25,8 @@ export type RefSearch = {
     word: string;
     root: string;
     path: string;
+    /** The name of the library file the search was made in, for a search made in one. */
+    library?: string;
     /** Where the caret was, lines and columns counted from one. */
     line: number;
     column: number;
@@ -36,7 +43,13 @@ export type RefLine = {
 };
 
 /** The locations of one file. */
-export type RefFile = { root: string; path: string; lines: RefLine[] };
+export type RefFile = {
+    root: string;
+    path: string;
+    /** The name of the library file, for a file that is one. */
+    library?: string;
+    lines: RefLine[];
+};
 
 /** Everything one References tab holds. */
 export type RefsState = {
@@ -57,6 +70,7 @@ const searchShape = z.object({
     word: z.string().catch(''),
     root: z.string(),
     path: z.string(),
+    library: z.string().optional().catch(undefined),
     line: anyNumberShape.catch(1),
     column: anyNumberShape.catch(1)
 }) satisfies z.ZodType<RefSearch>;
@@ -71,6 +85,7 @@ const lineShape = z.object({
 const fileShape = z.object({
     root: z.string(),
     path: z.string(),
+    library: z.string().optional().catch(undefined),
     lines: rowsShape(lineShape)
 }) satisfies z.ZodType<RefFile>;
 
@@ -95,7 +110,13 @@ export function totals(files: readonly RefFile[]): { locations: number; files: n
 }
 
 /** One location a walk or a press opens. */
-export type RefPick = { root: string; path: string; line: number; column: number };
+export type RefPick = {
+    root: string;
+    path: string;
+    library?: string;
+    line: number;
+    column: number;
+};
 
 /** The locations of a result in the order they are drawn: by file, then by line. */
 export function picks(files: readonly RefFile[]): RefPick[] {
@@ -103,6 +124,7 @@ export function picks(files: readonly RefFile[]): RefPick[] {
         file.lines.map((one) => ({
             root: file.root,
             path: file.path,
+            ...(file.library === undefined ? {} : { library: file.library }),
             line: one.line,
             column: one.start + 1
         }))
@@ -156,7 +178,9 @@ export function withoutFile(files: readonly RefFile[], root: string, path: strin
 export function copyText(files: readonly RefFile[]): string {
     return files
         .flatMap((file) =>
-            file.lines.map((one) => `${file.path}:${String(one.line)}:${String(one.start + 1)}`)
+            file.lines.map(
+                (one) => `${file.library ?? file.path}:${String(one.line)}:${String(one.start + 1)}`
+            )
         )
         .join('\n');
 }

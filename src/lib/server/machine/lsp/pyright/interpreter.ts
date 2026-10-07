@@ -106,6 +106,11 @@ export type Interpreters = {
     inForce: string | null;
     /** What pyright is answered as its `pythonPath`, null when it is given none. */
     effective: string | null;
+    /**
+     * The `sys.prefix` and `sys.base_prefix` the effective interpreter answered, empty when there
+     * is none: the folders its standard library and installed packages live under.
+     */
+    prefixes: string[];
 };
 
 function readOrNull(path: string): string | null {
@@ -122,6 +127,7 @@ export async function interpretersFor(options: InterpreterOptions): Promise<Inte
     const exists = options.exists ?? existsSync;
     const read = options.read ?? readOrNull;
     const list: LspInterpreter[] = [];
+    const answered = new Map<string, Answer>();
 
     for (const folder of ['.venv', 'venv']) {
         const path = join(options.root, folder, 'bin', 'python');
@@ -138,6 +144,7 @@ export async function interpretersFor(options: InterpreterOptions): Promise<Inte
         }
         const answer = await ask(run, path);
         if (answer === null) continue;
+        answered.set(path, answer);
         list.push({
             path,
             version: answer.version,
@@ -149,6 +156,7 @@ export async function interpretersFor(options: InterpreterOptions): Promise<Inte
 
     const system = await ask(run, PATH_PYTHON);
     if (system !== null) {
+        answered.set(system.executable, system);
         list.push({
             path: system.executable,
             version: system.version,
@@ -162,6 +170,7 @@ export async function interpretersFor(options: InterpreterOptions): Promise<Inte
     if (chosen !== undefined && !list.some((one) => one.path === chosen) && exists(chosen)) {
         const answer = await ask(run, chosen);
         if (answer !== null) {
+            answered.set(chosen, answer);
             list.push({
                 path: chosen,
                 version: answer.version,
@@ -184,7 +193,9 @@ export async function interpretersFor(options: InterpreterOptions): Promise<Inte
             : forced.approved
               ? forced.path
               : (list.find((one) => one.found === 'path')?.path ?? null);
-    return { list, inForce, effective };
+    const found = effective === null ? undefined : answered.get(effective);
+    const prefixes = found === undefined ? [] : [...new Set([found.prefix, found.basePrefix])];
+    return { list, inForce, effective, prefixes };
 }
 
 /** The folder name of the venv an interpreter runs in, null when it is not in one. */
