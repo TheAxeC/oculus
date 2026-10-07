@@ -1,5 +1,5 @@
 In flight (2 of 6 slots):
-- D11 (the debug client for rite): building.
+- D11 (the debug client for rite): built; under review.
 - X3e (Files lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop): building.
 
 No step can be prepared now: M8 waits for X3e and D11 to land; D43 waits for M8; D33 waits for D11 and D28; D28 waits for X3e. The other four slots stay empty until one of these lands.

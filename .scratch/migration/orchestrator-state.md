@@ -34,10 +34,12 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 5308e806e
   launched: 2026-10-07
   report: agents/reviews/D11-report.md
+  builder_usage: 369,610 tokens, 629 tool uses, 155.5 min
+  reviewer_report: agents/reviews/D11-refuter.md (a7023f786466de3d0, claude-opus-5-5, 219,129 tokens, 132 tool uses, 20.4 min)
   brief_check: agents/reviews/D11-brief-check.md (a0e68a55e2b7c6f81, claude-opus-5-5, 338,752 tokens, 125 tool uses, 18.5 min; the brief corrected since from agents/reviews/D11-premise-recheck-2.md)
   shared_paths: DESIGN.md and docs/views.md with D15 (D15 writes DESIGN.md:169 and :533 and docs/views.md:239 and :259; D11 writes DESIGN.md:121, :165, :410, :568 and a new decisions entry, and a section after docs/views.md:71), different lines, so the merge at the second landing is simple
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/D11-round1.md)
 - step: X3e
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -161,6 +163,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+1. D11, case 40 (2026-10-07): Step Into on a line that calls a function ends the program with "+ expects numbers" in cathedra's `rite_dap`, where the brief expects a pause in the callee. oculus sends the plain DAP `stepIn {threadId: 1}` (`session.ts:607`); the builder's own probe client sends the same request and gets the same end, and the reviewer places the fault in cathedra's `debugger_impl.cpp:196-215`, where StepIn arms a temporary break at the callee's first instruction. Options: (a) D11 lands sending `stepIn` as it does, and the StepIn fault is fixed in cathedra as a step of its own (a fix in another repository, with its own test there); (b) D11 lands with Step Into disabled until cathedra is fixed, which removes a working control from every other line; (c) D11 lands as it is and the fault is left. Recommended: (a). The lazy option is (c). It is yours because the fix is in cathedra's code, outside oculus.
+2. D11's live look (2026-10-07): the debugger can be looked at on TEST only with `rite_dap_bin` set in `config/local.yml` to `~/workspace/cathedra/bin/debug/rite_dap`, since `rite_dap` is not on PATH (Z447). No agent opens that file. Without it the look sees only the idle Debug view and a launch ending in "rite_dap could not be started". Needed before D11's landing look.
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
