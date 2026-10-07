@@ -4,6 +4,31 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z704 (2026-10-07, step D11, the orchestrator, automode): the rite debugger's places, approval, framing and keys
+
+- Chosen: Debug and Debug Console after the TeX view (s6, s7), no shipped chord moved; a debug launch approved as a `command`; a short HELP section and a Debugging guide; the debug messages framed by the library the language servers already use; `~/` read as the home folder in `rite_dap_bin`; a guarded test that a debug launch runs only after approval; a frame outside the roots listed but not opened; the debug keys reach the debugger even from a terminal; breakpoints shared across tabs.
+- Not chosen: the brief's clashing order, everything in HELP.md, a second hand-written framing parser, `~` failing, no test (the lazy options).
+
+## Z703 (2026-10-07, step D43, the orchestrator, automode): texlab, and a repository's latexmkrc
+
+- Chosen: texlab and the LaTeX build both wait for an approval of a repository's latexmkrc (Perl that latexmk runs), as the Svelte config does; `brew install texlab` named when it is missing; a `latex.texlab_path` key; `.bib` files get their own language; keys for the unicode-math symbols (off) and the picture preview (on); every texlab feature except formatting, build and forward search; each build error shown once; the Outline keeps its headings while texlab is missing.
+- Not chosen: running latexmkrc unapproved, PATH only, `.bib` as LaTeX, the four features of the step text only (the lazy options).
+
+## Z702 (2026-10-07, step D33, the orchestrator, automode): the Problems view
+
+- Chosen: Problems in the Explorer group after the TeX view and the debug views (s8) so no chord moves, Cmd+Shift+M; VS Code's fixed defaults stated in the guide; its own status item; a press selects the whole range (after D28); command errors as editor marks; Files decorations as VS Code's; outside and library rows listed; `source(code)`; the TeX view's own Problems list removed in favour of the view; the Settings cards get the cursor; F8 across files; no guarded entry; per page.
+- Not chosen: moving the TeX view's chord, no key, one joined count, the column only, no marks, D45's three lists kept (the lazy options among them).
+
+## Z701 (2026-10-07, step M8, the orchestrator, automode): how the hub's YAML is checked in the editor
+
+- Chosen: references name the registries as the code already does (`people`, `venues`, ..., `projects`, `vocab.<key>`); every YAML tab gets the YAML server, with a schema where its path matches; a co-author's talk is the event role `co-present`; the YAML server never formats a file; `snooze` and `subtasks`, which oculus writes, are allowed everywhere; an unknown field is marked; `.oculus/commands.yml` and oculus's own catalogs and text files get schemas too; the schemas move to a new `config/schemas/` folder; `redownload.py` handles `direct`, `script` and `url`; a key that exists twice in a registry is a finding.
+- Not chosen: unresolved names, formatting hub files on save, marking oculus's own fields, letting typos through, only the files the ruling lists (the lazy options).
+
+## Z700 (2026-10-07, step D15, the orchestrator, automode): where a PDF's place is kept
+
+- Chosen: each PDF tab keeps its place (page, offset, zoom, scroll and spread, side panel) across a reload and a new window, and a PDF opened again starts where it was last read, for the last 50 files; the cockpit's deck is left alone under your Z650 and oculus's own equation card is looked at and fixed instead; Restore panes on a document is looked at first and fixed only if it still reloads.
+- Not chosen: a place kept per tab only, which a reopen loses; the page alone without the zoom and layout; M4 dropped with no look (the lazy options).
+
 ## Z698 (2026-10-07, step D45, the orchestrator, automode): three choices of the second LaTeX repair round
 
 - Chosen: the server tells every page how the last build of a main file ended (a new field on the LaTeX answer), so a page that did not start a build still knows not to show a failed PDF; a page in the desktop app holds the same lock a browser page does, so a PDF window can tell when the page that opened it has closed; a PDF window whose tab closed is freed after about 10 to 20 seconds rather than at once, so a reload of that tab keeps it.

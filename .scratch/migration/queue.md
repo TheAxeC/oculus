@@ -1,4 +1,4 @@
-In flight (0 of 6 slots): none. Being prepared: X3e, D11, D15, M8, D43 and D33, each with a premise recheck on main at 8bd2070c running.
+In flight (0 of 6 slots): none. Being prepared: D15 (brief written, brief check running); X3e, D11, M8, D43 and D33, each with a premise recheck on main at 8bd2070c running.
 
 Queued, in order (20 steps):
 - X3e (Files lists reordered by drag): ready.

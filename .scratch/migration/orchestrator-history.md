@@ -4,6 +4,11 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z704 (2026-10-07): automode, D11's nine choices (orders 6 and 7, `command` approval, a Debugging guide, Z448 replaced by vscode-jsonrpc's framing, `~/` expanded, G38 widened, outside frames listed, debug keys from a terminal, breakpoints shared across tabs).
+- Z703 (2026-10-07): automode, D43's choices (a latexmkrc approval for texlab and the LaTeX build, brew install named, `latex.texlab_path`, a `bibtex` language, two keys, every texlab feature but formatting and build, build errors once, the Outline fallback).
+- Z702 (2026-10-07): automode, D33's fourteen choices (Problems at s8 with no chord moved, Cmd+Shift+M, VS Code's defaults, its own status item, ranges after D28, command marks, decorations, outside rows, `source(code)`, the TeX view's list removed, the cards' cursor, no guarded entry, per page, F8 across files).
+- Z701 (2026-10-07): automode, M8's ten choices (registry names, a server for every YAML tab, `co-present`, no YAML formatting, `snooze` and `subtasks` allowed, unknown fields marked, commands.yml and oculus's catalogs and text files covered, `config/schemas/`, `redownload.py`'s three methods, duplicate keys a finding), each its recommendation.
+- Z700 (2026-10-07): automode, D15's five choices (place per tab and per file for 50 files; page, offset, zoom, modes and side panel; the ui store; oculus's equation card in place of the frozen deck; M4-3 looked at first), each its recommendation.
 - Z698 (2026-10-07): automode, D45's round-2 choices (the `build` field of `/api/latex`, the page lock in the desktop app, the float freed 10 to 20 s after its tab closes), each kept.
 - Z697 (2026-10-07): Axel, (a): the fixes of D23b's and D45's second repair rounds are kept; no exception round for a finding the last review raised first.
 - Z679 (2026-10-07): automode, D23c's round review: the word is selected only for a column inside it; fixed at landing.
