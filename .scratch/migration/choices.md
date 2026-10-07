@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z688 (2026-10-07, step PR4, the orchestrator, automode): the audience window after a reload
+
+- Chosen: in the oculus desktop window, pressing Presenter again always brings back a live audience window, even after the presenter screen was reloaded; reloading the audience window itself keeps the talk going, and only closing it ends the presentation.
+- Not chosen: leaving the projector stuck on "The presenter screen has ended." after a reload, or a reload of the audience window ending the talk (the lazy options).
+
 ## Z687 (2026-10-07, step D23b, the orchestrator, automode): Organize Imports
 
 - Chosen: Organize Imports made to work for every language server that offers it; today it never reaches pyright or clangd, because the editor's built-in client does not ask for it.
