@@ -81,6 +81,9 @@
     /** The frames of every tab under the workbench, drawn by the frame layer. */
     const frames = provideTabFrames();
 
+    // A tab put in a window, or copied there, starts from the places its viewers hold back.
+    $effect(() => client.layout.settleBeforeWindow(() => frames.flush()));
+
     const {
         layout: { change, activeInstance, currentPage, expandChild, floats, focused, layout },
         ui: { crt, icons, paletteRequested, textScale, theme, updateTrayRequested, wallpaper },

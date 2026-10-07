@@ -12,11 +12,9 @@
 import { mount, unmount, type ComponentProps } from 'svelte';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { t } from '$lib/state/shared/words/text';
+import type { SidePanelKind } from '$lib/state/sources/explorer/pdf-place';
 import type { TipIds } from '$lib/ui/menu/tip-ids';
 import PdfControl from './PdfControl.svelte';
-
-/** What the panel shows: nothing, the outline, or the thumbnails. */
-export type SidePanelKind = '' | 'outline' | 'thumbnails';
 
 /** What the panel asks of the viewer. */
 export type SidePanelHooks = {

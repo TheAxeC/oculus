@@ -66,6 +66,12 @@ export type FrameSpec = {
      * with the box. It runs again only for a new box.
      */
     mount?: (node: HTMLDivElement) => (() => void) | undefined;
+    /**
+     * Send what the frame's view keeps of the document and has not yet written down, which a
+     * view that keeps a place in a frame's document holds back for a moment. It is called before a
+     * tab is put in a window or copied there (`TabFrames.flush`).
+     */
+    flush?: () => void;
     hear?: FrameHear;
 };
 
@@ -141,17 +147,24 @@ export class TabFrames {
     /**
      * Hold the frame a view describes, in place of the one it described before. A description that
      * draws the same frame as the one held changes nothing that is drawn: a view drawn again hands
-     * over its own `attach` and `hear`, which are read when they are needed and are no signal.
+     * over its own `attach`, `mount`, `flush` and `hear`, which are read when they are needed and
+     * are no signal.
      */
     set(id: string, spec: FrameSpec): void {
         const held = this.#specs.get(id);
         if (held !== undefined && sameFrame(held, spec)) {
             held.attach = spec.attach;
             held.mount = spec.mount;
+            held.flush = spec.flush;
             held.hear = spec.hear;
             return;
         }
         this.#specs.set(id, spec);
+    }
+
+    /** Have every frame's view send what it holds back, so a tab put in a window carries it. */
+    flush(): void {
+        for (const spec of this.#specs.values()) spec.flush?.();
     }
 
     /** Hold no frame for the tab. */

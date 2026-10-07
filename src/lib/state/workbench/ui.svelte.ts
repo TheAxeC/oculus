@@ -1,7 +1,9 @@
 // Layer 2, client state. What the page looks like and what each open view remembers: the theme, the
 // CRT overlay, the wallpaper, the glyph mode, the app and terminal sizes, the code theme of the
 // editors, and one blob of state per view instance, keyed by the instance id the layout gives it.
-// Two instances of the same view therefore remember different things.
+// Two instances of the same view therefore remember different things. A view may also keep a record
+// under a fixed id of its own that no instance has, as the file view keeps the places of the PDFs
+// it has shown under `pdf-place` (state/sources/explorer/pdf-place.ts).
 //
 // The seven appearance values save together under the one key, so what a browser was left looking
 // like comes back whole, and so do the status bar's own two: the items the reader hid from it and
@@ -101,7 +103,10 @@ type Ui = {
     statusHidden: string[];
     /** Whether Do Not Disturb is on: a notification goes into the list and shows no toast. */
     statusQuiet: boolean;
-    /** One entry per view instance, by instance id. The shape of the value is the view's own. */
+    /**
+     * One entry per view instance, by instance id, and one for each fixed id a view keeps a record
+     * under. The shape of the value is the view's own.
+     */
     instances: Record<string, unknown>;
 };
 
@@ -185,6 +190,12 @@ export type UiStore = {
     setStatusQuiet: (on: boolean) => void;
     setPaneStrip: (key: PaneStripKey, value: string) => void;
     setInstanceState: (id: string, state: unknown) => void;
+    /**
+     * Change a record from what the storage holds for it at this moment, which another browser
+     * tab may have written since this one last heard of it: `change` is given the saved record,
+     * or this tab's when none is saved, and what it returns is kept and saved.
+     */
+    updateInstanceState: (id: string, change: (held: unknown) => unknown) => void;
     clearInstanceState: (id: string) => void;
     /** The ids of the instance records whose id starts with a prefix. */
     instanceKeys: (prefix: string) => string[];
@@ -611,6 +622,21 @@ export function createUi(
     }
 
     /**
+     * Change one record from the value the storage holds for it now. The storage is read here and
+     * not taken from the last `storage` event, so an entry another browser tab saved in between is
+     * in what `change` is given. The record is saved even when this tab's copy already reads the
+     * same, since the storage's differs. Two tabs that write within the same instant can still
+     * overwrite one another, as the storage has no lock.
+     */
+    function updateInstanceState(id: string, change: (held: unknown) => unknown): void {
+        const saved = backing === null ? null : savedHeld(backing);
+        const held =
+            saved !== null && id in saved.instances ? saved.instances[id] : instanceState(id);
+        synced = Object.fromEntries(Object.entries(synced).filter(([key]) => key !== id));
+        setInstanceState(id, change(held));
+    }
+
+    /**
      * Forget an instance's state when its tab closes, so a closed editor's draft does not linger.
      */
     function clearInstanceState(id: string): void {
@@ -682,6 +708,7 @@ export function createUi(
         setStatusQuiet,
         setPaneStrip,
         setInstanceState,
+        updateInstanceState,
         clearInstanceState,
         instanceKeys,
         clearInstanceStates

@@ -17,7 +17,8 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { t } from '$lib/state/shared/words/text';
-    import type { PdfViewer, ScrollName, SpreadName } from './viewer.svelte';
+    import type { ScrollName, SpreadName } from '$lib/state/sources/explorer/pdf-place';
+    import type { PdfViewer } from './viewer.svelte';
 
     type Props = {
         viewer: PdfViewer;

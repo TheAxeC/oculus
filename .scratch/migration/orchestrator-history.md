@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z709 (2026-10-07): automode, D15's Behaviour 1 over round 1: the window's place is taken only by a viewer whose box was hidden; fixed at D15's landing.
 - Z708 (2026-10-07): the cockpit against Z650 in M8, raised to Axel (a clash of rulings); ruled (a): M8 leaves the cockpit untouched.
 - Z707 (2026-10-07): a new guarded entry for M8's schema findings, raised to Axel; ruled (a): G56 with the proposed words, M8 writes its test.
 - Z706 (2026-10-07): automode, the choices of M8's brief check (schemas from the snapshot through the relay's options after X3e and D11, oculus answers each file's schema, the YAML server held to its own packages on disk, zod readers for oculus's own catalogs, text files and apps' `app.yml`, `.oculus/settings.yml` from its options entries, `type: records`, `suggest_from` and `values_by` into `from:`, `help` in the code, schemas listed in Settings, the hub's glyphs kept, the server's own words, the implied inputs), each its recommendation; Z707 (a new guarded entry) and Z708 (the cockpit against Z650) raised to Axel.

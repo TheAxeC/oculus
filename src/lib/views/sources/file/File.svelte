@@ -60,6 +60,21 @@
     // The picture and the download line carry `data-tab-focus`, which is where the keyboard goes
     // when a double click keeps the tab (PaneBody.svelte): the arrow keys then scroll the picture.
     //
+    // The place a PDF is read at is kept in two records of the ui store (state/sources/explorer/
+    // pdf-place.ts), written as the viewer reports it: the tab's own record, which a reload, a
+    // window, Return to Page and a restored page carry and which goes with the tab, and one list of
+    // the last 50 files read, so a tab opened for a file starts where the file was last read. A
+    // viewer is bound to the file it was mounted for. Its report reaches the file's entry whatever
+    // happens to the tab, and the tab's record only while the layout still holds the tab, the tab
+    // still shows this view and still shows that file, so a viewer torn down after its tab closed,
+    // was pointed at another file or became another view writes no record for the tab. The list is
+    // changed from what the storage holds when the report is made, so an entry another page wrote
+    // is kept. The viewer is handed both places when it opens: the file's entry never moves a
+    // viewer that holds its document, and the tab's record moves it when another page wrote a
+    // place there, as a window does while the tab is in it. The tab's frame offers the viewer's
+    // `flush` to the frame store, which runs before a tab is put in a window or copied there, so
+    // the record that is carried is current.
+    //
     // A picture the browser cannot load is the read failure: the message box with a control that
     // draws the picture again, which asks the server for the bytes once more.
 
@@ -78,12 +93,24 @@
     import { PdfViewer } from './pdf/viewer.svelte';
     import { humanSize } from '$lib/state/boards/board';
     import { fileBytesUrl } from '$lib/state/sources/fs.svelte';
+    import {
+        PDF_PLACES_ID,
+        readPdfPlaces,
+        readTabPlace,
+        withPdfPlace,
+        withTabPlace,
+        type PdfPlace
+    } from '$lib/state/sources/explorer/pdf-place';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { fileTabState, openInBrowserTab } from '$lib/state/workbench/navigation/pages';
     import { extensionOf, nameOf, opensInProgram, typeOfFile } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source.svelte';
     import type { LatexRoot } from '$lib/state/sessions/latex/latex-state';
-    import { instanceNumber, instanceText } from '$lib/state/workbench/layout/instance';
+    import {
+        instanceMap,
+        instanceNumber,
+        instanceText
+    } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { shownGate, useShown, useState } from '$lib/state/client/use';
@@ -94,8 +121,9 @@
         fs: { fileVersion, heldFileKind, readFileKind, roots },
         latex,
         latexActions,
-        layout: { closeInstance, keepPreview, openView },
+        layout: { closeInstance, holding, instanceView, keepPreview, openView },
         selectors: { programApps },
+        ui: { instanceState, setInstanceState, updateInstanceState },
         windows: { openInWindow },
         writes: { openFile }
     } = client;
@@ -206,7 +234,8 @@
                   src: '',
                   title,
                   key: `${drawn.root}\n${drawn.path}`,
-                  mount
+                  mount,
+                  flush: () => viewer?.flush()
               }
             : null
     );
@@ -236,14 +265,52 @@
         return true;
     }
 
+    /** The place the tab's own record holds, or null. */
+    function ownPlace(): PdfPlace | null {
+        return readTabPlace(instanceMap(instanceState(instance.id)));
+    }
+
+    /**
+     * The place to open a PDF at when the viewer holds no document: the tab's own record, else the
+     * file's entry of the list, else none, which opens the top. The file's entry never moves a
+     * viewer that holds its document, so another tab of the file does not pull this one.
+     */
+    function savedPlace(): PdfPlace | null {
+        const own = ownPlace();
+        if (own !== null) return own;
+        const entry = readPdfPlaces(instanceState(PDF_PLACES_ID)).find(
+            (one) => one.root === drawn.root && one.path === drawn.path
+        );
+        return entry?.place ?? null;
+    }
+
+    /** Keep a place the viewer of one tab and file reported, in the file's entry and the tab's. */
+    function keepPlace(
+        tab: string,
+        view: string,
+        file: { root: string; path: string },
+        place: PdfPlace
+    ): void {
+        updateInstanceState(PDF_PLACES_ID, (held) =>
+            withPdfPlace(readPdfPlaces(held), file.root, file.path, place)
+        );
+        if (holding(tab) === null || instanceView(tab) !== view) return;
+        if (drawn.root !== file.root || drawn.path !== file.path) return;
+        setInstanceState(tab, withTabPlace(instanceMap(instanceState(tab)), place));
+    }
+
     /** Mount the viewer in the box the frame layer drew, and hand it to the tab frames. */
     function mount(node: HTMLDivElement): () => void {
+        const tab = instance.id;
+        const view = instance.view;
+        const file = { root: drawn.root, path: drawn.path };
         const made = new PdfViewer(node, {
             jump: (page, x, y) =>
                 void latexActions.inverse(drawn.root, drawn.path, page, x, y, instance.id),
             reverse: () => latex.settings()?.reverseSynctex ?? 'ctrl_click',
             build: () => void latexActions.build(drawn.root, drawn.path),
             key: texKey,
+            placed: (place) => keepPlace(tab, view, file, place),
             tips,
             words: {
                 loading: t('file.pdf_loading'),
@@ -264,7 +331,13 @@
     // The viewer draws the file at its address, which moves when the file is written.
     $effect(() => {
         if (viewer === undefined || src === '' || type.kind !== 'pdf') return;
-        viewer.open(src, `${drawn.root}\n${drawn.path}`);
+        const key = `${drawn.root}\n${drawn.path}`;
+        viewer.open(
+            src,
+            key,
+            untrack(() => savedPlace()),
+            untrack(() => ownPlace())
+        );
     });
 
     // The PDF of a build is held against the LaTeX state of its root, which is what notices a

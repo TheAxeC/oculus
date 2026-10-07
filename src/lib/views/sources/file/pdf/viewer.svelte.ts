@@ -7,12 +7,29 @@
 // the box once (`new PdfViewer`), hands it to the tab frames store, and reads it from there; the
 // viewer holds no view and imports no store, so what it needs of the page comes in as hooks.
 //
-// `open(url, key)` loads a document. The key names the file: a call with the key of the file shown
-// reloads it in place and puts the viewer back at the page, the offset in the page and the zoom it
-// was at, which is how a rebuilt PDF is drawn; a call with another key starts at the first page at
-// the zoom the reader chose. A load that a later call overtook, or that ends after `dispose`, draws
-// nothing. A document that cannot be read leaves the viewer in a state that says why, with the old
-// document still behind it until a new one loads.
+// `open(url, key, saved, own)` loads a document. The key names the file: a call with the key of
+// the file shown reloads it in place and puts the viewer back at the place it was at (the page,
+// the offset in the page, the zoom, the scroll and spread modes and the side panel), which is how
+// a rebuilt PDF is drawn. When `own`, the place the page keeps for this tab, is one the viewer did
+// not send and the box is hidden, another page wrote it (a window the tab was in), and the viewer
+// goes there; a viewer in view keeps its place. A call
+// while no document is held opens at `saved`, the place the page kept for the tab or the file, or
+// at the first page at the zoom the reader chose when it has none. A load that a later call
+// overtook, or that ends after `dispose`, draws nothing. A document that cannot be read leaves the
+// viewer in a state that says why, with the old document still behind it until a new one loads.
+//
+// The viewer reports the place the reader is at through the `placed` hook, so the page can keep
+// it. A change of page that is no scroll (a page entry, Next, a link), of zoom, of a mode or of the
+// panel is reported on PDF.js's next `updateviewarea`, which carries the new offset; the offset
+// while the reader scrolls, and a page change that comes of the scroll, is reported at most once
+// in 500 ms, the last one always. Nothing is reported before the place a load restores is applied,
+// while no document is ready, or while the box has no size. A report still waiting is sent by
+// `flush` with the place PDF.js holds, which PDF.js keeps while no page is visible: when the box
+// loses its size, when the viewer is disposed (its box is already detached then), when the
+// window's page is hidden, and when the page is about to put the tab in a window or copy it
+// there, move a float or hand the tab to another window. The viewer takes its place when the box
+// loses its size and scrolls back to it when the box has a size again, since a hidden box loses its
+// scroll offset.
 //
 // The libraries load on the first `open`, as a chunk of their own, so a page that never shows a PDF
 // carries none of PDF.js. The worker is built by Vite from a URL import, and the character maps,
@@ -36,7 +53,14 @@ import type { PDFViewer, PDFLinkService } from 'pdfjs-dist/web/pdf_viewer.mjs';
 import { mount, unmount, type ComponentProps } from 'svelte';
 import type { TipIds } from '$lib/ui/menu/tip-ids';
 import PdfControl from './PdfControl.svelte';
-import { SidePanel, type SidePanelKind } from './side-panel';
+import { SidePanel } from './side-panel';
+import {
+    readPdfPlace,
+    type PdfPlace,
+    type ScrollName,
+    type SidePanelKind,
+    type SpreadName
+} from '$lib/state/sources/explorer/pdf-place';
 
 /** What the viewer reads of one page's view: its element and the scale it is drawn at. */
 type PageView = { div: HTMLElement; viewport: { scale: number } };
@@ -66,18 +90,14 @@ export type ViewerHooks = {
     build?: () => void;
     /** A key the page may take for itself before the viewer reads it; true when it did. */
     key?: (event: KeyboardEvent) => boolean;
+    /** The place the reader is at changed: the page keeps it. */
+    placed?: (place: PdfPlace) => void;
     /** The page's tooltip counter, which the mounted controls draw their tooltips with. */
     tips: TipIds;
 };
 
 /** Where the viewer is in reading a document. */
 export type ViewerStatus = 'loading' | 'ready' | 'missing' | 'invalid' | 'failed';
-
-/** How the pages are laid out one against another. */
-export type ScrollName = 'vertical' | 'horizontal' | 'wrapped' | 'page';
-
-/** How the pages are paired into spreads. */
-export type SpreadName = 'none' | 'odd' | 'even';
 
 /** What a search found: the match shown, how many there are, and how the search stands. */
 export type Found = {
@@ -86,13 +106,14 @@ export type Found = {
     state: 'idle' | 'found' | 'wrapped' | 'notfound' | 'pending';
 };
 
-/** A place in the document a reload or a back returns to. */
-type Position = {
-    page: number;
-    left: number;
-    top: number;
-    scaleValue: string;
-};
+/** A place in the document a link or a back returns to. */
+type Position = Pick<PdfPlace, 'page' | 'left' | 'top' | 'scaleValue'>;
+
+/** The longest a scroll's offset waits before it is reported. */
+const REPORT_EVERY_MS = 500;
+
+/** A page change this soon after a scroll event comes of the scroll and is held to the throttle. */
+const SCROLLING_MS = 200;
 
 /** The place a PDF.js request for a run-time file goes to. */
 const ASSETS = '/api/pdfjs';
@@ -152,7 +173,25 @@ export class PdfViewer {
     #key = '';
     #url = '';
     #generation = 0;
-    #restore: Position | null = null;
+    #restore: PdfPlace | null = null;
+    readonly #sizes: ResizeObserver;
+    /** Whether the box had a size at the last look. */
+    #sized = false;
+    /** The place put back after a load, which holds reports back until it is applied. */
+    #applied = false;
+    /** The place to scroll back to when the box has a size again, while it has none. */
+    #away: PdfPlace | null = null;
+    #disposed = false;
+    #pending = false;
+    #timer: ReturnType<typeof setTimeout> | null = null;
+    /** Whether a change that is no scroll waits for PDF.js's next `updateviewarea`. */
+    #awaiting = false;
+    #sentAt = 0;
+    #scrolledAt = 0;
+    /** The place last reported, which a reload of a document that cannot be read goes back to. */
+    #sent: PdfPlace | null = null;
+    /** The place the page last handed `open`, for the same reload when nothing was reported. */
+    #saved: PdfPlace | null = null;
     #reveal: { page: number; left: number; top: number; w: number; h: number } | null = null;
     #trail: Position[] = [];
 
@@ -207,14 +246,53 @@ export class PdfViewer {
             signal,
             capture: true
         });
+        this.#container.addEventListener(
+            'scroll',
+            () => {
+                this.#scrolledAt = Date.now();
+                this.#changed(false);
+            },
+            { signal, passive: true }
+        );
+        window.addEventListener('pagehide', () => this.flush(), { signal });
+        this.#sizes = new ResizeObserver(() => this.#resized());
+        this.#sizes.observe(this.#box);
     }
 
     /**
-     * Load a document. The key names the file; the same key as the file shown keeps the page, the
-     * offset in the page and the zoom, any other starts at the top.
+     * Load a document. The key names the file; the same key as the file shown keeps the place it
+     * is at, unless the box is hidden and `own`, the tab's own record, holds a place this viewer
+     * did not send, which is the place another page left it at. A call while no document is held
+     * opens at `saved`, or at the top without one.
      */
-    open(url: string, key: string): void {
-        const keep = key === this.#key && this.#doc !== null ? this.#position() : null;
+    open(
+        url: string,
+        key: string,
+        saved: PdfPlace | null = null,
+        own: PdfPlace | null = null
+    ): void {
+        const held = key === this.#key && this.#doc !== null;
+        if (saved !== null) this.#saved = saved;
+        let keep: PdfPlace | null;
+        if (!held) {
+            keep = saved;
+            this.#sent = saved;
+        } else if (
+            own !== null &&
+            this.#away !== null &&
+            !this.#pending &&
+            !sameAs(own, this.#sent)
+        ) {
+            // The box was hidden and the tab's record holds a place this viewer did not send:
+            // another page wrote it while the tab was in a window of its own. The box shows that
+            // place when it has a size again.
+            keep = own;
+            this.#sent = own;
+            this.#away = own;
+        } else {
+            // A document still being laid out has no place of its own yet; the one it restores is.
+            keep = this.#away ?? (this.#applied ? this.#place() : this.#restore);
+        }
         if (key !== this.#key) this.#trail = [];
         this.canBack = this.#trail.length > 0;
         this.#key = key;
@@ -227,13 +305,16 @@ export class PdfViewer {
 
     /** Read the file again, which is what Retry does. */
     reload(): void {
-        if (this.#url !== '') this.open(this.#url, this.#key);
+        if (this.#url !== '') this.open(this.#url, this.#key, this.#sent ?? this.#saved);
     }
 
     /** The document and the box go: nothing the viewer started draws again. */
     dispose(): void {
+        this.flush();
+        this.#disposed = true;
         this.#generation += 1;
         this.#stop.abort();
+        this.#sizes.disconnect();
         this.#side.dispose();
         for (const one of this.#controls) void unmount(one);
         this.#controls.length = 0;
@@ -288,8 +369,16 @@ export class PdfViewer {
     }
 
     showSide(kind: SidePanelKind): void {
-        this.sidebar = this.sidebar === kind ? '' : kind;
-        this.#side.show(this.sidebar);
+        // Asked first, so that the view update made by laying the pages out beside the panel
+        // sends it.
+        this.#changed(true);
+        this.#setSide(this.sidebar === kind ? '' : kind);
+    }
+
+    /** Show the panel of a kind, or none, and lay the pages out beside it. */
+    #setSide(kind: SidePanelKind): void {
+        this.sidebar = kind;
+        this.#side.show(kind);
         this.#viewer?.update();
     }
 
@@ -385,9 +474,13 @@ export class PdfViewer {
             (event: { scale: number; presetValue?: string }) => {
                 this.scale = event.scale;
                 this.scaleValue = event.presetValue ?? String(event.scale);
+                this.#changed(true);
             },
             { signal }
         );
+        eventBus.on('updateviewarea', () => this.#located(), { signal });
+        eventBus.on('scrollmodechanged', () => this.#changed(true), { signal });
+        eventBus.on('spreadmodechanged', () => this.#changed(true), { signal });
         eventBus.on(
             'updatefindmatchescount',
             (event: { matchesCount: Found }) => {
@@ -407,7 +500,7 @@ export class PdfViewer {
         this.#bus = eventBus;
     }
 
-    async #load(url: string, mine: number, keep: Position | null): Promise<void> {
+    async #load(url: string, mine: number, keep: PdfPlace | null): Promise<void> {
         try {
             this.#setup ??= this.#library();
             await this.#setup;
@@ -428,6 +521,8 @@ export class PdfViewer {
             const old = this.#doc;
             this.#doc = doc;
             this.#restore = keep;
+            this.#applied = false;
+            this.#away = null;
             this.pages = doc.numPages;
             this.#viewer.setDocument(doc);
             this.#links?.setDocument(doc, null);
@@ -440,6 +535,7 @@ export class PdfViewer {
             const name = error instanceof Error ? error.name : '';
             this.problem = error instanceof Error ? error.message : String(error);
             const status = name === MISSING ? 'missing' : name === INVALID ? 'invalid' : 'failed';
+            if (status === 'missing') this.flush();
             // A document already drawn stays on screen when its replacement cannot be read, which
             // is a build that was still writing the file; only a file that is gone replaces it.
             this.#shown(status);
@@ -462,6 +558,8 @@ export class PdfViewer {
     #drop(): void {
         const doc = this.#doc;
         this.#doc = null;
+        this.#applied = false;
+        this.#away = null;
         this.pages = 0;
         this.#side.setDocument(null);
         if (doc !== null) void doc.loadingTask.destroy();
@@ -498,38 +596,151 @@ export class PdfViewer {
     #initialised(): void {
         const viewer = this.#viewer;
         if (viewer === null) return;
-        viewer.scrollMode = SCROLL[this.scroll];
-        viewer.spreadMode = SPREAD[this.spread];
         const keep = this.#restore;
         this.#restore = null;
+        if (keep !== null) {
+            this.scroll = keep.scroll;
+            this.spread = keep.spread;
+        }
+        viewer.scrollMode = SCROLL[this.scroll];
+        viewer.spreadMode = SPREAD[this.spread];
         viewer.currentScaleValue = keep?.scaleValue ?? this.scaleValue;
-        if (keep !== null) this.#scrollTo(keep);
+        if (keep !== null && keep.sidebar !== this.sidebar) this.#setSide(keep.sidebar);
+        // A forward search that is waiting is drawn at the end, and wins over the place saved.
+        if (keep !== null && this.#reveal === null) this.#land(keep);
         this.pages = viewer.pagesCount;
         this.page = viewer.currentPageNumber;
         this.#side.current(this.page);
+        this.#applied = true;
         void this.#settle();
     }
 
     #paged(page: number): void {
         this.page = page;
         this.#side.current(page);
+        this.#changed(Date.now() - this.#scrolledAt > SCROLLING_MS);
     }
 
-    /** Where the viewer is: the page, the offset in it in PDF units and the zoom. */
+    /**
+     * Where the viewer is: the page, the offset in it in PDF units and the zoom. PDF.js holds no
+     * offset before it has first updated its view, and the viewer then has no place.
+     */
     #position(): Position | null {
         const viewer = this.#viewer;
         if (viewer === null) return null;
         const at = viewer._location as { left?: number; top?: number } | null | undefined;
+        if (at === null || at === undefined) return null;
         return {
             page: viewer.currentPageNumber,
-            left: at?.left ?? 0,
-            top: at?.top ?? 0,
+            left: at.left ?? 0,
+            top: at.top ?? 0,
             scaleValue: viewer.currentScaleValue
         };
     }
 
+    /** The place the reader is at, as the page keeps it, or null while there is none. */
+    #place(): PdfPlace | null {
+        const at = this.#position();
+        if (at === null) return null;
+        return readPdfPlace({
+            ...at,
+            scroll: this.scroll,
+            spread: this.spread,
+            sidebar: this.sidebar
+        });
+    }
+
+    /** Scroll to a place, or hold it until the box has a size to scroll in. */
+    #land(place: PdfPlace): void {
+        if (this.#hasSize()) this.#scrollTo(place);
+        else this.#away = place;
+    }
+
+    #hasSize(): boolean {
+        return this.#box.clientWidth > 0 && this.#box.clientHeight > 0;
+    }
+
+    /** The box lost its size or has one again. */
+    #resized(): void {
+        const sized = this.#hasSize();
+        if (sized === this.#sized) return;
+        this.#sized = sized;
+        if (!sized) {
+            if (this.#applied && this.#away === null) this.#away = this.#place();
+            this.flush();
+            return;
+        }
+        const place = this.#away;
+        this.#away = null;
+        if (place !== null) this.#scrollTo(place);
+    }
+
+    /** Whether a place may be reported now. */
+    #sendable(): boolean {
+        return (
+            !this.#disposed &&
+            this.hooks.placed !== undefined &&
+            this.status === 'ready' &&
+            this.#applied
+        );
+    }
+
+    /**
+     * Ask for a report of the place. A change that is no scroll is sent on PDF.js's next
+     * `updateviewarea`, which follows its new offset; a scroll's offset, and a page change that
+     * comes of it, is sent when 500 ms have passed since the last report.
+     */
+    #changed(discrete: boolean): void {
+        if (!this.#sendable() || this.#away !== null || !this.#hasSize()) return;
+        this.#pending = true;
+        if (discrete) {
+            this.#awaiting = true;
+            return;
+        }
+        if (this.#timer !== null) return;
+        const wait = Math.max(0, REPORT_EVERY_MS - (Date.now() - this.#sentAt));
+        this.#timer = setTimeout(() => {
+            this.#timer = null;
+            this.flush();
+        }, wait);
+    }
+
+    /** PDF.js has updated its place: send the change that waited for it. */
+    #located(): void {
+        if (this.#awaiting) this.flush();
+    }
+
+    /**
+     * Send the report that is waiting, now, with the place PDF.js holds: the place held while the
+     * box is hidden, else its current one. PDF.js keeps its offset while no page is visible, which
+     * is the case once the box is detached or has no size, so no size is needed.
+     */
+    flush(): void {
+        if (!this.#pending) return;
+        this.#send(this.#away ?? this.#place());
+    }
+
+    /** Report a place unless it is the one reported last. */
+    #send(place: PdfPlace | null): void {
+        if (this.#timer !== null) clearTimeout(this.#timer);
+        this.#timer = null;
+        this.#pending = false;
+        this.#awaiting = false;
+        if (place === null || !this.#sendable() || sameAs(place, this.#sent)) return;
+        this.#sent = place;
+        this.#sentAt = Date.now();
+        this.hooks.placed?.(place);
+    }
+
     #scrollTo(place: Position): void {
-        this.#viewer?.scrollPageIntoView({
+        const viewer = this.#viewer;
+        if (viewer === null || viewer.pagesCount === 0) return;
+        if (place.page > viewer.pagesCount) {
+            // A document rebuilt shorter than the place was taken in: the last page's top.
+            viewer.currentPageNumber = viewer.pagesCount;
+            return;
+        }
+        viewer.scrollPageIntoView({
             pageNumber: place.page,
             destArray: [null, { name: 'XYZ' }, place.left, place.top, null],
             allowNegativeOffset: true,
@@ -622,4 +833,9 @@ function stateOf(
     if (state === find.WRAPPED) return 'wrapped';
     if (state === find.NOT_FOUND) return 'notfound';
     return 'pending';
+}
+
+/** Whether two places are the same place; no place is the same as no other. */
+function sameAs(one: PdfPlace | null, other: PdfPlace | null): boolean {
+    return one !== null && other !== null && JSON.stringify(one) === JSON.stringify(other);
 }

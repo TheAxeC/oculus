@@ -51,6 +51,16 @@ export type FloatOps = {
      * staying where it is; answers the id of the float, or null when no tab has this id.
      */
     copyTabToWindow: (id: string, bounds: WindowBounds) => string | null;
+    /**
+     * Name what is called before a tab is put in a window or copied there (`windowTab`,
+     * `windowPane`, `windowFloat`, `copyTabToWindow`) or a float leaves its place (`dockFloat`,
+     * `freeFloat`, `returnFloat`), so that a view that holds back what it keeps of its tab, as the
+     * PDF viewer does its place, writes it first and the tab starts from it where it goes. It
+     * answers how to stop.
+     */
+    settleBeforeWindow: (settle: () => void) => () => void;
+    /** Call what `settleBeforeWindow` named, before a tab is handed to another window. */
+    settle: () => void;
 };
 
 /** The place of a float in a window of the app. */
@@ -59,6 +69,8 @@ function windowed(bounds: WindowBounds): FloatPlace {
 }
 
 export function createFloatOps(access: LayoutAccess, keep: KeepRule): FloatOps {
+    let settle: () => void = () => undefined;
+
     /** Save the pages a float operation answered, when it changed any. */
     function floated(next: Pages): void {
         if (next !== access.held()) access.save(next);
@@ -77,7 +89,9 @@ export function createFloatOps(access: LayoutAccess, keep: KeepRule): FloatOps {
 
     function returnFloat(id: string, page?: string): void {
         const to = pageIdOf(page);
-        if (to !== undefined) floated(returnFloatIn(access.held(), id, to));
+        if (to === undefined) return;
+        settle();
+        floated(returnFloatIn(access.held(), id, to));
     }
 
     function placeFloat(id: string, place: FloatPlace): void {
@@ -87,20 +101,32 @@ export function createFloatOps(access: LayoutAccess, keep: KeepRule): FloatOps {
     return {
         floatPane,
         floatTab: (id, point) => floated(floatTabIn(access.held(), id, point, keep)),
-        dockFloat: (id, edge) => floated(dockFloatIn(access.held(), id, edge)),
-        freeFloat: (id) => floated(freeFloatIn(access.held(), id)),
+        dockFloat: (id, edge) => {
+            settle();
+            floated(dockFloatIn(access.held(), id, edge));
+        },
+        freeFloat: (id) => {
+            settle();
+            floated(freeFloatIn(access.held(), id));
+        },
         returnFloat,
         placeFloat,
         windowPane: (path, bounds, page) => {
             const id = pageIdOf(page);
-            if (id !== undefined) {
-                floated(floatPaneIn(access.held(), id, path, windowed(bounds)));
-            }
+            if (id === undefined) return;
+            settle();
+            floated(floatPaneIn(access.held(), id, path, windowed(bounds)));
         },
-        windowTab: (id, bounds) =>
-            floated(floatTabIn(access.held(), id, { x: 0, y: 0 }, keep, windowed(bounds))),
-        windowFloat: (id, bounds) => placeFloat(id, windowed(bounds)),
+        windowTab: (id, bounds) => {
+            settle();
+            floated(floatTabIn(access.held(), id, { x: 0, y: 0 }, keep, windowed(bounds)));
+        },
+        windowFloat: (id, bounds) => {
+            settle();
+            placeFloat(id, windowed(bounds));
+        },
         copyTabToWindow: (id, bounds) => {
+            settle();
             const ids = { tab: crypto.randomUUID(), float: crypto.randomUUID() };
             const held = access.held();
             const next = copyTabIn(held, id, windowed(bounds), ids);
@@ -111,6 +137,13 @@ export function createFloatOps(access: LayoutAccess, keep: KeepRule): FloatOps {
             }
             access.save(next);
             return ids.float;
+        },
+        settle: () => settle(),
+        settleBeforeWindow: (next) => {
+            settle = next;
+            return () => {
+                if (settle === next) settle = () => undefined;
+            };
         }
     };
 }

@@ -1,215 +1,88 @@
-# D15 report: the place a PDF is read at, kept across reloads, windows and reopening
+# D15 report (after repair round 1): the place a PDF is read at, kept across reloads, windows and reopening
 
-Everything in the brief is done, with the ruling of `agents/briefs/D15-cases.md` applied. Two things are stated, not hidden: the browser cases (1 to 8, 11 to 18, 20 to 23) are proven by reading the code path and wait for the orchestrator's look on TEST at landing, since there is no browser suite; and one run of `tests/checks/tree` printed 1 failed of 39 while other suites ran on the machine, a failure I did not identify (three reruns of the same command printed 39 passed).
+Item 3 is built by a different route than the brief names: the flush is called inside the four window operations (`float/store.ts`) and not at each of their callers, so it needed two paths the brief's list does not name (`float/store.ts`, `shell/Workbench.svelte`); the reason and what it covers are under Judgment calls. Items 1, 2, 4, 5 and 6 are done as written. Nothing was run in a browser (no browser or server may be started here): every case below is a reading of the code with its lines, and the look on TEST at landing settles the browser behaviour, above all Open in New Window in a browser tab, Return to Page after moving in the window, a quick close after a scroll, and Maximise then Restore on a document tab.
 
-## Open items (state file, "Open items" section, verbatim)
+## Open items (state file, "Open items" section, as it reads now)
 
-"## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)"
+Read with `sed -n '/^## Open items/,/^## Booked/p' tools/oculus/.scratch/migration/orchestrator-state.md`: the section holds its two rule paragraphs and no entry, so there is no open item for Axel to rule on.
 
-"An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own."
+## Findings of `agents/reviews/D15-refuter.md` and what changed for each
 
-The section holds no entries after those two lines; the next section is "Booked, no ruling needed".
+All lines are in `tools/oculus/` of the worktree.
+
+- Spec 1 (a report pending at dispose was dropped): `viewer.svelte.ts:709-712`, `flush()` sends `this.#away ?? this.#place()` with no size guard; `dispose` (:303-305) calls it before it sets `#disposed`; the hide edge (:655-668), `pagehide` (:255) and the missing file (:529) call it the same way. PDF.js keeps `_location` while no page is visible (`pdf_viewer.mjs:9144-9146`, `update()` returns first), so a detached box still answers its place.
+- Spec 2 (a discrete change waited 100 ms): `SETTLE_MS` and its timer are gone (`grep -n "SETTLE\|#due" viewer.svelte.ts` prints nothing). `#changed(true)` (:684-697) sets `#awaiting`; the `updateviewarea` listener (:472) calls `#located` (:700-702), which flushes, so the report carries the offset PDF.js has just computed (`pdf_viewer.mjs:9175-9178`, dispatched after `_updateLocation`). With no `updateviewarea` (box without size) the flush of Spec 1 sends it.
+- Spec 3 (ruling 3 against case 16): a page change that comes of a scroll stays under the 500 ms throttle (`#paged`, :609-613, `SCROLLING_MS` at :114), as the round brief rules. A tab put in a window or copied there is flushed first: `float/store.ts:106,110,114,118` call `settle()` in `windowPane`, `windowTab`, `windowFloat` and `copyTabToWindow`; `settle` is the tab frames store's `flush` (`ui/tabs/tab-frames.svelte.ts:166-168`), registered by `shell/Workbench.svelte:85` through `settleBeforeWindow` (`float/store.ts:130-135`), which calls each frame spec's new `flush` member (`tab-frames.svelte.ts:74`, kept across a redraw at :158), set by `File.svelte:234` to `viewer.flush()`.
+- Spec 4 (the first line said everything was done): this report's first paragraph.
+- Proof 1 (cases 3 and 23 described wrongly): described as the code does them in the cases below (case 3: no dispose, the window operation's flush writes the record; case 23: the old viewer's dispose flush writes the old path's entry and not the tab's record).
+- Proof 2 (the copy limit was too narrow): Limits below states every way a copy or a closed tab carries an old place after this round.
+- Proof 3 (the scratch run of case 21 cannot be rerun): no decision rests on it; case 21 is described by reading in the ruling section below.
+- Standards 1 (head comments false): `viewer.svelte.ts:1-30` and `File.svelte:62-77` rewritten; quoted under Verify 7.
+- Standards 2 (own map reader): `pdf-place.ts:123` and `:128` read the record through `instanceMap` (`state/workbench/layout/instance.ts:36-38`), imported at `pdf-place.ts:17`; `mapShape` is no longer imported there.
+- Behaviour 1 (Return to Page ignored the window's place): `File.svelte:265-267` (`ownPlace`) and `:334-335` pass the tab's own record to `open` apart from the per-file fallback; `viewer.svelte.ts:266-297`: with a document held and a record that is not the place the viewer sent (`#sent`) and no report pending, the viewer goes to the record (:278-283); a rebuild in the same page keeps its in-memory place (:284-287); the file's entry (`saved`) never moves a viewer that holds its document. `docs/views.md:259` ("a tab keeps its own place across a reload, a window and Return to Page") is true by this.
 
 ## The ruling carried (`agents/briefs/D15-cases.md`)
 
-1. Case 21, ruled (a): the ui store has `updateInstanceState(id, change)`, and `File.svelte` writes the `pdf-place` list through it. Code, `src/lib/state/workbench/ui.svelte.ts:624-637`:
+1. Case 21, ruled (a): the ui store has `updateInstanceState(id, change)` (`state/workbench/ui.svelte.ts:631`, member at :198); `File.svelte:290` writes the `pdf-place` list through it. It reads the record as the storage holds it at the write, applies `change`, drops the id from `synced` and saves through `setInstanceState`, so an entry another page wrote before the `storage` event is kept. Two pages that write in the same instant can still race: the storage has no lock.
+2. Cases 11, 23 and a closed tab: the hook is bound in `mount` (`File.svelte:299-316`) to the tab id, its view and the file the viewer was mounted for. `keepPlace` (`File.svelte:284-296`) writes the per-file entry always, and the tab record only while the layout holds the tab (`holding`), the tab still shows the same view (`instanceView`) and `drawn` still names that file.
+3. A null PDF.js `_location` reports nothing (`#position` returns null, `viewer.svelte.ts:619-630`); a number zoom outside 0.1 to 25 reads as `auto` (`pdf-place.ts`, `readPdfPlace`); a page change, zoom, scroll mode, spread mode or side panel change is reported on PDF.js's next view update, not on a timer; only the offset while scrolling, and a page change that comes of the scroll, is throttled at 500 ms.
 
-```ts
-function updateInstanceState(id: string, change: (held: unknown) => unknown): void {
-    const saved = backing === null ? null : savedHeld(backing);
-    const held =
-        saved !== null && id in saved.instances ? saved.instances[id] : instanceState(id);
-    synced = Object.fromEntries(Object.entries(synced).filter(([key]) => key !== id));
-    setInstanceState(id, change(held));
-}
-```
+## First run of the ten round-1 cases on the round-0 tree (readings, taken before any change of this round)
 
-It reads the record as the storage holds it at the write, applies `change`, keeps the result in memory and saves it through `setInstanceState`. Dropping the id from `synced` makes `mergedInstances` treat the record as this tab's own change, so the saved record is replaced by the changed one. Two processes that write in the same instant can still race, since the storage has no lock: each reads, changes and writes, and the later write replaces the earlier. No test was added (no guarded entry covers the ui store); the scratch run below exercises the function.
+Round-0 lines are those of the tree this round started from, as `agents/reviews/D15-refuter.md` cites them; the files have changed since, so they are not the lines of the tree now.
 
-2. Cases 11, 23 and a closed tab: the hook is bound in `mount` to the tab id and the file the viewer was mounted for (`File.svelte:286-291`), and `keepPlace` (`File.svelte:272-278`) writes the per-file entry always and the tab record only while `holding(tab) !== null` and `drawn` still names that file. The tab record names no file.
+1. Scroll 5 to 9, close within 500 ms, reopen from Files: fails (page 5). The scroll sets a 500 ms timer (`viewer.svelte.ts:663-677`); `dispose` calls `#flush` (:285), which sent `this.#away ?? (this.#hasSize() ? this.#place() : null)` (:680-683); the box is already detached at that point (Svelte removes a block's DOM before it runs the children's teardowns, `svelte/src/internal/client/reactivity/effects.js:526` then `:542`), so `#send(null)` cleared the pending report and sent nothing.
+2. 200 percent, close within 100 ms: fails. `#changed(true)` waited `SETTLE_MS = 100` (:109-110, :667), and the dispose flush dropped it as in case 1.
+3. Scroll to page 7 and Open in New Window at once: fails in a browser tab, holds in the app. `windowTab` did not flush; the main page keeps the frame of a tab in a window (`FrameLayer.svelte:45-53`, `model.ts:177-178`), so `dispose` never runs; the record was written by the hide flush at the next animation frame (:641) or by the timer. A background browser tab stops animation frames and clamps timers to about 1 s, so the window could read the record first.
+4. Scroll 5 to 7 then Copy into New Window within 500 ms, and 150 percent then copy within 100 ms: fails. `copyTabToWindow` copies the record synchronously (`float/store.ts:108-111`) and did not flush, so the copy had page 5 or 6 (a page change from scrolling is held to the throttle, :589-593) and the old zoom (100 ms settle).
+5. Open in New Window at page 7, move to page 12, Return to Page: fails (page 7). `open` with the document held took `this.#away ?? ...` (:267) and `#away` holds page 7 from the moment the tab left; the record the window wrote (page 12) was never read.
+6. Rebuild in the same page at page 4 with a report pending: holds. `open` keeps `#away`, else `#place()` once applied, else `#restore` (:267), so it reloads at page 4.
+7. Two tabs of one file at pages 3 and 8, rebuild the second's PDF: holds. The held branch (:267) ignores `saved`.
+8. Page entry 20 and Enter: holds, one report 100 ms late. `#paged` (:589-593) with no scroll within 200 ms calls `#changed(true)`, one timer of `SETTLE_MS`, then `#send` of the place PDF.js holds by then.
+9. Case 16 again: holds. `#changed(false)` keeps one timer at `max(0, 500 - since the last send)` (:663-677), so a scroll sends at most once in 500 ms; a discrete change adds one report of its own.
+10. Rename (case 23) and preview retarget (case 11) with a report pending: fails. The old viewer's dispose flush sent nothing (case 1), so the old file's entry did not get the place; the tab record was not written either (the guard at `File.svelte:276` held).
 
-3. The smaller points:
-   - A null PDF.js `_location` reports nothing: `#position()` returns null (`viewer.svelte.ts`, `#position`), `#place()` returns null, `#send(null)` sends nothing, and `open` keeps no position from it.
-   - `readPdfPlace` reads a number zoom outside 0.1 to 25 as `auto`.
-   - Case 4: a change of page by a jump, zoom, scroll mode, spread mode or side panel is reported once PDF.js has settled, not throttled; only the offset while the reader scrolls is throttled at 500 ms. A Copy into New Window can carry an offset within the page up to 500 ms old, since `float/store.ts` cannot ask the viewer to flush. See "Judgment calls" for how a discrete change is timed.
+## The ten round-1 cases after this round (readings with the lines of the tree now)
 
-## First run of every case on the unchanged tree (taken before any change)
+1. Scroll 5 to 9 and close within 500 ms: the scroll listener (`viewer.svelte.ts:248-253`) calls `#changed(false)` (:684-697), which sets `#pending` and one timer. The close drops the frame, `dispose` (:303) calls `flush()` (:709) before it sets `#disposed`, `#send` (:715) passes `#sendable()` and calls `placed`, and `keepPlace` (`File.svelte:284-296`) writes the file's entry with page 9; the tab record is cleared by the close (`layout/instances.ts:234`) and `holding(tab)` is null, so it is not written. Reopening from Files: `savedPlace` (`File.svelte:274`) finds no tab record and takes the file's entry: page 9.
+2. 200 percent and close within 100 ms: `scalechanging` (:464-470) sets `scaleValue` and calls `#changed(true)`; if `updateviewarea` (:472) comes first the report goes out at once, else `dispose` flushes `#place()`, whose `scaleValue` is `viewer.currentScaleValue` (:619-630), set synchronously by the zoom setter. Reopen: 200 percent.
+3. Scroll to page 7 and Open in New Window at once: every caller reaches `layout.windowTab` (`tab-menu-state.svelte.ts:171`, `drag.svelte.ts:207`, `float/browser.ts:58`), which runs `settle()` (`float/store.ts:110`) and so `frames.flush()` (`Workbench.svelte:85`) and the File frame's `flush` (`File.svelte:234`): `viewer.flush()` calls `placed`, `keepPlace` writes the file entry and, since the tab is still held and shows this view and file, the tab record (`File.svelte:293-295`) through `setInstanceState`, which saves to `localStorage` synchronously (`ui.svelte.ts:620-622`, `:528-537`). Only then does `floatTabIn` change the layout and the window start. The main page keeps the frame (`FrameLayer.svelte:45-53`, `model.ts:177-178`), so no `dispose` runs and none is needed. The write happens in the click, so it is the same in a browser tab and in the app: the window reads page 7.
+4. Scroll 5 to 7 then Copy into New Window within 500 ms, and 150 percent then copy within 100 ms: `copyTabToWindow` runs `settle()` first (`float/store.ts:118`), the flush writes the tab record with page 7 (the throttled scroll report is pending and is sent), or with the 150 percent scale (`scaleValue` is current, :619-630), and then the record is copied (`float/store.ts:123-127`). The copy shows page 7 and 150 percent. The offset inside a page after a zoom change is the one PDF.js held at the last view update; see Limits.
+5. Open in New Window at page 7, move to page 12 in the window, Return to Page: the main viewer holds `#away` (page 7, :660) with no report pending. On Return to Page the File view calls `open(src, key, saved, own)` (`File.svelte:331-336`) with the document held and `own` = the window's record (page 12), which is not `#sent` (page 7, the report the window operation flushed): the branch at `viewer.svelte.ts:278-283` takes `keep = own`, `#load` (:507-520) clears `#away` at :516 and `#initialised` (:587) lands page 12. The main page shows page 12.
+6. Rebuild in the same page at page 4 with a report pending: `#pending` is true, so the branch at :278 is not taken even when the record is older; the last branch (:284-287) keeps `#away ?? #place()`, page 4.
+7. Two tabs of one file at pages 3 and 8, rebuild the second's PDF: the second viewer holds its document, its `own` is its own record (page 8, equal to `#sent`), so the last branch keeps its in-memory page 8; the first tab's record and the file's entry are not read for a held document.
+8. Page entry 20 and Enter: `pagechanging` (:457) calls `#paged` (:609-613); with no scroll within 200 ms it calls `#changed(true)`, which waits for `updateviewarea` (:472), whose `#located` flushes: one `placed` call with page 20 and the offset in `_location` (`pdf_viewer.mjs:9174-9178`). The scroll event the jump causes calls `#changed(false)`; its timer would send a second report only when the place differs from `#sent` (`#send`, :719-722). Read, not run: PDF.js's scroll handler is registered when `PDFViewer` is constructed after this viewer's (`pdf_viewer.mjs:8056`, `viewer.svelte.ts:443`), so `#scrolledAt` is set before `pagechanging` of a scroll.
+9. Case 16 again: while scrolling, `#changed(false)` keeps one timer (:690-696), `#located` sends only when `#awaiting` (set by a discrete change alone), and a page change within 200 ms of a scroll event is `#changed(false)` (:609-613), so a scroll sends at most once in 500 ms plus one report per discrete change. Counted by reading only; the orchestrator counts at landing.
+10. Rename (case 23) and preview retarget (case 11) with a report pending: the old viewer's `dispose` flush sends the place; `keepPlace` writes the old path's entry (`File.svelte:290-292`). For a retarget `clearInstanceState` ran (`layout/open/opening.ts:168` and `:254`) and `drawn` or the view moved on, so the tab record is not written (`File.svelte:293-294`). For a rename the tab record is kept (`followTabs`, `explorer/ops.svelte.ts:351-369`) and `drawn` names the new path, so the old viewer's flush does not write it either; the new box opens at the tab's record, which holds the last place reported before the rename (Limits).
 
-The tree was unchanged against the base copy when these were taken (`diff -rq` printed nothing). Browser cases are readings of the code path; no server was started.
+The other cases of the brief that this round touches are read the same way: case 13 (a hidden tab) is unchanged (`#changed` returns while `#away` is set or the box has no size, :685); case 14 sends the last good place before `#shown('missing')` (:529); case 15 (a forward search) is unchanged (`#initialised` skips `#land` while `#reveal` is set, :587-607).
 
-1. Fails. A reload makes a new `PdfViewer`; `open` (`viewer.svelte.ts:216-217`) keeps a place only when `key === #key && #doc !== null`, and the first call has `#key === ''`. Page 1, `auto`, vertical, no spread, no panel. `grep -n "setInstanceState\|instanceState" File.svelte` printed nothing, so nothing was saved.
-2. Fails. Same reason; no per-file record existed.
-3. Fails. Nothing saved, so the window's viewer opens at page 1.
-4. Fails. `float/store.ts:108-111` copies the tab's ui record, which held no place.
-5. PDF tab fails. FrameLayer sets `display: none` (`FrameLayer.svelte:81`) and `block` (:89) on the frame root, the scroll offset resets, and no code restored it (the orchestrator's look: 394 to 10). The document-tab part is not in this step's code and is left to the landing look.
-6. Holds. `open` :217 keeps page, `_location` left and top and `currentScaleValue` in `#restore` (:430), applied by `#initialised` (:498-511).
-7. Fails. With `#doc` null `keep` is null (:217), so the later build opens at page 1. Nothing was written, so nothing could be overwritten.
-8. Fails with an error. A rebuilt shorter PDF with the old page passes `#scrollTo(keep)` a page beyond the count; PDF.js logs `scrollPageIntoView: "N" is not a valid pageNumber parameter` (`pdf_viewer.mjs:9022`) and does not scroll.
-9. Not runnable: `grep -rn "pdf-place\|readPdfPlace\|withPdfPlace" src tests docs DESIGN.md` printed nothing, and the scratch file failed on import: `Error: Cannot find module '../../../../src/lib/state/sources/explorer/pdf-place.ts'`. A zoom of "banana" given to PDF.js logs `#setScale: "banana" is an unknown zoom value` (`pdf_viewer.mjs:8987`).
-10. Not runnable, as 9.
-11. Holds. The retarget clears the record (`opening.ts:168`, `:254`) and the new key draws a new box at the top. Under the brief's rules alone it failed whenever a report was pending (ruling 2 above).
-12. Fails. Both tabs reopen at page 1.
-13. Fails. A hidden tab draws no address (`File.svelte` gate, :133) and writes nothing, but no record existed to open at.
-14. Holds, since nothing was written.
-15. Holds. `#reveal` is drawn by `#settle` at the end of `#initialised` (:510) and no saved place competed with it.
-16. Not countable; no reports existed.
-17. Holds. Nothing read `pdf` or `pdf-place`.
-18. Holds. `File.svelte` wrote no record.
-19. Not runnable, as 9.
-20. Fails. No per-file record existed.
-21. Not applicable (no record); under the brief's rule it failed in the interval before a `storage` event (ruling 1 above).
-22. Not applicable (no write); `save` catches the `setItem` throw (`ui.svelte.ts` `save`, the `catch` after `backing.setItem`), so it holds with writes.
-23. Fails. Rename calls `layout.restateInstance` (`ops.svelte.ts`, `followTabs`), the key changes, a new box opens at page 1 and the place is lost.
-24. Not runnable, as 9.
-25. Not runnable, as 9.
-
-## The cases on the changed tree
-
-Cases 9, 10, 19, 24, 25 and 21 ran in the scratch file (run below). The others are readings of the changed code; each names where. All of them are looked at by the orchestrator on TEST at landing.
-
-1. `File.svelte:312-316` calls `viewer.open(src, key, untrack(() => savedPlace()))`; `savedPlace` (:262-270) reads the tab's record first. `#initialised` (`viewer.svelte.ts`) sets `scroll`, `spread`, the zoom (`keep?.scaleValue`), the side panel (`#setSide(keep.sidebar)`) and lands the place (`#land(keep)`, then `#scrollTo`). The viewer reports place changes through `placed` (`File.svelte:290`), and the tab record is written by `keepPlace` (:277).
-2. A closed tab's record is cleared (`instances.ts:234`); `keepPlace` wrote the per-file entry at each report (:273-275), and `savedPlace` falls back to it (:265-269) for the new tab.
-3. The viewer's dispose flush (`viewer.svelte.ts`, `dispose` calls `#flush()` first) and the hide flush (`#resized`) send a pending report at once; the tab is still held by the layout, so the tab record is written (`keepPlace` :276). The window's page reads it through its ui store at load.
-4. `copyTabToWindow` copies the tab's ui record (`float/store.ts:108-111`), which holds `pdf`. Each copy then writes its own record, bound to its own tab id. The offset within the page in the copy can be up to 500 ms old.
-5. `#resized` (`viewer.svelte.ts`) takes the place when the box loses its size (`#away = #place()`) and scrolls back to it when the box has a size again (`#scrollTo(place)`). FrameLayer's `display: none` and `block` (`FrameLayer.svelte:81`, `:89`) change the box's size, which a `ResizeObserver` on the box reports. A document tab's frame is not in this step's code.
-6. `open` with the same key and a document held keeps `#away ?? #place()` (or `#restore` while the new document is still being laid out).
-7. A first load that fails leaves `#restore` unset (`#load` sets it only after the document is read) and `#applied` false, so nothing is reported; the later `open` with a document absent opens at `saved`, which `File.svelte` re-reads (untracked) from the unchanged records. A report needs `#applied`, which `#initialised` sets after `#land(keep)`.
-8. `#scrollTo` clamps: a page beyond `viewer.pagesCount` sets `currentPageNumber` to the last page and returns, so PDF.js logs no error.
-11. `File.svelte:276`: a viewer mounted for a.pdf, torn down after `drawn` moved to b.pdf, writes only a.pdf's per-file entry. `opening.ts:168`/`:254` clears the tab record, and `savedPlace` for b.pdf falls to b.pdf's own entry or none.
-12. Two tabs have two ids, so two tab records (`savedPlace` :263); the per-file entry is the fallback only.
-13. A hidden tab draws no address and so mounts no viewer. A mounted viewer whose box loses its size reports nothing (`#changed` returns while `!#hasSize()`), flushing once at the hide edge.
-14. `#sendable()` needs `status === 'ready'` and `#applied`; a missing, invalid or unreadable file sets neither, and `#flush` before `#shown('missing')` sends the last good place first.
-15. `#initialised`: `if (keep !== null && this.#reveal === null) this.#land(keep)`, and `#settle()` draws the reveal last.
-16. `#changed(false)` sets one timer at `max(0, 500 - since last send)`, so a scroll sends at most once in 500 ms, and a page change within 200 ms of a scroll event (`SCROLLING_MS`) is held to the same throttle. Counted by the orchestrator at landing. Each report calls `updateInstanceState` once and `setInstanceState` once.
-17. `savedPlace` reads `readTabPlace(undefined)` (null) and `readPdfPlaces(undefined)` (the empty list); no other view's record is read or written.
-18. `keepPlace` runs only from a viewer's `placed`, and a viewer exists only for a PDF (`frame` is null otherwise, `File.svelte`).
-20. `withPdfPlace` and `savedPlace` match on root and path both.
-21. The scratch run below (`updateInstanceState` with a second store that had heard no `storage` event).
-22. `save` catches a refused `setItem`; `updateInstanceState` calls `setInstanceState`, which calls `save`.
-23. A rename restates the instance (`ops.svelte.ts` `followTabs`, `layout.restateInstance`), keeps its id and its tab record; the new box's viewer opens at the tab record. The old viewer's flush sees `drawn` on the new path and writes only the old path's entry.
-
-## The scratch test (written, run, quoted, deleted)
-
-File: `tests/state/sources/explorer/pdf-place.scratch.test.ts`, imports `pdf-place.ts` (and, for case 21, `createUi` from `ui.svelte.ts` with a two-method storage object). Run: `npx vitest run tests/state/sources/explorer/pdf-place.scratch.test.ts --project unit --reporter=verbose`, exit 0. Its output (the file path column trimmed):
-
-```
-  ok case 9, a saved zoom that is no zoom > reads "banana" as auto
-  ok ... reads "-2", "NaN", "", "0", "Infinity", "1e999", "0x10", " 2", "30", "0.05", "1e9" as auto
-  ok case 9 > reads a number type as auto and keeps the presets and a positive number
-  ok case 9 > reads an unknown mode or panel as its default
-  ok case 10 > reads a string, an array, null, undefined, page NaN, page 0, page 2.5, left NaN, top Infinity as null
-  ok case 10 > reads a whole place back as it was written
-  ok case 19, a 51st PDF read > keeps 50 entries and drops the oldest
-  ok case 24 > reads a value that is not an array as the empty list
-  ok case 24 > drops bad entries and keeps the first of a root and path
-  ok case 24 > keeps 50 of 60
-  ok case 25 > moves its entry to the front and holds it once
-  ok case 25 > keeps a path of another root as its own entry
-  ok case 21, two pages writing the per-file list > keeps the entry a page wrote before the other heard its storage event 661ms
-
- Test Files  1 passed (1)
-      Tests  31 passed (31)
-```
-
-Before the module existed the file failed on import (first run, case 9). The file and the folder `tests/state/sources/explorer` are deleted: `ls tests/state/sources` prints `repositories`. The step adds and changes no test, and edits no existing assertion, allow list or predicate.
-
-## Lines that read and write the records (cases 2, 11, 17, 20, 21)
+## Lines that read and write the records
 
 `src/lib/views/sources/file/File.svelte`:
 
 ```ts
-262    function savedPlace(): PdfPlace | null {
-263        const own = readTabPlace(instanceState(instance.id));
-264        if (own !== null) return own;
-265        const entry = readPdfPlaces(instanceState(PDF_PLACES_ID)).find(
-266            (one) => one.root === drawn.root && one.path === drawn.path
-267        );
-268        return entry?.place ?? null;
-269    }
-272    function keepPlace(tab: string, file: { root: string; path: string }, place: PdfPlace): void {
-273        updateInstanceState(PDF_PLACES_ID, (held) =>
-274            withPdfPlace(readPdfPlaces(held), file.root, file.path, place)
-275        );
-276        if (holding(tab) === null || drawn.root !== file.root || drawn.path !== file.path) return;
-277        setInstanceState(tab, withTabPlace(instanceState(tab), place));
-278    }
-290            placed: (place) => keepPlace(tab, file, place),
-312        viewer.open(src, key, untrack(() => savedPlace()));   (written over four lines by prettier)
+function ownPlace(): PdfPlace | null {                           // :265
+    return readTabPlace(instanceState(instance.id));
+}
+function savedPlace(): PdfPlace | null { ... }                   // :274, own record, else the file's entry
+function keepPlace(tab, view, file, place): void {               // :284
+    updateInstanceState(PDF_PLACES_ID, (held) => withPdfPlace(readPdfPlaces(held), file.root, file.path, place));
+    if (holding(tab) === null || instanceView(tab) !== view) return;      // :293
+    if (drawn.root !== file.root || drawn.path !== file.path) return;
+    setInstanceState(tab, withTabPlace(instanceState(tab), place));       // :295
+}
+viewer.open(src, key, untrack(() => savedPlace()), untrack(() => ownPlace()));   // :331-336
 ```
-
-## DONE / NOT DONE
-
-| Item | Command | Result |
-|---|---|---|
-| Item 1, types and reader | `src/lib/state/sources/explorer/pdf-place.ts` (129 lines); scratch run above | DONE, 31 passed |
-| Item 2, `placed` hook | `viewer.svelte.ts` (`#changed`, `#send`, `#flush`, `#resized`) | DONE, behaviour at landing look |
-| Item 3, saved place to `open` | `viewer.svelte.ts` `open(url, key, saved)` | DONE |
-| Item 4, place kept while hidden | `viewer.svelte.ts` `#resized`, `#land`, `#away` | DONE, behaviour at landing look |
-| Item 5, the two records | `File.svelte:262-278`, `:290`, `:312-316`; `ui.svelte.ts:631` | DONE |
-| Item 6, documents | `docs/views.md:259`, `DESIGN.md:169` and `:533`, `ui.svelte.ts:1-6` and `:106-110` | DONE |
-| Verify 1 | `npm run diagrams` (exit 0), then `sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md` | DONE, output below |
-| Verify 3 | `wc -l`; `sh utils/folder-check.sh`; `sh utils/unused-exports.sh` | DONE, output below |
-| Verify 4 | the `perl` ASCII gate over `src tests config` (`bin` does not exist in this tree) | DONE, printed nothing |
-| Verify 6 | `grep -rn "pdf-place\|readPdfPlace\|withPdfPlace" src` | DONE, output below |
-| Verify 7 | head comments quoted below | DONE |
-| Verify 8 | sentences read against the standard | DONE, below |
-
-Verify 1, last lines of the final run (exit 0):
-
-```
-$ npm run test:quick
-test:quick: 14 changed file(s), from git since HEAD
-test:quick: 15 test file(s), 10 essential
-ok      prettier (0.7 s): All matched files use Prettier code style!
-ok      ASCII gate (0.8 s)
-ok      svelte-kit sync (2.7 s)
-ok      svelte-check (9.4 s): 1791377704931 COMPLETED 421 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      eslint (11.4 s)
-ok      vitest (16.1 s): Duration  11.13s (transform 26.04s, setup 0ms, import 37.12s, tests 3.32s, environment 3ms)
-test:quick: 17.3 s (limit 45.0 s); every command passed
-checks: 1 commands passed
-```
-
-Verify 3:
-
-```
-     129 src/lib/state/sources/explorer/pdf-place.ts
-     799 src/lib/views/sources/file/pdf/viewer.svelte.ts
-     222 src/lib/views/sources/file/pdf/side-panel.ts
-     306 src/lib/views/sources/file/pdf/Controls.svelte
-     465 src/lib/views/sources/file/File.svelte
-     716 src/lib/state/workbench/ui.svelte.ts
-folder-check exit 0
-unused-exports: diff against the base's unused-exports.txt prints nothing
-```
-
-Sources are under 880, `File.svelte` and `Controls.svelte` under 520. `ls src/lib/state/sources/explorer | wc -l` is now 9.
-
-Also run after the last change: `npx vitest run tests/checks/tree --project unit --reporter=dot` printed `Tests  39 passed (39)` three times. One earlier run of the same command, taken while other suites ran, printed `1 failed | 38 passed`; I did not identify the failing test, and the three reruns were green.
-
-Verify 6:
-
-```
-src/lib/state/workbench/ui.svelte.ts:6:// it has shown under `pdf-place` (state/sources/explorer/pdf-place.ts).
-src/lib/state/sources/explorer/pdf-place.ts:19:export const PDF_PLACES_ID = 'pdf-place';
-src/lib/views/sources/file/File.svelte:64:    // pdf-place.ts), written as the viewer reports it: ...
-```
-
-plus the import and call lines of `readPdfPlace`, `readPdfPlaces` and `withPdfPlace` in `File.svelte` (the id `PDF_PLACES_ID` is used only there), `pdf-place.ts` and `viewer.svelte.ts:52,616` (`readPdfPlace`, which the viewer uses to shape the place it reports). The record's id string is defined once, at `pdf-place.ts:19`; the two other hits of the text `pdf-place` are comments and import paths. Brief item 6 named `File.svelte` and `pdf-place.ts` only; `viewer.svelte.ts` also imports `readPdfPlace` (see Judgment calls).
-
-Verify 7, head comments as they read now: `viewer.svelte.ts:9-30` is the paragraph quoted at the top of that file ("`open(url, key, saved)` loads a document ... since a hidden box loses its scroll offset."). `ui.svelte.ts:1-6`: "... one blob of state per view instance, keyed by the instance id the layout gives it. Two instances of the same view therefore remember different things. A view may also keep a record under a fixed id of its own that no instance has, as the file view keeps the places of the PDFs it has shown under `pdf-place` (state/sources/explorer/pdf-place.ts)." And `ui.svelte.ts:106-109`: "One entry per view instance, by instance id, and one for each fixed id a view keeps a record under. The shape of the value is the view's own."
-
-Verify 8: the sentences in `docs/views.md:259` and `DESIGN.md:169`, `:533` each state one fact; the `DESIGN.md:533` sentence is long, as the line it extends is. Re-read of the other documents that describe the behaviour: `HELP.md` (`grep -n -i pdf HELP.md` lists only keys; what a user does is unchanged) still true; `docs/views.md:239` still true; `File.svelte` head comment rewritten (lines 62-70 added); `viewer.svelte.ts` head comment rewritten; `ui.svelte.ts` head comment extended and the save-merge paragraph still true; `side-panel.ts` and `Controls.svelte` head comments still true.
-
-History-word grep over the lines added or changed in comments (`before`, `used to`, `no longer`, `still`, `always has`, `always had`, `as before`, `previously`, `the step adds`, `after this`): hits are `viewer.svelte.ts` "the old document still behind it" (original sentence, rewrapped), "Nothing is reported before the place a load restores is applied" and "A report still waiting" (state, not history), "waits before it is reported" (an order within the code), "A document still being laid out" (state); `File.svelte` "the layout still holds the tab", "the tab still shows that file" (a condition the code checks); `ui.svelte.ts` "can still overwrite one another" (states the limit). None compares with an earlier state. No comment names a package id or a date. Comment lines over 100 columns in the added code: none (awk check over the changed files; the one 148-column line at `ui.svelte.ts:645` is the existing eslint directive).
-
-Grep after changing names (`SidePanelKind`, `ScrollName`, `SpreadName`) over `src config docs HELP.md DESIGN.md README.md tests`: the only importers are `viewer.svelte.ts`, `side-panel.ts`, `Controls.svelte` and `pdf-place.ts`, each from `pdf-place`.
 
 ## Files changed (`diff -rq` against the base copy, after the last change)
 
 ```
+src/lib/shell/Workbench.svelte
 Only in src/lib/state/sources/explorer: pdf-place.ts
+src/lib/state/workbench/layout/open/float/store.ts
 src/lib/state/workbench/ui.svelte.ts
+src/lib/ui/tabs/tab-frames.svelte.ts
 src/lib/views/sources/file/File.svelte
 src/lib/views/sources/file/pdf/Controls.svelte
 src/lib/views/sources/file/pdf/side-panel.ts
@@ -219,40 +92,76 @@ docs/views.md
 DESIGN.md
 ```
 
-Line counts are in Verify 3. Every path is in the brief's list; the diagram edits are what `npm run diagrams` rewrites (edge counts, e.g. `layers.dot` "views to state" 983 to its new count). `ui.svelte.ts` changed beyond lines 1-4 and 105 as ruling 1 allows: the head comment, the `instances` field comment (:106-109), the `UiStore` member `updateInstanceState` (:198) with its comment, the function (:624-637) and its entry in the returned object.
+Line counts (Verify 3, below): `viewer.svelte.ts` 832, `File.svelte` 485, `tab-frames.svelte.ts` 240, `store.ts` 137, `Workbench.svelte` 489, `pdf-place.ts` 129, `ui.svelte.ts` 716, `side-panel.ts` 222, `Controls.svelte` 306. The two paths the round brief does not list are `float/store.ts` and `shell/Workbench.svelte`. The diagram files are what `npm run diagrams` rewrites. `DESIGN.md:533` gained the sentence on when a pending report is sent; `docs/views.md:259` and `DESIGN.md:169` read true as they stand (re-read). No test was added, changed or removed.
 
-## Judgment calls the brief and the ruling left open (each reversible)
+## DONE / NOT DONE
 
-1. A change that is not a scroll (zoom, scroll mode, spread mode, side panel, a page jump) is sent 100 ms after the change (`SETTLE_MS`), not synchronously. At the event PDF.js has not yet updated its offset (`pagechanging` is dispatched before `_updateLocation`, `pdf_viewer.mjs:9174`; a jump's scroll is applied after the dispatch), so a report made at once would carry the previous offset. This is not a throttle: each such change is its own report.
-2. Case 16 and the ruling meet at the page change a scroll causes: scrolling through pages would otherwise report once per page crossed, more than twice a second. A `pagechanging` that arrives within 200 ms of a scroll event (`SCROLLING_MS`) is held to the 500 ms throttle; one that does not (a page entry, Next, a link) is sent as a settled change.
-3. `viewer.svelte.ts` imports `readPdfPlace` and builds the reported place through it, so a place the viewer reports is one the reader accepts (a NaN page or an out-of-bounds zoom is never sent).
-4. `reload()` (Retry) opens at the last place the viewer reported, else the last `saved` it was handed, so a first load that failed and is retried opens at the saved place, not the top. Two private fields (`#sent`, `#saved`).
-5. A report equal to the one before it is not sent (`#send` compares the two as JSON), so a scroll event that changed nothing writes nothing.
-6. `open` with the same key while the new document is still being laid out keeps `#restore` (the place the load is about to apply), not the position of the reset view.
-7. A page beyond the document's count opens (and `back` returns to) the top of the last page (`currentPageNumber = pagesCount`), not an offset from the old page.
-8. The zoom factor must be plain decimal digits (`/^\d+(\.\d+)?$/`) inside 0.1 to 25; `"1e3"`, `"0x10"`, `" 2"` read as `auto`. The viewer writes factors in that form.
-9. `updateInstanceState` drops the id from `synced` before saving (see ruling 1), so the changed record replaces the saved one even when this tab's copy already read the same.
-10. The viewer reports nothing until `#applied`, a field set at the end of `#initialised`; a place restored while the box has no size is held in `#away` and scrolled to when the box has one.
-11. `File.svelte` reads the saved place with `untrack`, so a report's write does not reopen the document.
+| Item | Command or place | Result |
+|---|---|---|
+| 1, flush with no size guard | `viewer.svelte.ts:709-712`, `:303-305` | DONE |
+| 2, discrete change on `updateviewarea`, no timer | `viewer.svelte.ts:472`, `:684-702`; `grep -n "SETTLE\|#due" viewer.svelte.ts` prints nothing | DONE |
+| 3, flush before every window operation | `float/store.ts:106-118`, `Workbench.svelte:85`, `tab-frames.svelte.ts:74,166`, `File.svelte:234` | DONE, by a different route than the brief (below) |
+| 3, scroll page change under the throttle | `viewer.svelte.ts:609-613` | DONE |
+| 4, Return to Page shows the window's place | `viewer.svelte.ts:266-297`, `File.svelte:265,331-336` | DONE, behaviour at the landing look |
+| 5, `instanceMap` | `pdf-place.ts:17,123,128` | DONE |
+| 6, report | this file | DONE |
+| Browser behaviour of the cases | none run | NOT DONE here, a landing look |
+| Verify list | below | DONE, 6 full-list runs, the last one quoted |
+
+## Judgment calls (each reversible)
+
+1. Item 3's route. The brief has each caller call the flush before the operation. The grep `grep -rn "windowTab\|windowPane\|windowFloat\|copyTabToWindow" src` finds `tab-menu-state.svelte.ts:171,175`, `PaneView.svelte:259-260` with `pane-view.ts:413-438`, `drag.svelte.ts:207` and `float/browser.ts:58`; the last two are in the state layer, which cannot import `ui/tabs`, so each would need a function injected, and a caller added later would miss the flush. The flush is called inside the four operations instead (`float/store.ts`), through a function the workbench registers (`settleBeforeWindow`, wired at `Workbench.svelte:85` to the tab frames store's `flush`), so every caller, present and future, is covered by one call per operation. The lazy option would have been to flush at only the shell callers; the chosen route ends the cause. The frame store route the brief names is kept: `FrameSpec.flush`, `TabFrames.flush`. The store flushes every frame's viewer, not only the moved tabs; a viewer with nothing pending sends nothing.
+2. `keepPlace` also checks that the tab still shows the same view (`instanceView(tab)`, `File.svelte:293`). With the flush now live at dispose, a tab retargeted to another view keeps its id and its record, and the old viewer's `drawn` still names the old file; without the view check the old place would be written into that other view's record.
+3. `open` takes a fourth parameter, `own`, kept apart from `saved` (`viewer.svelte.ts:266-271`), and `#sent` is set when `open` runs without a held document (:275-277) so a record equal to what the viewer opened at counts as sent.
+4. `viewer.svelte.ts` imports `readPdfPlace` and shapes the reported place through it (:636), so a NaN page or a zoom outside 0.1 to 25 is never sent; `reload()` (Retry) opens at the last place reported, else the last `saved` (:298-300); a report equal to the last one is not sent (`sameAs`, end of file); a page beyond the count opens at the last page (`#scrollTo`, :726); the zoom factor must be plain decimal digits inside 0.1 to 25.
+5. `updateInstanceState` drops the id from `synced` before saving, so the changed record replaces the saved one even when this tab's copy reads the same.
 
 ## User-visible changes, before and after (the look on TEST at landing)
 
-- A PDF tab reloaded: before, page 1 at the zoom `auto`, vertical scroll, no side panel; after, the page, the offset in it, the zoom, the scroll and spread modes and the side panel it was left at.
-- A PDF opened from Files after its tab was closed (or in a new tab, window or Copy into New Window): before, page 1; after, the file's last place (the last 50 files), a copy at the original's place.
-- Maximise pane then Restore panes on a PDF tab at page 4: before, the offset reset to the top of the first pages (394 to 10 on the orchestrator's look); after, page 4 at the same offset. A document tab's frame under Maximise is the orchestrator's look at landing; no code of this step touches it.
-- A rebuilt PDF shorter than the page read: before, a PDF.js console error and the view not moving; after, the last page, no error.
-- A forward search that opens a PDF with a saved place shows the search's place. Nothing else a reader sees changes: the controls, strings and keys are as they were, no catalog key was added.
+- A PDF tab reloaded: the page, the offset in it, the zoom, the scroll and spread modes and the side panel it was left at, in place of page 1 at `auto`.
+- A PDF reopened from Files after its tab closed, including a close within 500 ms of a scroll or within a view update of a zoom change: the file's last place (the last 50 files), in place of page 1.
+- Open in New Window, Copy into New Window and every other window operation: the window or copy starts at the place the viewer is at, including a scroll within the last 500 ms and a zoom change.
+- Return to Page after moving in the window: the main page shows the window's place.
+- Maximise pane then Restore panes on a PDF tab keeps its page and offset (before: the offset reset, 394 to 10 on the orchestrator's look). A document tab's frame under Maximise is the orchestrator's look at landing; no code of this step touches it.
+- A rebuilt PDF shorter than the page read shows the last page, with no PDF.js console error.
+- A forward search that opens a PDF with a saved place shows the search's place. Controls, strings and keys are as they were, and no catalog key was added.
 
-## Things in the brief that were wrong or impossible, with the evidence
+## Limits: every way a copy or a closed tab carries an old place after this round
 
-- Brief item 5 and case 21: "written over the list the store holds at the moment of the write" cannot keep an entry another page wrote before the `storage` event arrived (`instanceState` returns the in-memory copy, `ui.svelte.ts:325`; `mergedInstances` writes a changed record whole). Ruled (a) and built.
-- Brief item 2 (flush at dispose) with item 5 (a tab record that names no file) wrote a closed tab's record and an earlier file's place into a retargeted tab. Ruled and built (ruling 2).
-- Brief item 4 and the head comment: PDF.js's `_location.top` is measured up from the page bottom, so the former `top: 0` fallback meant the bottom of the page; a null `_location` now yields no place (ruling 3).
-- Verify 4's gate lists `bin`, which does not exist in this tree (`bfs: error: bin: No such file or directory`); the gate was run over `src tests config`.
+- A rename of a PDF with a scroll report pending (up to 500 ms): the old path's entry gets the place, and the renamed tab keeps its record (it names no file), so the tab opens at the place last written to its record, up to 500 ms of scrolling old. A retarget must not write the tab's record (case 11), and the viewer cannot tell a rename from a retarget, so this stays.
+- A window operation, a copy or a close between a discrete change and PDF.js's next `updateviewarea`: the report carries the new page, zoom and modes (`currentPageNumber` and `currentScaleValue` are set at once) but the offset PDF.js held at its last view update, which can be one update old.
+- A tab that another browser page shows: `frames.flush()` reaches the viewers of the page that runs the operation only. A tab shown in a window of its own and copied or moved by the main page keeps whatever that window last reported (up to 500 ms of scrolling old).
+- A page that goes without `pagehide` (a killed process, a discarded mobile tab): a report pending then is lost, up to 500 ms of scrolling.
+- A refused or full `localStorage`: `save` keeps the record as last saved (`ui.svelte.ts:538`), so a copy carries that one.
+- Two pages writing the per-file list in the same instant can lose one entry; the window is the read-modify-write inside `updateInstanceState`, not an interval.
+- A tab whose box is hidden reports nothing while hidden (`#changed` returns while `#away` is set), and the hide edge sends what was pending, so a copy of a hidden tab carries the place it had when it was hidden.
+- A copy or a close carries no other old place: every operation in `float/store.ts` that puts a tab in a window or copies it there flushes first, and a closed tab's viewer is disposed with a flush.
 
-## Limitations I know of
+## Verify list, last run
 
-- Two pages writing the per-file list in the same instant can still lose one entry (no lock on `localStorage`); the window is the read-modify-write inside `updateInstanceState`, microseconds, not the earlier interval.
-- A Copy into New Window can carry an offset within the page up to 500 ms old (ruling 3).
-- Nothing about the browser behaviour (cases 1 to 8, 11 to 18, 20 to 23, and Maximise or Restore under a document tab) was run here; the `ResizeObserver` path of item 4 is proven by reading `FrameLayer.svelte:62-92` (`place()` writes `display` once per animation frame, so each change reaches the observer in its own frame) and `pdf_viewer.mjs` (`update()` returns before `_updateLocation` when no page is visible, so `_location` holds while the box is hidden), not by a run.
-- `tests/checks` other than `tree` were not run by me (the landing list runs them).
+Run as a script under the session scratchpad (`d15r1/verify.sh`, output `verify.out`), from `tools/oculus` of the worktree, after the last change of the round. Six runs of the full list were made in the round; this is the last, and the files did not change after it.
+
+```
+1 diagrams exit 0                      (npm run diagrams)
+2 checks.sh exit 0
+ok      ASCII gate (0.5 s)
+ok      svelte-kit sync (1.8 s)
+ok      eslint (6.7 s)
+ok      svelte-check (6.2 s): 1791379902824 COMPLETED 421 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (11.6 s): Duration  8.39s (transform 19.87s, setup 0ms, import 28.20s, tests 2.52s, environment 3ms)
+test:quick: 12.2 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+3 wc -l   129 pdf-place.ts, 832 viewer.svelte.ts, 485 File.svelte, 240 tab-frames.svelte.ts, 137 store.ts, 489 Workbench.svelte, 716 ui.svelte.ts, 222 side-panel.ts, 306 Controls.svelte
+4 folder-check exit 0
+5 unused-exports diff against .agents/worktrees/D15-base/unused-exports.txt: exit 0 (371 lines each)
+6 perl ASCII gate over src tests config: exit 0, printed nothing
+7 LC_ALL=C grep -n '[^ -~]' over DESIGN.md, docs/views.md and the three diagram .dot files: exit 1, printed nothing
+8 comment lines over 100 columns in the touched files: only src/lib/state/workbench/ui.svelte.ts:645 (148 columns), the eslint directive that is in the base copy at line 619
+npx vitest run tests/checks/tree --project unit --reporter=dot: Test Files  3 passed (3), Tests  39 passed (39)
+```
+
+Verify 6 (`grep -rn "pdf-place\|readPdfPlace\|withPdfPlace\|PDF_PLACES_ID" src`): the id string is defined once (`pdf-place.ts:20`); `PDF_PLACES_ID` is used only in `File.svelte`; `readPdfPlace` is used by `viewer.svelte.ts` and `readTabPlace`; `side-panel.ts:15` and `Controls.svelte:20` import the unions from `pdf-place`.
+
+Verify 7, head comments as they read now: `viewer.svelte.ts:9-30` is the paragraph quoted in the file ("`open(url, key, saved, own)` loads a document ... since a hidden box loses its scroll offset."); `File.svelte:62-77` is the paragraph on the two records and the flush ("The place a PDF is read at is kept in two records of the ui store ... so the record that is carried is current."); `ui.svelte.ts:1-6` and `:106-109` are unchanged by this round. The history-word grep over the comment lines added or changed against the base (`round`, `previous`, `no longer`, `used to`, `formerly`, `reverted`, `earlier`, `D15`, `bug`) prints nothing.
+
+What the green result does not cover: tests outside the quick selection and `tests/checks` other than `tree` (the landing list runs them), the browser behaviour of every case, and PDF.js's event order, which is read from `pdf_viewer.mjs` and not run.

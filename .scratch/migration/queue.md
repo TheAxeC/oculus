@@ -1,9 +1,8 @@
-In flight (3 of 6 slots):
-- D15 (PDF reading): reviewed; repair round 1 sent (the place sent at every close, copy and return).
+In flight (2 of 6 slots):
 - D11 (the debug client for rite): building.
 - X3e (Files lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop): building.
 
-No step can be prepared now: M8 waits for X3e and D11 to land; D43 waits for M8; D33 waits for D11 and D28; D28 waits for X3e. The other three slots stay empty until one of these lands.
+No step can be prepared now: M8 waits for X3e and D11 to land; D43 waits for M8; D33 waits for D11 and D28; D28 waits for X3e. The other four slots stay empty until one of these lands.
 
 Queued, in order (17 steps):
 - D28 (saving a file as VS Code does): after X3e.
@@ -27,6 +26,7 @@ Queued, in order (17 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D15 (PDF reading), 2026-10-07; the look on TEST owed.
 - D45 (LaTeX as VS Code's LaTeX Workshop), 2026-10-07, 0753a5e7.
 - D23b (rename, workspace symbols, hierarchies, the TypeScript and Svelte servers), 2026-10-07, 639820b9.
 - PR4 (Present's presenter screen), 2026-10-07, eede4598.

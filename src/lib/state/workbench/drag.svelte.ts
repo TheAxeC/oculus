@@ -203,6 +203,8 @@ export function createDrag(layout: LayoutStore, desktop?: Desktop): DragStore {
                       // The point is read out of the drag's reactive state: an IPC message carries
                       // plain data, and a reactive object cannot be cloned.
                       const point = { x: at.x, y: at.y };
+                      // The window that takes the tab reads what its views keep of it at once.
+                      layout.settle();
                       void desktop.bridge.dropOutside({ tab: id, at: point }).then((taken) => {
                           if (!taken) layout.windowTab(id, { ...at, ...WINDOW_START });
                       });

@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z709 (2026-10-07, step D15, the orchestrator, automode): which viewer takes a place another page wrote
+
+- Chosen: only a viewer whose box was hidden when `open` runs again goes to the place in the tab's record that it did not send, which is the tab returning from a window; a viewer in view keeps its own place. Two oculus pages that share one arrangement no longer move each other's PDF when a pane is split or a rail page switched.
+- Not chosen: (a) every viewer goes to the record's place, as round 1 built it, and the report states the jump; it leaves a PDF the reader is looking at jumping to another browser tab's page on a redraw. It is the lazy option, since it states the defect instead of fixing it.
+
+Where it applies: D15, fixed at its landing. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z706 (2026-10-07, step M8, the orchestrator, automode): how the hub's YAML reaches the editor, and the brief check's other choices
 
 - Chosen: the schemas come to the YAML server from the same snapshot build the hub's validation uses, so M8 waits for X3e and D11 to make room in the server's start file; oculus answers which schema each file gets; the YAML server cannot read any file on disk outside oculus's packages; oculus's own catalogs, text files, `.oculus/settings.yml` and apps' `app.yml` are checked through their own readers; career's sections are `type: records`; `suggest_from` and `values_by` become forms of `from:`; the help line is `help` in the code as in the files; the moved manifest schema stays listed in Settings; the hub's existing accented names and glyphs stay; the YAML server's own words in the editor, as pyright's; integer years, career's free keys and the radar's `new-idea-candidate` pass.
