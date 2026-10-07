@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z686 (2026-10-07, step D23b, the orchestrator, automode): the TypeScript and Svelte servers and the cross-file edit
+
+- Chosen: the Svelte server runs at once in its safe mode and gets its full features only after you approve the repository's Svelte and Vite config files, asked again when they change; a new guarded rule that no repository code runs before that approval, with its test; renames in TypeScript reach the `.svelte` files through the Svelte team's TypeScript plugin; no background `npm` installs and no server logs in repositories; one shared list of what each server offers; History names an edit made by a language server, in the singular for one file.
+- Not chosen: keeping the approval per folder, no test for it, splitting the step, renames that miss `.svelte` files (the lazy options).
+
 ## Z685 (2026-10-07, step PR4, the orchestrator, automode): how the presenter screen holds up
 
 - Chosen: presenting survives switching tabs and pages and ends only on End, Esc, closing the audience window or the tab; the audience window notices the presenter page has gone at once, not by a timer, so a hidden presenter never ends the talk; one presenter per deck, a second Presenter press takes the audience over; switching deck ends the presentation; in the desktop app the audience window fills its display without blanking the others, is not opened twice, closes with the window that opened it, gets full screen, and Close Window closes it; P is named on the Presenter control and the first-slide hint, never on the projector; a click on the current slide moves on.

@@ -1890,3 +1890,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z683 (2026-10-07): automode, D45's four choices from its second recheck (the new window's form, the SyncTeX click, composing with texlab, Preview through Open in Program).
 - Z684 (2026-10-07): automode, X3e's eight choices from its third recheck.
 - Z685 (2026-10-07): automode, PR4's ten choices from its brief check.
+- Z686 (2026-10-07): automode, D23b's choices from its brief check (the Svelte approval by config text, G55, the test rows under G2, G3, G8 and G9, one step, the shared server facts, the copy kind, no type acquisition, the Svelte TypeScript plugin, the feature set, the singular label).

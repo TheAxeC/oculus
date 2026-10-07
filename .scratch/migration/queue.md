@@ -1,8 +1,9 @@
-In flight (2 of 6 slots):
+In flight (3 of 6 slots):
 - D45 (LaTeX as VS Code's LaTeX Workshop): building.
 - PR4 (Present's presenter screen): building.
+- D23b (cross-file language features, TypeScript and Svelte servers): building.
 
-Queued, in order (21 steps):
+Queued, in order (20 steps):
 - X3e (Files lists reordered by drag): after D45.
 - D28 (saving a file as VS Code does): after X3e.
 - M6 (the collection forms removed): after X3e and D28.
@@ -12,7 +13,6 @@ Queued, in order (21 steps):
 - D41 (links in Markdown checked): after M7.
 - M8 (the hub's YAML checked in the editor): waiting for Axel's ruling on the hub YAML's shape.
 - D43 (LaTeX navigation through texlab): after D23b and D45.
-- D23b (cross-file language features): brief check running.
 - D33 (the Problems view): after D45.
 - D39 (hub keys as links): after M8 and D23b.
 - D36 (linters on save): after D33.

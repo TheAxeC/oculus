@@ -37,6 +37,32 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D45-brief-check.md (a32b5474d92306805, claude-opus-5-5, 324,219 tokens, 91 tool uses, 17.2 min; the brief rewritten since from agents/reviews/D45-premise-recheck-2.md, a0dc73f3ef96a19bb, claude-opus-5-5, 263,515 tokens, 119 tool uses, 12.1 min)
   landing: not-started
   round: 0
+- step: PR4
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: aae584457c255ee97 (builder, launched 2026-10-07)
+  worktree: .agents/worktrees/PR4
+  base: 70b68cca
+  launched: 2026-10-07
+  report: agents/reviews/PR4-report.md
+  brief_check: agents/reviews/PR4-brief-check.md (adc90b337fe7ebaaa, claude-opus-5-5, 229,636 tokens, 65 tool uses, 10.4 min)
+  shared_paths: with D45: tools/oculus/DESIGN.md (PR4 :478 and the windows bullet at :570-574, D45 :531-535 and :570-574 only where the float window in a browser makes it false), docs/window.md (PR4 :7, D45 :15, :41, :58-59, :82), docs/views.md (PR4 :95-107, D45 :67-75, :229, :241-243), HELP.md (PR4 :103, D45 :23-73, :96, :132), src/desktop/decide/links.ts and src/desktop/windows/windows.ts (D45 only if the desktop float window needs a change); sentence-level edits in different places, whichever lands second carries the other's text
+  landing: not-started
+  round: 0
+- step: D23b
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: (read after launch)
+  session_id: (after launch)
+  worktree: .agents/worktrees/D23b
+  base: (the preparation commit)
+  launched: 2026-10-07
+  report: agents/reviews/D23b-report.md
+  brief_check: agents/reviews/D23b-brief-check.md (a87b263e7d9067812, claude-opus-5-5, 231,512 tokens, 94 tool uses, 13.2 min)
+  shared_paths: with D45: src/lib/shell/keys/keys.ts and workbench-keys.svelte.ts (each adds its own bindings; D23b moves no file D45 edits), src/lib/views/sources/source/language/ (D45 the LaTeX files, D23b lsp.ts), config/text/statusbar.yml and app.yml (different keys), DESIGN.md:571-572, HELP.md, docs/views.md and docs/window.md (different rows and lines); with PR4: DESIGN.md:570-574 and docs/window.md:7; sentence-level edits in different places, whichever lands second carries the other's text
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
