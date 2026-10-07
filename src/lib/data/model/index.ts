@@ -579,15 +579,33 @@ export {
 } from './model-search.ts';
 export {
     BUILD_OUTCOMES,
+    DEBUG_CONSOLE_KINDS,
+    DEBUG_CONSOLE_MAX,
+    DEBUG_STATUSES,
     SCHEDULE_WORDS,
     STEER_CONTROL,
     STEER_MAX,
     TERMINAL_COLORS,
     TERMINAL_REFUSALS,
     UPDATE_TASKS
-} from './model-processes.ts';
+} from './model-machine.ts';
 export type {
     BuildOutcome,
+    DebugBreakpoint,
+    DebugConfiguration,
+    DebugConsole,
+    DebugConsoleAppend,
+    DebugConsoleKind,
+    DebugConsoleLine,
+    DebugFileBreakpoints,
+    DebugFrame,
+    DebugFunctionBreakpoint,
+    DebugLaunches,
+    DebugPayload,
+    DebugScope,
+    DebugSession,
+    DebugStatus,
+    DebugWatch,
     LspApproval,
     LspCode,
     LspConfig,
@@ -619,7 +637,7 @@ export type {
     TerminalResume,
     UnchosenKey,
     UpdateTask
-} from './model-processes.ts';
+} from './model-machine.ts';
 export type {
     ChainLine,
     CommandContext,

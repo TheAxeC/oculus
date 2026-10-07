@@ -77,6 +77,34 @@ text:
             outside: That deck is outside the folders oculus serves
             repeated: A deck is listed twice in the group
             unknown_name: 'No deck named {0} belongs to the group'
+        debug:
+            bad_action: action must be launch, approve, continue, next, stepIn, stepOut, finishFrame, frame, evaluate, breakpoints, functions, watch or stop, with the fields that action takes
+            bad_header: rite_dap sent a message with no usable Content-Length header
+            bad_lines: lines must be whole numbers from 1
+            bad_path: path must be an absolute path under a root the file browser serves
+            default_name: Debug the open file
+            ended_meanwhile: The debug session ended before the evaluation was answered
+            exit_code: rite_dap exited with code {0}
+            field_problem: '{0} {1}'
+            finished: The debug session ended
+            launch_line: 'rite_dap {0} in {1}'
+            no_configuration: 'launch.yml has no configuration named {0}'
+            no_expression: Type an expression to evaluate
+            no_frame: No frame {0} in this pause
+            no_session: No debug session is running
+            not_json: rite_dap sent a message that is not JSON
+            not_message: rite_dap sent a message that is neither a response nor an event of the debug protocol
+            not_paused: No debug session is paused
+            not_rite: 'Only a .rite file that exists can be debugged: {0}'
+            partial: rite_dap stopped in the middle of a message
+            process: rite_dap {0} (pid {1})
+            request_failed: 'rite_dap refused a request: {0}'
+            running: 'A debug session is running: stop it first'
+            signal: rite_dap ended with signal {0}
+            start_failed: "rite_dap could not be started: {0}. Set rite_dap_bin in config/local.yml to the adapter's path."
+            stopped: The debug session was stopped
+            too_many_lines: lines must hold at most 10,000 numbers
+            unserved: '{0} is under no root the file browser serves, so it cannot be debugged'
         config_value:
             local: local.yml is the machine's own file and is not written from here
             no_entry: The options catalog has no list or family of that name in a tracked config file

@@ -63,15 +63,27 @@ export function pushedCollections(pushed: unknown): string[] | null {
  * every key the list no longer holds, so a collection taken out of config/sources.yml leaves the
  * rail and the palette with the keys that took it out rather than at the next reload.
  *
+ * A key that is the id of a view a module registers as its own is left out, so a `collections:`
+ * entry named `debug` or `files` never replaces a built-in view.
+ *
  * What a factory module registered last time is read back from the registry, as the registrations
  * drawn by that module's own component, so this module owns the collection registrations without
  * keeping a second record of them anywhere.
  */
 export function registerCollections(registry: RegistryStore, keys: string[]): void {
+    const builtIn = new Set(
+        Object.values(viewModules).flatMap((unknownModule) => {
+            const source = (unknownModule as ViewModule).registration;
+            return source === undefined || typeof source === 'function'
+                ? []
+                : definitions(source).map((registration) => registration.id);
+        })
+    );
+    const free = keys.filter((key) => !builtIn.has(key));
     for (const unknownModule of Object.values(viewModules)) {
         const module = unknownModule as ViewModule;
         if (typeof module.registration !== 'function') continue;
-        const wanted = definitions(module.registration, keys);
+        const wanted = definitions(module.registration, free);
         const ids = new Set(wanted.map((registration) => registration.id));
         for (const registration of registry.views()) {
             if (registration.component !== module.default) continue;

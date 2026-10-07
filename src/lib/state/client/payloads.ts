@@ -6,7 +6,13 @@
 // top level and a payload of a hundred thousand rows costs the same as a small one.
 
 import { z } from 'zod';
-import { anyNumberShape, mapShape, unchangedAs } from '../../data/shapes/shapes.ts';
+import { DEBUG_STATUSES } from '../../data/model/index.ts';
+import {
+    anyNumberShape,
+    debugAppendShape,
+    mapShape,
+    unchangedAs
+} from '../../data/shapes/shapes.ts';
 import type { Payloads } from '../shared/stores/shapes.ts';
 
 /** A list; its items are checked where they are read. */
@@ -117,6 +123,56 @@ const appsShape = unchangedAs<Payloads['apps']>(
     z.object({ rows: listShape, findings: listShape, folders: z.array(z.string()) })
 );
 
+const debugShape: z.ZodType<Payloads['debug']> = z.object({
+    status: z.enum(DEBUG_STATUSES),
+    session: z
+        .object({
+            repo: z.string(),
+            name: z.string(),
+            program: z.string(),
+            cwd: z.string(),
+            pid: z.number(),
+            number: z.number()
+        })
+        .nullable(),
+    pause: z.object({ reason: z.string(), description: z.string() }).nullable(),
+    frames: z.array(
+        z.object({
+            id: z.number(),
+            name: z.string(),
+            path: z.string(),
+            line: z.number(),
+            column: z.number()
+        })
+    ),
+    frame: z.number().nullable(),
+    scopes: z.array(
+        z.object({
+            name: z.string(),
+            variables: z.array(z.object({ name: z.string(), value: z.string() }))
+        })
+    ),
+    watch: z.array(
+        z.object({
+            expression: z.string(),
+            value: z.string().optional(),
+            error: z.string().optional()
+        })
+    ),
+    breakpoints: z.array(
+        z.object({
+            path: z.string(),
+            breakpoints: z.array(
+                z.object({ line: z.number(), verified: z.boolean(), message: z.string() })
+            )
+        })
+    ),
+    functions: z.array(z.object({ name: z.string(), verified: z.boolean(), message: z.string() })),
+    ended: z.string()
+});
+
+const debugConsoleShape: z.ZodType<Payloads['debug-console']> = debugAppendShape;
+
 const jumpShape: z.ZodType<Payloads['jump']> = z.object({
     owner: z.string().min(1),
     root: z.string().min(1),
@@ -144,5 +200,7 @@ export const payloadShapes: { [K in keyof Payloads]: z.ZodType<Payloads[K]> } = 
     audit: auditShape,
     files: filesShape,
     apps: appsShape,
+    debug: debugShape,
+    'debug-console': debugConsoleShape,
     jump: jumpShape
 };

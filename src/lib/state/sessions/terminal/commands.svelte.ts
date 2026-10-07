@@ -13,6 +13,11 @@
 // and a key ask the same question, and the shell draws it once, so the answer comes from one place
 // whichever started the run.
 //
+// A caller that needs to know how a press of a command ended registers `afterPress`. A press that
+// asked an approval has not ended: it ends with the answer, started once the command's terminal
+// is made, refused when the write or the run was refused, dropped when the question was answered
+// no, replaced by another press's question, or superseded before it could be held.
+//
 // The form that saves a command is held here too (`forming`): a button opens it with the command
 // to edit or none, and the shell draws it over the page, so it stands on the modal ground like
 // the question does and not inside the view that opened it.
@@ -158,6 +163,13 @@ export type RunAnswer =
     | { ok: false; error: string }
     | { ok: true; id: string; terminal?: Terminal };
 
+/** How a press of a command ended. */
+type PressOutcome =
+    { kind: 'started'; terminal: string } | { kind: 'refused' } | { kind: 'dropped' };
+
+/** What a listener of `afterPress` is told: the press and how it ended. */
+type PressEnd = { repo: string; name: string; outcome: PressOutcome };
+
 /** The question a press is waiting on. */
 export type CommandAsking =
     | { kind: 'approve'; repo: string; name: string; source: CommandSource; lines: ChainLine[] }
@@ -188,6 +200,8 @@ export type CommandsStore = {
     restart: (id: string, confirmed: boolean) => Promise<RunAnswer>;
     /** Run a command as a press does: ask what it needs, say a refusal, show the terminal. */
     press: (repo: string, name: string, source: CommandSource) => Promise<boolean>;
+    /** Call a listener once for each press of a command that ends; the call returned removes it. */
+    afterPress: (listener: (end: PressEnd) => void) => () => void;
     /** Restart as a press does: ask for a running line, then restart it. */
     pressRestart: (id: string) => Promise<boolean>;
     /** Rerun as a press does: a refusal is said and the terminal's output starts again. */
@@ -288,6 +302,9 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
     /** The output read of each task terminal, by terminal id. */
     const outputs: { byId: Record<string, Output> } = $state({ byId: {} });
     let question: CommandAsking | null = $state(null);
+    /** The press the held question belongs to, or null for a question no command press asked. */
+    let owner: { repo: string; name: string } | null = null;
+    const listeners = new Set<(end: PressEnd) => void>();
     let form: CommandForming | null = $state(null);
     /** The count of presses begun, so an answer of an earlier press raises no question. */
     let pressed = 0;
@@ -469,19 +486,37 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
      * the server asked is held as `again`; null holds none, which is how the answer of a press that
      * a later press superseded leaves the question of the later one.
      */
-    function settle(answer: RunAnswer, again: CommandAsking | null): boolean {
+    function settle(
+        answer: RunAnswer,
+        again: CommandAsking | null,
+        who: { repo: string; name: string } | null = null
+    ): boolean {
         if ('approve' in answer || 'confirm' in answer) {
-            if (again !== null) question = again;
+            if (again === null) {
+                finish(who, { kind: 'dropped' });
+                return false;
+            }
+            finish(owner, { kind: 'dropped' });
+            question = again;
+            owner = who;
             return false;
         }
         if (!answer.ok) {
             notices.post(answer.error === '' ? t('commands.refused') : answer.error, {
                 tone: 'error'
             });
+            finish(who, { kind: 'refused' });
             return false;
         }
         if (answer.terminal !== undefined) terminals.adopt(answer.terminal);
+        finish(who, { kind: 'started', terminal: answer.id });
         return true;
+    }
+
+    /** Tell the listeners how the press of a command ended; a question of no press tells none. */
+    function finish(who: { repo: string; name: string } | null, outcome: PressOutcome): void {
+        if (who === null) return;
+        for (const listener of [...listeners]) listener({ ...who, outcome });
     }
 
     async function press(repo: string, name: string, source: CommandSource): Promise<boolean> {
@@ -490,7 +525,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         const answer = await run(repo, name, source);
         const lines = 'approve' in answer ? answer.approve : [];
         const ask: CommandAsking = { kind: 'approve', repo, name, source, lines };
-        return settle(answer, turn === pressed ? ask : null);
+        return settle(answer, turn === pressed ? ask : null, { repo, name });
     }
 
     async function pressRestart(id: string): Promise<boolean> {
@@ -507,8 +542,13 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
 
     async function answer(yes: boolean): Promise<void> {
         const asked = question;
+        const who = owner;
         question = null;
-        if (!yes || asked === null) return;
+        owner = null;
+        if (!yes || asked === null) {
+            finish(who, { kind: 'dropped' });
+            return;
+        }
         if (asked.kind === 'restart') {
             settle(await restart(asked.id, true), null);
             return;
@@ -516,6 +556,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         const approved = await approve(asked.repo, asked.lines);
         if (!approved.ok) {
             notices.post(approved.error, { tone: 'error' });
+            finish(who, { kind: 'refused' });
             return;
         }
         await press(asked.repo, asked.name, asked.source);
@@ -708,6 +749,10 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         press,
         pressRestart,
         pressRerun,
+        afterPress: (listener) => {
+            listeners.add(listener);
+            return () => listeners.delete(listener);
+        },
         asking: () => question,
         answer,
         forming: () => form,

@@ -4,14 +4,15 @@
 // `optionalTextShape`, `textOrNumberOnlyShape`), the whole-number schema `wholeShape`, the list
 // schemas (`itemsShape`, a list of anything, and `optionalItemsShape`, an optional list of
 // strings), the quick path `quickly` builds over a schema full of `.catch` repairs, and the plain
-// readers `readAs`, `readOr`, `filledText`, `optionalText`, `text` and `textOrNumber`. They sit in
-// a folder of their own so every data folder above data/helpers can import them, and apart from the
-// server's json.ts, which can reach the disk: the write diagram draws a module as a writer when
-// anything it imports can write, and a schema helper never does.
+// readers `readAs`, `readOr`, `filledText`, `optionalText`, `text` and `textOrNumber`, and the one
+// shape of a debug console append (`debugAppendShape`), which the server's merge and the page's
+// reader share. They sit in a folder of their own so every data folder above data/helpers can
+// import them, and apart from the server's json.ts, which can reach the disk: the write diagram
+// draws a module as a writer when anything it imports can write, and a schema helper never does.
 
 import { z } from 'zod';
 import { strings } from '../helpers/guards.ts';
-import type { TaskRef } from '../model/index.ts';
+import { DEBUG_CONSOLE_KINDS, type TaskRef } from '../model/index.ts';
 
 /**
  * A schema that accepts what `shape` accepts and answers the value it was given, not the copy zod
@@ -298,3 +299,13 @@ export function clusterFolder(value: unknown): string | null {
     );
     return sound ? value : null;
 }
+
+/**
+ * One append of the debug console as the channel carries it: the session, the absolute number of
+ * the first line sent and the lines, which the server merges and the page reads by this one shape.
+ */
+export const debugAppendShape = z.object({
+    session: z.number(),
+    start: z.number(),
+    lines: z.array(z.object({ kind: z.enum(DEBUG_CONSOLE_KINDS), text: z.string() }))
+});

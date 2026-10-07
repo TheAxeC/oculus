@@ -87,14 +87,9 @@
         type HtmlSerializer
     } from './grid-actions';
     import { errorLinks } from './grid-links';
+    import { gridKeys } from './grid-keys';
     import FindBar from './FindBar.svelte';
-    import {
-        FIND_LIMIT,
-        findKey,
-        linkHandler,
-        type FindAction,
-        type FindToggles
-    } from '../terminal-list';
+    import { FIND_LIMIT, linkHandler, type FindAction, type FindToggles } from '../terminal-list';
     import { untrack } from 'svelte';
     import type { Terminal as Grid } from '@xterm/xterm';
     import { terminalOptions } from '$lib/state/shared/words/appearance';
@@ -150,6 +145,7 @@
 
     const {
         commands: { errorFile, note, openAt },
+        debug,
         terminals: {
             clearHistory,
             keepViewport,
@@ -305,16 +301,16 @@
             term.loadAddon(serializing);
             serializer = serializing;
             term.unicode.activeVersion = '11';
-            // A find key is the bar's, on its press and on its release, and never the shell's.
-            term.attachCustomKeyEventHandler((event) => {
-                const action = findKey(event, { mac, where: 'grid', open: find.finding });
-                if (action === null) return true;
-                if (event.type === 'keydown') {
-                    event.preventDefault();
-                    find.action(action);
-                }
-                return false;
-            });
+            // A find key is the bar's, on its press and on its release, and never the shell's; a
+            // debug key is the debugger's while a session runs (grid/grid-keys.ts).
+            term.attachCustomKeyEventHandler(
+                gridKeys({
+                    mac,
+                    finding: () => find.finding,
+                    find: (action) => find.action(action),
+                    debugging: debug.active
+                })
+            );
             const detachFind = find.attach(searcher);
             term.open(at);
             fit.fit();

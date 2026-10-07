@@ -8,10 +8,11 @@
 // is painted. That every word of those headers sits on its own lane surface in the page needs a DOM
 // and is not run here; the src/ reading case below only reports a lane text token referenced
 // outside the one shape the header uses; `--on-accent-bg` on the selected tree row's surface
-// `--accent-bg`; and the on-chip ink on its filled chip. A pair below the threshold is printed with
-// its ratio and fails. It is never fixed by loosening the threshold or by editing a colour here: a
-// colour is an authored value in tokens.css or themes.css, and a failure is a finding about that
-// value or about derive.ts, not something this file repairs.
+// `--accent-bg`; the on-chip ink on its filled chip; and the ink of the orange debugging status bar
+// on the fill its hovered and open items take. A pair below the threshold is printed with its ratio
+// and fails. It is never fixed by loosening the threshold or by editing a colour here: a colour is
+// an authored value in tokens.css or themes.css, and a failure is a finding about that value or
+// about derive.ts, not something this file repairs.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -66,6 +67,8 @@ function pairs(name: string): Pair[] {
         const on = `--${fg.slice('--on-'.length)}`;
         if (all[on]) measure(fg, on);
     }
+    // The status bar a debug session paints orange draws its hovered and open items on this fill.
+    measure('--on-c-orange', '--c-orange-hover');
     return found;
 }
 

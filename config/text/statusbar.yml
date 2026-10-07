@@ -7,6 +7,7 @@ text:
         item_branch: Branch
         item_sync: Sync
         item_findings: Findings
+        item_debug: Debug
         item_hpc: HPC
         item_usage: Usage
         item_server: Server
@@ -38,6 +39,8 @@ text:
         blame_tip: The commit that last changed this line. Open it in the graph.
         sync_upstream: the upstream
         findings_name: '{0} findings'
+        debug_name: 'Debug: {0}'
+        debug_tip: 'Debug with {0}, or pick another configuration to start.'
         findings_tip: '{0} findings in the hub and the configuration. Open Findings.'
         hpc_polling: polling
         hpc_live: '{0} running, {1} pending'

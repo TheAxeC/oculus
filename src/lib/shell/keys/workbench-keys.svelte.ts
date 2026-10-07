@@ -27,6 +27,7 @@ import {
     type RailOrder
 } from './keys';
 import { DOC_PICK } from '$lib/state/workbench/navigation/catalogue';
+import type { DebugKey } from '$lib/state/system/machine/debug/debug';
 
 type Options = {
     drag: DragStore;
@@ -57,6 +58,12 @@ type Options = {
     runDefault: (which: 'build' | 'test') => void;
     /** Ask the source tab on screen to save, which does nothing when it cannot write its file. */
     saveSource: () => void;
+    /** Carry out a debug key; false when it had nothing to act on. */
+    debugKey: (which: DebugKey) => boolean;
+    /** Whether a debug session is starting, running or paused. */
+    debugging: () => boolean;
+    /** Whether the source tab on screen is a `.rite` file. */
+    riteOnScreen: () => boolean;
     /** Whether the command modifier is Cmd (macOS) and not Ctrl. */
     mac: boolean;
     /**
@@ -141,12 +148,15 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
                 trayOpen: options.updateOpen(),
                 confirmOpen: dialogShown(),
                 mac: options.mac,
-                app: options.app
+                app: options.app,
+                debugging: options.debugging(),
+                riteFocus: inEditor(event.target) && options.riteOnScreen()
             },
             keyState,
             Date.now()
         );
         keyState = result.state;
+        if (result.swallow === true) event.preventDefault();
         if (result.action !== null) {
             if (perform(result.action, pane)) event.preventDefault();
             return;
@@ -209,6 +219,8 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         } else if (action.kind === 'tex-view') {
             clearCursor();
             options.layout.showTexView();
+        } else if (action.kind === 'debug') {
+            return options.debugKey(action.which);
         } else if (action.kind === 'command-default') {
             options.runDefault(action.which);
         } else if (action.kind === 'save') {
@@ -480,6 +492,11 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     }
 
     return { keys, paneFocused, frameFocused, panePressed, clearCursor, syncCards, stopCards };
+}
+
+/** Whether a key target is inside the source tab's editor. */
+function inEditor(target: EventTarget | null): boolean {
+    return target instanceof HTMLElement && target.closest('.monaco-editor') !== null;
 }
 
 /**

@@ -98,6 +98,7 @@ describe('loadLocal', () => {
             hub: '/srv/research-hub',
             port: DEFAULT_PORT,
             claudeBin: 'claude',
+            riteDapBin: 'rite_dap',
             calendars: [],
             mail: [],
             accounts: DEFAULT_ACCOUNTS
@@ -136,6 +137,7 @@ describe('loadLocal', () => {
             hub: '/srv/from-one',
             port: 8791,
             claudeBin: 'claude',
+            riteDapBin: 'rite_dap',
             calendars: [],
             mail: [],
             accounts: DEFAULT_ACCOUNTS
@@ -144,6 +146,7 @@ describe('loadLocal', () => {
             hub: '/srv/from-the-other',
             port: 8792,
             claudeBin: 'claude',
+            riteDapBin: 'rite_dap',
             calendars: [],
             mail: [],
             accounts: DEFAULT_ACCOUNTS

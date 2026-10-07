@@ -7,6 +7,7 @@ import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { noApps } from '../../../src/lib/server/machine/apps/held.ts';
 import { hostInfo, type ServerContext } from '../../../src/lib/server/root/context.ts';
 import { RateLimiter } from '../../../src/lib/server/root/hooks.ts';
+import { DebugClient } from '../../../src/lib/server/machine/debug/session.ts';
 import { createRelay } from '../../../src/lib/server/machine/lsp/relay.ts';
 import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
 import { HookStore, sessionRecord } from '../../../src/lib/server/sessions/stores/hooks.ts';
@@ -39,6 +40,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         hub: '/fixture/hub',
         port: 8791,
         claudeBin: 'claude',
+        riteDapBin: 'rite_dap',
         accounts: [],
         calendars: [],
         mail: []
@@ -54,6 +56,16 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             lspFolder: () => '/fixture/lsp',
             approvals: () => '/fixture/approvals.json'
         });
+    const debug =
+        overrides.debug ??
+        new DebugClient({
+            hub,
+            spawn: () => {
+                throw new Error('the fixture context starts no debug adapter');
+            },
+            adapter: () => local.riteDapBin,
+            catalog: () => ({})
+        });
     const hooks = overrides.hooks ?? {
         store: new HookStore(),
         hub,
@@ -67,6 +79,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         memories: { refused: new Set<string>() },
         terminals,
         relay,
+        debug,
         hooks,
         git: { refresh: noop, close: noop },
         hpc: { refresh: () => Promise.resolve(), set: noop, close: noop },
@@ -146,6 +159,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             if (closed) return;
             closed = true;
             terminals.close();
+            debug.close();
             void relay.close();
         },
         ...overrides

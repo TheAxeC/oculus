@@ -41,7 +41,7 @@
         EditorOwnAction,
         EditorReach
     } from '$lib/ui/controls/editor/types';
-    import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter/gutter';
+    import type { EditorGutter } from './source-gutter.svelte';
     import type { EditorOptions } from '$lib/ui/controls/editor/options';
     import { languageOf } from '$lib/state/sources/fs';
     import {
@@ -88,8 +88,8 @@
         actions?: EditorOwnAction[];
         /** Whether the reader wants the rendered half, for a file that has one. */
         rendered?: boolean;
-        marks?: EditorMark[];
-        blame?: EditorBlame[];
+        /** The marks, blame and breakpoints of the gutter, and what a press in it does. */
+        gutter?: EditorGutter;
         /** What the tab's language adds to the editor, such as LaTeX's markers and preview. */
         extension?: EditorExtension;
         /** Whether the editor takes typing; false for a file this machine's mode locks. */
@@ -103,8 +103,6 @@
         oncaret?: (caret: EditorCaret) => void;
         /** The selected text on every caret move, empty with no selection. */
         onselect?: (text: string) => void;
-        onmark?: (mark: EditorMark) => void;
-        onblame?: (row: EditorBlame) => void;
         /** The editor's actions the palette offers, said once the editor has loaded. */
         onactions?: (actions: EditorAction[]) => void;
     };
@@ -125,15 +123,12 @@
         rulers = null,
         actions = [],
         rendered = false,
-        marks = [],
-        blame = [],
+        gutter,
         extension,
         writable = true,
         oninput,
         oncaret,
         onselect,
-        onmark,
-        onblame,
         onactions
     }: Props = $props();
 
@@ -236,14 +231,18 @@
                 {ending}
                 {look}
                 codeTheme={codeTheme()}
-                {marks}
-                {blame}
+                marks={gutter?.marks}
+                blame={gutter?.blame}
+                breakpoints={gutter?.breakpoints}
+                paused={gutter?.paused}
+                onglyph={gutter?.onglyph}
+                onbreakpoints={gutter?.onbreakpoints}
                 {extension}
                 {writable}
                 {oncaret}
                 {onselect}
-                {onmark}
-                {onblame}
+                onmark={gutter?.onmark}
+                onblame={gutter?.onblame}
                 {onactions}
                 changeWords={{
                     next: t('source.next_change'),

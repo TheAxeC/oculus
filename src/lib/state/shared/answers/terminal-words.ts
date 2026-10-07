@@ -1,6 +1,6 @@
 // Layer 2, client state. The sentences the catalog holds for the words POST /api/terminal refuses
-// with (data/model/model-processes.ts TERMINAL_REFUSALS). The server answers a word and the names
-// its sentence is about, so no text of tmux, of a validator or of the server's English reaches the
+// with (data/model/model-machine.ts TERMINAL_REFUSALS). The server answers a word and the names its
+// sentence is about, so no text of tmux, of a validator or of the server's English reaches the
 // reader; answers.ts says these after the file and LaTeX words.
 
 import { TERMINAL_REFUSALS, type TerminalRefusal } from '../../../data/model/index.ts';

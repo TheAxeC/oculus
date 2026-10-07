@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { readAs, readJson } from '../../../data/shapes/shapes.ts';
 import { failedAnswer } from '../../shared/answers/answers.ts';
 import type { WritesStore } from '../../shared/stores/shapes.ts';
-import { postWithToken } from '../terminal/pty/pty-io.ts';
+import { postWithToken } from '../../shared/stores/token-post.ts';
 import {
     citesBodyShape,
     packagesBodyShape,

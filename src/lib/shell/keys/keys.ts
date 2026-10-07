@@ -2,6 +2,7 @@
 // guard state and performs the returned action, leaving shortcut precedence testable without a DOM.
 
 import type { RailOrder } from '$lib/state/workbench/navigation/catalogue';
+import { debugKeyOf, type DebugKey } from '$lib/state/system/machine/debug/debug';
 import { SAVE_KEY } from '$lib/ui/controls/editor/chords';
 
 export type { RailOrder };
@@ -20,6 +21,10 @@ export type KeyContext = {
      * arrive.
      */
     app?: boolean;
+    /** Whether a debug session is starting, running or paused. */
+    debugging?: boolean;
+    /** Whether the focus is in the editor of a `.rite` source tab. */
+    riteFocus?: boolean;
 };
 
 export type KeyEventLike = {
@@ -56,13 +61,18 @@ export type KeyAction =
     | { kind: 'command-default'; which: 'build' | 'test' }
     | { kind: 'save' }
     | { kind: 'tex-view' }
+    | { kind: 'debug'; which: DebugKey }
     | { kind: 'close-tab' }
     | { kind: 'new-text-file' }
     | { kind: 'find' }
     | { kind: 'workspace-symbol' }
     | { kind: 'clear-cursor' };
 
-export type KeyResult = { action: KeyAction | null; state: KeyState };
+/**
+ * What one key resolves to. `swallow` is a debug key the browser must not have, whether or not an
+ * action follows: a key under an overlay does nothing and is still kept from the browser.
+ */
+export type KeyResult = { action: KeyAction | null; state: KeyState; swallow?: boolean };
 
 export type CardRect = { top: number; left: number };
 
@@ -166,6 +176,33 @@ function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
     return null;
 }
 
+/**
+ * A debug key (F5, Shift+F5, Cmd+Shift+F5, F9, F10, F11, Shift+F11) answers with a field or the
+ * editor focused and under no overlay, as the default build does. It is swallowed, so the browser
+ * never reloads the page or goes fullscreen on it, whenever a debug session runs or a `.rite`
+ * editor has the focus, and under an overlay it then does nothing; with neither, an overlay leaves
+ * the key to the browser.
+ */
+function debugAction(event: KeyEventLike, context: KeyContext, state: KeyState): KeyResult | null {
+    if (event.defaultPrevented === true) return null;
+    const which = debugKeyOf(
+        {
+            key: event.key,
+            shiftKey: event.shiftKey === true,
+            metaKey: event.metaKey === true,
+            ctrlKey: event.ctrlKey === true,
+            altKey: event.altKey === true
+        },
+        context.mac !== false
+    );
+    if (which === null) return null;
+    const swallow = context.debugging === true || context.riteFocus === true;
+    if (context.paletteOpen || context.trayOpen || context.confirmOpen) {
+        return { action: null, state, swallow };
+    }
+    return { action: { kind: 'debug', which }, state: { ...state, chord: '' }, swallow };
+}
+
 /** Resolve one workbench key, retaining only the two short-lived chord timestamps. */
 export function resolveKey(
     event: KeyEventLike,
@@ -209,6 +246,8 @@ export function resolveKey(
     }
     const taken = appKey(event, context);
     if (taken !== null) return { action: taken, state: { ...state, chord: '' } };
+    const debug = debugAction(event, context, state);
+    if (debug !== null) return debug;
     const held = context.typing || context.paletteOpen || context.trayOpen || context.confirmOpen;
     // Ctrl and a bracket carry the focused pane one tab along, the left one backwards. The browser
     // keeps Ctrl and Tab for its own tabs and never hands it to a page, so in a browser the pair is

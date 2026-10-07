@@ -24,13 +24,14 @@
     //
     // The keyboard reaches the quick diff marks through three editor actions, which the palette
     // lists while the text holds a mark (gutter/gutter.ts `changeActions`): Next, Previous, Open
-    // Change. The decorations of the marks, the breakpoints and the blame, the press in the gutter
-    // and the action over the marks from the caret's line are gutter/editor-gutter.ts's, which this
-    // file calls with the editor, the model and the values it holds. The `actions` prop adds the
-    // actions the parent owns (Alt+Z's toggle of word wrap), each bound to its key when it has one
-    // and listed to the palette. A parent may also tint runs of lines (`highlights`, the merge
-    // editor's conflicts) and draw bars of its own above lines (`bars`, rendered by its `bar`
-    // snippet, placed by bars/zones.ts), and add to the model what it needs once the model exists
+    // Change. The decorations of the marks, the breakpoints, the paused line and the blame, the
+    // press in the gutter, the hint dot, the breakpoints' lines read back after an edit and the
+    // action over the marks from the caret's line are gutter/editor-gutter.ts's, which this file
+    // calls with the editor, the model and the values it holds. The `actions` prop adds the actions
+    // the parent owns (Alt+Z's toggle of word wrap), each bound to its key when it has one and
+    // listed to the palette. A parent may also tint runs of lines (`highlights`, the merge editor's
+    // conflicts) and draw bars of its own above lines (`bars`, rendered by its `bar` snippet,
+    // placed by bars/zones.ts), and add to the model what it needs once the model exists
     // (`extension`, types.ts).
     //
     // Tab inserts indentation. An Escape Monaco did not take arms the next Tab to move the focus
@@ -44,8 +45,20 @@
     import { shikiId } from './kit/grammars';
     import { font, paintCode, repaint } from './kit/look';
     import { chordActions, ownListing } from './chords';
-    import { changeActions, type EditorBlame, type EditorMark } from './gutter/gutter';
-    import { actOnMarks, drawGutter, pressInGutter } from './gutter/editor-gutter';
+    import {
+        changeActions,
+        type EditorBlame,
+        type EditorBreakpoint,
+        type EditorMark
+    } from './gutter/gutter';
+    import {
+        actOnMarks,
+        drawGutter,
+        drawHighlights,
+        followGutter,
+        gutterCollections,
+        type GutterCollections
+    } from './gutter/editor-gutter';
     import { tabOut } from './tab-out';
     import { followFirstLine, reachedBy, runCommand, type FirstLine } from './commands';
     import { applyIndent, applyOptions, monacoOptions } from './options';
@@ -97,8 +110,10 @@
         codeTheme?: string;
         marks?: EditorMark[];
         blame?: EditorBlame[];
-        /** The lines a breakpoint sits on. */
-        breakpoints?: number[];
+        /** The breakpoints, each on its line and drawn by its state. */
+        breakpoints?: EditorBreakpoint[];
+        /** The line a paused program is on, tinted and marked with an arrow. */
+        paused?: number | null;
         onchange?: (text: string, edit: EditorEdit) => void;
         oncaret?: (caret: EditorCaret) => void;
         /** The selected text on every caret move; empty with none or a selection too long. */
@@ -111,7 +126,10 @@
         startLine?: number;
         onmark?: (mark: EditorMark) => void;
         onblame?: (row: EditorBlame) => void;
+        /** A press in the glyph margin; with it given, the margin shows a dot under the pointer. */
         onglyph?: (line: number) => void;
+        /** The lines the breakpoints sit on once an edit moved them, in the order given. */
+        onbreakpoints?: (lines: number[]) => void;
         /** The labels of the actions over the marks; without them the editor adds none. */
         changeWords?: EditorChangeWords;
         /** The actions the parent owns: each is bound to its key, if it has one, and listed. */
@@ -142,6 +160,7 @@
         marks = [],
         blame = [],
         breakpoints = [],
+        paused = null,
         onchange,
         oncaret,
         onselect,
@@ -151,6 +170,7 @@
         onmark,
         onblame,
         onglyph,
+        onbreakpoints,
         changeWords,
         actions = [],
         onactions,
@@ -179,12 +199,7 @@
     /** What the paint depends on besides the tokens: the look and the code theme. */
     const painting = $derived(JSON.stringify([look, codeTheme]));
     const listeners: Monaco.IDisposable[] = [];
-    let collections: {
-        marks: Monaco.editor.IEditorDecorationsCollection;
-        blame: Monaco.editor.IEditorDecorationsCollection;
-        breakpoints: Monaco.editor.IEditorDecorationsCollection;
-        highlights: Monaco.editor.IEditorDecorationsCollection;
-    } | null = null;
+    let collections: GutterCollections | null = null;
     const placed = lineBars();
 
     const lines = $derived(text.split('\n').length);
@@ -208,12 +223,7 @@
             ...(options === undefined ? {} : monacoOptions(options)),
             ...font(host)
         });
-        collections = {
-            marks: made.createDecorationsCollection(),
-            blame: made.createDecorationsCollection(),
-            breakpoints: made.createDecorationsCollection(),
-            highlights: made.createDecorationsCollection()
-        };
+        collections = gutterCollections(made);
         placed.mount(made, made.getOption(loaded.monaco.editor.EditorOption.lineHeight));
         firstLine = followFirstLine(made, (line) => onfirst?.(line));
         listeners.push(
@@ -223,15 +233,12 @@
                 onscroll?.(room > 0 ? Math.min(1, event.scrollTop / room) : 0);
             }),
             firstLine.listener,
-            made.onMouseDown((event) =>
-                pressInGutter(
-                    loaded.monaco,
-                    event.target,
-                    { marks, blame, breakpoints },
-                    model?.getLineCount() ?? lines,
-                    { onmark, onblame, onglyph }
-                )
-            )
+            ...followGutter(loaded.monaco, made, collections, () => ({
+                values: { marks, blame, breakpoints, paused },
+                lines: model?.getLineCount() ?? lines,
+                handlers: { onmark, onblame, onglyph, onbreakpoints },
+                applying
+            }))
         );
         editor = made;
         kit = loaded;
@@ -389,7 +396,7 @@
     // The gutter: the marks and the breakpoints as decorations, the blame in the number column.
     $effect(() => {
         const count = lines;
-        const held = { marks, blame, breakpoints };
+        const held = { marks, blame, breakpoints, paused };
         if (editor === null || model === null || collections === null) return;
         drawGutter(editor, model, collections, held, count);
     });
@@ -404,17 +411,7 @@
 
     $effect(() => {
         const runs = highlights;
-        collections?.highlights.set(
-            runs.map(({ line, count }) => ({
-                range: {
-                    startLineNumber: line,
-                    startColumn: 1,
-                    endLineNumber: line + count - 1,
-                    endColumn: 1
-                },
-                options: { isWholeLine: true, className: 'oculus-highlight' }
-            }))
-        );
+        if (collections !== null) drawHighlights(collections, runs);
     });
 
     // The theme and the font again whenever the look or the code theme changes from the one the

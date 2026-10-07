@@ -5,7 +5,7 @@
 // sends with a run, and the diagnostics a task terminal's output gives.
 
 import type { Id } from './model-entities.ts';
-import type { Terminal } from './model-processes.ts';
+import type { Terminal } from './model-machine.ts';
 
 export type SessionTool = 'claude' | 'codex';
 

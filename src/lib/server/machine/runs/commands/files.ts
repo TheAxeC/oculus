@@ -1,5 +1,7 @@
 // Layer 2, server. One command entry as a source writes it, and the reader of the one source that
-// is a file of the repository: `<repo>/.oculus/commands.yml`.
+// is a file of the repository: `<repo>/.oculus/commands.yml`. The rules of a name, a folder and a
+// field of the wrong type, and the reading of a YAML file down to its list, are exported so
+// `<repo>/.oculus/launch.yml` (server/machine/debug/launch.ts) reads by the same code.
 //
 // An entry is `{ name, run, cwd?, depends_on?, default? }`. checkEntry reads it through a zod
 // schema and then applies the rules a schema cannot: the name's length and characters, a line that
@@ -56,18 +58,21 @@ export type Taken = Set<CommandDefault>;
 /** What one source gives: the commands that read and the findings for those that did not. */
 export type Reading = { commands: ProjectCommand[]; findings: CommandFinding[] };
 
-/** The type problems of an entry, one per field. */
-function typeProblems(error: z.ZodError): Problem[] {
+/**
+ * The type problems of an entry, one per field. `wrong` holds the sentence of each field of the
+ * entry; an issue on no field is the entry itself not being a map.
+ */
+export function typeProblems(error: z.ZodError, wrong: Record<string, string>): Problem[] {
     const found = new Map<string, Problem>();
     for (const issue of error.issues) {
         const field = typeof issue.path[0] === 'string' ? issue.path[0] : '';
-        found.set(field, { field, message: WRONG_TYPE[field] ?? 'must be a map of the fields' });
+        found.set(field, { field, message: wrong[field] ?? 'must be a map of the fields' });
     }
     return [...found.values()];
 }
 
 /** The reason a name is refused, or null. */
-function nameProblem(name: string): string | null {
+export function nameProblem(name: string): string | null {
     if (name.trim() === '') return 'must not be empty';
     if (name.length > NAME_MAX) return `must be at most ${NAME_MAX} characters`;
     // eslint-disable-next-line no-control-regex
@@ -81,7 +86,7 @@ function nameProblem(name: string): string | null {
  * the relative `cwd` names. An absolute `cwd`, a `..` that leaves the repository, a link that leads
  * out of it and a path that is no folder are refused with the sentence for each.
  */
-function folderOf(repo: string, cwd: string | null | undefined): string | Problem {
+export function folderOf(repo: string, cwd: string | null | undefined): string | Problem {
     if (cwd === undefined || cwd === null || cwd === '') return repo;
     const field = 'cwd';
     if (isAbsolute(cwd)) {
@@ -110,7 +115,7 @@ export function checkEntry(
     raw: unknown
 ): { entry: Entry; cwd: string } | { problems: Problem[] } {
     const read = entryShape.safeParse(raw);
-    if (!read.success) return { problems: typeProblems(read.error) };
+    if (!read.success) return { problems: typeProblems(read.error, WRONG_TYPE) };
     const entry = read.data;
     const problems: Problem[] = [];
     const named = nameProblem(entry.name);
@@ -190,6 +195,54 @@ export function fileFinding(file: string, message: string): Reading {
     return { commands: [], findings: [{ file, field: '', message }] };
 }
 
+/** What a YAML file's list is called in the findings of a file that does not read down to it. */
+export type ListWords = {
+    /** The finding for a top that is not a map: "must be a map with a <key> list". */
+    top: string;
+    /** The finding for a list key that is not a list. */
+    list: string;
+};
+
+/** The items of a file's list with the line each starts on, or the findings that say why none. */
+export type ListFile =
+    | { items: unknown[]; lineOf: (at: number) => number | undefined }
+    | { findings: CommandFinding[] };
+
+/**
+ * A YAML file read down to the list under `key`. No file, an empty file and an absent or empty
+ * list are no items and no finding; a file that cannot be read or is not YAML, a top that is not a
+ * map and a `key` that is not a list are one finding each. The file is followed through links.
+ */
+export function readListFile(file: string, key: string, words: ListWords): ListFile {
+    if (!existsSync(file)) return { findings: [] };
+    let text: string;
+    try {
+        text = readFileSync(file, 'utf8');
+    } catch {
+        return { findings: fileFinding(file, 'cannot be read').findings };
+    }
+    const lines = new LineCounter();
+    const doc = parseDocument(text, { lineCounter: lines });
+    if (doc.errors.length > 0) {
+        const at = doc.errors[0].linePos?.[0].line;
+        const message = at === undefined ? 'is not YAML' : `is not YAML, at line ${at}`;
+        return { findings: fileFinding(file, message).findings };
+    }
+    if (doc.contents === null) return { findings: [] };
+    if (!isYamlMap(doc.contents)) return { findings: fileFinding(file, words.top).findings };
+    const list = doc.contents.get(key, true);
+    if (list === undefined || (isNode(list) && list.toJS(doc) === null)) return { findings: [] };
+    if (!isSeq(list)) return { findings: [{ file, field: key, message: words.list }] };
+    return {
+        items: list.items.map((item) => (isNode(item) ? item.toJS(doc) : item) as unknown),
+        lineOf: (at) => {
+            const item = list.items[at];
+            const start = isNode(item) ? item.range?.[0] : undefined;
+            return start === undefined ? undefined : lines.linePos(start).line;
+        }
+    };
+}
+
 /**
  * The commands of `<repo>/.oculus/commands.yml`. No file is no commands and no finding. A file
  * that is not YAML, or whose top is not a map, or whose `commands` is not a list is one finding
@@ -197,45 +250,14 @@ export function fileFinding(file: string, message: string): Reading {
  */
 export function readCommandsFile(repo: string, taken: Taken): Reading {
     const file = join(repo, COMMANDS_FILE);
-    if (!existsSync(file)) return { commands: [], findings: [] };
-    let text: string;
-    try {
-        text = readFileSync(file, 'utf8');
-    } catch {
-        return fileFinding(file, 'cannot be read');
-    }
-    const lines = new LineCounter();
-    const doc = parseDocument(text, { lineCounter: lines });
-    if (doc.errors.length > 0) {
-        const at = doc.errors[0].linePos?.[0].line;
-        return fileFinding(file, at === undefined ? 'is not YAML' : `is not YAML, at line ${at}`);
-    }
-    if (doc.contents === null) return { commands: [], findings: [] };
-    if (!isYamlMap(doc.contents)) return fileFinding(file, 'must be a map with a commands list');
-    const list = doc.contents.get('commands', true);
-    if (list === undefined || (isNode(list) && list.toJS(doc) === null)) {
-        return { commands: [], findings: [] };
-    }
-    if (!isSeq(list)) {
-        return {
-            commands: [],
-            findings: [{ file, field: 'commands', message: 'must be a list of commands' }]
-        };
-    }
-    const items = list.items.map((item) => (isNode(item) ? item.toJS(doc) : item) as unknown);
+    const read = readListFile(file, 'commands', {
+        top: 'must be a map with a commands list',
+        list: 'must be a list of commands'
+    });
+    if ('findings' in read) return { commands: [], findings: read.findings };
     return collect(
-        items,
-        {
-            repo,
-            file,
-            label: 'commands',
-            source: 'file',
-            lineOf: (at) => {
-                const item = list.items[at];
-                const start = isNode(item) ? item.range?.[0] : undefined;
-                return start === undefined ? undefined : lines.linePos(start).line;
-            }
-        },
+        read.items,
+        { repo, file, label: 'commands', source: 'file', lineOf: read.lineOf },
         taken
     );
 }

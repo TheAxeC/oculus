@@ -13,6 +13,9 @@
 //
 // The lines are read once: a value that itself holds a placeholder is not read again. One
 // placeholder name is one variable across the whole chain, numbered by where it first appears.
+//
+// `fillText` is the other use: a text that is handed to a program as one argument, never to a
+// shell, has each placeholder replaced by its value as text (a debug launch's program).
 
 import { basename, dirname, extname } from 'node:path';
 import type { CommandContext, TerminalRefusal } from '../../../../data/model/index.ts';
@@ -99,4 +102,33 @@ export function fillPlaceholders(
         })
     );
     return refused.length === 0 ? { lines, env } : refused[0];
+}
+
+/**
+ * A text with every placeholder replaced by its value as text, or the word that refuses the first
+ * placeholder with no value or a value no argument can hold, with the placeholder it is about.
+ * The text is for a program's argument list, so no quoting is added.
+ */
+export function fillText(
+    text: string,
+    context: CommandContext,
+    repo: string
+): string | { error: TerminalRefusal; names: string[] } {
+    const refused: { error: TerminalRefusal; names: string[] }[] = [];
+    const filled = text.replace(PLACEHOLDER, (placeholder, name: Name) => {
+        const value = valueOf(name, context, repo);
+        if (value === null) {
+            refused.push({
+                error: name === 'selectedText' ? 'no-selection' : 'no-file',
+                names: [placeholder]
+            });
+            return placeholder;
+        }
+        if (value.includes('\u0000')) {
+            refused.push({ error: 'nul-value', names: [placeholder] });
+            return placeholder;
+        }
+        return value;
+    });
+    return refused.length === 0 ? filled : refused[0];
 }

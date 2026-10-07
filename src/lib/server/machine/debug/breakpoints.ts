@@ -1,0 +1,94 @@
+// Layer 2, server. The breakpoints a debug session holds, as the adapter last answered them: for
+// each file the lines asked for with whether the adapter verified each, and the function
+// breakpoints the same way. The adapter answers a breakpoint with `verified: false` and a reason
+// until the module holds it; a stop that names a breakpoint's id by `hitBreakpointIds` verifies it.
+// The ids are the adapter's and stay here; the published state carries lines, names and answers.
+
+import type { DebugFileBreakpoints, DebugFunctionBreakpoint } from '../../../data/model/index.ts';
+import type { BreakpointAnswers } from './shapes.ts';
+
+type Held = { id: number | null; verified: boolean; message: string };
+type HeldLine = Held & { line: number };
+type HeldName = Held & { name: string };
+
+export class Breakpoints {
+    #files = new Map<string, HeldLine[]>();
+    #functions: HeldName[] = [];
+
+    /** Forget every breakpoint, as a new session and an ended one do. */
+    clear(): void {
+        this.#files = new Map();
+        this.#functions = [];
+    }
+
+    /**
+     * Hold the lines of one file with the adapter's answers; no lines hold nothing for it. A line
+     * the adapter already verified, by an answer or by stopping at it, stays verified when the
+     * file's lines are sent again, since the adapter answers a resent line as pending.
+     */
+    setFile(path: string, lines: number[], answers: BreakpointAnswers): void {
+        if (lines.length === 0) {
+            this.#files.delete(path);
+            return;
+        }
+        const verified = new Set(
+            (this.#files.get(path) ?? []).filter((one) => one.verified).map((one) => one.line)
+        );
+        this.#files.set(
+            path,
+            lines.map((line, at) => keeping({ line, ...answered(answers, at) }, verified.has(line)))
+        );
+    }
+
+    /** Hold the function breakpoints with the adapter's answers, keeping the ones verified. */
+    setFunctions(names: string[], answers: BreakpointAnswers): void {
+        const verified = new Set(
+            this.#functions.filter((one) => one.verified).map((one) => one.name)
+        );
+        this.#functions = names.map((name, at) =>
+            keeping({ name, ...answered(answers, at) }, verified.has(name))
+        );
+    }
+
+    /** A breakpoint the adapter stopped at is verified, whatever it said when it was set. */
+    verifyHit(id: number): void {
+        const held: Held[] = [...this.#files.values()].flat();
+        for (const one of [...held, ...this.#functions]) {
+            if (one.id === id) Object.assign(one, { verified: true, message: '' });
+        }
+    }
+
+    files(): DebugFileBreakpoints[] {
+        return [...this.#files].map(([path, held]) => ({
+            path,
+            breakpoints: held.map((one) => ({
+                line: one.line,
+                verified: one.verified,
+                message: one.message
+            }))
+        }));
+    }
+
+    functions(): DebugFunctionBreakpoint[] {
+        return this.#functions.map((one) => ({
+            name: one.name,
+            verified: one.verified,
+            message: one.message
+        }));
+    }
+}
+
+/** A held breakpoint, verified when it was before whatever the adapter answers now. */
+function keeping<T extends Held>(one: T, wasVerified: boolean): T {
+    return wasVerified ? { ...one, verified: true, message: '' } : one;
+}
+
+/** The adapter's answer for the breakpoint at an index; unverified when it gave none. */
+function answered(answers: BreakpointAnswers, at: number): Held {
+    const answer = answers.at(at);
+    return {
+        id: answer?.id ?? null,
+        verified: answer?.verified ?? false,
+        message: answer?.message ?? ''
+    };
+}

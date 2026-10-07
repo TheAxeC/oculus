@@ -33,6 +33,7 @@
         "@types/lodash-es": "^4.17.12",
         "@types/node": "^24.13.4",
         "@types/ws": "^8.18.1",
+        "@vscode/debugprotocol": "1.68.0",
         "electron": "44.5.1",
         "eslint": "^10.10.0",
         "eslint-plugin-svelte": "^3.23.0",

@@ -22,8 +22,10 @@
 // Code's `git.blame.statusBarItem.template` default `${authorName} (${authorDateAgo})`, or Not
 // Committed Yet, and a tab over a file at HEAD or in the index shows its blame in the gutter alone.
 // The findings item counts the Findings view's list, the snapshot's findings and the config
-// channel's, and opens that view. The LaTeX item is the build state of the root of the active LaTeX
-// file or PDF, and opens the TeX view.
+// channel's, and opens that view. The debug item follows it once a debug session has run since the
+// server started: the last configuration's name, and a press opens the configuration picker. The
+// LaTeX item is the build state of the root of the active LaTeX file or PDF, and opens the TeX
+// view.
 
 import type { EditorStatus } from '$lib/state/workbench/navigation/editor-status.svelte';
 import { t } from '$lib/state/shared/words/text';
@@ -34,6 +36,7 @@ export const LEFT_ITEMS = [
     'branch',
     'sync',
     'findings',
+    'debug',
     'hpc',
     'usage',
     'server',
@@ -74,6 +77,8 @@ export function itemName(item: StatusItem): string {
             return t('statusbar.item_sync');
         case 'findings':
             return t('statusbar.item_findings');
+        case 'debug':
+            return t('statusbar.item_debug');
         case 'hpc':
             return t('statusbar.item_hpc');
         case 'usage':

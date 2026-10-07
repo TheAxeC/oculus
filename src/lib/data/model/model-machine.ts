@@ -1,10 +1,10 @@
 // Layer 1, data. What the machine views read: the Processes view's rows and the payload of one read
 // of the machine's process table, the update tray's schedules (the entries of
 // `~/.oculus/schedules.yml` with their problems, next runs and latest runs), the terminals tmux
-// holds and the words a terminal request is refused with, and the messages the page and the
-// language server relay exchange besides JSON-RPC.
+// holds and the words a terminal request is refused with, the messages the page and the language
+// server relay exchange besides JSON-RPC, and the debug session's state and console.
 
-import type { CommandSource } from './model-sessions.ts';
+import type { CommandFinding, CommandSource } from './model-sessions.ts';
 
 /** The four update tasks, in the order the tray lists them. */
 export const UPDATE_TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
@@ -469,6 +469,133 @@ export type LspToPage =
     | { oculus: 'file'; root: string; uri: string; code: LspReadRefusal }
     /** The answer to a `held_ask`: those of its files that another page holds open. */
     | { oculus: 'held_answer'; id: number; files: LspPlace[] };
+
+/** Where a debug session stands: no session yet, starting, running, paused, or ended. */
+export const DEBUG_STATUSES = ['idle', 'starting', 'running', 'paused', 'ended'] as const;
+export type DebugStatus = (typeof DEBUG_STATUSES)[number];
+
+/** The session a debug launch made: what it runs, where, and the adapter's process. */
+export type DebugSession = {
+    /** The repository the launch belongs to, as a real path. */
+    repo: string;
+    /** The configuration's name, or the default configuration's. */
+    name: string;
+    /** The program as run: an absolute path. */
+    program: string;
+    /** The folder the adapter runs in: an absolute real path. */
+    cwd: string;
+    /** The adapter's process id, 0 while it has none. */
+    pid: number;
+    /** The session's number, which grows by one for each launch the server answers. */
+    number: number;
+};
+
+/** One frame of the stack, the top one first; `path` is the file as the page named it. */
+export type DebugFrame = {
+    id: number;
+    name: string;
+    path: string;
+    line: number;
+    column: number;
+};
+
+/** One name and the value the adapter gives it. */
+type DebugVariable = { name: string; value: string };
+
+/** One scope of the selected frame and what it holds. */
+export type DebugScope = { name: string; variables: DebugVariable[] };
+
+/** A watch expression's result at the pause: its value or the adapter's error, one of them. */
+export type DebugWatch = { expression: string; value?: string; error?: string };
+
+/** One line the adapter answered a breakpoint for. `line` is the line the page asked for. */
+export type DebugBreakpoint = {
+    line: number;
+    verified: boolean;
+    /** The adapter's reason a breakpoint is not verified; empty when it is. */
+    message: string;
+};
+
+/** The breakpoints of one file as the adapter last answered them. */
+export type DebugFileBreakpoints = { path: string; breakpoints: DebugBreakpoint[] };
+
+/** One function breakpoint as the adapter last answered it. */
+export type DebugFunctionBreakpoint = { name: string; verified: boolean; message: string };
+
+/** Why the program is paused, as the adapter says it. */
+type DebugPause = {
+    /** `breakpoint` or `step`. */
+    reason: string;
+    description: string;
+};
+
+/** The payload of the `debug` channel: the whole state, replaced by each message. */
+export type DebugPayload = {
+    status: DebugStatus;
+    /** The session running or the last one that ran since the server started; null before any. */
+    session: DebugSession | null;
+    /** The reason of the current pause, null unless the status is `paused`. */
+    pause: DebugPause | null;
+    frames: DebugFrame[];
+    /** The id of the selected frame, null unless the status is `paused`. */
+    frame: number | null;
+    scopes: DebugScope[];
+    watch: DebugWatch[];
+    breakpoints: DebugFileBreakpoints[];
+    functions: DebugFunctionBreakpoint[];
+    /** Why the session ended, in words; empty unless the status is `ended`. */
+    ended: string;
+};
+
+/**
+ * The kind of a console line: what the program wrote (`stdout`, `stderr`), what the adapter said
+ * (`console`), an expression the reader typed (`input`) and its result or its error.
+ */
+export const DEBUG_CONSOLE_KINDS = [
+    'stdout',
+    'stderr',
+    'console',
+    'input',
+    'result',
+    'error'
+] as const;
+export type DebugConsoleKind = (typeof DEBUG_CONSOLE_KINDS)[number];
+
+/** The most lines a session's console holds, on the server and on a page. */
+export const DEBUG_CONSOLE_MAX = 10_000;
+
+/** One line of the console. */
+export type DebugConsoleLine = { kind: DebugConsoleKind; text: string };
+
+/**
+ * The payload of the `debug-console` channel: lines of one session appended to its console, the
+ * first of them the console's line number `start`. Lines are numbered from 0 in each session.
+ */
+export type DebugConsoleAppend = { session: number; start: number; lines: DebugConsoleLine[] };
+
+/** The console as the server holds it: `first` is the number of its first held line. */
+export type DebugConsole = { session: number; first: number; lines: DebugConsoleLine[] };
+
+/** One configuration of a repository's `.oculus/launch.yml`, its fields as written. */
+export type DebugConfiguration = {
+    name: string;
+    /** The `.rite` file to run: a path in the repository or a text holding placeholders. */
+    program: string;
+    /** The folder the adapter runs in relative to the repository; `.` for the repository. */
+    cwd: string;
+    /** The name of a command to run first; absent when none is named. */
+    before?: string;
+    /** The line the entry starts on in the file. */
+    line?: number;
+};
+
+/** The answer of GET /api/debug: what the launch file holds and what in it did not read. */
+export type DebugLaunches = {
+    /** Whether `.oculus/launch.yml` is there. */
+    exists: boolean;
+    configurations: DebugConfiguration[];
+    findings: CommandFinding[];
+};
 
 /** A JSON-RPC message of the protocol, carried as the payload of a frame. */
 export type LspRpc = {

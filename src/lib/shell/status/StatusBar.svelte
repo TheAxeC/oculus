@@ -12,11 +12,17 @@
     // status store, which the shell reads. The unsaved tabs and the notifications are the shell's
     // own, from the layout, ui and notices stores.
     //
+    // The debug item is drawn once a debug session has run since the server started: the name of
+    // the last configuration with the bug glyph, and a press lists the repository's configurations,
+    // whose pick starts it. While a session runs or is paused the whole bar is painted in the
+    // orange the theme defines, with the ink derived for it.
+    //
     // A right-click anywhere on the bar lists every item with a check, and unchecking one hides it;
     // the hidden set is the ui store's, saved with the appearance.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Bell from './Bell.svelte';
     import LatexItem from './LatexItem.svelte';
@@ -34,6 +40,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
+        debug,
         editorStatus: { statusOf },
         layout: { activeInstance, activateInstance, hosts, openView, switchPage },
         ui: { setStatusHidden, statusHidden, unsaved }
@@ -73,6 +80,33 @@
         if (isStatusItem(id)) setStatusHidden(id, shown(id));
     }
 
+    /** The repository's launch file is read while the debug item is drawn. */
+    const debugRepo = $derived(debug.ran() && shown('debug') ? debug.repo() : null);
+    $effect(() => {
+        const path = debugRepo;
+        if (path === null) return undefined;
+        return debug.watch(path);
+    });
+    const debugListed = $derived(debugRepo === null ? null : debug.launches(debugRepo));
+    const debugChosen = $derived(debugRepo === null ? null : debug.chosen(debugRepo, debugListed));
+    /** The configurations the item lists; a repository with none offers the open file. */
+    const debugChoices = $derived<MenuItem[]>(
+        debugListed === null || debugListed.configurations.length === 0
+            ? [{ id: '', label: t('debug.default_name') }]
+            : debugListed.configurations.map((one) => ({
+                  id: one.name,
+                  label: one.name,
+                  active: one.name === debugChosen?.name
+              }))
+    );
+    /** The configuration that ran last, which the server names in the session it holds. */
+    const debugName = $derived(debug.payload().session?.name ?? t('debug.default_name'));
+
+    function debugPicked(name: string): void {
+        if (debugRepo !== null && name !== '') debug.choose(debugRepo, name);
+        void debug.start();
+    }
+
     /** Show the first tab holding unsaved text, on its own page; a float needs no page switch. */
     function openUnsaved(): void {
         const found = firstUnsaved(held, unsaved);
@@ -83,7 +117,12 @@
 </script>
 
 <ContextMenu label={t('statusbar.hide_menu')} items={choices} onpick={toggled}>
-    <footer class="bar" aria-label={t('statusbar.label')} data-status-bar>
+    <footer
+        class="bar"
+        class:debugging={debug.active() && debug.status() !== 'starting'}
+        aria-label={t('statusbar.label')}
+        data-status-bar
+    >
         <div class="group" data-status-group="left">
             {#if shown('host')}
                 <span data-status="host">
@@ -112,6 +151,19 @@
                     >
                         {status.findings}
                     </ToolButton>
+                </span>
+            {/if}
+            {#if debug.ran() && shown('debug')}
+                <span data-status="debug">
+                    <Menu
+                        status
+                        label={t('statusbar.debug_name', debugName)}
+                        words={debugName}
+                        glyph="debug"
+                        title={t('statusbar.debug_tip', debugName)}
+                        items={debugChoices}
+                        onpick={debugPicked}
+                    />
                 </span>
             {/if}
             {#if shown('hpc')}
@@ -230,8 +282,25 @@
         flex: 0 0 auto;
     }
 
+    /* A session runs or is paused: the whole bar takes the orange and the ink derived for it. A
+       hovered or open item takes the fill derived from the orange (themes/derive.ts), and an item
+       in the warning tone, whose amber does not read on the orange, takes the bar's ink in bold;
+       the status ToolButton reads both from these properties. */
+    .bar.debugging {
+        background: var(--c-orange);
+        color: var(--on-c-orange);
+        --status-hover: var(--c-orange-hover);
+        --status-warning: var(--on-c-orange);
+        --status-warning-weight: 600;
+    }
+
     :global(body.wall) .bar {
         background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall) .bar.debugging {
+        background: var(--c-orange);
+        backdrop-filter: none;
     }
 </style>

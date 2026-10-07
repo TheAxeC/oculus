@@ -15,6 +15,7 @@ import {
     unchangedAs
 } from '../../../../data/shapes/shapes.ts';
 import { refusedAnswer, unreadableAnswer } from '../../../shared/answers/answers.ts';
+import { postWithToken, type TokenSource } from '../../../shared/stores/token-post.ts';
 
 /** The geometry a terminal is started at when the pane has not been measured yet. */
 export const COLS = 80;
@@ -118,30 +119,6 @@ const listAnswerShape = z.object({
 
 /** The action field of a request body, which is how `postTerminal` knows a start from the rest. */
 const actionShape = z.object({ action: z.string() });
-
-/** The write token of the page, and the call that renews it (WritesStore). */
-export type TokenSource = { writeToken: () => string; renewToken: () => Promise<void> };
-
-/**
- * Post a JSON body to an endpoint with the write token. A 403 renews the token and posts once more;
- * the answer is the response of the last post, and a failed request throws.
- */
-export async function postWithToken(
-    url: string,
-    body: unknown,
-    writes: TokenSource
-): Promise<Response> {
-    const send = (): Promise<Response> =>
-        fetch(url, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json', 'x-oculus-token': writes.writeToken() },
-            body: JSON.stringify(body)
-        });
-    const response = await send();
-    if (response.status !== 403) return response;
-    await writes.renewToken();
-    return send();
-}
 
 /**
  * Post one action with the write token (postWithToken). A page rendered on the server has no fetch

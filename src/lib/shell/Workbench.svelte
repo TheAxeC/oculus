@@ -33,6 +33,9 @@
     import DropLayer from './panes/DropLayer.svelte';
     import { createWorkbenchKeys } from './keys/workbench-keys.svelte';
     import CommandAsk from './commands/CommandAsk.svelte';
+    import DebugAsk from './commands/DebugAsk.svelte';
+    import DebugToolbar from './commands/DebugToolbar.svelte';
+    import type { DebugKey } from '$lib/state/system/machine/debug/debug';
     import Palette from './keys/Palette.svelte';
     import FoldedPane from './panes/leaf/FoldedPane.svelte';
     import PageLeaf from './panes/leaf/PageLeaf.svelte';
@@ -185,6 +188,21 @@
             docs
         )
     );
+    /** Carry out one debug key; the steps and the stop act only on a session that can take them. */
+    function pressDebug(which: DebugKey): boolean {
+        const { debug } = client;
+        if (which === 'toggle') return debug.toggleAtCaret();
+        if (which === 'start') void debug.press();
+        else if (which === 'restart') {
+            if (debug.active()) void debug.restart();
+        } else if (which === 'stop') {
+            if (debug.active() || debug.waiting() !== null) void debug.stop();
+        } else if (debug.paused()) {
+            void debug.resume(which === 'over' ? 'next' : which === 'into' ? 'stepIn' : 'stepOut');
+        }
+        return true;
+    }
+
     const keyboard = createWorkbenchKeys({
         drag: client.drag,
         layout: client.layout,
@@ -205,6 +223,12 @@
         composeIn: (page) => client.terminals.composeIn(page),
         focusSearchBox: (id, box) => client.search.wantFocus(id, box),
         runDefault: (which) => void client.commands.runDefault(which),
+        debugging: () => client.debug.active(),
+        riteOnScreen: () =>
+            sourceOnScreen(activeInstance(), client.editorStatus.statusOf)?.status.file.endsWith(
+                '.rite'
+            ) === true,
+        debugKey: (which) => pressDebug(which),
         saveSource: () => {
             const tab = sourceOnScreen(activeInstance(), client.editorStatus.statusOf);
             if (tab !== null)
@@ -405,6 +429,8 @@
 />
 <UpdateTray open={updateOpen} onclose={() => (updateOpen = false)} />
 <CommandAsk />
+<DebugAsk />
+<DebugToolbar />
 {#if sheetOpen}
     <KeySheet
         title={t('app.keys.title')}

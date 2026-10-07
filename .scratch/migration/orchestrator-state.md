@@ -25,21 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D11
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a9e3866bea9c8baf8 (builder, launched 2026-10-07)
-  worktree: .agents/worktrees/D11
-  base: 5308e806e
-  launched: 2026-10-07
-  report: agents/reviews/D11-report.md
-  builder_usage: 369,610 tokens, 629 tool uses, 155.5 min
-  reviewer_report: agents/reviews/D11-refuter.md (a7023f786466de3d0, claude-opus-5-5, 219,129 tokens, 132 tool uses, 20.4 min)
-  brief_check: agents/reviews/D11-brief-check.md (a0e68a55e2b7c6f81, claude-opus-5-5, 338,752 tokens, 125 tool uses, 18.5 min; the brief corrected since from agents/reviews/D11-premise-recheck-2.md)
-  shared_paths: DESIGN.md and docs/views.md with D15 (D15 writes DESIGN.md:169 and :533 and docs/views.md:239 and :259; D11 writes DESIGN.md:121, :165, :410, :568 and a new decisions entry, and a section after docs/views.md:71), different lines, so the merge at the second landing is simple
-  landing: not-started
-  round: 1 (agents/briefs/D11-round1.md)
 - step: X3e
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -164,8 +149,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-1. D11, case 40 (2026-10-07): Step Into on a line that calls a function ends the program with "+ expects numbers" in cathedra's `rite_dap`, where the brief expects a pause in the callee. oculus sends the plain DAP `stepIn {threadId: 1}` (`session.ts:607`); the builder's own probe client sends the same request and gets the same end, and the reviewer places the fault in cathedra's `debugger_impl.cpp:196-215`, where StepIn arms a temporary break at the callee's first instruction. Options: (a) D11 lands sending `stepIn` as it does, and the StepIn fault is fixed in cathedra as a step of its own (a fix in another repository, with its own test there); (b) D11 lands with Step Into disabled until cathedra is fixed, which removes a working control from every other line; (c) D11 lands as it is and the fault is left. Recommended: (a). The lazy option is (c). It is yours because the fix is in cathedra's code, outside oculus.
+1. D11, case 40 (2026-10-07): Step Into on a line that calls a function ends the program with "+ expects numbers" in cathedra's `rite_dap`, where the brief expects a pause in the callee. oculus sends the plain DAP `stepIn {threadId: 1}` (`session.ts:553` after round 1); the builder's own probe client sends the same request and gets the same end, and the reviewer places the fault in cathedra's `debugger_impl.cpp:196-215`, where StepIn arms a temporary break at the callee's first instruction. Options: (a) D11 lands sending `stepIn` as it does, and the StepIn fault is fixed in cathedra as a step of its own (a fix in another repository, with its own test there); (b) D11 lands with Step Into disabled until cathedra is fixed, which removes a working control from every other line; (c) D11 lands as it is and the fault is left. Recommended: (a). The lazy option is (c). It is yours because the fix is in cathedra's code, outside oculus.
 2. D11's live look (2026-10-07): the debugger can be looked at on TEST only with `rite_dap_bin` set in `config/local.yml` to `~/workspace/cathedra/bin/debug/rite_dap`, since `rite_dap` is not on PATH (Z447). No agent opens that file. Without it the look sees only the idle Debug view and a launch ending in "rite_dap could not be started". Needed before D11's landing look.
+3. The Vite dev server on port 8790 (2026-10-07): after `npm ci` installed D11's new dependency in main's `node_modules`, every page it serves shows "There is a new version of the pre-bundle for .../node_modules/.vite/deps_ssr/svelte_store.js", and three reloads over 30 s did not clear it. It is your server, so only you restart it; until then no look on TEST can run (D11's, X3e's). Not checked: whether the server on port 8787 is affected.
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -235,6 +221,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-07 19:30. D11 landed (the debug client for rite; booking in plan.md; `agents/reviews/D11-landing.md`) after one repair round, with four fixes at landing (three minor findings of the review over round 1, and `npm ci` for the new dependency). Look on TEST not done: open items 2 and 3. Open items 1 to 3. X3e's builder has reported; its review is next. Then M8 is prepared.
 - 2026-10-07 16:15. D15 landed (PDF reading, the place kept per tab and per file; booking in plan.md; `agents/reviews/D15-landing.md`) with six findings of the review over round 1 and two red lines fixed at landing; automode Z709. Looked at on TEST at Axel's word, two fixes from the look committed after the landing. No open item. In flight: D11 and X3e (builders running). No step can be prepared: M8 waits for X3e and D11, D43 for M8, D33 for D11 and D28, D28 for X3e. Next: D11's and X3e's reports, their reviews and landings.
 - 2026-10-07 15:10. Axel: "continue with the full orchestration, automode, fill all open slots as far as is possible, keep queue.md up to date". Z699 ruled (a): Axel applied the PDF viewer fix, committed on main. Premise rechecks on main at 8bd2070c running for X3e, D11, D15, M8, D43 and D33 (Agents section of plan.md); each is then prepared by /spec. Nothing dispatched.
 - 2026-10-07 13:40. D45 landed (LaTeX as VS Code's LaTeX Workshop; booking in plan.md; `agents/reviews/D45-landing.md`) with the review over round 2's nine findings fixed at landing; automode Z698 kept round 2's three choices. No open item. Nothing in flight. Ready: X3e, D11, D15, M8, D43, D33. Orchestration stops here for Axel, who has not given leave to go on; M8 and D11 get fresh premise checks at /spec.

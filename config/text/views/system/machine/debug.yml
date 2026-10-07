@@ -1,0 +1,73 @@
+# Oculus text owned by the Debug and Debug Console views, the debug toolbar and the questions the debugger asks.
+text:
+    views:
+        debug: Debug
+        debug_glyph: debug
+        debug_console: Debug Console
+        debug_console_glyph: debug_console
+    debug:
+        abort: Abort
+        add_configuration: Add Configuration
+        ask_abort: 'Stop the terminal of the command {0}? The launch is dropped.'
+        ask_in: 'in {0}'
+        ask_launch: 'Run the debug configuration {0}?'
+        ask_launch_default: Debug the open file?
+        ask_line: 'rite_dap {0}'
+        ask_stop: 'Stop {0}?'
+        ask_yes: Approve and Debug
+        before_failed: 'The command {0} ended with exit code {1}.'
+        before_unknown: 'before names {0}, which is not a command of this repository'
+        breakpoints: Breakpoints
+        call_stack: Call Stack
+        configuration: Debug configuration
+        console_dropped: '{0} earlier lines were dropped'
+        console_empty: 'The console is empty: it fills when a debug session starts.'
+        console_input: Evaluate in the selected frame
+        console_input_off: Evaluation needs a paused program
+        continue: Continue
+        default_name: Debug the open file
+        disable_all: Disable All Breakpoints
+        enable_all: Enable All Breakpoints
+        enable_box: Enabled
+        finish_frame: Finish Frame
+        frame_unserved: '{0} is under no root the file browser serves, so it cannot be debugged'
+        function_add: Add Function Breakpoint
+        function_field: Name of a function
+        go_on: Debug Anyway
+        no_breakpoints: No breakpoint is set. F9 sets one at the caret of a .rite file.
+        no_file: Open a .rite file to debug
+        no_reading: 'launch.yml lists no configuration that reads; its findings are in the Debug view'
+        not_approved: 'The launch is dropped: the command {0} was not approved'
+        not_available: not available
+        not_saved: '{0} could not be saved, so the launch is dropped'
+        not_started: 'The launch is dropped: the command {0} did not start'
+        nothing_paused: The program is not paused
+        open_launch: Open launch.yml
+        refused: The debug configuration was not read
+        remove: Remove
+        remove_all: Remove All Breakpoints
+        restart: Restart
+        running: 'A debug session is running: stop it first'
+        show_errors: Show Errors
+        slow: 'Waiting for the command {0}...'
+        start: Start
+        state_ended: 'Ended: {0}'
+        state_idle: No session
+        state_paused_breakpoint: Paused on breakpoint
+        state_paused_step: Paused after a step
+        state_running: Running
+        state_starting: Starting
+        step_into: Step Into
+        step_out: Step Out
+        step_over: Step Over
+        stop: Stop
+        terminal_closed: 'The launch is dropped: the terminal of {0} closed before the command ended'
+        toolbar: Debug
+        variable: '{0} = {1}'
+        variables: Variables
+        waiting: 'A launch is waiting on {0}'
+        watch: Watch
+        watch_add: Add Expression
+        watch_field: Watch expression
+        watch_remove: Remove Expression
+        watch_remove_all: Remove All Expressions

@@ -20,6 +20,10 @@
 // in a theme whose panel is lighter than its ink, the same hue darkened until it clears 3:1 on the
 // panel, since seti-ui draws for a dark ground and a pale icon disappears on a light one.
 //
+// And `--c-orange-hover`, the fill a hovered or open item of the status bar takes while a debug
+// session paints the bar orange: the orange moved a quarter of the way toward the colour opposite
+// the bar's ink, so the ink reads on it at least as well as on the orange.
+//
 // The rule is WCAG relative luminance, a 0.02 lightness step, a bound of 50 steps, and the grounds
 // tried in a fixed order. Nothing here touches the document; ui/theme.ts sets the theme class and
 // applies these tokens. Pure functions over one import, culori, whose wcagLuminance and
@@ -57,6 +61,13 @@ export const SETI_RATIO = 3;
 
 /** How much of the accent the pressed-toggle surface carries, the rest being the page. */
 const ACCENT_SHARE = 0.2;
+
+/**
+ * How much of the orange the fill under a hovered or open item of the debugging status bar keeps,
+ * the rest being the colour opposite the bar's ink. That colour moves the fill away from the ink,
+ * so the ink keeps at least the contrast it has on the orange itself.
+ */
+const ORANGE_HOVER_SHARE = 0.75;
 
 /**
  * How much of a hue a lane header's surface carries, the rest being the panel. At half, with every
@@ -212,6 +223,16 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
     for (const key of keys) {
         if (!key.startsWith('--seti-'))
             derived[`--on-${key.slice(2)}`] = contrastOn(effective[key]);
+    }
+
+    // The status bar a debug session paints orange draws its hovered and open items on this fill.
+    if (effective['--c-orange']) {
+        const ink = derived['--on-c-orange'];
+        derived['--c-orange-hover'] = mix(
+            effective['--c-orange'],
+            ink === DARK_INK ? LIGHT_INK : DARK_INK,
+            ORANGE_HOVER_SHARE
+        );
     }
 
     const chip = effective['--chip'] || effective['--panel'] || effective['--bg'];

@@ -107,6 +107,8 @@ export function createEntities(): EntitiesStore {
          */
         audit: () => payload('audit'),
         /** The apps found in the machine's folder and the roots, or null before the first push. */
-        apps: () => payload('apps')
+        apps: () => payload('apps'),
+        /** The debug session's state, or null before the server's first message. */
+        debug: () => payload('debug')
     };
 }

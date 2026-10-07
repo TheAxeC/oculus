@@ -5,18 +5,19 @@
 //
 // The shape is the one every user of the processes rule shares, `{ version: 1, approved: { "<kind>:
 // <sha256>": { label, at, folder? } } }`. There are four kinds of key. A command is approved under
-// `command:<sha256>` of its chain text. An app is approved under `app:<sha256>` of its content,
-// with the real path of its folder, and at most one `app` entry is live per folder. A Python
-// interpreter a repository holds is approved under `interpreter:<sha256>` of the JSON `[repository
-// real path, interpreter path]`, so a changed path or another repository asks again. The Svelte and
-// Vite configuration a repository holds is approved under `svelte-config:<sha256>` of the JSON
-// `[repository real path, [[config file, SHA-256 of its bytes], ...]]`, so a changed file or
-// another repository asks again. An entry of a kind a call does not write is kept as it stood. The
-// file is private to its owner (mode 0600), and the default file's folder, `~/.oculus`, is made
-// mode 0700 when it is looser; the file is written whole by a rename and read back to check the
-// write. A file that is not JSON, or not that shape, is read as holding no approvals, which asks
-// again for everything and approves nothing by mistake, and a write over it is refused with the
-// reason, so the bytes the reader put there are never replaced.
+// `command:<sha256>` of its chain text, and a debug launch under the same kind of key of its own
+// text (`debugText`), whose `debug` member keeps it apart from a chain. An app is approved under
+// `app:<sha256>` of its content, with the real path of its folder, and at most one `app` entry is
+// live per folder. A Python interpreter a repository holds is approved under `interpreter:<sha256>`
+// of the JSON `[repository real path, interpreter path]`, so a changed path or another repository
+// asks again. The Svelte and Vite configuration a repository holds is approved under
+// `svelte-config:<sha256>` of the JSON `[repository real path, [[config file, SHA-256 of its
+// bytes], ...]]`, so a changed file or another repository asks again. An entry of a kind a call
+// does not write is kept as it stood. The file is private to its owner (mode 0600), and the default
+// file's folder, `~/.oculus`, is made mode 0700 when it is looser; the file is written whole by a
+// rename and read back to check the write. A file that is not JSON, or not that shape, is read as
+// holding no approvals, which asks again for everything and approves nothing by mistake, and a
+// write over it is refused with the reason, so the bytes the reader put there are never replaced.
 
 import { createHash } from 'node:crypto';
 import { chmodSync, mkdirSync, readFileSync, statSync } from 'node:fs';
@@ -71,6 +72,17 @@ export function chainLines(repo: string, chain: { cwd: string; run: string }[]):
  */
 export function chainText(repo: string, lines: ChainLine[]): string {
     return JSON.stringify({ repo, chain: lines.map((line) => [line.folder, line.run]) }, null, 1);
+}
+
+/**
+ * The text a debug launch is approved by: the repository's real path, the folder the adapter runs
+ * in relative to it (`.` for the repository) and the program as written, before any placeholder is
+ * replaced. The adapter's own path is the reader's `local.yml` value and the configuration's name
+ * is a label, so neither is in it; a renamed configuration runs the same thing. The member is
+ * `debug` where a chain's is `chain`, so no launch is approved by a command's text or the reverse.
+ */
+export function debugText(repo: string, cwd: string, program: string): string {
+    return JSON.stringify({ repo, debug: [cwd, program] }, null, 1);
 }
 
 type Loaded = { ok: true; approvals: Approvals } | { ok: false; error: string };

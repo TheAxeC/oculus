@@ -135,6 +135,10 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // take out of the object are SHELL_STORES below, and the second rule checks each destructuring
 // against that list.
 //
+// `state/system/machine/debug/debug` is in the shell's row because the keys resolve the debugger's
+// keys with its pure `debugKeyOf`, and the debugger's questions, toolbar and status bar item read
+// the debug store.
+//
 // `state/system/machine/lsp/lsp.svelte` and `state/system/machine/lsp/symbols` are in the shell's
 // row because the status bar's language server items and the palette's choice rows draw the
 // server states and the choices the relay sends, and the pane strip's breadcrumb draws the symbols
@@ -182,6 +186,7 @@ const ALLOWED: Record<string, string[]> = {
         'state/workbench/palette-source',
         'state/workbench/selection',
         'state/workbench/navigation/**',
+        'state/system/machine/debug/debug',
         'state/system/machine/lsp/lsp.svelte',
         'state/system/machine/lsp/symbols',
         'state/system/machine/lsp/workspace-symbols',
@@ -405,6 +410,7 @@ const FROZEN = [
  * find bar and the arrangement's save turn through `desktop`, and the update tray and its schedule
  * list and dialog read and write the schedules through `schedule`, and the status bar's language
  * server items and the palette's choice rows read the servers' states and choices through `lsp`,
+ * and the debugger's questions, toolbar and status bar item read the debug session through `debug`,
  * while the pane strip's breadcrumb reads the symbols of the file in view through `documents`, and
  * the status bar's LaTeX item reads the build of the root in front through `latex` and asks the
  * root of a file through `latexActions`, and the workbench and the browser's float windows read
@@ -431,6 +437,7 @@ const SHELL_STORES = [
     'schedule',
     'lsp',
     'lspEdits',
+    'debug',
     'workspaceSymbols',
     'documents',
     'latex',

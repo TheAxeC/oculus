@@ -1229,7 +1229,7 @@ options:
             description: Where the local history lives, one folder per file with a copy of the file as it was before each save and before each delete. Up to 50 copies of a save are kept per file, none of a file over 256 KB, and a delete keeps the content of a file up to 5 MB, the newest 50 such copies over all files. Without it the folder is ~/.oculus/history. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         approvals:
             section: Saved files
-            description: Where the approvals live, the texts of the project commands a reader approved to run, each under a key made from its text. Without it the file is ~/.oculus/approvals.json, mode 0600, in ~/.oculus, which each write makes mode 0700 when it is looser; a file named here leaves the mode of its folder as it is. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+            description: 'Where the approvals live: the project commands and debug launches, apps, interpreters and Svelte configurations a reader approved, each under a key made from its text. Without it the file is ~/.oculus/approvals.json, mode 0600, in ~/.oculus, which each write makes mode 0700 when it is looser; a file named here leaves the mode of its folder as it is. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.'
         lsp:
             section: Saved files
             description: Where the language servers keep this machine's state, a folder per served root named by a hash of the root's real path, holding the index clangd writes there instead of into the repository, and choices.json, the interpreter and the compile database chosen for each repository. Without it the folder is ~/.oculus/lsp. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change ends every language server, and each starts again on its next document under the new folder; the old folder is left as it was.
@@ -1245,6 +1245,9 @@ options:
         open_bin:
             section: Programs
             description: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to macOS's /usr/bin/open. A change is read again at once.
+        rite_dap_bin:
+            section: Programs
+            description: The rite debug adapter that the Debug view starts, rite_dap of a cathedra build, an absolute path, a path under ~/ or a name resolved on PATH. Without it the name is rite_dap. A change is read again at once.
         accounts:
             section: Usage accounts
             description: The Claude and Codex configuration folders that the Usage view reads, a list of tool (claude or codex), dir and label. Without it the two default folders, ~/.claude and ~/.codex, are read. A Claude label must stay unique once reduced to lowercase letters, digits and dashes. A change is read again at once.

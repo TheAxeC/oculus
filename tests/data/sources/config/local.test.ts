@@ -66,6 +66,8 @@ describe('checkLocal', () => {
         ['schedules: 3', 'local.yml: schedules must be a path'],
         ['port: x', 'local.yml: port must be an integer'],
         ["hpc_host: ''", 'local.yml: hpc_host must be a non-empty string'],
+        ["rite_dap_bin: ''", 'local.yml: rite_dap_bin must be a non-empty string'],
+        ['rite_dap_bin: 5', 'local.yml: rite_dap_bin must be a non-empty string'],
         [
             'calendars: [{ provider: yahoo, label: a }]',
             'local.yml: calendars[0].provider must be google, microsoft or ics'

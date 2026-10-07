@@ -43,7 +43,7 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | m1-m7 | open a view of the Sessions page's group |
 | p1-p4 | open a view of the Projects page's group |
 | e1-e6 | open a view of the Incoming page's group |
-| s1-s5 | open a view of the Explorer page's group |
+| s1-s7 | open a view of the Explorer page's group |
 | c1-c6 | open a view of the Academic Life page's group |
 | l1-l3 | open a view of the Pillars page's group |
 | r1-r4 | open a view of the References page's group |
@@ -81,6 +81,11 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | : | command line |
 | Esc | clear the cursor |
 | Alt+F5 / Shift+Alt+F5 | next / previous change, in a diff pane (through every file it holds) or a source tab's editor that holds the focus |
+| F5 | start debugging the open `.rite` file or the chosen launch configuration, or continue while the program is paused; with no `.rite` file to run it says so |
+| Shift+F5 | stop the debug session, after a confirmation naming the adapter process |
+| Cmd+Shift+F5 | restart the debug session (Ctrl+Shift+F5 off macOS) |
+| F9 | toggle a breakpoint on the caret line of the `.rite` source tab on screen |
+| F10 / F11 / Shift+F11 | step over / step into / step out, while the program is paused; no key pauses a running program |
 | Cmd+F | find in a terminal's grid that holds the focus (Ctrl+F off macOS); in the find bar Enter, Shift+F3 and Cmd+Shift+G go to the previous match, Shift+Enter, F3 and Cmd+G to the next, Escape closes it |
 | Cmd+F | in the app, in a view with no find of its own (the Help view, a list), the find bar of the window: Enter goes to the next match, Shift+Enter to the previous, Escape closes it and gives the focus back; a source tab's editor and a terminal keep their own find |
 | Ctrl+Enter / Cmd+Enter | commit, in a commit box's message field; send, in a diff's comment box |
@@ -108,6 +113,8 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `search` | [Search](docs/views.md#search) | A pattern across the files of one root or of all of them, the hits grouped by file, with an optional replace. |
 | `references` | [References](docs/views.md#references) | The locations a language server found for Find All References or Find All Implementations in a source tab, and the call and type hierarchies of a symbol. |
 | `latex` | [TeX view](docs/views.md#tex-view) | LaTeX Workshop's side bar for the root of the LaTeX file in front: Commands, Structure, Problems and Math Symbols. |
+| `debug` | [Debug](docs/views.md#debug) | The debugger of rite: the launch configuration picker with Start, the findings of `.oculus/launch.yml`, and Variables, Watch, Call Stack and Breakpoints. |
+| `debug-console` | [Debug Console](docs/views.md#debug-console) | What the debugged program wrote and the expressions you evaluated in the paused frame. |
 | `funding` | [Funding](docs/views.md#funding) | The funding schemes, their stage and the statement each grant requires. |
 | `events` | [Talks & Events](docs/views.md#talks--events) | Talks, events and what is coming. |
 | `education` | [Education & Service](docs/views.md#education--service) | Teaching and service entries. |
@@ -152,6 +159,10 @@ Open the Search view with Cmd-Shift-F, type a pattern and press Enter; a press o
 ## Project commands
 
 A repository's named command lines run as terminals from a button in the Repositories view or on a project card; a command from a file of the repository runs only after you approve its text, and Cmd+Shift+B and Cmd+Alt+T run the default build and test. The rules are in the [Terminals and commands guide](docs/terminals.md#where-project-commands-come-from).
+
+## Debugging
+
+The Debug view runs a `.rite` program under cathedra's `rite_dap` adapter: set a breakpoint with F9 or a press in the editor's margin, press F5, and the program runs until it stops on one, where Variables, Watch, Call Stack and the Debug Console show its state and F10, F11 and Shift+F11 step. A repository's configurations live in `.oculus/launch.yml`, and a launch asks once for each text it runs. The behaviour and what is left out are in the [Debugging guide](docs/debugging.md).
 
 ## Apps
 

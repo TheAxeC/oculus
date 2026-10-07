@@ -216,7 +216,9 @@
     /* An item of the status bar (statusbarpart.css): the bar's height, flush with the next item,
        8 px either side, the bar's 12 px words in the bar's own colour, and a fill over it while
        the pointer is on it. The size is fixed as the rail's is, under every theme, a terminal
-       palette included. */
+       palette included. The bar sets `--status-hover`, `--status-warning` and
+       `--status-warning-weight` when its own colour makes the chip fill or the amber text
+       unreadable. */
     .tool.status,
     :global(body.rice) .tool.status {
         box-sizing: border-box;
@@ -233,11 +235,12 @@
 
     .tool.status:hover:not(:disabled),
     .tool.status[aria-expanded='true'] {
-        background: var(--chip);
+        background: var(--status-hover, var(--chip));
     }
 
     .tool.status.warning {
-        color: var(--c-amber-txt);
+        color: var(--status-warning, var(--c-amber-txt));
+        font-weight: var(--status-warning-weight, normal);
     }
 
     /* Its icon at the size VS Code draws a status bar icon, and a stand-in at the words' size. */

@@ -68,6 +68,7 @@
     provideSpelling(desktop?.bridge.spelling);
     const {
         apps: { findings: appFindings, holds, rows: appRows },
+        debug: { load: loadDebug, stopFollowing: stopFollowingDebug },
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
         fs: { bookmarks: savedBookmarks, workspaces },
         layout: { activeInstance, loadLayout, openView, stopFollowing },
@@ -236,11 +237,14 @@
             'processes',
             'schedule',
             'apps',
+            'debug',
+            'debug-console',
             'jump'
         ]);
         takeCarried(localStorage, window, location.origin);
         loadUi(localStorage, window);
         loadLayout(localStorage, window);
+        loadDebug(localStorage, window);
         // The browser's own menu stays only where a control owns the right-click
         // (context-guard.ts).
         const guard = (event: MouseEvent): void => {
@@ -252,6 +256,7 @@
             disconnect();
             stopFollowing();
             stopFollowingUi();
+            stopFollowingDebug();
         };
     });
 </script>

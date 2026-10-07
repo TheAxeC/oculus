@@ -1,7 +1,9 @@
 /* Layer 3, stylesheet of ui/controls/editor/Editor.svelte. The marks the gutter draws as Monaco
-   decorations (gutter.ts): the quick diff marks, the breakpoints, the blame and the tinted runs of
-   lines. Monaco puts the classes on elements it makes outside any component, so each rule is held
-   to the source editor by its root's data-editor-host attribute, which no other editor carries. */
+   decorations (gutter.ts): the quick diff marks, the breakpoints (filled when the adapter holds
+   one, a ring while it has not, a grey ring when turned off), the hint dot, the paused line, the
+   blame and the tinted runs of lines. Monaco puts the classes on elements it makes outside any
+   component, so each rule is held to the source editor by its root's data-editor-host attribute,
+   which no other editor carries. */
 
 /* The blame's padding is spaces, which the number column keeps only drawn as written. */
 .editor[data-editor-host] .monaco-editor .margin-view-overlays .line-numbers {
@@ -39,14 +41,51 @@
     cursor: pointer;
 }
 
-.editor[data-editor-host] .monaco-editor .oculus-breakpoint::before {
+.editor[data-editor-host] .monaco-editor .oculus-breakpoint::before,
+.editor[data-editor-host] .monaco-editor .oculus-hint::before {
     content: '';
     display: block;
     width: 10px;
     height: 10px;
     margin: 4px auto 0;
     border-radius: 50%;
+    box-sizing: border-box;
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-breakpoint-verified::before {
     background: var(--c-red);
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-breakpoint-unverified::before {
+    border: 2px solid var(--c-red);
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-breakpoint-disabled::before {
+    border: 2px solid var(--c-grey);
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-hint {
+    cursor: pointer;
+    opacity: 0.4;
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-hint::before {
+    background: var(--c-red);
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-paused-arrow::before {
+    content: '';
+    display: block;
+    width: 0;
+    height: 0;
+    margin: 3px auto 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 10px solid var(--c-amber);
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-paused-line {
+    background: var(--c-amber-bg);
 }
 
 .editor[data-editor-host] .monaco-editor .oculus-blame {

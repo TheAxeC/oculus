@@ -1,15 +1,16 @@
 // Layer 3, view partial of Source.svelte. What a source tab's language adds to its editor, made
 // once per tab: the language server wiring (`lsp.ts`) and the extension the editor is handed, which
 // is LaTeX's build markers, preview, completions and editing commands (`latex-editor.ts`), a
-// Markdown file's headings as document symbols (`symbols.ts`), or the registration with a server.
-// The extension follows the language the editor paints, so a text past the paint limit gets none
-// of them; a LaTeX file's build, keys and bar follow its language by name (source/latex/). The
-// extension is a new function whenever the painted language, the root or the path changes, so the
-// editor ends the old one and makes the new one.
+// Markdown file's headings as document symbols (`symbols.ts`), a rite file's debug hover, or the
+// registration with a server. The extension follows the language the editor paints, so a text past
+// the paint limit gets none of them; a LaTeX file's build, keys and bar follow its language by name
+// (source/latex/). The extension is a new function whenever the painted language, the root or the
+// path changes, so the editor ends the old one and makes the new one.
 
 import type { ClientState } from '$lib/state/client/context';
 import { markdownOutline } from '$lib/state/sources/explorer/sections/outline';
 import type { LatexCommands } from '$lib/ui/controls/editor/kit/latex/latex-editing';
+import { riteHover } from '$lib/ui/controls/editor/kit/rite/rite-hover';
 import type { EditorExtension } from '$lib/ui/controls/editor/types';
 import { languageExtension } from './extension';
 import { latexEditor } from './latex-editor';
@@ -65,6 +66,7 @@ export function createTabLanguage(input: TabLanguageInput): TabLanguage {
                     input.commands
                 ),
             markdown: () => symbolsExtension(markdownOutline),
+            rite: () => riteHover((word) => input.client.debug.hover(word)),
             // A tab over a file of a served root has no library address, and its file names none.
             served: lsp.extension(
                 shown,

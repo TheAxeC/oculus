@@ -8,6 +8,11 @@
 // every save (a hidden tab reads again once, when it is shown). The marks and the blame are
 // handed to the editor as its decorations and to the code window as Gutter.svelte's rows. A press
 // on a mark opens the file's diff at its change and a press on a blamed line opens its commit.
+//
+// A tab over a rite file on disk is also given the debugger's breakpoints of its file, the line a
+// paused program is on, a press in the glyph margin that toggles a breakpoint and the lines the
+// breakpoints moved to after an edit, all read from the debug store; any other tab is given none
+// of them, so no other file takes a breakpoint. The editor takes all of it as one object, `editor`.
 
 import { untrack } from 'svelte';
 import { listOf } from '$lib/state/sources/repositories/answers';
@@ -27,8 +32,25 @@ import {
 import type { RepositoriesStore } from '$lib/state/sources/repositories/repositories.svelte';
 import { lineCount } from '$lib/state/workbench/navigation/editor-text';
 import type { ShownGate } from '$lib/state/client/use';
-import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter/gutter';
+import type {
+    EditorBlame,
+    EditorBreakpoint,
+    EditorMark
+} from '$lib/ui/controls/editor/gutter/gutter';
+import type { DebugStore } from '$lib/state/system/machine/debug/debug.svelte';
 import { readJson } from '$lib/data/shapes/shapes';
+
+/** What the editor is given of its gutter. The last four are the debugger's, for a rite tab. */
+export type EditorGutter = {
+    marks: EditorMark[];
+    blame: EditorBlame[];
+    onmark: (mark: EditorMark) => void;
+    onblame: (row: EditorBlame) => void;
+    breakpoints?: EditorBreakpoint[];
+    paused?: number | null;
+    onglyph?: (line: number) => void;
+    onbreakpoints?: (lines: number[]) => void;
+};
 
 /** What the gutter reads of its tab, each as a function so that a read is a tracked one. */
 export type SourceGutterInput = {
@@ -46,6 +68,10 @@ export type SourceGutterInput = {
     /** Whether the tab's Blame toggle is on, which is whether the blame is drawn. */
     blameOn: () => boolean;
     gate: ShownGate;
+    /** The absolute path of the rite file the tab shows on disk, the empty string for any other. */
+    riteFile: () => string;
+    /** The debugger's reads and writes of a file's breakpoints. */
+    debug: Pick<DebugStore, 'markers' | 'pausedLine' | 'toggle' | 'moved'>;
 };
 
 /** Read one of the gutter's answers: its status and body, and a refusal when the read threw. */
@@ -146,6 +172,26 @@ export function createSourceGutter(input: SourceGutterInput) {
         /** The blame as the editor's line-number column draws it, none while blame is off. */
         get editorBlame(): EditorBlame[] {
             return input.blameOn() && blame !== null ? blameRows(blame, readAt) : [];
+        },
+        /** Everything the editor draws and hears in its gutter. */
+        get editor(): EditorGutter {
+            const rite = input.riteFile();
+            const { debug } = input;
+            const byLine = new Map((blame ?? []).map((one) => [one.line, one]));
+            return {
+                marks: this.editorMarks,
+                blame: this.editorBlame,
+                onmark: (mark) => openMark(mark.line),
+                onblame: (row) => openBlamed(byLine.get(row.line)),
+                ...(rite === ''
+                    ? {}
+                    : {
+                          breakpoints: debug.markers(rite),
+                          paused: debug.pausedLine(rite),
+                          onglyph: (line: number) => debug.toggle(rite, line),
+                          onbreakpoints: (lines: number[]) => debug.moved(rite, lines)
+                      })
+            };
         }
     };
 }

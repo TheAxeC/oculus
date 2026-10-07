@@ -14,6 +14,8 @@ import type {
     AuditPayload,
     CalendarPayload,
     ConfigPayload,
+    DebugConsoleAppend,
+    DebugPayload,
     FeedsPayload,
     FilesPayload,
     GitPayload,
@@ -44,6 +46,8 @@ export type Payloads = {
     audit: AuditPayload;
     files: FilesPayload;
     apps: AppsPayload;
+    debug: DebugPayload;
+    'debug-console': DebugConsoleAppend;
     jump: Jump;
 };
 
@@ -74,6 +78,8 @@ export type EntitiesStore = {
     usage: () => UsagePayload | null;
     audit: () => AuditPayload | null;
     apps: () => AppsPayload | null;
+    /** The debug session's state, or null before the server's first message. */
+    debug: () => DebugPayload | null;
 };
 
 /** The minute clock of one client. */

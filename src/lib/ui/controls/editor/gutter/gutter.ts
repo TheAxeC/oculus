@@ -1,9 +1,10 @@
 // Layer 3, primitive. The editor's gutter as Monaco draws VS Code's: the quick diff marks as line
 // decorations in the lane between the line numbers and the text (a bar beside an added or a
 // modified run, a wedge where lines were deleted, at the top of the line after them or at the foot
-// of the last line for a deletion at the end), the breakpoints as glyph-margin decorations, and
-// the blame written into the line-number column through Monaco's `lineNumbers` function, the
-// commit and its subject on the number's hover.
+// of the last line for a deletion at the end), the breakpoints as glyph-margin decorations (filled
+// when the adapter holds one, a ring while it has not, a grey ring when turned off), the hint dot
+// and the line a paused program is on, and the blame written into the line-number column through
+// Monaco's `lineNumbers` function, the commit and its subject on the number's hover.
 //
 // Each is built here from plain values the editor is handed, so the view that reads git decides
 // what is marked and the editor draws it; a press is mapped back to the mark or the blamed line it
@@ -166,9 +167,45 @@ export function markAction(
     return to === null ? null : { line: to };
 }
 
-/** The breakpoints as glyph-margin decorations, one on each line handed in. */
-export function breakpointDecorations(lines: readonly number[]): editor.IModelDeltaDecoration[] {
-    return lines.map((line) => onLines(line, line, { glyphMarginClassName: 'oculus-breakpoint' }));
+/** Monaco's `TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges`, an enum only typed here. */
+const NEVER_GROWS = 1;
+
+/** How a breakpoint is drawn: the adapter holds it, has not yet, or the reader turned it off. */
+type BreakpointState = 'verified' | 'unverified' | 'disabled';
+
+/** A breakpoint: the line it sits on, counting from one, and how it is drawn. */
+export type EditorBreakpoint = { line: number; state: BreakpointState };
+
+/**
+ * The breakpoints as glyph-margin decorations, one on each breakpoint handed in, in that order,
+ * so the ranges Monaco tracks afterwards are read back in the same order. A breakpoint stays on
+ * its line while text is typed at the edge of the line.
+ */
+export function breakpointDecorations(
+    points: readonly EditorBreakpoint[]
+): editor.IModelDeltaDecoration[] {
+    return points.map((point) =>
+        onLines(point.line, point.line, {
+            glyphMarginClassName: `oculus-breakpoint oculus-breakpoint-${point.state}`,
+            stickiness: NEVER_GROWS
+        })
+    );
+}
+
+/** The line a paused program is on: an arrow in the glyph margin and the line tinted whole. */
+export function pausedDecorations(line: number | null): editor.IModelDeltaDecoration[] {
+    if (line === null) return [];
+    return [
+        onLines(line, line, {
+            glyphMarginClassName: 'oculus-paused-arrow',
+            className: 'oculus-paused-line'
+        })
+    ];
+}
+
+/** The faint dot of the glyph margin under the pointer, which a press there makes a breakpoint. */
+export function hintDecorations(line: number | null): editor.IModelDeltaDecoration[] {
+    return line === null ? [] : [onLines(line, line, { glyphMarginClassName: 'oculus-hint' })];
 }
 
 /**

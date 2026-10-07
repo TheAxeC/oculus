@@ -112,6 +112,11 @@ export type LocalConfig = {
      * then hands the address to macOS's /usr/bin/open.
      */
     openBin?: string;
+    /**
+     * The rite debug adapter the Debug view starts, `rite_dap_bin` in the file: an absolute path, a
+     * path under `~/` or a name resolved on PATH. A change holds from the next launch.
+     */
+    riteDapBin: string;
     /** Claude and Codex config folders shown by the Usage view. */
     accounts: UsageAccountConfig[];
     /** The calendar accounts the Calendar view reads, empty unless the machine names any. */
@@ -166,6 +171,7 @@ export const LOCAL_KEYS = [
     'schedule_record',
     'claude_bin',
     'open_bin',
+    'rite_dap_bin',
     'accounts',
     'calendars',
     'calendar_dir',
@@ -187,14 +193,15 @@ const LITERATURE_KEYS = [
 ] as const;
 
 /**
- * The defaults: the hub is two directories above tools/oculus, the port is 8790, and Claude is
- * resolved on PATH.
+ * The defaults: the hub is two directories above tools/oculus, the port is 8790, and Claude and
+ * the rite debug adapter are resolved on PATH.
  */
 export function localDefaults(engine: string): LocalConfig {
     return {
         hub: resolve(engine, '..', '..'),
         port: DEFAULT_PORT,
         claudeBin: 'claude',
+        riteDapBin: 'rite_dap',
         accounts: [
             { tool: 'claude', dir: join(homedir(), '.claude'), label: 'claude' },
             { tool: 'codex', dir: join(homedir(), '.codex'), label: 'codex' }
@@ -463,7 +470,8 @@ export function readLocalText(text: string, engine: string): LocalRead {
     for (const [key, field] of [
         ['hpc_host', 'hpcHost'],
         ['claude_bin', 'claudeBin'],
-        ['open_bin', 'openBin']
+        ['open_bin', 'openBin'],
+        ['rite_dap_bin', 'riteDapBin']
     ] as const) {
         if (record[key] === undefined) continue;
         const value = filledAt(record, key);

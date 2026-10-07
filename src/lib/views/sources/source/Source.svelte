@@ -108,7 +108,6 @@
         type Caret
     } from '$lib/state/workbench/navigation/editor-text';
     import type { EditorAction } from '$lib/state/workbench/navigation/editor-status.svelte';
-    import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter/gutter';
     import type { EditorHandle } from '$lib/ui/controls/editor/types';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -287,7 +286,10 @@
         text: () => draft.text,
         saved: () => draft.saved,
         blameOn: () => draft.blame,
-        gate
+        gate,
+        riteFile: () =>
+            language === 'rite' && file.onDisk && lib.address === '' ? file.wholeFile : '',
+        debug: client.debug
     });
     /** How far the text is scrolled, which the gutter follows. */
     let top = $state(0);
@@ -460,15 +462,12 @@
                     text={draft.text}
                     reached={() => sourceReach(instance.id)}
                     rendered={draft.rendered}
-                    marks={gutter.editorMarks}
-                    blame={gutter.editorBlame}
+                    gutter={gutter.editor}
                     extension={tabLanguage.extension}
                     writable={lock.words === ''}
                     oninput={tabDraft.typed}
                     oncaret={(at: Caret) => (caret = at)}
                     onselect={(text: string) => (selection = text)}
-                    onmark={(mark: EditorMark) => gutter.openMark(mark.line)}
-                    onblame={(row: EditorBlame) => gutter.openBlamed(blameMap.get(row.line))}
                     onactions={(offered: EditorAction[]) => (actions = offered)}
                 />
             {/if}

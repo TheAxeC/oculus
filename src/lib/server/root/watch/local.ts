@@ -92,6 +92,7 @@ const FIELDS: (keyof LocalConfig)[] = [
     'scheduleRecord',
     'claudeBin',
     'openBin',
+    'riteDapBin',
     'accounts',
     'calendars',
     'calendarDir',

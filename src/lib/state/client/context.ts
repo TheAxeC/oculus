@@ -127,6 +127,7 @@ import { createCommands, type CommandsStore } from '../sessions/terminal/command
 import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
 import { createTranscripts, type TranscriptsStore } from '../sessions/transcript.svelte.ts';
 import { createUi, type UiStore } from '../workbench/ui.svelte.ts';
+import { createDebug, type DebugStore } from '../system/machine/debug/debug.svelte.ts';
 import {
     createUsageRefresh,
     type UsageRefreshStore
@@ -174,6 +175,8 @@ export type ClientState = {
     terminals: TerminalsStore;
     /** The project commands of the repositories, and the questions a run asks. */
     commands: CommandsStore;
+    /** The debugger: its session, console, breakpoints and launch configurations. */
+    debug: DebugStore;
     /** The composer's choices, the Customizations section's rows, and a session's export. */
     agents: AgentsStore;
     files: FilesStore;
@@ -556,6 +559,54 @@ export function createClientState(
             openFile: (repo, path, line) => repositories.openFile(repo, path, line)
         })
     );
+    const debug = withQueries(
+        'debug',
+        createDebug({
+            entities,
+            writes,
+            queries,
+            notices,
+            commands,
+            terminalById: terminals.terminalById,
+            showTerminal: (id) => terminals.showTerminal(id),
+            stopTerminal: terminals.stopTerminal,
+            onScreen: () => sourceOnScreen(layout.activeInstance(), editorStatus.statusOf),
+            focusedSource: () => editorStatus.focused(),
+            gitRoots: selectors.gitRoots,
+            served: servedRoots,
+            openFile: (repo, path, line) => repositories.openFile(repo, path, line),
+            riteTabs: () =>
+                layout
+                    .hosts()
+                    .flatMap((host) => tabsOf(host.workbench.root))
+                    .flatMap((tab) => {
+                        const file = tab.view === 'source' ? fileOfTab(tab) : null;
+                        if (!file?.path.endsWith('.rite')) return [];
+                        return [{ id: tab.id, ...file, dirty: ui.unsaved(tab.id) }];
+                    }),
+            draft: source.sourceDraft,
+            saveDraft: source.saveSourceDraft,
+            create: explorer.create,
+            saveText: async (root, path, text) => {
+                const answer = await source.saveSource(root, path, text);
+                return { ok: answer.ok, error: answer.error ?? answer.refused.at(0)?.reason ?? '' };
+            },
+            openView: (view) => void layout.openView(view),
+            focusEditor: (file, line) => {
+                const tab = layout.activeInstance();
+                if (tab?.view !== 'source' || editorStatus.statusOf(tab.id)?.file !== file) {
+                    return false;
+                }
+                const at = { line: line - 1, character: 0 };
+                return editorStatus.ask(tab.id, {
+                    kind: 'select',
+                    range: { start: at, end: at },
+                    focus: true
+                });
+            },
+            focusWindow: () => (desktop === undefined ? window.focus() : desktop.bridge.focusMain())
+        })
+    );
     // The notifications the channels and the writes post: a session that starts waiting, a job
     // that ends, an update task whose results land, each heard once per message the entities store
     // keeps, and a write that does not land, heard from the writes store.
@@ -621,6 +672,7 @@ export function createClientState(
         selection,
         terminals,
         commands,
+        debug,
         agents,
         files,
         fs,

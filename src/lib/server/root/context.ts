@@ -41,20 +41,13 @@ import type { Finding, HostInfo, Snapshot } from '../../data/model/index.ts';
 import { mintToken } from '../core/auth.ts';
 import { defaultConnectDir } from '../accounts/connect/store.ts';
 import { ConnectStates } from '../accounts/connect/oauth.ts';
-import type { AccountBook } from '../accounts/connect/actions.ts';
 import {
     watchCalendar,
     type CalendarOptions,
     type CalendarWatcher
 } from '../accounts/calendar/poll.ts';
 import { watchMail, type MailOptions, type MailWatcher } from '../accounts/mail/poll.ts';
-import {
-    addressOpener,
-    macOpenAddress,
-    macOpenPath,
-    type Opener,
-    type PathOpener
-} from '../files/open.ts';
+import { addressOpener, macOpenAddress, macOpenPath, type Opener } from '../files/open.ts';
 import { docFindings, layoutFile } from '../content/docs.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
 import { Hub } from '../core/channels.ts';
@@ -62,23 +55,23 @@ import { target } from '../edit/writes.ts';
 import { expandHome } from '../files/files.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
-import type { LogPaths } from '../machine/hpc/actions.ts';
-import type { Plan } from '../git/deposit.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { defaultApprovalsPath } from '../machine/approvals/approvals.ts';
-import { defaultWorkspacesPath, ignoredCache, type IgnoredCache } from '../files/fs.ts';
-import { pickerState, type PickerState } from '../files/fs/picker.ts';
-import { submitState, type SubmitState } from '../machine/hpc/submit.ts';
-import { fsWrites, type FsWrites } from '../core/json.ts';
-import { createRunningGit, type RunningGit } from '../core/git/running.ts';
-import { memoriesMemory, type MemoriesMemory } from '../content/memories.ts';
+import { defaultWorkspacesPath, ignoredCache } from '../files/fs.ts';
+import { pickerState } from '../files/fs/picker.ts';
+import { submitState } from '../machine/hpc/submit.ts';
+import { fsWrites } from '../core/json.ts';
+import { createRunningGit } from '../core/git/running.ts';
+import { memoriesMemory } from '../content/memories.ts';
 import { browserRoots, repositoryRoots } from '../files/roots.ts';
-import { wallpaperMemory, type WallpaperMemory } from '../content/wallpaper.ts';
+import { wallpaperMemory } from '../content/wallpaper.ts';
 import { hostWordsOf, hpcSettingsOf, latestResources } from '../machine/hpc/host.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.ts';
 import { savedPath } from '../machine/runs/commands/saved.ts';
 import { defaultLspPath } from '../machine/lsp/choices.ts';
+import { DebugClient, type DebugOptions } from '../machine/debug/session.ts';
 import { createRelay, type Relay, type RelayOptions } from '../machine/lsp/relay.ts';
+import { spawnChild } from '../machine/lsp/held/process.ts';
 import { withheldFolders } from '../machine/lsp/library/rules.ts';
 import { followRoots } from '../machine/lsp/held/watch.ts';
 import { ownFolder } from '../machine/lsp/servers.ts';
@@ -105,6 +98,7 @@ import { sessionFolders } from '../sessions/folders.ts';
 import { watchUsageRefresh, type UsageRefreshWatcher } from '../machine/usage/refresh.ts';
 import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
+import type { ServerContext } from './process/server-context.ts';
 import { LISTEN_HOST, type PortMove } from './mover.ts';
 import { watchApps, type AppsWatcher, type AppsWatchOptions } from './watch/apps.ts';
 import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
@@ -128,103 +122,7 @@ export function hostInfo(port: number): HostInfo {
     return { name: hostname(), address: `http://${LISTEN_HOST}:${port}` };
 }
 
-export type ServerContext = {
-    hub: Hub;
-    terminals: Terminals;
-    /** The language servers behind the `lsp:` channels of the socket. */
-    relay: Relay;
-    hooks: HookTarget;
-    git: GitWatcher;
-    hpc: HpcWatcher;
-    calendar: CalendarWatcher;
-    mail: MailWatcher;
-    usage: UsageWatcher;
-    usageRefresh: UsageRefreshWatcher;
-    /**
-     * The schedule watcher, each call handed to the one in force, so a route reaches the watcher
-     * built again after a change of local.yml's `schedules` or `schedule_record`.
-     */
-    schedules: SchedulesWatcher;
-    /** The apps found in the machine's folder and in the roots, and the keeping of an app. */
-    apps: AppsWatcher;
-    token: string;
-    /**
-     * The second secret of the process, which the address key of every approved app is made with
-     * and no page is sent.
-     */
-    appsSecret: string;
-    /**
-     * The machine the server runs on and the address a page reaches it at, replaced when the port
-     * moves.
-     */
-    host: HostInfo;
-    local: LocalConfig;
-    /**
-     * The directory the configuration was read from, so a route names a config file without a walk.
-     */
-    engine: string;
-    /** The write chain of the workspaces file, so two POSTs cannot lose one another's change. */
-    fsWrites: FsWrites;
-    /**
-     * The write chain of the file operations under the served roots, apart from `fsWrites` so a
-     * long copy holds up another file operation and not the workspace, bookmark and note writes.
-     */
-    opsWrites: FsWrites;
-    /** The git and deposit writes in flight, so Cancel ends the one a root or a deposit runs. */
-    gitRunning: RunningGit;
-    /** The ignored names the file browser's listings asked git for lately. */
-    ignoredCache: IgnoredCache;
-    /** Whether the folder panel is open, so a second request while it is open is answered busy. */
-    folderPicker: PickerState;
-    /** The log path found per HPC job id. */
-    hpcLogPaths: LogPaths;
-    /** The Submit runs in flight, whose children the server's close ends. */
-    hpcSubmits: SubmitState;
-    /** The calendar consents in flight, minted by the connect action and taken by the callback. */
-    calendarConnects: ConnectStates;
-    /**
-     * The folder the calendar credential files live in, resolved once for the poller and the
-     * routes.
-     */
-    calendarDir: string;
-    /** The mail consents in flight, minted by the connect action and taken by the callback. */
-    mailConnects: ConnectStates;
-    /** The folder the mail credential files and the triage notes live in, resolved once. */
-    mailDir: string;
-    /** The pacing of the literature sources and the answers kept for a repeated search. */
-    literature: LiteratureDesk;
-    /** The folder the one client half per provider lives in, resolved once. */
-    providerDir: string;
-    /**
-     * The machine's own file, the chain an account write waits on, and the re-read after one: the
-     * whole file is read again, `local` and the fields above take its values, and what is built
-     * from a key that changed is handed it or built again, so a row added or removed holds without
-     * a restart.
-     */
-    accounts: AccountBook;
-    /**
-     * How an `https` address reaches the operating system, so the one process that opens anything
-     * is this one and a test is handed a context that opens nothing.
-     */
-    opener: Opener;
-    /**
-     * How the open endpoint hands a file or a folder to the operating system, injectable the same
-     * way.
-     */
-    openPath: PathOpener;
-    /** The last deposit plan per project. */
-    depositPlans: Map<string, Plan>;
-    /** The wallpaper pick and the refused directories. */
-    wallpaper: WallpaperMemory;
-    /** The Memories wall's refused directories, so a bad setting is reported once. */
-    memories: MemoriesMemory;
-    /**
-     * The drawing of every icon config/catalogs/icons.yml names, read once here and again whenever
-     * the watcher publishes a config push, so a page load reads what is held rather than the disk.
-     */
-    icons: IconMemory;
-    close(): void;
-};
+export type { ServerContext };
 
 /** One finding on stderr, in the one format every config finding is said in. */
 export function reportFindings(findings: Finding[]): void {
@@ -243,6 +141,7 @@ export type ContextDependencies = {
     createHub: () => Hub;
     createTerminals: (hub: Hub) => Terminals;
     createRelay: (options: RelayOptions) => Relay;
+    createDebug: (options: DebugOptions) => DebugClient;
     watchPortfolio: typeof watchPortfolio;
     watchSessions: typeof watchSessions;
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
@@ -266,6 +165,7 @@ const dependencies: ContextDependencies = {
     createHub: () => new Hub(),
     createTerminals: (hub) => new Terminals(hub),
     createRelay,
+    createDebug: (options) => new DebugClient(options),
     watchPortfolio,
     watchSessions,
     watchGit: (hub, options) => watchGit(hub, options),
@@ -349,6 +249,12 @@ export function createServerContext(
             closed: closedPaths(make.loadConfig(engine).config).folders,
             withheld: withheldFolders(configDir(engine), local.hub)
         })
+    });
+    const debug = make.createDebug({
+        hub,
+        spawn: spawnChild,
+        adapter: () => local.riteDapBin,
+        catalog: () => textCatalog(make.loadConfig(engine).config)
     });
     let followed = followRoots(relay, hub, local.workspaces ?? defaultWorkspacesPath());
     const token = make.mintToken();
@@ -552,6 +458,7 @@ export function createServerContext(
         hub,
         terminals,
         relay,
+        debug,
         hooks,
         get git() {
             return owned().git;
@@ -618,6 +525,7 @@ export function createServerContext(
             held.portfolio.close();
             terminals.close();
             followed.close();
+            debug.close();
             void relay.close();
         }
     };

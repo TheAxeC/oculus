@@ -14,7 +14,9 @@
 // channel may therefore name how two of its messages combine, which is what the `pty:` channels do:
 // their held chunk and the next one are concatenated rather than replaced, so a page that falls
 // behind sees every byte, late, rather than a hole. The `files` channel also registers a merge: its
-// newest root and its bookmark-change marker are independent facts in one payload.
+// newest root and its bookmark-change marker are independent facts in one payload. The
+// `debug-console` channel registers one too: its held append and the next append of the same
+// session are joined into one, so a page that falls behind gets every console line, late.
 
 import type { Message } from '../../data/model/index.ts';
 
