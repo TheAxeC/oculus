@@ -1,10 +1,15 @@
 // Layer 2, client state, pure. The Slides view's own state: for each group of a deck, the list of
-// deck names the reader has ticked and ordered, and the line the status region is showing.
+// deck names the reader has ticked and ordered, the deck's `order:` as the reader has arranged it,
+// and the line the status region is showing.
 //
 // It is here rather than inside the component because it is what the view is: a tick and a move are
 // answers over a list, and a pure answer is a plain call in a test rather than a rendered page.
 // The groups themselves are the deck's, which the server answers; what the reader's work is held
 // against is each group's `slides:` as the file holds it.
+//
+// A deck moves within its group and across groups: the work keeps each list the reader touched,
+// and one move across groups changes two of them. The order is a list of the tokens the write names
+// its entries by (data/sources/deck/spec.ts), empty until the reader moves an entry.
 //
 // The work is held against the lists it was made over. A push that changes a group's `slides:`
 // leaves the two out of step, and the view then draws what the file says and says that the unsaved
@@ -14,7 +19,9 @@ import { z } from 'zod';
 import { mapOfShape, readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { movedOrder } from '../boards/collection.ts';
 import { t } from '../shared/words/text.ts';
-import type { DeckGroup } from '../../data/model/index.ts';
+import type { DeckGroup, DeckOrderEntry } from '../../data/model/index.ts';
+
+export type { DeckOrderEntry };
 
 /** What the reader changed: the list of each group they touched, by group name. */
 export type SlideWork = Record<string, string[]>;
@@ -22,6 +29,8 @@ export type SlideWork = Record<string, string[]>;
 /** One Slides pane's own state: the work, what it was made over and a line. */
 export type SlidesState = {
     work: SlideWork;
+    /** The tokens of the deck's order entries in the order the reader made; empty for no work. */
+    order: string[];
     /** The signature of the lists the work was made over; empty when there is no work. */
     at: string;
     /** What the status region is showing, already translated; empty for nothing. */
@@ -39,6 +48,7 @@ export type SaveAnswer = {
 /** The fields a Slides pane keeps, each read as absent when it is of the wrong type. */
 const slidesStateShape = z.object({
     work: mapOfShape(stringItemsShape).catch(() => ({})),
+    order: stringItemsShape.catch(() => []),
     at: z.string().catch(''),
     said: z.string().catch('')
 });
@@ -50,6 +60,7 @@ export function parseSlidesState(value: unknown): SlidesState {
     const held = readAs(slidesStateShape, value);
     return {
         work: held?.work ?? {},
+        order: held?.order ?? [],
         at: held?.at ?? '',
         said: held?.said ?? ''
     };
@@ -59,8 +70,11 @@ export function parseSlidesState(value: unknown): SlidesState {
  * The lists a piece of work was made over. Work held against different ones is the reader's edits
  * over a deck whose file has since changed, so it is dropped and the file answers.
  */
-export function listsSignature(groups: DeckGroup[]): string {
-    return JSON.stringify(groups.map((group) => [group.name, group.slides]));
+export function listsSignature(groups: DeckGroup[], order: DeckOrderEntry[]): string {
+    return JSON.stringify([
+        groups.map((group) => [group.name, group.slides]),
+        order.map((entry) => entry.token)
+    ]);
 }
 
 /** The kinds of row a group lists. */
@@ -139,6 +153,47 @@ export function withMove(list: string[], name: string, to: number): string[] | n
     return movedOrder(list, list.indexOf(name), to);
 }
 
+/**
+ * One name taken out of the list of one group and put in the list of another at `to`, which is
+ * the place it lands counted in the list it joins. Null when the name is not in the list it
+ * leaves, when the two groups are one, or when the name is already in the list it joins.
+ */
+export function withCross(
+    lists: SlideWork,
+    from: string,
+    into: string,
+    name: string,
+    to: number
+): SlideWork | null {
+    const leaving = lists[from];
+    const joining = lists[into];
+    if (from === into || !leaving.includes(name) || joining.includes(name)) return null;
+    const placed = Math.max(0, Math.min(to, joining.length));
+    return {
+        [from]: leaving.filter((one) => one !== name),
+        [into]: joining.toSpliced(placed, 0, name)
+    };
+}
+
+/** The tokens the order is drawn from: the reader's work when they made some, else the file's. */
+export function orderTokens(entries: DeckOrderEntry[], work: string[]): string[] {
+    return work.length > 0 ? work : entries.map((entry) => entry.token);
+}
+
+/** The entries of the order in the order of `tokens`, each entry the deck has once. */
+export function orderRows(entries: DeckOrderEntry[], tokens: string[]): DeckOrderEntry[] {
+    const byToken = new Map(entries.map((entry) => [entry.token, entry]));
+    return tokens.flatMap((token) => {
+        const entry = byToken.get(token);
+        return entry === undefined ? [] : [entry];
+    });
+}
+
+/** Whether the tokens the reader arranged differ from the file's order. */
+export function orderChanged(entries: DeckOrderEntry[], work: string[]): boolean {
+    return work.length > 0 && work.some((token, at) => token !== entries[at]?.token);
+}
+
 /** The groups whose work differs from what the file holds, with the list to write. */
 export function changedGroups(
     groups: DeckGroup[],
@@ -159,10 +214,10 @@ export function changedGroups(
  * does not know gets the general one rather than being printed.
  */
 export function saveMessage(answer: SaveAnswer): string {
-    if (answer.ok) return t('slides.saved');
-    if (answer.network === true) return t('slides.failed_network');
     const reason = answer.refused?.at(0)?.reason;
     if (reason !== undefined) return reason;
+    if (answer.ok) return t('slides.saved');
+    if (answer.network === true) return t('slides.failed_network');
     if (answer.error === 'unwritable') return t('slides.failed_file');
     return t('slides.failed_other');
 }

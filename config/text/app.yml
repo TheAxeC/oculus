@@ -25,6 +25,7 @@ text:
             interpreter_none: No Python interpreter was found for this repository.
             interpreter_typed: 'Use the interpreter at {0}'
             kind_collection: Collection
+            kind_command: Command
             kind_database: Compile Database
             kind_editor: Editor
             kind_feed: Feed

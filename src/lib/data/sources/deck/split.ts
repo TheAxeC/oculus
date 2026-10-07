@@ -14,6 +14,10 @@
 //
 // Nothing here throws. A front matter that cannot be read as YAML at all is reported through
 // `unreadable` and its lines stay in the slide's body, so the words of the slide are not lost.
+//
+// Each slide also says which lines of the file are its own (`SlideSpan`), so the edits of a slide
+// file (deck/slide-text.ts) and the line a view opens a slide at cut the file where the reader
+// cut it, by the one rule.
 
 import { parseFrontmatter, splitFrontmatter } from '../docs.ts';
 
@@ -23,9 +27,22 @@ export type RawSlide = {
     body: string;
 };
 
+/**
+ * The lines of a file one slide owns, 0-based. `before` is the separator line ahead of the slide,
+ * which is the opener of its front matter when it has one, and -1 for the first slide of a file
+ * that does not open with a separator. `first` is the slide's first line: that opener when the
+ * slide has front matter, else its first body line. `end` is one past its last line, the next
+ * separator or the end of the file.
+ */
+type SlideSpan = { before: number; first: number; end: number };
+
 /** What a file was cut into, and whether its own front matter was YAML that does not parse. */
 export type SlideFile = {
     slides: RawSlide[];
+    /** The lines each slide owns, in the order of `slides`. */
+    spans: SlideSpan[];
+    /** The file's lines, line endings normalised to `\n`. */
+    lines: string[];
     unreadable: boolean;
 };
 
@@ -39,7 +56,7 @@ const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const CLOSE = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
 
 /** What each line of a file is for the cut: a separator, or anything else. */
-function separators(lines: string[]): boolean[] {
+export function separators(lines: string[]): boolean[] {
     const marks: boolean[] = [];
     let fence: { mark: string; length: number } | null = null;
     let comment = false;
@@ -67,7 +84,7 @@ function separators(lines: string[]): boolean[] {
 }
 
 /** The text of lines, with the blank lines at both ends dropped. */
-function trimmed(lines: string[]): string {
+export function trimmed(lines: string[]): string {
     return lines
         .join('\n')
         .replace(/^\s*\n/, '')
@@ -79,6 +96,7 @@ export function splitSlides(text: string): SlideFile {
     const lines = text.replace(/\r\n?/g, '\n').split('\n');
     const marks = separators(lines);
     const slides: RawSlide[] = [];
+    const spans: SlideSpan[] = [];
     let unreadable = false;
     // A slide starts on the line after a separator; the first one on the first line of the file,
     // which stands for a separator when it is one.
@@ -108,10 +126,13 @@ export function splitSlides(text: string): SlideFile {
         let end = from;
         while (end < lines.length && !marks[end]) end += 1;
         const body = trimmed(lines.slice(from, end));
-        if (meta !== null || body !== '') slides.push({ meta, body });
+        if (meta !== null || body !== '') {
+            slides.push({ meta, body });
+            spans.push({ before: start - 1, first: meta === null ? from : open, end });
+        }
         if (end >= lines.length) break;
         start = end + 1;
         first = false;
     }
-    return { slides, unreadable };
+    return { slides, spans, lines, unreadable };
 }

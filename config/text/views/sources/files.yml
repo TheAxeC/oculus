@@ -103,12 +103,14 @@ text:
         menu_nesting: File Nesting
         menu_new_file: New File...
         menu_new_folder: New Folder...
+        menu_new_present: New Presentation...
         menu_open_browser: Open in Browser Tab
         menu_open_folder: Open Folder...
         menu_open_program: Open in Program
         menu_open_side: Open to the Side
         menu_paste: Paste
         menu_present: Open Presentation
+        menu_present_outline: New Presentation from Outline
         menu_preview: Open Preview
         menu_remove_bookmark: Remove Bookmark
         menu_remove_root: Remove Folder from Workspace

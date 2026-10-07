@@ -53,6 +53,8 @@ import { setFlag, setOverride } from '../sessions/overrides.ts';
 import { glyphNames } from '../../data/sources/config/rail.ts';
 import { createIdea, writeManifest } from './writes/manifest.ts';
 import { configWrite } from './writes/config/config-write.ts';
+import { writeDeckEdit } from './writes/config/deck/deck-acts.ts';
+import { undoDeckEdit } from './writes/config/deck/deck-undo.ts';
 import { rootsHeldIn, type RootsHeld } from './writes/config/roots.ts';
 import { filesTargetOf, undoFiles, type FilesDeps, type FilesTarget } from './writes/file-undo.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
@@ -68,6 +70,7 @@ import {
     writeFeedField
 } from './feeds.ts';
 import {
+    deckEditWrite,
     deleteEntryWrite,
     entryWrite,
     feedDeleteWrite,
@@ -187,7 +190,7 @@ export type WriteOutcome = {
 
 // The writers and the parsers, re-exported under their own names.
 export { coerce, createIdea, fieldTypes, insideHub, writeManifest } from './writes/manifest.ts';
-export { writeDeckSlides } from './writes/config/deck.ts';
+export { writeDeckSlides } from './writes/config/deck/deck.ts';
 export { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 export { collectionFile, identityField } from '../files/fs/collections.ts';
 export { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
@@ -201,6 +204,7 @@ export {
     auditMuteWrite,
     configKeyWrite,
     configValueWrite,
+    deckEditWrite,
     deckSlidesWrite,
     deleteEntryWrite,
     entryWrite,
@@ -223,6 +227,9 @@ export {
     undoWrite
 } from './writes/bodies.ts';
 export { undoChange, valueNow } from './writes/undo.ts';
+
+/** The kind the change log files the acts on a deck's files under. */
+const DECK_EDIT = 'deck-edit';
 
 /** The engine config file the audit's mute list lives in. */
 const BEHAVIOR = 'behavior.yml';
@@ -525,6 +532,13 @@ export async function handleWrite(
         return answer(outcome, 'linkedin-post', into, undefined, app ?? undefined);
     }
 
+    const deckEdit = deckEditWrite(body);
+    if (deckEdit !== null) {
+        const outcome = await writeDeckEdit(into, deckEdit, deps);
+        if ('error' in outcome) return json({ error: outcome.error }, { status: 500 });
+        return answer({ found: true, ...outcome }, 'deck-edit', into);
+    }
+
     const configured = configWrite(body, into);
     if (configured !== null) {
         if ('error' in configured) {
@@ -552,7 +566,9 @@ export async function handleWrite(
         const outcome =
             change.kind === FILES_KIND
                 ? await undoFiles(into, change, deps)
-                : undoChange(into, change);
+                : change.kind === DECK_EDIT
+                  ? await undoDeckEdit(into, change, deps)
+                  : undoChange(into, change);
         if ('error' in outcome) {
             if (outcome.error === 'refused') {
                 return json({ error: outcome.error, refused: outcome.refused }, { status: 400 });

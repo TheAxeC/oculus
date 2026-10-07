@@ -145,7 +145,7 @@ const formShape = z.enum(['', 'root', 'workspace', 'bookmark']).catch('');
 
 /** The pending name a saved record holds: a kind, a named root and a path. */
 const namingShape = z.object({
-    mode: z.enum(['file', 'folder', 'rename']),
+    mode: z.enum(['file', 'folder', 'deck', 'rename']),
     root: z.string().min(1),
     path: z.string()
 }) satisfies z.ZodType<Naming>;

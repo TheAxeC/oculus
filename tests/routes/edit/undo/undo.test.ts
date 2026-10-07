@@ -20,6 +20,7 @@ import {
     MANIFEST,
     TOKEN,
     changesOf,
+    DECK_ORDER,
     DECK_PATH,
     deckOf,
     deckTarget,
@@ -172,24 +173,51 @@ describe('taking a change back', () => {
         expect(tasksOf(into)).toContain('- { do: read it }');
     });
 
-    it("puts a deck group's list back to the list the write replaced", async () => {
+    it('puts the lists of a deck write back, each record on its own, and a record keyed by the bare group name', async () => {
         const into = deckTarget();
         const file = join(into.hub, DECK_PATH);
         const before = deckOf(into);
-        const slides = (group: string, base: string[], next: string[]): unknown => ({
+        const group = (name: string, base: string[], slides: string[]) => ({
+            group: name,
+            base,
+            slides
+        });
+        await made(into, {
             kind: 'deck-slides',
             root: 'hub',
             path: DECK_PATH,
-            group,
-            base,
-            slides: next
+            groups: [group('pillars', ['alpha'], ['beta', 'alpha'])],
+            order: { base: DECK_ORDER, entries: ['slides:pillars', 'intro.md', 'slides:more'] }
         });
-        const change = await made(into, slides('pillars', ['alpha'], ['beta', 'alpha']));
-        expect(change.kind).toBe('deck-slides');
-        expect(deckOf(into)).not.toBe(before);
-        const back = await undoneBack(into, change, file, before);
-        expect(back.kind).toBe('deck-slides');
-        expect(back.undoes).toBe(change.at);
+        const [order, list] = changesOf(into);
+        expect([list.key, order.key]).toEqual(['slides:pillars', 'order']);
+        const written = deckOf(into);
+        expect(written).not.toBe(before);
+
+        const orderOf = (text: string): string => /\norder:[\s\S]*$/.exec(text)?.[0] ?? '';
+        const middle = written.replace(orderOf(written), orderOf(before));
+        const orderBack = await undoneBack(into, order, file, middle);
+        expect(orderBack).toMatchObject({ kind: 'deck-slides', key: 'order', undoes: order.at });
+        expect((await undone(into, list)).status).toBe(200);
+        expect(deckOf(into)).toBe(before);
+        const [listBack] = changesOf(into);
+        expect(listBack).toMatchObject({ key: 'slides:pillars', undoes: list.at });
+
+        // A record keyed by the group's bare name is undone as that group's list.
+        const bare = { ...list, key: 'pillars', before: ['alpha'], after: ['beta', 'alpha'] };
+        writeFileSync(file, written);
+        writeFileSync(
+            into.changes?.file ?? '',
+            `${JSON.stringify({ ...bare, at: '2026-01-01T00:00:00.000Z' })}\n`
+        );
+        const [bareKeyed] = changesOf(into);
+        const back = await undoneBack(
+            into,
+            bareKeyed,
+            file,
+            before.replace(orderOf(before), orderOf(written))
+        );
+        expect(back.undoes).toBe(bareKeyed.at);
     });
 
     it('puts a career host and a subtask line back', async () => {

@@ -132,6 +132,7 @@ const CLOSED_WRITES = [
     'config-value',
     'session',
     'deck-slides',
+    'deck-edit',
     'roots',
     'app-store',
     'calendar',

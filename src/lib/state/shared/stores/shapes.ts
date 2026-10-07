@@ -135,6 +135,25 @@ export type WriteAnswer = {
     id?: string;
 };
 
+/**
+ * One act on the files of a deck, as the deck write takes it (server/edit/writes/bodies.ts): `base`
+ * is the text of the slide's file as the page read it.
+ */
+export type DeckEditAct =
+    | { act: 'new'; root: string; path: string; after?: string }
+    | { act: 'duplicate' | 'delete'; root: string; path: string; slide: string; base: string }
+    | {
+          act: 'image';
+          root: string;
+          path: string;
+          slide: string;
+          base: string;
+          name: string;
+          data: string;
+      }
+    | { act: 'create'; root: string; folder: string; title: string }
+    | { act: 'outline'; root: string; file: string };
+
 /** What one session write may set. A field left out is left as the overrides file has it. */
 export type SessionFields = {
     /** True archives the session, false brings it back. */
@@ -227,10 +246,11 @@ export type WritesStore = {
     newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
     writeDeckSlides: (
         deck: { root: string; path: string },
-        group: string,
-        base: string[],
-        slides: string[]
+        groups: { group: string; base: string[]; slides: string[] }[],
+        order?: { base: string[]; entries: string[] }
     ) => Promise<WriteAnswer>;
+    /** One act on the files of a deck; the answer's `id` is what to show next. */
+    writeDeckEdit: (act: DeckEditAct, said?: boolean) => Promise<WriteAnswer>;
     /** Rewrite the rail list; `said` when the caller posts the refusal's notification itself. */
     writeRail: (
         rail: { label: string; glyph: string; page: string }[],

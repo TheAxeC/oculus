@@ -29,6 +29,7 @@ import { oculusAnswers } from './server/health.ts';
 import { loginEnvironment } from './server/login-env.ts';
 import { forkServer, type ServerProcess } from './server/process.ts';
 import { registerBridge } from './windows/bridge.ts';
+import { printPdf } from './windows/print.ts';
 import { buildMenu } from './windows/menu.ts';
 import { createPicker } from './windows/pick.ts';
 import { createWindowStore } from './windows/window-state.ts';
@@ -116,8 +117,9 @@ async function run(
     const icon = join(checkout, 'assets', 'app-icon.png');
     if (existsSync(icon)) app.dock?.setIcon(nativeImage.createFromPath(icon));
 
+    const preload = fileURLToPath(new URL('./preload.cjs', import.meta.url));
     const windows = createWindows({
-        preload: fileURLToPath(new URL('./preload.cjs', import.meta.url)),
+        preload,
         store: createWindowStore(join(home, '.oculus', 'window.json')),
         log: (line) => print(`[app] ${line}`),
         ownPort: (port) => server?.port() === port,
@@ -126,7 +128,7 @@ async function run(
             if (server === null) origin = next;
         }
     });
-    registerBridge(windows, createSaveTurn());
+    registerBridge(windows, createSaveTurn(), (address) => printPdf(address, { preload }));
 
     const pick = createPicker(windows, t, (message) => server?.send(message));
 

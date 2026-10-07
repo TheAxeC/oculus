@@ -3,20 +3,28 @@
 // verbs. The roots are the list lib/server/files/roots.ts folds and nothing else, so a folder the
 // reader added in the file browser is a root a deck can be opened from. The projects are the ones
 // this request's server last published, and the configuration is `locals.config()`, read from disk
-// at this request.
+// at this request. The POST reads the same deck over the drafts of the body.
 
 import { portfolioConfigFrom } from '$lib/data/index';
-import { handleDeck } from '$lib/server/content/deck/endpoint';
+import { handleDeck, handleDeckDrafts } from '$lib/server/content/deck/endpoint';
+import type { DeckSource } from '$lib/server/content/deck/read';
 import { browserRoots } from '$lib/server/files/roots';
 import { projects } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ request, locals }) => {
+/** What a deck is read over at this request. */
+function sourceOf(locals: App.Locals): DeckSource {
     const config = locals.config().config;
-    return handleDeck(request, locals.token, {
+    return {
         roots: browserRoots({ config, engine: locals.server.engine, local: locals.server.local }),
         hub: locals.server.local.hub,
         config: portfolioConfigFrom(config),
         projects: projects(locals.server.hub)
-    });
-};
+    };
+}
+
+export const GET: RequestHandler = ({ request, locals }) =>
+    handleDeck(request, locals.token, sourceOf(locals));
+
+export const POST: RequestHandler = ({ request, locals }) =>
+    handleDeckDrafts(request, locals.token, sourceOf(locals));

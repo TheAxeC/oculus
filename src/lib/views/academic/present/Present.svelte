@@ -40,26 +40,35 @@
     // Shift+Space the previous one), `O` for the grid, `F` for full screen and Escape to close the
     // grid.
     //
-    // Full screen is the box's own: the browser draws the box alone, so the rail, the tabs and the
-    // toolbar are gone with no change to the shell, and leaving it puts the pane back as it was.
-    // Whether this box is the full-screen element is read from the document on every
-    // `fullscreenchange`, so a way out the page does not control (a browser tab's Esc, the app
-    // window's menu) is seen too. In full screen the box fills the screen on the page's background
-    // colour with the frame centred and edge to edge, a click on the slide moves to the next one,
-    // and the pointer hides after it has rested. The box leaves full screen when its tab is hidden,
-    // when the deck holds no slides and when the view unmounts, so a full screen never shows a
-    // hidden or an empty box. In full screen the shell's keys are held back, since what they open
-    // is drawn outside the box: the deck's keys, the card cursor's keys over the grid and Enter on
-    // a control act, Tab wraps inside the box, and the focus leaving for an element outside the
-    // box (a modified key such as Cmd+Shift+F) ends the full screen.
+    // Full screen is the box's own (fullscreen.svelte.ts): the browser draws the box alone, so the
+    // rail, the tabs and the toolbar are gone with no change to the shell. In full screen the box
+    // fills the screen on the page's background colour with the frame centred and edge to edge, a
+    // click on the slide moves to the next one, and the pointer hides after it has rested. In full
+    // screen the shell's keys are held back, since what they open is drawn outside the box: the
+    // deck's keys, the card cursor's keys over the grid and Enter on a control act, Tab wraps
+    // inside the box, and the focus leaving for an element outside the box (a modified key such as
+    // Cmd+Shift+F) ends the full screen.
+    //
+    // A slide has a menu on a right-click, on the slide and on its tile in the grid (acts/menu.ts):
+    // Edit Slide, New Slide, Duplicate Slide and Delete Slide, which are also commands in the
+    // palette for the slide on screen. An image dropped on a slide of the deck's own files is added
+    // to it. While a source tab of the same page holds text its file does not, the slide is drawn
+    // from that text (acts/live.svelte.ts). The pane's status line, at the end of the toolbar, says
+    // what an act came to.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import Bar from './Bar.svelte';
+    import { createActs } from './acts/acts.svelte';
+    import { createLive } from './acts/live.svelte';
+    import { slideMenu } from './acts/menu';
+    import { createFullscreen } from './fullscreen.svelte';
     import Overview from './Overview.svelte';
     import Slide from './Slide.svelte';
     import { CONTROLS, keepTab } from './keys';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, tabsOf } from '$lib/state/workbench/layout/instance';
     import {
         FRAME_HEIGHT,
         FRAME_WIDTH,
@@ -72,6 +81,7 @@
         labelOf,
         leftDeck,
         nothingToShow,
+        pageDrafts,
         parsePresentState,
         sameDeck,
         slideAt,
@@ -79,6 +89,7 @@
         tabDeck,
         withLabel,
         type DeckRef,
+        type DeckSlide,
         type PresentState
     } from '$lib/state/life/present';
     import { t } from '$lib/state/shared/words/text';
@@ -86,15 +97,17 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     const {
-        layout: { openBeside, pointInstance, restateInstance },
-        present: { deck: deckOf, portfolio, projectDecks, shown: shownDeck },
-        ui: { instanceState, setInstanceState }
+        desktop,
+        explorer,
+        layout: { holding, hosts, openBeside, pointInstance, restateInstance },
+        paletteSource: { offer, withdraw },
+        present: { deck: deckOf, drawn, portfolio, projectDecks, shown: shownDeck },
+        source: { reloadSource, sourceDirty, sourceDraft },
+        ui: { instanceState, setInstanceState },
+        writes: { writeDeckEdit }
     } = useState();
 
     let { instance }: ViewProps = $props();
-
-    /** How long the pointer rests over the box in full screen before it is hidden. */
-    const POINTER_REST_MS = 2000;
 
     /** The card cursor's keys, which act on the overview grid's tiles inside the box. */
     const GRID_KEYS = new Set(['j', 'k', 'i', 'J', 'K', 'ArrowUp', 'ArrowDown']);
@@ -102,16 +115,6 @@
     const tabShown = useShown();
 
     let box = $state<HTMLElement | null>(null);
-
-    /** Whether this box is the document's full-screen element. */
-    let full = $state(false);
-    /** Whether the pointer has rested long enough in full screen to be hidden. */
-    let resting = $state(false);
-    let restTimer: ReturnType<typeof setTimeout> | undefined;
-    /** Whether a full-screen request is on its way, so a second press does not ask again. */
-    let entering = false;
-    /** Whether the view has gone, so a request that resolves after it leaves again. */
-    let unmounted = false;
 
     /** The deck box's measured size, 0 until it has been laid out and while its tab is hidden. */
     let width = $state(0);
@@ -121,11 +124,56 @@
     const held = $derived(parsePresentState(instanceState(instance.id)));
     const ref = $derived(shownDeck(deckRefOf(instance.state)));
     const answer = $derived(ref === null ? null : deckOf(ref));
-    const deck = $derived(answer?.deck ?? null);
+    const filesDeck = $derived(answer?.deck ?? null);
+
+    /** The unsaved text of the source tabs of this pane's page, which the slide is drawn from. */
+    const drafts = $derived(
+        pageDrafts(
+            tabsOf(holding(instance.id)?.workbench.root ?? { kind: 'pane', tabs: [], active: '' }),
+            sourceDraft
+        )
+    );
+    const liveDeck = createLive({
+        ref: () => ref,
+        drafts: () => drafts,
+        files: () => filesDeck,
+        drawn
+    });
+    const deck = $derived(liveDeck() ?? filesDeck);
     const rows = $derived(deck?.slides ?? []);
     const shown = $derived(slideAt(rows, held.slide));
     const at = $derived(indexOf(rows, held.slide));
     const grid = $derived(held.overview);
+
+    const screen = createFullscreen({
+        box: () => box,
+        showable: () => tabShown() && rows.length > 0
+    });
+    const full = $derived(screen.full());
+    const resting = $derived(screen.resting());
+
+    const acts = createActs({
+        instance: () => instance.id,
+        ref: () => ref,
+        deck: () => deck,
+        shown: () => shown,
+        grid: () => grid,
+        write: writeDeckEdit,
+        bridge: desktop?.bridge,
+        upload: explorer.upload,
+        openTab: (address) => window.open(address, '_blank', 'noopener'),
+        openBeside,
+        reread: (place) => {
+            const folder = `${place.root}/${place.path}/`;
+            for (const tab of hosts().flatMap((host) => tabsOf(host.workbench.root))) {
+                if (tab.view !== 'source' || sourceDirty(tab.id)) continue;
+                if (sourceDraft(tab.id).file.startsWith(folder)) void reloadSource(tab.id);
+            }
+        },
+        show: (key) => write({ slide: key }),
+        offer,
+        withdraw
+    });
     /** The shell's card cursor, which the overview grid's tiles carry as every card list does. */
     const cursor = $derived(cardCursor(instance.state));
 
@@ -206,73 +254,6 @@
         return control !== null && box.contains(control);
     }
 
-    /** A refused or superseded full-screen request leaves the pane as it is. */
-    const ignore = (): undefined => undefined;
-
-    function enterFull(): void {
-        if (box === null || entering) return;
-        const element = box;
-        entering = true;
-        element
-            .requestFullscreen()
-            .then(() => {
-                if (unmounted && document.fullscreenElement === element) {
-                    document.exitFullscreen().catch(ignore);
-                }
-            })
-            .catch(ignore)
-            .finally(() => (entering = false));
-    }
-
-    function leaveFull(): void {
-        if (box !== null && document.fullscreenElement === box) {
-            document.exitFullscreen().catch(ignore);
-        }
-    }
-
-    function toggleFull(): void {
-        if (box !== null && document.fullscreenElement === box) leaveFull();
-        else enterFull();
-    }
-
-    /** Follow the document's full-screen element; the box takes the focus when it becomes it. */
-    function syncFull(): void {
-        full = box !== null && document.fullscreenElement === box;
-        if (full) box?.focus();
-    }
-
-    /** The pointer moved over the box: show it, and hide it again once it has rested. */
-    function rouse(): void {
-        clearTimeout(restTimer);
-        resting = false;
-        if (full) restTimer = setTimeout(() => (resting = true), POINTER_REST_MS);
-    }
-
-    // The pointer's rest starts when full screen is entered, whether or not the pointer moves, and
-    // ends with it.
-    $effect(() => {
-        if (full) rouse();
-        else {
-            clearTimeout(restTimer);
-            resting = false;
-        }
-        return () => clearTimeout(restTimer);
-    });
-
-    // A full screen never outlives what it shows: a hidden tab, an empty deck or the view going.
-    $effect(() => {
-        if (full && (!tabShown() || rows.length === 0)) leaveFull();
-    });
-
-    $effect(() => {
-        const element = box;
-        if (element === null) return;
-        return () => {
-            unmounted = true;
-            if (document.fullscreenElement === element) document.exitFullscreen().catch(ignore);
-        };
-    });
-
     /**
      * Move, and put the keys in force, so the next arrow key reaches this pane and not the shell.
      */
@@ -311,7 +292,7 @@
             case 'F':
                 if (rows.length === 0) return;
                 event.preventDefault();
-                if (!event.repeat) toggleFull();
+                if (!event.repeat) screen.toggle();
                 return;
             case ' ':
                 if (inControl(event.target)) return;
@@ -344,7 +325,7 @@
     /** In full screen the focus leaving for an element outside the box ends the full screen. */
     function focusLeft(event: FocusEvent): void {
         const to = event.relatedTarget;
-        if (full && box !== null && to instanceof Node && !box.contains(to)) leaveFull();
+        if (full && box !== null && to instanceof Node && !box.contains(to)) screen.leave();
     }
 
     /** In full screen a click on the slide, or on the letterbox around it, shows the next one. */
@@ -375,14 +356,16 @@
             write({ overview: !grid });
             box?.focus();
         }}
-        onpresent={toggleFull}
+        onpresent={screen.toggle}
         onslides={() => {
             openBeside('slides', deckState({}, deckRefOf(instance.state)));
         }}
+        onexport={acts.exportPdf}
+        said={acts.said()}
     />
 {/snippet}
 
-<svelte:document onfullscreenchange={syncFull} />
+<svelte:document onfullscreenchange={screen.sync} />
 
 <Pane title={t('present.title')} {bar}>
     <!-- The box is the deck's own key surface: it is focusable and named as a region, and the keys
@@ -403,8 +386,10 @@
         onkeydown={keys}
         onfocusout={focusLeft}
         onpointerdown={() => box?.focus()}
-        onpointermove={rouse}
+        onpointermove={screen.rouse}
         onclick={advance}
+        ondragover={(event: DragEvent) => acts.carriesFiles(event) && event.preventDefault()}
+        ondrop={acts.dropped}
     >
         {#if rows.length === 0 || deck === null}
             <Empty
@@ -413,28 +398,43 @@
                 glyph={t('present.empty_glyph')}
             />
         {:else if grid}
-            <Overview {rows} current={shown?.key ?? ''} {cursor} onpick={pick} />
+            <Overview
+                {rows}
+                current={shown?.key ?? ''}
+                {cursor}
+                onpick={pick}
+                menu={(row: DeckSlide) => slideMenu(deck, row)}
+                onact={acts.act}
+            />
         {:else if shown !== null}
-            <div
-                class="stage"
-                style:width="{FRAME_WIDTH * scale}px"
-                style:height="{FRAME_HEIGHT * scale}px"
+            <ContextMenu
+                label={t('present.menu_label')}
+                items={slideMenu(deck, shown)}
+                onpick={(id: string) => acts.act(id, shown)}
             >
                 <div
-                    class="frame"
-                    data-frame
-                    data-scroll
-                    style:width="{FRAME_WIDTH}px"
-                    style:height="{FRAME_HEIGHT}px"
-                    style:transform="scale({scale})"
-                    style:visibility={scale === 0 ? 'hidden' : undefined}
+                    class="stage"
+                    style:width="{FRAME_WIDTH * scale}px"
+                    style:height="{FRAME_HEIGHT * scale}px"
                 >
-                    <Slide row={shown} {deck} first={at === 0} />
+                    <div
+                        class="frame slide-frame"
+                        data-frame
+                        data-scroll
+                        style:width="{FRAME_WIDTH}px"
+                        style:height="{FRAME_HEIGHT}px"
+                        style:transform="scale({scale})"
+                        style:visibility={scale === 0 ? 'hidden' : undefined}
+                    >
+                        <Slide row={shown} {deck} first={at === 0} />
+                    </div>
                 </div>
-            </div>
+            </ContextMenu>
         {/if}
     </div>
 </Pane>
+
+<AskConfirm asking={acts.asking()} onclose={acts.closeQuestion} />
 
 <style>
     .present {
@@ -482,25 +482,11 @@
         flex: 0 0 auto;
     }
 
-    /* The frame is laid out at the design size and scaled from its top left corner. The slide
-       type scale is in px at that size and follows the text size; the padding and the reading
-       width are px of the frame too. */
+    /* The frame is laid out at the design size (themes/slide.css) and scaled from its top left
+       corner. */
     .frame {
-        --slide-fs-title: calc(56px * var(--text-scale, 1));
-        --slide-fs-h: calc(36px * var(--text-scale, 1));
-        --slide-fs-sub: calc(28px * var(--text-scale, 1));
-        --slide-fs-body: calc(24px * var(--text-scale, 1));
-        --slide-fs-small: calc(18px * var(--text-scale, 1));
-        --slide-reading: 1040px;
-        box-sizing: border-box;
-        padding: 64px;
         overflow-y: auto;
         transform-origin: 0 0;
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        background: var(--card);
-        color: var(--ink-txt, var(--ink));
-        font-size: var(--slide-fs-body);
     }
 
     /* Over a wallpaper the surface goes translucent, as every other card surface does. */

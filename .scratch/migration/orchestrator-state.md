@@ -25,22 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: PR3
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a348cc74b67ed634e (builder, launched 2026-10-06)
-  worktree: .agents/worktrees/PR3
-  base: 272f60b4
-  launched: 2026-10-06
-  report: agents/reviews/PR3-report.md
-  brief_check: agents/reviews/PR3-brief-check.md (a8ea4645a98e6dde0, claude-opus-5-5, 218,976 tokens, 88 tool uses, 12.1 min)
-  shared_paths: with Q126 and D23: tools/oculus/DESIGN.md, docs/views.md, docs/files-and-search.md, docs/configuration.md, HELP.md (item- and paragraph-level edits; whichever lands second carries the other's text, Z642's rule); part 8 waits for Axel's ruling Z667, sent to the builder by message
-  builder_usage: a348cc74b67ed634e, 200,916 tokens, 54 tool uses, 30.0 min (report agents/reviews/PR3-report.md); round 1: 309,126 tokens, 179 tool uses, 27.0 min (report rewritten; its guarded.md lines saved as agents/reviews/PR3-guarded.diff)
-  reviewer_report: agents/reviews/PR3-refuter.md (aa378ab34c21e2821, claude-opus-5-5, 126,998 tokens, 108 tool uses, 15.8 min); over round 1: a22d168bb7ca66506, claude-opus-5-5, 261,986 tokens, 75 tool uses, 16.6 min (section 'Repair round 1, refuted'; R1 to R7 and Z675 closed at landing)
-  landing: cherry-picking
-  round: 1
-  round_sent: 2026-10-07, agents/briefs/PR3-round1.md (Z674); the tree at sending: `git diff --binary 272f60b4 | shasum` d692b4109f37, 26 untracked files
 - step: D23c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -53,8 +37,8 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D23c-report.md
   brief_check: agents/reviews/D23c-brief-check.md (a81066bbccca96733, claude-opus-5-5, 188,115 tokens, 51 tool uses, 7.8 min)
   shared_paths: with PR3: tools/oculus/DESIGN.md, docs/views.md, docs/files-and-search.md (sentence-level edits in different items: D23c's language server, References and locked-file items, PR3's Present items; whichever lands second carries the other's text, Z642)
-  builder_usage: a12b39260f0c0a455, 184,970 tokens, 194 tool uses, 46.1 min (report agents/reviews/D23c-report.md); a80adc4082930a5ef before it, stopped mid-build, its usage not recorded
-  reviewer_report: agents/reviews/D23c-refuter.md (af53f7cfd7795c93a, claude-opus-5-5, 323,026 tokens, 109 tool uses, 18.8 min)
+  builder_usage: a12b39260f0c0a455, 184,970 tokens, 194 tool uses, 46.1 min (report agents/reviews/D23c-report.md); a80adc4082930a5ef before it, stopped mid-build, its usage not recorded; round 1: a12b39260f0c0a455, 327,884 tokens, 71 tool uses, 17.0 min
+  reviewer_report: agents/reviews/D23c-refuter.md (af53f7cfd7795c93a, claude-opus-5-5, 323,026 tokens, 109 tool uses, 18.8 min); over round 1: ad7ea502ca23d89b0, claude-opus-5-5, 225,221 tokens, 61 tool uses, 11.5 min
   landing: not-started
   round: 1
   round_sent: 2026-10-07, agents/briefs/D23c-round1.md (Z676, Z678); the tree at sending: `git diff --binary 951b61e3 | shasum` 8758cd15fbe8, 13 untracked files
@@ -229,6 +213,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-07 03:30. PR3 landed (the Present view edits and generates decks; booking in plan.md; `agents/reviews/PR3-landing.md`) with the merge conflicts, R1 to R6, Z675 and four fixes from its look on a scratch oculus fixed at landing. D23c reviewed over round 1, all 14 items closed; Z679 in automode. In flight: D23c (lands next). Next: land D23c, then prepare PR4, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-06 23:55. Q126 landed (DESIGN.md reduced to its decisions; booking in plan.md; `agents/reviews/Q126-landing.md`), merged with D23 by Z642's rule, with the round-1 refutation's five findings fixed at landing. In flight: PR3 (builder running). Next: prepare D23c, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-06 23:30. D23 landed (the language server client: pyright and clangd in the source editor; booking in plan.md; `agents/reviews/D23-landing.md`) with 15 fixes at landing, Z663 among them, and its look on a scratch oculus; look item 4 waived by Axel's ruling (b) 'D23 lands before Z669', Z669 (a) and Z670 (a) booked as D23c. In flight: Q126 (lands next), PR3 (builder running). Next: land Q126; prepare D23c, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-06. Axel ruled Z667 (a): PR3's builder rewords the 40 deck lines by hand; `agents/spec.md:101` gains the sentence for hub text a ruling asks to have reworded. Sent to PR3's builder.

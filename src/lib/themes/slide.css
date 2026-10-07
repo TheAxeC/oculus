@@ -1,0 +1,19 @@
+/* The frame a slide is laid out in, at the design size of 1280 by 720 px: the slide type scale in
+   px at that size, which follows the text size, the reading width, the padding and the surface.
+   The Present pane scales the frame to its box and the print route prints it at scale 1, both
+   through this one class. */
+.slide-frame {
+    --slide-fs-title: calc(56px * var(--text-scale, 1));
+    --slide-fs-h: calc(36px * var(--text-scale, 1));
+    --slide-fs-sub: calc(28px * var(--text-scale, 1));
+    --slide-fs-body: calc(24px * var(--text-scale, 1));
+    --slide-fs-small: calc(18px * var(--text-scale, 1));
+    --slide-reading: 1040px;
+    box-sizing: border-box;
+    padding: 64px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--card);
+    color: var(--ink-txt, var(--ink));
+    font-size: var(--slide-fs-body);
+}

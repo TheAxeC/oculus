@@ -8,6 +8,14 @@ text:
         col_project: Project
         counter: '{0} / {1}'
         deck_menu: Deck
+        delete_detail: 'The slide is in {0}. A file that holds only this slide goes to the Trash; in a file of several slides only this slide is removed.'
+        delete_entry: The entry leaves the order in {0}; no slide file is deleted.
+        delete_message: 'Delete the slide {0}?'
+        delete_yes: Delete
+        drop_large: '{0} is larger than {1} MB, so it is not added to the slide.'
+        drop_not_image: '{0} is not a PNG, JPEG, GIF, WebP or SVG image, so it is not added to the slide.'
+        drop_not_own: Only a slide of the deck's own files takes an image.
+        drop_one: Drop one image at a time.
         deck_portfolio: Portfolio deck
         deck_project: 'Project: {0}'
         eli5_plain: In plain words
@@ -18,11 +26,23 @@ text:
         empty_no_file: 'The folder {0} holds no present.yml, so it is not a deck yet.'
         empty_unnamed: 'No deck is set. Name the portfolio deck as `portfolio_deck` in config/sources.yml, or open a deck from a project card or from a folder in the Files view.'
         empty_unreadable: 'The present.yml in {0} does not parse as a map, so nothing is drawn. The Audit view says where.'
+        export: Export to PDF
+        export_busy: Making the PDF...
+        export_done: 'Wrote {0} beside the deck.'
+        export_opened: The deck opened in a new tab; the browser's print dialog saves it as a PDF.
+        export_tip: Write the deck to a PDF beside it, one slide to a page
+        export_too_large: 'The PDF is larger than the {0} MB a file may be.'
         failed: 'The deck could not be read: {0}'
+        failed_network: The change did not reach the server.
         figure_alt: A figure of the project
         figure_missing: 'missing figure: {0}'
         key_hint: Arrow keys or Space move through the deck | O opens the overview | F shows it full screen
         loading: Reading the deck ...
+        menu_delete: Delete Slide
+        menu_duplicate: Duplicate Slide
+        menu_edit: Edit Slide
+        menu_label: Slide actions
+        menu_new: New Slide
         method: Method
         next: Next
         overview: Overview
@@ -30,7 +50,12 @@ text:
         present: Present
         present_tip: Show the deck on the whole screen (F, while the deck has the focus)
         previous: Previous
+        read_failed: 'The file of the slide could not be read: {0}'
         results: Results
+        said_added: 'Added {0} to the slide.'
+        said_copied: The slide is copied.
+        said_deleted: The slide is deleted.
+        said_new: A new slide is added.
         title: Present
         toolbar: Deck controls
     views:

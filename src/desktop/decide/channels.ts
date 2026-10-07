@@ -16,6 +16,12 @@ export const FIND = 'oculus:find';
 export const STOP_FIND = 'oculus:stop-find';
 export const CLOSE_FIND = 'oculus:close-find';
 
+/**
+ * A page asking the host to print an address of its own server's print route to a PDF, answered
+ * with the bytes or the reason it could not.
+ */
+export const PRINT_PDF = 'oculus:print-pdf';
+
 /** A page handing the host a released tab, answered with whether a window took it. */
 export const DROP_OUTSIDE = 'oculus:drop-outside';
 
@@ -27,3 +33,6 @@ export const EVENT = 'oculus:event';
 
 /** The channels the find bar's view may use. */
 export const BAR_CHANNELS: readonly string[] = [FIND, STOP_FIND, CLOSE_FIND];
+
+/** The channels the print route's page may use: none, since the host reads its readiness itself. */
+export const PRINT_CHANNELS: readonly string[] = [];

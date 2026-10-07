@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z679 (2026-10-07, step D23c, the orchestrator, automode): a remembered cursor just after a word
+
+- Chosen: the cursor goes to that place with nothing selected; a word is selected only when the cursor lies inside it.
+- Not chosen: selecting the word that ends just before the cursor (the lazy option, it selects text the reader never pointed at).
+
 ## Z678 (1) (2026-10-07, step D23c, the orchestrator, automode): a remembered cursor past the end of its line
 
 - Chosen: the cursor goes to the end of the line with nothing selected; the word under it is selected only when the remembered column lies inside the line.

@@ -21,7 +21,7 @@ import { writeMute } from './audit-mute.ts';
 import { writeConfigKey } from './config-key.ts';
 import type { SourceInputs } from './config-sources.ts';
 import { writeConfigValue } from './config-value.ts';
-import { writeDeckSlides } from './deck.ts';
+import { writeDeckSlides } from './deck/deck.ts';
 import { writeRail } from './rail.ts';
 import { addRootTo, removeRootFrom } from './roots.ts';
 

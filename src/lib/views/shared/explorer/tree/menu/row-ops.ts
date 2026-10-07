@@ -37,6 +37,8 @@ type Words = (key: string, ...args: (string | number)[]) => string;
 
 export const ROW_NEW_FILE = 'new-file';
 export const ROW_NEW_FOLDER = 'new-folder';
+export const ROW_NEW_DECK = 'new-present';
+export const ROW_DECK_OUTLINE = 'new-present-outline';
 export const ROW_UPLOAD = 'upload';
 export const ROW_PASTE = 'paste';
 export const ROW_CUT = 'cut';
@@ -78,8 +80,16 @@ export type RowOpsDeps = {
     confirm: (question: AskedQuestion) => Promise<boolean>;
     /** Open the browser's file dialog; the files chosen, and none when it was left. */
     choose: () => Promise<File[]>;
-    /** Start typing the name of a new file or folder in a folder, or a new name for a row. */
-    startName: (mode: 'file' | 'folder' | 'rename', row: TreeRow) => void;
+    /**
+     * Start typing the name of a new file or folder in a folder, the title of a new presentation
+     * there, or a new name for a row.
+     */
+    startName: (mode: 'file' | 'folder' | 'deck' | 'rename', row: TreeRow) => void;
+    /**
+     * Make a presentation from a Markdown file and show it: the sentence for why it was not made,
+     * and the empty string when it was.
+     */
+    outline: (file: Place) => Promise<string>;
     /** Open the comparison of `file` (the right side) against `against` (the left). */
     openCompare: (file: Place, against: Place) => void;
     /** Whether an open tab holds text of a file that is not saved. */
@@ -224,6 +234,8 @@ export function rowOpsPicker(deps: RowOpsDeps, t: Words): (row: TreeRow, pick: s
     return (row, pick) => {
         if (pick === ROW_NEW_FILE) deps.startName('file', row);
         else if (pick === ROW_NEW_FOLDER) deps.startName('folder', row);
+        else if (pick === ROW_NEW_DECK) deps.startName('deck', row);
+        else if (pick === ROW_DECK_OUTLINE) void deps.outline(placeOf(row)).then(deps.say);
         else if (pick === ROW_RENAME) deps.startName('rename', row);
         else if (pick === ROW_CUT) deps.explorer.cut(acted(row).map(placeOf));
         else if (pick === ROW_COPY) deps.explorer.copy(acted(row).map(placeOf));
@@ -375,12 +387,17 @@ export type RowNamingDeps = {
     say: (note: string) => void;
     /** The entries a folder's listing holds under the shown kinds, and null while unlisted. */
     entries: (root: string, path: string) => { name: string }[] | null;
+    /**
+     * Make a presentation in a folder with the title typed and show it: the sentence for why it was
+     * not made, and the empty string when it was.
+     */
+    deck: (folder: Place, title: string) => Promise<string>;
 };
 
 /** The calls of the name input: start one, accept its text, and test a name against its folder. */
 export function rowNaming(deps: RowNamingDeps, t: Words) {
     /** Start typing a name in a folder, or a new name for a row. */
-    function start(mode: 'file' | 'folder' | 'rename', row: TreeRow): void {
+    function start(mode: 'file' | 'folder' | 'deck' | 'rename', row: TreeRow): void {
         deps.say('');
         deps.patch(namingStarted(deps.view().expanded, mode, row));
     }
@@ -391,6 +408,10 @@ export function rowNaming(deps: RowNamingDeps, t: Words) {
         if (naming === null) return;
         deps.patch({ naming: null });
         const place = { root: naming.root, path: naming.path };
+        if (naming.mode === 'deck') {
+            deps.say(await deps.deck(place, text));
+            return;
+        }
         const outcome =
             naming.mode === 'rename'
                 ? await deps.explorer.rename(place, text)

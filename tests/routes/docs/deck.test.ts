@@ -11,7 +11,7 @@ import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
-import { handleDeck } from '../../../src/lib/server/content/deck/endpoint.ts';
+import { handleDeck, handleDeckDrafts } from '../../../src/lib/server/content/deck/endpoint.ts';
 import type { DeckSource } from '../../../src/lib/server/content/deck/read.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 
@@ -35,6 +35,30 @@ function source(): { source: DeckSource; dir: string } {
             projects: []
         }
     };
+}
+
+/** One POST of the route, as the page makes it, over the drafts given. */
+async function drawn(
+    held: DeckSource,
+    drafts: { root: string; path: string; text: string }[],
+    over: { root?: string; path?: string; token?: string | null } = {}
+): Promise<Response> {
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    if (over.token !== null) headers['x-oculus-token'] = over.token ?? TOKEN;
+    return handleDeckDrafts(
+        new Request('http://127.0.0.1:8791/api/deck', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ root: over.root ?? 'hub', path: over.path ?? 'talk', drafts })
+        }),
+        TOKEN,
+        held
+    );
+}
+
+/** The title of every slide of an answer. */
+function headings(deck: { slides: { title?: string }[] }): (string | undefined)[] {
+    return deck.slides.map((one) => one.title);
 }
 
 /** One request of the route, as the page makes it. */
@@ -68,5 +92,63 @@ describe('the deck route', () => {
             expect(response.status, row).toBe(403);
             expect(await response.json(), row).toEqual({ error: 'outside' });
         }
+    });
+
+    it('refuses a draft read without the token and one over a root nothing serves or a path that climbs out', async () => {
+        const held = source().source;
+        expect((await drawn(held, [], { token: null })).status).toBe(403);
+        const refused: { row: string; over: { root?: string; path?: string } }[] = [
+            { row: 'a root nothing serves', over: { root: 'nowhere' } },
+            { row: 'a climb into a folder beside the root', over: { path: '../elsewhere/secret' } },
+            { row: 'a link inside the root that leaves it', over: { path: 'link' } }
+        ];
+        for (const { row, over } of refused) {
+            const response = await drawn(held, [], over);
+            expect(response.status, row).toBe(403);
+            expect(await response.json(), row).toEqual({ error: 'outside' });
+        }
+    });
+
+    it('draws a slide from the text an editor holds, and ignores a draft of a file the deck does not read or of a path outside the roots', async () => {
+        const { source: held, dir } = source();
+        const file = (await (await drawn(held, [])).json()) as { slides: { title?: string }[] };
+        expect(headings(file)).toEqual(['One', 'Two']);
+        const alias = { ...held, roots: [...held.roots, { key: 'alias', dir: join(dir, 'hub') }] };
+        const draft = '# Typed\n\n---\n\n# Two\n';
+        const rows: {
+            row: string;
+            drafts: { root: string; path: string; text: string }[];
+            heads: string[];
+        }[] = [
+            {
+                row: 'a draft of the file the deck reads',
+                drafts: [{ root: 'hub', path: 'talk/main.md', text: draft }],
+                heads: ['Typed', 'Two']
+            },
+            {
+                row: 'a draft of a file the deck does not read',
+                drafts: [{ root: 'hub', path: 'talk/README.md', text: '# Elsewhere\n' }],
+                heads: ['One', 'Two']
+            },
+            {
+                row: 'a draft of a path outside the served roots',
+                drafts: [{ root: 'hub', path: '../elsewhere/secret/main.md', text: '# Typed\n' }],
+                heads: ['One', 'Two']
+            }
+        ];
+        for (const { row, drafts, heads } of rows) {
+            const deck = (await (await drawn(held, drafts)).json()) as {
+                slides: { title?: string }[];
+            };
+            expect(headings(deck), row).toEqual(heads);
+        }
+        const second = [{ root: 'alias', path: 'talk/main.md', text: draft }];
+        const reached = (await (await drawn(alias, second)).json()) as {
+            slides: { title?: string }[];
+        };
+        expect(
+            headings(reached),
+            'a draft under a second root key that reaches the same file'
+        ).toEqual(['Typed', 'Two']);
     });
 });

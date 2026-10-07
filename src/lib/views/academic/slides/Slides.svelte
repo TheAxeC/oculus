@@ -14,10 +14,12 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One deck's groups: for each group, the decks it holds in the order it shows
-    // them and the decks it found and does not hold, each with a tick saying whether the group
-    // holds it and the controls that move it. Save writes each changed group's `slides:` list into
-    // the deck's `present.yml` and the deck is live at the next push.
+    // Layer 3, view. One deck's order and groups. The order is the deck's `order:` as one list of
+    // entries, each dragged or stepped to another place. For each group, the decks it holds in the
+    // order it shows them and the decks it found and does not hold, each with a tick saying whether
+    // the group holds it and the controls that move it: a deck is dragged within its group or onto
+    // another group, where it leaves the group it came from. Save writes every list the reader
+    // changed into the deck's `present.yml` as one edit, and the deck is live at the next push.
     //
     // The groups are the deck route's, so a deck added on disk is in this list at the next push.
     // What is the pane's own is the reader's unsaved work: the list they have dragged a group into
@@ -33,13 +35,14 @@
     //
     // It is a tab and not a dialog: oculus has no modal for content, and Escape does nothing here.
 
-    import { tick } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
+    import Order from './Order.svelte';
+    import Steps from './Steps.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
@@ -47,15 +50,19 @@
         groupRows,
         listOf,
         listsSignature,
+        orderChanged,
+        orderRows,
+        orderTokens,
         parseSlidesState,
         saveMessage,
+        withCross,
         withMove,
         withTick,
         type GroupRow,
         type RowKind,
         type SlideWork
     } from '$lib/state/life/slides';
-    import { deckLabel, deckRefOf } from '$lib/state/life/present';
+    import { deckFile, deckLabel, deckRefOf } from '$lib/state/life/present';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -73,9 +80,10 @@
     const answer = $derived(ref === null ? null : deckOf(ref));
     const deck = $derived(answer?.deck ?? null);
     const groups = $derived(deck?.groups ?? []);
+    const entries = $derived(deck?.order ?? []);
 
     /** The lists the reader's unsaved work was made over; a different set drops it. */
-    const signature = $derived(listsSignature(groups));
+    const signature = $derived(listsSignature(groups, entries));
 
     /** Whether the work the pane is holding was made over the lists now on screen. */
     const current = $derived(held.at !== '' && held.at === signature);
@@ -87,6 +95,11 @@
     const work = $derived<SlideWork>(current ? held.work : {});
     const changes = $derived(changedGroups(groups, work));
 
+    /** The order's tokens as the reader arranged them, and whether that differs from the file. */
+    const arranged = $derived(current ? held.order : []);
+    const tokens = $derived(orderTokens(entries, arranged));
+    const reordered = $derived(orderChanged(entries, arranged));
+
     /** What the status region shows: the last line, or the note that a push dropped the work. */
     const said = $derived(dropped ? t('slides.dropped') : held.said);
 
@@ -96,8 +109,8 @@
     /** True while a save is in flight, so a second press sends no second write. */
     let busy = $state(false);
 
-    function keep(next: SlideWork, words: string): void {
-        setInstanceState(instance.id, { ...held, work: next, at: signature, said: words });
+    function keep(next: SlideWork, words: string, order: string[] = arranged): void {
+        setInstanceState(instance.id, { ...held, work: next, order, at: signature, said: words });
     }
 
     /** Put one deck on the group or take it off, which is what a row's box says. */
@@ -115,42 +128,44 @@
         );
     }
 
-    /**
-     * Keep the keyboard on the row after a move that took the pressed control out of reach: a deck
-     * moved to either end disables the control that moved it, and the focus would otherwise fall to
-     * the page. The other direction's control is where the reader is.
-     *
-     * The focus is set after the update has been drawn, since the row is moved in the DOM and the
-     * two controls take their new disabled state then.
-     */
-    async function moveFrom(
-        event: MouseEvent,
-        group: string,
-        list: string[],
-        name: string,
-        to: number,
-        other: 'up' | 'down'
-    ): Promise<void> {
-        const ends = other === 'down' ? to === 0 : to === list.length - 1;
-        const pressed = event.currentTarget;
-        move(group, list, name, to);
-        if (!ends || !(pressed instanceof HTMLElement)) return;
-        await tick();
-        const row = pressed.closest('[data-slide-row]');
-        const next = row?.querySelector(`[data-step="${other}"] button`);
-        if (next instanceof HTMLElement) next.focus();
+    /** Move one entry of the order to another place, and say where it landed. */
+    function moveEntry(token: string, to: number): void {
+        const next = withMove(tokens, token, to);
+        const entry = entries.find((one) => one.token === token);
+        if (next === null || entry === undefined) return;
+        keep(work, t('slides.entry_moved', entry.title, String(to + 1), String(next.length)), next);
     }
 
-    /** The row the reader is dragging, and the row that armed its own grip. */
-    let dragged = $state('');
+    /** The row the reader is dragging, by its group and name, and the row that armed its grip. */
+    let dragged = $state({ group: '', name: '' });
     let armed = $state('');
 
+    /**
+     * Drop the dragged deck on a row of a group, or on the group itself when `onto` is empty. In
+     * its own group the deck takes the place of the row; on another group it leaves its own list,
+     * joins this one at that place or at the end, and the save names both lists.
+     */
     function drop(group: string, list: string[], onto: string): void {
         const from = dragged;
-        dragged = '';
+        dragged = { group: '', name: '' };
         armed = '';
-        if (from === '' || from === onto || !list.includes(onto)) return;
-        move(group, list, from, list.indexOf(onto));
+        if (from.name === '') return;
+        if (from.group === group) {
+            if (from.name !== onto && list.includes(onto)) {
+                move(group, list, from.name, list.indexOf(onto));
+            }
+            return;
+        }
+        const lists: SlideWork = Object.fromEntries(
+            groups.map((one) => [one.name, listOf(one, work)])
+        );
+        const at = list.includes(onto) ? list.indexOf(onto) : list.length;
+        const next = withCross(lists, from.group, group, from.name, at);
+        if (next === null) {
+            keep(work, t('slides.already_in', from.name, group));
+            return;
+        }
+        keep({ ...work, ...next }, t('slides.moved_across', from.name, group, String(at + 1)));
     }
 
     /** What a kind of row is called beside its title. */
@@ -170,33 +185,30 @@
     }
 
     /**
-     * Write each changed group's list. The first refusal stops the save and is told in the
-     * server's own sentence; what has been written stays written, and the unsaved groups
-     * stay as the reader left them.
+     * Write every list the reader changed as one edit, the order included. A refusal is told in the
+     * server's own sentence and writes nothing: the work stays as the reader left it.
      */
     async function save(): Promise<void> {
-        if (busy || ref === null || changes.length === 0) return;
+        if (busy || ref === null || (changes.length === 0 && !reordered)) return;
         busy = true;
         keep(work, t('slides.saving'));
-        let remaining = { ...work };
-        let line = t('slides.saved');
-        for (const { group, slides } of changes) {
-            const reply = await writeDeckSlides(ref, group.name, group.slides, slides);
-            if (!reply.ok) {
-                line = saveMessage(reply);
-                break;
-            }
-            remaining = Object.fromEntries(
-                Object.entries(remaining).filter(([name]) => name !== group.name)
-            );
-        }
+        const lists = changes.map(({ group, slides }) => ({
+            group: group.name,
+            base: group.slides,
+            slides
+        }));
+        const order = reordered
+            ? { base: entries.map((one) => one.token), entries: tokens }
+            : undefined;
+        const reply = await writeDeckSlides({ root: ref.root, path: deckFile(ref) }, lists, order);
         busy = false;
-        const none = Object.keys(remaining).length === 0;
+        const written = reply.ok && reply.refused.length === 0;
         setInstanceState(instance.id, {
             ...held,
-            work: remaining,
-            at: none ? '' : signature,
-            said: line
+            work: written ? {} : work,
+            order: written ? [] : arranged,
+            at: written ? '' : signature,
+            said: saveMessage(reply)
         });
     }
 </script>
@@ -206,7 +218,7 @@
         <ToolButton
             label={t('slides.save')}
             onclick={() => void save()}
-            disabled={busy || blocked || changes.length === 0}
+            disabled={busy || blocked || (changes.length === 0 && !reordered)}
         />
         <span class="said" role="status">{said}</span>
     </Toolbar>
@@ -234,14 +246,26 @@
                 error
                 glyph={t('slides.empty_glyph')}
             />
-        {:else if groups.length === 0}
+        {:else if groups.length === 0 && entries.length === 0}
             <Empty message={t('slides.empty', deck.path)} glyph={t('slides.empty_glyph')} />
         {:else}
             <Intro html={t('slides.intro')} trusted />
+            {#if entries.length > 0}
+                <Order rows={orderRows(entries, tokens)} {busy} onmove={moveEntry} />
+            {/if}
             {#each groups as group (group.name)}
                 {@const list = listOf(group, work)}
                 {@const rows = groupRows(group, list)}
-                <section class="group" data-group={group.name} aria-label={group.name}>
+                <section
+                    class="group"
+                    data-group={group.name}
+                    aria-label={group.name}
+                    ondragover={(event: DragEvent) => event.preventDefault()}
+                    ondrop={(event: DragEvent) => {
+                        event.preventDefault();
+                        drop(group.name, list, '');
+                    }}
+                >
                     <h3 class="name">
                         {group.name}
                         <span class="count">{t('slides.count', String(group.count))}</span>
@@ -252,19 +276,22 @@
                             {@const words = kindWords(row.kind, row)}
                             <div
                                 class="row"
-                                class:dragging={dragged === `${group.name}/${row.name}`}
+                                class:dragging={dragged.group === group.name &&
+                                    dragged.name === row.name}
                                 class:off={!row.ticked}
                                 data-slide-row={row.name}
                                 data-row-kind={row.kind}
                                 draggable={armed === `${group.name}/${row.name}`}
-                                ondragstart={() => (dragged = row.name)}
+                                ondragstart={() =>
+                                    (dragged = { group: group.name, name: row.name })}
                                 ondragover={(event: DragEvent) => event.preventDefault()}
                                 ondrop={(event: DragEvent) => {
                                     event.preventDefault();
+                                    event.stopPropagation();
                                     drop(group.name, list, row.name);
                                 }}
                                 ondragend={() => {
-                                    dragged = '';
+                                    dragged = { group: '', name: '' };
                                     armed = '';
                                 }}
                                 role="listitem"
@@ -297,42 +324,13 @@
                                     <Tag label={words} />
                                 {/if}
                                 {#if at >= 0}
-                                    <span class="steps">
-                                        <span data-step="up">
-                                            <ToolButton
-                                                small
-                                                label={t('slides.up')}
-                                                title={t('slides.up_tip', row.title)}
-                                                disabled={at === 0}
-                                                onclick={(event: MouseEvent) =>
-                                                    void moveFrom(
-                                                        event,
-                                                        group.name,
-                                                        list,
-                                                        row.name,
-                                                        at - 1,
-                                                        'down'
-                                                    )}
-                                            />
-                                        </span>
-                                        <span data-step="down">
-                                            <ToolButton
-                                                small
-                                                label={t('slides.down')}
-                                                title={t('slides.down_tip', row.title)}
-                                                disabled={at === list.length - 1}
-                                                onclick={(event: MouseEvent) =>
-                                                    void moveFrom(
-                                                        event,
-                                                        group.name,
-                                                        list,
-                                                        row.name,
-                                                        at + 1,
-                                                        'up'
-                                                    )}
-                                            />
-                                        </span>
-                                    </span>
+                                    <Steps
+                                        {at}
+                                        count={list.length}
+                                        title={row.title}
+                                        onstep={(to: number) =>
+                                            move(group.name, list, row.name, to)}
+                                    />
                                 {/if}
                             </div>
                         {/each}
@@ -419,13 +417,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-    }
-
-    .steps {
-        display: flex;
-        flex: none;
-        align-items: center;
-        gap: 4px;
     }
 
     /* The status words close the bar. */

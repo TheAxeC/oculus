@@ -21,6 +21,7 @@ import type {
     Deck,
     DeckGroup,
     DeckIdeaCard,
+    DeckOrderEntry,
     DeckSlide,
     DeckState,
     DeckSummaryRow,
@@ -29,7 +30,8 @@ import type {
 import { fileAddress, realOf, resolveIn, type DeckRoot } from './files.ts';
 import { resolveGroups, type Doc, type Finder, type Resolved } from './groups.ts';
 import { buildSlide, type DeckProject, type KindContext } from './kinds.ts';
-import { readSpec, type OrderEntry, type Raise } from './spec.ts';
+import { orderText } from './order-text.ts';
+import { orderTokens, readSpec, type OrderEntry, type Raise } from './spec.ts';
 import { splitSlides, type RawSlide } from './split.ts';
 
 /** The file that makes a folder a deck. */
@@ -55,6 +57,11 @@ export type DeckContext = {
     /** The engine's `tag_tones`, which a deck's own `defaults` override. */
     tagTones: Record<string, string>;
     catalog: TextCatalog;
+    /**
+     * The text a file holds unsaved in an editor, by the file's real path. A file the deck reads
+     * is read from its draft; a path the deck does not read is never looked at.
+     */
+    drafts?: ReadonlyMap<string, string>;
 };
 
 /** A reader that keeps what it has read. */
@@ -90,6 +97,8 @@ export function createReader(context: DeckContext): DeckReader {
     const memo = new Map<string, DeckSlide[]>();
     const groups = new Map<string, Map<string, Resolved>>();
     const files = new Map<string, RawSlide[] | null>();
+    /** The 1-based first line of each slide of a slide file, by the file's path. */
+    const firstLines = new Map<string, number[]>();
     const globbed = new Map<string, Doc[]>();
     let cuts = 0;
 
@@ -102,6 +111,13 @@ export function createReader(context: DeckContext): DeckReader {
             known.add(identity);
             raised.push(finding);
         };
+
+    const drafts = context.drafts ?? new Map<string, string>();
+
+    /** A file's text: its draft when an editor holds one, else what the disk holds. */
+    function textOf(path: string): string {
+        return drafts.get(realOf(path) ?? path) ?? readFileSync(path, 'utf8');
+    }
 
     const projectDirs = new Map<string, DeckProject>();
     for (const project of context.projects) {
@@ -151,7 +167,7 @@ export function createReader(context: DeckContext): DeckReader {
         }
         let value: unknown;
         try {
-            value = parse(readFileSync(file, 'utf8'));
+            value = parse(textOf(file));
         } catch {
             doc.state = 'unreadable';
             raise('', 'findings.deck.unreadable');
@@ -242,10 +258,14 @@ export function createReader(context: DeckContext): DeckReader {
         if (held !== undefined) return held;
         let cut: RawSlide[] | null = null;
         try {
-            const read = splitSlides(readFileSync(at.path, 'utf8'));
+            const read = splitSlides(textOf(at.path));
             if (read.unreadable) raise(entry.at, 'findings.deck.front_matter', entry.file);
             if (read.slides.length === 0) raise(entry.at, 'findings.deck.file_empty', entry.file);
             cut = read.slides;
+            firstLines.set(
+                at.path,
+                read.spans.map((span) => span.first + 1)
+            );
         } catch {
             raise(entry.at, 'findings.deck.order_file_missing', entry.file, doc.path);
         }
@@ -284,6 +304,7 @@ export function createReader(context: DeckContext): DeckReader {
         const slides: DeckSlide[] = [];
         const from = resolveIn(doc.root, doc.dir, entry.file);
         const folder = 'path' in from ? dirname(from.path) : doc.dir;
+        const under = 'path' in from ? from.under : null;
         const fill = (group: string, whole: string): string => {
             const count = countOf(doc, group, stack);
             if (count === null) {
@@ -315,6 +336,15 @@ export function createReader(context: DeckContext): DeckReader {
             };
             const built = buildSlide(filled, number, kind);
             if (built === null) continue;
+            if (under !== null) {
+                built.slide.source = {
+                    root: doc.root.key,
+                    path: under,
+                    index: number,
+                    entry: entry.index,
+                    line: firstLines.get('path' in from ? from.path : '')?.[number] ?? 1
+                };
+            }
             if (built.legend !== undefined && 'legend' in built.slide) {
                 built.slide.legend = legendOf(doc, built.legend, key);
             }
@@ -346,6 +376,13 @@ export function createReader(context: DeckContext): DeckReader {
             return null;
         }
         const key = `${entry.kind}:${entry.of}`;
+        const source = {
+            root: doc.root.key,
+            path: doc.path === '' ? DECK_FILE : `${doc.path}/${DECK_FILE}`,
+            index: entry.index,
+            entry: entry.index,
+            line: (orderText(textOf(doc.file))?.slots.at(entry.index)?.line ?? 0) + 1
+        };
         const title = entry.title.replace(/<[^>]*>/g, '');
         if (entry.kind === 'grid') {
             const cards: DeckIdeaCard[] = found.members.map((member) => {
@@ -362,6 +399,7 @@ export function createReader(context: DeckContext): DeckReader {
             });
             return {
                 key,
+                source,
                 kind: 'grid',
                 title,
                 heading: entry.title,
@@ -382,7 +420,15 @@ export function createReader(context: DeckContext): DeckReader {
             if (project?.domain !== undefined) row.domain = project.domain;
             return row;
         });
-        return { key, kind: 'summary', title, heading: entry.title, rows, foot: entry.foot };
+        return {
+            key,
+            source,
+            kind: 'summary',
+            title,
+            heading: entry.title,
+            rows,
+            foot: entry.foot
+        };
     }
 
     /** Every slide a deck places, in order. */
@@ -408,7 +454,13 @@ export function createReader(context: DeckContext): DeckReader {
                 }
                 for (const member of found.members) {
                     for (const one of slidesOf(member.doc, inside)) {
-                        slides.push({ ...one, key: `${member.doc.name}/${one.key}` });
+                        const key = `${member.doc.name}/${one.key}`;
+                        const source = one.source;
+                        slides.push(
+                            source === undefined
+                                ? { ...one, key }
+                                : { ...one, key, source: { ...source, entry: entry.index } }
+                        );
                     }
                 }
             } else {
@@ -458,6 +510,24 @@ export function createReader(context: DeckContext): DeckReader {
         });
     }
 
+    /** The entries of a deck's `order:` as the Slides view lists them. */
+    function orderOfDeck(doc: Doc): DeckOrderEntry[] {
+        if (doc.spec === null) return [];
+        const tokens = orderTokens(doc.spec.order);
+        return doc.spec.order.map((entry, at) => {
+            const token = tokens[at];
+            if (entry.kind === 'file') {
+                const first = fileSlides(doc, entry, [doc.dir]).at(0);
+                return { token, kind: 'file', name: entry.file, title: first?.title ?? entry.file };
+            }
+            if (entry.kind === 'group') {
+                return { token, kind: 'group', name: entry.group, title: entry.group };
+            }
+            const title = entry.title.replace(/<[^>]*>/g, '');
+            return { token, kind: entry.kind, name: entry.of, title };
+        });
+    }
+
     /** An answer for a folder that holds no deck. */
     function absent(root: DeckRoot, path: string, state: DeckState): Deck {
         return {
@@ -467,6 +537,7 @@ export function createReader(context: DeckContext): DeckReader {
             title: basename(path),
             state,
             slides: [],
+            order: [],
             groups: [],
             tagTones: { ...context.tagTones },
             findings: [...raised]
@@ -507,6 +578,7 @@ export function createReader(context: DeckContext): DeckReader {
             title: doc.title,
             state,
             slides,
+            order: orderOfDeck(doc),
             groups: groupsOfDeck(doc),
             tagTones: { ...context.tagTones, ...(doc.spec?.tagTones ?? {}) },
             findings: [...raised]

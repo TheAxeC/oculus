@@ -149,7 +149,7 @@ notes:
 
 
 # === The change log =========================================================
-# Every write that changed something is recorded in ~/.oculus/changes.jsonl, or wherever local.yml's `changes` key puts it. `keep` is how many changes the file holds; it is rewritten down to that number once it has grown past twice it.
+# Every write that changed something is recorded in ~/.oculus/changes.jsonl, or wherever local.yml's `changes` key puts it. `keep` is how many changes the file holds; it is rewritten down to that number, or the few more that keep the last act whole, once it has grown past twice it.
 changes:
   keep: 500
 

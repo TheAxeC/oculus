@@ -48,6 +48,8 @@ text:
         kind_linkedin_idea: LinkedIn idea
         kind_linkedin_post: LinkedIn post
         kind_deck: deck
+        kind_deck_edit: deck file
+        kind_deck_order: deck order
         kind_deck_slides: deck group
         kind_new_idea: idea scaffolded
         kind_audit_mute: audit mute
@@ -58,6 +60,14 @@ text:
         kind_roots: workspace folder
         kind_app_store: app store
         bytes: '{0} bytes'
+        deck_create: deck made
+        deck_delete: slide removed
+        deck_duplicate: slide copied
+        deck_image: image linked
+        deck_image_bytes: image file added
+        deck_named: '{0}: {1}'
+        deck_new: slide added
+        deck_outline: deck made from an outline
         file_named: '{0} of {1}'
         file_create: Create
         file_rename: Rename

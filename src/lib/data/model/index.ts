@@ -367,6 +367,7 @@ export type {
     DeckCard,
     DeckGroup,
     DeckIdeaCard,
+    DeckOrderEntry,
     DeckSlide,
     DeckState,
     DeckSummaryRow,

@@ -310,6 +310,7 @@
                                             ? stemLength(row.name)
                                             : undefined}
                                         taken={naming.takenIn(row)}
+                                        title={row.editing === 'title'}
                                         onaccept={(text: string) => void naming.named(text)}
                                         oncancel={() => view.patch({ naming: null })}
                                     />

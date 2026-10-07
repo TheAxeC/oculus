@@ -101,6 +101,18 @@ function headingOf(body: string): { heading: string; rest: string } {
 }
 
 /**
+ * The path a Markdown link names: its percent escapes decoded, `%23`, `%3F` and `%25` among them
+ * for a file name that holds `#`, `?` or `%`. A link with a stray `%` names itself.
+ */
+function unescaped(href: string): string {
+    try {
+        return decodeURIComponent(href);
+    } catch {
+        return href;
+    }
+}
+
+/**
  * Every relative image of a Markdown text addressed through the file route. An image the deck's
  * folder lacks, or that lies outside the root, becomes the gap (DECK_GAP) named by its path, and a
  * finding says so.
@@ -108,7 +120,7 @@ function headingOf(body: string): { heading: string; rest: string } {
 function addressed(markdown: string, context: KindContext): string {
     return markdown.replace(IMAGE, (whole, alt: string, href: string, title?: string) => {
         if (ABSOLUTE.test(href)) return whole;
-        const found = context.image(decodeURI(href));
+        const found = context.image(unescaped(href));
         if ('src' in found) return `![${alt}](${found.src}${title ?? ''})`;
         context.raise(
             context.key,

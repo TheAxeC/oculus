@@ -24,7 +24,8 @@
     // has quick diff marks, and the Cmd+K chords the editor gave up so that Cmd+K opens the palette
     // from inside it, each with its old chord beside it. Choosing one asks the tab to run it. A
     // diff pane on screen lists its diff editor's actions the same way, and takes no line or
-    // language query.
+    // language query. A view that offers commands of its own (the Present view's slide actions and
+    // Export to PDF) has them listed while its tab is on screen, and choosing one runs it.
     //
     // It is also where the Files view's workspace commands run: `:workspace` lists the default
     // workspace and the saved ones, the one in force marked, and a pick switches in place;
@@ -51,6 +52,7 @@
         commands,
         editorItems,
         pinItems,
+        viewItems,
         folderCommand,
         kindWord,
         lineQuery,
@@ -83,7 +85,7 @@
         fs: { workspaces },
         layout: { activeInstance, openView },
         lsp,
-        paletteSource: { paletteSource },
+        paletteSource: { paletteSource, offered },
         ui: { setCrt, setTheme, crt },
         registry: { views }
     } = client;
@@ -125,7 +127,8 @@
             ? [
                   ...buildIndex(current.snapshot, current.feeds, knownViews),
                   ...editorItems(acting),
-                  ...pinItems(pinnable, t)
+                  ...pinItems(pinnable, t),
+                  ...viewItems(tab?.id ?? null, offered)
               ]
             : []
     );
@@ -249,8 +252,8 @@
      */
     function choose(item: PaletteItem): void {
         onclose();
-        const id = openPaletteItem(client.layout, client.ui, item, client.editorStatus);
-        if (id !== '' && item.kind !== 'editor') void landOn(id);
+        const id = openPaletteItem(client, item);
+        if (id !== '' && item.kind !== 'editor' && item.kind !== 'command') void landOn(id);
     }
 
     /** Give the keyboard to the selected tab head of the pane showing an instance, if one does. */

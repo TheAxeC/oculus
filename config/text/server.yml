@@ -47,11 +47,33 @@ text:
             not_parsed: The file does not parse
             not_in_file: The file does not hold this key as a plain or quoted value
             not_kept: The edit would change more than this one value, so the file is left as it is
+        deck_edit:
+            changed: 'The file {0} changed on disk while you were working. Read the deck again and make the change again.'
+            file_large: 'The file {0} is too large to outline'
+            has_deck: 'The folder {0} already holds a present.yml'
+            image_empty: 'The image {0} holds no bytes'
+            image_large: 'The image {0} is larger than {1} MB'
+            image_name: 'The name {0} cannot be given to an image file'
+            image_type: 'The file {0} is not a PNG, JPEG, GIF, WebP or SVG image'
+            new_slide_heading: New slide
+            no_deck: There is no deck at that path that oculus can read
+            no_file: 'The file {0} is not there'
+            no_folder: 'The folder {0} is not in the folders oculus serves'
+            no_slide: 'The deck has no slide {0}'
+            not_a_deck: That path is not a present.yml
+            not_kept: The deck files would not keep the change, so they were left as they were
+            not_markdown: 'The file {0} is not a Markdown file'
+            not_own: 'The slide {0} is not in a file of this deck'
+            outside: That path is outside the folders oculus serves
+            title_empty: A presentation needs a title
         deck_slides:
             changed: The group's slides list changed on disk while you were working. Read the deck again and make the change again.
             no_group: 'The deck has no group named {0}'
             not_a_deck: That path is not a present.yml
-            not_kept: The deck file did not keep the new list, so it was left as it was
+            not_found_by: 'The deck {0} is not one that the group {1} finds, so it cannot join it'
+            not_kept: The deck file did not keep the new lists, so it was left as it was
+            order_changed: The order of the deck changed on disk while you were working. Read the deck again and make the change again.
+            order_not_a_permutation: The new order must hold the same entries as the order the file holds
             outside: That deck is outside the folders oculus serves
             repeated: A deck is listed twice in the group
             unknown_name: 'No deck named {0} belongs to the group'

@@ -81,9 +81,10 @@ export type TreeRow = {
     open: boolean;
     /**
      * Set on the row where a name is typed: `new` for the pending row of a new file or folder,
-     * which has no name yet, and `rename` for the row whose name the input replaces.
+     * which has no name yet, `rename` for the row whose name the input replaces, and `title` for
+     * the pending row of a new presentation, which holds the folder's name as the deck's title.
      */
-    editing?: 'new' | 'rename';
+    editing?: 'new' | 'rename' | 'title';
     /** True for an entry the listing marks as ignored by git. */
     ignored?: true;
     /** Set on a file with other files nested under it; `open` then says whether they are drawn. */

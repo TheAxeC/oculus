@@ -281,6 +281,18 @@ export function changeAt(log: ChangeLog, at: string): Change | undefined {
     return allOf(log).find((one) => one.at === at);
 }
 
+/**
+ * The changes one write made, the one given included: those of the log of the same kind and key
+ * that took back the same change (or none). A write that changes several files files each under one
+ * key, so taking one back can take the others back with it. The log prunes whole acts of that
+ * kind, so every record of a kept act is among them.
+ */
+export function writtenWith(log: ChangeLog, change: Change): Change[] {
+    return allOf(log).filter(
+        (one) => one.kind === change.kind && one.key === change.key && one.undoes === change.undoes
+    );
+}
+
 /** The time of the last line, as milliseconds, or zero when the file holds none. */
 function lastMoment(lines: string[]): number {
     for (let at = lines.length - 1; at >= 0; at -= 1) {
@@ -290,6 +302,32 @@ function lastMoment(lines: string[]): number {
         return Number.isFinite(moment) ? moment : 0;
     }
     return 0;
+}
+
+/** The kind whose records of one write share a key and are taken back together. */
+const ACT_KIND = 'deck-edit';
+
+/**
+ * Where a cut of the lines at `cut` keeps whole acts: the cut itself, or the first line of the act
+ * it falls inside. An act is the run of lines of kind `deck-edit` with one key and `undoes`, as
+ * `writtenWith` takes it, so a kept act is never missing its first records.
+ */
+function actStart(lines: string[], cut: number): number {
+    let at = Math.max(0, cut);
+    while (at > 0 && at < lines.length) {
+        const before = parseLine(lines[at - 1]);
+        const after = parseLine(lines[at]);
+        const inside =
+            before !== null &&
+            after !== null &&
+            before.kind === ACT_KIND &&
+            before.kind === after.kind &&
+            before.key === after.key &&
+            before.undoes === after.undoes;
+        if (!inside) break;
+        at -= 1;
+    }
+    return at;
 }
 
 /**
@@ -319,7 +357,7 @@ function append(log: ChangeLog, kind: string, records: ChangeRecord[], undoes?: 
     mkdirSync(dirname(log.file), { recursive: true });
     if (lines.length + written.length > log.keep * 2) {
         const all = [...lines, ...written];
-        const kept = all.slice(-log.keep);
+        const kept = all.slice(actStart(all, all.length - log.keep));
         for (const gone of all.slice(0, all.length - kept.length)) {
             const old = parseLine(gone);
             const file = old === null || log.undoDir === undefined ? null : keptFile(log, old.at);

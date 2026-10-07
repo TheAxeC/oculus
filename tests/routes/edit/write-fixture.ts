@@ -217,8 +217,11 @@ export async function undoneBack(
     return back;
 }
 
-/** The portfolio deck's file, a deck file with comments the edit must keep. */
-const DECK = `deck:
+/**
+ * The portfolio deck's file, a deck file with comments the edit must keep: three groups, and an
+ * order of a file and the slides of two of them.
+ */
+export const DECK = `deck:
     title: A deck
 
 groups:
@@ -227,10 +230,25 @@ groups:
         find: { folders: projects/*/*/present, tiers: [active] }
         slides:
             - alpha
+    # the rest
+    more:
+        find: { folders: projects/*/*/present }
+        slides: []
+    ideas:
+        find: { folders: projects/*/*/present, tiers: [archive] }
+        slides:
+            - gamma
 
+# what is shown
 order:
+    - intro.md
     - { slides: pillars }
+    # the rest follows
+    - { slides: more }
 `;
+
+/** The order's tokens in that file, as the write names them. */
+export const DECK_ORDER = ['intro.md', 'slides:pillars', 'slides:more'];
 
 /** The hub folder of the portfolio deck the deck target holds. */
 const DECK_FOLDER = 'deck';
@@ -250,8 +268,8 @@ function deckProject(id: string, tier: Tier): Project {
 /**
  * A target over a hub in a temporary directory that holds the portfolio deck and the decks of three
  * projects: `alpha` is named by the group `pillars`, `beta` is found by it and waits as a
- * candidate, and `gamma` is archived, so the group's `tiers:` does not find it and neither the view
- * nor the write offers it a place.
+ * candidate, and `gamma` is archived, so the group `pillars`, whose `tiers:` do not find it, offers
+ * it no place; the group `more` finds every project and `ideas` the archived ones.
  */
 export function deckTarget(): WriteTarget {
     const dir = scratchDir('oculus-deck-');
@@ -259,6 +277,7 @@ export function deckTarget(): WriteTarget {
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
     mkdirSync(join(dir, DECK_FOLDER), { recursive: true });
     writeFileSync(file, DECK);
+    writeFileSync(join(dir, DECK_FOLDER, 'intro.md'), '# Intro\n');
     const projects = [
         deckProject('alpha', 'active'),
         deckProject('beta', 'active'),

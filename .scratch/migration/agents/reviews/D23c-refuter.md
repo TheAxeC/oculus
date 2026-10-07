@@ -201,3 +201,44 @@ Cases of the brief's "Cases" (case 1 as D23c-cases item 1 rules it):
 - A pyright interpreter whose `sys.prefix` is the home folder would put `~/.ssh` under the dot-rule exception (`rules.ts:69`); not exercised; the orchestrator's call.
 
 Reviewer usage: af53f7cfd7795c93a, claude-opus-5-5, 323,026 tokens, 109 tool uses, 18.8 min.
+
+## Repair round 1, refuted
+
+Reviewer over round 1: ad7ea502ca23d89b0, claude-opus-5-5, 225,221 tokens, 61 tool uses, 11.5 min. Tree reviewed: `git diff --binary 951b61e3 | shasum` 6b2ba593eb6a, 14 untracked files (the new one `src/lib/views/sources/source/status/tab-shown.ts`).
+
+### Verification (rerun by the reviewer)
+
+- `npm run test:quick -- --base 951b61e3`: run 1 every command passed, 53.7 s over the 45.0 s limit; run 2 "43.7 s (limit 45.0 s); every command passed", exit 0 (66 changed files, 99 test files).
+- Guarded tests (`tests/server/machine/lsp`, `source.test.ts`, `layout-saved.test.ts`): `Test Files 9 passed (9)`, `Tests 120 passed (120)`.
+- `sh utils/folder-check.sh` exit 0; `wc -l Source.svelte` 520; the ASCII gate over src, tests, config and the three docs printed nothing; the diagrams staleness check 46 passed; the tree checks without config 13 files, 172 tests passed.
+- The round's scratch test and the `r1files` probe on a scratch oculus (port 8795, stopped by its pid; 8790 untouched) reproduce every "after" line the report quotes: `word` at columns 18 and 200 gives `position 18`, `select` with and without focus, the opener with no column for a positionless open and a link press, a refused library read kept as `{"text":"","language":"cpp"}`, the over-limit location kept with read `too_large`, case 12d reading `int first_version = 1;` after the link moved, no `file://` path in any frame. The "before" runs could not be rerun: the builder removed its scratch copies.
+
+### The 14 items of the round
+
+All 14 closed: Outline focus (Z676), case 21's clamped column, the write-list marks, case 12d as ruled, `Source.svelte`'s head comment restored at 520 lines (code moved to `status/tab-shown.ts` and `submit.submittable`, the moved logic equivalent to the base's), the Outline rewrap, `relay.ts`'s names, `read.ts`'s check order, the history-word row, no column on a positionless open, F4 stated, a refused library file kept with its sentence, Copy Path stated, the dot-rule exception limited (rows `library.test.ts:346`, `:352`, `:358`, `:364`). No finding closed by removing a check; no fix reaching beyond its finding.
+
+### Verdicts, whole diff since the base
+
+Every item of "What to build" holds (Part 1 items 1 to 9, Part 2 items 1 to 7). Every case is met, with the drawn parts (cases 1 to 4, 12g's tab sentence, 13 to 19a, 21) left to the landing look.
+
+### Findings
+
+- Spec: none.
+- Proof: none.
+- Standards 1. `src/lib/server/machine/lsp/library/read.ts:8-9`: "a link retargeted since the token was minted would otherwise read another file (`moved`)". Case 12d as Z678 (2) rules it and row `library.test.ts:504` say the opposite: the token stores the resolved path, so a retargeted link still reads the first file, and `moved` answers only when a folder of the stored real path has been replaced by a link (row `:491`). Failure scenario: a maintainer changes the read to resolve the link again, against Z678 (2).
+- Standards 2. `agents/reviews/D23c-report.md`, "Anything in the brief that was wrong or impossible", third bullet: quotes the first build's quick-list times (46.1 s and 44.0 s, 62 changed files) where the round's runs took 58.9 s and 34.1 s (66 changed files).
+- Behaviour: none.
+
+### Declined to judge
+
+- The drawn editor (the landing look).
+- The round's "before" runs (scratch copies removed).
+- The filesystem-root row `library.test.ts:358` passes whatever `tooWide`'s root clause does: `inside` in `src/lib/server/core/paths.ts:15-19` tests `full.startsWith(root + sep)`, which for the root `/` treats no path as inside it; outside the step's paths.
+- A column on a non-word character right after a word selects that word (`R1 word column 2 (a space): selection 1-2`); Z678 (1) ruled only the line end.
+
+### Closed
+
+- Standards 1: fixed at landing, `read.ts`'s head comment says `moved` answers a folder of the stored path replaced by a link.
+- Standards 2: fixed at landing, the bullet corrected to the round's runs.
+- Declined point, the word after a non-word column: ruled Z679 (the orchestrator, automode), fixed at landing.
+- Declined point, `inside` for the root `/`: outside the step's paths, a different concern; booked in the landing report.

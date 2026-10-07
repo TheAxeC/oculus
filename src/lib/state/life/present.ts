@@ -11,8 +11,10 @@
 
 import { z } from 'zod';
 import { byKey, isMap, item } from '../../data/helpers/guards.ts';
-import { optionalTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
+import { MAX_DRAFT_BYTES, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from '../../data/file-ops.ts';
+import { optionalTextShape, readAs, rowsShape, unchangedAs } from '../../data/shapes/shapes.ts';
 import { domainTone } from '../shared/words/tones.ts';
+import { t } from '../shared/words/text.ts';
 import type { Deck, DeckSlide, PresentSlide } from '../../data/model/index.ts';
 
 export { DECK_GAP } from '../../data/model/index.ts';
@@ -121,6 +123,51 @@ export function tabDeck(ref: DeckRef, home: DeckRef | null): DeckRef {
 function withRecent(recent: DeckRef[], shown: DeckRef, next: DeckRef): DeckRef[] {
     const rest = recent.filter((one) => !sameDeck(one, shown) && !sameDeck(one, next));
     return [shown, ...rest].slice(0, RECENT_LIMIT);
+}
+
+/** The text an editor holds unsaved for one file, as the deck route reads the deck over it. */
+export type DeckDraft = { root: string; path: string; text: string };
+
+/** The source tab's fields a draft is matched by: its file's root and path, and no `head`. */
+const sourceFieldsShape = z.object({
+    root: z.string().min(1),
+    path: z.string().min(1),
+    head: z.unknown().optional()
+});
+
+/** The most drafts one deck request carries. */
+const MAX_DRAFTS = 64;
+
+/**
+ * The unsaved drafts of the source tabs of one page: each tab that holds a file the disk does not
+ * have, once per file. A tab over a version at HEAD or in the index, a draft cut at the read limit
+ * and a draft larger than the route takes are left out, so one such file never refuses the rest.
+ */
+export function pageDrafts(
+    tabs: readonly { id: string; view: string; state: unknown }[],
+    draftOf: (id: string) => {
+        file: string;
+        text: string;
+        saved: string;
+        loaded: boolean;
+        truncated: boolean;
+    }
+): DeckDraft[] {
+    const found = new Map<string, DeckDraft>();
+    for (const tab of tabs) {
+        if (tab.view !== 'source') continue;
+        const at = readAs(sourceFieldsShape, tab.state);
+        if (at === null || at.head !== undefined) continue;
+        const draft = draftOf(tab.id);
+        const key = `${at.root}/${at.path}`;
+        if (!draft.loaded || draft.truncated || draft.file !== key || draft.text === draft.saved) {
+            continue;
+        }
+        if (new TextEncoder().encode(draft.text).length > MAX_DRAFT_BYTES || found.has(key))
+            continue;
+        found.set(key, { root: at.root, path: at.path, text: draft.text });
+    }
+    return [...found.values()].slice(0, MAX_DRAFTS);
 }
 
 /** The size in px a slide is laid out at; the pane scales this frame as a whole. */
@@ -291,4 +338,119 @@ export function nothingToShow(
         return { message: t('present.empty_unreadable', folder), error: true };
     }
     return { message: t('present.empty', folder), error: false };
+}
+
+// What the Present view offers to do with a slide, and the facts the acts need from a slide and its
+// file: which acts a slide offers, where its file opens it, the words an act says, and what a
+// dropped file must be to be an image of the slide. A slide is the deck's own when a file entry of
+// `order:` placed it: only that slide can be copied, deleted or given an image, since the file is
+// the deck's to change. A slide of a member deck belongs to the other deck, and a summary or a grid
+// is an entry of `present.yml` that Delete takes out of `order:`. The server decides the same thing
+// from the same facts and refuses the rest; the menu offers only what it would take.
+
+export type SlideAct = 'edit' | 'new' | 'duplicate' | 'delete';
+
+/** The extensions an image dropped on a slide may have, which the server takes. */
+const IMAGE_ENDINGS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+
+/** The kind of `order:` entry that placed a slide, or undefined for a slide with no source. */
+function placedBy(deck: Deck, row: DeckSlide): Deck['order'][number]['kind'] | undefined {
+    const source = row.source;
+    return source === undefined ? undefined : deck.order.at(source.entry)?.kind;
+}
+
+/** Whether a file entry of the deck's `order:` placed the slide, so its file is the deck's own. */
+function ownSlide(deck: Deck, row: DeckSlide | null): boolean {
+    return row !== null && placedBy(deck, row) === 'file';
+}
+
+/** Whether the deck's `present.yml` can be edited: the file is there and was read. */
+function editable(deck: Deck | null): boolean {
+    return deck !== null && (deck.state === 'ok' || deck.state === 'empty');
+}
+
+/** The acts the slide on screen offers, in the order the menu lists them. */
+export function slideActs(deck: Deck | null, row: DeckSlide | null): SlideAct[] {
+    if (deck === null || !editable(deck)) return [];
+    const acts: SlideAct[] = [];
+    if (row?.source !== undefined) acts.push('edit');
+    acts.push('new');
+    if (ownSlide(deck, row)) acts.push('duplicate');
+    if (
+        row !== null &&
+        (ownSlide(deck, row) || ['summary', 'grid'].includes(placedBy(deck, row) ?? ''))
+    ) {
+        acts.push('delete');
+    }
+    return acts;
+}
+
+/** The name of the file a slide is in, for the question Delete asks. */
+function fileName(row: DeckSlide): string {
+    return row.source?.path.split('/').at(-1) ?? '';
+}
+
+/** What Delete asks before it writes: the slide's title and the file it is in. */
+export function deleteQuestion(row: DeckSlide): { message: string; detail: string } {
+    const title = row.title === '' ? row.key : row.title;
+    const entry = row.kind === 'summary' || row.kind === 'grid';
+    return {
+        message: t('present.delete_message', title),
+        detail: entry
+            ? t('present.delete_entry', fileName(row))
+            : t('present.delete_detail', fileName(row))
+    };
+}
+
+/** Why a drop on a slide writes nothing, or the empty string for a drop that is one image. */
+export function dropRefusal(
+    deck: Deck,
+    row: DeckSlide | null,
+    files: readonly { name: string; size: number }[]
+): string {
+    if (row === null || !ownSlide(deck, row)) return t('present.drop_not_own');
+    if (files.length !== 1) return t('present.drop_one');
+    const file = files[0];
+    const ending = file.name.split('.').at(-1)?.toLowerCase() ?? '';
+    if (!file.name.includes('.') || !IMAGE_ENDINGS.includes(ending)) {
+        return t('present.drop_not_image', file.name);
+    }
+    if (file.size > MAX_UPLOAD_BYTES)
+        return t('present.drop_large', file.name, String(MAX_UPLOAD_MB));
+    return '';
+}
+
+/** The part of an answer the pane depends on; the slides are the server's own and are kept. */
+export const deckShape = unchangedAs<Deck>(
+    z.object({
+        root: z.string(),
+        path: z.string(),
+        name: z.string(),
+        title: z.string(),
+        state: z.enum(['ok', 'empty', 'no_file', 'unreadable', 'missing']),
+        slides: z.array(z.object({ key: z.string(), kind: z.string(), title: z.string() })),
+        groups: z.array(z.object({ name: z.string() })),
+        tagTones: z.record(z.string(), z.string()),
+        findings: z.array(z.unknown())
+    })
+);
+
+/** The deck's `present.yml` as a write names it: the deck's folder and the file in it. */
+export function deckFile(ref: DeckRef): string {
+    return ref.path === '' ? 'present.yml' : `${ref.path}/present.yml`;
+}
+
+/** The path of the print route, which draws every slide of one deck for the PDF. */
+const PRINT_ROUTE = '/present/print';
+
+/** The address of the print route for a deck, relative to the server it is asked of. */
+export function printAddress(ref: DeckRef): string {
+    return `${PRINT_ROUTE}?${new URLSearchParams({ root: ref.root, path: ref.path }).toString()}`;
+}
+
+export { MAX_UPLOAD_MB };
+
+/** Whether a PDF of this many bytes is within the upload's size. */
+export function pdfFits(bytes: number): boolean {
+    return bytes <= MAX_UPLOAD_BYTES;
 }

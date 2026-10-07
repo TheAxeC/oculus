@@ -15,6 +15,7 @@ import {
     FIND,
     FOCUS_MAIN,
     OPEN_FLOAT_WINDOW,
+    PRINT_PDF,
     SAVE_LAYOUT,
     SHOW_FIND,
     STOP_FIND
@@ -22,12 +23,24 @@ import {
 import { windowAt } from '../decide/drop.ts';
 import { rectOf, type Rect } from '../decide/place.ts';
 import type { SaveTurn } from '../decide/save-turn.ts';
-import { mayCall, senderOf, type Sender } from '../decide/sender.ts';
-import type { FindOptions, SaveAnswer } from '../../lib/state/shared/stores/desktop.ts';
+import { mayCall, printTarget, senderOf, type Sender } from '../decide/sender.ts';
+import type {
+    FindOptions,
+    PrintAnswer,
+    SaveAnswer
+} from '../../lib/state/shared/stores/desktop.ts';
 import type { Entry, Windows } from './windows.ts';
 
 /** The answer to a save the bridge does not answer: refused, with no envelope to take. */
 const REFUSED: SaveAnswer = { admitted: false, held: null };
+
+/**
+ * The answer to a print the bridge does not answer or for an address that is not the print route.
+ */
+const PRINT_REFUSED: PrintAnswer = { ok: false, error: 'refused' };
+
+/** Print the deck at an address of the server to a PDF; the app's own printing (print.ts). */
+export type Printer = (address: string) => Promise<PrintAnswer>;
 
 /** The window a call came from and who in it sent the call. */
 type Caller = { entry: Entry; who: Exclude<Sender, null> };
@@ -79,7 +92,7 @@ function addressOf(url: string): { origin: string; pathname: string } | null {
 }
 
 /** Register the bridge's handlers over the app's windows. */
-export function registerBridge(windows: Windows, turn: SaveTurn): void {
+export function registerBridge(windows: Windows, turn: SaveTurn, print: Printer): void {
     /** The tabs handed to a window that has not answered yet, by request number. */
     const waiting = new Map<number, { contents: WebContents; settle: (taken: boolean) => void }>();
     let requests = 0;
@@ -178,6 +191,15 @@ export function registerBridge(windows: Windows, turn: SaveTurn): void {
         if (callerOf(event, DROP_TAKEN) === null || typeof taken !== 'boolean') return;
         const asked = typeof request === 'number' ? waiting.get(request) : undefined;
         if (asked?.contents === event.sender) asked.settle(taken);
+    });
+
+    ipcMain.handle(PRINT_PDF, (event, address: unknown): Promise<PrintAnswer> => {
+        const caller = callerOf(event, PRINT_PDF);
+        const target =
+            caller === null || typeof address !== 'string'
+                ? null
+                : printTarget(address, caller.entry.origin);
+        return target === null ? Promise.resolve(PRINT_REFUSED) : print(target);
     });
 
     ipcMain.on(SHOW_FIND, (event) => {

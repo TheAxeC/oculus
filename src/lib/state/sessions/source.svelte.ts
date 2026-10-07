@@ -180,10 +180,14 @@ export function sourceInfoUrl(root: string, path: string): string {
     return `/api/source?root=${encodeURIComponent(root)}&path=${encodeURIComponent(path)}`;
 }
 
-/** Read one file's text from the existing file route, cut at the limit every reader of it uses. */
+/**
+ * Read one file's text from the existing file route, cut at the limit every reader of it uses. The
+ * route lets a browser keep an answer for a minute, so the read asks the server each time: a text
+ * a write is based on, or a tab shows after a change, is the file's text now.
+ */
 export async function loadSource(root: string, path: string): Promise<SourceLoad> {
     try {
-        const response = await fetch(sourceFileUrl(root, path));
+        const response = await fetch(sourceFileUrl(root, path), { cache: 'no-cache' });
         if (!response.ok) return { ok: false, error: refusedAnswer(response.status) };
         const held = await readCapped(response, TEXT_LIMIT);
         return { ok: true, content: held.text, truncated: held.truncated };

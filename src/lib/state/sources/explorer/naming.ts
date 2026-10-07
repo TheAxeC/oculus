@@ -3,6 +3,9 @@
 // tree left with a name half typed is the same tree after a switch of tab, and the virtualised tree
 // draws it as a row of treeRows() like any other.
 //
+// A new presentation is asked for the same way: its row is the first of the folder it is made in,
+// holding the folder's name as the title typed there.
+//
 // The record is parsed by fs.ts's filesViewOf, with the rest of the view's state. A new item is a
 // row under its folder, the first of that folder's rows, whose path is the folder's path with a
 // trailing `/` so it can be the key of no real entry. A rename is the row it renames, drawn with
@@ -19,8 +22,11 @@ import {
     type TreeRow
 } from './view/place.ts';
 
-/** What the reader is naming: a new file, a new folder, or a row that is being renamed. */
-export type Naming = { mode: 'file' | 'folder' | 'rename'; root: string; path: string };
+/**
+ * What the reader is naming: a new file, a new folder, the title of a new presentation in a folder,
+ * or a row that is being renamed.
+ */
+export type Naming = { mode: 'file' | 'folder' | 'deck' | 'rename'; root: string; path: string };
 
 /** The path the row of a new item is drawn at: the folder's, with a `/` after it. */
 export function pendingPath(folder: string): string {

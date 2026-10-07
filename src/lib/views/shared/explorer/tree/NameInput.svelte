@@ -2,7 +2,8 @@
     // Layer 3, partial of tree/Tree.svelte. The input in the row where a name is typed: a new
     // file's or folder's, or a row's new name. It opens with the text it was given selected as far
     // as `select` says, and says what is wrong with the text as it is typed (nameMessage in
-    // row-ops.ts), after the first key.
+    // row-ops.ts), after the first key. A title is any line of text, so the input of a new
+    // presentation's title checks no file name and accepts the text it was opened with unchanged.
     //
     // Enter and leaving the input accept a valid name, and Escape cancels it. An empty name and an
     // unchanged name cancel. A name that is refused is kept by Enter, with its message under it,
@@ -20,11 +21,13 @@
         select?: number;
         /** Whether the folder already holds a name, as the folder compares names. */
         taken: (name: string) => boolean;
+        /** Whether the text is the title of a new presentation and not a file name. */
+        title?: boolean;
         onaccept: (name: string) => void;
         oncancel: () => void;
     };
 
-    let { value, select, taken, onaccept, oncancel }: Props = $props();
+    let { value, select, taken, title = false, onaccept, oncancel }: Props = $props();
 
     /** The text as it stands, and whether a key has been typed in the box. */
     let text = $derived(value);
@@ -36,16 +39,16 @@
      */
     let settled = false;
 
-    const message = $derived(typed ? nameMessage(text, taken, t) : null);
+    const message = $derived(typed && !title ? nameMessage(text, taken, t) : null);
 
     function finish(now: string, enter: boolean): void {
         if (settled) return;
-        if (now.trim() === '' || now === value) {
+        if (now.trim() === '' || (now === value && !title)) {
             settled = true;
             oncancel();
             return;
         }
-        if (nameMessage(now, taken, t)?.error === true) {
+        if (!title && nameMessage(now, taken, t)?.error === true) {
             if (enter) {
                 typed = true;
                 return;

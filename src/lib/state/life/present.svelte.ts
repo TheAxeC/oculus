@@ -18,14 +18,13 @@
 // state/workbench/ui.svelte.ts, so two Present panes hold two positions, a pane is on its slide
 // when its page comes back, and the slide a project card opens the deck at is the same key.
 
-import { z } from 'zod';
 import { str } from '../../data/helpers/guards.ts';
-import { readAs, unchangedAs } from '../../data/shapes/shapes.ts';
+import { readAs } from '../../data/shapes/shapes.ts';
 import type { Deck } from '../../data/model/index.ts';
 import { readAnswer } from '../sources/fs-transport.ts';
 import { HUB_ROOT } from '../sources/fs.ts';
 import type { EntitiesStore, Queries } from '../shared/stores/shapes.ts';
-import type { DeckRef } from './present.ts';
+import { deckShape, type DeckDraft, type DeckRef } from './present.ts';
 
 /** One deck as the pane reads it. */
 type DeckAnswer = {
@@ -48,6 +47,12 @@ export type PresentStore = {
     shown: (ref: DeckRef) => DeckRef | null;
     /** The answer for one deck. */
     deck: (ref: DeckRef) => DeckAnswer;
+    /**
+     * The deck read over the text editors hold unsaved: the same answer, from the files as the
+     * drafts have them. Asked on the page's own account and held nowhere, so only the pane that
+     * draws from the drafts holds it.
+     */
+    drawn: (ref: DeckRef, drafts: DeckDraft[]) => Promise<DeckAnswer>;
 };
 
 /** What every deck's query key opens with. */
@@ -58,21 +63,6 @@ const PENDING: DeckAnswer = { deck: null, error: '', loading: true };
 
 /** What no deck at all reads as: no reference asks nothing and waits for nothing. */
 const NOTHING: DeckAnswer = { deck: null, error: '', loading: false };
-
-/** The part of an answer the pane depends on; the slides are the server's own and are kept. */
-const deckShape = unchangedAs<Deck>(
-    z.object({
-        root: z.string(),
-        path: z.string(),
-        name: z.string(),
-        title: z.string(),
-        state: z.enum(['ok', 'empty', 'no_file', 'unreadable', 'missing']),
-        slides: z.array(z.object({ key: z.string(), kind: z.string(), title: z.string() })),
-        groups: z.array(z.object({ name: z.string() })),
-        tagTones: z.record(z.string(), z.string()),
-        findings: z.array(z.unknown())
-    })
-);
 
 export function createPresent(
     entities: EntitiesStore,
@@ -99,13 +89,27 @@ export function createPresent(
         return data ?? PENDING;
     }
 
-    async function load(ref: DeckRef): Promise<DeckAnswer> {
+    function load(ref: DeckRef): Promise<DeckAnswer> {
+        const query = new URLSearchParams({ root: ref.root, path: ref.path });
+        return answered(() =>
+            fetch(`/api/deck?${query.toString()}`, { headers: { 'x-oculus-token': token() } })
+        );
+    }
+
+    function drawn(ref: DeckRef, drafts: DeckDraft[]): Promise<DeckAnswer> {
+        return answered(() =>
+            fetch('/api/deck', {
+                method: 'POST',
+                headers: { 'x-oculus-token': token(), 'content-type': 'application/json' },
+                body: JSON.stringify({ root: ref.root, path: ref.path, drafts })
+            })
+        );
+    }
+
+    /** The deck a request answers, or what it failed with. */
+    async function answered(ask: () => Promise<Response>): Promise<DeckAnswer> {
         try {
-            const query = new URLSearchParams({ root: ref.root, path: ref.path });
-            const response = await fetch(`/api/deck?${query.toString()}`, {
-                headers: { 'x-oculus-token': token() }
-            });
-            const answer = await readAnswer(response);
+            const answer = await readAnswer(await ask());
             if (!answer.ok) return { deck: null, error: answer.error, loading: false };
             const held = readAs(deckShape, answer.body);
             return held === null
@@ -146,6 +150,7 @@ export function createPresent(
         portfolio: () => portfolio,
         projectDecks: () => projectDecks,
         shown,
-        deck
+        deck,
+        drawn
     };
 }

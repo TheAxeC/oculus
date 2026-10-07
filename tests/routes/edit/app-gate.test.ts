@@ -46,6 +46,7 @@ const RADAR = {
 const DELETE = { kind: 'delete-entry', collection: 'tasks', id: 'x' };
 const ENTRY_OF_BOOKMARKS = { kind: 'entry', collection: 'bookmarks', id: 'x', fields: {} };
 const UNDO = { kind: 'undo', at: 1 };
+const DECK_EDIT = { kind: 'deck-edit', act: 'new', root: 'hub', path: 'deck/present.yml' };
 const STORE = { store: { seen: ['a'] } };
 
 /** The gate's decision for a body sent under the app header and kind header given. */
@@ -120,6 +121,13 @@ const ROWS: Row[] = [
         'refused'
     ),
     gated('a closed kind named truthfully', UNDO, 'app:notes', 'undo', 'refused'),
+    gated(
+        'the deck write that makes files, named truthfully',
+        DECK_EDIT,
+        'app:notes',
+        'deck-edit',
+        'refused'
+    ),
     gated(
         'an entry write naming the bookmarks collection',
         ENTRY_OF_BOOKMARKS,

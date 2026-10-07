@@ -105,9 +105,34 @@
         ];
     }
 
-    /** The word a kind of write is called, which is a catalog word and never the wire's own. */
+    /**
+     * The word a kind of write is called, which is a catalog word and never the wire's own. The
+     * records of a deck's `order:` are told from those of a group's list by their field.
+     */
     function kindOf(row: Change): string {
+        if (row.kind === 'deck-slides' && row.field === 'order')
+            return t('history.kind_deck_order');
         return t(`history.kind_${row.kind.replaceAll('-', '_')}`);
+    }
+
+    /** What one act of a deck edit did to the file of its record, in the catalog's words. */
+    function deckAct(field: string): string {
+        switch (field) {
+            case 'new':
+                return t('history.deck_new');
+            case 'duplicate':
+                return t('history.deck_duplicate');
+            case 'delete':
+                return t('history.deck_delete');
+            case 'image':
+                return t('history.deck_image');
+            case 'image-bytes':
+                return t('history.deck_image_bytes');
+            case 'create':
+                return t('history.deck_create');
+            default:
+                return t('history.deck_outline');
+        }
     }
 
     /** The words a row is named by in a control's tooltip and in the status region. */
@@ -119,7 +144,13 @@
                 ? operation
                 : t('history.file_named', operation, row.file);
         }
-        return row.field === '' ? row.key : t('history.named', row.key, row.field);
+        // A deck edit's key is the id its records share, so the row names what the act did.
+        if (row.kind === 'deck-edit') return t('history.deck_named', deckAct(row.field), row.file);
+        // The order's record is named by its key alone; the kind beside it says it is the order.
+        if (row.kind === 'deck-slides' && row.field === 'order') return row.key;
+        // A group's list is keyed `slides:<group>`; the group is what the row names.
+        const key = row.kind === 'deck-slides' ? row.key.replace(/^slides:/, '') : row.key;
+        return row.field === '' ? key : t('history.named', key, row.field);
     }
 
     /** What a row says it addressed: the operation of a file record, else the key and field. */

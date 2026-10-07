@@ -51,7 +51,9 @@ import {
     ROW_COMPARE_WITH,
     ROW_COPY,
     ROW_CUT,
+    ROW_DECK_OUTLINE,
     ROW_DELETE,
+    ROW_NEW_DECK,
     ROW_NEW_FILE,
     ROW_NEW_FOLDER,
     ROW_PASTE,
@@ -123,6 +125,11 @@ export type RowMenuFacts = {
     latex?: boolean;
     /** Whether the row is a `present.yml` file or a folder whose listing holds one directly. */
     present?: boolean;
+    /**
+     * Whether the row is a folder or root whose listing was read and holds no `present.yml`, which
+     * is where New Presentation... is offered.
+     */
+    newDeck?: boolean;
     /** The key hint of an item by its id; none when omitted. */
     hints?: Readonly<Record<string, string>>;
     /** The project commands of the repository a root or a folder row is; none when omitted. */
@@ -239,6 +246,12 @@ export function rowFacts(
                 : (entriesOf(row.root, row.path) ?? []).some(
                       (one) => one.kind === 'file' && one.name === DECK_FILE
                   ),
+        newDeck:
+            kind !== 'file' &&
+            row.up !== true &&
+            !(entriesOf(row.root, row.path) ?? [{ kind: 'file', name: DECK_FILE }]).some(
+                (one) => one.kind === 'file' && one.name === DECK_FILE
+            ),
         hints,
         commands
     };
@@ -252,7 +265,9 @@ export function rowFacts(
  * Open LaTeX is its own group after Reveal in Finder and the terminal, on a `.tex` file and on a
  * folder or root whose listing has one: the listing the fs store holds, else the one the menu read
  * when it opened (picks.svelte.ts). Open Presentation follows it in that group, on a `present.yml`
- * file and on a folder or root whose listing holds one. A folder: New File... and New Folder...,
+ * file and on a folder or root whose listing holds one; New Presentation... is in that group on a
+ * folder or root whose listing holds none, and New Presentation from Outline on a Markdown file.
+ * A folder: New File... and New Folder...,
  * Reveal in Finder and its shell, Find in Folder..., Cut, Copy and Paste, Upload..., the two
  * copies, then Rename... and Delete. A folder or root that is a repository with project commands
  * also offers Run Command, a submenu of them. A root: those of a folder without Cut, Copy,
@@ -276,7 +291,9 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     const cutCopy = [item(ROW_CUT, t('files.menu_cut')), item(ROW_COPY, t('files.menu_copy'))];
     const latex = [
         ...(facts.latex === true ? [item(ROW_LATEX, t('files.menu_latex'))] : []),
-        ...(facts.present === true ? [item(ROW_DECK, t('files.menu_present'))] : [])
+        ...(facts.present === true ? [item(ROW_DECK, t('files.menu_present'))] : []),
+        ...(facts.newDeck === true ? [item(ROW_NEW_DECK, t('files.menu_new_present'))] : []),
+        ...(facts.markdown ? [item(ROW_DECK_OUTLINE, t('files.menu_present_outline'))] : [])
     ];
     const bookmark =
         facts.bookmarked === null || facts.bookmarked === undefined

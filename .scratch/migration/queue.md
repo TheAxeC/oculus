@@ -1,11 +1,10 @@
-In flight (2 of 6 slots):
-- PR3 (Present decks edited and generated, PDF export): reviewed; landing next.
-- D23c (library definitions read-only, the symbol selected on open): repair round 1.
+In flight (1 of 6 slots):
+- D23c (library definitions read-only, the symbol selected on open): reviewed; landing next.
 
-Queued, in order (23 steps):
+Queued, in order (22 steps):
 - D45 (LaTeX as VS Code's LaTeX Workshop): after D23c.
-- X3e (Files lists reordered by drag): after PR3 and D23c.
-- PR4 (Present's presenter screen): after PR3.
+- X3e (Files lists reordered by drag): after D23c.
+- PR4 (Present's presenter screen): ready.
 - D28 (saving a file as VS Code does): after X3e.
 - M6 (the collection forms removed): after X3e and D28.
 - D11 (the debug client for rite): after D45.

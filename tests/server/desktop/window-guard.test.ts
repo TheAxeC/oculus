@@ -6,12 +6,13 @@
 import { describe, expect, it } from 'vitest';
 import { linkDecision, movedPort } from '../../../src/desktop/decide/links.ts';
 import { permissionGranted } from '../../../src/desktop/decide/permissions.ts';
-import { mayCall, senderOf } from '../../../src/desktop/decide/sender.ts';
+import { mayCall, printTarget, senderOf } from '../../../src/desktop/decide/sender.ts';
 import { windowPreferences } from '../../../src/desktop/decide/window-options.ts';
 import {
     CLOSE_FIND,
     FIND,
     OPEN_FLOAT_WINDOW,
+    PRINT_PDF,
     SAVE_LAYOUT,
     STOP_FIND
 } from '../../../src/desktop/decide/channels.ts';
@@ -57,6 +58,36 @@ describe('the desktop host decisions', () => {
         expect(mayCall('find-bar', OPEN_FLOAT_WINDOW)).toBe(false);
         expect(mayCall('find-bar', SAVE_LAYOUT)).toBe(false);
         expect(mayCall(null, FIND)).toBe(false);
+        expect(senderOf({ ...top, pathname: '/present/print' }, ORIGIN)).toBe('print');
+        expect(senderOf({ ...top, pathname: '/present/print', isTop: false }, ORIGIN)).toBeNull();
+        expect(
+            senderOf({ ...top, pathname: '/present/print', origin: 'https://example.org' }, ORIGIN)
+        ).toBeNull();
+        for (const channel of [SAVE_LAYOUT, FIND, OPEN_FLOAT_WINDOW, PRINT_PDF]) {
+            expect(mayCall('print', channel), channel).toBe(false);
+        }
+        expect(mayCall('page', PRINT_PDF)).toBe(true);
+        expect(mayCall('find-bar', PRINT_PDF)).toBe(false);
+    });
+
+    it('prints only the print route of its own server, named by a root and a path and nothing else', () => {
+        const route = `${ORIGIN}/present/print`;
+        expect(printTarget(`${route}?root=hub&path=deck`, ORIGIN)).toBe(
+            `${route}?root=hub&path=deck`
+        );
+        for (const refused of [
+            `${route}?root=hub`,
+            `${route}?root=hub&path=deck&x=1`,
+            `${route}?root=hub&path=deck#top`,
+            `${ORIGIN}/?root=hub&path=deck`,
+            `${ORIGIN}/find?root=hub&path=deck`,
+            `http://127.0.0.1:8790/present/print?root=hub&path=deck`,
+            `https://example.org/present/print?root=hub&path=deck`,
+            'file:///etc/hosts',
+            'not an address'
+        ]) {
+            expect(printTarget(refused, ORIGIN), refused).toBeNull();
+        }
     });
 
     it("grants clipboard and full screen to the server's page alone and denies every other ask", () => {

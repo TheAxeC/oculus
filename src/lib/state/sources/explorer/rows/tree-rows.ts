@@ -53,7 +53,8 @@ function renaming(naming: Naming | null, root: string, path: string): boolean {
  * it. A folder that is open but whose listing has not arrived contributes its own line and nothing
  * under it, so the tree grows as the answers land rather than waiting for all of them. The name
  * being typed (`naming`) is a row too: for a new file or folder the first row under its folder,
- * and for a rename the renamed row itself, each marked `editing`.
+ * for a new presentation the first row under its folder holding the folder's name, and for a rename
+ * the renamed row itself, each marked `editing`.
  *
  * A compacted line stands at the last folder of its run: its `path` and `name` are that folder's,
  * its `chain` lists every folder of the run, and it is open when that last folder is. A run stops
@@ -119,12 +120,12 @@ export function treeRows(
             rows.push({
                 root,
                 path: `${path}/`,
-                name: '',
+                name: naming?.mode === 'deck' ? folder : '',
                 kind: naming?.mode === 'folder' ? 'dir' : 'file',
                 size: 0,
                 depth,
                 open: false,
-                editing: 'new'
+                editing: naming?.mode === 'deck' ? 'title' : 'new'
             });
         }
         for (const { entry, children } of nestEntries(entriesOf(root, path), rules, folder)) {

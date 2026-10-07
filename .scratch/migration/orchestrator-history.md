@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z679 (2026-10-07): automode, D23c's round review: the word is selected only for a column inside it; fixed at landing.
 - Z678 (2026-10-07): automode, D23c's review findings (the clamped column, case 12d as built, Source.svelte's comment restored, no column on a positionless open, F4 selecting the word, a refused library file kept with its sentence, the dot-rule exception closed for a home-folder prefix); repair round 1 sent (`agents/briefs/D23c-round1.md`).
 - Z677 (2026-10-07): Axel, `start.test.ts` keeps all five rows and its diagnosis is dropped (replaces Z674 (6)); the diagnosis agent stopped, its scratch worktrees removed.
 - Z676 (2026-10-07): automode, D23c's Outline press keeps moving focus into the editor (a focus flag on `select`).

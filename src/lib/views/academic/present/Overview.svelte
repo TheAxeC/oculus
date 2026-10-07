@@ -1,9 +1,12 @@
 <script lang="ts">
     // Layer 3, Present partial. The whole deck at once: one tile per slide, in deck order, each
     // naming the slide and carrying the domain colour of the project it belongs to. Pressing a tile
-    // shows that slide and closes the grid.
+    // shows that slide and closes the grid, and a right-click on a tile opens the menu of that
+    // slide.
 
     import Card from '$lib/ui/frame/Card.svelte';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { t } from '$lib/state/shared/words/text';
     import { slideTone } from '$lib/state/life/present';
     import type { DeckSlide } from '$lib/state/life/present';
@@ -15,9 +18,13 @@
         /** The shell's card cursor, the card its keys act on; null for none. */
         cursor: string | null;
         onpick: (key: string) => void;
+        /** The menu of one slide. */
+        menu: (row: DeckSlide) => MenuItem[];
+        /** A pick of the menu of one slide. */
+        onact: (id: string, row: DeckSlide) => void;
     };
 
-    let { rows, current, cursor, onpick }: Props = $props();
+    let { rows, current, cursor, onpick, menu, onact }: Props = $props();
 
     /** The row's hue as a custom property, so the edge below names a token and not a colour. */
     function toneStyle(tone: string | undefined): string | undefined {
@@ -28,24 +35,30 @@
 <div class="overview" data-overview>
     {#each rows as row, at (row.key)}
         {@const tone = slideTone(row)}
-        <div
-            class="tile"
-            class:toned={tone !== undefined}
-            class:current={row.key === current}
-            style={toneStyle(tone)}
+        <ContextMenu
+            label={t('present.menu_label')}
+            items={menu(row)}
+            onpick={(id: string) => onact(id, row)}
         >
-            <Card
-                id={row.key}
-                cursor={row.key === cursor}
-                title={row.title === '' ? row.key : row.title}
-                level={4}
-                ontitle={() => onpick(row.key)}
+            <div
+                class="tile"
+                class:toned={tone !== undefined}
+                class:current={row.key === current}
+                style={toneStyle(tone)}
             >
-                {#snippet meta()}
-                    <span class="at">{t('present.at', String(at + 1))}</span>
-                {/snippet}
-            </Card>
-        </div>
+                <Card
+                    id={row.key}
+                    cursor={row.key === cursor}
+                    title={row.title === '' ? row.key : row.title}
+                    level={4}
+                    ontitle={() => onpick(row.key)}
+                >
+                    {#snippet meta()}
+                        <span class="at">{t('present.at', String(at + 1))}</span>
+                    {/snippet}
+                </Card>
+            </div>
+        </ContextMenu>
     {/each}
 </div>
 

@@ -29,6 +29,7 @@ import { APP_HEADER, KIND_HEADER, appHeaderValue } from '../../data/helpers/file
 import { failedAnswer, unreadableAnswer } from '../shared/answers/answers.ts';
 import { t } from '../shared/words/text.ts';
 import type {
+    DeckEditAct,
     SendOptions,
     SessionFields,
     SubtaskAction,
@@ -396,17 +397,28 @@ export function createWrites(
     }
 
     /**
-     * Save one group's `slides:` list in a deck's `present.yml`. `base` is the list the caller
-     * read, so a file that changed since is refused and left as it is, as is a name no deck of the
+     * Save the lists of a deck's `present.yml` as one edit: the `slides:` of each group in
+     * `groups` and, when given, the `order:` entries. Each list's `base` is what the caller read,
+     * so a file that changed since is refused and nothing is written, as is a name no deck of its
      * group answers to.
      */
     async function writeDeckSlides(
         deck: { root: string; path: string },
-        group: string,
-        base: string[],
-        slides: string[]
+        groups: { group: string; base: string[]; slides: string[] }[],
+        order?: { base: string[]; entries: string[] }
     ): Promise<WriteAnswer> {
-        return send({ kind: 'deck-slides', root: deck.root, path: deck.path, group, base, slides });
+        const body = { kind: 'deck-slides', root: deck.root, path: deck.path, groups };
+        return send(order === undefined ? body : { ...body, order });
+    }
+
+    /**
+     * One act on the files of a deck: a new slide, a slide copied or taken out, an image dropped on
+     * a slide, a deck made in a folder or from a Markdown file. The answer's `id` is what to show
+     * next: the new slide's key, or the new deck's folder. `said` when the caller words a refusal
+     * itself, as the Present pane does in its status line.
+     */
+    async function writeDeckEdit(act: DeckEditAct, said = false): Promise<WriteAnswer> {
+        return send({ kind: 'deck-edit', ...act }, '/api/write', { said });
     }
 
     /**
@@ -644,6 +656,7 @@ export function createWrites(
         markPosted,
         newEntry,
         writeDeckSlides,
+        writeDeckEdit,
         writeRail,
         writeConfigKey,
         writeConfigValue,

@@ -34,7 +34,7 @@ import {
     writeFeedField
 } from '../feeds.ts';
 import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
-import { deckSlidesNow, undoDeckSlides } from './config/deck.ts';
+import { deckSlidesNow, undoDeckSlides } from './config/deck/deck.ts';
 import { configKeyNow, writeConfigKey } from './config/config-key.ts';
 import { configValueNow, putBackConfigValue, writeConfigValue } from './config/config-value.ts';
 import { railNow, writeRail } from './config/rail.ts';

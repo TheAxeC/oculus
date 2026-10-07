@@ -344,6 +344,21 @@ export type DeckSummaryRow = {
     headline: string;
 };
 
+/**
+ * Where a slide is written: the served root and the file under it, the slide's place in that file
+ * counted from 0, and `entry`, the place in the shown deck's `order:` of the entry that placed it
+ * (a group's entry for a slide of a member deck). For a summary or a grid the file is the deck's
+ * `present.yml` and `index` is its entry's place, the same as `entry`. `line` is the 1-based line
+ * of the file the slide starts on: the entry's line in `present.yml` for a summary or a grid.
+ */
+type DeckSlideSource = {
+    root: string;
+    path: string;
+    index: number;
+    entry: number;
+    line: number;
+};
+
 /** What every slide of a deck carries. */
 type SlideBase = {
     /** The slide's key inside its deck, which a pane keeps to stay on the slide. */
@@ -351,6 +366,8 @@ type SlideBase = {
     /** Plain words naming the slide in the overview grid. */
     title: string;
     notes?: string;
+    /** Absent for a slide the deck does not read from a file. */
+    source?: DeckSlideSource;
 };
 
 /**
@@ -437,6 +454,18 @@ export type DeckGroup = {
     count: number;
 };
 
+/**
+ * One entry of a deck's `order:` as the Slides view lists it: its `token`, which a write names it
+ * by, what it is (a slide file, a group's slides, a summary or a grid), the file or group it
+ * names, and the words that show it (the title of a file's first slide, a summary's own title).
+ */
+export type DeckOrderEntry = {
+    token: string;
+    kind: 'file' | 'group' | 'summary' | 'grid';
+    name: string;
+    title: string;
+};
+
 /** Why a deck draws nothing, or `ok` when it draws slides. */
 export type DeckState = 'ok' | 'empty' | 'no_file' | 'unreadable' | 'missing';
 
@@ -453,6 +482,8 @@ export type Deck = {
     title: string;
     state: DeckState;
     slides: DeckSlide[];
+    /** The entries of `order:` the reader knows, in the file's order. */
+    order: DeckOrderEntry[];
     groups: DeckGroup[];
     tagTones: Record<string, string>;
     findings: Finding[];

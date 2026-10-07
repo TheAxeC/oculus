@@ -5,7 +5,9 @@
 // While a source tab is on screen the index also holds its editor's actions: those that step
 // through and open the quick diff marks, and the Cmd+K chords the editor gave up so that Cmd+K
 // opens the palette from inside it. Each is under the editor's own label with its keys as the
-// hint, none for an action without keys, and choosing one asks that tab to run it.
+// hint, none for an action without keys, and choosing one asks that tab to run it. A view that
+// offers commands of its own (the Present view's slide actions) has them listed the same way while
+// its tab is on screen, and choosing one runs the command the view handed in.
 
 import { z } from 'zod';
 import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
@@ -41,7 +43,7 @@ export type PaletteFeeds = Partial<Record<FeedKind, PaletteFeed>>;
 
 export type PaletteItem = {
     id: string;
-    kind: 'view' | 'project' | 'collection' | 'feed' | 'editor';
+    kind: 'view' | 'project' | 'collection' | 'feed' | 'editor' | 'command';
     label: string;
     title: string;
     text: string;
@@ -176,6 +178,26 @@ export function editorItems(source: SourceOnScreen | null): PaletteItem[] {
     }));
 }
 
+/**
+ * The commands the view on screen offers, as palette items of kind `command`, none while the tab
+ * on screen offers none. Each carries the instance and the command id that choosing it runs.
+ */
+export function viewItems(
+    instance: string | null,
+    offered: (instance: string) => { id: string; label: string }[]
+): PaletteItem[] {
+    if (instance === null) return [];
+    return offered(instance).map((command) => ({
+        id: `command:${command.id}`,
+        kind: 'command',
+        label: command.label,
+        title: command.label,
+        text: command.id,
+        view: '',
+        state: { instance, command: command.id }
+    }));
+}
+
 /** The chord VS Code binds Pin Editor and Unpin Editor to, which the palette stands in for. */
 const PIN_CHORD = 'Cmd+K Shift+Enter';
 
@@ -247,6 +269,7 @@ export function kindWord(
     if (kind === 'project') return t('app.palette.kind_project');
     if (kind === 'collection') return t('app.palette.kind_collection');
     if (kind === 'editor') return t('app.palette.kind_editor');
+    if (kind === 'command') return t('app.palette.kind_command');
     return t('app.palette.kind_feed');
 }
 

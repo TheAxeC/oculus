@@ -3,7 +3,13 @@
 // free of stores while exposing only the snapshot, socket feeds, merged config and triage-notes run
 // date the shell needs, and the two things the language picker does beyond painting a tab: write a
 // file association and open the Settings view on the language settings.
+//
+// A view in focus also offers the palette its own commands: the Present view's slide actions and
+// Export to PDF. A view says which commands it offers while it is mounted, keyed by its instance,
+// the palette lists the ones of the tab on screen, and choosing one runs the command the view
+// handed in.
 
+import { untrack } from 'svelte';
 import type { EntitiesStore, WriteAnswer } from '../shared/stores/shapes.ts';
 import type { FeedsStore } from '../feeds/feeds.svelte.ts';
 import type { PaletteFeeds } from './palette.ts';
@@ -23,6 +29,9 @@ export type PaletteActions = {
     layout: Pick<LayoutStore, 'openView' | 'currentPage'>;
     ui: Pick<UiStore, 'instanceState' | 'setInstanceState'>;
 };
+
+/** One command a view offers the palette: the label it is listed by, and what choosing it does. */
+type ViewCommand = { id: string; label: string; run: () => void };
 
 export type PaletteSource = {
     snapshot: Snapshot | null;
@@ -48,6 +57,14 @@ export type PaletteSourceStore = {
      * search.
      */
     openLanguageSettings: () => string;
+    /** Say which commands one view offers, replacing what it offered before. */
+    offer: (instance: string, commands: ViewCommand[]) => void;
+    /** Take a view's commands away, which is what an unmounted view does. */
+    withdraw: (instance: string) => void;
+    /** The commands one view offers, none for a view that offers none. */
+    offered: (instance: string) => ViewCommand[];
+    /** Run one command a view offers; false when the view does not offer it. */
+    runOffered: (instance: string, id: string) => boolean;
 };
 
 export function createPaletteSource(
@@ -82,5 +99,38 @@ export function createPaletteSource(
         return id;
     }
 
-    return { paletteSource, associate, openLanguageSettings };
+    let held = $state<Record<string, ViewCommand[]>>({});
+
+    // A view offers from an effect, so the write reads what is held without subscribing to it:
+    // an effect that reads and writes one value runs again at once, without end.
+    function offer(instance: string, commands: ViewCommand[]): void {
+        held = { ...untrack(() => held), [instance]: commands };
+    }
+
+    function withdraw(instance: string): void {
+        held = Object.fromEntries(
+            Object.entries(untrack(() => held)).filter(([id]) => id !== instance)
+        );
+    }
+
+    function offered(instance: string): ViewCommand[] {
+        return held[instance] ?? [];
+    }
+
+    function runOffered(instance: string, id: string): boolean {
+        const command = offered(instance).find((one) => one.id === id);
+        if (command === undefined) return false;
+        command.run();
+        return true;
+    }
+
+    return {
+        paletteSource,
+        associate,
+        openLanguageSettings,
+        offer,
+        withdraw,
+        offered,
+        runOffered
+    };
 }

@@ -29,10 +29,10 @@ export type GroupSpec = {
     slides: string[];
 };
 
-/** One entry of `order:`. `at` names it in a finding. */
+/** One entry of `order:`. `at` names it in a finding and `index` is its place in the list. */
 export type OrderEntry =
-    | { kind: 'file'; file: string; at: string }
-    | { kind: 'group'; group: string; at: string }
+    | { kind: 'file'; file: string; at: string; index: number }
+    | { kind: 'group'; group: string; at: string; index: number }
     | {
           kind: 'summary' | 'grid';
           of: string;
@@ -40,7 +40,28 @@ export type OrderEntry =
           lede: string;
           foot: string;
           at: string;
+          index: number;
       };
+
+/**
+ * The token each entry of `order:` is named by in a write: a file by its name as `order:` writes
+ * it, a group's slides as `slides:<group>`, a summary as `summary:<group>` and a grid as
+ * `grid:<group>`. An entry that appears again takes `~2`, `~3` and on, as slide keys do.
+ */
+export function orderTokens(order: OrderEntry[]): string[] {
+    const seen = new Map<string, number>();
+    return order.map((entry) => {
+        const name =
+            entry.kind === 'file'
+                ? entry.file
+                : entry.kind === 'group'
+                  ? `slides:${entry.group}`
+                  : `${entry.kind}:${entry.of}`;
+        const count = (seen.get(name) ?? 0) + 1;
+        seen.set(name, count);
+        return count === 1 ? name : `${name}~${count}`;
+    });
+}
 
 /** What a `present.yml` holds. */
 export type DeckSpec = {
@@ -119,7 +140,7 @@ function orderOf(value: unknown, raise: Raise): OrderEntry[] {
     for (const [index, item] of value.entries()) {
         const at = `order[${index}]`;
         if (typeof item === 'string' && item.trim() !== '') {
-            order.push({ kind: 'file', file: item.trim(), at });
+            order.push({ kind: 'file', file: item.trim(), at, index });
             continue;
         }
         if (!isMap(item)) {
@@ -128,7 +149,7 @@ function orderOf(value: unknown, raise: Raise): OrderEntry[] {
         }
         const group = str(item.slides);
         if (group !== undefined && group !== '') {
-            order.push({ kind: 'group', group, at });
+            order.push({ kind: 'group', group, at, index });
             continue;
         }
         const kind = str(item.kind);
@@ -140,7 +161,8 @@ function orderOf(value: unknown, raise: Raise): OrderEntry[] {
                 title: str(item.title) ?? '',
                 lede: str(item.lede) ?? '',
                 foot: str(item.foot) ?? '',
-                at
+                at,
+                index
             });
             continue;
         }

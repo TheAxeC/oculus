@@ -15,13 +15,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import { logChanges, readChanges } from '../../../src/lib/server/core/changes.ts';
+import { logChanges, readChanges, writtenWith } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { DECK_PATH, deckTarget, targetOver } from '../../routes/edit/write-fixture.ts';
+import { DECK_ORDER, DECK_PATH, deckTarget, targetOver } from '../../routes/edit/write-fixture.ts';
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
@@ -238,23 +238,29 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         });
     });
 
-    it("records a deck group's list as the file held it and as it holds it now", async () => {
+    it("records each list of a deck write as the file held it and as it holds it now, and the order's entries", async () => {
         const into = deckTarget();
         const rows = await written(into, {
             kind: 'deck-slides',
             root: 'hub',
             path: DECK_PATH,
-            group: 'pillars',
-            base: ['alpha'],
-            slides: ['beta', 'alpha']
+            groups: [{ group: 'pillars', base: ['alpha'], slides: ['beta', 'alpha'] }],
+            order: { base: DECK_ORDER, entries: ['slides:pillars', 'intro.md', 'slides:more'] }
         });
-        expect(rows).toHaveLength(1);
-        expect(rows[0]).toMatchObject({
+        expect(rows).toHaveLength(2);
+        expect(rows[1]).toMatchObject({
             kind: 'deck-slides',
-            key: 'pillars',
+            key: 'slides:pillars',
             field: 'slides',
             before: ['alpha'],
             after: ['beta', 'alpha'],
+            undo: 'field'
+        });
+        expect(rows[0]).toMatchObject({
+            key: 'order',
+            field: 'order',
+            before: DECK_ORDER,
+            after: ['slides:pillars', 'intro.md', 'slides:more'],
             undo: 'field'
         });
         expect(rows[0].file).toBe(DECK_PATH);
@@ -310,5 +316,27 @@ describe('what a store write leaves in the undo folder', () => {
         for (const change of left) {
             expect(existsSync(join(dir, '.undo', `${change.at}.json`))).toBe(true);
         }
+    });
+});
+
+describe("the change log's prune", () => {
+    it('keeps a whole act when the cut of the window falls inside it', async () => {
+        const dir = scratchDir('oculus-changes-act-');
+        const log: ChangeLog = { file: join(dir, 'changes.jsonl'), keep: 2, writes: fsWrites() };
+        const record = (key: string, file: string) => ({
+            file: join(dir, file),
+            key,
+            field: 'new',
+            before: '',
+            after: file,
+            undo: 'field' as const
+        });
+        await logChanges(log, 'deck-edit', [record('act-x', 'x1.md'), record('act-x', 'x2.md')]);
+        await logChanges(log, 'deck-edit', [record('act-y', 'y1.md'), record('act-y', 'y2.md')]);
+        // Five lines pass the bound of four, and the cut at the last two falls between y1 and y2.
+        await logChanges(log, 'deck-edit', [record('act-z', 'z1.md')]);
+        const left = readChanges(log);
+        expect(left.map((one) => one.key)).toEqual(['act-z', 'act-y', 'act-y']);
+        expect(writtenWith(log, left[1]).map((one) => one.after)).toEqual(['y1.md', 'y2.md']);
     });
 });

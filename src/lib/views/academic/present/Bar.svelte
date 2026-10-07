@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, Present partial. The toolbar of the Present pane: the deck menu, the two step
-    // buttons, the overview and the full-screen controls, the button that opens the Slides view
-    // on this deck, and the place in the deck. It holds no state of its own; Present.svelte owns
-    // the deck and the position and hands each action in.
+    // buttons, the overview and the full-screen controls, the button that opens the Slides view on
+    // this deck, the Export to PDF button, the status line of the last slide act, and the place in
+    // the deck. It holds no state of its own; Present.svelte owns the deck and the position and
+    // hands each action in.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -25,6 +26,9 @@
         onoverview: () => void;
         onpresent: () => void;
         onslides: () => void;
+        onexport: () => void;
+        /** What the last act of a slide came to, empty for none. */
+        said: string;
     };
 
     let {
@@ -38,7 +42,9 @@
         onstep,
         onoverview,
         onpresent,
-        onslides
+        onslides,
+        onexport,
+        said
     }: Props = $props();
 </script>
 
@@ -61,13 +67,30 @@
         disabled={count === 0}
     />
     <ToolButton label={t('slides.open')} title={t('slides.open_tip')} onclick={onslides} />
+    <ToolButton
+        label={t('present.export')}
+        title={t('present.export_tip')}
+        onclick={onexport}
+        disabled={count === 0}
+    />
+    <span class="said" role="status">{said}</span>
     <span class="counter">{t('present.counter', String(at), String(count))}</span>
 </Toolbar>
 
 <style>
+    /* The status line takes the room between the controls and the place in the deck. */
+    .said {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     /* The place in the deck closes the bar. */
     .counter {
-        margin-left: auto;
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-num);
         font-size: var(--fs-sm);

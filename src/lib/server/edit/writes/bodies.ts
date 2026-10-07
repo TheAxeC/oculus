@@ -93,18 +93,47 @@ export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> }
 export type RadarAddWrite = { kind: 'radar-add'; fields: Record<string, unknown> };
 
 /**
- * One group's `slides:` of a deck's `present.yml`: the served root and the file's path under it,
- * the group, `base` (the list the page read, which the file must hold) and `slides` (the list
- * to write).
+ * The lists of a deck's `present.yml` to write in one edit: the served root and the file's path
+ * under it, each group's `slides:` as `{ group, base, slides }` (`base` is the list the page read,
+ * which the file must hold, and `slides` the list to write), and the `order:` list as `{ base,
+ * entries }`, both the tokens of its entries. The body names at least one list.
  */
 export type DeckSlidesWrite = {
     kind: 'deck-slides';
     root: string;
     path: string;
-    group: string;
-    base: string[];
-    slides: string[];
+    groups: { group: string; base: string[]; slides: string[] }[];
+    order?: { base: string[]; entries: string[] };
 };
+
+/**
+ * One act on the files of a deck. `new` adds a slide file after the slide `after`; `duplicate`,
+ * `delete` and `image` act on the slide `slide` of the deck's own files, whose file the page read
+ * as `base`; `image` also names the file dropped and its bytes as base64; `create` makes a deck in
+ * a folder of a served root, and `outline` makes one from a Markdown file.
+ */
+export type DeckEditWrite =
+    | { kind: 'deck-edit'; act: 'new'; root: string; path: string; after?: string }
+    | {
+          kind: 'deck-edit';
+          act: 'duplicate' | 'delete';
+          root: string;
+          path: string;
+          slide: string;
+          base: string;
+      }
+    | {
+          kind: 'deck-edit';
+          act: 'image';
+          root: string;
+          path: string;
+          slide: string;
+          base: string;
+          name: string;
+          data: string;
+      }
+    | { kind: 'deck-edit'; act: 'create'; root: string; folder: string; title: string }
+    | { kind: 'deck-edit'; act: 'outline'; root: string; file: string };
 
 /** One LinkedIn idea stub and one idea promoted to a numbered post. */
 export type LinkedinIdeaWrite = { kind: 'linkedin-idea'; title: string; category: string };
@@ -264,14 +293,58 @@ const linkedinPostShape = z.object({
     file: z.string()
 }) satisfies z.ZodType<LinkedinPostWrite>;
 
-const deckSlidesShape = z.object({
-    kind: z.literal('deck-slides'),
-    root: wordShape,
-    path: wordShape,
-    group: wordShape,
-    base: keysShape,
-    slides: keysShape
-}) satisfies z.ZodType<DeckSlidesWrite>;
+const deckSlidesShape = z
+    .object({
+        kind: z.literal('deck-slides'),
+        root: wordShape,
+        path: wordShape,
+        groups: z.array(z.object({ group: wordShape, base: keysShape, slides: keysShape })),
+        order: z.object({ base: keysShape, entries: keysShape }).optional()
+    })
+    .refine(
+        (body) => body.groups.length > 0 || body.order !== undefined
+    ) satisfies z.ZodType<DeckSlidesWrite>;
+
+const deckEditShape = z.discriminatedUnion('act', [
+    z.object({
+        kind: z.literal('deck-edit'),
+        act: z.literal('new'),
+        root: wordShape,
+        path: wordShape,
+        after: z.string().optional()
+    }),
+    z.object({
+        kind: z.literal('deck-edit'),
+        act: z.enum(['duplicate', 'delete']),
+        root: wordShape,
+        path: wordShape,
+        slide: wordShape,
+        base: z.string()
+    }),
+    z.object({
+        kind: z.literal('deck-edit'),
+        act: z.literal('image'),
+        root: wordShape,
+        path: wordShape,
+        slide: wordShape,
+        base: z.string(),
+        name: wordShape,
+        data: z.string()
+    }),
+    z.object({
+        kind: z.literal('deck-edit'),
+        act: z.literal('create'),
+        root: wordShape,
+        folder: z.string(),
+        title: z.string()
+    }),
+    z.object({
+        kind: z.literal('deck-edit'),
+        act: z.literal('outline'),
+        root: wordShape,
+        file: wordShape
+    })
+]) satisfies z.ZodType<DeckEditWrite>;
 
 const undoShape = z.object({
     kind: z.literal('undo'),
@@ -401,13 +474,19 @@ export function linkedinPostWrite(body: unknown): LinkedinPostWrite | null {
 }
 
 /**
- * The body as a write of one deck group's list, or null when it is not one. A list that repeats a
- * name or names none the group knows is of the right shape and reaches the writer, which is where
- * it is refused: the refusal names what was wrong with it rather than the body being unknown to
- * the route.
+ * The body as a write of a deck's lists, or null when it is not one: a body that holds one `group`,
+ * its `base` and `slides` at the top, with no `groups` list, is not one. A list that repeats a name
+ * or names none the group knows is of the right shape and reaches the writer, which is where it is
+ * refused: the refusal names what was wrong with it rather than the body being unknown to the
+ * route.
  */
 export function deckSlidesWrite(body: unknown): DeckSlidesWrite | null {
     return readAs(deckSlidesShape, body);
+}
+
+/** The body as an act on a deck's files, or null when it is not one. */
+export function deckEditWrite(body: unknown): DeckEditWrite | null {
+    return readAs(deckEditShape, body);
 }
 
 /** One recorded change taken back, addressed by the moment the log stamped it. */

@@ -100,7 +100,7 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `applications` | [Applications](docs/views.md#applications) | Position applications and where each stands. |
 | `joint-work` | [Joint work](docs/views.md#joint-work) | One entry per piece of work with one person, and the pipeline it is in. |
 | `tasks` | [Tasks & Service](docs/views.md#tasks--service) | The task list. |
-| `present` | [Present](docs/views.md#present) | A deck, one slide at a time as a 16:9 frame scaled to its pane, with an overview grid and full screen. |
+| `present` | [Present](docs/views.md#present) | A deck, one slide at a time as a 16:9 frame scaled to its pane, with an overview grid and full screen. A right-click on a slide edits, adds, copies or deletes it. An image dropped on a slide is added to it, a slide shows what its source tab holds unsaved, and Export to PDF writes the deck beside it. |
 | `radar` | [Lit Watch](docs/views.md#lit-watch) | The literature radar the scout writes. |
 | `literature` | [Literature search](docs/views.md#literature-search) | One query asked of OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC and arXiv, and of Web of Science and Scopus when `local.yml` holds their keys. |
 | `leads` | [Position Leads](docs/views.md#position-leads) | The position leads the scout writes. |

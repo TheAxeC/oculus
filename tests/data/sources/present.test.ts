@@ -5,6 +5,7 @@
 import { describe, expect } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
+import { outlineOf } from '../../../src/lib/data/sources/deck/outline.ts';
 import { splitSlides } from '../../../src/lib/data/sources/deck/split.ts';
 import type { DeckProject } from '../../../src/lib/data/sources/deck/kinds.ts';
 import type { DeckSlide } from '../../../src/lib/data/model/index.ts';
@@ -188,6 +189,22 @@ describe('the deck reader', () => {
             'text',
             'summary'
         ]);
+        const at = (path: string, index: number, entry: number, line: number) => ({
+            root: 'hub',
+            path,
+            index,
+            entry,
+            line
+        });
+        const beta = 'projects/manuscripts/beta/present';
+        expect(deck.slides.map((slide) => [slide.key, slide.source])).toEqual([
+            ['title.md#0', at('deck/title.md', 0, 0, 1)],
+            ['alpha/main.md#0', at('projects/manuscripts/alpha/present/main.md', 0, 1, 1)],
+            ['beta/one.md#0', at(`${beta}/one.md`, 0, 1, 1)],
+            ['beta/two.md#0', at(`${beta}/two.md`, 0, 1, 1)],
+            ['beta/two.md#1', at(`${beta}/two.md`, 1, 1, 6)],
+            ['summary:pillars', at('deck/present.yml', 2, 2, 11)]
+        ]);
         const title = deck.slides[0];
         expect(title.kind === 'title' ? title.lede : '').toBe('4 slides.');
         expect(deck.groups).toHaveLength(1);
@@ -205,5 +222,80 @@ describe('the deck reader', () => {
             { domain: 'heart', project: 'Alpha', mechanism: 'A mechanism', headline: 'A result' },
             { domain: 'heart', project: 'Beta', mechanism: '', headline: '' }
         ]);
+    });
+
+    it('reads an image link percent-encoded by a drop back to the file of that name', () => {
+        const dir = plantScratch('oculus-deck-image-', {
+            'deck/present.yml': ['deck: { title: Images }', 'order: [one.md]'].join('\n'),
+            'deck/one.md': [
+                '# One',
+                '',
+                '![fig#1](fig%231.png)',
+                '![my fig](my%20fig.png)',
+                '![fig(1)](fig%281%29.png)'
+            ].join('\n'),
+            'deck/fig#1.png': 'x',
+            'deck/my fig.png': 'x',
+            'deck/fig(1).png': 'x'
+        });
+        expect(readHub(dir).findings).toEqual([]);
+    });
+});
+
+describe('outlineOf', () => {
+    it('cuts a file into one slide for each level-1 heading and reads the slide file back as those slides', () => {
+        const rows: {
+            row: string;
+            text: string;
+            title: string;
+            slides: { kind: string; first: string }[];
+            has?: string[];
+        }[] = [
+            {
+                row: 'text before the first heading, a fenced block holding a heading line, and a level-2 heading',
+                text: 'Some text\n\n# A\n\n```\n# not a heading\n```\n\n## B\n\n# C\n',
+                title: 'A',
+                slides: [
+                    { kind: 'title', first: '# A' },
+                    { kind: 'text', first: '# A' },
+                    { kind: 'text', first: '# C' }
+                ],
+                has: ['# not a heading', '## B']
+            },
+            {
+                row: 'a file with no level-1 heading',
+                text: 'Just a paragraph.\n\nAnother one.\n',
+                title: 'notes',
+                slides: [{ kind: 'text', first: 'Just a paragraph.' }]
+            },
+            {
+                row: 'a thematic break written as three hyphens between two headings',
+                text: '# A\n\n---\n\n# B\n',
+                title: 'A',
+                slides: [
+                    { kind: 'text', first: '# A' },
+                    { kind: 'text', first: '# B' }
+                ],
+                has: ['***']
+            },
+            {
+                row: 'front matter, a heading written over equals signs and a line of text over hyphens',
+                text: '---\ntitle: x\n---\nIntro\n=====\n\nA line\n---\n',
+                title: 'Intro',
+                slides: [{ kind: 'text', first: '# Intro' }],
+                has: ['## A line']
+            }
+        ];
+        for (const { row, text, title, slides, has } of rows) {
+            const outline = outlineOf(text, 'notes');
+            expect(outline.title, row).toBe(title);
+            const read = splitSlides(outline.slides).slides;
+            expect(
+                read.map((slide) => [slide.meta?.kind ?? 'text', slide.body.split('\n')[0]]),
+                row
+            ).toEqual(slides.map((one) => [one.kind, one.first]));
+            for (const kept of has ?? []) expect(outline.slides, row).toContain(kept);
+            expect(outline.slides, row).not.toContain('title: x');
+        }
     });
 });

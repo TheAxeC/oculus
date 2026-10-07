@@ -29,6 +29,17 @@ export const TEXT_LIMIT = 2 * 1024 * 1024;
 /** The largest file one upload carries, in bytes, which the Memories wall's pictures share. */
 export const MAX_UPLOAD_BYTES = 32 * 1024 * 1024;
 
+/** The same limit in MB, as the sentences that refuse a larger file name it. */
+export const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / (1024 * 1024);
+
+/**
+ * How long the desktop host waits for a deck's print route to say it is ready, loading included.
+ */
+export const READY_WAIT_MS = 60_000;
+
+/** The largest text one unsaved draft carries to the deck route, in bytes. */
+export const MAX_DRAFT_BYTES = 1024 * 1024;
+
 /**
  * The extensions a picture folder is filtered to, and the only ones a folder's route serves: the
  * server's reader of a wallpaper or Memories folder and the Settings view's list of wallpaper files

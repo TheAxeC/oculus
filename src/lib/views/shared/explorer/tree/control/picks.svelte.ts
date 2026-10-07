@@ -8,7 +8,8 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import type { CommandSource, ProjectCommand } from '$lib/state/sessions/terminal/commands.svelte';
-import { shownOf, type FsEntry, type FsRoot, type TreeRow } from '$lib/state/sources/fs';
+import { nameOf, shownOf, type FsEntry, type FsRoot, type TreeRow } from '$lib/state/sources/fs';
+import type { DeckEditAct } from '$lib/state/shared/stores/shapes';
 import { rowsActed } from '$lib/state/sources/explorer/acts/selection';
 import { confirmDelete } from '$lib/state/sources/explorer/acts/confirm';
 import { absoluteOf, openComparison } from '$lib/state/workbench/navigation/pages';
@@ -72,9 +73,25 @@ export function createPicks(deps: PicksDeps) {
     /** The rows a pick on a row acts on: the selection when the row is in it. */
     const acted = (row: TreeRow): TreeRow[] => rowsActed(view.picked(), deps.rows(), row);
 
+    const stores = rowStores(client);
+
+    /**
+     * One act that makes a deck, then the deck shown in a Present tab named as the folder is: the
+     * sentence for why nothing was made, and the empty string once the deck is shown.
+     */
+    async function deckMade(act: DeckEditAct, root: string): Promise<string> {
+        const answer = await client.writes.writeDeckEdit(act, true);
+        if (!answer.ok || answer.refused.length > 0 || answer.id === undefined) {
+            return answer.refused.at(0)?.reason ?? answer.error ?? t('present.failed_network');
+        }
+        const label = answer.id === '' ? rootNameIn(deps.rows(), root) : nameOf(answer.id);
+        stores.showDeck({ root, path: answer.id }, label);
+        return '';
+    }
+
     const menuPicked = rowPicker(
         {
-            ...rowStores(client),
+            ...stores,
             dirOf: (root: string) => deps.roots()?.find((one) => one.key === root)?.dir ?? '',
             rootName: (root: string) => rootNameIn(deps.rows(), root),
             say,
@@ -95,7 +112,12 @@ export function createPicks(deps: PicksDeps) {
             patch: view.patch,
             say,
             entries: (root: string, path: string) =>
-                client.fs.heldEntries(root, path, shownOf(view.now()))
+                client.fs.heldEntries(root, path, shownOf(view.now())),
+            deck: (folder, title) =>
+                deckMade(
+                    { act: 'create', root: folder.root, folder: folder.path, title },
+                    folder.root
+                )
         },
         t
     );
@@ -107,6 +129,8 @@ export function createPicks(deps: PicksDeps) {
             confirm: asking.ask,
             choose: asking.choose,
             startName: naming.start,
+            outline: (file) =>
+                deckMade({ act: 'outline', root: file.root, file: file.path }, file.root),
             openCompare: (file, against) => openComparison(client.layout.openView, file, against),
             draftOf: (row: TreeRow) =>
                 explorer.unsaved({ root: row.root, path: row.path }, holdsContents(row)),

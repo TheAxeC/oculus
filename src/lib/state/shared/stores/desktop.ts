@@ -34,6 +34,16 @@ type Spelling = { misspelled: boolean; suggestions: string[] };
  */
 export type SaveAnswer = { admitted: true } | { admitted: false; held: string | null };
 
+export { READY_WAIT_MS } from '../../../data/file-ops.ts';
+
+/**
+ * What the host answers to a print of the deck at an address: the PDF's bytes, or why there are
+ * none: the page was not ready within the wait, the print failed, or the address is not the print
+ * route of this server.
+ */
+export type PrintAnswer =
+    { ok: true; bytes: Uint8Array } | { ok: false; error: 'timeout' | 'failed' | 'refused' };
+
 /** The menu commands the host sends a page. */
 type DesktopCommand = 'settings' | 'help';
 
@@ -77,6 +87,8 @@ export type DesktopBridge = {
     stopFind: () => void;
     /** Hide the find bar and give the page the keyboard. */
     closeFind: () => void;
+    /** Print the deck the print route at `address` draws to a PDF, in a window the host hides. */
+    printPdf: (address: string) => Promise<PrintAnswer>;
     /** Whether the spell checker holds a word wrong, and what it suggests. */
     spelling: (word: string) => Promise<Spelling>;
     /** Hear a message of the host; answers how to stop. */
