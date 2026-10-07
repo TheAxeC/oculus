@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z676 (2026-10-07, step D23c, the orchestrator, automode): where the keyboard goes after a press in the Outline
+
+The question: D23c makes a press on a symbol in the Files view's Outline select the symbol's name in the editor. As built, the keyboard then stays in the Outline, where before D23c it moved into the editor.
+
+- Chosen: the keyboard moves into the editor, as before; the new select command takes a flag for it that only the Outline sets, so the clangd AST view keeps the keyboard where it is.
+- Not chosen: leaving the keyboard in the Outline (the lazy option, a change of behaviour nobody asked for).
+
 ## Z675 (2026-10-07, step PR3, the orchestrator, automode): an image dropped on a slide whose name holds a space
 
 The question: PR3's builder found that an image named `my fig.png` is linked as `![my fig](<my fig.png>)`, a form the slide reader does not recognise, so the slide does not draw the image.

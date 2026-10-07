@@ -53,6 +53,8 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D23c-report.md
   brief_check: agents/reviews/D23c-brief-check.md (a81066bbccca96733, claude-opus-5-5, 188,115 tokens, 51 tool uses, 7.8 min)
   shared_paths: with PR3: tools/oculus/DESIGN.md, docs/views.md, docs/files-and-search.md (sentence-level edits in different items: D23c's language server, References and locked-file items, PR3's Present items; whichever lands second carries the other's text, Z642)
+  builder_usage: a12b39260f0c0a455, 184,970 tokens, 194 tool uses, 46.1 min (report agents/reviews/D23c-report.md); a80adc4082930a5ef before it, stopped mid-build, its usage not recorded
+  reviewer_report: agents/reviews/D23c-refuter.md (af53f7cfd7795c93a, claude-opus-5-5, running)
   landing: not-started
   round: 0
 ```

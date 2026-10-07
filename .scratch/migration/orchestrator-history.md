@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z676 (2026-10-07): automode, D23c's Outline press keeps moving focus into the editor (a focus flag on `select`).
 - Z675 (2026-10-07): automode, PR3's image link for a name with a space or parentheses written percent-encoded, fixed at landing.
 - Z674 (2026-10-07): automode, PR3's review findings (tests outside the guarded entries deleted but G47's rows, no G53 test, the image link percent-encoded, the prune keeping whole acts, the order record's History name, the `start.test.ts` flake diagnosed, the three wire fields kept); repair round 1 sent (`agents/briefs/PR3-round1.md`).
 - Z672 (2026-10-07): automode, M8's eight choices, each its recommendation.
