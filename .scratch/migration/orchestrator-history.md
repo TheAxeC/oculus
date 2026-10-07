@@ -1891,3 +1891,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z684 (2026-10-07): automode, X3e's eight choices from its third recheck.
 - Z685 (2026-10-07): automode, PR4's ten choices from its brief check.
 - Z686 (2026-10-07): automode, D23b's choices from its brief check (the Svelte approval by config text, G55, the test rows under G2, G3, G8 and G9, one step, the shared server facts, the copy kind, no type acquisition, the Svelte TypeScript plugin, the feature set, the singular label).
+- 2026-10-07. PR4 dispatched (base 70b68cca, builder on claude-sonnet-5-5); D23b's brief check closed in its brief (Z686, G55) and D23b dispatched (base 8d9cdd60, builder on claude-sonnet-5-5). Running: D45's, PR4's and D23b's builders. Every queued step waits on one of them or on Axel.

@@ -53,10 +53,10 @@ dispatch:   # steps in flight, up to six (Z632)
 - step: D23b
   executor: agent
   worker: claude:sonnet at ordo-high
-  model: (read after launch)
-  session_id: (after launch)
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: adf9011378450f02a (builder, launched 2026-10-07)
   worktree: .agents/worktrees/D23b
-  base: (the preparation commit)
+  base: 8d9cdd60
   launched: 2026-10-07
   report: agents/reviews/D23b-report.md
   brief_check: agents/reviews/D23b-brief-check.md (a87b263e7d9067812, claude-opus-5-5, 231,512 tokens, 94 tool uses, 13.2 min)
