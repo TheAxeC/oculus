@@ -1887,3 +1887,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z680 (2026-10-07): automode, PR4's presenter screen shape (the control and key, the audience window per host, the sync, the screen's parts, the saved deck, the end, the audience window's rights).
 - Z681 (2026-10-07): open item, M8's renames and data changes against DESIGN.md:24.
 - Z682 (2026-10-07): automode, D23b's choices (the write, the refusals, rename, symbols, hierarchies, the two servers, the guarded entry, one entry per server).
+- Z683 (2026-10-07): automode, D45's four choices from its second recheck (the new window's form, the SyncTeX click, composing with texlab, Preview through Open in Program).
+- Z684 (2026-10-07): automode, X3e's eight choices from its third recheck.

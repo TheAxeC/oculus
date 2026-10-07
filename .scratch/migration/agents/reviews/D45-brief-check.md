@@ -202,3 +202,5 @@ Agent a1370daf3bcbb7a5b, claude-opus-5-5, ordo-high, 319,525 tokens, 121 tool us
 - Rulings since: Z553 (X3e also writes `Source.svelte`, queued ahead); Z548 (an empty `out_dir` or `aux_dir` is the main's folder).
 - Banned text: Verify 5 (line 408) asks for the final test run against the pre-change code after the change; rewritten to a run on the unchanged tree before the code is changed, nothing reverted.
 - Declined to judge: LaTeX Workshop source lines, `pdfjs-dist` registry facts, Chrome's handling of the chords, the in-flight merges in fact, the step's size, the TeX view's chord number.
+
+Corrected again on main at c0a4af9c from the second premise recheck (`agents/reviews/D45-premise-recheck-2.md`, its 29 corrections) and the rulings Z671 and Z683: the brief was rewritten whole on that tree, every finding above still closed in it.

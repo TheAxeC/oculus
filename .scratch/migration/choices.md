@@ -4,6 +4,16 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z684 (2026-10-07, step X3e, the orchestrator, automode): eight choices in the Files lists step
+
+- Chosen: the desktop app's folder sheet ends when the page goes away, with its own test; the C++ AST and memory sections can be dragged like the other Files sections; every reader of the file-change notice skips folder-only changes; apps get the new fields and their guide says so; palette descriptions with no new file; refusal sentences keep their no-full-stop form; a folder that was missing is watched once it appears; the guide text goes to the `docs/` pages.
+- Not chosen: the lazy versions of each (the AST and memory sections fixed, three readers only, the apps guide left wrong, the palette file squeezed, a missing folder never watched, `HELP.md` only).
+
+## Z683 (2026-10-07, step D45, the orchestrator, automode): the PDF's new window, the SyncTeX click, LaTeX with texlab, Preview
+
+- Chosen: Open in New Window gives a window holding the PDF tab alone (no rail, no status bar), in the desktop app and as a new ChromeTab; inverse search is Cmd or Ctrl and a click (or a double click, a setting), so a plain click still selects text; D45's LaTeX features stay on when texlab later serves the file; a PDF opens in Preview through the existing Open in Program item, `.pdf` mapped to Preview in the shipped config.
+- Not chosen: opening the main page with the PDF tab active, or leaving the LaTeX and texlab overlap to whichever step finds it (the lazy options); a full workbench in the new ChromeTab; a plain click for inverse search.
+
 ## Z682 (2026-10-07, step D23b, the orchestrator, automode): rename, cross-file edits, symbols, hierarchies, TypeScript and Svelte
 
 - Chosen: a language server's edit of files no tab holds is written to disk as one undoable change in History, open tabs edited unsaved; refused whole when another page has one of the files open, or it touches a library file, a file outside the roots, or creates, renames or deletes a file; F2 rename from every server; workspace symbols under `#` and Cmd+T in the palette; call and type hierarchy in the References view (Shift+Alt+H); the TypeScript server on oculus's own TypeScript; the Svelte server only after you approve running the repository's Svelte, as for pyright's interpreter.
