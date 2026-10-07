@@ -34,6 +34,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: e1a75b8e1
   launched: 2026-10-07
   report: agents/reviews/X3e-report.md
+  builder_usage: 242,603 tokens, 1,064 tool uses, 247.4 min
   brief_check: agents/reviews/X3e-brief-check.md (the brief corrected since from agents/reviews/X3e-premise-recheck-4.md)
   fixtures: $TMPDIR/x3e-red (verify 12: a detached worktree of the hub at the base, four clones, a scratch hub with two worktrees, the harnesses), removed at landing
   shared_paths: with D15, docs/views.md and DESIGN.md at different lines, simple; with D11, server/root/context.ts (D11 moves the ServerContext type to server/root/process/, X3e moves startGit to server/root/watch/, Z705 (I1); the folderPicker doc and one close() line each carried by the second landing), Source.svelte (one dependency line), model-sessions.ts, payloads.ts, commands.svelte.ts, options.yml, glyphs.yml, icons.yml, server.yml, app.yml, HELP.md, DESIGN.md, docs/views.md and docs/configuration.md at different lines; each merge simple, judged on both diffs at the second landing
@@ -149,9 +150,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-1. D11, case 40 (2026-10-07): Step Into on a line that calls a function ends the program with "+ expects numbers" in cathedra's `rite_dap`, where the brief expects a pause in the callee. oculus sends the plain DAP `stepIn {threadId: 1}` (`session.ts:553` after round 1); the builder's own probe client sends the same request and gets the same end, and the reviewer places the fault in cathedra's `debugger_impl.cpp:196-215`, where StepIn arms a temporary break at the callee's first instruction. Options: (a) D11 lands sending `stepIn` as it does, and the StepIn fault is fixed in cathedra as a step of its own (a fix in another repository, with its own test there); (b) D11 lands with Step Into disabled until cathedra is fixed, which removes a working control from every other line; (c) D11 lands as it is and the fault is left. Recommended: (a). The lazy option is (c). It is yours because the fix is in cathedra's code, outside oculus.
-2. D11's live look (2026-10-07): the debugger can be looked at on TEST only with `rite_dap_bin` set in `config/local.yml` to `~/workspace/cathedra/bin/debug/rite_dap`, since `rite_dap` is not on PATH (Z447). No agent opens that file. Without it the look sees only the idle Debug view and a launch ending in "rite_dap could not be started". Needed before D11's landing look.
-3. The Vite dev server on port 8790 (2026-10-07): after `npm ci` installed D11's new dependency in main's `node_modules`, every page it serves shows "There is a new version of the pre-bundle for .../node_modules/.vite/deps_ssr/svelte_store.js", and three reloads over 30 s did not clear it. It is your server, so only you restart it; until then no look on TEST can run (D11's, X3e's). Not checked: whether the server on port 8787 is affected.
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -173,6 +171,9 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The fixture exports the four test sweeps leave unused (T1c's report names `ClientState` in `tests/fixtures/client.ts`, `sweepingOnError` in `scratch.ts` and `gitPayload` in `sessions-fixture.ts`; T1b, T1d and T1e name theirs): removed by the orchestrator at the landing of the last of T1b to T1e, after `sh utils/unused-exports.sh` and a grep of each name over `tests` and `src`, since each is unused only once all four have landed (T1e's brief, item 6).
 
 ## Closed items
+- 2026-10-07: open item 1 (D11 case 40, Step Into in cathedra's rite_dap) ruled (a) by Axel as Z710: D11 stays as landed and the fault is fixed in cathedra as a step of its own; its description is `~/workspace/cathedra/.scratch/38-4-what-the-split-left/bug.md`.
+- 2026-10-07: open item 2 (`rite_dap_bin` for D11's look) closed: Axel set `rite_dap_bin: ~/workspace/cathedra/bin/debug/rite_dap` in `local.yml`.
+- 2026-10-07: open item 3 (the Vite dev server on port 8790 stale after `npm ci`) closed: Axel restarted the server; the page on 8790 loads again with its status items.
 - Z709 (2026-10-07): automode, D15's Behaviour 1 over round 1: the window's place is taken only by a viewer whose box was hidden; fixed at D15's landing.
 - Z707 (2026-10-07), a guarded entry for the schema findings: ruled (a) by Axel, G56 added to `agents/guarded.md`; M8 writes its test.
 - Z708 (2026-10-07), the cockpit against Z650: ruled (a) by Axel, M8 leaves `tools/cockpit/` untouched and runs no cockpit check.
