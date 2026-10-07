@@ -13,6 +13,12 @@
     // focus in the box so the loss of focus does not hand the earlier text on first. The box
     // carries the text boxes' editing menu (TextBoxMenu.svelte).
     //
+    // The box's own input and key handlers are given to Combobox.Input, which runs them before
+    // bits-ui's and stops at a handled Enter; set on the input itself they would replace bits-ui's,
+    // and the list would stay closed after Enter however much is typed. The editing menu wraps the
+    // combobox, not the input alone: bits-ui takes an input as the anchor of the nearest floating
+    // layer, so an input inside the menu's root anchors the menu and leaves the list unplaced.
+    //
     // A caller whose list is not there yet gives `note` instead of suggestions: the list then
     // holds that sentence, already translated, and nothing to pick.
 
@@ -94,17 +100,17 @@
     }
 </script>
 
-<Combobox.Root
-    type="single"
-    bind:value={taken}
-    bind:open
-    {items}
-    inputValue={value}
-    allowDeselect={false}
-    onValueChange={picked}
->
-    <TextBoxMenu {label} box={() => input}>
-        <Combobox.Input>
+<TextBoxMenu {label} box={() => input}>
+    <Combobox.Root
+        type="single"
+        bind:value={taken}
+        bind:open
+        {items}
+        inputValue={value}
+        allowDeselect={false}
+        onValueChange={picked}
+    >
+        <Combobox.Input oninput={typed} onkeydown={keyed}>
             {#snippet child({ props })}
                 <input
                     {...props}
@@ -113,51 +119,49 @@
                     autocomplete="off"
                     aria-label={label}
                     {placeholder}
-                    oninput={typed}
-                    onkeydown={keyed}
                     onblur={left}
                     onfocus={() => (open = true)}
                     bind:this={input}
                 />
             {/snippet}
         </Combobox.Input>
-    </TextBoxMenu>
-    {#if listed.length > 0 || note !== undefined}
-        <Combobox.Portal>
-            <Combobox.Content collisionPadding={MARGIN} strategy="fixed">
-                {#snippet child({ wrapperProps, props })}
-                    <div {...wrapperProps}>
-                        <FloatingList {label} list={props} shape="field">
-                            <Combobox.Viewport>
-                                {#snippet child({ props: viewport })}
-                                    <div
-                                        {...viewport}
-                                        class="viewport"
-                                        role="presentation"
-                                        onmousedown={(event) => event.preventDefault()}
-                                    >
-                                        {#if note !== undefined}
-                                            <div class="note">{note}</div>
-                                        {/if}
-                                        {#each listed as one (one)}
-                                            <Combobox.Item value={one} label={one}>
-                                                {#snippet child({ props: entry })}
-                                                    <div {...entry} class="item">
-                                                        <span class="name">{one}</span>
-                                                    </div>
-                                                {/snippet}
-                                            </Combobox.Item>
-                                        {/each}
-                                    </div>
-                                {/snippet}
-                            </Combobox.Viewport>
-                        </FloatingList>
-                    </div>
-                {/snippet}
-            </Combobox.Content>
-        </Combobox.Portal>
-    {/if}
-</Combobox.Root>
+        {#if listed.length > 0 || note !== undefined}
+            <Combobox.Portal>
+                <Combobox.Content collisionPadding={MARGIN} strategy="fixed">
+                    {#snippet child({ wrapperProps, props })}
+                        <div {...wrapperProps}>
+                            <FloatingList {label} list={props} shape="field">
+                                <Combobox.Viewport>
+                                    {#snippet child({ props: viewport })}
+                                        <div
+                                            {...viewport}
+                                            class="viewport"
+                                            role="presentation"
+                                            onmousedown={(event) => event.preventDefault()}
+                                        >
+                                            {#if note !== undefined}
+                                                <div class="note">{note}</div>
+                                            {/if}
+                                            {#each listed as one (one)}
+                                                <Combobox.Item value={one} label={one}>
+                                                    {#snippet child({ props: entry })}
+                                                        <div {...entry} class="item">
+                                                            <span class="name">{one}</span>
+                                                        </div>
+                                                    {/snippet}
+                                                </Combobox.Item>
+                                            {/each}
+                                        </div>
+                                    {/snippet}
+                                </Combobox.Viewport>
+                            </FloatingList>
+                        </div>
+                    {/snippet}
+                </Combobox.Content>
+            </Combobox.Portal>
+        {/if}
+    </Combobox.Root>
+</TextBoxMenu>
 
 <style>
     /* The look of TextInput.svelte, so the two kinds of box read as one kind. */

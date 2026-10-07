@@ -285,7 +285,8 @@
     /* A session runs or is paused: the whole bar takes the orange and the ink derived for it. A
        hovered or open item takes the fill derived from the orange (themes/derive.ts), and an item
        in the warning tone, whose amber does not read on the orange, takes the bar's ink in bold;
-       the status ToolButton reads both from these properties. */
+       the status ToolButton reads both from these properties, and the status MenuOpener reads
+       the fill. */
     .bar.debugging {
         background: var(--c-orange);
         color: var(--on-c-orange);

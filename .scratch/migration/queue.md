@@ -25,7 +25,7 @@ Queued, in order (17 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D11 (the debug client for rite), 2026-10-07; looked at on the 8796 scratch oculus; four look fixes in the gate and four more in work (Axel's list, state file 21:45).
+- D11 (the debug client for rite), 2026-10-07; looked at on a scratch oculus, the look's fixes on main; open item 4 (Debug Anyway at the command's end) for Axel.
 - D15 (PDF reading), 2026-10-07, a84214da; looked at on TEST, two fixes from the look.
 - D45 (LaTeX as VS Code's LaTeX Workshop), 2026-10-07, 0753a5e7.
 - D23b (rename, workspace symbols, hierarchies, the TypeScript and Svelte servers), 2026-10-07, 639820b9.

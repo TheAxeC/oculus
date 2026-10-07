@@ -1,7 +1,8 @@
 // Layer 2, server. The breakpoints a debug session holds, as the adapter last answered them: for
 // each file the lines asked for with whether the adapter verified each, and the function
 // breakpoints the same way. The adapter answers a breakpoint with `verified: false` and a reason
-// until the module holds it; a stop that names a breakpoint's id by `hitBreakpointIds` verifies it.
+// until the module holds it; its later `breakpoint` event, or a stop that names the breakpoint's id
+// by `hitBreakpointIds`, verifies it.
 // The ids are the adapter's and stay here; the published state carries lines, names and answers.
 
 import type { DebugFileBreakpoints, DebugFunctionBreakpoint } from '../../../data/model/index.ts';
@@ -55,6 +56,18 @@ export class Breakpoints {
         const held: Held[] = [...this.#files.values()].flat();
         for (const one of [...held, ...this.#functions]) {
             if (one.id === id) Object.assign(one, { verified: true, message: '' });
+        }
+    }
+
+    /**
+     * The adapter's later word on a breakpoint, as when a pending one binds once its module loads;
+     * a breakpoint verified by a stop stays verified.
+     */
+    changed(id: number, verified: boolean, message: string): void {
+        const held: Held[] = [...this.#files.values()].flat();
+        for (const one of [...held, ...this.#functions]) {
+            if (one.id !== id || one.verified) continue;
+            Object.assign(one, { verified, message: verified ? '' : message });
         }
     }
 

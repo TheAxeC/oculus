@@ -55,15 +55,12 @@
 
     /** What was sent, oldest first. */
     let history: string[] = $state([]);
-    /** What the box shows and what the reader typed, which differ while a listed input is taken. */
+    /** What the box holds. */
     let text = $state('');
-    let typed = $state('');
     /** The place in `history` the arrow keys stand at, null while the reader types. */
     let stepping: number | null = $state(null);
-    /** Whether the key that is being handled is Enter, which tells a send from a press. */
-    let enter = false;
 
-    const suggestions = $derived(historyMatches(history, typed));
+    const suggestions = $derived(historyMatches(history, text));
 
     let host: HTMLDivElement | undefined = $state();
     /** The scroll box of the pane, once the view is on the page. */
@@ -92,26 +89,32 @@
     });
 
     function send(): void {
-        const sent = typed.trim();
+        const sent = text.trim();
         text = '';
-        typed = '';
         stepping = null;
         if (sent === '') return;
         history = [...history.filter((one) => one !== sent), sent];
         void debug.evaluate(sent);
     }
 
-    /** A key before the combobox sees it: Enter sends, Tab takes the first listed input. */
+    /**
+     * A key before the combobox sees it: Enter sends the text typed, whatever the list's cursor is
+     * on, and Tab takes the first listed input.
+     */
     function keyed(event: KeyboardEvent): void {
-        enter = event.key === 'Enter' && !event.isComposing;
+        if (event.key === 'Enter' && !event.isComposing) {
+            event.preventDefault();
+            event.stopPropagation();
+            send();
+            return;
+        }
         if (event.key === 'Tab' && !event.shiftKey && suggestions.length > 0) {
             event.preventDefault();
             text = suggestions[0];
-            typed = text;
             return;
         }
         const arrow = event.key === 'ArrowUp' || event.key === 'ArrowDown';
-        if (!arrow || (typed !== '' && stepping === null)) return;
+        if (!arrow || (text !== '' && stepping === null)) return;
         event.preventDefault();
         event.stopPropagation();
         const last = history.length - 1;
@@ -123,31 +126,20 @@
         if (next > last) {
             stepping = null;
             text = '';
-            typed = '';
             return;
         }
         stepping = next;
         text = history[next];
-        typed = text;
     }
 
-    /** What the box hands on: a send from Enter, and a taken input from a press. */
+    /** An input taken from the list by a press. */
     function entered(value: string): void {
-        if (enter) {
-            enter = false;
-            send();
-            return;
-        }
         text = value;
-        typed = value;
     }
 
     function typedText(value: string): void {
         text = value;
-        if (!enter) {
-            typed = value;
-            stepping = null;
-        }
+        stepping = null;
     }
 
     const placeholder = $derived(

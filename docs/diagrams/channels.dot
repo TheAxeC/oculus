@@ -67,7 +67,7 @@ digraph channels {
     subgraph "cluster_lost" {
         label="not placed"; style=dashed;
         "? src/lib/server/machine/debug/console.ts:98" [label="src/lib/server/machine/debug/console.ts:98 publish(CONSOLE_CHANNEL)"];
-        "? src/lib/server/machine/debug/session.ts:178" [label="src/lib/server/machine/debug/session.ts:178 publish(DEBUG_CHANNEL)"];
+        "? src/lib/server/machine/debug/session.ts:179" [label="src/lib/server/machine/debug/session.ts:179 publish(DEBUG_CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
         "? src/lib/server/machine/runs/schedules/watch.ts:290" [label="src/lib/server/machine/runs/schedules/watch.ts:290 publish(CHANNEL)"];
@@ -328,7 +328,7 @@ digraph channels {
     "server/accounts/calendar/poll" -> "ch calendar";
     "server/accounts/mail/poll" -> "ch inbox";
     "server/machine/debug/console" -> "? src/lib/server/machine/debug/console.ts:98";
-    "server/machine/debug/session" -> "? src/lib/server/machine/debug/session.ts:178";
+    "server/machine/debug/session" -> "? src/lib/server/machine/debug/session.ts:179";
     "server/machine/hpc/poll" -> "ch hpc";
     "server/machine/processes/watch" -> "? src/lib/server/machine/processes/watch.ts:63";
     "server/machine/processes/watch" -> "? src/lib/server/machine/processes/watch.ts:67";

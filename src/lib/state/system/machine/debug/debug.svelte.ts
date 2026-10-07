@@ -206,8 +206,8 @@ export function createDebug(deps: DebugDeps) {
             source === undefined
                 ? () => undefined
                 : followKey(source, DEBUG_KEY, () => {
+                      // The tab that wrote the lists has posted them; this one only draws them.
                       held.saved = loadSaved(from);
-                      if (active()) void lists.postAll();
                   });
     }
 
@@ -258,7 +258,7 @@ export function createDebug(deps: DebugDeps) {
             deps.openView('debug');
             deps.focusWindow();
             const top = next.frames.find((frame) => frame.id === next.frame) ?? next.frames.at(0);
-            if (top !== undefined) openFrame(top.path, top.line);
+            if (top !== undefined) openServed(top.path, top.line, 100);
         }
         if (next.status === 'ended' && restarting) {
             restarting = false;
@@ -275,10 +275,14 @@ export function createDebug(deps: DebugDeps) {
     const keyOf = (repo: string): [string, string] => ['debug', repo];
 
     /** The repository of the source tab on screen, else of the one focused last, else the last. */
+    /**
+     * The repository of the file on screen, else the one last watched, else the session's, running
+     * or last run, which is the one a page loaded after a launch has before the reader picks a tab.
+     */
     function repo(): string | null {
         const file = (deps.onScreen() ?? deps.focusedSource())?.status.file ?? '';
         const found = file === '' ? null : repoOfFile(deps.gitRoots(), deps.served(), file);
-        return found ?? held.lastRepo;
+        return found ?? held.lastRepo ?? payload().session?.repo ?? null;
     }
 
     function watchRepo(path: string): () => void {
@@ -620,6 +624,18 @@ export function createDebug(deps: DebugDeps) {
         }
         if (!deps.openFile(place.item.key, place.path, line)) return;
         focusSoon(path, line, 20);
+    }
+
+    /**
+     * A page loaded while the session is paused hears the pause before it has read the served
+     * roots, so the frame is opened once they are there.
+     */
+    function openServed(path: string, line: number, left: number): void {
+        if (deps.served().length > 0 || left <= 0) {
+            openFrame(path, line);
+            return;
+        }
+        setTimeout(() => openServed(path, line, left - 1), 50);
     }
 
     /** The editor mounts after the tab opens, so the focus is asked again until it takes. */

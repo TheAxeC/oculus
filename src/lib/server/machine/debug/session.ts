@@ -8,10 +8,11 @@
 // `rite_dap_bin` holds from the next one. The handshake is `initialize`, `launch`, then on
 // `initialized` the breakpoints the page holds and `configurationDone`, which starts the program.
 // On each stop the stack, the selected frame's scopes and variables and the watch expressions are
-// read (inspect.ts), and one state is published. The adapter cannot be stopped by the protocol
-// (`disconnect` lets the program run to its end), so Stop is SIGTERM to the process this client
-// spawned and SIGKILL two seconds later; the route runs it only after the page confirmed the
-// process it names.
+// read (inspect.ts), and one state is published. A breakpoint the adapter answered as pending is
+// verified by its later `breakpoint` event or by a stop at it. The adapter cannot be stopped by the
+// protocol (`disconnect` lets the program run to its end), so Stop is SIGTERM to the process this
+// client spawned and SIGKILL two seconds later; the route runs it only after the page confirmed
+// the process it names.
 //
 // An answer is dropped when the session it was asked in has ended or a later pause or resume has
 // replaced the one it was asked in. A message of the adapter that does not read, and the adapter's
@@ -44,7 +45,7 @@ import {
     type Evaluation,
     type Link
 } from './inspect.ts';
-import { breakpointsShape, outputShape, stoppedShape } from './shapes.ts';
+import { breakpointEventShape, breakpointsShape, outputShape, stoppedShape } from './shapes.ts';
 import {
     Ended,
     THREAD,
@@ -384,6 +385,7 @@ export class DebugClient {
         if (event === 'initialized') run.isInitialized();
         else if (event === 'output') this.#output(run, body);
         else if (event === 'stopped') void this.#stopped(run, body);
+        else if (event === 'breakpoint') this.#breakpointChanged(body);
         else if (event === 'continued' && this.#paused()) {
             run.stop += 1;
             this.#status = 'running';
@@ -393,6 +395,15 @@ export class DebugClient {
             this.#flushPartials(run);
             this.#ask(run, 'disconnect', {}).catch(() => undefined);
         }
+    }
+
+    #breakpointChanged(body: unknown): void {
+        const read = breakpointEventShape.safeParse(body);
+        if (!read.success || read.data.reason !== 'changed') return;
+        const { id, verified, message } = read.data.breakpoint;
+        if (id === undefined) return;
+        this.#breakpoints.changed(id, verified, message ?? '');
+        this.#publish();
     }
 
     #output(run: Run, body: unknown): void {

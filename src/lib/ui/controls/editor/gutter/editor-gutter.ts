@@ -155,8 +155,11 @@ export function followGutter(
     }
 ): Monaco.IDisposable[] {
     const { MouseTargetType } = monaco.editor;
+    // A line that holds a breakpoint keeps its own mark under the pointer.
     const hint = (line: number | null): void => {
-        collections.hint.set(read().handlers.onglyph === undefined ? [] : hintDecorations(line));
+        const { values, handlers } = read();
+        const held = values.breakpoints.some((one) => one.line === line);
+        collections.hint.set(handlers.onglyph === undefined || held ? [] : hintDecorations(line));
     };
     return [
         editor.onMouseDown((event) => {

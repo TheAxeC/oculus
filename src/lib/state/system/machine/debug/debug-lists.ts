@@ -165,19 +165,7 @@ export function createLists(deps: ListsDeps) {
         return held.saved.watch.map((expression, at) => stopped.at(at) ?? { expression });
     }
 
-    /** Post every list as it stands, which is what a tab does when another tab changed them. */
-    async function postAll(): Promise<void> {
-        const paths = new Set([
-            ...Object.keys(held.saved.breakpoints),
-            ...payload().breakpoints.map((file) => file.path)
-        ]);
-        for (const path of paths) await postFile(path);
-        await postDebug({ action: 'functions', names: held.saved.functions }, writes);
-        await postDebug({ action: 'watch', expressions: held.saved.watch }, writes);
-    }
-
     return {
-        postAll,
         markers,
         rows,
         toggle,

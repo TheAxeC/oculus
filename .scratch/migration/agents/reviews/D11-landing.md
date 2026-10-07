@@ -37,3 +37,7 @@ From `tools/oculus` after `npm run diagrams`: `test:landing: 307.0 s; every comm
 ## Usage
 
 First report passed its bar: no (ten findings, one repair round). Builder a9e3866bea9c8baf8 (claude-sonnet-5-5): 369,610 tokens, 629 tool uses, 155.5 min; round 1: 184,655 tokens, 183 tool uses, 51.8 min. Brief check a0e68a55e2b7c6f81 (claude-opus-5-5): 338,752 tokens, 125 tool uses, 18.5 min. Reviewer a7023f786466de3d0 (claude-opus-5-5): 219,129 tokens, 132 tool uses, 20.4 min. Reviewer over round 1 a16dd4a2cb5b09b9a (claude-opus-5-5): 109,697 tokens, 103 tool uses, 15.2 min.
+
+## The look, and the fixes after it
+
+Taken 2026-10-07 on a scratch oculus on port 8796 with its own hub and `rite_dap_bin` set, in place of TEST. The look bullet under D11 in `plan.md` lists the cases met, the seven defects fixed after the landing commit, the `breakpoint` event, the checks run on the scratch page and the verification. Open item 4 holds Debug Anyway at the command's end, not reproduced. The rite_dap faults are in cathedra's `.scratch/38-4-what-the-split-left/bug.md`.

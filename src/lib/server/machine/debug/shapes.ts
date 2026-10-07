@@ -26,6 +26,16 @@ export const breakpointsShape = z.object({
 
 export type BreakpointAnswers = z.infer<typeof breakpointsShape>['breakpoints'];
 
+/** A `breakpoint` event: the adapter's new word on a breakpoint it answered before. */
+export const breakpointEventShape = z.object({
+    reason: z.string(),
+    breakpoint: z.object({
+        id: z.number().optional(),
+        verified: z.boolean(),
+        message: z.string().optional()
+    })
+});
+
 export const stackShape = z.object({
     stackFrames: z.array(
         z.object({

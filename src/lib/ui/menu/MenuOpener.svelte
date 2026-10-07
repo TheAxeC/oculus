@@ -231,7 +231,7 @@
 
     /* The status bar's item, the same as ToolButton.svelte's status item: the bar's height, 8 px
        either side, the bar's 12 px words in its own colour, and a fill while the pointer is on it
-       or its list is open. */
+       or its list is open: the bar's `--status-hover` when the bar sets one, else the chip. */
     .opener.status,
     :global(body.rice) .opener.status {
         box-sizing: border-box;
@@ -249,7 +249,7 @@
 
     .opener.status:hover,
     .opener.status[aria-expanded='true'] {
-        background: var(--chip);
+        background: var(--status-hover, var(--chip));
     }
 
     .opener.status {
