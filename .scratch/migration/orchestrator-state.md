@@ -24,7 +24,19 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []   # steps in flight, up to six (Z632)
+dispatch:   # steps in flight, up to six (Z632)
+- step: D15
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a8cd9de4bfca7039b (builder, launched 2026-10-07)
+  worktree: .agents/worktrees/D15
+  base: 9d698263c
+  launched: 2026-10-07
+  report: agents/reviews/D15-report.md
+  brief_check: agents/reviews/D15-brief-check.md (a9240828824e6638a, claude-opus-5-5, 255,080 tokens, 78 tool uses, 11.2 min)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -116,6 +128,8 @@ dispatch: []   # steps in flight, up to six (Z632)
 - Open items hold only questions with a real trade-off that needs Axel: two options that each cost something he would weigh. A choice between the correct option and an obviously wrong one, a test or a package with one sensible answer, a defect in delivered work, and work the orchestrator can do itself are decided and done, never parked as open items (Axel, 2026-10-05).
 
 ## The pause
+
+Lifted 2026-10-07 by Axel: "Once you are done, please continue with the full orchestration / automode, fill all open slots as far as is possible, keep queue.md up to sate". The loop runs in automode with six slots, each choice closed with its recommendation and booked as "(the orchestrator, automode)".
 
 Lifted 2026-10-06 by Axel's "Please continue orchestration": the five paused agents resumed by message with their context, E4g's reviewer over round 1 dispatched, the six slots kept full. In force from 2026-10-06, Axel: "Once the current agents are done, dont launch new ones". The agents running then (Q124's builder over its round, O30b's reviewer, D23's and Q125's builders, PR1's reviewer over its round) run to their end; no builder, reviewer, brief check or diagnosis agent is started after that, and E4g's reviewer over its round 1 is not dispatched. Reports that arrive are saved and booked; nothing new is launched until he says go.
 

@@ -1,16 +1,18 @@
-In flight (0 of 6 slots): none. Being prepared: D15 (brief written, brief check running); X3e, D11, M8, D43 and D33, each with a premise recheck on main at 8bd2070c running.
+In flight (1 of 6 slots):
+- D15 (PDF reading): building.
 
-Queued, in order (20 steps):
+Being prepared: M8 (brief check running); D11 and X3e (briefs being corrected from their rechecks); D43 and D33 (briefs to write).
+
+Queued, in order (19 steps):
 - X3e (Files lists reordered by drag): ready.
 - D28 (saving a file as VS Code does): after X3e.
 - M6 (the collection forms removed): after X3e and D28.
 - D11 (the debug client for rite): ready.
-- D15 (PDF reading): ready.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
 - M8 (the hub's YAML checked in the editor): ready.
-- D43 (LaTeX navigation through texlab): ready.
-- D33 (the Problems view): ready.
+- D43 (LaTeX navigation through texlab): after M8.
+- D33 (the Problems view): after D11 and D28.
 - D39 (hub keys as links): after M8.
 - D36 (linters on save): after D33.
 - D40 (the writing rules as editor marks): after D36.
