@@ -272,3 +272,34 @@ DECLINED TO JUDGE
 Usage: agent aa378ab34c21e2821, model claude-opus-5-5.
 
 Usage: aa378ab34c21e2821, claude-opus-5-5, 126,998 tokens, 108 tool uses, 15.8 min.
+
+## Repair round 1, refuted
+
+The run over repair round 1, saved from the reviewer's final message (a22d168bb7ca66506, claude-opus-5-5). Its findings are never sent to the builder; each is fixed at landing, as the Closed heading below says.
+
+Verification: `npm run test:quick -- --base 272f60b4` printed `test:quick: 36.6 s (limit 45.0 s); every command passed` (ok ASCII gate, svelte-kit sync, prettier, vitest, svelte-check 397 FILES 0 ERRORS, eslint); the round's 11 test files `Test Files 11 passed (11)`, `Tests 81 passed (81)`; the round's three new rows fail on the builder's copy of the worktree before the round (`Tests 3 failed | 12 passed (15)`); `grep -rn "32 MB\|60 seconds" config/text --exclude=local.yml` nothing; the ASCII gate over the round's files nothing; `npm run test:checks` 243 passed; `npm run check` 3078 FILES 0 ERRORS.
+
+Verdicts over the whole diff since the base: items 1 to 9 hold (item 4 for `#`, `%` and `?`; the space and parentheses case is Z675's). Cases 1 to 15, 17, 19 (by reading), 20 to 23, 26 to 36 met; 11a, 12 and 18 met for the data, their look halves at landing; 16, 24 and 25 not verifiable here (looks at landing).
+
+Findings:
+- R1, Behaviour. `deck-undo.ts:93-97`: the rollback writes every file already written back with its `after` text, so a file the act left absent (`after` empty) is written as an empty file; the `catch` takes every throw, not only the Trash's. Failure: the undo of Delete Slide of a one-slide `slide-1.md` whose `present.yml` write throws leaves an empty `slide-1.md` that `order:` does not name.
+- R2, Behaviour (report text). `PR3-report.md:367` "within about 1.5 s"; the code waits `DRAFT_REST_MS = 250` and the brief asks for at most 250 ms; the look at landing would read against the wrong figure.
+- R3, Standards. `READY_WAIT_MS` moved into `src/lib/state/shared/stores/desktop.ts` and imported by `src/desktop/windows/print.ts`, a host-to-client-state runtime import (DESIGN.md "Boundaries"), a new `"desktop" -> "state"` edge in `docs/diagrams/layers.dot`, which `boundaries.test.ts` does not read; `IMAGE_LIMIT_MB` and `UPLOAD_LIMIT_MB` repeat one expression over `MAX_UPLOAD_BYTES` (`src/lib/data/file-ops.ts`).
+- R4, Standards. `config/behavior.yml:152`'s description of `keep` is false once the prune keeps whole acts.
+- R5, Standards. The worktree's `guarded.md` copy books the prune row under G9's "an app's store", and the test sits in the describe of store writes (`changes.test.ts:282`, `:321`).
+- R6, Proof. `kinds.ts:107` now decodes with `decodeURIComponent`; no kept test reads an encoded image link through the deck reader (G32's present table).
+- R7, Standards (the first build). `PR3-report.md:226` and `:532` show the first build ran git commands (`git status`, `git diff HEAD`, `git show HEAD:`), which spec.md forbids a builder; not new in this round.
+- Z675, stated by the builder in part: a name with parentheses and no space (`![fig(1)](<fig(1).png>)`) also breaks, the `IMAGE` pattern capturing `<fig(1`; `deck-acts.test.ts:181` asserts the angle-bracket form Z675 replaces.
+
+Declined to judge: cases 16, 24 and 25 and the look halves of 11a, 12 and 18 (the running page, the desktop app, a print dialog); B3's History row (a view, at the look); the case scripts on the scratch server (not rerun); the builder's two-file drop run (judged by reading); the base's unused-export list (the base copy has no node_modules); Z674 (6) (the separate diagnosis).
+
+### Closed
+
+- R1: fixed at landing. In the rollback, a non-image part whose `after` is empty is removed (`unlinkSync`) rather than written; small, inside item 2 and B1.
+- R2: fixed at landing. The report's row reads "within 250 ms of the last keystroke, plus the answer of the POST".
+- R3: fixed at landing. `READY_WAIT_MS` and one `MAX_UPLOAD_MB` move into `src/lib/data/` (the MB value beside `MAX_UPLOAD_BYTES` in `file-ops.ts`), imported from there by the host and the page, and `npm run diagrams` run again so the edge goes.
+- R4: fixed at landing. `behavior.yml:152` reads "...it is rewritten down to that number, or the few more that keep the last act whole, once it has grown past twice it."
+- R5: fixed at landing. The prune row is booked on G9 under its own label, "the change log's prune", in a describe that names the prune.
+- R6: fixed at landing. One row in G32's present table: an image linked as `fig%231.png` and as `my%20fig.png` is read to the files `fig#1.png` and `my fig.png`, with Z675's fix.
+- R7: no change to the tree; booked with the landing as a fact of the first build.
+- Z675: fixed at landing as ruled, a space, `(`, `)`, `#`, `%` and `?` percent-encoded with no angle brackets; the row at `deck-acts.test.ts:181` takes the encoded form.
