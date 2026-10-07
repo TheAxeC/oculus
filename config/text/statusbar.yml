@@ -18,6 +18,7 @@ text:
         item_language_server: Language Server
         item_interpreter: Python Interpreter
         item_compile_database: Compile Database
+        item_svelte_config: Svelte Configuration
         item_language: Language mode
         item_sessions: Live sessions
         item_unsaved: Unsaved tabs
@@ -75,6 +76,8 @@ text:
         language_tip: Select language mode
         server_pyright: pyright
         server_clangd: clangd
+        server_typescript: typescript-language-server
+        server_svelte: svelte-language-server
         ls_waiting: '{0}'
         ls_starting: '{0}: starting'
         ls_indexing: '{0}: indexing {1} of {2}'
@@ -103,6 +106,11 @@ text:
         database_tip: 'Compile database: {0}. Select another.'
         database_findings_tip: 'The .oculus/cpp.yml of this repository has findings, which head the Select Compile Database list:'
         database_none_tip: This repository has no compile database and no .oculus/cpp.yml. Select one.
+        svelte_config_reduced: 'Svelte: reduced mode'
+        svelte_config_reduced_tip: The Svelte and Vite configuration of this repository is not approved, so the Svelte server runs in reduced mode. It does not run the configuration, and it uses its own Svelte, Prettier and preprocessors instead of the repository's. A repository with no svelte package gets the server's own Svelte 4. A rename in a TypeScript file reaches the Svelte files only after the approval. Select to review the files and approve them.
+        svelte_config_trusted: 'Svelte: trusted'
+        svelte_config_trusted_tip: The Svelte and Vite configuration of this repository is approved on this machine, and the Svelte server runs it with the repository's own Svelte, Prettier and preprocessors. Select to take the approval back.
+        svelte_config_trusted_own_tip: The Svelte and Vite configuration of this repository is approved on this machine, and the Svelte server runs it with the repository's own Prettier and preprocessors. The repository has no svelte package, so the server uses its own Svelte 4. Select to take the approval back.
         language_bash: Shell Script
         language_c: C
         language_cmake: CMake

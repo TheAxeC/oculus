@@ -286,6 +286,29 @@ const ROWS: Row[] = [
         }
     },
     {
+        name: 'is one TypeScript server for a ts tab and a js tab of one root on one page, and one Svelte server for two svelte tabs',
+        steps: async ({ relay, spawned, page }) => {
+            open(relay, page.sink, 'lsp:typescript', pageFile('repo', 'a.ts'), 'typescript');
+            open(relay, page.sink, 'lsp:javascript', pageFile('repo', 'b.js'), 'javascript');
+            open(relay, page.sink, 'lsp:svelte', pageFile('repo', 'a.svelte'), 'svelte');
+            open(relay, page.sink, 'lsp:svelte', pageFile('repo', 'b.svelte'), 'svelte');
+            const scripts = () =>
+                spawned.calls
+                    .filter((call) => call.command === '/node')
+                    .map((call) => /node_modules\/([^/]+)\//.exec(call.args[0])?.[1]);
+            // The Svelte server starts after its adapter reads the root's config files from disk,
+            // which a fixed number of turns does not wait for under load; a fourth start would
+            // still show, since the turns go on until three are seen and then once more.
+            for (let turn = 0; turn < 500 && scripts().length < 3; turn += 1) await settle();
+            await settle();
+            expect(scripts().sort()).toEqual([
+                'pyright',
+                'svelte-language-server',
+                'typescript-language-server'
+            ]);
+        }
+    },
+    {
         name: 'is one pyright for two Python tabs of one root on one page',
         steps: async ({ relay, spawned, page }) => {
             open(relay, page.sink, PYTHON, pageFile('repo', 'b.py'), 'python');

@@ -19,12 +19,21 @@
 
 import type * as Monaco from 'monaco-editor';
 import { LspTransport, type TransportHost } from './transport';
-import { Closed, type TextEdit } from './transport/messages';
+import { APPLY_COMMAND, Closed, ORGANIZE, type TextEdit } from './transport/messages';
+import { namedBy } from './transport/edits';
+import { factsForLanguage } from '$lib/data/prose/lsp-servers';
 import { inactiveDecorations, markerOwner, toMarkers } from './markers';
 import type { Peeks } from './peeks';
 import { semanticProvider, type Legend } from './semantic';
 import { Signal } from './signal';
-import type { LspDiagnostic, LspPort, LspServices, LspSymbol, LspSymbols } from './services';
+import type {
+    LspDiagnostic,
+    LspEditOutcome,
+    LspPort,
+    LspServices,
+    LspSymbol,
+    LspSymbols
+} from './services';
 import { pageUri, type Place, type Target } from './uris';
 
 /** The milliseconds a change waits for its end before the tab's symbols are asked again. */
@@ -35,9 +44,6 @@ const PEEK_GRACE_MS = 10_000;
 
 /** How often the peek models no editor shows are swept. */
 const SWEEP_MS = 5_000;
-
-/** The languages whose servers' semantic tokens the page draws. */
-const SEMANTIC_LANGUAGES: readonly string[] = ['c', 'cpp'];
 
 /** What a tab registers its model with. */
 export type Registration = {
@@ -123,6 +129,8 @@ export type HostParts = {
     registerCommand: (id: string, host: LanguageHost) => { dispose(): void };
     /** Told whenever what serves a model may have changed. */
     changed: Signal;
+    /** The text of every document the servers of this language's entry hold, by page address. */
+    held: (language: string) => Map<string, string>;
     now: () => number;
 };
 
@@ -132,6 +140,29 @@ type ServerState = 'starting' | 'ready' | 'indexing' | 'not_found' | 'failed';
 /** The address a registered file has on the channel: its library address, else the page's. */
 function addressOf(reg: Registration): string {
     return reg.library ?? pageUri(reg.place);
+}
+
+/** A code action of the protocol as Monaco's provider answers it. */
+function toAction(one: unknown): Monaco.languages.CodeAction {
+    const action = one as {
+        title: string;
+        kind?: string;
+        isPreferred?: boolean;
+        command?: { title: string; command: string; arguments?: unknown[] };
+    };
+    return {
+        title: action.title,
+        kind: action.kind,
+        isPreferred: action.isPreferred,
+        command:
+            action.command === undefined
+                ? undefined
+                : {
+                      id: action.command.command,
+                      title: action.command.title,
+                      arguments: action.command.arguments
+                  }
+    };
 }
 
 /** The symbols of an answer: the tree, or the flat list of the older form made one. */
@@ -196,6 +227,11 @@ export class LanguageHost {
             : { library: reg.library, name: reg.place.path };
     }
 
+    /** The text this host's transport holds of each document, by page address. */
+    documents(): Map<string, string> {
+        return this.#transport?.documents() ?? new Map<string, string>();
+    }
+
     /** Run a command of the server when its arguments name a document of this host. */
     run(id: string, args: readonly unknown[]): Promise<unknown> | null {
         return this.#transport?.command(id, args) ?? null;
@@ -216,7 +252,9 @@ export class LanguageHost {
         this.#entries.set(model, entry);
         reg.editor.updateOptions({
             'semanticHighlighting.enabled': true,
-            ...(this.language === 'python' ? {} : { formatOnType: true })
+            ...(factsForLanguage(this.language)?.formatOnType === true
+                ? { formatOnType: true }
+                : {})
         });
         if (first) this.#listen();
         this.#attach(entry);
@@ -297,7 +335,18 @@ export class LanguageHost {
         const transport = new LspTransport(this.#port, language, this.#hosting(), this.#parts.now);
         this.#transport = transport;
         this.#client = new this.#parts.ClientClass(transport as unknown as ClientTransport);
-        if (SEMANTIC_LANGUAGES.includes(language)) {
+        const facts = factsForLanguage(language);
+        this.#owned.push(this.#parts.registerCommand(APPLY_COMMAND, this));
+        if (facts?.organizeImports != null) {
+            this.#owned.push(
+                monaco.languages.registerCodeActionProvider(
+                    language,
+                    this.#sourceActions(facts.organizeImports.command),
+                    { providedCodeActionKinds: [ORGANIZE] }
+                )
+            );
+        }
+        if (facts?.semanticTokens === true) {
             const { provider, refresh } = semanticProvider({
                 tokens: async (model) => {
                     try {
@@ -392,6 +441,7 @@ export class LanguageHost {
             peek: (target, page, spelling) => peeks.acquire(services, target, page, spelling),
             drop: (model) => peeks.release(model as Monaco.editor.ITextModel),
             apply: (model, edits) => this.#apply(model as Monaco.editor.ITextModel, edits),
+            applyEdit: (edit) => this.#applyEdit(edit),
             diagnostics: (page, place, items) => {
                 this.#diagnostics.set(page, items);
                 if (place !== null) {
@@ -421,7 +471,7 @@ export class LanguageHost {
                     }
                 }
             },
-            notice: (key) => services.notice(key)
+            notice: (key, ...words) => services.notice(key, ...words)
         };
     }
 
@@ -455,6 +505,49 @@ export class LanguageHost {
         if (reg.library !== undefined) return;
         const { place } = reg;
         this.#parts.services.diagnostics(place.root, place.path, this.language, []);
+    }
+
+    /**
+     * Make the edit a server asked for, through the page, and read again the peek models of the
+     * files it wrote.
+     */
+    async #applyEdit(edit: unknown): Promise<LspEditOutcome> {
+        const { services, peeks } = this.#parts;
+        const outcome = await services.applyEdit(edit, this.#parts.held(this.language));
+        if (outcome.applied) await peeks.refresh(services, namedBy(edit).pages);
+        return outcome;
+    }
+
+    /**
+     * The provider of the source actions the editor asks for by kind, Organize Imports among them.
+     * The Monaco client asks for actions of no kind, so the server's source actions are asked for
+     * here, by the kind the editor wants, and only when the server declared source actions.
+     */
+    #sourceActions(command: string | null): Monaco.languages.CodeActionProvider {
+        return {
+            provideCodeActions: async (model, _range, context) => {
+                const only = context.only;
+                const declared = this.#capabilities.codeActionProvider as
+                    { codeActionKinds?: unknown } | boolean | undefined;
+                const kinds =
+                    typeof declared === 'object' && Array.isArray(declared.codeActionKinds)
+                        ? (declared.codeActionKinds as unknown[])
+                        : [];
+                const offered = kinds.some((kind) => String(kind).startsWith('source'));
+                if (only === undefined || !(only === ORGANIZE || only === 'source')) return null;
+                const transport = this.#transport;
+                if (transport === null || !this.#entries.has(model) || !offered) return null;
+                try {
+                    const actions = await transport.sourceActions(model, only, command);
+                    return {
+                        actions: actions.map((one) => toAction(one)),
+                        dispose: () => undefined
+                    };
+                } catch {
+                    return null;
+                }
+            }
+        };
     }
 
     /** Apply a server's edits to a registered model as one undo stop. */

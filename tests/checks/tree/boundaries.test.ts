@@ -134,11 +134,30 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // server states and the choices the relay sends, and the pane strip's breadcrumb draws the symbols
 // around the caret that the symbols module orders.
 //
+// `data/prose/lsp-servers` is one entry per language server (its languages, its words, its choices
+// and its own commands), which the relay's registry on the server and the page's kit, status bar,
+// palette and tab actions all read, so a server is declared once; `data/prose/lsp-addresses` is
+// the address a file has on a language server channel, which the editor kit and the page's edit
+// of files read the one way; `data/prose/text-edits` is the protocol's text edit applied to a text,
+// which the server's `lsp-edit` and the page's edit of an open tab apply by one rule and whose
+// catalog keys the page words a refusal with; `data/prose/symbol-kinds` names the protocol's symbol
+// kinds, which the palette's `#` list words. `state/sessions/source` is the source tab's state,
+// which a row of that list opens a file in, and `state/system/machine/lsp/workspace-symbols` the
+// rows it draws.
+//
 // `state/client/context` is where the client's stores are wired together, and it names nothing of
 // layer 3: the view registry is a state module, and the page root makes the primitives' tooltip
 // counter beside the client object, so the state row reaches no layer above it.
 const ALLOWED: Record<string, string[]> = {
-    ui: ['ui/**', 'themes/**', 'state/shared/words/text', 'data/prose/markdown'],
+    ui: [
+        'ui/**',
+        'themes/**',
+        'state/shared/words/text',
+        'data/prose/markdown',
+        'data/prose/lsp-servers',
+        'data/prose/lsp-addresses',
+        'data/prose/text-edits'
+    ],
     shell: [
         'shell/**',
         'ui/**',
@@ -156,10 +175,21 @@ const ALLOWED: Record<string, string[]> = {
         'state/workbench/navigation/**',
         'state/system/machine/lsp/lsp.svelte',
         'state/system/machine/lsp/symbols',
+        'state/system/machine/lsp/workspace-symbols',
         'state/sessions/terminals',
-        'data/shapes/shapes'
+        'state/sessions/source',
+        'data/shapes/shapes',
+        'data/prose/lsp-servers',
+        'data/prose/symbol-kinds'
     ],
-    views: ['ui/**', 'state/**', 'views/shared/**', 'data/shapes/shapes'],
+    views: [
+        'ui/**',
+        'state/**',
+        'views/shared/**',
+        'data/shapes/shapes',
+        'data/prose/lsp-servers',
+        'data/prose/text-edits'
+    ],
     state: [
         'state/**',
         'data/model',
@@ -194,7 +224,10 @@ const ALLOWED: Record<string, string[]> = {
         'data/sources/config/catalog/value-rule',
         'data/hub-address',
         'data/prose/languages',
-        'data/prose/literature'
+        'data/prose/literature',
+        'data/prose/lsp-servers',
+        'data/prose/lsp-addresses',
+        'data/prose/text-edits'
     ],
     data: ['data/**'],
     server: ['server/**', 'data/**'],
@@ -378,6 +411,8 @@ const SHELL_STORES = [
     'desktop',
     'schedule',
     'lsp',
+    'lspEdits',
+    'workspaceSymbols',
     'documents'
 ];
 

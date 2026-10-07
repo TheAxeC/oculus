@@ -12,13 +12,21 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The locations a language server answered for Find All References or Find All
-    // Implementations of a source tab's file, as VS Code's References view draws them: the count
-    // line ("<n> results in <m> files"), then a tree of one row per file (its icon, its name, its
-    // folder and its count) with a row per location under it (its line and its text, the match
-    // marked), a press on a location opening its file in a source tab at the line with the word at
-    // the match selected. A library file a server named is a row of its own name; its press opens
-    // the read-only library tab, which says the file is no longer open when the page was reloaded.
+    // Layer 3, view. The locations a language server answered for Find All References, Find All
+    // Implementations, Show Call Hierarchy (the call sites of a symbol) or Show Type Hierarchy (the
+    // types above and below it) of a source tab's file, as VS Code's References view draws them:
+    // the count line ("<n> results in <m> files"), then a tree of one row per file (its icon, its
+    // name, its folder and its count) with a row per location under it (its line and its text, the
+    // match marked), a press on a location opening its file in a source tab at the line with the
+    // word at the match selected. A library file a server named is a row of its own name; its press
+    // opens the read-only library tab, which says the file is no longer open when the page was
+    // reloaded.
+    //
+    // A call or type hierarchy result is a tree of the symbols the server named instead: a row for
+    // each (its name and the server's detail), a press opening the symbol, and the arrow, the arrow
+    // keys and the row's control opening it one level, which asks the server for the next level of
+    // calls or types. The pane's header then holds a button that reads the tree the other way round
+    // (incoming and outgoing calls, supertypes and subtypes).
     //
     // The pane's header holds Refresh, Clear, Clear History and Collapse All. A row's right-click
     // offers Copy, Copy Path and Dismiss, and a right-click on the count line Copy All. A cleared
@@ -42,6 +50,13 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { openReference } from '../../shared/links/source-file';
     import { nameOf } from '$lib/state/sources/fs';
+    import {
+        DIRECTIONS,
+        pickOf,
+        rowsOf,
+        type HierarchyDirection,
+        type RefNode
+    } from '$lib/state/system/machine/lsp/hierarchy';
     import {
         picks,
         searchKey,
@@ -70,6 +85,38 @@
     const lineKey = (file: RefFile, one: RefLine): string =>
         JSON.stringify([file.root, file.path, one.line, one.start]);
 
+    /** The rows of a hierarchy's tree, and the rows the tree's keys read. */
+    const nodes = $derived(held.hierarchy === null ? [] : rowsOf(held.hierarchy.nodes));
+    const nodeRows = $derived(
+        (held.hierarchy?.nodes ?? []).map((node) => ({
+            id: node.id,
+            parent: node.parent,
+            open: node.open
+        }))
+    );
+
+    /** The direction a hierarchy is read the other way round in, and the words of both. */
+    const other = $derived.by((): HierarchyDirection | null => {
+        const way = held.hierarchy?.direction;
+        if (way === undefined) return null;
+        const pair: readonly HierarchyDirection[] =
+            way === 'incoming' || way === 'outgoing' ? DIRECTIONS.calls : DIRECTIONS.types;
+        return pair.find((one) => one !== way) ?? null;
+    });
+
+    function directionWords(way: HierarchyDirection): string {
+        switch (way) {
+            case 'incoming':
+                return t('references.direction_incoming');
+            case 'outgoing':
+                return t('references.direction_outgoing');
+            case 'supertypes':
+                return t('references.direction_supertypes');
+            case 'subtypes':
+                return t('references.direction_subtypes');
+        }
+    }
+
     const rows = $derived(
         held.files.flatMap((file) => [
             { id: key(file), parent: null, open: !closed.includes(key(file)) },
@@ -79,6 +126,7 @@
 
     /** The count line, in VS Code's four forms. */
     const count = $derived.by(() => {
+        if (held.hierarchy !== null) return directionWords(held.hierarchy.direction);
         if (sums.locations === 1 && sums.files === 1) return t('references.count_one');
         if (sums.locations === 1) return t('references.count_one_result', sums.files);
         if (sums.files === 1) return t('references.count_one_file', sums.locations);
@@ -87,9 +135,16 @@
 
     /** The word a search is titled by: what it asked, then the word under the caret. */
     function titleOf(search: RefSearch): string {
-        return search.kind === 'implementations'
-            ? t('references.title_implementations')
-            : t('references.title_references');
+        switch (search.kind) {
+            case 'implementations':
+                return t('references.title_implementations');
+            case 'calls':
+                return t('references.title_calls');
+            case 'types':
+                return t('references.title_types');
+            case 'references':
+                return t('references.title_references');
+        }
     }
 
     const title = $derived(held.search === null ? t('views.references') : titleOf(held.search));
@@ -122,6 +177,24 @@
 
     function open(file: RefFile, one: RefLine): void {
         openReference(client, file, one.line, one.start + 1);
+    }
+
+    function openNode(node: RefNode): void {
+        const at = pickOf(node);
+        openReference(client, at, at.line, at.column);
+    }
+
+    /** The calls the page lets a hierarchy ask the server for, and the file opened when it must. */
+    const opening = {
+        open: (
+            file: { root: string; path: string; library?: string },
+            line: number,
+            column: number
+        ) => openReference(client, file, line, column)
+    };
+
+    function toggleNode(id: string): void {
+        void references.openNode(instance.id, id, opening);
     }
 
     /** Run a search again through the editor that holds its file. */
@@ -193,6 +266,14 @@
             disabled={held.files.length === 0}
             onclick={collapseAll}
         />
+        {#if other !== null}
+            <ToolButton
+                bare
+                label={directionWords(other)}
+                glyph="hierarchy_swap"
+                onclick={() => void references.reverse(instance.id, opening)}
+            />
+        {/if}
     </Toolbar>
 {/snippet}
 
@@ -202,7 +283,7 @@
         data-instance={instance.id}
         onfocusin={() => references.latest(instance.id)}
     >
-        {#if held.search === null || held.files.length === 0}
+        {#if held.search === null || (held.hierarchy === null ? held.files.length : nodes.length) === 0}
             <Empty
                 message={held.history.length === 0
                     ? t('references.empty')
@@ -231,85 +312,126 @@
                 <p class="count" data-references-count>{count}</p>
             </ContextMenu>
             <div class="results">
-                <TreeView label={t('references.results')} {rows} {ontoggle}>
-                    {#snippet children(nav: TreeNav)}
-                        <ul class="files" role="none">
-                            {#each held.files as file (key(file))}
-                                <li
-                                    class="file"
-                                    role="none"
-                                    data-references-file={`${file.root}:${file.path}`}
-                                >
-                                    <ContextMenu
-                                        label={nameOf(shown(file))}
-                                        items={rowMenu()}
-                                        onpick={(id: string) => pickFile(id, file)}
-                                    >
+                {#if held.hierarchy !== null}
+                    <TreeView label={t('references.results')} rows={nodeRows} ontoggle={toggleNode}>
+                        {#snippet children(nav: TreeNav)}
+                            <ul class="files" role="none">
+                                {#each nodes as { node, depth } (node.id)}
+                                    <li role="none" data-references-node={node.id}>
                                         <TreeItem
-                                            label={nameOf(shown(file))}
-                                            id={key(file)}
+                                            label={node.name}
+                                            id={node.id}
                                             {nav}
-                                            level={1}
-                                            file={shown(file)}
-                                            expanded={!closed.includes(key(file))}
-                                            count={file.lines.length}
-                                            badge
-                                            title={t('references.file_title', shown(file))}
-                                            onclick={() => ontoggle(key(file))}
+                                            level={depth + 1}
+                                            {depth}
+                                            expanded={node.open}
+                                            title={t(
+                                                'references.line_title',
+                                                node.library ?? node.path,
+                                                String(node.line)
+                                            )}
+                                            onclick={() => openNode(node)}
                                         >
-                                            {#snippet detail()}{folderOf(shown(file))}{/snippet}
+                                            {#snippet detail()}{node.detail ||
+                                                    nameOf(node.library ?? node.path)}{/snippet}
+                                            {#snippet actions(tabindex: number)}
+                                                <ToolButton
+                                                    bare
+                                                    label={node.open
+                                                        ? t('references.collapse_node')
+                                                        : t('references.expand_node')}
+                                                    glyph="chevron"
+                                                    {tabindex}
+                                                    onclick={() => toggleNode(node.id)}
+                                                />
+                                            {/snippet}
                                         </TreeItem>
-                                    </ContextMenu>
-                                    {#if !closed.includes(key(file))}
-                                        <ul class="lines" role="none">
-                                            {#each file.lines as one (lineKey(file, one))}
-                                                {@const parts = partsOf(one)}
-                                                <li
-                                                    class="line"
-                                                    role="none"
-                                                    data-references-line={`${file.path}:${one.line}`}
-                                                >
-                                                    <ContextMenu
-                                                        label={`${shown(file)}:${String(one.line)}`}
-                                                        items={rowMenu()}
-                                                        onpick={(id: string) =>
-                                                            pickLine(id, file, one)}
+                                    </li>
+                                {/each}
+                            </ul>
+                        {/snippet}
+                    </TreeView>
+                {:else}
+                    <TreeView label={t('references.results')} {rows} {ontoggle}>
+                        {#snippet children(nav: TreeNav)}
+                            <ul class="files" role="none">
+                                {#each held.files as file (key(file))}
+                                    <li
+                                        class="file"
+                                        role="none"
+                                        data-references-file={`${file.root}:${file.path}`}
+                                    >
+                                        <ContextMenu
+                                            label={nameOf(shown(file))}
+                                            items={rowMenu()}
+                                            onpick={(id: string) => pickFile(id, file)}
+                                        >
+                                            <TreeItem
+                                                label={nameOf(shown(file))}
+                                                id={key(file)}
+                                                {nav}
+                                                level={1}
+                                                file={shown(file)}
+                                                expanded={!closed.includes(key(file))}
+                                                count={file.lines.length}
+                                                badge
+                                                title={t('references.file_title', shown(file))}
+                                                onclick={() => ontoggle(key(file))}
+                                            >
+                                                {#snippet detail()}{folderOf(shown(file))}{/snippet}
+                                            </TreeItem>
+                                        </ContextMenu>
+                                        {#if !closed.includes(key(file))}
+                                            <ul class="lines" role="none">
+                                                {#each file.lines as one (lineKey(file, one))}
+                                                    {@const parts = partsOf(one)}
+                                                    <li
+                                                        class="line"
+                                                        role="none"
+                                                        data-references-line={`${file.path}:${one.line}`}
                                                     >
-                                                        <TreeItem
+                                                        <ContextMenu
                                                             label={`${shown(file)}:${String(one.line)}`}
-                                                            id={lineKey(file, one)}
-                                                            {nav}
-                                                            level={2}
-                                                            depth={1}
-                                                            title={t(
-                                                                'references.line_title',
-                                                                shown(file),
-                                                                String(one.line)
-                                                            )}
-                                                            onclick={() => open(file, one)}
+                                                            items={rowMenu()}
+                                                            onpick={(id: string) =>
+                                                                pickLine(id, file, one)}
                                                         >
-                                                            {#snippet words()}
-                                                                <span class="number"
-                                                                    >{one.line}</span
-                                                                >
-                                                                <span class="text"
-                                                                    >{parts.before}<strong
-                                                                        class="match"
-                                                                        >{parts.match}</strong
-                                                                    >{parts.after}</span
-                                                                >
-                                                            {/snippet}
-                                                        </TreeItem>
-                                                    </ContextMenu>
-                                                </li>
-                                            {/each}
-                                        </ul>
-                                    {/if}
-                                </li>
-                            {/each}
-                        </ul>
-                    {/snippet}
-                </TreeView>
+                                                            <TreeItem
+                                                                label={`${shown(file)}:${String(one.line)}`}
+                                                                id={lineKey(file, one)}
+                                                                {nav}
+                                                                level={2}
+                                                                depth={1}
+                                                                title={t(
+                                                                    'references.line_title',
+                                                                    shown(file),
+                                                                    String(one.line)
+                                                                )}
+                                                                onclick={() => open(file, one)}
+                                                            >
+                                                                {#snippet words()}
+                                                                    <span class="number"
+                                                                        >{one.line}</span
+                                                                    >
+                                                                    <span class="text"
+                                                                        >{parts.before}<strong
+                                                                            class="match"
+                                                                            >{parts.match}</strong
+                                                                        >{parts.after}</span
+                                                                    >
+                                                                {/snippet}
+                                                            </TreeItem>
+                                                        </ContextMenu>
+                                                    </li>
+                                                {/each}
+                                            </ul>
+                                        {/if}
+                                    </li>
+                                {/each}
+                            </ul>
+                        {/snippet}
+                    </TreeView>
+                {/if}
             </div>
         {/if}
     </div>

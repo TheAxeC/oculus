@@ -38,7 +38,8 @@
         EditorCommand,
         EditorExtension,
         EditorHandle,
-        EditorOwnAction
+        EditorOwnAction,
+        EditorReach
     } from '$lib/ui/controls/editor/types';
     import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter/gutter';
     import type { EditorOptions } from '$lib/ui/controls/editor/options';
@@ -60,6 +61,8 @@
     type Props = {
         path: string;
         text: string;
+        /** The edits the text was last replaced by, which the editor makes as they are. */
+        reached?: () => EditorReach | null;
         /** The tab instance, which names the editor's model. */
         instance?: string;
         /**
@@ -109,6 +112,7 @@
     let {
         path,
         text,
+        reached,
         instance = 'tab',
         line = 0,
         column = 0,
@@ -224,6 +228,7 @@
             <MonacoEditor
                 bind:this={editor}
                 {text}
+                {reached}
                 {path}
                 indent={indent ?? undefined}
                 {options}

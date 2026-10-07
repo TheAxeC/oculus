@@ -62,9 +62,9 @@ import { stampOf } from './file-changes.ts';
 import { SAVE_MAX_BYTES, keepCopy } from './history.ts';
 
 /** A refusal before or at a file. */
-type Fail = { ok: false; error: OpsRefusal };
+export type Fail = { ok: false; error: OpsRefusal };
 
-const fail = (error: OpsRefusal): Fail => ({ ok: false, error });
+export const fail = (error: OpsRefusal): Fail => ({ ok: false, error });
 
 /** What a preview runs over: the roots, the files never changed and how ripgrep is run. */
 type ReadScope = {
@@ -94,13 +94,13 @@ type ReplaceRequest = {
 };
 
 /** One file read for a replace: where it really is and what it holds. */
-type Loaded = { real: string; bytes: Buffer };
+export type Loaded = { real: string; bytes: Buffer };
 
 /** One match to replace: the bytes it covers in the file and the bytes that take its place. */
 type Splice = { from: number; to: number; text: Buffer };
 
 /** Whether a step answered a refusal rather than its value. */
-function refused(step: object): step is Fail {
+export function refused(step: object): step is Fail {
     return 'ok' in step && step.ok === false;
 }
 
@@ -131,10 +131,11 @@ function endsWithCrlf(bytes: Buffer): boolean {
 /**
  * The file a root's key and a path name, read: its refusal, or where it is and what it holds. A
  * file that is to be written is refused `denied` when its mode locks it, before its bytes are
- * looked at.
+ * looked at. The checks are `outside`, `missing`, `protected`, `denied`, `binary` and `too_large`,
+ * in that order; a file the server may read and write is returned with its bytes.
  */
-function loaded(
-    scope: ReadScope,
+export function readChecked(
+    scope: Pick<ReadScope, 'roots' | 'guarded'>,
     root: string,
     path: string,
     limit: number,
@@ -160,8 +161,20 @@ function loaded(
     } catch {
         return fail('denied');
     }
-    if (hasMarker(bytes.toString('utf8'))) return fail('marker');
     return { real: found.path, bytes };
+}
+
+/** A file read as `readChecked` does, refused `marker` when its text holds the replace marker. */
+function loaded(
+    scope: ReadScope,
+    root: string,
+    path: string,
+    limit: number,
+    writing: boolean
+): Loaded | Fail {
+    const read = readChecked(scope, root, path, limit, writing);
+    if (refused(read)) return read;
+    return hasMarker(read.bytes.toString('utf8')) ? fail('marker') : read;
 }
 
 /** Every match ripgrep finds in a file as it is now, by line and place, or why it could not run. */

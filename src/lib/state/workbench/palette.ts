@@ -11,6 +11,12 @@
 
 import { z } from 'zod';
 import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
+import {
+    LSP_CHOICES,
+    choicesOfLanguage,
+    type LspChoiceCommand,
+    type LspChoiceKind
+} from '../../data/prose/lsp-servers.ts';
 import { filledTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import { feedIdents, nestedStrings } from '../feeds/idents.ts';
 import { pickerLine, type PickRefusal } from '../sources/explorer/acts/folders.ts';
@@ -61,8 +67,7 @@ export type PaletteCommand = {
         | 'tab'
         | 'goto'
         | 'language'
-        | 'interpreter'
-        | 'compile-database'
+        | LspChoiceCommand
         | 'help'
         | 'update'
         | 'workspace'
@@ -295,8 +300,17 @@ export function lineQuery(parsed: ParsedCommand | null): number | null {
     return Number.isSafeInteger(line) && line > 0 ? line : null;
 }
 
-/** The languages whose servers have a compile database to choose. */
-const DATABASE_LANGUAGES = ['c', 'cpp'];
+/**
+ * The commands that list a kind of choice, each available while a server that asks for it serves.
+ */
+function choiceCommands(served: string): PaletteCommand[] {
+    const asked = choicesOfLanguage(served);
+    return (Object.keys(LSP_CHOICES) as LspChoiceKind[]).map((kind) => ({
+        name: LSP_CHOICES[kind].command,
+        hint: LSP_CHOICES[kind].hint,
+        available: asked.includes(kind)
+    }));
+}
 
 /**
  * The command vocabulary and its argument hints, over the current theme and view configuration,
@@ -316,12 +330,7 @@ export function commands(
         { name: 'tab', hint: '<view id>', available: true },
         { name: 'goto', hint: '<project id>', available: true },
         { name: 'language', hint: '<language>', available: source },
-        { name: 'interpreter', hint: '<path>', available: served === 'python' },
-        {
-            name: 'compile-database',
-            hint: '<name>',
-            available: DATABASE_LANGUAGES.includes(served)
-        },
+        ...choiceCommands(served),
         { name: 'help', hint: '', available: false },
         { name: 'update', hint: '', available: true },
         { name: 'workspace', hint: '<workspace>', available: true },

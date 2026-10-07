@@ -16,7 +16,8 @@ export type KeyContext = {
     mac?: boolean;
     /**
      * Whether the page is in the desktop app, which hands the page the keys Chrome keeps for
-     * itself: Cmd+W, Cmd+N, Cmd+F, Ctrl+Tab and Ctrl+Shift+Tab. In a browser they never arrive.
+     * itself: Cmd+W, Cmd+N, Cmd+F, Cmd+T, Ctrl+Tab and Ctrl+Shift+Tab. In a browser they never
+     * arrive.
      */
     app?: boolean;
 };
@@ -57,6 +58,7 @@ export type KeyAction =
     | { kind: 'close-tab' }
     | { kind: 'new-text-file' }
     | { kind: 'find' }
+    | { kind: 'workspace-symbol' }
     | { kind: 'clear-cursor' };
 
 export type KeyResult = { action: KeyAction | null; state: KeyState };
@@ -129,10 +131,11 @@ function savesFile(event: KeyEventLike, context: KeyContext): boolean {
 
 /**
  * The key only the desktop app delivers: Cmd+W closes the active tab of the focused pane, Cmd+N
- * opens a new text file in it, and Cmd+F opens the find bar. Cmd and the letter alone, the letter
- * read from the physical key; each answers with a field focused, as the editor is one, and under no
- * overlay. A view that takes Cmd+F itself (Monaco, the terminal) calls preventDefault first, and
- * then the key is not the page's.
+ * opens a new text file in it, Cmd+F opens the find bar, and Cmd+T opens the palette on the symbols
+ * of the workspace (`#`). Cmd and the letter alone, the letter read from the physical key; each
+ * answers with a field focused, as the editor is one, and under no overlay. A view that takes
+ * Cmd+F itself (Monaco, the terminal) calls preventDefault first, and then the key is not the
+ * page's.
  */
 function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
     if (context.app !== true || event.defaultPrevented === true) return null;
@@ -144,6 +147,7 @@ function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
     if (event.code === 'KeyW') return { kind: 'close-tab' };
     if (event.code === 'KeyN') return { kind: 'new-text-file' };
     if (event.code === 'KeyF') return { kind: 'find' };
+    if (event.code === 'KeyT') return { kind: 'workspace-symbol' };
     return null;
 }
 

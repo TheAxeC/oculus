@@ -11,6 +11,9 @@ import { describe, expect } from 'vitest';
 import { it } from '../../fixtures/scratch.ts';
 import {
     hit,
+    lspEdit,
+    lspEditPost,
+    lspFile,
     queryOf,
     records,
     replacePost,
@@ -50,5 +53,24 @@ describe('taking a replace back', () => {
             join(w.hub, 'a.txt'),
             join(w.hub, 'b.txt')
         ]);
+    });
+});
+
+describe('taking an lsp-edit back', () => {
+    it('puts both files back to their texts before the edit and records the undo as an lsp-edit that can be taken back', async () => {
+        const w = replaceWorld({ 'a.txt': 'foo a\n', 'b.txt': 'b foo\n' });
+        const answer = await lspEditPost(w, [
+            lspFile('a.txt', 'foo a\n', [lspEdit([0, 0], [0, 3], 'bar')]),
+            lspFile('b.txt', 'b foo\n', [lspEdit([0, 2], [0, 5], 'bar')])
+        ]);
+        expect(answer.body.ok).toBe(true);
+        const [made] = records(w);
+        expect([text(w, 'a.txt'), text(w, 'b.txt')]).toEqual(['bar a\n', 'b bar\n']);
+        expect((await undo(w, made.at)).status).toBe(200);
+        expect([text(w, 'a.txt'), text(w, 'b.txt')]).toEqual(['foo a\n', 'b foo\n']);
+        const [reverse] = records(w);
+        expect(reverse).toMatchObject({ field: 'lsp-edit', undoes: made.at, undo: 'file' });
+        expect((await undo(w, reverse.at)).status).toBe(200);
+        expect([text(w, 'a.txt'), text(w, 'b.txt')]).toEqual(['bar a\n', 'b bar\n']);
     });
 });

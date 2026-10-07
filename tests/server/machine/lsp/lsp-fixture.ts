@@ -18,7 +18,7 @@ import type { Sink } from '../../../../src/lib/server/core/channels.ts';
 import type { LspRpc } from '../../../../src/lib/data/model/index.ts';
 import type { LibraryRules } from '../../../../src/lib/server/machine/lsp/library/rules.ts';
 import { Relay } from '../../../../src/lib/server/machine/lsp/relay.ts';
-import type { Spawn } from '../../../../src/lib/server/machine/lsp/process.ts';
+import type { Spawn } from '../../../../src/lib/server/machine/lsp/held/process.ts';
 import { createServers } from '../../../../src/lib/server/machine/lsp/servers.ts';
 import { scratchDir } from '../../../fixtures/scratch.ts';
 
@@ -148,7 +148,9 @@ export function frame(channel: string, payload: object): string {
 }
 
 /** The scratch root of the suites: a folder, real, holding the files given. */
-export function plantRoot(files: string[] = ['a.py', 'b.py', 'x.c', 'y.cpp']): string {
+export function plantRoot(
+    files: string[] = ['a.py', 'b.py', 'x.c', 'y.cpp', 'a.ts', 'b.js', 'a.svelte', 'b.svelte']
+): string {
     const dir = realpathSync(scratchDir('oculus-lsp-root-'));
     for (const file of files) {
         mkdirSync(join(dir, file, '..'), { recursive: true });
@@ -167,16 +169,22 @@ export function makeRelay(options: {
     lspFolder?: () => string;
     /** What decides which files outside every root may be named to a page; none by default. */
     library?: () => LibraryRules;
+    /** The oculus folder and the node program the servers are found under; stubs by default. */
+    own?: { oculus: string; node: string };
 }): Relay {
     const home = realpathSync(scratchDir('oculus-lsp-home-'));
     const relay = new Relay({
-        oculus: '/oculus',
-        node: '/node',
+        oculus: options.own?.oculus ?? '/oculus',
+        node: options.own?.node ?? '/node',
         roots: options.roots,
         lspFolder: options.lspFolder ?? (() => join(home, 'lsp')),
         approvals: () => join(home, 'approvals.json'),
         spawn: options.spawn,
-        servers: createServers({ oculus: '/oculus', node: '/node', exists: () => true }),
+        servers: createServers({
+            oculus: options.own?.oculus ?? '/oculus',
+            node: options.own?.node ?? '/node',
+            exists: () => true
+        }),
         run: options.run ?? (() => Promise.resolve(null)),
         exists: options.exists ?? (() => false),
         library: options.library

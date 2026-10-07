@@ -28,7 +28,7 @@ const ROWS: Row[] = [
     {
         name: 'starts each server and the interpreter probe with an argument array, the root path one argument whatever it holds',
         steps: async () => {
-            const dir = awkwardRoot(['a.py', 'x.c', '.venv/bin/python']);
+            const dir = awkwardRoot(['a.py', 'x.c', 'a.ts', 'a.svelte', '.venv/bin/python']);
             const spawned = stubSpawn();
             const probes: { command: string; args: string[] }[] = [];
             const relay = makeRelay({
@@ -43,10 +43,17 @@ const ROWS: Row[] = [
             const page = { send: () => Promise.resolve(), close: () => undefined };
             open(relay, page, 'lsp:python', pageFile('repo', 'a.py'), 'python');
             open(relay, page, 'lsp:c', pageFile('repo', 'x.c'), 'c');
+            open(relay, page, 'lsp:typescript', pageFile('repo', 'a.ts'), 'typescript');
+            open(relay, page, 'lsp:svelte', pageFile('repo', 'a.svelte'), 'svelte');
             // The venv's own interpreter is asked only once approved, so the one probe made is the
             // PATH's, by name; a typed or approved path is a single program argument as well.
-            for (let turn = 0; turn < 30 && spawned.calls.length < 2; turn += 1) await settle();
-            expect(spawned.calls.map((call) => call.command).sort()).toEqual(['/node', 'clangd']);
+            for (let turn = 0; turn < 30 && spawned.calls.length < 4; turn += 1) await settle();
+            expect(spawned.calls.map((call) => call.command).sort()).toEqual([
+                '/node',
+                '/node',
+                '/node',
+                'clangd'
+            ]);
             for (const call of spawned.calls) {
                 expect(Array.isArray(call.args)).toBe(true);
                 expect(call.cwd).toBe(dir);

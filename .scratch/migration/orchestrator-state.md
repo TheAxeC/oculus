@@ -39,21 +39,6 @@ dispatch:   # steps in flight, up to six (Z632)
   reviewer_report: agents/reviews/D45-refuter.md (aafbba4d13fda558e, claude-opus-5-5, 285,900 tokens, 188 tool uses, 25.9 min); over round 1: afa4681f60c7525d3, claude-opus-5-5, 121,820 tokens, 153 tool uses, 38.6 min
   landing: not-started
   round: 2 (round 1 sent 2026-10-07: agents/briefs/D45-round1.md, 22 items; round 2 sent 2026-10-07 under the round cap's exception, Z696: agents/briefs/D45-round2.md, 12 items)
-- step: D23b
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: adf9011378450f02a (builder, launched 2026-10-07)
-  worktree: .agents/worktrees/D23b
-  base: 8d9cdd60
-  launched: 2026-10-07
-  report: agents/reviews/D23b-report.md
-  brief_check: agents/reviews/D23b-brief-check.md (a87b263e7d9067812, claude-opus-5-5, 231,512 tokens, 94 tool uses, 13.2 min)
-  shared_paths: with D45: src/lib/shell/keys/keys.ts and workbench-keys.svelte.ts (each adds its own bindings; D23b moves no file D45 edits), src/lib/views/sources/source/language/ (D45 the LaTeX files, D23b lsp.ts), config/text/statusbar.yml and app.yml (different keys), DESIGN.md:571-572, HELP.md, docs/views.md and docs/window.md (different rows and lines); with PR4: DESIGN.md:570-574 and docs/window.md:7; sentence-level edits in different places, whichever lands second carries the other's text; with D45 also `src/lib/state/sessions/source.svelte.ts`, `src/lib/views/sources/source/Source.svelte`, `src/lib/ui/controls/editor/{Editor.svelte,commands.ts,types.ts,chords.ts}` (the review over round 1, finding 6): the second of D23b and D45 to land merges them at its landing (Z694)
-  builder_usage: 140,021 tokens, 148 tool uses, 28.2 min before Z687; 313,076 tokens, 896 tool uses, 247.6 min in all (claude-sonnet-5-5); round 1: 334,314 tokens, 168 tool uses, 73.2 min; round 2: 287,265 tokens, 120 tool uses, 54.2 min
-  reviewer_report: agents/reviews/D23b-refuter.md (a4154cbe655a3b836, claude-opus-5-5, 138,932 tokens, 133 tool uses, 23.8 min); over round 1: a12a7cba3671b22e6, claude-opus-5-5, 255,821 tokens, 86 tool uses, 17.9 min; over round 2: a5cfe6049df8286b5, claude-opus-5-5, running
-  landing: not-started
-  round: 2 (round 1 sent 2026-10-07: agents/briefs/D23b-round1.md, 16 items; round 2 sent 2026-10-07 under the round cap's exception, Z694: agents/briefs/D23b-round2.md, 9 items)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -226,6 +211,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-07 13:15. D23b landed (rename, code actions, workspace symbols, call and type hierarchy, and the TypeScript and Svelte servers; booking in plan.md; `agents/reviews/D23b-landing.md`) with seven fixes at landing, the review over round 2's six findings and the lifetime row that read the Svelte spawn too early under load. No open item. In flight: D45 (its review over round 2 back). Next: D45's landing with its findings fixed at landing; orchestration then stops for Axel, who has not given leave to go on.
 - 2026-10-07 07:30. PR4 landed (Present's presenter screen; booking in plan.md; `agents/reviews/PR4-landing.md`) with six fixes at landing, five from the review over round 1 (Z689 among them) and one from its look on TEST. In flight: D45 and D23b (builders running). Every queued step waits on D45, D23b or Axel's ruling Z681. Next: D23b's and D45's reports, their reviews and landings.
 - 2026-10-07 04:20. D23c landed (library definitions open read-only, the symbol selected on open; booking in plan.md; `agents/reviews/D23c-landing.md`) with Z679, the read.ts comment, the report's timing and G2 and G3 fixed at landing, and one fix from its look on a scratch oculus: a tab over a served root's file passed an empty library address and so had no language features. In flight: none. Next: prepare PR4, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-07 03:30. PR3 landed (the Present view edits and generates decks; booking in plan.md; `agents/reviews/PR3-landing.md`) with the merge conflicts, R1 to R6, Z675 and four fixes from its look on a scratch oculus fixed at landing. D23c reviewed over round 1, all 14 items closed; Z679 in automode. In flight: D23c (lands next). Next: land D23c, then prepare PR4, D45, X3e, M8, D43, D23b and D33 into the free slots.

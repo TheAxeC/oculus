@@ -201,6 +201,24 @@ export type LspDatabase = {
     folder: string;
 };
 
+/**
+ * What a reader approves for a root: the interpreter at a path, or the text of the repository's
+ * own Svelte and Vite configuration files.
+ */
+export type LspApproval = { kind: 'interpreter'; path: string } | { kind: 'config'; key: string };
+
+/**
+ * The repository configuration a language server would run, and whether it is approved: `files`
+ * are the configuration files' paths (relative to the root, absolute above it), `approved` is
+ * whether their present text is, `key` is the key that text is approved under (an approval names
+ * the key the list showed) and `svelte` is whether the repository has a `svelte` package, which a
+ * trusted Svelte server then uses in place of its own.
+ */
+export type LspConfig = { files: string[]; approved: boolean; key: string; svelte: boolean };
+
+/** A file as the page names it: a served root's key and the path under it. */
+export type LspPlace = { root: string; path: string };
+
 /** A page's message to the relay, besides the JSON-RPC ones. */
 export type LspToServer =
     | { oculus: 'restart'; root: string }
@@ -208,12 +226,22 @@ export type LspToServer =
     | { oculus: 'output_off'; root: string }
     | { oculus: 'choices'; root: string }
     | { oculus: 'choose'; root: string; interpreter?: string; database?: string }
-    | { oculus: 'approve'; root: string; interpreter: string }
+    /** Approve what a repository would run: its interpreter or its Svelte and Vite config. */
+    | { oculus: 'approve'; root: string; approval: LspApproval }
+    /** Take an approval back; the server that runs on it restarts without it. */
+    | { oculus: 'revoke'; root: string; approval: { kind: 'config' } }
     /**
      * Read a library file: `uri` is the `oculus-lib:` address a language server's answer gave this
      * page, and `root` the root key of the document the request that got it was made for.
      */
-    | { oculus: 'read'; root: string; uri: string };
+    | { oculus: 'read'; root: string; uri: string }
+    /**
+     * On the channel `lsp:workspace`, which no document is on: every file the page holds open in a
+     * tab, whatever its language, sent whole each time the set changes.
+     */
+    | { oculus: 'held'; files: LspPlace[] }
+    /** On the same channel: which of these files another page holds open in a tab. */
+    | { oculus: 'held_ask'; id: number; files: LspPlace[] };
 
 /** The relay's message to a page, besides the JSON-RPC ones. */
 export type LspToPage =
@@ -232,13 +260,16 @@ export type LspToPage =
     | {
           oculus: 'choices';
           root: string;
-          interpreters: LspInterpreter[];
+          /** Each list and choice is present for the server that asks for it. */
+          interpreters?: LspInterpreter[];
           /** The path of the interpreter in force, null when there is none. */
-          interpreter: string | null;
-          databases: LspDatabase[];
+          interpreter?: string | null;
+          databases?: LspDatabase[];
           /** The key of the database in force, null when there is none. */
-          database: string | null;
-          findings: { file: string; field: string; message: string }[];
+          database?: string | null;
+          findings?: { file: string; field: string; message: string }[];
+          /** The configuration a Svelte server would run, with the approval it is held under. */
+          config?: LspConfig;
       }
     | { oculus: 'refused'; root: string; code: LspRefusal }
     | {
@@ -253,7 +284,9 @@ export type LspToPage =
       }
     /** The answer to a `read`: the file's text, or why it may not be read. */
     | { oculus: 'file'; root: string; uri: string; text: string }
-    | { oculus: 'file'; root: string; uri: string; code: LspReadRefusal };
+    | { oculus: 'file'; root: string; uri: string; code: LspReadRefusal }
+    /** The answer to a `held_ask`: those of its files that another page holds open. */
+    | { oculus: 'held_answer'; id: number; files: LspPlace[] };
 
 /** A JSON-RPC message of the protocol, carried as the payload of a frame. */
 export type LspRpc = {

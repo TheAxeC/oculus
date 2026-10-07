@@ -59,7 +59,10 @@ type Options = {
     saveSource: () => void;
     /** Whether the command modifier is Cmd (macOS) and not Ctrl. */
     mac: boolean;
-    /** Whether the page is in the desktop app, which delivers Cmd+W, Cmd+N, Cmd+F and Ctrl+Tab. */
+    /**
+     * Whether the page is in the desktop app, which delivers Cmd+W, Cmd+N, Cmd+F, Cmd+T and
+     * Ctrl+Tab.
+     */
     app?: boolean;
     /** Open the find bar of the app's window. */
     find?: () => void;
@@ -216,6 +219,9 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         } else if (action.kind === 'find') {
             clearCursor();
             options.find?.();
+        } else if (action.kind === 'workspace-symbol') {
+            clearCursor();
+            options.openPalette('#');
         } else if (action.kind === 'new-session') {
             clearCursor();
             options.composeIn(pageOf());

@@ -4,7 +4,7 @@
 // (../choices.ts) and the approvals file (server/machine/approvals/approvals.ts).
 
 import { approveInterpreter, isInterpreterApproved } from '../../approvals/approvals.ts';
-import { chosenFor } from '../choices.ts';
+import { chosenFor, notFound } from '../choices.ts';
 import type { Adapter, RootEnv, Setup } from '../servers.ts';
 import { interpretersFor, type Interpreters } from './interpreter.ts';
 
@@ -35,27 +35,13 @@ export const pyrightAdapter: Adapter = {
             fallbackFlags: []
         };
         const launch = entry.launch(setup);
-        if (launch === null) {
-            return {
-                ok: false,
-                state: 'not_found',
-                code: 'not_found',
-                program: entry.program,
-                note: `${entry.program} is not installed under the oculus folder`
-            };
-        }
+        if (launch === null) return notFound(entry, ' under the oculus folder');
         return { ok: true, setup, launch, note };
     },
 
     async choices(env) {
         const found = await interpreters(env);
-        return {
-            interpreters: found.list,
-            interpreter: found.inForce,
-            databases: [],
-            database: null,
-            findings: []
-        };
+        return { interpreters: found.list, interpreter: found.inForce };
     },
 
     async choose(env, message) {
@@ -79,12 +65,16 @@ export const pyrightAdapter: Adapter = {
     },
 
     async approve(env, message) {
-        const listed = (await interpreters(env)).list.find(
-            (one) => one.path === message.interpreter
-        );
-        if (listed?.found !== 'venv') return { ok: true, changed: false };
+        if (message.approval.kind !== 'interpreter') return { ok: true, apply: null };
+        const path = message.approval.path;
+        const listed = (await interpreters(env)).list.find((one) => one.path === path);
+        if (listed?.found !== 'venv') return { ok: true, apply: null };
         const done = approveInterpreter(env.approvals, env.root, listed.path);
-        return { ok: done.ok, changed: done.ok };
+        return { ok: done.ok, apply: done.ok ? 'configuration' : null };
+    },
+
+    revoke() {
+        return { ok: true, apply: null };
     },
 
     async settings(env, setup) {

@@ -1,8 +1,10 @@
 <script lang="ts">
-    // Layer 3, shell. The status bar's three items of a language server, drawn for the source tab
-    // on screen while a server serves its file (the tab says so in `status.served`): the server's
-    // state for any served language, the Python interpreter for a Python file, and the compile
-    // database for a C or C++ file. Each is one fact, as VS Code's status bar draws them.
+    // Layer 3, shell. The status bar's items of a language server, drawn for the source tab on
+    // screen while a server serves its file (the tab says so in `status.served`): the server's
+    // state for any served language, and an item for each kind of choice its entry in
+    // data/prose/lsp-servers.ts asks for: the Python interpreter, the compile database of a C or
+    // C++ file, and the approval of a Svelte repository's configuration. Each is one fact, as VS
+    // Code's status bar draws them.
     //
     // The server item reads starting, indexing with its count, ready, not found or failed, and its
     // press opens a menu of Restart Language Server and Show Language Server Output, which the tab
@@ -11,13 +13,16 @@
     // configuration's name or the database's folder, as `build/debug`, or `No compile database`;
     // a press on either opens the palette on that choice's list. While the repository's
     // `.oculus/cpp.yml` has findings the compile database item is in the warning tone and its
-    // tooltip lists them. The choices of the tab's root are
-    // asked of the relay once its server has said anything, and arrive again after each choice.
+    // tooltip lists them. The Svelte item reads reduced mode while the repository's configuration
+    // is not approved, in the warning tone, and trusted once it is; a press on it opens the list
+    // that approves or takes the approval back. The choices of the tab's root are asked of the
+    // relay once its server has said anything, and arrive again after each choice.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import type { ItemsProps } from './status-items';
+    import { factsForLanguage } from '$lib/data/prose/lsp-servers';
     import {
         databaseInForce,
         findingLine,
@@ -37,8 +42,9 @@
     const served = $derived(status.served);
     const server = $derived(served === null ? null : lsp.server(served.root, served.language));
     const choices = $derived(served === null ? null : lsp.choices(served.root, served.language));
-    const python = $derived(served?.language === 'python');
-    const name = $derived(python ? t('statusbar.server_pyright') : t('statusbar.server_clangd'));
+    const facts = $derived(served === null ? undefined : factsForLanguage(served.language));
+    const asks = $derived(facts?.choices ?? []);
+    const name = $derived(facts === undefined ? '' : t(facts.words.name));
     const where = $derived(served?.root ?? '');
 
     // The relay answers a root's choices on request, and only for a root it holds a server of.
@@ -114,6 +120,15 @@
             : t('statusbar.interpreter_unapproved_tip', interpreter.path);
     });
 
+    /** Whether the repository's Svelte and Vite configuration is approved on this machine. */
+    const approved = $derived(choices?.config?.approved === true);
+    const configTip = $derived.by(() => {
+        if (!approved) return t('statusbar.svelte_config_reduced_tip');
+        return choices?.config?.svelte === true
+            ? t('statusbar.svelte_config_trusted_tip')
+            : t('statusbar.svelte_config_trusted_own_tip');
+    });
+
     /** The compile database in force, by its name. */
     const database = $derived(databaseInForce(choices));
     /** The findings of the repository's `.oculus/cpp.yml`, which the item's tone and tip say. */
@@ -145,7 +160,7 @@
             />
         </span>
     {/if}
-    {#if python && shown('interpreter')}
+    {#if asks.includes('interpreter') && shown('interpreter')}
         <span data-status="interpreter">
             <ToolButton
                 label={interpreterWords}
@@ -156,7 +171,7 @@
             />
         </span>
     {/if}
-    {#if !python && shown('compile_database')}
+    {#if asks.includes('database') && shown('compile_database')}
         <span data-status="compile_database">
             <ToolButton
                 label={database === null ? t('statusbar.database_none') : database.name}
@@ -165,6 +180,20 @@
                 status
                 warning={findings.length > 0}
                 onclick={() => onpalette(':compile-database ')}
+            />
+        </span>
+    {/if}
+    {#if asks.includes('config') && shown('svelte_config')}
+        <span data-status="svelte_config">
+            <ToolButton
+                label={approved
+                    ? t('statusbar.svelte_config_trusted')
+                    : t('statusbar.svelte_config_reduced')}
+                glyph="svelte_config"
+                title={configTip}
+                status
+                warning={!approved && choices !== null}
+                onclick={() => onpalette(':svelte-config ')}
             />
         </span>
     {/if}

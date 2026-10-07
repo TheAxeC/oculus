@@ -21,6 +21,9 @@ import {
 import { CATALOGS, LOCAL_NAME } from '../../../src/lib/state/system/config/config-files.ts';
 import { SETTINGS_MESSAGES } from '../../../src/lib/state/system/config/messages.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
+import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
+import { LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
+import { symbolKindName } from '../../../src/lib/data/prose/symbol-kinds.ts';
 import { registerAll, registerApps, registerCollections } from '../../../src/routes/views.ts';
 import { fixtureApp } from '../../fixtures/entities-fixture.ts';
 import { recordedKinds } from '../../fixtures/kinds.ts';
@@ -42,6 +45,16 @@ beforeEach(() => {
         fixtureApp({ name: 'kept', kept: true })
     ]);
 });
+
+/** Each language server's entry once, read through the languages they serve. */
+const LSP_SERVER_LIST = [
+    ...new Set(SERVED_LANGUAGES.flatMap((language) => factsForLanguage(language) ?? []))
+];
+
+/** Every name a symbol kind is worded by: the protocol's kinds 1 to 26 and `symbol` for others. */
+const SYMBOL_KIND_WORDS = (): string[] => [
+    ...new Set(Array.from({ length: 27 }, (_, kind) => symbolKindName(kind)))
+];
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'src');
 
@@ -199,6 +212,48 @@ const COMPUTED_PREFIXES = [
             ['M', 'A', 'D', 'R', 'C', '?', 'U', 'UU', 'AA', 'DD', 'AU', 'UA', 'DU', 'UD'].map(
                 (status) => statusWordKey(status)
             )
+    },
+    {
+        // A language server's labels are the catalog keys its entry in data/prose/lsp-servers.ts
+        // holds, so an entry added there without its words fails here: its name in the status bar
+        // and in the title of its output tab, its Restart and Show Output actions, and the action
+        // of each choice it asks for.
+        file: 'lib/shell/status/LanguageItems.svelte',
+        start: 't(facts.words.name',
+        keys: () => LSP_SERVER_LIST.map((server) => server.words.name)
+    },
+    {
+        file: 'lib/views/sources/source/language/lsp.ts',
+        start: 't(facts.words.name',
+        keys: () => LSP_SERVER_LIST.map((server) => server.words.name)
+    },
+    {
+        file: 'lib/views/sources/source/language/lsp.ts',
+        start: 't(facts.words.restart',
+        keys: () => LSP_SERVER_LIST.map((server) => server.words.restart)
+    },
+    {
+        file: 'lib/views/sources/source/language/lsp.ts',
+        start: 't(facts.words.output',
+        keys: () => LSP_SERVER_LIST.map((server) => server.words.output)
+    },
+    {
+        file: 'lib/views/sources/source/language/lsp.ts',
+        start: 't(facts.words.choice',
+        keys: () => LSP_SERVER_LIST.flatMap((server) => Object.values(server.words.choice))
+    },
+    {
+        // The notice that says why an edit a language server asked for was not made is one of the
+        // list in data/prose/text-edits.ts.
+        file: 'lib/views/sources/source/language/lsp.ts',
+        start: 't(`source.${key}`',
+        keys: () => LSP_EDIT_NOTICES.map((notice) => `source.${notice}`)
+    },
+    {
+        // A symbol of the palette's `#` list is worded by its kind, the protocol's own list.
+        file: 'lib/shell/keys/rows/SymbolRows.svelte',
+        start: 't(`app.palette.symbol_',
+        keys: () => SYMBOL_KIND_WORDS().map((name) => `app.palette.symbol_${name}`)
     }
 ] as const;
 

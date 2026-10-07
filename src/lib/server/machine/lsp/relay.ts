@@ -28,13 +28,14 @@
 // when the page chooses.
 
 import type { watch } from 'node:fs';
-import type { LspRpc, LspToPage, LspToServer } from '../../../data/model/index.ts';
+import type { LspRpc, LspToPage } from '../../../data/model/index.ts';
 import type { Sink } from '../../core/channels.ts';
 import type { ChangeLog } from '../../core/changes.ts';
 import type { Root } from '../../files/files.ts';
-import { clangdAdapter } from './clangd/adapter.ts';
-import { applyApprove, applyChoose, sendChoices } from './choices.ts';
+import { WORKSPACE_LANGUAGE } from '../../../data/prose/lsp-servers.ts';
 import { adoptHeld, changeDocument, closeDocument, openingTarget } from './held/documents.ts';
+import { workspaceMessage } from './held/elsewhere.ts';
+import { handleOculus, heldOf, type OculusContext } from './held/oculus.ts';
 import {
     Held,
     LINGER_MS,
@@ -48,27 +49,33 @@ import {
     type Session
 } from './held/held.ts';
 import { libraryAddresses, libraryFile, type LibraryContext } from './library/pages.ts';
-import { readLibrary } from './library/read.ts';
 import type { LibraryRules } from './library/rules.ts';
 import { Library } from './library/tokens.ts';
-import { pyrightAdapter } from './pyright/adapter.ts';
 import type { Run } from './pyright/interpreter.ts';
-import { spawnChild, type Spawn } from './process.ts';
+import { spawnChild, type Spawn } from './held/process.ts';
 import {
     createServers,
     initializeParams,
-    type Adapter,
     type Prepared,
     type RootEnv,
     type ServerEntry,
-    type ServerId,
     type Servers,
     type Setup
 } from './servers.ts';
-import { normal, servedRoots, toPage, toServer, type Mapper, type ServedRoot } from './uris.ts';
 import {
+    normal,
+    parsePageUri,
+    servedRoots,
+    toPage,
+    toServer,
+    type Mapper,
+    type ServedRoot
+} from './uris.ts';
+import {
+    HIERARCHY,
     LSP_PREFIX,
     addressOf,
+    editAddress,
     isRecord,
     languageOf,
     readFrame,
@@ -80,9 +87,6 @@ import {
 const METHOD_NOT_FOUND = -32601;
 const INVALID_PARAMS = -32602;
 const REQUEST_CANCELLED = -32800;
-
-/** What each registry entry needs of a root. */
-const ADAPTERS: Record<ServerId, Adapter> = { pyright: pyrightAdapter, clangd: clangdAdapter };
 
 /** How long the served roots are remembered between two messages. */
 const ROOTS_MS = 1000;
@@ -176,16 +180,26 @@ export class Relay {
         if (!this.#canWrite(sink) || frame.payload === null) return true;
         const language = languageOf(frame.channel);
         const entry = language === null ? undefined : this.#servers.forLanguage(language);
-        if (language === null || entry === undefined) return true;
+        if (language === null || (entry === undefined && language !== WORKSPACE_LANGUAGE)) {
+            return true;
+        }
         const page = this.#page(sink);
         let session = page.sessions.get(frame.channel);
         if (session === undefined) {
             session = { version: 0, capabilities: {} };
             page.sessions.set(frame.channel, session);
         }
+        if (entry === undefined) {
+            workspaceMessage(this.#pages.values(), page, this.#roots(), frame.payload, (payload) =>
+                this.#send(page, frame.channel, payload)
+            );
+            return true;
+        }
         const payload: Inbound = frame.payload;
         if (payload.kind === 'oculus') {
-            this.#oculus(page, frame.channel, entry, payload.message).catch(() => undefined);
+            handleOculus(this.#oculusContext(), page, frame.channel, entry, payload.message).catch(
+                () => undefined
+            );
         } else {
             this.#rpc(page, frame.channel, language, entry, session, payload.message);
         }
@@ -283,7 +297,8 @@ export class Relay {
                 opened: new Map(),
                 outputs: new Map(),
                 stranded: new Map(),
-                library: new Library()
+                library: new Library(),
+                tabs: new Set()
             };
             this.#pages.set(sink, page);
         }
@@ -426,7 +441,7 @@ export class Relay {
                 closeDocument(page, message.params);
                 return;
             default:
-                this.#route(page, channel, message);
+                this.#route(page, channel, entry, message);
         }
     }
 
@@ -457,13 +472,18 @@ export class Relay {
         }
     }
 
-    /** A request or notification that names a document: routed to the server the document is on. */
-    #route(page: Page, channel: string, message: LspRpc): void {
+    /**
+     * A request or notification that names a document: routed to the server the document is on. A
+     * request about the workspace (its symbols) and a follow-up of a hierarchy item name a root and
+     * a file that may be open in no tab, and go to the server of that root.
+     */
+    #route(page: Page, channel: string, entry: ServerEntry, message: LspRpc): void {
         const method = message.method ?? '';
         const isRequest = message.id !== undefined && message.id !== null;
         const address = addressOf(method, message.params);
         const open = address === null ? undefined : page.docs.get(address);
-        if (address === null || open === undefined) {
+        const held = open?.held ?? this.#heldFor(page, entry, method, message.params, address);
+        if (held === undefined) {
             if (isRequest) {
                 const text =
                     address === null ? `${method} names no document` : 'the document is not open';
@@ -477,8 +497,8 @@ export class Relay {
             }
             return;
         }
-        const params = toServer(message.params, this.#roots(), (uri) =>
-            libraryFile(page, open.held, uri)
+        const params = toServer(this.#asked(method, message.params), this.#roots(), (uri) =>
+            libraryFile(page, held, uri)
         );
         if (params === null) {
             if (isRequest)
@@ -486,11 +506,11 @@ export class Relay {
             return;
         }
         if (!isRequest) {
-            open.held.notify({ jsonrpc: '2.0', method, params: params.value });
+            held.notify({ jsonrpc: '2.0', method, params: params.value });
             return;
         }
         this.#next += 1;
-        const accepted = open.held.request({
+        const accepted = held.request({
             jsonrpc: '2.0',
             id: this.#next,
             method,
@@ -504,9 +524,37 @@ export class Relay {
             page,
             channel,
             id: message.id ?? null,
-            held: open.held,
-            address
+            held,
+            address: address ?? ''
         });
+    }
+
+    /**
+     * The server a request that names no open document is for: the one of the root a
+     * `workspace/symbol` names, or of the file a hierarchy follow-up's item names.
+     */
+    #heldFor(
+        page: Page,
+        entry: ServerEntry,
+        method: string,
+        params: unknown,
+        address: string | null
+    ): Held | undefined {
+        if (method === 'workspace/symbol') {
+            const key = isRecord(params) && typeof params.root === 'string' ? params.root : null;
+            return key === null ? undefined : this.#heldOf(page, entry, key).held;
+        }
+        if (!HIERARCHY.includes(method) || address === null) return undefined;
+        const named = parsePageUri(address);
+        return named === null ? undefined : this.#heldOf(page, entry, named.root).held;
+    }
+
+    /** What a request carries to its server: `workspace/symbol` without the root that routed it. */
+    #asked(method: string, params: unknown): unknown {
+        if (method !== 'workspace/symbol' || !isRecord(params)) return params;
+        const sent = { ...params };
+        delete sent.root;
+        return sent;
     }
 
     /**
@@ -570,70 +618,17 @@ export class Relay {
     // ------------------------------------------------------------------ the oculus messages
 
     /** The server of a root key the page named, and the root. */
-    #heldOf(
-        page: Page,
-        entry: ServerEntry,
-        key: string
-    ): { root: ServedRoot | undefined; held: Held | undefined } {
-        const root = this.#roots().find((one) => one.key === key);
-        return {
-            root,
-            held: root === undefined ? undefined : page.helds.get(heldKey(entry, root))
-        };
+    #heldOf(page: Page, entry: ServerEntry, key: string): { root?: ServedRoot; held?: Held } {
+        return heldOf(this.#roots(), page, entry, key);
     }
 
-    async #oculus(
-        page: Page,
-        channel: string,
-        entry: ServerEntry,
-        message: LspToServer
-    ): Promise<void> {
-        const send = (payload: LspToPage): void => this.#send(page, channel, payload);
-        if (message.oculus === 'read') {
-            send(
-                await readLibrary(message, {
-                    library: page.library,
-                    language: languageOf(channel) ?? '',
-                    served: (key) => this.#roots().some((one) => one.key === key)
-                })
-            );
-            return;
-        }
-        const { root, held } = this.#heldOf(page, entry, message.root);
-        if (root === undefined) return;
-        const adapter = ADAPTERS[entry.id];
-        const env = this.#env(root);
-        switch (message.oculus) {
-            case 'restart':
-                await held?.restart();
-                return;
-            case 'output':
-            case 'output_off': {
-                if (held === undefined) return;
-                const asks = (page.outputs.get(held) ?? []).filter(
-                    (ask) => ask.channel !== channel || ask.root !== message.root
-                );
-                if (message.oculus === 'output') {
-                    asks.push({ channel, root: message.root });
-                    this.#send(page, channel, {
-                        oculus: 'output',
-                        root: message.root,
-                        lines: held.output,
-                        append: false
-                    });
-                }
-                page.outputs.set(held, asks);
-                return;
-            }
-            case 'choices':
-                await sendChoices(adapter, env, message.root, send);
-                return;
-            case 'choose':
-                await applyChoose(adapter, env, message, held, this.#options.changes?.(), send);
-                return;
-            case 'approve':
-                await applyApprove(adapter, env, message, held, send);
-        }
+    #oculusContext(): OculusContext {
+        return {
+            roots: () => this.#roots(),
+            env: (root) => this.#env(root),
+            changes: () => this.#options.changes?.(),
+            send: (page, channel, payload) => this.#send(page, channel, payload)
+        };
     }
 
     #env(root: ServedRoot): RootEnv {
@@ -650,7 +645,7 @@ export class Relay {
 
     /** What a server is started with: its program, and what its root's settings give it. */
     async #prepare(held: Held): Promise<Prepared> {
-        return await ADAPTERS[held.entry.id].prepare(held.entry, this.#env(held.root));
+        return await held.entry.adapter.prepare(held.entry, this.#env(held.root));
     }
 
     /** The `initialize` request a server is given: the page's capabilities with what it needs. */
@@ -726,12 +721,11 @@ export class Relay {
                         ? { roots: [], opened: () => undefined, alias: (root) => root.key }
                         : this.#mapper(page, held)
                 );
-                const uri =
-                    isRecord(params.edit) && isRecord(params.edit.changes)
-                        ? Object.keys(params.edit.changes)[0]
-                        : undefined;
-                if (edit === null || !this.#toPage(held, message, edit, uri)) {
-                    answer({ applied: false, failureReason: 'the page holds no such document' });
+                if (edit === null || !this.#toPage(held, message, edit, editAddress(params.edit))) {
+                    answer({
+                        applied: false,
+                        failureReason: 'the edit names a file the page lacks'
+                    });
                 }
                 return;
             }

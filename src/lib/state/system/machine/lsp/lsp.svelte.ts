@@ -5,10 +5,15 @@
 // A language's channel is `lsp:<language>` (DESIGN.md, "The socket"). The messages on it are the
 // protocol's JSON-RPC messages, which the editor's client reads through its port, and the relay's
 // own, told apart by their `oculus` field, which this store reads: `state` (a server starting,
-// indexing, ready, not found or failed, with the code that says why), `choices` (the interpreters
-// and compile databases a root offers and the one in force), `refused` (a choice that was not
-// written) and `output` (a server's log lines). The port hands the client every message, the
-// relay's own included, and the client ignores those.
+// indexing, ready, not found or failed, with the code that says why), `choices` (the interpreters,
+// compile databases and Svelte configuration a root offers and the one in force), `refused` (a
+// choice that was not written) and `output` (a server's log lines). The port hands the client every
+// message, the relay's own included, and the client ignores those.
+//
+// The channel `lsp:workspace` is the page's own and has no language: the page tells the relay which
+// files its tabs hold open, whatever their language (`publishTabs`), and asks which of some files
+// another page holds open (`askHeld`), since an edit a server asks for is made in a tab where one
+// holds the file and is written to disk only where no page does (edits.ts).
 //
 // A library file, which a language server named outside every served root in an answer to a
 // request of this page (DESIGN.md, "The language servers"), has an address `oculus-lib:` the relay
@@ -25,9 +30,12 @@
 // client is listening.
 
 import type {
+    LspApproval,
     LspCode,
+    LspConfig,
     LspDatabase,
     LspInterpreter,
+    LspPlace,
     LspReadRefusal,
     LspRefusal,
     LspState,
@@ -35,7 +43,12 @@ import type {
     LspToServer
 } from '../../../../data/model/index.ts';
 import { SvelteMap } from 'svelte/reactivity';
+import { WORKSPACE_LANGUAGE } from '../../../../data/prose/lsp-servers.ts';
 import type { SocketStore } from '../../../shared/stores/shapes.ts';
+
+/** A message of the relay about one root's server. */
+type HeldAnswer = Extract<LspToPage, { oculus: 'held_answer' }>;
+type RootMessage = Exclude<LspToPage, HeldAnswer>;
 
 /** The state of a port: the page socket as a language server client sees it. */
 type LspLinkState = 'open' | 'connecting' | 'closed';
@@ -62,8 +75,22 @@ type ServerView = {
     total: number;
 };
 
-/** The choices one root offers for one language. */
-export type ChoicesView = Extract<LspToPage, { oculus: 'choices' }>;
+/**
+ * The choices one root offers for one language: each list and choice is empty for a server that
+ * asks for none of that kind.
+ */
+export type ChoicesView = {
+    root: string;
+    interpreters: LspInterpreter[];
+    /** The path of the interpreter in force, null when there is none. */
+    interpreter: string | null;
+    databases: LspDatabase[];
+    /** The key of the database in force, null when there is none. */
+    database: string | null;
+    findings: { file: string; field: string; message: string }[];
+    /** The Svelte and Vite configuration the server would run, null for a server with none. */
+    config: LspConfig | null;
+};
 
 /** One choice made from a picker: an interpreter, or a compile database by its key. */
 type LspChoice = { interpreter: string } | { database: string };
@@ -96,8 +123,22 @@ export type LspStore = {
     askChoices: (root: string, language: string) => boolean;
     /** Make a choice for a root; the relay answers with the choices in force, or a refusal. */
     choose: (root: string, language: string, choice: LspChoice) => Promise<LspAnswer>;
-    /** Approve a repository's own interpreter on this machine. */
-    approve: (root: string, language: string, interpreter: string) => Promise<LspAnswer>;
+    /**
+     * Approve what a repository would run on this machine: its interpreter or its configuration.
+     */
+    approve: (root: string, language: string, approval: LspApproval) => Promise<LspAnswer>;
+    /** Take back the approval of a repository's configuration. */
+    revoke: (root: string, language: string) => Promise<LspAnswer>;
+    /**
+     * Tell the relay which files this page's tabs hold open; sent again after a reconnect and
+     * whenever the set changes.
+     */
+    publishTabs: (files: LspPlace[]) => void;
+    /**
+     * Which of the files another page holds open in a tab, or null when the relay did not answer,
+     * in which case an edit that names them is not made.
+     */
+    askHeld: (files: LspPlace[]) => Promise<LspPlace[] | null>;
     /** End a root's server and start it again on its next request. */
     restart: (root: string, language: string) => boolean;
     /** Record a library file a server named, under the root and language of the request. */
@@ -131,6 +172,9 @@ function keyOf(root: string, language: string): string {
     return JSON.stringify([language, root]);
 }
 
+/** The language of the channel that holds the page's own messages. */
+const WORKSPACE = WORKSPACE_LANGUAGE;
+
 /** The channel a language's messages are on. */
 function channelOf(language: string): string {
     return `lsp:${language}`;
@@ -159,7 +203,7 @@ export function createLsp(socket: SocketStore): LspStore {
     }
 
     /** Read one of the relay's own messages. */
-    function read(language: string, message: LspToPage): void {
+    function read(language: string, message: RootMessage): void {
         const key = keyOf(message.root, language);
         if (message.oculus === 'state') {
             held.servers[key] = {
@@ -174,7 +218,15 @@ export function createLsp(socket: SocketStore): LspStore {
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- keyed by root and language
             if (message.state === 'starting') delete held.choices[key];
         } else if (message.oculus === 'choices') {
-            held.choices[key] = message;
+            held.choices[key] = {
+                root: message.root,
+                interpreters: message.interpreters ?? [],
+                interpreter: message.interpreter ?? null,
+                databases: message.databases ?? [],
+                database: message.database ?? null,
+                findings: message.findings ?? [],
+                config: message.config ?? null
+            };
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- keyed by root and language
             delete held.refusals[key];
             answered(key, 'chosen');
@@ -220,11 +272,58 @@ export function createLsp(socket: SocketStore): LspStore {
         });
     }
 
-    /** Whether a payload is one of the relay's own messages. */
-    function isOculus(payload: unknown): payload is LspToPage {
+    /** Whether a payload is one of the relay's own messages about a root. */
+    function isOculus(payload: unknown): payload is RootMessage {
         if (typeof payload !== 'object' || payload === null) return false;
         const one = payload as Record<string, unknown>;
         return typeof one.oculus === 'string' && typeof one.root === 'string';
+    }
+
+    /** Whether a payload is the relay's answer to a question about the files other pages hold. */
+    function isHeldAnswer(payload: unknown): payload is HeldAnswer {
+        if (typeof payload !== 'object' || payload === null) return false;
+        const one = payload as Record<string, unknown>;
+        return (
+            one.oculus === 'held_answer' && typeof one.id === 'number' && Array.isArray(one.files)
+        );
+    }
+
+    /** The files the page last told the relay its tabs hold, and the questions about others'. */
+    let tabs: LspPlace[] = [];
+    let questions = 0;
+    const asking = new Map<number, (files: LspPlace[] | null) => void>();
+
+    function publishTabs(files: LspPlace[]): void {
+        link(WORKSPACE);
+        tabs = files;
+        if (linkState() === 'open') send(WORKSPACE, { oculus: 'held', files });
+    }
+
+    /** Send a message of the channel no language is on. */
+    function send(language: string, payload: LspToServer): boolean {
+        return socket.send({ channel: channelOf(language), payload });
+    }
+
+    function askHeld(files: LspPlace[]): Promise<LspPlace[] | null> {
+        if (files.length === 0) return Promise.resolve([]);
+        link(WORKSPACE);
+        questions += 1;
+        const id = questions;
+        return new Promise((resolve) => {
+            const later = setTimeout(() => {
+                asking.delete(id);
+                resolve(null);
+            }, ANSWER_MS);
+            asking.set(id, (answer) => {
+                clearTimeout(later);
+                resolve(answer);
+            });
+            if (!send(WORKSPACE, { oculus: 'held_ask', id, files })) {
+                asking.delete(id);
+                clearTimeout(later);
+                resolve(null);
+            }
+        });
     }
 
     function link(language: string): LspLink {
@@ -233,7 +332,13 @@ export function createLsp(socket: SocketStore): LspStore {
         let last = linkState();
         const channel = channelOf(language);
         socket.listen(channel, (message) => {
-            if (isOculus(message.payload)) read(language, message.payload);
+            const payload: unknown = message.payload;
+            if (isOculus(payload)) read(language, payload);
+            else if (isHeldAnswer(payload)) {
+                const resolve = asking.get(payload.id);
+                asking.delete(payload.id);
+                resolve?.(payload.files);
+            }
         });
         const own: LspLink = {
             state: {
@@ -276,6 +381,7 @@ export function createLsp(socket: SocketStore): LspStore {
     socket.onLink(() => {
         if (socket.status() !== 'open') forgetLibraries();
         if (linkState() !== 'open') return;
+        if (tabs.length > 0) send(WORKSPACE, { oculus: 'held', files: tabs });
         for (const one of watched.values()) {
             write(one.language, one.root, { oculus: 'output', root: one.root });
         }
@@ -350,8 +456,12 @@ export function createLsp(socket: SocketStore): LspStore {
         askChoices: (root, language) => write(language, root, { oculus: 'choices', root }),
         choose: (root, language, choice) =>
             ask(language, root, { oculus: 'choose', root, ...choice }),
-        approve: (root, language, interpreter) =>
-            ask(language, root, { oculus: 'approve', root, interpreter }),
+        approve: (root, language, approval) =>
+            ask(language, root, { oculus: 'approve', root, approval }),
+        revoke: (root, language) =>
+            ask(language, root, { oculus: 'revoke', root, approval: { kind: 'config' } }),
+        publishTabs,
+        askHeld,
         restart: (root, language) => write(language, root, { oculus: 'restart', root }),
         named: (address, root, language) => {
             const known = libraries.get(address);

@@ -9,6 +9,7 @@
 // copy that stops at two megabytes would take the rest of the file off the disk.
 
 import { z } from 'zod';
+import type { TextEdit } from '../../data/prose/text-edits.ts';
 import { optionalTextShape, readAs, readJson } from '../../data/shapes/shapes.ts';
 import type { WordWrap } from '../../data/helpers/editor.ts';
 import { TEXT_LIMIT } from '../sources/fs.ts';
@@ -293,7 +294,14 @@ export type SourceStore = {
     loadUntitledDraft: (id: string) => void;
     /** Read a tab's file again when the tab holds no unsaved text; a tab with some keeps it. */
     reloadSource: (id: string) => Promise<void>;
-    editSourceDraft: (id: string, text: string) => void;
+    /**
+     * Replace a tab's text. `edits` are the text edits the new text was made by, from the text the
+     * tab held: the editor makes them in its model as they are, which keeps its selections, its
+     * decorations and its folds.
+     */
+    editSourceDraft: (id: string, text: string, edits?: TextEdit[]) => void;
+    /** The edits the tab's text was last replaced by and the text they were made in, or null. */
+    sourceReach: (id: string) => { from: string; edits: TextEdit[] } | null;
     revertSourceDraft: (id: string) => void;
     saveSourceDraft: (id: string, root: string, path: string) => Promise<void>;
     toggleSourceRendered: (id: string) => void;
@@ -317,6 +325,8 @@ export function createSource(
     saved: (root: string, path: string) => void = () => undefined
 ): SourceStore {
     const reading = new Map<string, { file: string; request: Promise<void> }>();
+    /** The edits each tab's text was last replaced by, with the text they were made in. */
+    const reached = new Map<string, { from: string; edits: TextEdit[] }>();
 
     /** Working and saved copies belong to the instance, not its currently mounted component. */
     function sourceDraft(id: string): SourceDraft {
@@ -476,8 +486,15 @@ export function createSource(
     }
 
     /** Keep typing local to this instance until the user saves. */
-    function editSourceDraft(id: string, text: string): void {
+    function editSourceDraft(id: string, text: string, edits?: TextEdit[]): void {
+        // Set before the text, which the editor reads the edits at when the text reaches it.
+        if (edits === undefined) reached.delete(id);
+        else reached.set(id, { from: sourceDraft(id).text, edits });
         updateDraft(id, { text, message: '' });
+    }
+
+    function sourceReach(id: string): { from: string; edits: TextEdit[] } | null {
+        return reached.get(id) ?? null;
     }
 
     /** Revert restores the last saved copy without closing the tab. */
@@ -585,6 +602,7 @@ export function createSource(
         loadUntitledDraft,
         reloadSource,
         editSourceDraft,
+        sourceReach,
         revertSourceDraft,
         saveSourceDraft,
         toggleSourceRendered,

@@ -8,6 +8,7 @@
 // machine's local file names, so the `protected` refusal is proved without any real configuration
 // file being opened.
 
+import { createHash } from 'node:crypto';
 import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
@@ -90,6 +91,46 @@ export async function replacePost(w: ReplaceWorld, body: ReplaceBody | Record<st
     const message =
         'op' in body ? body : ({ op: 'replace', preserveCase: false, ...body } as OpsRequest);
     return opsPost(w, message);
+}
+
+/**
+ * One file an `lsp-edit` names: the edits to make and the hash of the bytes it is expected to hold.
+ */
+type LspEditFile = Extract<OpsRequest, { op: 'lsp-edit' }>['files'][number];
+
+/** One edit of a language server: the text from one position to another replaced. */
+export function lspEdit(
+    from: [number, number],
+    to: [number, number],
+    newText: string
+): LspEditFile['edits'][number] {
+    return {
+        range: {
+            start: { line: from[0], character: from[1] },
+            end: { line: to[0], character: to[1] }
+        },
+        newText
+    };
+}
+
+/** The hash of a file's bytes the page sends as the text it expects the file to hold. */
+export function hashOf(bytes: string | Buffer): string {
+    return createHash('sha256').update(bytes).digest('hex');
+}
+
+/** One file of an `lsp-edit` over the text the page read, which `hash` is taken of. */
+export function lspFile(
+    path: string,
+    read: string | Buffer,
+    edits: LspEditFile['edits'],
+    root = 'hub'
+): LspEditFile {
+    return { root, path, hash: hashOf(read), edits };
+}
+
+/** POST /api/ops with an `lsp-edit` of these files. */
+export async function lspEditPost(w: ReplaceWorld, files: unknown[]) {
+    return opsPost(w, { op: 'lsp-edit', files });
 }
 
 /** POST /api/ops with the token a page holds. */

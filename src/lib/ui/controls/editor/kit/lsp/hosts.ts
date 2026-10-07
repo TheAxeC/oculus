@@ -7,18 +7,19 @@
 // serves a model and the braces' while it does not. A go to definition into a library file (a
 // resource under the library scheme, uris.ts) opens its tab through the same opener.
 //
-// Pyright serves `python`, clangd `c` and `cpp`; a model of any other language registers with no
-// client and is never sent anywhere.
+// The languages a client is made for are the ones the entries of data/prose/lsp-servers.ts list,
+// one entry per server; a model of any other language registers with no client and is never sent
+// anywhere.
 
 import type * as Monaco from 'monaco-editor';
 import { LanguageHost, clientClassOf, type LspHandle, type Registration } from './client';
 import { createPeeks } from './peeks';
 import type { LspServices } from './services';
 import { Signal } from './signal';
+import { SERVED_LANGUAGES, factsForLanguage } from '$lib/data/prose/lsp-servers';
 import { libraryOfResource, placeOfResource, type Target } from './uris';
 
-/** The languages a server serves, by the name of the Monaco language a model is made under. */
-export const SERVED_LANGUAGES: readonly string[] = ['python', 'c', 'cpp'];
+export { SERVED_LANGUAGES };
 
 /** Which models a server serves now, and the call that hears it change. */
 type Served = {
@@ -97,6 +98,20 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
     }
 
     /**
+     * The text of every document the servers of a language's entry hold, over the clients of every
+     * language the entry serves (clangd's `c` and `cpp`, the TypeScript server's two).
+     */
+    function heldOf(language: string): Map<string, string> {
+        const served = factsForLanguage(language)?.languages ?? [language];
+        const texts = new Map<string, string>();
+        for (const [name, host] of hosts) {
+            if (!served.includes(name)) continue;
+            for (const [page, text] of host.documents()) texts.set(page, text);
+        }
+        return texts;
+    }
+
+    /**
      * The file a resource shows: a registered model's, or a peek model's in the page's form, of a
      * served root or a library file.
      */
@@ -158,6 +173,7 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
                     onPainted: parts.onPainted,
                     registerCommand,
                     changed,
+                    held: heldOf,
                     now
                 });
                 hosts.set(language, host);

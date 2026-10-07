@@ -4,17 +4,19 @@
 // project command is approved by is the whole chain a press runs, with the repository's path.
 //
 // The shape is the one every user of the processes rule shares, `{ version: 1, approved: { "<kind>:
-// <sha256>": { label, at, folder? } } }`. There are three kinds of key. A command is approved under
+// <sha256>": { label, at, folder? } } }`. There are four kinds of key. A command is approved under
 // `command:<sha256>` of its chain text. An app is approved under `app:<sha256>` of its content,
 // with the real path of its folder, and at most one `app` entry is live per folder. A Python
 // interpreter a repository holds is approved under `interpreter:<sha256>` of the JSON `[repository
-// real path, interpreter path]`, so a changed path or another repository asks again. An entry of a
-// kind a call does not write is kept as it stood. The file is private to its owner (mode 0600), and
-// the default file's folder, `~/.oculus`, is made mode 0700 when it is looser; the file is written
-// whole by a rename and read back to check the write. A file that is not JSON, or not that shape,
-// is read as holding no approvals, which asks again for everything and approves nothing by mistake,
-// and a write over it is refused with the reason, so the bytes the reader put there are never
-// replaced.
+// real path, interpreter path]`, so a changed path or another repository asks again. The Svelte and
+// Vite configuration a repository holds is approved under `svelte-config:<sha256>` of the JSON
+// `[repository real path, [[config file, SHA-256 of its bytes], ...]]`, so a changed file or
+// another repository asks again. An entry of a kind a call does not write is kept as it stood. The
+// file is private to its owner (mode 0600), and the default file's folder, `~/.oculus`, is made
+// mode 0700 when it is looser; the file is written whole by a rename and read back to check the
+// write. A file that is not JSON, or not that shape, is read as holding no approvals, which asks
+// again for everything and approves nothing by mistake, and a write over it is refused with the
+// reason, so the bytes the reader put there are never replaced.
 
 import { createHash } from 'node:crypto';
 import { chmodSync, mkdirSync, readFileSync, statSync } from 'node:fs';
@@ -180,6 +182,60 @@ export function approveInterpreter(
     if (key in loaded.approvals.approved) return { ok: true };
     const approved = { ...loaded.approvals.approved };
     approved[key] = { label: interpreterText(repo, interpreter), at: now.toISOString() };
+    return store(file, approved);
+}
+
+/**
+ * The text a repository's Svelte and Vite configuration is approved by: its real path and each
+ * configuration file's path and the SHA-256 of its bytes, in path order.
+ */
+export function configText(repo: string, files: { path: string; hash: string }[]): string {
+    return JSON.stringify([repo, files.map((one) => [one.path, one.hash])]);
+}
+
+/** The key of a configuration: `svelte-config:` and the SHA-256 of its text as hex. */
+export function configKey(text: string): string {
+    return `svelte-config:${createHash('sha256').update(text, 'utf8').digest('hex')}`;
+}
+
+/** Whether the reader approved any configuration, which saves reading a repository for one. */
+export function anyConfigApproved(file: string): boolean {
+    const keys = Object.keys(readApprovals(file).approved);
+    return keys.some((key) => key.startsWith('svelte-config:'));
+}
+
+/** Whether the reader approved this exact configuration text on this machine. */
+export function isConfigApproved(file: string, text: string): boolean {
+    return configKey(text) in readApprovals(file).approved;
+}
+
+/**
+ * Approve a repository's configuration: one entry for the text, none added for one already held.
+ * Answers `{ ok: true }`, or the reason the file was left as it was.
+ */
+export function approveConfig(file: string, text: string, now: Date = new Date()): ApprovalWrite {
+    const loaded = load(file);
+    if (!loaded.ok) return loaded;
+    const key = configKey(text);
+    if (key in loaded.approvals.approved) return { ok: true };
+    const approved = { ...loaded.approvals.approved };
+    approved[key] = { label: text, at: now.toISOString() };
+    return store(file, approved);
+}
+
+/**
+ * Take back the approval of a configuration text: its entry is removed and nothing else is. A file
+ * that holds none is left as it is. Answers `{ ok: true }`, or the reason the file was left as it
+ * was.
+ */
+export function revokeConfig(file: string, text: string): ApprovalWrite {
+    const loaded = load(file);
+    if (!loaded.ok) return loaded;
+    const key = configKey(text);
+    if (!(key in loaded.approvals.approved)) return { ok: true };
+    const approved = Object.fromEntries(
+        Object.entries(loaded.approvals.approved).filter(([name]) => name !== key)
+    );
     return store(file, approved);
 }
 

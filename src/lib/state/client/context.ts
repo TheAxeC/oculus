@@ -98,11 +98,22 @@ import { createExplorer, type ExplorerStore } from '../sources/explorer/ops.svel
 import { createSearch, type SearchStore } from '../sources/search/search.svelte.ts';
 import { createClangd, type ClangdStore } from '../system/machine/lsp/clangd.svelte.ts';
 import { createDocuments, type DocumentsStore } from '../system/machine/lsp/documents.svelte.ts';
+import { readHash, readText } from '../sources/fs-transport.ts';
+import { createLspEdits, type LspEdits } from '../system/machine/lsp/edits.ts';
+import {
+    createWorkspaceSymbols,
+    type WorkspaceSymbolsStore
+} from '../system/machine/lsp/workspace-symbols.ts';
 import { createLsp, type LspStore } from '../system/machine/lsp/lsp.svelte.ts';
 import { createReferences, type ReferencesStore } from '../system/machine/lsp/references.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
-import { createSource, sourceTabState, type SourceStore } from '../sessions/source.svelte.ts';
+import {
+    createSource,
+    loadSource,
+    sourceTabState,
+    type SourceStore
+} from '../sessions/source.svelte.ts';
 import {
     createTerminals,
     terminalLabel,
@@ -189,6 +200,10 @@ export type ClientState = {
     headings: HeadingsStore;
     /** The language servers: their channels, states, choices and logs. */
     lsp: LspStore;
+    /** The edits the language servers ask for, and the files this page's tabs hold open. */
+    lspEdits: LspEdits;
+    /** The symbol queries a source tab's server answers, for the palette's `#` list. */
+    workspaceSymbols: WorkspaceSymbolsStore;
     /** The diagnostics of the files and the document symbols of the source tabs. */
     documents: DocumentsStore;
     /** The References view's results, history and walk. */
@@ -449,7 +464,24 @@ export function createClientState(desktop?: Desktop): ClientState {
     const editorStatus = createEditorStatus();
     const headings = createHeadings();
     const lsp = createLsp(socket);
+    const lspEdits = createLspEdits({
+        tabs: () => layout.hosts().flatMap((host) => tabsOf(host.workbench.root)),
+        draft: source.sourceDraft,
+        edit: source.editSourceDraft,
+        diskText: async (root, path) => {
+            const answer = await loadSource(root, path);
+            return answer.ok && !answer.truncated ? answer.content : null;
+        },
+        askHeld: lsp.askHeld,
+        publishTabs: lsp.publishTabs,
+        write: explorer.lspEdit,
+        hashOf: readHash
+    });
     const documents = createDocuments();
+    const workspaceSymbols = createWorkspaceSymbols(async (root, path) => {
+        const file = await readText(root, path);
+        return file.error === '' ? file.text : null;
+    });
     const references = createReferences(ui);
     const clangd = createClangd();
     const notices = createNotices(ui);
@@ -554,6 +586,8 @@ export function createClientState(desktop?: Desktop): ClientState {
         editorStatus,
         headings,
         lsp,
+        lspEdits,
+        workspaceSymbols,
         documents,
         references,
         clangd,

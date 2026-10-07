@@ -1909,3 +1909,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Z697 (2026-10-07): open item, D23b's and D45's second rounds granted for findings the review over round 1 raised first.
 - 2026-10-07. D23b round 2 back (287,265 tokens, 120 tool uses, 54.2 min); its review over round 2 dispatched.
 - 2026-10-07. Z697 ruled (a) by Axel.
+- 2026-10-07. D23b refuted over round 2 by a5cfe6049df8286b5 (claude-opus-5-5, 272,924 tokens, 74 tool uses, 17.0 min) and landed with its findings 1 to 6 fixed at landing.

@@ -376,7 +376,7 @@ Proof: none. Spec: none, beyond Finding 1, where the fix does more than the find
 
 Reviewer usage: agent id not known to me (read it from the runner's record), claude-opus-5-5, tokens not known to me (read them from the completion notice), about 40 tool uses, about 25 minutes (not verified).
 
-Agent: x.
+Usage: a2951440a5a116e09, claude-opus-5-5, 212,724 tokens, 53 tool uses, 13.2 min.
 
 ## Closed
 

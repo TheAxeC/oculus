@@ -1,14 +1,20 @@
-// Layer 2, server. The language servers' registry: one entry per program, the one place a server
-// is described. An entry names the Monaco language ids it serves, how its program is found and
-// started, what it is asked at `initialize`, how its `workspace/configuration` requests are
-// answered, and the capabilities the page is told it has.
+// Layer 2, server. The language servers' registry: one entry per program, describing how a server
+// is run. An entry names how its program is found and started, what it is asked at `initialize`,
+// how its `workspace/configuration` requests are answered, and the capabilities the page is told it
+// has. The other half of a server is data/prose/lsp-servers.ts, keyed by the same ids: its
+// languages, the catalog keys of its words, its semantic tokens, its format-on-type, its Organize
+// Imports and the choices its root asks for. A new server is one entry in each of the two places,
+// and the `adapter` of its entry here names what it needs of a root (written in a folder of its own
+// beside this file); nothing else names a server or a language.
 //
-// The registry is code and no reader edits it: a new server is one entry here and nothing else.
-// There are two entries. pyright serves `python` and runs under the node that runs oculus, from the
-// `pyright` package in oculus's own `node_modules`, never a global install, never a `node` found on
-// PATH. clangd serves `c` and `cpp` and is the `clangd` on the oculus process's PATH, with oculus's
-// own arguments and no `--query-driver`; its index is written under the folder oculus links the
-// chosen compile database into, never into a repository.
+// The registry is code and no reader edits it. There are four entries. pyright serves `python` and
+// the TypeScript server `javascript` and `typescript`; each runs under the node that runs oculus,
+// from its package in oculus's own `node_modules`, never a global install, never a `node` found on
+// PATH, as does the Svelte server, which serves `svelte`. The TypeScript server runs on oculus's
+// own TypeScript, with automatic type acquisition and tsserver's log off, so no `npm` runs and
+// nothing is written into a repository. clangd serves `c` and `cpp` and is the `clangd` on the
+// oculus process's PATH, with oculus's own arguments and no `--query-driver`; its index is written
+// under the folder oculus links the chosen compile database into, never into a repository.
 //
 // Every command is an argument array: a root's path is one argument whatever characters it
 // holds, and nothing is passed through a shell.
@@ -17,6 +23,11 @@ import { existsSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { LspCode, LspToPage, LspToServer } from '../../../data/model/index.ts';
+import { serverFacts, type LspServerId } from '../../../data/prose/lsp-servers.ts';
+import { clangdAdapter } from './clangd/adapter.ts';
+import { pyrightAdapter } from './pyright/adapter.ts';
+import { svelteAdapter } from './web/svelte-adapter.ts';
+import { typescriptAdapter } from './web/typescript-adapter.ts';
 
 /** What an entry is told about the root it starts a server for. */
 export type Setup = {
@@ -33,12 +44,17 @@ export type Setup = {
     databaseFolder: string | null;
     /** The flags clangd uses for a file the database has no entry for. */
     fallbackFlags: string[];
+    /**
+     * Whether the reader approved the repository's own Svelte and Vite configuration, which the
+     * Svelte server runs trusted on and the TypeScript server loads the Svelte plugin on.
+     */
+    configApproved?: boolean;
 };
 
 /** The program, its arguments and the folder it runs in. */
 export type Launch = { command: string; args: string[]; cwd: string; program: string };
 
-export type ServerId = 'pyright' | 'clangd';
+type ServerId = LspServerId;
 
 /** What an entry's server was made ready with, or why it could not be. */
 export type Prepared =
@@ -58,7 +74,7 @@ export type RootEnv = {
     exists?: (path: string) => boolean;
 };
 
-/** The body of a `choices` message: the lists of one root, the other server's fields empty. */
+/** The body of a `choices` message: the lists of one root, each present for the server asking. */
 type ChoicesBody = Omit<Extract<LspToPage, { oculus: 'choices' }>, 'oculus' | 'root'>;
 
 /** What the reader chose, as it is written: a field is absent until it was chosen. */
@@ -66,6 +82,9 @@ export type Choice = { interpreter?: string; database?: string };
 
 /** A value an adapter may have at once or after asking a program. */
 type Eventually<T> = T | Promise<T>;
+
+/** How a running server is put through a choice: asked its settings again, or restarted. */
+export type Applying = 'configuration' | 'restart';
 
 /**
  * What a server needs of a root beyond its program: its settings, the lists the reader picks from
@@ -83,12 +102,20 @@ export type Adapter = {
     choose(
         env: RootEnv,
         message: Extract<LspToServer, { oculus: 'choose' }>
-    ): Eventually<{ choice: Choice; note?: string; apply: 'configuration' | 'restart' }>;
-    /** Approve what the message names; whether the approval changed the server's settings. */
+    ): Eventually<{ choice: Choice; note?: string; apply: Applying }>;
+    /**
+     * Approve what the message names. `apply` is what the running server is put through for it:
+     * its settings asked again, a restart, or nothing when the approval changed neither.
+     */
     approve(
         env: RootEnv,
         message: Extract<LspToServer, { oculus: 'approve' }>
-    ): Eventually<{ ok: boolean; changed: boolean }>;
+    ): Eventually<{ ok: boolean; apply: Applying | null }>;
+    /** Take an approval back; `apply` as for `approve`. */
+    revoke(
+        env: RootEnv,
+        message: Extract<LspToServer, { oculus: 'revoke' }>
+    ): Eventually<{ ok: boolean; apply: Applying | null }>;
     /** The setup of a running server after a choice or an approval, for its next question. */
     settings(env: RootEnv, setup: Setup): Eventually<Setup>;
 };
@@ -99,6 +126,8 @@ export type ServerEntry = {
     languages: readonly string[];
     /** The program's name, which the status item names when it is not found. */
     program: string;
+    /** What the server needs of a root beyond its program: its settings, choices and approvals. */
+    adapter: Adapter;
     /** How to start it for this root, or null when its program is not there. */
     launch(setup: Setup): Launch | null;
     /** What it is asked at `initialize`, as `initializationOptions`. */
@@ -109,6 +138,8 @@ export type ServerEntry = {
     capabilities(language: string): Record<string, unknown>;
     /** The commands the server may be asked to run, which the page registers. */
     commands: readonly string[];
+    /** What the server needs of the page's client beyond what the page declared, by section. */
+    clientTextDocument?: Record<string, unknown>;
 };
 
 /** The registry: the entries and the lookup by language. */
@@ -120,7 +151,10 @@ export type Servers = {
 
 /** What the registry needs of the machine. */
 export type ServersOptions = {
-    /** The oculus folder, which holds `node_modules/pyright`: `ownFolder()` in a server. */
+    /**
+     * The oculus folder, which holds `node_modules` with the servers' packages: `ownFolder()` in a
+     * server.
+     */
     oculus: string;
     /** The node that runs oculus, `process.execPath`. */
     node: string;
@@ -141,17 +175,32 @@ function serving(language: string, options: Record<string, unknown> = {}): Recor
     return { ...options, documentSelector: [{ language }] };
 }
 
-/** The capabilities both servers keep, each for one language. */
-function common(language: string): Record<string, unknown> {
+/** What a server offers of the capabilities every server here keeps. */
+type Offers = {
+    /** Go to Declaration. */
+    declaration: boolean;
+    /** Rename, which asks where the symbol is first. */
+    rename: boolean;
+    /** The call hierarchy, and the type hierarchy. */
+    callHierarchy: boolean;
+    typeHierarchy: boolean;
+};
+
+/** The capabilities every server keeps, each for one language. */
+function common(language: string, offers: Offers): Record<string, unknown> {
     return {
         textDocumentSync: INCREMENTAL,
         hoverProvider: serving(language),
         definitionProvider: serving(language),
-        declarationProvider: serving(language),
+        ...(offers.declaration ? { declarationProvider: serving(language) } : {}),
         typeDefinitionProvider: serving(language),
         referencesProvider: serving(language),
         documentHighlightProvider: serving(language),
-        documentSymbolProvider: serving(language)
+        documentSymbolProvider: serving(language),
+        workspaceSymbolProvider: serving(language),
+        ...(offers.rename ? { renameProvider: serving(language, { prepareProvider: true }) } : {}),
+        ...(offers.callHierarchy ? { callHierarchyProvider: serving(language) } : {}),
+        ...(offers.typeHierarchy ? { typeHierarchyProvider: serving(language) } : {})
     };
 }
 
@@ -160,10 +209,46 @@ function common(language: string): Record<string, unknown> {
  */
 const PYRIGHT_COMMANDS = ['pyright.organizeimports'] as const;
 
+/** The commands the TypeScript server's code actions and completions run. */
+const TYPESCRIPT_COMMANDS = [
+    '_typescript.applyRefactoring',
+    '_typescript.configurePlugin',
+    '_typescript.organizeImports',
+    '_typescript.applyRenameFile',
+    '_typescript.goToSourceDefinition',
+    '_typescript.applyCodeActionCommand',
+    '_typescript.applyFixAllCodeAction',
+    'typescript.tsserverRequest'
+] as const;
+
+/** The commands the Svelte server's code actions run. */
+const SVELTE_COMMANDS = [
+    'function_scope_0',
+    'function_scope_1',
+    'function_scope_2',
+    'function_scope_3',
+    'constant_scope_0',
+    'constant_scope_1',
+    'constant_scope_2',
+    'constant_scope_3',
+    'extract_to_svelte_component',
+    'migrate_to_svelte_5',
+    'Infer function return type'
+] as const;
+
+/** The characters the Svelte server completes after: its own, with those of its HTML and CSS. */
+const SVELTE_TRIGGERS = [
+    ...['.', '"', "'", '`', '/', '@', '<', '>', '*', '#', '$', '+', '^'],
+    ...['(', '[', '-', ':', '|']
+];
+
+const CLANGD_COMMANDS = ['clangd.applyFix', 'clangd.applyRename', 'clangd.applyTweak'] as const;
+
 /**
- * The folder oculus's code runs from, the one whose `node_modules` holds `pyright`: the nearest
- * folder above this module that holds a `package.json`, so a server given another `--engine`
- * folder finds it, and a missing `pyright` is the server's `not_found` and never a failed start.
+ * The folder oculus's code runs from, the one whose `node_modules` holds the servers' packages: the
+ * nearest folder above this module that holds a `package.json`, so a server given another
+ * `--engine` folder finds them, and a missing package is the server's `not_found` and never a
+ * failed start.
  */
 export function ownFolder(): string {
     let folder = dirname(fileURLToPath(import.meta.url));
@@ -173,23 +258,37 @@ export function ownFolder(): string {
     return folder;
 }
 
+/** The facts of a server the registry does not repeat: its languages and program name. */
+function factsOf(id: ServerId): Pick<ServerEntry, 'id' | 'languages' | 'program'> {
+    const { languages, program } = serverFacts(id);
+    return { id, languages, program };
+}
+
+/** The launch of a package that runs under oculus's own node, or null when it is not installed. */
+function packaged(
+    options: ServersOptions,
+    id: ServerId,
+    entry: string[],
+    setup: Setup
+): Launch | null {
+    const exists = options.exists ?? existsSync;
+    const script = join(options.oculus, 'node_modules', ...entry);
+    return exists(script)
+        ? {
+              command: options.node,
+              args: [script, '--stdio'],
+              cwd: setup.root,
+              program: serverFacts(id).program
+          }
+        : null;
+}
+
 /** The pyright entry, from the `pyright` package under oculus's own folder. */
 function pyright(options: ServersOptions): ServerEntry {
-    const exists = options.exists ?? existsSync;
-    const entry = join(options.oculus, 'node_modules', 'pyright', 'langserver.index.js');
     return {
-        id: 'pyright',
-        languages: ['python'],
-        program: 'pyright',
-        launch: (setup) =>
-            exists(entry)
-                ? {
-                      command: options.node,
-                      args: [entry, '--stdio'],
-                      cwd: setup.root,
-                      program: 'pyright'
-                  }
-                : null,
+        ...factsOf('pyright'),
+        adapter: pyrightAdapter,
+        launch: (setup) => packaged(options, 'pyright', ['pyright', 'langserver.index.js'], setup),
         initializationOptions: () => ({}),
         // pyright asks for the sections `python` and `pyright`; the interpreter reaches it through
         // the first, as `pythonPath`.
@@ -198,7 +297,12 @@ function pyright(options: ServersOptions): ServerEntry {
                 ? { pythonPath: setup.interpreter }
                 : null,
         capabilities: (language) => ({
-            ...common(language),
+            ...common(language, {
+                declaration: true,
+                rename: true,
+                callHierarchy: true,
+                typeHierarchy: false
+            }),
             completionProvider: serving(language, {
                 triggerCharacters: ['.', '[', '"', "'"],
                 resolveProvider: true
@@ -216,9 +320,8 @@ function pyright(options: ServersOptions): ServerEntry {
 /** The clangd entry, the program on the oculus process's PATH. */
 function clangd(): ServerEntry {
     return {
-        id: 'clangd',
-        languages: ['c', 'cpp'],
-        program: 'clangd',
+        ...factsOf('clangd'),
+        adapter: clangdAdapter,
         launch: (setup) => ({
             command: 'clangd',
             args: [
@@ -233,8 +336,14 @@ function clangd(): ServerEntry {
         }),
         initializationOptions: (setup) => ({ fallbackFlags: setup.fallbackFlags }),
         configuration: () => null,
+        clientTextDocument: { inactiveRegionsCapabilities: { inactiveRegions: true } },
         capabilities: (language) => ({
-            ...common(language),
+            ...common(language, {
+                declaration: true,
+                rename: true,
+                callHierarchy: true,
+                typeHierarchy: true
+            }),
             implementationProvider: serving(language),
             completionProvider: serving(language, {
                 triggerCharacters: ['.', '<', '>', ':', '"', '/', '*']
@@ -259,11 +368,136 @@ function clangd(): ServerEntry {
     };
 }
 
-const CLANGD_COMMANDS = ['clangd.applyFix', 'clangd.applyRename', 'clangd.applyTweak'] as const;
+/**
+ * The TypeScript entry: `typescript-language-server` over oculus's own TypeScript, with automatic
+ * type acquisition and tsserver's log off. The Svelte plugin is given to tsserver only for a
+ * repository whose Svelte configuration the reader approved, since the plugin loads the
+ * repository's own `svelte/compiler`.
+ */
+function typescript(options: ServersOptions): ServerEntry {
+    const tsserver = join(options.oculus, 'node_modules', 'typescript', 'lib', 'tsserver.js');
+    return {
+        ...factsOf('typescript'),
+        adapter: typescriptAdapter,
+        launch: (setup) =>
+            (options.exists ?? existsSync)(tsserver)
+                ? packaged(
+                      options,
+                      'typescript',
+                      ['typescript-language-server', 'lib', 'cli.mjs'],
+                      setup
+                  )
+                : null,
+        initializationOptions: (setup) => ({
+            disableAutomaticTypingAcquisition: true,
+            tsserver: { path: tsserver, logVerbosity: 'off' },
+            plugins:
+                setup.configApproved === true
+                    ? [
+                          {
+                              name: 'typescript-svelte-plugin',
+                              location: options.oculus,
+                              languages: ['svelte']
+                          }
+                      ]
+                    : []
+        }),
+        // The server asks for the formatting options of the file an edit is made in.
+        configuration: (section) =>
+            section === 'formattingOptions' ? { tabSize: 4, insertSpaces: true } : null,
+        capabilities: (language) => ({
+            ...common(language, {
+                declaration: false,
+                rename: true,
+                callHierarchy: true,
+                typeHierarchy: false
+            }),
+            implementationProvider: serving(language),
+            completionProvider: serving(language, {
+                triggerCharacters: ['.', '"', "'", '/', '@', '<'],
+                resolveProvider: true
+            }),
+            signatureHelpProvider: serving(language, {
+                triggerCharacters: ['(', ',', '<'],
+                retriggerCharacters: [')']
+            }),
+            codeActionProvider: serving(language, {
+                codeActionKinds: [
+                    'quickfix',
+                    'refactor',
+                    'source.organizeImports.ts',
+                    'source.removeUnusedImports.ts',
+                    'source.sortImports.ts',
+                    'source.addMissingImports.ts',
+                    'source.removeUnused.ts',
+                    'source.fixAll.ts'
+                ],
+                resolveProvider: true
+            }),
+            documentFormattingProvider: serving(language),
+            documentRangeFormattingProvider: serving(language),
+            foldingRangeProvider: serving(language),
+            selectionRangeProvider: serving(language),
+            inlayHintProvider: serving(language),
+            executeCommandProvider: { commands: [...TYPESCRIPT_COMMANDS] }
+        }),
+        commands: TYPESCRIPT_COMMANDS
+    };
+}
+
+/**
+ * The Svelte entry: `svelte-language-server`, started untrusted (`isTrusted: false`: it loads no
+ * configuration and no package of the repository) until the reader approved the repository's
+ * configuration, and trusted after.
+ */
+function svelte(options: ServersOptions): ServerEntry {
+    return {
+        ...factsOf('svelte'),
+        adapter: svelteAdapter,
+        launch: (setup) =>
+            packaged(options, 'svelte', ['svelte-language-server', 'bin', 'server.js'], setup),
+        initializationOptions: (setup) => ({ isTrusted: setup.configApproved === true }),
+        configuration: () => null,
+        capabilities: (language) => ({
+            ...common(language, {
+                declaration: false,
+                rename: true,
+                callHierarchy: true,
+                typeHierarchy: false
+            }),
+            implementationProvider: serving(language),
+            completionProvider: serving(language, {
+                triggerCharacters: SVELTE_TRIGGERS,
+                resolveProvider: true
+            }),
+            signatureHelpProvider: serving(language, {
+                triggerCharacters: ['(', ',', '<'],
+                retriggerCharacters: [')']
+            }),
+            codeActionProvider: serving(language, {
+                codeActionKinds: [
+                    'quickfix',
+                    'refactor',
+                    'source.organizeImports',
+                    'source.sortImports',
+                    'source.addMissingImports',
+                    'source.removeUnusedImports'
+                ],
+                resolveProvider: true
+            }),
+            documentFormattingProvider: serving(language),
+            foldingRangeProvider: serving(language),
+            selectionRangeProvider: serving(language),
+            inlayHintProvider: serving(language),
+            executeCommandProvider: { commands: [...SVELTE_COMMANDS] }
+        }),
+        commands: SVELTE_COMMANDS
+    };
+}
 
 /** The registry for this machine. */
 export function createServers(options: ServersOptions): Servers {
-    const entries = [pyright(options), clangd()];
+    const entries = [pyright(options), clangd(), typescript(options), svelte(options)];
     return {
         entries,
         forLanguage: (language) => entries.find((one) => one.languages.includes(language)),
@@ -286,12 +520,10 @@ export function initializeParams(
     setup: Setup
 ): Record<string, unknown> {
     const textDocument: Record<string, unknown> = {
-        ...(caps.textDocument as Record<string, unknown> | undefined)
+        ...(caps.textDocument as Record<string, unknown> | undefined),
+        ...entry.clientTextDocument
     };
     delete textDocument.diagnostic;
-    if (entry.id === 'clangd') {
-        textDocument.inactiveRegionsCapabilities = { inactiveRegions: true };
-    }
     const workspace = (caps.workspace ?? {}) as Record<string, unknown>;
     const uri = pathToFileURL(root).href;
     return {

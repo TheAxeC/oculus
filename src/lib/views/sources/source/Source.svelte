@@ -84,7 +84,6 @@
     // registration and actions, and the format before a save when the language's `format_on_save`
     // is on) is made by language/tab-language.svelte.ts.
 
-    import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Prompt from '$lib/ui/forms/Prompt.svelte';
@@ -108,6 +107,7 @@
     import { createSubmitJob } from './actions/submit-job.svelte';
     import ReadAgainButton from './actions/ReadAgainButton.svelte';
     import { createTabSave } from './save/tab-save.svelte';
+    import { createTabDraft } from './save/tab-draft.svelte';
     import { createTabLanguage } from './language/tab-language.svelte';
     import { createSourceGutter } from './source-gutter.svelte';
     import { createSourceOptions } from '$lib/views/shared/prose/source-options';
@@ -140,6 +140,7 @@
         source: {
             revertSourceDraft,
             editSourceDraft,
+            sourceReach,
             loadSourceDraft,
             loadUntitledDraft,
             saveSourceDraft,
@@ -207,6 +208,21 @@
     /** The indentation Tab inserts: the tab's choice, the file's own, or the configured one. */
     const indent = $derived(options.indent);
     const ending = $derived(lineEnding(draft.text));
+    /** The draft read in for the file the tab names, and the editor's typing and wrap toggle. */
+    const tabDraft = createTabDraft({
+        id: () => instance.id,
+        root: () => root,
+        path: () => path,
+        head: () => head,
+        blocked: () => blocked,
+        untitled: () => untitled,
+        toggled: () => options.toggled,
+        load: loadSourceDraft,
+        loadUntitled: loadUntitledDraft,
+        edit: editSourceDraft,
+        wrap: setSourceWrap,
+        keepPreview
+    });
     /** What the language adds to the editor: LaTeX's build, Markdown's headings or a server. */
     const tabLanguage = createTabLanguage({
         client,
@@ -297,7 +313,7 @@
             submittable: submit.submittable,
             save: () => void tabSave.save(),
             revert: () => revertSourceDraft(instance.id),
-            toggleWrap,
+            toggleWrap: tabDraft.toggleWrap,
             toggleRendered: () => toggleSourceRendered(instance.id),
             submit: () => void submit.press(),
             previewSide: () => openBeside(MARKDOWN_PREVIEW_VIEW, markdownPreviewState(root, path)),
@@ -359,30 +375,6 @@
             file.blameable ||
             servedFile(currentRoots(), root, path, file.onDisk)
     );
-
-    $effect(() => {
-        const id = instance.id;
-        if (untitled) untrack(() => loadUntitledDraft(id));
-        if (blocked) return;
-        const fileRoot = root;
-        const filePath = path;
-        const stage = head;
-        untrack(() => void loadSourceDraft(id, fileRoot, filePath, stage));
-    });
-
-    /** Alt+Z in the editor: the tab's word wrap toggled, kept with the draft. */
-    function toggleWrap(): void {
-        setSourceWrap(instance.id, options.toggled);
-    }
-
-    /**
-     * Typing is the reader working in this tab, so a preview tab becomes one that is kept. The
-     * editor hands the text back in the line ending it holds it in.
-     */
-    function typed(value: string): void {
-        keepPreview(instance.id);
-        editSourceDraft(instance.id, value);
-    }
 </script>
 
 {#snippet margin()}
@@ -464,12 +456,13 @@
                     actions={own}
                     instance={instance.id}
                     text={draft.text}
+                    reached={() => sourceReach(instance.id)}
                     rendered={draft.rendered}
                     marks={gutter.editorMarks}
                     blame={gutter.editorBlame}
                     extension={tabLanguage.extension}
                     writable={lock.words === ''}
-                    oninput={typed}
+                    oninput={tabDraft.typed}
                     oncaret={(at: Caret) => (caret = at)}
                     onselect={(text: string) => (selection = text)}
                     onmark={(mark: EditorMark) => gutter.openMark(mark.line)}

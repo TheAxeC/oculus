@@ -69,6 +69,7 @@ import { isBinaryFile } from '../source.ts';
 import type { SearchRunner } from '../search.ts';
 import { recordOf, stampKept, stampOf, unkeep } from './file-changes.ts';
 import { defaultHistoryDir, historyPath, readCopy } from './history.ts';
+import { lspEditFiles } from './lsp-edit.ts';
 import { previewReplace, replaceFiles } from './replace.ts';
 
 /** What an operation runs over: the roots it may touch and the chain that orders its writes. */
@@ -152,6 +153,12 @@ const queryShape = z.object({
     under: z.string()
 });
 
+/** A position of the protocol, as an `lsp-edit` names the places its edits are made at. */
+const position = z.object({
+    line: z.number().int().min(0),
+    character: z.number().int().min(0)
+});
+
 /** The body of POST /api/ops, one shape per operation. */
 const opsShape = z.discriminatedUnion('op', [
     z.object({
@@ -207,6 +214,22 @@ const opsShape = z.discriminatedUnion('op', [
         root: z.string(),
         path: z.string(),
         hits: z.array(z.object({ line: z.number().int().min(1), at: z.number().int().min(0) }))
+    }),
+    z.object({
+        op: z.literal('lsp-edit'),
+        files: z.array(
+            z.object({
+                root: z.string(),
+                path: z.string(),
+                hash: z.string(),
+                edits: z.array(
+                    z.object({
+                        range: z.object({ start: position, end: position }),
+                        newText: z.string()
+                    })
+                )
+            })
+        )
     })
 ]) satisfies z.ZodType<OpsRequest>;
 
@@ -653,6 +676,18 @@ function run(scope: Scope, request: Exclude<OpsRequest, { op: 'preview' }>): Pro
                     note: (before, after) => noted(scope, 'replace', before, after)
                 },
                 request
+            );
+        case 'lsp-edit':
+            return Promise.resolve(
+                lspEditFiles(
+                    {
+                        roots: scope.roots,
+                        guarded: (path) => guarded(scope.locals, path),
+                        history: scope.history,
+                        note: (before, after) => noted(scope, 'lsp-edit', before, after)
+                    },
+                    request.files
+                )
             );
     }
 }

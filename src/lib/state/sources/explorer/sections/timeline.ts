@@ -1,18 +1,19 @@
 // Layer 2, client state, pure. The Timeline section's rows for one file: the local-history copies
-// the server keeps before a save, a replace or a delete (GET /api/history) and the commits that
-// touched the file (GET /api/git?log=), merged newest first.
+// the server keeps before a save, a replace, an edit of a language server or a delete (GET
+// /api/history) and the commits that touched the file (GET /api/git?log=), merged newest first.
 //
 // A copy is made before the change, so its time is when the file was changed, and a row of kind
-// `save` reads "File Saved", `replace` "File Replaced" and `delete` "File Deleted"; the words come
-// from the catalog where the row is drawn. A commit row carries its subject, its author, both of
-// its dates and the file's path in that commit, and its time is the committer date, which is the
-// order git lists commits in. The commits are read a page at a time, so while older commits remain
-// the copies older than the oldest commit read wait for the page that reaches their time.
+// `save` reads "File Saved", `replace` "File Replaced", `lsp-edit` "File Edited by a Language
+// Server" and `delete` "File Deleted"; the words come from the catalog where the row is drawn. A
+// commit row carries its subject, its author, both of its dates and the file's path in that commit,
+// and its time is the committer date, which is the order git lists commits in. The commits are read
+// a page at a time, so while older commits remain the copies older than the oldest commit read wait
+// for the page that reaches their time.
 
 import type { GitFileCommit } from '../../../../data/model/index.ts';
 
 /** What a copy of a file in the local history was made before. */
-type CopyKind = 'save' | 'replace' | 'delete';
+type CopyKind = 'save' | 'replace' | 'lsp-edit' | 'delete';
 
 /** One copy of a file in the local history, as GET /api/history lists it. */
 export type SavedCopy = { id: string; at: number; size: number; kind: CopyKind };

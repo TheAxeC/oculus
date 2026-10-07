@@ -24,6 +24,7 @@ import {
     checkName,
     freeName,
     stemLength,
+    type LspEditFile,
     type OpsPlace,
     type OpsRefusal,
     type OpsRequest
@@ -130,6 +131,11 @@ export type ExplorerStore = {
      * replace wrote reads the file again, and the folders of those files are listed again.
      */
     replace: (request: Extract<OpsRequest, { op: 'replace' }>) => Promise<Outcome>;
+    /**
+     * Post the edits a language server asked for in files no tab holds, as one operation, and read
+     * the answer; the folders of the files written are listed again.
+     */
+    lspEdit: (files: LspEditFile[]) => Promise<Outcome>;
     /**
      * Whether an open source tab holds text of the file, or of a file under the folder, not saved.
      */
@@ -300,11 +306,20 @@ export function createExplorer(
         );
     }
 
-    async function replace(request: Extract<OpsRequest, { op: 'replace' }>): Promise<Outcome> {
+    /** Post a request that writes files in place and leave the page as the files were left. */
+    async function writeInPlace(request: OpsRequest): Promise<Outcome> {
         const outcome = await send(request);
         const names = outcome.ok ? outcome.paths : (outcome.done ?? []);
         await rewritten(names.flatMap((one) => placeOfName(one) ?? []));
         return outcome;
+    }
+
+    function replace(request: Extract<OpsRequest, { op: 'replace' }>): Promise<Outcome> {
+        return writeInPlace(request);
+    }
+
+    function lspEdit(files: LspEditFile[]): Promise<Outcome> {
+        return writeInPlace({ op: 'lsp-edit', files });
     }
 
     /** Post one request and read the answer. */
@@ -630,6 +645,7 @@ export function createExplorer(
         upload,
         undoFile,
         replace,
+        lspEdit,
         addFolders,
         openFolder
     };

@@ -99,7 +99,7 @@ function pageUri(root: string, path: string): string {
  * to a `/`, a NUL or a backslash. A root key is read as the text it is whatever it holds, since
  * the key only ever names a served root it equals.
  */
-function parsePageUri(uri: unknown): { root: string; path: string } | null {
+export function parsePageUri(uri: unknown): { root: string; path: string } | null {
     if (typeof uri !== 'string' || !uri.startsWith(`${PAGE_SCHEME}///`)) return null;
     const parts = uri.slice(`${PAGE_SCHEME}///`.length).split('/');
     if (parts.length < 2) return null;
@@ -275,8 +275,8 @@ export function toServer(
  * turned into the page's form. A location the mapper gives no address for is dropped, with the
  * list entry, command or workspace edit that holds it: the result is null when the dropped
  * location was the whole answer. A command whose `arguments` name such a file is dropped whole,
- * since its arguments are positional, and so is a workspace edit whose `changes` name one, since
- * part of an edit would be applied without the rest.
+ * since its arguments are positional, and so is a workspace edit whose `changes` or
+ * `documentChanges` name one, since part of an edit would be applied without the rest.
  */
 export function toPage(value: unknown, mapper: Mapper): { value: unknown } | null {
     // clangd answers `textDocument/switchSourceHeader` with the file's address alone.
@@ -308,6 +308,10 @@ export function toPage(value: unknown, mapper: Mapper): { value: unknown } | nul
                     turned.push(page);
                 }
                 copy[key] = turned;
+            } else if (key === 'documentChanges' && Array.isArray(inner)) {
+                const entries = inner.map(walk);
+                if (entries.includes(DROP)) return DROP;
+                copy[key] = entries;
             } else if (key === 'changes' && isRecord(inner)) {
                 const changes: Record<string, unknown> = {};
                 for (const [uri, edits] of Object.entries(inner)) {

@@ -46,8 +46,25 @@ export type EditorOwnAction = {
     label: string;
     key?: KeyPress;
     menu?: string;
+    /** Not runnable: the action is hidden from the editor's menu and left out of the palette. */
+    disabled?: boolean;
     run: () => void;
 };
+
+/** One text edit in the protocol's positions: zero-based lines and UTF-16 characters. */
+type EditorTextEdit = {
+    range: {
+        start: { line: number; character: number };
+        end: { line: number; character: number };
+    };
+    newText: string;
+};
+
+/**
+ * The edits a text the parent hands in was reached by, made in the text `from`. The editor makes
+ * them in its model as they are, so selections, decorations and folds keep their places.
+ */
+export type EditorReach = { from: string; edits: EditorTextEdit[] };
 
 /** The labels of the editor's three actions over the quick diff marks, in the parent's words. */
 export type EditorChangeWords = { next: string; previous: string; open: string };

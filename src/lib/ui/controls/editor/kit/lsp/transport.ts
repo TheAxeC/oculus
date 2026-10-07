@@ -21,11 +21,17 @@
 // differ only in case are given addresses that do not.
 //
 // What the client has no handler for is the transport's own: `publishDiagnostics` and
-// `inactiveRegions` go to the host, the server's `workspace/applyEdit` is applied to the model of
-// the document it names when it names that document alone, and `workspace/semanticTokens/refresh`
-// is answered and told to the host. A code action is offered only when its edit names only the
-// asking document, or when it carries a command. A request of the client the relay could not pass
-// on to a server is answered with no result. The host's own questions to the server (the
+// `inactiveRegions` go to the host, and `workspace/semanticTokens/refresh` is answered and told to
+// the host. An edit a server asks for (its `workspace/applyEdit`, a rename's answer, a code
+// action's edit) is never given to Monaco, whose client applies an edit to the models it can name:
+// the transport hands the whole edit to the host (`TransportHost.applyEdit`), which edits the
+// tabs and writes the other files or refuses the whole edit with a notice. A code action's edit is
+// kept under a token and the action carries the command that applies it (`APPLY_COMMAND`), so an
+// action that names other files is offered like any other. An edit whose document changed since
+// the request it answers was made is refused. The client declares `workspace.applyEdit` and a
+// `workspace.workspaceEdit` of `documentChanges` with transactional failure handling to the
+// server. A request of the client the relay could not pass on to a server is answered with no
+// result. The host's own questions to the server (the
 // symbols, the semantic tokens, the formatting) go through `ask`, which answers the protocol's
 // result as the relay sent it, addresses in the page's form.
 //
@@ -42,23 +48,21 @@
 // in the order they arrived, so a peek read in the middle of one answer never lets a later one
 // overtake it.
 
-import type { LspDiagnostic, LspFrame, LspPort } from './services';
+import type { LspDiagnostic, LspEditOutcome, LspFrame, LspPort } from './services';
 import {
     ADDRESSES,
+    APPLY_COMMAND,
     BARE_DOCUMENT,
     Closed,
     DROP,
-    ORGANIZE,
-    ORGANIZE_COMMAND,
+    NO_DOCUMENT,
     OWN,
     REQUEST_CANCELLED,
     SPELLINGS,
     SYNC,
-    asksOrganize,
     changesOf,
     isRecord,
     keyOf,
-    touched,
     type LspModel,
     type LspRange,
     type ModelChange,
@@ -66,6 +70,17 @@ import {
     type TextEdit
 } from './transport/messages';
 import { Connection } from './transport/connection';
+import {
+    EditTokens,
+    declaringEdits,
+    keeping,
+    nameOfPage,
+    sourceActionsOf,
+    sourceRequest,
+    staleFile,
+    toClient,
+    type KeptEdit
+} from './transport/edits';
 import { libraryOf, pageUri, placeOf, type Place, type Target } from './uris';
 
 /** What the host does for the transport. */
@@ -80,6 +95,8 @@ export type TransportHost = {
     drop(model: LspModel): void;
     /** Apply edits to a registered model as one undo stop; false when it could not be. */
     apply(model: LspModel, edits: readonly TextEdit[]): boolean;
+    /** Make the edit a server asked for, all or none; the outcome says why not. */
+    applyEdit(edit: unknown): Promise<LspEditOutcome>;
     /**
      * A server's diagnostics for one file, whether or not a model holds it: the file's address,
      * and its place when it is a file of a served root.
@@ -93,8 +110,8 @@ export type TransportHost = {
     refreshTokens(): void;
     /** The capabilities the server's `initialize` answer declared. */
     declared(capabilities: Record<string, unknown>): void;
-    /** Shows a notice by its catalog key. */
-    notice(key: string): void;
+    /** Shows a notice by its catalog key, with the words it is said with. */
+    notice(key: string, ...words: string[]): void;
 };
 
 /** A document the server holds: the file, its models, the version last sent. */
@@ -107,7 +124,20 @@ type Doc = {
 };
 
 /** A request of the client that waits for its answer. */
-type Waiting = { method: string; params: unknown; asking: string | null };
+type Waiting = {
+    method: string;
+    params: unknown;
+    asking: string | null;
+    /** The versions of the documents when the request was made, for a request that gets an edit. */
+    asked: ReadonlyMap<string, number> | null;
+};
+
+/** The requests whose answers hold an edit the transport applies. */
+const EDITING: readonly string[] = [
+    'textDocument/rename',
+    'textDocument/codeAction',
+    'codeAction/resolve'
+];
 
 /** A request of the host that waits for its answer. */
 type Own = {
@@ -140,6 +170,7 @@ export class LspTransport {
     /** The root keys whose server ended because the root stopped being served. */
     #gone = new Set<string>();
     #waiting = new Map<number | string, Waiting>();
+    #tokens: EditTokens;
     #own = new Map<string, Own>();
     #next = 0;
     #chain: Promise<void> = Promise.resolve();
@@ -149,6 +180,7 @@ export class LspTransport {
     constructor(port: LspPort, language: string, host: TransportHost, now: () => number) {
         this.#port = port;
         this.#language = language;
+        this.#tokens = new EditTokens(language);
         this.#host = host;
         this.#now = now;
         this.state.set(port.state.value);
@@ -322,19 +354,54 @@ export class LspTransport {
         }
         const id = message.id;
         if (method === 'initialize') {
-            this.#waiting.set(id, { method, params: message.params, asking: null });
-            this.#write(message);
+            this.#waiting.set(id, { method, params: message.params, asking: null, asked: null });
+            this.#write({ ...message, params: declaringEdits(message.params) });
             return Promise.resolve();
         }
-        const asking = this.#askingOf(message.params);
-        const params = this.#out(message.params);
+        if (method === 'codeAction/resolve' && this.#isKept(message.params)) {
+            // An action whose edit the transport keeps has nothing for the server to resolve.
+            const result = message.params;
+            this.#enqueue(() => this.#deliver({ jsonrpc: '2.0', id, result }));
+            return Promise.resolve();
+        }
+        return this.#forward(id, method, message.params);
+    }
+
+    /** One request of the client sent to the server with its addresses turned. */
+    #forward(id: number | string, method: string, given: unknown): Promise<void> {
+        const asking = this.#askingOf(given);
+        const params = this.#out(given);
         if (params === null) {
             this.#enqueue(() => this.#deliver({ jsonrpc: '2.0', id, result: null }));
             return Promise.resolve();
         }
-        this.#waiting.set(id, { method, params: message.params, asking });
+        const asked = EDITING.includes(method) ? this.#versions() : null;
+        this.#waiting.set(id, { method, params: given, asking, asked });
         this.#write({ jsonrpc: '2.0', id, method, params: params.value });
         return Promise.resolve();
+    }
+
+    /**
+     * The text the server holds of every document of this transport, by the page's address of the
+     * file: the text of the document's first model, which the server follows.
+     */
+    documents(): Map<string, string> {
+        return new Map(
+            [...this.#docs].flatMap(([page, doc]) =>
+                doc.models.length === 0 ? [] : [[page, doc.models[0].getValue()] as const]
+            )
+        );
+    }
+
+    /** The version of every document the server holds. */
+    #versions(): Map<string, number> {
+        return new Map([...this.#docs].map(([page, doc]) => [page, doc.version]));
+    }
+
+    /** Whether a code action is one whose edit the transport keeps, by its command. */
+    #isKept(action: unknown): boolean {
+        const command = isRecord(action) ? action.command : null;
+        return isRecord(command) && command.command === APPLY_COMMAND;
     }
 
     /** The client's address of the document a request is made for, or null for none. */
@@ -405,16 +472,77 @@ export class LspTransport {
      */
     command(command: string, args: readonly unknown[]): Promise<unknown> | null {
         if (this.#closed) return null;
+        if (command === APPLY_COMMAND) {
+            const kept = this.#tokens.get(args[0]);
+            return kept === undefined ? null : this.#applyKept(kept);
+        }
         const turned = this.#out({ arguments: args });
         if (turned === null) return null;
         const { arguments: given } = turned.value as { arguments: unknown[] };
         return this.#request({ command, arguments: given }, 'workspace/executeCommand', null);
     }
 
+    /** Make the edit a code action kept, then run the command the action had after it. */
+    async #applyKept(kept: KeptEdit): Promise<unknown> {
+        if (kept.asking !== null && !this.#addresses.has(kept.asking)) {
+            this.#host.notice('lsp_edit_gone');
+            return null;
+        }
+        const outcome = await this.#commit(kept.edit, kept.asked);
+        if (!outcome.applied) {
+            this.#host.notice(outcome.notice, ...outcome.words);
+            return null;
+        }
+        if (kept.then === null) return null;
+        return (await this.command(kept.then.command, kept.then.arguments ?? [])) ?? null;
+    }
+
+    /**
+     * Make an edit a server asked for through the host, unless a document it names changed since
+     * the request it answers (`asked`) or the version its entry names is not the document's.
+     */
+    async #commit(
+        edit: unknown,
+        asked: ReadonlyMap<string, number> | null
+    ): Promise<LspEditOutcome> {
+        const stale = staleFile(edit, this.#versions(), asked);
+        if (stale !== null) {
+            return { applied: false, notice: 'lsp_edit_changed', words: [nameOfPage(stale)] };
+        }
+        return await this.#host.applyEdit(edit);
+    }
+
+    /**
+     * The code actions of a kind of source action a registered model's server offers: the actions
+     * the server answers to a request for that kind alone, with their edits kept for the page to
+     * apply. When the server answers none for Organize Imports and has a command of its own for it
+     * (`fallback`), the action that runs the command.
+     */
+    async sourceActions(
+        model: LspModel,
+        only: string,
+        fallback: string | null
+    ): Promise<unknown[]> {
+        const doc = this.#byModel.get(model);
+        if (this.#closed || doc === undefined) throw new Closed();
+        const asking = keyOf(model);
+        const asked = this.#versions();
+        const answer = await this.#askAbout(
+            doc,
+            'textDocument/codeAction',
+            sourceRequest(model, only)
+        );
+        return sourceActionsOf(answer, only, fallback, { asking, asked }, this.#tokens);
+    }
+
     #askAbout(doc: Doc, method: string, params: Record<string, unknown>): Promise<unknown> {
-        const document = BARE_DOCUMENT.includes(method)
-            ? { uri: doc.page }
-            : { textDocument: { uri: doc.page } };
+        let document: Record<string, unknown> = { textDocument: { uri: doc.page } };
+        if (BARE_DOCUMENT.includes(method)) document = { uri: doc.page };
+        // A request about the workspace, or about an item an answer gave, names no document; the
+        // relay finds the server by the item's file or, for a symbol query, by the root.
+        else if (NO_DOCUMENT.includes(method)) {
+            document = method === 'workspace/symbol' ? { root: doc.place.root } : {};
+        }
         return this.#request({ ...params, ...document }, method, doc.place.root);
     }
 
@@ -477,7 +605,7 @@ export class LspTransport {
             return;
         }
         if (message.id !== undefined && message.id !== null) {
-            this.#serverRequest(message);
+            await this.#serverRequest(message);
             return;
         }
         this.#notification(message);
@@ -518,12 +646,26 @@ export class LspTransport {
         }
         // The model the request was made for went before the answer came: nothing is made for it.
         if (waiting.asking !== null && !this.#addresses.has(waiting.asking)) {
+            if (waiting.method === 'textDocument/rename' && message.result != null) {
+                this.#host.notice('lsp_edit_gone');
+            }
             this.#deliver({ jsonrpc: '2.0', id, result: null });
             return;
         }
         let result: unknown = message.result ?? null;
         if (waiting.method === 'textDocument/codeAction') {
             result = this.#codeActions(waiting, result);
+        } else if (waiting.method === 'codeAction/resolve') {
+            result = keeping(result, this.#tokens, waiting);
+        } else if (waiting.method === 'textDocument/rename' && result !== null) {
+            // Monaco's rename applies the edit it is given to the models it can name and announces
+            // what it applied, so the page makes the real edit and Monaco is given no result: an
+            // empty edit would be announced as "Made 0 edits in 0 files". Monaco's standalone
+            // editor writes its "No result." for that answer to the console only.
+            const outcome = await this.#commit(result, waiting.asked);
+            if (!outcome.applied) this.#host.notice(outcome.notice, ...outcome.words);
+            this.#deliver({ jsonrpc: '2.0', id, result: null });
+            return;
         }
         const turned = await this.#in(result, waiting.asking);
         this.#deliver({ jsonrpc: '2.0', id, result: turned === DROP ? null : turned });
@@ -536,38 +678,12 @@ export class LspTransport {
     }
 
     /**
-     * The answer to a code action request: an action whose edit names a file other than the asking
-     * one is offered only when it carries a command, without the edit, and Organize Imports is
-     * added for Python when it was asked for and the server gave none.
+     * The answer to a code action request: each action's edit is kept for the page to apply and the
+     * action carries the command that applies it.
      */
     #codeActions(waiting: Waiting, result: unknown): unknown {
-        const doc = this.#docOf(waiting.asking);
-        const given = Array.isArray(result) ? (result as unknown[]) : [];
-        const kept: unknown[] = [];
-        for (const action of given) {
-            if (!isRecord(action) || action.edit === undefined) {
-                kept.push(action);
-                continue;
-            }
-            const names = touched(action.edit);
-            const own = names?.every((name) => name === doc?.page) === true;
-            if (own) kept.push(action);
-            else if (action.command !== undefined) kept.push({ ...action, edit: undefined });
-        }
-        const asked = asksOrganize(waiting.params);
-        const hasOrganize = kept.some((one) => isRecord(one) && one.kind === ORGANIZE);
-        if (doc?.language === 'python' && asked && !hasOrganize) {
-            kept.push({
-                title: 'Organize Imports',
-                kind: ORGANIZE,
-                command: {
-                    title: 'Organize Imports',
-                    command: ORGANIZE_COMMAND,
-                    arguments: [doc.page]
-                }
-            });
-        }
-        return result === null && kept.length === 0 ? null : kept;
+        if (!Array.isArray(result)) return result;
+        return (result as unknown[]).map((action) => keeping(action, this.#tokens, waiting));
     }
 
     /** The document a client address names, when it is registered. */
@@ -578,13 +694,20 @@ export class LspTransport {
     }
 
     /** A request of the server's the relay passed on. */
-    #serverRequest(message: Rpc): void {
+    async #serverRequest(message: Rpc): Promise<void> {
         const id = message.id ?? null;
         const reply = (result: unknown): void => void this.#write({ jsonrpc: '2.0', id, result });
         switch (message.method) {
-            case 'workspace/applyEdit':
-                reply({ applied: this.#applyEdit(message.params) });
+            case 'workspace/applyEdit': {
+                const edit = isRecord(message.params) ? message.params.edit : null;
+                const outcome = await this.#commit(edit, null);
+                if (outcome.applied) reply({ applied: true });
+                else {
+                    this.#host.notice(outcome.notice, ...outcome.words);
+                    reply({ applied: false, failureReason: outcome.notice });
+                }
                 return;
+            }
             case 'workspace/semanticTokens/refresh':
                 reply(null);
                 this.#host.refreshTokens();
@@ -599,44 +722,6 @@ export class LspTransport {
                     error: { code: -32601, message: `${message.method ?? ''} is not handled` }
                 });
         }
-    }
-
-    /**
-     * Apply a server's edit when it names registered documents alone, each as one undo stop. An
-     * edit that names a file no model holds, or creates, renames or deletes one, is refused with a
-     * notice, and nothing is applied.
-     */
-    #applyEdit(params: unknown): boolean {
-        const edit = isRecord(params) ? params.edit : null;
-        const edits = new Map<string, TextEdit[]>();
-        if (!isRecord(edit)) return false;
-        if (isRecord(edit.changes)) {
-            for (const [page, list] of Object.entries(edit.changes)) {
-                edits.set(page, [...(edits.get(page) ?? []), ...(list as TextEdit[])]);
-            }
-        }
-        if (Array.isArray(edit.documentChanges)) {
-            for (const change of edit.documentChanges as unknown[]) {
-                const document = isRecord(change) ? change.textDocument : null;
-                if (!isRecord(document) || typeof document.uri !== 'string') {
-                    this.#host.notice('lsp_other_files');
-                    return false;
-                }
-                const list = isRecord(change) ? (change.edits as TextEdit[]) : [];
-                edits.set(document.uri, [...(edits.get(document.uri) ?? []), ...list]);
-            }
-        }
-        const docs = [...edits.keys()].map((page) => this.#docs.get(page));
-        if (edits.size === 0 || docs.some((doc) => doc === undefined)) {
-            this.#host.notice('lsp_other_files');
-            return false;
-        }
-        let applied = true;
-        for (const [page, list] of edits) {
-            const doc = this.#docs.get(page);
-            if (doc !== undefined && !this.#host.apply(doc.models[0], list)) applied = false;
-        }
-        return applied;
     }
 
     #notification(message: Rpc): void {
@@ -717,41 +802,7 @@ export class LspTransport {
             } else if (placeOf(page) === null) continue;
             models.set(page, await this.#modelFor(page, asking));
         }
-        const address = (page: string): string | null | undefined => {
-            if (!models.has(page)) return undefined;
-            return models.get(page) ?? null;
-        };
-        const walk = (item: unknown): unknown => {
-            if (Array.isArray(item)) return item.map(walk).filter((one) => one !== DROP);
-            if (!isRecord(item)) return item;
-            const copy: Record<string, unknown> = {};
-            for (const [key, inner] of Object.entries(item)) {
-                if (ADDRESSES.includes(key) && typeof inner === 'string') {
-                    const turned = address(inner);
-                    if (turned === null) return DROP;
-                    copy[key] = turned ?? inner;
-                } else if (key === 'changes' && isRecord(inner)) {
-                    const changes: Record<string, unknown> = {};
-                    for (const [page, edits] of Object.entries(inner)) {
-                        const turned = address(page);
-                        if (turned === null) return DROP;
-                        changes[turned ?? page] = walk(edits);
-                    }
-                    copy[key] = changes;
-                } else if (key === 'arguments' && Array.isArray(inner)) {
-                    copy[key] = inner.map((one) => {
-                        const turned = typeof one === 'string' ? address(one) : undefined;
-                        return typeof one === 'string' ? (turned ?? one) : walk(one);
-                    });
-                } else {
-                    const walked = walk(inner);
-                    if (walked === DROP) return DROP;
-                    copy[key] = walked;
-                }
-            }
-            return copy;
-        };
-        return walk(value);
+        return toClient(value, models);
     }
 
     /**
@@ -804,6 +855,7 @@ export class LspTransport {
         for (const own of this.#own.values()) own.reject(new Closed());
         this.#own.clear();
         this.#waiting.clear();
+        this.#tokens.clear();
         for (const peek of this.#peeks.values()) this.#host.drop(peek.model);
         this.#peeks.clear();
         this.#docs.clear();

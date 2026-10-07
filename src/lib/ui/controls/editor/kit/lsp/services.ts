@@ -38,6 +38,13 @@ export type LspSymbol = DocumentSymbol;
 /** The answer for the symbols of one tab: the tree, a request in flight, or none to give. */
 export type LspSymbols = readonly LspSymbol[] | 'loading' | 'none';
 
+/**
+ * How an edit a server asked for ended: made, or refused with the notice that says why, its words
+ * the files it names. Nothing of a refused edit is applied.
+ */
+export type LspEditOutcome =
+    { applied: true } | { applied: false; notice: string; words: string[] };
+
 /** What the language server kit needs from the page, passed in by the source view. */
 export type LspServices = {
     /** The port of a language's channel. */
@@ -68,6 +75,13 @@ export type LspServices = {
     ): void;
     /** Hands the document symbols of one tab instance. */
     symbols(instance: string, answer: LspSymbols): void;
+    /**
+     * Make an edit a server asked for, a workspace edit with the page's addresses: the open tabs of
+     * any language edited unsaved and the other files written, all or none. `held` is the text the
+     * asking server holds of each document, by the page's address of the file, over every language
+     * its entry serves.
+     */
+    applyEdit(edit: unknown, held: ReadonlyMap<string, string>): Promise<LspEditOutcome>;
     /** Shows a notice of the source tab by its name, as the tab's other notices are shown. */
     notice(key: string, ...words: string[]): void;
     /** A catalog line, for the labels of the actions the kit adds. */

@@ -5,10 +5,12 @@
 //
 // The file is `{ "version": 1, "repositories": { "<real path>": { "interpreter"?, "database"? } }
 // }`. It is written whole by a rename. A file that is not JSON, or not that shape, reads as holding
-// no choices, and a write over it is refused with the reason and leaves it as it was, so the
-// bytes the reader put there are never replaced. Every write that changed a choice is recorded in
-// the change log as the other machine-local writes are. The flows of the page's `choices`, `choose`
-// and `approve` messages are here too, over the registry's adapters (servers.ts).
+// no choices, and a write over it is refused with the reason and leaves it as it was, so the bytes
+// the reader put there are never replaced. Every write that changed a choice is recorded in the
+// change log as the other machine-local writes are. The flows of the page's `choices`, `choose`,
+// `approve` and `revoke` messages are here too, over the registry's adapters (servers.ts), with the
+// two parts every adapter shares: the answer for a program that is not there and the approval parts
+// of a server with none.
 
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -17,7 +19,7 @@ import type { LspRefusal, LspToPage, LspToServer } from '../../../data/model/ind
 import { logChanges, type ChangeLog } from '../../core/changes.ts';
 import { readJsonChecked, writeTextAtomic } from '../../core/json.ts';
 import type { Held } from './held/held.ts';
-import type { Adapter, Choice, RootEnv } from './servers.ts';
+import type { Adapter, Applying, Choice, Prepared, RootEnv, ServerEntry } from './servers.ts';
 
 const choiceShape = z.object({
     interpreter: z.string().optional(),
@@ -140,18 +142,32 @@ export async function applyChoose(
             send({ oculus: 'refused', root: message.root, code: written.code });
             return;
         }
-        if (picked.apply === 'restart') await held?.restart();
-        else await reconfigure(adapter, env, held);
+        await applied(adapter, env, held, picked.apply);
     }
     await sendChoices(adapter, env, message.root, send);
 }
 
-/** The reader approved the repository's interpreter. */
+/** What a running server is put through for a choice or an approval. */
+async function applied(
+    adapter: Adapter,
+    env: RootEnv,
+    held: Held | undefined,
+    how: Applying | null
+): Promise<void> {
+    if (how === 'restart') await held?.restart();
+    else if (how === 'configuration') await reconfigure(adapter, env, held);
+}
+
+/**
+ * The reader approved what the repository would run: its interpreter, or its configuration. The
+ * servers that depend on the same approval (`followers`) are restarted with it.
+ */
 export async function applyApprove(
     adapter: Adapter,
     env: RootEnv,
     message: Extract<LspToServer, { oculus: 'approve' }>,
     held: Held | undefined,
+    followers: Held[],
     send: Send
 ): Promise<void> {
     const done = await adapter.approve(env, message);
@@ -159,6 +175,50 @@ export async function applyApprove(
         send({ oculus: 'refused', root: message.root, code: 'choices_write' });
         return;
     }
-    if (done.changed) await reconfigure(adapter, env, held);
+    await applied(adapter, env, held, done.apply);
+    if (done.apply !== null) await Promise.all(followers.map((one) => one.restart()));
     await sendChoices(adapter, env, message.root, send);
 }
+
+/** The reader took an approval back: the servers that run on it restart without it. */
+export async function applyRevoke(
+    adapter: Adapter,
+    env: RootEnv,
+    message: Extract<LspToServer, { oculus: 'revoke' }>,
+    held: Held | undefined,
+    followers: Held[],
+    send: Send
+): Promise<void> {
+    const done = await adapter.revoke(env, message);
+    if (!done.ok) {
+        send({ oculus: 'refused', root: message.root, code: 'choices_write' });
+        return;
+    }
+    await applied(adapter, env, held, done.apply);
+    if (done.apply !== null) await Promise.all(followers.map((one) => one.restart()));
+    await sendChoices(adapter, env, message.root, send);
+}
+
+/**
+ * The answer of `prepare` for an entry whose program is not there; `where` says where it is looked
+ * for.
+ */
+export function notFound(entry: ServerEntry, where: string): Prepared {
+    return {
+        ok: false,
+        state: 'not_found',
+        code: 'not_found',
+        program: entry.program,
+        note: `${entry.program} is not installed${where}`
+    };
+}
+
+/**
+ * The adapter parts of a server with no approval of its own, whose setup does not change after it
+ * started: nothing is approved or taken back, and the setup it runs with stays.
+ */
+export const NO_APPROVAL: Pick<Adapter, 'approve' | 'revoke' | 'settings'> = {
+    approve: () => ({ ok: true, apply: null }),
+    revoke: () => ({ ok: true, apply: null }),
+    settings: (_env, setup) => setup
+};

@@ -1,6 +1,7 @@
 // Layer 2, client state, pure. What the References view holds for one instance and what it draws:
-// the locations a language server answered for Find All References or Find All Implementations,
-// grouped by file with each location's line text, the history of the last searches, and the
+// the locations a language server answered for Find All References, Find All Implementations, the
+// call hierarchy (the call sites of a symbol) or the type hierarchy (the types above and below
+// it), grouped by file with each location's line text, the history of the last searches, and the
 // numbers and words the view draws from them.
 //
 // A file is one of a served root (`root` and `path`) or a library file a language server named
@@ -14,9 +15,10 @@
 
 import { z } from 'zod';
 import { anyNumberShape, readAs, rowsShape } from '../../../../data/shapes/shapes.ts';
+import { hierarchyShape, type Hierarchy } from './hierarchy.ts';
 
 /** Which request a search made. */
-type RefKind = 'references' | 'implementations';
+type RefKind = 'references' | 'implementations' | 'calls' | 'types';
 
 /** One search: what it asked and where, which a history row runs again. */
 export type RefSearch = {
@@ -55,6 +57,8 @@ export type RefFile = {
 export type RefsState = {
     search: RefSearch | null;
     files: RefFile[];
+    /** The tree of a call or type hierarchy search, which has no files; null for any other. */
+    hierarchy: Hierarchy | null;
     /** The last searches, newest first. */
     history: RefSearch[];
 };
@@ -63,10 +67,10 @@ export type RefsState = {
 const HISTORY_KEPT = 10;
 
 /** The state a References tab opens with. */
-const EMPTY_REFS: RefsState = { search: null, files: [], history: [] };
+const EMPTY_REFS: RefsState = { search: null, files: [], hierarchy: null, history: [] };
 
 const searchShape = z.object({
-    kind: z.enum(['references', 'implementations']),
+    kind: z.enum(['references', 'implementations', 'calls', 'types']),
     word: z.string().catch(''),
     root: z.string(),
     path: z.string(),
@@ -92,6 +96,7 @@ const fileShape = z.object({
 const stateShape = z.object({
     search: searchShape.nullable().catch(null),
     files: rowsShape(fileShape).catch([]),
+    hierarchy: hierarchyShape.nullable().catch(null),
     history: rowsShape(searchShape).catch([])
 });
 

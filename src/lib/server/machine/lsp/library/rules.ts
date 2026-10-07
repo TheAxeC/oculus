@@ -19,6 +19,7 @@
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps.ts';
+import { namesInterpreterLibrary } from '../../../../data/prose/lsp-servers.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { normal } from '../uris.ts';
 
@@ -81,7 +82,7 @@ export function mintable(real: string, rules: LibraryRules, naming: Naming): boo
     if (under(real, rules.withheld)) return false;
     if (inClosed(real, rules.closed)) return false;
     if (pathSegmentsOpen(real.replace(/^\/+/, ''))) return true;
-    if (naming.server !== 'pyright') return false;
+    if (!namesInterpreterLibrary(naming.server)) return false;
     const home = rules.home ?? homedir();
     return under(
         real,

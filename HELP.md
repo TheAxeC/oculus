@@ -65,6 +65,9 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | Cmd+Alt+T | run the default test of that repository (Ctrl+Alt+T off macOS) |
 | Shift-F10 | the right-click menu of the focused row or control, as the context menu key opens it |
 | Cmd-K | jump palette |
+| Cmd+T | in the app, the palette on the symbols of the workspace (`#` in the palette does the same in a browser) |
+| F2 | rename the symbol at the caret of a source tab's editor, through its language server |
+| Shift+Alt+H | show the call hierarchy of the symbol at the caret of a source tab's editor, in the References view |
 | : | command line |
 | Esc | clear the cursor |
 | Alt+F5 / Shift+Alt+F5 | next / previous change, in a diff pane (through every file it holds) or a source tab's editor that holds the focus |
@@ -93,7 +96,7 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `files` | [Files](docs/views.md#files) | The file browser over the hub, the engine config folder and the configured roots, read like an editor's explorer. |
 | `repositories` | [Repositories](docs/views.md#repositories) | VS Code's Source Control over every repository oculus knows, with the commit box, the changes, the graph, stashes, tags and worktrees. |
 | `search` | [Search](docs/views.md#search) | A pattern across the files of one root or of all of them, the hits grouped by file, with an optional replace. |
-| `references` | [References](docs/views.md#references) | The locations a language server found for Find All References or Find All Implementations in a source tab. |
+| `references` | [References](docs/views.md#references) | The locations a language server found for Find All References or Find All Implementations in a source tab, and the call and type hierarchies of a symbol. |
 | `funding` | [Funding](docs/views.md#funding) | The funding schemes, their stage and the statement each grant requires. |
 | `events` | [Talks & Events](docs/views.md#talks--events) | Talks, events and what is coming. |
 | `education` | [Education & Service](docs/views.md#education--service) | Teaching and service entries. |

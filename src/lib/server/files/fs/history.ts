@@ -55,11 +55,14 @@ export const SAVES_KEPT = 50;
 /** How many copies of kind `delete` are kept over all files. */
 export const DELETES_KEPT = 50;
 
-/** What a copy was made before: a save of the file, a replace in it, or the delete of it. */
-export type HistoryKind = 'save' | 'replace' | 'delete';
+/**
+ * What a copy was made before: a save of the file, a replace in it, an edit a language server asked
+ * for in it, or the delete of it.
+ */
+export type HistoryKind = 'save' | 'replace' | 'lsp-edit' | 'delete';
 
 /** The kinds of copy kept per file, newest `SAVES_KEPT` of each, which are the edits of a file. */
-const EDIT_KINDS: readonly HistoryKind[] = ['save', 'replace'];
+const EDIT_KINDS: readonly HistoryKind[] = ['save', 'replace', 'lsp-edit'];
 
 /** One copy of a file: its id, the time it was made (ms), the file's size and why it was made. */
 export type HistorySave = { id: string; at: number; size: number; kind: HistoryKind };
@@ -74,7 +77,7 @@ const entriesShape = z.object({
             id: z.string().regex(/^\d{8}T\d{9}(-\d+)?$/),
             at: z.number(),
             size: z.number(),
-            kind: z.enum(['save', 'replace', 'delete'])
+            kind: z.enum(['save', 'replace', 'lsp-edit', 'delete'])
         })
     )
 });

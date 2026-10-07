@@ -5,6 +5,7 @@ text:
         clear: Clear
         clear_all_history: Clear History
         collapse_all: Collapse All
+        collapse_node: Collapse
         copy: Copy
         copy_all: Copy All
         copy_path: Copy Path
@@ -12,17 +13,24 @@ text:
         count_one: 1 result in 1 file
         count_one_file: '{0} results in 1 file'
         count_one_result: '1 result in {0} files'
+        direction_incoming: Incoming calls
+        direction_outgoing: Outgoing calls
+        direction_subtypes: Subtypes
+        direction_supertypes: Supertypes
         dismiss: Dismiss
         empty: No results.
         empty_history: 'No results. Try running a previous search again:'
+        expand_node: Expand
         file_title: '{0}'
         history_row: '{0}: {1}'
         history_title: 'Run {0} of {1} again'
         line_title: '{0}:{1}'
         refresh: Refresh
         results: References
+        title_calls: Call Hierarchy
         title_implementations: Implementations
         title_references: References
+        title_types: Type Hierarchy
     search:
         actions: Search actions
         capped: cut at {0}

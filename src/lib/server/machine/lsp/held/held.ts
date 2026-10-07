@@ -19,7 +19,7 @@ import { basename } from 'node:path';
 import type { watch } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { LspCode, LspRpc, LspState } from '../../../../data/model/index.ts';
-import { OUTPUT_LINES, ServerProcess, type Spawn } from '../process.ts';
+import { OUTPUT_LINES, ServerProcess, type Spawn } from './process.ts';
 import type { Sink } from '../../../core/channels.ts';
 import type { Library } from '../library/tokens.ts';
 import type { Prepared, ServerEntry, Setup } from '../servers.ts';
@@ -576,6 +576,8 @@ export type Page = {
     stranded: Map<string, { entry: ServerEntry; roots: Set<string> }>;
     /** The library files the page was given addresses for, which end with the page. */
     library: Library;
+    /** The real paths of the files its tabs show, whatever their language (held/elsewhere.ts). */
+    tabs: Set<string>;
 };
 
 /**

@@ -47,7 +47,7 @@
     import { changeActions, type EditorBlame, type EditorMark } from './gutter/gutter';
     import { actOnMarks, drawGutter, pressInGutter } from './gutter/editor-gutter';
     import { tabOut } from './tab-out';
-    import { followFirstLine, runCommand, type FirstLine } from './commands';
+    import { followFirstLine, reachedBy, runCommand, type FirstLine } from './commands';
     import { applyIndent, applyOptions, monacoOptions } from './options';
     import type { EditorOptions } from './options';
     import { lineBars } from './bars/zones';
@@ -63,7 +63,8 @@
         EditorEnding,
         EditorExtension,
         EditorIndent,
-        EditorOwnAction
+        EditorOwnAction,
+        EditorReach
     } from './types';
 
     /** The most characters of selected text handed to `onselect`; a longer selection hands none. */
@@ -71,6 +72,11 @@
 
     type Props = {
         text: string;
+        /**
+         * The edits the text was last changed by, read when the text differs from the model's;
+         * null for a text typed or set whole.
+         */
+        reached?: () => EditorReach | null;
         /** Oculus's name for the language, which kit/grammars.ts answers the Shiki id of. */
         language: string;
         /** Whether the reader may change the text. */
@@ -123,6 +129,7 @@
 
     let {
         text,
+        reached,
         language,
         writable = true,
         indent,
@@ -256,10 +263,20 @@
             });
         });
         const said = listed.map(({ id, label, hint }): EditorAction => ({ id, label, hint }));
-        for (const { id, label, key, menu, run } of actions) {
+        for (const { id, label, key, menu, disabled, run } of actions) {
             const keybindings = key === undefined ? [] : [keyCode(loaded.monaco, key)];
             const group = menu === undefined ? {} : { contextMenuGroupId: menu };
-            added.push(made.addAction({ id, label, keybindings, ...group, run: () => run() }));
+            const precondition = disabled === true ? { precondition: 'false' } : {};
+            added.push(
+                made.addAction({
+                    id,
+                    label,
+                    keybindings,
+                    ...group,
+                    ...precondition,
+                    run: () => run()
+                })
+            );
         }
         said.push(...ownListing(actions, loaded.mac));
         untrack(() => onactions?.([...said, ...chordActions(made, loaded.mac)]));
@@ -320,8 +337,9 @@
         };
     });
 
-    // A text the parent hands in that the model does not hold already replaces the model's as one
-    // edit, in the line ending asked for; the text the reader typed comes back equal and is left.
+    // A text the parent hands in that the model does not hold already reaches the model as the
+    // edits it was made by when the parent names them, and as one replacement otherwise, in the
+    // line ending asked for; the text the reader typed comes back equal and is left.
     $effect(() => {
         const held = model;
         const wanted = text;
@@ -332,11 +350,13 @@
         untrack(() => {
             applying = true;
             try {
-                held.pushEditOperations(
-                    [],
-                    [{ range: held.getFullModelRange(), text: wanted }],
-                    () => null
-                );
+                if (!reachedBy(loaded.monaco, held, reached?.() ?? null, wanted)) {
+                    held.pushEditOperations(
+                        [],
+                        [{ range: held.getFullModelRange(), text: wanted }],
+                        () => null
+                    );
+                }
                 held.pushEOL(eolOf(loaded.monaco, ending));
             } finally {
                 applying = false;

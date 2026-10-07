@@ -212,6 +212,32 @@ const ROWS: Row[] = [
         ]
     },
     {
+        name: 'drops a workspace edit whose documentChanges name a file the mapper has no address for, and turns the entries of one it can',
+        got: (world) => {
+            const outside = pathToFileURL(world.outside).href;
+            const app = pathToFileURL(world.app).href;
+            const entry = (uri: string) => ({
+                textDocument: { uri, version: null },
+                edits: [{ range: { start: { line: 0, character: 0 } }, newText: 'x' }]
+            });
+            const edit = { edit: { documentChanges: [entry(app), entry(outside)] } };
+            return [toPage(edit, world.mapper), toPage(edit, lending(world))?.value];
+        },
+        want: () => [
+            null,
+            {
+                edit: {
+                    documentChanges: [
+                        expect.objectContaining({
+                            textDocument: { uri: 'oculus-file:///repo/src/app.py', version: null }
+                        }),
+                        expect.objectContaining({ textDocument: { uri: LIBRARY, version: null } })
+                    ]
+                }
+            }
+        ]
+    },
+    {
         name: 'turns a library address of a message to a server into the file address its resolver gives, and refuses the message when it gives none',
         got: (world) => {
             const real = pathToFileURL(world.outside).href;

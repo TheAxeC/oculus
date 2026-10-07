@@ -228,6 +228,12 @@
         client.layout.adoptFloats(shipped);
     });
 
+    // The files this page's source tabs hold open are told to the language server relay, which
+    // tells another page a rename or a code action names one of them (state/system/machine/lsp/).
+    $effect(() => {
+        client.lspEdits.publish();
+    });
+
     $effect(() => {
         currentPage();
         keyboard.syncCards();

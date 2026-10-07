@@ -1,501 +1,524 @@
-<svg width="264pt" height="1096pt"
- viewBox="0.00 0.00 264.00 1096.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="264pt" height="1154pt"
+ viewBox="0.00 0.00 264.00 1154.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <style>svg { color: #333333; } @media (prefers-color-scheme: dark) { svg { color: #cccccc; background: #1e1e1e; } }</style>
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 1092.16)">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 1149.76)">
 <title>layer_shell</title>
 <g id="clust1" class="cluster">
 <title>cluster_shell</title>
-<polygon fill="none" stroke="currentColor" points="8,-8 8,-1080.16 194,-1080.16 194,-8 8,-8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="101" y="-1065.36" font-family="Helvetica,Arial,sans-serif" font-size="12.00">shell</text>
+<polygon fill="none" stroke="currentColor" points="8,-8 8,-1137.76 194,-1137.76 194,-8 8,-8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="101" y="-1122.96" font-family="Helvetica,Arial,sans-serif" font-size="12.00">shell</text>
 </g>
 <!-- folder shell -->
 <g id="node1" class="node">
 <title>folder shell</title>
-<polygon fill="none" stroke="currentColor" points="144,-1049.76 90,-1049.76 90,-1028.16 144,-1028.16 144,-1049.76"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="117" y="-1035.96" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell</text>
+<polygon fill="none" stroke="currentColor" points="144,-1107.36 90,-1107.36 90,-1085.76 144,-1085.76 144,-1107.36"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="117" y="-1093.56" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell</text>
 </g>
 <!-- folder shell/frames -->
 <g id="node2" class="node">
 <title>folder shell/frames</title>
-<polygon fill="none" stroke="currentColor" points="130.08,-886.08 63.92,-886.08 63.92,-864.48 130.08,-864.48 130.08,-886.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="97" y="-872.28" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/frames</text>
+<polygon fill="none" stroke="currentColor" points="130.08,-943.68 63.92,-943.68 63.92,-922.08 130.08,-922.08 130.08,-943.68"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="97" y="-929.88" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/frames</text>
 </g>
 <!-- folder shell&#45;&gt;folder shell/frames -->
 <!-- folder shell to folder shell/commands -->
 <g id="node8" class="node">
 <title>folder shell to folder shell/commands</title>
-<polygon fill="none" stroke="none" points="25.88,-664.8 16.12,-664.8 16.12,-652.32 25.88,-652.32 25.88,-664.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="21" y="-656.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+<polygon fill="none" stroke="none" points="25.88,-722.4 16.12,-722.4 16.12,-709.92 25.88,-709.92 25.88,-722.4"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="21" y="-713.76" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
 </g>
 <!-- folder shell&#45;&gt;folder shell to folder shell/commands -->
 <g id="edge7" class="edge">
 <title>folder shell&#45;&gt;folder shell to folder shell/commands</title>
-<path fill="none" stroke="currentColor" d="M96.76,-1027.67C67.54,-1011.2 17,-975.98 17,-929.32 17,-929.32 17,-929.32 17,-768.2 17,-728.56 19.69,-680.85 20.66,-664.98"/>
+<path fill="none" stroke="currentColor" d="M96.76,-1085.27C67.54,-1068.8 17,-1033.58 17,-986.92 17,-986.92 17,-986.92 17,-825.8 17,-786.16 19.69,-738.45 20.66,-722.58"/>
 </g>
 <!-- folder shell to folder shell/frames -->
 <g id="node9" class="node">
 <title>folder shell to folder shell/frames</title>
-<polygon fill="none" stroke="none" points="101.88,-934.56 92.12,-934.56 92.12,-922.08 101.88,-922.08 101.88,-934.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="97" y="-925.92" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+<polygon fill="none" stroke="none" points="101.88,-992.16 92.12,-992.16 92.12,-979.68 101.88,-979.68 101.88,-992.16"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="97" y="-983.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
 </g>
 <!-- folder shell&#45;&gt;folder shell to folder shell/frames -->
 <g id="edge9" class="edge">
 <title>folder shell&#45;&gt;folder shell to folder shell/frames</title>
-<path fill="none" stroke="currentColor" d="M115.15,-1027.93C111.02,-1005.45 101.11,-951.65 97.97,-934.6"/>
+<path fill="none" stroke="currentColor" d="M115.15,-1085.53C111.02,-1063.05 101.11,-1009.25 97.97,-992.2"/>
 </g>
 <!-- folder shell to folder shell/keys -->
 <g id="node10" class="node">
 <title>folder shell to folder shell/keys</title>
-<polygon fill="none" stroke="none" points="185.88,-664.8 176.12,-664.8 176.12,-652.32 185.88,-652.32 185.88,-664.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="181" y="-656.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+<polygon fill="none" stroke="none" points="185.88,-722.4 176.12,-722.4 176.12,-709.92 185.88,-709.92 185.88,-722.4"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="181" y="-713.76" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
 </g>
 <!-- folder shell&#45;&gt;folder shell to folder shell/keys -->
 <g id="edge11" class="edge">
 <title>folder shell&#45;&gt;folder shell to folder shell/keys</title>
-<path fill="none" stroke="currentColor" d="M122.56,-1028.04C138.81,-998.11 185,-905.75 185,-823.24 185,-823.24 185,-823.24 185,-768.2 185,-728.56 182.31,-680.85 181.34,-664.98"/>
+<path fill="none" stroke="currentColor" d="M122.56,-1085.64C138.81,-1055.71 185,-963.35 185,-880.84 185,-880.84 185,-880.84 185,-825.8 185,-786.16 182.31,-738.45 181.34,-722.58"/>
 </g>
 <!-- folder shell to folder shell/panes -->
 <g id="node11" class="node">
 <title>folder shell to folder shell/panes</title>
-<polygon fill="none" stroke="none" points="41.88,-828.48 32.12,-828.48 32.12,-816 41.88,-816 41.88,-828.48"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="37" y="-819.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
+<polygon fill="none" stroke="none" points="41.88,-886.08 32.12,-886.08 32.12,-873.6 41.88,-873.6 41.88,-886.08"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="37" y="-877.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
 </g>
 <!-- folder shell&#45;&gt;folder shell to folder shell/panes -->
 <g id="edge13" class="edge">
 <title>folder shell&#45;&gt;folder shell to folder shell/panes</title>
-<path fill="none" stroke="currentColor" d="M109.61,-1027.7C103.22,-1018.6 93.95,-1004.83 87,-992.16 73.49,-967.54 69.79,-961.24 61,-934.56 48.01,-895.13 40.18,-845.48 37.79,-828.91"/>
+<path fill="none" stroke="currentColor" d="M109.61,-1085.3C103.22,-1076.2 93.95,-1062.43 87,-1049.76 73.49,-1025.14 69.79,-1018.84 61,-992.16 48.01,-952.73 40.18,-903.08 37.79,-886.51"/>
 </g>
 <!-- folder shell to folder shell/rail -->
 <g id="node12" class="node">
 <title>folder shell to folder shell/rail</title>
-<polygon fill="none" stroke="none" points="77.88,-934.56 68.12,-934.56 68.12,-922.08 77.88,-922.08 77.88,-934.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="73" y="-925.92" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+<polygon fill="none" stroke="none" points="77.88,-992.16 68.12,-992.16 68.12,-979.68 77.88,-979.68 77.88,-992.16"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="73" y="-983.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
 </g>
 <!-- folder shell&#45;&gt;folder shell to folder shell/rail -->
 <g id="edge15" class="edge">
 <title>folder shell&#45;&gt;folder shell to folder shell/rail</title>
-<path fill="none" stroke="currentColor" d="M112.94,-1027.93C103.83,-1005.45 82.04,-951.65 75.14,-934.6"/>
+<path fill="none" stroke="currentColor" d="M112.94,-1085.53C103.83,-1063.05 82.04,-1009.25 75.14,-992.2"/>
 </g>
 <!-- folder shell to folder shell/status -->
 <g id="node13" class="node">
 <title>folder shell to folder shell/status</title>
-<polygon fill="none" stroke="none" points="169.88,-828.48 160.12,-828.48 160.12,-816 169.88,-816 169.88,-828.48"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="165" y="-819.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+<polygon fill="none" stroke="none" points="169.88,-886.08 160.12,-886.08 160.12,-873.6 169.88,-873.6 169.88,-886.08"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="165" y="-877.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
 </g>
 <!-- folder shell&#45;&gt;folder shell to folder shell/status -->
 <g id="edge17" class="edge">
 <title>folder shell&#45;&gt;folder shell to folder shell/status</title>
-<path fill="none" stroke="currentColor" d="M120.77,-1027.83C129.58,-1003.69 151.47,-940.71 161,-886.08 164.65,-865.19 165.06,-839.87 165.05,-828.84"/>
+<path fill="none" stroke="currentColor" d="M120.77,-1085.43C129.58,-1061.29 151.47,-998.31 161,-943.68 164.65,-922.79 165.06,-897.47 165.05,-886.44"/>
 </g>
 <!-- folder shell to layer state -->
 <g id="node14" class="node">
 <title>folder shell to layer state</title>
-<polygon fill="none" stroke="none" points="176.88,-1045.2 167.12,-1045.2 167.12,-1032.72 176.88,-1032.72 176.88,-1045.2"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="172" y="-1036.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
+<polygon fill="none" stroke="none" points="176.88,-1102.8 167.12,-1102.8 167.12,-1090.32 176.88,-1090.32 176.88,-1102.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="172" y="-1094.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
 </g>
 <!-- folder shell&#45;&gt;folder shell to layer state -->
 <g id="edge19" class="edge">
 <title>folder shell&#45;&gt;folder shell to layer state</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M144.5,-1038.96C151.95,-1038.96 159.4,-1038.96 166.84,-1038.96"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M144.5,-1096.56C151.95,-1096.56 159.4,-1096.56 166.84,-1096.56"/>
 </g>
 <!-- folder shell to layer ui -->
 <g id="node15" class="node">
 <title>folder shell to layer ui</title>
-<polygon fill="none" stroke="none" points="185.88,-987.6 176.12,-987.6 176.12,-975.12 185.88,-975.12 185.88,-987.6"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="181" y="-978.96" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
+<polygon fill="none" stroke="none" points="185.88,-1045.2 176.12,-1045.2 176.12,-1032.72 185.88,-1032.72 185.88,-1045.2"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="181" y="-1036.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
 </g>
 <!-- folder shell&#45;&gt;folder shell to layer ui -->
 <g id="edge21" class="edge">
 <title>folder shell&#45;&gt;folder shell to layer ui</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M128.74,-1027.76C142.74,-1015.6 165.53,-995.8 175.75,-986.92"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M128.74,-1085.36C142.74,-1073.2 165.53,-1053.4 175.75,-1044.52"/>
 </g>
 <!-- folder shell/rail -->
 <g id="node3" class="node">
 <title>folder shell/rail</title>
-<polygon fill="none" stroke="currentColor" points="124,-780 70,-780 70,-758.4 124,-758.4 124,-780"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="97" y="-766.2" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/rail</text>
+<polygon fill="none" stroke="currentColor" points="124,-837.6 70,-837.6 70,-816 124,-816 124,-837.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="97" y="-823.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/rail</text>
 </g>
 <!-- folder shell/frames&#45;&gt;folder shell/rail -->
 <!-- folder shell/frames to layer state -->
 <g id="node16" class="node">
 <title>folder shell/frames to layer state</title>
-<polygon fill="none" stroke="none" points="153.88,-881.52 144.12,-881.52 144.12,-869.04 153.88,-869.04 153.88,-881.52"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="149" y="-872.88" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+<polygon fill="none" stroke="none" points="153.88,-939.12 144.12,-939.12 144.12,-926.64 153.88,-926.64 153.88,-939.12"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="149" y="-930.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
 </g>
 <!-- folder shell/frames&#45;&gt;folder shell/frames to layer state -->
 <g id="edge23" class="edge">
 <title>folder shell/frames&#45;&gt;folder shell/frames to layer state</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M130.31,-875.28C134.79,-875.28 139.27,-875.28 143.74,-875.28"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M130.31,-932.88C134.79,-932.88 139.27,-932.88 143.74,-932.88"/>
 </g>
 <!-- folder shell/status -->
 <g id="node4" class="node">
 <title>folder shell/status</title>
-<polygon fill="none" stroke="currentColor" points="127.86,-616.32 66.14,-616.32 66.14,-594.72 127.86,-594.72 127.86,-616.32"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="97" y="-602.52" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/status</text>
+<polygon fill="none" stroke="currentColor" points="139.86,-673.92 78.14,-673.92 78.14,-652.32 139.86,-652.32 139.86,-673.92"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="109" y="-660.12" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/status</text>
 </g>
 <!-- folder shell/rail&#45;&gt;folder shell/status -->
 <!-- folder shell/rail to layer state -->
 <g id="node17" class="node">
 <title>folder shell/rail to layer state</title>
-<polygon fill="none" stroke="none" points="151.88,-775.44 138.12,-775.44 138.12,-762.96 151.88,-762.96 151.88,-775.44"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="145" y="-766.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">21</text>
+<polygon fill="none" stroke="none" points="151.88,-833.04 138.12,-833.04 138.12,-820.56 151.88,-820.56 151.88,-833.04"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="145" y="-824.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">21</text>
 </g>
 <!-- folder shell/rail&#45;&gt;folder shell/rail to layer state -->
 <g id="edge25" class="edge">
 <title>folder shell/rail&#45;&gt;folder shell/rail to layer state</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M124.38,-769.2C128.89,-769.2 133.4,-769.2 137.91,-769.2"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M124.38,-826.8C128.89,-826.8 133.4,-826.8 137.91,-826.8"/>
 </g>
 <!-- folder shell/rail to layer ui -->
 <g id="node18" class="node">
 <title>folder shell/rail to layer ui</title>
-<polygon fill="none" stroke="none" points="125.88,-717.84 112.12,-717.84 112.12,-705.36 125.88,-705.36 125.88,-717.84"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="119" y="-709.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">22</text>
+<polygon fill="none" stroke="none" points="125.88,-775.44 112.12,-775.44 112.12,-762.96 125.88,-762.96 125.88,-775.44"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="119" y="-766.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">22</text>
 </g>
 <!-- folder shell/rail&#45;&gt;folder shell/rail to layer ui -->
 <g id="edge27" class="edge">
 <title>folder shell/rail&#45;&gt;folder shell/rail to layer ui</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M101.04,-758C105.65,-746.34 113.04,-727.66 116.74,-718.31"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M101.04,-815.6C105.65,-803.94 113.04,-785.26 116.74,-775.91"/>
 </g>
 <!-- folder shell/panes -->
 <g id="node5" class="node">
 <title>folder shell/panes</title>
-<polygon fill="none" stroke="currentColor" points="141.86,-464.12 80.14,-464.12 80.14,-442.52 141.86,-442.52 141.86,-464.12"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="111" y="-450.32" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/panes</text>
+<polygon fill="none" stroke="currentColor" points="117.86,-464.12 56.14,-464.12 56.14,-442.52 117.86,-442.52 117.86,-464.12"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="87" y="-450.32" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/panes</text>
 </g>
 <!-- folder shell/status&#45;&gt;folder shell/panes -->
-<!-- folder shell/status to layer state -->
+<!-- folder shell/status to layer data -->
 <g id="node19" class="node">
+<title>folder shell/status to layer data</title>
+<polygon fill="none" stroke="none" points="164.88,-669.36 155.12,-669.36 155.12,-656.88 164.88,-656.88 164.88,-669.36"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="160" y="-660.72" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+</g>
+<!-- folder shell/status&#45;&gt;folder shell/status to layer data -->
+<g id="edge29" class="edge">
+<title>folder shell/status&#45;&gt;folder shell/status to layer data</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M140.08,-663.12C144.95,-663.12 149.83,-663.12 154.71,-663.12"/>
+</g>
+<!-- folder shell/status to layer state -->
+<g id="node20" class="node">
 <title>folder shell/status to layer state</title>
-<polygon fill="none" stroke="none" points="162.88,-611.76 149.12,-611.76 149.12,-599.28 162.88,-599.28 162.88,-611.76"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="156" y="-603.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">20</text>
+<polygon fill="none" stroke="none" points="115.88,-611.76 102.12,-611.76 102.12,-599.28 115.88,-599.28 115.88,-611.76"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="109" y="-603.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">20</text>
 </g>
 <!-- folder shell/status&#45;&gt;folder shell/status to layer state -->
-<g id="edge29" class="edge">
+<g id="edge31" class="edge">
 <title>folder shell/status&#45;&gt;folder shell/status to layer state</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M128.34,-605.52C135.11,-605.52 141.88,-605.52 148.65,-605.52"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M109,-651.92C109,-640.26 109,-621.58 109,-612.23"/>
 </g>
 <!-- folder shell/status to layer ui -->
-<g id="node20" class="node">
+<g id="node21" class="node">
 <title>folder shell/status to layer ui</title>
-<polygon fill="none" stroke="none" points="95.88,-554.16 82.12,-554.16 82.12,-541.68 95.88,-541.68 95.88,-554.16"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89" y="-545.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">16</text>
+<polygon fill="none" stroke="none" points="137.88,-554.16 124.12,-554.16 124.12,-541.68 137.88,-541.68 137.88,-554.16"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="131" y="-545.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">16</text>
 </g>
 <!-- folder shell/status&#45;&gt;folder shell/status to layer ui -->
-<g id="edge31" class="edge">
+<g id="edge33" class="edge">
 <title>folder shell/status&#45;&gt;folder shell/status to layer ui</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M95.53,-594.32C93.85,-582.66 91.17,-563.98 89.82,-554.63"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M112.64,-652.07C115.83,-642.88 120.36,-628.85 123,-616.32 127.76,-593.72 129.92,-566.22 130.67,-554.57"/>
 </g>
 <!-- folder shell/keys -->
 <g id="node6" class="node">
 <title>folder shell/keys</title>
-<polygon fill="none" stroke="currentColor" points="117.64,-300.44 60.36,-300.44 60.36,-278.84 117.64,-278.84 117.64,-300.44"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89" y="-286.64" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/keys</text>
+<polygon fill="none" stroke="currentColor" points="93.64,-300.44 36.36,-300.44 36.36,-278.84 93.64,-278.84 93.64,-300.44"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="65" y="-286.64" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/keys</text>
 </g>
 <!-- folder shell/panes&#45;&gt;folder shell/keys -->
 <!-- folder shell/panes to folder shell/keys -->
-<g id="node21" class="node">
+<g id="node22" class="node">
 <title>folder shell/panes to folder shell/keys</title>
-<polygon fill="none" stroke="none" points="137.88,-348.92 128.12,-348.92 128.12,-336.44 137.88,-336.44 137.88,-348.92"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="133" y="-340.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+<polygon fill="none" stroke="none" points="113.88,-348.92 104.12,-348.92 104.12,-336.44 113.88,-336.44 113.88,-348.92"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="109" y="-340.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
 </g>
 <!-- folder shell/panes&#45;&gt;folder shell/panes to folder shell/keys -->
-<g id="edge33" class="edge">
+<g id="edge35" class="edge">
 <title>folder shell/panes&#45;&gt;folder shell/panes to folder shell/keys</title>
-<path fill="none" stroke="currentColor" d="M114.62,-442.26C117.79,-433.07 122.31,-419.04 125,-406.52 129.48,-385.66 131.77,-360.33 132.61,-349.28"/>
+<path fill="none" stroke="currentColor" d="M90.62,-442.26C93.79,-433.07 98.31,-419.04 101,-406.52 105.48,-385.66 107.77,-360.33 108.61,-349.28"/>
 </g>
 <!-- folder shell/panes to layer state -->
-<g id="node22" class="node">
+<g id="node23" class="node">
 <title>folder shell/panes to layer state</title>
-<polygon fill="none" stroke="none" points="169.88,-459.56 156.12,-459.56 156.12,-447.08 169.88,-447.08 169.88,-459.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="163" y="-450.92" font-family="Helvetica,Arial,sans-serif" font-size="8.00">45</text>
+<polygon fill="none" stroke="none" points="155.88,-459.56 142.12,-459.56 142.12,-447.08 155.88,-447.08 155.88,-459.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="149" y="-450.92" font-family="Helvetica,Arial,sans-serif" font-size="8.00">45</text>
 </g>
 <!-- folder shell/panes&#45;&gt;folder shell/panes to layer state -->
-<g id="edge35" class="edge">
+<g id="edge37" class="edge">
 <title>folder shell/panes&#45;&gt;folder shell/panes to layer state</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M142.28,-453.32C146.81,-453.32 151.35,-453.32 155.88,-453.32"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M118,-453.32C125.91,-453.32 133.82,-453.32 141.73,-453.32"/>
 </g>
 <!-- folder shell/panes to layer ui -->
-<g id="node23" class="node">
+<g id="node24" class="node">
 <title>folder shell/panes to layer ui</title>
-<polygon fill="none" stroke="none" points="117.88,-401.96 104.12,-401.96 104.12,-389.48 117.88,-389.48 117.88,-401.96"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="111" y="-393.32" font-family="Helvetica,Arial,sans-serif" font-size="8.00">20</text>
+<polygon fill="none" stroke="none" points="93.88,-401.96 80.12,-401.96 80.12,-389.48 93.88,-389.48 93.88,-401.96"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="87" y="-393.32" font-family="Helvetica,Arial,sans-serif" font-size="8.00">20</text>
 </g>
 <!-- folder shell/panes&#45;&gt;folder shell/panes to layer ui -->
-<g id="edge37" class="edge">
+<g id="edge39" class="edge">
 <title>folder shell/panes&#45;&gt;folder shell/panes to layer ui</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M111,-442.12C111,-430.46 111,-411.78 111,-402.43"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M87,-442.12C87,-430.46 87,-411.78 87,-402.43"/>
 </g>
 <!-- folder shell/commands -->
 <g id="node7" class="node">
 <title>folder shell/commands</title>
-<polygon fill="none" stroke="currentColor" points="150.14,-90.64 67.86,-90.64 67.86,-69.04 150.14,-69.04 150.14,-90.64"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="109" y="-76.84" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/commands</text>
+<polygon fill="none" stroke="currentColor" points="126.14,-90.64 43.86,-90.64 43.86,-69.04 126.14,-69.04 126.14,-90.64"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="85" y="-76.84" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/commands</text>
 </g>
 <!-- folder shell/keys&#45;&gt;folder shell/commands -->
 <!-- folder shell/keys to layer data -->
-<g id="node24" class="node">
+<g id="node25" class="node">
 <title>folder shell/keys to layer data</title>
-<polygon fill="none" stroke="none" points="163.88,-295.88 154.12,-295.88 154.12,-283.4 163.88,-283.4 163.88,-295.88"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="159" y="-287.24" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+<polygon fill="none" stroke="none" points="151.88,-295.88 142.12,-295.88 142.12,-283.4 151.88,-283.4 151.88,-295.88"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="147" y="-287.24" font-family="Helvetica,Arial,sans-serif" font-size="8.00">3</text>
 </g>
 <!-- folder shell/keys&#45;&gt;folder shell/keys to layer data -->
-<g id="edge39" class="edge">
+<g id="edge41" class="edge">
 <title>folder shell/keys&#45;&gt;folder shell/keys to layer data</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M117.98,-289.64C129.95,-289.64 141.91,-289.64 153.87,-289.64"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M93.83,-289.64C109.89,-289.64 125.95,-289.64 142.02,-289.64"/>
 </g>
 <!-- folder shell/keys to layer state -->
-<g id="node25" class="node">
+<g id="node26" class="node">
 <title>folder shell/keys to layer state</title>
-<polygon fill="none" stroke="none" points="73.88,-238.28 60.12,-238.28 60.12,-225.8 73.88,-225.8 73.88,-238.28"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="67" y="-229.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">19</text>
+<polygon fill="none" stroke="none" points="49.88,-238.28 36.12,-238.28 36.12,-225.8 49.88,-225.8 49.88,-238.28"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="43" y="-229.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">22</text>
 </g>
 <!-- folder shell/keys&#45;&gt;folder shell/keys to layer state -->
-<g id="edge41" class="edge">
+<g id="edge43" class="edge">
 <title>folder shell/keys&#45;&gt;folder shell/keys to layer state</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M84.96,-278.44C80.35,-266.78 72.96,-248.1 69.26,-238.75"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M60.96,-278.44C56.35,-266.78 48.96,-248.1 45.26,-238.75"/>
 </g>
 <!-- folder shell/keys to layer ui -->
-<g id="node26" class="node">
+<g id="node27" class="node">
 <title>folder shell/keys to layer ui</title>
-<polygon fill="none" stroke="none" points="93.88,-180.68 84.12,-180.68 84.12,-168.2 93.88,-168.2 93.88,-180.68"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
+<polygon fill="none" stroke="none" points="69.88,-180.68 60.12,-180.68 60.12,-168.2 69.88,-168.2 69.88,-180.68"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="65" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
 </g>
 <!-- folder shell/keys&#45;&gt;folder shell/keys to layer ui -->
-<g id="edge43" class="edge">
+<g id="edge45" class="edge">
 <title>folder shell/keys&#45;&gt;folder shell/keys to layer ui</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M89,-278.59C89,-255.44 89,-198.91 89,-180.99"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M65,-278.59C65,-255.44 65,-198.91 65,-180.99"/>
 </g>
 <!-- folder shell/commands to layer state -->
-<g id="node27" class="node">
+<g id="node28" class="node">
 <title>folder shell/commands to layer state</title>
-<polygon fill="none" stroke="none" points="179.88,-86.08 170.12,-86.08 170.12,-73.6 179.88,-73.6 179.88,-86.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="175" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
+<polygon fill="none" stroke="none" points="167.88,-86.08 158.12,-86.08 158.12,-73.6 167.88,-73.6 167.88,-86.08"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="163" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
 </g>
 <!-- folder shell/commands&#45;&gt;folder shell/commands to layer state -->
-<g id="edge45" class="edge">
+<g id="edge47" class="edge">
 <title>folder shell/commands&#45;&gt;folder shell/commands to layer state</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M150.51,-79.84C156.89,-79.84 163.26,-79.84 169.64,-79.84"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M126.44,-79.84C136.91,-79.84 147.38,-79.84 157.86,-79.84"/>
 </g>
 <!-- folder shell/commands to layer ui -->
-<g id="node28" class="node">
+<g id="node29" class="node">
 <title>folder shell/commands to layer ui</title>
-<polygon fill="none" stroke="none" points="113.88,-28.48 104.12,-28.48 104.12,-16 113.88,-16 113.88,-28.48"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="109" y="-19.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
+<polygon fill="none" stroke="none" points="89.88,-28.48 80.12,-28.48 80.12,-16 89.88,-16 89.88,-28.48"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="85" y="-19.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
 </g>
 <!-- folder shell/commands&#45;&gt;folder shell/commands to layer ui -->
-<g id="edge47" class="edge">
+<g id="edge49" class="edge">
 <title>folder shell/commands&#45;&gt;folder shell/commands to layer ui</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M109,-68.64C109,-56.98 109,-38.3 109,-28.95"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M85,-68.64C85,-56.98 85,-38.3 85,-28.95"/>
 </g>
 <!-- folder shell to folder shell/commands&#45;&gt;folder shell/commands -->
 <g id="edge8" class="edge">
 <title>folder shell to folder shell/commands&#45;&gt;folder shell/commands</title>
-<path fill="none" stroke="currentColor" d="M21.34,-652.14C22.31,-636.27 25,-588.56 25,-548.92 25,-548.92 25,-548.92 25,-173.44 25,-138.37 58.46,-110.69 83.14,-95.03"/>
-<polygon fill="currentColor" stroke="currentColor" points="84.21,-96.84 88.23,-91.92 82.01,-93.26 84.21,-96.84"/>
+<path fill="none" stroke="currentColor" d="M21,-709.73C21,-693.86 21,-646.13 21,-606.52 21,-606.52 21,-606.52 21,-173.44 21,-141.38 47.28,-112.39 66.15,-95.7"/>
+<polygon fill="currentColor" stroke="currentColor" points="67.39,-97.4 70.59,-91.9 64.66,-94.21 67.39,-97.4"/>
 </g>
 <!-- folder shell to folder shell/frames&#45;&gt;folder shell/frames -->
 <g id="edge10" class="edge">
 <title>folder shell to folder shell/frames&#45;&gt;folder shell/frames</title>
-<path fill="none" stroke="currentColor" d="M97,-921.86C97,-915.2 97,-903.63 97,-893.81"/>
-<polygon fill="currentColor" stroke="currentColor" points="99.1,-893.95 97,-887.95 94.9,-893.95 99.1,-893.95"/>
+<path fill="none" stroke="currentColor" d="M97,-979.46C97,-972.8 97,-961.23 97,-951.41"/>
+<polygon fill="currentColor" stroke="currentColor" points="99.1,-951.55 97,-945.55 94.9,-951.55 99.1,-951.55"/>
 </g>
 <!-- folder shell to folder shell/keys&#45;&gt;folder shell/keys -->
 <g id="edge12" class="edge">
 <title>folder shell to folder shell/keys&#45;&gt;folder shell/keys</title>
-<path fill="none" stroke="currentColor" d="M181.34,-652.14C182.31,-636.27 185,-588.56 185,-548.92 185,-548.92 185,-548.92 185,-394.72 185,-353.35 143.52,-321.4 115.09,-304.36"/>
-<polygon fill="currentColor" stroke="currentColor" points="116.44,-302.71 110.2,-301.51 114.33,-306.34 116.44,-302.71"/>
+<path fill="none" stroke="currentColor" d="M180.91,-709.73C180.67,-693.86 180,-646.13 180,-606.52 180,-606.52 180,-606.52 180,-394.72 180,-350.29 132.23,-319.9 98.26,-303.9"/>
+<polygon fill="currentColor" stroke="currentColor" points="99.38,-302.1 93.05,-301.52 97.64,-305.92 99.38,-302.1"/>
 </g>
 <!-- folder shell to folder shell/panes&#45;&gt;folder shell/panes -->
 <g id="edge14" class="edge">
 <title>folder shell to folder shell/panes&#45;&gt;folder shell/panes</title>
-<path fill="none" stroke="currentColor" d="M37.77,-815.83C39.94,-799.99 46,-752.34 46,-712.6 46,-712.6 46,-712.6 46,-546.92 46,-514.88 72.39,-486.07 91.54,-469.39"/>
-<polygon fill="currentColor" stroke="currentColor" points="92.82,-471.06 96.06,-465.59 90.12,-467.84 92.82,-471.06"/>
+<path fill="none" stroke="currentColor" d="M37.94,-873.43C40.6,-857.61 48,-810.01 48,-770.2 48,-770.2 48,-770.2 48,-546.92 48,-518.33 63.98,-488.4 75.48,-470.56"/>
+<polygon fill="currentColor" stroke="currentColor" points="77.06,-471.98 78.64,-465.82 73.57,-469.65 77.06,-471.98"/>
 </g>
 <!-- folder shell to folder shell/rail&#45;&gt;folder shell/rail -->
 <g id="edge16" class="edge">
 <title>folder shell to folder shell/rail&#45;&gt;folder shell/rail</title>
-<path fill="none" stroke="currentColor" d="M70.02,-921.65C66.12,-913.88 59.49,-899.37 57,-886.08 55.23,-876.64 55.09,-873.89 57,-864.48 62.84,-835.77 77.73,-804.96 87.6,-786.65"/>
-<polygon fill="currentColor" stroke="currentColor" points="89.21,-788.09 90.26,-781.82 85.53,-786.07 89.21,-788.09"/>
+<path fill="none" stroke="currentColor" d="M70.02,-979.25C66.12,-971.48 59.49,-956.97 57,-943.68 55.23,-934.24 55.09,-931.49 57,-922.08 62.84,-893.37 77.73,-862.56 87.6,-844.25"/>
+<polygon fill="currentColor" stroke="currentColor" points="89.21,-845.69 90.26,-839.42 85.53,-843.67 89.21,-845.69"/>
 </g>
 <!-- folder shell to folder shell/status&#45;&gt;folder shell/status -->
 <g id="edge18" class="edge">
 <title>folder shell to folder shell/status&#45;&gt;folder shell/status</title>
-<path fill="none" stroke="currentColor" d="M165.01,-815.6C164.91,-804.49 164.08,-779.04 159,-758.4 146.38,-707.12 119.51,-650.44 105.66,-623.09"/>
-<polygon fill="currentColor" stroke="currentColor" points="107.57,-622.22 102.97,-617.83 103.83,-624.13 107.57,-622.22"/>
+<path fill="none" stroke="currentColor" d="M164.88,-873.23C164.56,-862.17 163.36,-836.81 159,-816 148.44,-765.62 126.94,-708.54 115.9,-680.9"/>
+<polygon fill="currentColor" stroke="currentColor" points="117.96,-680.4 113.77,-675.62 114.07,-681.97 117.96,-680.4"/>
 </g>
 <!-- layer state from folder shell -->
-<g id="node29" class="node">
+<g id="node30" class="node">
 <title>layer state from folder shell</title>
-<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-1049.76 202,-1049.76 202,-1028.16 256,-1028.16 256,-1049.76"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-1035.96" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-1107.36 202,-1107.36 202,-1085.76 256,-1085.76 256,-1107.36"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-1093.56" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
 </g>
 <!-- folder shell to layer state&#45;&gt;layer state from folder shell -->
 <g id="edge20" class="edge">
 <title>folder shell to layer state&#45;&gt;layer state from folder shell</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M177.34,-1038.96C183.02,-1038.96 188.69,-1038.96 194.37,-1038.96"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.04,-1041.06 200.04,-1038.96 194.04,-1036.86 194.04,-1041.06"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M177.34,-1096.56C183.02,-1096.56 188.69,-1096.56 194.37,-1096.56"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.04,-1098.66 200.04,-1096.56 194.04,-1094.46 194.04,-1098.66"/>
 </g>
 <!-- layer ui from folder shell -->
-<g id="node30" class="node">
+<g id="node31" class="node">
 <title>layer ui from folder shell</title>
-<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-992.16 202,-992.16 202,-970.56 256,-970.56 256,-992.16"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-978.36" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui</text>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-1049.76 202,-1049.76 202,-1028.16 256,-1028.16 256,-1049.76"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-1035.96" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui</text>
 </g>
 <!-- folder shell to layer ui&#45;&gt;layer ui from folder shell -->
 <g id="edge22" class="edge">
 <title>folder shell to layer ui&#45;&gt;layer ui from folder shell</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M186.25,-981.36C188.97,-981.36 191.69,-981.36 194.41,-981.36"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.1,-983.46 200.1,-981.36 194.1,-979.26 194.1,-983.46"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M186.25,-1038.96C188.97,-1038.96 191.69,-1038.96 194.41,-1038.96"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.1,-1041.06 200.1,-1038.96 194.1,-1036.86 194.1,-1041.06"/>
 </g>
 <!-- layer state from folder shell/frames -->
-<g id="node31" class="node">
+<g id="node32" class="node">
 <title>layer state from folder shell/frames</title>
-<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-886.08 202,-886.08 202,-864.48 256,-864.48 256,-886.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-872.28" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-943.68 202,-943.68 202,-922.08 256,-922.08 256,-943.68"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-929.88" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
 </g>
 <!-- folder shell/frames to layer state&#45;&gt;layer state from folder shell/frames -->
 <g id="edge24" class="edge">
 <title>folder shell/frames to layer state&#45;&gt;layer state from folder shell/frames</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M154.31,-875.28C167.61,-875.28 180.9,-875.28 194.19,-875.28"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.06,-877.38 200.06,-875.28 194.06,-873.18 194.06,-877.38"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M154.31,-932.88C167.61,-932.88 180.9,-932.88 194.19,-932.88"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.06,-934.98 200.06,-932.88 194.06,-930.78 194.06,-934.98"/>
 </g>
 <!-- layer state from folder shell/rail -->
-<g id="node32" class="node">
+<g id="node33" class="node">
 <title>layer state from folder shell/rail</title>
-<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-780 202,-780 202,-758.4 256,-758.4 256,-780"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-766.2" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-837.6 202,-837.6 202,-816 256,-816 256,-837.6"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-823.8" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
 </g>
 <!-- folder shell/rail to layer state&#45;&gt;layer state from folder shell/rail -->
 <g id="edge26" class="edge">
 <title>folder shell/rail to layer state&#45;&gt;layer state from folder shell/rail</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M152.22,-769.2C166.27,-769.2 180.31,-769.2 194.36,-769.2"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.19,-771.3 200.19,-769.2 194.19,-767.1 194.19,-771.3"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M152.22,-826.8C166.27,-826.8 180.31,-826.8 194.36,-826.8"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.19,-828.9 200.19,-826.8 194.19,-824.7 194.19,-828.9"/>
 </g>
 <!-- layer ui from folder shell/rail -->
-<g id="node33" class="node">
+<g id="node34" class="node">
 <title>layer ui from folder shell/rail</title>
-<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-722.4 202,-722.4 202,-700.8 256,-700.8 256,-722.4"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-708.6" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui</text>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-780 202,-780 202,-758.4 256,-758.4 256,-780"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-766.2" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui</text>
 </g>
 <!-- folder shell/rail to layer ui&#45;&gt;layer ui from folder shell/rail -->
 <g id="edge28" class="edge">
 <title>folder shell/rail to layer ui&#45;&gt;layer ui from folder shell/rail</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M126.3,-711.6C148.99,-711.6 171.67,-711.6 194.36,-711.6"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.21,-713.7 200.21,-711.6 194.21,-709.5 194.21,-713.7"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M126.3,-769.2C148.99,-769.2 171.67,-769.2 194.36,-769.2"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.21,-771.3 200.21,-769.2 194.21,-767.1 194.21,-771.3"/>
+</g>
+<!-- layer data from folder shell/status -->
+<g id="node35" class="node">
+<title>layer data from folder shell/status</title>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-673.92 202,-673.92 202,-652.32 256,-652.32 256,-673.92"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-660.12" font-family="Helvetica,Arial,sans-serif" font-size="10.00">data</text>
+</g>
+<!-- folder shell/status to layer data&#45;&gt;layer data from folder shell/status -->
+<g id="edge30" class="edge">
+<title>folder shell/status to layer data&#45;&gt;layer data from folder shell/status</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M165.12,-663.12C174.8,-663.12 184.48,-663.12 194.15,-663.12"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.04,-665.22 200.04,-663.12 194.04,-661.02 194.04,-665.22"/>
 </g>
 <!-- layer state from folder shell/status -->
-<g id="node34" class="node">
+<g id="node36" class="node">
 <title>layer state from folder shell/status</title>
 <polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-616.32 202,-616.32 202,-594.72 256,-594.72 256,-616.32"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-602.52" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
 </g>
 <!-- folder shell/status to layer state&#45;&gt;layer state from folder shell/status -->
-<g id="edge30" class="edge">
+<g id="edge32" class="edge">
 <title>folder shell/status to layer state&#45;&gt;layer state from folder shell/status</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M163.13,-605.52C173.58,-605.52 184.04,-605.52 194.49,-605.52"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.21,-607.62 200.21,-605.52 194.21,-603.42 194.21,-607.62"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M116.03,-605.52C142.12,-605.52 168.2,-605.52 194.28,-605.52"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.13,-607.62 200.13,-605.52 194.13,-603.42 194.13,-607.62"/>
 </g>
 <!-- layer ui from folder shell/status -->
-<g id="node35" class="node">
+<g id="node37" class="node">
 <title>layer ui from folder shell/status</title>
 <polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-558.72 202,-558.72 202,-537.12 256,-537.12 256,-558.72"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-544.92" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui</text>
 </g>
 <!-- folder shell/status to layer ui&#45;&gt;layer ui from folder shell/status -->
-<g id="edge32" class="edge">
+<g id="edge34" class="edge">
 <title>folder shell/status to layer ui&#45;&gt;layer ui from folder shell/status</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M96.11,-547.92C128.85,-547.92 161.58,-547.92 194.32,-547.92"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.23,-550.02 200.23,-547.92 194.23,-545.82 194.23,-550.02"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M138.27,-547.92C156.94,-547.92 175.61,-547.92 194.28,-547.92"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.2,-550.02 200.2,-547.92 194.2,-545.82 194.2,-550.02"/>
 </g>
 <!-- folder shell/panes to folder shell/keys&#45;&gt;folder shell/keys -->
-<g id="edge34" class="edge">
+<g id="edge36" class="edge">
 <title>folder shell/panes to folder shell/keys&#45;&gt;folder shell/keys</title>
-<path fill="none" stroke="currentColor" d="M128.29,-336.22C122.21,-329.17 111.38,-316.6 102.62,-306.44"/>
-<polygon fill="currentColor" stroke="currentColor" points="104.26,-305.12 98.75,-301.95 101.07,-307.86 104.26,-305.12"/>
+<path fill="none" stroke="currentColor" d="M104.29,-336.22C98.21,-329.17 87.38,-316.6 78.62,-306.44"/>
+<polygon fill="currentColor" stroke="currentColor" points="80.26,-305.12 74.75,-301.95 77.07,-307.86 80.26,-305.12"/>
 </g>
 <!-- layer state from folder shell/panes -->
-<g id="node36" class="node">
+<g id="node38" class="node">
 <title>layer state from folder shell/panes</title>
 <polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-464.12 202,-464.12 202,-442.52 256,-442.52 256,-464.12"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-450.32" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
 </g>
 <!-- folder shell/panes to layer state&#45;&gt;layer state from folder shell/panes -->
-<g id="edge36" class="edge">
+<g id="edge38" class="edge">
 <title>folder shell/panes to layer state&#45;&gt;layer state from folder shell/panes</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M170.22,-453.32C178.31,-453.32 186.39,-453.32 194.48,-453.32"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.39,-455.42 200.39,-453.32 194.39,-451.22 194.39,-455.42"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M156.19,-453.32C168.87,-453.32 181.55,-453.32 194.23,-453.32"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.18,-455.42 200.18,-453.32 194.18,-451.22 194.18,-455.42"/>
 </g>
 <!-- layer ui from folder shell/panes -->
-<g id="node37" class="node">
+<g id="node39" class="node">
 <title>layer ui from folder shell/panes</title>
 <polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-406.52 202,-406.52 202,-384.92 256,-384.92 256,-406.52"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-392.72" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui</text>
 </g>
 <!-- folder shell/panes to layer ui&#45;&gt;layer ui from folder shell/panes -->
-<g id="edge38" class="edge">
+<g id="edge40" class="edge">
 <title>folder shell/panes to layer ui&#45;&gt;layer ui from folder shell/panes</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M118.38,-395.72C143.68,-395.72 168.98,-395.72 194.28,-395.72"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.26,-397.82 200.26,-395.72 194.26,-393.62 194.26,-397.82"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M94.21,-395.72C127.64,-395.72 161.06,-395.72 194.49,-395.72"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.11,-397.82 200.11,-395.72 194.11,-393.62 194.11,-397.82"/>
 </g>
 <!-- layer data from folder shell/keys -->
-<g id="node38" class="node">
+<g id="node40" class="node">
 <title>layer data from folder shell/keys</title>
 <polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-300.44 202,-300.44 202,-278.84 256,-278.84 256,-300.44"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-286.64" font-family="Helvetica,Arial,sans-serif" font-size="10.00">data</text>
 </g>
 <!-- folder shell/keys to layer data&#45;&gt;layer data from folder shell/keys -->
-<g id="edge40" class="edge">
+<g id="edge42" class="edge">
 <title>folder shell/keys to layer data&#45;&gt;layer data from folder shell/keys</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M164.2,-289.64C174.24,-289.64 184.29,-289.64 194.34,-289.64"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.15,-291.74 200.15,-289.64 194.15,-287.54 194.15,-291.74"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M152.12,-289.64C166.19,-289.64 180.25,-289.64 194.32,-289.64"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.16,-291.74 200.16,-289.64 194.16,-287.54 194.16,-291.74"/>
 </g>
 <!-- layer state from folder shell/keys -->
-<g id="node39" class="node">
+<g id="node41" class="node">
 <title>layer state from folder shell/keys</title>
 <polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-242.84 202,-242.84 202,-221.24 256,-221.24 256,-242.84"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-229.04" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
 </g>
 <!-- folder shell/keys to layer state&#45;&gt;layer state from folder shell/keys -->
-<g id="edge42" class="edge">
+<g id="edge44" class="edge">
 <title>folder shell/keys to layer state&#45;&gt;layer state from folder shell/keys</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M74.28,-232.04C114.2,-232.04 154.12,-232.04 194.05,-232.04"/>
-<polygon fill="currentColor" stroke="currentColor" points="193.99,-234.14 199.99,-232.04 193.99,-229.94 193.99,-234.14"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M50.27,-232.04C98.3,-232.04 146.34,-232.04 194.37,-232.04"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.26,-234.14 200.26,-232.04 194.26,-229.94 194.26,-234.14"/>
 </g>
 <!-- layer ui from folder shell/keys -->
-<g id="node40" class="node">
+<g id="node42" class="node">
 <title>layer ui from folder shell/keys</title>
 <polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-185.24 202,-185.24 202,-163.64 256,-163.64 256,-185.24"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-171.44" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui</text>
 </g>
 <!-- folder shell/keys to layer ui&#45;&gt;layer ui from folder shell/keys -->
-<g id="edge44" class="edge">
+<g id="edge46" class="edge">
 <title>folder shell/keys to layer ui&#45;&gt;layer ui from folder shell/keys</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M94.2,-174.44C127.62,-174.44 161.05,-174.44 194.48,-174.44"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.1,-176.54 200.1,-174.44 194.1,-172.34 194.1,-176.54"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M70.12,-174.44C111.5,-174.44 152.87,-174.44 194.24,-174.44"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.18,-176.54 200.18,-174.44 194.18,-172.34 194.18,-176.54"/>
 </g>
 <!-- layer state from folder shell/commands -->
-<g id="node41" class="node">
+<g id="node43" class="node">
 <title>layer state from folder shell/commands</title>
 <polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-90.64 202,-90.64 202,-69.04 256,-69.04 256,-90.64"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-76.84" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state</text>
 </g>
 <!-- folder shell/commands to layer state&#45;&gt;layer state from folder shell/commands -->
-<g id="edge46" class="edge">
+<g id="edge48" class="edge">
 <title>folder shell/commands to layer state&#45;&gt;layer state from folder shell/commands</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M180.06,-79.84C184.83,-79.84 189.6,-79.84 194.36,-79.84"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.34,-81.94 200.34,-79.84 194.34,-77.74 194.34,-81.94"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M168.16,-79.84C176.95,-79.84 185.73,-79.84 194.52,-79.84"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.39,-81.94 200.39,-79.84 194.39,-77.74 194.39,-81.94"/>
 </g>
 <!-- layer ui from folder shell/commands -->
-<g id="node42" class="node">
+<g id="node44" class="node">
 <title>layer ui from folder shell/commands</title>
 <polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="256,-33.04 202,-33.04 202,-11.44 256,-11.44 256,-33.04"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="229" y="-19.24" font-family="Helvetica,Arial,sans-serif" font-size="10.00">ui</text>
 </g>
 <!-- folder shell/commands to layer ui&#45;&gt;layer ui from folder shell/commands -->
-<g id="edge48" class="edge">
+<g id="edge50" class="edge">
 <title>folder shell/commands to layer ui&#45;&gt;layer ui from folder shell/commands</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M114.16,-22.24C140.92,-22.24 167.69,-22.24 194.46,-22.24"/>
-<polygon fill="currentColor" stroke="currentColor" points="194.12,-24.34 200.12,-22.24 194.12,-20.14 194.12,-24.34"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M90.34,-22.24C124.98,-22.24 159.62,-22.24 194.26,-22.24"/>
+<polygon fill="currentColor" stroke="currentColor" points="194.13,-24.34 200.13,-22.24 194.13,-20.14 194.13,-24.34"/>
 </g>
 </g>
 </svg>

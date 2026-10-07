@@ -55,8 +55,9 @@
 // would take the root rule's foreground over Shiki's colour. The language server clients live in
 // `lsp` (lsp/hosts.ts).
 //
-// Monaco's TypeScript service checks a file against the files of its project, which an editor
-// holding one file has none of, so its semantic check is off and its syntax check stays on.
+// Monaco's own TypeScript service is switched off for the page before any model exists
+// (`silenceBuiltin`), so a hover, a completion or a marker of a TypeScript or JavaScript model is
+// the TypeScript language server's alone.
 
 import type * as Monaco from 'monaco-editor';
 import { FIRST_LANGUAGES, PLAINTEXT, SHIKI_LANGUAGES, shikiId } from './grammars';
@@ -212,9 +213,6 @@ async function start(): Promise<EditorKit> {
     monaco.editor.addKeybindingRules(
         freedKeys(mac).map((press) => ({ keybinding: keyCode(monaco, press), command: null }))
     );
-    const quiet = { noSemanticValidation: true, noSyntaxValidation: false };
-    monaco.typescript.typescriptDefaults.setDiagnosticsOptions(quiet);
-    monaco.typescript.javascriptDefaults.setDiagnosticsOptions(quiet);
     const known = new Set(monaco.languages.getLanguages().map((language) => language.id));
     for (const id of SHIKI_LANGUAGES) {
         if (!known.has(id)) monaco.languages.register({ id });
@@ -230,6 +228,7 @@ async function start(): Promise<EditorKit> {
             painting.current?.onPainted(listener) ?? { dispose: () => undefined }
     });
     registerFolding(monaco, lsp.served);
+    silenceBuiltin(monaco);
     const made = painter({
         monaco,
         createHighlighter: shiki.createHighlighter,
@@ -260,6 +259,39 @@ async function start(): Promise<EditorKit> {
         formatting: createFormatting(monaco),
         lsp
     };
+}
+
+/** The features of Monaco's TypeScript service, all off. */
+const NO_BUILTIN = {
+    completionItems: false,
+    hovers: false,
+    documentSymbols: false,
+    definitions: false,
+    references: false,
+    documentHighlights: false,
+    rename: false,
+    diagnostics: false,
+    documentRangeFormattingEdits: false,
+    signatureHelp: false,
+    onTypeFormattingEdits: false,
+    codeActions: false,
+    inlayHints: false
+};
+
+/**
+ * Switch Monaco's own TypeScript service off for the page. Monaco registers its providers once,
+ * when the first TypeScript or JavaScript model is made, from the modes set at that time, and a
+ * later change of the modes registers nothing and removes nothing, so the modes are set here,
+ * before any model exists, and the TypeScript language server is the page's one TypeScript and
+ * JavaScript service.
+ */
+function silenceBuiltin(monaco: typeof Monaco): void {
+    for (const defaults of [
+        monaco.typescript.typescriptDefaults,
+        monaco.typescript.javascriptDefaults
+    ]) {
+        defaults.setModeConfiguration(NO_BUILTIN);
+    }
 }
 
 /** The page's one theme name, in Shiki and in Monaco. */

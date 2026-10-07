@@ -20,12 +20,19 @@ text:
             choices_loading: Reading the choices of this repository...
             cmd_unknown: '# unknown command'
             cmdk_placeholder: Search projects, entries, tabs...
+            config_approve: Approve and run this repository's Svelte and Vite configuration
+            config_ask: Run the Svelte and Vite configuration of this repository? The Svelte server then runs these files and the repository's own Svelte, Prettier and preprocessors, which can run any code they hold.
+            config_none: No Svelte configuration has been read for this repository.
+            config_revoke: Stop running this repository's Svelte and Vite configuration
+            config_yes: Approve
             database_configuration: .oculus/cpp.yml
             database_none: This repository has no compile database and no .oculus/cpp.yml.
             interpreter_none: No Python interpreter was found for this repository.
             interpreter_typed: 'Use the interpreter at {0}'
             kind_collection: Collection
             kind_command: Command
+            kind_config: Svelte Configuration
+            kind_config_file: Configuration File
             kind_database: Compile Database
             kind_editor: Editor
             kind_feed: Feed
@@ -35,6 +42,36 @@ text:
             kind_view: View
             kind_workspace: Workspace
             pin_editor: Pin Editor
+            symbol_array: Array
+            symbol_boolean: Boolean
+            symbol_class: Class
+            symbol_constant: Constant
+            symbol_constructor: Constructor
+            symbol_enum: Enum
+            symbol_enum_member: Enum Member
+            symbol_event: Event
+            symbol_field: Field
+            symbol_file: File
+            symbol_function: Function
+            symbol_interface: Interface
+            symbol_key: Key
+            symbol_method: Method
+            symbol_module: Module
+            symbol_namespace: Namespace
+            symbol_null: 'Null'
+            symbol_number: Number
+            symbol_object: Object
+            symbol_operator: Operator
+            symbol_package: Package
+            symbol_property: Property
+            symbol_string: String
+            symbol_struct: Struct
+            symbol_symbol: Symbol
+            symbol_type_parameter: Type Parameter
+            symbol_variable: Variable
+            symbols_loading: Asking the language server...
+            symbols_none: No symbol of the workspace matches.
+            symbols_unavailable: No language server answers for the tab on screen.
             unpin_editor: Unpin Editor
             workspace_save: 'Save the folders in force as the workspace {0}'
             workspace_save_name: Type a name for the workspace

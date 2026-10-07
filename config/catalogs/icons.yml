@@ -231,6 +231,8 @@ icons:
     language_server: server-cog
     interpreter: square-terminal
     compile_database: database
+    svelte_config: file-cog
     references: list-tree
     lsp_output: scroll-text
     history: history
+    hierarchy_swap: arrow-left-right

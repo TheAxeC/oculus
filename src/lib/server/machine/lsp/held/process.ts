@@ -15,8 +15,8 @@
 import { spawn as nodeSpawn } from 'node:child_process';
 import type { Readable, Writable } from 'node:stream';
 import { StreamMessageReader, StreamMessageWriter } from 'vscode-jsonrpc/node';
-import type { LspCode, LspRpc } from '../../../data/model/index.ts';
-import type { Launch } from './servers.ts';
+import type { LspCode, LspRpc } from '../../../../data/model/index.ts';
+import type { Launch } from '../servers.ts';
 
 /** The milliseconds a server may take to answer `initialize`. */
 const INITIALIZE_MS = 30_000;

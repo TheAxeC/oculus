@@ -1,9 +1,12 @@
 // Layer 3, shell, partial of Palette.svelte. Which colon commands open a list of their own and what
-// the list of the two language-server commands holds. `:language`, `:workspace` and
-// `:workspace-save` are list modes of the palette, as are `:interpreter` and `:compile-database`:
-// each lists the choices of the source tab's root with the one in force marked, and a typed path is
-// offered as a new interpreter. The compile database list opens with a row for each finding of the
-// repository's `.oculus/cpp.yml`, which no press acts on.
+// the list of the language-server commands holds. `:language`, `:workspace` and `:workspace-save`
+// are list modes of the palette, as are the commands of the choices a server asks for
+// (data/prose/lsp-servers.ts): `:interpreter`, `:compile-database` and `:svelte-config`. Each lists
+// the choices of the source tab's root with the one in force marked, and a typed path is offered as
+// a new interpreter. The compile database list opens with a row for each finding of the
+// repository's `.oculus/cpp.yml`, which no press acts on. The Svelte configuration list names the
+// configuration files the Svelte server would run, which no press acts on, and one row that
+// approves them or, once approved, takes the approval back.
 
 import type { ParsedCommand } from '$lib/state/workbench/palette';
 import {
@@ -14,14 +17,19 @@ import {
     type ChoicesView
 } from '$lib/state/system/machine/lsp/lsp.svelte';
 import { t } from '$lib/state/shared/words/text';
+import {
+    LSP_CHOICES,
+    choiceOfCommand,
+    choicesOfLanguage,
+    type LspChoiceKind
+} from '$lib/data/prose/lsp-servers';
 
 /** The commands that, chosen, open the list of their own instead of running. */
 const MODE_COMMANDS = [
     'language',
     'workspace',
     'workspace-save',
-    'interpreter',
-    'compile-database'
+    ...Object.values(LSP_CHOICES).map((one) => one.command)
 ];
 
 /** Whether choosing a command types its name and a space, which opens its list. */
@@ -29,22 +37,21 @@ export function opensAsMode(name: string): boolean {
     return MODE_COMMANDS.includes(name);
 }
 
-/** The list a language-server command shows. */
-export type ChoiceMode = 'interpreter' | 'compile-database';
+/** The list a language-server command shows: the kind of choice it lists. */
+export type ChoiceMode = LspChoiceKind;
 
-/** The list the query is, when a server serves the language of the tab on screen. */
+/** The list the query is, when a server that asks for the choice serves the tab on screen. */
 export function choiceModeOf(parsed: ParsedCommand | null, served: string): ChoiceMode | null {
     if (parsed === null) return null;
-    if (parsed.name === 'interpreter' && served === 'python') return 'interpreter';
-    if (parsed.name === 'compile-database' && (served === 'c' || served === 'cpp')) {
-        return 'compile-database';
-    }
-    return null;
+    const kind = choiceOfCommand(parsed.name);
+    return kind !== undefined && choicesOfLanguage(served).includes(kind) ? kind : null;
 }
 
 /** What a press on a row does. */
 type ChoicePick =
-    { kind: 'interpreter'; path: string; approve: boolean } | { kind: 'database'; key: string };
+    | { kind: 'interpreter'; path: string; approve: boolean }
+    | { kind: 'database'; key: string }
+    | { kind: 'config'; approve: boolean; key: string };
 
 /** One row of a choice list; a row with no `pick` is a finding, which a press does not act on. */
 export type ChoiceRow = {
@@ -77,7 +84,28 @@ export function choiceRows(
     argument: string
 ): ChoiceRow[] {
     if (view === null) return [];
-    if (mode === 'compile-database') {
+    if (mode === 'config') {
+        if (view.config === null) return [];
+        const files: ChoiceRow[] = view.config.files.map((file) => ({
+            value: `config:${file}`,
+            label: file,
+            hint: '',
+            active: false,
+            pick: null
+        }));
+        const approved = view.config.approved;
+        return [
+            ...files,
+            {
+                value: approved ? 'config:revoke' : 'config:approve',
+                label: approved ? t('app.palette.config_revoke') : t('app.palette.config_approve'),
+                hint: '',
+                active: approved,
+                pick: { kind: 'config', approve: !approved, key: view.config.key }
+            }
+        ];
+    }
+    if (mode === 'database') {
         const inForce = databaseInForce(view);
         const findings: ChoiceRow[] = view.findings.map((one, at) => ({
             value: `finding:${at}`,

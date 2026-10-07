@@ -108,11 +108,13 @@ export function chordHint(keys: readonly KeyPress[], mac: boolean): string {
 
 /** The actions a parent owns as the palette lists them, each with its key as the hint. */
 export function ownListing(actions: readonly EditorOwnAction[], mac: boolean): EditorAction[] {
-    return actions.map(({ id, label, key }) => ({
-        id,
-        label,
-        hint: key === undefined ? '' : chordHint([key], mac)
-    }));
+    return actions
+        .filter((one) => one.disabled !== true)
+        .map(({ id, label, key }) => ({
+            id,
+            label,
+            hint: key === undefined ? '' : chordHint([key], mac)
+        }));
 }
 
 /**

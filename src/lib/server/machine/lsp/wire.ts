@@ -25,6 +25,9 @@ export function languageOf(channel: string): string | null {
 
 const rootShape = z.string().min(1);
 
+/** A file as the page names it. */
+const placeShape = z.object({ root: rootShape, path: z.string() });
+
 /** The oculus messages a page may send. */
 const oculusShape = z.discriminatedUnion('oculus', [
     z.object({ oculus: z.literal('restart'), root: rootShape }),
@@ -37,8 +40,22 @@ const oculusShape = z.discriminatedUnion('oculus', [
         interpreter: z.string().min(1).optional(),
         database: z.string().min(1).optional()
     }),
-    z.object({ oculus: z.literal('approve'), root: rootShape, interpreter: z.string().min(1) }),
-    z.object({ oculus: z.literal('read'), root: rootShape, uri: z.string().min(1) })
+    z.object({
+        oculus: z.literal('approve'),
+        root: rootShape,
+        approval: z.discriminatedUnion('kind', [
+            z.object({ kind: z.literal('interpreter'), path: z.string().min(1) }),
+            z.object({ kind: z.literal('config'), key: z.string().min(1) })
+        ])
+    }),
+    z.object({
+        oculus: z.literal('revoke'),
+        root: rootShape,
+        approval: z.object({ kind: z.literal('config') })
+    }),
+    z.object({ oculus: z.literal('read'), root: rootShape, uri: z.string().min(1) }),
+    z.object({ oculus: z.literal('held'), files: z.array(placeShape) }),
+    z.object({ oculus: z.literal('held_ask'), id: z.number().int(), files: z.array(placeShape) })
 ]) satisfies z.ZodType<LspToServer>;
 
 /** A JSON-RPC message: a request, a notification or a response. */
@@ -86,11 +103,24 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** The requests that follow up an item of a call or type hierarchy. */
+export const HIERARCHY: readonly string[] = [
+    'callHierarchy/incomingCalls',
+    'callHierarchy/outgoingCalls',
+    'typeHierarchy/supertypes',
+    'typeHierarchy/subtypes'
+];
+
 /** The page's address of the document a message names, or null when it names none. */
 export function addressOf(method: string, params: unknown): string | null {
     if (!isRecord(params)) return null;
     const document = params.textDocument;
     if (isRecord(document) && typeof document.uri === 'string') return document.uri;
+    // The follow-up of a hierarchy names the item an earlier answer gave, whose file may be open
+    // in no tab.
+    if (HIERARCHY.includes(method) && isRecord(params.item)) {
+        return typeof params.item.uri === 'string' ? params.item.uri : null;
+    }
     // clangd's `textDocument/switchSourceHeader` takes the document's identifier itself.
     if (method === 'textDocument/switchSourceHeader') {
         return typeof params.uri === 'string' ? params.uri : null;
@@ -110,6 +140,28 @@ export function addressOf(method: string, params: unknown): string | null {
             const named = isRecord(change) ? change.textDocument : null;
             return isRecord(named) && typeof named.uri === 'string' ? named.uri : null;
         }
+    }
+    return null;
+}
+
+/**
+ * The address of the first file a workspace edit names: a key of its `changes`, else the document
+ * of its first `documentChanges` entry, or the address of the file an entry creates, renames or
+ * deletes. Null for an edit that names none.
+ */
+export function editAddress(edit: unknown): string | null {
+    if (!isRecord(edit)) return null;
+    if (isRecord(edit.changes)) {
+        const first = Object.keys(edit.changes).at(0);
+        if (first !== undefined) return first;
+    }
+    if (!Array.isArray(edit.documentChanges)) return null;
+    for (const change of edit.documentChanges as unknown[]) {
+        if (!isRecord(change)) continue;
+        const document = change.textDocument;
+        if (isRecord(document) && typeof document.uri === 'string') return document.uri;
+        const named = change.uri ?? change.oldUri;
+        if (typeof named === 'string') return named;
     }
     return null;
 }

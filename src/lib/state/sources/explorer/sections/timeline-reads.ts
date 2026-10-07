@@ -32,7 +32,7 @@ const copyShape = unchanged(
         id: z.string().min(1),
         at: z.number(),
         size: z.number(),
-        kind: z.enum(['save', 'replace', 'delete'])
+        kind: z.enum(['save', 'replace', 'lsp-edit', 'delete'])
     })
 ) satisfies z.ZodType<SavedCopy>;
 

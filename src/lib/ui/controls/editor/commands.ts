@@ -2,12 +2,13 @@
 // `EditorCommand`), done on the editor and its model: go to a line, go to a place and select the
 // word at it, set or convert the indentation, set the line ending, set the language (and load its
 // grammar when it has not loaded), or run one of the editor's actions; and the first line the
-// editor shows, which the parent keeps so that a copy of the tab opens at it.
+// editor shows, which the parent keeps so that a copy of the tab opens at it; and the edits a text
+// the parent handed in was reached by, made in the model as they are.
 
 import type * as Monaco from 'monaco-editor';
 import { eolOf, type EditorKit } from './kit/load';
 import { shikiId } from './kit/grammars';
-import type { EditorCommand } from './types';
+import type { EditorCommand, EditorReach } from './types';
 
 /** Do one ask of the parent's on a loaded editor and its model. */
 export function runCommand(
@@ -131,4 +132,33 @@ export function followFirstLine(
             });
         }
     };
+}
+
+/**
+ * Make the edits a text was reached by, each at its own range, as one undo stop. False when the
+ * model does not hold the text they were made in or does not hold `wanted` after them.
+ */
+export function reachedBy(
+    monaco: EditorKit['monaco'],
+    held: Monaco.editor.ITextModel,
+    reach: EditorReach | null,
+    wanted: string
+): boolean {
+    const LF = monaco.editor.EndOfLinePreference.LF;
+    const same = held.getValue(LF) === reach?.from.replace(/\r\n/g, '\n');
+    if (reach === null || !same) return false;
+    held.pushEditOperations(
+        [],
+        reach.edits.map(({ range, newText }) => ({
+            range: new monaco.Range(
+                range.start.line + 1,
+                range.start.character + 1,
+                range.end.line + 1,
+                range.end.character + 1
+            ),
+            text: newText
+        })),
+        () => null
+    );
+    return held.getValue(LF) === wanted.replace(/\r\n/g, '\n');
 }

@@ -74,9 +74,28 @@ export const REQUEST_CANCELLED = -32800;
 /** How many variants of an address are tried before a peek is given up. */
 export const SPELLINGS = 8;
 
-/** The kind a code action of Organize Imports has, and the command pyright runs for it. */
+/** The kind a code action of Organize Imports has. */
 export const ORGANIZE = 'source.organizeImports';
-export const ORGANIZE_COMMAND = 'pyright.organizeimports';
+
+/**
+ * The command that applies an edit the transport kept for a code action. A server's edit is never
+ * handed to Monaco, which would apply it to the models it can name; the transport keeps it under a
+ * token and the action's command names the token.
+ */
+export const APPLY_COMMAND = 'oculus.applyEdit';
+
+/**
+ * The requests whose parameters name no document: a hierarchy follow-up carries the item an
+ * answer gave, and the workspace symbols a query. The relay finds the server by the item's file, or
+ * by the `root` the transport adds to the symbol query.
+ */
+export const NO_DOCUMENT: readonly string[] = [
+    'callHierarchy/incomingCalls',
+    'callHierarchy/outgoingCalls',
+    'typeHierarchy/supertypes',
+    'typeHierarchy/subtypes',
+    'workspace/symbol'
+];
 
 /** What `ask` rejects with when the port is closed or the transport ended. */
 export class Closed extends Error {
@@ -110,26 +129,4 @@ export function changesOf(changes: readonly ModelChange[]): unknown[] {
         rangeLength: change.rangeLength,
         text: change.text
     }));
-}
-
-/** The place a code action's edit touches: every address it names, as the relay wrote it. */
-export function touched(edit: unknown): string[] | null {
-    if (!isRecord(edit)) return [];
-    const named: string[] = [];
-    if (isRecord(edit.changes)) named.push(...Object.keys(edit.changes));
-    if (Array.isArray(edit.documentChanges)) {
-        for (const change of edit.documentChanges as unknown[]) {
-            const document = isRecord(change) ? change.textDocument : null;
-            if (!isRecord(document) || typeof document.uri !== 'string') return null;
-            named.push(document.uri);
-        }
-    }
-    return named;
-}
-
-/** Whether a code action request asks for Organize Imports. */
-export function asksOrganize(params: unknown): boolean {
-    const context = isRecord(params) ? params.context : null;
-    const only = isRecord(context) ? context.only : null;
-    return Array.isArray(only) && only.some((kind) => kind === ORGANIZE || kind === 'source');
 }

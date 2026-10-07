@@ -147,12 +147,13 @@ async function writeBack(target: FilesTarget, stamp: FileStamp, done: Done): Pro
 }
 
 /**
- * Write the files of a `replace` record back from the copies it kept, keeping a copy of each file
- * as it is first so that the record this undo makes can be taken back too. Each stamp of `before`
- * is paired with the stamp of `after` at the same place.
+ * Write the files of a `replace` or `lsp-edit` record back from the copies it kept, keeping a copy
+ * of each file as it is first, of the record's own kind, so that the record this undo makes can be
+ * taken back too. Each stamp of `before` is paired with the stamp of `after` at the same place.
  */
 function writeReplaced(
     target: FilesTarget,
+    via: 'replace' | 'lsp-edit',
     before: FileStamp[],
     after: FileStamp[],
     done: Done
@@ -162,7 +163,7 @@ function writeReplaced(
     for (const [at, was] of before.entries()) {
         const left = after.at(at);
         if (left === undefined || was.kept === undefined) continue;
-        const kept = keepCopy(history, left.path, 'replace');
+        const kept = keepCopy(history, left.path, via);
         const id = kept.ok ? kept.kept?.id : undefined;
         if (!restoreCopy(history, was.path, was.kept, was.path)) continue;
         done.before.push(id === undefined ? left : { ...left, kept: id });
@@ -231,7 +232,7 @@ async function undoNow(
         } catch {
             return finish(done, 'unwritable');
         }
-    } else if (via === 'replace') {
+    } else if (via === 'replace' || via === 'lsp-edit') {
         const paired = before.data.length === after.data.length;
         if (!paired || before.data.length === 0) return { error: 'nothing' };
         if (before.data.some((one, at) => one.path !== after.data[at]?.path)) {
@@ -242,9 +243,9 @@ async function undoNow(
         if (before.data.some((one) => one.kept === undefined || copyGone(target, one))) {
             return { error: 'copy-gone' };
         }
-        done = { field: 'replace', before: [], after: [] };
+        done = { field: via, before: [], after: [] };
         try {
-            writeReplaced(target, before.data, after.data, done);
+            writeReplaced(target, via, before.data, after.data, done);
         } catch {
             return finish(done, 'unwritable');
         }

@@ -9,7 +9,8 @@
 //
 // Monaco has no read-only model, so a peek editor that is typed into is put back to the text that
 // was read. A file's model is shared by the clients that ask for it and disposed with the last of
-// them; one unattached to an editor is also disposed once the transport sweeps it.
+// them; one unattached to an editor is also disposed once the transport sweeps it. A model whose
+// file a language server's edit wrote is read again (`refresh`), so a peek shows the file as it is.
 
 import type * as Monaco from 'monaco-editor';
 import { shikiId } from '../grammars';
@@ -17,7 +18,17 @@ import type { LspServices } from './services';
 import type { Target } from './uris';
 
 /** A model and the clients holding it. */
-type Held = { model: Monaco.editor.ITextModel; holders: number; stop: { dispose(): void } };
+type Held = {
+    model: Monaco.editor.ITextModel;
+    holders: number;
+    stop: { dispose(): void };
+    /** The text the model is held at, which an edit made in it is put back to. */
+    text: string;
+    /** The file it shows. */
+    target: Target;
+    /** Whether the model is being set to its text, which is no edit of a reader's. */
+    setting: boolean;
+};
 
 /** The peek models of one page. */
 export type Peeks = {
@@ -30,6 +41,8 @@ export type Peeks = {
     ): Promise<Monaco.editor.ITextModel | null>;
     /** Give a model back; it is disposed when no client holds it. */
     release(model: Monaco.editor.ITextModel): void;
+    /** Read again the files of the pages' addresses that a peek model shows. */
+    refresh(services: LspServices, pages: readonly string[]): Promise<void>;
 };
 
 /** The address a peek model has: the page's, with a variant when two addresses differ by case. */
@@ -65,15 +78,33 @@ export function createPeeks(
             if (again !== null) return null;
             await ensureLanguage(read.language);
             const model = monaco.editor.createModel(read.text, shikiId(read.language), uri);
-            let restoring = false;
-            const stop = model.onDidChangeContent(() => {
-                if (restoring) return;
-                restoring = true;
-                model.setValue(read.text);
-                restoring = false;
-            });
-            held.set(model, { model, holders: 1, stop });
+            const one: Held = {
+                model,
+                holders: 1,
+                text: read.text,
+                target,
+                setting: false,
+                stop: model.onDidChangeContent(() => {
+                    if (one.setting) return;
+                    one.setting = true;
+                    model.setValue(one.text);
+                    one.setting = false;
+                })
+            };
+            held.set(model, one);
             return model;
+        },
+        async refresh(services, pages) {
+            for (const one of [...held.values()]) {
+                const uri = one.model.uri.with({ query: '' }).toString(true);
+                if (!pages.some((page) => monaco.Uri.parse(page).toString(true) === uri)) continue;
+                const read = await services.readFile(one.target);
+                if (read === null || one.model.isDisposed() || one.text === read.text) continue;
+                one.text = read.text;
+                one.setting = true;
+                one.model.setValue(read.text);
+                one.setting = false;
+            }
         },
         release(model) {
             const one = held.get(model);

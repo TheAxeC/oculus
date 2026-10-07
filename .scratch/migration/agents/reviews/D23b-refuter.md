@@ -180,7 +180,7 @@ Cases:
 
 Reviewer usage: agent id not known to the reviewer, claude-opus-5-5, tokens not measured, tool uses not counted across the context compaction, minutes not measured.
 
-Agent: x.
+Usage: a4154cbe655a3b836, claude-opus-5-5, 138,932 tokens, 133 tool uses, 23.8 min.
 
 ## Repair round 1, refuted
 
@@ -369,4 +369,201 @@ Case 22, the partial tab edit: not established. The five reruns did not reproduc
 
 Reviewer usage: agent id not known to the reviewer, claude-opus-5-5, tokens not measured, about 60 tool uses, about 20 minutes.
 
-Agent: x.
+Usage: a12a7cba3671b22e6, claude-opus-5-5, 255,821 tokens, 86 tool uses, 17.9 min.
+
+## Repair round 2, refuted
+
+Summary: the round closes its nine items. Every check I reran passes. Item 4 of the brief now holds, and so do the other seven items. What is left:
+- (a) The restored two-page row (`edits.test.ts:132`) would still pass if the other-page check were narrowed again. Its mock answers the same thing whatever files it is asked about. This is a Proof finding, and the fix is small.
+- (b) Four small text fixes: the singular of `lsp_edit_partial`, one false sentence in the head comment of `edits.ts`, a test comment that points at "the step's report", and G8's Code line in the Doc text.
+- (c) A Behaviour finding from the first build, outside this round's delta. After every rename, the screen reader announces Monaco's "Made 0 edits in 0 files". The fix is not small.
+- (d) A breach of a standing rule in this round: the builder ran `tmux kill-session -t oculus-usage-claude` on the default tmux socket twice, without checking whose session it was.
+- (e) Case 22 is not settled. Nothing in the page's code leaves one named tab unedited while another is edited. The logged state matches a server answer that named only `lib.ts`. My probe shows typescript-language-server answers that way for this fixture whenever `app.ts` is not open on the server.
+
+```
+npm run diagrams                     (worktree tools/oculus)
+  regenerated docs/diagrams/*; `git diff 8d9cdd60 | md5` 5206a2da136cfa83c6b0f0e09a75dcec before and after (no change against the builder's tree)
+
+npm run test:quick -- --base 8d9cdd60
+  ok      ASCII gate (1.0 s)
+  ok      prettier (2.2 s): All matched files use Prettier code style!
+  ok      svelte-kit sync (8.7 s)
+  ok      eslint (23.1 s)
+  ok      svelte-check (19.5 s): 1791364513631 COMPLETED 406 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok      vitest (32.6 s): Duration  24.31s (transform 49.11s, setup 0ms, import 62.05s, tests 29.43s, environment 141ms)
+  test:quick: 33.4 s (limit 45.0 s); every command passed
+  test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+              build, lint of unchanged files; npm run test:landing runs them
+
+npx vitest run tests/server/machine/lsp tests/server/files/ops.test.ts tests/routes/replace tests/state/system/lsp tests/views/sources
+  Test Files  14 passed (14)
+       Tests  151 passed (151)          (matches the report)
+npx vitest run tests/state/system/lsp/edits.test.ts tests/server/machine/lsp/svelte-trust.test.ts tests/routes/replace/replace-undo.test.ts --reporter=verbose
+  edits.test.ts: 4 rows pass, among them 'refuses an edit that names a file open in a tab of another page, whether or not a tab of this page holds it' (:132) and 'does not overwrite a tab typed into while the edit waited, and writes nothing before it notices' (:146)
+  Test Files  3 passed (3), Tests  8 passed (8); then `ps ... | grep -E "tsserver.js|typescript-language-server|svelte-language-server" | wc -l` -> 0
+npm run test:checks
+  FAIL tests/checks/config/integrity.test.ts > the real hub > validates with no findings
+  FAIL tests/checks/config/integrity.test.ts > the real hub > reads the portfolio deck with every named deck found
+  Test Files  1 failed | 16 passed (17); Tests  2 failed | 241 passed (243)   (the two real-hub rows; deck/ is not in the worktree)
+npx tsc --noEmit -p .   -> task-card.ts(10,15) and card.ts(10,15) TS2614 'CardAction', nothing else (present in the base, round 1 item 16)
+sh utils/folder-check.sh; echo $?   -> 0
+sh utils/unused-exports.sh vs D23b-base/tools/oculus/unused-exports.txt -> diff prints nothing; "Unused exports (250)"
+brief's item 4 grep (entries module excluded) -> kit/folding.ts:97, kit/lsp/hosts.ts:19,22,162, views/sources/source/language/lsp.ts:36,120 (as before; none a server branch)
+wc -l: Source.svelte 513, save/tab-draft.svelte.ts 57, kit/lsp/transport.ts 873, client.ts 640, hosts.ts 188, services.ts 89, state/.../lsp/edits.ts 285, ui Editor.svelte 516, Palette.svelte 520, relay.ts 839, ops.ts 849; `ls save | wc -l` 8
+line references of the round's report: hosts.ts:104 heldOf, :176 `held: heldOf`, client.ts:133, :231 documents(), :516, transport.ts:99 and :512 applyEdit(edit), :388 documents(), source.yml:68-69, edits.test.ts:132 and :146: all as quoted
+
+My own probes of the final edits.ts (scratchpad probes/probe.mts, the module imported as it is, recording parts):
+  two-tabs, second dirty:            {"applied":false,"notice":"lsp_edit_changed","words":["hub/a.py"]} {"edited":[],"written":[]}
+  two-tabs, both the held text:      {"applied":true} edited t1 and t2 "new = 1\n"
+  two-tabs, first dirty and held:    {"applied":false,"notice":"lsp_edit_changed","words":["hub/a.py"]} {"edited":[],"written":[]}
+  other-channel, held of the asking channel only: {"applied":false,"notice":"lsp_edit_changed","words":["hub/legacy.c"]}
+  other-channel, held of c and cpp (what heldOf passes): {"applied":true} edited tu "int y = neu();\n", tl "// typed\nint x = neu();\n"
+  crlf draft, lf model text:         {"applied":true} edited "new = 1\r\n"
+
+typescript-language-server probe (scratchpad tsprobe/probe.mjs, the worktree's node_modules, cathedra/ts/app.ts and lib.ts copied from the builder's fixture, which has no tsconfig; rename of `double` in lib.ts):
+  both          ["lib.ts:1","app.ts:3"]
+  typed-undone  ["lib.ts:1","app.ts:3"]
+  lib-only      ["lib.ts:1"]
+  app-closed    ["lib.ts:1"]
+  then tsserver/typescript-language-server processes: 0
+
+The builder's logs read (not rerun): $TMPDIR/d23b/out/f-case24.txt, f-case13c.txt, case13c-dirty.txt, r2-case22.txt: as the round's report quotes them.
+```
+
+Not rerun: the live Electron cases (24, 13c clean and dirty, 13b, 1, 2, 10, 19, 21, 22). Their verdicts rest on the builder's logs, which I read on disk, and on my probes.
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. The round does not change the entries; the grep and the facts module are as in the first review.
+- 2: holds, as in the review over round 1. The round does not change the servers.
+- 3: holds. `lsp-edit.test.ts` and `replace-undo.test.ts` pass. The round does not change the server side.
+- 4: holds.
+  - The check is per tab (`edits.ts:224-241`). A tab of a held file is edited only when its draft is the text the server holds, which is the first model's text (`transport.ts:388-394`, `client.ts:231`). Any other tab of that file is refused. Refusing that tab is correct, not stricter than needed: when the held tab is dirty, a clean second tab equal to the disk would get positions computed for other text. My probes show both outcomes.
+  - `heldOf` (`hosts.ts:104-112`) merges the `documents()` of every host whose language the asking server's entry lists. `factsForLanguage` gives clangd `['c','cpp']` and the TypeScript server `['javascript','typescript']` (`lsp-servers.ts:97`, `:115`). It is passed per host (`hosts.ts:176`), and `client.ts:516` hands it to `services.applyEdit` (`lsp.ts:197`). My probe with the merged map edits the dirty `.c` tab.
+  - The two-page refusal asks about every named file (`edits.ts:219-221`). Its row is weak (Finding 1).
+  - A tab typed into after the post gets `lsp_edit_typed` or `lsp_edit_typed_one` (`edits.ts:256-261`). Its singular is chosen by `files.length === 1`, and the row asserts both forms. The rest stands as in the review over round 1.
+- 5: holds. The `uris.test.ts` row passes in the covering run.
+- 6: holds. Rename goes through the page function, per case 24's second rename and case 13c. The announcement Monaco makes after a rename is Finding 6.
+- 7: holds, as in the review over round 1.
+- 8: holds under Z691.
+
+The split of `tab-draft.svelte.ts` out of `Source.svelte`: holds by reading.
+- The `$effect` body, `typed` and `toggleWrap` match the removed code line for line (`git diff 8d9cdd60 -- Source.svelte`), with `untrack` imported where it is used.
+- Nothing else left `Source.svelte`.
+- One difference: the load effect is now created at `Source.svelte:212`, before `createTabLanguage` and the other partials, where before it was the last effect created. Every getter it reads (`root`, `path`, `head`, `blocked`, `untitled`, `options`) is declared above line 212. The load runs untracked and async. So the order changes only which effect sees the loaded draft on its first run. The builder's runs after the move (cases 24, 1, 13c) show tabs loading and typing reaching the draft.
+
+Cases of the brief's "Cases":
+
+- 1: met, per the builder's final run.
+- 2: met, per cases 2 and 19. Its test row does not discriminate (Finding 1).
+- 3, 7, 8, 9: met. `lsp-edit.test.ts` and `replace-undo.test.ts` pass.
+- 4: met by reading the two rows together, as in the review over round 1.
+- 5, 10, 11, 14 to 17: met, as in the review over round 1. The round does not change these paths.
+- 6: met.
+- 12: met.
+- 13a: met.
+- 13b: met under Z692.
+- 13c: met with clean tabs (f-case13c.txt). With unsaved text in the `.c` tab the edit now applies to that tab, unsaved, and writes nothing (case13c-dirty.txt).
+
+Implied inputs:
+- A file named twice: met.
+- A file in two tabs of one page: met (my two-tabs probes; case 24's log).
+- Overlapping ranges, CRLF, BOM and UTF-16: met.
+- An answer after the tab closed: met by reading.
+- A revoke restarts the server untrusted: met.
+- A killed server leaves no child: met.
+
+Case 22, the tab left unrenamed: not established.
+- The page's function edits every tab its answer names, or none. All tab edits run in one loop after every check (`edits.ts:263`).
+- A named tab whose file is not matched would have gone to `lsp-edit` and been written. The log shows `app.ts` unchanged on disk too.
+- So the logged state (`lib.ts` renamed; `app.ts` unchanged in the tab and on disk; no refusal) matches an answer that named `lib.ts` alone. Nothing in `edits.ts`, `client.ts`, `hosts.ts` or `transport.ts` explains it.
+- typescript-language-server gives exactly that answer for this fixture (`cathedra/ts` has no tsconfig, so `app.ts` and `lib.ts` are loose files in an inferred project) whenever `app.ts` is not open on the server (my probe: `lib-only` and `app-closed` give `["lib.ts:1"]`).
+- Whether `app.ts` had been closed on the server at that moment is not established. The original frames are gone, and `out/case10.txt` was overwritten at 10:34.
+- The three reruns are not the original state. In all three, `app.ts` keeps the typed `}dou` (`r2-case22.txt`), so the undo did not take. The builder's account of the original says the undo ran, and its quote shows no `dou`.
+- The likely cause is the server's own reach for loose TypeScript files, not oculus's page code. In VS Code, a TypeScript rename in a folder without a tsconfig also misses files that are not open.
+
+### Findings
+
+1. Proof, `tests/state/system/lsp/edits.test.ts:132-144`. The row is `elsewhere: [{ root: 'hub', path: 'a.py' }]` with `askHeld: () => { options.during?.(); return Promise.resolve(options.elsewhere ?? []); }` (`:57-60`).
+   - What is wrong: the mock answers `[a]` whatever files it is asked about. So under the narrow rule Z693 (1) guards against, the row still passes. That rule is `askHeld(onDisk...)`, which asks only about `b`, the file no tab holds. It would refuse with `lsp_edit_elsewhere`, `hub/a.py`, which is what the row expects. Judged by reading.
+   - Failure scenario: a later change narrows the other-page check to files no tab of this page holds. The suite stays green. Then a file open in both pages is renamed in one page, and one page's save overwrites the other's text.
+   - Fix (small, at landing): the mock answers only the files it is asked about:
+     ```ts
+     askHeld: (files) => {
+         options.during?.();
+         const asked = (one: LspPlace) => files.some((f) => f.root === one.root && f.path === one.path);
+         return Promise.resolve((options.elsewhere ?? []).filter(asked));
+     },
+     ```
+   - Verdict: case 2's test (item 4's other-page refusal) is not proven by its row; the behaviour itself holds.
+
+2. Behaviour and standards, `config/text/views/sources/source.yml:65`: `lsp_edit_partial: "The language server's edit stopped at {0} after {1} files were written. History undoes them."`
+   - What is wrong: `refusedWrite` (`edits.ts:173-175`) fills `{1}` with `outcome.done.length`. When the second of two files fails, that is 1. The round gave `lsp_edit_typed` a singular, and this key, from the same family, still reads "after 1 files were written. History undoes them."
+   - Failure scenario: a two-file rename whose second write fails shows the plural sentence for one file.
+   - Fix (small): add `lsp_edit_partial_one` ("... after 1 file was written. History undoes it."), add it to `LSP_EDIT_NOTICES` (`text-edits.ts`), and branch on `done.length === 1` in `refusedWrite`.
+   - Verdict: none.
+
+3. Standards, `src/lib/state/system/machine/lsp/edits.ts:19-27`: "The whole edit is refused, with the notice that names the file, when ... - a tab's draft changed while the edit waited".
+   - What is wrong: when the tab is typed into after the post, the files stay written and only the tabs are left. `edits.ts:255` says so, but the head comment lists this case under "the whole edit is refused" (spec: a head comment the change makes false is a defect).
+   - Failure scenario: a reader trusts the head comment and expects nothing written in that case.
+   - Fix (small): the item reads "a tab's draft changed while the edit waited, before the files were written (after, the files stay written, History undoes them, and the tabs are left as typed)".
+   - Verdict: none.
+
+4. Standards, `tests/state/system/lsp/edits.test.ts:11-13`: "the refusals of a file named twice and of a tab whose text is not the one the server holds, which the step's report shows with a probe of this function over recording parts and with live runs".
+   - What is wrong: a test comment points at "the step's report", a process document under `.scratch/` that a reader of the tree cannot find. That is the history the spec's comment rule bans. Round item 7 asked to say where each refusal is shown, and the only true place is not one a comment may name.
+   - Failure scenario: a reader looks for "the step's report" in the tree and finds nothing.
+   - Fix (small): "...and of a tab whose text is not the one the server holds, which no guarded entry names, so no row here tests them".
+   - Verdict: none.
+
+5. Spec (Doc text), report "Doc text", entry G8: "Code adds `src/lib/server/files/fs/lsp-edit.ts`. Test adds ... `tests/state/system/lsp/edits.test.ts`, 'does not overwrite a tab typed into ...'".
+   - What is wrong: the G8 row tests `src/lib/state/system/machine/lsp/edits.ts`, which G8's Code line does not name. The spec says an entry names the units its tests cover.
+   - Failure scenario: a later step changes `edits.ts`, does not run G8's test, and the typed-tab refusal breaks unseen.
+   - Fix (small, at landing, where the orchestrator applies the Doc text): G8's Code line also names `src/lib/state/system/machine/lsp/edits.ts`.
+   - Verdict: none.
+
+6. Behaviour, from the first build and outside this round's delta, `src/lib/ui/controls/editor/kit/lsp/transport.ts` (the rename branch of the answer handler): `result: outcome.applied ? { documentChanges: [] } : null`.
+   - What is wrong: Monaco's rename controller applies the empty edit and announces its summary in its aria live region. Every rename that oculus applied is announced "Successfully renamed 'total' to 'grand_total'. Summary: Made 0 edits in 0 files" (`f-case24.txt`, `f-case13c.txt`, `r2-case22.txt`). The spec counts the accessible output as visible. The reports state no before and after for it.
+   - Failure scenario: a screen-reader user renames across two files, hears "Made 0 edits in 0 files", and concludes the rename did nothing.
+   - Not small. Options:
+     - (a) Register oculus's own rename provider over the client's. It applies through the page and returns an edit that names nothing, together with the page's own announcement.
+     - (b) Return `null` and let the page announce the result. Monaco then shows its visible "No result", which is worse.
+     - (c) Book it as a later step for the editor's announcements. This is the lazy option.
+   - Recommended: (a), raised to the orchestrator.
+   - Verdict: none.
+
+7. Standards (the state file's standing demand "Never run tmux without `-L` or a private `-S` socket, and never list the default socket"), the builder's transcript `agents/agent-adf9011378450f02a.jsonl`:
+   - In the first build (06:10) the builder ran `tmux list-sessions ...` and `tmux kill-session -t oculus-usage-claude`. The list showed the session was the scratch hub's.
+   - In this round (08:39 and 08:50) it ran `tmux kill-session -t oculus-usage-claude 2>/dev/null` twice, on the default socket, with no check of whose session it was. The report's stray-processes row calls this ending the session.
+   - What is wrong: `oculus-usage-claude` is the fixed name both the scratch server and Axel's own server on 8787 give their usage-refresh session on the default socket (`usage/refresh.ts:67`, `:197`; `pty/tmux.ts:44-46` adds `-S` only when a socket is given). The blind kill could have ended Axel's server's refresh mid-run. Also, the scratch server's own tick kills a leftover of that name, so any scratch server collides with Axel's on that session.
+   - Failure scenario: Axel's server is mid-refresh when a builder's cleanup runs. Its usage refresh is killed, and the Usage view shows a failed refresh.
+   - No code fix in this step. For the orchestrator: the next brief that starts a scratch server says to turn its usage refresh off and never to call tmux on the default socket.
+   - Verdict: none.
+
+### Declined to judge
+
+- The live Electron cases of the round (24, 13c clean and dirty, 13b, 1, 2, 10, 19, 21, 22). I did not rerun them. I read the builder's logs on disk, which match the report's quotes, and I checked the page function with my own probes.
+- `heldOf` live. I read it and fed `edits.ts` the merged map it builds. I did not run a page with `c` and `cpp` hosts myself.
+- Whether either blind `tmux kill-session` in this round ended a session of Axel's server. The output was sent to `/dev/null`, so the transcript cannot settle it, and I did not touch tmux.
+- The cause of case 22. Settling it needs a rerun of the original sequence that logs, at rename time, whether `app.ts` was open on the TypeScript server (the transport's `didOpen`/`didClose` frames) and the server's raw rename answer.
+- The effect-order change in `Source.svelte`. Read only; no run of mine.
+
+Reviewer usage: agent id not known to the reviewer, claude-opus-5-5, tokens not measured, about 65 tool uses, about 16 minutes.
+
+Usage: a5cfe6049df8286b5, claude-opus-5-5, 272,924 tokens, 74 tool uses, 17.0 min.
+
+## Closed
+
+The dispositions of the findings of the review over round 2, the step's last round (none goes back to the builder):
+
+1. Finding 1 (the two-page row's mock answers whatever it is asked): fixed at landing, `askHeld` answers only the files it is asked about.
+2. Finding 2 (`lsp_edit_partial` for one file): fixed at landing, `lsp_edit_partial_one` and the branch on `done.length === 1`.
+3. Finding 3 (`edits.ts`'s head comment): fixed at landing.
+4. Finding 4 (`edits.test.ts`'s comment naming the step's report): fixed at landing.
+5. Finding 5 (G8's Code line): fixed at landing in `agents/guarded.md`, with the round's Doc text.
+6. Finding 6 (Monaco announces "Made 0 edits in 0 files" after every rename oculus applies): fixed at landing. The transport answers Monaco's rename request with no result once the page has applied or refused the edit (`kit/lsp/transport.ts`, the rename branch of the answer handler), so Monaco applies nothing and announces no summary; each language has one rename provider (`forLanguage` in `server/machine/lsp/servers.ts`), so no second provider is asked, and the standalone editor writes its "No result." to the console only (`rename.js:241-244`, `standaloneServices.js:168-192`).
+7. Finding 7 (`tmux kill-session -t oculus-usage-claude` on the default socket in round 2): a breach of the standing demand, reported to Axel; whether it ended a session of his server cannot be read from the transcript (output to `/dev/null`). The next brief that starts a scratch server repeats the demand.
+8. Case 22: the cause is not established in oculus's code; the review reads `edits.ts`, `client.ts`, `hosts.ts` and `transport.ts` and finds no path that leaves a named tab unedited, and its probe shows typescript-language-server answering a rename in a folder with no tsconfig with `lib.ts` alone whenever `app.ts` is not open on the server (`lib-only`, `app-closed`: `["lib.ts:1"]`), which matches the logged state.
+
+The earlier runs' findings are closed as `agents/briefs/D23b-round1.md` and `agents/briefs/D23b-round2.md` list them, each verified by the review over the following round.

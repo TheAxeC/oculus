@@ -16,34 +16,37 @@
     // It is also the quick input of the source tab on screen, as VS Code's is of the active editor:
     // a colon and a number goes to that line, a colon alone says which line the caret is on and how
     // many there are, and `:language` lists every language the highlighter paints, the words after
-    // it narrowing the list, under VS Code's three entries above them (LanguageRows.svelte: Auto
-    // Detect, the file association, the language's settings). Both are asked of the tab through the
-    // editor status store, and with no source tab on screen the palette says there is none. While a
-    // source tab is on screen its editor's actions are listed with the other results: Go to Next
-    // Change and Go to Previous Change with their keys beside them, and Open Change, while the file
-    // has quick diff marks, and the Cmd+K chords the editor gave up so that Cmd+K opens the palette
-    // from inside it, each with its old chord beside it. Choosing one asks the tab to run it. A
-    // diff pane on screen lists its diff editor's actions the same way, and takes no line or
-    // language query. A view that offers commands of its own (the Present view's slide actions and
-    // Export to PDF) has them listed while its tab is on screen, and choosing one runs it.
+    // it narrowing the list, under VS Code's three entries above them (rows/LanguageRows.svelte:
+    // Auto Detect, the file association, the language's settings). Both are asked of the tab
+    // through the editor status store, and with no source tab on screen the palette says there is
+    // none. While a source tab is on screen its editor's actions are listed with the other results:
+    // Go to Next Change and Go to Previous Change with their keys beside them, and Open Change,
+    // while the file has quick diff marks, and the Cmd+K chords the editor gave up so that Cmd+K
+    // opens the palette from inside it, each with its old chord beside it. Choosing one asks the
+    // tab to run it. A diff pane on screen lists its diff editor's actions the same way, and takes
+    // no line or language query. A view that offers commands of its own (the Present view's slide
+    // actions and Export to PDF) has them listed while its tab is on screen, and choosing one runs
+    // it.
     //
     // It is also where the Files view's workspace commands run: `:workspace` lists the default
     // workspace and the saved ones, the one in force marked, and a pick switches in place;
-    // `:workspace-save <name>` saves the folders in force under the name (WorkspaceRows.svelte);
-    // `:folder` opens the folder panel and shows the folder chosen. A refusal of any of them is
-    // said in the palette, which stays open, and a success closes it.
+    // `:workspace-save <name>` saves the folders in force under the name
+    // (rows/WorkspaceRows.svelte); `:folder` opens the folder panel and shows the folder chosen. A
+    // refusal of any of them is said in the palette, which stays open, and a success closes it.
     //
-    // While a language server serves the source tab on screen, `:interpreter` (a Python tab) and
-    // `:compile-database` (a C or C++ tab) list the choices of the tab's root, the one in force
-    // marked (ChoiceRows.svelte; which commands open a list is shell/keys/palette-modes.ts).
+    // While a language server serves the source tab on screen, `:interpreter` and
+    // `:compile-database` list the choices of the tab's root, the one in force marked
+    // (rows/ChoiceRows.svelte; which commands open a list is in palette-modes.ts), and `#` with a
+    // query lists its workspace's symbols (rows/SymbolRows.svelte; Cmd+T in the app).
 
     import { Command } from 'bits-ui';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
-    import LanguageRows from '$lib/shell/keys/LanguageRows.svelte';
-    import ChoiceRows from '$lib/shell/keys/ChoiceRows.svelte';
-    import WorkspaceRows from '$lib/shell/keys/WorkspaceRows.svelte';
+    import LanguageRows from '$lib/shell/keys/rows/LanguageRows.svelte';
+    import ChoiceRows from '$lib/shell/keys/rows/ChoiceRows.svelte';
+    import SymbolRows from '$lib/shell/keys/rows/SymbolRows.svelte';
+    import WorkspaceRows from '$lib/shell/keys/rows/WorkspaceRows.svelte';
     import { choiceModeOf, choiceRows, opensAsMode } from '$lib/shell/keys/palette-modes';
     import { focusQuietly } from '$lib/ui/frame/quiet-focus';
     import { configuredThemes, openPaletteItem } from '$lib/shell/keys/palette-open';
@@ -159,7 +162,8 @@
     const choiceList = $derived(
         choiceMode === null ? [] : choiceRows(choiceMode, choiceView, parsed?.argument ?? '')
     );
-    /** Whether the query is the workspace list, and whether it is the save command. */
+    /** Whether the query is the workspace's symbol list (a `#`), the workspace list or its save. */
+    const symbolMode = $derived(parsed === null && query.startsWith('#'));
     const workspaceMode = $derived(parsed !== null && parsed.name === 'workspace');
     const saveMode = $derived(parsed !== null && parsed.name === 'workspace-save');
     const saved = $derived(workspaces());
@@ -173,7 +177,9 @@
                   command.name.startsWith(parsed.name)
               )
     );
-    const matches = $derived(parsed === null ? ranked(index, query).slice(0, 30) : []);
+    const matches = $derived(
+        parsed === null && !symbolMode ? ranked(index, query).slice(0, 30) : []
+    );
     const count = $derived(
         parsed === null
             ? matches.length
@@ -341,7 +347,13 @@
                                     <Command.Viewport>
                                         {#snippet child({ props: viewport })}
                                             <div {...viewport} {...list} class="list">
-                                                {#if parsed === null}
+                                                {#if symbolMode}
+                                                    <SymbolRows
+                                                        instance={source?.instance ?? null}
+                                                        query={query.slice(1)}
+                                                        {onclose}
+                                                    />
+                                                {:else if parsed === null}
                                                     {#each matches as found (found.item.id)}
                                                         <PaletteRow
                                                             row={{
@@ -438,7 +450,7 @@
                                                 {#if said !== ''}
                                                     <p class="empty" data-palette-said>{said}</p>
                                                 {/if}
-                                                {#if count === 0 && line === null && !languageMode && !workspaceMode && choiceMode === null}
+                                                {#if count === 0 && line === null && !languageMode && !workspaceMode && !symbolMode && choiceMode === null}
                                                     <p class="empty">
                                                         {parsed === null
                                                             ? t('app.palette_empty')

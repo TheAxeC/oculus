@@ -63,8 +63,9 @@ export function shownBytes(size: unknown): Shown {
 }
 
 /**
- * The word an operation of a file record is called: VS Code's own name for it. A replace says in
- * how many files it wrote, which is the number of files its record names after the change.
+ * The word an operation of a file record is called: VS Code's own name for it. A replace and an
+ * edit of a language server say in how many files they wrote, which is the number of files their
+ * record names after the change.
  */
 export function fileOperation(field: string, after: unknown): string {
     if (field === 'create') return t('history.file_create');
@@ -79,6 +80,12 @@ export function fileOperation(field: string, after: unknown): string {
         return files === 1
             ? t('history.file_replace_one')
             : t('history.file_replace', String(files));
+    }
+    if (field === 'lsp-edit') {
+        const files = stampPaths(after).length;
+        return files === 1
+            ? t('history.file_lsp_edit_one')
+            : t('history.file_lsp_edit', String(files));
     }
     return field;
 }

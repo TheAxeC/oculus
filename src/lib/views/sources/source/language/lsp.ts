@@ -1,8 +1,9 @@
-// Layer 3, view partial of Source.svelte. What a Python, C or C++ source tab adds to its editor
-// when a language server serves it: the registration of its model with the editor's language
+// Layer 3, view partial of Source.svelte. What a source tab of a language a server serves adds to
+// its editor when the server serves it: the registration of its model with the editor's language
 // server client (ui/controls/editor/kit/lsp/), the services that client is handed (the page's
-// channel, the reads and opens it needs, the stores it reports to), and the actions the tab lists
-// while a server serves it.
+// channel, the reads and opens it needs, the stores it reports to, the edits a server asks for),
+// and the actions the tab lists while a server serves it. Which languages a server serves, the
+// words each is named by and the choices it asks for are the entries of data/prose/lsp-servers.ts.
 //
 // A tab over a library file (status/library-tab.svelte.ts) registers its model under the library
 // address, so hover, definitions and diagnostics are answered by the server that named the file.
@@ -16,12 +17,16 @@
 // never registered, since the kit registers a model under the language it is drawn in.
 //
 // The actions are the tab's own (`EditorOwnAction`), joined to the tab's list in the order
-// Restart Language Server, Show Language Server Output, Select Interpreter or Select Compile
-// Database, Switch Between Source/Header, Find All References, Find All Implementations, Show AST
-// and Show Memory Usage, each while it applies. Restart and Show Output apply while any server of
-// the language is asked for; the rest apply while the server of the tab's root answers. A search
-// of the References view and clangd's two extensions hand their answers to the page's stores
-// (state/system/machine/lsp/), which the Explorer's and the Files view's sections draw.
+// Restart Language Server, Show Language Server Output, the server's choices (Select Interpreter,
+// Select Compile Database, Review Svelte Configuration), Switch Between Source/Header, Find All
+// References, Find All Implementations, Show Call Hierarchy, Show Type Hierarchy, Show AST and
+// Show Memory Usage, each while it applies. Restart and Show Output apply while any server of the
+// language is asked for; the rest apply while the server of the tab's root answers, the two
+// hierarchies and Find All Implementations only when the server declared them. A search of the
+// References view (references, implementations, the callers of a symbol, the types above and
+// below it) and clangd's two extensions hand their answers to the page's stores
+// (state/system/machine/lsp/), which the Explorer's and the Files view's sections draw. The tab
+// answers the palette's workspace symbols (`#`) through the same server.
 
 import type * as Monaco from 'monaco-editor';
 import type { ClientState } from '$lib/state/client/context';
@@ -29,6 +34,10 @@ import type { EditorExtension, EditorOwnAction, KeyPress } from '$lib/ui/control
 import type { FormatOutcome, LspHandle } from '$lib/ui/controls/editor/kit/lsp/client';
 import type { LspServices } from '$lib/ui/controls/editor/kit/lsp/services';
 import { SERVED_LANGUAGES } from '$lib/ui/controls/editor/kit/lsp/hosts';
+import { LSP_CHOICES, factsForLanguage, type LspServerFacts } from '$lib/data/prose/lsp-servers';
+import { LSP_EDIT_NOTICES } from '$lib/data/prose/text-edits';
+import { hierarchyBelow, hierarchyRoots } from '$lib/views/sources/source/language/hierarchy';
+import type { HierarchyDirection, HierarchyEntry } from '$lib/state/system/machine/lsp/hierarchy';
 import { isLibrary, libraryOf, placeOf, type Target } from '$lib/ui/controls/editor/kit/lsp/uris';
 import { readText } from '$lib/state/sources/fs-transport';
 import { languageOf } from '$lib/state/sources/explorer/file-type';
@@ -39,6 +48,7 @@ import {
 } from '$lib/views/shared/links/source-file';
 import type { RefFile, RefLine, RefSearch } from '$lib/state/system/machine/lsp/references';
 import type { AstNode, MemoryTree } from '$lib/state/system/machine/lsp/clangd';
+import { symbolRowsOf, type SymbolRow } from '$lib/state/system/machine/lsp/workspace-symbols';
 import { t } from '$lib/state/shared/words/text';
 
 /** The milliseconds a save waits for the language server's formatting (VS Code's participant). */
@@ -89,6 +99,7 @@ export type LspTab = {
 /** The shortcut of an action, with VS Code's keys. */
 const KEYS: Record<string, KeyPress> = {
     references: { code: 'F12', shift: true, alt: true },
+    callHierarchy: { code: 'KeyH', shift: true, alt: true },
     header: { code: 'KeyO', alt: true },
     next: { code: 'F4' },
     previous: { code: 'F4', shift: true }
@@ -96,20 +107,12 @@ const KEYS: Record<string, KeyPress> = {
 
 /** A notice of the editor extension, by its name, in the catalog's words. */
 function noticeWords(key: string, words: string[]): string {
-    if (key === 'lsp_other_files') return t('source.lsp_other_files');
+    if ((LSP_EDIT_NOTICES as readonly string[]).includes(key)) {
+        return t(`source.${key}`, ...words);
+    }
     if (key === 'format_failed') return t('source.format_failed', ...words);
     if (key === 'format_timeout') return t('source.format_timeout');
     return key;
-}
-
-/** The label of an action of a language: the title of the VS Code command it is. */
-function labels(language: string): {
-    restart: string;
-    output: string;
-} {
-    return language === 'python'
-        ? { restart: t('source.cmd_python_restart'), output: t('source.cmd_python_output') }
-        : { restart: t('source.cmd_clangd_restart'), output: t('source.cmd_clangd_output') };
 }
 
 /** Whether a language is one a server serves. */
@@ -144,7 +147,7 @@ function locationOf(item: unknown): { uri: string; range: Range } | null {
 /** Make the language server wiring of one source tab. */
 export function createLspTab(input: LspTabInput): LspTab {
     const { client } = input;
-    const { lsp, documents, references, clangd } = client;
+    const { lsp, lspEdits, documents, references, clangd, workspaceSymbols } = client;
 
     /** What the registered model gave back, while the extension holds one. */
     const held: {
@@ -191,6 +194,7 @@ export function createLspTab(input: LspTabInput): LspTab {
             }
         },
         library: lsp.named,
+        applyEdit: lspEdits.apply,
         diagnostics: documents.setDiagnostics,
         symbols: documents.setSymbols,
         notice: (key, ...words) => input.say(noticeWords(key, words)),
@@ -239,19 +243,21 @@ export function createLspTab(input: LspTabInput): LspTab {
     }
 
     /** Ask the server for a search's locations, grouped by file; null when it could not answer. */
-    async function ask(search: RefSearch): Promise<RefFile[] | null> {
+    async function askFiles(search: RefSearch): Promise<RefFile[] | null> {
         const handle = held.handle;
         if (handle === null) return null;
-        const params = {
-            position: { line: search.line - 1, character: search.column - 1 },
-            ...(search.kind === 'references' ? { context: { includeDeclaration: true } } : {})
-        };
+        const position = { line: search.line - 1, character: search.column - 1 };
         try {
             const answer = await handle.ask(
                 search.kind === 'references'
                     ? 'textDocument/references'
                     : 'textDocument/implementation',
-                params
+                {
+                    position,
+                    ...(search.kind === 'references'
+                        ? { context: { includeDeclaration: true } }
+                        : {})
+                }
             );
             return await filesOf(answer, search);
         } catch {
@@ -259,7 +265,41 @@ export function createLspTab(input: LspTabInput): LspTab {
         }
     }
 
-    /** Find All References or Find All Implementations from the caret, shown in the view. */
+    /** Ask the server for the first level of a hierarchy or the one below an item. */
+    async function askEntries(
+        search: RefSearch,
+        direction: HierarchyDirection,
+        item: unknown
+    ): Promise<HierarchyEntry[] | null> {
+        const handle = held.handle;
+        if (handle === null) return null;
+        try {
+            return item === null
+                ? await hierarchyRoots(handle, direction, {
+                      line: search.line - 1,
+                      character: search.column - 1
+                  })
+                : await hierarchyBelow(handle, direction, item);
+        } catch {
+            return null;
+        }
+    }
+
+    /** The workspace symbols whose name matches a query, asked of this tab's server. */
+    async function askSymbols(query: string): Promise<SymbolRow[] | null> {
+        const handle = held.handle;
+        if (handle === null) return null;
+        try {
+            return symbolRowsOf(await handle.ask('workspace/symbol', { query }));
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Find All References, Find All Implementations, the callers of a symbol or the types above
+     * and below it, from the caret, shown in the References view.
+     */
     async function find(kind: RefSearch['kind']): Promise<void> {
         const at = held.editor?.getPosition() ?? null;
         const place = held.place;
@@ -271,10 +311,9 @@ export function createLspTab(input: LspTabInput): LspTab {
             line: at.lineNumber,
             column: at.column
         };
-        const files = await ask(search);
-        if (files === null) return;
-        const id = client.layout.openView(REFERENCES_VIEW);
-        references.setResult(id, search, files);
+        await references.start(search, { files: askFiles, entries: askEntries }, () =>
+            client.layout.openView(REFERENCES_VIEW)
+        );
     }
 
     async function showAst(): Promise<void> {
@@ -337,9 +376,14 @@ export function createLspTab(input: LspTabInput): LspTab {
             held.editor = editor;
             held.place = file;
             const at = refPlace(file);
-            const asker = references.registerAsker(at.root, at.path, ask);
+            const asker = references.registerAsker(at.root, at.path, {
+                files: askFiles,
+                entries: askEntries
+            });
+            const symbols = workspaceSymbols.register(input.instance(), askSymbols);
             return () => {
                 asker();
+                symbols();
                 handle.dispose();
                 held.handle = null;
                 held.model = null;
@@ -363,42 +407,37 @@ export function createLspTab(input: LspTabInput): LspTab {
     }
 
     function actions(language: string, file: { root: string; path: string }): EditorOwnAction[] {
-        if (!servedLanguage(language) || file.root === '' || file.path === '') return [];
+        const facts: LspServerFacts | undefined = factsForLanguage(language);
+        if (facts === undefined || file.root === '' || file.path === '') return [];
         const { root } = file;
         const state = lsp.server(root, language)?.state;
         const answering = state === 'ready' || state === 'indexing';
-        const words = labels(language);
-        const python = language === 'python';
+        const provides = (capability: string): boolean =>
+            held.handle?.provides(capability) === true;
         const listed: EditorOwnAction[] = [
             {
                 id: 'oculus.lsp.restart',
-                label: words.restart,
+                label: t(facts.words.restart),
                 run: () => void lsp.restart(root, language)
             },
             {
                 id: 'oculus.lsp.output',
-                label: words.output,
+                label: t(facts.words.output),
                 run: () => {
                     client.layout.openView(OUTPUT_VIEW, {
                         root,
                         language,
-                        label: t('output.tab', python ? 'pyright' : 'clangd', root)
+                        label: t('output.tab', t(facts.words.name), root)
                     });
                 }
             },
-            python
-                ? {
-                      id: 'oculus.lsp.interpreter',
-                      label: t('source.cmd_python_interpreter'),
-                      run: () => client.ui.requestPalette(':interpreter ')
-                  }
-                : {
-                      id: 'oculus.lsp.database',
-                      label: t('source.cmd_clangd_database'),
-                      run: () => client.ui.requestPalette(':compile-database ')
-                  }
+            ...facts.choices.map((kind) => ({
+                id: `oculus.lsp.${kind}`,
+                label: t(facts.words.choice[kind] ?? ''),
+                run: () => client.ui.requestPalette(`:${LSP_CHOICES[kind].command} `)
+            }))
         ];
-        if (!python && answering) {
+        if (facts.extras.includes('header') && answering) {
             listed.push({
                 id: 'oculus.lsp.header',
                 label: t('source.cmd_clangd_header'),
@@ -413,28 +452,45 @@ export function createLspTab(input: LspTabInput): LspTab {
                 key: KEYS.references,
                 run: () => void find('references')
             });
-            if (held.handle?.provides('implementationProvider') === true) {
+            if (provides('implementationProvider')) {
                 listed.push({
                     id: 'oculus.lsp.implementations',
                     label: t('source.cmd_find_implementations'),
                     run: () => void find('implementations')
                 });
             }
-        }
-        if (!python && answering) {
             listed.push(
                 {
-                    id: 'oculus.lsp.ast',
-                    label: t('source.cmd_clangd_ast'),
+                    id: 'oculus.lsp.call_hierarchy',
+                    label: t('source.cmd_call_hierarchy'),
+                    key: KEYS.callHierarchy,
                     menu: 'navigation',
-                    run: () => void showAst()
+                    disabled: !provides('callHierarchyProvider'),
+                    run: () => void find('calls')
                 },
                 {
-                    id: 'oculus.lsp.memory',
-                    label: t('source.cmd_clangd_memory'),
-                    run: () => void showMemory()
+                    id: 'oculus.lsp.type_hierarchy',
+                    label: t('source.cmd_type_hierarchy'),
+                    menu: 'navigation',
+                    disabled: !provides('typeHierarchyProvider'),
+                    run: () => void find('types')
                 }
             );
+        }
+        if (facts.extras.includes('ast') && answering) {
+            listed.push({
+                id: 'oculus.lsp.ast',
+                label: t('source.cmd_clangd_ast'),
+                menu: 'navigation',
+                run: () => void showAst()
+            });
+        }
+        if (facts.extras.includes('memory') && answering) {
+            listed.push({
+                id: 'oculus.lsp.memory',
+                label: t('source.cmd_clangd_memory'),
+                run: () => void showMemory()
+            });
         }
         if (references.hasResult()) {
             listed.push(

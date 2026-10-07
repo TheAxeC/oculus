@@ -66,7 +66,7 @@ A pattern across the files of one served root or of all of them, the hits groupe
 
 ## References
 
-The locations a language server found for Find All References (Shift+Alt+F12) or, where the server offers it, Find All Implementations in a source tab, under a count, one row per file and one per location with the match marked. A press opens the location at its line with the word at the match selected; a location in a library file opens the read-only library tab, which says after a reload that the library file is no longer open. F4 and Shift+F4 step through the latest result. The pane's actions refresh, clear, clear the history of the last ten searches and collapse all.
+The locations a language server found for Find All References (Shift+Alt+F12) or, where the server offers it, Find All Implementations in a source tab, or the call or type hierarchy of the symbol at the caret (Show Call Hierarchy, Shift+Alt+H, and Show Type Hierarchy in the editor menu), under a count, one row per file and one per location with the match marked. A press opens the location at its line with the word at the match selected; a location in a library file opens the read-only library tab, which says after a reload that the library file is no longer open. A hierarchy is a tree: the first level is the incoming calls or the supertypes (or the outgoing calls or the subtypes, which the arrow button in the pane's title swaps to), and each node opens one level of its own when its arrow is pressed. F4 and Shift+F4 step through the latest result. The pane's actions refresh, clear, clear the history of the last ten searches and collapse all.
 
 ## Funding
 
