@@ -10,7 +10,7 @@ Queued, in order (20 steps):
 - D15 (PDF reading): after D45.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
-- M8 (the hub's YAML checked in the editor): waiting for Axel's ruling on the hub YAML's shape.
+- M8 (the hub's YAML checked in the editor): after D23b.
 - D43 (LaTeX navigation through texlab): after D23b and D45.
 - D33 (the Problems view): after D45.
 - D39 (hub keys as links): after M8 and D23b.
