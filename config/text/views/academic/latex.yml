@@ -3,53 +3,204 @@ text:
     latex:
         at: '{0}:{1}'
         at_line: line {0}
+        bar_build: Build
+        bar_build_title: Build the LaTeX project (Cmd+Alt+B)
+        bar_building: Building
+        bar_building_title: A build is running
+        bar_kill: Kill
+        bar_kill_title: Stop the build that is running
+        bar_log: Log
+        bar_log_title: Open the log file of the last build
+        bar_view: View
+        bar_view_title: View the PDF (Cmd+Alt+V)
+        bib_unread: The bibliography could not be read, so it was not changed.
         build: build
         build_tip: run latexmk on this file and show it running
-        building: building
         clean: clean
         clean_tip: remove what a build left beside this file
+        cmd_bib_align: Align the bibliography
+        cmd_bib_align_sort: Align and sort the bibliography
+        cmd_bib_sort: Sort the bibliography
+        cmd_build: Build LaTeX project
+        cmd_build_log: Open the build log file
+        cmd_build_recipe: Build with recipe
+        cmd_checkcites: Check the citations with checkcites
+        cmd_cites: Open the citation browser
+        cmd_clean: Clean up auxiliary files
+        cmd_close_environment: Close the current environment
+        cmd_command: 'Format: {0}'
+        cmd_compiler_log: Show the compiler log
+        cmd_count: Count words in the LaTeX project
+        cmd_cursors_in_name: Place a cursor at each end of the environment name
+        cmd_demote: Demote the sections in the selection
+        cmd_item: Insert a new item
+        cmd_kill: Kill the build that is running
+        cmd_math_preview: Open the math preview
+        cmd_navigate: Jump to the matching environment or bracket
+        cmd_promote: Promote the sections in the selection
+        cmd_reveal: Reveal the output folder
+        cmd_root_comment: Insert the root comment
+        cmd_save_quietly: Save without building
+        cmd_select_content: Select the content of the current environment
+        cmd_select_environment: Select the current environment
+        cmd_select_name: Select the name of the current environment
+        cmd_select_section: Select the current section
+        cmd_surround: Surround the selection with a command
+        cmd_synctex: Show the PDF at the caret (SyncTeX)
+        cmd_texdoc: Open the documentation of a package
+        cmd_texdoc_packages: Open the documentation of a package this project loads
+        cmd_toggle_equation: Toggle between inline and display equation
+        cmd_view: View the LaTeX PDF
+        cmd_wrap_environment: Wrap the selection in an environment
+        commands: Commands
         count: count words
-        count_refused: 'the words were not counted: {0}'
         count_tip: count the words of this file and the files it includes
-        log: log
-        log_tip: open the log of the last build as a tab
-        no_errors: no errors
-        no_pdf: no PDF yet
-        none: This folder holds no LaTeX main file, a .tex file that declares a document class.
-        none_glyph: folder
-        open_pdf: PDF
-        open_pdf_tip: open the built PDF as a tab
         error_one: 1 error
         errors_many: '{0} errors'
-        outline: outline
+        failed_exit: 'the build ended with exit code {0}'
+        failed_notice: 'The LaTeX build of {0} failed.'
+        float_algorithm: Algorithm
+        float_figure: Figure
+        float_listing: Listing
+        float_table: Table
+        floats: Floats
+        follow_editor: Follow the active editor
+        following_glyph: link
+        glyph_building: latex_building
+        glyph_failed: latex_failed
+        glyph_succeeded: latex_ok
+        hover_package: 'Package {0}'
+        hover_package_docs: View documentation
+        hover_ref_number: 'Number {0}'
+        hover_ref_pdf: View on PDF
+        jump_failed: The main window could not be reached. Reconnect and try again.
+        kill: kill
+        labels: Labels
+        no_build: '{0} has no build to show a log of in this session.'
+        no_cites: No citation was found in the bibliographies of this project.
+        no_errors: no errors
+        no_main: 'No main file was found for {0}. Add a root comment, or build from the file that holds the document class.'
+        no_packages: This project loads no package.
+        no_pdf: no PDF yet
+        no_records: The PDF holds no record of that place. Build the file again.
+        no_root: No LaTeX root
+        none_followed: Open a LaTeX file, or pick a root, to list its commands, structure and problems.
+        none_glyph: folder
+        open_compiler_log: Open Compiler Log
+        open_pdf: PDF
+        open_pdf_tip: open the built PDF as a tab
+        open_source_tip: 'Open {0}'
         outline_empty: The file holds no sections.
         outline_failed: 'the outline was not read: {0}'
         outline_partial: 'not fully read: {0}'
         outline_unread: 'not read, over 2 MB or unreadable: {0}'
-        outline_tip: show the sections of this file and the files it includes
         pdf_at: 'PDF {0}'
+        pick_cite: Citation
+        pick_cite_placeholder: Pick a citation key to insert
+        pick_package: Package
+        pick_package_placeholder: Pick a package to open its documentation
+        pick_recipe: Build recipe
+        pick_recipe_placeholder: Pick a recipe to build with
+        pick_root: LaTeX root
+        pick_root_placeholder: Pick the main file the view is about
+        pick_root_tip: Pick the main file this view is about
+        pinned_glyph: pin
         problem: problem
         problem_counts: '{0}, {1}'
         problems: problems
-        program: built with {0}
+        problems_head: Problems
+        problems_unbuilt: The root has not been built in this session.
         read_failed: 'the folder was not read: {0}'
-        refused: 'the step was not started: {0}'
         refused_badness_missing: badness was not found. Install it, or name it in latex.badness_path.
+        refused_building: '{0} is building, so it was not cleaned. Kill Build first.'
         refused_count_failed: texcount could not count the file.
         refused_count_missing: texcount is not installed. It comes with TeX Live and MacTeX.
         refused_count_timeout: texcount did not finish in time.
+        refused_folder: '{0} leaves the folder this root serves, so the build was not started.'
         refused_format_failed: The formatter could not format the file.
         refused_format_none: No LaTeX formatter is chosen. Choose one under latex.formatter in Settings.
         refused_format_timeout: The formatter did not finish in time.
+        refused_idle: '{0} has no build running.'
         refused_latexindent_missing: latexindent was not found. It comes with TeX Live and MacTeX, or name it in latex.latexindent_path.
         refused_no_project: No project of the portfolio has that id.
+        refused_no_recipe: latex.recipes holds no recipe, so the build was not started.
         refused_not_a_file: That is not a file.
         refused_not_a_main: That is not a main file of this folder.
+        refused_program: '{0} was not found, so the build was not started. Install it, or name its path in latex.tools.'
+        refused_program_brew: '{0} was not found, so the build was not started. Install it with brew install {1}.'
+        refused_program_texlive: '{0} was not found, so the build was not started. It comes with TeX Live and MacTeX: brew install --cask mactex-no-gui, then tlmgr install {1} if the package is missing.'
+        refused_recipe: 'The recipe {0} is not in latex.recipes, so the build was not started.'
+        refused_synctex_failed: synctex could not read the build.
+        refused_synctex_missing: synctex is not installed. It comes with TeX Live and MacTeX, or name it in latex.synctex_path.
+        refused_synctex_no_file: The build left no SyncTeX file. Build the file again to write it.
+        refused_synctex_no_pdf: The PDF of this file is not built yet.
+        refused_synctex_outside: The build names a file outside this root, so it is not opened. Build the file here again.
+        refused_synctex_timeout: synctex did not finish in time.
         refused_tex_fmt_missing: tex-fmt was not found. Install it with brew install tex-fmt, or name it in latex.tex_fmt_path.
+        refused_texdoc_failed: texdoc found no documentation for that name.
+        refused_texdoc_missing: texdoc is not installed. It comes with TeX Live and MacTeX.
+        refused_texdoc_name: That is not a package name.
+        refused_texdoc_timeout: texdoc did not finish in time.
         retry: Try again
+        show_problems: Show Problems
+        state_building: building
+        state_failed: failed
+        state_stopped: stopped
+        state_succeeded: built
+        structure: Structure
+        suggest_environment: environment
+        symbols: Math Symbols
+        symbols_filter: filter symbols ...
+        symbols_none: No symbol matches.
+        texdoc_detail: Type the name of a package or a document; texdoc opens the documentation it finds.
+        texdoc_field: Name
+        texdoc_open: Open
+        texdoc_placeholder: amsmath
+        texdoc_title: Open documentation
+        tree_bib: BibTeX
+        tree_bib_align: Align
+        tree_bib_align_sort: Align and sort
+        tree_bib_sort: Sort
+        tree_build: Build LaTeX project
+        tree_build_clean: Clean up auxiliary files
+        tree_build_log: Build log file
+        tree_build_now: Build with the default recipe
+        tree_checkcites: checkcites
+        tree_cites: Citation browser
+        tree_close_environment: Close the current environment
+        tree_compiler_log: Compiler log
+        tree_count: Count words
+        tree_cursors_in_name: Cursors at the environment name
+        tree_demote: Demote sections
+        tree_edit: Navigate, select and edit
+        tree_kill: Kill the build
+        tree_logs: Logs
+        tree_misc: Miscellaneous
+        tree_navigate: Jump to the matching environment
+        tree_promote: Promote sections
+        tree_recipe: 'Recipe: {0}'
+        tree_refresh: Refresh viewers
+        tree_reveal: Reveal the output folder
+        tree_root_comment: Insert the root comment
+        tree_select_content: Select the environment content
+        tree_select_environment: Select the environment
+        tree_select_name: Select the environment name
+        tree_select_section: Select the section
+        tree_synctex: SyncTeX from the caret
+        tree_texdoc: texdoc
+        tree_texdoc_packages: texdoc of a loaded package
+        tree_toggle_equation: Toggle equation form
+        tree_view: View LaTeX PDF
+        tree_view_browser: Open in a browser
+        tree_view_program: Open in its program
+        tree_view_tab: Open in a tab
+        tree_view_window: Open in a window
+        tree_wrap_environment: Wrap in an environment
+        view_title: LaTeX
         warning_one: 1 warning
         warnings_many: '{0} warnings'
         words: '{0} words'
+        words_of: '{0}: {1} words'
     views:
         latex: LaTeX
         latex_glyph: journals

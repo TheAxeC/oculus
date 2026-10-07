@@ -98,6 +98,7 @@
     --map-related: #ec4899;
     --map-mutual: #0891b2;
     --c-on: #fff; /* text sitting on a filled status chip */
+    --pdf-paper: #fff; /* the sheet a PDF page is drawn on, white in every theme */
     /* shape + type */
     --radius: 10px;
     --radius-sm: 6px;

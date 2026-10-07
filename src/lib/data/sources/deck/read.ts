@@ -27,7 +27,8 @@ import type {
     DeckSummaryRow,
     Finding
 } from '../../model/index.ts';
-import { fileAddress, realOf, resolveIn, type DeckRoot } from './files.ts';
+import { fileBytesUrl } from '../../helpers/files/address.ts';
+import { realOf, resolveIn, type DeckRoot } from './files.ts';
 import { resolveGroups, type Doc, type Finder, type Resolved } from './groups.ts';
 import { buildSlide, type DeckProject, type KindContext } from './kinds.ts';
 import { orderText } from './order-text.ts';
@@ -323,7 +324,7 @@ export function createReader(context: DeckContext): DeckReader {
             };
             const resolve = (name: string) => {
                 const at = resolveIn(doc.root, folder, name);
-                return 'error' in at ? at : { src: fileAddress(doc.root, at.under) };
+                return 'error' in at ? at : { src: fileBytesUrl(doc.root.key, at.under) };
             };
             const kind: KindContext = {
                 key,

@@ -16,6 +16,7 @@ import {
     iconSet,
     type IconMemory,
     languageFindings,
+    latexEditingFindings,
     nestingFindings,
     optionFindings,
     loadConfig,
@@ -25,6 +26,7 @@ import {
     mailSettings,
     openSettings,
     processesSettings,
+    latexBuild,
     latexFormatting,
     readLocal,
     refreshSettings,
@@ -331,8 +333,7 @@ export function createServerContext(
     const refresh = refreshSettings(config);
     // The open and LaTeX endpoints read their keys again at every request, so a key the catalog
     // holds no rule for stops the server here rather than reaching a tab.
-    openSettings(config);
-    latexFormatting(config);
+    for (const read of [openSettings, latexFormatting, latexBuild]) read(config);
     const processesConfig = processesSettings(config);
     const hub = make.createHub();
     registerFilesChannel(hub);
@@ -370,6 +371,7 @@ export function createServerContext(
         ...behaviorFindings(engine, config),
         ...settingFindings(engine, config),
         ...languageFindings(engine, config),
+        ...latexEditingFindings(engine, config),
         ...nestingFindings(engine, config),
         ...optionFindings(engine, config),
         ...themeFindings(engine, config),

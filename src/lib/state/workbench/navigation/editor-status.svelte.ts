@@ -68,6 +68,8 @@ export type EditorAsk =
     | { kind: 'language'; language: string }
     | { kind: 'commit' }
     | { kind: 'select'; range: SelectRange; focus?: boolean }
+    | { kind: 'insert'; text: string; snippet?: boolean }
+    | { kind: 'replace'; text: string }
     | { kind: 'action'; id: string };
 
 /** The id of the tab action Cmd+S asks of the source tab on screen. */

@@ -120,11 +120,14 @@ export function registerBridge(windows: Windows, turn: SaveTurn, print: Printer)
         event.returnValue = caller !== null && valid ? turn(next, from) : REFUSED;
     });
 
-    ipcMain.on(OPEN_FLOAT_WINDOW, (event, id: unknown, bounds: unknown) => {
+    ipcMain.on(OPEN_FLOAT_WINDOW, (event, id: unknown, bounds: unknown, owner: unknown) => {
         const caller = callerOf(event, OPEN_FLOAT_WINDOW);
         const rect = boundsOf(bounds);
         if (caller === null || typeof id !== 'string' || id === '' || rect === null) return;
-        windows.openFloat(id, rect, caller.entry.origin);
+        const page = typeof owner === 'string' && owner !== '' ? owner : null;
+        // The window that asks is the main window of the page the float's address names.
+        if (caller.entry.kind === 'main') caller.entry.page = page;
+        windows.openFloat(id, rect, caller.entry.origin, page);
     });
 
     ipcMain.on(CLOSE_SELF, (event) => {
@@ -134,9 +137,15 @@ export function registerBridge(windows: Windows, turn: SaveTurn, print: Printer)
         caller.entry.win.close();
     });
 
+    // A main window raises itself, which is what the page that heard a jump asks. A float window
+    // raises the main window of the page that opened it, and the main window focused last once
+    // that window is gone.
     ipcMain.on(FOCUS_MAIN, (event) => {
-        if (callerOf(event, FOCUS_MAIN) === null) return;
-        const main = windows.lastMain();
+        const caller = callerOf(event, FOCUS_MAIN);
+        if (caller === null) return;
+        const { entry } = caller;
+        const owner = entry.owner === null ? null : windows.mainOf(entry.owner);
+        const main = entry.kind === 'main' ? entry : (owner ?? windows.lastMain());
         if (main !== null) {
             main.win.show();
             main.win.focus();

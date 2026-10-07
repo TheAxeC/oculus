@@ -31,6 +31,8 @@ export type TerminalAnswer = {
     refused?: string;
     /** The terminal a start answered, when it did. */
     terminal?: Terminal;
+    /** The name of the recipe a LaTeX build ran, when the answer names one. */
+    recipe?: string;
     /** The lines of the chain a project command run asked to have approved before it starts. */
     approve?: ChainLine[];
     /** The seed, folder and agent a composer start with a task asked to have approved first. */
@@ -68,6 +70,7 @@ const seedApprovalShape = z.object({ seed: z.string(), cwd: z.string(), agent: z
 const actionAnswerShape = z.object({
     id: optionalTextShape,
     terminal: startedShape.optional().catch(undefined),
+    recipe: z.string().optional().catch(undefined),
     error: optionalTextShape,
     names: z.array(z.string()).optional().catch(undefined),
     approve: z
@@ -120,27 +123,37 @@ const actionShape = z.object({ action: z.string() });
 export type TokenSource = { writeToken: () => string; renewToken: () => Promise<void> };
 
 /**
- * Post one action with the write token. A 403 renews the token and posts once more. A page
- * rendered on the server has no fetch and posts nothing. A refusal is told in the catalog's
- * sentence for its word, with the names the answer carried (state/shared/answers/answers.ts),
- * never in the server's own text. An answer at 200 is ok whatever it names, except for a start: a
- * terminal started with no id is one the page cannot attach to, so a start whose answer names no
- * terminal with an id is a failed start.
+ * Post a JSON body to an endpoint with the write token. A 403 renews the token and posts once more;
+ * the answer is the response of the last post, and a failed request throws.
  */
-export async function postTerminal(body: unknown, writes: TokenSource): Promise<TerminalAnswer> {
-    if (typeof fetch !== 'function') return { ok: false, id: '', error: '' };
+export async function postWithToken(
+    url: string,
+    body: unknown,
+    writes: TokenSource
+): Promise<Response> {
     const send = (): Promise<Response> =>
-        fetch('/api/terminal', {
+        fetch(url, {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'x-oculus-token': writes.writeToken() },
             body: JSON.stringify(body)
         });
+    const response = await send();
+    if (response.status !== 403) return response;
+    await writes.renewToken();
+    return send();
+}
+
+/**
+ * Post one action with the write token (postWithToken). A page rendered on the server has no fetch
+ * and posts nothing. A refusal is told in the catalog's sentence for its word, with the names the
+ * answer carried (state/shared/answers/answers.ts), never in the server's own text. An answer at
+ * 200 is ok whatever it names, except for a start: a terminal started with no id is one the page
+ * cannot attach to, so a start whose answer names no terminal with an id is a failed start.
+ */
+export async function postTerminal(body: unknown, writes: TokenSource): Promise<TerminalAnswer> {
+    if (typeof fetch !== 'function') return { ok: false, id: '', error: '' };
     try {
-        let response = await send();
-        if (response.status === 403) {
-            await writes.renewToken();
-            response = await send();
-        }
+        const response = await postWithToken('/api/terminal', body, writes);
         const raw = await readJson(response);
         if (raw === undefined)
             return { ok: false, id: '', error: unreadableAnswer(response.status) };
@@ -168,6 +181,7 @@ export async function postTerminal(body: unknown, writes: TokenSource): Promise<
             id: answer?.terminal?.id ?? answer?.id ?? '',
             error: '',
             terminal: answer?.terminal,
+            ...(answer?.recipe === undefined ? {} : { recipe: answer.recipe }),
             ...(approve === undefined || !Array.isArray(approve) ? {} : { approve }),
             ...(approve === undefined || Array.isArray(approve) ? {} : { seedApproval: approve }),
             ...(seeded === undefined ? {} : { seeded }),

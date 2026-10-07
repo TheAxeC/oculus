@@ -12,9 +12,22 @@
 import { closedPathEntryOk } from '../../helpers/files/apps.ts';
 import type { ProgramApps } from '../../helpers/files/opens-in-program.ts';
 import { byKey } from '../../helpers/guards.ts';
-import { FORMATTERS, type Formatter } from '../../prose/latex.ts';
+import {
+    AUTO_BUILDS,
+    AUTO_CLEANS,
+    FORMATTERS,
+    RECIPE_DEFAULTS,
+    REVERSE_SYNCTEX,
+    TEXCOUNT_AUTORUNS,
+    type AutoBuild,
+    type AutoClean,
+    type Formatter,
+    type RecipeDefault,
+    type ReverseSynctex,
+    type TexcountAutorun
+} from '../../prose/latex.ts';
 import { mapShape, readAs } from '../../shapes/shapes.ts';
-import { catalogOf, configItems, type CatalogEntry } from './catalog/options.ts';
+import { catalogOf, configItems, type CatalogEntry, type FieldSpec } from './catalog/options.ts';
 import { valueProblem, type RuleLists, type ValueProblem } from './catalog/value-rule.ts';
 
 /**
@@ -22,10 +35,13 @@ import { valueProblem, type RuleLists, type ValueProblem } from './catalog/value
  * is used, `entry` a member of a family that is not read, `field` a field of a record that is not
  * read; `spec` is the entry or field that holds the rule. `block` is a block that is not a map,
  * whose keys all take their defaults, and `family` a family that is not a map, none of whose
- * entries is read.
+ * entries is read. `repeat` is a row of a list of records whose name an earlier row already took,
+ * and `unnamed` a row with no name; neither is read.
  */
 export type SettingProblem =
     | { key: string; where: 'block' | 'family' }
+    | { key: string; where: 'repeat'; name: string }
+    | { key: string; where: 'unnamed' }
     | {
           key: string;
           where: 'value' | 'entry' | 'field';
@@ -493,12 +509,225 @@ export function latexFormatting(
     };
 }
 
-/** Read `latex.auto_build`, what saving a .tex file does, its default when missing or wrong. */
-export function latexAutoBuild(
+/** The word `latex.auto_build` holds, which the catalog's choice keeps to the three words. */
+function latexAutoBuild(
     config: Record<string, unknown>,
     problems: SettingProblem[] = []
-): string {
-    return settingReader(config, problems).text('latex.auto_build');
+): AutoBuild {
+    const word = settingReader(config, problems).text('latex.auto_build');
+    const found = AUTO_BUILDS.find((one) => one === word);
+    if (found === undefined) throw noRule('latex.auto_build');
+    return found;
+}
+
+/** One tool of `latex.tools`: a program and its arguments, called by its name. */
+export type LatexTool = { name: string; command: string; args: string[] };
+
+/** One recipe of `latex.recipes`: the tools run one after the other, by tool name. */
+export type LatexRecipe = { name: string; tools: string[] };
+
+/** What a LaTeX build and its follow-ups are set by, every key of `latex:` but the formatter's. */
+export type LatexBuilding = {
+    recipes: LatexRecipe[];
+    tools: LatexTool[];
+    recipeDefault: RecipeDefault;
+    outDir: string;
+    auxDir: string;
+    autoBuild: AutoBuild;
+    autoBuildIntervalMs: number;
+    cleanAndRetry: boolean;
+    autoClean: AutoClean;
+    synctexPath: string;
+    reverseSynctex: ReverseSynctex;
+    texcountAutorun: TexcountAutorun;
+    contextMenu: boolean;
+};
+
+/** The word of a choice key, which the catalog's `values` already holds to the list's words. */
+function wordOf<T extends string>(list: readonly T[], word: string, key: string): T {
+    const found = list.find((one) => one === word);
+    if (found === undefined) throw noRule(key);
+    return found;
+}
+
+/** A field of a records entry: its spec, which the rows are read against. */
+function fieldOf(
+    fields: Record<string, FieldSpec> | undefined,
+    name: string,
+    key: string
+): FieldSpec {
+    const spec = fields === undefined ? undefined : byKey(fields, name);
+    if (spec === undefined) throw noRule(key);
+    return spec;
+}
+
+/** The rows a records entry holds: its list, or none when the key is missing or no list. */
+function rowsOf(
+    config: Record<string, unknown>,
+    key: string,
+    problems: SettingProblem[]
+): unknown[] {
+    const held = heldAt(config, key, problems);
+    if (!held.present || held.value === null) return [];
+    if (!Array.isArray(held.value)) {
+        problems.push({ key, where: 'family' });
+        return [];
+    }
+    return held.value;
+}
+
+/**
+ * The rows of a list of records, each read by the entry's own fields: a row that is no map, or
+ * whose `name` or any other field the rule refuses is not read and comes back as a problem at
+ * `<key>[<index>]`, a row with no name is not read, and a row repeating a name an earlier row took
+ * is not read either. `pick` takes a row's fields out of it, and `refuse` names a problem a read
+ * row has beyond its fields' own, which leaves the row out.
+ */
+function recordRows<T extends { name: string }>(
+    config: Record<string, unknown>,
+    key: string,
+    problems: SettingProblem[],
+    pick: (row: Record<string, unknown>) => T,
+    refuse: (one: T, at: string) => SettingProblem | null = () => null
+): T[] {
+    const entry = settingEntry(config, key);
+    const named = new Set<string>();
+    const kept: T[] = [];
+    rowsOf(config, key, problems).forEach((raw, index) => {
+        const at = `${key}[${index}]`;
+        const row = readAs(mapShape, raw);
+        if (row === null) {
+            problems.push({ key: at, where: 'entry', problem: { kind: 'records' }, spec: entry });
+            return;
+        }
+        for (const [name, spec] of Object.entries(entry.fields ?? {})) {
+            const problem = valueProblem(spec, row[name]);
+            if (problem !== null) {
+                problems.push({ key: `${at}.${name}`, where: 'field', problem, spec });
+                return;
+            }
+        }
+        const one = pick(row);
+        if (one.name === '') {
+            problems.push({ key: at, where: 'unnamed' });
+            return;
+        }
+        if (named.has(one.name)) {
+            problems.push({ key, where: 'repeat', name: one.name });
+            return;
+        }
+        const refused = refuse(one, at);
+        if (refused !== null) {
+            problems.push(refused);
+            return;
+        }
+        named.add(one.name);
+        kept.push(one);
+    });
+    return kept;
+}
+
+/** The text items of a field the rule has already held to a list of texts. */
+function itemsAt(row: Record<string, unknown>, name: string): string[] {
+    const held = row[name];
+    return Array.isArray(held) ? held.filter((one) => typeof one === 'string') : [];
+}
+
+/** The text a field the rule has already held to a text holds. */
+function textAt(row: Record<string, unknown>, name: string): string {
+    const held = row[name];
+    return typeof held === 'string' ? held : '';
+}
+
+/**
+ * Read the tools of `latex.tools`, then the recipes of `latex.recipes` against them: a tool with
+ * no program is not read, and neither is a recipe that names no tool or a tool the list does not
+ * hold.
+ */
+function latexRecipes(
+    config: Record<string, unknown>,
+    problems: SettingProblem[]
+): { recipes: LatexRecipe[]; tools: LatexTool[] } {
+    const commandSpec = fieldOf(
+        settingEntry(config, 'latex.tools').fields,
+        'command',
+        'latex.tools'
+    );
+    const tools = recordRows<LatexTool>(
+        config,
+        'latex.tools',
+        problems,
+        (row) => ({
+            name: textAt(row, 'name'),
+            command: textAt(row, 'command'),
+            args: itemsAt(row, 'args')
+        }),
+        (tool, at) =>
+            tool.command === ''
+                ? {
+                      key: `${at}.command`,
+                      where: 'field',
+                      problem: { kind: 'empty' },
+                      spec: commandSpec
+                  }
+                : null
+    );
+    const known = tools.map((tool) => tool.name);
+    const toolsSpec = fieldOf(
+        settingEntry(config, 'latex.recipes').fields,
+        'tools',
+        'latex.recipes'
+    );
+    const recipes = recordRows<LatexRecipe>(
+        config,
+        'latex.recipes',
+        problems,
+        (row) => ({ name: textAt(row, 'name'), tools: itemsAt(row, 'tools') }),
+        (recipe, at) =>
+            recipe.tools.length > 0 && recipe.tools.every((name) => known.includes(name))
+                ? null
+                : {
+                      key: `${at}.tools`,
+                      where: 'field',
+                      problem: { kind: 'choice', values: known },
+                      spec: toolsSpec
+                  }
+    );
+    return { recipes, tools };
+}
+
+/** Read every key of `latex:` a build, its follow-ups and its SyncTeX are set by. */
+export function latexBuild(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): LatexBuilding {
+    const read = settingReader(config, problems);
+    return {
+        ...latexRecipes(config, problems),
+        recipeDefault: wordOf(
+            RECIPE_DEFAULTS,
+            read.text('latex.recipe_default'),
+            'latex.recipe_default'
+        ),
+        outDir: read.text('latex.out_dir'),
+        auxDir: read.text('latex.aux_dir'),
+        autoBuild: latexAutoBuild(config, problems),
+        autoBuildIntervalMs: read.number('latex.auto_build_interval_ms'),
+        cleanAndRetry: read.flag('latex.clean_and_retry'),
+        autoClean: wordOf(AUTO_CLEANS, read.text('latex.auto_clean'), 'latex.auto_clean'),
+        synctexPath: read.text('latex.synctex_path'),
+        reverseSynctex: wordOf(
+            REVERSE_SYNCTEX,
+            read.text('latex.reverse_synctex'),
+            'latex.reverse_synctex'
+        ),
+        texcountAutorun: wordOf(
+            TEXCOUNT_AUTORUNS,
+            read.text('latex.texcount_autorun'),
+            'latex.texcount_autorun'
+        ),
+        contextMenu: read.flag('latex.context_menu')
+    };
 }
 
 /** Every reader above that takes the problems it finds, in the order of their blocks. */
@@ -521,7 +750,7 @@ const PROBLEM_READERS: ((
     paintLimit,
     processesSettings,
     latexFormatting,
-    latexAutoBuild
+    latexBuild
 ];
 
 /**

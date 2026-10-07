@@ -1,5 +1,5 @@
 // Layer 2, client state. The sentences the catalog holds for the words POST /api/terminal refuses
-// with (data/model/model-sessions.ts TERMINAL_REFUSALS). The server answers a word and the names
+// with (data/model/model-processes.ts TERMINAL_REFUSALS). The server answers a word and the names
 // its sentence is about, so no text of tmux, of a validator or of the server's English reaches the
 // reader; answers.ts says these after the file and LaTeX words.
 
@@ -13,7 +13,7 @@ export function terminalWord(value: unknown): TerminalRefusal | null {
 
 /** The sentence for one terminal refusal word, with the names the server sent for it. */
 export function terminalSentence(word: TerminalRefusal, names: readonly string[] = []): string {
-    const [first = '', second = ''] = names;
+    const [first = '', second = '', third = ''] = names;
     switch (word) {
         case 'not-ours':
             return catalogText('sessions.refused_not_ours');
@@ -63,5 +63,21 @@ export function terminalSentence(word: TerminalRefusal, names: readonly string[]
             return catalogText('sessions.refused_needs_confirm', first);
         case 'approvals-unwritable':
             return catalogText('sessions.refused_approvals_unwritable', first);
+        case 'latex-program':
+            return second === 'texlive'
+                ? catalogText('latex.refused_program_texlive', first, third)
+                : second === 'brew'
+                  ? catalogText('latex.refused_program_brew', first, third)
+                  : catalogText('latex.refused_program', first);
+        case 'latex-recipe':
+            return catalogText('latex.refused_recipe', first);
+        case 'latex-no-recipe':
+            return catalogText('latex.refused_no_recipe');
+        case 'latex-folder':
+            return catalogText('latex.refused_folder', first);
+        case 'latex-building':
+            return catalogText('latex.refused_building', first);
+        case 'latex-idle':
+            return catalogText('latex.refused_idle', first);
     }
 }

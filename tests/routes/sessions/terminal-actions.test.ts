@@ -19,6 +19,7 @@ import {
 import { engineDir } from '../../../src/lib/data/sources/config.ts';
 import { taskTmux } from '../../server/machine/runs/commands/commands-fixture.ts';
 import { chatIndexPath } from '../../../src/lib/server/machine/pty/start/chat.ts';
+import { Turns } from '../../../src/lib/server/machine/pty/latex/turns.ts';
 import {
     SERVER,
     TOKEN,
@@ -96,6 +97,10 @@ describe('POST /api/terminal, the latex action', () => {
             '\\section{Intro}\n'
         );
         writeFileSync(
+            join(task.chatHub, LATEX_PROJECT, 'manuscript', 'second.tex'),
+            '\\documentclass{article}\n'
+        );
+        writeFileSync(
             join(task.chatHub, LATEX_PROJECT, 'manuscript', '-v.tex'),
             '\\documentclass{article}\n'
         );
@@ -109,15 +114,44 @@ describe('POST /api/terminal, the latex action', () => {
             .replace('{2}', main);
     }
 
+    /** The turns every request of this describe shares, as the server's terminals share theirs. */
+    const turns = new Turns();
+
     function latexOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
         return {
+            turns,
             engine: engineDir(),
             run: driver.run,
             hubFor: () => task.chatHub,
             configFor: () => BASE_CHAT_CONFIG,
             projectFor: (id) =>
-                id === 'alpha' ? { title: 'Alpha Study', folder: LATEX_PROJECT } : null
+                id === 'alpha' ? { title: 'Alpha Study', folder: LATEX_PROJECT } : null,
+            servedRootsFor: () => [{ key: 'hub', dir: task.chatHub }],
+            programFound: () => true
         };
+    }
+
+    /** The manuscript folder of the synthetic project, which a build runs in and writes to. */
+    function manuscript(): string {
+        return join(task.chatHub, LATEX_PROJECT, 'manuscript');
+    }
+
+    /**
+     * The line of LaTeX Workshop's default latexmk tool for `main.tex`, as the build must run it.
+     */
+    function latexmkLine(extra: string[] = []): string {
+        const dir = manuscript();
+        return command([
+            'latexmk',
+            ...extra,
+            '-synctex=1',
+            '-interaction=nonstopmode',
+            '-file-line-error',
+            '-pdf',
+            `-outdir=${dir}`,
+            `-auxdir=${dir}`,
+            join(dir, 'main')
+        ]);
     }
 
     /** The body of a latex action over the synthetic project's main file. */
@@ -141,16 +175,19 @@ describe('POST /api/terminal, the latex action', () => {
         expect(started[started.indexOf('-c') + 1]).toBe(folder);
         expect(started[started.indexOf('-x') + 1]).toBe('88');
         expect(started[started.indexOf('-y') + 1]).toBe('25');
-        expect(lineOf(started)).toEqual([
-            "latexmk -pdf -interaction=nonstopmode -file-line-error 'main.tex'"
-        ]);
+        expect(lineOf(started)).toEqual([latexmkLine()]);
         // The build is a task terminal whose pane stays after latexmk ends, and its task mark and
         // name are set by the invocation that creates the session.
         const session = `oculus-${terminal.id}`;
         const [keep, mark, label] = joinedCommands(started).slice(1);
         expect(keep).toEqual(['set-option', '-t', session, 'remain-on-exit', 'on']);
         expect(mark.slice(0, 4)).toEqual(['set-option', '-t', session, '@oculus_task']);
-        expect(JSON.parse(mark[4])).toEqual({ repo: folder, name, source: 'latex' });
+        expect(JSON.parse(mark[4])).toEqual({
+            repo: folder,
+            name,
+            source: 'latex',
+            latex: { step: 'build', main: 'main.tex' }
+        });
         expect(label).toEqual(['set-option', '-t', session, '@oculus_name', name]);
         expect(driver.calls.filter((args) => args[0] === 'set-option')).toEqual([]);
     });
@@ -175,15 +212,7 @@ describe('POST /api/terminal, the latex action', () => {
         driver.end(session, 0);
         expect((await post('build')).id).toBe(first.id);
         expect(driver.starts()).toHaveLength(1);
-        expect(driver.respawns()).toEqual([
-            [
-                'respawn-pane',
-                '-k',
-                '-t',
-                session,
-                "latexmk -pdf -interaction=nonstopmode -file-line-error 'main.tex'"
-            ]
-        ]);
+        expect(driver.respawns()).toEqual([['respawn-pane', '-k', '-t', session, latexmkLine()]]);
         driver.end(session, 0);
         expect((await post('clean')).id).not.toBe(first.id);
         expect(driver.starts()).toHaveLength(2);
@@ -196,6 +225,175 @@ describe('POST /api/terminal, the latex action', () => {
         );
         expect((await answer(again)).ok).toBe(true);
         expect(driver.respawns()).toHaveLength(2);
+    });
+
+    /** Post one latex step with extra fields, answering the response. */
+    async function postStep(
+        driver: ReturnType<typeof taskTmux>,
+        step: string,
+        extra: Record<string, unknown> = {}
+    ): Promise<Response> {
+        return handleTerminal(
+            request({ ...latexBody(step), ...extra }),
+            TOKEN,
+            latexOptions(driver)
+        );
+    }
+
+    /** The terminal of a successful answer. */
+    async function terminalOf(response: Response): Promise<{ id: string }> {
+        return (await answer(response)).terminal as { id: string };
+    }
+
+    /** The one terminal line a start of the driver was given. */
+    function lineStarted(driver: ReturnType<typeof taskTmux>, index: number): string {
+        const started = driver.starts()[index];
+        return started.slice(started.indexOf('--') + 1)[0];
+    }
+
+    /**
+     * The outcomes of the latex action other than the first build, each row one input: what the
+     * action starts, refuses or sends, and to which terminal.
+     */
+    const LATEX_ROWS: {
+        title: string;
+        run: (driver: ReturnType<typeof taskTmux>) => Promise<void>;
+    }[] = [
+        {
+            title: 'runs the recipe asked for as one line of its tools joined by &&',
+            run: async (driver) => {
+                const response = await postStep(driver, 'build', {
+                    recipe: 'pdflatex -> bibtex -> pdflatex * 2'
+                });
+                expect(response.status).toBe(200);
+                const pdflatex = [
+                    'pdflatex',
+                    '-synctex=1',
+                    '-interaction=nonstopmode',
+                    '-file-line-error',
+                    join(manuscript(), 'main')
+                ];
+                expect(lineStarted(driver, 0)).toBe(
+                    [
+                        command(pdflatex),
+                        command(['bibtex', 'main']),
+                        command(pdflatex),
+                        command(pdflatex)
+                    ].join(' && ')
+                );
+            }
+        },
+        {
+            title: 'makes latexmk build again with -g when the page says so',
+            run: async (driver) => {
+                const response = await postStep(driver, 'build', { force: true });
+                expect(response.status).toBe(200);
+                expect(lineStarted(driver, 0)).toBe(latexmkLine(['-g']));
+            }
+        },
+        {
+            title: 'stops the build terminal of the main and no other terminal',
+            run: async (driver) => {
+                const idle = await postStep(driver, 'stop');
+                expect(idle.status).toBe(404);
+                expect(await answer(idle)).toEqual({ error: 'latex-idle', names: ['main.tex'] });
+                const build = await terminalOf(await postStep(driver, 'build'));
+                // Another main of the folder has its build running, and a checkcites terminal of
+                // the first main is listed beside it: neither is interrupted.
+                const other = await terminalOf(
+                    await postStep(driver, 'build', { main: 'second.tex' })
+                );
+                const cites = await terminalOf(await postStep(driver, 'checkcites'));
+                expect(driver.starts()).toHaveLength(3);
+                expect(new Set([build.id, other.id, cites.id]).size).toBe(3);
+                const clean = await postStep(driver, 'clean');
+                expect(clean.status).toBe(400);
+                expect(driver.starts()).toHaveLength(3);
+                const stopped = await postStep(driver, 'stop');
+                expect(stopped.status).toBe(200);
+                const keys = driver.calls.filter((args) => args[0] === 'send-keys');
+                expect(keys).toEqual([['send-keys', '-t', `oculus-${build.id}`, '--', 'C-c']]);
+                // Once the build's line has ended there is nothing to stop.
+                driver.end(`oculus-${build.id}`, 130);
+                expect((await postStep(driver, 'stop')).status).toBe(404);
+                expect(driver.calls.filter((args) => args[0] === 'send-keys')).toHaveLength(1);
+            }
+        },
+        {
+            title: 'refuses a clean while the main builds, and runs it once the build ended',
+            run: async (driver) => {
+                const build = await terminalOf(await postStep(driver, 'build'));
+                const refused = await postStep(driver, 'clean');
+                expect(refused.status).toBe(400);
+                expect(await answer(refused)).toEqual({
+                    error: 'latex-building',
+                    names: ['main.tex']
+                });
+                expect(driver.starts()).toHaveLength(1);
+                driver.end(`oculus-${build.id}`, 0);
+                expect((await postStep(driver, 'clean')).status).toBe(200);
+                expect(driver.starts()).toHaveLength(2);
+                const dir = manuscript();
+                expect(lineStarted(driver, 1)).toBe(
+                    command([
+                        'latexmk',
+                        '-c',
+                        `-outdir=${dir}`,
+                        `-auxdir=${dir}`,
+                        join(dir, 'main')
+                    ])
+                );
+            }
+        },
+        {
+            title: 'answers concurrent requests for one build with the one terminal it started',
+            run: async (driver) => {
+                const answers = await Promise.all([1, 2, 3].map(() => postStep(driver, 'build')));
+                const terminals = await Promise.all(answers.map((one) => terminalOf(one)));
+                expect(answers.map((one) => one.status)).toEqual([200, 200, 200]);
+                expect(new Set(terminals.map((one) => one.id)).size).toBe(1);
+                expect(driver.starts()).toHaveLength(1);
+                // A build of another main file of the folder has a turn of its own.
+                const other = await terminalOf(
+                    await postStep(driver, 'build', { main: 'second.tex' })
+                );
+                expect(other.id).not.toBe(terminals[0].id);
+                expect(driver.starts()).toHaveLength(2);
+            }
+        },
+        {
+            title: 'keeps one build of a main file whether the folder is named by project or by root',
+            run: async (driver) => {
+                const byRoot = { id: undefined, root: 'hub', path: `${LATEX_PROJECT}/manuscript` };
+                const build = await terminalOf(await postStep(driver, 'build', byRoot));
+                const again = await postStep(driver, 'build');
+                expect((await terminalOf(again)).id).toBe(build.id);
+                expect(driver.starts()).toHaveLength(1);
+                const refused = await postStep(driver, 'clean');
+                expect(refused.status).toBe(400);
+                expect(await answer(refused)).toEqual({
+                    error: 'latex-building',
+                    names: ['main.tex']
+                });
+                expect(driver.starts()).toHaveLength(1);
+            }
+        },
+        {
+            title: 'checks the citations of a main file with checkcites in a terminal of its own',
+            run: async (driver) => {
+                const build = await terminalOf(await postStep(driver, 'build'));
+                const checked = await terminalOf(await postStep(driver, 'checkcites'));
+                expect(checked.id).not.toBe(build.id);
+                expect(driver.starts()).toHaveLength(2);
+                expect(lineStarted(driver, 1)).toBe(
+                    command(['checkcites', join(manuscript(), 'main.aux')])
+                );
+            }
+        }
+    ];
+
+    it.each(LATEX_ROWS.map((row) => [row.title, row.run] as const))('%s', async (_title, run) => {
+        await run(taskTmux(HERE));
     });
 });
 

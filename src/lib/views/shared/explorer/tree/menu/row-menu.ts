@@ -4,7 +4,8 @@
 // are offered, and each pick runs what the view or the stores already have: a file opened as a
 // press opens it but in a pane beside (opening.ts), a file the configuration names an application
 // for (`open.program_ext`) handed to that application through the open endpoint, a picture, a PDF
-// or an HTML page opened in a browser tab of its own, a file or folder bookmarked or its bookmark
+// or an HTML page opened in a browser tab of its own (a PDF also in a tab of the page and in a
+// window of its own), a file or folder bookmarked or its bookmark
 // taken out as the row's star does, a file or folder revealed in Finder through the open endpoint,
 // a shell started in the folder (state/shared/stores/shell.ts, `openShell`), the file's bytes saved
 // from api/file as the file view's link saves them, the Search view opened on the folder, the
@@ -17,7 +18,7 @@
 // the view's own form, question and refusal line as calls handed in, so a test hands in fakes.
 
 import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
-import { absoluteOf } from '$lib/state/workbench/navigation/pages';
+import { absoluteOf, fileTabState } from '$lib/state/workbench/navigation/pages';
 import { tabDeck } from '$lib/state/life/present';
 import {
     languageOf,
@@ -42,7 +43,6 @@ import type { CommandSource, ProjectCommand } from '$lib/state/sessions/terminal
 import { commandKey, commandLabel, commandTip, keyOf } from '../../../sessions/commands';
 import type { ClientState } from '$lib/state/client/context';
 import type { ExplorerStore } from '$lib/state/sources/explorer/ops.svelte';
-import { fileUrl } from '../../../links/file-url';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
 import { openRowBeside } from '../../opening';
 import { openShell } from '$lib/state/shared/stores/shell';
@@ -67,6 +67,8 @@ type Words = (key: string, ...args: (string | number)[]) => string;
 export const ROW_OPEN_SIDE = 'open-side';
 export const ROW_OPEN_PROGRAM = 'open-program';
 const ROW_OPEN_BROWSER = 'open-browser';
+const ROW_OPEN_PDF_TAB = 'open-pdf-tab';
+const ROW_OPEN_PDF_WINDOW = 'open-pdf-window';
 const ROW_ADD_BOOKMARK = 'add-bookmark';
 const ROW_REMOVE_BOOKMARK = 'remove-bookmark';
 export const ROW_REVEAL = 'reveal';
@@ -78,7 +80,6 @@ export const ROW_COPY_RELATIVE = 'copy-relative';
 export const ROW_ADD_ROOT = 'add-root';
 export const ROW_REMOVE_ROOT = 'remove-root';
 export const ROW_PREVIEW = 'preview';
-export const ROW_LATEX = 'latex';
 export const ROW_DECK = 'present';
 
 /** The file a folder holds to be a deck, and the name that file is shown under. */
@@ -118,11 +119,8 @@ export type RowMenuFacts = {
      * root's own line.
      */
     bookmarked?: boolean | null;
-    /**
-     * Whether the row is a `.tex` file or a folder whose listing, held or read when the menu
-     * opened, has one directly in it.
-     */
-    latex?: boolean;
+    /** Whether the row is a PDF, which a tab of the page and a window of its own also show. */
+    pdf?: boolean;
     /** Whether the row is a `present.yml` file or a folder whose listing holds one directly. */
     present?: boolean;
     /**
@@ -140,11 +138,6 @@ export type RowMenuFacts = {
  * The entries held for one folder of a root, or null when none are: what a menu reads, never asks.
  */
 export type HeldEntries = (root: string, path: string) => FsEntry[] | null;
-
-/** Whether a name is a LaTeX source file. */
-function isTex(name: string): boolean {
-    return name.toLowerCase().endsWith('.tex');
-}
 
 /** The kinds of file a browser tab draws itself. */
 const BROWSER_KINDS: readonly string[] = ['html', 'image', 'pdf'];
@@ -200,7 +193,7 @@ export function menuHints(keymap: readonly FilesChord[], words: KeyWords): Recor
 /**
  * The facts of one row of the tree, with the root keys a removal refuses, the selection the menu
  * acts on (the row alone when it is not given), the hints of the items and the entries the fs store
- * holds or the menu read, which say whether a folder has a `.tex` file in it, the applications
+ * holds or the menu read, which say whether a folder holds a `present.yml`, the applications
  * `open.program_ext` names by extension, which say whether a file opens in one, and whether the
  * row is bookmarked.
  */
@@ -234,12 +227,7 @@ export function rowFacts(
         program: kind === 'file' && opensInProgram(row.path, programs),
         browser: kind === 'file' && BROWSER_KINDS.includes(typeOfFile(row.name).kind),
         bookmarked: row.up !== true && row.path !== '' ? bookmarked : null,
-        latex:
-            kind === 'file'
-                ? isTex(row.path)
-                : (entriesOf(row.root, row.path) ?? []).some(
-                      (one) => one.kind === 'file' && isTex(one.name)
-                  ),
+        pdf: kind === 'file' && typeOfFile(row.name).kind === 'pdf',
         present:
             kind === 'file'
                 ? row.name === DECK_FILE
@@ -261,12 +249,12 @@ export function rowFacts(
  * The row's items, in VS Code's groups. A file: Open to the Side, with Open in Program after it on
  * a file `open.program_ext` names an application for, Reveal in Finder and Open in Integrated
  * Terminal (a shell in its folder), the compare items, Open Timeline in a group of its own, Cut and
- * Copy, Download..., the two copies, Open Preview on a Markdown file, then Rename... and Delete.
- * Open LaTeX is its own group after Reveal in Finder and the terminal, on a `.tex` file and on a
- * folder or root whose listing has one: the listing the fs store holds, else the one the menu read
- * when it opened (picks.svelte.ts). Open Presentation follows it in that group, on a `present.yml`
- * file and on a folder or root whose listing holds one; New Presentation... is in that group on a
- * folder or root whose listing holds none, and New Presentation from Outline on a Markdown file.
+ * Copy, Download..., the two copies, Open Preview on a Markdown file, then Rename... and Delete. A
+ * PDF also offers Open in New Tab and Open in New Window after Open to the Side. Open Presentation
+ * is its own group after Reveal in Finder and the terminal, on a `present.yml` file and on a folder
+ * or root whose listing holds one: the listing the fs store holds, else the one the menu read when
+ * it opened (picks.svelte.ts); New Presentation... is in that group on a folder or root whose
+ * listing holds none, and New Presentation from Outline on a Markdown file.
  * A folder: New File... and New Folder...,
  * Reveal in Finder and its shell, Find in Folder..., Cut, Copy and Paste, Upload..., the two
  * copies, then Rename... and Delete. A folder or root that is a repository with project commands
@@ -289,8 +277,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         item(ROW_COPY_RELATIVE, t('files.menu_copy_relative'))
     ];
     const cutCopy = [item(ROW_CUT, t('files.menu_cut')), item(ROW_COPY, t('files.menu_copy'))];
-    const latex = [
-        ...(facts.latex === true ? [item(ROW_LATEX, t('files.menu_latex'))] : []),
+    const decks = [
         ...(facts.present === true ? [item(ROW_DECK, t('files.menu_present'))] : []),
         ...(facts.newDeck === true ? [item(ROW_NEW_DECK, t('files.menu_new_present'))] : []),
         ...(facts.markdown ? [item(ROW_DECK_OUTLINE, t('files.menu_present_outline'))] : [])
@@ -319,6 +306,12 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         return grouped([
             [
                 item(ROW_OPEN_SIDE, t('files.menu_open_side')),
+                ...(facts.pdf === true
+                    ? [
+                          item(ROW_OPEN_PDF_TAB, t('files.menu_open_tab')),
+                          item(ROW_OPEN_PDF_WINDOW, t('files.menu_open_window'))
+                      ]
+                    : []),
                 ...(facts.browser === true
                     ? [item(ROW_OPEN_BROWSER, t('files.menu_open_browser'))]
                     : []),
@@ -327,7 +320,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
                     : [])
             ],
             [reveal, terminal],
-            latex,
+            decks,
             [
                 ...(facts.compareWith !== null
                     ? [item(ROW_COMPARE_WITH, t('files.menu_compare_with'))]
@@ -367,7 +360,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         return grouped([
             created,
             [reveal, terminal],
-            latex,
+            decks,
             find,
             run,
             [...cutCopy, paste],
@@ -380,7 +373,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     return grouped([
         created,
         [reveal, terminal],
-        latex,
+        decks,
         find,
         run,
         [paste],
@@ -414,7 +407,7 @@ export type RowStores = {
     openView: ClientState['layout']['openView'];
     showDeck: ClientState['layout']['showDeck'];
     showTimeline: ClientState['layout']['showTimeline'];
-    rootOf: ClientState['latex']['rootOf'];
+    openInWindow: ClientState['windows']['openInWindow'];
     keepPreview: ClientState['layout']['keepPreview'];
     readFileKind: ClientState['fs']['readFileKind'];
     holds: ClientState['apps']['holds'];
@@ -437,7 +430,7 @@ export function rowStores(client: ClientState): RowStores {
         showDeck: (ref, label, beside) =>
             client.layout.showDeck(tabDeck(ref, client.present.portfolio()), label, beside),
         showTimeline: client.layout.showTimeline,
-        rootOf: client.latex.rootOf,
+        openInWindow: client.windows.openInWindow,
         keepPreview: client.layout.keepPreview,
         readFileKind: client.fs.readFileKind,
         holds: client.apps.holds,
@@ -489,6 +482,11 @@ export type RowPickDeps = RowStores & {
     acting?: (row: TreeRow) => RowRef[];
 };
 
+/** The PDF of a row opened as a tab of the page, which answers the tab's id. */
+function openPdf(deps: RowStores, row: TreeRow): string {
+    return deps.openView('file', fileTabState(row));
+}
+
 /** What a pick from a row's menu does, over the calls handed in. */
 export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: string) => void {
     /**
@@ -531,30 +529,6 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         }
     }
 
-    /** The newest Open LaTeX pick, so a pick whose root answer comes late opens nothing. */
-    let newestLatex = 0;
-
-    /**
-     * The LaTeX view on the folder a row is about: a folder's or root's own, a `.tex` file's main
-     * file's folder when the file builds through one, else the file's own folder. The tab is
-     * labelled with the folder's name, and a root with the name its row has in the tree, whichever
-     * row was picked. Only the newest pick opens a view, since the root of a file is an answer
-     * that comes after the pick.
-     */
-    async function latex(row: TreeRow): Promise<void> {
-        newestLatex += 1;
-        const mine = newestLatex;
-        const own =
-            row.kind === 'dir'
-                ? row.path
-                : row.path.slice(0, Math.max(0, row.path.lastIndexOf('/')));
-        const found = row.kind === 'dir' ? null : await deps.rootOf(row.root, row.path);
-        if (mine !== newestLatex) return;
-        const place = found ?? { root: row.root, path: own };
-        const label = place.path === '' ? deps.rootName(place.root) : nameOf(place.path);
-        deps.openView('latex', { root: place.root, path: place.path, label });
-    }
-
     /**
      * The Present view on the deck a row is about: a folder's or root's own, or the folder of the
      * `present.yml` file. The tab is labelled with the folder's name, and a root with the name its
@@ -581,12 +555,13 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         else if (pick === ROW_TERMINAL) void shell(row, dir);
         else if (pick === ROW_FIND)
             deps.setSearchState(deps.openView('search'), { root: row.root, under: row.path });
-        else if (pick === ROW_DOWNLOAD) deps.download(fileUrl(row.root, row.path), row.name);
+        else if (pick === ROW_DOWNLOAD) deps.download(fileBytesUrl(row.root, row.path), row.name);
         else if (pick === ROW_COPY_PATH) void copy(copied(row, 'absolute'));
         else if (pick === ROW_COPY_RELATIVE) void copy(copied(row, 'relative'));
         else if (pick === ROW_ADD_ROOT) deps.addRoot();
         else if (pick === ROW_REMOVE_ROOT) deps.removeRoot(row.root);
-        else if (pick === ROW_LATEX) void latex(row);
+        else if (pick === ROW_OPEN_PDF_TAB) deps.keepPreview(openPdf(deps, row));
+        else if (pick === ROW_OPEN_PDF_WINDOW) deps.openInWindow(openPdf(deps, row));
         else if (pick === ROW_DECK) present(row);
         else if (pick === ROW_TIMELINE) deps.showTimeline(row.path, row.root);
         else if (pick.startsWith(RUN_PREFIX)) {

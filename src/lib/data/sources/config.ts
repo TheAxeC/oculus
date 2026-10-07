@@ -80,6 +80,7 @@ export {
     changesKeep,
     closedPaths,
     confirmDelete,
+    latexBuild,
     latexFormatting,
     literatureSettings,
     mailSettings,
@@ -91,6 +92,7 @@ export {
     usageTiers
 } from './config/settings.ts';
 export { languageFindings } from './config/languages.ts';
+export { latexEditingFindings } from './config/catalog/latex-editing.ts';
 export { nestingFindings } from './config/catalog/nesting.ts';
 export { optionFindings } from './config/catalog/option-findings.ts';
 export { themeFindings } from './config/themes.ts';

@@ -69,9 +69,13 @@ import {
 import { createSchedule, type ScheduleStore } from '../system/machine/schedules/schedule.svelte.ts';
 import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
 import { tabsOf } from '../workbench/layout/instance.ts';
+import { fileOfTab } from '../workbench/navigation/pages.ts';
 import { paneAt } from '../workbench/layout/index.ts';
-import { createLatex, type LatexStore } from '../sessions/latex.svelte.ts';
+import { pageOpen } from '../workbench/layout/saved/storage.ts';
+import { createLatexActions, type LatexActions } from '../sessions/latex/actions.ts';
+import { createLatex, type LatexStore } from '../sessions/latex/latex.svelte.ts';
 import type { Desktop } from '../shared/stores/desktop.ts';
+import { createWindows, type Windows } from '../workbench/layout/open/float/browser.ts';
 import { createLayout, type LayoutStore } from '../workbench/layout.svelte.ts';
 import { appsSettings } from '../../data/sources/config/settings.ts';
 import { createLines, type LinesStore } from '../system/lines.svelte.ts';
@@ -147,6 +151,14 @@ export type TabScopeStore = {
 export type ClientState = {
     /** What the app gave this page: its bridge and the float it draws; undefined in a browser. */
     desktop: Desktop | undefined;
+    /** The float this page draws alone in a window of its own, in the app or a browser tab. */
+    float: string | null;
+    /** The id of this page when it is a main page, which the windows it opens carry as `owner`. */
+    pageId: string;
+    /** The id of the main page that opened the window this page draws a float in, else null. */
+    owner: string | null;
+    /** Put a tab in a window of its own. */
+    windows: Windows;
     graphviz: GraphvizLoader;
     /** The LaTeX reader the Files Outline reads with, which loads the parser on its first call. */
     latexReader: LatexReader;
@@ -168,6 +180,8 @@ export type ClientState = {
     fs: FsStore;
     docs: DocsStore;
     latex: LatexStore;
+    /** What a reader does with a LaTeX file or its PDF: build, view the PDF, SyncTeX. */
+    latexActions: LatexActions;
     deposit: DepositStore;
     transcripts: TranscriptsStore;
     source: SourceStore;
@@ -246,7 +260,12 @@ function scopedStore(
  * One client's stores, built in dependency order: a store is made after everything it reads, and is
  * handed those instances here. Nothing else wires one store to another.
  */
-export function createClientState(desktop?: Desktop): ClientState {
+export function createClientState(
+    desktop?: Desktop,
+    float: string | null = desktop?.float ?? null,
+    pageId = 'main',
+    owner: string | null = desktop?.owner ?? null
+): ClientState {
     // Every store that fetches an answer holds it in this one query client.
     const queries = createQueries();
     // The stores handed the query client, by their name in the client object, which is what a tab's
@@ -296,7 +315,7 @@ export function createClientState(desktop?: Desktop): ClientState {
     // activating another Terminal tab. The page of a popped-out window closes no tab for an ended
     // terminal: the main window's page does, once for every tab.
     const terminals = createTerminals(entities, socket, writes, {
-        upkeep: (desktop?.float ?? null) === null,
+        upkeep: float === null,
         tabs: () =>
             layout.hosts().flatMap((host) =>
                 tabsOf(host.workbench.root)
@@ -379,7 +398,45 @@ export function createClientState(desktop?: Desktop): ClientState {
      */
     const servedRoots = (): { key: string; dir: string }[] => fs.roots();
     const docs = withQueries('docs', createDocs(entities, queries));
-    const latex = withQueries('latex', createLatex(entities, terminals, fs, queries, writes));
+    const notices = createNotices(ui);
+    const latex = withQueries(
+        'latex',
+        createLatex(entities, terminals, fs, queries, writes, {
+            notices,
+            saveAll: async () => {
+                for (const host of layout.hosts()) {
+                    for (const tab of tabsOf(host.workbench.root)) {
+                        const file = tab.view === 'source' ? fileOfTab(tab) : null;
+                        if (file === null || !ui.unsaved(tab.id)) continue;
+                        await source.saveSourceDraft(tab.id, file.root, file.path);
+                    }
+                }
+            },
+            openLog: (terminal) => {
+                selection.select(terminal);
+                terminals.showTerminal(terminal);
+            },
+            showProblems: (target, main) => {
+                const place =
+                    'root' in target
+                        ? target
+                        : { root: latex.state(target).root, path: latex.state(target).dir };
+                layout.openView('latex', { ...place, main });
+            }
+        })
+    );
+    const latexActions = createLatexActions({
+        latex,
+        layout,
+        notices,
+        float,
+        pageId,
+        owner,
+        socket,
+        jumpOf: (message) => entities.payloadOf(message, 'jump'),
+        ownerOpen: pageOpen,
+        focus: () => (desktop === undefined ? window.focus() : desktop.bridge.focusMain())
+    });
     const deposit = withQueries('deposit', createDeposit(queries));
     const transcripts = withQueries('transcripts', createTranscripts(queries));
     // A saved file may be a LaTeX file whose main builds on save, which the latex store decides.
@@ -484,7 +541,6 @@ export function createClientState(desktop?: Desktop): ClientState {
     });
     const references = createReferences(ui);
     const clangd = createClangd();
-    const notices = createNotices(ui);
     const commands = withQueries(
         'commands',
         createCommands({
@@ -540,8 +596,18 @@ export function createClientState(desktop?: Desktop): ClientState {
                 )
             )
     };
+    const windows = createWindows(
+        layout,
+        desktop !== undefined,
+        (address) => void window.open(address, '_blank'),
+        pageId
+    );
     return {
         desktop,
+        float,
+        pageId,
+        owner,
+        windows,
         graphviz: createGraphviz(),
         latexReader: createLatexReader(),
         entities,
@@ -560,6 +626,7 @@ export function createClientState(desktop?: Desktop): ClientState {
         fs,
         docs,
         latex,
+        latexActions,
         deposit,
         transcripts,
         source,

@@ -15,6 +15,39 @@ text:
         open_program_glyph: open_program
         other: 'This window does not draw a {0} file. It is {1} on disk.'
         other_glyph: paper
+        pdf_back: Go back
+        pdf_build: Build
+        pdf_controls: PDF controls
+        pdf_failed: The PDF could not be shown.
+        pdf_find: Find
+        pdf_find_count: '{0} of {1}'
+        pdf_find_next: Next match
+        pdf_find_none: No match
+        pdf_find_placeholder: Find in the PDF
+        pdf_find_prev: Previous match
+        pdf_fit_page: Fit page
+        pdf_fit_width: Fit width
+        pdf_invalid: The file is not a PDF.
+        pdf_invert: Invert colors
+        pdf_loading: Loading the PDF...
+        pdf_missing: The PDF is not built yet.
+        pdf_next_page: Next page
+        pdf_of: 'of {0}'
+        pdf_open: Open
+        pdf_outline: Outline
+        pdf_outline_empty: The PDF has no outline.
+        pdf_page: Page
+        pdf_prev_page: Previous page
+        pdf_scroll_horizontal: Horizontal scrolling
+        pdf_scroll_page: Page scrolling
+        pdf_scroll_vertical: Vertical scrolling
+        pdf_scroll_wrapped: Wrapped scrolling
+        pdf_spread_even: Even spreads
+        pdf_spread_none: No spreads
+        pdf_spread_odd: Odd spreads
+        pdf_thumbnails: Thumbnails
+        pdf_zoom_in: Zoom in
+        pdf_zoom_out: Zoom out
         retry: Read again
         unbookmark: Remove Bookmark
         unreadable: 'The file {0} could not be read.'

@@ -126,14 +126,49 @@ editor:
 
 
 # === LaTeX ==================================================================
-# What saving a .tex file does: on_save builds the main file the saved file belongs to, without showing the build; never does not build. Any other value counts as on_save.
+# What a build runs and when it runs, as LaTeX Workshop's latex.* settings read. A recipe is a named chain of tools and a tool is a program with its arguments; a build runs the chain as one task terminal in the main file's folder, each tool one command joined with && (a tool whose program is not on PATH refuses the build before any terminal starts). The placeholders %DOC% (the main file's path without its extension), %DOC_EXT% (with it), %DOCFILE% and %DOCFILE_EXT% (its name without and with the extension), %DIR% (its folder), %OUTDIR% and %AUXDIR% (the two folders below) are filled in per main file.
+# recipe_default: first builds with the first recipe, last_used with the one the reader last asked for. A % !TEX program = xelatex or lualatex comment, or a % !LW recipe = <name> comment, picks the recipe of a file whichever of the two is set.
+# out_dir and aux_dir: where the PDF and the auxiliary files go; %DIR% is the main file's own folder, any other value is a folder under the served root, resolved from the main file's folder.
+# auto_build: on_file_change builds a main file when any file it includes changes on disk, whoever wrote it; on_save builds when a file of it is saved in the editor; never builds only when asked. auto_build_interval_ms is the shortest time between two automatic builds of one main file. clean_and_retry cleans and builds once more a build that ended in an error. auto_clean runs Clean after a build: never, on_failed, on_succeeded or on_built.
+# synctex_path is where the synctex program is (empty finds it on PATH); reverse_synctex is the click that opens the source from the PDF: ctrl_click (Cmd or Ctrl and a click) or double_click. texcount_autorun: on_save counts the words of the main file after each save of a LaTeX file; context_menu adds Build and SyncTeX to the editor's right-click menu.
 # formatter is the program Format Document runs on a .tex file: none, latexindent, tex-fmt or badness. Each *_path names where that program is; empty finds it on PATH.
 latex:
-  auto_build: on_save
+  recipe_default: first
+  out_dir: "%DIR%"
+  aux_dir: "%OUTDIR%"
+  auto_build: on_file_change
+  auto_build_interval_ms: 1000
+  clean_and_retry: true
+  auto_clean: never
+  synctex_path: ''
+  reverse_synctex: ctrl_click
+  texcount_autorun: never
+  context_menu: false
   formatter: none
   latexindent_path: ''
   tex_fmt_path: ''
   badness_path: ''
+  recipes:
+    - { name: latexmk, tools: [latexmk] }
+    - { name: latexmk (latexmkrc), tools: [latexmk_rconly] }
+    - { name: latexmk (lualatex), tools: [lualatexmk] }
+    - { name: latexmk (xelatex), tools: [xelatexmk] }
+    - { name: pdflatex -> bibtex -> pdflatex * 2, tools: [pdflatex, bibtex, pdflatex, pdflatex] }
+    - { name: Compile Rnw files, tools: [rnw2tex, latexmk] }
+    - { name: Compile Jnw files, tools: [jnw2tex, latexmk] }
+    - { name: Compile Pnw files, tools: [pnw2tex, latexmk] }
+    - { name: tectonic, tools: [tectonic] }
+  tools:
+    - { name: latexmk, command: latexmk, args: [-synctex=1, -interaction=nonstopmode, -file-line-error, -pdf, "-outdir=%OUTDIR%", "-auxdir=%AUXDIR%", "%DOC%"] }
+    - { name: lualatexmk, command: latexmk, args: [-synctex=1, -interaction=nonstopmode, -file-line-error, -lualatex, "-outdir=%OUTDIR%", "-auxdir=%AUXDIR%", "%DOC%"] }
+    - { name: xelatexmk, command: latexmk, args: [-synctex=1, -interaction=nonstopmode, -file-line-error, -xelatex, "-outdir=%OUTDIR%", "-auxdir=%AUXDIR%", "%DOC%"] }
+    - { name: latexmk_rconly, command: latexmk, args: ["%DOC%"] }
+    - { name: pdflatex, command: pdflatex, args: [-synctex=1, -interaction=nonstopmode, -file-line-error, "%DOC%"] }
+    - { name: bibtex, command: bibtex, args: ["%DOCFILE%"] }
+    - { name: rnw2tex, command: Rscript, args: [-e, "knitr::opts_knit$set(concordance = TRUE); knitr::knit('%DOCFILE_EXT%')"] }
+    - { name: jnw2tex, command: julia, args: [-e, "using Weave; weave(\"%DOC_EXT%\", doctype=\"tex\")"] }
+    - { name: pnw2tex, command: pweave, args: [-f, tex, "%DOC_EXT%"] }
+    - { name: tectonic, command: tectonic, args: [--synctex, --keep-logs, --print, "%DOC%.tex"] }
 
 
 # === Writes =================================================================
@@ -195,6 +230,7 @@ open:
     ".pages": com.apple.iWork.Pages
     ".numbers": com.apple.iWork.Numbers
     ".key": com.apple.iWork.Keynote
+    ".pdf": com.apple.Preview
 
 
 # === Apps ===================================================================

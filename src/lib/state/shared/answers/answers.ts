@@ -93,6 +93,26 @@ function latexSentence(word: LatexRefusal): string {
             return catalogText('latex.refused_format_timeout');
         case 'format-failed':
             return catalogText('latex.refused_format_failed');
+        case 'synctex-missing':
+            return catalogText('latex.refused_synctex_missing');
+        case 'synctex-timeout':
+            return catalogText('latex.refused_synctex_timeout');
+        case 'synctex-failed':
+            return catalogText('latex.refused_synctex_failed');
+        case 'synctex-outside':
+            return catalogText('latex.refused_synctex_outside');
+        case 'synctex-no-pdf':
+            return catalogText('latex.refused_synctex_no_pdf');
+        case 'synctex-no-file':
+            return catalogText('latex.refused_synctex_no_file');
+        case 'texdoc-name':
+            return catalogText('latex.refused_texdoc_name');
+        case 'texdoc-missing':
+            return catalogText('latex.refused_texdoc_missing');
+        case 'texdoc-timeout':
+            return catalogText('latex.refused_texdoc_timeout');
+        case 'texdoc-failed':
+            return catalogText('latex.refused_texdoc_failed');
     }
 }
 

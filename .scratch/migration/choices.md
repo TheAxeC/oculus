@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z698 (2026-10-07, step D45, the orchestrator, automode): three choices of the second LaTeX repair round
+
+- Chosen: the server tells every page how the last build of a main file ended (a new field on the LaTeX answer), so a page that did not start a build still knows not to show a failed PDF; a page in the desktop app holds the same lock a browser page does, so a PDF window can tell when the page that opened it has closed; a PDF window whose tab closed is freed after about 10 to 20 seconds rather than at once, so a reload of that tab keeps it.
+- Not chosen: each page judging only the builds it started itself, a new message between the desktop app and the page for a closed owner, and freeing the window at once (the lazy options).
+
 ## Z696 (2026-10-07, step D45, the orchestrator, automode): a second repair round for LaTeX
 
 - Chosen: one more repair round, since a failed build still replaces a PDF window's document, one save can start several LaTeX builds in one folder, a Cmd+click in the desktop window can raise the wrong window, and the status item hides during a build; the fixes are too large to make at landing.

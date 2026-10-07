@@ -1,0 +1,1464 @@
+# The editing tables of a LaTeX tab and of the TeX view's Math Symbols section: the `@` suggestions, the environments `\envname` completes, the chords of the formatting shortcuts, and the math symbol groups, with the notice of the project they come from. The reader is src/lib/data/sources/config/catalog/latex-tables.ts and the findings are worded by latex-editing.ts beside it; a row the reader cannot use (a missing prefix, body or source, a chord whose key is not one character) is left out with a finding and the rest are kept.
+latex_editing:
+    notice: >-
+        The @ suggestions, the shortcut chords and the math symbols follow LaTeX Workshop 10.19.0 (MIT License, Copyright (c) 2016 James Yu).
+    at:
+        - { prefix: '@.', body: '\cdot', description: '\cdot' }
+        - { prefix: '@8', body: '\infty', description: 'infinity symbol' }
+        - { prefix: '@6', body: '\partial', description: 'partial derivative symbol' }
+        - { prefix: '@/', body: '\frac{$1}{$2}$0', description: 'fraction' }
+        - { prefix: '@%', body: '\frac{$1}{$2}$0', description: 'fraction' }
+        - { prefix: '@^', body: '\hat{${1:${TM_SELECTED_TEXT}}}$0', description: 'hat' }
+        - { prefix: '@_', body: '\bar{${1:${TM_SELECTED_TEXT}}}$0', description: 'bar' }
+        - { prefix: '@@', body: '\circ', description: 'circ' }
+        - { prefix: '@0', body: '^\circ', description: 'superscript circ' }
+        - { prefix: '@;', body: '\dot{${1:${TM_SELECTED_TEXT}}}$0', description: 'dot' }
+        - { prefix: '@:', body: '\ddot{${1:${TM_SELECTED_TEXT}}}$0', description: 'ddot' }
+        - { prefix: '@=', body: '\equiv', description: 'equiv symbol' }
+        - { prefix: '@*', body: '\times', description: 'times symbol' }
+        - { prefix: '@<', body: '\leq', description: 'leq symbol' }
+        - { prefix: '@>', body: '\geq', description: 'geq symbol' }
+        - { prefix: '@2', body: '\sqrt{${1:${TM_SELECTED_TEXT}}}$0', description: 'sqrt command' }
+        - { prefix: '@I', body: '\int_{$1}^{$2}$0', description: 'integral' }
+        - { prefix: '@|', body: '\Big|', description: 'Big |' }
+        - { prefix: '@+', body: '\bigcup', description: 'bigcup' }
+        - { prefix: '@-', body: '\bigcap', description: 'bigcap' }
+        - { prefix: '@,', body: '\nonumber', description: 'nonumber' }
+        - { prefix: '@a', body: '\alpha', description: 'alpha' }
+        - { prefix: '@b', body: '\beta', description: 'beta' }
+        - { prefix: '@c', body: '\chi', description: 'chi' }
+        - { prefix: '@d', body: '\delta', description: 'delta' }
+        - { prefix: '@e', body: '\epsilon', description: 'epsilon' }
+        - { prefix: '@ve', body: '\varepsilon', description: 'varepsilon' }
+        - { prefix: '@f', body: '\phi', description: 'phi' }
+        - { prefix: '@vf', body: '\varphi', description: 'varphi' }
+        - { prefix: '@g', body: '\gamma', description: 'gamma' }
+        - { prefix: '@h', body: '\eta', description: 'eta' }
+        - { prefix: '@i', body: '\iota', description: 'iota' }
+        - { prefix: '@k', body: '\kappa', description: 'kappa' }
+        - { prefix: '@l', body: '\lambda', description: 'lambda' }
+        - { prefix: '@m', body: '\mu', description: 'mu' }
+        - { prefix: '@n', body: '\nu', description: 'nu' }
+        - { prefix: '@p', body: '\pi', description: 'pi' }
+        - { prefix: '@vp', body: '\varpi', description: 'varpi' }
+        - { prefix: '@q', body: '\theta', description: 'theta' }
+        - { prefix: '@vq', body: '\vartheta', description: 'vartheta' }
+        - { prefix: '@r', body: '\rho', description: 'rho' }
+        - { prefix: '@vr', body: '\varrho', description: 'varrho' }
+        - { prefix: '@s', body: '\sigma', description: 'sigma' }
+        - { prefix: '@vs', body: '\varsigma', description: 'varsigma' }
+        - { prefix: '@t', body: '\tau', description: 'tau' }
+        - { prefix: '@u', body: '\upsilon', description: 'upsilon' }
+        - { prefix: '@o', body: '\omega', description: 'omega' }
+        - { prefix: '@&', body: '\wedge', description: 'wedge' }
+        - { prefix: '@x', body: '\xi', description: 'xi' }
+        - { prefix: '@y', body: '\psi', description: 'psi' }
+        - { prefix: '@z', body: '\zeta', description: 'zeta' }
+        - { prefix: '@D', body: '\Delta', description: 'Delta' }
+        - { prefix: '@F', body: '\Phi', description: 'Phi' }
+        - { prefix: '@G', body: '\Gamma', description: 'Gamma' }
+        - { prefix: '@Q', body: '\Theta', description: 'Theta' }
+        - { prefix: '@L', body: '\Lambda', description: 'Lambda' }
+        - { prefix: '@P', body: '\Pi', description: 'Pi' }
+        - { prefix: '@X', body: '\Xi', description: 'Xi' }
+        - { prefix: '@Y', body: '\Psi', description: 'Psi' }
+        - { prefix: '@S', body: '\Sigma', description: 'Sigma' }
+        - { prefix: '@U', body: '\Upsilon', description: 'Upsilon' }
+        - { prefix: '@W', body: '\Omega', description: 'Omega' }
+        - {
+              prefix: '@(',
+              body: '\left( ${1:${TM_SELECTED_TEXT}} \right)',
+              description: 'left( ... right)'
+          }
+        - {
+              prefix: '@{',
+              body: '\left\{ ${1:${TM_SELECTED_TEXT}} \right\\}',
+              description: 'left{ ... right}'
+          }
+        - {
+              prefix: '@[',
+              body: '\left[ ${1:${TM_SELECTED_TEXT}} \right]',
+              description: 'left[ ... right]'
+          }
+        - {
+              prefix: '@|',
+              body: '\left| ${1:${TM_SELECTED_TEXT}} \right|',
+              description: 'left| ... right|'
+          }
+    environments:
+        - { name: 'document' }
+        - { name: 'abstract' }
+        - { name: 'itemize' }
+        - { name: 'enumerate' }
+        - { name: 'description' }
+        - { name: 'equation' }
+        - { name: 'equation*' }
+        - { name: 'align' }
+        - { name: 'align*' }
+        - { name: 'alignat', arguments: '{${1:n}}' }
+        - { name: 'alignat*', arguments: '{${1:n}}' }
+        - { name: 'gather' }
+        - { name: 'gather*' }
+        - { name: 'multline' }
+        - { name: 'multline*' }
+        - { name: 'flalign' }
+        - { name: 'flalign*' }
+        - { name: 'split' }
+        - { name: 'cases' }
+        - { name: 'array', arguments: '{${1:cols}}' }
+        - { name: 'matrix' }
+        - { name: 'pmatrix' }
+        - { name: 'bmatrix' }
+        - { name: 'Bmatrix' }
+        - { name: 'vmatrix' }
+        - { name: 'Vmatrix' }
+        - { name: 'smallmatrix' }
+        - { name: 'figure', arguments: '[${1:htbp}]' }
+        - { name: 'figure*', arguments: '[${1:htbp}]' }
+        - { name: 'table', arguments: '[${1:htbp}]' }
+        - { name: 'table*', arguments: '[${1:htbp}]' }
+        - { name: 'tabular', arguments: '{${1:cols}}' }
+        - { name: 'tabular*', arguments: '{${1:width}}{${2:cols}}' }
+        - { name: 'center' }
+        - { name: 'flushleft' }
+        - { name: 'flushright' }
+        - { name: 'quote' }
+        - { name: 'quotation' }
+        - { name: 'verse' }
+        - { name: 'verbatim' }
+        - { name: 'minipage', arguments: '{${1:width}}' }
+        - { name: 'tikzpicture' }
+        - { name: 'thebibliography', arguments: '{${1:99}}' }
+        - { name: 'proof' }
+        - { name: 'theorem' }
+        - { name: 'lemma' }
+        - { name: 'definition' }
+        - { name: 'frame' }
+        - { name: 'lstlisting' }
+        - { name: 'picture' }
+        - { name: 'titlepage' }
+        - { name: 'subequations' }
+        - { name: 'algorithm' }
+    chords:
+        text:
+            {
+                b: textbf,
+                i: textit,
+                u: underline,
+                e: emph,
+                r: textrm,
+                t: texttt,
+                s: textsl,
+                c: textsc,
+                n: textnormal,
+                '6': textsuperscript,
+                '-': textsubscript
+            }
+        math: { b: mathbf, i: mathit, r: mathrm, t: mathtt, s: mathsf, B: mathbb, c: mathcal }
+    symbols:
+        - name: 'Greek/Hebrew Letters'
+          items:
+              - { name: 'alpha', source: '\alpha', insert: '\alpha', keywords: 'greek' }
+              - { name: 'beta', source: '\beta', insert: '\beta', keywords: 'greek' }
+              - { name: 'gamma', source: '\gamma', insert: '\gamma', keywords: 'greek' }
+              - { name: 'delta', source: '\delta', insert: '\delta', keywords: 'greek kronecker' }
+              - { name: 'epsilon', source: '\epsilon', insert: '\epsilon', keywords: 'greek' }
+              - {
+                    name: 'varepsilon',
+                    source: '\varepsilon',
+                    insert: '\varepsilon',
+                    keywords: 'greek'
+                }
+              - { name: 'zeta', source: '\zeta', insert: '\zeta', keywords: 'greek' }
+              - { name: 'eta', source: '\eta', insert: '\eta', keywords: 'greek' }
+              - { name: 'theta', source: '\theta', insert: '\theta', keywords: 'greek' }
+              - { name: 'vartheta', source: '\vartheta', insert: '\vartheta', keywords: 'greek' }
+              - { name: 'iota', source: '\iota', insert: '\iota', keywords: 'greek' }
+              - { name: 'kappa', source: '\kappa', insert: '\kappa', keywords: 'greek' }
+              - { name: 'lambda', source: '\lambda', insert: '\lambda', keywords: 'greek' }
+              - { name: 'mu', source: '\mu', insert: '\mu', keywords: 'greek' }
+              - { name: 'nu', source: '\nu', insert: '\nu', keywords: 'greek' }
+              - { name: 'xi', source: '\xi', insert: '\xi', keywords: 'greek' }
+              - { name: 'o', source: 'o', insert: 'o', keywords: 'greek' }
+              - { name: 'pi', source: '\pi', insert: '\pi', keywords: "greek Archimedes' constant" }
+              - { name: 'varpi', source: '\varpi', insert: '\varpi', keywords: 'greek' }
+              - { name: 'rho', source: '\rho', insert: '\rho', keywords: 'greek probability cordd' }
+              - { name: 'varrho', source: '\varrho', insert: '\varrho', keywords: 'greek' }
+              - {
+                    name: 'sigma',
+                    source: '\sigma',
+                    insert: '\sigma',
+                    keywords: 'greek standard deviation covarience'
+                }
+              - { name: 'varsigma', source: '\varsigma', insert: '\varsigma', keywords: 'greek' }
+              - { name: 'tau', source: '\tau', insert: '\tau', keywords: 'greek' }
+              - { name: 'upsilon', source: '\upsilon', insert: '\upsilon', keywords: 'greek' }
+              - { name: 'phi', source: '\phi', insert: '\phi', keywords: 'greek' }
+              - {
+                    name: 'varphi',
+                    source: '\varphi',
+                    insert: '\varphi',
+                    keywords: 'greek golden ratio'
+                }
+              - { name: 'chi', source: '\chi', insert: '\chi', keywords: 'greek' }
+              - { name: 'psi', source: '\psi', insert: '\psi', keywords: 'greek' }
+              - {
+                    name: 'omega',
+                    source: '\omega',
+                    insert: '\omega',
+                    keywords: 'greek asymptotic big o dominates'
+                }
+              - { name: 'Alpha', source: 'A', insert: 'A', keywords: 'greek' }
+              - { name: 'Beta', source: 'B', insert: 'B', keywords: 'greek' }
+              - { name: 'Gamma', source: '\Gamma', insert: '\Gamma', keywords: 'greek' }
+              - { name: 'varGamma', source: '\varGamma', insert: '\varGamma', keywords: 'greek' }
+              - {
+                    name: 'Delta',
+                    source: '\Delta',
+                    insert: '\Delta',
+                    keywords: 'greek laplace operator'
+                }
+              - { name: 'varDelta', source: '\varDelta', insert: '\varDelta', keywords: 'greek' }
+              - { name: 'Epsilon', source: 'E', insert: 'E', keywords: 'greek' }
+              - { name: 'Zeta', source: 'Z', insert: 'Z', keywords: 'greek' }
+              - { name: 'Eta', source: 'H', insert: 'H', keywords: 'greek' }
+              - {
+                    name: 'Theta',
+                    source: '\Theta',
+                    insert: '\Theta',
+                    keywords: 'greek asymptotic big o bounded above and below'
+                }
+              - { name: 'varTheta', source: '\varTheta', insert: '\varTheta', keywords: 'greek' }
+              - { name: 'Iota', source: 'I', insert: 'I', keywords: 'greek' }
+              - { name: 'Kappa', source: 'K', insert: 'K', keywords: 'greek' }
+              - { name: 'Lambda', source: '\Lambda', insert: '\Lambda', keywords: 'greek' }
+              - { name: 'Lambda', source: '\varLambda', insert: '\varLambda', keywords: 'greek' }
+              - { name: 'Mu', source: 'M', insert: 'M', keywords: 'greek' }
+              - { name: 'Nu', source: 'N', insert: 'N', keywords: 'greek' }
+              - { name: 'Xi', source: '\Xi', insert: '\Xi', keywords: 'greek' }
+              - { name: 'Xi', source: '\varXi', insert: '\varXi', keywords: 'greek' }
+              - { name: 'O', source: 'O', insert: 'O', keywords: 'greek' }
+              - { name: 'Pi', source: '\Pi', insert: '\Pi', keywords: 'greek' }
+              - { name: 'varPi', source: '\varPi', insert: '\varPi', keywords: 'greek' }
+              - { name: 'Rho', source: 'P', insert: 'P', keywords: 'greek' }
+              - { name: 'Sigma', source: '\Sigma', insert: '\Sigma', keywords: 'greek' }
+              - { name: 'varSigma', source: '\varSigma', insert: '\varSigma', keywords: 'greek' }
+              - { name: 'Tau', source: 'T', insert: 'T', keywords: 'greek' }
+              - { name: 'Upsilon', source: '\Upsilon', insert: '\Upsilon', keywords: 'greek' }
+              - {
+                    name: 'varUpsilon',
+                    source: '\varUpsilon',
+                    insert: '\varUpsilon',
+                    keywords: 'greek'
+                }
+              - { name: 'Phi', source: '\Phi', insert: '\Phi', keywords: 'greek' }
+              - { name: 'varPhi', source: '\varPhi', insert: '\varPhi', keywords: 'greek' }
+              - { name: 'Chi', source: 'X', insert: 'X', keywords: 'greek' }
+              - { name: 'Psi', source: '\Psi', insert: '\Psi', keywords: 'greek' }
+              - { name: 'varPsi', source: '\varPsi', insert: '\varPsi', keywords: 'greek' }
+              - {
+                    name: 'Omega',
+                    source: '\Omega',
+                    insert: '\Omega',
+                    keywords: 'greek asymptotic big o bounded below'
+                }
+              - { name: 'varOmega', source: '\varOmega', insert: '\varOmega', keywords: 'greek' }
+              - {
+                    name: 'aleph',
+                    source: '\aleph',
+                    insert: '\aleph',
+                    keywords: 'hebrew infinite cardinality'
+                }
+              - { name: 'beth', source: '\beth', insert: '\beth', keywords: 'hebrew' }
+              - { name: 'daleth', source: '\daleth', insert: '\daleth', keywords: 'hebrew' }
+              - { name: 'gimel', source: '\gimel', insert: '\gimel', keywords: 'hebrew' }
+        - name: 'Delimiters'
+          items:
+              - { name: 'vertical bar', source: '|', insert: '|' }
+              - {
+                    name: 'vertical bar',
+                    source: '\vert',
+                    insert: '\vert',
+                    keywords: 'cardinality restriction'
+                }
+              - { name: 'double vertical bar', source: '\|', insert: '\|' }
+              - { name: 'double vertical bar', source: '\Vert', insert: '\Vert' }
+              - { name: 'left parenthesis', source: '(', insert: '(', keywords: 'interval' }
+              - { name: 'right parenthesis', source: ')', insert: ')', keywords: 'interval' }
+              - { name: 'left bracket', source: '[', insert: '[', keywords: 'interval' }
+              - { name: 'right bracket', source: ']', insert: ']', keywords: 'interval' }
+              - { name: 'left curly bracket', source: '\{', insert: '\{' }
+              - { name: 'right curly bracket', source: '\}', insert: '\\}' }
+              - { name: 'left angle bracket', source: '\langle', insert: '\langle' }
+              - { name: 'right angle bracket', source: '\rangle', insert: '\rangle' }
+              - { name: 'left floor', source: '\lfloor', insert: '\lfloor' }
+              - { name: 'right floor', source: '\rfloor', insert: '\rfloor' }
+              - { name: 'left ceil', source: '\lceil', insert: '\lceil' }
+              - { name: 'right ceil', source: '\rceil', insert: '\rceil' }
+              - { name: 'forwards slash', source: '/', insert: '/' }
+              - { name: 'backslash', source: '\backslash', insert: '\backslash' }
+              - { name: 'Uparrow', source: '\Uparrow', insert: '\Uparrow' }
+              - {
+                    name: 'uparrow',
+                    source: '\uparrow',
+                    insert: '\uparrow',
+                    keywords: 'function tends to limit approach from below'
+                }
+              - { name: 'Downarrow', source: '\Downarrow', insert: '\Downarrow' }
+              - {
+                    name: 'downarrow',
+                    source: '\downarrow',
+                    insert: '\downarrow',
+                    keywords: 'function tends to limit approach from above'
+                }
+              - { name: 'lower left corner', source: '\llcorner', insert: '\llcorner' }
+              - { name: 'lower right corner', source: '\lrcorner', insert: '\lrcorner' }
+              - { name: 'upper left corner', source: '\ulcorner', insert: '\ulcorner' }
+              - { name: 'upper right corner', source: '\urcorner', insert: '\urcorner' }
+              - {
+                    name: 'parenthesis',
+                    source: '(abc)',
+                    insert: '\left(${1:${TM_SELECTED_TEXT}}\right)',
+                    keywords: 'sequence vector dot product triple algebraic field extension'
+                }
+              - {
+                    name: 'brackets',
+                    source: '[abc]',
+                    insert: '\left[${1:${TM_SELECTED_TEXT}}\right]',
+                    keywords: 'geometry line segment vector cross product dd equivalence class group commuter of elements polynomial ring'
+                }
+              - {
+                    name: 'curly brackets',
+                    source: '\{abc\}',
+                    insert: '\left\{${1:${TM_SELECTED_TEXT}}\right\\}'
+                }
+              - {
+                    name: 'angle brackets',
+                    source: '\langle abc\rangle',
+                    insert: '\left\langle ${1:${TM_SELECTED_TEXT}}\right\rangle',
+                    keywords: 'vector dot product function inner linear hull subgroup generated by set average'
+                }
+              - {
+                    name: 'absolute value',
+                    source: '\lvert abc\rvert',
+                    insert: '\left\lvert ${1:${TM_SELECTED_TEXT}}\right\rvert',
+                    keywords: 'set cardinality geometry length of line segment vector length matrix determinant'
+                }
+              - {
+                    name: 'normed',
+                    source: '\lVert abc\rVert',
+                    insert: '\left\lVert ${1:${TM_SELECTED_TEXT}}\right\rVert',
+                    keywords: 'vector matrix'
+                }
+              - {
+                    name: 'floored round down',
+                    source: '\lfloor abc\rfloor',
+                    insert: '\left\lfloor ${1:${TM_SELECTED_TEXT}}\right\rfloor'
+                }
+              - {
+                    name: 'ceiled round up',
+                    source: '\lceil abc\rceil',
+                    insert: '\left\lceil ${1:${TM_SELECTED_TEXT}}\right\rceil'
+                }
+              - {
+                    name: 'round',
+                    source: '\lfloor abc\rceil',
+                    insert: '\left\lfloor ${1:${TM_SELECTED_TEXT}}\right\rceil'
+                }
+        - name: 'Maths Constructs'
+          items:
+              - {
+                    name: 'fraction',
+                    source: '\frac{abc}{xyz}',
+                    insert: '\frac{${1:${TM_SELECTED_TEXT}}}{$2}',
+                    keywords: 'divide'
+                }
+              - {
+                    name: 'derivative',
+                    source: '\frac{d^n y}{d x^n}',
+                    insert: '\frac{d^${1:${TM_SELECTED_TEXT}} y}{d x^${1:${TM_SELECTED_TEXT}}}'
+                }
+              - {
+                    name: 'integral',
+                    source: '\int_a^b\ \,dx',
+                    insert: '\int_{$2}^{$3} ${1:${TM_SELECTED_TEXT}} \,d${4:x}'
+                }
+              - {
+                    name: 'limit',
+                    source: '\lim_{x \to \infty}',
+                    insert: '\lim_{${2:x} \to ${3:\infty}} ${1:${TM_SELECTED_TEXT}}'
+                }
+              - {
+                    name: 'sum',
+                    source: '\sum_{n=1}^{\infty}',
+                    insert: '\sum_{${2:n = 1}}^{${3:\infty}} ${1:${TM_SELECTED_TEXT}}'
+                }
+              - {
+                    name: 'square root',
+                    source: '\sqrt{abc}',
+                    insert: '\sqrt{${1:${TM_SELECTED_TEXT}}}'
+                }
+              - {
+                    name: 'nth root',
+                    source: '\sqrt[n]{abc}',
+                    insert: '\sqrt[${2:n}]{${1:${TM_SELECTED_TEXT}}}'
+                }
+              - {
+                    name: 'overline',
+                    source: '\overline{abc}',
+                    insert: '\overline{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'set complement topology closure of set algebraic field closure rising factorial'
+                }
+              - {
+                    name: 'underline',
+                    source: '\underline{abc}',
+                    insert: '\underline{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'falling factorial'
+                }
+              - {
+                    name: 'widehat',
+                    source: '\widehat{abc}',
+                    insert: '\widehat{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'corresponds to'
+                }
+              - {
+                    name: 'widetilde',
+                    source: '\widetilde{abc}',
+                    insert: '\widetilde{${1:${TM_SELECTED_TEXT}}}'
+                }
+              - {
+                    name: 'overrightarrow',
+                    source: '\overrightarrow{abc}',
+                    insert: '\overrightarrow{${1:${TM_SELECTED_TEXT}}}'
+                }
+              - {
+                    name: 'overleftarrow',
+                    source: '\overleftarrow{abc}',
+                    insert: '\overleftarrow{${1:${TM_SELECTED_TEXT}}}'
+                }
+              - {
+                    name: 'overbrace',
+                    source: '\overbrace{abc}',
+                    insert: '\overbrace{${1:${TM_SELECTED_TEXT}}}'
+                }
+              - {
+                    name: 'underbrace',
+                    source: '\underbrace{abc}',
+                    insert: '\underbrace{${1:${TM_SELECTED_TEXT}}}'
+                }
+              - {
+                    name: 'binomial',
+                    source: '\binom{n}{k}',
+                    insert: '\binom{${1:${TM_SELECTED_TEXT}}}{$2}',
+                    keywords: 'combinatorics permutations'
+                }
+        - name: 'Variable-sized symbols'
+          items:
+              - { name: 'sum', source: '\sum', insert: '\sum' }
+              - { name: 'product', source: '\prod', insert: '\prod', keywords: 'sequence series' }
+              - {
+                    name: 'coproduct',
+                    source: '\coprod',
+                    insert: '\coprod',
+                    keywords: 'sequence series'
+                }
+              - { name: 'int', source: '\int', insert: '\int' }
+              - { name: 'curve integral', source: '\oint', insert: '\oint' }
+              - { name: 'surface integral', source: '\iint', insert: '\iint' }
+              - { name: 'biguplus', source: '\biguplus', insert: '\biguplus' }
+              - { name: 'bigcap', source: '\bigcap', insert: '\bigcap' }
+              - { name: 'bigcup', source: '\bigcup', insert: '\bigcup' }
+              - { name: 'bigoplus', source: '\bigoplus', insert: '\bigoplus' }
+              - { name: 'bigotimes', source: '\bigotimes', insert: '\bigotimes' }
+              - { name: 'bigodot', source: '\bigodot', insert: '\bigodot' }
+              - {
+                    name: 'bigvee',
+                    source: '\bigvee',
+                    insert: '\bigvee',
+                    keywords: 'least upper bound supremum join quantifier existential logic'
+                }
+              - {
+                    name: 'bigwedge',
+                    source: '\bigwedge',
+                    insert: '\bigwedge',
+                    keywords: 'quantifier universal logic'
+                }
+              - { name: 'bigsqcup', source: '\bigsqcup', insert: '\bigsqcup' }
+        - name: 'Standard Functions'
+          items:
+              - { name: 'arc cosine', source: '\arccos', insert: '\arccos' }
+              - { name: 'cosine', source: '\cos', insert: '\cos' }
+              - { name: 'cosecant', source: '\csc', insert: '\csc' }
+              - { name: 'exponent', source: '\exp', insert: '\exp' }
+              - { name: 'kernel', source: '\ker', insert: '\ker' }
+              - { name: 'limit supremum', source: '\limsup', insert: '\limsup' }
+              - { name: 'minimum', source: '\min', insert: '\min' }
+              - { name: 'hyperbolic sine', source: '\sinh', insert: '\sinh' }
+              - { name: 'arc sine', source: '\arcsin', insert: '\arcsin' }
+              - { name: 'hyperbolic cosine', source: '\cosh', insert: '\cosh' }
+              - { name: 'degree', source: '\deg', insert: '\deg' }
+              - { name: 'greatest common denominator', source: '\gcd', insert: '\gcd' }
+              - { name: 'logarithm', source: '\lg', insert: '\lg' }
+              - { name: 'natural logarithm', source: '\ln', insert: '\ln' }
+              - { name: 'probability', source: '\Pr', insert: '\Pr' }
+              - { name: 'supremum', source: '\sup', insert: '\sup' }
+              - { name: 'arc tangent', source: '\arctan', insert: '\arctan' }
+              - { name: 'cotangent', source: '\cot', insert: '\cot' }
+              - { name: 'determinant', source: '\det', insert: '\det' }
+              - { name: 'hom functor', source: '\hom', insert: '\hom' }
+              - { name: 'limit', source: '\lim', insert: '\lim' }
+              - { name: 'logarithm', source: '\log', insert: '\log' }
+              - { name: 'secant', source: '\sec', insert: '\sec' }
+              - { name: 'tangent', source: '\tan', insert: '\tan' }
+              - { name: 'argument', source: '\arg', insert: '\arg', keywords: 'complex number' }
+              - { name: 'hyperbolic cotangent', source: '\coth', insert: '\coth' }
+              - { name: 'dimension', source: '\dim', insert: '\dim' }
+              - { name: 'infinum', source: '\inf', insert: '\inf' }
+              - { name: 'infinum limit', source: '\liminf', insert: '\liminf' }
+              - { name: 'maximum', source: '\max', insert: '\max' }
+              - { name: 'sine', source: '\sin', insert: '\sin' }
+              - { name: 'hyperbolic tangent', source: '\tanh', insert: '\tanh' }
+        - name: 'Operators and Relations'
+          items:
+              - {
+                    name: 'asterix',
+                    source: '\ast',
+                    insert: '\ast',
+                    keywords: 'complex conjugate function convolution matrix transpose dual space operation of elements relation reflexive closure group units of ring'
+                }
+              - { name: 'star', source: '\star', insert: '\star' }
+              - {
+                    name: 'center dot',
+                    source: '\cdot',
+                    insert: '\cdot',
+                    keywords: 'multiply product matrix'
+                }
+              - {
+                    name: 'bullet',
+                    source: '\bullet',
+                    insert: '\bullet',
+                    keywords: 'operation of elements'
+                }
+              - {
+                    name: 'circle',
+                    source: '\circ',
+                    insert: '\circ',
+                    keywords: 'function relation composition topology interior of set matrix Hadamard product shape'
+                }
+              - { name: 'big circle', source: '\bigcirc', insert: '\bigcirc', keywords: 'shape' }
+              - { name: 'diamond', source: '\diamond', insert: '\diamond', keywords: 'shape' }
+              - {
+                    name: 'times',
+                    source: '\times',
+                    insert: '\times',
+                    keywords: 'multiply cartesian product vector direct group units of ring'
+                }
+              - { name: 'division', source: '\div', insert: '\div' }
+              - { name: 'center dot', source: '\centerdot', insert: '\centerdot' }
+              - { name: 'circled asterix', source: '\circledast', insert: '\circledast' }
+              - { name: 'circled circle', source: '\circledcirc', insert: '\circledcirc' }
+              - { name: 'circled dash', source: '\circleddash', insert: '\circleddash' }
+              - { name: 'dotplus', source: '\dotplus', insert: '\dotplus' }
+              - { name: 'divideontimes', source: '\divideontimes', insert: '\divideontimes' }
+              - { name: 'plus minus', source: '\pm', insert: '\pm' }
+              - { name: 'minus plus', source: '\mp', insert: '\mp' }
+              - { name: 'amalg', source: '\amalg', insert: '\amalg' }
+              - { name: 'circled dot', source: '\odot', insert: '\odot' }
+              - { name: 'circled minus', source: '\ominus', insert: '\ominus' }
+              - {
+                    name: 'circled plus',
+                    source: '\oplus',
+                    insert: '\oplus',
+                    keywords: 'vector space sum logic xor exclusive or'
+                }
+              - {
+                    name: 'circled slash',
+                    source: '\oslash',
+                    insert: '\oslash',
+                    keywords: 'matrix Hadamard division'
+                }
+              - {
+                    name: 'circledtimes',
+                    source: '\otimes',
+                    insert: '\otimes',
+                    keywords: 'matrix Kronecker vector dyadic product tensor'
+                }
+              - { name: 'wreath product', source: '\wr', insert: '\wr' }
+              - { name: 'Box', source: '\Box', insert: '\Box', keywords: 'QED end of proof' }
+              - { name: 'boxed plus', source: '\boxplus', insert: '\boxplus' }
+              - { name: 'boxed minus', source: '\boxminus', insert: '\boxminus' }
+              - { name: 'boxed times', source: '\boxtimes', insert: '\boxtimes' }
+              - { name: 'boxed dot', source: '\boxdot', insert: '\boxdot' }
+              - {
+                    name: 'square',
+                    source: '\square',
+                    insert: '\square',
+                    keywords: "D'Alembert operator geometry quadrilateral prism shape"
+                }
+              - { name: 'Intersection', source: '\cap', insert: '\cap', keywords: 'sets' }
+              - { name: 'Union', source: '\cup', insert: '\cup', keywords: 'sets' }
+              - { name: 'uplus', source: '\uplus', insert: '\uplus' }
+              - {
+                    name: 'square cap',
+                    source: '\sqcap',
+                    insert: '\sqcap',
+                    keywords: 'greatest common divisor gcd'
+                }
+              - {
+                    name: 'square cup',
+                    source: '\sqcup',
+                    insert: '\sqcup',
+                    keywords: 'set disjoint union least common multiple'
+                }
+              - {
+                    name: 'wedge',
+                    source: '\wedge',
+                    insert: '\wedge',
+                    keywords: 'logical and greatest common divisor gcd vector wedge product'
+                }
+              - {
+                    name: 'vee',
+                    source: '\vee',
+                    insert: '\vee',
+                    keywords: 'logical or least common multiple'
+                }
+              - {
+                    name: 'dagger',
+                    source: '\dagger',
+                    insert: '\dagger',
+                    keywords: 'matrix transpose'
+                }
+              - { name: 'double dagger', source: '\ddagger', insert: '\ddagger' }
+              - { name: 'barwedge', source: '\barwedge', insert: '\barwedge' }
+              - {
+                    name: 'veebar',
+                    source: '\veebar',
+                    insert: '\veebar',
+                    keywords: 'logic xor exclusive or'
+                }
+              - { name: 'curlywedge', source: '\curlywedge', insert: '\curlywedge' }
+              - { name: 'curlyvee', source: '\curlyvee', insert: '\curlyvee' }
+              - { name: 'Cap', source: '\Cap', insert: '\Cap' }
+              - { name: 'Cup', source: '\Cup', insert: '\Cup' }
+              - {
+                    name: 'bot',
+                    source: '\bot',
+                    insert: '\bot',
+                    keywords: 'Proposition contradictory contradiction'
+                }
+              - { name: 'top', source: '\top', insert: '\top' }
+              - { name: 'intercal', source: '\intercal', insert: '\intercal' }
+              - { name: 'doublebarwedge', source: '\doublebarwedge', insert: '\doublebarwedge' }
+              - { name: 'lhd', source: '\lhd', insert: '\lhd' }
+              - { name: 'rhd', source: '\rhd', insert: '\rhd' }
+              - { name: 'triangle left', source: '\triangleleft', insert: '\triangleleft' }
+              - { name: 'triangle right', source: '\triangleright', insert: '\triangleright' }
+              - { name: 'unlhd', source: '\unlhd', insert: '\unlhd' }
+              - { name: 'unrhd', source: '\unrhd', insert: '\unrhd' }
+              - { name: 'bigtriangledown', source: '\bigtriangledown', insert: '\bigtriangledown' }
+              - { name: 'bigtriangleup', source: '\bigtriangleup', insert: '\bigtriangleup' }
+              - { name: 'set minus', source: '\setminus', insert: '\setminus' }
+              - { name: 'rightthreetimes', source: '\rightthreetimes', insert: '\rightthreetimes' }
+              - { name: 'leftthreetimes', source: '\leftthreetimes', insert: '\leftthreetimes' }
+              - {
+                    name: 'equivalent',
+                    source: '\equiv',
+                    insert: '\equiv',
+                    keywords: 'identical congruent modulo modular arithmetic'
+                }
+              - {
+                    name: 'congruent',
+                    source: '\cong',
+                    insert: '\cong',
+                    keywords: 'groups isomorphic'
+                }
+              - { name: 'not equal', source: '\neq', insert: '\neq' }
+              - {
+                    name: 'similar',
+                    source: '\sim',
+                    insert: '\sim',
+                    keywords: 'asymptotically equal big o order of relation element equivalence probability distribution random variable'
+                }
+              - {
+                    name: 'similar or equal',
+                    source: '\simeq',
+                    insert: '\simeq',
+                    keywords: 'groups isomorphic'
+                }
+              - {
+                    name: 'approximately',
+                    source: '\approx',
+                    insert: '\approx',
+                    keywords: 'probability distribution random variable'
+                }
+              - { name: 'asymptotically', source: '\asymp', insert: '\asymp' }
+              - { name: 'doteq', source: '\doteq', insert: '\doteq' }
+              - { name: 'proportional to', source: '\propto', insert: '\propto' }
+              - {
+                    name: 'models',
+                    source: '\models',
+                    insert: '\models',
+                    keywords: 'inference proposition follows semantically logic tautology '
+                }
+              - {
+                    name: 'less than or equal',
+                    source: '\leq',
+                    insert: '\leq',
+                    keywords: 'order relation of elements subgroup'
+                }
+              - { name: 'greater than or equal', source: '\geq', insert: '\geq' }
+              - {
+                    name: 'precedes',
+                    source: '\prec',
+                    insert: '\prec',
+                    keywords: 'relation element predecessor'
+                }
+              - {
+                    name: 'succeeds',
+                    source: '\succ',
+                    insert: '\succ',
+                    keywords: 'relation element successor'
+                }
+              - { name: 'precedes or equal', source: '\preceq', insert: '\preceq' }
+              - { name: 'succeeds or equal', source: '\succeq', insert: '\succeq' }
+              - { name: 'much less than', source: '\ll', insert: '\ll', keywords: 'smaller' }
+              - { name: 'much greater than', source: '\gg', insert: '\gg', keywords: 'bigger' }
+              - { name: 'proper subset', source: '\subset', insert: '\subset' }
+              - { name: 'proper superset', source: '\supset', insert: '\supset' }
+              - { name: 'subset or equal', source: '\subseteq', insert: '\subseteq' }
+              - { name: 'superset or equal', source: '\supseteq', insert: '\supseteq' }
+              - { name: 'square subset', source: '\sqsubset', insert: '\sqsubset' }
+              - { name: 'square supset', source: '\sqsupset', insert: '\sqsupset' }
+              - { name: 'square subset or equal', source: '\sqsubseteq', insert: '\sqsubseteq' }
+              - { name: 'square supset or equal', source: '\sqsupseteq', insert: '\sqsupseteq' }
+              - { name: 'dashv', source: '\dashv', insert: '\dashv' }
+              - {
+                    name: 'vdash',
+                    source: '\vdash',
+                    insert: '\vdash',
+                    keywords: 'turnstile proposition can be syntactically derived'
+                }
+              - {
+                    name: 'perpendicular',
+                    source: '\perp',
+                    insert: '\perp',
+                    keywords: 'relatively prime orthogonal complement of subspace probability independence'
+                }
+              - {
+                    name: 'mid',
+                    source: '\mid',
+                    insert: '\mid',
+                    keywords: 'divides set that satisfy satisfies field extension conditional probability'
+                }
+              - { name: 'parallel', source: '\parallel', insert: '\parallel', keywords: 'geometry' }
+              - { name: 'bowtie', source: '\bowtie', insert: '\bowtie' }
+              - { name: 'Join', source: '\Join', insert: '\Join' }
+              - { name: 'left times', source: '\ltimes', insert: '\ltimes' }
+              - {
+                    name: 'right times',
+                    source: '\rtimes',
+                    insert: '\rtimes',
+                    keywords: 'groups semidirect product'
+                }
+              - { name: 'smile', source: '\smile', insert: '\smile' }
+              - { name: 'frown', source: '\frown', insert: '\frown' }
+              - { name: 'in', source: '\in', insert: '\in' }
+              - { name: 'owns', source: '\ni', insert: '\ni', keywords: 'in' }
+              - { name: 'not in', source: '\notin', insert: '\notin' }
+              - { name: 'approxeq', source: '\approxeq', insert: '\approxeq' }
+              - { name: 'thicksim', source: '\thicksim', insert: '\thicksim' }
+              - { name: 'backsim', source: '\backsim', insert: '\backsim' }
+              - { name: 'backsimeq', source: '\backsimeq', insert: '\backsimeq' }
+              - { name: 'triangleq', source: '\triangleq', insert: '\triangleq' }
+              - { name: 'circeq', source: '\circeq', insert: '\circeq' }
+              - { name: 'bumpeq', source: '\bumpeq', insert: '\bumpeq' }
+              - { name: 'Bumpeq', source: '\Bumpeq', insert: '\Bumpeq' }
+              - { name: 'doteqdot', source: '\doteqdot', insert: '\doteqdot' }
+              - { name: 'thickapprox', source: '\thickapprox', insert: '\thickapprox' }
+              - { name: 'fallingdotseq', source: '\fallingdotseq', insert: '\fallingdotseq' }
+              - { name: 'risingdotseq', source: '\risingdotseq', insert: '\risingdotseq' }
+              - { name: 'varpropto', source: '\varpropto', insert: '\varpropto' }
+              - { name: 'therefore', source: '\therefore', insert: '\therefore' }
+              - { name: 'because', source: '\because', insert: '\because' }
+              - { name: 'eqcirc', source: '\eqcirc', insert: '\eqcirc' }
+              - { name: 'neq', source: '\neq', insert: '\neq' }
+              - { name: 'less than or equal', source: '\leqq', insert: '\leqq' }
+              - { name: 'greater than or equal', source: '\geqq', insert: '\geqq' }
+              - { name: 'less than or equal', source: '\leqslant', insert: '\leqslant' }
+              - { name: 'greater than or equal', source: '\geqslant', insert: '\geqslant' }
+              - { name: 'approximately less than', source: '\lessapprox', insert: '\lessapprox' }
+              - { name: 'approximately greater than', source: '\gtrapprox', insert: '\gtrapprox' }
+              - { name: 'lll', source: '\lll', insert: '\lll', keywords: 'smaller' }
+              - { name: 'ggg', source: '\ggg', insert: '\ggg', keywords: 'bigger' }
+              - { name: 'lessdot', source: '\lessdot', insert: '\lessdot' }
+              - { name: 'gtrdot', source: '\gtrdot', insert: '\gtrdot' }
+              - { name: 'lesssim', source: '\lesssim', insert: '\lesssim' }
+              - { name: 'gtrsim', source: '\gtrsim', insert: '\gtrsim' }
+              - { name: 'eqslantless', source: '\eqslantless', insert: '\eqslantless' }
+              - { name: 'eqslantgtr', source: '\eqslantgtr', insert: '\eqslantgtr' }
+              - { name: 'precsim', source: '\precsim', insert: '\precsim' }
+              - { name: 'succsim', source: '\succsim', insert: '\succsim' }
+              - { name: 'precapprox', source: '\precapprox', insert: '\precapprox' }
+              - { name: 'succapprox', source: '\succapprox', insert: '\succapprox' }
+              - { name: 'Subset', source: '\Subset', insert: '\Subset' }
+              - { name: 'Supset', source: '\Supset', insert: '\Supset' }
+              - { name: 'subseteqq', source: '\subseteqq', insert: '\subseteqq' }
+              - { name: 'supseteqq', source: '\supseteqq', insert: '\supseteqq' }
+              - { name: 'preccurlyeq', source: '\preccurlyeq', insert: '\preccurlyeq' }
+              - { name: 'succcurlyeq', source: '\succcurlyeq', insert: '\succcurlyeq' }
+              - { name: 'curlyeqprec', source: '\curlyeqprec', insert: '\curlyeqprec' }
+              - { name: 'curlyeqsucc', source: '\curlyeqsucc', insert: '\curlyeqsucc' }
+              - {
+                    name: 'blacktriangleleft',
+                    source: '\blacktriangleleft',
+                    insert: '\blacktriangleleft',
+                    keywords: 'shape'
+                }
+              - {
+                    name: 'blacktriangleright',
+                    source: '\blacktriangleright',
+                    insert: '\blacktriangleright',
+                    keywords: 'shape'
+                }
+              - { name: 'trianglelefteq', source: '\trianglelefteq', insert: '\trianglelefteq' }
+              - { name: 'trianglerighteq', source: '\trianglerighteq', insert: '\trianglerighteq' }
+              - {
+                    name: 'vartriangleleft',
+                    source: '\vartriangleleft',
+                    insert: '\vartriangleleft',
+                    keywords: 'normal subgroup shape (uncommon) ideal of ring'
+                }
+              - {
+                    name: 'vartriangleright',
+                    source: '\vartriangleright',
+                    insert: '\vartriangleright',
+                    keywords: 'shape'
+                }
+              - { name: 'lessgtr', source: '\lessgtr', insert: '\lessgtr' }
+              - { name: 'lesseqgtr', source: '\lesseqgtr', insert: '\lesseqgtr' }
+              - { name: 'lesseqqgtr', source: '\lesseqqgtr', insert: '\lesseqqgtr' }
+              - { name: 'gtreqqless', source: '\gtreqqless', insert: '\gtreqqless' }
+              - { name: 'gtreqless', source: '\gtreqless', insert: '\gtreqless' }
+              - { name: 'gtrless', source: '\gtrless', insert: '\gtrless' }
+              - { name: 'backepsilon', source: '\backepsilon', insert: '\backepsilon' }
+              - { name: 'between', source: '\between', insert: '\between' }
+              - { name: 'pitchfork', source: '\pitchfork', insert: '\pitchfork' }
+              - { name: 'shortmid', source: '\shortmid', insert: '\shortmid' }
+              - { name: 'smallfrown', source: '\smallfrown', insert: '\smallfrown' }
+              - { name: 'smallsmile', source: '\smallsmile', insert: '\smallsmile' }
+              - { name: 'Vdash', source: '\Vdash', insert: '\Vdash' }
+              - { name: 'vDash', source: '\vDash', insert: '\vDash' }
+              - { name: 'Vvdash', source: '\Vvdash', insert: '\Vvdash' }
+              - { name: 'shortparallel', source: '\shortparallel', insert: '\shortparallel' }
+              - { name: 'nshortparallel', source: '\nshortparallel', insert: '\nshortparallel' }
+              - { name: 'ncong', source: '\ncong', insert: '\ncong' }
+              - { name: 'does not divide', source: '\nmid', insert: '\nmid' }
+              - {
+                    name: 'nparallel',
+                    source: '\nparallel',
+                    insert: '\nparallel',
+                    keywords: 'geometry'
+                }
+              - { name: 'nshortmid', source: '\nshortmid', insert: '\nshortmid' }
+              - { name: 'nshortparallel', source: '\nshortparallel', insert: '\nshortparallel' }
+              - { name: 'nsim', source: '\nsim', insert: '\nsim' }
+              - { name: 'nVDash', source: '\nVDash', insert: '\nVDash' }
+              - { name: 'nvDash', source: '\nvDash', insert: '\nvDash' }
+              - { name: 'nvdash', source: '\nvdash', insert: '\nvdash' }
+              - { name: 'ntriangleleft', source: '\ntriangleleft', insert: '\ntriangleleft' }
+              - { name: 'ntrianglelefteq', source: '\ntrianglelefteq', insert: '\ntrianglelefteq' }
+              - { name: 'ntriangleright', source: '\ntriangleright', insert: '\ntriangleright' }
+              - {
+                    name: 'ntrianglerighteq',
+                    source: '\ntrianglerighteq',
+                    insert: '\ntrianglerighteq'
+                }
+              - { name: 'nleq', source: '\nleq', insert: '\nleq' }
+              - { name: 'ngeq', source: '\ngeq', insert: '\ngeq' }
+              - { name: 'nleqq', source: '\nleqq', insert: '\nleqq' }
+              - { name: 'ngeqq', source: '\ngeqq', insert: '\ngeqq' }
+              - { name: 'nleqslant', source: '\nleqslant', insert: '\nleqslant' }
+              - { name: 'ngeqslant', source: '\ngeqslant', insert: '\ngeqslant' }
+              - { name: 'nless', source: '\nless', insert: '\nless' }
+              - { name: 'ngtr', source: '\ngtr', insert: '\ngtr' }
+              - { name: 'nprec', source: '\nprec', insert: '\nprec' }
+              - { name: 'nsucc', source: '\nsucc', insert: '\nsucc' }
+              - { name: 'npreceq', source: '\npreceq', insert: '\npreceq' }
+              - { name: 'nsucceq', source: '\nsucceq', insert: '\nsucceq' }
+              - { name: 'precnapprox', source: '\precnapprox', insert: '\precnapprox' }
+              - { name: 'succnapprox', source: '\succnapprox', insert: '\succnapprox' }
+              - { name: 'precnsim', source: '\precnsim', insert: '\precnsim' }
+              - { name: 'succnsim', source: '\succnsim', insert: '\succnsim' }
+              - { name: 'lnapprox', source: '\lnapprox', insert: '\lnapprox' }
+              - { name: 'gnapprox', source: '\gnapprox', insert: '\gnapprox' }
+              - { name: 'lneq', source: '\lneq', insert: '\lneq' }
+              - { name: 'gneq', source: '\gneq', insert: '\gneq' }
+              - { name: 'lneqq', source: '\lneqq', insert: '\lneqq' }
+              - { name: 'gneqq', source: '\gneqq', insert: '\gneqq' }
+              - { name: 'lnsim', source: '\lnsim', insert: '\lnsim' }
+              - { name: 'gnsim', source: '\gnsim', insert: '\gnsim' }
+              - { name: 'lvertneqq', source: '\lvertneqq', insert: '\lvertneqq' }
+              - { name: 'gvertneqq', source: '\gvertneqq', insert: '\gvertneqq' }
+              - { name: 'nsubseteq', source: '\nsubseteq', insert: '\nsubseteq' }
+              - { name: 'nsupseteq', source: '\nsupseteq', insert: '\nsupseteq' }
+              - { name: 'nsubseteqq', source: '\nsubseteqq', insert: '\nsubseteqq' }
+              - { name: 'nsupseteqq', source: '\nsupseteqq', insert: '\nsupseteqq' }
+              - { name: 'proper subset neq', source: '\subsetneq', insert: '\subsetneq' }
+              - { name: 'proper superset neq', source: '\supsetneq', insert: '\supsetneq' }
+              - { name: 'subsetneqq', source: '\subsetneqq', insert: '\subsetneqq' }
+              - { name: 'supsetneqq', source: '\supsetneqq', insert: '\supsetneqq' }
+              - { name: 'varsubsetneq', source: '\varsubsetneq', insert: '\varsubsetneq' }
+              - { name: 'varsupsetneq', source: '\varsupsetneq', insert: '\varsupsetneq' }
+              - { name: 'varsubsetneqq', source: '\varsubsetneqq', insert: '\varsubsetneqq' }
+              - { name: 'varsupsetneqq', source: '\varsupsetneqq', insert: '\varsupsetneqq' }
+              - { name: 'logic and', source: '\land', insert: '\land' }
+              - { name: 'logic or', source: '\lor', insert: '\lor' }
+              - { name: 'logic negation', source: '\lnot', insert: '\lnot', keywords: 'not' }
+        - name: 'Arrows'
+          items:
+              - {
+                    name: 'leftarrow',
+                    source: '\leftarrow',
+                    insert: '\leftarrow',
+                    keywords: 'logic converse implication'
+                }
+              - { name: 'longleftarrow', source: '\longleftarrow', insert: '\longleftarrow' }
+              - { name: 'Leftarrow', source: '\Leftarrow', insert: '\Leftarrow' }
+              - { name: 'Longleftarrow', source: '\Longleftarrow', insert: '\Longleftarrow' }
+              - {
+                    name: 'rightarrow',
+                    source: '\rightarrow',
+                    insert: '\rightarrow',
+                    keywords: 'logic concequence from proposition'
+                }
+              - { name: 'longrightarrow', source: '\longrightarrow', insert: '\longrightarrow' }
+              - {
+                    name: 'Rightarrow',
+                    source: '\Rightarrow',
+                    insert: '\Rightarrow',
+                    keywords: 'logic concequence from proposition'
+                }
+              - { name: 'Longrightarrow', source: '\Longrightarrow', insert: '\Longrightarrow' }
+              - {
+                    name: 'leftrightarrow',
+                    source: '\leftrightarrow',
+                    insert: '\leftrightarrow',
+                    keywords: 'logic equivalence proposition follows'
+                }
+              - {
+                    name: 'longleftrightarrow',
+                    source: '\longleftrightarrow',
+                    insert: '\longleftrightarrow'
+                }
+              - {
+                    name: 'Leftrightarrow',
+                    source: '\Leftrightarrow',
+                    insert: '\Leftrightarrow',
+                    keywords: 'logic equivalence proposition follows'
+                }
+              - {
+                    name: 'Longleftrightarrow',
+                    source: '\Longleftrightarrow',
+                    insert: '\Longleftrightarrow'
+                }
+              - { name: 'uparrow', source: '\uparrow', insert: '\uparrow' }
+              - { name: 'Uparrow', source: '\Uparrow', insert: '\Uparrow' }
+              - { name: 'downarrow', source: '\downarrow', insert: '\downarrow' }
+              - { name: 'Downarrow', source: '\Downarrow', insert: '\Downarrow' }
+              - { name: 'updownarrow', source: '\updownarrow', insert: '\updownarrow' }
+              - { name: 'Updownarrow', source: '\Updownarrow', insert: '\Updownarrow' }
+              - { name: 'nleftarrow', source: '\nleftarrow', insert: '\nleftarrow' }
+              - { name: 'nrightarrow', source: '\nrightarrow', insert: '\nrightarrow' }
+              - { name: 'nLeftarrow', source: '\nLeftarrow', insert: '\nLeftarrow' }
+              - { name: 'nRightarrow', source: '\nRightarrow', insert: '\nRightarrow' }
+              - { name: 'nleftrightarrow', source: '\nleftrightarrow', insert: '\nleftrightarrow' }
+              - { name: 'nLeftrightarrow', source: '\nLeftrightarrow', insert: '\nLeftrightarrow' }
+              - {
+                    name: 'to',
+                    source: '\to',
+                    insert: '\to',
+                    keywords: 'sequence tends to limit function map sets'
+                }
+              - {
+                    name: 'mapsto',
+                    source: '\mapsto',
+                    insert: '\mapsto',
+                    keywords: 'function map sets elements'
+                }
+              - { name: 'longmapsto', source: '\longmapsto', insert: '\longmapsto' }
+              - {
+                    name: 'implies',
+                    source: '\implies',
+                    insert: '\implies',
+                    keywords: 'logic concequence from proposition'
+                }
+              - { name: 'hookleftarrow', source: '\hookleftarrow', insert: '\hookleftarrow' }
+              - {
+                    name: 'hookrightarrow',
+                    source: '\hookrightarrow',
+                    insert: '\hookrightarrow',
+                    keywords: 'embedding topological vector space'
+                }
+              - { name: 'leftharpoonup', source: '\leftharpoonup', insert: '\leftharpoonup' }
+              - { name: 'rightharpoonup', source: '\rightharpoonup', insert: '\rightharpoonup' }
+              - { name: 'leftharpoondown', source: '\leftharpoondown', insert: '\leftharpoondown' }
+              - {
+                    name: 'rightharpoondown',
+                    source: '\rightharpoondown',
+                    insert: '\rightharpoondown'
+                }
+              - {
+                    name: 'rightleftharpoons',
+                    source: '\rightleftharpoons',
+                    insert: '\rightleftharpoons'
+                }
+              - {
+                    name: 'leftrightharpoons',
+                    source: '\leftrightharpoons',
+                    insert: '\leftrightharpoons'
+                }
+              - { name: 'upharpoonleft', source: '\upharpoonleft', insert: '\upharpoonleft' }
+              - { name: 'downharpoonleft', source: '\downharpoonleft', insert: '\downharpoonleft' }
+              - { name: 'upharpoonright', source: '\upharpoonright', insert: '\upharpoonright' }
+              - {
+                    name: 'downharpoonright',
+                    source: '\downharpoonright',
+                    insert: '\downharpoonright'
+                }
+              - { name: 'leadsto', source: '\leadsto', insert: '\leadsto' }
+              - {
+                    name: 'nearrow',
+                    source: '\nearrow',
+                    insert: '\nearrow',
+                    keywords: 'function tends to limit approach from below'
+                }
+              - {
+                    name: 'searrow',
+                    source: '\searrow',
+                    insert: '\searrow',
+                    keywords: 'function tends to limit approach from above'
+                }
+              - { name: 'swarrow', source: '\swarrow', insert: '\swarrow' }
+              - { name: 'nwarrow', source: '\nwarrow', insert: '\nwarrow' }
+              - { name: 'dashrightarrow', source: '\dashrightarrow', insert: '\dashrightarrow' }
+              - { name: 'dashleftarrow', source: '\dashleftarrow', insert: '\dashleftarrow' }
+              - { name: 'leftleftarrows', source: '\leftleftarrows', insert: '\leftleftarrows' }
+              - {
+                    name: 'rightrightarrows',
+                    source: '\rightrightarrows',
+                    insert: '\rightrightarrows'
+                }
+              - { name: 'leftrightarrows', source: '\leftrightarrows', insert: '\leftrightarrows' }
+              - { name: 'rightleftarrows', source: '\rightleftarrows', insert: '\rightleftarrows' }
+              - { name: 'upuparrows', source: '\upuparrows', insert: '\upuparrows' }
+              - { name: 'downdownarrows', source: '\downdownarrows', insert: '\downdownarrows' }
+              - {
+                    name: 'twoheadleftarrow',
+                    source: '\twoheadleftarrow',
+                    insert: '\twoheadleftarrow'
+                }
+              - {
+                    name: 'twoheadrightarrow',
+                    source: '\twoheadrightarrow',
+                    insert: '\twoheadrightarrow'
+                }
+              - { name: 'leftarrowtail', source: '\leftarrowtail', insert: '\leftarrowtail' }
+              - { name: 'rightarrowtail', source: '\rightarrowtail', insert: '\rightarrowtail' }
+              - { name: 'rightsquigarrow', source: '\rightsquigarrow', insert: '\rightsquigarrow' }
+              - {
+                    name: 'leftrightsquigarrow',
+                    source: '\leftrightsquigarrow',
+                    insert: '\leftrightsquigarrow'
+                }
+              - { name: 'curvearrowleft', source: '\curvearrowleft', insert: '\curvearrowleft' }
+              - { name: 'curvearrowright', source: '\curvearrowright', insert: '\curvearrowright' }
+              - { name: 'circlearrowleft', source: '\circlearrowleft', insert: '\circlearrowleft' }
+              - {
+                    name: 'circlearrowright',
+                    source: '\circlearrowright',
+                    insert: '\circlearrowright'
+                }
+              - { name: 'looparrowleft', source: '\looparrowleft', insert: '\looparrowleft' }
+              - { name: 'looparrowright', source: '\looparrowright', insert: '\looparrowright' }
+              - { name: 'Lsh', source: '\Lsh', insert: '\Lsh' }
+              - { name: 'Rsh', source: '\Rsh', insert: '\Rsh' }
+              - { name: 'Lleftarrow', source: '\Lleftarrow', insert: '\Lleftarrow' }
+              - { name: 'Rrightarrow', source: '\Rrightarrow', insert: '\Rrightarrow' }
+              - { name: 'multimap', source: '\multimap', insert: '\multimap' }
+        - name: 'Accents'
+          items:
+              - {
+                    name: 'hat accent',
+                    source: '\hat{a}',
+                    insert: '\hat{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'math fourier transform completion of metric space normalised normalized vector statistics estimator'
+                }
+              - {
+                    name: 'dot accent',
+                    source: '\dot{a}',
+                    insert: '\dot{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'math time derivative topology punctured neighbourhood of point'
+                }
+              - {
+                    name: 'check accent',
+                    source: '\check{a}',
+                    insert: '\check{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'math'
+                }
+              - {
+                    name: 'ddot accent',
+                    source: '\ddot{a}',
+                    insert: '\ddot{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'math time derivative'
+                }
+              - {
+                    name: 'tilde accent',
+                    source: '\tilde{a}',
+                    insert: '\tilde{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'math'
+                }
+              - {
+                    name: 'breve accent',
+                    source: '\breve{a}',
+                    insert: '\breve{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'math'
+                }
+              - {
+                    name: 'acute accent',
+                    source: '\acute{a}',
+                    insert: '\acute{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'math'
+                }
+              - {
+                    name: 'bar accent',
+                    source: '\bar{a}',
+                    insert: '\bar{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'math complex conjugate statistics average logic negation'
+                }
+              - {
+                    name: 'grave accent',
+                    source: '\grave{a}',
+                    insert: '\grave{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'math'
+                }
+              - {
+                    name: 'vector accent',
+                    source: '\vec{a}',
+                    insert: '\vec{${1:${TM_SELECTED_TEXT}}}',
+                    keywords: 'math'
+                }
+        - name: 'Miscellaneous'
+          items:
+              - { name: 'infty', source: '\infty', insert: '\infty' }
+              - {
+                    name: 'nabla',
+                    source: '\nabla',
+                    insert: '\nabla',
+                    keywords: 'gradient divergence curl'
+                }
+              - {
+                    name: 'partial',
+                    source: '\partial',
+                    insert: '\partial',
+                    keywords: 'derivative topology boundry of set'
+                }
+              - { name: 'eth', source: '\eth', insert: '\eth' }
+              - { name: 'clubsuit', source: '\clubsuit', insert: '\clubsuit' }
+              - { name: 'diamondsuit', source: '\diamondsuit', insert: '\diamondsuit' }
+              - { name: 'heartsuit', source: '\heartsuit', insert: '\heartsuit' }
+              - { name: 'spadesuit', source: '\spadesuit', insert: '\spadesuit' }
+              - { name: 'cdots', source: '\cdots', insert: '\cdots' }
+              - { name: 'vdots', source: '\vdots', insert: '\vdots' }
+              - { name: 'ldots', source: '\ldots', insert: '\ldots' }
+              - { name: 'ddots', source: '\ddots', insert: '\ddots' }
+              - {
+                    name: 'Im',
+                    source: '\Im',
+                    insert: '\Im',
+                    keywords: 'imaginary part complex number'
+                }
+              - { name: 'Re', source: '\Re', insert: '\Re', keywords: 'real part complex number' }
+              - {
+                    name: 'forall',
+                    source: '\forall',
+                    insert: '\forall',
+                    keywords: 'quantifier universal logic'
+                }
+              - {
+                    name: 'exists',
+                    source: '\exists',
+                    insert: '\exists',
+                    keywords: 'quantifier existential logic'
+                }
+              - {
+                    name: 'no element exists',
+                    source: '\nexists',
+                    insert: '\nexists',
+                    keywords: 'quantifier existential logic not'
+                }
+              - { name: 'empty set', source: '\emptyset', insert: '\emptyset' }
+              - {
+                    name: 'varnothing',
+                    source: '\varnothing',
+                    insert: '\varnothing',
+                    keywords: 'empty set'
+                }
+              - { name: 'imath', source: '\imath', insert: '\imath' }
+              - { name: 'jmath', source: '\jmath', insert: '\jmath' }
+              - { name: 'ell', source: '\ell', insert: '\ell' }
+              - { name: 'sharp', source: '\sharp', insert: '\sharp', keywords: 'music' }
+              - { name: 'flat', source: '\flat', insert: '\flat', keywords: 'music' }
+              - { name: 'natural', source: '\natural', insert: '\natural', keywords: 'music' }
+              - { name: 'bigstar', source: '\bigstar', insert: '\bigstar' }
+              - { name: 'diagdown', source: '\diagdown', insert: '\diagdown' }
+              - { name: 'diagup', source: '\diagup', insert: '\diagup' }
+              - { name: 'Diamond', source: '\Diamond', insert: '\Diamond' }
+              - { name: 'Finv', source: '\Finv', insert: '\Finv' }
+              - { name: 'Game', source: '\Game', insert: '\Game' }
+              - { name: 'hbar', source: '\hbar', insert: '\hbar' }
+              - { name: 'hslash', source: '\hslash', insert: '\hslash' }
+              - { name: 'lozenge', source: '\lozenge', insert: '\lozenge' }
+              - { name: 'mho', source: '\mho', insert: '\mho' }
+              - {
+                    name: 'prime',
+                    source: '\prime',
+                    insert: '\prime',
+                    keywords: 'derivative topological duel space bidual normed vector'
+                }
+              - { name: 'backprime', source: '\backprime', insert: '\backprime' }
+              - { name: 'surd', source: '\surd', insert: '\surd' }
+              - { name: 'Weierstrass p', source: '\wp', insert: '\wp', keywords: 'power set' }
+              - { name: 'angle', source: '\angle', insert: '\angle', keywords: 'geometry' }
+              - { name: 'measuredangle', source: '\measuredangle', insert: '\measuredangle' }
+              - { name: 'sphericalangle', source: '\sphericalangle', insert: '\sphericalangle' }
+              - { name: 'complement', source: '\complement', insert: '\complement' }
+              - {
+                    name: 'triangledown',
+                    source: '\triangledown',
+                    insert: '\triangledown',
+                    keywords: 'shape'
+                }
+              - {
+                    name: 'triangle',
+                    source: '\triangle',
+                    insert: '\triangle',
+                    keywords: 'set symmetric difference geometry shape'
+                }
+              - { name: 'vartriangle', source: '\vartriangle', insert: '\vartriangle' }
+              - {
+                    name: 'blacklozenge',
+                    source: '\blacklozenge',
+                    insert: '\blacklozenge',
+                    keywords: 'shape'
+                }
+              - {
+                    name: 'blacksquare',
+                    source: '\blacksquare',
+                    insert: '\blacksquare',
+                    keywords: 'QED end of proof shape'
+                }
+              - {
+                    name: 'blacktriangle',
+                    source: '\blacktriangle',
+                    insert: '\blacktriangle',
+                    keywords: 'shape'
+                }
+              - {
+                    name: 'blacktriangledown',
+                    source: '\blacktriangledown',
+                    insert: '\blacktriangledown',
+                    keywords: 'shape'
+                }
+              - { name: 'circledS', source: '\circledS', insert: '\circledS' }
+        - name: 'Letter Styles'
+          items:
+              - { name: 'Caligraphic A', source: '\mathcal{A}', insert: '\mathcal{A}' }
+              - { name: 'Caligraphic B', source: '\mathcal{B}', insert: '\mathcal{B}' }
+              - { name: 'Caligraphic C', source: '\mathcal{C}', insert: '\mathcal{C}' }
+              - { name: 'Caligraphic D', source: '\mathcal{D}', insert: '\mathcal{D}' }
+              - { name: 'Caligraphic E', source: '\mathcal{E}', insert: '\mathcal{E}' }
+              - { name: 'Caligraphic F', source: '\mathcal{F}', insert: '\mathcal{F}' }
+              - { name: 'Caligraphic G', source: '\mathcal{G}', insert: '\mathcal{G}' }
+              - { name: 'Caligraphic H', source: '\mathcal{H}', insert: '\mathcal{H}' }
+              - { name: 'Caligraphic I', source: '\mathcal{I}', insert: '\mathcal{I}' }
+              - { name: 'Caligraphic J', source: '\mathcal{J}', insert: '\mathcal{J}' }
+              - { name: 'Caligraphic K', source: '\mathcal{K}', insert: '\mathcal{K}' }
+              - { name: 'Caligraphic L', source: '\mathcal{L}', insert: '\mathcal{L}' }
+              - { name: 'Caligraphic M', source: '\mathcal{M}', insert: '\mathcal{M}' }
+              - { name: 'Caligraphic N', source: '\mathcal{N}', insert: '\mathcal{N}' }
+              - {
+                    name: 'Caligraphic O',
+                    source: '\mathcal{O}',
+                    insert: '\mathcal{O}',
+                    keywords: 'asymptotic big o bounded by'
+                }
+              - {
+                    name: 'Caligraphic P',
+                    source: '\mathcal{P}',
+                    insert: '\mathcal{P}',
+                    keywords: 'power set'
+                }
+              - { name: 'Caligraphic Q', source: '\mathcal{Q}', insert: '\mathcal{Q}' }
+              - { name: 'Caligraphic R', source: '\mathcal{R}', insert: '\mathcal{R}' }
+              - { name: 'Caligraphic S', source: '\mathcal{S}', insert: '\mathcal{S}' }
+              - { name: 'Caligraphic T', source: '\mathcal{T}', insert: '\mathcal{T}' }
+              - { name: 'Caligraphic U', source: '\mathcal{U}', insert: '\mathcal{U}' }
+              - { name: 'Caligraphic V', source: '\mathcal{V}', insert: '\mathcal{V}' }
+              - { name: 'Caligraphic W', source: '\mathcal{W}', insert: '\mathcal{W}' }
+              - { name: 'Caligraphic X', source: '\mathcal{X}', insert: '\mathcal{X}' }
+              - { name: 'Caligraphic Y', source: '\mathcal{Y}', insert: '\mathcal{Y}' }
+              - { name: 'Caligraphic Z', source: '\mathcal{Z}', insert: '\mathcal{Z}' }
+              - {
+                    name: 'Blackboard Bold A',
+                    source: '\mathbb{A}',
+                    insert: '\mathbb{A}',
+                    keywords: 'algebraic numbers'
+                }
+              - { name: 'Blackboard Bold B', source: '\mathbb{B}', insert: '\mathbb{B}' }
+              - {
+                    name: 'Blackboard Bold C',
+                    source: '\mathbb{C}',
+                    insert: '\mathbb{C}',
+                    keywords: 'complex numbers'
+                }
+              - { name: 'Blackboard Bold D', source: '\mathbb{D}', insert: '\mathbb{D}' }
+              - { name: 'Blackboard Bold E', source: '\mathbb{E}', insert: '\mathbb{E}' }
+              - {
+                    name: 'Blackboard Bold F',
+                    source: '\mathbb{F}',
+                    insert: '\mathbb{F}',
+                    keywords: 'finite field'
+                }
+              - { name: 'Blackboard Bold G', source: '\mathbb{G}', insert: '\mathbb{G}' }
+              - {
+                    name: 'Blackboard Bold H',
+                    source: '\mathbb{H}',
+                    insert: '\mathbb{H}',
+                    keywords: 'quaternions'
+                }
+              - { name: 'Blackboard Bold I', source: '\mathbb{I}', insert: '\mathbb{I}' }
+              - { name: 'Blackboard Bold J', source: '\mathbb{J}', insert: '\mathbb{J}' }
+              - {
+                    name: 'Blackboard Bold K',
+                    source: '\mathbb{K}',
+                    insert: '\mathbb{K}',
+                    keywords: 'field real complex numbers'
+                }
+              - { name: 'Blackboard Bold L', source: '\mathbb{L}', insert: '\mathbb{L}' }
+              - { name: 'Blackboard Bold M', source: '\mathbb{M}', insert: '\mathbb{M}' }
+              - {
+                    name: 'Blackboard Bold N',
+                    source: '\mathbb{N}',
+                    insert: '\mathbb{N}',
+                    keywords: 'natural numbers'
+                }
+              - { name: 'Blackboard Bold O', source: '\mathbb{O}', insert: '\mathbb{O}' }
+              - { name: 'Blackboard Bold P', source: '\mathbb{P}', insert: '\mathbb{P}' }
+              - {
+                    name: 'Blackboard Bold Q',
+                    source: '\mathbb{Q}',
+                    insert: '\mathbb{Q}',
+                    keywords: 'rational numbers'
+                }
+              - {
+                    name: 'Blackboard Bold R',
+                    source: '\mathbb{R}',
+                    insert: '\mathbb{R}',
+                    keywords: 'real numbers'
+                }
+              - { name: 'Blackboard Bold S', source: '\mathbb{S}', insert: '\mathbb{S}' }
+              - { name: 'Blackboard Bold T', source: '\mathbb{T}', insert: '\mathbb{T}' }
+              - { name: 'Blackboard Bold U', source: '\mathbb{U}', insert: '\mathbb{U}' }
+              - { name: 'Blackboard Bold V', source: '\mathbb{V}', insert: '\mathbb{V}' }
+              - { name: 'Blackboard Bold W', source: '\mathbb{W}', insert: '\mathbb{W}' }
+              - { name: 'Blackboard Bold X', source: '\mathbb{X}', insert: '\mathbb{X}' }
+              - { name: 'Blackboard Bold Y', source: '\mathbb{Y}', insert: '\mathbb{Y}' }
+              - {
+                    name: 'Blackboard Bold Z',
+                    source: '\mathbb{Z}',
+                    insert: '\mathbb{Z}',
+                    keywords: 'integers'
+                }
+              - { name: 'Fraktur A', source: '\mathfrak{A}', insert: '\mathfrak{A}' }
+              - { name: 'Fraktur B', source: '\mathfrak{B}', insert: '\mathfrak{B}' }
+              - { name: 'Fraktur C', source: '\mathfrak{C}', insert: '\mathfrak{C}' }
+              - { name: 'Fraktur D', source: '\mathfrak{D}', insert: '\mathfrak{D}' }
+              - { name: 'Fraktur E', source: '\mathfrak{E}', insert: '\mathfrak{E}' }
+              - { name: 'Fraktur F', source: '\mathfrak{F}', insert: '\mathfrak{F}' }
+              - { name: 'Fraktur G', source: '\mathfrak{G}', insert: '\mathfrak{G}' }
+              - { name: 'Fraktur H', source: '\mathfrak{H}', insert: '\mathfrak{H}' }
+              - { name: 'Fraktur I', source: '\mathfrak{I}', insert: '\mathfrak{I}' }
+              - { name: 'Fraktur J', source: '\mathfrak{J}', insert: '\mathfrak{J}' }
+              - { name: 'Fraktur K', source: '\mathfrak{K}', insert: '\mathfrak{K}' }
+              - { name: 'Fraktur L', source: '\mathfrak{L}', insert: '\mathfrak{L}' }
+              - { name: 'Fraktur M', source: '\mathfrak{M}', insert: '\mathfrak{M}' }
+              - { name: 'Fraktur N', source: '\mathfrak{N}', insert: '\mathfrak{N}' }
+              - { name: 'Fraktur O', source: '\mathfrak{O}', insert: '\mathfrak{O}' }
+              - {
+                    name: 'Fraktur P',
+                    source: '\mathfrak{P}',
+                    insert: '\mathfrak{P}',
+                    keywords: 'power set'
+                }
+              - { name: 'Fraktur Q', source: '\mathfrak{Q}', insert: '\mathfrak{Q}' }
+              - { name: 'Fraktur R', source: '\mathfrak{R}', insert: '\mathfrak{R}' }
+              - { name: 'Fraktur S', source: '\mathfrak{S}', insert: '\mathfrak{S}' }
+              - { name: 'Fraktur T', source: '\mathfrak{T}', insert: '\mathfrak{T}' }
+              - { name: 'Fraktur U', source: '\mathfrak{U}', insert: '\mathfrak{U}' }
+              - { name: 'Fraktur V', source: '\mathfrak{V}', insert: '\mathfrak{V}' }
+              - { name: 'Fraktur W', source: '\mathfrak{W}', insert: '\mathfrak{W}' }
+              - { name: 'Fraktur X', source: '\mathfrak{X}', insert: '\mathfrak{X}' }
+              - { name: 'Fraktur Y', source: '\mathfrak{Y}', insert: '\mathfrak{Y}' }
+              - { name: 'Fraktur Z', source: '\mathfrak{Z}', insert: '\mathfrak{Z}' }
+              - { name: 'Sans serif A', source: '\mathsf{A}', insert: '\mathsf{A}' }
+              - { name: 'Sans serif B', source: '\mathsf{B}', insert: '\mathsf{B}' }
+              - { name: 'Sans serif C', source: '\mathsf{C}', insert: '\mathsf{C}' }
+              - { name: 'Sans serif D', source: '\mathsf{D}', insert: '\mathsf{D}' }
+              - { name: 'Sans serif E', source: '\mathsf{E}', insert: '\mathsf{E}' }
+              - { name: 'Sans serif F', source: '\mathsf{F}', insert: '\mathsf{F}' }
+              - { name: 'Sans serif G', source: '\mathsf{G}', insert: '\mathsf{G}' }
+              - { name: 'Sans serif H', source: '\mathsf{H}', insert: '\mathsf{H}' }
+              - { name: 'Sans serif I', source: '\mathsf{I}', insert: '\mathsf{I}' }
+              - { name: 'Sans serif J', source: '\mathsf{J}', insert: '\mathsf{J}' }
+              - { name: 'Sans serif K', source: '\mathsf{K}', insert: '\mathsf{K}' }
+              - { name: 'Sans serif L', source: '\mathsf{L}', insert: '\mathsf{L}' }
+              - { name: 'Sans serif M', source: '\mathsf{M}', insert: '\mathsf{M}' }
+              - { name: 'Sans serif N', source: '\mathsf{N}', insert: '\mathsf{N}' }
+              - { name: 'Sans serif O', source: '\mathsf{O}', insert: '\mathsf{O}' }
+              - { name: 'Sans serif P', source: '\mathsf{P}', insert: '\mathsf{P}' }
+              - { name: 'Sans serif Q', source: '\mathsf{Q}', insert: '\mathsf{Q}' }
+              - { name: 'Sans serif R', source: '\mathsf{R}', insert: '\mathsf{R}' }
+              - { name: 'Sans serif S', source: '\mathsf{S}', insert: '\mathsf{S}' }
+              - { name: 'Sans serif T', source: '\mathsf{T}', insert: '\mathsf{T}' }
+              - { name: 'Sans serif U', source: '\mathsf{U}', insert: '\mathsf{U}' }
+              - { name: 'Sans serif V', source: '\mathsf{V}', insert: '\mathsf{V}' }
+              - { name: 'Sans serif W', source: '\mathsf{W}', insert: '\mathsf{W}' }
+              - { name: 'Sans serif X', source: '\mathsf{X}', insert: '\mathsf{X}' }
+              - { name: 'Sans serif Y', source: '\mathsf{Y}', insert: '\mathsf{Y}' }
+              - { name: 'Sans serif Z', source: '\mathsf{Z}', insert: '\mathsf{Z}' }
+              - { name: 'Bold A', source: '\mathbf{A}', insert: '\mathbf{A}' }
+              - { name: 'Bold B', source: '\mathbf{B}', insert: '\mathbf{B}' }
+              - { name: 'Bold C', source: '\mathbf{C}', insert: '\mathbf{C}' }
+              - { name: 'Bold D', source: '\mathbf{D}', insert: '\mathbf{D}' }
+              - { name: 'Bold E', source: '\mathbf{E}', insert: '\mathbf{E}' }
+              - { name: 'Bold F', source: '\mathbf{F}', insert: '\mathbf{F}' }
+              - { name: 'Bold G', source: '\mathbf{G}', insert: '\mathbf{G}' }
+              - { name: 'Bold H', source: '\mathbf{H}', insert: '\mathbf{H}' }
+              - { name: 'Bold I', source: '\mathbf{I}', insert: '\mathbf{I}' }
+              - { name: 'Bold J', source: '\mathbf{J}', insert: '\mathbf{J}' }
+              - { name: 'Bold K', source: '\mathbf{K}', insert: '\mathbf{K}' }
+              - { name: 'Bold L', source: '\mathbf{L}', insert: '\mathbf{L}' }
+              - { name: 'Bold M', source: '\mathbf{M}', insert: '\mathbf{M}' }
+              - { name: 'Bold N', source: '\mathbf{N}', insert: '\mathbf{N}' }
+              - { name: 'Bold O', source: '\mathbf{O}', insert: '\mathbf{O}' }
+              - { name: 'Bold P', source: '\mathbf{P}', insert: '\mathbf{P}' }
+              - { name: 'Bold Q', source: '\mathbf{Q}', insert: '\mathbf{Q}' }
+              - { name: 'Bold R', source: '\mathbf{R}', insert: '\mathbf{R}' }
+              - { name: 'Bold S', source: '\mathbf{S}', insert: '\mathbf{S}' }
+              - { name: 'Bold T', source: '\mathbf{T}', insert: '\mathbf{T}' }
+              - { name: 'Bold U', source: '\mathbf{U}', insert: '\mathbf{U}' }
+              - { name: 'Bold V', source: '\mathbf{V}', insert: '\mathbf{V}' }
+              - { name: 'Bold W', source: '\mathbf{W}', insert: '\mathbf{W}' }
+              - { name: 'Bold X', source: '\mathbf{X}', insert: '\mathbf{X}' }
+              - { name: 'Bold Y', source: '\mathbf{Y}', insert: '\mathbf{Y}' }
+              - { name: 'Bold Z', source: '\mathbf{Z}', insert: '\mathbf{Z}' }

@@ -26,6 +26,9 @@
 // answer never puts back a list that a newer one has replaced. An answer of "no server" is read
 // again before it is taken as an empty list, because tmux refuses a connection for a moment and
 // that one answer would otherwise tell every page that all its terminals have ended.
+//
+// `Turns` (latex/turns.ts) serves the build requests of the terminal route one at a time per
+// build; the `Terminals` of a server holds the one every request of that server shares.
 
 import { z } from 'zod';
 import type {
@@ -63,6 +66,7 @@ import {
     sessionName,
     SCROLLBACK_LINES
 } from './sessions.ts';
+import { Turns } from './latex/turns.ts';
 import {
     control,
     run,
@@ -323,6 +327,8 @@ export type TerminalsOptions = {
  * `sessions` channel carries.
  */
 export class Terminals {
+    /** The turns of the requests that start one build, which every page's request shares. */
+    readonly turns = new Turns();
     #hub: Hub;
     #driver: TerminalDriver;
     #lines: number;

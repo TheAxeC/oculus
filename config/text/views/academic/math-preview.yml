@@ -1,0 +1,10 @@
+# Oculus text owned by the Math Preview view.
+text:
+    math_preview:
+        glyph: sigma
+        no_formula: The caret is not inside a formula.
+        no_source: Open a LaTeX file to preview the formula at its caret.
+        title: Math Preview
+    views:
+        math_preview: Math Preview
+        math_preview_glyph: sigma

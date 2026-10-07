@@ -199,6 +199,15 @@ function settingText(catalog: TextCatalog, problem: EditorProblem): string {
             return findingText(catalog, 'findings.config.setting_block', problem.key);
         case 'family':
             return findingText(catalog, 'findings.config.setting_family', problem.key);
+        case 'repeat':
+            return findingText(
+                catalog,
+                'findings.config.setting_repeat',
+                problem.key,
+                problem.name
+            );
+        case 'unnamed':
+            return findingText(catalog, 'findings.config.setting_unnamed', problem.key);
         case 'unknown-language':
             return findingText(catalog, 'findings.config.editor_unknown_language', problem.key);
         case 'unknown-field':
@@ -242,7 +251,7 @@ export function settingFindings(engine: string, config: Record<string, unknown>)
     }
     const named = new Set<string>();
     return problems.flatMap((problem) => {
-        const once = `${problem.where}:${problem.key}`;
+        const once = `${problem.where}:${problem.key}${problem.where === 'repeat' ? problem.name : ''}`;
         if (named.has(once)) return [];
         named.add(once);
         return [{ file, key: problem.key, message: settingText(catalog, problem) }];

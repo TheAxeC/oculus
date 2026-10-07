@@ -4,11 +4,12 @@
 // electron, so tests/server/desktop/window-guard.test.ts reads it without an app.
 //
 // An app window shows only its own server's page. That page at `/` opens in an app window: a main
-// window, or the window of a popped-out float when the address carries `?float=<id>` and nothing
-// else. The audience route, `/present/show` with the params `root` and `path` and nothing else,
-// opens the audience window of a presentation. Any other http, https or mailto address, the
-// server's own file addresses included, goes to the default browser. Every other scheme is
-// refused, since handing a `file:` or `javascript:` address to the operating system would run it.
+// window, or the window of a popped-out float when the address carries `?float=<id>` and at most
+// `owner=<id>` beside it. The audience route, `/present/show` with the params `root` and `path` and
+// nothing else, opens the audience window of a presentation. Any other http, https or mailto
+// address, the server's own file addresses included, goes to the default browser. Every other
+// scheme is refused, since handing a `file:` or `javascript:` address to the operating system would
+// run it.
 
 import { AUDIENCE_PATH } from './sender.ts';
 
@@ -30,13 +31,16 @@ function parsed(address: string): URL | null {
 }
 
 /**
- * The float id an address of the server's page names: its search is `?float=<id>` alone. Null for
- * an empty search, which names the main window, and for a search that carries anything else.
+ * The float id an address of the server's page names: its search is `?float=<id>`, with an
+ * `owner=<id>` beside it at most. Null for an empty search, which names the main window, and for a
+ * search that carries anything else.
  */
 function floatOf(url: URL): { id: string | null } | null {
     if (url.search === '') return { id: null };
     const params = [...url.searchParams.keys()];
-    if (params.length !== 1 || params[0] !== 'float') return null;
+    if (params.length === 0 || params.length > 2) return null;
+    if (params.some((name) => name !== 'float' && name !== 'owner')) return null;
+    if (new Set(params).size !== params.length || !params.includes('float')) return null;
     const id = url.searchParams.get('float');
     return id === null || id === '' ? null : { id };
 }

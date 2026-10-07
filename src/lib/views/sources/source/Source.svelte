@@ -33,10 +33,11 @@
     // The tab draws no title row and no row of controls: its path is the breadcrumb the pane draws
     // under the strip. It hands up to the pane through ui/tabs/tab-actions.svelte.ts its actions
     // for the right end of the breadcrumb bar (actions/BarActions.svelte): Save, Revert File, the
-    // star, Open in Program, Open Preview, Open Preview to the Side, Submit Job and Toggle Blame,
-    // each where it applies, and nothing for the tab row. Word wrap and the rendered half are the
-    // palette's, which lists Save, Revert File, word wrap, the rendered half, Open Preview to the
-    // Side, Submit Job and Toggle Blame while each applies (status/ask-perform.ts), and Cmd+S asks
+    // star, Open in Program, Open Preview, Open Preview to the Side, Submit Job, Toggle Blame and,
+    // for a LaTeX file, Build, View PDF and Build Log, each where it applies, and nothing for the
+    // tab row. Word wrap and the rendered half are the palette's, which lists Save, Revert File,
+    // word wrap, the rendered half, Open Preview to the Side, Submit Job, Toggle Blame and the
+    // LaTeX actions while each applies (status/ask-perform.ts), and Cmd+S asks
     // the tab on screen to save. The save outcome and what the tab said stay under the editor
     // (save/SourceNote.svelte): an alert for a refusal, a status for Submit's progress. A file that
     // could not be read is the message box with a control that reads it again
@@ -44,10 +45,7 @@
     // text. A file the route says is gone opens here too, so this is the tab that says it cannot be
     // opened.
     //
-    // Submit Job, on a .slurm file on disk under a served root, saves the unsaved text, asks the
-    // server for the plan, puts it to the reader as one confirm and on a yes runs it; the flow is
-    // actions/submit-job.svelte.ts, its confirm is drawn by views/shared/writes/AskConfirm.svelte,
-    // and the job is then shown in the Live HPC view.
+    // Submit Job, on a .slurm file on disk under a served root, is actions/submit-job.svelte.ts.
     //
     // A tab over a library file a language server named is this view too, read-only and with no
     // root or path (status/library-tab.svelte.ts).
@@ -56,33 +54,19 @@
     // asks for a served root of the current workspace and a name, makes the file there, writes the
     // text to it and becomes a tab over that file.
     //
-    // What the status bar draws for the tab is published from here to the editor status store,
-    // keyed by the instance, while the tab is mounted: the caret the editor reports, the
-    // indentation in force, the line ending of the text, the language (the one chosen from the
-    // bar, or the file name's), whether the file may be written, and the editor's actions the
-    // palette lists. The indentation, the word wrap (the tab's Alt+Z choice among them) and the
-    // rulers are resolved in views/shared/prose/source-options.ts, in the order
-    // data/helpers/editor.ts's `resolveEditor` states, and handed to the editor as its options.
-    // What the bar and the palette ask of the tab is performed here once per ask: an indentation, a
-    // language and a word wrap are kept with the draft and handed to the editor, and a line to go
-    // to, a conversion of the indentation, a line ending and an editor action are performed by the
-    // editor on its model (Editor.svelte's `perform`). A rewrite of the text is an edit like
-    // typing, handed back as one and unsaved until Save. The editor keeps the text in the line
-    // ending it was opened in, so typing into a CRLF file is kept in CRLF.
+    // What the status bar draws for the tab and what the bar and the palette ask of it are
+    // status/source-status.svelte.ts and status/ask-perform.ts; the editor's indentation, word wrap
+    // and rulers are views/shared/prose/source-options.ts. The editor keeps the text in the line
+    // ending it was opened in, so typing into a CRLF file is kept in CRLF. A rewrite of the text is
+    // an edit like typing, handed back as one and unsaved until Save. For a file in a repository
+    // the gutter carries the quick diff marks and each line's blame (source-gutter.svelte.ts).
     //
-    // For a file in a repository the gutter carries VS Code's quick diff marks against the index,
-    // and Git: Toggle Git Blame Editor Decoration, kept with the draft, adds each line's blame to
-    // it. The caret line's blame is in the status bar whether or not the decoration is on, as VS
-    // Code's `git.blame.statusBarItem.enabled` is on by default. A tab over the file at HEAD or in
-    // the index reads the blame of that version and no marks. They are read
-    // (source-gutter.svelte.ts) again whenever the repository's state on the `git` channel moves
-    // and after every save; a hidden tab reads again once, when it is shown. A press on a mark
-    // opens the file's diff at its change and a press on a line's blame opens its commit in the
-    // Repositories view's graph.
-    //
-    // What a language adds to the editor (Markdown headings, LaTeX's build, a language server's
-    // registration and actions, and the format before a save when the language's `format_on_save`
-    // is on) is made by language/tab-language.svelte.ts.
+    // What a language adds to the editor (Markdown headings, LaTeX's editing commands and markers,
+    // a language server's registration and actions, and the format before a save when the
+    // language's `format_on_save` is on) is made by language/tab-language.svelte.ts. A LaTeX file's
+    // build, its PDF, SyncTeX, citations and the keys of those are latex/latex-tab.svelte.ts, whose
+    // controls are drawn in the bar (latex/LatexButtons.svelte) and whose questions are
+    // latex/LatexDialogs.svelte.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -95,6 +79,8 @@
     import BarActions from './actions/BarActions.svelte';
     import Gutter from './Gutter.svelte';
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
+    import LatexDialogs from './latex/LatexDialogs.svelte';
+    import { createLatexTab } from './latex/latex-tab.svelte';
     import LockedCode from './save/LockedCode.svelte';
     import { createSaid } from './save/tab-said.svelte';
     import SourceNote from './save/SourceNote.svelte';
@@ -227,13 +213,13 @@
     const tabLanguage = createTabLanguage({
         client,
         instance: () => instance.id,
-        language: () => language,
         shown: () => options.shown,
         root: () => at.root,
         path: () => at.path,
         library: () => lib.address,
         version: () => head !== undefined,
-        say: (words: string) => note.say(words)
+        say: (words: string) => note.say(words),
+        commands: (found) => (latexTab.commands = found)
     });
     /** Whether the file has a rendered half, which is what a Markdown file has. */
     const markdown = $derived(language === 'markdown');
@@ -264,6 +250,19 @@
         prepare: () => (options.formatOnSave ? tabLanguage.lsp.formatForSave() : Promise.resolve()),
         restate: restateInstance,
         said: (words) => note.say(words)
+    });
+    /** A LaTeX file's root, build, keys and questions; it applies to a file on disk by name. */
+    const latexTab = createLatexTab({
+        client,
+        instance: () => instance.id,
+        root: () => root,
+        path: () => path,
+        language: () => language,
+        onDisk: () => file.onDisk && head === undefined && lib.address === '',
+        draft: () => draft,
+        caret: () => caret,
+        editing: () => editing,
+        save: () => tabSave.save()
     });
     /** Submit on the job script: the press that saves, asks and runs, and the confirm it holds. */
     const submit = createSubmitJob({
@@ -318,7 +317,8 @@
             submit: () => void submit.press(),
             previewSide: () => openBeside(MARKDOWN_PREVIEW_VIEW, markdownPreviewState(root, path)),
             toggleBlame: () => toggleSourceBlame(instance.id),
-            language: drawn ? tabLanguage.lsp.actions(options.shown, at) : []
+            language: drawn ? tabLanguage.lsp.actions(options.shown, at) : [],
+            latex: latexTab.actions()
         })
     );
     /** What the palette lists: the tab's actions, then the editor's while it is drawn. */
@@ -373,6 +373,7 @@
             editing ||
             file.previewable ||
             file.blameable ||
+            latexTab.applies ||
             servedFile(currentRoots(), root, path, file.onDisk)
     );
 </script>
@@ -401,6 +402,7 @@
         blameable={file.blameable}
         submittable={submit.submittable}
         submitting={submit.busy}
+        latex={latexTab}
         onsave={() => void tabSave.save()}
         onsubmit={() => void submit.press()}
     />
@@ -487,6 +489,8 @@
 {/if}
 
 <AskConfirm asking={submit.asking} onclose={submit.release} />
+
+<LatexDialogs tab={latexTab} />
 
 <style>
     .source {

@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import type { Entry, SchemaField } from '../../data/model/index.ts';
+import { fileBytesUrl } from '../../data/helpers/files/address.ts';
 import type { BookmarkKind } from './explorer/view/bookmark-rows.ts';
 import {
     anyNumberShape,
@@ -195,21 +196,10 @@ export const NO_NOTE: NoteState = {
     loading: true
 };
 
+export { fileBytesUrl };
+
 /** The endpoint the tree reads and the workspace actions write. */
 export const FS_PATH = '/api/fs';
-
-/**
- * The address one file's bytes are read at, each segment escaped without escaping the separators.
- * A version above zero rides on the query, which makes a rewritten file a new browser address.
- */
-export function fileBytesUrl(root: string, path: string, version = 0): string {
-    const parts = path
-        .split('/')
-        .filter((part) => part !== '')
-        .map((part) => encodeURIComponent(part));
-    const at = `/api/file/${encodeURIComponent(root)}/${parts.join('/')}`;
-    return version > 0 ? `${at}?v=${version}` : at;
-}
 
 /**
  * The address one directory's entries are read at, with `hidden=1` and `ignored=1` for the two

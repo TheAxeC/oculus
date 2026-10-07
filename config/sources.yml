@@ -107,7 +107,7 @@ languages:
   javascript:    [.js, .jsx, .mjs, .cjs, .javascript]
   json:          [.json, .jsonc, .json5, .ipynb]
   julia:         [.jl, .julia]
-  latex:         [.tex, .latex, .bib, .sty, .cls]
+  latex:         [.tex, .latex, .bib, .sty, .cls, .rnw, .jnw, .pnw]
   lisp:          [.lisp, .el, .scm]
   makefile:      [.mk, .mak, .make, .makefile, makefile]
   markdown:      [.md, .markdown, .mkdown, .mkd]

@@ -236,3 +236,28 @@ icons:
     lsp_output: scroll-text
     history: history
     hierarchy_swap: arrow-left-right
+    latex_build: hammer
+    latex_building: loader-circle
+    latex_kill: square-stop
+    latex_view: eye
+    latex_log: scroll-text
+    latex_ok: circle-check
+    latex_failed: circle-x
+    latex_edit: square-pen
+    latex_misc: ellipsis
+    latex_bib: book-open
+    sigma: sigma
+    pdf_back: undo-2
+    pdf_find: search
+    pdf_fit_page: scan
+    pdf_fit_width: move-horizontal
+    pdf_invert: contrast
+    pdf_next: arrow-down
+    pdf_open: external-link
+    pdf_outline: list-tree
+    pdf_prev: arrow-up
+    pdf_scroll: rows
+    pdf_spread: columns
+    pdf_thumbnails: images
+    pdf_zoom_in: zoom-in
+    pdf_zoom_out: zoom-out

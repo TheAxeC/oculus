@@ -117,6 +117,8 @@ text:
             xlink_published: published
         latex:
             heading: LaTeX
+            open_view: TeX view
+            open_view_tip: open the TeX view on this manuscript's main file
         no_documents: This project has no Markdown document.
         no_sessions: No session has worked in this folder.
         none: No project chosen. Open a project from the title of its card.

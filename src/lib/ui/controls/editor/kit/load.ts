@@ -69,7 +69,7 @@ import { createLspKit, type LspKit } from './lsp/hosts';
 import { Signal } from './lsp/signal';
 import { semanticRules } from './theme/semantic';
 import { codeRules, editorTheme } from './theme/theme';
-import type { EditorEnding, KeyPress } from '../types';
+import type { EditorEnding, EditorKey, KeyPress } from '../types';
 import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
 import type { BundledLanguage, BundledTheme, LanguageRegistration, ThemeRegistration } from 'shiki';
 
@@ -197,6 +197,12 @@ export function keyCode(monaco: typeof Monaco, press: KeyPress): number {
     if (press.shift === true) code |= monaco.KeyMod.Shift;
     if (press.alt === true) code |= monaco.KeyMod.Alt;
     return code;
+}
+
+/** One press, or two pressed one after the other, as Monaco's key code. */
+export function keysCode(monaco: typeof Monaco, keys: EditorKey): number {
+    if ('code' in keys) return keyCode(monaco, keys);
+    return monaco.KeyMod.chord(keyCode(monaco, keys[0]), keyCode(monaco, keys[1]));
 }
 
 async function start(): Promise<EditorKit> {

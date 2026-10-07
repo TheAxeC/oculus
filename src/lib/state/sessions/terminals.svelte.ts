@@ -88,7 +88,7 @@ import {
     type TerminalAnswer
 } from './terminal/pty/pty-io.ts';
 
-export type { BusyTerminal, SeedApproval, TerminalAnswer };
+export type { BusyTerminal, SeedApproval };
 
 export { endedTerminals, terminalLabel, unownedTerminals } from './terminal/terminal-lists.ts';
 export type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
@@ -107,8 +107,14 @@ export type { TaskRef, Terminal, TerminalKind, TerminalResume } from '../../data
 // reach the tray from here.
 export { UPDATE_TASKS, type UpdateTask };
 
-/** What a LaTeX terminal does to one main file: build it, or clear what a build left beside it. */
-export type LatexStep = 'build' | 'clean';
+/**
+ * What a LaTeX terminal does to one main file: build it, clear what a build left beside it, stop
+ * the build that runs, or check its citations.
+ */
+export type LatexStep = 'build' | 'clean' | 'stop' | 'checkcites';
+
+/** What a build asks for beyond the main file: a recipe by name, the last one used, and force. */
+export type LatexBuildAsk = { recipe?: string; last?: string; force?: boolean };
 
 /** The terminals one client owns, and the actions it runs on them. */
 export type TerminalsStore = {
@@ -128,6 +134,7 @@ export type TerminalsStore = {
         target: LatexTarget,
         main: string,
         step: LatexStep,
+        ask?: LatexBuildAsk,
         cols?: number,
         rows?: number
     ) => Promise<TerminalAnswer>;
@@ -482,18 +489,20 @@ export function createTerminals(
     }
 
     /**
-     * Build or clean one main file of a project's manuscript or of a folder of a served root. The
-     * page sends the folder's name and the file's; the server checks the name against the folder's
-     * own main files and supplies both the latexmk command and the folder it runs in.
+     * Build, clean, stop or check the citations of one main file of a project's manuscript or of a
+     * folder of a served root. The page sends the folder's name and the file's, and for a build the
+     * recipe it asks for; the server checks the name against the folder's own main files and
+     * supplies both the command and the folder it runs in.
      */
     async function latex(
         target: LatexTarget,
         main: string,
         step: LatexStep,
+        ask: LatexBuildAsk = {},
         cols: number = COLS,
         rows: number = ROWS
     ): Promise<TerminalAnswer> {
-        return post({ action: 'latex', ...targetFields(target), main, step, cols, rows });
+        return post({ action: 'latex', ...targetFields(target), main, step, ...ask, cols, rows });
     }
 
     /**

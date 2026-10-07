@@ -60,6 +60,65 @@ const WRITES_KEPT = 500;
 const TAB_KEY = 'oculus.layout.tab';
 
 /**
+ * The id of this browser tab or app window, made on first use and kept in its session storage for
+ * its life, so a reload keeps it, or null when the session storage cannot be used. The record of
+ * layout writes names a write by it, and a float's address names the main page that opened the
+ * float's window by it (`owner`).
+ */
+export function browserTabId(): string | null {
+    try {
+        const held = sessionStorage.getItem(TAB_KEY);
+        if (held !== null && held !== '') return held;
+        const made = Math.random().toString(36).slice(2, 8);
+        sessionStorage.setItem(TAB_KEY, made);
+        return made;
+    } catch {
+        return null;
+    }
+}
+
+/** The name of the lock a main page holds for as long as it lives. */
+function pageLock(id: string): string {
+    return `oculus-page:${id}`;
+}
+
+/**
+ * Whether the main page with this id is open: it holds its lock, in a browser tab and in an app
+ * window alike, since every window of one session shares the locks of its origin. A page that
+ * cannot ask is taken to be open, so a jump is sent and not refused for a missing API.
+ */
+export async function pageOpen(id: string): Promise<boolean> {
+    if (typeof navigator === 'undefined' || !('locks' in navigator)) return true;
+    const { held } = await navigator.locks.query();
+    return held?.some((one) => one.name === pageLock(id)) ?? true;
+}
+
+/**
+ * Hold a Web Lock named for the id of this main page for as long as the page lives, and answer the
+ * call that lets it go. A browser copies the session storage of a tab that is duplicated, so the
+ * copy starts with the id of the original; the copy finds the lock taken, forgets the id and
+ * reloads under a new one, which keeps every main page's id its own (a float's `owner` names one
+ * page only). The lock is also what a float asks to know that its owner page is still open.
+ */
+export function holdBrowserTabId(id: string): () => void {
+    if (typeof navigator === 'undefined' || !('locks' in navigator)) return () => undefined;
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    void navigator.locks.request(pageLock(id), { ifAvailable: true }, (lock) => {
+        if (lock !== null) return held;
+        try {
+            sessionStorage.removeItem(TAB_KEY);
+        } catch {
+            // A session storage that cannot be used holds no id to forget.
+        }
+        window.location.reload();
+    });
+    return release;
+}
+
+/**
  * One write of the saved layout: `at` the time in milliseconds, `tab` the id of the browser tab
  * that wrote it, `call` the name of the layout store operation that asked for it, `page` the id of
  * the page on screen, and `tabs` every tab then in the arrangement as `<tab id>:<view id>`, so a
@@ -193,19 +252,6 @@ export function createStorage(turn?: SaveTurn): LayoutStorage {
         record(next, call);
     }
 
-    /** The id of this browser tab, made on first use and kept for the tab's life. */
-    function tabId(): string {
-        try {
-            const held = sessionStorage.getItem(TAB_KEY);
-            if (held !== null && held !== '') return held;
-            const made = Math.random().toString(36).slice(2, 8);
-            sessionStorage.setItem(TAB_KEY, made);
-            return made;
-        } catch {
-            return 'no-session-storage';
-        }
-    }
-
     /**
      * Add one entry to the record of layout writes, dropping the oldest past WRITES_KEPT, or count
      * the write on the newest entry when it repeats it. It reads and writes nothing but WRITES_KEY
@@ -222,7 +268,7 @@ export function createStorage(turn?: SaveTurn): LayoutStorage {
         try {
             const entry: LayoutWrite = {
                 at: Date.now(),
-                tab: tabId(),
+                tab: browserTabId() ?? 'no-session-storage',
                 call,
                 page: next.current,
                 tabs: hostsOf(next).flatMap((host) =>

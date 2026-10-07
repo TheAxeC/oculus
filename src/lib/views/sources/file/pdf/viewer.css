@@ -1,0 +1,118 @@
+/* The PDF viewer's own boxes. The pages, the text layer and the annotation layer are PDF.js's
+   (pdfjs-dist/web/pdf_viewer.css); what is here is the box around them, the side panel, the note
+   that says what the viewer is doing, and the rectangle a forward search draws. */
+
+.oc-pdf {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    color: var(--ink);
+    background: var(--panel);
+}
+
+.oc-pdf-side {
+    flex: 0 0 220px;
+    min-width: 0;
+    overflow: auto;
+    padding: 6px;
+    border-right: 1px solid var(--line);
+    font-size: var(--fs-md);
+}
+
+.oc-pdf-side[hidden] {
+    display: none;
+}
+
+.oc-pdf-main {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.oc-pdf-container {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    outline: none;
+    background: var(--bg);
+}
+
+.oc-pdf.invert .pdfViewer {
+    filter: invert(1) hue-rotate(180deg);
+}
+
+.oc-pdf-note {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--muted);
+    font-size: var(--fs-md);
+    background: var(--bg);
+}
+
+.oc-pdf-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.oc-pdf-button[hidden] {
+    display: none;
+}
+
+.oc-pdf-note[hidden] {
+    display: none;
+}
+
+.oc-pdf-outline,
+.oc-pdf-outline ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.oc-pdf-outline ul {
+    padding-left: 12px;
+}
+
+.oc-pdf-thumbs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.oc-pdf-thumb {
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+}
+
+.oc-pdf-thumb:has([aria-current='page']) {
+    border-color: var(--accent);
+}
+
+.oc-pdf-indicator {
+    position: absolute;
+    box-sizing: border-box;
+    border: 2px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 25%, transparent);
+    pointer-events: none;
+    animation: oc-pdf-fade 2.4s ease-out forwards;
+}
+
+@keyframes oc-pdf-fade {
+    0%,
+    60% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}

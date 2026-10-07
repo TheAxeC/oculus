@@ -19,6 +19,7 @@ import type {
     GitPayload,
     HpcPayload,
     InboxPayload,
+    Jump,
     Message,
     ProcessesPayload,
     SchedulePayload,
@@ -43,6 +44,7 @@ export type Payloads = {
     audit: AuditPayload;
     files: FilesPayload;
     apps: AppsPayload;
+    jump: Jump;
 };
 
 /** What every channel of the wire reads as, one instance per client. */

@@ -1,10 +1,11 @@
-// Layer 1, data. Session, terminal, project command, git and HPC records carried by runtime
+// Layer 1, data. Session, project command, git, HPC and usage records carried by runtime
 // channels. This concern module keeps the live operational wire types separate from portfolio
 // snapshots. The project commands of a repository are here as the server lists them and the page
 // draws them: the command, where it was read from, what could not be read, the context the page
 // sends with a run, and the diagnostics a task terminal's output gives.
 
 import type { Id } from './model-entities.ts';
+import type { Terminal } from './model-processes.ts';
 
 export type SessionTool = 'claude' | 'codex';
 
@@ -230,169 +231,6 @@ export type SessionsPayload = {
      * about any terminal rather than as every terminal having ended.
      */
     terminals?: Terminal[];
-};
-
-// ------------------------------------------------------------------ terminals
-// The tmux side of DESIGN.md's "PTY": one record per tmux session oculus started, and the three
-// messages the `pty:<id>` channel carries. JSON-safe like everything above, so the bytes of a pane
-// travel as base64 rather than as a string that a lone surrogate could break.
-
-/** What a terminal pane runs: DESIGN.md's two agents and a shell. */
-export type TerminalKind = 'claude' | 'codex' | 'shell';
-
-/**
- * Which agent session a terminal continues. A terminal started fresh carries none; one started by
- * the resume action carries the tool it was resumed with and that session's own id, which is what
- * `claude --resume <id>` and `codex resume <id>` were given.
- */
-export type TerminalResume = {
-    tool: 'claude' | 'codex';
-    id: string;
-};
-
-/** The eight colour names a terminal may carry, VS Code's ANSI colours, in the order offered. */
-export const TERMINAL_COLORS = [
-    'black',
-    'red',
-    'green',
-    'yellow',
-    'blue',
-    'magenta',
-    'cyan',
-    'white'
-] as const;
-
-/** One of the eight colour names. */
-export type TerminalColor = (typeof TERMINAL_COLORS)[number];
-
-/** The longest message one steer types into a terminal, which the server refuses to pass. */
-export const STEER_MAX = 100_000;
-
-/**
- * The control characters a steer refuses: each would be typed as a key of its own (Escape,
- * Ctrl-C). A line break and a tab are the two a message holds. The server refuses them and the
- * page checks a comment against the same expression before it types or copies it.
- */
-// eslint-disable-next-line no-control-regex
-export const STEER_CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f]/;
-
-/** Where a task terminal's job came from: a project command's source, or a LaTeX build. */
-type JobSource = CommandSource | 'latex';
-
-/**
- * The words a request to /api/terminal is refused with. The server answers a refusal as one of
- * them, with the names it is about in `names` where a sentence needs them, and the page says the
- * sentence the catalog holds for it (state/shared/answers/terminal-words.ts); an engine's own text
- * (tmux's, a validator's) never reaches the page.
- */
-export const TERMINAL_REFUSALS = [
-    'not-ours',
-    'not-a-session',
-    'session-unknown',
-    'session-live',
-    'bad-terminal',
-    'terminal-ended',
-    'terminal-failed',
-    'terminal-not-started',
-    'not-a-task',
-    'still-running',
-    'bad-repo',
-    'command-unknown',
-    'dependency-unknown',
-    'dependency-self',
-    'dependency-cycle',
-    'no-file',
-    'no-selection',
-    'nul-value',
-    'task-unknown',
-    'task-changed',
-    'task-too-long',
-    'task-needs-agent',
-    'needs-confirm',
-    'approvals-unwritable'
-] as const;
-export type TerminalRefusal = (typeof TERMINAL_REFUSALS)[number];
-
-/**
- * The command a task terminal runs (a LaTeX build's job is the folder it builds in, the build's
- * name and the source `latex`): the repository it belongs to, the command's name and the source
- * that name was read from, which tells apart two commands of one name, the token its line prints
- * with each command's name, and the commands of its chain in run order, each with the folder it
- * runs in, so the output is read by the chain the line was made of whatever the repository's list
- * says now. A mark that carries no source, no token or no chain leaves it absent.
- */
-export type TerminalJob = {
-    repo: string;
-    name: string;
-    source?: JobSource;
-    token?: string;
-    chain?: { name: string; cwd: string }[];
-};
-
-/** One tmux session oculus started, as `tmux list-sessions` reports it. */
-export type Terminal = {
-    /** The session name without the `oculus-` prefix; the `pty:<id>` channel is named from it. */
-    id: string;
-    /** What to call it on the page. The id when the starter named nothing. */
-    name: string;
-    /** The title the reader gave it (tmux user option `@oculus_title`); empty when it has none. */
-    title: string;
-    /** The glyph name the reader gave it (`@oculus_icon`); empty for the kind's own. */
-    icon: string;
-    /** One of the eight ANSI colour names (`@oculus_color`); empty for the default. */
-    color: string;
-    kind: TerminalKind;
-    /** The pane's current directory. */
-    cwd: string;
-    /** The pane's current command, which is what tmux reports is running right now. */
-    command: string;
-    /** The pane's process id, for a page that wants to show it. Zero when tmux reported none. */
-    pid: number;
-    /** When the session was created, as an ISO instant. */
-    created: string;
-    /** Whether any client (oculus or a terminal window) is attached to the tmux session. */
-    attached: boolean;
-    /** The session this terminal continues, or null when it continues nothing. */
-    resumes: TerminalResume | null;
-    /**
-     * True for a terminal a project command or a LaTeX build started (tmux user option
-     * `@oculus_task`). Its session stays in the list after its line ended, with the status of that
-     * line in `exit`.
-     */
-    task: boolean;
-    /**
-     * The exit status of a task terminal's line once it ended, and null while it runs and on a
-     * terminal that is no task.
-     */
-    exit: number | null;
-    /** The repository and command or build name a task terminal ran, or null when it is no task. */
-    job: TerminalJob | null;
-    /**
-     * True for a tmux session that carries the `oculus-` prefix but whose name oculus did not mint.
-     * It is listed, since it is there and the prefix claims it, and the stop and resize actions
-     * refuse it: the commands they build are keyed on an id of oculus's own shape.
-     */
-    foreign?: boolean;
-};
-
-/** The payload of a `pty:<id>` message: a chunk of pane output, or the scrollback, as base64. */
-export type PtyPayload = {
-    bytes: string;
-};
-
-/** Keystrokes from the page, as base64 of the UTF-8 bytes xterm.js produced. */
-export type TerminalInput = {
-    type: 'input';
-    channel: string;
-    bytes: string;
-};
-
-/** The page's terminal was resized, so the tmux window follows it. */
-export type TerminalResize = {
-    type: 'resize';
-    channel: string;
-    cols: number;
-    rows: number;
 };
 
 // ------------------------------------------------------------------ git

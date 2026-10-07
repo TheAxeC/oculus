@@ -172,7 +172,7 @@
         return (
             view.querySelector<HTMLElement>('.monaco-editor .native-edit-context') ??
             view.querySelector<HTMLElement>('.monaco-editor textarea.inputarea') ??
-            frames?.frameOf(id) ??
+            frames?.elementOf(id) ??
             view.querySelector<HTMLElement>('[data-tab-focus]')
         );
     }
@@ -232,7 +232,7 @@
         let ended = false;
         // The frame layer draws a frame after the view mounts, so the effect runs again when it
         // has.
-        frames?.frameOf(asked);
+        frames?.elementOf(asked);
         const give = (view: HTMLElement): boolean => {
             const input = inputOf(view, asked);
             if (input === null) return false;

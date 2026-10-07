@@ -38,6 +38,7 @@ digraph channels {
         "ch git" [label="git", shape=ellipse];
         "ch hpc" [label="hpc", shape=ellipse];
         "ch inbox" [label="inbox", shape=ellipse];
+        "ch jump" [label="jump", shape=ellipse];
         "ch lsp-*" [label="lsp-*", shape=ellipse];
         "ch lsp:*" [label="lsp:*", shape=ellipse];
         "ch network" [label="network", shape=ellipse];
@@ -110,7 +111,8 @@ digraph channels {
         "state/life/accounts";
         "state/life/calendar";
         "state/life/present";
-        "state/sessions/latex";
+        "state/sessions/latex/actions";
+        "state/sessions/latex/latex";
         "state/sessions/terminal/commands";
         "state/sessions/terminal/pty/pty-wire";
         "state/sessions/terminals";
@@ -217,7 +219,7 @@ digraph channels {
     "ch config" -> "state/client/selectors";
     "ch config" -> "state/client/socket";
     "ch config" -> "state/life/present";
-    "ch config" -> "state/sessions/latex";
+    "ch config" -> "state/sessions/latex/latex";
     "ch config" -> "state/sources/search/search";
     "ch config" -> "state/workbench/palette-source";
     "ch config" -> "views/feeds/leads";
@@ -233,7 +235,7 @@ digraph channels {
     "ch feeds" -> "routes/+page" [style=dashed];
     "ch feeds" -> "state/feeds/feeds";
     "ch files" -> "routes/+page" [style=dashed];
-    "ch files" -> "state/sessions/latex";
+    "ch files" -> "state/sessions/latex/latex";
     "ch files" -> "state/sessions/terminal/commands";
     "ch files" -> "state/system/apps/apps";
     "ch files" -> "state/system/apps/rules";
@@ -254,6 +256,7 @@ digraph channels {
     "ch inbox" -> "state/life/accounts";
     "ch inbox" -> "state/workbench/navigation/notice-sources";
     "ch inbox" -> "state/workbench/palette-source";
+    "ch jump" -> "routes/+page" [style=dashed];
     "ch lsp-*" -> "ui/controls/editor/kit/lsp/client";
     "ch lsp:*" -> "state/system/machine/lsp/lsp";
     "ch network" -> "state/system/config/write";
@@ -299,6 +302,7 @@ digraph channels {
     "ch sessions" -> "state/workbench/navigation/notice-sources";
     "ch sessions" -> "views/system/status";
     "ch timedOut" -> "state/system/config/write";
+    "ch timeline:${row.kind}:${row.key}" -> "state/sessions/latex/actions";
     "ch timeline:${row.kind}:${row.key}" -> "state/system/machine/lsp/lsp";
     "ch timeline:${row.kind}:${row.key}" -> "ui/controls/editor/kit/lsp/transport";
     "ch usage" -> "routes/+page" [style=dashed];

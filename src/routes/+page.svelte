@@ -30,8 +30,11 @@
     import { bookmarkRows, HUB_ROOT } from '$lib/state/sources/fs';
     import { takeCarried } from '$lib/state/workbench/layout/saved/carry';
     import { createClientState } from '$lib/state/client/context';
+    import { useBrowserWindows } from '$lib/shell/browser-windows.svelte';
     import { useDesktopWindows } from '$lib/shell/desktop-windows.svelte';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
+    import { floatOf, ownerOf } from '$lib/state/workbench/layout/open/float/browser';
+    import { browserTabId, holdBrowserTabId } from '$lib/state/workbench/layout/saved/storage';
     import { provideState } from '$lib/state/client/use';
     import { provideSpelling } from '$lib/ui/controls/text/spelling';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
@@ -45,12 +48,22 @@
     // primitives number their bubbles with is made here beside it, since it is `ui/`'s own and the
     // state layer imports nothing of `ui/`.
     // In the desktop app the page holds the bridge its host gave it, read here once, and a window
-    // of a popped-out float carries the float's id in its address; in a browser there is neither.
+    // of a popped-out float carries the float's id in its address; a browser has no bridge, and a
+    // browser tab opened for a float carries the id in its address the same way.
     const desktop =
         typeof window === 'undefined' ? undefined : desktopOf(window, window.location.search);
-    const client = createClientState(desktop);
+    const client = createClientState(
+        desktop,
+        typeof window === 'undefined' ? null : (desktop?.float ?? floatOf(window.location.search)),
+        typeof window === 'undefined'
+            ? 'server'
+            : (browserTabId() ?? Math.random().toString(36).slice(2, 8)),
+        typeof window === 'undefined' ? null : (desktop?.owner ?? ownerOf(window.location.search))
+    );
     provideState(client);
     useDesktopWindows(client);
+    useBrowserWindows(client);
+    $effect(() => (client.float === null ? holdBrowserTabId(client.pageId) : undefined));
     provideTipIds(createTipIds());
     provideSpelling(desktop?.bridge.spelling);
     const {
@@ -222,7 +235,8 @@
             'audit',
             'processes',
             'schedule',
-            'apps'
+            'apps',
+            'jump'
         ]);
         takeCarried(localStorage, window, location.origin);
         loadUi(localStorage, window);

@@ -14,6 +14,7 @@
     //                              Submit of the tab is planning or running
     //   Toggle Blame               a file in a repository, including its version at HEAD and in
     //                              the index
+    //   Build, View PDF, Build Log a LaTeX file on disk (latex/LatexButtons.svelte), before Save
     //
     // The star and Open in Program are the shared row's, for a file under a served root.
 
@@ -24,6 +25,8 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import FileBarActions from '../../../shared/links/FileBarActions.svelte';
+    import LatexButtons from '../latex/LatexButtons.svelte';
+    import type { LatexTab } from '../latex/latex-tab.svelte';
 
     type Props = {
         /** The tab's instance id, which its draft and its pane are kept under. */
@@ -42,6 +45,8 @@
         submittable: boolean;
         /** Whether a Submit of the tab is planning or running. */
         submitting: boolean;
+        /** The LaTeX side of the tab, whose controls lead the bar for a LaTeX file. */
+        latex: LatexTab;
         /** Save, which the tab performs since an untitled text asks for a name first. */
         onsave: () => void;
         /** Submit Job, which the tab performs since it saves first and asks the server. */
@@ -58,6 +63,7 @@
         blameable,
         submittable,
         submitting,
+        latex,
         onsave,
         onsubmit
     }: Props = $props();
@@ -83,6 +89,9 @@
 </script>
 
 {#snippet lead()}
+    {#if latex.applies}
+        <LatexButtons tab={latex} />
+    {/if}
     {#if editing}
         <ToolButton
             bare

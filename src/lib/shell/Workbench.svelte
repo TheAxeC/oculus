@@ -17,10 +17,11 @@
     // once, outside the block keyed by the page, and a pane draws only the slot a frame is laid
     // over, so a layout change never loads a frame's document again.
     //
-    // In the desktop app the page of a popped-out window (`?float=<id>`) is this component with the
-    // body drawn as that one float alone, filling the window (panes/floats/FloatWindow.svelte):
-    // no rail, no status bar and no page, and none of the work that fills the rail's pages and
-    // takes in the shipped floats, which the main window's page does for every window.
+    // In the desktop app, and in a browser tab opened for a float, the page of a popped-out window
+    // (`?float=<id>`) is this component with the body drawn as that one float alone, filling the
+    // window (panes/floats/FloatWindow.svelte): no rail, no status bar and no page, and none of the
+    // work that fills the rail's pages and takes in the shipped floats, which the main window's
+    // page does for every window.
     //
     // It is also where the appearance is put on the document, in one effect: the theme's class and
     // its derived tokens, the wallpaper's layer and the properties its translucent surfaces read,
@@ -64,6 +65,7 @@
         type StatusGit,
         type StatusWords
     } from '$lib/state/workbench/navigation/status';
+    import Bell from './status/Bell.svelte';
     import StatusBar from './status/StatusBar.svelte';
     import { setGlyphMode, t } from '$lib/state/shared/words/text';
     import {
@@ -150,7 +152,7 @@
     }: Props = $props();
 
     /** The float this page draws alone in a popped-out window of the app, or null. */
-    const floatId = client.desktop?.float ?? null;
+    const floatId = client.float;
 
     /** The area the page's tree fills, which a float let go beside it docks on. */
     let area: HTMLElement | undefined = $state();
@@ -330,6 +332,9 @@
 {#if floatId !== null}
     {#if client.layout.loaded()}
         <FloatWindow id={floatId} onpalette={openPalette} />
+        <!-- The window has no status bar, so the bell is mounted undrawn to show the toasts of what
+         the float's own actions say: a build that failed, a jump no main window could take. -->
+        <Bell drawn={false} />
     {/if}
 {:else}
     <div class="workbench">

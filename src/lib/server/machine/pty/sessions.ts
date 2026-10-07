@@ -229,7 +229,8 @@ const jobShape = z.object({
     chain: z
         .array(z.object({ name: z.string(), cwd: z.string() }))
         .optional()
-        .catch(undefined)
+        .catch(undefined),
+    latex: z.object({ step: z.string(), main: z.string() }).optional().catch(undefined)
 });
 
 /** The job a task mark holds, or null for a mark that is not the JSON of one. */
@@ -770,6 +771,15 @@ export async function steerTerminal(id: string, text: string, options: RunOption
         throw new Error('text must not hold control characters');
     }
     for (const args of steerArgs(id, text)) await (options.run ?? run)(args, options);
+}
+
+/**
+ * Send Ctrl+C to a terminal's pane: the terminal's line reads it as an interrupt, so the program
+ * in the foreground and its children end. The tmux session stays, with the line's exit status.
+ */
+export async function stopForeground(id: string, options: RunOptions = {}): Promise<void> {
+    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
+    await (options.run ?? run)(sendKeysArgs(id, { key: 'C-c' }), options);
 }
 
 /**

@@ -527,10 +527,96 @@ options:
         latex.auto_build:
             heading: editor
             section: LaTeX
-            description: What saving a .tex file does. on_save builds the main file the saved file belongs to with latexmk, in the background and without showing the terminal, and the build's errors and warnings reach the editor as markers when it ends. never builds nothing.
-            default: on_save
+            description: When a main file is built without being asked. on_file_change builds it when any file it includes changes on disk, whoever wrote the file (the editor, an agent, git), for the main files of the open LaTeX tabs and of the PDFs they build. on_save builds the main file the saved file belongs to when the file is saved in the editor. never builds only when asked. A build is in the background, and its errors and warnings reach the editor as markers when it ends.
+            default: on_file_change
             control: choice
-            values: [on_save, never]
+            values: [on_file_change, on_save, never]
+        latex.auto_build_interval_ms:
+            heading: editor
+            section: LaTeX
+            description: The shortest time, in milliseconds, between the starts of two automatic builds of one main file. A change that comes while a build runs gives one build after it.
+            default: 1000
+            control: number
+            min: 1
+            whole: true
+        latex.recipe_default:
+            heading: editor
+            section: LaTeX
+            description: The recipe a build uses when the file names none and the reader asked for none. first is the first recipe of latex.recipes and last_used is the one the reader last asked for with Build with Recipe.
+            default: first
+            control: choice
+            values: [first, last_used]
+        latex.out_dir:
+            heading: editor
+            section: LaTeX
+            description: The folder a build writes the PDF, the log and the SyncTeX file to. %DIR% is the main file's own folder; any other value is a folder resolved from the main file's folder, which must stay under the served root.
+            default: '%DIR%'
+            control: text
+        latex.aux_dir:
+            heading: editor
+            section: LaTeX
+            description: The folder a build writes its auxiliary files to. %OUTDIR% is the output folder; any other value is resolved as latex.out_dir is.
+            default: '%OUTDIR%'
+            control: text
+        latex.clean_and_retry:
+            heading: editor
+            section: LaTeX
+            description: true cleans the auxiliary files and builds once more after a build that ended in an error, as LaTeX Workshop does; a build the reader stopped is not retried.
+            default: true
+            control: toggle
+        latex.auto_clean:
+            heading: editor
+            section: LaTeX
+            description: Whether Clean runs after a build, by how the build ended. never does not clean; on_failed, on_succeeded and on_built clean after a failed build, a successful one, or either.
+            default: never
+            control: choice
+            values: [never, on_failed, on_succeeded, on_built]
+        latex.synctex_path:
+            heading: editor
+            section: LaTeX
+            description: Where the synctex program is, which finds the PDF position of a source line and the source line of a PDF click. Empty finds it on PATH.
+            default: ''
+            control: path
+            empty: true
+        latex.reverse_synctex:
+            heading: editor
+            section: LaTeX
+            description: The click on a page of the PDF that opens the source at that place. ctrl_click is Cmd, or Ctrl, and a click; double_click is a double click. Any other click selects text and follows links.
+            default: ctrl_click
+            control: choice
+            values: [ctrl_click, double_click]
+        latex.texcount_autorun:
+            heading: editor
+            section: LaTeX
+            description: on_save counts the words of the main file after each save of a LaTeX file, so the status bar's tooltip has the number; never counts only when asked.
+            default: never
+            control: choice
+            values: [never, on_save]
+        latex.context_menu:
+            heading: editor
+            section: LaTeX
+            description: true adds Build and SyncTeX from Cursor to the editor's right-click menu of a LaTeX file.
+            default: false
+            control: toggle
+        latex.recipes:
+            heading: editor
+            section: LaTeX
+            description: The recipes a build can run, each a name and the tools it chains in order. A recipe whose name an earlier recipe took, one with no name, one that names no tool and one that names a tool latex.tools does not hold is not read and is listed in the Findings view.
+            fields:
+                name: the name the build asks for, which a % !LW recipe = <name> comment also names
+                tools:
+                    description: the names of the tools the recipe runs one after the other
+                    control: list
+        latex.tools:
+            heading: editor
+            section: LaTeX
+            description: The tools recipes chain, each a program and its arguments. An argument may hold the placeholders %DOC%, %DOC_EXT%, %DOCFILE%, %DOCFILE_EXT%, %DIR%, %OUTDIR% and %AUXDIR%. A tool whose name an earlier tool took, or that has no name or no program, is not read and is listed in the Findings view.
+            fields:
+                name: the name recipes call the tool by
+                command: the program, found on PATH
+                args:
+                    description: the arguments, one per item
+                    control: list
         latex.formatter:
             heading: editor
             section: LaTeX

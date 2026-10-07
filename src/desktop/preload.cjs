@@ -20,7 +20,8 @@ webFrame.isWordMisspelled('oculus');
 
 /** @type {DesktopBridge} */
 const bridge = {
-    openFloatWindow: (id, bounds) => ipcRenderer.send('oculus:open-float-window', id, bounds),
+    openFloatWindow: (id, bounds, owner) =>
+        ipcRenderer.send('oculus:open-float-window', id, bounds, owner),
     closeSelf: () => ipcRenderer.send('oculus:close-self'),
     focusMain: () => ipcRenderer.send('oculus:focus-main'),
     dropOutside: (drop) => ipcRenderer.invoke('oculus:drop-outside', drop),

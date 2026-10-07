@@ -21,7 +21,7 @@ function titleBar(): number {
 }
 
 export function useDesktopWindows(client: ClientState): void {
-    const { desktop, layout, drag } = client;
+    const { desktop, layout, drag, pageId } = client;
     if (desktop === undefined) return;
     const { bridge, float } = desktop;
 
@@ -54,12 +54,11 @@ export function useDesktopWindows(client: ClientState): void {
                 const { place } = one;
                 // A plain object: the saved place is reactive state, which the bridge cannot clone.
                 if (place.kind === 'window') {
-                    bridge.openFloatWindow(one.id, {
-                        x: place.x,
-                        y: place.y,
-                        w: place.w,
-                        h: place.h
-                    });
+                    bridge.openFloatWindow(
+                        one.id,
+                        { x: place.x, y: place.y, w: place.w, h: place.h },
+                        pageId
+                    );
                 }
             }
         });

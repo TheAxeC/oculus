@@ -89,6 +89,7 @@
         "monaco-editor": "0.57.0",
         "node-diff3": "3.2.1",
         "nodemailer": "^10.0.12",
+        "pdfjs-dist": "6.4.299",
         "penpal": "8.0.1",
         "pyright": "1.1.414",
         "seti-ui": "1.11.0",

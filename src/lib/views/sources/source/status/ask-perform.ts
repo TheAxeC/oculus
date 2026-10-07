@@ -6,9 +6,10 @@
 //
 // The tab's own actions are File: Save, File: Revert File, View: Toggle Word Wrap (Alt+Z),
 // Markdown: Toggle Rendered Half, Markdown: Open Preview to the Side, Slurm: Submit Job and Git:
-// Toggle Git Blame Editor Decoration. Each is in `tabActions` only while it applies, so the palette
-// lists what the tab on screen can do, whether or not it draws an editor, and an ask for an action
-// that does not apply does nothing.
+// Toggle Git Blame Editor Decoration, and for a LaTeX file the actions of
+// latex/latex-tab.svelte.ts. Each is in `tabActions` only while it applies, so the palette lists
+// what the tab on screen can do, whether or not it draws an editor, and an ask for an action that
+// does not apply does nothing.
 //
 // Cmd+S is the shell key action `save` (shell/keys/keys.ts), performed in workbench-keys.svelte.ts
 // by an ask to the source tab on screen, and Alt+Z is the key of word wrap in the editor.
@@ -44,6 +45,8 @@ export type TabActionDeps = {
     toggleBlame: () => void;
     /** The actions a language server adds, which follow the tab's own in the palette. */
     language: EditorOwnAction[];
+    /** The actions of a LaTeX file (build, view, SyncTeX, editing), which follow the server's. */
+    latex: EditorOwnAction[];
 };
 
 /** The actions of the tab that apply now, in the order the palette lists them. */
@@ -81,7 +84,7 @@ export function tabActions(deps: TabActionDeps): EditorOwnAction[] {
     if (deps.blameable) {
         listed.push({ id: 'oculus.blame', label: t('source.cmd_blame'), run: deps.toggleBlame });
     }
-    return [...listed, ...deps.language];
+    return [...listed, ...deps.language, ...deps.latex];
 }
 
 /** What performing an ask reads of the tab and calls on it. */
@@ -126,7 +129,7 @@ export function performAsk(ask: EditorAsk, deps: AskDeps): void {
         if (!deps.editing || deps.indent === null) return;
         deps.setIndent({ tabs: ask.tabs, size: deps.indent.size });
         deps.editor?.perform(ask);
-    } else if (ask.kind === 'ending') {
+    } else if (ask.kind === 'ending' || ask.kind === 'insert' || ask.kind === 'replace') {
         if (deps.editing) deps.editor?.perform(ask);
     } else {
         deps.editor?.perform(ask);

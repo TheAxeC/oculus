@@ -5,7 +5,7 @@
     // that names no line opens the top of its file.
 
     import RowButton from '$lib/ui/controls/RowButton.svelte';
-    import type { LatexIssue } from '$lib/state/sessions/latex.svelte';
+    import type { LatexIssue } from '$lib/state/sessions/latex/latex-state';
     import { useState } from '$lib/state/client/use';
     import { openSourceFile } from '../links/source-file';
     import { placeOf, problemFile, problemRows } from './places';

@@ -27,6 +27,7 @@ import {
 } from '../../data/shapes/shapes.ts';
 import type { Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
 import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
+import { fileBytesUrl } from '../sources/fs-transport.ts';
 import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
 import { realProjects } from '../sources/venues.ts';
 
@@ -287,11 +288,7 @@ const HOSTED_SCHEME = 'https://';
 export function hrefOf(value: string): string {
     if (ADDRESSED.test(value)) return value;
     if (HOSTED.test(value)) return `${HOSTED_SCHEME}${value}`;
-    const parts = value
-        .split('/')
-        .filter((one) => one !== '')
-        .map((one) => encodeURIComponent(one));
-    return `/api/file/${HUB_ROOT}/${parts.join('/')}`;
+    return fileBytesUrl(HUB_ROOT, value);
 }
 
 /** The fields of an entry that hold a path of the hub when their value is not an address. */

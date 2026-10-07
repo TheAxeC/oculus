@@ -22,14 +22,12 @@
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
-import { join } from 'node:path';
 import { isUpdateTask } from '../../../data/helpers/run/tasks.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, loadLocal, textCatalog } from '../../../data/sources/config.ts';
-import { MANUSCRIPT, isMainOf, programOf } from '../../content/latex.ts';
-import type { Program } from '../../../data/prose/latex.ts';
-import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
+import type { Root } from '../../files/files.ts';
+import { startLatex } from './latex/latex.ts';
 import { captureTask, restartTask, rerunTask, startCommand } from '../runs/commands/run.ts';
 import { startChat, type ChatOptions } from './start/chat.ts';
 import { defaultApprovalsPath } from '../approvals/approvals.ts';
@@ -67,7 +65,6 @@ import {
     newId,
     resizeTerminal,
     resumeArgs,
-    respawnTerminal,
     startTerminal,
     steerTerminal,
     stopTerminal,
@@ -77,30 +74,9 @@ import { TmuxFailed, TerminalRefused, refusal, refusalFor } from './refusal.ts';
 import { shellWord } from './shell-word.ts';
 import { startUpdateTask } from '../runs/schedules/task.ts';
 import { run } from './tmux.ts';
-import type {
-    SessionRecord,
-    Terminal,
-    TerminalJob,
-    TerminalKind,
-    TerminalResume
-} from '../../../data/model/index.ts';
+import type { Turns } from './latex/turns.ts';
+import type { SessionRecord, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
 import { taskRefOf } from '../../../data/shapes/shapes.ts';
-
-/** The two things a reader does to one main file of a manuscript. */
-const LATEX_STEPS = ['build', 'clean'] as const;
-type LatexStep = (typeof LATEX_STEPS)[number];
-
-/** The step of a latex request: build or clean, and anything else is refused. */
-const latexStepShape = z.literal(LATEX_STEPS);
-
-/**
- * The folder a latex request names: a project by its id, or a folder of a served root by the root's
- * key and the path under it. A request naming both, or neither, names no folder.
- */
-const latexFolderShape = z.union([
-    z.object({ id: z.string().min(1), root: z.undefined().optional() }),
-    z.object({ id: z.undefined().optional(), root: z.string().min(1), path: z.string() })
-]);
 
 /** The name of a start request: text, and anything else starts the terminal with no name. */
 const startNameShape = z.string().optional().catch(undefined);
@@ -132,8 +108,12 @@ export type TerminalOptions = StartOptions &
          * The roots the file browser serves, which a latex request for a folder is looked up in.
          */
         servedRootsFor?: () => Root[];
+        /** Whether a program is found, as a build looks up each program of its recipe. */
+        programFound?: (program: string) => boolean;
         /** Re-read the terminal manager after a write. */
         refresh?: () => void;
+        /** Serves requests for one build one at a time; a request without it is served at once. */
+        turns?: Turns;
         /** The user's shell, whose base name a busy read compares a pane's command with. */
         shell?: string;
         /** The directories the file browser serves, one of which holds a command's repository. */
@@ -402,129 +382,6 @@ async function startTask(
     if ('refused' in started) return refusal(started.refused, started.names);
     options.refresh?.();
     return json({ ok: true, terminal: started.terminal }, { headers: NO_STORE });
-}
-
-/** The latexmk switch that builds with each program. */
-const LATEX_SWITCH: Record<Program, string> = {
-    pdflatex: '-pdf',
-    xelatex: '-pdfxe',
-    lualatex: '-pdflua'
-};
-
-/**
- * The exact latexmk command one step runs. `-file-line-error` is what puts a file and a line in
- * front of every error, which is the form server/content/latex.ts reads the log back in; the flags
- * are this module's own words and the file is the one value from the page, so it is the one word
- * quoted. The program is the one the main file's magic comment names; a clean needs none.
- */
-export function latexCommand(step: LatexStep, main: string, program: Program): string {
-    if (step === 'clean') return `latexmk -c ${shellWord(main)}`;
-    const flags = `${LATEX_SWITCH[program]} -interaction=nonstopmode -file-line-error`;
-    return `latexmk ${flags} ${shellWord(main)}`;
-}
-
-/**
- * The name the terminals list shows for one step, from the catalog: the reader sees it, so it is
- * words rather than a literal, as the chat terminals' names are. The route hands the config its
- * request read.
- */
-function latexName(options: TerminalOptions, step: LatexStep, id: string, main: string): string {
-    const catalog = textCatalog(options.configFor());
-    return words(catalog, 'server.latex.name', step, id, main).slice(0, NAME_MAX);
-}
-
-/** The folder a latex request names and what the terminal's name calls it, or the refusal. */
-function latexFolder(
-    message: Record<string, unknown>,
-    options: TerminalOptions
-): { dir: string; label: string } | Response {
-    const named = latexFolderShape.safeParse(message);
-    if (!named.success) {
-        return refusal('not-an-action');
-    }
-    if (named.data.id === undefined) {
-        const found = resolveRootPath(
-            options.servedRootsFor?.() ?? [],
-            named.data.root,
-            named.data.path
-        );
-        if ('error' in found) return refusal(found.error);
-        return {
-            dir: found.path,
-            label: named.data.path === '' ? named.data.root : named.data.path
-        };
-    }
-    const project = (options.projectFor ?? (() => null))(named.data.id);
-    if (project === null) return refusal('no-project');
-    const hub = options.hubFor?.() ?? (options.localFor?.() ?? loadLocal(options.engine)).hub;
-    return {
-        dir: join(projectDirectory(hub, project.folder), MANUSCRIPT),
-        label: named.data.id
-    };
-}
-
-/**
- * The kept terminal of a build or clean of one main file, or null: the listed task terminal whose
- * job is a LaTeX job of this folder with this name. The name holds the step, the folder's label and
- * the main file, so a main file has one terminal per step.
- */
-async function keptLatex(
-    folder: string,
-    name: string,
-    options: TerminalOptions
-): Promise<Terminal | null> {
-    const listed = await listTerminals(options);
-    return (
-        listed.find(
-            (one) =>
-                one.task &&
-                one.job?.source === 'latex' &&
-                one.job.repo === folder &&
-                one.job.name === name
-        ) ?? null
-    );
-}
-
-/**
- * Build or clean one main file, as a task terminal in the folder of the main file: a project's
- * `manuscript/` folder or a folder of a served root. The file is checked against the folder's own
- * main files before a command is built from it, so the only names that can reach latexmk are the
- * ones the view offered. tmux keeps the pane after latexmk ended, with its exit status, so the
- * output stays readable. A step whose kept terminal is listed runs in that terminal: a latexmk
- * still running is answered as it is, and an ended one is run again there with the command the
- * request builds now, so a build on every save leaves one terminal per main file and step.
- */
-async function startLatex(
-    message: Record<string, unknown>,
-    options: TerminalOptions
-): Promise<Response> {
-    const asked = latexStepShape.safeParse(message.step);
-    if (!asked.success) return refusal('not-an-action');
-    const step = asked.data;
-    const folder = latexFolder(message, options);
-    if (folder instanceof Response) return folder;
-    const main = message.main;
-    if (typeof main !== 'string' || !isMainOf(folder.dir, main)) {
-        return refusal('not-a-main');
-    }
-    const name = latexName(options, step, folder.label, main);
-    const command = latexCommand(step, main, programOf(join(folder.dir, main)));
-    const kept = await keptLatex(folder.dir, name, options);
-    if (kept !== null) {
-        if (kept.exit !== null) {
-            await respawnTerminal(kept.id, options, command);
-            options.refresh?.();
-        }
-        const again = (await listTerminals(options)).find((one) => one.id === kept.id);
-        return json({ ok: true, terminal: again ?? kept }, { headers: NO_STORE });
-    }
-    const job: TerminalJob = { repo: folder.dir, name, source: 'latex' };
-    const terminal = await startTerminal(
-        { kind: 'shell', cwd: folder.dir, cols: message.cols, rows: message.rows, name },
-        { ...options, command, task: job }
-    );
-    options.refresh?.();
-    return json({ ok: true, terminal }, { headers: NO_STORE });
 }
 
 /** The session a fork or a resume names, or the refusal of a tool or an id that is none. */

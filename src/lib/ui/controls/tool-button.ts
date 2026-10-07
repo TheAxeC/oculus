@@ -10,6 +10,8 @@ export type ToolButtonProps = {
     label: string;
     /** A name in `glyphs:`, drawn in front of the label. */
     glyph?: string;
+    /** Turn the glyph round and round, for an action that is under way. */
+    turning?: boolean;
     /** Draw it as the one in force. */
     active?: boolean;
     /**
@@ -18,6 +20,8 @@ export type ToolButtonProps = {
     expanded?: boolean;
     /** A toggle button's current state. Omitted for ordinary action buttons. */
     pressed?: boolean;
+    /** The button is the one of its set that names the place the reader is at, such as a page. */
+    current?: boolean;
     onclick: (event: MouseEvent) => void;
     /** A second press in quick succession, for a control whose two speeds mean two things. */
     ondblclick?: (event: MouseEvent) => void;

@@ -15,7 +15,31 @@ export const WRONG_SETTINGS: Record<string, unknown> = {
         latexindent_path: 'foo',
         tex_fmt_path: 'foo',
         badness_path: 'foo',
-        auto_build: 'x'
+        auto_build: 'x',
+        auto_build_interval_ms: 0,
+        recipe_default: 'x',
+        out_dir: 5,
+        aux_dir: 5,
+        clean_and_retry: 'yes',
+        auto_clean: 'x',
+        synctex_path: 'foo',
+        reverse_synctex: 'x',
+        texcount_autorun: 'x',
+        context_menu: 'yes',
+        tools: [
+            { name: 'one', command: 'x', args: [] },
+            { name: 'one', command: 'y', args: [] },
+            { command: 'z', args: [] },
+            5,
+            { name: 'two', command: '', args: [] },
+            { name: 'three', command: 'x', args: 'no' }
+        ],
+        recipes: [
+            { name: 'a', tools: ['one'] },
+            { name: 'a', tools: ['one'] },
+            { name: '', tools: ['one'] },
+            { name: 'b', tools: ['nope'] }
+        ]
     },
     git: { autofetch_minutes: -1 },
     files: { confirm_delete: 'no' },

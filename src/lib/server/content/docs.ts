@@ -48,6 +48,7 @@ import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { decodeHTML } from 'entities';
 import type { MarkedExtension, Token, Tokens } from 'marked';
+import { fileBytesUrl } from '../../data/helpers/files/address.ts';
 import { renderDocumentParts } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
@@ -228,11 +229,7 @@ const ABSOLUTE = /^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i;
 
 /** The file route's address for one path under one root, each segment escaped on its own. */
 function routeUrl(root: string, path: string): string {
-    const parts = path
-        .split(/[\\/]/)
-        .filter((one) => one !== '' && one !== '.')
-        .map((one) => encodeURIComponent(one));
-    return `/api/file/${encodeURIComponent(root)}/${parts.join('/')}`;
+    return fileBytesUrl(root, path.replaceAll('\\', '/'));
 }
 
 /**

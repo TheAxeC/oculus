@@ -66,7 +66,7 @@ export function placeFits(place: FloatPlace): boolean {
 }
 
 /** The place a float starts at: the middle of the window. */
-export function centred(): FloatPlace {
+function centred(): FloatPlace {
     return { kind: 'free', x: (1 - START_W) / 2, y: (1 - START_H) / 2, w: START_W, h: START_H };
 }
 

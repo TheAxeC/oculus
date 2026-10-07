@@ -1,9 +1,10 @@
 // Layer 1, data. The `/` path rules the page reads a path by: a path's last name, a folder without
-// its trailing slashes, a folder joined with a path below it, the path of a target below a folder,
-// and the deepest of several folders holding a target. The server reads real paths by the last of
-// these too: the Processes view's project of a process (server/machine/processes/read.ts) and the
-// project Submit plans for (server/machine/hpc/submit.ts), so a change made here for the page's
-// sake changes those two answers as well.
+// its trailing slashes, a folder joined with a path below it, the way from one folder to a target,
+// the path of a target below a folder, and the deepest of several folders holding a target. The
+// server reads real paths by the last of these too: the Processes view's project of a process
+// (server/machine/processes/read.ts) and the project Submit plans for
+// (server/machine/hpc/submit.ts), so a change made here for the page's sake changes those two
+// answers as well.
 //
 // The page holds paths as the server wrote them, always with `/`, so these are string rules over
 // that separator and import nothing from node; `state/` and the views may import them beside
@@ -70,4 +71,18 @@ export function deepestHolding<T>(
         if (best === null || depth > best.depth) best = { item, path, depth };
     }
     return best === null ? null : { item: best.item, path: best.path };
+}
+
+/**
+ * The path that leads from a folder to a target, both against the same base: `main.tex` from the
+ * folder itself, `../main.tex` from a folder below it, `sub/a.tex` from a folder above it.
+ */
+export function relativePath(from: string, target: string): string {
+    const down = from.split('/').filter((part) => part !== '');
+    const goal = target.split('/').filter((part) => part !== '');
+    let shared = 0;
+    while (shared < down.length && shared < goal.length - 1 && down[shared] === goal[shared]) {
+        shared += 1;
+    }
+    return [...down.slice(shared).map(() => '..'), ...goal.slice(shared)].join('/');
 }

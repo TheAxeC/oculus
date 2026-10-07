@@ -165,9 +165,10 @@ export function createPicks(deps: PicksDeps) {
      * The menu of a row: a right-click on a row outside the selection selects it first. A row that
      * is a repository has its list of commands read when its menu opens, not before, and a folder
      * or root whose listing is not held has its listing read then too, which says whether Open
-     * LaTeX is offered. The menu is returned at once, as reactive items that the Run Command
-     * submenu and Open LaTeX join when their answers arrive, whichever lands first, so a folder
-     * nobody opens a menu on is never asked for. A read that fails leaves the menu as it was.
+     * Presentation or New Presentation is offered. The menu is returned at once, as reactive items
+     * that the Run Command submenu and the presentation items join when their answers arrive,
+     * whichever lands first, so a folder nobody opens a menu on is never asked for. A read that
+     * fails leaves the menu as it was.
      */
     function menuOf(row: TreeRow, event: MouseEvent) {
         const here = targetOf(row, event);

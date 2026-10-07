@@ -12,7 +12,8 @@ import {
     type LatexTarget
 } from '../../../src/lib/server/content/latex/endpoint.ts';
 import type { Formatter } from '../../../src/lib/data/prose/latex.ts';
-import type { LatexFormatting } from '../../../src/lib/data/sources/config/settings.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { latexBuild, type LatexFormatting } from '../../../src/lib/data/sources/config/settings.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 const HOST = '127.0.0.1:8791';
@@ -44,7 +45,8 @@ const TARGET: LatexTarget = {
         return id === 'gamma' ? { folder: OUTLINED } : null;
     },
     roots: () => [{ key: 'docs', dir: join(HUB, 'docs') }],
-    formatting: formatting('tex-fmt')
+    formatting: formatting('tex-fmt'),
+    building: () => latexBuild(loadConfig(engineDir()).config)
 };
 
 /** The target with a bin folder as the whole of the PATH, and a time limit when given. */

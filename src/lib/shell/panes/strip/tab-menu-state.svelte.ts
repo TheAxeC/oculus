@@ -145,6 +145,8 @@ export function createTabMenu(deps: TabMenuDeps) {
             openBrowser: () => {
                 if (file !== null) openInBrowserTab(file);
             },
+            openPdfTab: () => layout.keepPreview(tab),
+            openPdfWindow: () => deps.client.windows.openInWindow(tab, deps.windowBounds?.()),
             openProgram: () => {
                 if (file === null) return;
                 void writes.openFile(file.root, file.path).then((answer) => {

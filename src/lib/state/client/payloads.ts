@@ -117,6 +117,14 @@ const appsShape = unchangedAs<Payloads['apps']>(
     z.object({ rows: listShape, findings: listShape, folders: z.array(z.string()) })
 );
 
+const jumpShape: z.ZodType<Payloads['jump']> = z.object({
+    owner: z.string().min(1),
+    root: z.string().min(1),
+    file: z.string().min(1),
+    line: z.number().int().min(1),
+    column: z.number().int().min(0).optional()
+});
+
 /**
  * The schema of each channel the page types, each held to the payload type the data model declares
  * for it. A channel not named here has a reader of its own.
@@ -135,5 +143,6 @@ export const payloadShapes: { [K in keyof Payloads]: z.ZodType<Payloads[K]> } = 
     usage: usageShape,
     audit: auditShape,
     files: filesShape,
-    apps: appsShape
+    apps: appsShape,
+    jump: jumpShape
 };

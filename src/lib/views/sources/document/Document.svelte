@@ -43,7 +43,7 @@
     // The tab draws no row of controls and hands none to the pane's strip: its path is the
     // breadcrumb the pane draws under the strip, the star and, for a file whose extension
     // `open.program_ext` maps, Open in Program stand at that bar's right end
-    // (shared/links/FileBarActions.svelte), and the bookmark, Open in Browser Tab and Open in
+    // (shared/links/FileBarActions.svelte), and the bookmark, Open in Browser and Open in
     // Program items are also in the tab's right-click menu (shell/panes/strip/tab-menu.ts).
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
@@ -58,7 +58,7 @@
     import { servedFile } from '$lib/views/shared/links/file-bar';
     import { t } from '$lib/state/shared/words/text';
     import FileBarActions from '../../shared/links/FileBarActions.svelte';
-    import { fileUrl } from '../../shared/links/file-url';
+    import { fileBytesUrl } from '$lib/state/sources/fs.svelte';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
@@ -80,7 +80,7 @@
 
     /** The title the pane draws: the bookmark's own words, or the view's name when it has none. */
     const title = $derived(label === '' ? t('views.document') : label);
-    const src = $derived(root === '' || path === '' ? '' : fileUrl(root, path));
+    const src = $derived(root === '' || path === '' ? '' : fileBytesUrl(root, path));
 
     /**
      * A right-click inside the frame: read there, kept from the browser's own menu, and raised

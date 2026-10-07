@@ -1,17 +1,16 @@
-In flight (1 of 6 slots):
-- D45 (LaTeX as VS Code's LaTeX Workshop): review over round 2 back; landing next, its findings fixed at landing.
+In flight (0 of 6 slots): none.
 
 Queued, in order (20 steps):
-- X3e (Files lists reordered by drag): after D45.
+- X3e (Files lists reordered by drag): ready.
 - D28 (saving a file as VS Code does): after X3e.
 - M6 (the collection forms removed): after X3e and D28.
-- D11 (the debug client for rite): after D45.
-- D15 (PDF reading): after D45.
+- D11 (the debug client for rite): ready.
+- D15 (PDF reading): ready.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
 - M8 (the hub's YAML checked in the editor): ready.
-- D43 (LaTeX navigation through texlab): after D45.
-- D33 (the Problems view): after D45.
+- D43 (LaTeX navigation through texlab): ready.
+- D33 (the Problems view): ready.
 - D39 (hub keys as links): after M8.
 - D36 (linters on save): after D33.
 - D40 (the writing rules as editor marks): after D36.
@@ -26,7 +25,8 @@ Queued, in order (20 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D23b (rename, workspace symbols, hierarchies, the TypeScript and Svelte servers), 2026-10-07.
+- D45 (LaTeX as VS Code's LaTeX Workshop), 2026-10-07.
+- D23b (rename, workspace symbols, hierarchies, the TypeScript and Svelte servers), 2026-10-07, 639820b9.
 - PR4 (Present's presenter screen), 2026-10-07, eede4598.
 - D23c (library definitions read-only, the symbol selected on open), 2026-10-07, c0a4af9c.
 - PR3 (Present decks edited and generated), 2026-10-07, a2901490.

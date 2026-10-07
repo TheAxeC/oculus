@@ -19,6 +19,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Bell from './Bell.svelte';
+    import LatexItem from './LatexItem.svelte';
     import RepoItems from './RepoItems.svelte';
     import SourceItems from './SourceItems.svelte';
     import { STATUS_ITEMS, isStatusItem, itemName, type StatusItem } from './status-items';
@@ -145,6 +146,9 @@
                         onclick={() => openView('status')}
                     />
                 </span>
+            {/if}
+            {#if shown('latex')}
+                <LatexItem />
             {/if}
         </div>
         <div class="group" data-status-group="right">

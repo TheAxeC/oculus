@@ -46,6 +46,13 @@ export type Entry = {
     kind: 'main' | 'float';
     /** The float this window draws, null for a main window. */
     float: string | null;
+    /** The id of the main window's page that opened a float window, null for any other window. */
+    owner: string | null;
+    /**
+     * The id of a main window's page, which it gave when it asked for a float window and which a
+     * float's `owner` names; null for a float window and for a main window that opened none.
+     */
+    page: string | null;
     /** The origin of the server the page was loaded from; it follows a port move. */
     origin: string;
     focusedAt: number;
@@ -71,7 +78,7 @@ export type WindowsDeps = {
 export type Windows = {
     openMain: (origin: string) => Entry;
     /** The window of a float; one already open is left as it is. */
-    openFloat: (id: string, bounds: Rect | null, origin: string) => Entry;
+    openFloat: (id: string, bounds: Rect | null, origin: string, owner: string | null) => Entry;
     entries: () => Entry[];
     /**
      * The window a web contents belongs to, and whether it is the window's page or its find bar.
@@ -81,6 +88,8 @@ export type Windows = {
     moveTo: (origin: string) => void;
     /** The main window focused last, or null with none open. */
     lastMain: () => Entry | null;
+    /** The main window whose page has this id, or null when none is open. */
+    mainOf: (page: string) => Entry | null;
     /** The window the reader is in, or the main window focused last. */
     focused: () => Entry | null;
     /**
@@ -127,7 +136,7 @@ export function createWindows(deps: WindowsDeps): Windows {
     function route(from: Entry, url: string): void {
         const where = linkDecision(url, from.origin);
         if (where.kind === 'main') openMain(from.origin);
-        else if (where.kind === 'float') openFloat(where.id, null, from.origin);
+        else if (where.kind === 'float') openFloat(where.id, null, from.origin, null);
         else if (where.kind === 'audience') audience.open(from, url, where);
         else if (where.kind === 'browser') void shell.openExternal(url);
         else refuse(url);
@@ -186,7 +195,9 @@ export function createWindows(deps: WindowsDeps): Windows {
 
     /** The search a window's own page carries, which a navigation in place keeps. */
     function searchOf(entry: Entry): string {
-        return entry.float === null ? '' : `?float=${encodeURIComponent(entry.float)}`;
+        if (entry.float === null) return '';
+        const owner = entry.owner === null ? '' : `&owner=${encodeURIComponent(entry.owner)}`;
+        return `?float=${encodeURIComponent(entry.float)}${owner}`;
     }
 
     /** Whether a navigation is the window's own page loading again, which is let through. */
@@ -326,6 +337,7 @@ export function createWindows(deps: WindowsDeps): Windows {
     function make(
         kind: Entry['kind'],
         float: string | null,
+        owner: string | null,
         origin: string,
         rect: Rect,
         content: boolean
@@ -344,6 +356,8 @@ export function createWindows(deps: WindowsDeps): Windows {
             win,
             kind,
             float,
+            owner,
+            page: null,
             origin,
             focusedAt: ++clock,
             bar: createFindBar({ window: win, origin: () => entry.origin, preload: deps.preload }),
@@ -389,7 +403,7 @@ export function createWindows(deps: WindowsDeps): Windows {
                       areas,
                       primary
                   );
-        const entry = make('main', null, origin, rect, false);
+        const entry = make('main', null, null, origin, rect, false);
         keepState(entry);
         const contents = entry.win.webContents;
         if (saved?.maximised === true) entry.win.maximize();
@@ -401,7 +415,12 @@ export function createWindows(deps: WindowsDeps): Windows {
         return entry;
     }
 
-    function openFloat(id: string, bounds: Rect | null, origin: string): Entry {
+    function openFloat(
+        id: string,
+        bounds: Rect | null,
+        origin: string,
+        owner: string | null
+    ): Entry {
         const open = list.find((one) => one.float === id);
         if (open !== undefined) return open;
         const { areas, primary } = displays();
@@ -415,11 +434,15 @@ export function createWindows(deps: WindowsDeps): Windows {
             areas,
             primary
         );
-        const entry = make('float', id, origin, rect, true);
+        const entry = make('float', id, owner, origin, rect, true);
         entry.win.setContentBounds({ x: rect.x, y: rect.y, width: rect.w, height: rect.h });
         tellBounds(entry);
-        void entry.win.webContents.loadURL(`${origin}/?float=${encodeURIComponent(id)}`);
+        void entry.win.webContents.loadURL(`${origin}/${searchOf(entry)}`);
         return entry;
+    }
+
+    function mainOf(page: string): Entry | null {
+        return list.find((one) => one.kind === 'main' && one.page === page) ?? null;
     }
 
     function lastMain(): Entry | null {
@@ -453,6 +476,7 @@ export function createWindows(deps: WindowsDeps): Windows {
         moveTo,
         lastMain,
         focused,
+        mainOf,
         closeFocused: () => {
             if (!audience.closeFocused()) focused()?.win.close();
         },

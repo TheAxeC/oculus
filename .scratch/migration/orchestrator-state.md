@@ -24,21 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:   # steps in flight, up to six (Z632)
-- step: D45
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a98fa2bf740de606f (builder, launched 2026-10-07)
-  worktree: .agents/worktrees/D45
-  base: f8e54615
-  launched: 2026-10-07
-  report: agents/reviews/D45-report.md
-  brief_check: agents/reviews/D45-brief-check.md (a32b5474d92306805, claude-opus-5-5, 324,219 tokens, 91 tool uses, 17.2 min; the brief rewritten since from agents/reviews/D45-premise-recheck-2.md, a0dc73f3ef96a19bb, claude-opus-5-5, 263,515 tokens, 119 tool uses, 12.1 min)
-  builder_usage: 234,542 tokens, 1213 tool uses, 211.0 min (claude-sonnet-5-5); round 1: 276,096 tokens, 379 tool uses, 146.4 min
-  reviewer_report: agents/reviews/D45-refuter.md (aafbba4d13fda558e, claude-opus-5-5, 285,900 tokens, 188 tool uses, 25.9 min); over round 1: afa4681f60c7525d3, claude-opus-5-5, 121,820 tokens, 153 tool uses, 38.6 min
-  landing: not-started
-  round: 2 (round 1 sent 2026-10-07: agents/briefs/D45-round1.md, 22 items; round 2 sent 2026-10-07 under the round cap's exception, Z696: agents/briefs/D45-round2.md, 12 items)
+dispatch: []   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -211,7 +197,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-07 13:15. D23b landed (rename, code actions, workspace symbols, call and type hierarchy, and the TypeScript and Svelte servers; booking in plan.md; `agents/reviews/D23b-landing.md`) with seven fixes at landing, the review over round 2's six findings and the lifetime row that read the Svelte spawn too early under load. No open item. In flight: D45 (its review over round 2 back). Next: D45's landing with its findings fixed at landing; orchestration then stops for Axel, who has not given leave to go on.
+- 2026-10-07 13:40. D45 landed (LaTeX as VS Code's LaTeX Workshop; booking in plan.md; `agents/reviews/D45-landing.md`) with the review over round 2's nine findings fixed at landing; automode Z698 kept round 2's three choices. No open item. Nothing in flight. Ready: X3e, D11, D15, M8, D43, D33. Orchestration stops here for Axel, who has not given leave to go on; M8 and D11 get fresh premise checks at /spec.
 - 2026-10-07 07:30. PR4 landed (Present's presenter screen; booking in plan.md; `agents/reviews/PR4-landing.md`) with six fixes at landing, five from the review over round 1 (Z689 among them) and one from its look on TEST. In flight: D45 and D23b (builders running). Every queued step waits on D45, D23b or Axel's ruling Z681. Next: D23b's and D45's reports, their reviews and landings.
 - 2026-10-07 04:20. D23c landed (library definitions open read-only, the symbol selected on open; booking in plan.md; `agents/reviews/D23c-landing.md`) with Z679, the read.ts comment, the report's timing and G2 and G3 fixed at landing, and one fix from its look on a scratch oculus: a tab over a served root's file passed an empty library address and so had no language features. In flight: none. Next: prepare PR4, D45, X3e, M8, D43, D23b and D33 into the free slots.
 - 2026-10-07 03:30. PR3 landed (the Present view edits and generates decks; booking in plan.md; `agents/reviews/PR3-landing.md`) with the merge conflicts, R1 to R6, Z675 and four fixes from its look on a scratch oculus fixed at landing. D23c reviewed over round 1, all 14 items closed; Z679 in automode. In flight: D23c (lands next). Next: land D23c, then prepare PR4, D45, X3e, M8, D43, D23b and D33 into the free slots.

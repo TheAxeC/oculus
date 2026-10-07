@@ -11,9 +11,16 @@
 // sized around the drawn image; a picture that does not decode gives no preview. A PDF is drawn as
 // its name. The widget is removed when the pointer leaves the span or the editor, when the text
 // changes and when the editor scrolls, and an answer that arrives after that is dropped.
+//
+// A `\ref`-like command's label shows its number and the block of text it sits in (the formula,
+// typeset, when the block is a math environment) with a link that shows the place in the PDF, and a
+// `\usepackage` name shows a link to the package's documentation. The pointer on the preview keeps
+// it so the links can be pressed.
 
 import type * as Monaco from 'monaco-editor';
+import { t } from '$lib/state/shared/words/text';
 import { mathSpanAt, pictureAt, pictureFile, type MathSpan } from './latex';
+import { packageAt, refAt } from './references';
 import type { EditorExtension, EditorProblem } from '../../types';
 
 /** How long the pointer rests on a span before its preview is drawn, in milliseconds. */
@@ -32,7 +39,16 @@ export type LatexEditorDeps = {
     format: (text: string) => Promise<{ text: string | null; error: string }>;
     /** Say a refusal where the reader sees it. */
     say: (words: string) => void;
+    /** The number and the block of text of a label the root defines, or null when it has none. */
+    label: (name: string) => Promise<LabelFacts | null>;
+    /** Show where a label was typeset in the PDF. */
+    viewOnPdf: (name: string) => void;
+    /** Open the documentation of a package. */
+    texdoc: (name: string) => void;
 };
+
+/** What the page knows of a label: the number its build gave it and the block it sits in. */
+type LabelFacts = { number: string; text: string; math: boolean };
 
 /** The owner Monaco files the build's markers under. */
 const OWNER = 'oculus-latex';
@@ -95,6 +111,58 @@ async function typeset(node: HTMLElement, span: MathSpan): Promise<void> {
     }
 }
 
+/** A button in a preview that runs one of the page's calls. */
+function action(words: string, run: () => void): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = words;
+    button.style.cssText =
+        'margin-top:6px;margin-right:8px;padding:0;border:0;background:none;cursor:pointer;' +
+        'color:var(--link, var(--accent));text-decoration:underline;font:inherit';
+    button.addEventListener('click', run);
+    return button;
+}
+
+/** A paragraph of a preview. */
+function line(words: string, mono = false): HTMLDivElement {
+    const node = document.createElement('div');
+    node.textContent = words;
+    if (mono) node.style.cssText = 'white-space:pre;font-family:var(--font-mono)';
+    return node;
+}
+
+/** The preview of a label a reference names: its number, its block and the jump to the PDF. */
+async function referencePreview(
+    name: string,
+    start: number,
+    end: number,
+    deps: LatexEditorDeps
+): Promise<Preview | null> {
+    const facts = await deps.label(name);
+    if (facts === null) return null;
+    const node = box();
+    if (facts.number !== '') node.append(line(t('latex.hover_ref_number', facts.number)));
+    if (facts.math) {
+        const formula = document.createElement('div');
+        const span = mathSpanAt(facts.text, facts.text.indexOf('\\begin'));
+        if (span !== null) await typeset(formula, span);
+        else formula.textContent = facts.text;
+        node.append(formula);
+    } else {
+        node.append(line(facts.text, true));
+    }
+    node.append(action(t('latex.hover_ref_pdf'), () => deps.viewOnPdf(name)));
+    return { node, start, end };
+}
+
+/** The preview of a package: its name and the link to its documentation. */
+function packagePreview(name: string, start: number, end: number, deps: LatexEditorDeps): Preview {
+    const node = box();
+    node.append(line(t('latex.hover_package', name)));
+    node.append(action(t('latex.hover_package_docs'), () => deps.texdoc(name)));
+    return { node, start, end };
+}
+
 /** A preview: the node to draw and the offsets of the text it is for. */
 type Preview = { node: HTMLElement; start: number; end: number };
 
@@ -110,6 +178,10 @@ async function previewOf(
         await typeset(node, math);
         return { node, start: math.start, end: math.end };
     }
+    const ref = refAt(text, offset);
+    if (ref !== null) return referencePreview(ref.name, ref.start, ref.end, deps);
+    const used = packageAt(text, offset);
+    if (used !== null) return packagePreview(used.name, used.start, used.end, deps);
     const call = pictureAt(text, offset);
     if (call === null) return null;
     const file = await pictureFile(call.path, await deps.folder(), deps.exists);
@@ -177,6 +249,8 @@ function previewing(
 
     function moved(event: Monaco.editor.IEditorMouseEvent): void {
         const position = event.target.position;
+        // A pointer on the preview itself keeps it, so its links can be pressed.
+        if (event.target.type === monaco.editor.MouseTargetType.CONTENT_WIDGET) return;
         const onText = event.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT;
         if (position === null || !onText) {
             hide();

@@ -1,6 +1,7 @@
 // Layer 2, client state. The asks that open a named view for another part of the app, not for the
 // reader: one path shown in the Files view of the page the reader is in, and one deck shown in a
-// Present tab.
+// Present tab. The TeX view is one more such ask: it opens as a tab of the pane that holds the
+// page's Files tab, so the two sit together as LaTeX Workshop's TeX view sits in the activity bar.
 //
 // A file browser ask is written into the Files instance's own state rather than acted on here: the
 // folders on the way are read by the view, which is what draws them, and an ask written into the
@@ -8,7 +9,7 @@
 // Present tab (state/life/present.ts), so the opener only names the tab.
 
 import { HUB_ROOT, nameOf, normalisePath, revealAsked, rootedState } from '../../../sources/fs.ts';
-import { findView } from '../instance.ts';
+import { findView, panes } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
 import type { ViewId } from '../model.ts';
@@ -21,12 +22,15 @@ export type ShowInFiles = {
     /** The same ask, and the Files tab opens its Timeline section on the path too. */
     showTimeline: (path: string, root?: string) => string;
     showFolderInFiles: (path: string, root?: string) => string;
+    /** Show the TeX view: its tab if one is open, else a new tab in the pane holding Files. */
+    showTexView: () => string;
 };
 
 export function createShowInFiles(
     access: LayoutAccess,
     attention: Attention,
-    openView: (view: ViewId, state?: unknown, page?: string) => string
+    openView: (view: ViewId, state?: unknown, page?: string) => string,
+    openInPane: (view: ViewId, state: unknown, page: string, path: number[]) => string
 ): ShowInFiles {
     /**
      * Show one path in the file browser. The Files tab of the page the reader is in is activated,
@@ -76,10 +80,28 @@ export function createShowInFiles(
         return id;
     }
 
+    /**
+     * The TeX view of the page the reader is in: the tab when the page holds one, else a new tab in
+     * the pane that holds the Files tab, else a new tab where the page opens views.
+     */
+    function showTexView(): string {
+        const page = attention.touched().id;
+        const tree = access.layout(page);
+        if (findView(tree, 'latex') === null) {
+            const home = panes(tree).find(({ pane }) =>
+                pane.tabs.some((tab) => tab.view === 'files')
+            );
+            const id = home === undefined ? '' : openInPane('latex', {}, page, home.path);
+            if (id !== '') return id;
+        }
+        return openView('latex', {}, page);
+    }
+
     return {
         showInFiles: (path, root, open = false) => show(path, root, open, false),
         showTimeline: (path, root) => show(path, root, false, true),
-        showFolderInFiles
+        showFolderInFiles,
+        showTexView
     };
 }
 

@@ -68,7 +68,6 @@ export {
     START_H,
     START_W,
     adoptFloats,
-    centred,
     floatsFrom,
     placeFits,
     writeHost

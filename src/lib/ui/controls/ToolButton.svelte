@@ -13,9 +13,11 @@
     let {
         label,
         glyph,
+        turning = false,
         active = false,
         expanded,
         pressed,
+        current = false,
         onclick,
         ondblclick,
         title,
@@ -77,6 +79,7 @@
         aria-checked={checked}
         aria-expanded={expanded}
         aria-pressed={pressed}
+        aria-current={current ? 'page' : undefined}
         aria-label={named ? label : undefined}
         data-view={dataView}
         data-doc={dataDoc}
@@ -90,7 +93,7 @@
         {...attributes}
     >
         {#if glyph !== undefined}
-            <Glyph name={glyph} />
+            <Glyph name={glyph} {turning} />
         {/if}
         {#if cell}
             {#if children !== undefined}

@@ -5,6 +5,7 @@
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
 import type { ClientState } from '$lib/state/client/context';
 import { findView, type Layout } from '$lib/state/workbench/layout';
+import { fileBytesUrl } from '$lib/state/sources/fs-transport';
 import { t } from '$lib/state/shared/words/text';
 import { openPage } from '../explorer/opening';
 import type { CardAction } from './CardActions.svelte';
@@ -65,11 +66,7 @@ export function subOf(path: string): string {
 
 /** The encoded api/file address for a project-relative file. */
 export function urlOf(folder: string, path: string): string {
-    const parts = `${folder}/${path}`
-        .split('/')
-        .filter((one) => one !== '')
-        .map((one) => encodeURIComponent(one));
-    return `/api/file/hub/${parts.join('/')}`;
+    return fileBytesUrl('hub', `${folder}/${path}`);
 }
 
 /**

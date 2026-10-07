@@ -278,7 +278,7 @@ Cases of the brief's "Cases":
 
 Reviewer usage: agent-aafbba4d13fda558e, claude-opus-5-5, tokens not measured (about 640k of the context budget used across the run, including before compaction), about 110 tool uses (not counted exactly), minutes not measured.
 
-Agent: x.
+Usage: aafbba4d13fda558e, claude-opus-5-5, 285,900 tokens, 188 tool uses, 25.9 min.
 
 ## Repair round 1, refuted
 
@@ -538,4 +538,231 @@ What holds, checked this round:
 
 Reviewer usage: afa4681f60c7525d3, claude-opus-5-5, about 480k tokens by the session's counter (15,000,000 to 14,515,950), tool uses not counted across the context compaction (about 30 in the second part), minutes not verified.
 
-Agent: x.
+Usage: afa4681f60c7525d3, claude-opus-5-5, 121,820 tokens, 153 tool uses, 38.6 min.
+
+## Repair round 2, refuted
+
+# D45 review over repair round 2 (worktree .agents/worktrees/D45, base f8e54615)
+
+Summary: round 2's twelve items are closed, and I reproduced the builder's evidence for items 1, 2, 4, 5, 6, 8, 9, 10, 11 and 12 with my own runs. One defect is left inside the brief. The server treats one main file as two different builds depending on how the request names its folder: by project id (the project tab's LaTeX panel) or by root and path (the source tab, the TeX view, a PDF). Because of that, a project-panel Clean or Build sent while a build of the same main started from the source tab is running starts a second terminal in the same folder (Behaviour 1). Case 5's 200 ms bound depends on a premise of the brief that does not hold: on this machine, one plain read of a freshly written file, with no oculus code involved, takes more than 200 ms.
+
+## Verification (rerun by me)
+
+All commands ran from `.agents/worktrees/D45/tools/oculus` with Node v24.21.0 first on PATH.
+
+```
+npm run diagrams
+  exit 0; md5 of `git status --short` 8baea20ab8397a11aa4f4981ed895daf before and after (and again at the end)
+sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md
+  $ npm run test:quick
+  test:quick: 194 changed file(s), from git since HEAD          (HEAD is f8e54615)
+  test:quick: 106 test file(s), 10 essential
+  ok      ASCII gate (0.5 s)
+  ok      svelte-kit sync (2.0 s)
+  ok      prettier (2.3 s): All matched files use Prettier code style!
+  ok      eslint (7.5 s)
+  ok      svelte-check (6.2 s): 1791367157582 COMPLETED 415 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok      vitest (31.6 s): Duration  27.65s (...)
+  test:quick: 32.2 s (limit 45.0 s); every command passed
+  checks: 1 commands passed                                     (exit 0; load average 3.83 to 5.67)
+npm run test:checks
+  Test Files  1 failed | 16 passed (17); Tests  2 failed | 241 passed (243)
+  (both failures are integrity.test.ts "the real hub": the worktree has no deck/, so neither belongs to the step)
+npx vitest run terminal-actions, latex, settings, bar-actions, layout-saved, tab-actions.client (G35, G1, G13, G37, G29)
+  Test Files  6 passed (6); Tests  88 passed (88)
+npx vitest run tests/server/desktop --tagsFilter '!slow'      (G47)
+  Test Files  2 passed | 1 skipped (3); Tests  16 passed | 5 skipped (21)
+npx vitest run tests/routes/sessions/terminal-actions.test.ts --reporter=verbose
+  19 passed (19); the latex describe is one it.each over LATEX_ROWS plus the two named its
+npm run check   -> COMPLETED 3302 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npm run format:check -> All matched files use Prettier code style!
+npm run lint    -> no finding
+sh utils/folder-check.sh -> exit 0; sh utils/size-check.sh -> exit 0
+sh utils/unused-exports.sh against the base listing, by file and name: added [], 11 removed (OUTLINE_MAX_BYTES, latexCommand, seven old latex.svelte.ts types, sourceFileUrl, ROW_LATEX)
+ASCII gate of spec.md over src tests bin config (local.yml excluded): 0 lines; LC_ALL=C grep '[^ -~]' DESIGN.md HELP.md docs/*.md: 0 lines
+grep -rIn --exclude=local.yml -E "fileUrl\b|file-url|sourceFileUrl|fileAddress|ROW_LATEX|menu_latex|autoBuildShape|Open in Browser Tab" src tests config docs HELP.md DESIGN.md | wc -l -> 0
+History-word scan over the added lines of the round-2 files: hits are present-tense ("checked before the action is read", "still open"); none is history.
+
+# the current G35 and G47 files run on a scratch copy of the base (D45-base plus the worktree's vite.config.ts, tsconfig.json and .svelte-kit; the Turns import replaced by a pass-through class so the file loads)
+terminal-actions: Tests 8 failed | 11 passed (19); stop row "expected 400 to be 404"; concurrent row "expected 3 to be 1"
+window-guard: "expected { kind: 'browser' } to deeply equal { kind: 'float', id: 'f1' }"; Tests 1 failed | 4 passed (5)
+
+# Electron probes: the builder's probe2.cjs with the port changed; my scratch server on 8794, HOME, hub, tmux and userData under $TMPDIR/d45rv2 (resolved by pwd -P); windows show:false; server stopped by pid
+fail:    float pages at the start 3; after the external write of \undefinedcmd: [3]; server [["main.tex","failed",1]]; main page notice true; pdf on disk 4 pages; float 3; fixed document [3,4]; server [["main.tex","ok",0]]
+three:   each of three pages sent one build request; latexmkPids ["1744"], peakAtOnce 1; tmux sessions the same before and after (the build terminal kept from the earlier mode answered)
+owner:   owner open {"A":1,"B":1,"notice":false}; locks after A closed ["oculus-float:fl1","oculus-page:arqqa4"]; owner closed {"B":1,"notice":true}
+reload:  place at 2, 6, 10, 14, 20, 26 s after the reload: all "window"; float tab {"destroyed":false,"closeCalls":0,"pages":3}; closed for good: [5,"window"], [12,"free"]
+status2: item while main.tex is active true; active tab notes.md; before a build false; 140 samples: drawn 58, turning 58, lastDrawn false
+(the first fail run timed out on a cold vite compile, float pages null; the second run above is the one that counts)
+
+# my probe, the project form against the folder form (vitest probe file in my scratchpad over the worktree's handleTerminal and taskTmux)
+folder-form build 200 "latex build projects/active/alpha/manuscript/main.tex"
+project-form clean while the folder-form build runs 200 (a new terminal "latex clean alpha/main.tex")
+project-form build while the folder-form build runs 200 "latex build alpha/main.tex"
+new-session starts 3
+
+# case 5 (r21.ts of the previous review), load average 2.14 to 4.22
+rootOf first touch, max per run (ms): 8.7, 251.0, 217.1, 258.0, 8.0, 112.5
+control, a plain statSync+readFileSync of each file first, max single read (ms): 251.7, 249.5, 139.8, 0.2, 0.3, 228.4; rootOf after that read: 6.8 to 18.0
+bare node, nothing of oculus: 60 files written, then read by a second process: max 210.5, 200.6, 218.5 ms (1 to 2 files of 60 over 20 ms); a third process reading the same files: max 0.0 to 0.2 ms
+look files on the real hub, read-only, three runs: every file at or under 7.5 ms
+cases 1 to 4 (final.ts): every answer as the case expects
+```
+
+Standing-rule events:
+- I ran two git commands outside the two allowed forms, both read-only: `git rev-parse HEAD` once (it printed f8e54615) and `git -C <worktree> status --short` once.
+- My first scratch server ran with `node_modules` symlinked to the worktree's. During that run (12:09 to 12:10) vite rewrote its dependency cache under the worktree's `node_modules/.vite`. That folder is ignored by git: `git status --short` hashes the same before and after. I then cloned `node_modules` into the scratch tree for the later runs.
+- I started no agent and edited no file outside my scratchpad and `$TMPDIR`.
+- Cleanup: `$TMPDIR/d45rv2` and the scratch base copy are removed; `lsof -iTCP:8794` prints nothing; the scratch tmux server is not running; `ps` finds no `latexmk` or `pdflatex`.
+
+## Verdicts, whole diff since f8e54615
+
+"Carried" means the previous review's verdict stands and I did not rerun it.
+
+Items:
+- 1: holds. Cases 1 to 4 rerun.
+- 2: holds. G35 passes.
+- 3: holds (carried; the round-1 out_dir probe).
+- 4: violated across the two request forms (Behaviour 1). With one form it holds: G35 passes, and the stop row fails on the base.
+- 5: holds (carried).
+- 6: holds. The three and status2 probes rerun.
+- 7: holds (carried).
+- 8: holds. `/api/latex` now carries `build`.
+- 9: holds (carried).
+- 10: holds. The thumbnail colour is `--pdf-paper` (`tokens.css:101`, `PdfControl.svelte:113`).
+- 11: holds on every path I ran (the fail probe). Behaviour 1 names one path I did not run: a stopped build seen through the project form.
+- 12, 13: hold (carried).
+- 14: holds:
+  - the owner page alone acts, rerun;
+  - a closed owner gives the notice, rerun;
+  - the app raises the owner's window, by reading `bridge.ts:143-154` and `windows.ts:425`.
+- 15: holds (the reload probe rerun).
+- 16, 17, 18: hold (carried).
+- 19: holds as round 2 item 6 words it, rerun with status2. Behaviour 2 covers a build when the item knows no root.
+- 20: holds. "The LaTeX build of main.tex failed." was seen in the fail probe.
+- 21 to 25: hold (carried; 22 as ruled by Z690).
+- 26: holds. `bib.ts:34` reads through `readBounded(path, BIB_MAX_BYTES)`.
+- 27, 28: hold (carried).
+- 29, 30: hold. The grep prints 0 lines.
+- 31: holds (carried).
+- 32: holds, except one sentence of `DESIGN.md:533` (Spec 2).
+
+Cases:
+- 1 to 4: met, rerun.
+- 5: met as far as `rootOf` is concerned. The 200 ms bound applied to freshly written files rests on a premise that does not hold (see item 7 below).
+- 6: met (G35).
+- 7, 8: met (carried).
+- 9: partial (carried). The spinner, the x and the 2 s end were not run.
+- 10: met (carried).
+- 11: met. The three and fail probes each started one `latexmk` per write.
+- 12: met. A failed build keeps the old document in the float; a successful build reloads it (rerun). Page, zoom and scroll kept: carried from round 1. Clean All with `-C`: not run.
+- 13 to 16: met (carried; 14 and 15 rerun in round 1).
+- 17, 18: not verifiable. Each needs a page on a workspace folder and a 21 MB file.
+- 19: partial. A clean is refused within one form (G35), but a project-form clean while a folder-form build runs is accepted (Behaviour 1).
+- 20: partial. Three pages of one form start one build (rerun), but a project-form build while a folder-form build runs starts a second build terminal (Behaviour 1).
+- 21 to 24: met (carried; 24 by G13, rerun).
+- 25: met. The grep prints 0 lines.
+- 26: met. The browser paths ran (fail, owner, reload). The desktop window was checked by reading, which the case allows.
+- 27, 28: met (carried).
+
+Item 7 of round 2, case 5. My verdict is that the bound depends on a premise of the brief that does not hold:
+- In a separate process with nothing of oculus, the first read of a freshly written file takes 200.6 to 218.5 ms for 1 or 2 files in 60, at a load average of about 2, and 0.2 ms on the next read.
+- The control read inside the r21 probe reaches 251.7 ms on a single file.
+- On files that already exist (the eight look files on the hub, read-only), `rootOf` takes at most 7.5 ms.
+- The builder's attribution to the first open of a fresh file is reproduced.
+
+What is left:
+- `rootOf` opens up to 7 files in the cases where a root comment points nowhere useful (outside the root, missing or not a `.tex`), and each fresh file is one more chance of a stall. Every open there is required by a rule.
+- The look runs on `cp -R` copies, so the bound will be exceeded there whenever the stall hits.
+- The bound should be restated for files that already exist. That is the orchestrator's call; there is no code fix for it.
+
+## 1. Spec
+
+1. `src/desktop/windows/bridge.ts:143-154`: `const main = entry.kind === 'main' ? entry : (owner ?? windows.lastMain());`
+   - What is wrong: FOCUS_MAIN is also the Switch to Main Window button of a float window (`PaneView.svelte:261`). In the app, that button now raises the window of the page that opened the float, where before this round it raised the main window focused last. That reaches beyond round item 3, and the report reads as if Switch to Main keeps the old target.
+   - Failure scenario: two app windows. The float was opened from window 1, and window 2 was focused last. Switch to Main brings up window 1. This may well be the better behaviour, but it was not reported.
+   - Verdict: none on an item.
+   - Fix: small. One line in the report's list of visible changes, or a ruling.
+2. `DESIGN.md:533`: "(`build` is `running`, `ok`, `failed` or `none`, read from the kept build terminal, the same for every page), so a failed or stopped build leaves the old document shown in every page".
+   - What is wrong: the answer depends on the form the folder was read by (Behaviour 1). The builder's own `$TMPDIR/d45r2/out2-api.txt` reads "folder form ... main.tex ok" against "project form ... main.tex none".
+   - Verdict: item 32 partial.
+   - Fix: small once Behaviour 1 is fixed.
+
+## 2. Proof
+
+1. The two test rows round 2 added have no failing line on the unchanged tree in the report, which `spec.md` requires:
+   - the G35 row 'answers concurrent requests for one build with the one terminal it started' (the report says it was taken out of the base run);
+   - the G47 row `?float=f1&owner=p1`.
+
+   My runs on the base copy: "expected 3 to be 1" and "expected { kind: 'browser' } to deeply equal { kind: 'float', id: 'f1' }". Both rows read correctly.
+   - Verdict: none.
+   - Fix: small. Quote these two lines at landing.
+2. The builder's own probe mode `api` (`$TMPDIR/d45r2/out2-api.txt`) printed `project form ... ["main.tex","none",0]` beside `folder form ... ["main.tex","ok",0]`.
+   - What is wrong: the report does not state this, although it bears on round item 1 ("the server's build state (the one every page reads)").
+   - Failure scenario: the orchestrator lands item 1 believing every page reads one state.
+   - Verdict: names Behaviour 1.
+
+## 3. Standards
+
+1. `src/lib/server/machine/pty/channel.ts:332` `export class Turns`. The report says it lives there "because `src/lib/server/machine/pty` holds ten items and `folder-check.sh` refuses an eleventh file".
+   - What is wrong: spec.md says a folder that would pass ten items is split into folders named for what they hold. Request serialisation went into the module of the `pty:<id>` socket channels (now 787 lines) to satisfy the check.
+   - Failure scenario: the next reader of `channel.ts` finds a route-request helper among the socket channel's code.
+   - Fix: small to medium. Move `latex.ts` and a new `turns.ts` into a subfolder of `pty/` and update about five imports.
+2. `src/lib/state/sessions/latex/latex-state.ts:253` `build: z.enum(['running', 'ok', 'failed', 'none']).catch('none')` repeats the union `BuildOutcome` of `src/lib/data/model/model-processes.ts:265`.
+   - What is wrong: one vocabulary is written in two places.
+   - Failure scenario: a fifth outcome added on the server reads as `none` on the page.
+   - Fix: small. One exported tuple, with the type and the schema derived from it.
+
+## 4. Behaviour
+
+1. Two identities for one build. `src/lib/server/machine/pty/latex.ts:151` and `:160`: the terminal's label is the path for a request that names a root and a path, and the project id for a request that names a project. The kept terminal (`keptLatex`) and `buildOutcome` (`:125`) match on the name, and the name carries that label. The project tab's panel sends `{ id }` (`views/boards/project/Latex.svelte:28`); the source tab, the TeX view and a PDF send `{ root, path }`.
+   - My probe:
+     ```
+     folder-form build 200 "latex build projects/active/alpha/manuscript/main.tex"
+     project-form clean while the folder-form build runs 200 ... "latex clean alpha/main.tex"
+     project-form build while the folder-form build runs 200 "latex build alpha/main.tex"
+     new-session starts 3
+     ```
+   - What is wrong:
+     - the clean-while-building refusal (item 4, case 19) does not hold across the two forms;
+     - "never two latexmk at once in one folder" (case 20) does not hold across the two forms;
+     - by reading, `buildOutcome` answers `none` for the other form's build, and `redraw` (`latex.svelte.ts:370`) bumps a `none` PDF whose log holds no error. A page that holds the project form (the project tab is open) can therefore draw the PDF of a stopped build (not run);
+     - the status item's `main.build === 'running'` misses a build of the other form.
+   - Failure scenario: Axel saves `main.tex`, and the source tab's auto build starts. He then presses Clean or Build in the project tab's LaTeX panel. A clean runs beside the build, or a second `latexmk` writes the same `.aux` and PDF.
+   - Verdicts: item 4 violated across forms, cases 19 and 20 partial, item 11 at risk, item 32 (Spec 2).
+   - Fix: not small. One identity per folder and main, whatever the form (match on the folder and the step and main rather than on the label in the name), with a G35 row. Today the terminal's name, which the reader sees, carries the label, so a name change is a visible choice.
+2. `src/lib/shell/status/LatexItem.svelte:35` and `:64`: the root comes only from an active LaTeX or PDF tab, and `drawn` needs `root !== null`.
+   - What is wrong: brief item 19 says the item shows "or a build runs". A build started in a page that has not yet had a LaTeX source or a PDF of a build in front (Build in the project tab's panel, the TeX view opened from the palette) draws no item, no spinner and no x.
+   - Failure scenario: a fresh page, the project tab active, Build pressed in its LaTeX panel. The status bar shows nothing.
+   - Verdict: item 19 partial on this path. Round 2 item 6 words it as "a build of its root", so this may be the reading the orchestrator wants.
+   - Fix: small. Take the root from the build when the item has none.
+
+## Declined to judge
+
+- The desktop app paths (the owner's window raised, Switch to Main, Web Locks in an app window): checked by reading only, since the rules forbid starting oculus's desktop app.
+- Cases 17 and 18, and the page parts of case 9 (spinner, x, the 2 s end): not run. Each needs a page on a workspace folder, a 21 MB file, or a never-ending build watched on screen.
+- Case 12's Clean All with `-C`, and case 12's page, zoom and scroll: not rerun this round. Page, zoom and scroll were carried from round 1.
+- Whether a stopped `pdflatex` leaves a PDF with a new modification time and a log with no error line, which decides whether Behaviour 1's stopped-build path actually draws a broken PDF: not run.
+- Whether a reload of the float's tab under a very slow dev server (more than the 10 s `LOAD_WAIT`) frees the float: not run. My reload probe ran at a load average of about 5 to 8 and held.
+- Items carried from the previous reviews (3, 5, 7, 9, 12, 13, 16 to 18, 21 to 25, 27, 28, 31) were not reread line by line this round.
+
+Reviewer usage: claude-opus-5-5. Tokens about 320k by the session counter (15,000,000 to about 14,681,000). About 75 tool uses (not counted exactly). About 20 minutes between the first and last uptime stamps (11:59 to 12:18); the whole session was not timed.
+
+
+Usage: ac564fc562c278620, claude-opus-5-5, 326,746 tokens, 97 tool uses, 27.8 min.
+
+## Closed
+
+The dispositions of the findings of the review over round 2, the step's last round (none goes back to the builder):
+
+1. Spec 1 (Switch to Main Window on a float raises the owner page's window in the app): fixed at landing, stated in the booking in `plan.md` with its before and after.
+2. Spec 2 (`DESIGN.md`'s build sentence): fixed at landing, true after Behaviour 1; the paragraph names the match by folder, step and main and the moved files.
+3. Proof 1 (no failing line on the unchanged tree for the two new rows): fixed at landing, the reviewer's two failing lines quoted in the booking.
+4. Proof 2 (the project form and the folder form answered different `build` values): closed by Behaviour 1's fix.
+5. Standards 1 (`Turns` in `channel.ts`): fixed at landing, `pty/latex/turns.ts` beside `pty/latex/latex.ts`, imports updated.
+6. Standards 2 (the build outcomes written twice): fixed at landing, `BUILD_OUTCOMES` with the type and the schema derived from it.
+7. Behaviour 1 (two identities for one build): fixed at landing, the job's `latex: { step, main }` and `keeps` in `latex.ts`, the folder compared by real path, the name kept; G35 row 'keeps one build of a main file whether the folder is named by project or by root'.
+8. Behaviour 2 (no status item for a build started with no LaTeX or PDF tab in front): fixed at landing, `running` in `builds.ts` read by `LatexItem.svelte`.
+9. Case 5 (the 200 ms bound): restated at landing for files already on disk, the cold first open outside `rootOf` stated with its measurements.
+
+The earlier runs' findings are closed as `agents/briefs/D45-round1.md` and `agents/briefs/D45-round2.md` list them, each verified by the review over the following round.

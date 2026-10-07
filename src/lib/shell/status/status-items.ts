@@ -4,11 +4,12 @@
 //
 // The order is VS Code's: on the left what the window is connected to (the machine, the repository
 // and how far it is from its upstream, the findings), then the extensions' items oculus keeps (the
-// HPC poll, the usage refreshers, the server connection); on the right the editor's own items for
-// the source tab on screen (the caret line's blame in a file of a repository, then the caret and
-// the text's own items, then the items of a language server: its state, the Python interpreter,
-// the compile database and the Svelte configuration, each drawn only for the language it belongs
-// to, before the language itself), then the live sessions and the unsaved tabs, and the bell last.
+// HPC poll, the usage refreshers, the server connection) and the LaTeX build item; on the right the
+// editor's own items for the source tab on screen (the caret line's blame in a file of a
+// repository, then the caret and the text's own items, then the items of a language server: its
+// state, the Python interpreter, the compile database and the Svelte configuration, each drawn only
+// for the language it belongs to, before the language itself), then the live sessions and the
+// unsaved tabs, and the bell last.
 //
 // The host item is the server's `os.hostname()` on the `config` channel's `ConfigPayload.host`,
 // with its address. Branch and sync are the repository holding the active tab's file
@@ -21,13 +22,23 @@
 // Code's `git.blame.statusBarItem.template` default `${authorName} (${authorDateAgo})`, or Not
 // Committed Yet, and a tab over a file at HEAD or in the index shows its blame in the gutter alone.
 // The findings item counts the Findings view's list, the snapshot's findings and the config
-// channel's, and opens that view.
+// channel's, and opens that view. The LaTeX item is the build state of the root of the active LaTeX
+// file or PDF, and opens the TeX view.
 
 import type { EditorStatus } from '$lib/state/workbench/navigation/editor-status.svelte';
 import { t } from '$lib/state/shared/words/text';
 
 /** The left group, in the order it is drawn. */
-export const LEFT_ITEMS = ['host', 'branch', 'sync', 'findings', 'hpc', 'usage', 'server'] as const;
+export const LEFT_ITEMS = [
+    'host',
+    'branch',
+    'sync',
+    'findings',
+    'hpc',
+    'usage',
+    'server',
+    'latex'
+] as const;
 
 /** The right group, in the order it is drawn, the bell against the window's right edge. */
 export const RIGHT_ITEMS = [
@@ -69,6 +80,8 @@ export function itemName(item: StatusItem): string {
             return t('statusbar.item_usage');
         case 'server':
             return t('statusbar.item_server');
+        case 'latex':
+            return t('statusbar.item_latex');
         case 'blame':
             return t('statusbar.item_blame');
         case 'caret':

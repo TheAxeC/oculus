@@ -156,6 +156,7 @@ describe("oculus's own config directory", () => {
         'catalogs/file-nesting.yml': ['patterns'],
         'catalogs/glyphs.yml': ['glyphs'],
         'catalogs/icons.yml': ['icons'],
+        'catalogs/latex.yml': ['latex_editing'],
         'layout.yml': [
             'rail',
             'nav_groups',
@@ -231,6 +232,7 @@ describe("oculus's own config directory", () => {
         'statusbar.yml',
         'ui.yml',
         'views/academic/latex.yml',
+        'views/academic/math-preview.yml',
         'views/academic/present.yml',
         'views/academic/slides.yml',
         'views/apps/apps.yml',

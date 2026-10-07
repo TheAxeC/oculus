@@ -24,9 +24,11 @@
     type Props = {
         /** A name in the `glyphs:` map of config/catalogs/glyphs.yml. An unknown name throws. */
         name: string;
+        /** Turn the drawing round and round, for a thing that is under way. */
+        turning?: boolean;
     };
 
-    let { name }: Props = $props();
+    let { name, turning = false }: Props = $props();
 
     /**
      * The stand-in's text in the ASCII mode, and otherwise the icon's drawing, the empty string for
@@ -42,9 +44,9 @@
 </script>
 
 {#if drawn.svg === ''}
-    <span class="glyph" data-glyph={name} aria-hidden="true">{drawn.text}</span>
+    <span class="glyph" class:turning data-glyph={name} aria-hidden="true">{drawn.text}</span>
 {:else}
-    <span class="glyph" data-glyph={name} aria-hidden="true">
+    <span class="glyph" class:turning data-glyph={name} aria-hidden="true">
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- the icon filter writes this -->
         {@html sanitiseSvg(drawn.svg)}
     </span>
@@ -70,6 +72,23 @@
         width: var(--glyph-size, calc(var(--icon-box) * var(--text-scale, 1)));
         height: var(--glyph-size, calc(var(--icon-box) * var(--text-scale, 1)));
         vertical-align: -0.125em;
+    }
+
+    /* A turning glyph goes round once a second; a reader who asks for less motion gets it still. */
+    .glyph.turning :global(svg) {
+        animation: glyph-turn 1s linear infinite;
+    }
+
+    @keyframes glyph-turn {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .glyph.turning :global(svg) {
+            animation: none;
+        }
     }
 
     /* A terminal palette draws the ASCII stand-in of config/catalogs/glyphs.yml instead of the

@@ -34,6 +34,7 @@ import type { BusyTerminal } from '../ui.svelte.ts';
 import type { TabFile } from './status.ts';
 import { diffState } from '../../sources/repositories/repositories.ts';
 import { DIFF_VIEW } from '../../sources/repositories/repositories.svelte.ts';
+import { typeOfFile } from '../../sources/explorer/file-type.ts';
 import { HUB_ROOT, type RowRef } from '../../sources/explorer/view/place.ts';
 import { nameOf } from '../../../data/helpers/files/paths.ts';
 import { opensInProgram } from '../../../data/helpers/files/opens-in-program.ts';
@@ -452,6 +453,8 @@ export type TabFileFacts = {
     browser: boolean;
     /** Whether `open.program_ext` names an application for the file. */
     program: boolean;
+    /** Whether the tab is a PDF, which a tab of the page and a window of its own also show. */
+    pdf: boolean;
 };
 
 /**
@@ -471,7 +474,8 @@ export function tabFileFacts(
             ? bookmarkAt([...held.bookmarks], file.root, file.path) !== null
             : null,
         browser: served && (tab.view === 'file' || tab.view === 'document'),
-        program: file !== null && opensInProgram(file.path, held.programs)
+        program: file !== null && opensInProgram(file.path, held.programs),
+        pdf: served && tab.view === 'file' && file !== null && typeOfFile(file.path).kind === 'pdf'
     };
 }
 
@@ -501,6 +505,11 @@ export async function bookmarkTabFile(
         return markRefusal(written);
     }
     return held === null ? '' : markRefusal(await calls.removeBookmark(held.id));
+}
+
+/** The state of a `file` tab over one file of a served root. */
+export function fileTabState(file: RowRef): { root: string; path: string; label: string } {
+    return { root: file.root, path: file.path, label: nameOf(file.path) };
 }
 
 /** Show a file in a browser tab of its own, which is also how a picture or a PDF is saved. */

@@ -10,24 +10,40 @@
 // scan the reader falls back to, and its includes are not followed, so the sections of the files
 // it includes are unknown rather than absent.
 
-import { statSync, readFileSync } from 'node:fs';
-import { extname, relative, resolve, sep } from 'node:path';
-import type { Include, Section } from '../../../data/prose/latex.ts';
+import { dirname, extname, relative, resolve, sep } from 'node:path';
+import {
+    auxInputs,
+    numbersOf,
+    scanStructure,
+    type Float,
+    type Include,
+    type Label,
+    type Section
+} from '../../../data/prose/latex.ts';
 import { inside, realPath } from '../../core/paths.ts';
 import { isFile } from '../latex.ts';
-import { readTex } from './reader.ts';
-
-/** The largest file the outline reads; a larger one is skipped rather than parsed. */
-export const OUTLINE_MAX_BYTES = 2 * 1024 * 1024;
+import { readBounded, readTex } from './reader.ts';
 
 /** One section of the outline: its level, title, the file it is in and its line. */
 export type OutlineEntry = { level: number; title: string; file: string; line: number };
 
+/** One label of the document: its name, the number its build gave it ('' before one), its place. */
+type LabelEntry = Label & { file: string; number: string };
+
+/** One float of the document: as `Float`, with the number its build gave it and its place. */
+type FloatEntry = Float & { file: string; number: string };
+
 /**
- * The outline of a main file, the files read only in part (the parser refused them) and the files
- * not read at all (too large or unreadable).
+ * The outline of a main file: its sections, labels and floats, the files read only in part (the
+ * parser refused them) and the files not read at all (too large or unreadable).
  */
-export type Outline = { sections: OutlineEntry[]; partial: string[]; unread: string[] };
+export type Outline = {
+    sections: OutlineEntry[];
+    labels: LabelEntry[];
+    floats: FloatEntry[];
+    partial: string[];
+    unread: string[];
+};
 
 /** The file an include names, as a real path inside the bound, or null. */
 function target(bound: string, dir: string, include: Include): string | null {
@@ -36,28 +52,55 @@ function target(bound: string, dir: string, include: Include): string | null {
     return real !== null && inside(real, bound) && isFile(real) ? real : null;
 }
 
-/** The text of a file, or null when it is too large or cannot be read. */
-function readBounded(path: string): string | null {
-    try {
-        return statSync(path).size > OUTLINE_MAX_BYTES ? null : readFileSync(path, 'utf8');
-    } catch {
-        return null;
-    }
-}
-
 /** The sections and includes of one file in the order the file holds them. */
 function inOrder(sections: Section[], includes: Include[]): (Section | Include)[] {
     const kept: (Section | Include)[] = [...sections, ...includes];
     return kept.sort((left, right) => left.line - right.line);
 }
 
+/** How deep an `.aux` file's own inputs are followed. */
+const AUX_DEPTH = 8;
+
+/**
+ * The numbers the build gave the document's labels, from its `.aux` file and the ones that file
+ * reads in turn (a `\include` writes one each). Every file is read once, none outside the folder
+ * of the first or beyond the size limit; none at all gives no numbers.
+ */
+function numbersFrom(aux: string): Map<string, string> {
+    const numbers = new Map<string, string>();
+    const seen = new Set<string>();
+    const read = (file: string, depth: number): void => {
+        if (seen.has(file) || depth > AUX_DEPTH) return;
+        seen.add(file);
+        const text = readBounded(file);
+        if (text === null) return;
+        for (const [name, number] of numbersOf(text)) numbers.set(name, number);
+        for (const input of auxInputs(text)) {
+            const next = resolve(dirname(file), input);
+            if (inside(next, dirname(aux))) read(next, depth + 1);
+        }
+    };
+    read(aux, 0);
+    return numbers;
+}
+
 /**
  * The outline of the main file at `main`, a real path inside `bound`. Includes resolve from `dir`,
  * and every file is named in the answer relative to `base`, which is `bound` unless the caller
  * names its files against a folder of its own (a project's, whose paths are against its folder).
+ * `aux` is the `.aux` file of the build, whose numbers the labels and floats carry once it exists.
  */
-export function outlineOf(bound: string, dir: string, main: string, base = bound): Outline {
+export function outlineOf(
+    bound: string,
+    dir: string,
+    main: string,
+    base = bound,
+    aux = ''
+): Outline {
     const sections: OutlineEntry[] = [];
+    const labels: LabelEntry[] = [];
+    const floats: FloatEntry[] = [];
+    const numbers = aux === '' ? new Map<string, string>() : numbersFrom(aux);
     const partial: string[] = [];
     const unread: string[] = [];
     const seen = new Set<string>();
@@ -72,6 +115,13 @@ export function outlineOf(bound: string, dir: string, main: string, base = bound
         }
         const read = readTex(text);
         if (read.refused) partial.push(name(file));
+        const structure = scanStructure(text);
+        for (const label of structure.labels) {
+            labels.push({ ...label, file: name(file), number: numbers.get(label.name) ?? '' });
+        }
+        for (const float of structure.floats) {
+            floats.push({ ...float, file: name(file), number: numbers.get(float.label) ?? '' });
+        }
         for (const item of inOrder(read.sections, read.includes)) {
             if ('title' in item) {
                 sections.push({ ...item, file: name(file) });
@@ -82,5 +132,5 @@ export function outlineOf(bound: string, dir: string, main: string, base = bound
         }
     };
     visit(main);
-    return { sections, partial, unread };
+    return { sections, labels, floats, partial, unread };
 }

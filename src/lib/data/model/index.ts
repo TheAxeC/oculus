@@ -221,6 +221,22 @@ export type Message = {
 };
 
 /**
+ * The source line a PDF window asks one main page of oculus to open: the `jump` message a page
+ * that carried the write token sends, and the payload of the Hub's `jump` channel it becomes. The
+ * `owner` is the id of the main page that opened the window, and only that page acts on the jump.
+ */
+export type Jump = {
+    owner: string;
+    root: string;
+    file: string;
+    line: number;
+    column?: number;
+};
+
+/** The message a page sends to ask for a jump. */
+export type JumpMessage = { type: 'jump' } & Jump;
+
+/**
  * The subscribe message a client sends: the channels it wants, and the write token when the page
  * has one. A socket that carried the token may send terminal input on a `pty:` channel; a socket
  * without it reads every channel and writes to none (DESIGN.md, "Auth").
@@ -500,7 +516,6 @@ export type {
     UsageTool,
     UsageWindow,
     LiveEntry,
-    PtyPayload,
     SecondaryArea,
     SessionAgent,
     SessionCache,
@@ -510,25 +525,11 @@ export type {
     SessionsPayload,
     SessionTokens,
     SessionTool,
-    Terminal,
-    TerminalColor,
-    TerminalInput,
-    TerminalJob,
-    TerminalKind,
-    TerminalRefusal,
-    TerminalResize,
-    TerminalResume,
     Turn,
     TurnTool,
     Workspace
 } from './model-sessions.ts';
-export {
-    BRANCH_NOT_MERGED,
-    STEER_CONTROL,
-    STEER_MAX,
-    TERMINAL_COLORS,
-    TERMINAL_REFUSALS
-} from './model-sessions.ts';
+export { BRANCH_NOT_MERGED } from './model-sessions.ts';
 
 export { DECK_GAP } from './model-entities.ts';
 export { confirmValues } from './model-agents.ts';
@@ -576,8 +577,17 @@ export {
     QUERY_MAX,
     SOURCE_STATES
 } from './model-search.ts';
-export { SCHEDULE_WORDS, UPDATE_TASKS } from './model-processes.ts';
+export {
+    BUILD_OUTCOMES,
+    SCHEDULE_WORDS,
+    STEER_CONTROL,
+    STEER_MAX,
+    TERMINAL_COLORS,
+    TERMINAL_REFUSALS,
+    UPDATE_TASKS
+} from './model-processes.ts';
 export type {
+    BuildOutcome,
     LspApproval,
     LspCode,
     LspConfig,
@@ -592,12 +602,21 @@ export type {
     LspToServer,
     ProcessesPayload,
     ProcessRow,
+    PtyPayload,
     ScheduleEntry,
     SchedulePayload,
     ScheduleProblem,
     ScheduleRow,
     ScheduleRun,
     ScheduleWord,
+    Terminal,
+    TerminalColor,
+    TerminalInput,
+    TerminalJob,
+    TerminalKind,
+    TerminalRefusal,
+    TerminalResize,
+    TerminalResume,
     UnchosenKey,
     UpdateTask
 } from './model-processes.ts';

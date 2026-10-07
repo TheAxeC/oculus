@@ -35,16 +35,20 @@ export type KeyPress = {
     alt?: true;
 };
 
+/** The keys of an action: one press, or two pressed one after the other. */
+export type EditorKey = KeyPress | readonly [KeyPress, KeyPress];
+
 /**
- * An action the parent owns and hands the editor: the editor binds `key` to it, when it has one,
- * and lists it to the palette with the key as its hint. The parent lists the same actions to the
+ * An action the parent owns and hands the editor: the editor binds `key` to it, when it has one
+ * (one press, or two pressed one after the other), and lists it to the palette with the key as its
+ * hint. The parent lists the same actions to the
  * palette itself while it draws no editor. An action with a `menu` is also in the editor's
  * right-click menu, in the group of that name.
  */
 export type EditorOwnAction = {
     id: string;
     label: string;
-    key?: KeyPress;
+    key?: EditorKey;
     menu?: string;
     /** Not runnable: the action is hidden from the editor's menu and left out of the palette. */
     disabled?: boolean;
@@ -77,6 +81,8 @@ export type EditorCommand =
     | { kind: 'convert'; tabs: boolean }
     | { kind: 'ending'; ending: EditorEnding }
     | { kind: 'language'; language: string }
+    | { kind: 'insert'; text: string; snippet?: boolean }
+    | { kind: 'replace'; text: string }
     | { kind: 'action'; id: string };
 
 /** The editor as its parent holds it through `bind:this`. */

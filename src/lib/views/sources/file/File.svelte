@@ -14,7 +14,7 @@
 
 <script lang="ts">
     // Layer 3, view. One file under one root as its own tab, for the files an editor cannot show: a
-    // picture, a PDF in a frame, and a name with a link for anything else. An HTML file never
+    // picture, a PDF in the viewer, and a name with a link for anything else. An HTML file never
     // reaches here; the file browser opens it in the document view, which gives it a document of
     // its own so its relative assets resolve.
     //
@@ -29,30 +29,33 @@
     // Everything is read through api/file, the one route that serves a local file, so the
     // inside-root check is the same here as it is for a manual's stylesheet.
     //
-    // The PDF frame carries no sandbox: Chrome refuses to run its own PDF viewer inside a sandboxed
-    // frame and draws an error page instead, and what the frame shows is a file this server serves
-    // from a root it checked, so the frame is as trusted as the page around it. The view draws the
-    // frame's slot and describes the frame to the workbench's tab frames (ui/tabs/
-    // tab-frames.svelte.ts), which the frame layer draws over the slot, so a layout change never
-    // loads the PDF again.
+    // A PDF is drawn by oculus's own viewer (pdf/viewer.svelte.ts, PDF.js), which is a box of the
+    // workbench's tab frames (ui/tabs/tab-frames.svelte.ts, the kind `viewer`): the view draws the
+    // box's slot and describes the box to the store, which the frame layer draws over the slot, so
+    // a layout change never loads the PDF again and its page, zoom and scroll stay. The view mounts
+    // the viewer once for each box, hands it to the store, and reads it back to drive it.
     //
     // The address carries the file's version from the fs store, so a file written under the open
-    // tab, which is what a LaTeX build does to the PDF it rebuilds, is a new address and the frame
-    // fetches the new bytes instead of drawing the ones the browser cached. A tab that is hidden
+    // tab, which is what a LaTeX build does to the PDF it rebuilds, is a new address and the viewer
+    // loads the new bytes in place, at the page, offset and zoom it was at. A tab that is hidden
     // keeps the address it drew, and draws the new one, with the one request it makes, when it is
-    // shown.
+    // shown. A click on the page with Cmd or Ctrl held, or a double click when
+    // `latex.reverse_synctex` says so, asks the LaTeX actions for the source line of that place
+    // (state/sessions/latex/actions.ts), and a forward search that named this PDF is drawn once
+    // the viewer holds it.
     //
     // The tab draws no row of controls and hands none to the pane's strip: its path is the
-    // breadcrumb the pane draws under the strip, and the star and, for a file whose extension
-    // `open.program_ext` names an application for, Open in Program stand at that bar's right end
-    // (shared/links/FileBarActions.svelte, handed up while the file is served). Open in Program
-    // hands the file to that application, so a `.docx` or an `.xlsx` the page draws no view of
-    // opens in the program that edits it. The server refuses what the name cannot show (an
-    // execute bit, a Finder alias, a file it cannot read) when it is pressed, and the button says
-    // so beside it.
-    // The bookmark, Open in Browser Tab and Open in Program items are also in the tab's
-    // right-click menu (shell/panes/strip/tab-menu.ts). A file whose bytes are text is handed to
-    // the source tab.
+    // breadcrumb the pane draws under the strip, and the viewer's controls (pdf/Controls.svelte),
+    // the star and, for a file whose extension `open.program_ext` names an application for, Open in
+    // Program stand at that bar's right end (shared/links/FileBarActions.svelte, handed up while
+    // the file is served). Open in Program hands the file to that application, so a `.docx` or an
+    // `.xlsx` the page draws no view of opens in the program that edits it. The server refuses what
+    // the name cannot show (an execute bit, a Finder alias, a file it cannot read) when it is
+    // pressed, and the button says so beside it.
+    // The bookmark, Open in Browser and Open in Program items are also in the tab's right-click
+    // menu (shell/panes/strip/tab-menu.ts), and a PDF's four ways to open are the viewer's menu,
+    // the tab menu's and the Files row menu's. A file whose bytes are text is handed to the source
+    // tab.
     //
     // The picture and the download line carry `data-tab-focus`, which is where the keyboard goes
     // when a double click keeps the tab (PaneBody.svelte): the arrow keys then scroll the picture.
@@ -66,28 +69,41 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import FrameSlot from '$lib/ui/tabs/FrameSlot.svelte';
     import { drawFrame, useTabFrames, type FrameSpec } from '$lib/ui/tabs/tab-frames.svelte';
+    import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import { servedFile } from '$lib/views/shared/links/file-bar';
     import FileBarActions from '../../shared/links/FileBarActions.svelte';
     import { openSourceFile } from '../../shared/links/source-file';
+    import PdfControls from './pdf/Controls.svelte';
+    import { PdfViewer } from './pdf/viewer.svelte';
     import { humanSize } from '$lib/state/boards/board';
     import { fileBytesUrl } from '$lib/state/sources/fs.svelte';
-    import { extensionOf, nameOf, typeOfFile } from '$lib/state/sources/fs';
+    import { onMac } from '$lib/ui/controls/editor/kit/load';
+    import { fileTabState, openInBrowserTab } from '$lib/state/workbench/navigation/pages';
+    import { extensionOf, nameOf, opensInProgram, typeOfFile } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source.svelte';
+    import type { LatexRoot } from '$lib/state/sessions/latex/latex-state';
     import { instanceNumber, instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { shownGate, useShown, useState } from '$lib/state/client/use';
+    import { useTipIds } from '$lib/ui/menu/tip-ids';
 
     const client = useState();
     const {
         fs: { fileVersion, heldFileKind, readFileKind, roots },
-        layout: { closeInstance }
+        latex,
+        latexActions,
+        layout: { closeInstance, keepPreview, openView },
+        selectors: { programApps },
+        windows: { openInWindow },
+        writes: { openFile }
     } = client;
 
     let { instance }: ViewProps = $props();
 
     const frames = useTabFrames();
+    const tips = useTipIds();
 
     /** The address of the picture that failed to load, and the empty string while none has. */
     let unreadable = $state('');
@@ -177,10 +193,21 @@
         untrack(() => void handOn(mine, own, fileRoot, filePath));
     });
 
-    /** The frame the tab holds while it draws a PDF. */
+    /**
+     * The box the tab holds while it draws a PDF. A tab pointed at another file draws a new box,
+     * so what the viewer kept of the file it drew last (its page, its zoom, the links followed) is
+     * not carried over to this one.
+     */
     const frame = $derived<FrameSpec | null>(
         src !== '' && type.kind === 'pdf'
-            ? { kind: 'pdf', view: instance.view, src, title, key: '' }
+            ? {
+                  kind: 'viewer',
+                  view: instance.view,
+                  src: '',
+                  title,
+                  key: `${drawn.root}\n${drawn.path}`,
+                  mount
+              }
             : null
     );
     drawFrame(
@@ -188,6 +215,104 @@
         () => instance.id,
         () => frame
     );
+
+    /** The viewer the frame layer holds for this tab, once its box is drawn. */
+    const viewer = $derived(frames?.provided(instance.id) as PdfViewer | undefined);
+
+    /**
+     * The LaTeX keys in a PDF tab, the ones the source tab has: Build on Cmd+Alt+B, Clean on
+     * Cmd+Alt+C and View PDF on Cmd+Alt+V (Ctrl+Alt off macOS), read from the physical key since
+     * Option types another character on macOS. True when the key was one of them.
+     */
+    function texKey(event: KeyboardEvent): boolean {
+        const mac = onMac();
+        if (!(mac ? event.metaKey : event.ctrlKey) || !event.altKey) return false;
+        if (event.shiftKey || (mac ? event.ctrlKey : event.metaKey)) return false;
+        if (event.code === 'KeyB') void latexActions.build(drawn.root, drawn.path);
+        else if (event.code === 'KeyC') void latexActions.clean(drawn.root, drawn.path);
+        else if (event.code === 'KeyV')
+            void latexActions.viewPdf(drawn.root, drawn.path, instance.id);
+        else return false;
+        return true;
+    }
+
+    /** Mount the viewer in the box the frame layer drew, and hand it to the tab frames. */
+    function mount(node: HTMLDivElement): () => void {
+        const made = new PdfViewer(node, {
+            jump: (page, x, y) =>
+                void latexActions.inverse(drawn.root, drawn.path, page, x, y, instance.id),
+            reverse: () => latex.settings()?.reverseSynctex ?? 'ctrl_click',
+            build: () => void latexActions.build(drawn.root, drawn.path),
+            key: texKey,
+            tips,
+            words: {
+                loading: t('file.pdf_loading'),
+                missing: t('file.pdf_missing'),
+                invalid: t('file.pdf_invalid'),
+                failed: t('file.pdf_failed'),
+                retry: t('file.retry'),
+                build: t('file.pdf_build')
+            }
+        });
+        const provided = frames?.provide(instance.id, made);
+        return () => {
+            provided?.();
+            made.dispose();
+        };
+    }
+
+    // The viewer draws the file at its address, which moves when the file is written.
+    $effect(() => {
+        if (viewer === undefined || src === '' || type.kind !== 'pdf') return;
+        viewer.open(src, `${drawn.root}\n${drawn.path}`);
+    });
+
+    // The PDF of a build is held against the LaTeX state of its root, which is what notices a
+    // rebuild and moves the file's version, so a PDF drawn in a page that shows no other LaTeX
+    // view (a float in a window of its own) is drawn again after a build as a tab of the main page
+    // is.
+    let built = $state<LatexRoot>(null);
+    $effect(() => {
+        built = null;
+        if (viewer === undefined || type.kind !== 'pdf') return;
+        let live = true;
+        void latexActions.rootOfFile(drawn.root, drawn.path).then((found) => {
+            if (live) built = found;
+        });
+        return () => {
+            live = false;
+        };
+    });
+    $effect(() => {
+        if (built !== null) void latex.state({ root: built.root, path: built.path });
+    });
+
+    // A forward search that named this PDF is shown once, when the viewer holds the file.
+    $effect(() => {
+        const place = latexActions.revealFor(drawn.root, drawn.path);
+        if (viewer === undefined || place === null) return;
+        viewer.reveal(place);
+        latexActions.taken(drawn.root, drawn.path);
+    });
+
+    /** The four ways to open the PDF, as the viewer's menu lists them. */
+    const ways = $derived<MenuItem[]>([
+        { id: 'tab', label: t('files.menu_open_tab') },
+        { id: 'window', label: t('files.menu_open_window') },
+        { id: 'browser', label: t('files.menu_open_browser') },
+        ...(opensInProgram(drawn.path, programApps())
+            ? [{ id: 'program', label: t('files.menu_open_program') }]
+            : [])
+    ]);
+
+    /** A pick of the viewer's open menu. */
+    function wayPicked(id: string): void {
+        const file = { root: drawn.root, path: drawn.path };
+        if (id === 'tab') keepPreview(openView('file', fileTabState(file)));
+        else if (id === 'window') openInWindow(instance.id);
+        else if (id === 'browser') openInBrowserTab(file);
+        else if (id === 'program') void openFile(file.root, file.path);
+    }
 
     /** Ask the server for the picture again, in a new element. */
     function retry(): void {
@@ -207,7 +332,13 @@
 
 <!-- The file's actions, handed up to the right end of the pane's breadcrumb bar. -->
 {#snippet barActions()}
-    <FileBarActions root={drawn.root} path={drawn.path} onDisk={holds} />
+    <FileBarActions root={drawn.root} path={drawn.path} onDisk={holds}>
+        {#snippet lead()}
+            {#if viewer !== undefined && type.kind === 'pdf'}
+                <PdfControls {viewer} {ways} open={wayPicked} />
+            {/if}
+        {/snippet}
+    </FileBarActions>
 {/snippet}
 
 {#snippet again()}

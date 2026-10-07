@@ -4,14 +4,15 @@
 //
 // content/latex/endpoint.ts answers the requests over this module and routes/api/(sessions)/latex/
 // +server.ts is the two lines that join them, since a route module may export only its verbs. What
-// a build runs is not here: the two steps are terminals, started through
-// lib/server/machine/pty/routes.ts, and this module reads the files those terminals leave behind.
+// a build runs is not here: its steps (build, clean, stop and checkcites) are terminals, started
+// through lib/server/machine/pty/routes.ts, and this module reads the files those terminals leave
+// behind.
 //
-// A main file is content, not configuration: every `.tex` directly in a folder whose text carries
-// `\documentclass` outside a comment. No manifest key names one, so a folder that gains a
-// supplement or a highlights file is found the moment it is written, and nothing has to be kept in
-// step with the folder. A project's mains sit in its `manuscript/` folder; any other folder of a
-// served root is read the same way.
+// A main file is content, not configuration: every `.tex` file, and every literate source (`.Rnw`,
+// `.jnw`, `.pnw`), directly in a folder whose text carries `\documentclass` outside a comment. No
+// manifest key names one, so a folder that gains a supplement or a highlights file is found the
+// moment it is written, and nothing has to be kept in step with the folder. A project's mains sit
+// in its `manuscript/` folder; any other folder of a served root is read the same way.
 //
 // The program a main asks for is a magic comment of its head (`% !TEX program = xelatex`), read by
 // data/prose/latex.ts, the one reader of LaTeX text the page shares, bound to the parser by
@@ -21,18 +22,23 @@
 
 import { closeSync, openSync, readFileSync, readdirSync, readSync, statSync } from 'node:fs';
 import { join, posix, relative, sep } from 'node:path';
-import { PROGRAMS, uncommented, type Program } from '../../data/prose/latex.ts';
+import {
+    MANUSCRIPT,
+    PROGRAMS,
+    isTexSource,
+    oneLine,
+    stemOf,
+    uncommented,
+    type Program
+} from '../../data/prose/latex.ts';
 import { inside } from '../core/paths.ts';
 import { magicComments } from './latex/reader.ts';
-
-/** The folder a project's main files sit directly under. */
-export const MANUSCRIPT = 'manuscript';
 
 /** The main file every manuscript has when it has one, drawn first whatever the rest sort as. */
 const FIRST = 'main.tex';
 
 /** How much of a `.tex` file is read to decide whether it declares a document class. */
-const HEAD_BYTES = 65536;
+export const HEAD_BYTES = 65536;
 
 /** How many lines of a log a warning's message may be joined from before it is cut. */
 const JOIN_MAX = 8;
@@ -62,6 +68,8 @@ export type MainState = LatexLog & {
     pdfPath: string;
     /** When the PDF was last written, in milliseconds, and null when there is no PDF. */
     pdf: number | null;
+    /** When the SyncTeX file was last written, in milliseconds, and null when there is none. */
+    synctex: number | null;
     /** When the log was last written, in milliseconds, and null when there is no log. */
     log: number | null;
 };
@@ -122,10 +130,10 @@ export function head(path: string): string {
 }
 
 /**
- * The main files directly in one folder: every `.tex` that declares a document class, `main.tex`
- * first and the rest by name. A folder that is missing or unreadable has none.
+ * The names of the `.tex` and literate sources directly in one folder, `main.tex` first and the
+ * rest by name, none of them read. A folder that is missing or unreadable has none.
  */
-export function mainsIn(dir: string): string[] {
+export function sourcesIn(dir: string): string[] {
     let entries;
     try {
         entries = readdirSync(dir, { withFileTypes: true });
@@ -134,12 +142,10 @@ export function mainsIn(dir: string): string[] {
     }
     const found: string[] = [];
     for (const entry of entries) {
-        if (!entry.name.endsWith('.tex')) continue;
-        const path = join(dir, entry.name);
+        if (!isTexSource(entry.name)) continue;
         // The kind comes from a stat rather than the directory entry, which calls a symlink a link
         // and not a file however ordinary the file it points at is.
-        if (!isFile(path)) continue;
-        if (declaresClass(head(path))) found.push(entry.name);
+        if (isFile(join(dir, entry.name))) found.push(entry.name);
     }
     found.sort((left, right) => {
         if (left === FIRST) return right === FIRST ? 0 : -1;
@@ -147,6 +153,14 @@ export function mainsIn(dir: string): string[] {
         return left.localeCompare(right);
     });
     return found;
+}
+
+/**
+ * The main files directly in one folder: every source of `sourcesIn` that declares a document
+ * class, in its order.
+ */
+export function mainsIn(dir: string): string[] {
+    return sourcesIn(dir).filter((name) => declaresClass(head(join(dir, name))));
 }
 
 /**
@@ -170,7 +184,7 @@ export function mains(folder: string): string[] {
  * Anything else, a program latexmk has no switch for among them, or no comment at all, is
  * `pdflatex`.
  */
-export function programOf(path: string): Program {
+function programOf(path: string): Program {
     const named = magicComments(head(path)).get('program')?.toLowerCase();
     return PROGRAMS.find((one) => one === named) ?? PROGRAMS[0];
 }
@@ -190,10 +204,17 @@ const WARNING = /^(LaTeX(?: Font)?|Package \S+|Class \S+) Warning: (.*)$/;
 /** Where a warning says it happened, when it says so at all. */
 const AT_LINE = /on input line (\d+)/;
 
-/** One message with its runs of whitespace collapsed, which is what a wrapped log row leaves. */
-function oneLine(text: string): string {
-    return text.replace(/\s+/g, ' ').trim();
-}
+/** The row TeX prints for a box it filled badly: an over- or underfull box and where it was set. */
+const BAD_BOX = /^((?:Over|Under)full \\[hv]box \([^)]*\)) (.*)$/;
+
+/**
+ * The first line a bad box says it was set on: `at lines 12--15`, `at line 12`, `detected at line
+ * 12`.
+ */
+const BOX_LINE = /(?:at lines?|detected at line) (\d+)/;
+
+/** The row TeX prints when a run wrote no page. */
+const NO_PAGES = /^No pages of output\.$/;
 
 /**
  * The file the log named, against the prefix of the answer. A log built by a terminal this view
@@ -250,6 +271,9 @@ function stoppedAt(lines: string[], from: number): number | null {
  * and a warning carries the line it says it is on. Nothing is inferred from the file the log
  * happened to have open, since a wrong file and line read worse than none.
  *
+ * A box TeX filled badly is a warning with the line it says it was set on, and the row "No pages
+ * of output." is an error with none, as LaTeX Workshop reads them.
+ *
  * `dir` is the folder the build ran in, for the one case a log names an absolute path, and `prefix`
  * is put in front of every file name a row names.
  */
@@ -271,6 +295,20 @@ export function parseLog(text: string, dir = '', prefix = ''): LatexLog {
         const bang = BANG.exec(line);
         if (bang !== null) {
             errors.push({ file: '', line: stoppedAt(lines, at + 1), message: oneLine(bang[1]) });
+            continue;
+        }
+        if (NO_PAGES.test(line)) {
+            errors.push({ file: '', line: null, message: line });
+            continue;
+        }
+        const box = BAD_BOX.exec(line);
+        if (box !== null) {
+            const place = BOX_LINE.exec(box[2]);
+            warnings.push({
+                file: '',
+                line: place === null ? null : Number(place[1]),
+                message: oneLine(`${box[1]} ${box[2]}`)
+            });
             continue;
         }
         const warned = WARNING.exec(line);
@@ -297,24 +335,36 @@ export function parseLog(text: string, dir = '', prefix = ''): LatexLog {
 /** What a path in an answer is joined onto: one prefix for the PDF and one for the log's files. */
 export type Prefixes = { pdf: string; files: string };
 
+/** Where a build writes: the folder of the PDF and SyncTeX file, and the folder of the rest. */
+export type Folders = { out: string; aux: string };
+
 /**
- * What the last build of one main file in `dir` left: its PDF, its log, and what that log held.
- * Each path of the answer is the prefix of its kind joined to the name, so the same read answers
- * for a project, whose paths are against its folder, and for a folder of a root, whose paths are
- * against the root.
+ * What the last build of one main file in `dir` left: its PDF and SyncTeX file in the output
+ * folder, its log in the auxiliary folder, and what that log held. Each path of the answer is the
+ * prefix of its kind joined to the name, so the same read answers for a project, whose paths are
+ * against its folder, and for a folder of a root, whose paths are against the root. Both folders
+ * are the main's own folder unless the caller names them.
  */
-export function buildStateIn(dir: string, main: string, prefixes: Prefixes): MainState {
-    const base = main.endsWith('.tex') ? main.slice(0, -'.tex'.length) : main;
-    const log = mtimeOf(join(dir, `${base}.log`));
+export function buildStateIn(
+    dir: string,
+    main: string,
+    prefixes: Prefixes,
+    folders: Folders = { out: dir, aux: dir }
+): MainState {
+    const base = stemOf(main);
+    const logPath = join(folders.aux, `${base}.log`);
+    const log = mtimeOf(logPath);
     const parsed =
         log === null
             ? { errors: [], warnings: [] }
-            : parseLog(readText(join(dir, `${base}.log`)), dir, prefixes.files);
+            : parseLog(readText(logPath), dir, prefixes.files);
+    const out = relative(dir, folders.out).split(sep).join('/');
     return {
         main,
         program: programOf(join(dir, main)),
-        pdfPath: placedUnder(prefixes.pdf, `${base}.pdf`),
-        pdf: mtimeOf(join(dir, `${base}.pdf`)),
+        pdfPath: placedUnder(prefixes.pdf, posix.join(out, `${base}.pdf`)),
+        pdf: mtimeOf(join(folders.out, `${base}.pdf`)),
+        synctex: mtimeOf(join(folders.out, `${base}.synctex.gz`)),
         log,
         ...parsed
     };

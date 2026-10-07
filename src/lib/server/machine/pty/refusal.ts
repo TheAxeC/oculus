@@ -43,10 +43,10 @@ function wordOf(text: unknown): TerminalRefusal | null {
     return TERMINAL_REFUSALS.find((one) => one === text) ?? null;
 }
 
-/** The 400 answer that carries one word and the names its sentence needs. */
-export function refusal(word: Word, names: string[] = []): Response {
+/** The answer that carries one word and the names its sentence needs, a 400 unless told another. */
+export function refusal(word: Word, names: string[] = [], status = 400): Response {
     const body = names.length === 0 ? { error: word } : { error: word, names };
-    return json(body, { status: 400, headers: NO_STORE });
+    return json(body, { status, headers: NO_STORE });
 }
 
 /**

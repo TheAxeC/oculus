@@ -3,7 +3,7 @@
 // problems are listed in, the words that say where a problem is, and the log a build left beside
 // its main file.
 
-import type { LatexIssue } from '$lib/state/sessions/latex.svelte';
+import type { LatexIssue } from '$lib/state/sessions/latex/latex-state';
 import { normalisePath } from '$lib/state/sources/fs';
 import { t } from '$lib/state/shared/words/text';
 import type { SourceFile } from '../links/source-file';
@@ -38,9 +38,4 @@ export function placeOf(issue: LatexIssue): string {
 /** A name in the folder `dir` of a root, both against the root; the root's own folder is empty. */
 export function inFolder(dir: string, name: string): string {
     return normalisePath(`${dir}/${name}`);
-}
-
-/** The log latexmk wrote beside a main file of the folder `dir`, as the file a press opens. */
-export function logFile(root: string, dir: string, main: string): SourceFile {
-    return { root, path: inFolder(dir, `${main.replace(/\.tex$/i, '')}.log`) };
 }

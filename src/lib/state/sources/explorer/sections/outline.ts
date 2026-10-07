@@ -15,8 +15,10 @@
 // (`latexReader`, made by createLatexReader), so no parser is held at module scope.
 
 import type { RenderedHeading } from '../../../../data/model/index.ts';
+import { lazyRewrites, type BibRewrites } from '../../../../data/prose/bib.ts';
 import {
     lazyReader,
+    lazyTree,
     scanSections,
     type LazyReader,
     type Section
@@ -83,15 +85,26 @@ export function markdownOutline(text: string): OutlineItem[] {
     return nested(found);
 }
 
-/** The client state's LaTeX reader, which loads the parser on its first read. */
-export type LatexReader = { read: LazyReader };
+/**
+ * The client state's LaTeX reader, which loads the parser on its first read: the sections and
+ * includes of a text, its parse tree, and the rewrites of a `.bib` text.
+ */
+export type LatexReader = {
+    read: LazyReader;
+    tree: (text: string) => Promise<object | null>;
+    bib: BibRewrites;
+};
 
 /**
  * A reader of LaTeX texts with latex-utensils, which it fetches once, on its first read. The client
  * state makes one and holds it.
  */
 export function createLatexReader(): LatexReader {
-    return { read: lazyReader(() => import('latex-utensils')) };
+    return {
+        read: lazyReader(() => import('latex-utensils')),
+        tree: lazyTree(() => import('latex-utensils')),
+        bib: lazyRewrites(() => import('latex-utensils'))
+    };
 }
 
 /** The outline items of a list of sections, nested by level. */

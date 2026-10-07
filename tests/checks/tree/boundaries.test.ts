@@ -94,18 +94,20 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/files/paths` holds the `/` path rules (a path's last name, the path under a
 // folder, the deepest folder holding a target) that the file browser, the source tab and the status
 // bar read a root or a repository by, so the three agree on which one holds a file.
-// `data/helpers/files/apps` holds what an app may name (the channels it reads, the write kinds it
-// asks for, the confirmations) and the two rules a file path an app names is judged by (the segment
-// rule and the `closed_paths` match): the page refuses an app's request by them before it sends
-// it and the server refuses the same request by them when it arrives, so a copy on each side
-// would let the two disagree. It imports no node module.
-// `data/shapes/shapes` holds the zod helpers (a schema that answers its input, the map and number
-// schemas, the quick path) that the server's, the state layer's, the views' and the shell's readers
-// of untyped input share, so all four read by one rule. `data/file-ops` holds what a file or folder
-// name may be, the name a copy takes, the sizes of an upload and of a comparison, and the shapes of
-// a file operation and its answer, which the Files view checks while a name is typed and the server
-// checks when the name arrives. The model's own concern modules (`data/model-*`) are reached
-// through the facade only, which is why they are not listed here.
+// `data/helpers/files/address` holds the one address `/api/file` answers a file at, which the
+// page's reads and downloads, the editor's picture addresses and a Present slide's figure all
+// build, so the escaping of a name is one rule. `data/helpers/files/apps` holds what an app may
+// name (the channels it reads, the write kinds it asks for, the confirmations) and the two rules a
+// file path an app names is judged by (the segment rule and the `closed_paths` match): the page
+// refuses an app's request by them before it sends it and the server refuses the same request by
+// them when it arrives, so a copy on each side would let the two disagree. It imports no node
+// module. `data/shapes/shapes` holds the zod helpers (a schema that answers its input, the map and
+// number schemas, the quick path) that the server's, the state layer's, the views' and the shell's
+// readers of untyped input share, so all four read by one rule. `data/file-ops` holds what a file
+// or folder name may be, the name a copy takes, the sizes of an upload and of a comparison, and the
+// shapes of a file operation and its answer, which the Files view checks while a name is typed and
+// the server checks when the name arrives. The model's own concern modules (`data/model-*`) are
+// reached through the facade only, which is why they are not listed here.
 //
 // `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
@@ -117,7 +119,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // state row because the server's outline and the Files Outline read the same sections through it,
 // the LaTeX store takes the list of programs from it, and the answers module takes the words a
 // LaTeX request is refused with; it takes a string and a parser and does no I/O, and imports no
-// parser of its own.
+// parser of its own. `data/prose/bib` is there for the same reason: the server lists the citations
+// of a bibliography through it and the page aligns and sorts a `.bib` file through it, over a
+// parser it is handed. `data/sources/config/catalog/latex-tables` reads the tables of
+// config/catalogs/latex.yml: the editor's commands and the TeX view read them, and the server words
+// one finding for each list that lost a row from the same read.
 //
 // The shell's row names the state modules the workbench is made of, one at a time, and the folder
 // `state/workbench/navigation/`, whose modules (the rail's pages, the view catalogue and its keys,
@@ -132,7 +138,10 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `state/system/machine/lsp/lsp.svelte` and `state/system/machine/lsp/symbols` are in the shell's
 // row because the status bar's language server items and the palette's choice rows draw the
 // server states and the choices the relay sends, and the pane strip's breadcrumb draws the symbols
-// around the caret that the symbols module orders.
+// around the caret that the symbols module orders. `state/sessions/latex/latex-state`,
+// `state/shared/words/format` and `data/prose/latex` are in it because the status bar's LaTeX item
+// reads the root and the build of the file in front, words the time the build ended and tells a
+// LaTeX file from another by name.
 //
 // `data/prose/lsp-servers` is one entry per language server (its languages, its words, its choices
 // and its own commands), which the relay's registry on the server and the page's kit, status bar,
@@ -178,6 +187,9 @@ const ALLOWED: Record<string, string[]> = {
         'state/system/machine/lsp/workspace-symbols',
         'state/sessions/terminals',
         'state/sessions/source',
+        'state/sessions/latex/latex-state',
+        'state/shared/words/format',
+        'data/prose/latex',
         'data/shapes/shapes',
         'data/prose/lsp-servers',
         'data/prose/symbol-kinds'
@@ -200,6 +212,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/accounts/connect',
         'data/helpers/dates',
         'data/helpers/files/paths',
+        'data/helpers/files/address',
         'data/helpers/files/apps',
         'data/accounts/leads',
         'data/helpers/worktrees',
@@ -207,6 +220,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/opens-in-program',
         'data/helpers/files/languages',
         'data/prose/latex',
+        'data/prose/bib',
         'data/helpers/files/nesting',
         'data/helpers/run/tasks',
         'data/helpers/run/schedules',
@@ -220,6 +234,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/sources/config/rail',
         'data/sources/config/settings',
         'data/sources/config/editor-options',
+        'data/sources/config/catalog/latex-tables',
         'data/sources/config/catalog/options',
         'data/sources/config/catalog/value-rule',
         'data/hub-address',
@@ -390,7 +405,11 @@ const FROZEN = [
  * find bar and the arrangement's save turn through `desktop`, and the update tray and its schedule
  * list and dialog read and write the schedules through `schedule`, and the status bar's language
  * server items and the palette's choice rows read the servers' states and choices through `lsp`,
- * while the pane strip's breadcrumb reads the symbols of the file in view through `documents`.
+ * while the pane strip's breadcrumb reads the symbols of the file in view through `documents`, and
+ * the status bar's LaTeX item reads the build of the root in front through `latex` and asks the
+ * root of a file through `latexActions`, and the workbench and the browser's float windows read
+ * which float a page draws through `float`, and the tab menu opens one through `windows`, and the
+ * windows of the desktop app name the page that opens a float's window through `pageId`.
  */
 const SHELL_STORES = [
     'commands',
@@ -413,7 +432,12 @@ const SHELL_STORES = [
     'lsp',
     'lspEdits',
     'workspaceSymbols',
-    'documents'
+    'documents',
+    'latex',
+    'latexActions',
+    'float',
+    'windows',
+    'pageId'
 ];
 
 /**

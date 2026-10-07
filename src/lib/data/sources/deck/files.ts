@@ -71,12 +71,3 @@ export function resolveIn(
     }
     return { error: 'missing' };
 }
-
-/** The address the file route answers a path under a root at, each segment escaped on its own. */
-export function fileAddress(root: DeckRoot, under: string): string {
-    const parts = under
-        .split('/')
-        .filter((one) => one !== '' && one !== '.')
-        .map((one) => encodeURIComponent(one));
-    return `/api/file/${encodeURIComponent(root.key)}/${parts.join('/')}`;
-}

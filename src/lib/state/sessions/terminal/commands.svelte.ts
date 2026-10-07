@@ -28,8 +28,8 @@
 // command that printed it, the token, the chain and its folders being the ones the terminal's mark
 // carries. A line ending in the marker counts, so a command whose last output had no line break
 // does not hide the next marker; a mark with no token is read by the bare name. A LaTeX build is a
-// task terminal too, and its problems are the LaTeX state's own (state/sessions/latex.svelte.ts),
-// so its output is not read here.
+// task terminal too, and its problems are the LaTeX state's own
+// (state/sessions/latex/latex.svelte.ts), so its output is not read here.
 
 import { untrack } from 'svelte';
 import { z } from 'zod';

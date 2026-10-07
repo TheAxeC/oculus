@@ -44,7 +44,6 @@ import {
     hostsOf,
     LAYOUT_KEY,
     maximise,
-    centred,
     newPage,
     PREVIOUS_KEY,
     restore,
@@ -211,6 +210,8 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         showTimeline: ShowInFiles['showTimeline'];
         /** Show one folder as a Files tab rooted at it, found again by the folder. */
         showFolderInFiles: (path: string, root?: string) => string;
+        /** Show the TeX view: its tab, or a new tab in the pane holding the Files tab. */
+        showTexView: () => string;
         /** Show a deck in a Present tab, beside the tab being read when asked. */
         showDeck: ShowDeck['showDeck'];
         /**
@@ -235,10 +236,8 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
     };
 
 /**
- * What the app gives the layout: the host's turn for a save of the arrangement, and whether the
- * page is a window of the app, which is what draws a float placed in a window. A page in a browser
- * is given none, and then every save is written directly and a float placed in a window is read as
- * the default free place.
+ * What the app gives the layout: the host's turn for a save of the arrangement. A page in a browser
+ * is given none, and then every save is written directly.
  */
 export type LayoutDesktop = { turn: SaveTurn };
 
@@ -304,25 +303,13 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         return store.current.pages.find((page) => page.id === id) ?? null;
     }
 
-    /** The floats `floats()` last mapped, and the saved list they were mapped from. */
-    let mappedFrom: Float[] = [];
-    let mapped: Float[] = [];
-
     /**
-     * The floats, in the order they were made. A page of the app holds a float placed in a window
-     * as it is saved; a page in a browser draws it at the default free place, its tabs kept, and
-     * writes the place back only when that page changes the float.
+     * The floats, in the order they were made. A float placed in a window is drawn by the window
+     * that holds it: the host's in the app, a browser tab opened for it in a browser
+     * (shell/browser-windows.svelte.ts takes a float back whose tab is gone).
      */
     function floats(): Float[] {
-        const held = store.current.floats;
-        if (desktop !== undefined || !held.some((one) => one.place.kind === 'window')) return held;
-        if (mappedFrom !== held) {
-            mappedFrom = held;
-            mapped = held.map((one) =>
-                one.place.kind === 'window' ? { ...one, place: centred() } : one
-            );
-        }
-        return mapped;
+        return store.current.floats;
     }
 
     /** The page or float with this id: a float is a workbench of its one pane. */
@@ -399,7 +386,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     const opening = createOpening(access, attention, instances.keepPreview, (view) =>
         openedRule(view)
     );
-    const files = createShowInFiles(access, attention, opening.openView);
+    const files = createShowInFiles(access, attention, opening.openView, opening.openInPane);
     const decks = createShowDeck(opening.openView, opening.openBeside);
     const keeps = createArmedKeeps((id) => {
         const host = holding(id);
@@ -821,6 +808,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         showInFiles: files.showInFiles,
         showTimeline: files.showTimeline,
         showFolderInFiles: files.showFolderInFiles,
+        showTexView: files.showTexView,
         showDeck: decks.showDeck,
         armedKeep: keeps.armed,
         armKeep: keeps.arm,

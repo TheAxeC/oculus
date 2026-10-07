@@ -37,6 +37,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
                 local: server.local
             }),
         approvalsFor: () => server.local.approvals ?? defaultApprovalsPath(),
-        refresh: () => server.terminals.refresh()
+        refresh: () => server.terminals.refresh(),
+        turns: server.terminals.turns
     });
 };

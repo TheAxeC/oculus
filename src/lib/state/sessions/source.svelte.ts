@@ -15,7 +15,7 @@ import type { WordWrap } from '../../data/helpers/editor.ts';
 import { TEXT_LIMIT } from '../sources/fs.ts';
 import { headUrl } from '../sources/repositories/repositories.ts';
 import type { HeadStage } from '../sources/repositories/file-git.ts';
-import { readCapped } from '../sources/fs.svelte.ts';
+import { fileBytesUrl, readCapped } from '../sources/fs.svelte.ts';
 import type { WriteAnswer, WritesStore, InstanceStates } from '../shared/stores/shapes.ts';
 import { refusedAnswer } from '../shared/answers/answers.ts';
 import { t } from '../shared/words/text.ts';
@@ -208,15 +208,6 @@ export function headOf(state: unknown): HeadStage | undefined {
     return readAs(headShape, state)?.head;
 }
 
-/** The api/file URL, escaping each path segment without escaping its separators. */
-export function sourceFileUrl(root: string, path: string): string {
-    const parts = path
-        .split('/')
-        .filter((part) => part !== '')
-        .map((part) => encodeURIComponent(part));
-    return `/api/file/${encodeURIComponent(root)}/${parts.join('/')}`;
-}
-
 /** The api/source address the file's own facts are read at. */
 export function sourceInfoUrl(root: string, path: string): string {
     return `/api/source?root=${encodeURIComponent(root)}&path=${encodeURIComponent(path)}`;
@@ -229,7 +220,7 @@ export function sourceInfoUrl(root: string, path: string): string {
  */
 export async function loadSource(root: string, path: string): Promise<SourceLoad> {
     try {
-        const response = await fetch(sourceFileUrl(root, path), { cache: 'no-cache' });
+        const response = await fetch(fileBytesUrl(root, path), { cache: 'no-cache' });
         if (!response.ok) return { ok: false, error: refusedAnswer(response.status) };
         const held = await readCapped(response, TEXT_LIMIT);
         return { ok: true, content: held.text, truncated: held.truncated };

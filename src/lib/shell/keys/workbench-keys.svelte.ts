@@ -206,6 +206,9 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return activateTab(pane, action.index);
         } else if (action.kind === 'cycle-tab') {
             return cycleTab(pane, action.by);
+        } else if (action.kind === 'tex-view') {
+            clearCursor();
+            options.layout.showTexView();
         } else if (action.kind === 'command-default') {
             options.runDefault(action.which);
         } else if (action.kind === 'save') {
@@ -287,11 +290,12 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     }
 
     /**
-     * The place in its pane of a frame that holds the focus: the frames are drawn outside the panes
-     * (shell/frames/FrameLayer.svelte), so the pane of a frame is the pane of its slot.
+     * The place in its pane of a frame that holds the focus, or of an element inside a viewer's
+     * box: the frames are drawn outside the panes (shell/frames/FrameLayer.svelte), so the pane of
+     * a frame is the pane of its slot.
      */
     function frameSlot(element: HTMLElement): HTMLElement | null {
-        const id = element.dataset.frameOf;
+        const id = element.closest<HTMLElement>('[data-frame-of]')?.dataset.frameOf;
         if (id === undefined) return null;
         return document.querySelector<HTMLElement>(`[data-frame-slot="${CSS.escape(id)}"]`);
     }

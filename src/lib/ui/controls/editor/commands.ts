@@ -1,9 +1,10 @@
 // Layer 3, primitive. What a parent asks the text editor to do through `perform` (types.ts's
 // `EditorCommand`), done on the editor and its model: go to a line, go to a place and select the
 // word at it, set or convert the indentation, set the line ending, set the language (and load its
-// grammar when it has not loaded), or run one of the editor's actions; and the first line the
-// editor shows, which the parent keeps so that a copy of the tab opens at it; and the edits a text
-// the parent handed in was reached by, made in the model as they are.
+// grammar when it has not loaded), insert a text or a snippet at the selections, replace the whole
+// text as one edit, or run one of the editor's actions; and the first line the editor shows, which
+// the parent keeps so that a copy of the tab opens at it; and the edits a text the parent handed in
+// was reached by, made in the model as they are.
 
 import type * as Monaco from 'monaco-editor';
 import { eolOf, type EditorKit } from './kit/load';
@@ -56,6 +57,31 @@ export function runCommand(
     } else if (command.kind === 'language') {
         kit.monaco.editor.setModelLanguage(held, shikiId(command.language));
         void kit.ensureLanguage(command.language);
+    } else if (command.kind === 'insert') {
+        made.focus();
+        const snippets = made.getContribution('snippetController2') as unknown as {
+            insert: (template: string) => void;
+        } | null;
+        if (command.snippet === true && snippets !== null) {
+            snippets.insert(command.text);
+        } else {
+            made.pushUndoStop();
+            made.executeEdits(
+                'oculus-insert',
+                (made.getSelections() ?? []).map((range) => ({
+                    range,
+                    text: command.text,
+                    forceMoveMarkers: true
+                }))
+            );
+            made.pushUndoStop();
+        }
+    } else if (command.kind === 'replace') {
+        made.pushUndoStop();
+        made.executeEdits('oculus-replace', [
+            { range: held.getFullModelRange(), text: command.text }
+        ]);
+        made.pushUndoStop();
     } else {
         made.focus();
         void made.getAction(command.id)?.run();

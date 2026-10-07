@@ -33,6 +33,7 @@ describe('the desktop host decisions', () => {
         expect(where('not an address')).toEqual({ kind: 'refused' });
         expect(where('http://127.0.0.1:8790/')).toEqual({ kind: 'browser' });
         expect(where('http://localhost:8817/')).toEqual({ kind: 'browser' });
+        expect(where(`${ORIGIN}/?float=f1&owner=p1`)).toEqual({ kind: 'float', id: 'f1' });
         expect(where(`${ORIGIN}/?float=f1&x=1`)).toEqual({ kind: 'browser' });
         expect(movedPort('http://127.0.0.1:8819/', ORIGIN)).toBe(8819);
         expect(movedPort('http://127.0.0.1:8819/?float=f1', ORIGIN)).toBe(8819);

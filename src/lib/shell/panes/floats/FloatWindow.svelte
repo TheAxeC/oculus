@@ -5,7 +5,8 @@
     // pane with the float's id as its page, as FloatLayer draws it, so the tab strip, the menus,
     // the keyboard and the drops reach it as they reach any pane. The float's window is closed when
     // the float stops being one placed in a window: it was returned to a page, docked, freed or
-    // closed elsewhere.
+    // closed elsewhere. In the app the host closes it; a browser tab opened for the float closes
+    // itself.
 
     import { useState } from '$lib/state/client/use';
     import PaneView from '../PaneView.svelte';
@@ -27,7 +28,9 @@
     const float = $derived(floats().find((one) => one.id === id));
 
     $effect(() => {
-        if (float?.place.kind !== 'window') client.desktop?.bridge.closeSelf();
+        if (float?.place.kind === 'window') return;
+        if (client.desktop === undefined) window.close();
+        else client.desktop.bridge.closeSelf();
     });
 </script>
 

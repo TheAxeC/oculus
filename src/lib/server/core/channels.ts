@@ -43,6 +43,8 @@ export class Hub {
     #merges = new Map<string, Merge>();
     /** The callbacks per channel for the change from no subscriber to one. */
     #firstListeners = new Map<string, Set<() => void>>();
+    /** The version of the last message `send` made per channel, which keeps no latest message. */
+    #sentVersions = new Map<string, number>();
 
     /** The channel's version: 0 before anything is published on it. */
     version(channel: string): number {
@@ -146,6 +148,21 @@ export class Hub {
             if (subscriber.channels.has(channel)) this.#deliver(sink, subscriber, message);
         }
         return message.version;
+    }
+
+    /**
+     * Send a payload to the channel's subscribers once and keep nothing of it: it is an event, not
+     * a state, so a page that subscribes later is not told and `latest` stays as it was. A page
+     * that is behind is sent the newest event only, as with any channel.
+     */
+    send(channel: string, payload: unknown): number {
+        const version = (this.#sentVersions.get(channel) ?? 0) + 1;
+        this.#sentVersions.set(channel, version);
+        const message: Message = { channel, version, payload };
+        for (const [sink, subscriber] of this.#subscribers) {
+            if (subscriber.channels.has(channel)) this.#deliver(sink, subscriber, message);
+        }
+        return version;
     }
 
     /** Forget a sink. Called when its socket closes; a send in flight for it is then dropped. */

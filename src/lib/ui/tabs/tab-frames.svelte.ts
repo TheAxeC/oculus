@@ -13,6 +13,12 @@
 // shows its view any more. A view being drawn again, or going out of sight with its pane or its
 // page, ends none of them.
 //
+// A frame of the kind `viewer` is no iframe but a box the view fills itself (`mount`): the PDF
+// viewer's pages, which hold a document that a redraw would load and lay out again. The layer draws
+// the box, places it and keeps it as it does an iframe, and the view's controller is handed to the
+// view through `provide` and `provided`, so the controls the view draws read the one viewer the
+// layer holds.
+//
 // The workbench provides one store to everything under it. A view drawn where none is provided
 // (a case that renders the view alone) draws no frame.
 
@@ -23,12 +29,13 @@ import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 const TAB_FRAMES = Symbol('tab-frames');
 
 /**
- * The three kinds of frame a tab holds. The kind fixes the frame's sandbox, so a view cannot ask
+ * The four kinds of frame a tab holds. The kind fixes the frame's sandbox, so a view cannot ask
  * for one: an app's document has the opaque origin and no more than scripts and downloads, a
- * manual of the machine keeps its own origin to load its stylesheets and images, and a PDF has
- * none because Chrome refuses to run its viewer in a sandboxed frame.
+ * manual of the machine keeps its own origin to load its stylesheets and images, a PDF has none
+ * because Chrome refuses to run its viewer in a sandboxed frame, and a viewer is no frame of a
+ * document but a box of the page that the view fills.
  */
-type FrameKind = 'app' | 'document' | 'pdf';
+type FrameKind = 'app' | 'document' | 'pdf' | 'viewer';
 
 /** What a view hears of the document its frame holds, on the document, each time one loads. */
 type FrameHear = {
@@ -54,6 +61,11 @@ export type FrameSpec = {
      * view drawing the slot.
      */
     attach?: (node: HTMLIFrameElement) => (() => void) | undefined;
+    /**
+     * For the kind `viewer`: called once for each box drawn, with the box; what it returns ends
+     * with the box. It runs again only for a new box.
+     */
+    mount?: (node: HTMLDivElement) => (() => void) | undefined;
     hear?: FrameHear;
 };
 
@@ -74,6 +86,8 @@ export class TabFrames {
     #specs = new SvelteMap<string, FrameSpec>();
     #slots = new SvelteMap<string, HTMLElement>();
     #nodes = new SvelteMap<string, HTMLIFrameElement>();
+    #boxes = new SvelteMap<string, HTMLDivElement>();
+    #provided = new SvelteMap<string, unknown>();
     #shields = new SvelteSet<string>();
 
     /** The ids of the tabs that hold a frame. */
@@ -96,6 +110,29 @@ export class TabFrames {
         return this.#nodes.get(id);
     }
 
+    /** The box drawn for a tab of the kind `viewer`, or undefined while there is none. */
+    boxOf(id: string): HTMLDivElement | undefined {
+        return this.#boxes.get(id);
+    }
+
+    /** The element drawn for the tab, an iframe or a box, or undefined while there is none. */
+    elementOf(id: string): HTMLIFrameElement | HTMLDivElement | undefined {
+        return this.#nodes.get(id) ?? this.#boxes.get(id);
+    }
+
+    /** What the tab's box was mounted with, or undefined while it holds none. */
+    provided(id: string): unknown {
+        return this.#provided.get(id);
+    }
+
+    /** Hold what a tab's box was mounted with; what it returns lets go of it. */
+    provide(id: string, value: unknown): () => void {
+        this.#provided.set(id, value);
+        return () => {
+            if (this.#provided.get(id) === value) this.#provided.delete(id);
+        };
+    }
+
     /** Whether the frame takes no pointer, because something over its slot is to take it. */
     shielded(id: string): boolean {
         return this.#shields.has(id);
@@ -110,6 +147,7 @@ export class TabFrames {
         const held = this.#specs.get(id);
         if (held !== undefined && sameFrame(held, spec)) {
             held.attach = spec.attach;
+            held.mount = spec.mount;
             held.hear = spec.hear;
             return;
         }
@@ -135,6 +173,14 @@ export class TabFrames {
         this.#nodes.set(id, node);
         return () => {
             if (this.#nodes.get(id) === node) this.#nodes.delete(id);
+        };
+    }
+
+    /** Record the box the layer drew for a tab of the kind `viewer`; what it returns forgets it. */
+    boxed(id: string, node: HTMLDivElement): () => void {
+        this.#boxes.set(id, node);
+        return () => {
+            if (this.#boxes.get(id) === node) this.#boxes.delete(id);
         };
     }
 

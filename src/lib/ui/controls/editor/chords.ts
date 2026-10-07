@@ -113,7 +113,7 @@ export function ownListing(actions: readonly EditorOwnAction[], mac: boolean): E
         .map(({ id, label, key }) => ({
             id,
             label,
-            hint: key === undefined ? '' : chordHint([key], mac)
+            hint: key === undefined ? '' : chordHint('code' in key ? [key] : key, mac)
         }));
 }
 

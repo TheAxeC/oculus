@@ -51,6 +51,10 @@ function skippedReason(where: EditorProblem['where']): string {
             return t('workbench.settings_origin_field');
         case 'not-a-map':
             return t('workbench.settings_origin_map');
+        case 'repeat':
+            return t('workbench.settings_origin_repeat');
+        case 'unnamed':
+            return t('workbench.settings_origin_unnamed');
     }
 }
 

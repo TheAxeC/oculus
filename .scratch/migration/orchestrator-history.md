@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z698 (2026-10-07): automode, D45's round-2 choices (the `build` field of `/api/latex`, the page lock in the desktop app, the float freed 10 to 20 s after its tab closes), each kept.
 - Z697 (2026-10-07): Axel, (a): the fixes of D23b's and D45's second repair rounds are kept; no exception round for a finding the last review raised first.
 - Z679 (2026-10-07): automode, D23c's round review: the word is selected only for a column inside it; fixed at landing.
 - Z678 (2026-10-07): automode, D23c's review findings (the clamped column, case 12d as built, Source.svelte's comment restored, no column on a positionless open, F4 selecting the word, a refused library file kept with its sentence, the dot-rule exception closed for a home-folder prefix); repair round 1 sent (`agents/briefs/D23c-round1.md`).
@@ -1910,3 +1911,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-07. D23b round 2 back (287,265 tokens, 120 tool uses, 54.2 min); its review over round 2 dispatched.
 - 2026-10-07. Z697 ruled (a) by Axel.
 - 2026-10-07. D23b refuted over round 2 by a5cfe6049df8286b5 (claude-opus-5-5, 272,924 tokens, 74 tool uses, 17.0 min) and landed with its findings 1 to 6 fixed at landing.
+- 2026-10-07. D45 refuted over round 2 by ac564fc562c278620 (claude-opus-5-5, 326,746 tokens, 97 tool uses, 27.8 min) and landed with its nine findings fixed at landing; Z698 kept round 2's three choices.

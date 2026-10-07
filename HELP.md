@@ -43,7 +43,7 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | m1-m7 | open a view of the Sessions page's group |
 | p1-p4 | open a view of the Projects page's group |
 | e1-e6 | open a view of the Incoming page's group |
-| s1-s4 | open a view of the Explorer page's group |
+| s1-s5 | open a view of the Explorer page's group |
 | c1-c6 | open a view of the Academic Life page's group |
 | l1-l3 | open a view of the Pillars page's group |
 | r1-r4 | open a view of the References page's group |
@@ -63,6 +63,16 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | Cmd+S | save the source tab on screen (Ctrl+S off macOS); the browser's save dialog is never opened |
 | Cmd+Shift+B | run the default build of the repository holding the open source file (Ctrl+Shift+B off macOS) |
 | Cmd+Alt+T | run the default test of that repository (Ctrl+Alt+T off macOS) |
+| Cmd+Alt+B / Cmd+Alt+C / Cmd+Alt+V | build, clean and view the PDF of the LaTeX root of the source tab or the PDF tab in front (Ctrl+Alt off macOS) |
+| Cmd+Alt+J | in a LaTeX source tab, show the line at the caret on the PDF page (SyncTeX forward search) |
+| Cmd+click / Ctrl+click | in a PDF tab, open the source line of the place clicked (a double click when `latex.reverse_synctex` is `double_click`) |
+| Cmd+Alt+M | open Math Preview beside a LaTeX source tab |
+| Cmd+Alt+X | show the TeX view in the pane that holds the Files tab, with any focus |
+| Cmd+Alt+[ / Cmd+Alt+] | promote / demote the sections in the selection of a LaTeX source tab |
+| Enter / Alt+Enter | in an `itemize`, `enumerate` or `description` environment, start a new `\item ` / a plain new line |
+| Cmd+L, then Cmd+B, I, U, E, R, T, S, C, N, 6 or - | in a LaTeX source tab, wrap the selection in `\textbf`, `\textit`, `\underline`, `\emph`, `\textrm`, `\texttt`, `\textsl`, `\textsc`, `\textnormal`, `\textsuperscript` or `\textsubscript` |
+| Cmd+L, then Cmd+Enter / Cmd+W | insert `\item` / surround the selection with a command whose name is asked |
+| Ctrl+Shift+M, then Cmd+B, I, R, T, S, Shift+B or C | wrap the selection in `\mathbf`, `\mathit`, `\mathrm`, `\mathtt`, `\mathsf`, `\mathbb` or `\mathcal` (Ctrl+M, then Ctrl+key off macOS) |
 | Shift-F10 | the right-click menu of the focused row or control, as the context menu key opens it |
 | Cmd-K | jump palette |
 | Cmd+T | in the app, the palette on the symbols of the workspace (`#` in the palette does the same in a browser) |
@@ -97,6 +107,7 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `repositories` | [Repositories](docs/views.md#repositories) | VS Code's Source Control over every repository oculus knows, with the commit box, the changes, the graph, stashes, tags and worktrees. |
 | `search` | [Search](docs/views.md#search) | A pattern across the files of one root or of all of them, the hits grouped by file, with an optional replace. |
 | `references` | [References](docs/views.md#references) | The locations a language server found for Find All References or Find All Implementations in a source tab, and the call and type hierarchies of a symbol. |
+| `latex` | [TeX view](docs/views.md#tex-view) | LaTeX Workshop's side bar for the root of the LaTeX file in front: Commands, Structure, Problems and Math Symbols. |
 | `funding` | [Funding](docs/views.md#funding) | The funding schemes, their stage and the statement each grant requires. |
 | `events` | [Talks & Events](docs/views.md#talks--events) | Talks, events and what is coming. |
 | `education` | [Education & Service](docs/views.md#education--service) | Teaching and service entries. |

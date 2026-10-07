@@ -55,6 +55,7 @@ export type KeyAction =
     | { kind: 'new-session' }
     | { kind: 'command-default'; which: 'build' | 'test' }
     | { kind: 'save' }
+    | { kind: 'tex-view' }
     | { kind: 'close-tab' }
     | { kind: 'new-text-file' }
     | { kind: 'find' }
@@ -113,6 +114,20 @@ function defaultCommand(event: KeyEventLike, context: KeyContext): 'build' | 'te
     if (event.code === 'KeyB' && event.shiftKey === true && event.altKey !== true) return 'build';
     if (event.code === 'KeyT' && event.altKey === true && event.shiftKey !== true) return 'test';
     return null;
+}
+
+/**
+ * Whether the key is Cmd+Alt+X (Ctrl+Alt+X off macOS), LaTeX Workshop's Show TeX View. The letter
+ * is read from the physical key, since Option and X type another character on macOS. It answers
+ * while a field is typed in, as the editor is one, and under no overlay.
+ */
+function showsTexView(event: KeyEventLike, context: KeyContext): boolean {
+    if (event.defaultPrevented === true) return false;
+    if (context.paletteOpen || context.trayOpen || context.confirmOpen) return false;
+    const mac = context.mac !== false;
+    if ((mac ? event.metaKey : event.ctrlKey) !== true) return false;
+    if ((mac ? event.ctrlKey : event.metaKey) === true) return false;
+    return event.code === 'KeyX' && event.altKey === true && event.shiftKey !== true;
 }
 
 /**
@@ -184,6 +199,9 @@ export function resolveKey(
     }
     if (savesFile(event, context)) {
         return { action: { kind: 'save' }, state: { ...state, chord: '' } };
+    }
+    if (showsTexView(event, context)) {
+        return { action: { kind: 'tex-view' }, state: { ...state, chord: '' } };
     }
     const which = defaultCommand(event, context);
     if (which !== null) {

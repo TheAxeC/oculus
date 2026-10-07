@@ -14,6 +14,7 @@ The files below sit in the `config/` folder of the engine, `tools/oculus/config/
 | `catalogs/file-nesting.yml` | The files the Files view draws under another file when File Nesting is on: per parent name, the names nested under it, as VS Code lists them by default. |
 | `catalogs/glyphs.yml` | The glyph vocabulary: each name with the ASCII stand-in, one to three characters, that a terminal theme draws in place of its icon. |
 | `catalogs/icons.yml` | The line icon each glyph name is drawn as, one row per name in the glyph vocabulary. |
+| `catalogs/latex.yml` | The LaTeX editing tables: the `@` suggestions, the Cmd+L and Ctrl+Shift+M chord keys, the environments `\envname` offers with their arguments and the math symbol groups the TeX view lists, from LaTeX Workshop's own data lists (MIT license; the notice is in the file's head). |
 | `layout.yml` | How things are arranged: the rail's pages and the arrangements each starts as, the view catalogue's groups, the hub documents, the board chrome, the tab rollups and the live badges. |
 | `catalogs/manifest-schema.yml` | The project.yml edit form as data: its sections, its fields, the widget each field is edited by, and where a widget takes its choices from. |
 | `catalogs/meta.yml` | The tool identity: the title and the subtitle the window carries. |

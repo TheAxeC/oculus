@@ -79,7 +79,7 @@ arrangements:
       dir: row
       sizes: [0.4, 0.6]
       children:
-        - { kind: pane, view: [files, repositories, search] }
+        - { kind: pane, view: [files, repositories, search, latex] }
         - { kind: pane, view: [] }
   academic:
     root: { kind: pane, view: [funding, events, education, applications, joint-work, tasks] }

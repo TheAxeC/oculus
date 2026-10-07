@@ -68,7 +68,7 @@ type DesktopEvents = {
 /** The bridge. */
 export type DesktopBridge = {
     /** Ask for the window of a float placed in a window; one already open stays as it is. */
-    openFloatWindow: (id: string, bounds: ScreenBounds) => void;
+    openFloatWindow: (id: string, bounds: ScreenBounds, owner: string) => void;
     /** Close the window this page is in. */
     closeSelf: () => void;
     /** Bring a main window to the front. */
@@ -98,19 +98,29 @@ export type DesktopBridge = {
     ) => () => void;
 };
 
-/** What a client is built with in the app: the bridge, and the float a popped-out page draws. */
-export type Desktop = { bridge: DesktopBridge; float: string | null };
+/**
+ * What a client is built with in the app: the bridge, the float a popped-out page draws, and the id
+ * of the main window that opened it.
+ */
+export type Desktop = { bridge: DesktopBridge; float: string | null; owner: string | null };
 
 /** The bridge `window.oculusDesktop` is when the host gave the page one. */
 type DesktopWindow = { oculusDesktop?: DesktopBridge };
 
 /**
- * The desktop a page has: the bridge of a page the host made, and the float id its address names
- * with `?float=<id>`, null for a main window; undefined in a browser. An empty id names none.
+ * The desktop a page has: the bridge of a page the host made, the float id its address names with
+ * `?float=<id>` and the main window that opened it with `&owner=<id>`, both null for a main window;
+ * undefined in a browser. An empty id names none.
  */
 export function desktopOf(win: object, search: string): Desktop | undefined {
     const bridge = (win as DesktopWindow).oculusDesktop;
     if (bridge === undefined) return undefined;
-    const named = new URLSearchParams(search).get('float');
-    return { bridge, float: named === null || named === '' ? null : named };
+    const params = new URLSearchParams(search);
+    const named = params.get('float');
+    const owner = params.get('owner');
+    return {
+        bridge,
+        float: named === null || named === '' ? null : named,
+        owner: owner === null || owner === '' ? null : owner
+    };
 }

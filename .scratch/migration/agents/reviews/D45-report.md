@@ -597,3 +597,182 @@ Each probe below ran in hidden Electron windows (`show: false`, `backgroundThrot
 
 - Rewritten: `DESIGN.md:121`, `DESIGN.md:533`, `DESIGN.md:574` (owner, Web Lock, page lock), `docs/views.md:259`, head comments of `socket.ts`, `browser-windows.svelte.ts`, `float/browser.ts`, `root.ts`, `LatexItem.svelte`, `side-panel.ts`, `PdfControl.svelte`, `FloatWindow.svelte`, `Workbench.svelte`, `builds.ts` (rewrapped), the `LayoutDesktop` and `floats()` comments of `layout.svelte.ts`, the comments of `storage.ts` (`browserTabId`, `holdBrowserTabId`), `config/text/views/academic/latex.yml` (`failed_notice`), `config/behavior.yml:133`, `config/catalogs/options.yml:591`, the `boundaries.test.ts` comments.
 - Still true, checked by `grep -n "float\|jump\|window" HELP.md README.md docs/window.md docs/files-and-search.md docs/configuration.md`: `HELP.md`, `README.md`, `docs/window.md` (its "Move into New Window (in the app)" sentences are identical to the base, and the menu flag is `client.desktop !== undefined` at `PaneView.svelte:217,234`), `docs/files-and-search.md`, `docs/configuration.md`.
+
+
+## Repair round 2
+
+Not done, not verified, and open, first:
+
+- Proof 1 (item 7, case 5): `rootOf` is not changed. The profile shows the time is one `openSync` of a file the operating system has just been given, which no code inside `rootOf` can shorten, and `rootOf` opens no file it does not need (list under item 7). The bound of 200 ms is met in five of the six runs quoted and exceeded in one (241.4 ms, load average about 10), and the wrapped runs show every excess to be one cold `openSync`. This is the item whose requested fix, "fix it within `rootOf`", I did not make, because the profile finds nothing in `rootOf` to fix.
+- Behaviour 3 (the raise of the owner's window in the desktop app) is checked by reading only (`file:line` under item 3). The app was not started, so `win.show()` and `win.focus()` on the owner's window were not seen to run.
+- Behaviour 3 and 4 in the app: the owner page's Web Lock in an app window (`+page.svelte:66` now holds it there too) was exercised in hidden Electron windows that load the page without the app's host bridge, which is the same page code and the same lock manager, not the app.
+- `npm run test:checks` ends with 2 failures, both in `tests/checks/config/integrity.test.ts` ("the real hub > validates with no findings", "reads the portfolio deck with every named deck found"), the two that read the real hub and fail the same way in round 1. Every other file of `test:checks` passes (`Tests 2 failed | 241 passed (243)`).
+- `npm run test:quick` passes and reports "over the time limit": 65.2 s against 45.0 s, at a load average of about 12 on this machine. Every command in it passed.
+- Edits the brief leaves to the coordinator: the proposed Doc text of G47 (item 8) is below; I did not edit `agents/guarded.md`.
+- Decisions for Axel (each user-visible, each taken with the recommendation and open until he rules):
+  1. `/api/latex` answers a new field `build` on every main (`running`, `ok`, `failed`, `none`). It is a wire shape between the server and the page of the same app. Recommended: keep it, since the page cannot learn how a build ended that another page started from anything else the server sends. The cheaper option, a page-local test of the page's own builds, is the one that left the defect.
+  2. `holdBrowserTabId` now runs in the desktop app as well as in a browser (`+page.svelte:66`; the `desktop === undefined` condition is gone), so an app window's page holds `oculus-page:<id>` and a float window can ask whether its owner is open. Recommended: keep it. The cheaper option, a new host message for "the owner is gone", adds a bridge channel (`preload.cjs`, `channels.ts`, `bridge.ts` and the type) for what the lock already says.
+  3. A float freed after its tab closes now waits about 10 s after its lock comes free, up to 20 s (item 5), where round 1 freed it when the lock came free. Recommended: keep it. The cheaper option, freeing at once, returns a reloaded float's tabs to the main page.
+
+Standing-rule events, stated as they are: I ran no git command in this round. I ran `tests/server/desktop` only with `--tagsFilter '!slow'`. The scratch server ran on port 8795 under `$TMPDIR/d45r2` (resolved by `pwd -P`) and was stopped by its pid; afterwards `lsof -nP -iTCP:8795 -sTCP:LISTEN` printed nothing and `ps -axo pid=,command= | grep -E "[l]atexmk|[p]dflatex|[v]ite.js dev|[e]lectron.*d45r2"` printed nothing, after `tmux kill-server` on the scratch tmux directory. No LaTeX build ran over a real project folder; every build was in the scratch hub.
+
+### What is done, and the command that shows it
+
+| Item | Done | Check |
+|---|---|---|
+| 1 Behaviour 1 | yes | probe `fail`, below |
+| 2 Behaviour 2 | yes | probe `three`, and the G35 row |
+| 3 Behaviour 3 | yes, by reading | `bridge.ts:143-154` |
+| 4 Behaviour 4 | yes | probe `owner` |
+| 5 Behaviour 5 | yes | probe `reload` |
+| 6 Spec 1 | yes | probe `status2` |
+| 7 Proof 1 | diagnosed, no change to `rootOf` | six runs and the control, below |
+| 8 Proof 3 | yes | `window-guard.test.ts:35` |
+| 9 Proof 2 | yes, quoted | below |
+| 10 Standards 1 | yes | `tokens.css:101`, `PdfControl.svelte:113` |
+| 11 Standards 2 | yes | `bib.ts:34`, `reader.ts:27` |
+| 12 Size split | answered | below |
+
+### Item 1, Behaviour 1: a failed or stopped build never moves the PDF's version in any page
+
+Change. The server says how the build of each main came to. `buildOutcome` (`src/lib/server/machine/pty/latex.ts:118`) reads the terminals list the `sessions` payload carries and answers `running` while the kept build terminal of the main has no exit status, `ok` after status 0, `failed` after any other status (a stopped build ends with one), `none` when no oculus terminal built it. `/api/latex` carries it as `build` on every main (`endpoint.ts:453`, wired in `routes/api/(sessions)/latex/+server.ts:22`, type `BuildOutcome` in `data/model/model-processes.ts`, read through `latex-state.ts:253`). `redraw` (`latex.svelte.ts:370`) bumps a moved PDF only when `build` is not `running` or `failed`, and, when `build` is `none`, only when the log holds no error; it no longer reads the page's own builds, so a page that did not start the build and a `clean_and_retry` in progress hold the PDF like the page that did. A held folder is read again on a `sessions` push while any main of it has `build: running` (`latex.svelte.ts:213-217`), so the page that did not start the build learns of its end. The head comment of `latex.svelte.ts` is rewritten.
+
+Check. Probe `fail` (hidden Electron, scratch server, a float page `?float=fl1&owner=<id>` on `main.pdf`, `main.tex` written from outside with `\undefinedcmd`, then a fixed document), output `$TMPDIR/d45r2/final-fail.txt`:
+
+```
+RESULT float pages at the start: 3
+RESULT external write of a document with \undefinedcmd: float page counts every 0.5 s for 20 s: [3]
+RESULT server answer after the failed build: [main, build, error count]: [["main.tex","failed",1]]
+RESULT main page notice: true
+RESULT pdf on disk after the failed build, pages: 4
+RESULT float pages after the failed build: 3
+RESULT fixed document: float page counts every 0.5 s for 15 s: [3,4]
+RESULT server answer after the fixed build: [main, build, error count]: [["main.tex","ok",0]]
+RESULT pdf on disk after the fixed build, pages: 4
+```
+
+The PDF on disk has 4 pages after the failed build (`pdfinfo`), and the float, a page that sent no build request, kept its 3 pages for 20 s, then showed 4 once the fixed document had built. The probe fails on the round 1 tree: the reviewer's probe3 on it saw the float go from 3 to 4 pages on a failed build.
+
+### Item 2, Behaviour 2: one build per folder and main, whatever the number of pages
+
+Change. `Turns` (`src/lib/server/machine/pty/channel.ts:329`) keeps one in-flight promise per key; a request that finds its key served waits for it and answers a clone of the response. `Terminals` holds one (`channel.ts:355`), the terminal route passes it as `TerminalOptions.turns` (`routes/api/(sessions)/terminal/+server.ts:41`, `pty/routes.ts:116`), and `startLatex` serves the build, clean and checkcites steps under the key folder, step and main (`pty/latex.ts:272`); `stop` is not queued. A request with no `turns` is served at once, as before. The head of `pty/latex.ts` is rewritten for it; the head of `channel.ts` gains the two lines that name `Turns`. The type lives in `channel.ts` because `src/lib/server/machine/pty` holds ten items and `folder-check.sh` refuses an eleventh file.
+
+Check, the reviewer's case: three main pages following the root under `on_file_change`, one external write, with the scratch tmux server empty before it (probe `three`, `$TMPDIR/d45r2/final-three2.txt`):
+
+```
+RESULT latex requests each page sent: {"main":[{"at":19593,"step":"build","main":"main.tex"}],"second":[{"at":18533,"step":"build","main":"main.tex"}],"third":[{"at":18794,"step":"build","main":"main.tex"}],"float":[]}
+RESULT latexmk processes during the build: {"latexmkPids":["42424"],"peakAtOnce":1,"tmuxSessionsSeen":["oculus-38e58a-shell"]}
+RESULT tmux sessions before and after: {"before":[],"after":["oculus-38e58a-shell"],"builds":1}
+tmux @oculus_name of that session: latex build projects/active/alpha/manuscript/main.tex
+```
+
+Three pages each sent one build request, and the server started one tmux build session and one `latexmk`. G35 row `answers concurrent requests for one build with the one terminal it started` (`tests/routes/sessions/terminal-actions.test.ts:343`) posts three build requests at once, expects one terminal id and one tmux start, then a build of `second.tex` with a terminal of its own; `npx vitest run tests/routes/sessions/terminal-actions.test.ts` prints `Tests 21 passed (21)` together with the comment-width test.
+
+### Item 3, Behaviour 3: the jump raises the owner page's window in the app
+
+Change. A main window records the page id it gave when it asked for a float window (`Entry.page`, `windows.ts:52`; set at `bridge.ts:129`), and `windows.mainOf(page)` finds the main window of an id (`windows.ts:425`). FOCUS_MAIN (`bridge.ts:143-154`) raises the caller itself when the caller is a main window, which is the page that heard a jump and calls `focus()` (`actions.ts` `listen('jump')`, `context.ts:421`); when the caller is a float window it raises `mainOf(entry.owner)`, and the main window focused last only when that window no longer exists (the Switch to Main button of a float, `PaneView.svelte:261`). The host sets nothing it did not set before except `Entry.page`.
+
+Check, by reading: `bridge.ts:129` `if (caller.entry.kind === 'main') caller.entry.page = page;`, `bridge.ts:146-148` `const owner = entry.owner === null ? null : windows.mainOf(entry.owner); const main = entry.kind === 'main' ? entry : (owner ?? windows.lastMain());`, `bridge.ts:149-152` `main.win.show(); main.win.focus();`. Not run in the app.
+
+### Item 4, Behaviour 4: a jump whose owner no longer exists says `jump_failed`
+
+Change. A main page holds the Web Lock `oculus-page:<id>` for its life; `pageOpen(id)` (`state/workbench/layout/saved/storage.ts:90`) answers whether `navigator.locks.query()` lists it (true when the API is missing, so a jump is sent and not refused for an API). The float's `inverse` awaits `ownerOpen(owner)` before it sends and says `latex.jump_failed` when the owner is gone (`state/sessions/latex/actions.ts:274`; the dependency is wired at `state/client/context.ts:422`). The lock is held in the app as well as in a browser (`routes/+page.svelte:66`), so a float window asks the same question; an app window's session storage is its own, so the duplicate-tab reload of `holdBrowserTabId` has no id to find taken (not exercised in the app).
+
+Check, probe `owner` (the reviewer's probe4: owner A opens the float, main B opens, A closes, Ctrl-click in the float), `$TMPDIR/d45r2/final-owner.txt`:
+
+```
+RESULT owner open: jumps heard by A and by B, notice in the float: {"A":1,"B":1,"notice":false}
+RESULT locks held after A closed: ["oculus-float:fl1","oculus-page:o1ozsg"]
+RESULT owner closed: jumps heard by B, notice in the float: {"B":1,"notice":true}
+```
+
+With A open the jump is sent (both pages hear it, only A acts) and no notice shows; after A is closed B's heard count stays 1 (nothing was sent) and the float shows "The main window could not be reached. Reconnect and try again."
+
+### Item 5, Behaviour 5: a reload of the float's tab keeps the float in its window
+
+Change. In `browser-windows.svelte.ts` the main page no longer frees a float the moment its lock is granted. A granted lock starts a wait of `LOAD_WAIT` = 10 s (`browser-windows.svelte.ts:28`), after which `navigator.locks.query()` (`drawn`, line 59) says whether a tab holds the lock again; if one does, the page watches again, and if none does, `layout.freeFloat(id)` runs (`watch`, line 64, `freed`, line 73). The grace is 10 s because that is the time round 1 already allows a tab to load and take its lock (the wait before the first request), and a reload frees the lock only between the unload and the load of the same page; a tab closed for good is freed 10 s after its lock came free: about 10 s after the close when the page's request for the lock is already waiting, up to 20 s when the page placed the float less than 10 s before the close. The head comment is rewritten.
+
+Check, probe `reload` (the reviewer's probe2), `$TMPDIR/d45r2/final-reload.txt`:
+
+```
+RESULT float place before the reload: [["fl1","window"]]
+RESULT float place at seconds after the reload: [[2,"window"],[6,"window"],[10,"window"],[14,"window"],[20,"window"],[26,"window"]]
+RESULT float tab after the reload: {"destroyed":false,"closeCalls":0,"pages":3}
+RESULT after the float tab was closed for good: [seconds, place, tab back in the page]: [[5,"window",false],[12,"free",false],[16,"free",false],[22,"free",false]]
+```
+
+The float's place stayed `window` through 26 s after the reload, the tab was not closed (`closeCalls` 0) and drew its 3 pages. A tab closed for good is `free` by 12 s. (The last column is whether a tab with the float's tab id is in the main page's own pane; it stays false because a freed float is kept as a float and not folded into the pane, which round 1 also did.)
+
+### Item 6, Spec 1: the status item shows while a build of its root runs, whatever tab is active
+
+Change. `LatexItem.svelte` keeps the root of the last LaTeX file or build PDF in front while another tab is active (`:35` the effect returns for any other tab without clearing the root), and draws while `root !== null && (latexTab || pdfTab || building)` (`:64`), where `building` is the page's own build or the server's `build: running` for the main (`:58`). A LaTeX file with no root still clears the root first (`:35-37`), and a PDF no build wrote has none, so round 1's rule for them holds. The glyph is the spinner whenever `building` (`:67`). The head comment is rewritten; `docs/window.md:82` ("or while a build runs, as a spinner") is still true and unchanged.
+
+Check, probe `status2` (a main.tex tab, then the Markdown tab `notes.md` active, then a change of `chap/one.tex` on disk), `$TMPDIR/d45r2/final-status2.txt`:
+
+```
+RESULT item while main.tex is active: true
+RESULT active tab:  notes.md
+RESULT item before a build, Markdown tab active: false
+RESULT samples every 0.1 s over 14 s with the Markdown tab active: {"samples":140,"drawn":60,"turningSpinner":60,"lastDrawn":false,"firstTurningAt":14443}
+```
+
+With the Markdown tab active the item is not drawn before the build, drawn with the turning spinner in 60 of 140 samples (6 s, the build), and not drawn after it.
+
+### Item 7, Proof 1: the first touch of `rootOf`
+
+Profile. The probe is the reviewer's own (`refute-d45-r1/r21.ts`, 16 cases over 31 files written seconds before, first touch with no prior read, and the control that reads every file plainly first), with the `node:fs` calls of `rootOf` wrapped to time each one (`openSync`, `readSync`, `statSync`, `readFileSync`, `readdirSync`, `realpathSync`, `lstatSync`, `existsSync`, `closeSync`), 30 runs at a load average of 4.3 to 10.4 (`uptime` before and after). In 14 of the 30 runs at least one case took over 20 ms: 19 slow cases in all, 9 of them over 200 ms. Each of the 19 was one `openSync`; the case's time minus that `openSync` was at most 8.6 ms, and no other call ever took 20 ms. The cases over 200 ms, as case ms against its own `openSync` ms:
+
+```
+203.9 / 203.2   216.6 / 213.6   223.6 / 222.4   231.0 / 228.1   239.6 / 236.7
+216.9 / 208.4   218.2 / 218.1   217.9 / 216.3   249.1 / 240.5
+```
+
+In those runs the cold read alone exceeds 200 ms, and the `openSync` in the same run is the control: it is the plain read of the file `rootOf` was opening. The few milliseconds left in a slow case are the first call's parse. A bare script that writes 60 files and opens each (`openSync`, nothing of oculus): 1 of 60 took 136 ms; a second process opening the same 60 files: 0 of 60 over 20 ms; a third process 20 s later: 0 of 60. So the stall is the first open of a file by a process after the file was written, a property of the file system on this machine, 1 of 60 files in the bare script, and 19 slow cases among the roughly 31 first opens of each of 30 runs of the probe. What exceeds the control's single read is the number of files one call opens: the cases that need every source of a folder open up to 7 files (`1 outside`, `1 missing`, `1 md`: `c1/out.tex main.tex cyc1.tex cyc2.tex md.tex miss.tex thesis.tex`), each with its own chance, so one call can meet two stalls (the reviewer's 296.0 and 278.8 ms), where the control reads one file at a time and reports the largest single read. Every one of those opens is read by a rule: `declaresClass` of each source of the folder for the `included` and `folder` rules, the named file and its target for the `magic` rule. Each file is opened once per call (`Walk`, `root.ts:60-70`) and the call stops when the answer is decided.
+
+Six runs after (no change to `rootOf`), load average 10.18 before and 10.89 after (`uptime`), maximum per run in ms over the 16 cases, first touch: 66.4, 23.1, 17.1, 16.6, 113.0, 241.4. The control beside it, the largest single plain read of the 31 files in six runs (the reviewer's `read-first` mode): 8.3, 1.1, 1.5, 0.9, 81.3, 10.9. Stated plainly: the bound of 200 ms is exceeded in one of the six runs (241.4 ms) and in 9 of the 30 wrapped runs' cases, each time by one cold `openSync` of the kind quoted above; the cause is outside `rootOf`, which opens only the files its rules read.
+
+### Item 8, Proof 3: the G47 row for the owner address
+
+`tests/server/desktop/window-guard.test.ts:35` adds `expect(where(`${ORIGIN}/?float=f1&owner=p1`)).toEqual({ kind: 'float', id: 'f1' });` beside the refused `?float=f1&x=1` (`:36`). `npx vitest run tests/server/desktop --tagsFilter '!slow'` prints `Tests 16 passed | 5 skipped (21)`. Proposed text for G47's Doc line in `agents/guarded.md:31`, to be added after "never opens in an app window": "a float window's address may carry `owner=<id>` beside `float=<id>`, which names the main window's page that opened it, and any other parameter sends the address to the default browser;".
+
+### Item 9, Proof 2: the G35 stop row on the unchanged tree
+
+The base copy (`D45-base/tools/oculus`, no git) with the current `terminal-actions.test.ts` (round 2's concurrent row and its `Turns` import taken out, since the base has no `Turns`) and the worktree's `node_modules`, run with `npx vitest run tests/routes/sessions/terminal-actions.test.ts`:
+
+```
+ FAIL  ... > POST /api/terminal, the latex action > stops the build terminal of the main and no other terminal
+AssertionError: expected 400 to be 404 // Object.is equality
+ Test Files  1 failed (1)
+      Tests  7 failed | 11 passed (18)
+```
+
+The stop row fails on the tree without the step ("expected 400 to be 404": the base's `LATEX_STEPS = ['build', 'clean']`, `pty/routes.ts:90` of the base, makes `stop` an unknown step and the route answers 400) and passes on the worktree (`Tests 21 passed (21)` in the line under item 2). The scratch copy was removed after the run.
+
+### Item 10, Standards 1: the thumbnail background is a token
+
+`src/lib/themes/tokens.css:101` adds `--pdf-paper: #fff;` (the sheet a PDF page is drawn on, white in every theme) and `PdfControl.svelte:113` reads `background: var(--pdf-paper);`. `npm run test:checks` passes the token and contrast files (only the two integrity tests fail).
+
+### Item 11, Standards 2: the bibliography read goes through the shared bounded read
+
+`readBounded(path, max = READ_MAX_BYTES)` (`reader.ts:27`) takes the limit as a parameter; `bib.ts:34` calls `readBounded(path, BIB_MAX_BYTES)` with its 8 MB, and `bib.ts` no longer imports `node:fs` or holds `readBib`. The other callers (`root.ts`, `outline.ts`, `texdoc.ts`) keep 2 MB.
+
+### Item 12: the move of the terminal types
+
+It is a size split. The step added six refusal words to `TERMINAL_REFUSALS` (`latex-program`, `latex-recipe`, `latex-no-recipe`, `latex-folder`, `latex-building`, `latex-idle`, used by cases 6, 7 and 8, 9, 16 and 19 of the first report, lines 31-44) and the `Terminal` family of types with them lived in `model-sessions.ts`, which was 876 lines at the base against the step's limit of 880 (`agents/spec.md:45`). The six words plus their comment lines take the file past 880, so the terminal types moved to `model-processes.ts` (now 445 lines) and `model-sessions.ts` is 714 (`wc -l`). Nothing else needed the move. `model-processes.ts` also now holds `BuildOutcome`.
+
+### Gates, on the final tree
+
+- `npm run check`: `COMPLETED 3302 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run lint` (`eslint .`) and `npm run format:check` (`All matched files use Prettier code style!`) print no finding.
+- `sh utils/size-check.sh` exit 0; `sh utils/folder-check.sh` exit 0 (it printed `src/lib/server/machine/pty holds 11 items` before `Turns` moved into `channel.ts`, and exits 0 now).
+- `sh utils/unused-exports.sh` against the base `unused-exports.txt`, by name: `names added vs base: []`, 11 removed. `AnsweredMain` (`endpoint.ts`) is a local type for that reason.
+- ASCII: 179 files differ from the base; the lines that differ hold 0 non-ASCII characters (a Python scan over every changed file).
+- `npm run diagrams` regenerated `docs/diagrams/*` (the edges `state/client` to `workbench/layout/saved/storage` and the `Turns` import); `npm run test:checks` passes the diagram files after it.
+- `npm run test:quick`, last command run: every command passed (`ASCII gate`, `prettier`, `svelte-kit sync`, `svelte-check ... 0 ERRORS`, `eslint`, `vitest (62.9 s): Duration 55.82s`), `test:quick: 65.2 s (limit 45.0 s); every command passed`, `over the time limit`.
+- No test edited under `tests/checks`, no allow-list edited (`find tests/checks utils config -type f -newer <start of round 2>` printed nothing): no edit table.
+
+### Files this round changed, and docs and head comments
+
+`src/desktop/windows/bridge.ts`, `windows.ts`; `src/lib/data/model/index.ts`, `model-processes.ts`; `src/lib/server/content/latex/bib.ts`, `endpoint.ts`, `reader.ts`; `src/lib/server/machine/pty/channel.ts`, `latex.ts`, `routes.ts`; `src/lib/shell/browser-windows.svelte.ts`, `status/LatexItem.svelte`; `src/lib/state/client/context.ts`; `src/lib/state/sessions/latex/actions.ts`, `latex-state.ts`, `latex.svelte.ts`; `src/lib/state/workbench/layout/saved/storage.ts`; `src/lib/themes/tokens.css`; `src/lib/views/sources/file/pdf/PdfControl.svelte`; `src/routes/+page.svelte`, `src/routes/api/(sessions)/latex/+server.ts`, `src/routes/api/(sessions)/terminal/+server.ts`; `tests/routes/sessions/terminal-actions.test.ts`, `tests/server/desktop/window-guard.test.ts`; `DESIGN.md`; `docs/diagrams/*`. Sizes (`wc -l`): `channel.ts` 787, `latex.svelte.ts` 539, `endpoint.ts` 593, `model-processes.ts` 445, `model-sessions.ts` 714, `LatexItem.svelte` 111; none is over 880 and no component is over 520.
+
+Docs and head comments: `docs/window.md:82` still true (unchanged). `DESIGN.md:533` rewritten (the serialised builds, `build` deciding the PDF redraw, the owner lock and the app's raise). Rewritten head comments: `latex.svelte.ts`, `pty/latex.ts`, `LatexItem.svelte`, `browser-windows.svelte.ts`; rewritten doc comments: `holdBrowserTabId` and the new `pageOpen` in `storage.ts`, the FOCUS_MAIN handler in `bridge.ts`, `Entry.page` in `windows.ts`; `channel.ts` head gains two lines. Still true and unchanged: the heads of `endpoint.ts`, `latex-state.ts`, `bib.ts`, `reader.ts`, `bridge.ts`.

@@ -8,7 +8,9 @@
     // pane does not show, a pane or a page that is not drawn, a view drawn again.
     //
     // A frame goes when its tab closes or shows another view, when its view drops it, and when its
-    // key changes, which draws a new element.
+    // key changes, which draws a new element. A frame of the kind `viewer` is a box of the page,
+    // not an iframe: the view's `mount` fills it once, and the box is placed, hidden and kept as an
+    // iframe is, so the document the view mounted in it survives a layout change.
     //
     // The place of a frame is the slot's box, read each animation frame while any frame is held:
     // a slot moves with a sash, a split, a float, the window and the bars above it, and nothing
@@ -51,7 +53,7 @@
     });
 
     /** The place written to each element, so an element is written only when it moved. */
-    const placed = new WeakMap<HTMLIFrameElement, string>();
+    const placed = new WeakMap<HTMLElement, string>();
 
     /** The depth of a frame over `slot`: one above the float it is in, or 0 in the page. */
     function depthOver(slot: HTMLElement): number {
@@ -63,7 +65,7 @@
     /** Lay every frame over its slot, or hide it while its slot is not on screen. */
     function place(): void {
         for (const id of frames.ids()) {
-            const node = frames.frameOf(id);
+            const node = frames.elementOf(id);
             if (node === undefined) continue;
             const slot = frames.slotOf(id);
             const shown =
@@ -93,16 +95,18 @@
 
     /**
      * A press that moves the keyboard from one frame into another blurs no window of the page, so
-     * the page hears nothing; a frame that newly holds the keyboard raises a `focusin` on its slot,
-     * as the window's blur does for a press from the page (shell/keys/workbench-keys.svelte.ts),
-     * and the pane that holds the slot becomes the active one.
+     * the page hears nothing; a frame that newly holds the keyboard (an iframe, or an element
+     * inside a viewer's box) raises a `focusin` on its slot, as the window's blur does for a press
+     * from the page (shell/keys/workbench-keys.svelte.ts), and the pane that holds the slot becomes
+     * the active one.
      */
     function followFocus(): void {
         const active = document.activeElement;
         if (active === lastActive) return;
         lastActive = active;
-        if (!(active instanceof HTMLIFrameElement)) return;
-        const id = frames.ids().find((held) => frames.frameOf(held) === active);
+        const held = active instanceof HTMLElement ? active.closest('[data-frame-of]') : null;
+        if (held === null) return;
+        const id = frames.ids().find((one) => frames.elementOf(one) === held);
         if (id === undefined) return;
         frames.slotOf(id)?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     }
@@ -146,6 +150,22 @@
     }
 
     /**
+     * One viewer box drawn: recorded, filled by its view's `mount`, and placed. The mount reads no
+     * state it would run again for, as an iframe's attachment does not.
+     */
+    function boxDrawn(id: string, node: HTMLDivElement): () => void {
+        return untrack(() => {
+            const forget = frames.boxed(id, node);
+            const ended = frames.specOf(id)?.mount?.(node);
+            place();
+            return () => {
+                if (typeof ended === 'function') ended();
+                forget();
+            };
+        });
+    }
+
+    /**
      * One element drawn: recorded, handed to its view's `attach`, heard, and placed. The attachment
      * reads no state it would run again for: an element's connection lives as long as the element,
      * whatever the slot does.
@@ -183,6 +203,16 @@
                         style:color-scheme={spec.colorScheme}
                         {@attach (node: HTMLIFrameElement) => drawn(id, node)}
                     ></iframe>
+                {:else if spec.kind === 'viewer'}
+                    <div
+                        class="frame panel box"
+                        class:inert={inert(id)}
+                        data-frame-of={id}
+                        role="document"
+                        aria-label={spec.title}
+                        tabindex="-1"
+                        {@attach (node: HTMLDivElement) => boxDrawn(id, node)}
+                    ></div>
                 {:else if spec.kind === 'document'}
                     <iframe
                         class="frame panel"
@@ -227,6 +257,10 @@
 
     .frame.clear {
         background: transparent;
+    }
+
+    .frame.box {
+        overflow: hidden;
     }
 
     .frame.panel {

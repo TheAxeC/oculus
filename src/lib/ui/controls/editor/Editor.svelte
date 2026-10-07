@@ -39,7 +39,7 @@
 
     import { onDestroy, untrack, type Snippet } from 'svelte';
     import type * as Monaco from 'monaco-editor';
-    import { eolOf, keyCode, modelUri, type EditorKit } from './kit/load';
+    import { eolOf, keyCode, keysCode, modelUri, type EditorKit } from './kit/load';
     import { buildWhenHosted } from './kit/built.svelte';
     import { shikiId } from './kit/grammars';
     import { font, paintCode, repaint } from './kit/look';
@@ -264,7 +264,7 @@
         });
         const said = listed.map(({ id, label, hint }): EditorAction => ({ id, label, hint }));
         for (const { id, label, key, menu, disabled, run } of actions) {
-            const keybindings = key === undefined ? [] : [keyCode(loaded.monaco, key)];
+            const keybindings = key === undefined ? [] : [keysCode(loaded.monaco, key)];
             const group = menu === undefined ? {} : { contextMenuGroupId: menu };
             const precondition = disabled === true ? { precondition: 'false' } : {};
             added.push(

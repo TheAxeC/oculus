@@ -10,6 +10,7 @@ text:
         item_hpc: HPC
         item_usage: Usage
         item_server: Server
+        item_latex: LaTeX build
         item_blame: Blame
         item_caret: Line and column
         item_indent: Indentation
@@ -50,6 +51,13 @@ text:
         server_closed: down
         server_connecting: waiting
         server_tip: 'Connection to the server: {0}. Open Status.'
+        latex_label: Build
+        latex_label_clean: Clean
+        latex_label_checkcites: checkcites
+        latex_tip_root: 'LaTeX root {0}'
+        latex_tip_recipe: 'Recipe {0}'
+        latex_tip_at: 'Last build at {0}'
+        latex_tip_words: '{0} words'
         sessions_name: '{0} live sessions'
         sessions_tip: '{0} live sessions. Open the session list.'
         unsaved_name: '{0} unsaved tabs'
