@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z711 (2026-10-07, step X3e, the orchestrator, automode): the head pill on HEAD's graph row
+
+- Chosen: the head pill names the checked-out branch, and carries the short hash only while HEAD is detached, so the branch HEAD is on is read on its row without a tooltip, as in VS Code's graph.
+- Not chosen: D9 as written (the short hash always, the branch name grouped as a glyph with its name in a tooltip), stated in the report; it hides the one branch a reader most needs on that row, and keeping it would be the lazy option.
+
+Where it applies: X3e, sent in its round 1. Booked in `plan.md` Rulings, the state file's closed log and `orchestrator-history.md`.
+
 ## Z709 (2026-10-07, step D15, the orchestrator, automode): which viewer takes a place another page wrote
 
 - Chosen: only a viewer whose box was hidden when `open` runs again goes to the place in the tab's record that it did not send, which is the tab returning from a window; a viewer in view keeps its own place. Two oculus pages that share one arrangement no longer move each other's PDF when a pane is split or a rail page switched.

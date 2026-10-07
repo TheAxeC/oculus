@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z711 (2026-10-07): automode, X3e's Behaviour 2: on HEAD's graph row the head pill names the checked-out branch, and the short hash only while HEAD is detached; sent in X3e's round 1.
 - Z709 (2026-10-07): automode, D15's Behaviour 1 over round 1: the window's place is taken only by a viewer whose box was hidden; fixed at D15's landing.
 - Z708 (2026-10-07): the cockpit against Z650 in M8, raised to Axel (a clash of rulings); ruled (a): M8 leaves the cockpit untouched.
 - Z707 (2026-10-07): a new guarded entry for M8's schema findings, raised to Axel; ruled (a): G56 with the proposed words, M8 writes its test.

@@ -1,5 +1,5 @@
 In flight (1 of 6 slots):
-- X3e (Files lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop): built; under review.
+- X3e (Files lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop): repair round 1 building (Z711 taken in automode).
 
 No step can be prepared now: M8 waits for X3e and D11 to land; D43 waits for M8; D33 waits for D11 and D28; D28 waits for X3e. The other four slots stay empty until one of these lands.
 
