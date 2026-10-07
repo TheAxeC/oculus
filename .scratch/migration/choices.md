@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z695 (2026-10-07, step D45, the orchestrator, automode): three choices of the LaTeX repair
+
+- Chosen: a PDF window whose ChromeTab is missing waits up to 10 seconds, then comes back into the main page as a free float; a duplicated ChromeTab of oculus gets its own identity, so a Cmd+click in a PDF window opens the source in the right page; a PDF window shows notices, so a jump that fails says so.
+- Not chosen: the old behaviour that closed a PDF ChromeTab at once, two pages sharing one identity, or failures nobody sees (the lazy options).
+
 ## Z694 (2026-10-07, step D23b, the orchestrator, automode): a second repair round for the language features
 
 - Chosen: one more repair round, since a rename can still corrupt a second tab of the same file or wrongly refuse a C header or `.js` tab, and the fix is too large to make at landing.

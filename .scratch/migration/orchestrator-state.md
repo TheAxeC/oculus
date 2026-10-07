@@ -35,8 +35,8 @@ dispatch:   # steps in flight, up to six (Z632)
   launched: 2026-10-07
   report: agents/reviews/D45-report.md
   brief_check: agents/reviews/D45-brief-check.md (a32b5474d92306805, claude-opus-5-5, 324,219 tokens, 91 tool uses, 17.2 min; the brief rewritten since from agents/reviews/D45-premise-recheck-2.md, a0dc73f3ef96a19bb, claude-opus-5-5, 263,515 tokens, 119 tool uses, 12.1 min)
-  builder_usage: 234,542 tokens, 1213 tool uses, 211.0 min (claude-sonnet-5-5)
-  reviewer_report: agents/reviews/D45-refuter.md (aafbba4d13fda558e, claude-opus-5-5, 285,900 tokens, 188 tool uses, 25.9 min)
+  builder_usage: 234,542 tokens, 1213 tool uses, 211.0 min (claude-sonnet-5-5); round 1: 276,096 tokens, 379 tool uses, 146.4 min
+  reviewer_report: agents/reviews/D45-refuter.md (aafbba4d13fda558e, claude-opus-5-5, 285,900 tokens, 188 tool uses, 25.9 min); over round 1: afa4681f60c7525d3, claude-opus-5-5, running
   landing: not-started
   round: 1 (sent 2026-10-07: agents/briefs/D45-round1.md, 22 items)
 - step: D23b
