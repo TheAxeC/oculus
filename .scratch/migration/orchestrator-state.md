@@ -34,10 +34,11 @@ dispatch:   # steps in flight, up to six (Z632)
   base: d8f32d576
   launched: 2026-10-08
   report: agents/reviews/M8-report.md
-  builder_usage: first run, handed back case 10 (227,713 tokens, 37 tool uses, 5.0 min)
+  builder_usage: first run, handed back case 10 (227,713 tokens, 37 tool uses, 5.0 min); resumed after Z717, with G61 and G62 added (303,454 tokens, 929 tool uses, 171.1 min)
   brief_check: agents/reviews/M8-brief-check.md (a40f2578315ca7d21, claude-opus-5-5, 145,450 tokens, 197 tool uses, 25.4 min)
+  reviewer_report: agents/reviews/M8-refuter.md (ab7cdbacbd59ae325, claude-opus-5-5, 252,447 tokens, 189 tool uses, 34.2 min)
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-10-08, agents/briefs/M8-round1.md)
 - step: D33
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -161,6 +162,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 8 (2026-10-08, M8): M8's builder wrote four tests that no entry of `agents/guarded.md` names (`agents/reviews/M8-refuter.md`, Spec 2); repair round 1 takes them out of the tree and gives their text in its report. (a) Add two entries and land their tests: G63, "A document a language server holds is sent at a version above every one sent before for that file, and an edit the server names a version in reaches the page under the page's own version" (`tests/server/machine/lsp/versions.test.ts`; a failure answers a reopened YAML file from its old text, or refuses a rename after a close and reopen); and G64, "A relation field of a manifest written as a bare key, or `waiting-on` written as one text, gives one type finding" (`tests/data/snapshot/relation-shapes.test.ts`; a failure lets a manifest the boards read as empty pass the gate). `repo-settings.test.ts` and the `servers.test.ts` workspace-folders row stay out: the first guards a listing in the Settings view whose failure shows there at once, the second a capability that round 1 moves onto the YAML entry. (b) Add none and land no test of the version mapping or the relation shapes. Recommendation: (a). (b) is the lazy option: it leaves the version mapping that round 1 adds untested, and a failure there refuses edits.
 
 
 
@@ -237,6 +239,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 10:30. M8 reviewed (`agents/reviews/M8-refuter.md`: 3 Spec, 3 Proof, 4 Standards, 4 Behaviour findings); repair round 1 sent to its builder (`agents/briefs/M8-round1.md`, 14 rulings). Open item 8 raised (M8's unentried tests). D33 building.
 - 2026-10-08 09:10. D33 prepared (1439a44ec; brief check closed as Z718) and its builder a9ae1281ebf50855a (claude-sonnet-5-5) launched in `.agents/worktrees/D33`, beside M8's builder. Every other queued step waits for M8, D33 or M6 to land.
 - 2026-10-08 08:30. M8's builder handed back case 10 (no `deck/` in the worktree); ruled as Z717 (`agents/briefs/M8-cases.md`), `deck` and `docs` added to the worktree paths, builder resumed. D33's brief written (`agents/briefs/D33.md`); its brief check next.
 - 2026-10-08 08:00. M8 prepared (d8f32d576, its brief corrected from rechecks 3 and 4, Z715) and its builder acd90a7603ba715c3 (claude-sonnet-5-5) launched in `.agents/worktrees/M8`. M6's recheck (`agents/reviews/M6-premise-recheck-2.md`) puts M6 after M8 (shared hub `schema:` blocks, DATA-MAP, findings.yml, validate.ts, vocab.yml); its eight choices are booked at its next /spec. D33's recheck saved (`agents/reviews/D33-premise-recheck-3.md`); its choices N1 to N4 and the glob library are being booked and its brief written.
