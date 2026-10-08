@@ -1,12 +1,12 @@
-In flight (0 of 6 slots): none.
+In flight (4 of 6 slots):
+- M6 (the collection forms removed): brief being rewritten.
+- D39 (hub keys as links): brief being written.
+- D43 (LaTeX navigation through texlab): brief being written.
+- D36 (linters on save): brief being written.
 
-Queued, in order:
-- M6 (the collection forms removed): ready to prepare.
-- D39 (hub keys as links): ready to prepare.
+Queued, in order (10 steps):
 - M7 (a project folder moved in Files): after M6 and D39.
 - D41 (links in Markdown checked): after M7.
-- D43 (LaTeX navigation through texlab): ready to prepare.
-- D36 (linters on save): ready to prepare.
 - D40 (the writing rules as editor marks): after D36.
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (release readiness): paused (Axel).

@@ -1749,6 +1749,10 @@ Agents in no role the cost script prices:
 - a9ae1281ebf50855a: builder of step D33, claude-sonnet-5-5
 - a4557dd5285730c0d: reviewer of step D33, claude-opus-5-5
 - aba7f4b62b7054a8f: reviewer of step D33 over round 1, claude-opus-5-5
+- a0faf60614eeb1d1f: brief writer of step M6 at main e61cfc598, claude-opus-5-5
+- abd3eb3a6adcd53ac: brief writer of step D39 at main e61cfc598, claude-opus-5-5
+- a8b1b2865432151e9: brief writer of step D43 at main e61cfc598, claude-opus-5-5
+- a43e902d158485713: premise survey and brief writer of step D36 at main e61cfc598, claude-opus-5-5
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

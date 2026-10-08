@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 11 (2026-10-08): Axel ruled (a): G69, a root that leaves the served roots takes its command and LaTeX rows with it; its test the two files of `agents/reviews/D33-case8-tests.patch`, landed after D33 (e61cfc598).
 - Z728 (2026-10-08): Axel ruled (b) on Z727: D33's case 8 fixed at landing as Z723 ruled; the second round's builder stopped, its partial changes put back.
 - Open item 10 (2026-10-08): Axel ruled (a): G66 to G68, D39's reference index, rename edit and rename preview; their tests written by D39's builder.
 - Open item 9 (2026-10-08): Axel ruled (a): G65, the windowed list never read past its end; its test, the three files of `agents/reviews/D33-diagnosis.md`, landed by D33.
