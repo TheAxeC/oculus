@@ -21,7 +21,7 @@ import { randomBytes } from 'node:crypto';
 import { statSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
 import { z } from 'zod';
-import { STEER_CONTROL, STEER_MAX } from '../../../data/model/index.ts';
+import { SCROLLBACK_LINES, STEER_CONTROL, STEER_MAX } from '../../../data/model/index.ts';
 import type {
     Terminal,
     TerminalJob,
@@ -48,9 +48,6 @@ export function isTerminalKind(value: unknown): value is TerminalKind {
 
 /** The longest name a terminal may carry, which is what `label` accepts. */
 export const NAME_MAX = 80;
-
-/** The default scrollback handed to a page that attaches. */
-export const SCROLLBACK_LINES = 2000;
 
 /** The widest geometry accepted from the page; a terminal larger than this is not a terminal. */
 export const MAX_GEOMETRY = 2000;

@@ -1,13 +1,12 @@
-In flight (1 of 6 slots):
-- D33 (the Problems view): landing.
+In flight (0 of 6 slots): none.
 
 Queued, in order:
-- M6 (the collection forms removed): after D33.
-- D39 (hub keys as links): after D33.
+- M6 (the collection forms removed): ready to prepare.
+- D39 (hub keys as links): ready to prepare.
 - M7 (a project folder moved in Files): after M6 and D39.
 - D41 (links in Markdown checked): after M7.
-- D43 (LaTeX navigation through texlab): after D33.
-- D36 (linters on save): after D33.
+- D43 (LaTeX navigation through texlab): ready to prepare.
+- D36 (linters on save): ready to prepare.
 - D40 (the writing rules as editor marks): after D36.
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (release readiness): paused (Axel).
@@ -20,6 +19,7 @@ Queued, in order:
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D33 (the Problems view), 2026-10-08, landing commit below.
 - M8 (the hub's YAML checked and completed in the editor), 2026-10-08, 7c5514850.
 - D28 (saving a source file as VS Code does), 2026-10-08, 3bf3bf4c6.
 - X3e (the Files view's lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop), 2026-10-08, 1ae5e7c8d.

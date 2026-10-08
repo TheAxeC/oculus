@@ -12,7 +12,8 @@
 // Every finding carries a signature, twelve hex characters of a sha1 over its scope, its place, its
 // kind, the catalog key of its message and the arguments that fill it. It is what the mute list in
 // config/behavior.yml holds, so a muted finding is still muted after a rebuild, and rewording a
-// message in the catalog keeps every mute.
+// message in the catalog keeps every mute. A finding also names the file it is about, outside the
+// signature, which the Audit view opens.
 //
 // The scan reads the disk (a document's text, whether a folder is there), so it runs once per
 // rebuild in the portfolio watcher and never per request. It is pure over its arguments: the hub

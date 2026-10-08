@@ -142,6 +142,12 @@ export type SourceStore = {
     setSourceWrap: (id: string, wrap: WordWrap | null) => void;
     /** Keep the first line the tab's editor shows, so a copy of the tab opens at it. */
     setSourceFirst: (id: string, line: number) => void;
+    /**
+     * The number that stamps one open of a place in a file (`asked` of a tab's state): it starts at
+     * the time the page loaded and grows by one with each open, so no two opens of one page share
+     * it and a page loaded later starts above every one an earlier page gave.
+     */
+    nextAsked: () => number;
     saveSource: (root: string, path: string, content: string) => Promise<WriteAnswer>;
 };
 
@@ -168,6 +174,7 @@ export function createSource(
     const queued = new Map<string, Promise<boolean>>();
     const formats = new Map<string, () => Promise<void>>();
     const editListeners = new Set<(id: string) => void>();
+    let asked = Date.now();
 
     /** Working and saved copies belong to the instance, not its currently mounted component. */
     function sourceDraft(id: string): SourceDraft {
@@ -712,6 +719,7 @@ export function createSource(
         setSourceIndent,
         setSourceWrap,
         setSourceFirst,
+        nextAsked: () => ++asked,
         saveSource
     };
 }

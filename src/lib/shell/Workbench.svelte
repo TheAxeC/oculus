@@ -127,8 +127,8 @@
         directChord?: string;
         /**
          * The words of the status bar's items whose stores the shell may not read: the machine,
-         * the repository, the findings, the HPC poll, the usage, the server and the live sessions.
-         * The page makes them and hands them on.
+         * the repository, the findings, the problems, the HPC poll, the usage, the server and the
+         * live sessions. The page makes them and hands them on.
          */
         status?: StatusWords;
         /**
@@ -141,6 +141,8 @@
          * the sessions channel and hands it on, since the shell may not read entities itself.
          */
         waiting?: number;
+        /** The F8 walk: opens the next or previous problem, and answers false with none. */
+        walkProblem?: (by: 1 | -1) => boolean;
     };
 
     let {
@@ -154,7 +156,8 @@
         directChord,
         status = NO_STATUS,
         git = NO_GIT,
-        waiting = 0
+        waiting = 0,
+        walkProblem = () => false
     }: Props = $props();
 
     /** The float this page draws alone in a popped-out window of the app, or null. */
@@ -229,6 +232,7 @@
                 '.rite'
             ) === true,
         debugKey: (which) => pressDebug(which),
+        walkProblem: (by) => walkProblem(by),
         saveSource: () => {
             const tab = sourceOnScreen(activeInstance(), client.editorStatus.statusOf);
             if (tab !== null)

@@ -23,6 +23,7 @@
     import type { EditorGutter } from './source-gutter.svelte';
     import LockedCode from './save/LockedCode.svelte';
     import SourceNote from './save/SourceNote.svelte';
+    import type { OpenedAt } from './status/tab-state';
     import type { Locked } from './save/locked-words';
     import type { SaidTone } from './save/said-tone';
 
@@ -46,10 +47,11 @@
         /** The tab's gutter for the code window, and the scroll the window reports to it. */
         margin: Snippet;
         onscrolled: (top: number) => void;
-        /** The file the editor's model is for, and the line and column the tab was opened at. */
+        /** The file the editor's model is for, and the place the tab was opened at. */
         at: string;
-        line: number;
-        column: number;
+        place: OpenedAt;
+        /** Said with the tab's `asked` once the editor has gone to its place. */
+        onwent: (asked: number) => void;
         first: number;
         onfirst: (shown: number) => void;
         indent: Indent | null;
@@ -92,8 +94,8 @@
         margin,
         onscrolled,
         at,
-        line,
-        column,
+        place,
+        onwent,
         first,
         onfirst,
         indent,
@@ -144,8 +146,8 @@
             <Editor
                 bind:this={editor}
                 path={at}
-                {line}
-                {column}
+                {place}
+                {onwent}
                 {first}
                 {onfirst}
                 {language}

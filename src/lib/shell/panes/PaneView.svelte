@@ -58,6 +58,7 @@
         stripPicked
     } from '$lib/shell/panes/pane-view';
     import { createCloseQuestion } from './strip/close-question.svelte';
+    import { useFileProblems } from './strip/file-problems';
     import { stripTab } from './strip/strip-tab';
     import { createTabMenu } from './strip/tab-menu-state.svelte';
     import { crumbPicked, tabCrumbs, type Crumb } from './strip/tab-crumbs';
@@ -85,6 +86,7 @@
     import { windowBoundsOfPane } from './floats/window-bounds';
 
     const client = useState();
+    const problemsOf = useFileProblems();
 
     const {
         layout: {
@@ -192,7 +194,8 @@
                     dirty: unsaved,
                     gone: (file) =>
                         client.fs.gone(file.root, file.path) ||
-                        client.ui.fileGone(file.root, file.path)
+                        client.ui.fileGone(file.root, file.path),
+                    problemsOf
                 },
                 t
             )

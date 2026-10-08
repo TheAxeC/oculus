@@ -8,6 +8,7 @@ import { readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import type { EntitiesStore } from '../shared/stores/shapes.ts';
 import type { FeedsStore, FeedState } from '../feeds/feeds.svelte.ts';
 import type { AuditStore } from '../system/audit.svelte.ts';
+import type { ProblemsStore } from '../system/problems.svelte.ts';
 import type { CalendarStore } from '../life/calendar.svelte.ts';
 import type { HpcStore } from '../system/machine/hpc/hpc.svelte.ts';
 import type { InboxStore } from '../feeds/inbox.svelte.ts';
@@ -67,6 +68,8 @@ export type RailBadgesStore = {
     linkedinBadgeGlyph: () => string;
     applicationsBadge: () => string;
     auditBadge: () => string;
+    problemsBadge: () => string;
+    problemsBadgeTitle: () => string;
     repositoriesBadge: () => string;
     boardCells: (view: string) => BadgeCell[];
     queueCells: () => BadgeCell[];
@@ -97,6 +100,7 @@ export function createRailBadges(
     calendar: CalendarStore,
     inbox: InboxStore,
     audit: AuditStore,
+    problems: Pick<ProblemsStore, 'total'>,
     selectors: BadgeSelectors
 ): RailBadgesStore {
     /** The number of cards on one of the three project boards. */
@@ -185,6 +189,20 @@ export function createRailBadges(
     /** Audit findings the reader has not parked, which is what the Audit view opens on. */
     function auditBadge(): string {
         return countText(audit.openCount());
+    }
+
+    /** Every problem of every source, as VS Code's Problems view counts them for its badge. */
+    function problemsCount(): number {
+        const { errors, warnings, infos } = problems.total();
+        return errors + warnings + infos;
+    }
+
+    function problemsBadge(): string {
+        return countText(problemsCount());
+    }
+
+    function problemsBadgeTitle(): string {
+        return t('problems.badge_title', problemsCount());
     }
 
     /**
@@ -283,6 +301,8 @@ export function createRailBadges(
         linkedinBadgeGlyph,
         applicationsBadge,
         auditBadge,
+        problemsBadge,
+        problemsBadgeTitle,
         repositoriesBadge,
         boardCells,
         queueCells,

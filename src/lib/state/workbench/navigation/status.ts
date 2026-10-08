@@ -1,8 +1,8 @@
 // Layer 2, client state. The words of the status bar: what the page makes for the items whose
 // stores the shell's row of the boundary table does not name (the machine, the socket, the usage
-// refreshers, the HPC poll, the live sessions, the findings and the repository of the tab on
-// screen), and the words the bar draws for the source tab's items, the caret, the indentation and
-// the language, from what the source tab publishes.
+// refreshers, the HPC poll, the live sessions, the findings, the problems and the repository of the
+// tab on screen), and the words the bar draws for the source tab's items, the caret, the
+// indentation and the language, from what the source tab publishes.
 //
 // The unsaved tabs are counted by the shell itself from the layout and ui stores it does read. The
 // repository holding a tab's file is the deepest one holding it, read through deepestHolding of
@@ -90,6 +90,8 @@ export type StatusWords = {
     live: number;
     /** How many findings the Findings view lists: the snapshot's and the config channel's. */
     findings: number;
+    /** The problems the Problems view lists, by severity. */
+    problems: { errors: number; warnings: number; infos: number };
     repo: RepoStatus | null;
 };
 
@@ -101,6 +103,7 @@ export const NO_STATUS: StatusWords = {
     hpc: { short: '', long: '' },
     live: 0,
     findings: 0,
+    problems: { errors: 0, warnings: 0, infos: 0 },
     repo: null
 };
 
@@ -211,9 +214,10 @@ export function repoStatus(
 }
 
 /**
- * How many findings the Findings view lists, which is what the findings item counts, as VS Code's
- * Problems count is the Problems view's: everything the build found wrong in the hub's YAML, the
- * snapshot's, in config/, the config channel's, and in the apps folders, the apps channel's.
+ * How many findings the Findings view lists, which is what the findings item counts: everything
+ * the build found wrong in the hub's YAML, the snapshot's, in config/, the config channel's, and in
+ * the apps folders, the apps channel's. The problems item counts the Problems view's list, the
+ * rows of the language servers, the commands and the LaTeX builds.
  */
 export function findingsCount(
     snapshot: { findings?: readonly unknown[] } | null,
@@ -241,7 +245,12 @@ export function statusWords(
     usage: UsagePayload | null,
     hpc: HpcPayload | null,
     sessions: SessionsPayload | null,
-    held: { host: HostInfo | null; findings: number; repo: RepoStatus | null }
+    held: {
+        host: HostInfo | null;
+        findings: number;
+        problems: StatusWords['problems'];
+        repo: RepoStatus | null;
+    }
 ): StatusWords {
     return {
         host: held.host,
@@ -250,6 +259,7 @@ export function statusWords(
         hpc: hpcWords(hpc),
         live: liveCount(sessions),
         findings: held.findings,
+        problems: held.problems,
         repo: held.repo
     };
 }

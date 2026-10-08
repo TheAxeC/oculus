@@ -1,8 +1,9 @@
 // Layer 3, view partial of RootedTree.svelte. What one explorer tree is built from: the record it
 // keeps its state in, the rows treeRows() draws over the listings and the open folders, the rows a
-// typed filter draws instead, the listings that failed, the git decoration, the bookmark stars and
-// the presses that write into the record. The Files view and a project card both build their tree
-// from this, each from the roots it draws, the folder it is rooted at and the record it owns.
+// typed filter draws instead, the listings that failed, the git decoration, the problem marks, the
+// bookmark stars and the presses that write into the record. The Files view and a project card both
+// build their tree from this, each from the roots it draws, the folder it is rooted at and the
+// record it owns.
 //
 // Everything here is read from the owner's record (`filesViewOf`), so a record of the wrong shape
 // is an empty tree, and a press writes nothing into a record that was cleared with its tab
@@ -16,11 +17,13 @@ import {
     markedKeys,
     nestingRulesOf,
     shownOf,
+    problemMarkOf,
     statusFold,
     treeRows,
     type FilesView,
     type FsEntry,
     type FsRoot,
+    type ProblemMark,
     type RowRef,
     type TreeTop,
     unopened
@@ -70,6 +73,7 @@ export type RootedTree = ReturnType<typeof createRootedTree>;
 export function createRootedTree(client: ClientState, input: RootedInput) {
     const {
         explorer,
+        problems,
         apps: { holds },
         fs: { bookmarks, entries, heldEntries, listing, readFileKind },
         layout: { armKeep, askFocus, disarmKeep, keepPreview, openView, showInFiles },
@@ -148,6 +152,14 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
             })
         )
     );
+    /** What the Problems view counts for a row: its errors and warnings, from the store's fold. */
+    function problemOf(root: string, path: string, kind: 'file' | 'dir'): ProblemMark | null {
+        return problemMarkOf(
+            kind === 'dir' ? problems.folderCounts(root, path) : problems.fileCounts(root, path),
+            kind
+        );
+    }
+
     const marks = $derived(bookmarks());
     /** The row keys a bookmark of the reader's own names, which the tree draws its star from. */
     const marked = $derived(markedKeys(marks.entries));
@@ -200,6 +212,7 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
         tab,
         marking,
         held,
+        problemOf,
         addFolders,
         get view() {
             return view;

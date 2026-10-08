@@ -2,11 +2,12 @@
     // Layer 3, partial of views/sources/files/Files.svelte. The Open Editors section: the tabs of
     // the page this view is on that show a file, grouped by the pane that holds them, each row the
     // file's icon and name with the folder it sits in, the dot of a tab holding unsaved text, the
-    // name of a tab whose file was deleted struck through in red, and a close control under the
-    // pointer. A press on a row brings its tab forward. The head carries Save All, which saves
-    // every dirty source tab, and Close All, which closes every tab listed and asks the close
-    // question first (state/workbench/navigation/pages.ts's closeAsk) whenever one of them holds
-    // unsaved text.
+    // name of a tab whose file was deleted struck through in red, the count of the errors and
+    // warnings the file holds in the colour of the worst (the name takes that colour too), and a
+    // close control under the pointer. A press on a row brings its tab forward. The head carries
+    // Save All, which saves every dirty source tab, and Close All, which closes every tab listed
+    // and asks the close question first (state/workbench/navigation/pages.ts's closeAsk) whenever
+    // one of them holds unsaved text.
     //
     // A row drags onto another row, and the tab moves to the place of the target row's tab in that
     // row's pane (state/sources/explorer/sections/open-editors.ts's editorDrop), through
@@ -33,6 +34,7 @@
         openIds,
         type OpenEditor
     } from '$lib/state/sources/explorer/sections/open-editors';
+    import { problemMarkOf, problemWords } from '$lib/state/sources/fs';
     import { instanceLabel, panes } from '$lib/state/workbench/layout';
     import { fileOfTab } from '$lib/state/workbench/navigation/pages';
     import { closingEditors, type Confirming } from '../control/editor-closing';
@@ -51,6 +53,7 @@
     const {
         layout: { activateInstance, closeInstance, currentPage, layout, transferInstance },
         fs: { gone },
+        problems,
         ui: { saveBeforeClose, unsaved },
         source: { saveSourceDraft }
     } = useState();
@@ -71,6 +74,11 @@
 
     /** The close that waits on the dialog: the words it asks and what a yes does. */
     let confirming: Confirming | null = $state(null);
+
+    /** The mark of a row's file: its errors and warnings. */
+    function markOf(row: OpenEditor) {
+        return problemMarkOf(problems.fileCounts(row.file.root, row.file.path), 'file');
+    }
 
     /** The id a group line has in the tree, and a row's. */
     const groupKey = (index: number): string => `group:${String(index)}`;
@@ -206,6 +214,7 @@
                         </li>
                     {/if}
                     {#each group.rows as row (row.id)}
+                        {@const mark = markOf(row)}
                         <li
                             role="none"
                             data-fs-editor={row.id}
@@ -222,7 +231,11 @@
                                 level={several ? 3 : 2}
                                 file={row.file.path}
                                 selected={row.active}
-                                tone={gone(row.file.root, row.file.path) ? 'error' : undefined}
+                                tone={gone(row.file.root, row.file.path) || mark?.tone === 'error'
+                                    ? 'error'
+                                    : mark === null
+                                      ? undefined
+                                      : 'warn'}
                                 struck={gone(row.file.root, row.file.path)}
                                 title={gone(row.file.root, row.file.path)
                                     ? `${t('files.editors_open_title', row.name)}\n${t('ui.tab_deleted')}`
@@ -233,6 +246,15 @@
                                     {row.where}
                                 {/snippet}
                                 {#snippet end()}
+                                    {#if mark !== null}
+                                        {@const words = problemWords(mark)}
+                                        <span
+                                            class="problems"
+                                            class:warning={mark.tone === 'warning'}
+                                            title={words.title}
+                                            data-problem-count>{words.count}</span
+                                        >
+                                    {/if}
                                     {#if row.dirty}
                                         <span
                                             class="dirty"
@@ -271,6 +293,20 @@
 <style>
     .editors {
         margin-top: 0;
+    }
+
+    /* The count of the errors or warnings of the row's file, before the unsaved mark, in the error
+       colour and in the warning colour when the file has no error. */
+    .problems {
+        margin-left: 5px;
+        color: var(--c-red-txt);
+        font-size: 90%;
+        font-weight: 600;
+        opacity: 0.75;
+    }
+
+    .problems.warning {
+        color: var(--c-amber-txt);
     }
 
     /* The unsaved mark: the dirty glyph the tab draws, in the row's own text colour, where VS Code

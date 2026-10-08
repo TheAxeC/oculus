@@ -98,7 +98,7 @@ digraph writes {
         "? src/lib/data/sources/config/catalogs.ts:118" [label="src/lib/data/sources/config/catalogs.ts:118 standInShape.safeParse("];
         "? src/lib/server/edit/writes/config/audit-mute.ts:65" [label="src/lib/server/edit/writes/config/audit-mute.ts:65 SIGNATURE.test("];
         "? src/lib/server/edit/writes/entries.ts:75" [label="src/lib/server/edit/writes/entries.ts:75 ISO_DATE.test("];
-        "? src/lib/server/files/fs.ts:227" [label="src/lib/server/files/fs.ts:227 rootShape.safeParse("];
+        "? src/lib/server/files/fs.ts:234" [label="src/lib/server/files/fs.ts:234 rootShape.safeParse("];
     }
     "file on disk" [shape=cylinder];
     "lib/data/snapshot/normalise.ts" -> "lib/data/snapshot/schema/field.ts" [tooltip="fieldsOf"];
@@ -249,7 +249,7 @@ removeEntry, reorderCollection, writeEntry"];
 writeHost, writeSubtask, writeSubtaskAdd"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/files/fs/collections.ts" [tooltip="entryOf, readCollection"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/sessions/overrides.ts" [tailport=s, tooltip="overrides, setFlag, setOverride"];
-    "lib/server/files/fs.ts" -> "? src/lib/server/files/fs.ts:227" [style=dashed];
+    "lib/server/files/fs.ts" -> "? src/lib/server/files/fs.ts:234" [style=dashed];
     "lib/server/files/fs.ts" -> "lib/server/core/json.ts" [tailport=n, tooltip="readJson"];
     "lib/server/files/fs/bookmarks.ts" -> "lib/server/core/json.ts" [tooltip="writeTextAtomic"];
     "lib/server/files/fs/collections.ts" -> "lib/server/files/fs/bookmarks.ts" [tooltip="ensureBookmarksFile"];

@@ -90,6 +90,15 @@ export function currentWorkspace(saved: WorkspacesState): { name: string; roots:
 }
 
 /**
+ * The current workspace's roots when the workspaces were read, and null while they are being read,
+ * when none was read yet and when the read failed: an empty list of served roots then says nothing
+ * about what is served.
+ */
+export function readRoots(saved: WorkspacesState): FsRoot[] | null {
+    return saved.loading || saved.error !== '' ? null : currentWorkspace(saved).roots;
+}
+
+/**
  * The roots the reader cannot take off. A tab that follows a session can take none off. In the
  * default workspace (`removable` is the keys of the roots config/sources.yml lists) the folders of
  * that list can be taken off and the hub, the engine's config folder and the fallback folder
@@ -202,7 +211,12 @@ export const NO_NOTE: NoteState = {
 export { fileBytesUrl };
 
 /** One root of a workspace, and one workspace, answered as the endpoint sent them. */
-const fsRootShape = z.object({ key: z.string(), dir: z.string(), fixed: z.boolean() });
+const fsRootShape = z.object({
+    key: z.string(),
+    dir: z.string(),
+    fixed: z.boolean(),
+    real: z.string().optional().catch(undefined)
+});
 
 const workspaceShape = unchanged(
     z.object({ name: z.string(), roots: z.array(fsRootShape) })

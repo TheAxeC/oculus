@@ -1,5 +1,5 @@
-// Layer 2, client state, pure. What a refused mute reads as, and the findings a search keeps and
-// a section of the view holds.
+// Layer 2, client state, pure. What a refused mute reads as, the findings a search keeps and a
+// section of the view holds, and the card id of each row.
 //
 // The endpoint answers one word (`invalid`, `unwritable`) and the page never draws it: the view
 // shows a sentence of its own for each, and this is the map from word to sentence for the audit's
@@ -39,4 +39,19 @@ export function auditSearch(findings: AuditFinding[], search: string): AuditFind
 /** The findings of one kind, in the order the scan reported them. */
 export function findingsOfKind(findings: AuditFinding[], kind: string): AuditFinding[] {
     return findings.filter((finding) => finding.kind === kind);
+}
+
+/**
+ * The card id of each finding of a list, in the list's order: the signature for the first finding
+ * that has it and `<signature>:<n>` for the n-th (from 2). Two findings of one signature are two
+ * rows, and the keyboard's cursor and the arrow keys name a row, so each row needs an id of its
+ * own; the mute control sends the signature, which is what the mute list holds.
+ */
+export function cardIds(findings: readonly Pick<AuditFinding, 'signature'>[]): string[] {
+    const seen = new Map<string, number>();
+    return findings.map(({ signature }) => {
+        const count = (seen.get(signature) ?? 0) + 1;
+        seen.set(signature, count);
+        return count === 1 ? signature : `${signature}:${String(count)}`;
+    });
 }

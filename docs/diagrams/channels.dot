@@ -78,7 +78,7 @@ digraph channels {
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
         "? src/lib/server/machine/runs/schedules/watch.ts:290" [label="src/lib/server/machine/runs/schedules/watch.ts:290 publish(CHANNEL)"];
         "? src/lib/server/root/context.ts:319" [label="src/lib/server/root/context.ts:319 publish(set)"];
-        "? src/lib/shell/panes/PaneView.svelte:470" [label="src/lib/shell/panes/PaneView.svelte:470 message()"];
+        "? src/lib/shell/panes/PaneView.svelte:473" [label="src/lib/shell/panes/PaneView.svelte:473 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
         "? src/lib/state/sessions/source/disk.svelte.ts:119" [label="src/lib/state/sessions/source/disk.svelte.ts:119 channel === undefined"];
@@ -117,7 +117,7 @@ digraph channels {
         "? src/lib/views/shared/changes/CommitBox.svelte:57" [label="src/lib/views/shared/changes/CommitBox.svelte:57 message(root)"];
         "? src/lib/views/shared/changes/CommitBox.svelte:76" [label="src/lib/views/shared/changes/CommitBox.svelte:76 message(root)"];
         "? src/lib/views/shared/changes/CommitBox.svelte:83" [label="src/lib/views/shared/changes/CommitBox.svelte:83 message(root)"];
-        "? src/lib/views/system/workbench/editors/Editor.svelte:132" [label="src/lib/views/system/workbench/editors/Editor.svelte:132 message('changedSince', row.file)"];
+        "? src/lib/views/system/workbench/editors/Editor.svelte:142" [label="src/lib/views/system/workbench/editors/Editor.svelte:142 message('changedSince', row.file)"];
         "? src/lib/views/system/workbench/settings/Item.svelte:108" [label="src/lib/views/system/workbench/settings/Item.svelte:108 message('missing', row.file)"];
     }
     subgraph "cluster_read state" {
@@ -194,7 +194,7 @@ digraph channels {
         label="routes"; style=solid;
         "routes/+page";
     }
-    "? src/lib/shell/panes/PaneView.svelte:470" -> "shell/panes/PaneView";
+    "? src/lib/shell/panes/PaneView.svelte:473" -> "shell/panes/PaneView";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
     "? src/lib/state/client/queries.svelte.ts:79" -> "state/client/queries";
     "? src/lib/state/sessions/source/disk.svelte.ts:119" -> "state/sessions/source/disk";
@@ -232,7 +232,7 @@ digraph channels {
     "? src/lib/views/shared/changes/CommitBox.svelte:57" -> "views/shared/changes";
     "? src/lib/views/shared/changes/CommitBox.svelte:76" -> "views/shared/changes";
     "? src/lib/views/shared/changes/CommitBox.svelte:83" -> "views/shared/changes";
-    "? src/lib/views/system/workbench/editors/Editor.svelte:132" -> "views/system/workbench";
+    "? src/lib/views/system/workbench/editors/Editor.svelte:142" -> "views/system/workbench";
     "? src/lib/views/system/workbench/settings/Item.svelte:108" -> "views/system/workbench";
     "ch ${path.split('/').slice(-2).join('/')}:*" -> "ui/controls/editor/kit/lsp/transport";
     "ch apps" -> "routes/+page" [style=dashed];

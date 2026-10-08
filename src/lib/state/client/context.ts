@@ -68,7 +68,13 @@ import {
 } from '../system/machine/processes/processes.svelte.ts';
 import { createSchedule, type ScheduleStore } from '../system/machine/schedules/schedule.svelte.ts';
 import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
-import { tabsOf } from '../workbench/layout/instance.ts';
+import {
+    instanceMap,
+    instanceText,
+    isInstanceOf,
+    stateId,
+    tabsOf
+} from '../workbench/layout/instance.ts';
 import { fileOfTab } from '../workbench/navigation/pages.ts';
 import { paneAt } from '../workbench/layout/index.ts';
 import { pageOpen } from '../workbench/layout/saved/storage.ts';
@@ -102,7 +108,11 @@ import { createExplorer, type ExplorerStore } from '../sources/explorer/ops.svel
 import { createSearch, type SearchStore } from '../sources/search/search.svelte.ts';
 import { createClangd, type ClangdStore } from '../system/machine/lsp/clangd.svelte.ts';
 import { createDocuments, type DocumentsStore } from '../system/machine/lsp/documents.svelte.ts';
-import { readHash, readText } from '../sources/fs-transport.ts';
+import { languageProblems, commandProblems, latexProblems } from '../system/problem-sources.ts';
+import { createProblems, problemTarget, type ProblemsStore } from '../system/problems.svelte.ts';
+import { openPlace, type PlaceOpener } from '../sessions/source/place.ts';
+import { readHash, readRoots, readText } from '../sources/fs-transport.ts';
+import { watchServedRoots } from '../shared/stores/served-roots.svelte.ts';
 import { createLspEdits, type LspEdits } from '../system/machine/lsp/edits.ts';
 import {
     createWorkspaceSymbols,
@@ -227,6 +237,8 @@ export type ClientState = {
     workspaceSymbols: WorkspaceSymbolsStore;
     /** The diagnostics of the files and the document symbols of the source tabs. */
     documents: DocumentsStore;
+    /** The problems of every source folded: the Problems view, the status bar and the F8 walk. */
+    problems: ProblemsStore;
     /** The References view's results, history and walk. */
     references: ReferencesStore;
     /** What clangd answered a tab for the Files view's AST and Memory Usage sections. */
@@ -409,6 +421,15 @@ export function createClientState(
     const servedRoots = (): { key: string; dir: string }[] => fs.roots();
     const docs = withQueries('docs', createDocs(entities, queries));
     const notices = createNotices(ui);
+    /**
+     * Show the Problems view with its list limited to one root: the view is opened or activated and
+     * the root becomes the scope in its filter, which the reader dismisses from the view.
+     */
+    function showProblems(root: string): void {
+        const id = layout.openView('problems');
+        if (id === '') return;
+        ui.setInstanceState(id, { ...instanceMap(ui.instanceState(id)), scope: root });
+    }
     const latex = withQueries(
         'latex',
         createLatex(entities, terminals, fs, queries, writes, {
@@ -426,12 +447,8 @@ export function createClientState(
                 selection.select(terminal);
                 terminals.showTerminal(terminal);
             },
-            showProblems: (target, main) => {
-                const place =
-                    'root' in target
-                        ? target
-                        : { root: latex.state(target).root, path: latex.state(target).dir };
-                layout.openView('latex', { ...place, main });
+            showProblems: (target) => {
+                showProblems('root' in target ? target.root : latex.state(target).root);
             }
         })
     );
@@ -567,7 +584,6 @@ export function createClientState(
     ui.registerUnsaved(
         (id) => layout.instanceView(id) === SETTINGS_VIEW && settingsTyped(ui.instanceState(id))
     );
-    const railBadges = createRailBadges(entities, feeds, hpc, calendar, inbox, audit, selectors);
     const paletteSource = createPaletteSource(entities, feeds, {
         writeConfigValue: writes.writeConfigValue,
         layout,
@@ -610,6 +626,73 @@ export function createClientState(
             served: servedRoots,
             openFile: (repo, path, line) => repositories.openFile(repo, path, line)
         })
+    );
+    // A root that leaves the served roots takes its command diagnostics and its LaTeX states with
+    // it. The change is read from the fs store's workspaces, the one state the served roots are
+    // made of, and only between two reads of them (`readRoots` is null while they load or failed).
+    watchServedRoots(
+        () => readRoots(fs.workspaces()),
+        (roots) => {
+            commands.forgetOutside(roots);
+            latex.forgetOutside(roots);
+        }
+    );
+    // The problems the page knows of: the language servers' diagnostics, the errors project
+    // commands printed and the LaTeX builds' errors and warnings. F8 steps from the source tab on
+    // screen, or else the one focused last, and leaving a tab tells it its editor lost the
+    // keyboard.
+    const placeOpener: PlaceOpener = {
+        layout: {
+            openView: layout.openView,
+            keepPreview: layout.keepPreview,
+            holds: (tab) =>
+                layout
+                    .hosts()
+                    .some((host) =>
+                        tabsOf(host.workbench.root).some((one) =>
+                            isInstanceOf(one, 'source', stateId(tab))
+                        )
+                    )
+        },
+        source
+    };
+    const problems = createProblems({
+        here: () => {
+            const on =
+                sourceOnScreen(layout.activeInstance(), editorStatus.statusOf) ??
+                editorStatus.focused();
+            const caret = on?.status.caret;
+            if (on === null || caret === null || caret === undefined) return null;
+            const state = layout.instanceLayoutState(on.instance);
+            const library = instanceText(state, 'library');
+            return {
+                instance: on.instance,
+                root: instanceText(state, 'root'),
+                path: library === '' ? instanceText(state, 'path') : library,
+                line: caret.line,
+                column: caret.column
+            };
+        },
+        open: (row, { kept, focus, leaving }) => {
+            const target = problemTarget(row);
+            if (target === null) return;
+            if (leaving !== null) autosave.blurred(leaving);
+            openPlace(placeOpener, focus ? target : { ...target, focus: false }, kept);
+        },
+        show: showProblems
+    });
+    problems.register(languageProblems(documents));
+    problems.register(commandProblems(commands, servedRoots));
+    problems.register(latexProblems(latex));
+    const railBadges = createRailBadges(
+        entities,
+        feeds,
+        hpc,
+        calendar,
+        inbox,
+        audit,
+        problems,
+        selectors
     );
     const debug = withQueries(
         'debug',
@@ -761,6 +844,7 @@ export function createClientState(
         lspEdits,
         workspaceSymbols,
         documents,
+        problems,
         references,
         clangd,
         notices,

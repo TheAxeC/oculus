@@ -4,10 +4,12 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
+import { relative } from 'node:path';
 import { z } from 'zod';
 import { findingText } from '../../../data/helpers/finding-text.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import type { AuditFinding, Collection, Project } from '../../../data/model/index.ts';
+import { below, realPath } from '../../core/paths.ts';
 
 /** The thresholds and vocabularies the rules read, out of the merged configuration. */
 export type AuditRules = {
@@ -187,6 +189,26 @@ export function collector(catalog: Record<string, string>): {
             });
         }
     };
+}
+
+/** The file of a finding that is about none. */
+export const NO_FILE = '';
+
+/**
+ * The hub-relative path of the file a finding is about: the path given when it names a file on disk
+ * whose real path, links followed, lies below the hub's real path, and the empty text for a folder,
+ * a missing path, a link that leaves the hub and anything outside the hub.
+ */
+export function fileOf(hub: string, path: string): string {
+    const real = realPath(path);
+    const root = realPath(hub);
+    if (real === null || root === null || !below(real, root)) return NO_FILE;
+    try {
+        if (!statSync(real).isFile()) return NO_FILE;
+    } catch {
+        return NO_FILE;
+    }
+    return relative(hub, path);
 }
 
 /** One file's text, and the empty string for anything that cannot be read. */

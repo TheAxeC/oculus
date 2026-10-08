@@ -104,7 +104,10 @@ export type ToolButtonProps = {
     dataView?: string;
     /** A configured hub document's path, rendered on the button for browser navigation. */
     dataDoc?: string;
-    /** Marks the project-card control the keyboard cursor activates when its title is plain. */
+    /**
+     * Marks the control the keyboard cursor presses on any card: the one Enter activates when the
+     * card has no title button of its own.
+     */
     dataCardToggle?: boolean;
     /** `data-*` attributes by their names after `data-`, for a caller that finds a button. */
     data?: Record<string, string | number>;

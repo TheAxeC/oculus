@@ -31,6 +31,7 @@
 // build; the `Terminals` of a server holds the one every request of that server shares.
 
 import { z } from 'zod';
+import { SCROLLBACK_LINES } from '../../../data/model/index.ts';
 import type {
     Message,
     PtyPayload,
@@ -63,8 +64,7 @@ import {
     serverPid,
     resizeArgs,
     inputArgs,
-    sessionName,
-    SCROLLBACK_LINES
+    sessionName
 } from './sessions.ts';
 import { Turns } from './latex/turns.ts';
 import {

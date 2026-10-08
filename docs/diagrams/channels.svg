@@ -1534,11 +1534,11 @@
 <path fill="none" stroke="currentColor" d="M438.68,-203.46C477.21,-205.26 551.57,-201.94 612.74,-187 649.86,-177.94 690.56,-159.6 714.08,-146.11"/>
 <polygon fill="currentColor" stroke="currentColor" points="715.15,-147.93 719.23,-143.05 713,-144.32 715.15,-147.93"/>
 </g>
-<!-- ? src/lib/shell/panes/PaneView.svelte:470 -->
+<!-- ? src/lib/shell/panes/PaneView.svelte:473 -->
 <g id="node60" class="node">
-<title>? src/lib/shell/panes/PaneView.svelte:470</title>
+<title>? src/lib/shell/panes/PaneView.svelte:473</title>
 <polygon fill="none" stroke="currentColor" points="521.71,-3105.8 301.7,-3105.8 301.7,-3084.2 521.71,-3084.2 521.71,-3105.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="411.7" y="-3092" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/shell/panes/PaneView.svelte:470 message()</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="411.7" y="-3092" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/shell/panes/PaneView.svelte:473 message()</text>
 </g>
 <!-- shell/panes/PaneView -->
 <g id="node155" class="node">
@@ -1546,9 +1546,9 @@
 <polygon fill="none" stroke="currentColor" points="787.7,-3105.8 682.11,-3105.8 682.11,-3084.2 787.7,-3084.2 787.7,-3105.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-3092" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/panes/PaneView</text>
 </g>
-<!-- ? src/lib/shell/panes/PaneView.svelte:470&#45;&gt;shell/panes/PaneView -->
+<!-- ? src/lib/shell/panes/PaneView.svelte:473&#45;&gt;shell/panes/PaneView -->
 <g id="edge1" class="edge">
-<title>? src/lib/shell/panes/PaneView.svelte:470&#45;&gt;shell/panes/PaneView</title>
+<title>? src/lib/shell/panes/PaneView.svelte:473&#45;&gt;shell/panes/PaneView</title>
 <path fill="none" stroke="currentColor" d="M521.9,-3095C572.85,-3095 631.53,-3095 674.21,-3095"/>
 <polygon fill="currentColor" stroke="currentColor" points="674.21,-3097.1 680.21,-3095 674.21,-3092.9 674.21,-3097.1"/>
 </g>
@@ -2038,15 +2038,15 @@
 <path fill="none" stroke="currentColor" d="M458.65,-1846.29C504.77,-1854.57 574.33,-1858.18 612.74,-1817 650.49,-1776.53 602.31,-867.23 632.74,-821 642.71,-805.85 659,-795.62 675.63,-788.74"/>
 <polygon fill="currentColor" stroke="currentColor" points="676.01,-790.85 680.84,-786.73 674.49,-786.93 676.01,-790.85"/>
 </g>
-<!-- ? src/lib/views/system/workbench/editors/Editor.svelte:132 -->
+<!-- ? src/lib/views/system/workbench/editors/Editor.svelte:142 -->
 <g id="node98" class="node">
-<title>? src/lib/views/system/workbench/editors/Editor.svelte:132</title>
+<title>? src/lib/views/system/workbench/editors/Editor.svelte:142</title>
 <polygon fill="none" stroke="currentColor" points="604.74,-1701.8 218.67,-1701.8 218.67,-1680.2 604.74,-1680.2 604.74,-1701.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="411.7" y="-1688" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/system/workbench/editors/Editor.svelte:132 message(&#39;changedSince&#39;, row.file)</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="411.7" y="-1688" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/system/workbench/editors/Editor.svelte:142 message(&#39;changedSince&#39;, row.file)</text>
 </g>
-<!-- ? src/lib/views/system/workbench/editors/Editor.svelte:132&#45;&gt;views/system/workbench -->
+<!-- ? src/lib/views/system/workbench/editors/Editor.svelte:142&#45;&gt;views/system/workbench -->
 <g id="edge39" class="edge">
-<title>? src/lib/views/system/workbench/editors/Editor.svelte:132&#45;&gt;views/system/workbench</title>
+<title>? src/lib/views/system/workbench/editors/Editor.svelte:142&#45;&gt;views/system/workbench</title>
 <path fill="none" stroke="currentColor" d="M458.66,-1702.29C504.78,-1710.58 574.34,-1714.19 612.74,-1673 651.54,-1631.38 595.77,-692.26 632.74,-649 641.77,-638.43 654.67,-632.63 668.26,-629.67"/>
 <polygon fill="currentColor" stroke="currentColor" points="668.39,-631.78 673.92,-628.64 667.64,-627.65 668.39,-631.78"/>
 </g>

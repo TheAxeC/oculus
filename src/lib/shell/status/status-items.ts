@@ -3,13 +3,13 @@
 // hides it.
 //
 // The order is VS Code's: on the left what the window is connected to (the machine, the repository
-// and how far it is from its upstream, the findings), then the extensions' items oculus keeps (the
-// HPC poll, the usage refreshers, the server connection) and the LaTeX build item; on the right the
-// editor's own items for the source tab on screen (the caret line's blame in a file of a
-// repository, then the caret and the text's own items, then the items of a language server: its
-// state, the Python interpreter, the compile database and the Svelte configuration, each drawn only
-// for the language it belongs to, before the language itself), then the live sessions and the
-// unsaved tabs, and the bell last.
+// and how far it is from its upstream, the problems, the findings), then the extensions' items
+// oculus keeps (the HPC poll, the usage refreshers, the server connection) and the LaTeX build
+// item; on the right the editor's own items for the source tab on screen (the caret line's blame in
+// a file of a repository, then the caret and the text's own items, then the items of a language
+// server: its state, the Python interpreter, the compile database and the Svelte configuration,
+// each drawn only for the language it belongs to, before the language itself), then the live
+// sessions and the unsaved tabs, and the bell last.
 //
 // The host item is the server's `os.hostname()` on the `config` channel's `ConfigPayload.host`,
 // with its address. Branch and sync are the repository holding the active tab's file
@@ -21,11 +21,12 @@
 // tab over a file of a repository whether or not the tab draws blame in its gutter, worded as VS
 // Code's `git.blame.statusBarItem.template` default `${authorName} (${authorDateAgo})`, or Not
 // Committed Yet, and a tab over a file at HEAD or in the index shows its blame in the gutter alone.
-// The findings item counts the Findings view's list, the snapshot's findings and the config
-// channel's, and opens that view. The debug item follows it once a debug session has run since the
-// server started: the last configuration's name, and a press opens the configuration picker. The
-// LaTeX item is the build state of the root of the active LaTeX file or PDF, and opens the TeX
-// view.
+// The problems item counts the errors, warnings and infos the Problems view lists, with the infos
+// only when there are some, and a press shows that view or hides it. The findings item counts the
+// Findings view's list, the snapshot's findings and the config channel's, and opens that view. The
+// debug item follows it once a debug session has run since the server started: the last
+// configuration's name, and a press opens the configuration picker. The LaTeX item is the build
+// state of the root of the active LaTeX file or PDF, and opens the TeX view.
 
 import type { EditorStatus } from '$lib/state/workbench/navigation/editor-status.svelte';
 import { t } from '$lib/state/shared/words/text';
@@ -35,6 +36,7 @@ export const LEFT_ITEMS = [
     'host',
     'branch',
     'sync',
+    'problems',
     'findings',
     'debug',
     'hpc',
@@ -60,6 +62,16 @@ export const RIGHT_ITEMS = [
     'bell'
 ] as const;
 
+/**
+ * A count as VS Code's status bar packs it: as it is up to 999, whole thousands from 1000 (`1K`
+ * to `9K`), and `10K+` from 10000.
+ */
+export function packNumber(count: number): string {
+    if (count > 9999) return t('statusbar.packed_many');
+    if (count > 999) return t('statusbar.packed_thousands', Math.floor(count / 1000));
+    return String(count);
+}
+
 /** One item's id, which is its `data-status` and what the ui store keeps a hidden one under. */
 export type StatusItem = (typeof LEFT_ITEMS)[number] | (typeof RIGHT_ITEMS)[number];
 
@@ -75,6 +87,8 @@ export function itemName(item: StatusItem): string {
             return t('statusbar.item_branch');
         case 'sync':
             return t('statusbar.item_sync');
+        case 'problems':
+            return t('statusbar.item_problems');
         case 'findings':
             return t('statusbar.item_findings');
         case 'debug':

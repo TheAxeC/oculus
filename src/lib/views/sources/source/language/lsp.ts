@@ -196,16 +196,16 @@ export function createLspTab(input: LspTabInput): LspTab {
                 language: languageOf(target.path, client.selectors.languages())
             };
         },
-        open: (target, line, column) => {
+        open: (target, line, column, end) => {
+            const place = {
+                line,
+                column,
+                ...(end === undefined ? {} : { endLine: end.line, endColumn: end.column })
+            };
             if (isLibrary(target)) {
-                openLibraryFile(client, {
-                    library: target.library,
-                    name: target.name,
-                    line,
-                    column
-                });
+                openLibraryFile(client, { library: target.library, name: target.name, ...place });
             } else {
-                openSourceFile(client, { root: target.root, path: target.path, line, column });
+                openSourceFile(client, { root: target.root, path: target.path, ...place });
             }
         },
         library: lsp.named,

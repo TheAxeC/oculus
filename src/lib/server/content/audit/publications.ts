@@ -7,7 +7,15 @@ import { parse } from 'yaml';
 import { z } from 'zod';
 import { isMap } from '../../../data/helpers/guards.ts';
 import type { Project } from '../../../data/model/index.ts';
-import { printed, type AuditInput, sentence, type Raised, slurp, scalarShape } from './rules.ts';
+import {
+    fileOf,
+    printed,
+    type AuditInput,
+    sentence,
+    type Raised,
+    slurp,
+    scalarShape
+} from './rules.ts';
 
 /** Hub types that should have a public entry on the website. */
 const PUBLIC = ['published', 'phd', 'submitted'];
@@ -158,6 +166,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
     if (rules.publicationsFile === '') return;
     const path = join(input.hub, rules.publicationsFile);
     if (!existsSync(path)) return;
+    const file = fileOf(input.hub, path);
     let data: unknown;
     try {
         data = parse(slurp(path));
@@ -167,6 +176,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             scope: 'website',
             where: rules.publicationsFile,
             kind: 'publink',
+            file,
             ...sentence('audit.msg_site_unreadable', reason)
         });
         return;
@@ -196,6 +206,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
                     scope: project.folder,
                     where: 'publications.yml',
                     kind: 'publink',
+                    file,
                     ...sentence(
                         'audit.msg_site_wrong_section',
                         printed(sectionsOf(hit)),
@@ -211,6 +222,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
                     scope: project.folder,
                     where: 'publications.yml',
                     kind: 'publink',
+                    file,
                     ...sentence('audit.msg_site_title_differs', hit.title, printed(sectionsOf(hit)))
                 });
             }
@@ -219,6 +231,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
                 scope: project.folder,
                 where: 'publications.yml',
                 kind: 'publink',
+                file,
                 ...sentence('audit.msg_site_missing', type, expectedSections(project).join('/'))
             });
         }
@@ -239,6 +252,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             scope: project.folder,
             where: 'publications.yml',
             kind: 'publink',
+            file,
             ...(NEGATIVE.includes(type)
                 ? sentence('audit.msg_site_negative', type, printed(sectionsOf(hit)))
                 : sentence('audit.msg_site_deadend', type, printed(sectionsOf(hit))))
@@ -260,6 +274,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
         scope: 'website',
         where: 'publications.yml',
         kind: 'publink',
+        file,
         ...sentence(
             'audit.msg_site_untracked',
             untracked.length,

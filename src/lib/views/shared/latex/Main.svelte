@@ -2,7 +2,8 @@
     // Layer 3, shared view. One main file of a LaTeX target as the project tab draws it: its name,
     // which opens it as a source tab, the state of its build (running, built, failed or stopped,
     // and when its PDF was written), and the controls Build, Clean, View PDF and Count Words, with
-    // the problems of the last build opening under it. Everything goes through the LaTeX store
+    // the count of the problems of the last build, whose press shows them in the Problems view
+    // limited to the root. Everything goes through the LaTeX store
     // (state/sessions/latex/latex.svelte.ts) and its actions (state/sessions/latex/actions.ts), the
     // ones the source tab's bar, the keys and the TeX view use, so a main file behaves the same
     // wherever it is drawn. The row says `building` while the store holds a build of the main file,
@@ -10,14 +11,12 @@
     // again, and a refusal of a press is said as a notice.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import { stamp } from '$lib/state/shared/words/format';
     import type { LatexMain } from '$lib/state/sessions/latex/latex-state';
     import type { LatexTarget } from '$lib/state/sessions/terminal/latex-target';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { openSourceFile } from '../links/source-file';
-    import Problems from './Problems.svelte';
     import { stateGlyph, stateWords } from './state-words';
     import { inFolder } from './places';
 
@@ -35,14 +34,12 @@
     const client = useState();
     const {
         latex: { buildOf },
-        latexActions
+        latexActions,
+        problems
     } = client;
 
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
-
-    /** Whether the problems list is open. */
-    let opened = $state(false);
 
     /** The main file's path against the root. */
     const mainPath = $derived(inFolder(dir, row.main));
@@ -124,11 +121,15 @@
     </div>
     <div class="counts">
         {#if total > 0}
-            <Disclosure
-                count={total}
-                label={total === 1 ? t('latex.problem') : t('latex.problems')}
-                expanded={opened}
-                onclick={() => (opened = !opened)}
+            <ToolButton
+                small
+                label={t(
+                    'latex.problem_pill',
+                    total,
+                    total === 1 ? t('latex.problem') : t('latex.problems')
+                )}
+                title={t('latex.problems_open_tip')}
+                onclick={() => problems.show(root)}
             />
             <span class="note">{t('latex.problem_counts', errorsSaid, warningsSaid)}</span>
         {:else if row.log !== null}
@@ -138,9 +139,6 @@
             <span class="note">{t('latex.words', row.words)}</span>
         {/if}
     </div>
-    {#if opened}
-        <Problems {root} {mainPath} errors={row.errors} warnings={row.warnings} />
-    {/if}
 </div>
 
 <style>

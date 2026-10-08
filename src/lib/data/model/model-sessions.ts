@@ -712,7 +712,7 @@ export type CommandSeverity = 'error' | 'warning';
 export type CommandDiagnostic = {
     /** The repository the command belongs to. */
     root: string;
-    /** The file the line names, relative to the command's folder or absolute as written. */
+    /** The file the line names: a path inside the repository, or the absolute path. */
     file: string;
     line: number;
     column?: number;

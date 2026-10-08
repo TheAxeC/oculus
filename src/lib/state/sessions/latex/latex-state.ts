@@ -34,7 +34,7 @@ export { macrosOf } from '../../../data/prose/latex.ts';
 export type { SymbolGroup } from '../../../data/sources/config/catalog/latex-tables.ts';
 
 /** One error or warning of a build, as the rows draw it. */
-export type LatexIssue = { file: string; line: number | null; message: string };
+type LatexIssue = { file: string; line: number | null; message: string };
 
 /** One main file of a folder and what the last build of it left. */
 export type LatexMain = {

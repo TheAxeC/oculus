@@ -22,9 +22,10 @@ digraph layer_shell {
         "folder shell/frames to layer state" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/rail to layer state" [label="21", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/rail to layer ui" [label="22", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/status to folder shell/keys" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/status to layer data" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/status to layer state" [label="24", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder shell/status to layer ui" [label="18", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/status to layer ui" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/panes to folder shell/keys" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/panes to layer state" [label="45", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/panes to layer ui" [label="20", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -82,6 +83,8 @@ digraph layer_shell {
     "folder shell/rail" -> "folder shell/rail to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
     "folder shell/rail to layer ui" -> "layer ui from folder shell/rail" [style=dashed];
     { rank=same; "folder shell/rail to layer ui"; "layer ui from folder shell/rail"; }
+    "folder shell/status" -> "folder shell/status to folder shell/keys" [arrowhead=none, minlen=3, weight=10];
+    "folder shell/status to folder shell/keys" -> "folder shell/keys" [];
     "folder shell/status" -> "folder shell/status to layer data" [arrowhead=none, style=dashed];
     "folder shell/status to layer data" -> "layer data from folder shell/status" [style=dashed];
     { rank=same; "folder shell/status"; "folder shell/status to layer data"; "layer data from folder shell/status"; }

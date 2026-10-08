@@ -7,6 +7,7 @@ text:
         item_branch: Branch
         item_sync: Sync
         item_findings: Findings
+        item_problems: Problems
         item_debug: Debug
         item_hpc: HPC
         item_usage: Usage
@@ -39,6 +40,13 @@ text:
         blame_tip: The commit that last changed this line. Open it in the graph.
         sync_upstream: the upstream
         findings_name: '{0} findings'
+        packed_many: 10K+
+        packed_thousands: '{0}K'
+        problems_join: ', '
+        problems_none: No Problems
+        problems_part_errors: 'Errors: {0}'
+        problems_part_infos: 'Infos: {0}'
+        problems_part_warnings: 'Warnings: {0}'
         debug_name: 'Debug: {0}'
         debug_tip: 'Debug with {0}, or pick another configuration to start.'
         findings_tip: '{0} findings in the hub and the configuration. Open Findings.'

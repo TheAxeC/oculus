@@ -43,7 +43,7 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | m1-m7 | open a view of the Sessions page's group |
 | p1-p4 | open a view of the Projects page's group |
 | e1-e6 | open a view of the Incoming page's group |
-| s1-s7 | open a view of the Explorer page's group |
+| s1-s8 | open a view of the Explorer page's group |
 | c1-c6 | open a view of the Academic Life page's group |
 | l1-l3 | open a view of the Pillars page's group |
 | r1-r4 | open a view of the References page's group |
@@ -53,7 +53,7 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | j / k | move the card cursor left / right |
 | J / K | carry the card under the cursor left / right |
 | i / o | move the card cursor up / down a row |
-| Enter | expand the card under the cursor |
+| Enter | expand the card under the cursor; on an Audit row open the file the finding names, on a Focus lane card open the project, on a Settings card move into its first field |
 | / | focus this board's search |
 | Cmd-Shift-F | open the Search view and put the cursor in its query box |
 | Cmd-Shift-H | open the Search view with the replace row shown and put the cursor in its replace box |
@@ -61,6 +61,8 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | G | bottom of page |
 | n | start a new agent session: the composer in the page's Terminal tab (a new one when it has none), in that tab's folder |
 | Cmd+S | save the source tab on screen (Ctrl+S off macOS), refused over a file that is not UTF-8 text throughout; the browser's save dialog is never opened |
+| Cmd+Shift+M | show the Problems view, or hide it when it is the one on screen (Ctrl+Shift+M off macOS) |
+| F8 / Shift+F8 | go to the next / previous problem, across files |
 | Cmd+Shift+B | run the default build of the repository holding the open source file (Ctrl+Shift+B off macOS) |
 | Cmd+Alt+T | run the default test of that repository (Ctrl+Alt+T off macOS) |
 | Cmd+Alt+B / Cmd+Alt+C / Cmd+Alt+V | build, clean and view the PDF of the LaTeX root of the source tab or the PDF tab in front (Ctrl+Alt off macOS) |
@@ -112,7 +114,8 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `repositories` | [Repositories](docs/views.md#repositories) | VS Code's Source Control over every repository oculus knows, with the commit box, the changes, the graph, stashes, tags and worktrees, repositories below a root down to `repository_scan_depth` included, and a changed file's name pressed to open it. |
 | `search` | [Search](docs/views.md#search) | A pattern across the files of one root or of all of them, the hits grouped by file, with an optional replace. |
 | `references` | [References](docs/views.md#references) | The locations a language server found for Find All References or Find All Implementations in a source tab, and the call and type hierarchies of a symbol. |
-| `latex` | [TeX view](docs/views.md#tex-view) | LaTeX Workshop's side bar for the root of the LaTeX file in front: Commands, Structure, Problems and Math Symbols. |
+| `latex` | [TeX view](docs/views.md#tex-view) | LaTeX Workshop's side bar for the root of the LaTeX file in front: Commands, Structure and Math Symbols. |
+| `problems` | [Problems](docs/views.md#problems) | The errors, warnings and infos of the language servers, of project commands and of LaTeX builds, one row per problem under its file. |
 | `debug` | [Debug](docs/views.md#debug) | The debugger of rite: the launch configuration picker with Start, the findings of `.oculus/launch.yml`, and Variables, Watch, Call Stack and Breakpoints. |
 | `debug-console` | [Debug Console](docs/views.md#debug-console) | What the debugged program wrote and the expressions you evaluated in the paused frame. |
 | `funding` | [Funding](docs/views.md#funding) | The funding schemes, their stage and the statement each grant requires. |

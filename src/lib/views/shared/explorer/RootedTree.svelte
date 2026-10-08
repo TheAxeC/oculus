@@ -91,6 +91,7 @@
     fixed={tree.fixed}
     marked={tree.marked}
     fold={tree.fold}
+    problemOf={tree.problemOf}
     {header}
     {headerOpen}
     onselect={tree.tab.selectRow}

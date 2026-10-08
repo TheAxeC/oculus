@@ -33,6 +33,7 @@ text:
         open_findings: Findings
         open_findings_glyph: warn
         open_findings_tip: Open the Findings view, which lists the errors in the files themselves.
+        open_place_tip: Open {0}
         findings_note: "A bad id, an unknown chip and every other error in the files themselves are the Findings view's, and are not repeated here."
         msg_markers: '{0} open marker(s), the first "{1}"'
         msg_intro_marker: 'intro: "{0}"'

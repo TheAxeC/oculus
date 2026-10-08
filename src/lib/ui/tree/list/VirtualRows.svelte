@@ -75,8 +75,10 @@
     let size = $state(0);
     /** The list's offset in its scroll box, in px. */
     let margin = $state(0);
-    /** The window the virtualizer drew last, read again each time it says the window changed. */
-    let windowed: RowWindow = $state(firstWindow(0));
+    /** Counts the virtualizer's word that its window moved, so the window is read again. */
+    let moved = $state(0);
+    /** The window read last, handed back to `rowWindow` so an unchanged window keeps its value. */
+    let held: RowWindow = firstWindow(0);
     /** A row a key moved to that is not drawn yet, focused once it is. */
     let pending = $state('');
 
@@ -90,15 +92,25 @@
         scrollToFn: elementScroll,
         onChange: () => {
             place();
-            windowed = rowWindow(
-                virtualizer,
-                untrack(() => windowed)
-            );
+            moved += 1;
         }
     });
 
-    /** The rows drawn: the first ones until the list has found its scroll box, then the window. */
-    const drawn = $derived(box === null ? firstWindow(count) : windowed);
+    /**
+     * The rows drawn: the first ones until the list has found its scroll box, then the window the
+     * virtualizer gives for the list as it is now. The window is read here rather than written by
+     * an effect, so whatever reads the rows (the each below, run by Svelte ahead of this
+     * component's effects when the caller's list changes inside an effect of its own) never gets a
+     * window of a list that has since shrunk.
+     */
+    const drawn = $derived.by(() => {
+        if (box === null) return firstWindow(count);
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- the read is the dependency
+        moved;
+        configure(count, size, margin, key, kept);
+        held = rowWindow(virtualizer, held);
+        return held;
+    });
     /** How many rows are not drawn, held after the first window at the tokens' row height. */
     const rest = $derived(count - drawn.rows.length);
     /** The items kept drawn: the caller's, and those holding the rows the tree keeps. */
@@ -107,13 +119,13 @@
         ...(nav?.kept() ?? []).map((id) => owns?.(id) ?? -1).filter((index) => index >= 0)
     ]);
 
-    /** Hand the virtualizer the list as it is now, and read the window it gives. */
+    /** Hand the virtualizer the list as it is now. */
     function configure(
         rows: number,
         height: number,
         offset: number,
         keyOf: (index: number) => string,
-        held: readonly number[]
+        keptRows: readonly number[]
     ): void {
         virtualizer.setOptions({
             ...virtualizer.options,
@@ -121,23 +133,9 @@
             getItemKey: keyOf,
             estimateSize: () => height,
             scrollMargin: offset,
-            rangeExtractor: (range: Range) => keptRange(range, held)
+            rangeExtractor: (range: Range) => keptRange(range, keptRows)
         });
-        windowed = rowWindow(
-            virtualizer,
-            untrack(() => windowed)
-        );
     }
-
-    $effect.pre(() => {
-        if (box === null) return;
-        const rows = count;
-        const height = size;
-        const offset = margin;
-        const keyOf = key;
-        const held = kept;
-        untrack(() => configure(rows, height, offset, keyOf, held));
-    });
 
     /** Read the list's offset in its scroll box again, which moves when anything above it does. */
     function place(): void {

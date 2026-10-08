@@ -21,6 +21,8 @@ import {
     type Raised,
     slurp,
     isFolder,
+    fileOf,
+    NO_FILE,
     namesShape,
     scalarShape
 } from './rules.ts';
@@ -155,6 +157,7 @@ export function markers(input: AuditInput, add: (f: Raised) => void): void {
                 scope: project.folder,
                 where: name,
                 kind: 'todo',
+                file: fileOf(input.hub, path),
                 ...sentence('audit.msg_markers', count, firstMarker(text))
             });
         }
@@ -166,6 +169,7 @@ export function markers(input: AuditInput, add: (f: Raised) => void): void {
                 scope: collection.id,
                 where: relative(input.hub, collection.file),
                 kind: 'todo',
+                file: fileOf(input.hub, collection.file),
                 ...sentence('audit.msg_intro_marker', firstMarker(intro))
             });
         }
@@ -176,6 +180,7 @@ export function markers(input: AuditInput, add: (f: Raised) => void): void {
                 scope: collection.id,
                 where: labelOf(entry.title, entry.index),
                 kind: 'todo',
+                file: fileOf(input.hub, collection.file),
                 ...sentence('audit.msg_entry_marker', firstMarker(blob))
             });
         }
@@ -209,6 +214,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'venue_id',
                 kind: 'data',
+                file: fileOf(input.hub, project.file),
                 ...sentence('audit.msg_no_venue')
             });
         }
@@ -223,6 +229,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     scope,
                     where: 'project.yml',
                     kind: 'data',
+                    file: fileOf(input.hub, project.file),
                     ...sentence('audit.msg_missing_field', field)
                 });
             }
@@ -232,6 +239,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     scope,
                     where: 'project.yml',
                     kind: 'data',
+                    file: fileOf(input.hub, project.file),
                     ...sentence('audit.msg_provisional', provisional.length)
                 });
             }
@@ -240,6 +248,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     scope,
                     where: 'project',
                     kind: 'data',
+                    file: fileOf(input.hub, join(folder, 'README.md')),
                     ...sentence('audit.msg_no_data_section')
                 });
             }
@@ -250,6 +259,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     scope,
                     where: 'project.yml',
                     kind: 'data',
+                    file: fileOf(input.hub, project.file),
                     ...sentence('audit.msg_docs_ahead', when, lag)
                 });
             }
@@ -268,6 +278,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'project.yml',
                 kind: 'data',
+                file: fileOf(input.hub, project.file),
                 ...sentence('audit.msg_deposit_before_reproduction', deposited, reproduced)
             });
         }
@@ -289,6 +300,7 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'README.md',
                 kind: 'conform',
+                file: NO_FILE,
                 ...sentence('audit.msg_no_readme')
             });
         }
@@ -298,6 +310,7 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: name,
                 kind: 'conform',
+                file: fileOf(input.hub, join(folder, name)),
                 ...sentence('audit.msg_retired_doc')
             });
         }
@@ -307,6 +320,7 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: `${bad}/`,
                 kind: 'conform',
+                file: NO_FILE,
                 ...sentence('audit.msg_bad_folder', good)
             });
         }
@@ -315,6 +329,7 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'code/',
                 kind: 'conform',
+                file: NO_FILE,
                 ...sentence('audit.msg_code_no_readme')
             });
         }
@@ -338,6 +353,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'status.chips',
                 kind: 'manifest',
+                file: fileOf(input.hub, project.file),
                 ...sentence('audit.msg_no_author_chip')
             });
         }
@@ -348,6 +364,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                     scope,
                     where: 'status.chips',
                     kind: 'manifest',
+                    file: fileOf(input.hub, project.file),
                     ...sentence('audit.msg_terminal_live', project.type, printed(live))
                 });
             }
@@ -359,6 +376,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'status.chips',
                 kind: 'manifest',
+                file: fileOf(input.hub, project.file),
                 ...sentence('audit.msg_projects_published')
             });
         }
@@ -368,6 +386,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'status.chips',
                 kind: 'manifest',
+                file: fileOf(input.hub, project.file),
                 ...sentence('audit.msg_contradictory_chips', one, other)
             });
         }
@@ -380,6 +399,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'eli5',
                 kind: 'manifest',
+                file: fileOf(input.hub, project.file),
                 ...sentence('audit.msg_missing')
             });
         }
@@ -407,6 +427,7 @@ export function readability(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: `\`${field}\``,
                 kind: 'readability',
+                file: fileOf(input.hub, project.file),
                 ...sentence('audit.msg_too_long', length, limit)
             });
         }
@@ -418,6 +439,7 @@ export function readability(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: `results[${at}]`,
                 kind: 'readability',
+                file: fileOf(input.hub, project.file),
                 ...sentence('audit.msg_result_too_long', result.length, limit)
             });
         });
@@ -449,6 +471,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                 scope: collection.id,
                 where,
                 kind: 'data',
+                file: NO_FILE,
                 ...sentence('audit.msg_collection_missing')
             });
             continue;
@@ -463,6 +486,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                     scope: collection.id,
                     where: `entry #${entry.index + 1}`,
                     kind: 'data',
+                    file: fileOf(input.hub, collection.file),
                     ...sentence('audit.msg_entry_no_title')
                 });
             }
@@ -473,6 +497,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                     scope: collection.id,
                     where: label,
                     kind: 'data',
+                    file: fileOf(input.hub, collection.file),
                     ...sentence('audit.msg_entry_no_status')
                 });
             } else if (rules.waitingStatus.has(status.toLowerCase()) && fields.date === '') {
@@ -480,6 +505,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                     scope: collection.id,
                     where: label,
                     kind: 'data',
+                    file: fileOf(input.hub, collection.file),
                     ...sentence('audit.msg_entry_no_date', status)
                 });
             }
@@ -489,6 +515,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                     scope: collection.id,
                     where: label,
                     kind: 'data',
+                    file: fileOf(input.hub, collection.file),
                     ...sentence('audit.msg_entry_related', related)
                 });
             }
@@ -503,6 +530,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                     scope: collection.id,
                     where: label,
                     kind: 'data',
+                    file: fileOf(input.hub, collection.file),
                     ...sentence('audit.msg_entry_link', link)
                 });
             }

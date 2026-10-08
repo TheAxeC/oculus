@@ -42,6 +42,7 @@
         EditorReach
     } from '$lib/ui/controls/editor/types';
     import type { EditorGutter } from './source-gutter.svelte';
+    import { NOWHERE, type OpenedAt } from './status/tab-state';
     import type { EditorOptions } from '$lib/ui/controls/editor/options';
     import { languageOf } from '$lib/state/sources/fs';
     import {
@@ -66,13 +67,13 @@
         /** The tab instance, which names the editor's model. */
         instance?: string;
         /**
-         * The line the tab was opened at, and zero for one opened at the file itself. It is acted
-         * on once per line and column the tab is pointed at: every scroll after that is the
-         * reader's own.
+         * The place the tab was opened at, and zeros for one opened at the file itself. It is
+         * acted on once per ask: every scroll after that is the reader's own. A place with an
+         * `asked` is gone to when `asked` differs from `wentTo`, and `onwent` then says the value
+         * gone to; one without goes once per line, column and end it is pointed at.
          */
-        line?: number;
-        /** The column of the place the tab was opened at, from one, or 0 for none. */
-        column?: number;
+        place?: OpenedAt;
+        onwent?: (asked: number) => void;
         /**
          * The highlighter's name for the language the text is painted in, the file name's when the
          * tab hands none.
@@ -114,8 +115,8 @@
         text,
         reached,
         instance = 'tab',
-        line = 0,
-        column = 0,
+        place = NOWHERE,
+        onwent,
         first = 1,
         onfirst,
         language: chosen,
@@ -173,22 +174,41 @@
     /** The theme and the text size in force, which the editor's look is built from. */
     const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
 
-    // Go to the place the tab was opened at, once per line and column it is pointed at: the word at
-    // the column is selected, and a line alone is gone to.
+    /** The editor's command for a place: its range, the word at its column, or its line. */
+    function goingTo(at: OpenedAt): EditorCommand {
+        const focus = at.focus ? {} : { focus: false };
+        if (at.endLine > 0) {
+            const { line, column, endLine, endColumn } = at;
+            return {
+                kind: 'range',
+                line,
+                column: Math.max(column, 1),
+                endLine,
+                endColumn,
+                ...focus
+            };
+        }
+        if (at.column > 0) return { kind: 'word', line: at.line, column: at.column, ...focus };
+        return { kind: 'goto', line: at.line, ...focus };
+    }
+
+    // Go to the place the tab was opened at, once per ask of it: a place with an `asked` is gone
+    // to when the ask is not the one already gone to, which a reload keeps, so the same place
+    // asked for again is gone to again. A place with none is gone to once per line, column and end.
     $effect(() => {
-        const wanted = line;
-        const at = column;
+        const at = place;
         const held = editor;
-        if (wanted === 0 || held === undefined) return;
+        if (at.line === 0 || held === undefined) return;
         untrack(() => {
-            const place = `${String(wanted)}:${String(at)}`;
-            if (placed === place) return;
-            placed = place;
-            held.perform(
-                at === 0
-                    ? { kind: 'goto', line: wanted }
-                    : { kind: 'word', line: wanted, column: at }
-            );
+            const ask =
+                at.asked > 0
+                    ? `asked ${String(at.asked)}`
+                    : [at.line, at.column, at.endLine, at.endColumn].join(':');
+            if (placed === ask) return;
+            placed = ask;
+            if (at.asked > 0 && at.asked === at.wentTo) return;
+            held.perform(goingTo(at));
+            if (at.asked > 0) onwent?.(at.asked);
         });
     });
 
@@ -218,7 +238,7 @@
 <div
     class="source-editor"
     data-source-editor={path}
-    data-source-line={line === 0 ? undefined : line}
+    data-source-line={place.line === 0 ? undefined : place.line}
     data-language={shown}
 >
     <div class="row" bind:this={box}>
@@ -257,7 +277,7 @@
                 model={instance}
                 onchange={oninput}
                 onscroll={(next: number) => (fraction = next)}
-                startLine={line === 0 ? first : 1}
+                startLine={place.line === 0 ? first : 1}
                 {onfirst}
             />
         </div>

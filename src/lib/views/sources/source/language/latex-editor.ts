@@ -12,6 +12,7 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import { nameOf } from '$lib/state/sources/fs';
+import { LATEX_OWNER } from '$lib/state/system/problem-sources';
 import { latexOutline } from '$lib/state/sources/explorer/sections/outline';
 import type { EditorExtension } from '$lib/ui/controls/editor/types';
 import { latexExtension } from '$lib/ui/controls/editor/kit/latex/latex-widget';
@@ -71,6 +72,7 @@ export function latexEditor(
     let folder: Promise<string> | null = null;
     const widgets = latexExtension({
         problems,
+        owner: LATEX_OWNER,
         folder: () => {
             folder ??= client.latex
                 .rootOf(root, path)

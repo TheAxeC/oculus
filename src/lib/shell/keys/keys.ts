@@ -61,6 +61,8 @@ export type KeyAction =
     | { kind: 'command-default'; which: 'build' | 'test' }
     | { kind: 'save' }
     | { kind: 'tex-view' }
+    | { kind: 'toggle-problems' }
+    | { kind: 'next-problem'; by: 1 | -1 }
     | { kind: 'debug'; which: DebugKey }
     | { kind: 'close-tab' }
     | { kind: 'new-text-file' }
@@ -138,6 +140,71 @@ function showsTexView(event: KeyEventLike, context: KeyContext): boolean {
     if ((mac ? event.metaKey : event.ctrlKey) !== true) return false;
     if ((mac ? event.ctrlKey : event.metaKey) === true) return false;
     return event.code === 'KeyX' && event.altKey === true && event.shiftKey !== true;
+}
+
+/**
+ * Whether the key is Cmd+Shift+M (Ctrl+Shift+M off macOS), which shows the Problems view and, when
+ * that view is the one on screen, hides it. The letter is read from the physical key. On macOS
+ * Ctrl+Shift+M is the LaTeX tab's math chord and is not this key. It answers while a field is
+ * typed in, as the editor is one, and under no overlay.
+ */
+function togglesProblems(event: KeyEventLike, context: KeyContext): boolean {
+    if (event.defaultPrevented === true) return false;
+    if (context.paletteOpen || context.trayOpen || context.confirmOpen) return false;
+    const mac = context.mac !== false;
+    if ((mac ? event.metaKey : event.ctrlKey) !== true) return false;
+    if ((mac ? event.ctrlKey : event.metaKey) === true) return false;
+    return event.code === 'KeyM' && event.shiftKey === true && event.altKey !== true;
+}
+
+/**
+ * F8 (+1) and Shift+F8 (-1), which step to the next and the previous problem. They answer with a
+ * field focused, as the editor is one, and under no overlay.
+ */
+function problemStep(event: KeyEventLike, context: KeyContext): 1 | -1 | null {
+    if (event.defaultPrevented === true) return null;
+    if (context.paletteOpen || context.trayOpen || context.confirmOpen) return null;
+    if (event.key !== 'F8' || event.metaKey === true || event.ctrlKey === true) return null;
+    if (event.altKey === true) return null;
+    return event.shiftKey === true ? -1 : 1;
+}
+
+/**
+ * Show a view, or hide it when it is the instance on screen in the page. The Problems key and the
+ * status bar's Problems item both toggle the view through this. Hiding keeps the instance's UI
+ * state (a view's filter, toggles and scope) in the ui store under a record of the page and the
+ * view, and the next show gives it to the instance it opens, so a hidden view comes back as it
+ * was, whichever of the two callers hid it and showed it. Both name the page, so the record is
+ * the page's own. Closing a tab by its own close button forgets the state, as the layout's close
+ * does.
+ */
+export function toggleView(
+    layout: {
+        activeInstance: (page?: string) => { id: string; view: string } | null;
+        closeInstance: (id: string, page?: string) => void;
+        openView: (view: string, state?: unknown, page?: string) => string;
+    },
+    ui: {
+        instanceState: (id: string) => unknown;
+        setInstanceState: (id: string, state: unknown) => void;
+        clearInstanceState: (id: string) => void;
+    },
+    view: string,
+    page: string
+): void {
+    const active = layout.activeInstance(page);
+    const hidden = `hidden-view:${page}:${view}`;
+    if (active !== null && active.view === view) {
+        const kept = ui.instanceState(active.id);
+        layout.closeInstance(active.id, page);
+        if (kept !== undefined) ui.setInstanceState(hidden, kept);
+        return;
+    }
+    const kept = ui.instanceState(hidden);
+    const id = layout.openView(view, undefined, page);
+    if (kept === undefined) return;
+    ui.clearInstanceState(hidden);
+    if (id !== '' && ui.instanceState(id) === undefined) ui.setInstanceState(id, kept);
 }
 
 /**
@@ -239,6 +306,13 @@ export function resolveKey(
     }
     if (showsTexView(event, context)) {
         return { action: { kind: 'tex-view' }, state: { ...state, chord: '' } };
+    }
+    if (togglesProblems(event, context)) {
+        return { action: { kind: 'toggle-problems' }, state: { ...state, chord: '' } };
+    }
+    const step = problemStep(event, context);
+    if (step !== null) {
+        return { action: { kind: 'next-problem', by: step }, state: { ...state, chord: '' } };
     }
     const which = defaultCommand(event, context);
     if (which !== null) {

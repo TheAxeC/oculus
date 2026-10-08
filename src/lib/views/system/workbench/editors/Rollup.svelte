@@ -24,10 +24,13 @@
         /** The spec of the key of a group: a choice of the names the catalog lists, else a text. */
         keySpec: CatalogEntry;
         lists: Lists;
+        /** The instance the cards are drawn in, and the file and key of the setting. */
+        instance: string;
+        base: string;
         onedit: (edit: Edit) => void;
     };
 
-    let { draft, specs, keySpec, lists, onedit }: Props = $props();
+    let { draft, specs, keySpec, lists, instance, base, onedit }: Props = $props();
 </script>
 
 <div class="groups">
@@ -70,6 +73,8 @@
                 {specs}
                 form="rollup"
                 {lists}
+                {instance}
+                {base}
                 group={at}
                 {onedit}
             />

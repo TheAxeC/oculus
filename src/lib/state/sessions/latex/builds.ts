@@ -73,8 +73,8 @@ export type BuildDeps = {
     count: (target: LatexTarget, main: string) => Promise<unknown>;
     /** Show the terminal of a build as the compiler log. */
     openLog: (terminal: string) => void;
-    /** Show the problems of a main file's last build. */
-    showProblems: (target: LatexTarget, main: string) => void;
+    /** Show the Problems view limited to the root of the target. */
+    showProblems: (target: LatexTarget) => void;
     /** Tell the store that a build state moved, so the readers redraw. */
     touched: () => void;
     /** Read the count of moves, which makes the reader depend on every move. */
@@ -290,7 +290,7 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         }
         actions.push({
             label: t('latex.show_problems'),
-            run: () => deps.showProblems(entry.target, entry.main)
+            run: () => deps.showProblems(entry.target)
         });
         deps.notify(message, 'error', actions);
     }

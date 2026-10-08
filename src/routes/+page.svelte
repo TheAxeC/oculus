@@ -9,6 +9,7 @@
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
     import { shouldCancel } from '$lib/shell/context-guard';
+    import { provideFileProblems } from '$lib/shell/panes/strip/file-problems';
     import type { Bookmark } from '$lib/shell/rail/rail';
     import { parseFloats } from '$lib/state/workbench/navigation/arrangement';
     import { readChord, readDocs, readGroups } from '$lib/state/workbench/navigation/catalogue';
@@ -27,7 +28,7 @@
     } from '$lib/state/workbench/navigation/status';
     import { repositoriesViewOf } from '$lib/state/sources/repositories/repositories';
     import { configGeneration } from '$lib/state/shared/words/generation.svelte';
-    import { bookmarkRows, HUB_ROOT } from '$lib/state/sources/fs';
+    import { bookmarkRows, HUB_ROOT, problemMarkOf, problemWords } from '$lib/state/sources/fs';
     import { takeCarried } from '$lib/state/workbench/layout/saved/carry';
     import { createClientState } from '$lib/state/client/context';
     import { useBrowserWindows } from '$lib/shell/browser-windows.svelte';
@@ -72,12 +73,20 @@
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
         fs: { bookmarks: savedBookmarks, workspaces },
         layout: { activeInstance, loadLayout, openView, stopFollowing },
+        problems,
         repositories,
         selectors: { waitingCount },
         socket: { connect, disconnect, seedApps, seedConfig, status: socketStatus },
         ui: { instanceState, loadUi, setInstanceState, stopFollowing: stopFollowingUi },
         writes: { setToken, writeRail }
     } = client;
+
+    // The errors and warnings a file tab's face draws come from the problems store, which the shell
+    // may not read, so the panes get this function in its place.
+    provideFileProblems((file) => {
+        const mark = problemMarkOf(problems.fileCounts(file.root, file.path), 'file');
+        return mark === null ? null : { ...problemWords(mark), tone: mark.tone };
+    });
 
     // The views, and the collection views one per key of config/sources.yml's `collections:`, which
     // the load function shipped with the catalog. It runs here in the script body rather than on
@@ -172,6 +181,7 @@
         statusWords(socketStatus(), usage(), hpc(), sessions(), {
             host: config()?.host ?? null,
             findings: findingsCount(portfolio(), config(), { findings: appFindings() }),
+            problems: problems.total(),
             repo: repoStatus(tabFile(activeInstance()?.state), served, gitPayload(), HUB_ROOT)
         })
     );
@@ -273,4 +283,5 @@
     {status}
     {git}
     waiting={waitingCount()}
+    walkProblem={problems.walk}
 />

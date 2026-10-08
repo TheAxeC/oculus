@@ -77,8 +77,8 @@ export type LatexHooks = {
     saveAll: () => Promise<void>;
     /** Show a build's terminal as the compiler log. */
     openLog: (terminal: string) => void;
-    /** Show the problems of a main file's last build. */
-    showProblems: (target: LatexTarget, main: string) => void;
+    /** Show the Problems view limited to the root of the target. */
+    showProblems: (target: LatexTarget) => void;
 };
 
 /** One folder's LaTeX state per target, and what is asked of a main file of one. */
@@ -104,6 +104,12 @@ export type LatexStore = Omit<
             ask?: LatexBuildAsk
         ) => Promise<TerminalAnswer>;
         invalidate: (target: LatexTarget) => void;
+        /**
+         * Forget the folder states and the outlines of every target whose root is none of the
+         * roots, which are the served roots after a change, so the diagnostics of a root that is no
+         * longer served leave with it. A project whose state names no root is kept.
+         */
+        forgetOutside: (roots: { key: string }[]) => void;
         /**
          * Read a target's state again when it is shown next: a view or a panel opening on a folder
          * calls it, so the files that changed while nothing watched the folder are read. A target
@@ -315,6 +321,21 @@ export function createLatex(
         queries.forget([KIND, ...targetKey(target)]);
         queries.forget([OUTLINES, ...targetKey(target)]);
         touched();
+    }
+
+    function forgetOutside(roots: { key: string }[]): void {
+        let any = false;
+        for (const { key, data } of queries.entries<LatexState>([KIND])) {
+            const named = data?.root ?? '';
+            const root = named !== '' ? named : key[1] === 'folder' ? String(key[2]) : '';
+            if (root === '' || roots.some((one) => one.key === root)) continue;
+            const target = key.slice(1).map(String);
+            queries.forget([KIND, ...target]);
+            queries.forget([OUTLINES, ...target]);
+            waiting.delete(target.join('\n'));
+            any = true;
+        }
+        if (any) touched();
     }
 
     async function load(target: LatexTarget, held: LatexState | undefined): Promise<LatexState> {
@@ -542,6 +563,7 @@ export function createLatex(
         watch,
         run,
         invalidate,
+        forgetOutside,
         reread,
         outline,
         count,

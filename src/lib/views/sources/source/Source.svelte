@@ -93,6 +93,7 @@
     import { createTabFile } from './status/tab-file.svelte';
     import { createLibraryTab } from './status/library-tab.svelte';
     import { tabFacts } from './status/tab-state';
+    import { instanceMap } from '$lib/state/workbench/layout';
     import { tabShown } from './status/tab-shown';
     import { createSubmitJob } from './actions/submit-job.svelte';
     import ReadAgainButton from './actions/ReadAgainButton.svelte';
@@ -139,7 +140,7 @@
 
     let { instance }: ViewProps = $props();
 
-    const { root, path, label, head, line, column, blocked, untitled } = $derived(
+    const { root, path, label, head, place, blocked, untitled } = $derived(
         tabFacts(instance.state)
     );
     const lib = createLibraryTab({
@@ -441,8 +442,9 @@
         {margin}
         onscrolled={(next: number) => (top = next)}
         at={at.path}
-        {line}
-        {column}
+        {place}
+        onwent={(asked: number) =>
+            restateInstance(instance.id, { ...instanceMap(instance.state), wentTo: asked })}
         first={draft.first}
         onfirst={(shown: number) => setSourceFirst(instance.id, shown)}
         {indent}

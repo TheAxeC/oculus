@@ -64,6 +64,7 @@
         treeKey,
         withHeader,
         type FsRoot,
+        type ProblemMark,
         type RowRef,
         type StatusFold,
         type TreeRow
@@ -89,6 +90,8 @@
         marked: string[];
         /** What git says of the paths under the repositories the page carries. */
         fold?: StatusFold;
+        /** What the Problems view counts for a row, null for a row with no error or warning. */
+        problemOf?: (root: string, path: string, kind: 'file' | 'dir') => ProblemMark | null;
         /**
          * The workspace header, drawn as the first row of the tree; none for a tab that draws no
          * workspace (a following or a rooted one). `headerOpen` says whether the roots show.
@@ -136,6 +139,7 @@
         fixed,
         marked,
         fold,
+        problemOf,
         header,
         headerOpen = true,
         onselect,
@@ -369,6 +373,7 @@
                                               ),
                                               row.kind
                                           )}
+                                    problem={problemOf?.(row.root, row.path, row.kind) ?? null}
                                     onpress={pressed}
                                     onkeep={(one: TreeRow, pressedAt?: number) => {
                                         onselect(one);

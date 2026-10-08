@@ -40,6 +40,12 @@ export type Tab = {
     pinned?: boolean;
     /** The file the tab shows is off the disk: its label is struck through, in the error colour. */
     gone?: boolean;
+    /**
+     * The errors and warnings the file the tab shows holds: the count already worded (`9+` from
+     * ten), the hover words that say it, and the hue of the worst. The count is drawn after the
+     * label and the label takes the hue.
+     */
+    problem?: { count: string; title: string; tone: 'error' | 'warning' };
 };
 
 /**

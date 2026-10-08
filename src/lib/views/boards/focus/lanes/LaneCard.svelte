@@ -9,7 +9,8 @@
     // click-to-cycle badge at its leading edge, which is a different thing from the card a board of
     // projects draws. It carries `data-card` and `data-cursor` all the same, which is what the
     // workbench's keyboard cursor moves over, so a lane card is reachable by key like every card
-    // the primitive draws.
+    // the primitive draws, and Enter on the card under the cursor presses its name, which opens the
+    // project.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -105,7 +106,7 @@
             </span>
         {/each}
         <span class="name">
-            <ToolButton plain cut {label} onclick={onopen} />
+            <ToolButton plain cut dataCardToggle {label} onclick={onopen} />
         </span>
         {#if due}
             <span class="due">

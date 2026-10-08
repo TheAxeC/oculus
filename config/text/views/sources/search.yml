@@ -1,5 +1,33 @@
-# Oculus text owned by the Search view: the query row, the count line and the results grouped by file.
+# Oculus text owned by the Search, References and Problems views: the query row, the count line, the results grouped by file and the problems of the page.
 text:
+    problems:
+        actions: Problems actions
+        active_only: Show Active File Only
+        as_table: View as Table
+        as_tree: View as Tree
+        badge_title: Total {0} Problems
+        col_file: File
+        col_message: Message
+        col_position: Position
+        col_severity: Severity
+        col_source: Source
+        collapse_all: Collapse All
+        copy: Copy
+        copy_message: Copy Message
+        empty: No problems have been detected in the workspace.
+        errors: Show Errors
+        filter: Filter (e.g. text, **/*.ts, !**/node_modules/**)
+        filtered_empty: No results found with provided filter criteria.
+        infos: Show Infos
+        position: '[Ln {0}, Col {1}]'
+        results: Problems
+        scope: '{0}'
+        scope_title: Show the problems of every root again
+        severity_error: Error
+        severity_info: Info
+        severity_warning: Warning
+        toolbar: Problems
+        warnings: Show Warnings
     references:
         actions: References actions
         clear: Clear
@@ -119,6 +147,8 @@ text:
         word: word
         word_title: Match whole words only, which is how an identifier is found without its neighbours
     views:
+        problems: Problems
+        problems_glyph: warn
         references: References
         references_glyph: references
         search: Search

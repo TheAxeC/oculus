@@ -27,9 +27,12 @@
     // Each section is a list of rows drawn as the Findings view draws its rows: one line of the
     // tree's row height, growing by whole lines when the words wrap, with the fill of a tree row
     // under the pointer. A row is the scope in the row's main words, the message, the place in the
-    // mono face and the mute control at the row's end. Every row carries `data-card`, which the
-    // shell's arrow keys step through; the view has no selection of its own. The list is drawn
-    // straight into the pane, so the pane asks for the tint.
+    // mono face and the mute control at the row's end. Every row carries `data-card`, its card id
+    // (state/system/audit.ts), which the shell's arrow keys step through; the row the instance's
+    // card cursor names is marked `data-cursor` and drawn with the accent outline, and the view has
+    // no selection of its own. A finding that names a file draws its place as a control that opens
+    // the file in a source tab, and Enter on the row presses it. The list is drawn straight into
+    // the pane, so the pane asks for the tint.
     //
     // The errors in the files themselves, a bad id or an unknown chip, are the Findings view's and
     // are not repeated here.
@@ -42,18 +45,21 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { auditSearch, findingsOfKind, muteMessage } from '$lib/state/system/audit';
+    import { auditSearch, cardIds, findingsOfKind, muteMessage } from '$lib/state/system/audit';
+    import { HUB_ROOT } from '$lib/state/sources/fs';
     import { useState } from '$lib/state/client/use';
-    import { instanceFlag, instanceText } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, instanceFlag, instanceText } from '$lib/state/workbench/layout/instance';
+    import { openSourceFile } from '../../shared/links/source-file';
     import type { AuditFinding } from '$lib/state/system/audit.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
+    const client = useState();
     const {
         audit: { open, parked },
         layout: { openView },
         ui: { instanceState, setInstanceState },
         writes: { muteFinding }
-    } = useState();
+    } = client;
 
     let { instance }: ViewProps = $props();
 
@@ -70,6 +76,16 @@
 
     const shown = $derived(auditSearch(open(), search));
     const hidden = $derived(auditSearch(parked(), search));
+
+    /** The card id of every row drawn, by finding. */
+    const ids = $derived(
+        new Map([
+            ...cardIds(shown).map((id, at): [AuditFinding, string] => [shown[at], id]),
+            ...cardIds(hidden).map((id, at): [AuditFinding, string] => [hidden[at], id])
+        ])
+    );
+    /** The card the keyboard's cursor is on, null for none. */
+    const cursor = $derived(cardCursor(instance.state));
 
     /** The six sections in the order the scan reports them, each with the findings it holds. */
     const sections = $derived(
@@ -112,7 +128,8 @@
 {/snippet}
 
 {#snippet row(finding: AuditFinding, muted: boolean)}
-    <li data-card={finding.signature}>
+    {@const card = ids.get(finding) ?? finding.signature}
+    <li data-card={card} data-cursor={card === cursor || undefined}>
         {#if finding.scope !== ''}
             <span class="scope">{finding.scope}</span>
         {/if}
@@ -121,7 +138,17 @@
                 <CodeText text={finding.message} />
             </span>
         {/if}
-        {#if finding.where !== ''}
+        {#if finding.where !== '' && finding.file !== ''}
+            <span class="where">
+                <ToolButton
+                    plain
+                    dataCardToggle
+                    label={finding.where}
+                    title={t('audit.open_place_tip', finding.file)}
+                    onclick={() => openSourceFile(client, { root: HUB_ROOT, path: finding.file })}
+                />
+            </span>
+        {:else if finding.where !== ''}
             <span class="where">{finding.where}</span>
         {/if}
         <span class="act">
@@ -156,7 +183,7 @@
                         <span class="count">{section.items.length}</span>
                     </h3>
                     <ul>
-                        {#each section.items as finding, index (`${finding.signature}:${index}`)}
+                        {#each section.items as finding (ids.get(finding))}
                             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                             {@render row(finding, false)}
                         {/each}
@@ -174,7 +201,7 @@
                 />
                 {#if showMuted}
                     <ul>
-                        {#each hidden as finding, index (`${finding.signature}:${index}`)}
+                        {#each hidden as finding (ids.get(finding))}
                             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                             {@render row(finding, true)}
                         {/each}
@@ -254,8 +281,15 @@
     }
 
     li:hover,
-    li:focus-within {
+    li:focus-within,
+    li[data-cursor] {
         --row-reveal: 1;
+    }
+
+    /* The row the keyboard's cursor is on: the accent outline a card under the cursor draws. */
+    li[data-cursor] {
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     @media (hover: none) {
@@ -274,6 +308,10 @@
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
         word-break: break-all;
+    }
+
+    .where :global(button:hover) {
+        text-decoration: underline;
     }
 
     .act {

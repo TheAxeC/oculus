@@ -50,10 +50,23 @@ export function cardSelector(id: string): string {
     return `[data-card=${JSON.stringify(id)}]`;
 }
 
-/** Activate the selected card's title, or its marked toggle when the title is plain. */
+/** The controls the keyboard can focus, which Enter on a card with a field area looks for. */
+const FOCUSABLE =
+    'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Activate the selected card. A card with a field area (`[data-card-focus]`, a Settings card) moves
+ * the focus to the first control in it and clicks nothing, so a checkbox keeps its value; any other
+ * card presses its title, or its marked toggle when the title is plain.
+ */
 export function activateCursor(pane: ParentNode | null, cursor: string | null): boolean {
     if (cursor === null) return false;
     const card = shownView(pane)?.querySelector<HTMLElement>(cardSelector(cursor));
+    const field = card?.querySelector<HTMLElement>(`[data-card-focus] :is(${FOCUSABLE})`);
+    if (field) {
+        field.focus();
+        return true;
+    }
     const control = card?.querySelector<HTMLElement>('.title button, [data-card-toggle]');
     if (!control) return false;
     control.click();

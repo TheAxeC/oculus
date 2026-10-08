@@ -304,7 +304,20 @@ export class LanguageHost {
         if (transport === null) return;
         transport.register(entry.model, entry.reg.place, entry.reg.library);
         const held = this.#diagnostics.get(addressOf(entry.reg));
-        if (held !== undefined) this.#mark(entry, held);
+        if (held !== undefined) {
+            this.#mark(entry, held);
+            const { reg } = entry;
+            // A library file's diagnostics are in the store once a model shows the file.
+            if (reg.library !== undefined) {
+                this.#parts.services.diagnostics(
+                    '',
+                    reg.library,
+                    this.language,
+                    held,
+                    reg.place.path
+                );
+            }
+        }
         this.#parts.services.symbols(entry.reg.instance, 'loading');
         this.#symbols(entry, 0);
     }
@@ -382,7 +395,7 @@ export class LanguageHost {
         this.#transport = null;
         for (const entry of this.#entries.values()) {
             this.#unmark(entry);
-            this.#forget(entry.reg, null);
+            this.#drop(entry.reg);
         }
         if (this.#sweep !== null) clearInterval(this.#sweep);
         this.#sweep = null;
@@ -422,7 +435,7 @@ export class LanguageHost {
             for (const entry of this.#entries.values()) {
                 if (entry.reg.place.root !== root) continue;
                 this.#unmark(entry);
-                this.#forget(entry.reg, null);
+                this.#drop(entry.reg);
             }
         }
         if (state === 'ready' && before !== 'ready') {
@@ -444,12 +457,17 @@ export class LanguageHost {
             applyEdit: (edit) => this.#applyEdit(edit),
             diagnostics: (page, place, items) => {
                 this.#diagnostics.set(page, items);
+                const shown = [...this.#entries.values()].filter(
+                    (entry) => addressOf(entry.reg) === page
+                );
                 if (place !== null) {
                     services.diagnostics(place.root, place.path, this.language, items);
+                } else if (shown.length > 0) {
+                    // A library file belongs to no root: the store keeps it under its address.
+                    const { reg } = shown[0];
+                    services.diagnostics('', page, this.language, items, reg.place.path);
                 }
-                for (const entry of this.#entries.values()) {
-                    if (addressOf(entry.reg) === page) this.#mark(entry, items);
-                }
+                for (const entry of shown) this.#mark(entry, items);
             },
             inactive: (page, regions) => {
                 for (const entry of this.#entries.values()) {
@@ -500,11 +518,19 @@ export class LanguageHost {
         const held = [...this.#entries.values()].some(
             (one) => one !== except && addressOf(one.reg) === page
         );
-        if (held) return;
-        this.#diagnostics.delete(page);
-        if (reg.library !== undefined) return;
+        if (!held) this.#drop(reg);
+    }
+
+    /**
+     * Take a file's diagnostics from the page's store, whatever model shows it: every model of a
+     * root whose server ended, or of a client that disconnected, loses them at once.
+     */
+    #drop(reg: Registration): void {
+        this.#diagnostics.delete(addressOf(reg));
         const { place } = reg;
-        this.#parts.services.diagnostics(place.root, place.path, this.language, []);
+        if (reg.library !== undefined) {
+            this.#parts.services.diagnostics('', reg.library, this.language, [], place.path);
+        } else this.#parts.services.diagnostics(place.root, place.path, this.language, []);
     }
 
     /**

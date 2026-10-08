@@ -34,9 +34,10 @@ export function keptRange(range: Range, kept: readonly number[]): number[] {
  * so each gap is measured from the list's top or from the end of the row drawn before it.
  *
  * Handed the window the list holds, it gives that same window back when nothing in it moved, so
- * the list writes nothing and the rows drawn from it are not run again. A row whose effect makes
- * the list configure itself again (the open commit's files, whose rows the Graph's kept items are
- * counted from) would otherwise be run again by the window it caused, and again, without end.
+ * the list's window keeps its value and the rows drawn from it are not run again. A row whose
+ * effect makes the list read its window again (the open commit's files, whose rows the Graph's kept
+ * items are counted from) would otherwise be run again by the window it caused, and again,
+ * without end.
  */
 export function rowWindow<S extends Element | Window, I extends Element>(
     virtualizer: Virtualizer<S, I>,

@@ -17,8 +17,11 @@ import { ago as countAgo, type AgoUnit } from '../../../data/helpers/dates.ts';
 import { deepestHolding, joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
 import { t } from '../../shared/words/text.ts';
 
-/** A root the file routes serve: its key and the folder it is. */
-export type ServedRoot = { key: string; dir: string };
+/**
+ * A root the file routes serve: its key and the folder it is, and `real`, that folder with every
+ * symlink resolved (empty when it does not exist), where the answer carried it.
+ */
+export type ServedRoot = { key: string; dir: string; real?: string };
 
 /** A file of a repository: the repository's folder and the path under it. */
 export type RepoFile = { root: string; path: string };

@@ -73,10 +73,21 @@ export type EditorReach = { from: string; edits: EditorTextEdit[] };
 /** The labels of the editor's three actions over the quick diff marks, in the parent's words. */
 export type EditorChangeWords = { next: string; previous: string; open: string };
 
-/** What the parent asks the editor to do through `perform`. */
+/**
+ * What the parent asks the editor to do through `perform`. A command that goes to a place takes
+ * the keyboard into the editor unless `focus` is false. A place past the text is clamped to it.
+ */
 export type EditorCommand =
-    | { kind: 'goto'; line: number; column?: number }
-    | { kind: 'word'; line: number; column: number }
+    | { kind: 'goto'; line: number; column?: number; focus?: boolean }
+    | { kind: 'word'; line: number; column: number; focus?: boolean }
+    | {
+          kind: 'range';
+          line: number;
+          column: number;
+          endLine: number;
+          endColumn: number;
+          focus?: boolean;
+      }
     | { kind: 'indent'; indent: EditorIndent }
     | { kind: 'convert'; tabs: boolean }
     | { kind: 'ending'; ending: EditorEnding }

@@ -2,7 +2,8 @@
 // once per tab: the language server wiring (`lsp.ts`) and the extension the editor is handed, which
 // is LaTeX's build markers, preview, completions and editing commands (`latex-editor.ts`), a
 // Markdown file's headings as document symbols (`symbols.ts`), a rite file's debug hover, or the
-// registration with a server. The extension follows the language the editor paints, so a text past
+// registration with a server, and the markers of a project command's errors for the file
+// (`command-marks.svelte.ts`). The extension follows the language the editor paints, so a text past
 // the paint limit gets none of them; a LaTeX file's build, keys and bar follow its language by name
 // (source/latex/). The extension is a new function whenever the painted language, the root or the
 // path changes, so the editor ends the old one and makes the new one.
@@ -13,6 +14,7 @@ import type { LatexCommands } from '$lib/ui/controls/editor/kit/latex/latex-edit
 import { riteHover } from '$lib/ui/controls/editor/kit/rite/rite-hover';
 import type { EditorExtension } from '$lib/ui/controls/editor/types';
 import { languageExtension } from './extension';
+import { commandMarks } from './command-marks.svelte';
 import { latexEditor } from './latex-editor';
 import { createLspTab, type LspTab } from './lsp';
 import { symbolsExtension } from './symbols';
@@ -67,6 +69,9 @@ export function createTabLanguage(input: TabLanguageInput): TabLanguage {
                 ),
             markdown: () => symbolsExtension(markdownOutline),
             rite: () => riteHover((word) => input.client.debug.hover(word)),
+            // A version at a commit and a library file are no file a command printed a line of.
+            commands:
+                version || library !== '' ? undefined : commandMarks(input.client, { root, path }),
             // A tab over a file of a served root has no library address, and its file names none.
             served: lsp.extension(
                 shown,

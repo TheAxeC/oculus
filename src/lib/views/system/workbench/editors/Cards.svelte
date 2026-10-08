@@ -16,9 +16,17 @@
     // config/editors/draft.ts), and the entries come in as they are. A roll-up draws one of these
     // per key, with `group` naming the key's place, and a nested list draws one with `path` naming
     // the cards above it.
+    //
+    // Every card has a card id that is its own within the pane, which holds many lists: the file
+    // and key of the setting (`base`), the roll-up group, and the steps down through the nested
+    // lists to the card's place. The keyboard's cursor names one of them (the instance's card
+    // cursor), the card it names draws `data-cursor`, and Enter on it moves the focus to the first
+    // control inside the card's field area, marked `data-card-focus`, without changing a value.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { useState } from '$lib/state/client/use';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
     import type { Draft, Edit, Step } from '$lib/state/system/config/editors/draft';
     import {
         cardsOf,
@@ -40,6 +48,10 @@
         specs: Record<string, FieldSpec>;
         form: Draft['form'] | 'nested';
         lists: Lists;
+        /** The instance the cards are drawn in, whose card cursor marks one of them. */
+        instance: string;
+        /** The file and key of the setting the cards belong to: the start of every card id. */
+        base: string;
         /** The place of the key of a roll-up these entries are under. */
         group?: number;
         /** The cards above a nested list: each one's place in its list and the field holding it. */
@@ -61,6 +73,8 @@
         specs,
         form,
         lists,
+        instance,
+        base,
         group,
         path = [],
         scope = '',
@@ -69,6 +83,21 @@
         removeOnly = false,
         onedit
     }: Props = $props();
+
+    const {
+        layout: { instanceLayoutState }
+    } = useState();
+
+    /** The card the instance's keyboard cursor is on, null for none. */
+    const cursor = $derived(cardCursor(instanceLayoutState(instance)));
+
+    /** The id of the card at a place of this list, unique in the pane. */
+    function idOf(at: number): string {
+        const steps = [...path, { index: at, field: '' }]
+            .map((step) => `${step.index}.${step.field}`)
+            .join('/');
+        return `${base}|${group === undefined ? '' : String(group)}|${steps}`;
+    }
 
     /** The edits that address one entry of a list. */
     type Aimed = Extract<Edit, { do: 'add' | 'remove' | 'move' | 'set' }>;
@@ -120,8 +149,13 @@
 
 <div class="cards" data-cards={form}>
     {#each cards as card, at (at)}
-        <div class="card" class:inline data-card={at}>
-            <div class="fields">
+        <div
+            class="card"
+            class:inline
+            data-card={idOf(at)}
+            data-cursor={idOf(at) === cursor || undefined}
+        >
+            <div class="fields" data-card-focus>
                 {#each drawnOf(card) as name (name)}
                     {@const spec = specOf(name)}
                     {#if spec !== undefined && controlOf(spec) === 'records'}
@@ -133,6 +167,8 @@
                                 specs={spec.fields ?? {}}
                                 form="nested"
                                 {lists}
+                                {instance}
+                                {base}
                                 {group}
                                 path={[...path, { index: at, field: name }]}
                                 scope={`${scope}${name} ${at + 1}, `}
@@ -247,6 +283,12 @@
         width: 100%;
         max-width: 720px;
         padding: 6px 0;
+    }
+
+    /* The card the keyboard's cursor is on: the accent outline a card under the cursor draws. */
+    .card[data-cursor] {
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     .card:not(.inline) {

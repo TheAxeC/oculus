@@ -87,6 +87,13 @@ export type Saved = { current: string; workspaces: SavedWorkspace[]; dropped: st
 export type ShownRoot = Root & { fixed: boolean };
 
 /**
+ * A root as the workspaces answer carries it: `real` is its folder with every symlink resolved,
+ * which the page compares with the real path of a repository (`repositoryOf`), and empty for a
+ * folder that does not exist.
+ */
+type AnsweredRoot = ShownRoot & { real: string };
+
+/**
  * What a GET with no root answers: the workspace in force, every one there is, and what was
  * dropped.
  */
@@ -94,7 +101,7 @@ export type WorkspacesAnswer = {
     /** The home folder of the account the server runs as, which the page writes as `~`. */
     home: string;
     current: string;
-    workspaces: { name: string; roots: ShownRoot[] }[];
+    workspaces: { name: string; roots: AnsweredRoot[] }[];
     dropped: string[];
 };
 
@@ -442,7 +449,10 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
         current: saved.current,
         workspaces: names.map((name) => ({
             name,
-            roots: workspaceRoots(into.fixed, saved, name)
+            roots: workspaceRoots(into.fixed, saved, name).map((root) => ({
+                ...root,
+                real: realPath(root.dir) ?? ''
+            }))
         })),
         dropped: saved.dropped
     };

@@ -3,7 +3,10 @@
     // draws it: a folder (or a file with other files nested under it) with its twistie, a file with
     // its Seti icon, the name in the colour git gives the file and the status letter at the row's
     // right, the name of a folder chain as its segments joined by slashes, and the letters a fuzzy
-    // filter matched marked. A row's star and its new-tab control show on hover.
+    // filter matched marked. A file holding errors or warnings draws their count before the letter,
+    // as `9+` from ten and in the colour of the worst, and the name takes that colour in place of
+    // git's; a folder holding some draws a dot in the worst colour at 40% opacity. A row's star and
+    // its new-tab control show on hover.
     //
     // A press on the row is handed up with the event, so the tree reads the modifiers, and with the
     // path of the segment it landed on when the row is a chain of folders: each segment is a target
@@ -12,8 +15,18 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import { namePartsOf, rowKey, type Decoration, type TreeRow } from '$lib/state/sources/fs';
+    import {
+        namePartsOf,
+        rowKey,
+        type Decoration,
+        problemWords,
+        type ProblemMark,
+        type TreeRow
+    } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
+
+    /** The colour token a problem mark of each hue is drawn in. */
+    const PROBLEM_TOKEN = { error: '--c-red-txt', warning: '--c-amber-txt' } as const;
 
     type Props = {
         row: TreeRow;
@@ -23,6 +36,8 @@
         marked: boolean;
         /** What git says of the row, or null. */
         decoration: Decoration | null;
+        /** What the Problems view counts for the row, or null. */
+        problem: ProblemMark | null;
         /**
          * A press on the row, with the segment of a folder chain it landed on (or null) and whether
          * it landed on the twistie.
@@ -40,16 +55,23 @@
         onbookmark: (row: TreeRow) => void;
     };
 
-    let { row, nav, selected, marked, decoration, onpress, onkeep, onbookmark }: Props = $props();
+    let { row, nav, selected, marked, decoration, problem, onpress, onkeep, onbookmark }: Props =
+        $props();
 
     const opens = $derived((row.kind === 'dir' && row.up !== true) || row.nests === true);
     const parts = $derived(namePartsOf(row.name, row.hits));
     const lettered = $derived(decoration !== null && decoration.mark !== '');
 
-    /** The inline colour of the name and the letter: the decoration's token. */
-    const tone = $derived(
+    /** The inline colour of the status letter: the decoration's token. */
+    const letterTone = $derived(
         decoration === null ? undefined : `--tone-txt: var(--c-scm-${decoration.tone}-txt)`
     );
+    /** The colour of a problem mark, which is also the name's: the problem wins over git's. */
+    const problemTone = $derived(
+        problem === null ? undefined : `--tone-txt: var(${PROBLEM_TOKEN[problem.tone]})`
+    );
+    const tone = $derived(problemTone ?? letterTone);
+    const counted = $derived(problem === null || problem.dot ? null : problemWords(problem));
 
     function titleOf(): string {
         if (row.kind !== 'dir') return t('files.open_title', row.name);
@@ -82,8 +104,18 @@
 {/snippet}
 
 {#snippet end()}
+    {#if problem?.dot === true}
+        <span class="dot" style={problemTone} data-problem-dot></span>
+    {:else if problem !== null}
+        <span class="letter" style={problemTone} title={counted?.title} data-problem-count>
+            {counted?.count}
+        </span>
+    {/if}
     {#if decoration !== null && lettered}
-        <span class="letter" style={tone}>{decoration.mark}</span>
+        {#if problem !== null && !problem.dot}<span class="letter joint" aria-hidden="true"
+                >{t('files.problem_join')}</span
+            >{/if}
+        <span class="letter" style={letterTone}>{decoration.mark}</span>
     {/if}
 {/snippet}
 
@@ -128,7 +160,7 @@
     tone={row.ignored === true ? 'muted' : undefined}
     nameStyle={tone}
     words={row.chain !== undefined || row.hits !== undefined ? words : undefined}
-    end={lettered ? end : undefined}
+    end={lettered || problem !== null ? end : undefined}
     onclick={(event: MouseEvent) => onpress(row, event, hitOf(event))}
     onpressagain={row.kind === 'file'
         ? (event: MouseEvent) => onkeep(row, event.timeStamp)
@@ -148,6 +180,25 @@
         font-weight: 600;
         opacity: 0.75;
         text-align: center;
+    }
+
+    /* The comma between a problem count and the status letter takes the letter's own margin away,
+       so the two read as one run. */
+    .joint {
+        margin-left: 0;
+        margin-right: 3px;
+        color: var(--muted-txt, var(--muted));
+    }
+
+    /* The mark of a folder holding a problem: a dot in the worst colour, drawn faint. */
+    .dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin-left: 5px;
+        border-radius: 50%;
+        background: var(--tone-txt, var(--muted-txt));
+        opacity: 0.4;
     }
 
     .sep {

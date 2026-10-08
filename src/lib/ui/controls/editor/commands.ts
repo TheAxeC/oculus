@@ -1,10 +1,10 @@
 // Layer 3, primitive. What a parent asks the text editor to do through `perform` (types.ts's
 // `EditorCommand`), done on the editor and its model: go to a line, go to a place and select the
-// word at it, set or convert the indentation, set the line ending, set the language (and load its
-// grammar when it has not loaded), insert a text or a snippet at the selections, replace the whole
-// text as one edit, or run one of the editor's actions; and the first line the editor shows, which
-// the parent keeps so that a copy of the tab opens at it; and the edits a text the parent handed in
-// was reached by, made in the model as they are.
+// word at it, select a range, set or convert the indentation, set the line ending, set the language
+// (and load its grammar when it has not loaded), insert a text or a snippet at the selections,
+// replace the whole text as one edit, or run one of the editor's actions; and the first line the
+// editor shows, which the parent keeps so that a copy of the tab opens at it; and the edits a text
+// the parent handed in was reached by, made in the model as they are.
 
 import type * as Monaco from 'monaco-editor';
 import { eolOf, type EditorKit } from './kit/load';
@@ -23,7 +23,23 @@ export function runCommand(
         const column = Math.min(Math.max(1, command.column ?? 1), held.getLineMaxColumn(line));
         made.setPosition({ lineNumber: line, column });
         made.revealLineInCenter(line);
-        made.focus();
+        if (command.focus !== false) made.focus();
+    } else if (command.kind === 'range') {
+        const clamp = (line: number, column: number): Monaco.IPosition => {
+            const at = Math.min(Math.max(1, Math.floor(line)), held.getLineCount());
+            const to = Math.min(Math.max(1, Math.floor(column)), held.getLineMaxColumn(at));
+            return { lineNumber: at, column: to };
+        };
+        const start = clamp(command.line, command.column);
+        const end = clamp(command.endLine, command.endColumn);
+        made.setSelection({
+            startLineNumber: start.lineNumber,
+            startColumn: start.column,
+            endLineNumber: end.lineNumber,
+            endColumn: end.column
+        });
+        made.revealRangeInCenter(made.getSelection() ?? held.getFullModelRange());
+        if (command.focus !== false) made.focus();
     } else if (command.kind === 'word') {
         const line = Math.min(Math.max(1, Math.floor(command.line)), held.getLineCount());
         const end = held.getLineMaxColumn(line);
@@ -43,7 +59,7 @@ export function runCommand(
             });
         }
         made.revealLineInCenter(line);
-        made.focus();
+        if (command.focus !== false) made.focus();
     } else if (command.kind === 'indent') {
         const { tabs, size } = command.indent;
         held.updateOptions({ tabSize: size, indentSize: size, insertSpaces: !tabs });

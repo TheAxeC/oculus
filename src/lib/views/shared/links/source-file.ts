@@ -3,29 +3,21 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import type { OpenOptions } from '$lib/state/workbench/layout.svelte';
-import { libraryTabState, sourceTabState } from '$lib/state/sessions/source/draft';
-import type { ViewSource } from '$lib/state/sessions/view-source';
+import {
+    libraryFileState,
+    sourceFileState,
+    type LibraryFile,
+    type SourceFile
+} from '$lib/state/sessions/source/place';
 
-/**
- * A file to open, with the words the tab carries when its own name is not what to call it and the
- * line and column the tab opens at when the caller knows them: a search hit names its line, a
- * reference its line and column, and everything that opens a whole file names none. The column
- * means the word at it is selected.
- */
-export type SourceFile = ViewSource & { label?: string; line?: number; column?: number };
+export type { LibraryFile, SourceFile };
 
 export function openSourceFile(
     client: ClientState,
     file: SourceFile,
     options?: OpenOptions
 ): string {
-    const tab = sourceTabState(file.root, file.path, file.line, file.column);
-    return client.layout.openView(
-        'source',
-        file.label === undefined ? tab : { ...tab, label: file.label },
-        undefined,
-        options
-    );
+    return client.layout.openView('source', sourceFileState(client, file), undefined, options);
 }
 
 /**
@@ -34,15 +26,10 @@ export function openSourceFile(
  */
 export function openLibraryFile(
     client: ClientState,
-    file: { library: string; name: string; line?: number; column?: number },
+    file: LibraryFile,
     options?: OpenOptions
 ): string {
-    return client.layout.openView(
-        'source',
-        libraryTabState(file.library, file.name, file.line, file.column),
-        undefined,
-        options
-    );
+    return client.layout.openView('source', libraryFileState(client, file), undefined, options);
 }
 
 /**

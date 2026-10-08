@@ -191,6 +191,12 @@ export type TerminalColor = (typeof TERMINAL_COLORS)[number];
 export const STEER_MAX = 100_000;
 
 /**
+ * The lines of a terminal's scrollback the server hands a page that attaches, which is also all
+ * the output of a terminal the page keeps before it hears of the terminal.
+ */
+export const SCROLLBACK_LINES = 2000;
+
+/**
  * The control characters a steer refuses: each would be typed as a key of its own (Escape,
  * Ctrl-C). A line break and a tab are the two a message holds. The server refuses them and the
  * page checks a comment against the same expression before it types or copies it.

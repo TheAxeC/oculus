@@ -7,7 +7,10 @@ import type * as Monaco from 'monaco-editor';
 import type { LspDiagnostic } from './services';
 import type { LspRange } from './transport/messages';
 
-/** The marker owner of one language's client. */
+/**
+ * The marker owner of one language's client. The Problems view's rows name the same owner, built in
+ * `state/system/problem-sources.ts`, since `ui/` may not import `state/`.
+ */
 export function markerOwner(language: string): string {
     return `lsp-${language}`;
 }

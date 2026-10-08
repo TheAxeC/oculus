@@ -103,7 +103,15 @@
 {#if draft !== null}
     <div class="editor" data-editor={draft.form}>
         {#if draft.form === 'rollup'}
-            <Rollup {draft} {specs} {keySpec} {lists} onedit={edit} />
+            <Rollup
+                {draft}
+                {specs}
+                {keySpec}
+                {lists}
+                instance={id}
+                base={`${row.file}:${row.key}`}
+                onedit={edit}
+            />
         {:else}
             <Cards
                 cards={draft.cards}
@@ -111,6 +119,8 @@
                 {specs}
                 form={draft.form}
                 {lists}
+                instance={id}
+                base={`${row.file}:${row.key}`}
                 title={row.title}
                 slots={row.entry.slots}
                 removeOnly={row.control === 'parked'}

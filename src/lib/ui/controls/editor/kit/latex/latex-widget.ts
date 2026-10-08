@@ -29,6 +29,8 @@ export const REST_MS = 300;
 /** What a LaTeX model needs from its page. */
 export type LatexEditorDeps = {
     problems: EditorProblem[];
+    /** The owner Monaco files the build's markers under. */
+    owner: string;
     /** The folder, against the root, that a picture path in the text is resolved from. */
     folder: () => Promise<string>;
     /** Whether a file of the root exists. */
@@ -49,9 +51,6 @@ export type LatexEditorDeps = {
 
 /** What the page knows of a label: the number its build gave it and the block it sits in. */
 type LabelFacts = { number: string; text: string; math: boolean };
-
-/** The owner Monaco files the build's markers under. */
-const OWNER = 'oculus-latex';
 
 /**
  * The widest a picture is drawn: the box's 480 px less its horizontal padding and border. A length
@@ -281,7 +280,7 @@ export function latexExtension(deps: LatexEditorDeps): EditorExtension {
         const { monaco } = kit;
         monaco.editor.setModelMarkers(
             model,
-            OWNER,
+            deps.owner,
             deps.problems.map((problem) => markerOf(monaco, model, problem))
         );
         // Format Document is Monaco's own action once a formatter is registered for the language;
@@ -302,7 +301,7 @@ export function latexExtension(deps: LatexEditorDeps): EditorExtension {
         return () => {
             stop();
             unformat();
-            monaco.editor.setModelMarkers(model, OWNER, []);
+            monaco.editor.setModelMarkers(model, deps.owner, []);
         };
     };
 }

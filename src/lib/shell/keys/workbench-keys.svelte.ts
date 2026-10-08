@@ -23,6 +23,7 @@ import {
     initialKeyState,
     resolveKey,
     rowCursor,
+    toggleView,
     type KeyAction,
     type RailOrder
 } from './keys';
@@ -56,6 +57,8 @@ type Options = {
     railPage: (index: number) => boolean;
     /** Run the default build or the default test of the repository holding the file on screen. */
     runDefault: (which: 'build' | 'test') => void;
+    /** Step to the next (1) or previous (-1) problem and open it; false when there is none. */
+    walkProblem: (by: 1 | -1) => boolean;
     /** Ask the source tab on screen to save, which does nothing when it cannot write its file. */
     saveSource: () => void;
     /** Carry out a debug key; false when it had nothing to act on. */
@@ -94,6 +97,8 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     let lastPagePane: HTMLElement | null = null;
     let observedPane: HTMLElement | null = null;
     let cardObserver: MutationObserver | null = null;
+    /** The held cursor whose row the observed pane has drawn since its observation began. */
+    let drawnCursor: string | null = null;
 
     /**
      * Dispatch one key. `?` closes the key sheet, and Escape restores panes unless a drag owns it.
@@ -219,6 +224,11 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         } else if (action.kind === 'tex-view') {
             clearCursor();
             options.layout.showTexView();
+        } else if (action.kind === 'toggle-problems') {
+            clearCursor();
+            toggleView(options.layout, options.ui, 'problems', pageOf());
+        } else if (action.kind === 'next-problem') {
+            return options.walkProblem(action.by);
         } else if (action.kind === 'debug') {
             return options.debugKey(action.which);
         } else if (action.kind === 'command-default') {
@@ -374,6 +384,9 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         const id = instanceIn(pane);
         const cursor = cursorIn(pane);
         if (id === null || cursor === null) return false;
+        // A held cursor whose row is not drawn names no card under the cursor: the view may hide
+        // that card behind a filter, and carrying it would reorder an entry the reader cannot see.
+        if (!cards(pane).some((card) => card.id === cursor)) return false;
         options.ui.requestCardMove(id, cursor, direction === 'left' ? -1 : 1);
         return true;
     }
@@ -411,15 +424,21 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         writeCursor(focusedPaneElement(), null);
     }
 
-    /** Clear a stored cursor when a rendered card-list snapshot no longer contains its id. */
+    /**
+     * Clear a held cursor whose row the observed pane has drawn and a later render leaves out.
+     * A view draws its rows as its channels send them, so a pane shown from a restored layout first
+     * renders no row or only some of them; until the held row has been drawn once in this
+     * observation, its absence says only that it has not arrived, and the cursor is kept.
+     */
     function reconcilePane(pane: HTMLElement): void {
         const id = instanceIn(pane);
         if (id === null) return;
         const state = options.layout.instanceLayoutState(id);
-        const reconciled = reconcileCardCursor(
-            state,
-            cards(pane).map((card) => card.id)
-        );
+        const visible = cards(pane).map((card) => card.id);
+        const cursor = cardCursor(state);
+        if (cursor !== null && visible.includes(cursor)) drawnCursor = cursor;
+        if (cursor !== drawnCursor) return;
+        const reconciled = reconcileCardCursor(state, visible);
         if (reconciled !== state) writeCursor(pane, null);
     }
 
@@ -445,11 +464,23 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         });
     }
 
-    /** Match observation to restored layout state and stop watching panes removed by a render. */
+    /**
+     * Match observation to restored layout state and stop watching panes removed by a render. A
+     * held cursor marks the pane the keyboard is in, so while no pane is remembered (none pressed
+     * or focused, or the remembered one gone from the page), the pane that holds the cursor is:
+     * the keys move that cursor, and a press into another pane clears it. When two panes hold one,
+     * the first in document order is the remembered pane.
+     */
     function syncCards(): void {
         if (observedPane !== null) {
             if (!observedPane.isConnected || cursorIn(observedPane) === null) stopCards();
             else return;
+        }
+        if (!lastFocusedPane?.isConnected) {
+            const holding = [...document.querySelectorAll<HTMLElement>('[data-pane]')].find(
+                (one) => cursorIn(one) !== null
+            );
+            if (holding !== undefined) lastFocusedPane = holding;
         }
         const pane = focusedPaneElement();
         if (pane !== null && cursorIn(pane) !== null) observePane(pane);
@@ -459,6 +490,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         cardObserver?.disconnect();
         cardObserver = null;
         observedPane = null;
+        drawnCursor = null;
     }
 
     function rememberPane(target: EventTarget | null): void {

@@ -43,6 +43,8 @@ export type BadgeClient = {
         | 'leadsBadge'
         | 'linkedinBadgeGlyph'
         | 'auditBadge'
+        | 'problemsBadge'
+        | 'problemsBadgeTitle'
         | 'repositoriesBadge'
         | 'queueBadgeTitle'
         | 'queueCells'

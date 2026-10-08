@@ -74,6 +74,19 @@ export function deepestHolding<T>(
 }
 
 /**
+ * Whether a repository's folder is a served root's folder or inside one, the test the server's
+ * `repositoryOf` applies first. The repository is written as a real path, so each root is read as
+ * its `real` folder; a root that carries none is read as its configured `dir`, and a root whose
+ * `real` is empty (a folder that does not exist) holds nothing.
+ */
+export function underServedRoot(
+    roots: readonly { dir: string; real?: string }[],
+    repository: string
+): boolean {
+    return roots.some((root) => pathUnder(root.real ?? root.dir, repository) !== null);
+}
+
+/**
  * The path that leads from a folder to a target, both against the same base: `main.tex` from the
  * folder itself, `../main.tex` from a folder below it, `sub/a.tex` from a folder above it.
  */

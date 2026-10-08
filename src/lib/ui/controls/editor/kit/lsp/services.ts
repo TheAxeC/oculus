@@ -57,21 +57,31 @@ export type LspServices = {
     readFile(target: Target): Promise<{ text: string; language: string } | null>;
     /**
      * Opens the file in a source tab at the line, the same tab when it is open. A column means the
-     * word at it is selected; an open that names no position gives none.
+     * word at it is selected, and an end means the range from the line and column to it is; an open
+     * that names no position gives none.
      */
-    open(target: Target, line: number, column?: number): void;
+    open(
+        target: Target,
+        line: number,
+        column?: number,
+        end?: { line: number; column: number }
+    ): void;
     /**
      * A language server named a library file in an answer to a request made for a document of the
      * root, on the channel of the language: the page may read it for as long as the connection
      * lasts.
      */
     library(address: string, root: string, language: string): void;
-    /** Hands a server's diagnostics for one file to the page's store. */
+    /**
+     * Hands a server's diagnostics for one file to the page's store. A library file has an empty
+     * root, its address as the path and its name as `library`.
+     */
     diagnostics(
         root: string,
         path: string,
         language: string,
-        items: readonly LspDiagnostic[]
+        items: readonly LspDiagnostic[],
+        library?: string
     ): void;
     /** Hands the document symbols of one tab instance. */
     symbols(instance: string, answer: LspSymbols): void;

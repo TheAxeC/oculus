@@ -136,14 +136,23 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
             const position = at === undefined ? null : 'startLineNumber' in at ? at : null;
             const point = at === undefined ? null : 'lineNumber' in at ? at : null;
             // Only an open that names a position passes its column, so one with none opens the file
-            // at its first line with nothing selected.
-            if (position !== null)
-                services.open(target, position.startLineNumber, position.startColumn);
-            else if (point !== null) services.open(target, point.lineNumber, point.column);
+            // at its first line with nothing selected. A range that ends where it starts is a
+            // position, which is how a go to definition names the name it goes to; one that ends
+            // elsewhere selects the range.
+            if (position !== null) {
+                const ends =
+                    position.endLineNumber !== position.startLineNumber ||
+                    position.endColumn !== position.startColumn;
+                const end = ends
+                    ? { line: position.endLineNumber, column: position.endColumn }
+                    : undefined;
+                services.open(target, position.startLineNumber, position.startColumn, end);
+            } else if (point !== null) services.open(target, point.lineNumber, point.column);
             else services.open(target, 1);
             // The file opens in a tab of its own, so Monaco is told no editor of its own opened it:
             // an opener's true makes Monaco go on in the source editor as if it showed the file,
-            // and Next Problem then looks for the next problem from there again, without end.
+            // and a walk through its markers would then look for the next one from there again,
+            // without end.
             return false;
         }
     });

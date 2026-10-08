@@ -169,6 +169,10 @@ text:
         picker_token: The write token was refused; reload the page.
         picker_unsupported: The folder panel is available on macOS only.
         preview_tab: 'Preview {0}'
+        problem_join: ', '
+        problems_many: 9+
+        problems_one_title: 1 problem in this file
+        problems_title: '{0} problems in this file'
         read_again: read again
         read_again_bookmarks: Read the bookmarks again
         read_again_notes: Read the notes again

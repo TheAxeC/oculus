@@ -1,5 +1,7 @@
-// Layer 3, view partial of Source.svelte. The one function that picks what a source tab's language
-// adds to its editor: LaTeX's build markers, preview, formatter and editing commands
+// Layer 3, view partial of Source.svelte. The one function that picks what a source tab adds to its
+// editor: the markers of the errors a project command printed for the file
+// (`command-marks.svelte.ts`), added to every tab of a file on disk beside whatever its language
+// adds, which is LaTeX's build markers, preview, formatter and editing commands
 // (`latex-editor.ts`), the headings of a Markdown file as document symbols (`symbols.ts`), the
 // debug hover of a rite file (kit/rite/rite-hover.ts), or the registration of a model a language
 // server serves (`lsp.ts`). A language server's registration and LaTeX's extension are both added
@@ -23,6 +25,8 @@ export type ExtensionChoice = {
     rite: () => EditorExtension;
     /** The registration with a language server, undefined for a language none serves. */
     served: EditorExtension | undefined;
+    /** The markers of the errors a command printed, undefined for a tab with no file on disk. */
+    commands?: EditorExtension;
 };
 
 /** Both extensions as one: each is added in turn and both are taken away with it. */
@@ -39,6 +43,13 @@ function together(first: EditorExtension, second: EditorExtension): EditorExtens
  * The extension a tab's language adds to its editor, or undefined for a language that adds none.
  */
 export function languageExtension(choice: ExtensionChoice): EditorExtension | undefined {
+    const language = languageOnly(choice);
+    if (choice.commands === undefined) return language;
+    return language === undefined ? choice.commands : together(language, choice.commands);
+}
+
+/** The extension the tab's language adds, without the command markers. */
+function languageOnly(choice: ExtensionChoice): EditorExtension | undefined {
     const latex = choice.language === 'latex' && !choice.version;
     const rite = choice.language === 'rite' && !choice.version;
     if (choice.served !== undefined) {

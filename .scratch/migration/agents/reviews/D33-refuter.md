@@ -535,3 +535,40 @@ Also, case 8 covers the language-server rows of a removed root. Whether they go 
 - The Settings card, Audit and lane DOM behaviour: read only.
 
 Reviewer usage: aba7f4b62b7054a8f, claude-opus-5-5, 334,877 tokens, 113 tool uses, 18.7 min (from its completion notice).
+
+## Closed
+
+The findings of the run over repair round 1, each closed at landing in `.agents/worktrees/gate` and carried to main.
+
+- R1-1: `toggleView`'s `page` is required (`src/lib/shell/keys/keys.ts`), and the status bar's Problems item passes `layout.currentPage().id` (`src/lib/shell/status/StatusBar.svelte:178`), so the key and the item keep the view's state under one record of the page. Looked at on the 8796 scratch oculus: the filter "broken" typed, the view hidden by the status item and shown by Cmd+Shift+M, and the filter box reads "broken"; the view and its filter also came back after a reload.
+- R1-2: a report defect with no code to change; the report's quoted n33 line stands corrected by the review's rerun.
+- R1-3: `RowEntry` is local to `src/lib/views/sources/search/problem-rows.ts:130`.
+- R1-4: the comments at `src/lib/state/system/problem-sources.ts:12-16` and `src/lib/ui/controls/editor/kit/lsp/markers.ts:10-13` name both places the `lsp-<language>` owner is built, since `state/` and `ui/` may not import each other.
+- R1-5: two read-only git calls by the builder, a breach of the round's rule with no change to the tree; booked in `orchestrator-history.md`.
+- Case 8 (Z723, Z728): closed at landing. `watchServedRoots` (`src/lib/state/shared/stores/served-roots.svelte.ts`, started in `src/lib/state/client/context.ts`) hears a change between two read lists of the current workspace's roots (`readRoots` in `src/lib/state/sources/fs-transport.ts` is null while the workspaces load, are unread or failed); `commands.forgetOutside` drops the diagnostics of every repository under no served root and `latex.forgetOutside` forgets the states and outlines of every root key no longer served; each root is compared by its `real` folder, which `workspacesAnswer` (`src/lib/server/files/fs.ts`) now writes; and the language client drops a file's diagnostics from the page's store when its root's server fails or the client disconnects (`#drop` in `src/lib/ui/controls/editor/kit/lsp/client.ts`), where `#forget` had counted the entry itself as another holder and kept them. The design was taken from the stopped round-2 builder's partial changes, read whole at landing. Run of `tests/state/sessions/served-roots.client.test.ts` in the gate:
+
+```
+before the removal of root a
+  command /w/a src/x.ts
+  command /w/b/nested src/y.ts
+  command /w/b /etc/z.c
+  latex a main.tex
+  latex b main.tex
+after the removal of root a
+  command /w/b/nested src/y.ts
+  command /w/b /etc/z.c
+  latex b main.tex
+after the roots list went empty while the workspaces were read again
+  command /w/a src/x.ts
+  command /w/b/nested src/y.ts
+  command /w/b /etc/z.c
+  latex a main.tex
+  latex b main.tex
+after the removal of root b, root link served through a symlink
+  command /data/real src/x.ts
+  command /data/real/inner src/w.ts
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+```
+
+  Looked at on the 8796 scratch oculus: `pkg/broken.py` open in a folder `extra` of a scratch workspace gave 2 errors and 1 warning on the status bar, the file red with its count in the tree, and 3 on the Problems tab; after Remove Folder from Workspace the status bar read 0 and 0, the marks left the editor and the Problems view said "No problems have been detected in the workspace."

@@ -298,12 +298,15 @@ export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability'
 
 /**
  * One thing the hub is missing. `scope` is the project folder, the collection key or the website,
- * `where` the file, field or entry it is about, and `signature` the twelve hex characters the mute
- * list in config/behavior.yml holds.
+ * `where` the file, field or entry it is about, `file` the hub-relative path of the file it is
+ * about (the empty text when there is none, which the signature does not read), and `signature`
+ * the twelve hex characters the mute list in config/behavior.yml holds.
  */
 export type AuditFinding = {
     scope: string;
     where: string;
+    /** The hub-relative path of an existing file below the hub, else the empty text. */
+    file: string;
     kind: AuditKind;
     message: string;
     signature: string;
@@ -571,6 +574,7 @@ export {
     DEBUG_STATUSES,
     SCHEDULE_WORDS,
     STEER_CONTROL,
+    SCROLLBACK_LINES,
     STEER_MAX,
     TERMINAL_COLORS,
     TERMINAL_REFUSALS,

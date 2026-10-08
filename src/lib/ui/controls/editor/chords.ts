@@ -1,6 +1,7 @@
-// Layer 3, primitive. The keys the editor gives up so Cmd+K and Ctrl+K reach the shell and open the
-// palette from inside the editor: every chord Monaco binds under Cmd+K (Ctrl+K off macOS), and on
-// macOS Ctrl+K, which Monaco binds to Delete All Right.
+// Layer 3, primitive. The keys the editor gives up so the shell receives them from inside the
+// editor: Cmd+K and Ctrl+K, which open the palette (every chord Monaco binds under Cmd+K, Ctrl+K
+// off macOS, and on macOS Ctrl+K, which Monaco binds to Delete All Right), and F8 and Shift+F8,
+// which walk the Problems view's rows across files where Monaco's own walk stays in one file.
 //
 // Monaco resolves a chord through its first key, so one rule binding that key to no command frees
 // every chord under it (`freedKeys`, turned into Monaco's key codes when Monaco has loaded). The
@@ -24,6 +25,8 @@ export const SAVE_KEY: KeyPress = { code: 'KeyS', cmd: true };
 
 const CMD_K: KeyPress = { code: 'KeyK', cmd: true };
 const CTRL_K: KeyPress = { code: 'KeyK', ctrl: true };
+const F8: KeyPress = { code: 'F8' };
+const SHIFT_F8: KeyPress = { code: 'F8', shift: true };
 
 /** A Cmd+K chord whose second key is held with Cmd too, as most of them are. */
 function underCmdK(id: string, code: KeyPress['code'], shift = false): RemovedChord {
@@ -70,9 +73,12 @@ export function removedChords(mac: boolean): RemovedChord[] {
     return mac ? [...CMD_K_CHORDS, { id: 'deleteAllRight', keys: [CTRL_K] }] : [...CMD_K_CHORDS];
 }
 
-/** The first keys bound to no command, which frees every chord that starts with them. */
+/**
+ * The first keys bound to no command, which frees every chord that starts with them: the Cmd+K
+ * chords, Ctrl+K on macOS, and the two keys of the workbench's walk through the problems.
+ */
 export function freedKeys(mac: boolean): KeyPress[] {
-    return mac ? [CMD_K, CTRL_K] : [CMD_K];
+    return mac ? [CMD_K, CTRL_K, F8, SHIFT_F8] : [CMD_K, F8, SHIFT_F8];
 }
 
 /** Monaco's name for a key as its keycap reads: `KeyC` is C and `Digit0` is 0. */

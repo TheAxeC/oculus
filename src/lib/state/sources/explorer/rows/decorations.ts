@@ -1,5 +1,7 @@
-// Layer 2, client state, pure. What git says of the rows of the tree: the letter and the colour a
-// changed file is drawn with, and the colour a folder takes from the strongest change below it.
+// Layer 2, client state, pure. What git and the Problems view say of the rows of the tree: the
+// letter and the colour a changed file is drawn with, and the colour a folder takes from the
+// strongest change below it; and the count of errors and warnings a file holds, with the dot a
+// folder holding some draws.
 //
 // The `git` channel carries, per repository, the staged, unstaged, untracked and conflicted paths.
 // `statusFold` turns those lists into one lookup by absolute path, built once per payload;
@@ -7,10 +9,13 @@
 // staged add that was edited since still reads `A`. A folder takes the colour of the strongest
 // change below it (conflict, then deleted, then modified, then added) and shows no letter. An
 // untracked folder that git lists as a whole (`newdir/`) decorates everything under it as
-// untracked.
+// untracked. A problem mark is drawn beside the letter and in its own colour, which the name takes
+// in place of git's: `problemMarkOf` turns the errors and warnings the store counts for a row into
+// the mark, and the infos are no part of it.
 
 import type { GitEntry, GitState } from '../../../../data/model/index.ts';
 import { joinPath, pathUnder, trimSlash } from '../../../../data/helpers/files/paths.ts';
+import { t } from '../../../shared/words/text.ts';
 
 /** The letter a changed file shows: modified, untracked, added, deleted, renamed or conflicted. */
 export type Mark = 'M' | 'U' | 'A' | 'D' | 'R' | '!';
@@ -140,4 +145,36 @@ export function decorationOf(
     return fold.whole.some((one) => pathUnder(one, path) !== null)
         ? { mark: 'U', tone: 'added' }
         : null;
+}
+
+/** The hue of a problem mark: the worst severity of the problems it counts. */
+type ProblemTone = 'error' | 'warning';
+
+/**
+ * What a row shows of its problems: how many errors and warnings it holds, the hue of the worst,
+ * and whether it is drawn as a dot, which is how a folder holding some is drawn.
+ */
+export type ProblemMark = { count: number; tone: ProblemTone; dot: boolean };
+
+/**
+ * The mark of a row from the errors and warnings counted for it, or null for a row with none. The
+ * infos in the counts are left out.
+ */
+export function problemMarkOf(
+    counts: { errors: number; warnings: number } | null,
+    kind: 'file' | 'dir'
+): ProblemMark | null {
+    if (counts === null) return null;
+    const count = counts.errors + counts.warnings;
+    if (count === 0) return null;
+    return { count, tone: counts.errors > 0 ? 'error' : 'warning', dot: kind === 'dir' };
+}
+
+/** The words of a file's problem mark: its count, `9+` from ten, and the tooltip that says it. */
+export function problemWords(mark: ProblemMark): { count: string; title: string } {
+    return {
+        count: mark.count > 9 ? t('files.problems_many') : String(mark.count),
+        title:
+            mark.count === 1 ? t('files.problems_one_title') : t('files.problems_title', mark.count)
+    };
 }

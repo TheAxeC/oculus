@@ -6,11 +6,15 @@
     //
     // What the items say comes from three places. The page hands in the words made from stores the
     // shell's row of the boundary table does not name (state/workbench/navigation/status.ts): the
-    // machine, the repository of the tab on screen, the findings, the HPC poll, the usage
-    // refreshers, the server connection and the live sessions, with the git writes the branch and
-    // sync items ask for. The source tab on screen publishes its own items' state to the editor
+    // machine, the repository of the tab on screen, the findings, the problems, the HPC poll, the
+    // usage refreshers, the server connection and the live sessions, with the git writes the branch
+    // and sync items ask for. The source tab on screen publishes its own items' state to the editor
     // status store, which the shell reads. The unsaved tabs and the notifications are the shell's
     // own, from the layout, ui and notices stores.
+    //
+    // The problems item is VS Code's: the error and warning counts after their icons, and the info
+    // count when there are infos, packed as `1K` from 1000 and `10K+` from 10000. Its tooltip names
+    // the severities that have problems, and a press shows the Problems view or hides it.
     //
     // The debug item is drawn once a debug session has run since the server started: the name of
     // the last configuration with the bug glyph, and a press lists the repository's configurations,
@@ -22,13 +26,21 @@
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Bell from './Bell.svelte';
     import LatexItem from './LatexItem.svelte';
     import RepoItems from './RepoItems.svelte';
     import SourceItems from './SourceItems.svelte';
-    import { STATUS_ITEMS, isStatusItem, itemName, type StatusItem } from './status-items';
+    import { toggleView } from '$lib/shell/keys/keys';
+    import {
+        STATUS_ITEMS,
+        isStatusItem,
+        itemName,
+        packNumber,
+        type StatusItem
+    } from './status-items';
     import { firstUnsaved, unsavedCount } from '$lib/state/workbench/navigation/pages';
     import { sourceOnScreen } from '$lib/state/workbench/navigation/editor-status.svelte';
     import {
@@ -42,9 +54,11 @@
     const {
         debug,
         editorStatus: { statusOf },
-        layout: { activeInstance, activateInstance, hosts, openView, switchPage },
-        ui: { setStatusHidden, statusHidden, unsaved }
+        layout,
+        ui
     } = useState();
+    const { setStatusHidden, statusHidden, unsaved } = ui;
+    const { activeInstance, activateInstance, hosts, openView, switchPage } = layout;
 
     type Props = {
         status: StatusWords;
@@ -79,6 +93,20 @@
     function toggled(id: string): void {
         if (isStatusItem(id)) setStatusHidden(id, shown(id));
     }
+
+    /** The problems of the page by severity, which the problems item counts. */
+    const counts = $derived(status.problems);
+    /** The tooltip: the severities that have problems, as VS Code words them. */
+    const problemsTip = $derived.by(() => {
+        const parts = [
+            counts.errors > 0 ? t('statusbar.problems_part_errors', counts.errors) : '',
+            counts.warnings > 0 ? t('statusbar.problems_part_warnings', counts.warnings) : '',
+            counts.infos > 0 ? t('statusbar.problems_part_infos', counts.infos) : ''
+        ].filter((part) => part !== '');
+        return parts.length === 0
+            ? t('statusbar.problems_none')
+            : parts.join(t('statusbar.problems_join'));
+    });
 
     /** The repository's launch file is read while the debug item is drawn. */
     const debugRepo = $derived(debug.ran() && shown('debug') ? debug.repo() : null);
@@ -139,6 +167,25 @@
             {/if}
             {#if status.repo !== null}
                 <RepoItems repo={status.repo} {git} branch={shown('branch')} sync={shown('sync')} />
+            {/if}
+            {#if shown('problems')}
+                <span data-status="problems">
+                    <ToolButton
+                        label={problemsTip}
+                        glyph="cross"
+                        title={problemsTip}
+                        status
+                        onclick={() => toggleView(layout, ui, 'problems', layout.currentPage().id)}
+                    >
+                        {packNumber(counts.errors)}
+                        <Glyph name="warn" />
+                        {packNumber(counts.warnings)}
+                        {#if counts.infos > 0}
+                            <Glyph name="info" />
+                            {packNumber(counts.infos)}
+                        {/if}
+                    </ToolButton>
+                </span>
             {/if}
             {#if shown('findings')}
                 <span data-status="findings">

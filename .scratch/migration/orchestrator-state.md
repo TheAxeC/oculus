@@ -24,23 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:   # steps in flight, up to six (Z632)
-- step: D33
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a9ae1281ebf50855a (builder, launched 2026-10-08)
-  worktree: .agents/worktrees/D33
-  base: 1439a44ec
-  launched: 2026-10-08
-  report: agents/reviews/D33-report.md
-  builder_usage: first run, told of Z720 near its end (247,889 tokens, 760 tool uses, 226.6 min); round 1 (312,919 tokens, 198 tool uses, 33.5 min)
-  diagnosis: agents/reviews/D33-diagnosis.md, Proof 1 (aecfa0b2710e743e8, claude-opus-5-5, 288,280 tokens, 92 tool uses, 21.3 min)
-  reviewer_report: agents/reviews/D33-refuter.md (a4557dd5285730c0d, claude-opus-5-5, 369,712 tokens, 90 tool uses, 20.7 min); over round 1: aba7f4b62b7054a8f, claude-opus-5-5, 334,877 tokens, 113 tool uses, 18.7 min
-  brief_check: agents/reviews/D33-brief-check.md (a0a67ffbec5451994, claude-opus-5-5, 335,815 tokens, 131 tool uses, 19.6 min)
-  shared_paths: package.json and package-lock.json (M8 and D33 add different dependencies; the one line both change, picomatch's devOptional, changes identically; the lock is regenerated at the second landing), DESIGN.md, docs/files-and-search.md, docs/views.md, config/text/statusbar.yml and views/system/workbench/editors/Editor.svelte on different lines, docs/diagrams regenerated: a simple merge
-  landing: not-started
-  round: 1 (sent 2026-10-08, agents/briefs/D33-round1.md); round 2 (agents/briefs/D33-round2.md, Z727) stopped by the orchestrator at Axel's ruling Z728, its partial changes put back
+dispatch: []   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -155,7 +139,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- Open item 11 (2026-10-08), D33's case 8 tests (a removed root takes its rows with it): the fix at landing (Z728) carries two test files, `tests/state/sessions/served-roots.client.test.ts` (six rows: a removed root's command and LaTeX rows go and a nested repository's and an outside file's stay; nothing is forgotten while the workspaces load, fail or read again, or at the first read; a root served through a symlink keeps its rows; a root with no real folder is read as its folder; later output of a repository outside the roots is not listed) and `tests/state/sources/workspaces-real.test.ts` (the workspaces answer's `real` folder: a symlink's target, empty for a missing folder, absent when the body carries none). No entry of `agents/guarded.md` covers them. (a) A guarded entry G69, 'A root that leaves the served roots takes its command and LaTeX rows with it, and nothing is forgotten while the roots are not read', with these two files as its test, landed with D33; (b) no entry, the two files left out and the fix resting on the quoted run and the look, the lazy option. Recommended: (a), since a row dropped while its error is live, or kept after its root went, misleads the reader of the Problems view.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -231,6 +215,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 ## Current position (rewrite at every package)
 
 - 2026-10-08 13:10. /spec running for M6 (Z722 closed its recheck-2 choices; premise recheck on main at 7c5514850 by addf5c4b95029cf06), D43 (premise recheck 3 by afc7fb00307ab9995) and D39 (premise survey by a26d8068dfc88ec1f), all claude-opus-5-5 (Agents section of plan.md). M6 is dispatched only after D33 lands (queue.md). D33 on repair round 1. Open item 9 for Axel.
+- 2026-10-08 15:30. D33 landed (the Problems view; booking in plan.md; `agents/reviews/D33-landing.md`) with six fixes at landing, case 8 among them (Z728), and G65's test; the two case 8 test files held as `agents/reviews/D33-case8-tests.patch` for open item 11. Nothing in flight. Next: briefs of M6, D39 and D43 (each with its brief check), then M7, D41, D36 and D40.
 - 2026-10-08 14:45. Axel ruled open items 9 and 10 (a) (G65 to G68 in `agents/guarded.md`) and Z728 (b): D33's case 8 is fixed at landing; the round-2 builder is stopped. Next: put back its partial changes, /land D33 with case 8, then M6, D39, D43, M7, D41, D36 and D40.
 - 2026-10-08 14:20. D33's review over round 1 saved (aba7f4b62b7054a8f); its R1-1, R1-3 and R1-4 fixed and carried into the worktree; case 8 sent as repair round 2 (`agents/briefs/D33-round2.md`, Z727) to builder a9ae1281ebf50855a. Open items 9 and 10 for Axel. Next: D33's review over round 2, then /land D33, then M6, D39, D43, M7, D41, D36 and D40.
 - 2026-10-08 13:04. M8 landed (the hub's YAML checked and completed in the editor; booking in plan.md; `agents/reviews/M8-landing.md`) after one repair round, its review over round 1's ten findings closed at landing; the look ran on the 8796 scratch oculus with the gate as its hub. In flight: D33 (repair round 1, builder a9ae1281ebf50855a). Open item 9 for Axel. Next: D33's review over round 1, then /land D33, then M6 (with the Z719 EPIPE fix), M7, D41, D43, D39, D36 and D40.

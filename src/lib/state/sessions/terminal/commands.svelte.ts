@@ -28,13 +28,14 @@
 // replaces what was kept, which is what keeps an output replayed twice from counting twice. A task
 // that ends while no pane is reading its terminal is read once from the server's capture of its
 // pane, which replaces what was read, so the errors printed after a pane stopped reading are not
-// lost. The chain line prints a marker before each command, the run's token and the command's name,
-// and the output is read by those markers: a path an error names is resolved from the folder of the
-// command that printed it, the token, the chain and its folders being the ones the terminal's mark
-// carries. A line ending in the marker counts, so a command whose last output had no line break
-// does not hide the next marker; a mark with no token is read by the bare name. A LaTeX build is a
-// task terminal too, and its problems are the LaTeX state's own
-// (state/sessions/latex/latex.svelte.ts), so its output is not read here.
+// lost. Output a pane hands over before the sessions channel has listed its terminal is held, and
+// read when the terminal is listed. The chain line prints a marker before each command, the run's
+// token and the command's name, and the output is read by those markers: a path an error names is
+// resolved from the folder of the command that printed it, the token, the chain and its folders
+// being the ones the terminal's mark carries. A line ending in the marker counts, so a command
+// whose last output had no line break does not hide the next marker; a mark with no token is read
+// by the bare name. A LaTeX build is a task terminal too, and its problems are the LaTeX state's
+// own (state/sessions/latex/latex.svelte.ts), so its output is not read here.
 
 import { untrack } from 'svelte';
 import { z } from 'zod';
@@ -48,7 +49,13 @@ import type {
     ProjectCommand,
     Terminal
 } from '../../../data/model/index.ts';
-import { deepestHolding, joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
+import { SCROLLBACK_LINES } from '../../../data/model/index.ts';
+import {
+    deepestHolding,
+    joinPath,
+    pathUnder,
+    underServedRoot
+} from '../../../data/helpers/files/paths.ts';
 import { chainMarker } from '../../../data/helpers/run/marker.ts';
 import { readAs, readJson, rowsShape } from '../../../data/shapes/shapes.ts';
 import { tabOfFile, type ServedRoot } from '../../sources/repositories/file-git.ts';
@@ -74,6 +81,18 @@ const KIND = 'commands';
 /** The most diagnostics kept for one terminal, and the longest unfinished line kept for one. */
 const FOUND_MAX = 500;
 const TAIL_MAX = 16384;
+/** How many terminals' unlisted output is held at once. */
+const UNPLACED_MAX = 8;
+
+/**
+ * The last `lines` lines of a text, with the line breaks between them as they were; the whole text
+ * when it has no more. A line ends at `\r\n`, `\r` or `\n`, as the output is read.
+ */
+function lastLines(text: string, lines: number): string {
+    const parts = text.split(/(\r\n|\r|\n)/);
+    const kept = 2 * lines - 1;
+    return parts.length <= kept ? text : parts.slice(parts.length - kept).join('');
+}
 
 /** A line of output that names a place and a severity; the severity is read in any letter case. */
 const ERROR_LINE =
@@ -219,6 +238,12 @@ export type CommandsStore = {
     note: (id: string, text: string, scrollback: boolean) => void;
     /** The errors and warnings of the listed task terminals' output. */
     commandDiagnostics: () => CommandDiagnostic[];
+    /**
+     * Forget the diagnostics of every repository that lies under none of the roots, which are the
+     * served roots after a change; a diagnostic of a repository that is a root or inside one stays,
+     * whichever file it names. Output read afterwards from such a repository holds none either.
+     */
+    forgetOutside: (roots: ServedRoot[]) => void;
     /** The folder a task terminal's output is read from: its command's, else its repository's. */
     folderOf: (id: string) => string;
     /**
@@ -301,6 +326,8 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
     const watching: Record<string, number> = $state({});
     /** The output read of each task terminal, by terminal id. */
     const outputs: { byId: Record<string, Output> } = $state({ byId: {} });
+    /** The served roots after the last change of them, or null before one: a repository's home. */
+    let served: ServedRoot[] | null = null;
     let question: CommandAsking | null = $state(null);
     /** The press the held question belongs to, or null for a question no command press asked. */
     let owner: { repo: string; name: string } | null = null;
@@ -314,6 +341,8 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
     const looked = new Map<string, number>();
     /** How many times each task terminal's line was started again from this page. */
     const restarted = new Map<string, number>();
+    /** The output a pane handed over before its terminal was listed, by terminal id. */
+    const unplaced = new Map<string, { text: string; scrollback: boolean }>();
 
     const keyOf = (repo: string): [string, string] => [KIND, repo];
 
@@ -359,6 +388,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         if (kept.length !== Object.keys(outputs.byId).length)
             outputs.byId = Object.fromEntries(kept);
         for (const id of [...looked.keys()]) if (!listed.has(id)) looked.delete(id);
+        readUnplaced();
         readEnded();
     });
 
@@ -634,7 +664,43 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         deps.openFile(repo, path, line);
     }
 
+    /**
+     * Keep the output of a terminal the page has not heard of yet, the last `SCROLLBACK_LINES`
+     * lines of it, which is all the server's terminal keeps of its scrollback. A scrollback
+     * replaces what was held, as it replaces what was read, and a chunk after it is joined to it.
+     */
+    function hold(id: string, text: string, scrollback: boolean): void {
+        const held = unplaced.get(id);
+        unplaced.delete(id);
+        unplaced.set(
+            id,
+            scrollback || held === undefined
+                ? { text: lastLines(text, SCROLLBACK_LINES), scrollback }
+                : {
+                      text: lastLines(`${held.text}${text}`, SCROLLBACK_LINES),
+                      scrollback: held.scrollback
+                  }
+        );
+        for (const [first] of unplaced) {
+            if (unplaced.size <= UNPLACED_MAX) break;
+            unplaced.delete(first);
+        }
+    }
+
+    /** Read the output held for the terminals the sessions channel has listed since. */
+    function readUnplaced(): void {
+        for (const [id, held] of [...unplaced]) {
+            if (record(id) === null) continue;
+            unplaced.delete(id);
+            note(id, held.text, held.scrollback);
+        }
+    }
+
     function note(id: string, text: string, scrollback: boolean): void {
+        if (record(id) === null) {
+            hold(id, text, scrollback);
+            return;
+        }
         if (!ranCommand(record(id))) return;
         const before = scrollback ? NOTHING : (outputs.byId[id] ?? NOTHING);
         const lines = `${before.tail}${text.replace(ESCAPES, '')}`.split(/\r\n|\r|\n/);
@@ -655,6 +721,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
             const match = errorMatch(line);
             if (match === null || job === null || job === undefined || found.length >= FOUND_MAX)
                 continue;
+            if (served !== null && !underServedRoot(served, job.repo)) continue;
             const folder = chain?.[started - 1]?.cwd ?? folderOf(id);
             const whole = wholeOf(folder, match.file);
             const inside = pathUnder(job.repo, whole);
@@ -703,6 +770,18 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
             return;
         }
         note(id, answer.output.endsWith('\n') ? answer.output : `${answer.output}\n`, true);
+    }
+
+    function forgetOutside(roots: ServedRoot[]): void {
+        served = roots;
+        const next: Record<string, Output> = {};
+        let changed = false;
+        for (const [id, one] of Object.entries(outputs.byId)) {
+            const found = one.found.filter((row) => underServedRoot(roots, row.root));
+            if (found.length !== one.found.length) changed = true;
+            next[id] = found.length === one.found.length ? one : { ...one, found };
+        }
+        if (changed) outputs.byId = next;
     }
 
     function commandDiagnostics(): CommandDiagnostic[] {
@@ -769,6 +848,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         },
         note,
         commandDiagnostics,
+        forgetOutside,
         folderOf,
         errorFile,
         openAt,

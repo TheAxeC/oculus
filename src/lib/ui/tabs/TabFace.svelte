@@ -27,7 +27,8 @@
     // wider than the strip: its label is cut with an ellipsis and its close control keeps its room.
     //
     // A tab whose file is off the disk (`Tab.gone`) has its label struck through in the error
-    // colour.
+    // colour. A tab whose file holds errors or warnings (`Tab.problem`) draws their count after the
+    // label and takes the colour of the worst for the label, which a missing file's overrides.
     //
     // A tab holding text no save has taken (`Tab.dirty`, set from `ui.unsaved` for a pane tab)
     // shows the `bullet` glyph in the close control's place and is named `ui.tab_unsaved`.
@@ -105,6 +106,8 @@
             class="face"
             class:preview={tab.preview === true}
             class:gone={tab.gone === true}
+            class:problem-error={tab.problem?.tone === 'error'}
+            class:problem-warning={tab.problem?.tone === 'warning'}
             role="tab"
             aria-selected={current}
             aria-label={tab.dirty === true ? t('ui.tab_unsaved', tab.label) : undefined}
@@ -131,6 +134,11 @@
                 </span>
             {/if}
             <span class="label">{tab.label}</span>
+            {#if tab.problem !== undefined}
+                <span class="problem" title={tab.problem.title} data-tab-problem>
+                    {tab.problem.count}
+                </span>
+            {/if}
             {#if (tab.badgeGlyph ?? '') !== ''}
                 <span
                     class="tab-badge"
@@ -368,6 +376,29 @@
        tab is provisional without taking a hue that stands for a status somewhere else. */
     .face.preview .label {
         font-style: italic;
+    }
+
+    /* A tab whose file holds errors or warnings: the name and the count take the worst colour. */
+    .face.problem-error {
+        --problem-txt: var(--c-red-txt);
+    }
+
+    .face.problem-warning {
+        --problem-txt: var(--c-amber-txt);
+    }
+
+    .face.problem-error .label,
+    .face.problem-warning .label {
+        color: var(--problem-txt);
+    }
+
+    .problem {
+        flex: none;
+        margin-left: 4px;
+        color: var(--problem-txt);
+        font-size: 90%;
+        font-weight: 600;
+        opacity: 0.75;
     }
 
     /* A tab whose file is off the disk: its name struck through in the error colour. */

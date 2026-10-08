@@ -55,6 +55,22 @@ export type SourceTabState = {
      */
     column?: number;
     /**
+     * Where the range opened at ends: the line from one and the column from one. A place with an
+     * end selects the range; a state with the column but no line, or an end before the start,
+     * names none.
+     */
+    endLine?: number;
+    endColumn?: number;
+    /**
+     * The number the page gave this open of the place, and the last one the editor went to. The
+     * editor goes to the place when `asked` differs from `wentTo` and then writes `wentTo`, so a
+     * second open of the same place goes there again and a reload does not.
+     */
+    asked?: number;
+    wentTo?: number;
+    /** False for an open that leaves the keyboard where it is, such as a press in a list. */
+    focus?: boolean;
+    /**
      * The library address of a tab over a library file a language server named, which has no root
      * and no path: `root` and `path` are empty and `id` is the address.
      */
@@ -220,14 +236,15 @@ export function sourceTabState(
     root: string,
     path: string,
     line?: number,
-    column?: number
+    column?: number,
+    more?: PlaceMore
 ): SourceTabState {
     const state: SourceTabState = {
         root,
         path,
         label: path.split('/').filter(Boolean).at(-1) ?? path
     };
-    return placed(state, line, column);
+    return placed(state, line, column, more);
 }
 
 /**
@@ -238,15 +255,54 @@ export function libraryTabState(
     address: string,
     name: string,
     line?: number,
-    column?: number
+    column?: number,
+    more?: PlaceMore
 ): SourceTabState {
-    return placed({ root: '', path: '', label: name, id: address, library: address }, line, column);
+    return placed(
+        { root: '', path: '', label: name, id: address, library: address },
+        line,
+        column,
+        more
+    );
 }
 
-/** A state opened at a line and, when the line is named, at a column of it. */
-function placed(state: SourceTabState, line?: number, column?: number): SourceTabState {
+/** What a place adds to its line and column: where its range ends, the ask and the keyboard. */
+export type PlaceMore = Pick<SourceTabState, 'endLine' | 'endColumn' | 'asked' | 'focus'>;
+
+/**
+ * Whether a range's end lies before its start: on an earlier line, or on the start's line at an
+ * earlier column. A place whose end does so has no end, in a state written and in a state read.
+ */
+export function endsBeforeStart(
+    start: { line: number; column: number },
+    end: { line: number; column: number }
+): boolean {
+    return end.line < start.line || (end.line === start.line && end.column < start.column);
+}
+
+/**
+ * A state opened at a line and, when the line is named, at a column of it, the end of its range,
+ * the ask that made it and whether the keyboard goes to the editor. Each key is written only when
+ * it is named, none is written without a line, and an end before the start is not written.
+ */
+function placed(
+    state: SourceTabState,
+    line?: number,
+    column?: number,
+    more: PlaceMore = {}
+): SourceTabState {
     if (line === undefined) return state;
-    return column === undefined ? { ...state, line } : { ...state, line, column };
+    const { endLine, endColumn, ...rest } = more;
+    const reversed =
+        endLine !== undefined &&
+        endsBeforeStart({ line, column: column ?? 0 }, { line: endLine, column: endColumn ?? 0 });
+    const named = Object.entries({
+        line,
+        column,
+        ...rest,
+        ...(reversed ? {} : { endLine, endColumn })
+    }).filter(([, value]) => value !== undefined);
+    return { ...state, ...Object.fromEntries(named) };
 }
 
 /** The version a tab's state names, or undefined for a tab over the file on disk. */

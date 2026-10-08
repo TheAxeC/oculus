@@ -1,8 +1,6 @@
 # Oculus text owned by the LaTeX view and the rows it shares with the project tab.
 text:
     latex:
-        at: '{0}:{1}'
-        at_line: line {0}
         bar_build: Build
         bar_build_title: Build the LaTeX project (Cmd+Alt+B)
         bar_building: Building
@@ -84,7 +82,7 @@ text:
         no_pdf: no PDF yet
         no_records: The PDF holds no record of that place. Build the file again.
         no_root: No LaTeX root
-        none_followed: Open a LaTeX file, or pick a root, to list its commands, structure and problems.
+        none_followed: Open a LaTeX file, or pick a root, to list its commands and structure.
         none_glyph: folder
         open_compiler_log: Open Compiler Log
         open_pdf: PDF
@@ -107,9 +105,9 @@ text:
         pinned_glyph: pin
         problem: problem
         problem_counts: '{0}, {1}'
+        problem_pill: '{0} {1}'
         problems: problems
-        problems_head: Problems
-        problems_unbuilt: The root has not been built in this session.
+        problems_open_tip: Show the problems of this root in the Problems view
         read_failed: 'the folder was not read: {0}'
         refused_badness_missing: badness was not found. Install it, or name it in latex.badness_path.
         refused_building: '{0} is building, so it was not cleaned. Kill Build first.'
