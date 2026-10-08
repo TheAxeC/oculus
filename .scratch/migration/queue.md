@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- D36 (linters as VS Code's): repair round 1 (builder working on the first review's findings).
+- D36 (linters as VS Code's): review over repair round 1 running; open item 17 ruled (b), its tests applied at landing.
 - D39 (hub keys as links): building (builder launched on main at 58c7840d9).
 
 Queued, in order (10 steps):

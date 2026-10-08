@@ -1,0 +1,111 @@
+--- a/tools/oculus/tests/server/machine/runs/lint/eslint-trust.test.ts
++++ b/tools/oculus/tests/server/machine/runs/lint/eslint-trust.test.ts
+@@ -107,6 +107,24 @@
+         expect(refused.body).toEqual({ ok: false, state: 'not_approved' });
+     });
+ 
++    it('keeps a documentation address only when it is an http or https address', async () => {
++        const { lint } = world();
++        const shown = (await lint.post({ action: 'config', root: 'repo', path: 'a.js' })).body as {
++            config: { key: string };
++        };
++        await lint.post({ action: 'approve', key: shown.config.key, root: 'repo', path: 'a.js' });
++        const rowOf = async (path: string) =>
++            (
++                (await lint.post({ action: 'lint', linter: 'eslint', root: 'repo', path }))
++                    .body as {
++                    rows: { href?: string }[];
++                }
++            ).rows[0];
++        expect(await rowOf('a.js')).not.toHaveProperty('href');
++        expect(await rowOf('plain.js')).not.toHaveProperty('href');
++        expect((await rowOf('docs.js')).href).toBe('https://eslint.org/docs/rules/no-undef');
++    });
++
+     it('asks for a nested configuration on its own, and its approval covers that folder alone', async () => {
+         const { dir, lint, at } = world();
+         plant(join(dir, 'sub', 'eslint.config.js'), 'export default [];\n');
+--- a/tools/oculus/tests/server/machine/runs/lint/lint-route.test.ts
++++ b/tools/oculus/tests/server/machine/runs/lint/lint-route.test.ts
+@@ -132,4 +132,38 @@
+         expect(args.at(-1)).toBe(file);
+         expect(args[args.indexOf('-l') + 1]).toBe(rc);
+     });
++
++    it('keeps a documentation address of a ruff row only when it is an http or https address', async () => {
++        const base = scratch('oculus-lint-route-docs-');
++        const root = join(base, 'root');
++        plant(join(root, 'a.py'), 'import os\n');
++        const row = (url: string) => ({
++            code: 'F401',
++            message: 'unused',
++            location: { row: 1, column: 8 },
++            end_location: { row: 1, column: 10 },
++            fix: null,
++            url,
++            noqa_row: 1
++        });
++        const answer = JSON.stringify([
++            row('javascript:alert(1)'),
++            row('file:///etc/passwd'),
++            row('https://docs.astral.sh/ruff/rules/unused-import')
++        ]);
++        const ruff = plantProgram(join(base, 'bin'), 'ruff', answer);
++        const lint = route(
++            () => [{ key: 'repo', dir: root }],
++            () => settingsOf({ ruff }),
++            { env: { ...process.env, LINT_RECORD: join(base, 'ruff.args') } }
++        );
++        const rows = (
++            (await lint.post({ action: 'lint', root: 'repo', path: 'a.py', linter: 'ruff' }))
++                .body as { rows: { href?: string }[] }
++        ).rows;
++        expect(rows).toHaveLength(3);
++        expect(rows[0]).not.toHaveProperty('href');
++        expect(rows[1]).not.toHaveProperty('href');
++        expect(rows[2].href).toBe('https://docs.astral.sh/ruff/rules/unused-import');
++    });
+ });
+--- a/tools/oculus/tests/server/machine/runs/lint/lint-fixture.ts
++++ b/tools/oculus/tests/server/machine/runs/lint/lint-fixture.ts
+@@ -174,13 +174,19 @@
+         return false;
+     }
+     async lintFiles(files) {
++        this.file = files[0];
+         await import(pathToFileURL(this.options.overrideConfigFile).href);
+         if (files[0].includes('crash')) process.exit(3);
+         if (files[0].includes('hang')) await new Promise(() => undefined);
+         return [{ messages: [{ ruleId: 'no-undef', severity: 2, message: 'x is not defined', line: 1, column: 1 }] }];
+     }
+     getRulesMetaForResults() {
+-        return {};
++        const url = this.file.includes('docs')
++            ? 'https://eslint.org/docs/rules/no-undef'
++            : this.file.includes('plain')
++              ? 'file:///etc/passwd'
++              : 'javascript:alert(1)';
++        return { 'no-undef': { docs: { url } } };
+     }
+ }
+ `;
+@@ -189,7 +195,9 @@
+  * A repository under `base` whose ESLint is a stand-in package: its `eslint.config.js` writes
+  * `config.marker` beside itself when it is imported, and the stand-in imports the configuration it
+  * is given as ESLint does, appends its process id to `starts.txt` when it is made, and answers one
+- * message for every file, but exits on a file named `crash` and never answers one named `hang`.
++ * message for every file, but exits on a file named `crash` and never answers one named `hang`. The
++ * rule it reports names a `javascript:` documentation address, a `file:` one for a file named
++ * `plain` and an `https:` one for a file named `docs`.
+  * Returns the repository's folder.
+  */
+ export function eslintRepo(base: string): string {
+@@ -208,6 +216,8 @@
+     plant(join(dir, 'a.js'), 'x;\n');
+     plant(join(dir, 'crash.js'), 'x;\n');
+     plant(join(dir, 'hang.js'), 'x;\n');
++    plant(join(dir, 'plain.js'), 'x;\n');
++    plant(join(dir, 'docs.js'), 'x;\n');
+     return dir;
+ }
+ 
