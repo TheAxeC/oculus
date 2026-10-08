@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z742 (2026-10-09, step D40, the orchestrator, automode): the choices of D40's brief
+
+- Chosen: C1 (a), the linter's id `writing`, its name "Writing rules", owner `lint-writing`; C2 (a), every row a warning, with the codes `em-dash`, `en-dash`, `curly-quote`, `ellipsis`, `arrow`, `nbsp` and `wrapped-paragraph`; C3 (a), an em dash or a spaced en dash gets comma, colon and semicolon suggestions and no automatic fix, so Fix All never writes wrong punctuation; C5 (a), three settings, `lint.writing` (on or off), `lint.writing_skip` (files not read, defaulting to the remove-unicode skill's exempt list) and `lint.writing_glyphs` (files where arrows are icons, defaulting to its glyph surfaces); C6 (a), the comments of Python, TypeScript, JavaScript, Svelte, shell, CSS, SCSS, C, C++, Lua and LaTeX, Python docstrings counted.
+- Not chosen: the names `ascii` (wrong for wrapped paragraphs) and `prose` (comments and YAML are not prose); paragraphs as info; every row as info (the lazy option, it hides the marks); a `, ` fix Fix All applies (writes "ENW, XS"); a mark with no fix (the lazy option, against the plan line); one key with the lists in code (the lazy option, hub paths in code); one skip list covering the glyph surfaces (would leave an em dash in a `project.yml` unmarked); only D36's languages (the lazy option); docstrings not counted (the hub's only banned characters in Python are in one).
+
+Where it applies: D40. Booked in `plan.md` Rulings and D40's Step 0 and brief. C4 is open item 18 and C7 open item 19, both for Axel.
+
 ## Z741 (2026-10-09, step D39, the orchestrator, automode): where a rename's refusal shows, and D39's first review
 
 - Chosen: a refusal that does not depend on the new name is given at `prepareRename` and shows at the caret, and every such check of the rename plan (a file over the write limit or not text, a private folder, unsaved text in another window, a key shared by two sources, from its reference or its definition) moves to the prepare answer; a refusal that depends on the new name is given at `rename` and shows as a notice, where Monaco 0.57 and VS Code put a rename-time reason. This absorbs a premise Z735 got wrong: VS Code shows a rename-time refusal as a notification, and Monaco's rename sends it to the notification service. The rest of D39's first review goes back as repair round 1 (`agents/briefs/D39-round1.md`), with new sentences for a refusal with no words, a closed file over 5 MB and a closed file that is not text.
