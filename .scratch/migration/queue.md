@@ -3,7 +3,7 @@ In flight (2 of 6 slots in use):
 - D40 (the writing rules as editor marks): building (builder launched 2026-10-09, base 9fd6c6eac).
 
 Queued, in order (9 steps):
-- M7 (a project folder moved in Files): after D39.
+- M7 (a project folder moved in Files): after D39; its scope waits on open item 21.
 - D41 (links in Markdown checked): after M7.
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (release readiness): paused (Axel).
