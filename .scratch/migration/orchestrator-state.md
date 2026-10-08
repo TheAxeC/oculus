@@ -34,9 +34,12 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 669ae7f08
   launched: 2026-10-08
   report: agents/reviews/D36-report.md
+  builder_usage: 87,036 tokens, 378 tool uses, 87.3 min
+  reviewer_report: agents/reviews/D36-refuter.md (ae0da9f815922756d, claude-opus-5-5, 79,242 tokens, 95 tool uses, 23.2 min)
+  round_brief: agents/briefs/D36-round1.md (sent to a6524e67c2c932dc1; the tree before it copied at .agents/worktrees/D36-round0)
   brief_check: agents/reviews/D36-brief-check.md (ab66036bc6fe3c58d, claude-opus-5-5, 275,056 tokens, 102 tool uses, 15.1 min; closed by a95ffc1009df88e4a, claude-opus-5-5, usage not recorded); premise recheck at a60dcb4fa a171b94b2f14b66e9, claude-opus-5-5, 322,213 tokens, 95 tool uses, 15.0 min
   landing: not-started
-  round: 0
+  round: 1
 - step: D39
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -242,6 +245,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 22:10. D36 built and reviewed (`agents/reviews/D36-refuter.md`, ae0da9f815922756d, claude-opus-5-5); its findings sent as repair round 1 (`agents/briefs/D36-round1.md`, Z740 in automode) to builder a6524e67c2c932dc1. ShellCheck 0.11.0 installed. D39 building. No open item. Next: D36's round report and the review over it, D39's report and review, then /land; M7 after D39, D41 after M7, D40 after D36.
 - 2026-10-08 20:52. D39 prepared on main at 58c7840d9 (its premise recheck's corrections, Z739 and Axel's ruling (b) on open item 16 written into the brief; item 10 and case 48 added for `diskName`) and its builder a39d8c564a664a921 (claude-sonnet-5-5) launched in `.agents/worktrees/D39`, beside D36's (shared paths judged simple). Next: D36's and D39's reports and reviews; M7 after D39, D41 after M7, D40 after D36.
 - 2026-10-08 20:15. D36 prepared on main at 669ae7f08 (its premise recheck's corrections written into the brief, choices C1 to C5 closed as Z738 in automode) and its builder a6524e67c2c932dc1 (claude-sonnet-5-5) launched in `.agents/worktrees/D36`. D39 stopped on open item 16 (what a language server's edit refuses as closed, a premise of Z730 O5 found false); its other choices closed as Z739. Next: D36's report and review; D39 after Axel's ruling on open item 16, then M7, D41 and D40.
 - 2026-10-08 19:55. D43 landed (LaTeX navigation through texlab; booking in plan.md; `agents/reviews/D43-landing.md`) after one repair round, the review over round 1's findings fixed at landing (Z737 and Z736 in automode, for Axel's review in `choices.md`); G55, G36, G31, G13 and G7 written into `agents/guarded.md`; gate green in `.agents/worktrees/gate`, G48's start test 5 of 5, the look on the 8796 scratch oculus. Nothing in flight. No open item. Next: /spec D36 and /spec D39 (D39's Step 0 holds the `diskName` item), then M7, D41 and D40.

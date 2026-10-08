@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z740 (2026-10-08, step D36, the orchestrator, automode): the ESLint approval per configuration file, and D36's first review
+
+- Chosen: the ESLint approval and the held ESLint process are per configuration folder: the key is over the folder and the one `eslint.config.*` the process loads with `overrideConfigFile`, so the approval names exactly the code that runs, a nested configuration that was never approved is never loaded, and no lint walks the repository for every configuration file; `DESIGN.md:166`, `docs/files-and-search.md` and the `:eslint-config` list say so. The lint route's body carries an `action` (`lint`, `stop`, `config`, `approve`, `revoke`) and an approval carries the key the reader was shown, so an approval made after the file changed approves nothing; a lint answer carries the hash of the bytes its rows were read from. Sent back as repair round 1: a linter with no answer draws no item; a documentation address is opened only as an `http:` or `https:` address; Fix All is disabled while the tab's text is not the linted text; the hung-child end and the switch-off end get their test rows; the comments, the negation-contrast and the docs' switch values are fixed.
+- Not chosen: one key per repository over all its configuration files, as the brief worded it, which approves configurations the process never loads and makes a nested one wait on an unrelated change; removing the `lint.eslint` switch-off from G36's text instead of testing it, and deleting the unused hung-child fixture instead of testing the end it guards (both the lazy option).
+
+Where it applies: D36. Booked in `plan.md` Rulings and `agents/briefs/D36-round1.md`.
+
 ## Z739 (2026-10-08, step D39, the orchestrator, automode): the choices of D39's premise recheck on main at a60dcb4fa, all but the closed paths
 
 - Chosen: `diskName` is replaced in `hub-names.ts` by one function that says whether two names are one disk file from the served roots' real folders, used by the unsaved-text refusal, the page's edit plan and the YAML hook; while the page has not read its roots it falls back to the present prefix rule, which errs toward refusing; each side joins its root's real folder with the path, so a file reached through a symlinked folder inside a root counts as another file; a rename writes the new key through the one scalar writer `renderScalar`, so `123` or `null` as a new key is written quoted instead of refused; the function's test is a table in `tests/data/helpers/hub-names.test.ts`.
