@@ -35,7 +35,7 @@ dispatch:   # steps in flight, up to six (Z632)
   launched: 2026-10-08
   report: agents/reviews/D39-report.md
   builder_usage: 265,677 tokens, 751 tool uses, 171.7 min; round 1 226,450 tokens, 208 tool uses, 51.3 min
-  reviewer_report: agents/reviews/D39-refuter.md (a0406e6fb11a5db2d, claude-opus-5-5, 262,443 tokens, 132 tool uses, 23.6 min)
+  reviewer_report: agents/reviews/D39-refuter.md (a0406e6fb11a5db2d, claude-opus-5-5, 262,443 tokens, 132 tool uses, 23.6 min); over round 1: ab4302baf1d6aa897, claude-opus-5-5, stopped by Axel before it reported
   brief_check: agents/reviews/D39-brief-check.md (a82035d8af9667de8, claude-opus-5-5, 354,905 tokens, 148 tool uses, 20.9 min; closed inline in the brief); premise recheck at a60dcb4fa aff03e5971f3cf40d, claude-opus-5-5, 331,913 tokens, 122 tool uses, 17.0 min
   shared_paths: with D36, `server/root/context.ts` (D36 237-262, 321-325 beside D39's two changes at 257 and 327, its `SchemaFeed`, `createRelay` and watcher-hook lines 248-262 and 326), `relay.ts` (D36's three-line head comment edit at 23-25, which D39's hook sentence joins), `state/client/context.ts`, `DESIGN.md` (D36 23, 166, 476; D39 526, 553, 575-576), `HELP.md` (D36 118; D39 81, 116), `docs/views.md` (D36 81; D39 67-69, after 69, 253), `docs/files-and-search.md` (D36 a new section after 85; D39 85), `glyphs.yml` (each its own entries), `config/text/views/sources/search.yml` and `source.yml` (each its own lines), `src/lib/data/model/index.ts` (D36 572-609, D39 94-98) and `docs/diagrams/` (regenerated after the second landing); simple, since each is a few added statements or sentences kept from both sides at the second landing, with no logic of one step depending on the other's
   landing: not-started
@@ -43,6 +43,7 @@ dispatch:   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
+- A brief is written, its premises checked and its findings closed by the orchestrator itself through the `spec` skill, never by an agent (Axel, 2026-10-09): no brief-writing agent, no premise survey or premise recheck agent, no agent that edits a brief; the one agent `/spec` starts is the brief check, as the skill says.
 - A builder or reviewer never takes focus on Axel's screen and never reruns a case that starts the app (Axel, 2026-10-05): no `app.focus({steal:true})`, no `osascript activate`, no `Page.bringToFront`, no `focus()` or `show()` called from outside the app's code; a focus case is read from a recorder on `BrowserWindow.prototype.focus`; the app is started once for all window cases and closed by its pid; a case that does not show in that run is reported not verified and goes to the look. Every builder prompt that runs the desktop app restates this.
 - Never run `git reset --hard`, in any form, on main, in the gate or in any worktree (Axel, 2026-10-05). A worktree is moved to a new commit with `git checkout -f --detach <commit>` only.
 - Before T2a to T2d land (Axel, 2026-10-04, Z408): report each sweep's lines removed and left and its tests deleted and left, counted by command in its worktree, and wait for his judgement before `/land`.
