@@ -283,3 +283,5 @@ Closed by the orchestrating session in `agents/briefs/D39.md`, on main at fbc434
 - F31: verify item 3's `find` drops `bin`.
 
 Dictated lines held, each ASCII with no dash: "{0} is a word of oculus's vocabulary in config/catalogs/vocab.yml, and oculus's code reads some of those words, so none of them is renamed here."; "{0} is larger than {1}, so nothing was renamed."; "In {2}, {1} would be read as something other than a key, so nothing was renamed."; "{0} has unsaved text that does not read as YAML, so nothing was renamed."
+
+The brief was rechecked on main at a60dcb4fa after M6 and D43 landed (`agents/reviews/D39-premise-recheck.md`); its corrections are applied in the brief, with Z739 (items 3 and 10, case 48, the case 22 row for `123`, case 23) and open item 16 (item 5, case 30a, the O5 section). The closures above hold at the moved lines; case 30a now names the private folders in place of `closed_paths`, and the dictated sentence "In {2}, {1} would be read as something other than a key, so nothing was renamed." now serves only `a, b` in a flow list.

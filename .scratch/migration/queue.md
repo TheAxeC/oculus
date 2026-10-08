@@ -2,7 +2,7 @@ In flight (1 of 6 slots in use):
 - D36 (linters as VS Code's): building (builder launched on main at 669ae7f08).
 
 Queued, in order (11 steps):
-- D39 (hub keys as links): premises rechecked on main at a60dcb4fa; waits for open item 16 (what a language server's edit refuses as closed).
+- D39 (hub keys as links): prepared (brief corrected on main at 36c246b59, open item 16 ruled); its builder launches next.
 - M7 (a project folder moved in Files): after D39.
 - D41 (links in Markdown checked): after M7.
 - D40 (the writing rules as editor marks): after D36.
