@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z726 (2026-10-08): automode, the choices of D43's third premise recheck closed with their recommendations (`plan.md` Rulings Z726).
 - Z725 (2026-10-08): automode, the choices of D39's premise survey closed with their recommendations; its guarded entries raised as open item 10 (`plan.md` Rulings Z725).
 - Z724 (2026-10-08): automode, the choices of M6's third premise recheck closed with their recommendations (`plan.md` Rulings Z724).
 - D39's premise survey (a26d8068dfc88ec1f, 2026-10-08) broke the rule on private files: four of its commands passed `tools/oculus/config/local.yml` to `cat` or `grep` and one grep searched the hub's `secrets` folder for `.yml` files; it printed only a byte total, per-extension counts and file names, none of them under `secrets` or `local.yml` (its report, first section).

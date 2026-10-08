@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z726 (2026-10-08, step D43, the orchestrator, automode): the choices of D43's third premise recheck
+
+- Chosen: texlab started without `latexmk` on its PATH so it never runs a latexmkrc, the latexmkrc approval kept on the build and clean steps; a weave recipe asking once per repository, folder and tools; `brew install texlab` by the orchestrator before the look; an automatic build that waits on an unapproved latexmkrc, shown on the LaTeX status item, and a pressed build that asks.
+- Not chosen: an approval before texlab starts with a watcher, which texlab's own watcher outruns; changes after start ignored, weave recipes left out, a look without texlab, a silent skip (the lazy options).
+
+Where it applies: D43; it replaces Z703 (U3)'s approval before texlab starts. Booked in `plan.md` Rulings, D43's step line and the closed log of `orchestrator-history.md`.
+
 ## Z725 (2026-10-08, step D39, the orchestrator, automode): the choices of D39's premise survey
 
 - Chosen: hub-key definition, references and rename answered by the YAML server entry through a relay hook, from an index built with the snapshot and overlaid with open tabs; every reference declared in a schema, `waiting-on`, the deck groups and the engine's two keys included; vocabulary values navigable and their rename refused; a project id's rename refused and left to M7's folder move, D39 queued before M7; a Refactor Preview as VS Code's; the rename copy limit raised to the delete limit so the literature radar can be renamed in.

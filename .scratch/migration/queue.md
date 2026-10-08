@@ -6,7 +6,7 @@ Queued, in order (14 steps; M8 landed 2026-10-08 as 7c5514850):
 - D39 (hub keys as links): after D33; survey saved and its choices closed (Z725), open item 10 for its guarded entries; before M7 (Z725 C4).
 - M7 (a project folder moved in Files): after M6 and D39.
 - D41 (links in Markdown checked): after M7.
-- D43 (LaTeX navigation through texlab): ready to prepare.
+- D43 (LaTeX navigation through texlab): after D33; recheck 3 saved and its choices closed (Z726).
 - D36 (linters on save): after D33.
 - D40 (the writing rules as editor marks): after D36.
 - Q72 (the architecture re-read): paused (Axel).
