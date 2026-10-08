@@ -48,6 +48,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 1439a44ec
   launched: 2026-10-08
   report: agents/reviews/D33-report.md
+  builder_usage: first run, told of Z720 near its end (247,889 tokens, 760 tool uses, 226.6 min)
   brief_check: agents/reviews/D33-brief-check.md (a0a67ffbec5451994, claude-opus-5-5, 335,815 tokens, 131 tool uses, 19.6 min)
   shared_paths: package.json and package-lock.json (M8 and D33 add different dependencies; the one line both change, picomatch's devOptional, changes identically; the lock is regenerated at the second landing), DESIGN.md, docs/files-and-search.md, docs/views.md, config/text/statusbar.yml and views/system/workbench/editors/Editor.svelte on different lines, docs/diagrams regenerated: a simple merge
   landing: not-started
@@ -143,6 +144,8 @@ dispatch:   # steps in flight, up to six (Z632)
 - Open items hold only questions with a real trade-off that needs Axel: two options that each cost something he would weigh. A choice between the correct option and an obviously wrong one, a test or a package with one sensible answer, a defect in delivered work, and work the orchestrator can do itself are decided and done, never parked as open items (Axel, 2026-10-05).
 
 ## The pause
+
+In force from 2026-10-08, Axel: "We're at 98% usage, so once the current 2 agents are done, please pause so I can switch accounts". The two agents running then (M8's builder acd90a7603ba715c3 on repair round 1, D33's reviewer a4557dd5285730c0d) run to their end; their reports are saved and booked, and a resume-point commit is made. Nothing else is dispatched, refuted, landed or prepared until he says go. On his go: `/refute` M8 over round 1, D33's repair round from its refuter report (with the orchestrator's three findings: the Problems toggle closing the tab and losing its state, `docs/views.md` and `Problems.svelte:2` on the view's place in the group, `tabProblem` reading the store through the client), then `/land` M8, then D33.
 
 Lifted 2026-10-07 by Axel: "Once you are done, please continue with the full orchestration / automode, fill all open slots as far as is possible, keep queue.md up to sate". The loop runs in automode with six slots, each choice closed with its recommendation and booked as "(the orchestrator, automode)".
 
