@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z730 (2026-10-08, step D39, the orchestrator, automode): the choices of D39's brief
+
+- Chosen: the rename box's preview key Cmd+Enter (Ctrl+Enter off macOS), VS Code's and Monaco's own binding, in place of the Shift+Enter Z725 named; a new schema attribute `keyed: true` on a `records` field, so the deck groups' `slides` carry `from: projects`; the Refactor Preview as an unlisted view `refactor-preview` opened when a preview is asked, with VS Code's words and oculus's refusal sentences; References rows and Go to Definition opening with the whole range the server named, so a hyphenated key is selected whole; `lsp-edit` refusing a path under a `closed_paths` folder (`secrets`), a fix of D23b's delivered work.
+- Not chosen: Shift+Enter, a code rule for the deck, a listed view taking chord s9, a YAML word pattern that changes double-click, leaving hyphenated keys half-selected, leaving the secrets gap (the lazy options).
+
+Where it applies: D39. Booked in `plan.md` Rulings, D39's step line and the closed log of `orchestrator-history.md`.
+
 ## Z729 (2026-10-08, step D36, the orchestrator, automode): the choices of D36's brief
 
 - Chosen: ChkTeX, ruff and ShellCheck run as one process per lint, ESLint held per repository in a child process of oculus's own (one file in 7 to 17 s through the CLI); the repository's ESLint runs only after an `eslint-config:` approval made in the palette list `:eslint-config`; a `lint:` block in `behavior.yml` (each linter on or off, its path, ChkTeX's arguments); a lint on save and when a clean tab opens; each linter's quick fix, a disable comment, the rule's documentation and Fix All; one status item per linter saying not found, failed, timed out or not approved; files chosen by extension (no `.zsh`, `.bib`, `.sty`; `.slurm` by ShellCheck; JavaScript by ESLint); no new dependency, and ShellCheck installed with brew before the look.

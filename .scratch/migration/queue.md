@@ -1,7 +1,7 @@
 In flight (4 of 6 slots):
-- M6 (the collection forms removed): brief being rewritten.
-- D39 (hub keys as links): brief being written.
-- D43 (LaTeX navigation through texlab): brief being written.
+- M6 (the collection forms removed): brief written, its choices being closed.
+- D39 (hub keys as links): brief check running.
+- D43 (LaTeX navigation through texlab): brief written, its choices being closed.
 - D36 (linters on save): brief check running.
 
 Queued, in order (10 steps):

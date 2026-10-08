@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z730 (2026-10-08): D39's brief choices O1 to O5 closed in automode with their recommendations (`agents/briefs/D39.md`, `choices.md`).
 - Z729 (2026-10-08): D36's brief choices O1 to O5 and O7 to O9 closed in automode with their recommendations (`agents/briefs/D36.md`, `choices.md`); O6 raised as open item 12.
 - Open item 11 (2026-10-08): Axel ruled (a): G69, a root that leaves the served roots takes its command and LaTeX rows with it; its test the two files of `agents/reviews/D33-case8-tests.patch`, landed after D33 (e61cfc598).
 - Z728 (2026-10-08): Axel ruled (b) on Z727: D33's case 8 fixed at landing as Z723 ruled; the second round's builder stopped, its partial changes put back.
