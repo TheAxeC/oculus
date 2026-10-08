@@ -13,6 +13,7 @@
 
 import { tick } from 'svelte';
 import { endText, trimText, type KeptPlace } from '../../../data/helpers/files/save-text.ts';
+import { diskName } from '../../../data/helpers/hub-names.ts';
 import { editsBetween, type TextEdit } from '../../../data/prose/text-edits.ts';
 import type { WordWrap } from '../../../data/helpers/editor.ts';
 import type {
@@ -75,6 +76,11 @@ export type SourceStore = {
     sourceDirty: (id: string) => boolean;
     /** The instance ids of the drafts that hold a file on disk, read in this page's lifetime. */
     openDrafts: () => string[];
+    /**
+     * Whether any source tab of this page, on any workbench page, holds unsaved text of the file on
+     * disk at that root and path.
+     */
+    unsavedFile: (root: string, path: string) => boolean;
     loadSourceDraft: (id: string, root: string, path: string, head?: HeadStage) => Promise<void>;
     /**
      * Read the text of a tab over a library file with the read the caller makes of the language
@@ -212,6 +218,16 @@ export function createSource(
         return ui.instanceKeys('').filter((id) => {
             const draft = sourceDraft(id);
             return draft.loaded && diskFileOf(draft.file) !== null;
+        });
+    }
+
+    function unsavedFile(root: string, path: string): boolean {
+        const file = diskName({ root, path });
+        return openDrafts().some((id) => {
+            const place = diskFileOf(sourceDraft(id).file);
+            if (place === null) return false;
+            const held = diskName(place);
+            return held.root === file.root && held.path === file.path && sourceDirty(id);
         });
     }
 
@@ -699,6 +715,7 @@ export function createSource(
         sourceDraft,
         sourceDirty,
         openDrafts,
+        unsavedFile,
         loadSourceDraft,
         loadLibraryDraft,
         loadUntitledDraft,

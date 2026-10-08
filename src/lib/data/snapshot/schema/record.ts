@@ -13,6 +13,7 @@
 // carries the condition in `x-when` or `x-required-when` so a finding can name it.
 
 import { ISO_DATE } from '../../helpers/dates.ts';
+import { withoutPath } from '../../helpers/files/yaml/collection-text.ts';
 import type { FromPicked, SchemaField, When } from '../../model/index.ts';
 import { TEXT_TYPES, type JsonSchema } from './json.ts';
 
@@ -150,11 +151,6 @@ function condition(when: When, field: string, known: Set<string>, ctx: Context):
         properties[name] = { enum: Array.isArray(value) ? value : [value] };
     }
     return { properties, required: Object.keys(when) };
-}
-
-/** A condition without its `path` key, the part a record can state about its own fields. */
-function withoutPath(when: When): When {
-    return Object.fromEntries(Object.entries(when).filter(([name]) => name !== 'path'));
 }
 
 /**

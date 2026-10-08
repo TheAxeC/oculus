@@ -27,10 +27,10 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
-    import Table from '$lib/ui/display/Table.svelte';
+    import Table from '$lib/ui/display/table/Table.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import { type Column, cellText } from '$lib/ui/display/table-rows';
-    import Ticker from '$lib/ui/display/Ticker.svelte';
+    import { type Column, cellText } from '$lib/ui/display/table/table-rows';
+    import Ticker from '$lib/ui/display/ticker/Ticker.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';

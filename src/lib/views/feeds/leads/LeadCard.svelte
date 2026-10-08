@@ -3,11 +3,13 @@
     // deadline, posting, status writes and confirmed deletion. Feed rules stay in state and server
     // modules.
     //
-    // The `applied` control does not write the lead: it asks the Leads view to open the
-    // Applications add form filled from it, and the lead is set to `applied` once that form's
-    // entry is written. The `decline` control is a status write like reopen: it sets the lead's
-    // status to `declined` in the hub's file, so the change log records it and reopen puts `open`
-    // back. It is offered on an open lead alone, so a decline never writes over an outcome.
+    // The `applied` control asks the Leads view to open Applications beside the leads with an entry
+    // filled from the lead, and the lead is set to `applied` once that entry is placed. The
+    // controls that write the lead are disabled, `blocked` as their title, while the leads file has
+    // unsaved text in a source tab. The `decline` control is a status write like reopen: it sets
+    // the lead's status to `declined` in the hub's file, so the change log records it and reopen
+    // puts `open` back. It is offered on an open lead alone, so a decline never writes over an
+    // outcome.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -43,11 +45,13 @@
         cursor: boolean;
         expired?: boolean;
         onsaid: (words: string) => void;
-        /** Open the Applications add form filled from this lead, whose save marks it applied. */
+        /** Open Applications with an entry filled from this lead, and mark the lead applied. */
         onapply: () => void;
+        /** Why the controls that write the lead are disabled, '' when they are not. */
+        blocked: string;
     };
 
-    let { entry, vocab, cursor, expired = false, onsaid, onapply }: Props = $props();
+    let { entry, vocab, cursor, expired = false, onsaid, onapply, blocked }: Props = $props();
     let sure = $state(false);
 
     const text = (field: string): string => textOrNumber(entry[field]);
@@ -66,6 +70,11 @@
     const sub = $derived(`${institution} | ${country}`);
     const note = $derived(`${focus}${fit === '' ? '' : ` - ${fit}`}`);
     const deadlineTail = $derived(expired ? (isClosed(status) ? status : t('leads.expired')) : '');
+
+    /** A control's own words, or the words saying why it is disabled. */
+    function why(own: string): string {
+        return blocked === '' ? own : blocked;
+    }
 
     function say(answer: WriteAnswer): void {
         onsaid(answerWords(answer));
@@ -110,31 +119,35 @@
                     {#if status !== APPLIED}
                         <ToolButton
                             label={t('leads.action.applied')}
-                            title={t('leads.action.applied_tip')}
+                            title={why(t('leads.action.applied_tip'))}
                             small
+                            disabled={blocked !== ''}
                             onclick={onapply}
                         />
                     {/if}
                     {#if isOpen(status)}
                         <ToolButton
                             label={t('leads.action.decline')}
-                            title={t('leads.action.decline_tip')}
+                            title={why(t('leads.action.decline_tip'))}
                             small
+                            disabled={blocked !== ''}
                             onclick={() => mark(DECLINED)}
                         />
                     {/if}
                     {#if isClosed(status)}
                         <ToolButton
                             label={t('leads.action.reopen')}
-                            title={t('leads.action.reopen_tip')}
+                            title={why(t('leads.action.reopen_tip'))}
                             small
+                            disabled={blocked !== ''}
                             onclick={() => mark(OPEN)}
                         />
                     {/if}
                     <ToolButton
                         label={t('project.action.del')}
-                        title={t('leads.action.delete_lead_tip')}
+                        title={why(t('leads.action.delete_lead_tip'))}
                         small
+                        disabled={blocked !== ''}
                         onclick={() => (sure = true)}
                     />
                 </span>

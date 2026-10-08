@@ -11,6 +11,11 @@
     // from the people registry for is the one exception in kind rather than in name: it holds a
     // person's key, so the card draws the control that opens that person by their name.
     //
+    // The status, a deadline and a date change on the card (shared/forms/InPlace.svelte), every
+    // other field in the file, which Edit in File opens at the entry. The controls that write are
+    // disabled, the words saying why as their title, while the file has unsaved text in a source
+    // tab or the entry's identity cannot address a write.
+    //
     // A link is one of three things: a local HTML file opens in the document view, a path inside
     // the hub whose extension `open.program_ext` of config/behavior.yml names an application for (a
     // `.docx`, an `.xlsx`) is `shared/links/ProgramButton.svelte`, which hands the file to that
@@ -31,9 +36,12 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import CardActions, { type CardAction } from '../../shared/card/CardActions.svelte';
+    import { entryActions } from './entry-actions';
+    import { blockedBy, fileNameOf, openEntry } from '../../shared/forms/entry-file';
     import Clamp from '../../shared/card/Clamp.svelte';
+    import Grip from './Grip.svelte';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
-    import EntryForm from '../../shared/forms/EntryForm.svelte';
+    import InPlace from '../../shared/forms/InPlace.svelte';
     import ProgramButton from '../../shared/links/ProgramButton.svelte';
     import Subtasks from '../../shared/forms/Subtasks.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -48,10 +56,12 @@
         isPinned,
         identityValue,
         type Entry,
+        type IdentityFault,
         type Project,
         type SchemaField
     } from '$lib/state/boards/collection';
     import { HUB_ROOT, opensInProgram } from '$lib/state/sources/fs';
+    import type { ViewSource } from '$lib/state/sessions/view-source';
     import { openPage } from '$lib/views/shared/explorer/opening';
     import { personName } from '$lib/state/boards/person';
     import { t } from '$lib/state/shared/words/text';
@@ -63,6 +73,7 @@
         entities: { portfolio },
         layout: { openView, showInFiles },
         selectors: { archiveDead, programApps },
+        source: { unsavedFile },
         writes: { writeEntry }
     } = client;
 
@@ -77,12 +88,15 @@
         projects: Project[];
         /**
          * The lifecycle statuses of a file with no schema, which carries status buttons instead of
-         * the edit form. Empty for every file that has a schema.
+         * the status pick and Edit in File. Empty for every file that has a schema.
          */
         statuses: string[];
-        /** Whether this card's edit form is the one that is open. */
-        editing: boolean;
-        onedit: () => void;
+        /**
+         * The collection file, which Edit in File opens; null when the configuration names none.
+         */
+        file: ViewSource | null;
+        /** Why a write cannot address this entry, when the file's identities say so. */
+        fault: IdentityFault | undefined;
         /** The reader picked this card up by its grip, or dropped one on it. */
         ondragfrom: (value: string) => void;
         ondropon: (value: string) => void;
@@ -102,8 +116,8 @@
         schema,
         projects,
         statuses,
-        editing,
-        onedit,
+        file,
+        fault,
         ondragfrom,
         ondropon,
         onsaid,
@@ -118,8 +132,18 @@
     const lines = $derived(entrySubtasks(entry));
     const value = $derived(identityValue(entry, schema));
 
-    /** A card carries its controls only where a write can address it, which needs an identity. */
-    const addressable = $derived(schema !== undefined && value !== '');
+    /** A card carries its controls only where the file has a schema to write by. */
+    const addressable = $derived(schema !== undefined);
+
+    /** Why the controls that write are disabled, '' when they are not. */
+    const blocked = $derived(
+        blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)
+    );
+
+    /** Whether the schema declares a status pick, which then replaces the status chip. */
+    const statusPick = $derived(
+        schema?.some((one) => one.field === 'status' && (one.options ?? []).length > 0) === true
+    );
 
     /** True once the grip is held down, which is what makes the card draggable and nothing else. */
     let armed = $state(false);
@@ -143,53 +167,27 @@
         }))
     );
 
-    /**
-     * The card's controls: the pin, the edit form, while the entry has no subtask adding its first,
-     * and the Show in Files controls, then the controls the collection passes in `extra`. A file
-     * with no schema has no identity to write by, so its cards carry the file's other lifecycle
-     * statuses instead of the first three.
-     */
-    const actions = $derived.by((): CardAction[] => {
-        if (!addressable) {
-            const buttons: CardAction[] = statuses
-                .filter((one) => one !== status)
-                .map((one) => ({
-                    id: `status:${one}`,
-                    label: one,
-                    onclick: () => setStatus(one)
-                }));
-            return buttons.concat(shows, extra);
-        }
-        const rows: CardAction[] = [
-            {
-                id: 'pin',
-                label: pinned ? t('collection.unpin') : t('collection.pin_to_top'),
-                glyph: t('collection.pin_glyph'),
-                active: pinned,
-                onclick: pin
-            },
-            {
-                id: 'edit',
-                label: t('collection.edit_delete'),
-                glyph: t('collection.edit_glyph'),
-                active: editing,
-                onclick: onedit
+    /** The card's controls, from what the card knows (entry-actions.ts). */
+    const actions = $derived(
+        entryActions({
+            addressable,
+            blocked,
+            fileName: fileNameOf(file),
+            status,
+            statuses,
+            pinned,
+            firstSubtask: lines.length === 0,
+            addingSubtask,
+            shows,
+            extra,
+            onstatus: setStatus,
+            onpin: pin,
+            onedit: () => openEntry(client, file, entry, schema, fault, onsaid),
+            onsubtask: () => {
+                addingSubtask = !addingSubtask;
             }
-        ];
-        if (lines.length === 0) {
-            rows.push({
-                id: 'subtask',
-                label: t('project.action.add_subtask'),
-                title: t('project.action.add_subtask_tip'),
-                glyph: t('project.action.add_subtask_glyph'),
-                active: addingSubtask,
-                onclick: () => {
-                    addingSubtask = !addingSubtask;
-                }
-            });
-        }
-        return rows.concat(shows, extra);
-    });
+        })
+    );
 
     function said(answer: { ok: boolean; changed: string[]; error?: string }): void {
         onsaid(
@@ -273,16 +271,11 @@
     >
         {#snippet meta()}
             {#if addressable}
-                <span
-                    class="grip"
-                    title={t('collection.reorder_hint')}
-                    onmousedown={() => (armed = true)}
-                    role="presentation"
-                >
-                    <Glyph name={t('collection.grip_glyph')} />
-                </span>
+                <Grip {blocked} onpress={() => (armed = true)} />
             {/if}
-            {#if status !== undefined}
+            {#if status !== undefined && statusPick}
+                <InPlace field="status" {collection} {entry} {schema} {blocked} {onsaid} />
+            {:else if status !== undefined}
                 <Chip label={status} tone={statusTone(status)} filled />
             {/if}
             {#if actions.length > 0}
@@ -376,6 +369,18 @@
                             </a>
                         </p>
                     {/if}
+                {:else if addressable && (drawn.field === 'deadline' || drawn.field === 'date')}
+                    <div class="field">
+                        <span class="label">{drawn.label}</span>
+                        <InPlace
+                            field={drawn.field}
+                            {collection}
+                            {entry}
+                            {schema}
+                            {blocked}
+                            {onsaid}
+                        />
+                    </div>
                 {:else}
                     <div class="field">
                         <span class="label">{drawn.label}</span>
@@ -398,11 +403,8 @@
                     {onsaid}
                     adding={addingSubtask}
                     onadding={(next: boolean) => (addingSubtask = next)}
+                    {blocked}
                 />
-            {/if}
-
-            {#if editing}
-                <EntryForm {collection} {schema} {entry} onclose={onedit} {onsaid} />
             {/if}
         </div>
     </Card>
@@ -430,11 +432,6 @@
 
     .slot > :global(.card .title) {
         overflow-wrap: anywhere;
-    }
-
-    .grip {
-        cursor: grab;
-        color: var(--muted-txt, var(--muted));
     }
 
     .sub {

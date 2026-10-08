@@ -10,9 +10,9 @@
     // inside one, the total) is what decides how its cells are drawn. It sits in a box of its own
     // that scrolls sideways, so a narrow pane scrolls the table rather than the view past its edge.
 
-    import Table from '$lib/ui/display/Table.svelte';
+    import Table from '$lib/ui/display/table/Table.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { Column } from '$lib/ui/display/table-rows';
+    import type { Column } from '$lib/ui/display/table/table-rows';
     import {
         isUnderSource,
         SOURCE_FOLDER,

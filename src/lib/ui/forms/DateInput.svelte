@@ -4,6 +4,10 @@
     // text instead: showing a picker with nothing in it, over a value the file does hold, would
     // look like the field was empty and would clear it on the next save. The text box carries the
     // text boxes' editing menu (TextBoxMenu.svelte); the date control keeps the browser's.
+    //
+    // A form that writes the value when the reader is done with the box hands `onsettle`, called
+    // with the box's text on Enter and when the box loses the focus; the box keeps nothing of its
+    // own. A disabled box is drawn so and carries `title`, the words saying why.
 
     import TextBoxMenu from '../controls/text/TextBoxMenu.svelte';
     import { typedInto } from '../controls/text/text-menu';
@@ -12,10 +16,28 @@
         value: string;
         /** The control's accessible name, already translated by the view. */
         label: string;
-        oninput: (value: string) => void;
+        oninput?: (value: string) => void;
+        /** The reader is done with the box: Enter was pressed or the focus left, with its text. */
+        onsettle?: (value: string) => void;
+        disabled?: boolean;
+        /** Why the box is disabled, already translated. */
+        title?: string;
     };
 
-    let { value, label, oninput }: Props = $props();
+    let { value, label, oninput, onsettle, disabled = false, title }: Props = $props();
+
+    function typed(event: Event): void {
+        typedInto(event, (next) => oninput?.(next));
+    }
+
+    function settled(event: Event): void {
+        const field = event.currentTarget;
+        if (field instanceof HTMLInputElement) onsettle?.(field.value);
+    }
+
+    function keyed(event: KeyboardEvent): void {
+        if (event.key === 'Enter' && !event.isComposing) settled(event);
+    }
 
     let box: HTMLInputElement | null = $state(null);
 
@@ -31,7 +53,11 @@
         type="date"
         {value}
         aria-label={label}
-        oninput={(event) => typedInto(event, oninput)}
+        {disabled}
+        {title}
+        oninput={typed}
+        onkeydown={keyed}
+        onblur={settled}
     />
 {:else}
     <TextBoxMenu {label} box={() => box}>
@@ -40,7 +66,11 @@
             type="text"
             {value}
             aria-label={label}
-            oninput={(event) => typedInto(event, oninput)}
+            {disabled}
+            {title}
+            oninput={typed}
+            onkeydown={keyed}
+            onblur={settled}
             bind:this={box}
         />
     </TextBoxMenu>
@@ -57,6 +87,11 @@
         font-size: var(--fs-md);
         line-height: calc(var(--button-line) * var(--text-scale, 1));
         padding: 4px 6px;
+    }
+
+    .date:disabled {
+        color: var(--muted-txt, var(--muted));
+        cursor: not-allowed;
     }
 
     .date:focus-visible {

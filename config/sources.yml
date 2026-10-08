@@ -49,7 +49,7 @@ organisations_file: registries/organisations.yml
 resources_file: registries/resources.yml
 
 
-# Collection views: one card list per key, from one YAML file each, except the keys data, venues, pillars and domains, whose views are Data, Venues, Pillars and Domains and not a card list. The schema is the file's own `schema:` block, and the links between files are in docs/DATA-MAP.md. An entry is edited in the card's form.
+# Collection views: one card list per key, from one YAML file each, except the keys data, venues, pillars and domains, whose views are Data, Venues, Pillars and Domains and not a card list. The schema is the file's own `schema:` block, and the links between files are in docs/DATA-MAP.md. An entry is added and edited in the file, which Add and Edit in File open, and its status, deadline and date are changed on its card.
 collections:
   - { key: data,           file: "registries/data.yml" }
   - { key: venues,         file: "registries/venues.yml" }

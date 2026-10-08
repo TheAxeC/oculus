@@ -186,7 +186,6 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
     const marking = bookmarkActions({
         client,
         id: input.owner,
-        view: () => view,
         entries: () => marks.entries,
         tab
     });

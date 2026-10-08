@@ -43,8 +43,8 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
-    import Table from '$lib/ui/display/Table.svelte';
-    import { type Column, cellText } from '$lib/ui/display/table-rows';
+    import Table from '$lib/ui/display/table/Table.svelte';
+    import { type Column, cellText } from '$lib/ui/display/table/table-rows';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

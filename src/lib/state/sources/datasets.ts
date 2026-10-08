@@ -1,13 +1,11 @@
 // Layer 2, client state. Pure dataset summaries, search, tones, saved state and recovery command.
-// The Data view receives records ready to draw and keeps its search words, disabled facets and open
-// entry forms.
+// The Data view receives records ready to draw and keeps its search words and disabled facets.
 
 import { dataAccessTone } from '../shared/words/tones.ts';
 import type { Dataset, Project } from '../../data/model/index.ts';
 import { fieldItemsShape, readAs, searchRevealShape } from '../../data/shapes/shapes.ts';
-import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 
-export type DataState = OpenForms & { search: string; off: string[]; reveal?: string };
+export type DataState = { search: string; off: string[]; reveal?: string };
 
 /** Counts by access value, most frequent first and lexical inside a tie. */
 export function accessSummary(datasets: Dataset[]): string {
@@ -53,7 +51,7 @@ export function recoveryCommand(key: string): string {
     return `python3 tools/data/redownload.py ${quoted}`;
 }
 
-/** The fields a Data instance keeps beside its open forms, each read as absent when wrong. */
+/** The fields a Data instance keeps, each read as absent when wrong. */
 const dataStateShape = searchRevealShape.extend({ off: fieldItemsShape });
 
 /** Saved state of one Data instance, with defaults for malformed or absent fields. */
@@ -61,8 +59,7 @@ export function parseDataState(raw: unknown): DataState {
     const held = readAs(dataStateShape, raw);
     const state: DataState = {
         search: held?.search ?? '',
-        off: held?.off ?? [],
-        ...parseOpenForms(raw)
+        off: held?.off ?? []
     };
     if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;

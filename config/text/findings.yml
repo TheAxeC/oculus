@@ -191,6 +191,7 @@ text:
             no_waiting_on: 'waiting-on names no person or project: {0}'
             status_not_in_vocab: status {0} is not one of the status vocabulary
             schema_malformed: schema {0} is not a list of maps naming a field and a type
+            identity_empty: has no {0}
             identity_shared: two entries share the {0} {1}
             affiliation_retired: 'affiliation is read as a one-entry affiliations list; write affiliations'
             self_not_one: '{0} people entries carry self: true, and exactly one may'

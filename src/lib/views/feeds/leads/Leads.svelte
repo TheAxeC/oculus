@@ -16,13 +16,12 @@
     // Layer 3, view. Position Leads reads its socket feed, splits live from expired entries,
     // and keeps search plus the expired and run-log disclosures in this view instance's state.
     //
-    // A lead's `applied` control opens the Applications add form beside the leads, prefilled from
-    // the lead through state/feeds/lead-application.ts: the values go into that tab's form drafts,
-    // as typed values do, so they are there after a reload and the tab asks before it closes over
-    // them, and the tab's state names the lead, which the Applications view sets `applied` once the
-    // form's entry is written. Nothing is written until the reader saves the form, and a cancel
-    // writes nothing to the lead. An add form already holding typed text is asked about before the
-    // lead replaces it.
+    // Add opens the leads file with a new lead, dated today, in its unsaved text. A lead's
+    // `applied` control opens the Applications file beside the leads with an entry filled from the
+    // lead (state/feeds/lead-application.ts) in its unsaved text, and then sets the lead `applied`.
+    // A refused Add writes nothing to the lead, and a refused write of the lead leaves the entry in
+    // the text. The controls that write the leads file are disabled while a source tab holds
+    // unsaved text of it.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -31,14 +30,14 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import LeadCard from './LeadCard.svelte';
-    import AskConfirm from '../../shared/writes/AskConfirm.svelte';
-    import type { Ask } from '../../shared/writes/ask';
-    import EntryForm from '../../shared/forms/EntryForm.svelte';
+    import { addInFile, blockedBy, placeInFile } from '../../shared/forms/entry-file';
+    import { answerWords } from '../../shared/forms/answer-words';
     import Intro from '../../shared/prose/Intro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
+        APPLIED,
         declinedCount,
         leadIdents,
         leadsSearch,
@@ -51,12 +50,11 @@
         type LeadsState
     } from '$lib/state/feeds/leads';
     import { asText } from '$lib/state/forms/schema';
-    import { formFields } from '$lib/state/boards/collection';
+    import { sourceFileState } from '$lib/state/sessions/source/place';
     import {
         APPLICATIONS,
-        holdsTyped,
-        prefillFromLead,
-        type ApplicationTab
+        LEADS_FEED,
+        applicationFromLead
     } from '$lib/state/feeds/lead-application';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
@@ -65,15 +63,16 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         entities: { config },
         feeds: { feed },
-        formDrafts: { clearFormDraft, formEdits, setFormField, toggleAdd },
         layout: { openBeside },
         selectors: { collectionOf, configMap },
+        source: { unsavedFile },
         ui: { instanceState, setInstanceState },
-        writes: { addLead }
-    } = useState();
+        writes: { writeFeedField }
+    } = client;
 
     let { instance }: ViewProps = $props();
 
@@ -102,47 +101,49 @@
     const source = $derived(
         data === null || data.missing ? null : viewSourceFile('leads', configMap())
     );
+    /** Why the controls that write the leads file are disabled, '' when they are not. */
+    const blocked = $derived(
+        blockedBy(source, source !== null && unsavedFile(source.root, source.path), undefined)
+    );
     let said = $state('');
 
     function write(next: Partial<LeadsState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
 
-    /** The replace question held while the reader is asked, or null while none is. */
-    let asking: Ask | null = $state(null);
-
-    /** The Applications tab's drafts and state, which the prefill writes. */
-    const tab: ApplicationTab = {
-        formEdits,
-        clearFormDraft,
-        setFormField,
-        instanceState,
-        setInstanceState
-    };
+    /** Add opens the leads file with a new lead, dated the day of the press, in its text. */
+    async function add(): Promise<void> {
+        if (source === null || data === null) return;
+        said = await addInFile(client, source, data.schema, LEADS_FEED, {
+            date: localDate(Date.now())
+        });
+    }
 
     /**
-     * Open the Applications add form beside the leads over what one lead says. A form there that
-     * already holds typed text is asked about first, since the lead would replace it.
+     * Open Applications beside the leads with an entry filled from one lead in its unsaved text,
+     * then set the lead `applied`. A lead is named as the feed write names it, the title as the
+     * file holds it. A refused Add writes nothing to the lead.
      */
-    function toApplication(entry: LeadEntry): void {
-        const id = openBeside(APPLICATIONS);
-        if (id === '') return;
-        const fill = (): void =>
-            prefillFromLead(
-                tab,
-                id,
-                entry,
-                formFields(collectionOf(APPLICATIONS)?.schema, configMap())
-            );
-        if (!holdsTyped(tab, id)) {
-            fill();
+    async function toApplication(entry: LeadEntry): Promise<void> {
+        const file = viewSourceFile('collection', configMap(), APPLICATIONS);
+        const schema = collectionOf(APPLICATIONS)?.schema;
+        if (file === null) return;
+        const placed = await placeInFile(
+            client,
+            file,
+            schema,
+            APPLICATIONS,
+            applicationFromLead(entry),
+            (one) => openBeside('source', sourceFileState(client, one), undefined, instance.id)
+        );
+        if (!placed.placed) {
+            said = placed.sentence;
             return;
         }
-        asking = {
-            message: t('leads.action.to_application_replace'),
-            detail: asText(entry.title),
-            act: fill
-        };
+        const lead = asText(entry.title);
+        if (lead === '') return;
+        const answer = await writeFeedField(LEADS_FEED, lead, 'status', APPLIED);
+        said = answer.ok ? '' : answerWords(answer);
     }
 
     /**
@@ -162,9 +163,7 @@
             glyph="add"
             label={t('leads.add')}
             title={t('leads.add_tip')}
-            active={held.adding}
-            pressed={held.adding}
-            onclick={() => write({ adding: toggleAdd(instance.id, 'leads', held.adding) })}
+            onclick={add}
         />
         {#if source !== null}
             <SourceButton file={source} />
@@ -213,17 +212,6 @@
                 <p class="said">{said}</p>
             {/if}
 
-            {#if held.adding}
-                <EntryForm
-                    collection="leads"
-                    schema={data.schema}
-                    entry={null}
-                    onadd={addLead}
-                    onclose={() => write({ adding: false })}
-                    onsaid={(words: string) => (said = words)}
-                />
-            {/if}
-
             {#if split.live.length > 0}
                 <div class="cards">
                     {#each live as entry, at (`${asText(entry.title)}:${at}`)}
@@ -238,6 +226,7 @@
                                 cursor={cursor === leadOf(entry)}
                                 onsaid={(words: string) => (said = words)}
                                 onapply={() => toApplication(entry)}
+                                {blocked}
                             />
                         </Reveal>
                     {/each}
@@ -270,6 +259,7 @@
                                         expired
                                         onsaid={(words: string) => (said = words)}
                                         onapply={() => toApplication(entry)}
+                                        {blocked}
                                     />
                                 </Reveal>
                             {/each}
@@ -309,8 +299,6 @@
         {/if}
     </div>
 </Pane>
-
-<AskConfirm {asking} onclose={() => (asking = null)} />
 
 <style>
     /* One column the width of the pane, however long a line inside it: a grid's own column would

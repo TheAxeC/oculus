@@ -252,7 +252,7 @@ arch_color:
 data_access: { open: "#16a34a", registration: "#b45309", credentialed: "#dc2626", private: "#475569" }
 
 
-# Venue prestige tiers: the controlled vocabulary + colours for a venue's `tier:` (registries/venues.yml). A curated JUDGMENT, NOT derived from JIF (so AAAI/TSP read flagship with no JIF, and a wide JIF band isn't flattened into one label). Order = ranking (best first). The venues edit form's tier dropdown pulls its options from the ASSIGNABLE keys here; the Pillars tab colours its tier spread from these. `unrated` is the computed fallback (no venue / no tier), `assignable: false` so it's not offered as a choice.
+# Venue prestige tiers: the controlled vocabulary + colours for a venue's `tier:` (registries/venues.yml). A curated JUDGMENT, NOT derived from JIF (so AAAI/TSP read flagship with no JIF, and a wide JIF band isn't flattened into one label). Order = ranking (best first). The venues schema's `tier` takes its options from the ASSIGNABLE keys here; the Pillars tab colours its tier spread from these. `unrated` is the computed fallback (no venue / no tier), `assignable: false` so it's not offered as a choice.
 venue_categories: [journal, conference, thesis, meeting]
 venue_tiers:
   - { key: flagship,   color: "#7c3aed", label: "flagship" }

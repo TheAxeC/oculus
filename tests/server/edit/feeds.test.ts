@@ -89,6 +89,7 @@ describe('feed writes', () => {
                 found: true,
                 changed: ['file'],
                 refused: [],
+                id: 'xx-easy-problems-2.md',
                 records: [
                     {
                         file: made,

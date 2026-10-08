@@ -3,8 +3,8 @@
     // segments while retaining the full source table. The meters and the table fold as one section,
     // and the table folds again inside it; both folds stand as the pane holds them.
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Table from '$lib/ui/display/Table.svelte';
-    import type { Column } from '$lib/ui/display/table-rows';
+    import Table from '$lib/ui/display/table/Table.svelte';
+    import type { Column } from '$lib/ui/display/table/table-rows';
     import {
         partitionMeters,
         toggledHpcState,

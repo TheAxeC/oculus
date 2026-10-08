@@ -13,7 +13,6 @@
 import { z } from 'zod';
 import { ADDRESSED, HOSTED, isHubPath } from '../../data/hub-address.ts';
 import { isMap } from '../../data/helpers/guards.ts';
-import { vocabKeys } from '../../data/shapes/vocab-keys.ts';
 import {
     anyNumberShape,
     anyValueShape,
@@ -23,11 +22,9 @@ import {
     keyedRowsShape,
     listOrOneShape,
     readAs,
-    rowsShape,
     searchRevealShape
 } from '../../data/shapes/shapes.ts';
 import type { Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
-import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 import { fileBytesUrl } from '../sources/fs-transport.ts';
 import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
 import { realProjects } from '../sources/venues.ts';
@@ -73,15 +70,15 @@ export type Drawn = {
 };
 
 /**
- * What the view holds per instance: the search box, the status values in force, the statuses the
- * reader has switched off in the facet bar, and which of its entry forms are open.
+ * What the view holds per instance: the search box, the status values in force, and the statuses
+ * the reader has switched off in the facet bar.
  *
  * The two status fields are not one field. `statuses` is a selection: empty means every status, and
  * a value in it means that value alone. `hidden` is the facet bar of the acceptance list, where
  * every toggle is on until it is clicked and a click hides that status's cards. A card is drawn
  * when the selection admits it and the facet bar has not hidden it.
  */
-export type CollectionState = OpenForms & {
+export type CollectionState = {
     search: string;
     statuses: string[];
     hidden: string[];
@@ -89,28 +86,18 @@ export type CollectionState = OpenForms & {
     more: string[];
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
-    /**
-     * The title of the position lead the add form was filled from, whose status the view sets to
-     * `applied` once the form's entry is written, and forgets when the form closes.
-     */
-    lead?: string;
 };
 
 /** The state of an instance nobody has typed in yet. */
 export function emptyCollectionState(): CollectionState {
-    return { search: '', statuses: [], hidden: [], more: [], ...parseOpenForms(undefined) };
+    return { search: '', statuses: [], hidden: [], more: [] };
 }
 
 /** The fields of a saved instance, each read apart so a wrong one costs that field alone. */
 const collectionStateShape = searchRevealShape.extend({
     statuses: fieldItemsShape,
     hidden: fieldItemsShape,
-    more: fieldItemsShape,
-    lead: z
-        .string()
-        .refine((lead) => lead.trim() !== '')
-        .optional()
-        .catch(undefined)
+    more: fieldItemsShape
 });
 
 /** The saved state of one instance, with anything that is not the shape above replaced by it. */
@@ -121,11 +108,9 @@ export function parseCollectionState(raw: unknown): CollectionState {
         search: held.search,
         statuses: held.statuses,
         hidden: held.hidden,
-        more: held.more,
-        ...parseOpenForms(raw)
+        more: held.more
     };
     if (held.reveal !== undefined) state.reveal = held.reveal;
-    if (held.lead !== undefined) state.lead = held.lead;
     return state;
 }
 
@@ -134,9 +119,6 @@ const stringShape = z.string();
 
 /** The `from:` source of a schema field whose value is a key of the people registry. */
 export const PEOPLE_OPTIONS = 'people';
-
-/** The prefix of a `from:` source that names a list of config/catalogs/vocab.yml. */
-const VOCAB_PREFIX = 'vocab.';
 
 const CHIP_FIELDS = ['tags', 'related'];
 const BODY_FIELDS = ['note', 'statement'];
@@ -414,6 +396,47 @@ export function identityValue(entry: Entry, schema: SchemaField[] | undefined): 
     return held ?? (entry.title === '' ? entry.id : entry.title);
 }
 
+/**
+ * Why the controls that write an entry are disabled: the entry's identity field is empty, or two
+ * entries hold one value of it, which the server refuses every write over. `own` is whether the
+ * entry is itself one of those; `value` is the shared value, and '' for an empty one.
+ */
+export type IdentityFault = {
+    kind: 'empty' | 'shared';
+    field: string;
+    value: string;
+    own: boolean;
+};
+
+/**
+ * The faults of one file's entries, by `entry.index`. An entry with an empty identity has its own
+ * fault, and so has an entry that holds a value another entry holds, with that value. Every other
+ * entry of a file that holds a shared value has the file's fault, the first shared value, which is
+ * not its own. An entry the faults do not touch is not in the map.
+ */
+export function identityFaults(
+    entries: Entry[],
+    schema: SchemaField[] | undefined
+): Map<number, IdentityFault> {
+    const field = identityField(schema);
+    const values = entries.map((entry) => readAs(identityShape, entry.fields[field]) ?? '');
+    const held = (value: string): boolean =>
+        value !== '' && values.indexOf(value) !== values.lastIndexOf(value);
+    const shared = values.find(held);
+    const faults = new Map<number, IdentityFault>();
+    entries.forEach((entry, at) => {
+        const value = values[at];
+        if (value === '') {
+            faults.set(entry.index, { kind: 'empty', field, value: '', own: true });
+        } else if (held(value)) {
+            faults.set(entry.index, { kind: 'shared', field, value, own: true });
+        } else if (shared !== undefined) {
+            faults.set(entry.index, { kind: 'shared', field, value: shared, own: false });
+        }
+    });
+    return faults;
+}
+
 /** The identity of every entry the file holds, in the order the file holds them. */
 export function fileOrder(entries: Entry[], schema: SchemaField[] | undefined): string[] {
     return entries.map((entry) => identityValue(entry, schema));
@@ -590,128 +613,6 @@ export function groupProjects(projects: Project[], archiveDead: string[]): Cross
                         project.chips.includes('blocked')
                 )
         }));
-}
-
-/** What the entry form draws for one field. A type no control is written for is drawn as text. */
-export type FormKind =
-    'text' | 'textarea' | 'select' | 'tags' | 'date' | 'metalist' | 'checkbox' | 'raw';
-
-/** One control of the entry form, over one field of the file's own schema. */
-export type FormField = {
-    field: string;
-    label: string;
-    kind: FormKind;
-    options: string[];
-    required: boolean;
-    help?: string;
-};
-
-/**
- * The kind a schema field's type names, and text for a word no control is written for. A `records`
- * field is a nested block of records, which the form draws as the raw control and sends only once
- * it is edited.
- */
-const kindShape = z
-    .union([
-        z.literal('records').transform((): FormKind => 'raw'),
-        z.enum(['text', 'textarea', 'select', 'tags', 'date', 'metalist', 'checkbox', 'raw'])
-    ])
-    .catch('text') satisfies z.ZodType<FormKind>;
-
-/**
- * The controls the add and edit form draws, in the file's own field order. The type is the file's
- * word: the hub's schemas use text, tags, textarea, select, metalist and date, and a word none of
- * them uses is drawn as one line of text rather than left out, so a field is never uneditable.
- */
-export function formFields(
-    schema: SchemaField[] | undefined,
-    config: Record<string, unknown> = {}
-): FormField[] {
-    return (schema ?? []).map((field) => ({
-        field: field.field,
-        label: field.label ?? field.field,
-        kind: readAs(kindShape, field.type) ?? 'text',
-        options: field.options ?? vocabOptions(config, field.from),
-        required: field.required === true,
-        ...(field.help === undefined ? {} : { help: field.help })
-    }));
-}
-
-/**
- * The map-valued fields one entry carries that its schema does not name. They are offered as raw
- * controls, so a nested block such as a dataset's `retrieval:` is edited rather than left unedited
- * because the file's schema never listed it.
- */
-export function extraRawFields(
-    entry: Entry | null,
-    schema: SchemaField[] | undefined
-): FormField[] {
-    if (entry === null) return [];
-    const named = new Set((schema ?? []).map((field) => field.field));
-    const found: FormField[] = [];
-    for (const [field, value] of Object.entries(entry.fields)) {
-        if (named.has(field) || field === TITLE_FIELD) continue;
-        if (!isMap(value)) continue;
-        found.push({ field, label: field, kind: 'raw', options: [], required: false });
-    }
-    return found;
-}
-
-/**
- * What an emptied control saves as. A control the reader cleared on an entry that exists writes the
- * empty string, which is the reader saying the field has no words; a control nobody touched, and
- * every control of a form that adds an entry, writes nothing, so a new entry carries no key for
- * what was never filled in.
- */
-export function clearedValue(touched: boolean, editing: boolean): string | null {
-    return touched && editing ? '' : null;
-}
-
-/**
- * The first control whose value does not fit the kind the schema gave its field, or null when
- * every value fits. A select writes one of its own options and a date writes an ISO day; the form
- * refuses anything else before it is sent rather than leaving the file to take it.
- */
-export function refusedField(
-    fields: FormField[],
-    valueOf: (field: string) => unknown
-): string | null {
-    for (const field of fields) {
-        const value = valueOf(field.field);
-        const text = readAs(stringShape, value)?.trim() ?? '';
-        if (text === '') continue;
-        if (field.kind === 'select' && !field.options.includes(text)) return field.field;
-        if (field.kind === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(text)) return field.field;
-    }
-    return null;
-}
-
-/** One select choice: a string, or the key of a keyed row that is not marked unassignable. */
-const optionShape = z.union([
-    z.string(),
-    z
-        .object({ key: z.string(), assignable: anyValueShape })
-        .refine((row) => row.assignable !== false)
-        .transform((row) => row.key)
-]);
-
-const optionsShape = rowsShape(optionShape);
-
-/** Select choices read from one merged-config value: strings, or assignable keyed rows. */
-function vocabWords(value: unknown): string[] {
-    return readAs(optionsShape, value) ?? [];
-}
-
-/**
- * The choices of a select whose `from:` names one list of config/catalogs/vocab.yml
- * (`vocab.<key>`), and none for any other source: the registries' keys are the page's own data. A
- * vocab key held as a map (`data_access`) offers its keys, read as the schema check reads them.
- */
-function vocabOptions(config: Record<string, unknown>, from: SchemaField['from']): string[] {
-    const source = Array.isArray(from) && from.length === 1 ? from[0] : '';
-    if (!source.startsWith(VOCAB_PREFIX)) return [];
-    const held = config[source.slice(VOCAB_PREFIX.length)];
-    return isMap(held) ? vocabKeys(held) : vocabWords(held);
 }
 
 /** The project types the Funding view's synthetic card counts: the work that is still running. */

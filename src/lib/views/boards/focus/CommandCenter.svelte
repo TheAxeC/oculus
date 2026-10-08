@@ -21,7 +21,7 @@
     // state/system/machine/hpc/hpc.svelte.ts, drawn only while the cluster answers and the queue is
     // not empty, and a click on it opens the Live HPC view.
 
-    import type { TickerRow } from '$lib/ui/display/ticker-rows';
+    import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import {
         CATEGORIES,
         deadlinesByCategory,
@@ -32,7 +32,7 @@
     import { attention, refresh } from '$lib/state/feeds/feeds';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap } from '$lib/state/workbench/layout';
-    import { act, dateTail, openLine, rowMaker } from './rows';
+    import { act, dateTail, fileBlock, openLine, rowMaker } from './rows';
     import CommandCenterView from './CommandCenterView.svelte';
     import { useState } from '$lib/state/client/use';
 
@@ -127,7 +127,7 @@
 
     /** Everything the strip draws, and the line each row came from, by the row's own id. */
     const view = $derived.by(() => {
-        const { index, row, kept } = rowMaker('r');
+        const { index, row, kept } = rowMaker('r', fileBlock(client));
         const byKind = (lines: TickerItem[]): { kind: string; rows: TickerRow[] }[] =>
             runsByKind(lines).map((run) => ({
                 kind: run.kind,

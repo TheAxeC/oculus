@@ -4,8 +4,7 @@
 // The page holds the bookmarks as a query answer and marks it stale when a write from the page
 // changes them (state/sources/fs.svelte.ts). A write from anywhere else marks nothing, so without
 // this handle a bookmark added by hand, by another tool or by a second oculus page waits for the
-// next write this page happens to make, and the Files view's close of a form over a bookmark that
-// is gone waits with it.
+// next write this page happens to make.
 //
 // It is the `files` channel rather than one of its own because that channel already carries what
 // has changed on the disk under the file browser: a message names a root when a write landed under

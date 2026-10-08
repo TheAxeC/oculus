@@ -8,6 +8,7 @@
 
 import type { z } from 'zod';
 import { codeThemeIds, CODE_TOKENS } from '../../../../helpers/code-themes.ts';
+import { ENGINE_IN_HUB } from '../../../../helpers/hub-names.ts';
 import type { PortfolioConfig, RawPortfolio } from '../../../../model/index.ts';
 import { registered } from '../../../../prose/languages.ts';
 import { hubLists } from '../../../../snapshot/schema/lists.ts';
@@ -24,9 +25,6 @@ import { optionsSchema, type OptionLists } from './options.ts';
 import { settingsSchema } from './settings.ts';
 import type { NamedSchema } from '../../../../snapshot/schema/set.ts';
 import { SCHEMA_FILES } from '../../../../snapshot/schema/static.ts';
-
-/** Where the engine's config folder lies inside the hub. */
-const ENGINE_IN_HUB = 'tools/oculus/config';
 
 /** The globs of a file of the engine's config folder: in its own root and inside the hub. */
 function configRule(...globs: string[]): NamedSchema['rule'] {

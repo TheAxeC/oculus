@@ -5,7 +5,7 @@
 // The bookmarks and the notes are read here and written through this route because they are the
 // file browser's: a bookmark is a file under a root and a note is a file in a folder. What each one
 // is kept in is its own module, fs/bookmarks.ts and fs/notes.ts; a bookmark is written by the
-// collection write path instead, since it is a collection file and the entry form edits it.
+// collection write path instead, since it is a collection file and the entry writers edit it.
 //
 // A listing is one level deep and read at the call. The tree asks for a folder when the folder is
 // opened, so nothing walks a root: a home directory with a hundred thousand files under it costs
@@ -460,9 +460,9 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
 
 /**
  * GET /api/fs: one of five reads, chosen by what the query names. `bookmarks` answers the reader's
- * own bookmarks and their schema, `notes` every scratch note, `note` one note's own text, a root
- * and a path the entries of that directory (with `hidden=1` and `ignored=1` asking for what the
- * tree leaves out by default), and nothing at all the workspaces.
+ * own bookmarks, `notes` every scratch note, `note` one note's own text, a root and a path the
+ * entries of that directory (with `hidden=1` and `ignored=1` asking for what the tree leaves out by
+ * default), and nothing at all the workspaces.
  *
  * A read, so it carries no token; the origin guard in src/hooks.server.ts still refuses it to
  * another origin, since any page open in the browser can address this server. One file is read,

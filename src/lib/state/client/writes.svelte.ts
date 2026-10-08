@@ -12,6 +12,12 @@
 // beside the line the view that sent it draws. It is said once per write, after the one retry a
 // stale token gets, and a caller that says it in a notification of its own sends with `said`.
 //
+// A write over a hub file that a source tab of this page holds unsaved text of is refused before it
+// is sent, whichever control sent it, with the sentence of `app.file_unsaved` said once through
+// onUnwritten as any refusal is; the text of the tab is kept. The file is named from the write's
+// own arguments by sessions/source/write-files.ts, and whether a tab holds unsaved text of it is
+// the predicate createWrites is handed.
+//
 // `postCommand` is the other POST here: a command to the mail, calendar and account endpoints,
 // carrying the same token, answered as `Posted`. It neither retries on a 403 nor tells
 // onUnwritten; the store that sent it says its failure in its own view.
@@ -28,6 +34,12 @@ import {
 import { APP_HEADER, KIND_HEADER, appHeaderValue } from '../../data/helpers/files/apps.ts';
 import { failedAnswer, unreadableAnswer } from '../shared/answers/answers.ts';
 import { t } from '../shared/words/text.ts';
+import {
+    NO_LOOKUPS,
+    depositedFile,
+    writtenFile,
+    type FileLookups
+} from '../sessions/source/write-files.ts';
 import type {
     DeckEditAct,
     SendOptions,
@@ -101,12 +113,19 @@ export function writeTimeout(config: Record<string, unknown> | null): number | n
     return parsed.success ? parsed.data.writes.timeout_seconds * 1000 : null;
 }
 
+/** The code of the refusal a write over a file with unsaved text in a tab is answered with. */
+const FILE_UNSAVED = 'file_unsaved';
+
 /**
  * The page's writes. `settings` is the merged configuration as the page last received it, read at
- * each write, so a changed timeout applies to the next write without a reload.
+ * each write, so a changed timeout applies to the next write without a reload. `heldUnsaved` says
+ * whether a source tab of the page holds unsaved text of a file, `look` names a file a write
+ * carries only an id of.
  */
 export function createWrites(
-    settings: () => Record<string, unknown> | null = () => null
+    settings: () => Record<string, unknown> | null = () => null,
+    heldUnsaved: (file: { root: string; path: string }) => boolean = () => false,
+    look: FileLookups = NO_LOOKUPS
 ): WritesStore {
     const state: { pending: number; error: string | null } = $state({ pending: 0, error: null });
 
@@ -348,11 +367,6 @@ export function createWrites(
         return send({ kind: 'reorder', collection, order });
     }
 
-    /** Take one entry out of its collection file, by the id the reader gave it. */
-    async function deleteEntry(collection: string, id: string): Promise<WriteAnswer> {
-        return send({ kind: 'delete-entry', collection, id });
-    }
-
     /** Set or clear one field allowed by a generated feed. */
     async function writeFeedField(
         feed: string,
@@ -366,11 +380,6 @@ export function createWrites(
     /** Delete one entry from a generated feed that permits deletion. */
     async function deleteFeedEntry(feed: string, id: string): Promise<WriteAnswer> {
         return send({ kind: 'feed-delete', feed, id });
-    }
-
-    /** Add one position lead through the feed file's own schema. */
-    async function addLead(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        return send({ kind: 'lead-add', fields });
     }
 
     /** Add one paper to the Lit Watch radar. */
@@ -390,14 +399,6 @@ export function createWrites(
     /** Rename one LinkedIn idea and its same-basename sidecars as the next numbered post. */
     async function markPosted(file: string): Promise<WriteAnswer> {
         return send({ kind: 'linkedin-post', file });
-    }
-
-    /** Add one entry to a collection, rendered from that file's own schema. */
-    async function newEntry(
-        collection: string,
-        fields: Record<string, unknown>
-    ): Promise<WriteAnswer> {
-        return send({ kind: 'new-entry', collection, fields });
     }
 
     /**
@@ -532,6 +533,33 @@ export function createWrites(
         return send({ action, id, ...fields }, DEPOSIT_PATH, {}, action === 'cancel');
     }
 
+    /** The hub file a write changes, when the page can name it. */
+    function fileOf(request: unknown, path: string): { root: string; path: string } | null {
+        if (path === '/api/write') return writtenFile(request, settings(), look);
+        if (path !== DEPOSIT_PATH) return null;
+        const body = fields(request);
+        return depositedFile(
+            typeof body.action === 'string' ? body.action : '',
+            typeof body.id === 'string' ? body.id : '',
+            look
+        );
+    }
+
+    /**
+     * The refusal of a write over a file a source tab holds unsaved text of, or null when the write
+     * goes out. Nothing is posted for it; the file's name is what the sentence says.
+     */
+    function unsavedRefusal(request: unknown, path: string): Exchange | null {
+        const file = fileOf(request, path);
+        if (file === null || !heldUnsaved(file)) return null;
+        const name = file.path.slice(file.path.lastIndexOf('/') + 1);
+        const error = t('app.file_unsaved', name);
+        return {
+            answered: true,
+            answer: { ok: false, changed: [], refused: [], error, code: FILE_UNSAVED }
+        };
+    }
+
     /** One write, said to the listeners when it does not land. */
     async function send(
         request: unknown,
@@ -539,16 +567,21 @@ export function createWrites(
         options: SendOptions = {},
         limited = true
     ): Promise<WriteAnswer> {
-        return tell(await exchange(request, path, limited), options);
+        const held = unsavedRefusal(request, path);
+        return tell(held ?? (await exchange(request, path, limited)), options);
     }
 
     /**
      * One write from an app's frame. The headers name the app and the kind it sent, which the
-     * server checks against the body before any writer runs.
+     * server checks against the body before any writer runs. The file is named from the body as for
+     * any write, so an app's write over a file a tab holds unsaved text of is refused too.
      */
     async function sendFromApp(request: unknown, app: string, kind: string): Promise<WriteAnswer> {
         const headers = { [APP_HEADER]: appHeaderValue(app), [KIND_HEADER]: kind };
-        return tell(await exchange(request, '/api/write', true, headers), { said: true });
+        const held = unsavedRefusal(request, '/api/write');
+        return tell(held ?? (await exchange(request, '/api/write', true, headers)), {
+            said: true
+        });
     }
 
     /** A write whose request failed or whose answer could not be read, said as a failed read. */
@@ -652,14 +685,11 @@ export function createWrites(
         addSubtask,
         writeHost,
         reorderEntries,
-        deleteEntry,
         writeFeedField,
         deleteFeedEntry,
-        addLead,
         addRadarEntry,
         addLinkedinIdea,
         markPosted,
-        newEntry,
         writeDeckSlides,
         writeDeckEdit,
         writeRail,

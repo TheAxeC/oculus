@@ -9,8 +9,8 @@
     // line draws nothing, and a section with no group at all draws nothing either.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import Ticker from '$lib/ui/display/Ticker.svelte';
-    import type { TickerRow } from '$lib/ui/display/ticker-rows';
+    import Ticker from '$lib/ui/display/ticker/Ticker.svelte';
+    import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import {
         hasTasks,
         taskGroups,
@@ -18,7 +18,7 @@
         type TickerItem
     } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
-    import { act, openLine, rowMaker } from './rows';
+    import { act, fileBlock, openLine, rowMaker } from './rows';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -41,7 +41,7 @@
 
     /** The three groups of rows, and the line each row came from, by the row's own id. */
     const view = $derived.by(() => {
-        const { index, row, kept } = rowMaker('t');
+        const { index, row, kept } = rowMaker('t', fileBlock(client));
         const rows = (group: TickerItem[]): TickerRow[] => group.map((line) => row(line, ''));
         return {
             index,

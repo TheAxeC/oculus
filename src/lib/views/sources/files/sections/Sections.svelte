@@ -19,9 +19,9 @@
     // coming back to the file browser and the occasion a reader expects a view to be current. The
     // asks are untracked, so a read that fails again is not itself the reason for another ask.
     //
-    // What the view keeps is what its own presses are about: which section is open, which form is
-    // open, and what the last press answered. Those come in as the instance's own state and the
-    // callbacks, so this component holds nothing of its own.
+    // What the view keeps is what its own presses are about: which section is open, and what the
+    // last press answered. Those come in as the instance's own state and the callbacks, so this
+    // component holds nothing of its own.
     //
     // A note opens as a tab and is a file in a folder of its own, written by the first keystroke
     // typed into it, so adding one makes nothing here. Its three presses are this component's, and
@@ -39,7 +39,6 @@
     import type { FilesView, RowRef } from '$lib/state/sources/fs';
     import type { FollowTab } from '$lib/state/sources/explorer/sections/followed-tab';
     import type { SectionMove } from './list-drag.svelte';
-    import { fileOrder } from '$lib/state/boards/collection';
     import { noteId } from '$lib/state/life/notes';
     import { refusal } from '$lib/state/sources/explorer/acts/refusal';
     import { sectionOpen } from '$lib/state/sources/explorer/sections/section-state';
@@ -83,9 +82,10 @@
         onsection: (id: string) => void;
         /** Write part of the file browser's own state, which the Timeline's pin and lists are. */
         onpatch: (part: Partial<FilesView>) => void;
-        onaddmark: () => void;
         onopenmark: (entry: Entry) => void;
-        oneditmark: (id: string) => void;
+        /** Give one bookmark another label, and take one away. */
+        onrenamemark: (id: string, label: string) => void;
+        onremovemark: (id: string) => void;
         /** Say what a note press answered on the refusal line of the instance it was made in. */
         onnote: (owner: string, note: string) => void;
     };
@@ -101,9 +101,9 @@
         files,
         onsection,
         onpatch,
-        onaddmark,
         onopenmark,
-        oneditmark,
+        onrenamemark,
+        onremovemark,
         onnote
     }: Props = $props();
 
@@ -124,18 +124,13 @@
     }
 
     /**
-     * Put the bookmarks in the order a drag or a key left them: the file is written in the order
-     * of the identity values of the entries, and the bookmarks are read again so the rail, which
-     * reads the same file, follows. A refusal is said on the view's message line.
+     * Put the bookmarks in the order a drag or a key left them: the file is written in the order of
+     * the bookmarks' labels, which are their ids, and the bookmarks are read again so the rail,
+     * which reads the same file, follows. A refusal is said on the view's message line.
      */
     async function orderMarks(ids: string[]): Promise<void> {
         const from = owner;
-        const identities = fileOrder(marks.entries, marks.schema);
-        const byId = new Map(marks.entries.map((entry, at) => [entry.id, identities[at]]));
-        const answer = await reorderEntries(
-            'bookmarks',
-            ids.map((id) => byId.get(id) ?? id)
-        );
+        const answer = await reorderEntries('bookmarks', ids);
         bookmarksChanged();
         onnote(
             from,
@@ -206,12 +201,10 @@
             rows={marks.entries}
             error={marks.error}
             open={sectionOpen(view, 'bookmarks')}
-            editing={view.editing}
-            adding={view.form === 'bookmark' && view.editing === ''}
             ontoggle={() => onsection('bookmarks')}
-            onadd={onaddmark}
             onopen={onopenmark}
-            onedit={oneditmark}
+            onrename={onrenamemark}
+            onremove={onremovemark}
             onretry={retryBookmarks}
             move={move('bookmarks')}
             onorder={(ids: string[]) => void orderMarks(ids)}

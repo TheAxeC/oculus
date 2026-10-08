@@ -25,27 +25,23 @@
     // A folder is read one level at a time, when it is opened: a root is a whole checkout and
     // walking one to draw it would read a hundred thousand names to show twenty. Which folders are
     // open, the selected row and the rows selected with it, the filter text, which sections are
-    // closed or open, which form is open, the name being typed (`naming`) and the three listing
-    // toggles (hidden files, ignored files, nested files) live in the instance's own state, so a
-    // tree left half open is the same tree after a reload, and two file browsers on two pages are
-    // open at two different places and list the same folder each their own way. The refusal line
-    // (`note`) and the bookmark form's outcome line (`said`) are kept there too, since each answers
-    // a form that comes back. The tree is built by shared/explorer/rooted-tree.svelte.ts and drawn
-    // by shared/explorer/RootedTree.svelte, the tree a project card draws as well; the writes into
-    // the state are shared/explorer/control/tab-actions.ts's, and the bookmark's are
+    // closed or open, the name being typed (`naming`) and the three listing toggles (hidden files,
+    // ignored files, nested files) live in the instance's own state, so a tree left half open is
+    // the same tree after a reload, and two file browsers on two pages are open at two different
+    // places and list the same folder each their own way. The refusal line (`note`) is kept there
+    // too. The tree is built by shared/explorer/rooted-tree.svelte.ts and drawn by
+    // shared/explorer/RootedTree.svelte, the tree a project card draws as well; the writes into the
+    // state are shared/explorer/control/tab-actions.ts's, and the bookmark's are
     // shared/explorer/control/bookmark-actions.ts's. What stays in this view is what only a Files
-    // tab has: the workspace header, follow mode, the rooted tab, the sections and the bookmark
-    // form.
+    // tab has: the workspace header, follow mode, the rooted tab and the sections.
     //
     // The sections are files/sections/'s: the outline and clangd's two read the file tab shown last
     // on the page, the timeline the file pinned, else the one selected, else the one of the file
     // tab shown last, the bookmarks and the notes read their own files and answer a read of either
-    // that failed. What this view reads of them is what its tree and its bookmark form are built
-    // on: the roots of the workspace in force, and the bookmarks the tree draws its stars from. A
-    // bookmark is a collection entry, so it is added and edited by the form every other collection
-    // is edited by, over the schema its own file carries; the one thing this view supplies is the
-    // list of roots a bookmark may name, since that is what the workspace in force says and not
-    // what the file said when it was written.
+    // that failed. What this view reads of them is the bookmarks the tree draws its stars from. A
+    // bookmark is added by the star on a file and renamed and removed on its row in the Bookmarks
+    // section; the file `~/.oculus/bookmarks.yml` is under no served root, so no form or source tab
+    // edits it.
     //
     // The folders of the default workspace are the roots config/sources.yml lists, and those can be
     // taken out; every root the configuration names in a saved workspace is in it and cannot be,
@@ -72,7 +68,6 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import BookmarkForm from './sections/BookmarkForm.svelte';
     import Controls from './header/Controls.svelte';
     import Filters from './header/Filters.svelte';
     import MessageLine from './MessageLine.svelte';
@@ -97,12 +92,10 @@
         filesViewOf,
         followView,
         followedDirOf,
-        formsOf,
-        markSchemaFor,
         rootedView,
         type RowRef
     } from '$lib/state/sources/fs';
-    import { bookmarkById, rootKeysOf } from '$lib/state/sources/fs-transport';
+    import { rootKeysOf } from '$lib/state/sources/fs-transport';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -111,7 +104,7 @@
     const client = useState();
     const {
         explorer: { panelOpen },
-        fs: { addBookmark, addRoot, bookmarksChanged, invalidate, orderRoots },
+        fs: { addRoot, invalidate, orderRoots },
         layout: { activeInstance, currentPage, instanceLayoutState, layout },
         clangd,
         selection: { selected },
@@ -194,13 +187,11 @@
 
     /**
      * The one line the view says, laid over its foot: that the folder panel is open while it is,
-     * else the refusal, else the bookmark form's outcome, else the outcome of an ask to show a
-     * path, with what clears it.
+     * else the refusal, else the outcome of an ask to show a path, with what clears it.
      */
     const message = $derived.by(() => {
         if (panelOpen()) return { text: t('files.picker_busy'), error: false, clear: {} };
         if (view.note !== '') return { text: view.note, error: true, clear: { note: '' } };
-        if (view.said !== '') return { text: view.said, error: false, clear: { said: '' } };
         const shown = revealLine(view.revealed);
         return shown === '' ? null : { text: shown, error: false, clear: { revealed: null } };
     });
@@ -236,20 +227,6 @@
         const row = tree.rows.find((one) => one.root === at.root && one.path === at.path);
         return row?.kind === 'file' ? { root: at.root, path: at.path } : null;
     });
-
-    const editedMark = $derived(bookmarkById(tree.marks.entries, view.editing));
-    /**
-     * Whether the bookmark form is drawn. A form open over a bookmark waits for the bookmarks to be
-     * read, which after a reload arrive after the record saying the form is open. Drawn before them
-     * it would be an add form where the edit form belongs: its Save would add a new bookmark, and
-     * what was typed into the edit form would be hidden under it.
-     */
-    const markForm = $derived(
-        view.form === 'bookmark' && (view.editing === '' || editedMark !== null)
-    );
-
-    /** The bookmarks schema the form draws, its root field offering the workspace's roots. */
-    const markSchema = $derived(markSchemaFor(tree.marks.schema, current.roots));
 
     // The root and workspace line forms are not opened by any control now; a record saved with one
     // open is closed, since its typed text has no form to show it.
@@ -315,24 +292,6 @@
             ondismiss={() => patch({ outside: '' })}
         />
     {/if}
-    {#if markForm}
-        {#key `${instance.id} ${view.opening}`}
-            <BookmarkForm
-                owner={instance.id}
-                forms={formsOf(view)}
-                schema={markSchema}
-                entry={editedMark}
-                initial={{ root: current.roots[0]?.key ?? '' }}
-                onadd={addBookmark}
-                onclose={marking.settle}
-                onrenamed={marking.renameMark}
-                onsaid={(owner: string, answer: string) => {
-                    answerAt(owner, { said: answer });
-                    bookmarksChanged();
-                }}
-            />
-        {/key}
-    {/if}
     <ShowPath
         owner={instance.id}
         {view}
@@ -382,9 +341,9 @@
             files={treeSection}
             onsection={toggleSection}
             onpatch={patch}
-            onaddmark={marking.showMarkForm}
             onopenmark={(entry: Entry) => openBookmark(tree.opener, entry)}
-            oneditmark={marking.edit}
+            onrenamemark={(id: string, label: string) => void marking.rename(id, label)}
+            onremovemark={(id: string) => void marking.remove(id)}
             onnote={(owner: string, note: string) => answerAt(owner, { note })}
         />
         <MessageLine

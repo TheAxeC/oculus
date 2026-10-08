@@ -138,7 +138,7 @@ One query asked of OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC and 
 
 ## Position Leads
 
-The position leads the scout writes, the toolbar closing with the control that opens that feed file. A lead not yet applied to carries `applied`, which opens the Applications add form beside the leads, filled from the lead; saving it writes the application and then sets the lead's status to `applied`, and a cancel, or a save the file refuses, leaves the lead as it was. An open lead carries `decline`, which sets its status to `declined`, so it leaves the counts and History can undo it. The bar's toggle declined (n) shows the declined leads, counting the older `dismissed` ones with them, and its tooltip reads Show declined (n) or Hide declined (n); each closed card's reopen control puts it back on the radar.
+The position leads the scout writes, the toolbar closing with the control that opens that feed file. A lead not yet applied to carries `applied`, which opens the Applications file beside the leads with a new entry filled from the lead in the tab's unsaved text and the caret in it, and then sets the lead's status to `applied`; an entry the file cannot take (the file does not parse, or the tab's text differs from the disk's) is answered with a sentence, the file opens at the line it names, and the lead stays as it was. Add on the bar opens the leads file with a new lead dated today in its unsaved text. While a source tab holds unsaved text of the leads file, the lead cards' `applied`, `decline`, reopen and delete are disabled. An open lead carries `decline`, which sets its status to `declined`, so it leaves the counts and History can undo it. The bar's toggle declined (n) shows the declined leads, counting the older `dismissed` ones with them, and its tooltip reads Show declined (n) or Hide declined (n); each closed card's reopen control puts it back on the radar.
 
 ## Inbox
 
@@ -146,7 +146,7 @@ The reader's own mailboxes read live: one row per configured mail account with i
 
 ## LinkedIn
 
-The posts pipeline: what is posted and what is still an idea. It is drawn from a folder of one file per post rather than from one file, so the way into the text is each card's own control.
+The posts pipeline: what is posted and what is still an idea. It is drawn from a folder of one file per post rather than from one file, so the way into the text is each card's own control. Add asks for the title and the category in a prompt (the category box shows its help as the placeholder) and then opens the new idea's file in a source tab at its body.
 
 ## Sessions
 
@@ -245,6 +245,8 @@ Every page, with show, rename and close, and New page. The browser tabs of one s
 ## The control that opens a view's file
 
 A view drawn from one file of the hub carries that file's own control, last in its toolbar, which opens the file in a source tab: the three feeds above, the collection views over the YAML their `collections:` entry names, the five registry views with panes of their own (Person, Venues, Data, Pillars and Domains) over the registry file each is drawn from, and each file line of a Settings group over the file it draws. The tooltip names the path, so the file the view is drawn from is read without finding it in the file browser first.
+
+The collection views and the Venues, Data, Pillars and Domains views change entries in place or in the file. A card's status, and its deadline or date where the schema declares one, change in the card and are written at once; a status the field's options do not hold is the pick's first item, marked as not in the list. Add opens the view's file in a source tab with a new entry in its unsaved text, built from the file's `schema:`, and the caret inside it. Edit in File on a card opens the file at that entry, and an entry whose identity is empty or shared by another is opened by its position in the file. A file that does not parse, that lists its entries inline, or whose text differs from the disk's is answered with a sentence and Add inserts nothing. While a source tab holds unsaved text of the file, the card's in-place controls, pin, reorder, subtask controls and snooze are disabled with the title `{file} has unsaved text in a tab; save or revert it first`; Edit in File, Show in Files and Add stay enabled. An entry with an empty or shared identity cannot be addressed by a write, so its controls are disabled with a title naming the field and the Findings view lists it as `identity_empty` or `identity_shared`. The Focus board's buttons on a task line are disabled the same way.
 
 ## Views opened for something
 

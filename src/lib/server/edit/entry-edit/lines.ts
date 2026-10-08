@@ -5,21 +5,18 @@
 // node test is imported as `isYamlMap`.
 import { isDeepStrictEqual } from 'node:util';
 import { isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
-import type { Document, Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
+import type { Document, Node, Pair, Scalar, YAMLMap } from 'yaml';
 import type { EditResult } from '../yaml/yaml-edit.ts';
-import {
-    isBlockMap,
-    isMetalist,
-    renderBlockMap,
-    renderMetalist,
-    renderScalar
-} from '../yaml/yaml-values.ts';
+import { isBlockMap, isMetalist, renderBlockMap, renderMetalist } from '../yaml/yaml-values.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
-import { pairEnd, pairOf, rangeOf, valueEnd } from '../yaml/yaml-ranges.ts';
+import { lineAt, listOf, renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
+import {
+    pairEnd,
+    pairOf,
+    rangeOf,
+    valueEnd
+} from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
-
-/** The collection list key whose entries the writers locate and edit. */
-export const LIST = 'entries';
 
 /** The key of a checklist, on a manifest and on a collection entry alike. */
 export const SUBTASKS = 'subtasks';
@@ -95,14 +92,6 @@ export function asJs(source: string): unknown {
     }
 }
 
-/** The line a byte offset sits on, counting from zero. */
-export function lineAt(text: string, at: number): number {
-    let count = 0;
-    const to = Math.min(at, text.length);
-    for (let index = 0; index < to; index += 1) if (text[index] === '\n') count += 1;
-    return count;
-}
-
 /** The column a byte offset sits at, which is the indentation of the line it opens. */
 export function columnAt(text: string, at: number): number {
     return at - (text.lastIndexOf('\n', at - 1) + 1);
@@ -143,25 +132,6 @@ export function renderFlowList(values: string[], styles: (string | undefined)[])
 function itemStyles(node: Node): (string | undefined)[] {
     if (!isSeq(node)) return [];
     return node.items.map((item) => (isScalar(item) ? item.type : undefined));
-}
-
-/**
- * The list of records a collection file holds: `entries:` when it has one, else the first list of
- * maps that is not the file's own `schema:`. A file with neither has no entries to write.
- */
-export function listOf(root: YAMLMap): { key: string; seq: YAMLSeq } | null {
-    const direct = pairOf(root, LIST);
-    if (direct?.value != null && isSeq(direct.value)) {
-        return { key: LIST, seq: direct.value };
-    }
-    for (const item of root.items as Pair<Scalar, Node>[]) {
-        const name = (item.key as Scalar | undefined)?.value;
-        if (typeof name !== 'string' || name === 'schema') continue;
-        const value = item.value;
-        if (value === null || !isSeq(value)) continue;
-        if (value.items.length === 0 || isYamlMap(value.items[0])) return { key: name, seq: value };
-    }
-    return null;
 }
 
 /** The lines a block map occupies: its first key's line to its last value's, blanks excluded. */

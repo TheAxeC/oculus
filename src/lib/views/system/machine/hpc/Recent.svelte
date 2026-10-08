@@ -3,8 +3,8 @@
     // with an on-demand log action, drawn while the pointer is over the row or the focus is inside
     // it.
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Table from '$lib/ui/display/Table.svelte';
-    import { type Column, cellText } from '$lib/ui/display/table-rows';
+    import Table from '$lib/ui/display/table/Table.svelte';
+    import { type Column, cellText } from '$lib/ui/display/table/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { efficiencyTone, type HpcRecent } from '$lib/state/system/machine/hpc/hpc';
     import { t } from '$lib/state/shared/words/text';

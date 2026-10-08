@@ -5,8 +5,9 @@
 // reported with the file and the key, since a reference to it could mean either entry.
 
 import { basename, join } from 'node:path';
-import { LineCounter, isMap, isScalar, isSeq, parseDocument } from 'yaml';
+import { LineCounter, isSeq, parseDocument } from 'yaml';
 import type { Finding, RawPortfolio, RegistryName } from '../../model/index.ts';
+import { itemWith } from '../../helpers/files/yaml/collection-text.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { vocabKeys } from '../../shapes/vocab-keys.ts';
 import { MANIFEST, REGISTRY_SHAPES } from '../../helpers/hub-names.ts';
@@ -98,16 +99,8 @@ function lineOfItem(
     const doc = parseDocument(text, { lineCounter: lines });
     const seq = doc.get(list, true);
     if (!isSeq(seq)) return undefined;
-    let seen = 0;
-    for (const item of seq.items) {
-        if (!isMap(item)) continue;
-        const value = item.get(field, true);
-        if (!isScalar(value) || value.value !== key) continue;
-        if (seen === nth)
-            return value.range == null ? undefined : lines.linePos(value.range[0]).line;
-        seen++;
-    }
-    return undefined;
+    const found = itemWith(seq, field, key, nth);
+    return found?.held.range == null ? undefined : lines.linePos(found.held.range[0]).line;
 }
 
 /**

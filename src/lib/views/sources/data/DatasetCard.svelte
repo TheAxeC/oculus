@@ -14,7 +14,7 @@
 
 <script lang="ts">
     // Layer 3, Data view partial. One dataset card, its registry metadata, recovery, project users
-    // and edit form. The server supplies the recovery command and working directory.
+    // and Edit in File. The server supplies the recovery command and working directory.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -22,19 +22,21 @@
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
     import { editAction } from '$lib/views/shared/card/card';
-    import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
+    import { fileNameOf, openEntry } from '$lib/views/shared/forms/entry-file';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import { accessTone, type Dataset } from '$lib/state/sources/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
-    import type { Entry, Project, SchemaField } from '$lib/state/boards/collection';
+    import type { Entry, IdentityFault, Project, SchemaField } from '$lib/state/boards/collection';
+    import type { ViewSource } from '$lib/state/sessions/view-source';
     import { readOr } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         selection: { select },
         terminals: { recoverDataset, showTerminal }
-    } = useState();
+    } = client;
 
     type Props = {
         dataset: Dataset;
@@ -43,12 +45,13 @@
         projects: Project[];
         entry: Entry | null;
         schema: SchemaField[] | undefined;
-        editing: boolean;
-        onedit: () => void;
+        /** The registry file, which Edit in File opens; null when the configuration names none. */
+        file: ViewSource | null;
+        fault: IdentityFault | undefined;
         onsaid: (said: string) => void;
     };
 
-    let { dataset, cursor, projects, entry, schema, editing, onedit, onsaid }: Props = $props();
+    let { dataset, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
     let recovering = $state(false);
 
     const retrieval = $derived(
@@ -58,14 +61,18 @@
     const notes = $derived(retrieval.notes);
 
     /**
-     * The card's controls, drawn while the card is hovered or holds the focus: the edit form for a
+     * The card's controls, drawn while the card is hovered or holds the focus: Edit in File for a
      * dataset the collection file holds, and the recovery, which is not offered again while one is
      * starting.
      */
     const actions = $derived.by((): CardAction[] => {
         const rows: CardAction[] = [];
         if (entry !== null && schema !== undefined) {
-            rows.push(editAction(editing, onedit));
+            rows.push(
+                editAction(fileNameOf(file), () =>
+                    openEntry(client, file, entry, schema, fault, onsaid)
+                )
+            );
         }
         rows.push({
             id: 'recover',
@@ -161,10 +168,6 @@
                     {t('data.source')}
                 </a>
             </div>
-        {/if}
-
-        {#if editing && entry !== null}
-            <EntryForm collection="data" {schema} {entry} onclose={onedit} {onsaid} />
         {/if}
     </Card>
 </div>

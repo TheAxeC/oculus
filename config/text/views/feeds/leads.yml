@@ -3,13 +3,12 @@ text:
     leads:
         action:
             applied: applied
-            applied_tip: open the Applications add form beside the leads, filled in from this lead; saving it marks the lead applied
+            applied_tip: mark the lead applied and open Applications beside the leads with an entry filled from this lead
             decline: decline
             decline_tip: decline this lead (off the radar, kept in the file)
             delete_lead_tip: delete this lead (removes the entry)
             reopen: reopen
             reopen_tip: reopen (back to the radar)
-            to_application_replace: The Applications add form holds text you have not saved. Replace it with this lead?
         add: + add lead
         add_tip: add a position lead
         declined: declined {0}

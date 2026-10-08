@@ -97,7 +97,7 @@ digraph writes {
         "? src/lib/data/sources/config/catalog/latex-tables.ts:86" [label="src/lib/data/sources/config/catalog/latex-tables.ts:86 mapShape.safeParse("];
         "? src/lib/data/sources/config/catalogs.ts:118" [label="src/lib/data/sources/config/catalogs.ts:118 standInShape.safeParse("];
         "? src/lib/server/edit/writes/config/audit-mute.ts:65" [label="src/lib/server/edit/writes/config/audit-mute.ts:65 SIGNATURE.test("];
-        "? src/lib/server/edit/writes/entries.ts:75" [label="src/lib/server/edit/writes/entries.ts:75 ISO_DATE.test("];
+        "? src/lib/server/edit/writes/entries.ts:73" [label="src/lib/server/edit/writes/entries.ts:73 ISO_DATE.test("];
         "? src/lib/server/files/fs.ts:234" [label="src/lib/server/files/fs.ts:234 rootShape.safeParse("];
     }
     "file on disk" [shape=cylinder];
@@ -208,7 +208,7 @@ openDeck, remove"];
     "lib/server/edit/writes/config/roots.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeTextAtomic"];
     "lib/server/edit/writes/config/roots.ts" -> "lib/server/files/fs.ts" [tailport=ne, tooltip="defaultWorkspacesPath, folderToAdd, rootKey"];
     "lib/server/edit/writes/config/roots.ts" -> "lib/server/files/roots.ts" [tooltip="browserRoots"];
-    "lib/server/edit/writes/entries.ts" -> "? src/lib/server/edit/writes/entries.ts:75" [style=dashed];
+    "lib/server/edit/writes/entries.ts" -> "? src/lib/server/edit/writes/entries.ts:73" [style=dashed];
     "lib/server/edit/writes/entries.ts" -> "lib/data/snapshot/normalise.ts" [tooltip="collectionSchema"];
     "lib/server/edit/writes/entries.ts" -> "lib/server/core/changes.ts" [tooltip="plain"];
     "lib/server/edit/writes/entries.ts" -> "lib/server/core/json.ts" [tooltip="writeTextAtomic"];

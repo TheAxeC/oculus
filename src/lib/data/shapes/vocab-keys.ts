@@ -1,7 +1,7 @@
 // Layer 1, data, pure. The keys of one top-level key of config/catalogs/vocab.yml, read the one way
-// the schema checks (data/snapshot/schema/lists.ts) and the entry forms of the page
-// (state/boards/collection.ts, state/forms/schema.ts) both read them: a list gives one key for each
-// entry that has one, and a map gives its own keys.
+// the schema checks (data/snapshot/schema/lists.ts) and the manifest form of the page
+// (state/forms/schema.ts) both read them: a list gives one key for each entry that has one, and a
+// map gives its own keys.
 
 import { z } from 'zod';
 import { mapShape, readAs, readOr, rowsShape } from './shapes.ts';

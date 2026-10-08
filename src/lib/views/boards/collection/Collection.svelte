@@ -41,7 +41,7 @@
 <script lang="ts">
     // Layer 3, view. One collection file as its own tab: the file's title and intro, a search over
     // every word an entry holds and a facet bar of the statuses the file uses (both in the bar
-    // under the header), an add form over the file's own schema, and one card per entry, the
+    // under the header), an Add that opens the file with a new entry, and one card per entry, the
     // pinned ones first.
     //
     // It is registered once per collection key of config/sources.yml and reads which collection it
@@ -54,11 +54,6 @@
     // to the projects rather than a second view: funding adds the card of the projects no scheme
     // covers, and code adds what the portfolio says about its own code above the cards, then the
     // software projects of its own scan tier, which the registry file does not hold.
-    //
-    // An add form the Position Leads view opened from a lead names that lead in this instance's
-    // state, and its save goes through state/feeds/lead-application.ts: the entry, then the lead
-    // set to `applied` once the entry is written. Closing the form forgets the lead, so a cancel
-    // writes nothing to it.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -73,7 +68,7 @@
     import EntryCard from './EntryCard.svelte';
     import { taskCardActions } from './task-card';
     import AddButton from '../../shared/forms/AddButton.svelte';
-    import EntryForm from '../../shared/forms/EntryForm.svelte';
+    import { addInFile, blockedBy } from '../../shared/forms/entry-file';
     import Intro from '../../shared/prose/Intro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
@@ -83,6 +78,7 @@
         NO_FUNDING,
         applyCollectionFilters,
         fileOrder,
+        identityFaults,
         identityValue,
         movedOrder,
         offeredStatuses,
@@ -92,11 +88,6 @@
         unfundedBy,
         type CollectionState
     } from '$lib/state/boards/collection';
-    import {
-        closeAddForm,
-        leadAddFor,
-        type ApplicationTab
-    } from '$lib/state/feeds/lead-application';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/shared/words/text';
     import { statusTone } from '$lib/state/shared/words/tones';
@@ -105,14 +96,15 @@
     import { useState } from '$lib/state/client/use';
     import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
 
+    const client = useState();
     const {
         layout: { openView },
         terminals: { composeAt },
         selectors: { archiveDead, collectionOf, configMap, projects },
-        formDrafts: { clearFormDraft, formEdits, setFormField, toggleAdd, toggleEdit },
+        source: { unsavedFile },
         ui: { cardMoveRequested, instanceState, setInstanceState },
-        writes: { newEntry, reorderEntries, writeFeedField }
-    } = useState();
+        writes: { reorderEntries }
+    } = client;
 
     let { instance }: ViewProps = $props();
 
@@ -134,6 +126,10 @@
         collection === null ? null : viewSourceFile('collection', configMap(), key)
     );
 
+    /** Why a write cannot address an entry, by position, from the file's identities. */
+    const faults = $derived(identityFaults(collection?.entries ?? [], schema));
+    const unsaved = $derived(source !== null && unsavedFile(source.root, source.path));
+
     const all = $derived(projects());
     const unfunded = $derived(key === FUNDING ? unfundedBy(all, collection?.entries ?? []) : []);
 
@@ -152,20 +148,11 @@
         setInstanceState(instance.id, { ...held, ...next });
     }
 
-    /** This tab's drafts and state, as the add from a lead reads and writes them. */
-    const tab: ApplicationTab = {
-        formEdits,
-        clearFormDraft,
-        setFormField,
-        instanceState,
-        setInstanceState
-    };
-
-    /**
-     * The add write of a form opened from a position lead, or none for any other add form, which
-     * then writes through the form's own add.
-     */
-    const leadAdd = $derived(leadAddFor(tab, { newEntry, writeFeedField }, instance.id, key));
+    /** Add opens the file with a new entry in its unsaved text and the caret in it. */
+    async function add(): Promise<void> {
+        if (source === null) return;
+        said = await addInFile(client, source, schema, key);
+    }
 
     /** Hide one status's cards, or bring them back, which is what a facet toggle does. */
     function toggle(value: string): void {
@@ -215,6 +202,11 @@
     async function writeOrder(order: string[], at: number, to: number): Promise<void> {
         const moved = movedOrder(order, at, to);
         if (moved === null) return;
+        const blocked = blockedBy(source, unsaved, [...faults.values()].at(0));
+        if (blocked !== '') {
+            said = blocked;
+            return;
+        }
         const answer = await reorderEntries(key, moved);
         said = answer.ok
             ? t('editor.saved', answer.changed.join(', '))
@@ -241,11 +233,8 @@
 
 {#snippet tools()}
     <Toolbar label={t('collection.toolbar')} overflow>
-        {#if schema !== undefined}
-            <AddButton
-                open={held.adding}
-                onclick={() => write({ adding: toggleAdd(instance.id, key, held.adding) })}
-            />
+        {#if schema !== undefined && source !== null}
+            <AddButton onclick={add} />
         {/if}
         {#if source !== null}
             <SourceButton file={source} />
@@ -288,17 +277,6 @@
             <Intro html={inlineMarkdown(collection.intro)} />
         {/if}
 
-        {#if held.adding}
-            <EntryForm
-                collection={key}
-                {schema}
-                entry={null}
-                onadd={leadAdd}
-                onclose={() => closeAddForm(tab, instance.id)}
-                onsaid={(words: string) => (said = words)}
-            />
-        {/if}
-
         {#if said !== ''}
             <p class="said">{said}</p>
         {/if}
@@ -325,11 +303,8 @@
                             {schema}
                             projects={all}
                             statuses={lifecycle}
-                            editing={held.editing === entry.id}
-                            onedit={() =>
-                                write({
-                                    editing: toggleEdit(instance.id, key, held.editing, entry.id)
-                                })}
+                            file={source}
+                            fault={faults.get(entry.index)}
                             ondragfrom={(value: string) => (dragged = value)}
                             ondropon={drop}
                             onsaid={(words: string) => (said = words)}

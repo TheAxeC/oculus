@@ -20,7 +20,7 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
-    import { createListDrag, listKeys, type SectionMove } from './list-drag.svelte';
+    import { createListDrag, listKeys, type ListSectionProps } from './list-drag.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -28,21 +28,10 @@
 
     type Props = {
         rows: { id: string; title: string; modified: number }[];
-        /** What reading the notes failed with, or the empty string. */
-        error: string;
-        /** Whether the section is open. */
-        open: boolean;
-        ontoggle: () => void;
         onadd: () => void;
         onopen: (id: string) => void;
         onremove: (id: string) => void;
-        /** Ask for the notes again, which the failed line's own control offers. */
-        onretry: () => void;
-        /** What lets the head be dragged and moved by Alt+Up/Down. */
-        move?: SectionMove;
-        /** Put the notes in the order the ids name, after a drop or Alt+Up/Down on a row. */
-        onorder: (ids: string[]) => void;
-    };
+    } & ListSectionProps;
 
     let { rows, error, open, ontoggle, onadd, onopen, onremove, onretry, move, onorder }: Props =
         $props();

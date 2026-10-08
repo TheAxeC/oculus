@@ -6,7 +6,7 @@
     // A cell is the value as text unless the caller passes the `cell` snippet, which is how a
     // column of chips or of links is drawn without this component learning what either is.
 
-    import { type Column, type Sort, cellText, order } from '$lib/ui/display/table-rows';
+    import { type Column, type Sort, cellText, order } from '$lib/ui/display/table/table-rows';
     import type { Snippet } from 'svelte';
 
     type Props = {

@@ -5,6 +5,7 @@ text:
         collections: 'Collections: {0}'
         datasets: 'Datasets: {0}'
         domains: 'Domains: {0}'
+        file_unsaved: '{0} has unsaved text in a tab; save or revert it first'
         funding: 'Funding schemes: {0}'
         git: 'Workspaces with git state: {0}'
         keys:

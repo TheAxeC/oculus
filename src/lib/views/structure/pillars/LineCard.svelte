@@ -4,9 +4,10 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import RegistryCard from '$lib/views/shared/forms/RegistryCard.svelte';
+    import RegistryCard from '$lib/views/shared/forms/registry/RegistryCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import type { Entry, SchemaField } from '$lib/state/boards/collection';
+    import type { Entry, IdentityFault, SchemaField } from '$lib/state/boards/collection';
+    import type { ViewSource } from '$lib/state/sessions/view-source';
     import {
         inFlight,
         isDormant,
@@ -29,8 +30,8 @@
         entry: Entry | null;
         schema: SchemaField[] | undefined;
         muted?: boolean;
-        editing: boolean;
-        onedit: () => void;
+        file: ViewSource | null;
+        fault: IdentityFault | undefined;
         onsaid: (said: string) => void;
     };
 
@@ -43,8 +44,8 @@
         entry,
         schema,
         muted = false,
-        editing,
-        onedit,
+        file,
+        fault,
         onsaid
     }: Props = $props();
     const flight = $derived(inFlight(projects));
@@ -55,7 +56,6 @@
 
 <div class:dormant={isDormant(projects)} class:muted data-pillar={line.id}>
     <RegistryCard
-        collection="pillars"
         id={line.id}
         {cursor}
         title={line.title}
@@ -63,8 +63,8 @@
         {projects}
         {entry}
         {schema}
-        {editing}
-        {onedit}
+        {file}
+        {fault}
         {onsaid}
     >
         {#if !muted}

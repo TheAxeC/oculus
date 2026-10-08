@@ -43,24 +43,9 @@ import {
 import { createEntities, type EntitiesStore } from './entities.svelte.ts';
 import { createFeeds, type FeedsStore } from '../feeds/feeds.svelte.ts';
 import { createFiles, type FilesStore } from '../sources/files.svelte.ts';
-import {
-    addedKey,
-    createFormDrafts,
-    formKey,
-    formsKey,
-    snapshotEntries,
-    type FormDraftsStore
-} from '../forms/form-drafts.svelte.ts';
 import { cardTreePrefix } from '../sources/explorer/view/card-tree.ts';
-import { BOOKMARK_COLLECTION, createFs, type FsStore } from '../sources/fs.svelte.ts';
-import {
-    FILES_VIEW,
-    bookmarkLeft,
-    filesLineTyped,
-    filesViewOf,
-    patchedFilesView,
-    type FilesForms
-} from '../sources/fs.ts';
+import { createFs, type FsStore } from '../sources/fs.svelte.ts';
+import { filesLineTyped } from '../sources/fs.ts';
 import { createHpc, type HpcStore } from '../system/machine/hpc/hpc.svelte.ts';
 import {
     createProcesses,
@@ -202,7 +187,6 @@ export type ClientState = {
     source: SourceStore;
     /** Saving a source tab by `editor.autosave`: the editor's blur reaches it here. */
     autosave: AutosaveStore;
-    formDrafts: FormDraftsStore;
     manifestDraft: ManifestDraftStore;
     feeds: FeedsStore;
     hpc: HpcStore;
@@ -298,25 +282,29 @@ export function createClientState(
         return store;
     }
     const entities = createEntities();
-    const writes = createWrites(() => entities.config()?.config ?? null);
+    // The write path refuses a write over a file a source tab holds unsaved text of, and names a
+    // file a write carries only an id of out of the snapshot and the change log; the source store
+    // and the change log are made after it, so both are read when a write is made.
+    const writes = createWrites(
+        () => entities.config()?.config ?? null,
+        (file) => source.unsavedFile(file.root, file.path),
+        {
+            projectFolder: (id) => entities.portfolio()?.entities.projects[id]?.folder ?? null,
+            changeFile: (at) => changes.rows().find((row) => row.at === at)?.file ?? null
+        }
+    );
     const socket = createSocket(entities, writes);
     const ui = createUi(writes.writeConfigKey, desktop !== undefined);
-    const formDrafts = createFormDrafts(ui, snapshotEntries(entities.portfolio));
     // A tab's close, a pane's close and a page's close forget the state of every instance they take
-    // away, and the layout is the one store that knows an instance closed. The entry forms of an
-    // instance keep their drafts in an entry of their own beside that state, and the project cards
-    // it draws keep their file trees in records under its id, so the layout is handed a forget
-    // that takes all of them, with the entries its add forms made and the mark saying
-    // a save from one of its forms is out, and the Search store lets go of a closed tab's requests.
+    // away, and the layout is the one store that knows an instance closed. The project cards an
+    // instance draws keep their file trees in records under its id, so the layout is handed a
+    // forget that takes those too, and the Search store lets go of a closed tab's requests.
     const layout = createLayout(
         {
             ...ui,
             clearInstanceState: (id: string) => {
                 ui.clearInstanceState(id);
-                ui.clearInstanceState(formsKey(id));
-                ui.clearInstanceState(addedKey(id));
                 ui.clearInstanceStates(cardTreePrefix(id));
-                formDrafts.forgetForms(id);
                 search.forgetSearch(id);
             }
         },
@@ -383,35 +371,7 @@ export function createClientState(
         'files',
         createFiles(entities, queries, () => selectors.hubRoot())
     );
-    // The file browser's bookmark forms are the fs store's to close: it is what learns that a
-    // bookmark has left the file, and a form over one that is gone has nothing to draw and nothing
-    // to save into. Which file browsers there are, what each one has open and how one is moved are
-    // the layout's, the ui store's and the form drafts' and are handed to it here. The entities
-    // store is handed to it for the `files` channel, which is what says the bookmarks file changed
-    // on disk.
-    const fsForms = {
-        browsers: () =>
-            layout
-                .hosts()
-                .flatMap((host) => tabsOf(host.workbench.root))
-                .filter((tab) => tab.view === FILES_VIEW)
-                .map((tab) => ({
-                    id: tab.id,
-                    forms: filesViewOf(ui.instanceState(tab.id))
-                })),
-        saving: (owner: string, editing: string) =>
-            formDrafts.formsSaving(owner).includes(formKey(BOOKMARK_COLLECTION, editing)),
-        shift: (owner: string, now: FilesForms, next: FilesForms) => {
-            const left = bookmarkLeft(now, next);
-            if (left !== null && left.editing === '') {
-                formDrafts.toggleAdd(owner, BOOKMARK_COLLECTION, true);
-            } else if (left !== null) {
-                formDrafts.toggleEdit(owner, BOOKMARK_COLLECTION, left.editing, next.editing);
-            }
-            ui.setInstanceState(owner, patchedFilesView(ui.instanceState(owner), next));
-        }
-    };
-    const fs = withQueries('fs', createFs(writes, fsForms, entities, queries));
+    const fs = withQueries('fs', createFs(writes, entities, queries));
     /**
      * The roots a root key is resolved against on the page: the current workspace's roots only,
      * which are the ones the server's file route serves (`addedRoots`, server/files/fs.ts). A key
@@ -516,7 +476,6 @@ export function createClientState(
     ui.registerUnsaved(source.sourceDirty);
     ui.registerGone(source.fileGone);
     ui.registerSaveBeforeClose(autosave.saveBeforeClose);
-    ui.registerUnsaved(formDrafts.formsDirty);
     const feeds = createFeeds(entities);
     const hpc = createHpc(entities, writes);
     const processes = createProcesses(entities, {
@@ -818,7 +777,6 @@ export function createClientState(
         transcripts,
         source,
         autosave,
-        formDrafts,
         manifestDraft,
         feeds,
         hpc,

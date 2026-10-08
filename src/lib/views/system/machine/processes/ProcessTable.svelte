@@ -6,7 +6,7 @@
     // sorted body, so this draws its own bodies and takes its ordering from the primitive's
     // `order`.
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { order } from '$lib/ui/display/table-rows';
+    import { order } from '$lib/ui/display/table/table-rows';
     import { humanSize } from '$lib/state/boards/board';
     import { stamp } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';

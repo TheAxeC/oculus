@@ -14,7 +14,8 @@
     // took.
     //
     // A caller that refuses the text hands the words as `invalid`: the box carries `aria-invalid`
-    // and the words as its title.
+    // and the words as its title. A disabled box is drawn so and carries `title`, the words saying
+    // why, which `invalid` takes the place of when both are given.
     //
     // A right-click on the box opens its editing menu (TextBoxMenu.svelte), read from the box as
     // the right-click arrives; the menu is the box's own, so a menu of a row or a view around it
@@ -34,6 +35,9 @@
         onblur?: (value: string) => void;
         /** Shown and not editable, for a field a write never touches. */
         readonly?: boolean;
+        disabled?: boolean;
+        /** Why the box is disabled, already translated. */
+        title?: string;
         placeholder?: string;
         /** Drawn as dots and never offered to the browser's autofill, for a secret. */
         secret?: boolean;
@@ -54,6 +58,8 @@
         onenter,
         onblur,
         readonly = false,
+        disabled = false,
+        title,
         placeholder,
         secret = false,
         inputmode,
@@ -85,11 +91,12 @@
         autocomplete={secret ? 'off' : undefined}
         {value}
         {readonly}
+        {disabled}
         {placeholder}
         {inputmode}
         aria-label={label}
         aria-invalid={invalid === undefined ? undefined : 'true'}
-        title={invalid}
+        title={invalid ?? title}
         aria-readonly={readonly ? 'true' : undefined}
         oninput={(event) => typedInto(event, oninput)}
         onkeydown={keyed}
@@ -116,6 +123,11 @@
 
     .text::placeholder {
         color: var(--muted-txt, var(--muted));
+    }
+
+    .text:disabled {
+        color: var(--muted-txt, var(--muted));
+        cursor: not-allowed;
     }
 
     .text:focus-visible {

@@ -309,3 +309,186 @@ Cases of the brief's "Cases":
 - The server's refusal of a bookmark rename to a held label (case 22) was not run here.
 
 Reviewer usage: agent a89f8c70199b6a617, claude-opus-5-5, about 590,000 tokens (from the session's token counter), 156 tool uses (counted in the transcript file), 24 minutes (the transcript's first and last timestamps, 15:00:38 to 15:24:42 UTC).
+
+## Repair round 1, refuted
+
+On /Users/axelfaes/workspace/research-hub/.agents/worktrees/M6, base 0e9bde803. The round's delta is M6-round0/tools/oculus against the worktree's tools/oculus, plus registries/data.yml. registries/data.yml is the only hub file whose mtime falls in the round (17:39:22; every other hub file and docs/DATA-MAP.md is 15:01 to 15:56).
+
+Summary for the orchestrator: every verification command passes when rerun, and every count the report quotes matches my reruns. All 13 rulings are closed as ruled. No finding was closed by removing a check. No fix reaches past its finding, apart from three paths outside the write list, which the report names. Two small findings remain. First, the builder ran two more read-only git commands in this round, although the round brief repeats the ban; they are disclosed. Second, the report's first line calls the Leads view's mount-time "today" a change, but it is base behaviour. Two behaviour notes carry no verdict: the assumption behind `diskName`, and the server's career-file fallback.
+
+```
+Verify 1, diagrams. `npm run diagrams` writes docs/diagrams, so it was replaced by the read-only staleFiles() of utils/diagrams/diagrams.mjs:
+$ node scratchpad/m6r1/stale.mjs "$PWD"
+stale diagram files: 0
+
+Verify 1: npm run test:quick
+test:quick: 150 changed file(s), from git since HEAD
+test:quick: 76 test file(s), 10 essential
+ok      prettier (4.2 s): All matched files use Prettier code style!
+ok      ASCII gate (4.4 s)
+ok      svelte-kit sync (11.1 s)
+ok      eslint (18.0 s)
+ok      svelte-check (20.0 s): 1791475845521 COMPLETED 434 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (36.7 s): Duration  28.77s (transform 71.25s, setup 0ms, import 83.26s, tests 24.27s, environment 214ms)
+test:quick: 41.2 s (limit 45.0 s); every command passed
+exit 0
+(The report ran it with 135 given paths; this run took git's list, 150 files. Both select 76 test files.)
+
+Verify 2: npx vitest run <the 23 files of item 2> tests/routes/edit/undo/undo.test.ts tests/state/client/held-unsaved.test.ts tests/checks/source/comment-width.test.ts --testTimeout=300000
+ Test Files  26 passed (26)
+      Tests  189 passed (189)
+exit 0
+npx vitest run tests/server/edit/feeds.test.ts
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+
+Round's named files: npx vitest run tests/state/client/held-unsaved.test.ts tests/checks/source/comment-width.test.ts tests/checks/tree/duplication.test.ts --reporter=verbose
+ [pass] |unit| tests/state/client/held-unsaved.test.ts > a write over a file a source tab holds unsaved text of > posts nothing and answers the refusal, and a write over another file posts 3ms
+ [pass] |unit| tests/checks/tree/duplication.test.ts > a rule written twice > holds the lists to clones that are still shared, so a repaired copy takes its entry with it 496ms
+ [pass] |unit| tests/checks/source/comment-width.test.ts > a comment line > ends by the hundredth column everywhere under src, tests and utils 3340ms
+ Test Files  3 passed (3)
+      Tests  21 passed (21)
+exit 0
+(vitest prints a check glyph where [pass] stands.)
+
+Verify 3: grep -rn "EntryForm\|entry-form\|BookmarkForm\|form-drafts\|form-values\|open-forms\|newEntry\|deleteEntry\|addLead" src/lib/state src/lib/views
+grep exit 1 (nothing printed)
+diff -q base vs worktree: bodies.ts, undo.ts, server/edit/writes/app-gate.ts, state/system/apps/words.ts, data/helpers/files/apps.ts, config/text/views/system/history.yml, config/text/views/apps/apps.yml, docs/apps.md: diff-exit 0 each
+re-export grep over src/lib/server: exit 1 (nothing printed)
+
+Verify 4: npx tsx scratchpad/m6r/probe.ts "$PWD" (read only; no write call in it)
+tasks/tasks.yml |   - title: "" /     status: todo | caret 45,13 | 3,4 | after line 42 | ... | edits 1
+... all 13 rows identical to the first review's, each followed by "second press untouched: edits 0" with the same caret
+feeds/position-leads.yml |   - title: "" /     status: open /     date: 2026-10-08 | caret 566,13 | 50,51 | after line 563 | lead [""] | list entries | edits 1
+case3 stub ... "line":5,"column":13; case3 entryAt {"line":2,"column":12}; case6 {"code":"file_unparsed","line":4}; case10 flow full {"code":"list_inline","line":1}; case10 scalar {"code":"list_not_a_list","line":1}; case27 entries 2; case7 entryAtIndex 1 {"line":3,"column":12}; identity rule: pair+empty+two empty gives shared,shared,has no,has no; leads closed+open gives shared x2; funding key no title gives has no title
+
+Verify 5: LC_ALL=C perl ... (the spec's line) $(find src tests config -type f ! -name local.yml)
+gate exit 0 (nothing printed); ls bin: No such file or directory
+LC_ALL=C grep -n '[^ -~]' docs/DATA-MAP.md tools/oculus/docs/{window,files-and-search,views}.md tools/oculus/DESIGN.md registries/data.yml
+one line printed, registries/data.yml:595 (the name Hjortkjaer with its accented letter, base text, not line 23); the guides print nothing
+sh utils/folder-check.sh: exit 0
+wc -l: EntryCard.svelte 506, Grip.svelte 38, Leads.svelte 342, Linkedin.svelte 331, VenueCard.svelte 296, collection.ts 730, writes.svelte.ts 708, source.svelte.ts 742, write-files.ts 127, hub-names.ts 73, linkedin-idea.ts 24, server/edit/feeds.ts 714, yaml-edit.ts 867, fs.svelte.ts 826, context.ts 813; data/prose holds 10 items, views/boards/collection 7
+
+Verify 6: sh utils/unused-exports.sh compared with M6-base/unused-exports.txt
+1c1 (248 -> 246), 149c149 (lead-application.ts: NOT_APPLIED), 152,153d151, 250c248 (120 -> 117), 307c305, 316,317d313, 327d322; no added line
+
+Verify 8: node scratchpad/m6r/guard/parent.mjs child.mjs $PWD/src/desktop/output.ts <tmp>
+exit 0 null
+dropped 1
+stderr: ""
+
+Verify 9: node -e yaml parse, base copy vs worktree: "same" for all 13 hub files (data.yml 57588 ... position-leads 171467)
+git diff 0e9bde803 -U0 over the hub data folders, changed lines that are not comments: 0
+git diff 0e9bde803 -- registries/data.yml: line 23 only, "# Schema: field -> type / options / required / help. Drives the fields a new entry is built with, the editor's completion and marks, and the type check of a write and selftest; Data cards draw no in-place controls."
+
+Commands the report quotes, rerun:
+npm run test:checks -> Test Files 17 passed (17), Tests 248 passed (248), exit 0 (report: same)
+npm run lint -> exit 0 (report: same)
+Files table: wc -l of each of the 162 rows' paths from the worktree root -> no mismatch
+Item 3, identityFaults (npx tsx scratchpad/m6r1/faults.ts), titles A, A, B, B, C:
+   0:"A" shared/"A"/own=true edit=index 0 ; 1:"A" shared/"A"/own=true edit=index 1
+   2:"B" shared/"B"/own=true edit=index 2 ; 3:"B" shared/"B"/own=true edit=index 3
+   4:"C" shared/"A"/own=false edit=title="C" title "Writes are off: title "A" is empty or shared with another entry"
+ A, A, B, B, C, "": as above, plus 5:"" empty/""/own=true edit=index 5. "", "", B: two empty faults, B none. A, B, C: none.
+Item 4 and 5, npx tsx scratchpad/m6r1/names.ts (pure: diskName, writtenFile):
+rail write: {"root":"engine","path":"layout.yml"} -> {"root":"engine","path":"layout.yml"}
+undo of a config write: {"root":"hub","path":"tools/oculus/config/layout.yml"} -> {"root":"engine","path":"layout.yml"}
+host with career_file: {"root":"hub","path":"registries/career.yml"}
+host without career_file: null ; host with empty career_file: null
+rail vs hub tab: true | rail vs engine tab: true ; undo vs engine tab: true | undo vs hub tab: true
+hub registries/career.yml vs engine tab: false
+(unsavedFile, source.svelte.ts:224-232, read: both the asked file and each dirty draft's diskFileOf go through diskName before the compare.)
+Comment width, scratchpad/m6r1/wrap2.py (the first review's measure, made to compare against the base copy instead of running git):
+short lines: 8 files compared: 111. All 8 hits are in table/table-rows.ts (moved byte-identical, diff exit 0) and ticker/ticker-rows.ts lines 5, 6, 16, 21 and 22 (base text; that file's only change is lines 28-36). No paragraph the step edited has a short line.
+git status --short: 156 lines before and after these runs, identical (no file changed by the review)
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1: holds. The probe gives the 13 rows and the fixture cases unchanged after the round's rewraps of collection-text.ts. The re-export grep prints nothing. G56's and G8's tests pass in the verify 2 run.
+- 2: holds. Edit in File's target now follows `identityFaults`: an entry holding any shared value has `own: true` and opens by `entry.index` (entry-file.ts:119-121); the faults run is above.
+- 3: holds by reading. Grip.svelte:14-24 draws the disabled grip with the `blocked` words as its title, sets the grab cursor only under `.grip:not(.off)`, and calls `onpress` only when `blocked === ''`. Seeing it drawn is the look on TEST.
+- 3a: holds. `sendFromApp` (writes.svelte.ts:579-585) runs `unsavedRefusal` before it posts, and held-unsaved.test.ts:56-64 covers the app path. An app body carries `kind` (app-gate.ts:121-122 refuses one whose header kind differs), so `writtenFile` names its file. Report judgment 7 lists the kinds left unnamed: the app store write, `host` without `career_file`, and the file-creating kinds.
+- 4: holds. The Add, Edit in File and identity-fault parts are as in item 2.
+- 5.1: holds. The new lead's date is `localDate(Date.now())` inside `add()` (Leads.svelte:115-120), and the blocked words come from `blockedBy` (Leads.svelte:105-107).
+- 5.2: holds. `ideaStub` and `IDEA_BODY_LINE` come from data/prose/linkedin-idea.ts. The server writes `ideaStub` (feeds.ts:251), and the view opens `IDEA_BODY_LINE`, which is 9 (7 front-matter lines plus 2). G8's LinkedIn test passes.
+- 5.3: holds (unchanged in the round; first review's evidence stands).
+- 6: holds. The verify 3 grep and diffs are clean, and unused-exports adds no line.
+- 7: holds. DESIGN.md:553 and docs/window.md:66 now say that Add puts the entry in a tab and Edit in File puts no text, and that a write from any view or from an app is refused. registries/data.yml:23 follows ruling 10, and its parse is unchanged. The other documents are as the first review judged them; none of them changed in the round.
+- 8: holds (identity rule rows above; G14 passes in verify 2).
+- 9: holds (guard run above; the harness is unchanged in the round apart from its head-comment rewrap).
+
+Cases:
+
+- 1: met at unit level (tasks row). The tab, autosave and Findings parts are not verifiable here; the look on TEST settles them.
+- 2: met (13 probe rows).
+- 3: met (caret 5,13; entryAt 2,12).
+- 4: met.
+- 5: met.
+- 6: met (file_unparsed at line 4).
+- 7: met at unit level. The case's fixture passes, and two different shared values now open by position (faults run). The disabled cards are a look.
+- 8: met at unit level (second press 0 edits).
+- 9: met at unit level for the write path. A view write and an app write over the held file post nothing (held-unsaved.test.ts). The disabled controls, the grip included, and Alt+Up are not verifiable here; the look settles them.
+- 10: met.
+- 11, 12, 13, 14, 15, 16, 17, 18: not verifiable here (page behaviour); the look settles them.
+- 19: met for the stubs (first review's c19 run; unchanged code). The History record is a look.
+- 20, 21, 22, 23, 24, 25, 26: not verifiable here; the look settles them. 21's open line is now `IDEA_BODY_LINE` = 9 by the i9 reading above.
+- 27: met (caret 5,11, two entries).
+- 28: met (first review's run; collection-text.ts changed only in comment wrap this round).
+- 29: not verifiable here.
+- 30: met (first review's run; unchanged code).
+- 31: met for the guard run and the harness reading. G48's titles and `pgrep -f app-harness` are the orchestrator's at landing.
+
+Rulings 1 to 13, each against the delta:
+
+1. Closed. `sendFromApp` runs the same refusal. The test gains the app path at held-unsaved.test.ts:56-64, and the report quotes its failure before the fix (`expected [ { kind: 'entry', ...(3) } ] to deeply equal []` at :59:24). I did not rerun that failure; see "Declined to judge". The report's judgment 7 and item 1 list the 15 app kinds. They match OPEN_WRITES (apps.ts:104-120).
+2. Closed by reading (Grip.svelte). The look confirms it.
+3. Closed. The doc comment at collection.ts:411-416 states what the code does. Over A, A, B, B, C, each of A, A, B, B gets its own `shared` fault with `own: true`, so Edit in File opens it by position and its title names its own value. C keeps the file-level fault (`value: "A"`, `own: false`), so Edit in File opens it by `title=C`, which is unique and therefore correct. Its disabled title reads `title "A" is empty or shared with another entry`. That names A, not C, which is the "file-level fault as now" the ruling keeps.
+4. Closed. `diskName` is applied to both sides inside `unsavedFile`, and every caller goes through that function: `unsavedRefusal` through `heldUnsaved` (context.ts:290), and EntryCard, VenueCard, Collection, Leads and rows.ts:81 directly. `write-files.ts` only names a file and compares nothing. No raw comparison of a write's file against a tab remains (`grep -rn "heldUnsaved\|unsavedFile" src` lists these callers and nothing else). Both directions are shown in the names run.
+5. Closed. `CAREER_FILE` is gone from write-files.ts, and `host` without the key answers null. See Behaviour 2 for what the server does in that case.
+6. Closed (`blockedBy` at Leads.svelte:106; no `lastIndexOf` left there).
+7. Closed (`t('venues.deadline')`, an existing key at venues.yml:10 that Ribbon.svelte:103 also reads).
+8. Closed for the new lead's date. Judgment call 11 (point e): the mount-time `today` that feeds `splitLeads` is base code (M6-base Leads.svelte:80 and :89 hold the same two lines). Ruling 8 names only the date of a new lead, and the brief asks nothing about the split. Nothing more is owed.
+9. Closed. The one constant is in data/prose. The views row of `boundaries.test.ts` gains `data/prose/linkedin-idea`, an allow-list edit the report lists with its before and after.
+10. Closed (texts above).
+11. Closed. The four named paragraphs are rewrapped. Point (f): I compared every other rewrapped paragraph of the round with its base text. output.ts, collection-text.ts and linkedin-idea.ts are new. The other files are yaml-ranges.ts (layer line edited), data/sources/feeds.ts, server/edit/feeds.ts (two paragraphs), writes/entries.ts, server/files/fs.ts, files-view.ts, fs.svelte.ts, reveal.svelte.ts (from Ticker.svelte, edited), Select.svelte, AddButton.svelte, RegistryHead.svelte and app-harness.ts. In every one of them the step changed the words of that paragraph, so each rewrap is a whole-paragraph rewrap of a comment the step edited. The measure finds no short line left in an edited paragraph.
+12. Closed. The report's reason now rests on the brief's naming of folders and states the counts: 8 items in ui/display now, 9 without table/, 10 at base.
+13. Closed. The first line states the end state. All 162 rows of the Files table match `wc -l`. record.ts, hub-names.ts, engine.ts, linkedin-idea.ts and Grip.svelte are listed outside the write list with reasons. The `state/client` premise is listed with its grep. The git commands are disclosed. One correction remains, under Proof.
+
+### 1. Spec
+
+None.
+
+### 2. Proof
+
+- M6-report.md, first line: "Two changes go beyond the brief's text and are checked by reading only: the Focus board sends a funding subtask with its collection (Judgment calls 9), and the Leads view still reads "today" once at mount for the live and expired split (Judgment calls 11)". What is wrong: the second item is no change. The base copy's Leads.svelte holds `const today = localDate(Date.now())` at :80 and passes it to `splitLeads` at :89, the same as the worktree's :79 and :88. Failure scenario: a reader of the first line looks for a change to the split in the diff and finds none, or takes the split as M6's to fix. Verdict: none.
+
+### 3. Standards
+
+- M6-report.md, "Wrong or impossible in the brief" 5: "in round 1 one `git -C . diff --stat --name-only` and one `git status` with its output discarded". What is wrong: spec.md, "Where you work", says a builder runs no git command, read-only ones included, and the round brief repeats it in its first paragraph ("no git command of any kind, read-only ones included"). Two more ran in this round, after the first review had already raised the first one. Both were read only, and `git status --short` shows no effect of them. The report also files the breach under "Wrong or impossible in the brief", but the brief is not wrong there. Failure scenario: none to the tree; the rule exists so the diff the orchestrator reads is the builder's file work alone. Verdict: none on an item; the orchestrator decides.
+
+### 4. Behaviour
+
+- data/helpers/hub-names.ts:21-33: "export const ENGINE_IN_HUB = 'tools/oculus/config'; ... both are named under `engine`, so two names of one file compare equal". What is wrong: by reading (not run), the mapping holds only while the engine that serves `engine` is the hub's own tools/oculus. When oculus runs from a worktree (an .agents/worktrees/<step>/tools/oculus server whose `hub` root is the main checkout), `hub:tools/oculus/config/layout.yml` is the main checkout's file and `engine:layout.yml` is the worktree's. `diskName` makes them one, so a dirty tab of one refuses a write to the other. The result is a refusal too many, never a lost edit. Ruling 4 states the same-file premise, and engine.ts already built its schema globs on the same constant, so this is a limit of the ruling's premise, not of the build. The server knows both real paths (`personalRoots`, DESIGN.md:552), which is what would settle it. Failure scenario: on a scratch oculus from a worktree, a Settings tab of the hub copy of layout.yml with unsaved text makes a rail reorder answer "layout.yml has unsaved text in a tab". Verdict: none.
+- state/sessions/source/write-files.ts:80-81: "case 'host': return inHub(text(merged.career_file));". What is wrong (point c): the tracked config/sources.yml:82 carries `career_file: registries/career.yml`, and options.yml:1218-1222 gives the same default. The server still falls back to `registries/career.yml` when the key is not text (server/edit/writes/subtasks.ts:174 `z.string().catch('registries/career.yml')`, and data/index.ts:155 `path('career_file', CAREER_FILE)`). So on a merged config without the key, the page names no file while the server writes registries/career.yml, and a tab of that file with unsaved text is not protected. Ruling 5 chose "not resolvable" for that case. The two server fallbacks are base code outside the step, and they are the place a fix would go. Failure scenario: a local.yml that sets `career_file:` to empty, then a host status move from the Focus board while registries/career.yml is unsaved in a tab; the write is sent, and Save meets D28's conflict. Verdict: none.
+
+### Declined to judge
+
+- `npm run diagrams` was not run, because it writes docs/diagrams. The read-only `staleFiles()` comparison prints 0 stale files.
+- held-unsaved.test.ts's failure on the tree before the fix (ruling 1) was not rerun. M6-round0 has no node_modules, and running there would write into it. The report quotes the run. Reading the round-0 `sendFromApp` (it called `exchange` with no refusal) agrees that the app branch's `expect(posted).toEqual([])` fails on it.
+- The `unsavedFile` half of the report's item 4 run (a temporary vitest case over the store) was checked by reading source.svelte.ts:224-232 together with the pure naming run above. I did not run a store over drafts, since that needs a test file in the worktree.
+- G48's `npx vitest run tests/server/desktop/start.test.ts` and `pgrep -f app-harness` after a killed run start Electron. They are the orchestrator's at landing.
+- Every page-only behaviour is the look on TEST, run on a workbench page named TEST: the disabled grip (half opacity, its title, no drag on a Tasks card after Add), the disabled title on card C of a file with titles A, A, B, B, C, the Venues deadline label, the Leads Add date, and LinkedIn opening at line 9. Cases 9 (page part), 11-18, 20-26 and 29 are the look too.
+- M6-base holds education/courses/bioinformatics/"HC 10 (Axel) ... .docx", which the worktree lacks. `git diff 0e9bde803 --stat -- education` shows only education.yml, so this is an artifact of how the base copy was made, not a change of the step.
+
+Reviewer usage: agent id not visible to this agent, claude-opus-5-5, about 296,000 tokens (from the session's token counter), 53 tool uses, about 17 minutes (18:04 to 18:21 local).
+
+## Closed
+
+- The 13 findings of the first run: closed in repair round 1 (`agents/briefs/M6-round1.md`), each confirmed closed by the review over round 1.
+- Over round 1, Proof (the report's first line counts Leads' mount-time `today` as a change): closed without code; the booking states that the line is base code.
+- Over round 1, Standards (two read-only git commands in round 1): closed without code; disclosed in the report and named in the booking.
+- Over round 1, Behaviour 2 (the page names no career file when the config names none, while the server writes `registries/career.yml`): fixed at landing; `CAREER_FILE` in `data/helpers/hub-names.ts` is read by `write-files.ts`, `server/edit/writes/subtasks.ts` and `data/index.ts`.
+- Over round 1, Behaviour 1 (`diskName` takes an engine served from outside the hub as the hub's copy): folded into D39's Step 0 in `plan.md`, where one file is decided by the roots' real folders.

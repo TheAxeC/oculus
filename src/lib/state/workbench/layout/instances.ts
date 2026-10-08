@@ -312,8 +312,8 @@ export function createInstances(
     }
 
     /**
-     * Forget what closed tabs held: a source draft, manifest edits and entry form drafts all live
-     * under the instance id, and the forget the store is handed takes every one of them.
+     * Forget what closed tabs held: a source draft and the manifest edits live under the instance
+     * id, and the forget the store is handed takes every one of them.
      */
     function forgetTabs(tabs: readonly Instance[]): void {
         for (const tab of tabs) access.ui.clearInstanceState(tab.id);

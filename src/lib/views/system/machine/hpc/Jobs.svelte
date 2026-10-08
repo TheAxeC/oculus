@@ -7,8 +7,8 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Meter from '$lib/ui/display/Meter.svelte';
-    import Table from '$lib/ui/display/Table.svelte';
-    import { type Column, cellText } from '$lib/ui/display/table-rows';
+    import Table from '$lib/ui/display/table/Table.svelte';
+    import { type Column, cellText } from '$lib/ui/display/table/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
         startLabel,

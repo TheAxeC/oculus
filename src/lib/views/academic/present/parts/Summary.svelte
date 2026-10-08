@@ -2,13 +2,14 @@
     // Layer 3, Present partial. A cross-project summary slide: one row per project, the domain's
     // label and hue as the field and the dot beside it, and the foot line under the table.
     //
-    // The table is ui/display/Table.svelte. Every cell but the field is words, and the field is the
-    // one the `cell` snippet is for, so the slide describes its four columns and draws nothing of a
-    // table itself. The rows are the deck's own order and are not sortable: a summary is written as
-    // a sequence, and a reader who sorted it would lose the sequence its author chose.
+    // The table is ui/display/table/Table.svelte. Every cell but the field is words, and the field
+    // is the one the `cell` snippet is for, so the slide describes its four columns and draws
+    // nothing of a table itself. The rows are the deck's own order and are not sortable: a summary
+    // is written as a sequence, and a reader who sorted it would lose the sequence its author
+    // chose.
 
-    import Table from '$lib/ui/display/Table.svelte';
-    import type { Column } from '$lib/ui/display/table-rows';
+    import Table from '$lib/ui/display/table/Table.svelte';
+    import type { Column } from '$lib/ui/display/table/table-rows';
     import { t } from '$lib/state/shared/words/text';
     import Dot from './Dot.svelte';
     import Words from './Words.svelte';

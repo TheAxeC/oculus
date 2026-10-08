@@ -2,43 +2,36 @@
 text:
     collection:
         add: + add
-        add_tip: add a new entry
+        add_tip: Add an entry in the file
         coverage: Code coverage
         coverage_anon: review-anon
         coverage_deposited: deposited
         coverage_none: no deposit
-        delete_glyph: cross
-        edit_delete: Edit / Delete
         edit_glyph: edit
+        edit_in_file: Edit in File
+        edit_in_file_title: Open {0} at this entry
         empty: No entries yet - add some to the YAML.
+        entry_gone: '{0} is no longer in {1}'
+        file_unparsed: '{0} does not parse: {1}'
+        file_unsaved: '{0} has unsaved text in a tab; save or revert it first'
         filters: Collection filters
         folder_glyph: folder
-        form_add_title: New entry
-        form_bad_value: '{0}: that value does not fit the field'
         form_cancel: Cancel
-        form_delete: Delete
-        form_delete_confirm: Delete this entry from the file?
-        form_edit_title: Edit entry
-        form_needs: '{0} is what the entry is found by; it cannot be empty.'
-        form_none: none
-        form_raw_invalid: Raw fields must be valid JSON maps whose values are strings, numbers, booleans or null.
-        form_save: Save
         fundstmt_tip: verbatim funder acknowledgment - paste into a manuscript's Funding section
         grip_glyph: grip
+        identity_unusable: 'Writes are off: {0} "{1}" is empty or shared with another entry'
         link_glyph: link
+        line: line {0}
+        list_inline: '{0} lists its entries inline; add the entry in the file'
+        list_not_a_list: '{1} in {0} is not a list; add the entry in the file'
         open_person: Open this person as their own tab
         person_glyph: collab
-        meta_add: + add row
-        meta_label: Label
-        meta_remove: Remove row
-        meta_value: Value
         no_funding: No funding
         no_funding_sub: Active and manuscript projects with no scheme attached.
         pin_glyph: pin
         pin_to_top: Pin to Top
         related: Named by
         reorder_hint: drag to reorder
-        save_glyph: check
         search: Search {0} ...
         show_in_files: Show in Files
         show_in_files_tip: select {0} in the Files view
@@ -49,7 +42,7 @@ text:
         start_agent: Start Agent
         start_agent_tip: Open the composer in this task's folder, seeded with the task
         status_facet: Status
-        tags_hint: comma separated
+        stub_unparsed: '{0} would not parse with the new entry in it; add the entry in the file'
         toolbar: Collection controls
         unpin: Unpin
     views:

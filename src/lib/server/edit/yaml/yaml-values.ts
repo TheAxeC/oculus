@@ -6,15 +6,17 @@
 // style, a map as indented block lines. They know nothing of where the text goes; yaml-edit.ts
 // locates the bytes and the entry writers (lines.ts, render.ts) place the lines.
 
-import { isScalar, isSeq, stringify } from 'yaml';
+import { isScalar, isSeq } from 'yaml';
 import type { Node } from 'yaml';
+import { DEFAULT_INDENT } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
+import {
+    renderScalar,
+    type ScalarFieldValue
+} from '../../../data/helpers/files/yaml/collection-text.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 
 /** One row of a metalist: a flat map whose keys and values are strings. */
 export type FlatStringMap = Record<string, string>;
-
-/** A scalar accepted inside a raw field's map. */
-export type ScalarFieldValue = string | number | boolean | null;
 
 /** One value inside a block: a scalar, a list of values, or a map of them, at any depth. */
 export type BlockValue = ScalarFieldValue | BlockValue[] | BlockMap;
@@ -27,9 +29,6 @@ export type BlockMap = { [key: string]: BlockValue };
 
 /** What a field may be set to. A raw map is a block map; null clears the field. */
 export type FieldValue = ScalarFieldValue | string[] | FlatStringMap[] | BlockMap;
-
-/** The indentation a nested map is written at when the file holds no other one to copy. */
-export const DEFAULT_INDENT = 2;
 
 /** Whether a value is a scalar a block may hold. */
 function isBlockScalar(value: unknown): value is ScalarFieldValue {
@@ -59,23 +58,6 @@ export function isBlockMap(value: unknown): value is BlockMap {
 /** Whether a non-empty list is the metalist shape rather than a list of strings. */
 export function isMetalist(value: Exclude<FieldValue, null>): value is FlatStringMap[] {
     return Array.isArray(value) && value.length > 0 && isMap(value[0]);
-}
-
-/** One scalar in YAML, on one line. `style` keeps the quoting the file already had. */
-export function renderScalar(value: ScalarFieldValue, style?: string): string {
-    if (typeof value !== 'string') return String(value);
-    // A single-quoted scalar carries no escape, so a value with a newline in it is written double
-    // quoted whatever the old style was: that is the one quoting that stays on one line.
-    const wanted = value.includes('\n')
-        ? 'QUOTE_DOUBLE'
-        : style === 'QUOTE_DOUBLE' || style === 'QUOTE_SINGLE'
-          ? style
-          : null;
-    const text =
-        wanted === null
-            ? stringify(value, { lineWidth: 0 })
-            : stringify(value, { lineWidth: 0, defaultStringType: wanted });
-    return text.replace(/\n+$/, '');
 }
 
 /** One key and its value as block lines, the key on the first of them. */

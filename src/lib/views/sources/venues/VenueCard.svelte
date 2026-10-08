@@ -1,5 +1,6 @@
 <script lang="ts">
-    // Layer 3, Venues view partial. One catalogue venue, its metadata, project users and edit form.
+    // Layer 3, Venues view partial. One catalogue venue, its metadata, project users, its deadline
+    // changed in place and Edit in File.
     // The project list is already restricted to real users, and concentration arrives as a flag.
     //
     // A `link` is told a path of the hub from an address by the rule the collection cards use
@@ -15,24 +16,29 @@
     import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
     import { editAction } from '$lib/views/shared/card/card';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
-    import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
+    import InPlace from '$lib/views/shared/forms/InPlace.svelte';
+    import { blockedBy, fileNameOf, openEntry } from '$lib/views/shared/forms/entry-file';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
         groupProjects,
         hrefOf,
         hubPathsOf,
         type Entry,
+        type IdentityFault,
         type SchemaField
     } from '$lib/state/boards/collection';
+    import type { ViewSource } from '$lib/state/sessions/view-source';
     import { t } from '$lib/state/shared/words/text';
     import { freeTone, quartileTone, type Project, type Venue } from '$lib/state/sources/venues';
     import { themeWordLabel, type ThemeWordLabels } from '$lib/state/shared/words/themes';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         layout: { showInFiles },
-        selectors: { archiveDead }
-    } = useState();
+        selectors: { archiveDead },
+        source: { unsavedFile }
+    } = client;
 
     type Props = {
         venue: Venue;
@@ -44,8 +50,9 @@
         labels: ThemeWordLabels;
         entry: Entry | null;
         schema: SchemaField[] | undefined;
-        editing: boolean;
-        onedit: () => void;
+        /** The registry file, which Edit in File opens; null when the configuration names none. */
+        file: ViewSource | null;
+        fault: IdentityFault | undefined;
         onsaid: (said: string) => void;
     };
 
@@ -57,8 +64,8 @@
         labels,
         entry,
         schema,
-        editing,
-        onedit,
+        file,
+        fault,
         onsaid
     }: Props = $props();
 
@@ -68,7 +75,7 @@
 
     /**
      * The card's controls, drawn while the card is hovered or holds the focus: Show in Files for a
-     * link that is a hub path, and the edit form for a venue the collection file holds.
+     * link that is a hub path, and Edit in File for a venue the collection file holds.
      */
     const actions = $derived.by((): CardAction[] => {
         const rows: CardAction[] = [];
@@ -85,10 +92,20 @@
             });
         }
         if (entry !== null && schema !== undefined) {
-            rows.push(editAction(editing, onedit));
+            rows.push(
+                editAction(fileNameOf(file), () =>
+                    openEntry(client, file, entry, schema, fault, onsaid)
+                )
+            );
         }
         return rows;
     });
+    /** Why the deadline cannot be written, or '' when it can. */
+    const blocked = $derived(
+        blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)
+    );
+    const deadline = $derived(schema?.find((one) => one.field === 'deadline'));
+
     /** One item of the card's metadata line. */
     type MetaItem = {
         label: string;
@@ -215,8 +232,11 @@
             </div>
         {/if}
 
-        {#if editing && entry !== null}
-            <EntryForm collection="venues" {schema} {entry} onclose={onedit} {onsaid} />
+        {#if entry?.fields.deadline !== undefined}
+            <div class="deadline">
+                <span class="label">{deadline?.label ?? t('venues.deadline')}</span>
+                <InPlace field="deadline" collection="venues" {entry} {schema} {blocked} {onsaid} />
+            </div>
         {/if}
     </Card>
 </div>
@@ -231,6 +251,7 @@
 
     .meta,
     .users,
+    .deadline,
     .themes {
         display: flex;
         flex-wrap: wrap;
@@ -240,13 +261,15 @@
 
     .meta,
     .users,
+    .deadline,
     .themes,
     .wants {
         margin-top: 8px;
     }
 
     .meta,
-    .users {
+    .users,
+    .deadline {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
     }

@@ -9,18 +9,19 @@
 // A field's value is checked against the type its own schema declares before anything is written: a
 // select takes one of its options, a date one ISO day, a checkbox a boolean, and a text field one
 // line of text. A value that does not fit is refused with the reason, never coerced into something
-// the file did not mean, and the other fields of the same request are written: the form sends every
-// field of the entry in one call, so one bad value holds back itself and nothing else.
+// the file did not mean, and the other fields of the same request are written: a request may set
+// several fields of the entry in one call, so one bad value holds back itself and nothing else.
 //
 // server/edit/writes.ts is the route and re-exports the public half of this file.
 //
 // A write answers with the id the file gives the entry after the write (`WriteOutcome.id`, set by
 // `writeEntry` and `createEntry` from their own `entryId`, carried in the endpoint's JSON and read
-// into `WriteAnswer`), so a page holding a form over that entry is told where the entry now is
-// rather than reading the file's id rule a second time.
+// into `WriteAnswer`), so the page is told where the entry now is after a rename rather than
+// reading the file's id rule a second time.
 
 import { z } from 'zod';
 import { ISO_DATE } from '../../../data/helpers/dates.ts';
+import { KEYED_FIELDS, LIST } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { byKey, scalar } from '../../../data/helpers/guards.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
@@ -49,9 +50,6 @@ import type { FieldValue } from '../yaml/yaml-values.ts';
 import type { PortfolioConfig, SchemaField } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 
-/** Registries whose entry key is not the first field of their collection schema. */
-const REGISTRY_IDENTITY_FIELDS: Record<string, string> = { venues: 'id' };
-
 /** One edit put on disk the way writeManifest does it: only when the edit changed something. */
 export function saved(file: string, source: string, edit: EditResult): WriteOutcome {
     if (edit.changed.length > 0 && edit.text !== source) writeTextAtomic(file, edit.text);
@@ -60,9 +58,9 @@ export function saved(file: string, source: string, edit: EditResult): WriteOutc
 
 /**
  * Why a value does not fit the type its schema field declares, or the empty string when it does.
- * The five types a form control writes are checked; a `tags`, `metalist` or `raw` field carries a
- * shape rather than a value and is left to yaml-edit's own vocabulary. An empty value clears a
- * field, whatever its type, so it is never refused here.
+ * The five types a control writes are checked; a `tags`, `metalist` or `raw` field carries a shape
+ * rather than a value and is left to yaml-edit's own vocabulary. An empty value clears a field,
+ * whatever its type, so it is never refused here.
  */
 function typeRefusal(field: SchemaField, value: unknown): string {
     if (value === null || value === undefined || value === '') return '';
@@ -137,9 +135,6 @@ function normaliseMetalists(
         ])
     );
 }
-
-/** The key a collection file with no list yet is given its first entry under. */
-const FIRST_LIST = 'entries';
 
 /**
  * The id the reader gives the entry one identity value names, which is what every write addresses
@@ -229,7 +224,7 @@ export function writeEntry(
             };
         }
     }
-    const registryField = byKey(REGISTRY_IDENTITY_FIELDS, collection);
+    const registryField = byKey(KEYED_FIELDS, collection);
     if (registryField !== undefined && registryField in wanted) {
         // The registry keys its entities by this field, so an edit may neither clear it nor move
         // the entry onto another entry's value: normalise would then keep one of the two.
@@ -369,7 +364,7 @@ export function createEntry(
     if (shared !== null) return shared;
     const typed = typeRefusals(held.schema, fields);
     const wanted = fitting(fields, typed);
-    const registryField = byKey(REGISTRY_IDENTITY_FIELDS, collection);
+    const registryField = byKey(KEYED_FIELDS, collection);
     const registryRaw = registryField === undefined ? undefined : wanted[registryField];
     const registryValue = typeof registryRaw === 'string' ? registryRaw.trim() : '';
     if (registryField !== undefined && registryValue === '') {
@@ -446,7 +441,7 @@ export function createEntry(
     // A file with no list yet is given one with this entry under it; every later add appends.
     const edit =
         held.list === ''
-            ? startEntries(held.source, FIRST_LIST, block)
+            ? startEntries(held.source, LIST, block)
             : appendEntry(held.source, held.list, block);
     const out = saved(held.file, held.source, edit);
     const records: ChangeRecord[] =

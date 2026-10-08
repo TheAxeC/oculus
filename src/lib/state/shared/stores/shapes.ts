@@ -241,7 +241,6 @@ export type WritesStore = {
     ) => Promise<WriteAnswer>;
     writeHost: (name: string, status: string) => Promise<WriteAnswer>;
     reorderEntries: (collection: string, order: string[]) => Promise<WriteAnswer>;
-    deleteEntry: (collection: string, id: string) => Promise<WriteAnswer>;
     writeFeedField: (
         feed: string,
         id: string,
@@ -249,11 +248,9 @@ export type WritesStore = {
         value: string | number | boolean | null
     ) => Promise<WriteAnswer>;
     deleteFeedEntry: (feed: string, id: string) => Promise<WriteAnswer>;
-    addLead: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     addRadarEntry: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     addLinkedinIdea: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     markPosted: (file: string) => Promise<WriteAnswer>;
-    newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
     writeDeckSlides: (
         deck: { root: string; path: string },
         groups: { group: string; base: string[]; slides: string[] }[],

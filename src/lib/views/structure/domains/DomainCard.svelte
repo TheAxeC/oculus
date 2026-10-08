@@ -2,9 +2,10 @@
     // Layer 3, Domains partial. One populated domain: the registry card (RegistryCard.svelte) with
     // its configured accent and its registry prose.
 
-    import RegistryCard from '$lib/views/shared/forms/RegistryCard.svelte';
+    import RegistryCard from '$lib/views/shared/forms/registry/RegistryCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import type { Entry, SchemaField } from '$lib/state/boards/collection';
+    import type { Entry, IdentityFault, SchemaField } from '$lib/state/boards/collection';
+    import type { ViewSource } from '$lib/state/sessions/view-source';
     import { isDormant, type Domain, type Project } from '$lib/state/boards/structure/lines';
     import { domainTone } from '$lib/state/shared/words/tones';
 
@@ -14,16 +15,15 @@
         projects: Project[];
         entry: Entry | null;
         schema: SchemaField[] | undefined;
-        editing: boolean;
-        onedit: () => void;
+        file: ViewSource | null;
+        fault: IdentityFault | undefined;
         onsaid: (said: string) => void;
     };
-    let { domain, cursor, projects, entry, schema, editing, onedit, onsaid }: Props = $props();
+    let { domain, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
 </script>
 
 <div class:dormant={isDormant(projects)} data-domain={domain.id}>
     <RegistryCard
-        collection="domains"
         id={domain.id}
         {cursor}
         title={domain.title}
@@ -31,8 +31,8 @@
         {projects}
         {entry}
         {schema}
-        {editing}
-        {onedit}
+        {file}
+        {fault}
         {onsaid}
     >
         {#if domain.blurb}

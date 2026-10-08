@@ -11,8 +11,9 @@
 
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { parse } from 'yaml';
+import { isMap as isYamlMap, parseDocument } from 'yaml';
 import { z } from 'zod';
+import { listOf } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import { anyNumberShape } from '../../../data/shapes/shapes.ts';
@@ -23,9 +24,9 @@ import { BOOKMARKS, ensureBookmarksFile } from './bookmarks.ts';
 /**
  * The file one collection key names, or null when sources.yml does not name it inside the hub.
  *
- * `own` is the reader's own bookmarks file, which is a collection edited by the same form and the
- * same writers while living outside the hub, under ~/.oculus. It is resolved before the hub's own
- * list so that a hub file keyed `bookmarks` could never take the reader's machine-local one over.
+ * `own` is the reader's own bookmarks file, which is a collection edited by the same writers while
+ * living outside the hub, under ~/.oculus. It is resolved before the hub's own list so that a hub
+ * file keyed `bookmarks` could never take the reader's machine-local one over.
  */
 export function collectionFile(
     hub: string,
@@ -77,29 +78,6 @@ export function entryId(entry: Record<string, unknown>, ident: string): string {
     return id || key || title || (identityText(entry, ident) ?? '');
 }
 
-/** The maps of a list, which is all an entry can be. */
-const entryMapsShape = z.array(z.unknown()).transform((all) => all.filter(isMap));
-
-/** A list under another key than `entries`: entries when it is empty or opens with a map. */
-const entryListShape = z
-    .array(z.unknown())
-    .refine((all) => all.length === 0 || isMap(all[0]))
-    .transform((all) => all.filter(isMap));
-
-/** The entry list of a parsed collection file: `entries:`, or the first list of maps beside it. */
-function listOf(
-    data: Record<string, unknown>
-): { key: string; items: Record<string, unknown>[] } | null {
-    const entries = entryMapsShape.safeParse(data.entries);
-    if (entries.success) return { key: 'entries', items: entries.data };
-    for (const [key, value] of Object.entries(data)) {
-        if (key === 'schema') continue;
-        const found = entryListShape.safeParse(value);
-        if (found.success) return { key, items: found.data };
-    }
-    return null;
-}
-
 /** One collection file read for a write: its text, its entry list and its identity field. */
 export type Collection = {
     file: string;
@@ -126,23 +104,26 @@ export function readCollection(
     } catch {
         return null;
     }
+    const doc = parseDocument(source);
+    if (doc.errors.length > 0 || !isYamlMap(doc.contents)) return null;
     let data: unknown;
     try {
-        data = parse(source);
+        data = doc.toJS();
     } catch {
         return null;
     }
     if (!isMap(data)) return null;
-    const list = listOf(data);
+    const found = listOf(doc.contents);
     // A file the reader's own writes made carries no list key until the first entry, since YAML
     // writes no empty block list. A hub file without one is malformed and is still refused.
-    if (list === null && file !== own) return null;
+    if (found === null && file !== own) return null;
+    const held = found === null ? undefined : data[found.key];
     return {
         file,
         source,
         schema: data.schema,
-        list: list?.key ?? '',
-        items: list?.items ?? [],
+        list: found?.key ?? '',
+        items: Array.isArray(held) ? held.filter(isMap) : [],
         ident: identityField(data.schema)
     };
 }

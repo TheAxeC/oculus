@@ -11,7 +11,6 @@ import {
     searchRevealShape,
     wordShape
 } from '../../../data/shapes/shapes.ts';
-import { parseOpenForms, type OpenForms } from '../../forms/open-forms.ts';
 import { realProjects } from '../../sources/venues.ts';
 
 export type { Domain, Pillar, Project, Venue } from '../../../data/model/index.ts';
@@ -22,17 +21,16 @@ const FLIGHT = ['active', 'manuscript'];
 export type TierRow = { key: string; label: string; color?: string };
 export type TierCount = TierRow & { count: number };
 export type ArchiveGroup = { type: string; count: number; projects: Project[] };
-export type PillarsState = OpenForms & { reveal?: string };
-export type DomainsState = OpenForms & { reveal?: string };
+export type PillarsState = { reveal?: string };
+export type DomainsState = { reveal?: string };
 
 /** The palette destination a saved state names, absent unless it is a non-empty text. */
 const revealShape = searchRevealShape.pick({ reveal: true });
 
-/** The open forms and the optional palette destination shared by the two registry-line views. */
-function parseRevealState(raw: unknown): OpenForms & { reveal?: string } {
-    const open = parseOpenForms(raw);
+/** The optional palette destination shared by the two registry-line views. */
+function parseRevealState(raw: unknown): { reveal?: string } {
     const reveal = readAs(revealShape, raw)?.reveal;
-    return reveal === undefined ? open : { ...open, reveal };
+    return reveal === undefined ? {} : { reveal };
 }
 
 /** Saved state of one Pillars instance. */

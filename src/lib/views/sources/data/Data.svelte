@@ -11,18 +11,18 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The dataset registry: its access summary, search, modality facets, cards and
-    // schema-driven add and edit forms. Registry entities display while its collection handles
-    // writes.
+    // Layer 3, view. The dataset registry: its access summary, search, modality facets, cards, and
+    // Add and Edit in File, which open the registry file. Registry entities display while its
+    // collection handles writes.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
-    import AddButton from '$lib/views/shared/forms/AddButton.svelte';
-    import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
-    import RegistryHead from '$lib/views/shared/forms/RegistryHead.svelte';
+    import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
+    import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';
+    import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import ThemeFacets from '$lib/views/shared/forms/ThemeFacets.svelte';
     import DatasetCard from '$lib/views/sources/data/DatasetCard.svelte';
@@ -33,28 +33,27 @@
         parseDataState,
         type DataState
     } from '$lib/state/sources/datasets';
-    import { applyThemeFacets, themeFacets, themeWordLabels } from '$lib/state/shared/words/themes';
+    import {
+        applyThemeFacets,
+        themeFacets,
+        themeWordLabels,
+        toggledThemes
+    } from '$lib/state/shared/words/themes';
     import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { entryById } from '$lib/state/boards/collection';
     import { t } from '$lib/state/shared/words/text';
-    import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
-        selectors: { collectionOf, configMap, datasets, projects },
-        formDrafts: { toggleAdd, toggleEdit },
+        selectors: { configMap, datasets, projects },
         ui: { instanceState, setInstanceState }
-    } = useState();
+    } = client;
 
     let { instance }: ViewProps = $props();
 
-    const collection = $derived(collectionOf('data'));
-    /**
-     * The registry file this view is drawn from, which the control at the end of the toolbar opens.
-     */
-    const source = $derived(viewSourceFile('datasets', configMap()));
+    const file = registryFile(client, 'datasets', 'data');
     const allDatasets = $derived(datasets());
     const allProjects = $derived(projects());
     const held = $derived(parseDataState(instanceState(instance.id)));
@@ -63,22 +62,12 @@
     const facets = $derived(themeFacets(allDatasets, labels));
     const shown = $derived(applyThemeFacets(datasetSearch(allDatasets, held.search), held.off));
 
-    let said = $state('');
-
     function write(next: Partial<DataState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
 
     function toggleTheme(theme: string): void {
-        write({
-            off: held.off.includes(theme)
-                ? held.off.filter((item) => item !== theme)
-                : [...held.off, theme]
-        });
-    }
-
-    function entryFor(id: string) {
-        return entryById(collection, id);
+        write({ off: toggledThemes(held.off, theme) });
     }
 
     function users(ids: string[]) {
@@ -87,14 +76,7 @@
 </script>
 
 {#snippet tools()}
-    <SourceToolbar {source}>
-        {#if collection?.schema !== undefined}
-            <AddButton
-                open={held.adding}
-                onclick={() => write({ adding: toggleAdd(instance.id, 'data', held.adding) })}
-            />
-        {/if}
-    </SourceToolbar>
+    <RegistryTools {file} />
 {/snippet}
 
 {#snippet bar()}
@@ -116,18 +98,12 @@
 
 <Pane title={t('views.data')} toolbar={tools} {bar}>
     <div class="data" data-instance={instance.id}>
-        <RegistryHead
-            collection="data"
-            schema={collection?.schema}
-            adding={held.adding}
-            bind:said
-            onclose={() => write({ adding: false })}
-        >
+        <RegistryHead said={file.said}>
             {#snippet intro()}
                 <Intro
                     lines={[
                         t('data.intro', allDatasets.length, accessSummary(allDatasets)),
-                        ...(collection?.intro ? [inlineMarkdown(collection.intro)] : [])
+                        ...(file.collection?.intro ? [inlineMarkdown(file.collection.intro)] : [])
                     ]}
                 />
             {/snippet}
@@ -147,19 +123,11 @@
                             {dataset}
                             cursor={cursor === dataset.id}
                             projects={users(dataset.projectIds)}
-                            entry={entryFor(dataset.id)}
-                            schema={collection?.schema}
-                            editing={held.editing === dataset.id}
-                            onedit={() =>
-                                write({
-                                    editing: toggleEdit(
-                                        instance.id,
-                                        'data',
-                                        held.editing,
-                                        dataset.id
-                                    )
-                                })}
-                            onsaid={(words: string) => (said = words)}
+                            entry={file.entryOf(dataset.id)}
+                            schema={file.collection?.schema}
+                            file={file.source}
+                            fault={file.faultOf(dataset.id)}
+                            onsaid={file.say}
                         />
                     </Reveal>
                 {/each}

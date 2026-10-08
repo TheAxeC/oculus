@@ -15,7 +15,8 @@
 
 <script lang="ts">
     // Layer 3, view. LinkedIn reads its Markdown-folder feed, draws posting cadence and two card
-    // sections, and keeps search plus the add-form disclosure in this view instance's saved state.
+    // sections, and keeps its search in this view instance's saved state. Add asks for the title
+    // and the category in a prompt, writes the idea file and opens it at its body.
     //
     // It carries no toolbar control over its own source, which the four views drawn from one file
     // do: `linkedin_dir` names a folder of one Markdown file per post and no index, so there is no
@@ -30,7 +31,11 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
     import PostCard from './PostCard.svelte';
-    import EntryForm from '../../shared/forms/EntryForm.svelte';
+    import Prompt from '$lib/ui/forms/Prompt.svelte';
+    import type { PromptRequest } from '$lib/ui/forms/prompt';
+    import { answerWords } from '../../shared/forms/answer-words';
+    import { openSourceFile } from '../../shared/links/source-file';
+    import { linkedinSourcePath } from './post-card';
     import Reveal from '../../shared/card/Reveal.svelte';
     import {
         cadence,
@@ -40,22 +45,22 @@
         parseLinkedinState,
         pickIdea,
         splitPosts,
-        type LinkedinState,
-        type SchemaField
+        type LinkedinState
     } from '$lib/state/feeds/linkedin';
+    import { HUB_ROOT } from '$lib/state/sources/fs';
+    import { IDEA_BODY_LINE } from '$lib/data/prose/linkedin-idea';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { feedIdents } from '$lib/state/feeds/idents';
-    import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         feeds: { feed },
-        formDrafts: { toggleAdd },
         ui: { instanceState, setInstanceState },
         writes: { addLinkedinIdea }
-    } = useState();
+    } = client;
 
     let { instance }: ViewProps = $props();
 
@@ -72,28 +77,49 @@
         data?.cadenceDays === undefined ? 'no-dates' : cadence(days, data.cadenceDays)
     );
     const picked = $derived(pickIdea(split.ideas, today));
-    const schema = $derived<SchemaField[]>([
-        {
-            field: 'title',
-            type: 'text',
-            required: true,
-            label: t('linkedin.form_title')
-        },
-        {
-            field: 'category',
-            type: 'text',
-            label: t('linkedin.form_category'),
-            help: t('linkedin.form_category_help')
-        }
-    ]);
     let said = $state('');
 
     function write(next: Partial<LinkedinState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
 
-    async function add(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        return addLinkedinIdea(fields);
+    /** The question Add asks, held while the prompt is open. */
+    let prompting: PromptRequest | null = $state(null);
+
+    /** Ask for the title and the category of a new idea. */
+    function ask(): void {
+        prompting = {
+            message: t('linkedin.add_ask'),
+            fields: [
+                { label: t('linkedin.form_title'), value: '' },
+                {
+                    label: t('linkedin.form_category'),
+                    value: '',
+                    placeholder: t('linkedin.form_category_help')
+                }
+            ],
+            verb: t('linkedin.add_verb'),
+            act: ([title, category]) => {
+                prompting = null;
+                void add(title, category);
+            }
+        };
+    }
+
+    /** Write the idea file, then open it at its body (the line the server's stub starts it on). */
+    async function add(title: string, category: string): Promise<void> {
+        const answer = await addLinkedinIdea({ title, category });
+        if (!answer.ok || answer.refused.length > 0) {
+            said = answerWords(answer);
+            return;
+        }
+        said = '';
+        if (data === null || answer.id === undefined) return;
+        openSourceFile(client, {
+            root: HUB_ROOT,
+            path: linkedinSourcePath(data.file, answer.id),
+            line: IDEA_BODY_LINE
+        });
     }
 </script>
 
@@ -104,9 +130,7 @@
             label={t('linkedin.addidea')}
             title={t('linkedin.addidea_tip')}
             glyph="add"
-            active={held.adding}
-            pressed={held.adding}
-            onclick={() => write({ adding: toggleAdd(instance.id, 'linkedin', held.adding) })}
+            onclick={ask}
         />
     </Toolbar>
 {/snippet}
@@ -163,17 +187,6 @@
 
             {#if said !== ''}
                 <p class="said">{said}</p>
-            {/if}
-
-            {#if held.adding}
-                <EntryForm
-                    collection="linkedin"
-                    {schema}
-                    entry={null}
-                    onadd={add}
-                    onclose={() => write({ adding: false })}
-                    onsaid={(words: string) => (said = words)}
-                />
             {/if}
 
             <section>
@@ -235,6 +248,14 @@
         {/if}
     </div>
 </Pane>
+
+{#if prompting !== null}
+    <Prompt
+        request={prompting}
+        cancel={t('ui.confirm_cancel')}
+        oncancel={() => (prompting = null)}
+    />
+{/if}
 
 <style>
     /* One column the width of the pane, however long a line inside it: a grid's own column would

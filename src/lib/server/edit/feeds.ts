@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { localDate } from '../../data/helpers/dates.ts';
 import { isMap, scalar } from '../../data/helpers/guards.ts';
 import { addressKey, radarText, sameTitle } from '../../data/prose/literature.ts';
+import { ideaStub } from '../../data/prose/linkedin-idea.ts';
 import { loadConfig } from '../../data/sources/config.ts';
 import { collectionSchema } from '../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../data/snapshot/validate.ts';
@@ -223,7 +224,10 @@ function slugOf(title: string): string {
     return slug || 'post';
 }
 
-/** Add one empty LinkedIn idea file without leaving its configured folder. */
+/**
+ * Add one empty LinkedIn idea file without leaving its configured folder. The outcome's `id` is the
+ * file's name, which the page opens the new file by.
+ */
 export function addLinkedinIdea(
     hub: string,
     config: PortfolioConfig,
@@ -244,22 +248,12 @@ export function addLinkedinIdea(
         file = `xx-${slug}-${suffix}.md`;
         suffix += 1;
     }
-    const source = [
-        '---',
-        'layout: post',
-        `title: ${JSON.stringify(title)}`,
-        `category: ${JSON.stringify(category)}`,
-        'publish: True',
-        `date: ${localDate(Date.now())}`,
-        '---',
-        '',
-        ''
-    ].join('\n');
-    writeTextAtomic(join(folder, file), source);
+    writeTextAtomic(join(folder, file), ideaStub(title, category, localDate(Date.now())));
     // A scaffolded Markdown file has no inverse writer: deleting a post is done in the folder, not
     // from a list, so the record says what was made and offers no way back.
     return {
         ...outcome(['file']),
+        id: file,
         records: [
             {
                 file: join(folder, file),
@@ -594,8 +588,8 @@ export function removeRadarEntry(
 /**
  * Put one recorded feed entry back exactly as it was recorded: every field it held, in the order
  * the file's own schema names them, and nothing derived. It is what an undo of a deletion goes
- * through, since addLead fills a missing status and today's date for an entry the reader is adding
- * and an entry that is coming back needs neither.
+ * through, since addLead fills a missing status and today's date for a new entry and an entry that
+ * is coming back needs neither.
  *
  * A feed whose last entry was deleted keeps its `entries:` key with nothing under it, which is not
  * a list to append to; the entry is then written under that key the way a first entry is.

@@ -26,7 +26,7 @@
 // those lines.
 //
 // The values a write may carry and how they are written as text are yaml-values.ts, and where a
-// node stands in its text is yaml-ranges.ts, both beside this file.
+// node stands in its text is data/helpers/files/yaml/yaml-ranges.ts.
 //
 // Nothing is thrown. A path this cannot write is a refusal with a reason, which is what the write
 // route hands back to the page.
@@ -42,18 +42,18 @@ import { byKey, isMap } from '../../../data/helpers/guards.ts';
 import type { RemovedText, ReplacedText } from '../../core/changes.ts';
 import { unchanged } from '../../../data/shapes/shapes.ts';
 import {
-    DEFAULT_INDENT,
     isBlockMap,
     isMetalist,
     itemStyles,
     renderBlock,
     renderBlockMap,
     renderFlow,
-    renderMetalist,
-    renderScalar
+    renderMetalist
 } from './yaml-values.ts';
 import type { BlockMap, FieldValue, FlatStringMap } from './yaml-values.ts';
+import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
 import {
+    DEFAULT_INDENT,
     columnOf,
     lineEndAfter,
     lineStart,
@@ -62,7 +62,7 @@ import {
     pairOf,
     rangeOf,
     valueEnd
-} from './yaml-ranges.ts';
+} from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 
 /** The reason a value is none of the shapes a write may carry. */
 export const NOT_A_FIELD_VALUE =

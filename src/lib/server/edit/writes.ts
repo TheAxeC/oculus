@@ -181,9 +181,8 @@ export type WriteOutcome = {
      */
     records?: ChangeRecord[];
     /**
-     * The id the file gives the entry this write made or edited, read after the write, so a page
-     * holding a form over that entry is told where the entry now is. Only an entry write carries
-     * it.
+     * The id the file gives the entry this write made or edited, read after the write, so the page
+     * is told where the entry now is when the write renamed it. Only an entry write carries it.
      */
     id?: string;
 };
@@ -304,7 +303,7 @@ export function target(
 
 /**
  * The whole endpoint: refuse, or write and say what changed. A refusal names what was wrong and
- * nothing more; the page shows it beside the form.
+ * nothing more; the page shows it beside the control that sent the write.
  */
 export async function handleWrite(
     request: Request,

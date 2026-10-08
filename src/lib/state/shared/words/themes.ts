@@ -56,6 +56,13 @@ export function themeFacets(
 }
 
 /**
+ * The words of `off` after one theme word is switched: taken out when it was off, added when on.
+ */
+export function toggledThemes(off: readonly string[], theme: string): string[] {
+    return off.includes(theme) ? off.filter((item) => item !== theme) : [...off, theme];
+}
+
+/**
  * The items with at least one theme word whose toggle remains on. `off` holds words, never labels,
  * and an empty `off` keeps every item, those with no theme at all included.
  */

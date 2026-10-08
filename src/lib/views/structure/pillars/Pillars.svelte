@@ -15,10 +15,10 @@
     // provisional lines, off-pillar lines and archival provenance.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import RegistryHead from '$lib/views/shared/forms/RegistryHead.svelte';
+    import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
     import Intro from '$lib/views/shared/prose/Intro.svelte';
-    import AddButton from '$lib/views/shared/forms/AddButton.svelte';
-    import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
+    import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
+    import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import ArchivalCard from '$lib/views/structure/pillars/ArchivalCard.svelte';
     import LineCard from '$lib/views/structure/pillars/LineCard.svelte';
@@ -35,30 +35,24 @@
         venueTiers,
         type PillarsState
     } from '$lib/state/boards/structure/lines';
-    import { entryById } from '$lib/state/boards/collection';
     import { t } from '$lib/state/shared/words/text';
-    import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         entities: { portfolio },
-        selectors: { archiveDead, collectionOf, configMap, projects, venues },
-        formDrafts: { toggleAdd, toggleEdit },
+        selectors: { archiveDead, configMap, projects, venues },
         ui: { instanceState, setInstanceState }
-    } = useState();
+    } = client;
 
     let { instance }: ViewProps = $props();
     const ORPHANS_CARD = 'pillars:orphans';
     const ARCHIVAL_CARD = 'pillars:archival';
     const held = $derived(parsePillarsState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const collection = $derived(collectionOf('pillars'));
-    /**
-     * The registry file this view is drawn from, which the control at the end of the toolbar opens.
-     */
-    const source = $derived(viewSourceFile('pillars', configMap()));
-    const lines = $derived(registryLines(portfolio(), 'pillars', collection?.entries ?? []));
+    const file = registryFile(client, 'pillars', 'pillars');
+    const lines = $derived(registryLines(portfolio(), 'pillars', file.collection?.entries ?? []));
     const allProjects = $derived(projects());
     const dead = $derived(archiveDead());
     const allVenues = $derived(venues());
@@ -70,34 +64,18 @@
     const archived = $derived(archival(allProjects, dead));
     const tiers = $derived(venueTiers(configMap().venue_tiers));
 
-    let said = $state('');
-
     function write(next: Partial<PillarsState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
 </script>
 
 {#snippet tools()}
-    <SourceToolbar {source}>
-        {#if collection?.schema !== undefined}
-            <AddButton
-                open={held.adding}
-                onclick={() => write({ adding: toggleAdd(instance.id, 'pillars', held.adding) })}
-            />
-        {/if}
-    </SourceToolbar>
+    <RegistryTools {file} />
 {/snippet}
 
 <Pane title={t('views.pillars')} toolbar={tools}>
     <div class="pillars-view" data-instance={instance.id}>
-        <RegistryHead
-            collection="pillars"
-            schema={collection?.schema}
-            adding={held.adding}
-            bind:said
-            onclose={() => write({ adding: false })}
-            spaced
-        >
+        <RegistryHead said={file.said} spaced>
             {#snippet intro()}
                 <Intro html={inlineMarkdown(t('pillars.intro'))} trusted />
             {/snippet}
@@ -112,14 +90,11 @@
                         projects={lineMembers(line, allProjects, dead)}
                         venues={allVenues}
                         {tiers}
-                        entry={entryById(collection, line.id)}
-                        schema={collection?.schema}
-                        editing={held.editing === line.id}
-                        onedit={() =>
-                            write({
-                                editing: toggleEdit(instance.id, 'pillars', held.editing, line.id)
-                            })}
-                        onsaid={(words: string) => (said = words)}
+                        entry={file.entryOf(line.id)}
+                        schema={file.collection?.schema}
+                        file={file.source}
+                        fault={file.faultOf(line.id)}
+                        onsaid={file.say}
                     />
                 </Reveal>
             {/each}
@@ -144,19 +119,11 @@
                                 projects={lineMembers(line, allProjects, dead)}
                                 venues={allVenues}
                                 {tiers}
-                                entry={entryById(collection, line.id)}
-                                schema={collection?.schema}
-                                editing={held.editing === line.id}
-                                onedit={() =>
-                                    write({
-                                        editing: toggleEdit(
-                                            instance.id,
-                                            'pillars',
-                                            held.editing,
-                                            line.id
-                                        )
-                                    })}
-                                onsaid={(words: string) => (said = words)}
+                                entry={file.entryOf(line.id)}
+                                schema={file.collection?.schema}
+                                file={file.source}
+                                fault={file.faultOf(line.id)}
+                                onsaid={file.say}
                             />
                         </Reveal>
                     {/each}
@@ -182,20 +149,12 @@
                                 projects={lineMembers(line, allProjects, dead)}
                                 venues={allVenues}
                                 {tiers}
-                                entry={entryById(collection, line.id)}
-                                schema={collection?.schema}
+                                entry={file.entryOf(line.id)}
+                                schema={file.collection?.schema}
                                 muted
-                                editing={held.editing === line.id}
-                                onedit={() =>
-                                    write({
-                                        editing: toggleEdit(
-                                            instance.id,
-                                            'pillars',
-                                            held.editing,
-                                            line.id
-                                        )
-                                    })}
-                                onsaid={(words: string) => (said = words)}
+                                file={file.source}
+                                fault={file.faultOf(line.id)}
+                                onsaid={file.say}
                             />
                         </Reveal>
                     {/each}

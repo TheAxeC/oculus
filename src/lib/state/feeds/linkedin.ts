@@ -1,12 +1,10 @@
 // Layer 2, client state. Pure LinkedIn cadence, ordering, snippets, search, and saved view state.
 // The view receives ready-to-draw ideas and posts and owns no folder or calendar rules.
 
-import { z } from 'zod';
 import { scalar } from '../../data/helpers/guards.ts';
 import { readAs, searchRevealShape, textOrNumberShape } from '../../data/shapes/shapes.ts';
 
 export { localDate } from '../../data/helpers/dates.ts';
-export type { SchemaField } from '../../data/model/index.ts';
 
 export type LinkedinEntry = {
     file: string;
@@ -19,8 +17,6 @@ export type LinkedinEntry = {
 
 export type LinkedinState = {
     search: string;
-    /** Whether the add-idea form is open, kept with the view instance. */
-    adding: boolean;
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
 };
@@ -29,9 +25,6 @@ export type LinkedinCadence = 'no-dates' | 'overdue' | 'ontrack';
 export type SplitLinkedin = { ideas: LinkedinEntry[]; posts: LinkedinEntry[] };
 
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
-
-/** The fields a view instance keeps of LinkedIn, each read as absent when of the wrong type. */
-const linkedinStateShape = searchRevealShape.extend({ adding: z.boolean().catch(false) });
 
 /** A text of the entry's, or a number written out, and the empty text for anything else. */
 function text(entry: Record<string, unknown>, field: string): string {
@@ -134,10 +127,10 @@ export function linkedinSearch(entries: LinkedinEntry[], search: string): Linked
     });
 }
 
-/** Read search and add-form state from one view instance. */
+/** Read the search and the palette destination from one view instance. */
 export function parseLinkedinState(raw: unknown): LinkedinState {
-    const held = readAs(linkedinStateShape, raw);
-    const state: LinkedinState = { search: held?.search ?? '', adding: held?.adding ?? false };
+    const held = readAs(searchRevealShape, raw);
+    const state: LinkedinState = { search: held?.search ?? '' };
     if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;
 }

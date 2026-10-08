@@ -8,21 +8,19 @@
 
 <script lang="ts">
     // Layer 3, partial of views/sources/files/Files.svelte. The reader's own bookmarks as a section
-    // under the trees: a head that opens and closes it and carries the control that adds one, and
-    // one explorer row per bookmark, opening the file or showing the folder it names, with the
-    // control that opens the shared entry form over it. A row drags to another place and moves with
-    // Alt+Up and Alt+Down, which write the bookmarks file in the new order. The bookmark the form
-    // is open for is drawn as the one in force; a folder has the folder glyph, and a path that is
-    // gone is drawn muted and struck through.
+    // under the trees: a head that opens and closes it, and one explorer row per bookmark, opening
+    // the file or showing the folder it names, with two controls: Rename Bookmark..., which asks
+    // for the new label in a prompt, and Remove Bookmark. A row drags to another place and moves
+    // with Alt+Up and Alt+Down, which write the bookmarks file in the new order. A folder has the
+    // folder glyph, and a path that is gone is drawn muted and struck through.
     //
-    // The head is drawn in every state, since it is where a bookmark is added: with no bookmark the
-    // section says so in one muted row, and with a bookmarks file that could not be read it says
-    // why in that row instead, with the control that reads it again beside it, as every other row
-    // of the tree carries its controls. The section is one stop of the focus order through
-    // ui/tree/TreeView.svelte.
+    // The head is drawn in every state: with no bookmark the section says so in one muted row, and
+    // with a bookmarks file that could not be read it says why in that row instead, with the
+    // control that reads it again beside it, as every other row of the tree carries its controls.
+    // The section is one stop of the focus order through ui/tree/TreeView.svelte.
     //
-    // The rail draws the same bookmarks as buttons, which is where they are pressed from; this is
-    // where they are changed, since a form has nowhere to go in a rail of 34-pixel controls.
+    // The star on a file adds a bookmark. The rail draws the same bookmarks as buttons, which is
+    // where they are pressed from; this is where they are renamed, removed and put in order.
 
     import Failed from '$lib/views/shared/explorer/tree/Failed.svelte';
     import Section from './Section.svelte';
@@ -30,48 +28,25 @@
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Prompt from '$lib/ui/forms/Prompt.svelte';
+    import type { PromptRequest } from '$lib/ui/forms/prompt';
     import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
-    import { createListDrag, listKeys, type SectionMove } from './list-drag.svelte';
+    import { createListDrag, listKeys, type ListSectionProps } from './list-drag.svelte';
     import type { BookmarkEntry } from '$lib/state/sources/fs.svelte';
     import { readOr } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         rows: BookmarkEntry[];
-        /** What reading the bookmarks failed with, or the empty string. */
-        error: string;
-        /** Whether the section is open. */
-        open: boolean;
-        /** The bookmark the form is open for, and the empty string while it is closed. */
-        editing: string;
-        /** Whether the form is open to add a bookmark. */
-        adding: boolean;
-        ontoggle: () => void;
-        onadd: () => void;
         onopen: (entry: BookmarkEntry) => void;
-        onedit: (id: string) => void;
-        /** Ask for the bookmarks again, which the failed line's own control offers. */
-        onretry: () => void;
-        /** What lets the head be dragged and moved by Alt+Up/Down. */
-        move?: SectionMove;
-        /** Put the bookmarks in the order the ids name, after a drop or Alt+Up/Down on a row. */
-        onorder: (ids: string[]) => void;
-    };
+        /** Give one bookmark another label. */
+        onrename: (id: string, label: string) => void;
+        /** Take one bookmark away. */
+        onremove: (id: string) => void;
+    } & ListSectionProps;
 
-    let {
-        rows,
-        error,
-        open,
-        editing,
-        adding,
-        ontoggle,
-        onadd,
-        onopen,
-        onedit,
-        onretry,
-        move,
-        onorder
-    }: Props = $props();
+    let { rows, error, open, ontoggle, onopen, onrename, onremove, onretry, move, onorder }: Props =
+        $props();
 
     /** The drags of the bookmark rows over each other. */
     const list = createListDrag({
@@ -85,6 +60,23 @@
         { id: 'head', parent: null, open },
         ...(open ? rows.map((row) => ({ id: `mark:${row.id}`, parent: 'head' })) : [])
     ]);
+
+    /** The question Rename Bookmark... asks, held while the prompt is open. */
+    let renaming: PromptRequest | null = $state(null);
+
+    function ask(row: BookmarkEntry): void {
+        renaming = {
+            message: t('files.bookmark_rename_ask', row.title),
+            fields: [{ label: t('files.bookmark_label'), value: row.title }],
+            verb: t('files.bookmark_rename_do'),
+            act: ([label]) => {
+                renaming = null;
+                if (label.trim() !== '' && label.trim() !== row.title) {
+                    onrename(row.id, label);
+                }
+            }
+        };
+    }
 
     /** The root and the path one bookmark names, which is what a row says after its label. */
     function whereOf(entry: BookmarkEntry): string {
@@ -108,14 +100,6 @@
                 count={rows.length}
                 {open}
                 {ontoggle}
-                add={{
-                    label: t('files.add_bookmark'),
-                    title: t('files.add_bookmark_title'),
-                    glyph: t('files.bookmark_glyph')
-                }}
-                {adding}
-                {onadd}
-                showActions
                 drag={move?.drag}
             >
                 {#if error !== ''}
@@ -146,7 +130,6 @@
                             title={row.kind === 'missing'
                                 ? t('files.bookmark_missing_title', whereOf(row))
                                 : t('files.bookmark_open_title', whereOf(row))}
-                            current={editing === row.id}
                             onclick={() => onopen(row)}
                             drag={list.row(row.id)}
                         >
@@ -155,13 +138,20 @@
                             {/snippet}
                             {#snippet actions(reach: number)}
                                 <ToolButton
-                                    label={t('files.bookmark_edit')}
+                                    label={t('files.bookmark_rename')}
                                     glyph="edit"
                                     compact
                                     tabindex={reach}
-                                    expanded={editing === row.id}
-                                    title={t('files.bookmark_edit_title', row.title)}
-                                    onclick={() => onedit(row.id)}
+                                    title={t('files.bookmark_rename_title', row.title)}
+                                    onclick={() => ask(row)}
+                                />
+                                <ToolButton
+                                    label={t('files.menu_remove_bookmark')}
+                                    glyph="trash"
+                                    compact
+                                    tabindex={reach}
+                                    title={t('files.bookmark_remove_title', row.title)}
+                                    onclick={() => onremove(row.id)}
                                 />
                             {/snippet}
                         </TreeItem>
@@ -171,6 +161,10 @@
         {/snippet}
     </TreeView>
 </div>
+
+{#if renaming !== null}
+    <Prompt request={renaming} cancel={t('ui.confirm_cancel')} oncancel={() => (renaming = null)} />
+{/if}
 
 <style>
     .marks {

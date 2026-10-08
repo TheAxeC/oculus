@@ -4,7 +4,8 @@
     //
     // The empty choice is there and first whenever the caller gives its words: a field of the
     // manifest that is set to nothing is a field that is not there, and clearing one is as ordinary
-    // as setting it. A caller that gives none draws a pick that always holds one of the choices.
+    // as setting it. A caller that gives none draws a pick that always holds one of the choices. A
+    // disabled pick is drawn so and carries `title`, the words saying why.
 
     import { isStray } from './choices';
 
@@ -16,9 +17,12 @@
         empty?: string;
         choices: { id: string; label: string }[];
         onchange: (value: string) => void;
+        disabled?: boolean;
+        /** Why the pick is disabled, already translated. */
+        title?: string;
     };
 
-    let { value, label, empty, choices, onchange }: Props = $props();
+    let { value, label, empty, choices, onchange, disabled = false, title }: Props = $props();
 
     function picked(event: Event): void {
         const field = event.currentTarget;
@@ -34,7 +38,7 @@
     );
 </script>
 
-<select class="select" aria-label={label} onchange={picked}>
+<select class="select" aria-label={label} {disabled} {title} onchange={picked}>
     {#if empty !== undefined}
         <option value="" selected={value === ''}>{empty}</option>
     {/if}
@@ -58,6 +62,11 @@
         font-size: var(--fs-md);
         line-height: calc(var(--button-line) * var(--text-scale, 1));
         padding: 4px 6px;
+    }
+
+    .select:disabled {
+        color: var(--muted-txt, var(--muted));
+        cursor: not-allowed;
     }
 
     .select:focus-visible {

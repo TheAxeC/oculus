@@ -18,6 +18,23 @@ export const HUB_ROOT = 'hub';
  */
 export const ENGINE_ROOT = 'engine';
 
+/** Where the engine's config folder lies inside the hub, its files served there under `hub`. */
+export const ENGINE_IN_HUB = 'tools/oculus/config';
+
+/**
+ * The one name of a disk file. A file of the engine's config folder is reached under `engine` and,
+ * as `tools/oculus/config/<name>`, under `hub`; both are named under `engine`, so two names of one
+ * file compare equal.
+ */
+export function diskName(file: { root: string; path: string }): { root: string; path: string } {
+    const prefix = `${ENGINE_IN_HUB}/`;
+    if (file.root !== HUB_ROOT || !file.path.startsWith(prefix)) return file;
+    return { root: ENGINE_ROOT, path: file.path.slice(prefix.length) };
+}
+
+/** The career file's path in the hub, which the config falls back to when it names none. */
+export const CAREER_FILE = 'registries/career.yml';
+
 /** The one filename a scan tier's folder is read for. */
 export const MANIFEST = 'project.yml';
 

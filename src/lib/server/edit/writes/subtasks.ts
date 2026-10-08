@@ -15,6 +15,7 @@ import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { z } from 'zod';
 import { isMap } from '../../../data/helpers/guards.ts';
+import { CAREER_FILE } from '../../../data/helpers/hub-names.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
 import {
     addSubtask,
@@ -171,7 +172,7 @@ export type CareerRules = { file: string; statuses: string[] };
  */
 const careerRulesShape = z
     .object({
-        career_file: z.string().catch('registries/career.yml'),
+        career_file: z.string().catch(CAREER_FILE),
         career_host_status: z
             .pipe(
                 mapShape,

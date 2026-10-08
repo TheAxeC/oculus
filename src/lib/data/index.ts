@@ -19,10 +19,10 @@ import {
 import { readManifests, readPersonal } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
-import { CAREER_FILE, readCareer } from './sources/career.ts';
+import { readCareer } from './sources/career.ts';
 import { readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
-import { HUB_ROOT } from './helpers/hub-names.ts';
+import { CAREER_FILE, HUB_ROOT } from './helpers/hub-names.ts';
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
 import { textCatalog } from './sources/config.ts';

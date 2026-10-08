@@ -10,16 +10,19 @@ import { isMap as isYamlMap, isScalar, isSeq } from 'yaml';
 import type { Node, YAMLMap } from 'yaml';
 import { NOT_A_FIELD_VALUE, asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
 import { isBlockMap } from '../yaml/yaml-values.ts';
-import { pairOf, rangeOf, valueEnd } from '../yaml/yaml-ranges.ts';
+import { pairOf, rangeOf } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
 import {
     LIST,
+    entryPlace,
+    lineAt,
+    listOf
+} from '../../../data/helpers/files/yaml/collection-text.ts';
+import {
     applyEntryField,
     asJs,
     document,
-    lineAt,
     linesOf,
-    listOf,
     locate,
     refuseAll,
     verified,
@@ -33,7 +36,7 @@ import {
  *
  * A field the entry already holds that value for is not written. A field the entry has not got is
  * appended on its own line at the entry's indentation, and `null` removes the field's lines. The
- * identity field is writable, since renaming an entry is what the edit form does, but it is never
+ * identity field is writable, since renaming an entry is a write of that field, but it is never
  * cleared: the entry would then be addressed by nothing.
  */
 export function setEntryFields(
@@ -192,19 +195,12 @@ export function appendEntry(source: string, listKey: string, block: string): Edi
     if (!isSeq(seq) || seq.flow === true) {
         return refuseAll(source, [listKey], `${listKey} is not a block list`);
     }
-    const key = rangeOf(pair.key);
-    if (key === null) return refuseAll(source, [listKey], 'the key has no place in the file');
-
-    let at: number;
-    if (seq.items.length === 0) {
-        at = lineAt(source, key[0]) + 1;
-    } else {
-        const last = seq.items[seq.items.length - 1] as Node;
-        const end = valueEnd(last);
-        at = lineAt(source, Math.max(end - 1, 0)) + 1;
+    const place = entryPlace(source);
+    if ('code' in place || place.list !== listKey) {
+        return refuseAll(source, [listKey], 'the key has no place in the file');
     }
     const lines = source.split('\n');
-    lines.splice(at, 0, '', ...block.split('\n'));
+    lines.splice(place.at, 0, ...place.lead, ...block.split('\n'));
     const text = lines.join('\n');
 
     const before = asJs(source);

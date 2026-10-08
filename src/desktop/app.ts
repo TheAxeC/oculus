@@ -7,7 +7,8 @@
 // What it does at the edges: a second start prints a line and ends; a port that is held is told
 // from an oculus (`GET /api/health`) and either named or offered a window; a server that ends while
 // the app runs is offered a restart; a quit stops the server and waits for it, at most five
-// seconds, and leaves the tmux sessions running.
+// seconds, and leaves the tmux sessions running. Its standard output and error are guarded against
+// a reader that has gone (output.ts), so a closed pipe never ends it.
 
 import { app, Menu, nativeImage, nativeTheme, session } from 'electron';
 import { existsSync, statSync } from 'node:fs';
@@ -24,6 +25,7 @@ import { permissionGranted } from './decide/permissions.ts';
 import { createSaveTurn } from './decide/save-turn.ts';
 import { ZOOM_LEAST, ZOOM_MOST } from './decide/window-file.ts';
 import { say as showDialog } from './dialogs.ts';
+import { dropClosed, guardOutput } from './output.ts';
 import { buildServer, type Build } from './server/build.ts';
 import { oculusAnswers } from './server/health.ts';
 import { loginEnvironment } from './server/login-env.ts';
@@ -51,11 +53,14 @@ const HEALTH_WAIT_MS = 2000;
 const ZOOM_STEP = 0.1;
 
 function print(line: string, error = false): void {
-    if (error) console.error(line);
-    else console.log(line);
+    dropClosed(() => {
+        if (error) console.error(line);
+        else console.log(line);
+    });
 }
 
 export function startApp(options: StartOptions): void {
+    guardOutput();
     const home = homedir();
     app.setName('oculus');
     // Page storage and the single-instance lock follow HOME, so a start under another HOME keeps

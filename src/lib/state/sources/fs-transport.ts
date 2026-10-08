@@ -4,7 +4,7 @@
 // they depend only on the wire and the response stream.
 
 import { z } from 'zod';
-import type { Entry, SchemaField } from '../../data/model/index.ts';
+import type { Entry } from '../../data/model/index.ts';
 import { fileBytesUrl } from '../../data/helpers/files/address.ts';
 import type { BookmarkKind } from './explorer/view/bookmark-rows.ts';
 import {
@@ -13,8 +13,7 @@ import {
     readAs,
     readJson,
     survivorsShape,
-    unchanged,
-    unchangedAs
+    unchanged
 } from '../../data/shapes/shapes.ts';
 import { failedAnswer, refusedAnswer } from '../shared/answers/answers.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
@@ -58,8 +57,6 @@ export type BookmarkEntry = Entry & { kind?: BookmarkKind };
 /** The reader's own bookmarks as the rail and the Files view read them. */
 export type BookmarksState = {
     entries: BookmarkEntry[];
-    /** The file's own schema, which is what the entry form draws its controls from. */
-    schema: SchemaField[];
     error: string;
     loading: boolean;
 };
@@ -145,11 +142,6 @@ export function fixedRootsOf(
     );
 }
 
-/** The bookmark of the given id, or null when the reader has none of it. */
-export function bookmarkById(entries: Entry[], id: string): Entry | null {
-    return entries.find((one) => one.id === id) ?? null;
-}
-
 /** Why a bookmark write was refused, the refused fields' reasons joined, or the empty string. */
 export function markRefusal(answer: WriteAnswer): string {
     return answer.ok ? answer.refused.map((one) => one.reason).join('; ') : (answer.error ?? '');
@@ -195,7 +187,7 @@ export const NO_WORKSPACES: WorkspacesState = {
 
 export const NO_TEXT: FileText = { text: '', truncated: false, error: '', loading: true };
 
-export const NO_BOOKMARKS: BookmarksState = { entries: [], schema: [], error: '', loading: true };
+export const NO_BOOKMARKS: BookmarksState = { entries: [], error: '', loading: true };
 
 export const NO_NOTES: NotesState = { notes: [], error: '', loading: true };
 
@@ -242,37 +234,8 @@ const bookmarkShape = unchanged(
     })
 ) satisfies z.ZodType<BookmarkEntry>;
 
-/** A condition of a schema field: each key a field of the record, each value a word or words. */
-const whenShape = z.record(z.string(), z.union([z.string(), z.array(z.string())]));
-
-/** One field of the bookmarks file's own schema, answered as the endpoint sent it. */
-const schemaFieldShape: z.ZodType<SchemaField> = z.lazy(() =>
-    unchangedAs<SchemaField>(
-        z.object({
-            field: z.string(),
-            type: z.string(),
-            label: z.string().optional(),
-            options: z.array(z.string()).optional(),
-            from: z
-                .union([
-                    z.array(z.string()),
-                    z.object({ field: z.string(), sources: z.record(z.string(), z.string()) })
-                ])
-                .optional(),
-            required: z.union([z.boolean(), z.object({ when: whenShape })]).optional(),
-            help: z.string().optional(),
-            when: whenShape.optional(),
-            open: z.boolean().optional(),
-            fields: z.array(schemaFieldShape).optional()
-        })
-    )
-);
-
-/** The bookmarks answer: the well-formed entries and the well-formed fields of the schema. */
-export const bookmarksShape = z.object({
-    entries: survivorsShape(bookmarkShape).catch([]),
-    schema: survivorsShape(schemaFieldShape).catch([])
-});
+/** The bookmarks answer: the well-formed entries. */
+export const bookmarksShape = z.object({ entries: survivorsShape(bookmarkShape).catch([]) });
 
 /** One note of the list, answered as the endpoint sent it. */
 const noteRowShape = unchanged(

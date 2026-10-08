@@ -4,7 +4,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { CAREER_FILE, readCareer } from '../../../src/lib/data/sources/career.ts';
+import { CAREER_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
+import { readCareer } from '../../../src/lib/data/sources/career.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { career } from '../../../src/lib/data/snapshot/normalise-career.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';

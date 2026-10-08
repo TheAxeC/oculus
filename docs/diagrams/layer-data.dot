@@ -17,18 +17,18 @@ digraph layer_data {
         "folder data to folder data/snapshot" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data to folder data/sources" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/accounts" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder data/sources to folder data/helpers" [label="34", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data/sources to folder data/helpers" [label="35", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/prose" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/shapes" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder data/sources to folder data/snapshot" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder data/snapshot to folder data/helpers" [label="17", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data/sources to folder data/snapshot" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data/snapshot to folder data/helpers" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/snapshot to folder data/shapes" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/accounts to folder data/helpers" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/shapes to folder data/helpers" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/shapes to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/helpers to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder data/helpers to folder data/prose" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data/helpers to folder data/prose" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/prose to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "folder data" -> "folder data/sources" [style=invis, weight=10, minlen=2];

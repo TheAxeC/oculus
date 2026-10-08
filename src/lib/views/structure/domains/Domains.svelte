@@ -12,14 +12,14 @@
 
 <script lang="ts">
     // Layer 3, view. The application-domain board over populated registry entries and real-project
-    // membership, with the shared schema-driven add and edit forms.
+    // membership, with Add and Edit in File, which open the registry file.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import DomainCard from '$lib/views/structure/domains/DomainCard.svelte';
-    import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
-    import RegistryHead from '$lib/views/shared/forms/RegistryHead.svelte';
+    import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
     import Intro from '$lib/views/shared/prose/Intro.svelte';
-    import AddButton from '$lib/views/shared/forms/AddButton.svelte';
+    import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
+    import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -30,56 +30,35 @@
         parseDomainsState,
         type DomainsState
     } from '$lib/state/boards/structure/lines';
-    import { entryById } from '$lib/state/boards/collection';
     import { t } from '$lib/state/shared/words/text';
-    import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         entities: { portfolio },
-        selectors: { archiveDead, collectionOf, configMap, projects },
-        formDrafts: { toggleAdd, toggleEdit },
+        selectors: { archiveDead, projects },
         ui: { instanceState, setInstanceState }
-    } = useState();
+    } = client;
 
     let { instance }: ViewProps = $props();
     const held = $derived(parseDomainsState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const collection = $derived(collectionOf('domains'));
-    /**
-     * The registry file this view is drawn from, which the control at the end of the toolbar opens.
-     */
-    const source = $derived(viewSourceFile('domains', configMap()));
-    const domains = $derived(registryLines(portfolio(), 'domains', collection?.entries ?? []));
+    const file = registryFile(client, 'domains', 'domains');
+    const domains = $derived(registryLines(portfolio(), 'domains', file.collection?.entries ?? []));
     const shown = $derived(domainsWithMembers(domains, projects(), archiveDead()));
-    let said = $state('');
-
     function write(next: Partial<DomainsState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
 </script>
 
 {#snippet tools()}
-    <SourceToolbar {source}>
-        {#if collection?.schema !== undefined}
-            <AddButton
-                open={held.adding}
-                onclick={() => write({ adding: toggleAdd(instance.id, 'domains', held.adding) })}
-            />
-        {/if}
-    </SourceToolbar>
+    <RegistryTools {file} />
 {/snippet}
 
 <Pane title={t('views.domains')} toolbar={tools}>
     <div class="domains-view" data-instance={instance.id}>
-        <RegistryHead
-            collection="domains"
-            schema={collection?.schema}
-            adding={held.adding}
-            bind:said
-            onclose={() => write({ adding: false })}
-        >
+        <RegistryHead said={file.said}>
             {#snippet intro()}
                 <Intro html={inlineMarkdown(t('domains.intro'))} trusted />
             {/snippet}
@@ -98,19 +77,11 @@
                             domain={item.domain}
                             cursor={cursor === item.domain.id}
                             projects={item.projects}
-                            entry={entryById(collection, item.domain.id)}
-                            schema={collection?.schema}
-                            editing={held.editing === item.domain.id}
-                            onedit={() =>
-                                write({
-                                    editing: toggleEdit(
-                                        instance.id,
-                                        'domains',
-                                        held.editing,
-                                        item.domain.id
-                                    )
-                                })}
-                            onsaid={(words: string) => (said = words)}
+                            entry={file.entryOf(item.domain.id)}
+                            schema={file.collection?.schema}
+                            file={file.source}
+                            fault={file.faultOf(item.domain.id)}
+                            onsaid={file.say}
                         />
                     </Reveal>
                 {/each}

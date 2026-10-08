@@ -19,6 +19,7 @@ import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../model/index.t
 import { text as str } from '../helpers/guards.ts';
 import { itemsShape, mapShape, readOr, rowsShape } from '../shapes/shapes.ts';
 import { isLeadClosed } from '../accounts/leads.ts';
+import { identityFieldOf, identityFindings } from '../snapshot/validate.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { errorLine, readYamlMap } from './yaml-file.ts';
 
@@ -52,9 +53,10 @@ function lead(entry: Record<string, unknown>): Lead {
 }
 
 /**
- * The leads file answers two of the five feeds: the live leads themselves, and the position
- * scout's own run date, which the file records as the leading date of a `meta.log` line rather
- * than as a run field of its own.
+ * The leads file answers two of the five feeds: the live leads themselves, and the position scout's
+ * own run date, which the file records as the leading date of a `meta.log` line rather than as a
+ * run field of its own. It also reports the identity findings of every lead of the file, since the
+ * live leads alone carry no file and no position the snapshot could check them by.
  */
 function leads(
     file: string,
@@ -63,9 +65,11 @@ function leads(
 ): { leads: Feeds['leads']; scout: Feeds['scout'] } {
     const data = readYamlMap(file, catalog, findings, () => null);
     if (data === null) return { leads: null, scout: null };
-    const live = readOr(entriesShape, data.entries, [])
-        .filter((entry) => !isLeadClosed(entry.status))
-        .map(lead);
+    const entries = readOr(entriesShape, data.entries, []);
+    // Every lead of the file is checked for its identity, the closed ones too, since a write
+    // addresses a lead by its title whether it is live or not.
+    findings.push(...identityFindings(file, identityFieldOf(data.schema), entries, catalog));
+    const live = entries.filter((entry) => !isLeadClosed(entry.status)).map(lead);
     const runs = readOr(itemsShape, metaOf(data).log, [])
         .map((line) => SCOUT_RUN.exec(str(line)))
         .filter((found): found is RegExpExecArray => found !== null)

@@ -8,7 +8,7 @@ import { isMap as isYamlMap, isScalar, isSeq } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { sameValue } from '../yaml/yaml-edit.ts';
 import type { EditResult } from '../yaml/yaml-edit.ts';
-import { pairEnd, pairOf } from '../yaml/yaml-ranges.ts';
+import { pairEnd, pairOf } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 import {
     document,
     fail,

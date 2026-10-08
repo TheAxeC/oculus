@@ -1,8 +1,6 @@
 # Oculus text owned by the file browser: the workspace header and its menu, its trees and their heads, its sections (open editors, outline, timeline, bookmarks and notes), the keys its row menu shows, what a refused workspace write says, and the file operations of its row menu: the menu words, the questions, the name messages, the refusals and the upload and compare lines.
 text:
     files:
-        add_bookmark: + bookmark
-        add_bookmark_title: Bookmark a file under one of these roots
         add_note: + note
         add_note_title: Open a scratch note of your own
         add_skipped: 'Already folders of this workspace: {0}'
@@ -10,14 +8,18 @@ text:
         ast_close: Close
         ast_close_title: Close the AST
         ast_none: No AST node at selection
-        bookmark_edit: edit
-        bookmark_edit_title: Change the bookmark {0}
         bookmark_failed: 'The bookmark was not written: {0}'
         bookmark_glyph: star
+        bookmark_label: Label
         bookmark_missing_title: The path is not on this machine any more
         bookmark_open_title: Open {0}
+        bookmark_remove_title: Remove the bookmark {0}
+        bookmark_rename: Rename Bookmark...
+        bookmark_rename_ask: Rename the bookmark {0}
+        bookmark_rename_do: Rename
+        bookmark_rename_title: Change the label of the bookmark {0}
         bookmarks: Bookmarks
-        bookmarks_empty: No bookmark yet.
+        bookmarks_empty: No bookmark yet. The star on a file adds one.
         bookmarks_failed: 'The bookmarks could not be read: {0}'
         cancel: cancel
         collapse_title: Close {0}

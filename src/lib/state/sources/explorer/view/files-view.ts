@@ -51,14 +51,12 @@ export type RevealOutcome = {
  * selected with it (`selection`, empty while only the cursor row is selected) and the row a range
  * grows from (`anchor`), the filter text and whether it matches fuzzily, the sections under the
  * tree that are closed (`collapsed`) and the ones that start closed and the reader opened
- * (`opened`), its open form with what was typed into a line form, the refusal and outcome lines
- * that answered its last press, which come back with the form they answered, its toggles (hidden
- * files, the files git ignores, nested files), the folder a rooted tab is drawn from (`top`) and
- * the folder Open Folder found outside every root (`outside`), and the Timeline's pin and the two
- * lists it shows (`timelinePinned`, `timelineGit`, `timelineLocal`), and the order its sections are
- * drawn in (`sections`, every section's id once, the ones not drawn included). A bookmark form's
- * typed values are not here: they are the form drafts of state/forms/form-drafts.svelte.ts, kept
- * beside this record as every entry form's are.
+ * (`opened`), its open line form with what was typed into it, the line that answered its last press
+ * (`note`), its toggles (hidden files, the files git ignores, nested files), the folder a rooted
+ * tab is drawn from (`top`) and the folder Open Folder found outside every root (`outside`), and
+ * the Timeline's pin and the two lists it shows (`timelinePinned`, `timelineGit`,
+ * `timelineLocal`), and the order its sections are drawn in (`sections`, every section's id once,
+ * the ones not drawn included).
  */
 export type FilesView = FilesForms &
     ListingShown & {
@@ -87,8 +85,6 @@ export type FilesView = FilesForms &
          * none.
          */
         note: string;
-        /** What the bookmark form's last write answered, which is a report and not a refusal. */
-        said: string;
         /** The name being typed for a new file or folder, or a renamed row; null for none. */
         naming: Naming | null;
         /** The folder a rooted tab is drawn from, or null for a tab that draws the workspace. */
@@ -168,8 +164,8 @@ const selectionShape = z
         })
     );
 
-/** The open form a saved record names, and no form for a name that is none of the three. */
-const formShape = z.enum(['', 'root', 'workspace', 'bookmark']).catch('');
+/** The open form a saved record names, and no form for a name that is none of the two. */
+const formShape = z.enum(['', 'root', 'workspace']).catch('');
 
 /** The pending name a saved record holds: a kind, a named root and a path. */
 const namingShape = z.object({
@@ -186,14 +182,11 @@ const filesViewShape = z
         filter: z.string().catch(''),
         collapsed: fieldItemsShape,
         form: formShape,
-        editing: z.string().catch(''),
         typed: z.string().catch(''),
-        opening: countShape,
         reveal: askShape.nullable().catch(null),
         revealed: outcomeShape.nullable().catch(null),
         revealing: countShape,
         note: z.string().catch(''),
-        said: z.string().catch(''),
         naming: namingShape.nullable().catch(null),
         hidden: z.boolean().catch(false),
         ignored: z.boolean().catch(false),
@@ -212,7 +205,6 @@ const filesViewShape = z
     .transform((held): FilesView => ({
         ...held,
         sections: sectionsOf(held.sections),
-        editing: held.form === 'bookmark' ? held.editing : '',
         typed: isLineForm(held.form) ? held.typed : '',
         // A rename names the row it renames, so a rename of no path is none.
         naming: held.naming?.mode === 'rename' && held.naming.path === '' ? null : held.naming
@@ -231,14 +223,11 @@ function emptyFilesView(): FilesView {
         filter: '',
         collapsed: [],
         form: '',
-        editing: '',
         typed: '',
-        opening: 0,
         reveal: null,
         revealed: null,
         revealing: 0,
         note: '',
-        said: '',
         naming: null,
         hidden: false,
         ignored: false,

@@ -240,39 +240,74 @@ function checkEntryStatus(
     }
 }
 
+/** The field a file's entries are addressed by: its schema's first field, `title` without one. */
+export function identityFieldOf(schema: unknown): string {
+    const names = fieldNames(schema);
+    return names.length > 0 ? names[0] : 'title';
+}
+
 /**
- * Two entries of one collection with the same identity value. The identity field is the schema's
- * first, `title` where the file has no schema, and it is what a write addresses an entry by: with
- * two of one value, an edit reaches the first and the second can be neither edited nor removed. A
- * collection that is a registry is left to the schema's duplicate-key rule (schema/lists.ts), which
- * reads every registry and names the line.
+ * The identity findings of one file's entries. The identity field is the schema's first, `title`
+ * where the file has no schema, and it is what a write addresses an entry by: an entry with no
+ * value there can be addressed by nothing, and with two of one value an edit reaches the first and
+ * the second can be neither edited nor removed. Each entry gives at most one finding:
+ * `identity_empty` for an empty value (two empty values are not a shared one), `identity_shared`
+ * for a value another entry also holds. An entry for which `exempt` answers true has its empty
+ * value reported elsewhere. Closed entries are checked like the rest, so a caller passes every
+ * entry of the file.
+ */
+export function identityFindings(
+    file: string,
+    ident: string,
+    entries: readonly Record<string, unknown>[],
+    catalog: TextCatalog,
+    exempt: (entry: Record<string, unknown>) => boolean = () => false
+): Finding[] {
+    const values = entries.map((entry) => readAs(textOrNumberOnlyShape, entry[ident]));
+    const counts = new Map<string, number>();
+    for (const value of values) {
+        if (value !== null && value !== '') counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+    const findings: Finding[] = [];
+    values.forEach((value, index) => {
+        const key = `entries[${index}].${ident}`;
+        if (value === null || value === '') {
+            if (exempt(entries[index])) return;
+            const message = findingText(catalog, 'findings.validate.identity_empty', ident);
+            findings.push({ file, key, message });
+            return;
+        }
+        if ((counts.get(value) ?? 0) < 2) return;
+        const message = findingText(catalog, 'findings.validate.identity_shared', ident, value);
+        findings.push({ file, key, message });
+    });
+    return findings;
+}
+
+/**
+ * The identity findings of every collection. A collection that is a registry whose schema opens
+ * with the registry's own id field is left to the schema's duplicate-key rule (schema/lists.ts) and
+ * to the registry reader's missing-id finding; venues open with `name` and funding with `title`, so
+ * their write identity is checked here. A funding entry with neither a key nor a title is the
+ * funding check's finding and is not reported twice.
  */
 function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
-    const registryFiles = new Set(
+    const idFields = new Map(
         (Object.keys(REGISTRY_SHAPES) as RegistryName[]).flatMap((name) =>
-            raw.registries[name].entries.map((one) => one.file)
+            raw.registries[name].entries.map((one) => [one.file, REGISTRY_SHAPES[name].idField])
         )
     );
+    const fundingFiles = new Set(raw.registries.funding.entries.map((one) => one.file));
+    const keyless = (entry: Record<string, unknown>): boolean =>
+        (readAs(textOrNumberOnlyShape, entry.key) ?? '') === '';
     for (const key of Object.keys(raw.collections).sort()) {
         const collection = raw.collections[key];
-        if (registryFiles.has(collection.file)) continue;
-        const names = fieldNames(collection.meta.schema);
-        const ident = names.length > 0 ? names[0] : 'title';
-        const values = collection.entries.map((entry) =>
-            readAs(textOrNumberOnlyShape, entry[ident])
+        const ident = identityFieldOf(collection.meta.schema);
+        if (idFields.get(collection.file) === ident) continue;
+        const exempt = fundingFiles.has(collection.file) ? keyless : undefined;
+        findings.push(
+            ...identityFindings(collection.file, ident, collection.entries, catalog, exempt)
         );
-        const counts = new Map<string, number>();
-        for (const value of values) {
-            if (value !== null) counts.set(value, (counts.get(value) ?? 0) + 1);
-        }
-        values.forEach((value, index) => {
-            if (value === null || (counts.get(value) ?? 0) < 2) return;
-            findings.push({
-                file: collection.file,
-                key: `entries[${index}].${ident}`,
-                message: findingText(catalog, 'findings.validate.identity_shared', ident, value)
-            });
-        });
     }
 }
 

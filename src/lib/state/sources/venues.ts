@@ -4,7 +4,6 @@
 import { z } from 'zod';
 import type { Project, Venue } from '../../data/model/index.ts';
 import { fieldItemsShape, readAs, searchRevealShape } from '../../data/shapes/shapes.ts';
-import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 
 export type VenueUse = { projects: Project[]; concentrated: boolean };
 export type TimelineChip = { venue: Venue; biennial: boolean };
@@ -18,7 +17,7 @@ export type TimelineMonth = {
 export type NextDeadline = { venue: Venue; month: number; distance: number };
 export type VenueTimeline = { months: TimelineMonth[]; next: NextDeadline[]; counts: number[] };
 
-export type VenuesState = OpenForms & {
+export type VenuesState = {
     search: string;
     off: string[];
     journalsOpen: boolean;
@@ -139,7 +138,7 @@ export function venueSearch(venues: Venue[], words: string | string[]): Venue[] 
     });
 }
 
-/** The fields a Venues instance keeps beside its open forms, each read as absent when wrong. */
+/** The fields a Venues instance keeps, each read as absent when wrong. */
 const venuesStateShape = searchRevealShape.extend({
     off: fieldItemsShape,
     journalsOpen: z.boolean().catch(true),
@@ -153,8 +152,7 @@ export function parseVenuesState(raw: unknown): VenuesState {
         search: held?.search ?? '',
         off: held?.off ?? [],
         journalsOpen: held?.journalsOpen ?? true,
-        conferencesOpen: held?.conferencesOpen ?? true,
-        ...parseOpenForms(raw)
+        conferencesOpen: held?.conferencesOpen ?? true
     };
     if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;

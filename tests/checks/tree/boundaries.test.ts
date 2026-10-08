@@ -213,6 +213,7 @@ const ALLOWED: Record<string, string[]> = {
         'state/**',
         'views/shared/**',
         'data/shapes/shapes',
+        'data/prose/linkedin-idea',
         'data/prose/lsp-servers',
         'data/prose/text-edits'
     ],
@@ -237,6 +238,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/save-text',
         'data/helpers/files/opens-in-program',
         'data/helpers/files/languages',
+        'data/helpers/files/yaml/collection-text',
         'data/prose/latex',
         'data/prose/bib',
         'data/helpers/files/nesting',

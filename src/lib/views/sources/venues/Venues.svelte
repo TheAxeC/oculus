@@ -21,9 +21,9 @@
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
-    import AddButton from '$lib/views/shared/forms/AddButton.svelte';
-    import RegistryHead from '$lib/views/shared/forms/RegistryHead.svelte';
-    import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
+    import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
+    import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';
+    import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
     import Intro from '$lib/views/shared/prose/Intro.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import ThemeFacets from '$lib/views/shared/forms/ThemeFacets.svelte';
@@ -38,26 +38,25 @@
         type VenuesState
     } from '$lib/state/sources/venues';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { applyThemeFacets, themeFacets, themeWordLabels } from '$lib/state/shared/words/themes';
-    import { entryById } from '$lib/state/boards/collection';
+    import {
+        applyThemeFacets,
+        themeFacets,
+        themeWordLabels,
+        toggledThemes
+    } from '$lib/state/shared/words/themes';
     import { t } from '$lib/state/shared/words/text';
-    import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
-        selectors: { archiveDead, collectionOf, configMap, projects, venues },
-        formDrafts: { toggleAdd, toggleEdit },
+        selectors: { archiveDead, configMap, projects, venues },
         ui: { instanceState, setInstanceState }
-    } = useState();
+    } = client;
 
     let { instance }: ViewProps = $props();
 
-    const collection = $derived(collectionOf('venues'));
-    /**
-     * The registry file this view is drawn from, which the control at the end of the toolbar opens.
-     */
-    const source = $derived(viewSourceFile('venues', configMap()));
+    const file = registryFile(client, 'venues', 'venues');
     const allVenues = $derived(venues());
     const allProjects = $derived(realProjects(projects(), archiveDead()));
     const held = $derived(parseVenuesState(instanceState(instance.id)));
@@ -70,34 +69,17 @@
     const conferences = $derived(byCategory.conferences);
     const todayMonth = new Date().getMonth() + 1;
 
-    let said = $state('');
-
     function write(next: Partial<VenuesState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
 
     function toggleTheme(theme: string): void {
-        write({
-            off: held.off.includes(theme)
-                ? held.off.filter((item) => item !== theme)
-                : [...held.off, theme]
-        });
-    }
-
-    function entryFor(id: string) {
-        return entryById(collection, id);
+        write({ off: toggledThemes(held.off, theme) });
     }
 </script>
 
 {#snippet tools()}
-    <SourceToolbar {source}>
-        {#if collection?.schema !== undefined}
-            <AddButton
-                open={held.adding}
-                onclick={() => write({ adding: toggleAdd(instance.id, 'venues', held.adding) })}
-            />
-        {/if}
-    </SourceToolbar>
+    <RegistryTools {file} />
 {/snippet}
 
 {#snippet bar()}
@@ -123,14 +105,7 @@
 
 <Pane title={t('views.venues')} toolbar={tools} {bar}>
     <div class="venues" data-instance={instance.id}>
-        <RegistryHead
-            collection="venues"
-            schema={collection?.schema}
-            adding={held.adding}
-            bind:said
-            spaced
-            onclose={() => write({ adding: false })}
-        >
+        <RegistryHead said={file.said} spaced>
             {#snippet intro()}
                 <Intro html={t('venues.intro')} trusted />
             {/snippet}
@@ -162,19 +137,11 @@
                                         projects={use.projects}
                                         concentrated={use.concentrated}
                                         {labels}
-                                        entry={entryFor(venue.id)}
-                                        schema={collection?.schema}
-                                        editing={held.editing === venue.id}
-                                        onedit={() =>
-                                            write({
-                                                editing: toggleEdit(
-                                                    instance.id,
-                                                    'venues',
-                                                    held.editing,
-                                                    venue.id
-                                                )
-                                            })}
-                                        onsaid={(words: string) => (said = words)}
+                                        entry={file.entryOf(venue.id)}
+                                        schema={file.collection?.schema}
+                                        file={file.source}
+                                        fault={file.faultOf(venue.id)}
+                                        onsaid={file.say}
                                     />
                                 </Reveal>
                             {/each}
@@ -209,19 +176,11 @@
                                         projects={use.projects}
                                         concentrated={use.concentrated}
                                         {labels}
-                                        entry={entryFor(venue.id)}
-                                        schema={collection?.schema}
-                                        editing={held.editing === venue.id}
-                                        onedit={() =>
-                                            write({
-                                                editing: toggleEdit(
-                                                    instance.id,
-                                                    'venues',
-                                                    held.editing,
-                                                    venue.id
-                                                )
-                                            })}
-                                        onsaid={(words: string) => (said = words)}
+                                        entry={file.entryOf(venue.id)}
+                                        schema={file.collection?.schema}
+                                        file={file.source}
+                                        fault={file.faultOf(venue.id)}
+                                        onsaid={file.say}
                                     />
                                 </Reveal>
                             {/each}

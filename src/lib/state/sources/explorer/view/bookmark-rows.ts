@@ -1,7 +1,7 @@
 // Layer 2, client state, pure. The reader's bookmarks as the file browser and the rail read them: a
 // bookmark is `{ root, path }` in ~/.oculus/bookmarks.yml and names a file or a folder, and these
 // functions turn the entries into the row keys the tree draws its stars from, the rows the rail's
-// Bookmarks menu draws, the label a new bookmark is filed under and the schema its form draws.
+// Bookmarks menu draws and the label a new bookmark is filed under.
 
 import { z } from 'zod';
 import { readAs } from '../../../../data/shapes/shapes.ts';
@@ -89,21 +89,6 @@ export function bookmarkRows(
             }
         ];
     });
-}
-
-/**
- * The bookmarks schema the entry form draws, with the roots of the workspace in force as the
- * choices of its root field. The file's own schema names the field and its type; which roots there
- * are is the reader's workspace and changes under it, so it is supplied here rather than written
- * into the file, where a root added later would not be one a bookmark could name.
- */
-export function markSchemaFor<T extends { field: string }>(
-    schema: T[],
-    roots: { key: string }[]
-): (T & { options?: string[] })[] {
-    return schema.map((field) =>
-        field.field === 'root' ? { ...field, options: roots.map((one) => one.key) } : field
-    );
 }
 
 /**

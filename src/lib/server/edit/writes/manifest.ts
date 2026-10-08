@@ -29,7 +29,7 @@ import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import { noteMapOf, setFields } from '../yaml/yaml-edit.ts';
-import { renderScalar } from '../yaml/yaml-values.ts';
+import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { insertRemoved, insertReplaced } from './restore.ts';
 import type { ChangeRecord, RemovedText, ReplacedText } from '../../core/changes.ts';
 import type { Refusal, SetFieldsResult } from '../yaml/yaml-edit.ts';

@@ -9,7 +9,8 @@ import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
 import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
-import { pairOf, rangeOf } from '../yaml/yaml-ranges.ts';
+import { lineAt, listOf } from '../../../data/helpers/files/yaml/collection-text.ts';
+import { pairOf, rangeOf } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 import { renderFlowMap } from './render.ts';
 import {
     LABEL,
@@ -19,8 +20,6 @@ import {
     indentOf,
     lastKeyLine,
     lastLineOf,
-    lineAt,
-    listOf,
     refuseAll,
     verified,
     type Change,

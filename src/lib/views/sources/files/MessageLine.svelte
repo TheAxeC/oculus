@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, view partial of Files.svelte. The one message line of the Files view: a refusal
-    // (the note), the bookmark form's outcome (what it said) or the outcome of an ask to show a
+    // Layer 3, view partial of Files.svelte. The one message line of the Files view: a refusal (the
+    // note, which a bookmark rename or removal answers on too) or the outcome of an ask to show a
     // path. It is laid over the foot of the view and takes no room of its own, so no row of the
     // tree moves when it shows or clears. Its own close control clears it; Escape in the view and
     // the next action that sets or clears the note clear it too, which Files.svelte does. A refusal

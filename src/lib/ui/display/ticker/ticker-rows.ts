@@ -25,9 +25,13 @@ export type TickerRow = {
     plain?: boolean;
 };
 
-/** One button on a row: what it is called back with, its words, and its hover title. */
+/**
+ * One button on a row: what it is called back with, its words, and its hover title. A disabled
+ * button is drawn and answers no press; the title says why.
+ */
 export type TickerAction = {
     id: string;
     label: string;
     title?: string;
+    disabled?: boolean;
 };

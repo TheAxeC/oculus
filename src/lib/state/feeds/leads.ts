@@ -29,8 +29,6 @@ export type LeadsState = {
     runlogOpen: boolean;
     /** Whether the run log shows every line rather than its first few. */
     logAll: boolean;
-    /** Whether the add form is open, kept with the instance so a re-render does not close it. */
-    adding: boolean;
     /** Whether the leads the reader declined are shown, so one can be reopened. */
     showDeclined: boolean;
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
@@ -63,7 +61,6 @@ const leadsStateShape = searchRevealShape.extend({
     expiredOpen: z.boolean().catch(false),
     runlogOpen: z.boolean().catch(false),
     logAll: z.boolean().catch(false),
-    adding: z.boolean().catch(false),
     showDeclined: z.unknown().optional(),
     showDismissed: z.unknown().optional()
 });
@@ -184,7 +181,6 @@ export function parseLeadsState(raw: unknown): LeadsState {
         expiredOpen: held?.expiredOpen ?? false,
         runlogOpen: held?.runlogOpen ?? false,
         logAll: held?.logAll ?? false,
-        adding: held?.adding ?? false,
         showDeclined: showing === true
     };
     if (held?.reveal !== undefined) state.reveal = held.reveal;

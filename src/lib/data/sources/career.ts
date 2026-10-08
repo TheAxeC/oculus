@@ -11,9 +11,6 @@ import type { TextCatalog } from '../helpers/finding-text.ts';
 import type { Finding } from '../model/index.ts';
 import { readYamlMap } from './yaml-file.ts';
 
-/** The path on the hub today, which the config falls back to when it names none. */
-export const CAREER_FILE = 'registries/career.yml';
-
 /**
  * Read the career file. The map comes back as it parsed, with no key renamed and no value coerced,
  * so that a section this model does not name is still there for a later package to read.

@@ -124,13 +124,13 @@ export function projectCount(count: number): string {
     return `${count} ${count === 1 ? t('pillars.project') : t('pillars.projects')}`;
 }
 
-/** The control that opens and closes a registry card's edit form, pressed while it is open. */
-export function editAction(editing: boolean, onedit: () => void): CardAction {
+/** The control that opens a registry card's entry in its file, titled with the file's name. */
+export function editAction(fileName: string, onedit: () => void): CardAction {
     return {
         id: 'edit',
-        label: t('collection.form_edit_title'),
+        label: t('collection.edit_in_file'),
+        title: t('collection.edit_in_file_title', fileName),
         glyph: t('collection.edit_glyph'),
-        active: editing,
         onclick: onedit
     };
 }

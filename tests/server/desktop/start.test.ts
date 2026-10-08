@@ -117,7 +117,7 @@ function run(
             PATH: process.env.PATH ?? '',
             ...extra
         },
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe']
     });
     for (const stream of [child.stdout, child.stderr]) {
         stream.on('data', (chunk: Buffer) => lines.push(...chunk.toString().split('\n')));

@@ -2,7 +2,7 @@
 // context rather than a prop.
 //
 // A pane provides it for each tab view it mounts (shell/panes/TabView.svelte), so a partial deep
-// inside a view (the entry form a card opens) can key what it keeps by its instance without every
+// inside a view (the documents a card lists) can key what it keeps by its instance without every
 // component between the view and the partial carrying one more prop. What is provided is a reader,
 // not a value, so a caller reads the id at the moment it acts rather than at its mount.
 

@@ -117,6 +117,24 @@ export type SectionMove = {
     step: (direction: 'up' | 'down') => void;
 };
 
+/**
+ * What a section with a list of movable rows (Bookmarks, Notes) is handed besides its rows: the
+ * failure of its read, whether it is open, and the controls that toggle it, read it again and put
+ * its rows in the order the ids name after a drop or Alt+Up/Down on a row.
+ */
+export type ListSectionProps = {
+    /** What reading the rows failed with, or the empty string. */
+    error: string;
+    /** Whether the section is open. */
+    open: boolean;
+    ontoggle: () => void;
+    /** Ask for the rows again, which the failed line's own control offers. */
+    onretry: () => void;
+    /** What lets the head be dragged and moved by Alt+Up/Down. */
+    move?: SectionMove;
+    onorder: (ids: string[]) => void;
+};
+
 /** The direction an Alt+Up or Alt+Down action names. */
 function directionOf(action: string): 'up' | 'down' | null {
     if (action === 'move-up') return 'up';

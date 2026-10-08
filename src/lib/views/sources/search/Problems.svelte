@@ -43,8 +43,8 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import Table from '$lib/ui/display/Table.svelte';
-    import type { Column } from '$lib/ui/display/table-rows';
+    import Table from '$lib/ui/display/table/Table.svelte';
+    import type { Column } from '$lib/ui/display/table/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';

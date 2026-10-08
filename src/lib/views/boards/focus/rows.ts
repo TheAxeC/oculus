@@ -6,19 +6,26 @@
 // a row lives here once rather than in each partial. It holds no markup and no list: a caller keeps
 // its own index of the lines it drew, because a button has to reach the line it sits on.
 //
-// A row's buttons are drawn only under the pointer or the keyboard (ui/display/Ticker.svelte's
-// `reveal`), except the one the row exists for, which the builder names by the row's id: a
-// subtask's or a follow-up's done, and a task entry's `done` status, since ticking a task off is
-// what its row is for. Another entry's statuses are all left under the pointer: the palette's
-// `terminal` says a status drops off the deadline radar, which is not the same as the status a
-// reader closes it with.
+// A row's buttons are drawn only under the pointer or the keyboard
+// (ui/display/ticker/Ticker.svelte's `reveal`), except the one the row exists for, which the
+// builder names by the row's id: a subtask's or a follow-up's done, and a task entry's `done`
+// status, since ticking a task off is what its row is for. Another entry's statuses are all left
+// under the pointer: the palette's `terminal` says a status drops off the deadline radar, which is
+// not the same as the status a reader closes it with.
+//
+// A line whose buttons write an entry or a subtask of a collection file has them disabled, with the
+// words naming the file as their title, while a source tab holds unsaved text of that file. The
+// `agent` button writes nothing and stays enabled.
 
-import type { TickerAction, TickerRow } from '$lib/ui/display/ticker-rows';
+import type { TickerAction, TickerRow } from '$lib/ui/display/ticker/ticker-rows';
 import { daysTone, type TickerItem, type TickerTarget } from '$lib/state/boards/ticker';
 import type { TaskRef, TerminalsStore } from '$lib/state/sessions/terminals.svelte';
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
 import { t } from '$lib/state/shared/words/text';
 import type { WriteAnswer, WritesStore } from '$lib/state/client/writes.svelte';
+import type { ClientState } from '$lib/state/client/context';
+import { viewSourceFile } from '$lib/state/sessions/view-source';
+import { blockedBy } from '$lib/views/shared/forms/entry-file';
 
 /** How a status button's id starts, the status following it. */
 const STATUS = 'status:';
@@ -48,6 +55,44 @@ export function keptAction(actions: TickerAction[] | undefined): string | undefi
 
 /** The collection of the entries a task start is offered on. */
 const TASKS = 'tasks';
+
+/** The collection a funding scheme's line belongs to. */
+const FUNDING = 'funding';
+
+/**
+ * The collection whose file a line's buttons write, and nothing for a line whose target is a
+ * project's manifest.
+ */
+function collectionOf(target: TickerTarget): string | undefined {
+    return target.kind === 'funding' ? FUNDING : target.collection;
+}
+
+/**
+ * The words saying why a line's buttons cannot write, or '' when they can: the collection file the
+ * line names has unsaved text in a source tab.
+ */
+export function fileBlock(
+    client: Pick<ClientState, 'selectors' | 'source'>
+): (line: TickerItem) => string {
+    return (line) => {
+        const collection = line.target === undefined ? undefined : collectionOf(line.target);
+        if (collection === undefined) return '';
+        const file = viewSourceFile('collection', client.selectors.configMap(), collection);
+        const unsaved = file !== null && client.source.unsavedFile(file.root, file.path);
+        return blockedBy(file, unsaved, undefined);
+    };
+}
+
+/** The buttons as they are, or, under `blocked`, every one that writes disabled with its words. */
+function lockedActions(
+    actions: TickerAction[] | undefined,
+    blocked: string
+): TickerAction[] | undefined {
+    if (actions === undefined || blocked === '') return actions;
+    return actions.map((action) =>
+        action.id === AGENT ? action : { ...action, disabled: true, title: blocked }
+    );
+}
 
 /** The `agent` button of a task line: it opens the composer seeded with the task. */
 function agentAction(): TickerAction {
@@ -190,9 +235,10 @@ function targetId(target: TickerTarget): string {
  * A fresh index and the builder that fills it. A row whose buttons write a target is named by that
  * target, so removing an earlier row cannot transfer a tap-open state to the line that follows it.
  * A targetless row has no hidden button and keeps the ordinal that only its immediate render uses.
- * The prefix keeps the two partials of one board from naming a row the same.
+ * The prefix keeps the two partials of one board from naming a row the same. `blocked` names, per
+ * line, the words that disable its buttons, as `fileBlock` answers them.
  */
-export function rowMaker(prefix: string): Rows {
+export function rowMaker(prefix: string, blocked: (line: TickerItem) => string = () => ''): Rows {
     const index: RowIndex = {};
     const keeps: Record<string, string | undefined> = {};
     let at = 0;
@@ -200,7 +246,7 @@ export function rowMaker(prefix: string): Rows {
         index,
         kept: (row) => keeps[row.id],
         row(line: TickerItem, tail: string): TickerRow {
-            const actions = actionsFor(line);
+            const actions = lockedActions(actionsFor(line), blocked(line));
             // An ordinal would let a line that moves up inherit the id of a row a tap just removed.
             const identity = line.target === undefined ? String(at++) : targetId(line.target);
             const id = `${prefix}${identity}`;
@@ -253,10 +299,8 @@ async function write(
     now: number
 ): Promise<WriteAnswer | null> {
     if (target.subtask !== undefined) {
-        const host =
-            target.collection === undefined
-                ? { id: target.id }
-                : { id: target.id, collection: target.collection };
+        const collection = collectionOf(target);
+        const host = collection === undefined ? { id: target.id } : { id: target.id, collection };
         if (action === 'done') return writes.writeSubtask(host, target.subtask, 'done');
         if (action === 'del') return writes.writeSubtask(host, target.subtask, 'delete');
         if (action === 'unsnooze') return writes.writeSubtask(host, target.subtask, 'snooze', '');

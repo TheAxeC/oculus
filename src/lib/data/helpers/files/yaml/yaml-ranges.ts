@@ -1,13 +1,16 @@
-// Layer 2, server. Where a node of a parsed YAML document stands in its text: the column and the
-// line a position sits on, the range of a node, where its value ends before the comment or the
-// newline its own range swallows, and the indentation a file writes its nested maps at.
+// Layer 1, data. Where a node of a parsed YAML document stands in its text: the column and the line
+// a position sits on, the range of a node, where its value ends before the comment or the newline
+// its own range swallows, and the indentation a file writes its nested maps at.
 //
-// parseDocument gives every node its byte range; yaml-edit.ts and the entry writers replace or
-// insert bytes at the positions read here, so the rules for them are in one place.
+// parseDocument gives every node its byte range. The entry writers of server/edit/ replace or
+// insert bytes at the positions read here, and collection-text.ts places a new entry in a tab's
+// text by the same positions, so the rules for them are in one place that both layers import.
 
 import { isMap as isYamlMap, isSeq } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
-import { DEFAULT_INDENT } from './yaml-values.ts';
+
+/** The indentation a nested map is written at when the file holds no other one to copy. */
+export const DEFAULT_INDENT = 2;
 
 /** The column a position sits at, which is the indentation of the line it is on. */
 export function columnOf(text: string, at: number): number {

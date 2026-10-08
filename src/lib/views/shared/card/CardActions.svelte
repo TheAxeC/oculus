@@ -10,6 +10,8 @@
         /** A glyph name; a control with one is drawn as its icon, one without as its words. */
         glyph?: string;
         active?: boolean;
+        /** Drawn disabled, with `title` saying why; pressing it does nothing. */
+        disabled?: boolean;
         /** The control that opens and closes the card, which the keyboard's Enter reaches. */
         toggle?: boolean;
         onclick: () => void | Promise<void>;
@@ -144,7 +146,8 @@
     });
 
     function pick(id: string): void {
-        void actions.find((action) => action.id === id)?.onclick();
+        const action = actions.find((one) => one.id === id);
+        if (action?.disabled !== true) void action?.onclick();
     }
 </script>
 
@@ -156,6 +159,7 @@
                 title={action.title}
                 glyph={action.glyph}
                 active={action.active}
+                disabled={action.disabled}
                 compact={action.glyph !== undefined}
                 dataCardToggle={action.toggle === true}
                 onclick={action.onclick}
@@ -175,7 +179,8 @@
                     label: action.label,
                     title: action.title,
                     glyph: action.glyph,
-                    active: action.active
+                    active: action.active,
+                    disabled: action.disabled
                 }))}
                 onpick={pick}
             />

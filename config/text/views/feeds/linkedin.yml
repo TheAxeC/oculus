@@ -1,6 +1,8 @@
 # Oculus text owned by the linkedin view.
 text:
     linkedin:
+        add_ask: A new idea
+        add_verb: Add Idea
         addidea: + idea
         addidea_tip: new LinkedIn idea draft (served mode)
         default_pick: a recent project milestone

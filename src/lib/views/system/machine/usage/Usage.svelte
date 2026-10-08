@@ -27,8 +27,8 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Meter from '$lib/ui/display/Meter.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Table from '$lib/ui/display/Table.svelte';
-    import type { Column } from '$lib/ui/display/table-rows';
+    import Table from '$lib/ui/display/table/Table.svelte';
+    import type { Column } from '$lib/ui/display/table/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { clock } from '$lib/state/shared/words/format';
     import { nameOf } from '$lib/state/sources/explorer/file-type';

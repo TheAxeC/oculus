@@ -1,11 +1,10 @@
-In flight (2 of 6 slots in use):
-- M6 (the collection forms removed): repair round 1 built; its review running.
+In flight (1 of 6 slots in use):
 - D43 (LaTeX navigation through texlab): repair round 1 building.
 
 Queued, in order (12 steps):
 - D36 (linters as VS Code's): brief closed; prepared again after D43 lands.
-- D39 (hub keys as links): brief closed; after M6 and D43 land.
-- M7 (a project folder moved in Files): after M6 and D39.
+- D39 (hub keys as links): brief closed; after D43 lands.
+- M7 (a project folder moved in Files): after D39.
 - D41 (links in Markdown checked): after M7.
 - D40 (the writing rules as editor marks): after D36.
 - Q72 (the architecture re-read): paused (Axel).
@@ -19,6 +18,7 @@ Queued, in order (12 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- M6 (the collection forms removed), 2026-10-08, 48af5d4e0.
 - D33 (the Problems view), 2026-10-08, b081d9da4.
 - M8 (the hub's YAML checked and completed in the editor), 2026-10-08, 7c5514850.
 - D28 (saving a source file as VS Code does), 2026-10-08, 3bf3bf4c6.

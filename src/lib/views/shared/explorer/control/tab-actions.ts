@@ -36,8 +36,8 @@ export type TabActionsDeps = {
 
 export type TabActions = ReturnType<typeof tabActions>;
 
-/** What every press that acts clears: the refusal line and the bookmark form's outcome. */
-const LINES_CLEARED = { note: '', said: '' } as const;
+/** What every press that acts clears: the refusal line. */
+const LINES_CLEARED = { note: '' } as const;
 
 export function tabActions(deps: TabActionsDeps) {
     const { client } = deps;
@@ -58,7 +58,7 @@ export function tabActions(deps: TabActionsDeps) {
      * switched away from by the time it lands. A tab closed meanwhile has no record left, and is
      * not given one back for a line nobody will see.
      */
-    function answerAt(owner: string, part: Pick<Partial<FilesView>, 'note' | 'said'>): void {
+    function answerAt(owner: string, part: Pick<Partial<FilesView>, 'note'>): void {
         if (owner !== deps.id() && instanceState(owner) === undefined) return;
         patchAt(owner, part);
     }
