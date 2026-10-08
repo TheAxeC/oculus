@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z732 (2026-10-08, step D43, the orchestrator, automode): the choices of D43's brief
+
+- Chosen: the words the brief gives for texlab's status items, the not-found tip with its install command, the two LaTeX commands, the three options' help, the latexmkrc and weave approval ask and the waiting status item; a weave recipe approved under the `command:` kind with a `weave` member (repository, main folder, the recipe's tools as written), a weave step being one whose program is Rscript, julia or pweave, and an automatic build waiting on it as on a latexmkrc; the 2415 Unicode math symbols as a catalog file `config/catalogs/unimath.yml` pushed with the other catalogs, its byte cost measured in the report.
+- Not chosen: the generic not-found sentence, leaving the weave recipes unasked, a fifth approval kind, a separate route for the symbols, the symbols inside `latex.yml` (the lazy options).
+
+Where it applies: D43. Booked in `plan.md` Rulings, D43's step line and the closed log of `orchestrator-history.md`. Open item 14 holds the guarded entries.
+
 ## Z731 (2026-10-08, step M6, the orchestrator, automode): the choices of M6's brief
 
 - Chosen: one exported identity rule in `validate.ts`, run per collection and by `leads()` over the whole leads file, closed leads included; a written field of a type Z724 did not name takes null, `textarea` `""`; every control that writes a file Add or Edit opens is disabled while a source tab holds unsaved text of that file, and every other write (manifests, career, radar, decks, config, memories, audit mutes, deposits, History's undo) is refused in the client's write path before it is sent, with the sentence "<file> has unsaved text in a tab; save or revert it first"; the new keys' words as the brief gives them.

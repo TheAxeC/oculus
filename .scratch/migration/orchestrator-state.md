@@ -24,7 +24,19 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []   # steps in flight, up to six (Z632)
+dispatch:   # steps in flight, up to six (Z632)
+- step: M6
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a173480c420c38472 (builder, launched 2026-10-08)
+  worktree: .agents/worktrees/M6
+  base: 0e9bde803
+  launched: 2026-10-08
+  report: agents/reviews/M6-report.md
+  brief_check: agents/reviews/M6-brief-check.md (a0ebc241025bf8a8f, claude-opus-5-5, 338,515 tokens, 132 tool uses, 16.3 min; closed by ad9ce45922c35f90e, claude-opus-5-5, 150,543 tokens, 121 tool uses, 23.1 min; closed again in the brief at 0e9bde803)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -142,6 +154,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 - Open item 12 (2026-10-08), D36's guarded entries (the linters step; `agents/briefs/D36.md`, O6): D36 adds a route that runs programs on a path from a request (`server/machine/runs/lint/routes.ts`, `linters.ts`) and a held ESLint child per repository that loads the repository's configuration (`eslint.ts`); no entry's Code line names them. (a) Widen G1 (the write token), G2 (a path outside the roots), G7 (an argument array) to the lint route and table; G36 (a held process ends) to the ESLint child, which ends when idle 15 minutes, when its root leaves, when its approval changes and with the server; G55 (no repository code before its approval) to "a language server or a linter" with `eslint.ts`; each with one test or one row of an existing table, written by D36's builder. Pros: the parts that run programs and repository code ship guarded, as every other route and server does. Cons: about five tests more to keep. (b) No widening and no test: the route and the child rest on the builder's runs and the look. Pros: no tests to keep. Cons: a route that runs programs from a request path and a child that loads repository code ship with no guard. The lazy option is (b). Recommended: (a). The readers of the linters' output get no entry either way, since a wrong mark loses no work.
 - Open item 13 (2026-10-08), G28's widening for M6 (the collection forms removed; `agents/briefs/M6.md`, section 3a): M6 makes the client's write path refuse any write over a file a source tab holds unsaved text of, so Overwrite can no longer lose that text; G28 covers unsaved edits but names no write that is refused for them. (a) Add to G28: "A write sent from any view over a file a source tab of the page holds unsaved text of is refused before it is sent, and the text is kept.", its Code line `src/lib/state/client/writes.svelte.ts`, its test the one case of `tests/state/client/held-unsaved.test.ts`, written by M6's builder. Pros: the one check that keeps typed text from being overwritten by a card, a board or History ships guarded. Cons: one test more to keep. (b) No widening; the builder's test is deleted at landing. Pros: nothing more to keep. Cons: the refusal that prevents lost work rests on the look alone. The lazy option is (b). Recommended: (a).
+- Open item 14 (2026-10-08), D43's guarded entries (LaTeX navigation through texlab; `agents/briefs/D43.md`, "Rulings on the choices"): D43 starts texlab with a PATH that holds no `latexmk`, asks before a build runs a repository's latexmkrc, and asks before a weave recipe runs Rscript, julia or pweave over a document's code; G55 speaks of language servers only and G36 names five servers. (a) G55 becomes "A language server, a LaTeX build's latexmk step and a weave tool run no code of a repository (its config files, its packages, its interpreter, its latexmkrc, its woven chunks) before the processes approval of that code.", with the rows of D43's cases 11, 27 to 31 and 37 in `tests/server/machine/lsp/servers.test.ts` and `terminal-actions.test.ts`; G36 gains "one texlab its LaTeX and BibTeX tabs" with case 13's row in `lifetime.test.ts`; all written by D43's builder. Pros: the three gates that keep a repository's code from running unasked ship with a test each. Cons: about eight rows more to keep. (b) Only the latexmk widening of G55 and the G36 clause, the weave rows deleted at landing. Pros: fewer rows. Cons: the weave gate, which runs a document's R, Julia or Python code, has no test. (c) No widening; every new row deleted at landing. The lazy options are (b) and (c). Recommended: (a).
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -217,6 +230,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 19:05. M6 prepared (0e9bde803) and its builder a173480c420c38472 (claude-sonnet-5-5) launched in `.agents/worktrees/M6`. D43's brief written (`agents/briefs/D43.md`), its choices O1 to O3 closed as Z732, O4 raised as open item 14; its brief check a87cb52c4ba0e7cc3 (claude-opus-5-5) running beside D39's and D36's. Open items 12 to 14 for Axel. Next: each brief check's findings closed, D39 and D43 prepared and dispatched, D36 after open item 12.
 - 2026-10-08 18:40. M6's brief closed (`agents/briefs/M6.md`): its choices closed as Z731 in automode, item 3 widened to a refusal in the client's write path for every write over a file with unsaved text; its brief-check report closed again in the brief; open item 13 raised (G28's widening). M6 being prepared. D39's and D36's brief checks running; D43's brief written, its choices next.
 - 2026-10-08 18:10. D39's brief written (`agents/briefs/D39.md`); its choices O1 to O5 closed as Z730 in automode, O5 a fix of D23b's delivered `lsp-edit`; its brief check a82035d8af9667de8 (claude-opus-5-5) running beside D36's (ab66036bc6fe3c58d). D43's brief written by a8b1b2865432151e9; M6's brief written by a0faf60614eeb1d1f. Open item 12 for Axel. Next: M6's choices closed and its preparation, D43's choices closed and its brief check, then each brief check's findings closed and the builders launched.
 - 2026-10-08 17:30. D36's brief written (`agents/briefs/D36.md`); its choices O1 to O5 and O7 to O9 closed as Z729 in automode; O6, its guarded entries, raised as open item 12 for Axel; its brief check ab66036bc6fe3c58d (claude-opus-5-5) running. The brief writers of M6, D39 and D43 still running. Next: each brief read whole, the brief checks of D39 and D43, D36's findings closed, then the preparation commits and the builders (D36's after open item 12 is ruled).
