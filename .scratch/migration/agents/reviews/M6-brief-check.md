@@ -310,3 +310,20 @@ New dictated lines, each read against the prose rules and ASCII: `collection.lis
 `LC_ALL=C grep -n '[^ -~]' agents/briefs/M6.md` prints nothing.
 
 Usage of the closing: ordo-high on claude-opus-5-5 (ad9ce45922c35f90e), 150,543 tokens, 121 tool uses, 23.1 min (completion notice).
+
+### Closed again in the brief written at main 833c5932f (2026-10-08)
+
+The brief was rewritten from premise recheck 3 and the rulings Z719, Z722, Z724 and Z731, so each finding above was read again against `agents/briefs/M6.md`; the line numbers are that brief's, from `grep -n`.
+
+- Names 1 to 3 (the YAML helpers and the boundary row): carried; the helpers move to `data/helpers/files/yaml/` (section 1, :62, :98, :108) and the state row of `boundaries.test.ts` gains its entry (:66, :76, Paths).
+- Names 4 and 5 (documents and the fourteen hub comment lines): carried; "Paragraphs and head comments" (:88-99) lists them, `registries/domains.yml:1` and `network/events.yml:1` among the twelve files (:23, :34, :94), and section 7 gives each its sense.
+- Names 6 (the bookmarks schema chain): carried in section 5.3 (:189).
+- Names 7 (`tests/server/edit/writes.test.ts:7`): still true; the sentence names the manifest schema's form, which the manifest editor keeps (`sed -n 7p` of that file).
+- Names 8 (`lead-add`, `history.kind_lead_add`, `history.kind_other`): replaced by Z722 (1); the kind, its undo and `history.kind_lead_add` stay whole (:31, :90, section 6), so no record of an unknown kind arises and `kind_other` is not built.
+- Names 9 (D20's `collections.ts`): carried; D20 has landed and the brief reads `server/files/fs/collections.ts` on main (:25, :30).
+- The step line 1 (Z550): carried; decisions 10 to 13 hold Z550's choices.
+- Premises 1 to 12: re-checked on main by the rewrite; `config/sources.yml:52` (:35, :93), the LinkedIn test at `feeds.test.ts:88` (:74, :198), the source store at `state/sessions/source/source.svelte.ts` (:32, :56). The shared-step findings (Premises 9 to 11, D20, D23, D45, D11, D28, X3e, M8) no longer apply: each of those steps has landed (`queue.md`, Landed), and the brief is written on main after them.
+- Cases and checks 1 to 5: carried; autosave (:32, :73), Add undrawn with no schema, `identity_unusable` over every card of a file with an empty or shared identity (:159-160), the lead's `applied` (section 5.1), verify 3's grep narrowed to the client names.
+- The question 1 and 2: carried in the look list of "Verify before you report" (Rename Bookmark, the Findings view, :205, :226, :422) and in verify 4's run of section 8's rule over case 7's fixtures.
+- Implied inputs: carried as cases 15 to 30 (`keepPreview` :54, :147; `form: 'bookmark'` :189, :255; `list_not_a_list` :115, :235; `stub_unparsed` :117, :253; the leads date through `localDate` :185).
+- Dictated text 1 and 2: carried; `files.menu_remove_bookmark` and `settings.not_in_list` are reused (:50, :156, :189). The dictated keys added since are the words of Z731 (4) under "Conventions" and section 3a's `file_unsaved`, read against `agents/spec.md`'s prose rules: ASCII (`LC_ALL=C grep -n '[^ -~]' agents/briefs/M6.md` prints nothing), no dash, each a plain sentence.

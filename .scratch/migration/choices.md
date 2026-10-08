@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z731 (2026-10-08, step M6, the orchestrator, automode): the choices of M6's brief
+
+- Chosen: one exported identity rule in `validate.ts`, run per collection and by `leads()` over the whole leads file, closed leads included; a written field of a type Z724 did not name takes null, `textarea` `""`; every control that writes a file Add or Edit opens is disabled while a source tab holds unsaved text of that file, and every other write (manifests, career, radar, decks, config, memories, audit mutes, deposits, History's undo) is refused in the client's write path before it is sent, with the sentence "<file> has unsaved text in a tab; save or revert it first"; the new keys' words as the brief gives them.
+- Not chosen: checking the live leads alone, `""` for every type, the listed controls alone, and booking the other writers as a step of their own (the lazy options).
+
+Where it applies: M6. Booked in `plan.md` Rulings, M6's step line and the closed log of `orchestrator-history.md`. Open item 13 holds the test of the write-path refusal.
+
 ## Z730 (2026-10-08, step D39, the orchestrator, automode): the choices of D39's brief
 
 - Chosen: the rename box's preview key Cmd+Enter (Ctrl+Enter off macOS), VS Code's and Monaco's own binding, in place of the Shift+Enter Z725 named; a new schema attribute `keyed: true` on a `records` field, so the deck groups' `slides` carry `from: projects`; the Refactor Preview as an unlisted view `refactor-preview` opened when a preview is asked, with VS Code's words and oculus's refusal sentences; References rows and Go to Definition opening with the whole range the server named, so a hyphenated key is selected whole; `lsp-edit` refusing a path under a `closed_paths` folder (`secrets`), a fix of D23b's delivered work.

@@ -1,5 +1,5 @@
 In flight (4 of 6 slots):
-- M6 (the collection forms removed): brief written, its choices being closed.
+- M6 (the collection forms removed): being prepared for its builder.
 - D39 (hub keys as links): brief check running.
 - D43 (LaTeX navigation through texlab): brief written, its choices being closed.
 - D36 (linters on save): brief check running.
