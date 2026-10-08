@@ -40,6 +40,19 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with D36, `server/root/context.ts` (D36 237-262, 321-325 beside D39's two changes at 257 and 327, its `SchemaFeed`, `createRelay` and watcher-hook lines 248-262 and 326), `relay.ts` (D36's three-line head comment edit at 23-25, which D39's hook sentence joins), `state/client/context.ts`, `DESIGN.md` (D36 23, 166, 476; D39 526, 553, 575-576), `HELP.md` (D36 118; D39 81, 116), `docs/views.md` (D36 81; D39 67-69, after 69, 253), `docs/files-and-search.md` (D36 a new section after 85; D39 85), `glyphs.yml` (each its own entries), `config/text/views/sources/search.yml` and `source.yml` (each its own lines), `src/lib/data/model/index.ts` (D36 572-609, D39 94-98) and `docs/diagrams/` (regenerated after the second landing); simple, since each is a few added statements or sentences kept from both sides at the second landing, with no logic of one step depending on the other's
   landing: not-started
   round: 1 (agents/briefs/D39-round1.md, sent 2026-10-09; the tree as handed back is at .agents/worktrees/D39-round0)
+- step: D40
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a55bd9e7057d5d802 (builder, launched 2026-10-09)
+  worktree: .agents/worktrees/D40
+  base: 9fd6c6eac
+  launched: 2026-10-09
+  report: agents/reviews/D40-report.md
+  brief_check: agents/reviews/D40-brief-check.md (a2cb4c691ca4ee98c, claude-opus-5-5, 296,952 tokens, 97 tool uses, 18.4 min; closed inline in the brief by the orchestrator)
+  shared_paths: with D39, `data/model/index.ts` (D40 572-609, D39 94-98), `server/root/context.ts` (D40 240-290 around D39's 257, D39 also 327), `config/text/views/sources/source.yml` (D40 3-33, D39 62-82 and three `lsp_*` keys), `DESIGN.md` (D40 23, 166, 476; D39 526, 553, 575-576), `HELP.md` (D40 118, D39 81, 116), `docs/views.md` (D40 81, D39 67-69, 253), `docs/files-and-search.md` (D40 87-106, D39 85), `docs/diagrams/` (regenerated at landing); each a different block of the file, so the merge is by hunk, with context.ts 257 and HELP.md 116/118 merged by hand.
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -236,7 +249,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-09 03:10. D40's brief closed inline by the orchestrator through `/spec` (no agent): open items 18, 19 and 20 and the Folder Fix All ruling written in, every brief-check finding closed under "Closed" in `agents/reviews/D40-brief-check.md`. D39's review over round 1 (a9fc0373cde573248, claude-opus-5-5) is running. Next: D40's preparation commit, worktree and builder; then D39's landing; then M7.
+- 2026-10-09 03:30. D40 prepared on main at 9fd6c6eac (its brief closed inline by the orchestrator through `/spec`, no agent: open items 18, 19 and 20 and the Folder Fix All ruling written in, every brief-check finding closed under "Closed" in `agents/reviews/D40-brief-check.md`) and its builder a55bd9e7057d5d802 (claude-sonnet-5-5) launched in `.agents/worktrees/D40`. D39's review over round 1 (a9fc0373cde573248, claude-opus-5-5) is running. Next: D39's landing when its review reports; then M7.
 - 2026-10-09 01:40. D36 landed at 5ed0bc24c (linters as VS Code's; booking in plan.md; `agents/reviews/D36-landing.md`). D39's first review (`agents/reviews/D39-refuter.md`) sent as repair round 1 (`agents/briefs/D39-round1.md`, Z741 in automode) to builder a39d8c564a664a921. No open item. Next: D39's round report, the review over the round and /land D39 (merging with D36's lines in `server/root/context.ts`); /spec D40 now; M7 after D39, D41 after M7.
 - 2026-10-08 22:10. D36 built and reviewed (`agents/reviews/D36-refuter.md`, ae0da9f815922756d, claude-opus-5-5); its findings sent as repair round 1 (`agents/briefs/D36-round1.md`, Z740 in automode) to builder a6524e67c2c932dc1. ShellCheck 0.11.0 installed. D39 building. No open item. Next: D36's round report and the review over it, D39's report and review, then /land; M7 after D39, D41 after M7, D40 after D36.
 - 2026-10-08 20:52. D39 prepared on main at 58c7840d9 (its premise recheck's corrections, Z739 and Axel's ruling (b) on open item 16 written into the brief; item 10 and case 48 added for `diskName`) and its builder a39d8c564a664a921 (claude-sonnet-5-5) launched in `.agents/worktrees/D39`, beside D36's (shared paths judged simple). Next: D36's and D39's reports and reviews; M7 after D39, D41 after M7, D40 after D36.

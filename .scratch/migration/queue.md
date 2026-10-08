@@ -1,10 +1,10 @@
-In flight (1 of 6 slots in use):
-- D39 (hub keys as links): repair round 1 sent (Z741).
+In flight (2 of 6 slots in use):
+- D39 (hub keys as links): repair round 1 built; its review over round 1 running.
+- D40 (the writing rules as editor marks): building (builder launched 2026-10-09, base 9fd6c6eac).
 
-Queued, in order (10 steps):
+Queued, in order (9 steps):
 - M7 (a project folder moved in Files): after D39.
 - D41 (links in Markdown checked): after M7.
-- D40 (the writing rules as editor marks): ready to prepare (D36 landed).
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (release readiness): paused (Axel).
 - O29 (retiring the cockpit): paused (Axel).
