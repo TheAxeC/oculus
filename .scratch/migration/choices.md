@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z739 (2026-10-08, step D39, the orchestrator, automode): the choices of D39's premise recheck on main at a60dcb4fa, all but the closed paths
+
+- Chosen: `diskName` is replaced in `hub-names.ts` by one function that says whether two names are one disk file from the served roots' real folders, used by the unsaved-text refusal, the page's edit plan and the YAML hook; while the page has not read its roots it falls back to the present prefix rule, which errs toward refusing; each side joins its root's real folder with the path, so a file reached through a symlinked folder inside a root counts as another file; a rename writes the new key through the one scalar writer `renderScalar`, so `123` or `null` as a new key is written quoted instead of refused; the function's test is a table in `tests/data/helpers/hub-names.test.ts`.
+- Not chosen: a second comparison beside `diskName` (the lazy option); comparing by root and path alone while the roots load; the server's resolved path on one side and the join on the other; a second scalar writer; no test of the function.
+
+Where it applies: D39. Booked in `plan.md` Rulings and D39's Step 0. The closed paths of a language server's edit are open item 16 for Axel.
+
+## Z738 (2026-10-08, step D36, the orchestrator, automode): the choices of D36's premise recheck on main at a60dcb4fa
+
+- Chosen: a `lint.chktex_path`, `lint.ruff_path` or `lint.shellcheck_path` value is read as `latex.texlab_path` reads its value: empty finds the program on PATH, otherwise an absolute path or one starting with `~`, and a named path that cannot be used shows `not_found` naming the path, with no PATH fallback; the status tooltips say "name its absolute path, or one starting with ~, in lint.<linter>_path". The held ESLint processes follow the served roots through the language servers' one follower and end at once when `lint.eslint` is switched off. The comment at `relay.ts:23-25` says texlab sends no ChkTeX rows. The approval key functions take the key kind, so D43's `latexmkrc:` copy is folded into them.
+- Not chosen: the path handed to the program runner as written, as the older `latex.<tool>_path` keys do (the lazy option; a relative path would depend on where the server runs); a fallback to PATH, which runs another program than the one named; ESLint processes left to the 15-minute idle after their root leaves or the switch goes off; the comment left as it reads; a third copy of the key functions.
+
+Where it applies: D36. Booked in `plan.md` Rulings, D36's step line and Step 0, the brief's "Rulings on the choices" and the closed log of `orchestrator-history.md`.
+
 ## Z737 (2026-10-08, step D43, the orchestrator, automode): the review over D43's repair round 1, closed at landing
 
 - Chosen: the LaTeX status item counts the waiting main files of the followed main's own folder (the same served root and folder path); a Rerun or Restart of a LaTeX build or clean terminal whose task mark names no folder takes the folder from the served root holding the terminal's working folder, and one whose mark names no step and main file is refused with a new word `latex-unmarked` and the sentence "This LaTeX terminal does not record its main file and folder, so what it would run cannot be checked; press Build or Clean of its main file to run it again."; a Rerun of a file that is no longer a main is refused `not-a-main`, as Build is; the clean held before a retry is let go when a later build of that main succeeds; G55 is written with the widening open item 14 ruled, without the report's added clause about Rerun, which the widened sentence already covers, and the case-32 route row is filed under G31.

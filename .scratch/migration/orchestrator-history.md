@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z739 (2026-10-08): the choices C1 to C4 and C6 of D39's premise recheck closed in automode (`choices.md`); C5, the closed paths of `lsp-edit`, raised as open item 16.
+- Z738 (2026-10-08): the choices C1 to C5 of D36's premise recheck closed in automode (`agents/reviews/D36-premise-recheck.md`; `choices.md`): the `lint.*_path` rule as `latex.texlab_path`, the held ESLint following the served roots and the off switch, the relay comment, the folded key functions.
 - Z737 (2026-10-08): the review over D43's repair round 1 closed at landing in automode (`agents/reviews/D43-refuter.md`, Closed; `choices.md`): the status item's folder scope, old LaTeX marks read by their served root or refused `latex-unmarked`, the owed retry let go after a success, G55 as open item 14 ruled it.
 - Z736 (2026-10-08): D43's first review, the `approve-latex` body, case 24's wording and the longest-waiting entry kept as built, in automode (`choices.md`).
 - Open item 15 (2026-10-08): Axel ruled (a): G66, G67 and G68 widened to D39's rows, the text given by D39's builder and written into `agents/guarded.md` at D39's landing.

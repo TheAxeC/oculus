@@ -207,3 +207,4 @@ Closed by the orchestrating session in `agents/briefs/D36.md`, on main at fbc434
 O6 is rewritten to Axel's ruling (a), open item 12, with the test files named in the Cases paragraph.
 
 Dictated lines held, each ASCII with no dash: `item_linter: Linters`; the seven `lint_*` status words and tooltips of item 5; the Disable comment forms of item 4.
+- After the premise recheck on main at a60dcb4fa (`agents/reviews/D36-premise-recheck.md`): the brief's premises, line numbers and paths corrected as its section 4 gives them, and its choices C1 to C5 closed as Z738. The dictated tooltip lines `lint_tip_not_found_chktex`, `lint_tip_not_found_ruff` and `lint_tip_not_found_shellcheck` (`grep -n lint_tip_not_found agents/briefs/D36.md`) now end "or name its absolute path, or one starting with ~, in lint.<linter>_path."; read line by line against `agents/spec.md`: ASCII, no dash standing in for punctuation, no history: hold.

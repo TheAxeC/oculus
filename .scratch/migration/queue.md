@@ -2,8 +2,8 @@ In flight (0 of 6 slots in use):
 - none.
 
 Queued, in order (12 steps):
-- D36 (linters as VS Code's): brief closed; ready for /spec.
-- D39 (hub keys as links): brief closed; ready for /spec.
+- D36 (linters as VS Code's): premises rechecked on main at a60dcb4fa and written into the brief; being prepared, its builder next.
+- D39 (hub keys as links): premises rechecked on main at a60dcb4fa; waits for open item 16 (what a language server's edit refuses as closed).
 - M7 (a project folder moved in Files): after D39.
 - D41 (links in Markdown checked): after M7.
 - D40 (the writing rules as editor marks): after D36.
@@ -18,7 +18,7 @@ Queued, in order (12 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D43 (LaTeX navigation through texlab), 2026-10-08.
+- D43 (LaTeX navigation through texlab), 2026-10-08, a60dcb4fa.
 - M6 (the collection forms removed), 2026-10-08, 827d5b77c.
 - D33 (the Problems view), 2026-10-08, b081d9da4.
 - M8 (the hub's YAML checked and completed in the editor), 2026-10-08, 7c5514850.
