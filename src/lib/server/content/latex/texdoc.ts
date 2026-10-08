@@ -8,7 +8,7 @@
 import { isTexSource, usedPackages } from '../../../data/prose/latex.ts';
 import { readBounded } from './reader.ts';
 import { closureOf } from './root.ts';
-import { run, type Run, type Tools } from './tools.ts';
+import { run, type Run, type Tools } from '../../core/program.ts';
 
 /** What a package name may be. */
 const NAME = /^[A-Za-z0-9._][A-Za-z0-9._-]*$/;

@@ -191,3 +191,234 @@ On the orchestrator's points:
 - Re-keying when a nested served root is added while rows are held, and a served root set below the repository root, for ESLint config lookup: not covered by a test and not run.
 
 Reviewer usage: agent id not given to me, claude-opus-5-5, tokens not known to me, tool uses not known to me, minutes not verified.
+
+## Repair round 1, refuted
+
+On `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D36`, base 669ae7f08. I read the round's delta from `D36-round0/tools/oculus` to `D36/tools/oculus` against the whole diff since the base: `git diff 669ae7f08 --stat` reports 72 files changed, 1046 insertions(+), 426 deletions(-). My own `diff -rq` over the two copies lists the same 28 files as `d36-r1.diff`. All runs below were made from `.agents/worktrees/D36/tools/oculus` with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`. The worktree's `git status --short` was the same before and after my runs (84 lines, compared with `diff`).
+
+```
+npm run diagrams                              -> exit 0; shasum of the 18 files in docs/diagrams before and after: "diagrams unchanged"
+sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md
+  ok      prettier (0.5 s): All matched files use Prettier code style!
+  ok      ASCII gate (0.5 s)
+  ok      svelte-kit sync (2.1 s)
+  ok      eslint (5.8 s)
+  ok      svelte-check (9.4 s): 1791494531198 COMPLETED 439 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok      vitest (34.4 s): Duration  30.47s (transform 48.77s, setup 0ms, import 64.88s, tests 52.74s, environment 272ms)
+  test:quick: 35.2 s (limit 45.0 s); every command passed
+  checks: 1 commands passed                     (exit 0)
+npm run test:quick -- --base 669ae7f08 (the reviewer's form)
+  test:quick: 97 changed file(s), from git since 669ae7f08
+  test:quick: 121 test file(s), 10 essential
+  ok      vitest (25.7 s): Duration  22.33s (...)
+  test:quick: 26.2 s (limit 45.0 s); every command passed      (exit 0)
+npx vitest run tests/server/machine/runs/lint/ tests/server/root/eslint-switch.test.ts --reporter=verbose
+  Test Files  4 passed (4)
+       Tests  21 passed (21)          (lint-route 9, eslint-life 7, eslint-trust 4, eslint-switch 1)
+  ... ends every held ESLint child from the hook the portfolio watcher runs 1024ms
+npx vitest run tests/server/root/eslint-switch.test.ts, run alone twice: 1037ms, 1091ms
+npm run test:checks                           -> Test Files  17 passed (17)  Tests  248 passed (248)
+each file alone, "Test Files 1 passed (1)" for every one, with this many tests:
+  channel 12, tab-menu 4, held-unsaved 1, terminal-close 3, manifest-draft 3, autosave.client 23, source-disk.client 4,
+  source 25, comment-draft.client 1, pages 5, served-roots.client 6, workspaces-real 2, config-cache 3, config 31,
+  config-folder 25, options 3, settings 70, approvals 7, compose 16, latex-approvals 19, servers 6, svelte-trust (slow) 2,
+  normalise 1, resources 1, docs 2, feeds 1, manifests 1, personal 2, present 4, methods 47
+config-cache.test.ts verbose: its three tests take 19 ms, 4 ms and 4 ms
+wc -l of changed sources: largest relay.ts 852, settings.ts 845, server/root/context.ts 839, state/client/context.ts 837; Palette.svelte 520
+sh utils/folder-check.sh                      -> exit 0
+diff D36-base/.../unused-exports.txt <now>    -> "39d38 < src/lib/server/content/latex/tools.ts: TOOL_TIMEOUT_MS" / "47a47 > src/lib/server/core/program.ts: TOOL_TIMEOUT_MS"
+ASCII gate (the spec's perl form over src tests config) -> no output, exit 0; LC_ALL=C grep -c over DESIGN.md HELP.md docs/*.md -> no file with a hit
+yaml.safe_load of the 8 changed config files  -> "yaml ok 8"
+grep -rn "from './tools.ts'" src/lib/server/content/latex -> endpoint.ts:53:import { readCount } from './tools.ts';
+grep -rn "no lint panel" DESIGN.md HELP.md docs -> exit 1
+find for .ruff_cache and .eslint_d under cases/work and the worktree -> none
+pgrep -fl "ruff|chktex|shellcheck|eslint|d36r1" after my runs -> exit 1
+The builder's scripts, rerun from $TMPDIR/d36r1/cases (each writes only under cases/work):
+  r1-docs.mts:  ruff url javascript:alert(1) {"code":"F401","href":null}
+                ruff url file:///etc/passwd {"code":"F401","href":null}
+                ruff url https://docs.astral.sh/ruff/rules/unused-import {"code":"F401","href":"https://docs.astral.sh/ruff/rules/unused-import"}
+                eslint docs javascript:alert(1) {"code":"no-undef","href":null}
+                eslint docs file:///etc/passwd {"code":"no-undef","href":null}
+                eslint docs https://eslint.org/docs/rules/no-undef {"code":"no-undef","href":"https://eslint.org/docs/rules/no-undef"}
+  r1-case12.mts: both {"ok":false,"state":"not_found"}
+  r1-d9.mts:    routeColumns 47; 397,1044; 33,70,82,309,332; 589; 13,345 (the report's five numbers)
+  r1-shellcheck.mts (ShellCheck 0.11.0): case4 a.sh SC2086 info, column 6 to 8, two edits; b.sh SC1073/SC1072 error; c.sh SC2164 warning;
+                d.sh "column":11,"endColumn":13; case24 .slurm SC2086; x.zsh, x.bib, x.sty, x.cls {"status":400,"body":{"ok":false,"error":"not_taken"}}; case5 clean {"ok":true,"rows":[]}
+  r1-eslint.mts: case3 not_approved before; first lint {"ok":true,"rows":0,"ms":5979}; second {"ok":true,"rows":0,"ms":24};
+                case22 running before [] and after revoke []; case23 mathconfig.js no_config, .eslintrc only no_config, gen/out.js rows [], control ["no-var"]
+  c1-4, c4a-4b, c23: identical to the builder's out2-*.txt once hashes are masked
+  c9-31: identical except for a pid, a scratch folder name and case14's ms (705 against 702)
+ChkTeX, on $TMPDIR/d36r1/chk/a.tex with -wall -n22 -n30 -e16 -q -I0: lines 3, 4, 6 and 7 warn, and line 5 ("% chktex 12 chktex 2") prints nothing;
+  the same file with that comment removed: line 5 prints 12 and 2
+```
+
+Not rerun: the four kept test files in `$TMPDIR/d36r1/proof` and `proof0` (see "Declined to judge").
+
+### Verdicts
+
+These are for the whole diff since the base. Items of the brief's "What to build":
+
+- 1: holds. `run` and its answers live in `core/program.ts`. The only remaining import of `tools.ts` is `readCount`. The unused-exports diff shows only the move of `TOOL_TIMEOUT_MS`.
+- 2: violated, Behaviour R1-1. The `:eslint-config` list says that no configuration applies to a tab whose linters have not answered. The rest holds:
+  - the readers keep only http and https documentation addresses (r1-docs);
+  - the approval is per configuration folder (Z740, `eslint-trust.test.ts:110`);
+  - cases 9 and 12 to 20 reproduce.
+- 3: holds. `statuses` (`lint.svelte.ts:228-235`) answers only linters with a slot status. Holds, saves, counters and `forgetOutside` are unchanged.
+- 4: holds. `problem-marks.svelte.ts:73`, `lint-fixes.ts:315` and `:365` pass every address through `webAddress`. Fix All is disabled unless `fresh()` holds (`lint-fixes.ts:418-424`).
+- 5: holds. `LanguageItems.svelte` draws only items for answered linters; `off` and `no_config` draw nothing. The words are in `statusbar.yml:134-141`.
+- 6: holds. settings 70, config 31 and config-folder 25 pass.
+- 7: holds:
+  - `DESIGN.md:575` reads "come from the ChkTeX linter";
+  - `docs/files-and-search.md` and `docs/configuration.md:13` say `true` or `false`;
+  - the per-folder approval sentence is in `DESIGN.md:166` and `docs/files-and-search.md:93`;
+  - the "no lint panel" grep exits 1.
+
+Cases:
+
+- 1: met (c1-4 rerun).
+- 2: met (c1-4 rerun).
+- 3: met. r1-eslint: first lint 5979 ms, second 24 ms. eslint-trust passes.
+- 4: met with the real ShellCheck 0.11.0 (r1-shellcheck).
+- 4a: met for the rows (c4a-4b). The drawing needs the look.
+- 4b: met (c1-4, c4a-4b).
+- 4c: met (c1-4, c4a-4b; `lint-fixes.ts:285`).
+- 5: met (c1-4; r1-shellcheck case5).
+- 6: met by reading (`problem-marks.svelte.ts:71`). The look covers Show Infos.
+- 7: met by reading (`state/client/context.ts:618`). served-roots.client: 6 passed.
+- 7a: met by reading (`canonical`, `lint.svelte.ts:101-108`).
+- 8: met by reading. A restored dirty tab is not linted and has no status.
+- 9: met (c9-31 rerun: the first pid is dead after the second run).
+- 10: met by reading (`release` and `forget`).
+- 11: met by reading (the store is per page).
+- 12: met (r1-case12 rerun).
+- 13: met (c9-31).
+- 13a: met (c9-31).
+- 14: met (c9-31, timeout at 705 ms).
+- 15: met (c9-31).
+- 16: met (c9-31).
+- 17: met (`eslint-life.test.ts:128`).
+- 18: met (lint-route, c9-31).
+- 19: met (lint-route, c9-31).
+- 20: met (c9-31: x_created false).
+- 21: met by reading. An unserved root has no status and no actions.
+- 22: met (eslint-trust 4 passed; r1-eslint).
+- 23: met (r1-eslint; `no_config` draws no item).
+- 24: met (r1-shellcheck).
+- 24a: met (lint-route, c9-31).
+- 25: not verifiable here. The undo step needs the look.
+- 26: met by reading (`lint-fixes.ts`). The look covers the drawn result.
+- 27: met by reading and r1-docs. The look covers the click.
+- 28: met by reading (`lint-fixes.ts:418-424`). The look covers the disabled state.
+- 29: met by reading (`fresh`, `lint-fixes.ts:55-67`).
+- 30: met (c9-31 `off`; settings.test). `lintItem` draws nothing for `off`.
+- 31: met (c9-31: 200 ok in 233 ms).
+
+### Findings
+
+The ten rulings, one by one:
+
+- Rulings 1 to 9 are closed by fixes, not by removing a check, and my reruns reproduce each claimed closure.
+- Ruling 1 reaches beyond its finding into the `:eslint-config` list (R1-1).
+- Ruling 7 also gained a test row, `eslint-trust.test.ts:110`. It falls under G55's guarantee and the report states it.
+- Ruling 10 holds except for one false row in the look table (R1-2).
+
+#### 1. Spec
+
+- R1-7. File: `tools/oculus/.scratch/migration/agents/reviews/D36-report.md` in the worktree. `git status --short` shows `?? tools/oculus/.scratch/migration/agents/reviews/D36-report.md`, and its first line is `# D36 report: linters (ChkTeX, ruff, ESLint, ShellCheck)`.
+  - What is wrong: the worktree still holds the round-0 report, and `cmp` with main's copy says "differ: char 13, line 1". The builder's report says it should not land.
+  - Failure scenario: the landing's wip commit takes the whole worktree, and the cherry-pick replaces main's round-1 report with the superseded round-0 one.
+  - Verdict: none.
+
+#### 2. Proof
+
+- R1-6. Place: the report's "Doc text" for G36, which adds "when the approval it started under changes or is taken back".
+  - What is wrong: the G36 Test line it proposes lists eslint-life and eslint-switch. No row there tests the end on a revoke. That row is `eslint-trust.test.ts:93`, 'ends the child when the approval is taken back', listed under G55 only.
+  - Failure scenario: a reader of G36 finds no G36 test for the revoke end. A later change to G55's rows leaves G36 claiming a guarantee it lists no test for.
+  - Fix at landing: add that title to G36's Test line.
+  - Verdict: none.
+
+#### 3. Standards
+
+- R1-3. File: `tests/server/root/eslint-switch.test.ts:86`, the test 'ends every held ESLint child from the hook the portfolio watcher runs'.
+  - What is wrong: the test takes 1024 ms, 1037 ms and 1091 ms (verbose runs above) and has no `// @module-tag slow`. `agents/spec.md`, "What every package obeys", says: "A test runs in well under a second; one that cannot (a real process, a timer, a network wait) is tagged slow." For comparison, `config-cache.test.ts` reaches the same context in 4 to 19 ms.
+  - Failure scenario: the test runs in `test:quick` and `npm test` whenever a file it imports changes. With six builders on the machine it can pass vitest's 5 s timeout and fail with no defect.
+  - Fix at landing: tag it slow.
+  - Verdict: none (ruling 5's row itself holds).
+- R1-4. File: `src/lib/data/hub-address.ts:4-9`, "One rule, imported by both layers: the collection card runs it ... and the Audit runs it ...". Also `tests/checks/tree/boundaries.test.ts:90-92`, which gives the collection card and the Audit as the readers of `data/hub-address`.
+  - What is wrong: the file now also holds `webAddress`. Its readers are `state/system/apps/methods.ts:16`, `server/machine/runs/lint/readers.ts:19`, and three views through `lint-model.ts:6`. The head comment paragraph and the boundaries comment still name one rule and its two readers. The spec's rule asks that head comments of touched code be read against the change.
+  - Failure scenario: someone who changes `webAddress` reads the head comment and expects only the card and the Audit to depend on the file, so they miss the app opener and the linter links.
+  - Verdict: none.
+- R1-5. The report's "Commands outside the brief's allowance": "`pkill -f nothing` once by mistake".
+  - What is wrong: `pkill -f` signals every process of the user whose command line contains the pattern. `agents/spec.md`, "Where you work", says never to signal the process that holds 8787 or any pid in `~/.claude/sessions/`, and a pattern kill cannot exclude them. The later `pgrep -fl nothing` cannot show whether a process was killed.
+  - Failure scenario: any process of Axel's, or another agent's, whose argv contains "nothing" receives SIGTERM.
+  - Verdict: none.
+
+#### 4. Behaviour
+
+- R1-1. Place: `src/lib/views/sources/source/Source.svelte:364-370`:
+  - `const items = client.lint.statuses(root, path).map(...)`
+  - `return items.length === 0 ? undefined : { at: place, items };`
+  - Read with `src/lib/shell/keys/palette-modes.ts:44-49`: `return parsed?.name === 'eslint-config' && linters !== undefined ? linters.at : null;`
+  - What is wrong: since ruling 1, `statuses` is empty until a linter answers, so `status.linters` is undefined. `lintConfigOf` then answers null, and `LintConfigRows.svelte` shows `app.palette.eslint_config_none`, which reads "No ESLint configuration applies to the file of the source tab." In round 0 the placeholder `ok` kept `linters.at` defined, so the list found the file before any answer. The report does not state this change.
+  - Failure scenario:
+    - A `.ts` tab restored with unsaved text in an unapproved repository: `:eslint-config` says no configuration applies, and the user cannot approve until the file is saved.
+    - A clean `.ts` tab in an approved repository during ESLint's cold start (5979 ms in my rerun, 17 s measured in the brief): the list says no configuration applies and cannot take the approval back.
+    - Once any answer has arrived, including `not_approved`, the list works.
+  - Small fix at landing: return `{ at: place, items }` whenever `client.lint.keyOf(root, path)` is not null. `LanguageItems` already draws nothing for an empty `items`.
+  - Verdict: item 2 violated.
+- R1-2. Place: the report's look table, the row "a tab before its first answer, a restored tab with unsaved text, a tab of an unserved root, a switched-off linter | n/a | no linter item at all; "Linters: Run Again" is still in the tab's actions".
+  - What is wrong: for a tab of an unserved root, `canonical` answers null (`lint.svelte.ts:101-108`) and `lintActions` returns `[]` at `lint-fixes.ts:404`, so Run Again is not listed. Round 0 listed it there. The code is right, but the report states the wrong after-state and leaves out the change.
+  - Failure scenario: at the look, Run Again is missing from an unserved-root tab, and that is booked as a defect.
+  - Verdict: none.
+
+### On the orchestrator's points
+
+1. **`webAddress` moved to `src/lib/data/hub-address.ts`.** The home holds. `data/hub-address` is already on the state layer's allow list (`boundaries.test.ts:265`), and the server may import any of `data/`. The file's concern is telling web addresses from hub paths. Views reach the check through the `lint-model.ts` re-export, which the layer rules require.
+   - Every caller uses the moved function: `methods.ts:16` and `:284`, `readers.ts:19` and `:133`, `lint-fixes.ts:315` and `:365`, `Problems.svelte:153`, `:172`, `:185` and `:375`, `problem-marks.svelte.ts:73`. No copy is left (grep).
+   - `methods.test.ts` is byte-identical to the base (`diff` prints nothing). Its rows drive `methods.open` with `javascript:`, `file:`, user and password, and over-2048 addresses into the same function, and 47 pass.
+   - The head comment is stale (R1-4).
+2. **The injected `exited(pid)` option and `createEslints`.** They are the size the job needs. `exited` is one optional callback beside `clock`, called after `#lost` on the child's `exit` (`eslint.ts:142-145`). `createEslints` follows the existing factory pattern (`createRelay`, `createDebug`). Production passes only `{ roots }` (`context.ts:276-281`), and `exited` falls back to a no-op (`eslint.ts:256`). Nothing extra reaches production.
+3. **Would `eslint-switch.test.ts` fail without `eslint.endAll()`?** Yes, by reading. After `lint.eslint` is set to `false` and `built?.()` runs, `expect(context.eslint.running()).toEqual([])` would see `[repo]`, and `await exits.gone(pid)` would never settle. The first `built?.()` with `true` also asserts `[repo]`, so an unconditional end would fail too. Its time is R1-3.
+4. **The hang row of `eslint-life.test.ts`.** It proves both points. `armed(LIMIT_MS)` waits for the lint's timer, the clock passes it, and the lint answers `timeout`. `await gone(hung)` settles only on that pid's exit event, so a child that was only forgotten would hang the test. `starts(dir)` reaching 2 and `alive(newest(dir))` show that the next lint starts a new child.
+5. **The readers of `statuses`.**
+   - Status bar (`LanguageItems.svelte:149-203`): behaves.
+   - Fix All (`lint-fixes.ts:396-427`): behaves. It is listed only for `ok` and enabled only when fresh.
+   - `tab-asks`: a pass-through, behaves.
+   - Run Again: listed whenever `keyOf` is not null, which includes a held file with no answer.
+   - `:eslint-config` through `lintConfigOf`: works for a `not_approved` file once its first answer has arrived. It does not find a file with no answer yet, and says "No ESLint configuration applies" (R1-1).
+6. **The four kept test files.** The tree holds none of them. `find tests -name lint.test.ts -o -name lint-actions.test.ts` finds nothing. The kept `eslint-trust.test.ts`, `lint-route.test.ts` and `lint-fixture.ts` differ from the tree's by exactly the documentation-address rows and stand-in. What else proves each ruling:
+   - Ruling 2 is proven on the tree by the r1-docs run, which I reran, plus reading of the view-side checks.
+   - Rulings 1 and 3 are proven only by reading and by the report's runs of those off-tree files, which I did not rerun. On the tree they rest on the look.
+   - Open item 17 holds this.
+7. **`ls -la ~/.oculus` and `pkill -f nothing`.** The listing breaks no rule of `agents/spec.md` or the brief: both forbid only approvals files under `~/.oculus`, and the listing wrote nothing. `pkill -f nothing` is R1-5.
+8. **The Doc text for `agents/guarded.md`.**
+   - The line numbers are right: G1 at 7, G2 at 10, G7 at 25, G55 at 37 and G36 at 65 (grep).
+   - Every quoted title exists verbatim in the verbose run above. That covers the G2 and G7 `%s` tables, the four G55 rows including the nested one, the seven G36 rows and the switch row.
+   - The Code lines name the files that hold each behaviour: `routes.ts`, `linters.ts`, `eslint.ts`, `eslint-child.mjs` and `context.ts`'s `built` hook.
+   - One mismatch: G36's text claims the revoke end with no G36 test listed for it (R1-6).
+9. **Test titles carrying `(G1)` and the like.** These are within the rule. `agents/spec.md` bans package ids (O17, Q14, D19c), dates and the listed comparison words. A G-id names a standing guarantee, not a package, session or date. The base already uses the form in a head comment (`tests/state/system/lsp/edits.test.ts:2` and `:4`). This round puts it into test titles for the first time (six titles).
+
+### Declined to judge
+
+- The kept tests for rulings 1 and 3 (`$TMPDIR/d36r1/proof`, `proof0`): not rerun. Their `node_modules` is a link to the worktree's, so vitest would write its cache through it outside that folder.
+- Anything only a page shows: the markers' ranges, the Info marker and Show Infos, the warning tone, the code link, undo as one step, Fix All's disabled state on screen, and the `:eslint-config` empty sentence on screen. These need the app, which this review may not start.
+- Whether `pkill -f nothing` signalled any process: no record exists to settle it.
+- `eslint-switch.test.ts` under parallel load: timed only alone and in a four-file run (1.0 to 1.1 s).
+
+Reviewer usage: agent id not known to me, claude-opus-5-5, tokens not known to me, about 75 tool uses counted from my own calls, minutes not verified.
+
+### Closed
+
+The findings of the run over round 1, each with its disposition at landing (none is sent to the builder):
+
+- R1-1 (the `:eslint-config` list before a linter's first answer): fixed at landing; `Source.svelte` publishes `linters` with its `at` whenever the lint store names the file, with an empty item list until an answer.
+- R1-2 (the report's look table, Run Again on an unserved root): no code change; the landing note states the after-state, no Run Again for a tab of an unserved root.
+- R1-3 (`eslint-switch.test.ts` over a second): fixed at landing, the file tagged slow.
+- R1-4 (`hub-address.ts` head comment and the `boundaries.test.ts` comment naming two readers): fixed at landing.
+- R1-5 (`pkill -f nothing`): a conduct slip of the builder, reported to Axel at landing; nothing to change in the tree.
+- R1-6 (G36's Test line missing the revoke row): fixed at landing in `agents/guarded.md`.
+- R1-7 (the worktree's round-0 report): closed by the landing script, which leaves the ledger root out of the worktree's commit; main keeps the round-1 report.
+- Also fixed at landing from the orchestrator's read of the delta: the code span `{ id, messages, docs }` split across two comment lines in `eslint-child.mjs`. Open item 17's two rows (`agents/reviews/D36-item17-tests.patch`) applied, as Axel ruled.
+
+- Fixed at landing from the gate's first run of `test:landing` (`test:checks` red, 2 of 248): the `boundaries.test.ts` comment the R1-4 fix rewrote ran past the hundredth column (G23), rewrapped; and `config/layout.yml`'s `nav_groups` no longer followed the rail order after commit 02a09980e moved Sessions after Incoming on main (G13's 'keys every catalogue group by the rail page it holds, in rail order'), its `sessions` group moved after `incoming` with its chord `m` kept.
+- Fixed at landing from the look on the 8796 scratch oculus: the first edit in a preview tab pins it, its editor is mounted again, and the lint store's release forgot the file's answers while the hold that followed came from a tab with unsaved text and linted nothing, so the marks and the status item were gone until the next save even after an undo. The last release now forgets the file after the current task (`setTimeout` 0 in `release`, `hold` keeping a file whose forget is pending), so a remount keeps the answers; checked on the page with `b.sh` (a preview tab, one character typed and undone: the ShellCheck mark and item stay).

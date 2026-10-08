@@ -25,6 +25,7 @@ import {
 } from '../../../src/lib/state/system/config/config-files.ts';
 import { SETTINGS_MESSAGES } from '../../../src/lib/state/system/config/messages.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
+import { CHKTEX_FIXABLE, LINT_IDS } from '../../../src/lib/data/model/index.ts';
 import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
 import { LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
 import { symbolKindName } from '../../../src/lib/data/prose/symbol-kinds.ts';
@@ -259,6 +260,28 @@ const COMPUTED_PREFIXES = [
         file: 'lib/views/sources/source/language/lsp.ts',
         start: 't(`source.${key}`',
         keys: () => LSP_EDIT_NOTICES.map((notice) => `source.${notice}`)
+    },
+    {
+        // A linter is named by its id, so a linter added to data/model without a name fails here.
+        file: 'lib/state/system/machine/lint/lint-words.ts',
+        start: 't(`lint.name_${id',
+        keys: () => LINT_IDS.map((id) => `lint.name_${id}`)
+    },
+    {
+        // A ChkTeX fix is titled by the warning's number, from the list of the warnings that have
+        // one.
+        file: 'lib/state/system/machine/lint/lint-words.ts',
+        start: 't(`lint.chktex_fix_${number',
+        keys: () => CHKTEX_FIXABLE.map((number) => `lint.chktex_fix_${number}`)
+    },
+    {
+        // A linter that was not found is told how to install it, in its own words.
+        file: 'lib/shell/status/LanguageItems.svelte',
+        start: 't(`statusbar.lint_tip_not_found_${',
+        keys: () =>
+            LINT_IDS.filter((id) => id !== 'eslint').map(
+                (id) => `statusbar.lint_tip_not_found_${id}`
+            )
     },
     {
         // A symbol of the palette's `#` list is worded by its kind, the protocol's own list.

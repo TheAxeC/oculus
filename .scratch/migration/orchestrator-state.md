@@ -25,21 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D36
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a6524e67c2c932dc1 (builder, launched 2026-10-08)
-  worktree: .agents/worktrees/D36
-  base: 669ae7f08
-  launched: 2026-10-08
-  report: agents/reviews/D36-report.md
-  builder_usage: 87,036 tokens, 378 tool uses, 87.3 min; round 1: 253,015 tokens, 265 tool uses, 63.7 min
-  reviewer_report: agents/reviews/D36-refuter.md (ae0da9f815922756d, claude-opus-5-5, 79,242 tokens, 95 tool uses, 23.2 min)
-  round_brief: agents/briefs/D36-round1.md (sent to a6524e67c2c932dc1; the tree before it copied at .agents/worktrees/D36-round0)
-  brief_check: agents/reviews/D36-brief-check.md (ab66036bc6fe3c58d, claude-opus-5-5, 275,056 tokens, 102 tool uses, 15.1 min; closed by a95ffc1009df88e4a, claude-opus-5-5, usage not recorded); premise recheck at a60dcb4fa a171b94b2f14b66e9, claude-opus-5-5, 322,213 tokens, 95 tool uses, 15.0 min
-  landing: not-started
-  round: 1
 - step: D39
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -49,6 +34,8 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 58c7840d9
   launched: 2026-10-08
   report: agents/reviews/D39-report.md
+  builder_usage: 265,677 tokens, 751 tool uses, 171.7 min
+  reviewer_report: agents/reviews/D39-refuter.md (a0406e6fb11a5db2d, claude-opus-5-5, 262,443 tokens, 132 tool uses, 23.6 min)
   brief_check: agents/reviews/D39-brief-check.md (a82035d8af9667de8, claude-opus-5-5, 354,905 tokens, 148 tool uses, 20.9 min; closed inline in the brief); premise recheck at a60dcb4fa aff03e5971f3cf40d, claude-opus-5-5, 331,913 tokens, 122 tool uses, 17.0 min
   shared_paths: with D36, `server/root/context.ts` (D36 237-262, 321-325 beside D39's `SchemaFeed`, `createRelay` and watcher-hook lines 248-262 and 326), `relay.ts` (D36's three-line head comment edit at 23-25, which D39's hook sentence joins), `state/client/context.ts`, `DESIGN.md` (D36 23, 166, 476; D39 526, 553, 575-576), `HELP.md` (D36 118; D39 81, 116), `docs/views.md` (D36 81; D39 67-69, after 69, 253), `docs/files-and-search.md` (D36 a new section after 85; D39 85), `glyphs.yml` (each its own entries) and `docs/diagrams/` (regenerated after the second landing); simple, since each is a few added statements or sentences kept from both sides at the second landing, with no logic of one step depending on the other's
   landing: not-started
@@ -246,6 +233,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 00:55. D36 landed (linters as VS Code's; booking in plan.md; `agents/reviews/D36-landing.md`) after one repair round, the review over round 1's findings fixed at landing; open item 17 ruled (b), G70 and its two rows written; G1, G2, G7, G55 and G36 widened in `agents/guarded.md`; gate in `.agents/worktrees/gate` green after the fixes at landing (the comment width, `nav_groups` in the rail order of 02a09980e, the lint store's forget on a remount found by the look, two files tagged slow by Z64); the look on the 8796 scratch oculus. D39 built and reviewed (`agents/reviews/D39-refuter.md`, a0406e6fb11a5db2d). No open item. Next: D39's repair round, its review over the round and /land D39; /spec D40 now D36 has landed; M7 after D39, D41 after M7.
 - 2026-10-08 22:10. D36 built and reviewed (`agents/reviews/D36-refuter.md`, ae0da9f815922756d, claude-opus-5-5); its findings sent as repair round 1 (`agents/briefs/D36-round1.md`, Z740 in automode) to builder a6524e67c2c932dc1. ShellCheck 0.11.0 installed. D39 building. No open item. Next: D36's round report and the review over it, D39's report and review, then /land; M7 after D39, D41 after M7, D40 after D36.
 - 2026-10-08 20:52. D39 prepared on main at 58c7840d9 (its premise recheck's corrections, Z739 and Axel's ruling (b) on open item 16 written into the brief; item 10 and case 48 added for `diskName`) and its builder a39d8c564a664a921 (claude-sonnet-5-5) launched in `.agents/worktrees/D39`, beside D36's (shared paths judged simple). Next: D36's and D39's reports and reviews; M7 after D39, D41 after M7, D40 after D36.
 - 2026-10-08 20:15. D36 prepared on main at 669ae7f08 (its premise recheck's corrections written into the brief, choices C1 to C5 closed as Z738 in automode) and its builder a6524e67c2c932dc1 (claude-sonnet-5-5) launched in `.agents/worktrees/D36`. D39 stopped on open item 16 (what a language server's edit refuses as closed, a premise of Z730 O5 found false); its other choices closed as Z739. Next: D36's report and review; D39 after Axel's ruling on open item 16, then M7, D41 and D40.

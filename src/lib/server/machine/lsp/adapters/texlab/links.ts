@@ -14,7 +14,7 @@
 import { randomBytes } from 'node:crypto';
 import { mkdirSync, readdirSync, renameSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { programPath } from '../../../../content/latex/recipes.ts';
+import { programPath } from '../../../../core/program.ts';
 
 /** The programs of the TeX distribution texlab is given, each when oculus's PATH finds it. */
 const LINKED_PROGRAMS = ['latex', 'kpsewhich', 'tectonic'] as const;

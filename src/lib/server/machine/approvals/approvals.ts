@@ -4,7 +4,7 @@
 // project command is approved by is the whole chain a press runs, with the repository's path.
 //
 // The shape is the one every user of the processes rule shares, `{ version: 1, approved: { "<kind>:
-// <sha256>": { label, at, folder? } } }`. There are five kinds of key. A command is approved under
+// <sha256>": { label, at, folder? } } }`. There are six kinds of key. A command is approved under
 // `command:<sha256>` of its chain text, and a debug launch under the same kind of key of its own
 // text (`debugText`), whose `debug` member keeps it apart from a chain. An app is approved under
 // `app:<sha256>` of its content, with the real path of its folder, and at most one `app` entry is
@@ -16,12 +16,14 @@
 // main would read are approved under `latexmkrc:<sha256>` of the JSON `[repository real path,
 // [[file, SHA-256 of its bytes], ...]]` in path order, and a recipe's weave tools under a
 // `command:` key of their own text (pty/latex/approval.ts), written together with it by
-// `approveLatex`. An entry of a kind a call does not write is kept as it stood. The file is private
-// to its owner (mode 0600), and the default file's folder, `~/.oculus`, is made mode 0700 when it
-// is looser; the file is written whole by a rename and read back to check the write. A file that is
-// not JSON, or not that shape, is read as holding no approvals, which asks again for everything and
-// approves nothing by mistake, and a write over it is refused with the reason, so the bytes the
-// reader put there are never replaced.
+// `approveLatex`. The `eslint.config.*` files a linter would import are approved under
+// `eslint-config:<sha256>` of the same JSON shape. The three file-set kinds share one set of
+// functions that take the kind (`ConfigKind`). An entry of a kind a call does not write is kept as
+// it stood. The file is private to its owner (mode 0600), and the default file's folder,
+// `~/.oculus`, is made mode 0700 when it is looser; the file is written whole by a rename and read
+// back to check the write. A file that is not JSON, or not that shape, is read as holding no
+// approvals, which asks again for everything and approves nothing by mistake, and a write over it
+// is refused with the reason, so the bytes the reader put there are never replaced.
 
 import { createHash } from 'node:crypto';
 import { chmodSync, mkdirSync, readFileSync, statSync } from 'node:fs';
@@ -201,38 +203,48 @@ export function approveInterpreter(
     return store(file, approved);
 }
 
+/** The kinds of key that approve a set of a repository's files by their bytes. */
+export type ConfigKind = 'svelte-config' | 'latexmkrc' | 'eslint-config';
+
 /**
- * The text a repository's Svelte and Vite configuration is approved by: its real path and each
- * configuration file's path and the SHA-256 of its bytes, in path order.
+ * The text a set of a repository's files is approved by: its real path and each file's path and
+ * the SHA-256 of its bytes, in path order.
  */
 export function configText(repo: string, files: { path: string; hash: string }[]): string {
     return JSON.stringify([repo, files.map((one) => [one.path, one.hash])]);
 }
 
-/** The key of a configuration: `svelte-config:` and the SHA-256 of its text as hex. */
-export function configKey(text: string): string {
-    return `svelte-config:${createHash('sha256').update(text, 'utf8').digest('hex')}`;
-}
-
-/** Whether the reader approved any configuration, which saves reading a repository for one. */
-export function anyConfigApproved(file: string): boolean {
-    const keys = Object.keys(readApprovals(file).approved);
-    return keys.some((key) => key.startsWith('svelte-config:'));
-}
-
-/** Whether the reader approved this exact configuration text on this machine. */
-export function isConfigApproved(file: string, text: string): boolean {
-    return configKey(text) in readApprovals(file).approved;
+/** The key of a file set: its kind and the SHA-256 of its text as hex. */
+export function configKey(kind: ConfigKind, text: string): string {
+    return `${kind}:${createHash('sha256').update(text, 'utf8').digest('hex')}`;
 }
 
 /**
- * Approve a repository's configuration: one entry for the text, none added for one already held.
+ * Whether the reader approved any file set of the kind, which saves reading a repository for one.
+ */
+export function anyConfigApproved(file: string, kind: ConfigKind): boolean {
+    const keys = Object.keys(readApprovals(file).approved);
+    return keys.some((key) => key.startsWith(`${kind}:`));
+}
+
+/** Whether the reader approved this exact file set text on this machine. */
+export function isConfigApproved(file: string, kind: ConfigKind, text: string): boolean {
+    return configKey(kind, text) in readApprovals(file).approved;
+}
+
+/**
+ * Approve a repository's file set: one entry for the text, none added for one already held.
  * Answers `{ ok: true }`, or the reason the file was left as it was.
  */
-export function approveConfig(file: string, text: string, now: Date = new Date()): ApprovalWrite {
+export function approveConfig(
+    file: string,
+    kind: ConfigKind,
+    text: string,
+    now: Date = new Date()
+): ApprovalWrite {
     const loaded = load(file);
     if (!loaded.ok) return loaded;
-    const key = configKey(text);
+    const key = configKey(kind, text);
     if (key in loaded.approvals.approved) return { ok: true };
     const approved = { ...loaded.approvals.approved };
     approved[key] = { label: text, at: now.toISOString() };
@@ -240,14 +252,13 @@ export function approveConfig(file: string, text: string, now: Date = new Date()
 }
 
 /**
- * Take back the approval of a configuration text: its entry is removed and nothing else is. A file
- * that holds none is left as it is. Answers `{ ok: true }`, or the reason the file was left as it
- * was.
+ * Take back the approval of a file set text: its entry is removed and nothing else is. A file that
+ * holds none is left as it is. Answers `{ ok: true }`, or the reason the file was left as it was.
  */
-export function revokeConfig(file: string, text: string): ApprovalWrite {
+export function revokeConfig(file: string, kind: ConfigKind, text: string): ApprovalWrite {
     const loaded = load(file);
     if (!loaded.ok) return loaded;
-    const key = configKey(text);
+    const key = configKey(kind, text);
     if (!(key in loaded.approvals.approved)) return { ok: true };
     const approved = Object.fromEntries(
         Object.entries(loaded.approvals.approved).filter(([name]) => name !== key)
@@ -319,16 +330,6 @@ export function revokeApp(file: string, folder: string): ApprovalWrite {
     return store(file, approved);
 }
 
-/** The key of a latexmkrc set: `latexmkrc:` and the SHA-256 of its text as hex. */
-function latexmkrcKey(text: string): string {
-    return `latexmkrc:${createHash('sha256').update(text, 'utf8').digest('hex')}`;
-}
-
-/** Whether the reader approved this exact latexmkrc set on this machine. */
-export function isLatexmkrcApproved(file: string, text: string): boolean {
-    return latexmkrcKey(text) in readApprovals(file).approved;
-}
-
 /**
  * Approve the texts a LaTeX step asked about: the latexmkrc set under its own key and the weave
  * text under `command:`, either of which may be null. Both entries are written by one store, so
@@ -345,7 +346,7 @@ export function approveLatex(
     const approved = { ...loaded.approvals.approved };
     const at = now.toISOString();
     if (texts.latexmkrc !== null) {
-        const key = latexmkrcKey(texts.latexmkrc);
+        const key = configKey('latexmkrc', texts.latexmkrc);
         if (!(key in approved)) approved[key] = { label: texts.latexmkrc, at };
     }
     if (texts.weave !== null) {

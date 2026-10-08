@@ -1,11 +1,10 @@
-In flight (2 of 6 slots in use):
-- D36 (linters as VS Code's): review over repair round 1 running; open item 17 ruled (b), its tests applied at landing.
-- D39 (hub keys as links): building (builder launched on main at 58c7840d9).
+In flight (1 of 6 slots in use):
+- D39 (hub keys as links): reviewed; repair round 1 next.
 
 Queued, in order (10 steps):
 - M7 (a project folder moved in Files): after D39.
 - D41 (links in Markdown checked): after M7.
-- D40 (the writing rules as editor marks): after D36.
+- D40 (the writing rules as editor marks): ready to prepare (D36 landed).
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (release readiness): paused (Axel).
 - O29 (retiring the cockpit): paused (Axel).
@@ -17,6 +16,7 @@ Queued, in order (10 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D36 (linters as VS Code's), 2026-10-09, its landing commit.
 - D43 (LaTeX navigation through texlab), 2026-10-08, a60dcb4fa.
 - M6 (the collection forms removed), 2026-10-08, 827d5b77c.
 - D33 (the Problems view), 2026-10-08, b081d9da4.

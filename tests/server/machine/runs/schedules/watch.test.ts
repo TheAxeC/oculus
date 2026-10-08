@@ -6,6 +6,7 @@
 // lock file's real modification time is never older than the fake `now`, and each case ends by
 // checking that no write took over a lock. What this does not cover: the autumn change of a
 // repeated hour, the page's reading of the payload, and the tmux of a real machine.
+// @module-tag slow: a due-time row runs over the 5 s limit on a loaded machine.
 
 import { afterEach, beforeEach, describe, expect, vi, type MockInstance } from 'vitest';
 import { Hub } from '../../../../../src/lib/server/core/channels.ts';

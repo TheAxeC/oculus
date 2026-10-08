@@ -67,6 +67,7 @@ export type PaletteCommand = {
         | 'tab'
         | 'goto'
         | 'language'
+        | 'eslint-config'
         | LspChoiceCommand
         | 'help'
         | 'update'
@@ -372,6 +373,12 @@ export function commands(
             available: source
         },
         ...choiceCommands(served),
+        {
+            name: 'eslint-config',
+            description: t('app.palette.cmd_eslint_config'),
+            hint: '',
+            available: source
+        },
         { name: 'help', description: t('app.palette.cmd_help'), hint: '', available: false },
         { name: 'update', description: t('app.palette.cmd_update'), hint: '', available: true },
         {

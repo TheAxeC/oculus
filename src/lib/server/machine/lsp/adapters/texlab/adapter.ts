@@ -12,7 +12,7 @@
 import { isAbsolute } from 'node:path';
 import { expandHome } from '../../../../files/files.ts';
 import type { LatexBuilding } from '../../../../../data/sources/config/settings.ts';
-import { programPath } from '../../../../content/latex/recipes.ts';
+import { programPath } from '../../../../core/program.ts';
 import { NO_APPROVAL, NO_CHOICE, notFound } from '../../choices.ts';
 import type { Adapter, Prepared, RootEnv, ServerEntry } from '../../servers.ts';
 import { makeLinks } from './links.ts';

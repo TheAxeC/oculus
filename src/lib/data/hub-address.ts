@@ -1,11 +1,15 @@
-// Layer 1, data. Whether a `link` or `url` value is a web address or a path inside the hub.
+// Layer 1, data. Whether a `link` or `url` value is a web address or a path inside the hub, and the
+// one check a web address an app or a linter names must pass before the page opens it.
 //
-// One rule, imported by both layers: the collection card runs it to decide whether a click opens a
-// web page or a file of the hub, and the Audit runs it to decide which links to look for on disk. A
-// second copy of the rule on either side would let the two disagree, so a link the card opens as a
-// web page would be reported missing from the disk, or one it serves from the hub never checked.
-// It is pure, two regular expressions and one function, so the server can import it as the client
-// does.
+// The hub path rule is imported by both layers: the collection card runs it to decide whether a
+// click opens a web page or a file of the hub, and the Audit runs it to decide which links to look
+// for on disk. A second copy of the rule on either side would let the two disagree, so a link the
+// card opens as a web page would be reported missing from the disk, or one it serves from the hub
+// never checked. `webAddress` is the one check of an address the page opens: an app's `open`
+// (state/system/apps/methods.ts), and a linter's documentation link, which the lint readers keep
+// only when it passes (server/machine/runs/lint/readers.ts) and the editor, the markers and the
+// Problems view check again before they open it. The file is pure, two regular expressions and
+// two functions, so the server can import it as the client does.
 
 /**
  * A value that already names where it goes: a scheme, or an absolute path of the page's own. With
@@ -31,4 +35,25 @@ export const HOSTED = /^(www\.[^/]+|[^/:]+\.[a-z]{2,}(:[0-9]+)?\/.*)$/i;
  */
 export function isHubPath(value: string): boolean {
     return value !== '' && !ADDRESSED.test(value) && !HOSTED.test(value);
+}
+
+/** The most characters an address a program or an app asks the page to open may have. */
+const ADDRESS_MAX = 2048;
+
+/**
+ * The address as the browser reads it, or null when the value is not an `http:` or `https:` address
+ * of at most `ADDRESS_MAX` characters with no user name or password in it. An app's `open` and a
+ * linter's documentation link are opened only when it answers one.
+ */
+export function webAddress(value: unknown): string | null {
+    if (typeof value !== 'string' || value.length > ADDRESS_MAX) return null;
+    let parsed: URL;
+    try {
+        parsed = new URL(value);
+    } catch {
+        return null;
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    if (parsed.username !== '' || parsed.password !== '') return null;
+    return parsed.href;
 }

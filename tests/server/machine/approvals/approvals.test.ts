@@ -17,7 +17,7 @@ import {
     chainText,
     debugText,
     isApproved,
-    isLatexmkrcApproved,
+    isConfigApproved,
     revokeApp
 } from '../../../../src/lib/server/machine/approvals/approvals.ts';
 import { enterHome, leaveHome } from '../runs/commands/commands-fixture.ts';
@@ -85,8 +85,10 @@ describe('the latexmkrc and weave approvals of a LaTeX step', () => {
         approveLatex(file, { latexmkrc: RC, weave: null });
         const keys = readApproved();
         expect(keys).toEqual([`latexmkrc:${sha(RC)}`]);
-        expect(isLatexmkrcApproved(file, RC)).toBe(true);
-        expect(isLatexmkrcApproved(file, RC.replace('a'.repeat(64), 'c'.repeat(64)))).toBe(false);
+        expect(isConfigApproved(file, 'latexmkrc', RC)).toBe(true);
+        expect(
+            isConfigApproved(file, 'latexmkrc', RC.replace('a'.repeat(64), 'c'.repeat(64)))
+        ).toBe(false);
     });
 
     it('keeps the weave text apart from a chain and a debug launch under command:', () => {
@@ -97,7 +99,7 @@ describe('the latexmkrc and weave approvals of a LaTeX step', () => {
         approveLatex(file, { latexmkrc: null, weave: WEAVE });
         expect(isApproved(file, WEAVE)).toBe(true);
         expect(isApproved(file, chainText('/repo', lines))).toBe(false);
-        expect(isLatexmkrcApproved(file, WEAVE)).toBe(false);
+        expect(isConfigApproved(file, 'latexmkrc', WEAVE)).toBe(false);
     });
 
     it('writes both entries once, however many times the same texts are approved', () => {
@@ -130,7 +132,7 @@ describe('the latexmkrc and weave approvals of a LaTeX step', () => {
             chmodSync(file, 0o600);
         }
         expect(readFileSync(file, 'utf8')).toBe(before);
-        expect(isLatexmkrcApproved(file, RC)).toBe(false);
+        expect(isConfigApproved(file, 'latexmkrc', RC)).toBe(false);
         expect(isApproved(file, WEAVE)).toBe(false);
     });
 });

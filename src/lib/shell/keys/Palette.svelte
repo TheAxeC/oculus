@@ -39,6 +39,8 @@
     // `:compile-database` list the choices of the tab's root, the one in force marked
     // (rows/ChoiceRows.svelte; which commands open a list is in palette-modes.ts), and `#` with a
     // query lists its workspace's symbols (rows/SymbolRows.svelte; Cmd+T in the app).
+    // `:eslint-config` lists the ESLint configuration of the tab's file
+    // (rows/LintConfigRows.svelte).
 
     import { Command } from 'bits-ui';
     import Modal from '$lib/ui/frame/Modal.svelte';
@@ -46,6 +48,8 @@
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import LanguageRows from '$lib/shell/keys/rows/LanguageRows.svelte';
     import ChoiceRows from '$lib/shell/keys/rows/ChoiceRows.svelte';
+    import LintConfigRows from '$lib/shell/keys/rows/LintConfigRows.svelte';
+    import { createLintConfigList } from '$lib/shell/keys/lint-config.svelte';
     import SymbolRows from '$lib/shell/keys/rows/SymbolRows.svelte';
     import WorkspaceRows from '$lib/shell/keys/rows/WorkspaceRows.svelte';
     import {
@@ -54,8 +58,7 @@
         listedRows,
         opensAsMode
     } from '$lib/shell/keys/palette-modes';
-    import { focusQuietly } from '$lib/ui/frame/quiet-focus';
-    import { configuredThemes, openPaletteItem } from '$lib/shell/keys/palette-open';
+    import { configuredThemes, landOn, openPaletteItem } from '$lib/shell/keys/palette-open';
     import {
         buildIndex,
         commands,
@@ -83,7 +86,7 @@
     } from '$lib/state/workbench/navigation/editor-status.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { registrationLabel } from '$lib/state/workbench/navigation/registry';
-    import { tick, untrack } from 'svelte';
+    import { untrack } from 'svelte';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -93,6 +96,7 @@
         explorer,
         fs: { workspaces },
         layout: { activeInstance, openView },
+        lint,
         lsp,
         paletteSource: { paletteSource, offered },
         ui: { setCrt, setTheme, crt },
@@ -172,12 +176,21 @@
     const symbolMode = $derived(parsed === null && query.startsWith('#'));
     const workspaceMode = $derived(parsed !== null && parsed.name === 'workspace');
     const saveMode = $derived(parsed !== null && parsed.name === 'workspace-save');
+    const lintConfig = createLintConfigList({
+        parsed: () => parsed,
+        linters: () => source?.status.linters,
+        config: lint.config
+    });
     const saved = $derived(workspaces());
     const choices = $derived(
         workspaceMode ? workspaceChoicesOf(parsed?.argument ?? '', saved) : []
     );
+    /** Whether the query is a mode whose rows are drawn by a partial of its own. */
+    const listsRows = $derived(
+        languageMode || workspaceMode || saveMode || choiceMode !== null || lintConfig.active
+    );
     const commandList = $derived(
-        parsed === null || line !== null || languageMode || workspaceMode || saveMode || choiceMode
+        parsed === null || line !== null || listsRows
             ? []
             : commands(
                   current.config,
@@ -204,7 +217,8 @@
             saveMode,
             choiceMode,
             commandList,
-            choiceList
+            choiceList,
+            lintList: lintConfig.active ? lintConfig.rows : null
         })
     );
     const count = $derived(listed.count);
@@ -248,15 +262,6 @@
         onclose();
         const id = openPaletteItem(client, item);
         if (id !== '' && item.kind !== 'editor' && item.kind !== 'command') void landOn(id);
-    }
-
-    /** Give the keyboard to the selected tab head of the pane showing an instance, if one does. */
-    async function landOn(id: string): Promise<void> {
-        await tick();
-        const head = document.querySelector<HTMLElement>(
-            `[data-pane-active="${CSS.escape(id)}"] [role="tab"][aria-selected="true"]`
-        );
-        if (head !== null) focusQuietly(head);
     }
 
     /** Send the source tab on screen to a line. */
@@ -409,6 +414,12 @@
                                                         {onclose}
                                                         onsaid={(words: string) => (said = words)}
                                                     />
+                                                {:else if lintConfig.active}
+                                                    <LintConfigRows
+                                                        list={lintConfig}
+                                                        {onclose}
+                                                        onsaid={(words: string) => (said = words)}
+                                                    />
                                                 {:else}
                                                     {#if parsed.name === '' && caret !== null && source !== null}
                                                         <p class="empty" data-line-hint>
@@ -439,7 +450,7 @@
                                                 {#if said !== ''}
                                                     <p class="empty" data-palette-said>{said}</p>
                                                 {/if}
-                                                {#if count === 0 && line === null && !languageMode && !workspaceMode && !symbolMode && choiceMode === null}
+                                                {#if count === 0 && line === null && !languageMode && !workspaceMode && !symbolMode && choiceMode === null && !lintConfig.active}
                                                     <p class="empty">
                                                         {parsed === null
                                                             ? t('app.palette_empty')

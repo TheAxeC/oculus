@@ -27,7 +27,7 @@ import type { LatexApproval } from '../../../../data/model/index.ts';
 import type { LatexBuilding, LatexTool } from '../../../../data/sources/config/settings.ts';
 import type { Step } from '../../../content/latex/recipes.ts';
 import { realPath } from '../../../core/paths.ts';
-import { isApproved, isLatexmkrcApproved } from '../../approvals/approvals.ts';
+import { isApproved, isConfigApproved } from '../../approvals/approvals.ts';
 
 /** The names latexmk reads a configuration from in each folder. */
 const RC_NAMES = ['.latexmkrc', 'latexmkrc'] as const;
@@ -183,7 +183,7 @@ export function latexItems(input: NeedsInput): Items | { unread: string } {
             latexmkrc = {
                 text,
                 lines: set.files.map((one) => one.path),
-                approved: isLatexmkrcApproved(approvals, text)
+                approved: isConfigApproved(approvals, 'latexmkrc', text)
             };
         }
     }

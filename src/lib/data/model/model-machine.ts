@@ -2,7 +2,8 @@
 // of the machine's process table, the update tray's schedules (the entries of
 // `~/.oculus/schedules.yml` with their problems, next runs and latest runs), the terminals tmux
 // holds and the words a terminal request is refused with, the messages the page and the language
-// server relay exchange besides JSON-RPC, and the debug session's state and console.
+// server relay exchange besides JSON-RPC, the debug session's state and console, and what a linter
+// run answers.
 
 import type { CommandFinding, CommandSource } from './model-sessions.ts';
 
@@ -624,6 +625,87 @@ export type DebugLaunches = {
     configurations: DebugConfiguration[];
     findings: CommandFinding[];
 };
+
+/** The linters oculus runs on a file, in the order the status bar draws them. */
+export const LINT_IDS = ['chktex', 'ruff', 'eslint', 'shellcheck'] as const;
+
+/** One linter's id. */
+export type LintId = (typeof LINT_IDS)[number];
+
+/** The extensions each linter takes, in lower case: ShellCheck takes no zsh, ChkTeX no .sty. */
+const LINT_EXTENSIONS: Record<LintId, readonly string[]> = {
+    chktex: ['.tex', '.latex'],
+    ruff: ['.py', '.pyi'],
+    eslint: ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.svelte'],
+    shellcheck: ['.sh', '.bash', '.slurm']
+};
+
+/** The linters that take a file, by its extension. */
+export function lintersOf(path: string): LintId[] {
+    const name = path.slice(path.lastIndexOf('/') + 1).toLowerCase();
+    const dot = name.lastIndexOf('.');
+    const extension = dot < 0 ? '' : name.slice(dot);
+    return LINT_IDS.filter((id) => LINT_EXTENSIONS[id].includes(extension));
+}
+
+/** The numbers of the ChkTeX warnings that have a fix, which LaTeX Workshop's code actions make. */
+export const CHKTEX_FIXABLE = [
+    1, 2, 4, 5, 6, 11, 12, 13, 18, 24, 26, 28, 32, 33, 34, 35, 39, 42, 45, 46
+] as const;
+
+/**
+ * One text edit of a fix, in the editor's positions: lines and columns count from one, columns in
+ * UTF-16 units, and the end is where the replaced text stops (not part of it).
+ */
+export type LintEdit = {
+    line: number;
+    column: number;
+    endLine: number;
+    endColumn: number;
+    text: string;
+};
+
+/**
+ * One fix a linter offers for a row. `fix` is the linter's own fix (the one Fix All applies) and
+ * `suggestion` an alternative it lists beside it. `title` is the linter's own words, empty for a
+ * fix the page titles from its row.
+ */
+export type LintFix = { kind: 'fix' | 'suggestion'; title: string; edits: LintEdit[] };
+
+/**
+ * One finding of a linter. The line, column and end are the editor's (see `LintEdit`); `code` is
+ * the rule (ChkTeX's number, ruff's and ESLint's rule id, ShellCheck's `SC<n>`) and absent for a
+ * finding with no rule, `href` the page that documents the rule, and `noqa` the line ruff's
+ * `# noqa` comment for this finding goes on.
+ */
+export type LintRow = {
+    line: number;
+    column: number;
+    endLine: number;
+    endColumn: number;
+    severity: 'error' | 'warning' | 'info';
+    message: string;
+    code?: string;
+    href?: string;
+    noqa?: number;
+    fixes: LintFix[];
+};
+
+/** Why a linter gave no rows: it is missing, failed, ran out of time, or has nothing to run on. */
+export type LintState = 'not_found' | 'failed' | 'timeout' | 'not_approved' | 'no_config' | 'off';
+
+/**
+ * The answer of POST /api/lint to a run: the file's rows with the hash of the bytes they were read
+ * from (the `base` a source tab holds for the same bytes), or the state it gave none in.
+ */
+export type LintAnswer =
+    { ok: true; rows: LintRow[]; hash: string } | { ok: false; state: LintState; reason?: string };
+
+/**
+ * The `eslint.config.*` file ESLint is given for a file, as its path under the folder it sits in,
+ * whether its present text is approved, and the key an approval of that text is named by.
+ */
+export type LintConfig = { files: string[]; approved: boolean; key: string };
 
 /** A JSON-RPC message of the protocol, carried as the payload of a frame. */
 export type LspRpc = {

@@ -1,22 +1,38 @@
 // Layer 2, client state. The sources that give the problems store its rows: the language servers'
-// diagnostics, the errors a project command printed, and the errors and warnings of a LaTeX build.
-// Each is a function the store calls inside its fold, so it reads reactive stores and the store
-// folds again whenever they change.
+// diagnostics, the errors a project command printed, the errors and warnings of a LaTeX build, and
+// the findings of the linters (ChkTeX, Ruff, ESLint, ShellCheck). Each is a function the store
+// calls inside its fold, so it reads reactive stores and the store folds again whenever they
+// change.
 
 import type { Diagnostic } from 'vscode-languageserver-protocol';
-import type { CommandDiagnostic } from '../../data/model/index.ts';
+import type { CommandDiagnostic, LintId } from '../../data/model/index.ts';
 import { tabOfFile } from '../sources/repositories/file-git.ts';
 import type { FileDiagnostics } from './machine/lsp/documents.svelte.ts';
+import type { LintedRows } from './machine/lint/lint.svelte.ts';
 import type { Problem, ProblemSeverity, ProblemSource } from './problems.svelte.ts';
 
 /**
  * The owners a problem's marker is filed under in a Monaco model: every project command's markers
- * share one, and a LaTeX build's markers have one. A language server's is `lsp-<language>`, built
- * here for its rows and by `markerOwner` in `ui/controls/editor/kit/lsp/markers.ts` for its
- * markers; the two are written twice since `state/` and `ui/` may not import each other.
+ * share one, a LaTeX build's markers have one, and each linter has its own, `lint-<id>`. A
+ * language server's is `lsp-<language>`, built here for its rows and by `markerOwner` in
+ * `ui/controls/editor/kit/lsp/markers.ts` for its markers; the two are written twice since
+ * `state/` and `ui/` may not import each other.
  */
 export const COMMAND_OWNER = 'command';
 export const LATEX_OWNER = 'oculus-latex';
+
+/** The owner of one linter's rows and markers. */
+export function lintOwner(linter: LintId): string {
+    return `lint-${linter}`;
+}
+
+/** The name a linter's rows show as their source, as the linter's VS Code extension writes it. */
+const LINT_SOURCES: Record<LintId, string> = {
+    chktex: 'ChkTeX',
+    ruff: 'Ruff',
+    eslint: 'eslint',
+    shellcheck: 'shellcheck'
+};
 
 /** A root the page serves, by its key and the folder it is. */
 type Served = { key: string; dir: string };
@@ -120,4 +136,27 @@ export function latexProblems(latex: { latexDiagnostics: () => LatexFound[] }): 
             message: found.message,
             source: found.source
         }));
+}
+
+/** The findings of every file the page lints, each under its linter's owner. */
+export function lintProblems(lint: { rows: () => LintedRows[] }): ProblemSource {
+    return () =>
+        lint.rows().flatMap((held) =>
+            held.rows.map((row): Problem => ({
+                root: held.root,
+                path: held.path,
+                owner: lintOwner(held.linter),
+                severity: row.severity,
+                line: row.line,
+                column: row.column,
+                endLine: row.endLine,
+                endColumn: row.endColumn,
+                message: row.message,
+                source: LINT_SOURCES[held.linter],
+                ...(row.code === undefined ? {} : { code: row.code }),
+                ...(row.href === undefined ? {} : { href: row.href }),
+                ...(row.noqa === undefined ? {} : { noqa: row.noqa }),
+                ...(row.fixes.length === 0 ? {} : { fixes: row.fixes })
+            }))
+        );
 }

@@ -3,10 +3,10 @@
 // came from (inverse).
 //
 // The program runs with no shell and its arguments as a list, under the time limit every LaTeX
-// program has (tools.ts). Its output is read by line: a result is a block of `Key:value` lines, a
-// forward result one block per place and an inverse result one block for the place asked about.
-// The coordinates are PDF points measured from the page's top left, which are a PDF.js viewport's
-// coordinates at scale 1.
+// program has (core/program.ts). Its output is read by line: a result is a block of `Key:value`
+// lines, a forward result one block per place and an inverse result one block for the place asked
+// about. The coordinates are PDF points measured from the page's top left, which are a PDF.js
+// viewport's coordinates at scale 1.
 //
 // A forward search gives the places in the order the program names them. An inverse search gives
 // the first place, with its column only when the program knows one (it answers -1 when it does
@@ -18,7 +18,7 @@ import { posix, relative, resolve, sep } from 'node:path';
 import { z } from 'zod';
 import { inside, realPath } from '../../core/paths.ts';
 import { isFile } from '../latex.ts';
-import { run, type Run, type Tools } from './tools.ts';
+import { run, type Run, type Tools } from '../../core/program.ts';
 
 /** One place a source line was typeset at: the page, the point, and the box the line sits in. */
 export type Place = {

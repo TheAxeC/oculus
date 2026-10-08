@@ -45,13 +45,13 @@ import type {
 } from '../../../../data/model/index.ts';
 import { MANUSCRIPT, stemOf } from '../../../../data/prose/latex.ts';
 import { inside, realPath } from '../../../core/paths.ts';
+import { onPath } from '../../../core/program.ts';
 import { words } from '../../../core/words.ts';
 import { head, isMainOf } from '../../../content/latex.ts';
 import {
     cleanStep,
     foldersOf,
     missingProgram,
-    onPath,
     planOf,
     type Refused,
     type Step

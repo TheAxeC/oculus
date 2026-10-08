@@ -26,6 +26,7 @@ text:
         severity_error: Error
         severity_info: Info
         severity_warning: Warning
+        show_documentation: Show Documentation
         toolbar: Problems
         warnings: Show Warnings
     references:

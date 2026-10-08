@@ -30,6 +30,7 @@ import {
     processesSettings,
     latexBuild,
     latexFormatting,
+    lintSettings,
     readLocal,
     refreshSettings,
     settingFindings,
@@ -79,6 +80,7 @@ import { SchemaFeed } from '../machine/lsp/schema-feed.ts';
 import { spawnChild } from '../machine/lsp/held/process.ts';
 import { withheldFolders } from '../machine/lsp/library/rules.ts';
 import { followRoots } from '../machine/lsp/held/watch.ts';
+import { servedRoots } from '../machine/lsp/uris.ts';
 import { ownFolder } from '../machine/lsp/servers.ts';
 import { Terminals } from '../machine/pty/channel.ts';
 import { stopTerminal } from '../machine/pty/sessions.ts';
@@ -90,6 +92,8 @@ import {
 import { readTable } from '../machine/processes/ps.ts';
 import { defaultSchedulesPath } from '../machine/runs/schedules/file.ts';
 import { defaultRecordPath } from '../machine/runs/schedules/record.ts';
+import { HeldEslints, type HeldEslintsOptions } from '../machine/runs/lint/eslint.ts';
+import { LintRuns } from '../machine/runs/lint/runs.ts';
 import { runEntry } from '../machine/runs/schedules/run.ts';
 import {
     watchSchedules,
@@ -149,6 +153,7 @@ export type ContextDependencies = {
     createTerminals: (hub: Hub) => Terminals;
     createRelay: (options: RelayOptions) => Relay;
     createDebug: (options: DebugOptions) => DebugClient;
+    createEslints: (options: HeldEslintsOptions) => HeldEslints;
     watchPortfolio: typeof watchPortfolio;
     watchSessions: typeof watchSessions;
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
@@ -173,6 +178,7 @@ const dependencies: ContextDependencies = {
     createTerminals: (hub) => new Terminals(hub),
     createRelay,
     createDebug: (options) => new DebugClient(options),
+    createEslints: (options) => new HeldEslints(options),
     watchPortfolio,
     watchSessions,
     watchGit: (hub, options) => watchGit(hub, options),
@@ -240,7 +246,7 @@ export function createServerContext(
     const refresh = refreshSettings(config);
     // The open and LaTeX endpoints read their keys again at every request, so a key the catalog
     // holds no rule for stops the server here rather than reaching a tab.
-    for (const read of [openSettings, latexFormatting, latexBuild]) read(config);
+    for (const read of [openSettings, latexFormatting, latexBuild, lintSettings]) read(config);
     const processesConfig = processesSettings(config);
     const hub = make.createHub();
     registerFilesChannel(hub);
@@ -266,7 +272,21 @@ export function createServerContext(
         adapter: () => local.riteDapBin,
         catalog: () => textCatalog(make.loadConfig(engine).config)
     });
-    let followed = followRoots(relay, hub, local.workspaces ?? defaultWorkspacesPath());
+    const lintRuns = new LintRuns();
+    const eslint = make.createEslints({
+        roots: () =>
+            servedRoots(
+                browserRoots({ config: make.loadConfig(engine).config, engine, local })
+            ).map((root) => root.real)
+    });
+    // The relay and the held ESLint children hear a change of the served roots together.
+    const rootsFollowers = {
+        reconcile: (): void => {
+            relay.reconcile();
+            eslint.reconcile();
+        }
+    };
+    let followed = followRoots(rootsFollowers, hub, local.workspaces ?? defaultWorkspacesPath());
     const token = make.mintToken();
     const appsSecret = make.mintToken();
     const store = new HookStore();
@@ -322,6 +342,7 @@ export function createServerContext(
                 built: () => {
                     built.live?.hostChanged();
                     relay.settingsChanged();
+                    if (!lintSettings(make.loadConfig(engine).config).on.eslint) eslint.endAll();
                 },
                 schemas: (set) => schemas.publish(set)
             }
@@ -474,6 +495,8 @@ export function createServerContext(
         terminals,
         relay,
         debug,
+        lintRuns,
+        eslint,
         hooks,
         get git() {
             return owned().git;
@@ -548,6 +571,8 @@ export function createServerContext(
             terminals.close();
             followed.close();
             debug.close();
+            lintRuns.close();
+            eslint.close();
             closePicker(context.folderPicker);
             void relay.close();
         }
@@ -755,8 +780,12 @@ export function createServerContext(
         if (changed.includes('lsp')) relay.reload();
         if (changed.includes('workspaces')) {
             followed.close();
-            followed = followRoots(relay, hub, local.workspaces ?? defaultWorkspacesPath());
-            relay.reconcile();
+            followed = followRoots(
+                rootsFollowers,
+                hub,
+                local.workspaces ?? defaultWorkspacesPath()
+            );
+            rootsFollowers.reconcile();
         }
         if (changed.includes('openBin')) context.opener = openerOf(local);
         if (changed.includes('hpcHost')) built.live?.hostChanged();

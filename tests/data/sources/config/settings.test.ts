@@ -16,6 +16,7 @@ import {
     confirmDelete,
     engineDir,
     latexFormatting,
+    lintSettings,
     literatureSettings,
     loadConfig,
     mailSettings,
@@ -85,6 +86,14 @@ const DEFAULTS: Record<string, unknown> = {
     'latex.texlab_path': '/a/texlab',
     'latex.unimath_symbols': true,
     'latex.includegraphics_preview': false,
+    'lint.chktex': false,
+    'lint.ruff': false,
+    'lint.eslint': false,
+    'lint.shellcheck': false,
+    'lint.chktex_path': '/a/chktex',
+    'lint.ruff_path': '/a/ruff',
+    'lint.shellcheck_path': '/a/shellcheck',
+    'lint.chktex_args': ['-q'],
     usage_refresh_min: 12,
     usage_refresh_model: 'm2',
     'git.autofetch_minutes': 7,
@@ -366,6 +375,57 @@ describe('latexFormatting and the auto build', () => {
         expect(
             outcome((p) => latexBuild(mapWith({ latex: { auto_build: 'x' } }), p))
         ).toStrictEqual({ value: BUILD_DEFAULTS, problems: ['latex.auto_build: choice'] });
+    });
+});
+
+describe('lintSettings', () => {
+    const DEFAULT = {
+        on: { chktex: false, ruff: false, eslint: false, shellcheck: false },
+        paths: { chktex: '/a/chktex', ruff: '/a/ruff', shellcheck: '/a/shellcheck' },
+        chktexArgs: ['-q']
+    };
+    const read = (lint: unknown) => outcome((p) => lintSettings(mapWith({ lint }), p));
+
+    it('answers the entry defaults for a block that holds nothing', () => {
+        expect(read({})).toStrictEqual({ value: DEFAULT, problems: [] });
+    });
+
+    it('reads the switches, the paths and the arguments the block holds', () => {
+        expect(
+            read({
+                chktex: true,
+                ruff: true,
+                eslint: true,
+                shellcheck: true,
+                chktex_path: '~/bin/chktex',
+                ruff_path: '/b/ruff',
+                shellcheck_path: '/b/shellcheck',
+                chktex_args: ['-wall', '-e9']
+            })
+        ).toStrictEqual({
+            value: {
+                on: { chktex: true, ruff: true, eslint: true, shellcheck: true },
+                paths: { chktex: '~/bin/chktex', ruff: '/b/ruff', shellcheck: '/b/shellcheck' },
+                chktexArgs: ['-wall', '-e9']
+            },
+            problems: []
+        });
+    });
+
+    it.each([
+        ['chktex', 'maybe', 'boolean'],
+        ['ruff', 'maybe', 'boolean'],
+        ['eslint', 'maybe', 'boolean'],
+        ['shellcheck', 'maybe', 'boolean'],
+        ['chktex_path', 'chktex', 'path'],
+        ['ruff_path', 'ruff', 'path'],
+        ['shellcheck_path', '../shellcheck', 'path'],
+        ['chktex_args', 'no', 'strings']
+    ])('answers the default for a wrong lint.%s and names the key', (key, bad, kind) => {
+        expect(read({ [key]: bad })).toStrictEqual({
+            value: DEFAULT,
+            problems: [`lint.${key}: ${kind}`]
+        });
     });
 });
 

@@ -27,6 +27,7 @@ text:
             cmd_folder: Open a folder in the Files view
             cmd_goto: Open a project in a tab
             cmd_goto_hint: '<project id>'
+            cmd_eslint_config: Approve or stop running the ESLint configuration of the repository
             cmd_help: Show the help
             cmd_interpreter: Choose the Python interpreter of the repository
             cmd_interpreter_hint: '<path>'
@@ -50,6 +51,12 @@ text:
             config_revoke: Stop running this repository's Svelte and Vite configuration
             config_yes: Approve
             database_configuration: .oculus/cpp.yml
+            eslint_config_approve: Approve and run this repository's ESLint configuration
+            eslint_config_ask: Run the ESLint configuration of this repository? ESLint then runs this file and the plugins it imports from the repository, which can run any code they hold.
+            eslint_config_changed: The ESLint configuration changed since this list showed it. The list shows it as it is now.
+            eslint_config_none: No ESLint configuration applies to the file of the source tab.
+            eslint_config_revoke: Stop running this repository's ESLint configuration
+            eslint_config_write: The approval could not be written.
             database_none: This repository has no compile database and no .oculus/cpp.yml.
             interpreter_none: No Python interpreter was found for this repository.
             interpreter_typed: 'Use the interpreter at {0}'
@@ -59,6 +66,7 @@ text:
             kind_config_file: Configuration File
             kind_database: Compile Database
             kind_editor: Editor
+            kind_eslint_config: ESLint Configuration
             kind_feed: Feed
             kind_finding: Finding
             kind_interpreter: Interpreter

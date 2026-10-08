@@ -91,9 +91,15 @@ import { heldDiff } from '../sources/repositories/repositories.ts';
 import { createSelection, type SelectionStore } from '../workbench/selection.svelte.ts';
 import { createExplorer, type ExplorerStore } from '../sources/explorer/ops.svelte.ts';
 import { createSearch, type SearchStore } from '../sources/search/search.svelte.ts';
+import { createLint, type LintStore } from '../system/machine/lint/lint.svelte.ts';
 import { createClangd, type ClangdStore } from '../system/machine/lsp/clangd.svelte.ts';
 import { createDocuments, type DocumentsStore } from '../system/machine/lsp/documents.svelte.ts';
-import { languageProblems, commandProblems, latexProblems } from '../system/problem-sources.ts';
+import {
+    languageProblems,
+    commandProblems,
+    latexProblems,
+    lintProblems
+} from '../system/problem-sources.ts';
 import { createProblems, problemTarget, type ProblemsStore } from '../system/problems.svelte.ts';
 import { openPlace, type PlaceOpener } from '../sessions/source/place.ts';
 import { readHash, readRoots, readText } from '../sources/fs-transport.ts';
@@ -223,6 +229,7 @@ export type ClientState = {
     documents: DocumentsStore;
     /** The problems of every source folded: the Problems view, the status bar and the F8 walk. */
     problems: ProblemsStore;
+    lint: LintStore;
     /** The References view's results, history and walk. */
     references: ReferencesStore;
     /** What clangd answered a tab for the Files view's AST and Memory Usage sections. */
@@ -433,7 +440,11 @@ export function createClientState(
     });
     const deposit = withQueries('deposit', createDeposit(queries));
     const transcripts = withQueries('transcripts', createTranscripts(queries));
-    // A saved file may be a LaTeX file whose main builds on save, which the latex store decides.
+    // The linters run on the files of the source tabs this page has mounted, and again when one of
+    // them is saved.
+    const lint = createLint({ writes, served: servedRoots });
+    // A saved file may be a LaTeX file whose main builds on save, which the latex store decides,
+    // and a file a linter takes is linted again.
     const saveRules = (id: string, draft: SourceDraft, root: string, path: string): SaveRules =>
         saveRulesOf(
             {
@@ -453,6 +464,7 @@ export function createClientState(
         (root, path) => {
             fs.markText(root, path);
             void latex.onSaved(root, path);
+            lint.saved(root, path);
         },
         {
             socket,
@@ -594,20 +606,22 @@ export function createClientState(
             askLatex: latex.holdAgain
         })
     );
-    // A root that leaves the served roots takes its command diagnostics and its LaTeX states with
-    // it. The change is read from the fs store's workspaces, the one state the served roots are
-    // made of, and only between two reads of them (`readRoots` is null while they load or failed).
+    // A root that leaves the served roots takes its command diagnostics, its LaTeX states and its
+    // lint rows with it. The change is read from the fs store's workspaces, the one state the
+    // served roots are made of, and only between two reads of them (`readRoots` is null while they
+    // load or failed).
     watchServedRoots(
         () => readRoots(fs.workspaces()),
         (roots) => {
             commands.forgetOutside(roots);
             latex.forgetOutside(roots);
+            lint.forgetOutside(roots);
         }
     );
     // The problems the page knows of: the language servers' diagnostics, the errors project
-    // commands printed and the LaTeX builds' errors and warnings. F8 steps from the source tab on
-    // screen, or else the one focused last, and leaving a tab tells it its editor lost the
-    // keyboard.
+    // commands printed, the LaTeX builds' errors and warnings and the linters' findings. F8 steps
+    // from the source tab on screen, or else the one focused last, and leaving a tab tells it its
+    // editor lost the keyboard.
     const placeOpener: PlaceOpener = {
         layout: {
             openView: layout.openView,
@@ -651,6 +665,7 @@ export function createClientState(
     problems.register(languageProblems(documents));
     problems.register(commandProblems(commands, servedRoots));
     problems.register(latexProblems(latex));
+    problems.register(lintProblems(lint));
     const railBadges = createRailBadges(
         entities,
         feeds,
@@ -811,6 +826,7 @@ export function createClientState(
         workspaceSymbols,
         documents,
         problems,
+        lint,
         references,
         clangd,
         notices,

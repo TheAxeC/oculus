@@ -234,6 +234,7 @@ glyphs:
   interpreter: "py"
   compile_database: "db"
   svelte_config: "sv"
+  linter: "ln"
   references: "ref"
   lsp_output: "out"
   history: "(h)"

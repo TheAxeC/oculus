@@ -22,6 +22,7 @@ text:
         item_interpreter: Python Interpreter
         item_compile_database: Compile Database
         item_svelte_config: Svelte Configuration
+        item_linter: Linters
         item_language: Language mode
         item_sessions: Live sessions
         item_unsaved: Unsaved tabs
@@ -130,6 +131,21 @@ text:
         database_tip: 'Compile database: {0}. Select another.'
         database_findings_tip: 'The .oculus/cpp.yml of this repository has findings, which head the Select Compile Database list:'
         database_none_tip: This repository has no compile database and no .oculus/cpp.yml. Select one.
+        lint_not_found: '{0}: not found'
+        lint_failed: '{0}: failed'
+        lint_timeout: '{0}: timed out'
+        lint_not_approved: 'ESLint: not approved'
+        lint_tip_ran: '{0} ran on this file. Select to run the linters again.'
+        lint_tip_not_found_chktex: 'ChkTeX was not found. It comes with TeX Live and MacTeX: tlmgr install chktex, or name its absolute path, or one starting with ~, in lint.chktex_path.'
+        lint_tip_not_found_ruff: 'Ruff was not found. Install it with brew install ruff, or name its absolute path, or one starting with ~, in lint.ruff_path.'
+        lint_tip_not_found_shellcheck: 'ShellCheck was not found. Install it with brew install shellcheck, or name its absolute path, or one starting with ~, in lint.shellcheck_path.'
+        lint_tip_not_approved: "Approve the repository's ESLint configuration in :eslint-config."
+        lint_tip_failed: '{0} failed: {1}'
+        lint_tip_too_large: '{0} wrote more output than oculus reads, so its findings were dropped.'
+        lint_tip_timeout: '{0} ran past 30 seconds and was stopped.'
+        lint_tip_unreadable: '{0} wrote output that oculus could not read, so its findings were dropped.'
+        lint_tip_stopped: '{0} was stopped before it finished. Select to run the linters again.'
+        lint_tip_no_answer: '{0} gave no answer. Select to run the linters again.'
         svelte_config_reduced: 'Svelte: reduced mode'
         svelte_config_reduced_tip: The Svelte and Vite configuration of this repository is not approved, so the Svelte server runs in reduced mode. It does not run the configuration, and it uses its own Svelte, Prettier and preprocessors instead of the repository's. A repository with no svelte package gets the server's own Svelte 4. A rename in a TypeScript file reaches the Svelte files only after the approval. Select to review the files and approve them.
         svelte_config_trusted: 'Svelte: trusted'

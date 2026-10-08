@@ -2,13 +2,14 @@
 // draw, and what the status bar asks of it, for the tab to do.
 //
 // The source view publishes its caret, its indentation, its line ending, its language, whether it
-// may be written, the file it shows and the text selected in it and, for a file in a repository,
-// the caret line's blame, keyed by its instance, and takes its entry away when it unmounts. The
-// shell reads the entry of the tab on screen and draws the bar's source items from it; it never
-// holds the text, so a change it offers (a line to go to, an indentation to convert to, another
-// line ending, another language, the blamed commit to open) is asked of the instance, and the view
-// that holds the text performs it. Every ask carries a sequence number, so a view performs one ask
-// once, and a view that mounts after an ask was made does not perform it.
+// may be written, the file it shows, the text selected in it and the state of each linter that has
+// answered for its file and, for a file in a repository, the caret line's blame, keyed by its
+// instance, and takes its entry away when it unmounts. The shell reads the entry of the tab on
+// screen and draws the bar's source items from it; it never holds the text, so a change it offers
+// (a line to go to, an indentation to convert to, another line ending, another language, the blamed
+// commit to open) is asked of the instance, and the view that holds the text performs it. Every ask
+// carries a sequence number, so a view performs one ask once, and a view that mounts after an ask
+// was made does not perform it.
 //
 // A tab also publishes the editor actions it offers the palette, the Cmd+K chords the editor gave
 // up so Cmd+K reaches the palette, and the palette asks the tab to run one by its id. A diff pane
@@ -18,6 +19,7 @@
 // project command started from a button in another view reads its placeholders from that tab.
 
 import { untrack } from 'svelte';
+import type { LintId, LintState } from '../../../data/model/index.ts';
 import type { Caret, Indent, LineEnding } from './editor-text.ts';
 
 /**
@@ -51,6 +53,15 @@ export type EditorStatus = {
      * of this root.
      */
     served: { root: string; language: string } | null;
+    /**
+     * The root and path the file is linted under, and the state of each linter that took the file
+     * and has answered for it, in the order the bar draws them. Absent for a tab that says nothing
+     * of linters or has no answer yet.
+     */
+    linters?: {
+        at: { root: string; path: string };
+        items: { id: LintId; state: LintState | 'ok'; reason?: string }[];
+    };
 };
 
 /** A range of a text, lines and characters counted from zero as a language server counts them. */

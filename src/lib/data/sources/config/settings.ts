@@ -1,14 +1,14 @@
 // Layer 1, data. The typed readers of single settings out of the merged map: the cluster, the
 // calendar, the search, the Literature search, the open list, the mail, the change log's length,
 // the usage tiers and the refresh, the Processes view's program names, the LaTeX formatter and its
-// auto build, the automatic fetch, the Trash confirmation and the editor's paint limit, and the
-// repository scan depth of sources.yml, the one setting here that lives outside behavior.yml. Each
-// reads a key by the rule of its entry in the options catalog (catalog/value-rule.ts), the same
-// rule the Settings view and the server's write refuse a value by: a key that is missing is the
-// entry's `default`, and a key whose value the rule refuses is the `default` too and comes back as
-// a problem naming the key, so a typo costs one setting and the server starts. A reader throws only
-// when the catalog holds no rule for a key it reads, or no default that reads, since without one no
-// value can be read.
+// auto build, the linters' switches, paths and ChkTeX's arguments, the automatic fetch, the Trash
+// confirmation and the editor's paint limit, and the repository scan depth of sources.yml, the one
+// setting here that lives outside behavior.yml. Each reads a key by the rule of its entry in the
+// options catalog (catalog/value-rule.ts), the same rule the Settings view and the server's write
+// refuse a value by: a key that is missing is the entry's `default`, and a key whose value the rule
+// refuses is the `default` too and comes back as a problem naming the key, so a typo costs one
+// setting and the server starts. A reader throws only when the catalog holds no rule for a key it
+// reads, or no default that reads, since without one no value can be read.
 
 import { closedPathEntryOk } from '../../helpers/files/apps.ts';
 import type { ProgramApps } from '../../helpers/files/opens-in-program.ts';
@@ -27,6 +27,7 @@ import {
     type ReverseSynctex,
     type TexcountAutorun
 } from '../../prose/latex.ts';
+import type { LintId } from '../../model/index.ts';
 import { mapShape, readAs } from '../../shapes/shapes.ts';
 import {
     catalogOf,
@@ -541,6 +542,40 @@ export function latexFormatting(
     };
 }
 
+/**
+ * The linters' settings of config/behavior.yml: which run, where three of them are, ChkTeX's flags.
+ */
+export type LintSettings = {
+    /** Whether each linter runs. */
+    on: Record<LintId, boolean>;
+    /** Where each program is; empty finds it on PATH. ESLint is the repository's own. */
+    paths: Record<Exclude<LintId, 'eslint'>, string>;
+    /** The arguments ChkTeX is run with besides the ones oculus adds. */
+    chktexArgs: string[];
+};
+
+/** Read `lint:`'s eight keys, each its default when it is missing or wrong. */
+export function lintSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): LintSettings {
+    const read = settingReader(config, problems);
+    return {
+        on: {
+            chktex: read.flag('lint.chktex'),
+            ruff: read.flag('lint.ruff'),
+            eslint: read.flag('lint.eslint'),
+            shellcheck: read.flag('lint.shellcheck')
+        },
+        paths: {
+            chktex: read.text('lint.chktex_path'),
+            ruff: read.text('lint.ruff_path'),
+            shellcheck: read.text('lint.shellcheck_path')
+        },
+        chktexArgs: read.strings('lint.chktex_args')
+    };
+}
+
 /** The word `latex.auto_build` holds, which the catalog's choice keeps to the three words. */
 function latexAutoBuild(
     config: Record<string, unknown>,
@@ -789,7 +824,8 @@ const PROBLEM_READERS: ((
     paintLimit,
     processesSettings,
     latexFormatting,
-    latexBuild
+    latexBuild,
+    lintSettings
 ];
 
 /**

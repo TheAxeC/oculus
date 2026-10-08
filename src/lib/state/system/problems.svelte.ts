@@ -4,7 +4,7 @@
 //
 // A source is a function that answers its problems now (the language servers', the project
 // commands', the LaTeX builds'); it reads reactive stores, so the fold is made again when any of
-// them changes. A source joins by `register`, and a later source (a linter, another language
+// them changes. A source joins by `register`, and a later source (another linter, another language
 // server) adds its rows without an edit to this store. Problems are per page: a pop-out window
 // folds its own.
 //
@@ -12,6 +12,8 @@
 // severity then path, and the counts of each file, of each folder (errors and warnings only, which
 // is what the Files tree draws) and of all. The walk takes the files in that order and the rows of
 // each file by position, as Monaco's own walk does within a file.
+
+import type { LintFix } from '../../data/model/index.ts';
 
 export type ProblemSeverity = 'error' | 'warning' | 'info';
 
@@ -28,8 +30,8 @@ export type Problem = {
     language?: string;
     /**
      * The owner of the marker the row stands for in a Monaco model: `lsp-<language>` for a
-     * language server, `LATEX_OWNER` for a LaTeX build and `COMMAND_OWNER` for a project command
-     * (state/system/problem-sources.ts).
+     * language server, `LATEX_OWNER` for a LaTeX build, `COMMAND_OWNER` for a project command and
+     * `lint-<id>` for a linter (state/system/problem-sources.ts).
      */
     owner: string;
     severity: ProblemSeverity;
@@ -40,6 +42,12 @@ export type Problem = {
     message: string;
     source: string;
     code?: string;
+    /** The page that documents the code, which the code is drawn as a link to. */
+    href?: string;
+    /** A linter's fixes for the row, in the editor's places. */
+    fixes?: LintFix[];
+    /** The line ruff's `# noqa` comment for the row goes on. */
+    noqa?: number;
 };
 
 /** What a source answers: its problems now. */

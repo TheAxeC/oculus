@@ -89,10 +89,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // (server/edit/writes/config/config-key.ts) read one description of what an option is; and
 // `data/hub-address`, the rule telling a path of the hub from a web address, which the collection
 // card reads to decide what a click opens and the Audit reads to decide which links to look for on
-// disk; and `data/prose/literature`, the rules of the literature search that both sides read: how
-// a DOI, a PubMed id and an arXiv id are written the one way and the bounds of a request, which the
-// Literature search refuses a query by before it sends it and the route refuses the same query by
-// when it arrives, and the rule by which Lit Watch holds a paper already.
+// disk, and the one check of an address the page opens, which an app's `open` and the linters'
+// documentation links read; and `data/prose/literature`, the rules of the literature search that
+// both sides read: how a DOI, a PubMed id and an arXiv id are written the one way and the bounds of
+// a request, which the Literature search refuses a query by before it sends it and the route
+// refuses the same query by when it arrives, and the rule by which Lit Watch holds a paper already.
 // `data/helpers/files/paths` holds the `/` path rules (a path's last name, the path under a
 // folder, the deepest folder holding a target) that the file browser, the source tab and the status
 // bar read a root or a repository by, so the three agree on which one holds a file.
@@ -159,14 +160,16 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 //
 // `data/prose/lsp-servers` is one entry per language server (its languages, its words, its choices
 // and its own commands), which the relay's registry on the server and the page's kit, status bar,
-// palette and tab actions all read, so a server is declared once; `data/prose/lsp-addresses` is
-// the address a file has on a language server channel, which the editor kit and the page's edit
-// of files read the one way; `data/prose/text-edits` is the protocol's text edit applied to a text,
+// palette and tab actions all read, so a server is declared once; `data/prose/lsp-addresses` is the
+// address a file has on a language server channel, which the editor kit and the page's edit of
+// files read the one way; `data/prose/text-edits` is the protocol's text edit applied to a text,
 // which the server's `lsp-edit` and the page's edit of an open tab apply by one rule and whose
 // catalog keys the page words a refusal with; `data/prose/symbol-kinds` names the protocol's symbol
 // kinds, which the palette's `#` list words. `state/sessions/source/draft` is the source tab's
 // state, which a row of that list opens a file in, and `state/system/machine/lsp/workspace-symbols`
-// the rows it draws.
+// the rows it draws. `state/system/machine/lint/lint-model` and `lint-words` are in it because the
+// status bar's linter items and the palette's ESLint configuration list draw the linters' states
+// and names.
 //
 // `state/client/context` is where the client's stores are wired together, and it names nothing of
 // layer 3: the view registry is a state module, and the page root makes the primitives' tooltip
@@ -200,6 +203,8 @@ const ALLOWED: Record<string, string[]> = {
         'state/system/machine/lsp/lsp.svelte',
         'state/system/machine/lsp/symbols',
         'state/system/machine/lsp/workspace-symbols',
+        'state/system/machine/lint/lint-model',
+        'state/system/machine/lint/lint-words',
         'state/sessions/terminals',
         'state/sessions/source/draft',
         'state/sessions/latex/latex-state',
@@ -426,6 +431,7 @@ const FROZEN = [
  * find bar and the arrangement's save turn through `desktop`, and the update tray and its schedule
  * list and dialog read and write the schedules through `schedule`, and the status bar's language
  * server items and the palette's choice rows read the servers' states and choices through `lsp`,
+ * and the palette's ESLint configuration list reads and approves the configuration through `lint`,
  * and the debugger's questions, toolbar and status bar item read the debug session through `debug`,
  * while the pane strip's breadcrumb reads the symbols of the file in view through `documents`, and
  * the status bar's LaTeX item reads the build of the root in front through `latex` and asks the
@@ -452,6 +458,7 @@ const SHELL_STORES = [
     'desktop',
     'schedule',
     'lsp',
+    'lint',
     'lspEdits',
     'debug',
     'workspaceSymbols',

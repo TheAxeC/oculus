@@ -24,8 +24,8 @@ export async function configOf(env: RootEnv): Promise<{ text: string; view: LspC
         text,
         view: {
             files: files.map((one) => one.path),
-            approved: isConfigApproved(env.approvals, text),
-            key: configKey(text),
+            approved: isConfigApproved(env.approvals, 'svelte-config', text),
+            key: configKey('svelte-config', text),
             svelte: hasSvelte(env.root)
         }
     };
@@ -36,7 +36,7 @@ export async function configOf(env: RootEnv): Promise<{ text: string; view: LspC
  * configuration anywhere answers no without reading the repository.
  */
 export async function isRootApproved(env: RootEnv): Promise<boolean> {
-    return anyConfigApproved(env.approvals) && (await configOf(env)).view.approved;
+    return anyConfigApproved(env.approvals, 'svelte-config') && (await configOf(env)).view.approved;
 }
 
 /**
@@ -46,10 +46,12 @@ export async function isRootApproved(env: RootEnv): Promise<boolean> {
  */
 export async function approveRootConfig(env: RootEnv, key: string): Promise<ApprovalWrite | null> {
     const { text } = await configOf(env);
-    return configKey(text) === key ? approveConfig(env.approvals, text) : null;
+    return configKey('svelte-config', text) === key
+        ? approveConfig(env.approvals, 'svelte-config', text)
+        : null;
 }
 
 /** Take back the approval of the present text of the root's configuration. */
 export async function revokeRootConfig(env: RootEnv): Promise<ApprovalWrite> {
-    return revokeConfig(env.approvals, (await configOf(env)).text);
+    return revokeConfig(env.approvals, 'svelte-config', (await configOf(env)).text);
 }

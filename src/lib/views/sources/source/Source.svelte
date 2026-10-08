@@ -99,6 +99,7 @@
     import ReadAgainButton from './actions/ReadAgainButton.svelte';
     import { createTabSave } from './save/tab-save.svelte';
     import { createTabDraft } from './save/tab-draft.svelte';
+    import { lintActions } from './language/lint-fixes';
     import { createTabLanguage } from './language/tab-language.svelte';
     import { createSourceGutter } from './source-gutter.svelte';
     import { createSourceOptions } from '$lib/views/shared/prose/source-options';
@@ -227,6 +228,8 @@
         read: () => read,
         markdown: () => markdown
     });
+    /** Whether the tab shows a file of a served root as it is on disk, which the linters read. */
+    const linted = $derived(file.onDisk && head === undefined && lib.address === '');
     /** The tab's Save, and the question the first Save of an untitled text asks. */
     const tabSave = createTabSave({
         get id() {
@@ -357,6 +360,18 @@
             },
             get latexActions() {
                 return latexTab.actions();
+            },
+            get linters() {
+                if (!linted) return undefined;
+                const place = client.lint.keyOf(root, path);
+                if (place === null) return undefined;
+                const items = client.lint
+                    .statuses(root, path)
+                    .map(({ linter, status }) => ({ id: linter, ...status }));
+                return { at: place, items };
+            },
+            get lintActions() {
+                return linted ? lintActions(client, instance.id, { root, path }) : [];
             }
         },
         does: {

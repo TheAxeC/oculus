@@ -28,6 +28,8 @@ import type { HpcWatcher } from '../../machine/hpc/poll.ts';
 import type { SubmitState } from '../../machine/hpc/submit.ts';
 import type { Relay } from '../../machine/lsp/relay.ts';
 import type { Terminals } from '../../machine/pty/channel.ts';
+import type { HeldEslints } from '../../machine/runs/lint/eslint.ts';
+import type { LintRuns } from '../../machine/runs/lint/runs.ts';
 import type { SchedulesWatcher } from '../../machine/runs/schedules/watch.ts';
 import type { UsageRefreshWatcher } from '../../machine/usage/refresh.ts';
 import type { UsageWatcher } from '../../machine/usage/watch.ts';
@@ -43,6 +45,10 @@ export type ServerContext = {
     relay: Relay;
     /** The one debug session of the server, whose adapter process `close` ends. */
     debug: DebugClient;
+    /** The linter runs in flight, which `close` stops. */
+    lintRuns: LintRuns;
+    /** The ESLint children held per repository, which `close` ends. */
+    eslint: HeldEslints;
     hooks: HookTarget;
     git: GitWatcher;
     /** The files open in source tabs, polled for a change on disk behind the `source:` channels. */

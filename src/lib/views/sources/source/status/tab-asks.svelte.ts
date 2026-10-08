@@ -1,9 +1,9 @@
 // Layer 3, view partial of Source.svelte. What the tab offers to the places that ask it things and
 // what it does when one asks: the tab's own actions that apply now (Save, Revert File, word wrap,
-// the rendered half, Open Preview to the Side, Submit Job, Toggle Blame, then a language server's
-// and a LaTeX file's), the list the palette shows (those, then the editor's own actions while the
-// editor is drawn), the status the bar draws for the tab, and the performing of an ask of the bar,
-// the palette or Cmd+S (ask-perform.ts, source-status.svelte.ts).
+// the rendered half, Open Preview to the Side, Submit Job, Toggle Blame, then a language server's,
+// a LaTeX file's and the linters'), the list the palette shows (those, then the editor's own
+// actions while the editor is drawn), the status the bar draws for the tab, and the performing of
+// an ask of the bar, the palette or Cmd+S (ask-perform.ts, source-status.svelte.ts).
 //
 // The tab reads its own state through `facts`, an object of getters that this partial reads inside
 // the effects and deriveds it registers, so each of them runs again when a fact it read changes and
@@ -56,9 +56,15 @@ type SourceFacts = {
     /** The absolute path of the file, empty for a tab showing no file on disk. */
     file: string;
     served: EditorStatus['served'];
-    /** The actions a language server adds, and those of a LaTeX file. */
+    /**
+     * The linters that have answered for the file with their last run's state, undefined for a tab
+     * with none.
+     */
+    linters: EditorStatus['linters'];
+    /** The actions a language server adds, those of a LaTeX file and those of the linters. */
     languageActions: EditorOwnAction[];
     latexActions: EditorOwnAction[];
+    lintActions: EditorOwnAction[];
 };
 
 /** What a press on one of the tab's actions calls on the tab. */
@@ -111,7 +117,8 @@ export function createTabAsks(deps: TabAsksDeps): TabAsks {
             previewSide: does.previewSide,
             toggleBlame: does.toggleBlame,
             language: facts.drawn ? facts.languageActions : [],
-            latex: facts.latexActions
+            latex: facts.latexActions,
+            lint: facts.drawn ? facts.lintActions : []
         });
     });
     /** What the palette lists: the tab's actions, then the editor's while it is drawn. */
@@ -142,7 +149,8 @@ export function createTabAsks(deps: TabAsksDeps): TabAsks {
                 actions: listed,
                 file: facts.file,
                 selection: facts.drawn ? facts.selection : '',
-                served: facts.served
+                served: facts.served,
+                ...(facts.linters === undefined ? {} : { linters: facts.linters })
             };
         },
         perform: (ask) => {

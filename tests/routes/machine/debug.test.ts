@@ -6,6 +6,7 @@
 // What this does NOT cover: the origin rule, which hooks.server.ts applies to every request under
 // /api/ ahead of a route seeing it (tests/server/root/hooks-server.test.ts), and the adapter's
 // side of the protocol, which a real `rite_dap` answers.
+// @module-tag slow: a launch row runs over the 5 s limit on a loaded machine.
 
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';

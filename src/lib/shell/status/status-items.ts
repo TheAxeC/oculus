@@ -8,8 +8,8 @@
 // item; on the right the editor's own items for the source tab on screen (the caret line's blame in
 // a file of a repository, then the caret and the text's own items, then the items of a language
 // server: its state, the Python interpreter, the compile database and the Svelte configuration,
-// each drawn only for the language it belongs to, before the language itself), then the live
-// sessions and the unsaved tabs, and the bell last.
+// each drawn only for the language it belongs to, then the linters of the file, one item each,
+// before the language itself), then the live sessions and the unsaved tabs, and the bell last.
 //
 // The host item is the server's `os.hostname()` on the `config` channel's `ConfigPayload.host`,
 // with its address. Branch and sync are the repository holding the active tab's file
@@ -56,6 +56,7 @@ export const RIGHT_ITEMS = [
     'interpreter',
     'compile_database',
     'svelte_config',
+    'linter',
     'language',
     'sessions',
     'unsaved',
@@ -119,6 +120,8 @@ export function itemName(item: StatusItem): string {
             return t('statusbar.item_compile_database');
         case 'svelte_config':
             return t('statusbar.item_svelte_config');
+        case 'linter':
+            return t('statusbar.item_linter');
         case 'language':
             return t('statusbar.item_language');
         case 'sessions':

@@ -17,11 +17,12 @@
 
 <script lang="ts">
     // Layer 3, view. The problems of the page as VS Code's Problems view draws them: the errors,
-    // warnings and infos of the language servers, of the project commands that were run and of the
-    // LaTeX builds (state/system/problems.svelte.ts), in a tree of one row per file with a row per
-    // problem under it. A file row is its icon, its name, its folder and its count; a problem row
-    // is its severity, its message, its source with the code in brackets and its place as
-    // `[Ln l, Col c]`.
+    // warnings and infos of the language servers, of the project commands that were run, of the
+    // LaTeX builds and of the linters (state/system/problems.svelte.ts), in a tree of one row per
+    // file with a row per problem under it. A file row is its icon, its name, its folder and its
+    // count; a problem row is its severity, its message, its source with the code in brackets and
+    // its place as `[Ln l, Col c]`. A code that has a documentation page is drawn as a link: a
+    // press on it opens the page, and the row's menu offers Show Documentation.
     //
     // A single press on a problem opens its file in the preview tab at the problem's range with the
     // keyboard kept here, so the list can be walked on; Enter or a double press opens a tab that
@@ -57,6 +58,7 @@
     import { opens, type Problem } from '$lib/state/system/problems.svelte';
     import { instanceFlag, instanceMap, instanceText } from '$lib/state/workbench/layout';
     import { t } from '$lib/state/shared/words/text';
+    import { webAddress } from '$lib/state/system/machine/lint/lint-model';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
     import {
@@ -143,8 +145,17 @@
         problems.open(row, { kept, focus: kept, leaving: null });
     }
 
-    /** A press: Enter (no click count) keeps the tab, a first click previews it. */
+    /**
+     * A press: on the code's link it opens the page, else Enter (no click count) keeps the tab and
+     * a first click previews it.
+     */
     function pressed(row: Problem, event: MouseEvent): void {
+        if (webAddress(row.href) !== null && event.target instanceof Element) {
+            if (event.target.closest('[data-code-link]') !== null) {
+                documentation(row);
+                return;
+            }
+        }
         if (event.detail > 1) return;
         show(row, event.detail === 0);
     }
@@ -153,13 +164,26 @@
         void navigator.clipboard.writeText(value).catch(() => undefined);
     }
 
-    const rowMenu: MenuItem[] = $derived([
-        { id: 'copy', label: t('problems.copy') },
-        { id: 'copy_message', label: t('problems.copy_message') }
-    ]);
+    /** The menu of a row: the copies, and the documentation of a code that has a page. */
+    function rowMenu(row: Problem): MenuItem[] {
+        return [
+            { id: 'copy', label: t('problems.copy') },
+            { id: 'copy_message', label: t('problems.copy_message') },
+            ...(webAddress(row.href) === null
+                ? []
+                : [{ id: 'documentation', label: t('problems.show_documentation') }])
+        ];
+    }
 
     function picked(id: string, row: Problem): void {
-        copy(id === 'copy' ? copyText(row) : row.message);
+        if (id === 'documentation') documentation(row);
+        else copy(id === 'copy' ? copyText(row) : row.message);
+    }
+
+    /** Open the page that documents a row's code. */
+    function documentation(row: Problem): void {
+        const address = webAddress(row.href);
+        if (address !== null) window.open(address, '_blank', 'noopener,noreferrer');
     }
 
     /** The first line of a message, which is what a row draws; the tooltip holds all of it. */
@@ -328,7 +352,7 @@
                                     <li role="none" data-problem={entry.id} {@attach measure}>
                                         <ContextMenu
                                             label={firstLine(row.message)}
-                                            items={rowMenu}
+                                            items={rowMenu(row)}
                                             onpick={(id: string) => picked(id, row)}
                                         >
                                             <TreeItem
@@ -348,7 +372,17 @@
                                                     : undefined}
                                             >
                                                 {#snippet detail()}
-                                                    <span class="source">{sourceText(row)}</span>
+                                                    {#if webAddress(row.href) !== null && row.code !== undefined}
+                                                        <span class="source"
+                                                            >{row.source}(<span
+                                                                class="code"
+                                                                data-code-link>{row.code}</span
+                                                            >)</span
+                                                        >
+                                                    {:else}
+                                                        <span class="source">{sourceText(row)}</span
+                                                        >
+                                                    {/if}
                                                     <span class="position">{positionText(row)}</span
                                                     >
                                                 {/snippet}
@@ -381,5 +415,11 @@
 
     .position {
         font-family: var(--font-num);
+    }
+
+    .code {
+        color: var(--accent);
+        text-decoration: underline;
+        cursor: pointer;
     }
 </style>

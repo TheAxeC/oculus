@@ -11,6 +11,8 @@ import { createConfigCache } from '../../../src/lib/server/root/process/config-c
 import { RateLimiter } from '../../../src/lib/server/root/hooks.ts';
 import { DebugClient } from '../../../src/lib/server/machine/debug/session.ts';
 import { createRelay } from '../../../src/lib/server/machine/lsp/relay.ts';
+import { HeldEslints } from '../../../src/lib/server/machine/runs/lint/eslint.ts';
+import { LintRuns } from '../../../src/lib/server/machine/runs/lint/runs.ts';
 import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
 import { HookStore, sessionRecord } from '../../../src/lib/server/sessions/stores/hooks.ts';
 import { ignoredCache } from '../../../src/lib/server/files/fs.ts';
@@ -77,6 +79,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         recordFor: (session: string) => sessionRecord(hub, session)
     };
     const engine = overrides.engine ?? '/fixture/engine';
+    const lintRuns = new LintRuns();
+    const eslint = new HeldEslints({ roots: () => [] });
     let closed = false;
     const context: ServerContext = {
         hub,
@@ -84,6 +88,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         terminals,
         relay,
         debug,
+        lintRuns,
+        eslint,
         hooks,
         git: { refresh: () => Promise.resolve(), close: noop },
         openFiles: { subscribed: () => [], unsubscribed: noop, remove: noop, close: noop },
@@ -168,6 +174,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             closed = true;
             terminals.close();
             debug.close();
+            lintRuns.close();
+            eslint.close();
             void relay.close();
         },
         ...overrides

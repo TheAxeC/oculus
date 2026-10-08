@@ -1,7 +1,8 @@
 <script lang="ts">
     // Layer 3, shell. The status bar's items of a language server, drawn for the source tab on
-    // screen while a server serves its file (the tab says so in `status.served`): the server's
-    // state for any served language, and an item for each kind of choice its entry in
+    // screen while a server serves its file (the tab says so in `status.served`), and the items of
+    // the linters that take its file (`status.linters`), drawn whether or not a server serves it.
+    // The server's state for any served language, and an item for each kind of choice its entry in
     // data/prose/lsp-servers.ts asks for: the Python interpreter, the compile database of a C or
     // C++ file, and the approval of a Svelte repository's configuration. Each is one fact, as VS
     // Code's status bar draws them.
@@ -17,12 +18,21 @@
     // is not approved, in the warning tone, and trusted once it is; a press on it opens the list
     // that approves or takes the approval back. The choices of the tab's root are asked of the
     // relay once its server has said anything, and arrive again after each choice.
+    //
+    // A linter's item reads the linter's name when it ran, and `not found`, `failed`, `timed out`
+    // or `not approved` in the warning tone otherwise; its tooltip says why and, for a program that
+    // is not found, how to install it and which setting names its path. A linter that has not
+    // answered for the file, that is switched off or that has no configuration for the file draws
+    // nothing. A press runs the tab's linters again, and on `not approved` opens the list that
+    // approves the repository's ESLint configuration. The linters share the one status item
+    // `linter`, which hides them all.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import type { ItemsProps } from './status-items';
     import { factsForLanguage } from '$lib/data/prose/lsp-servers';
+    import { lintName } from '$lib/state/system/machine/lint/lint-words';
     import {
         databaseInForce,
         findingLine,
@@ -133,6 +143,71 @@
             : t('statusbar.svelte_config_trusted_own_tip');
     });
 
+    /**
+     * One linter's item: the words it reads, its tooltip, and whether it is in the warning tone.
+     */
+    function lintItem(one: NonNullable<typeof status.linters>['items'][number]): {
+        words: string;
+        tip: string;
+        warning: boolean;
+    } | null {
+        const name = lintName(one.id);
+        switch (one.state) {
+            case 'off':
+            case 'no_config':
+                return null;
+            case 'ok':
+                return { words: name, tip: t('statusbar.lint_tip_ran', name), warning: false };
+            case 'not_found':
+                return {
+                    words: t('statusbar.lint_not_found', name),
+                    tip: t(`statusbar.lint_tip_not_found_${one.id}`),
+                    warning: true
+                };
+            case 'timeout':
+                return {
+                    words: t('statusbar.lint_timeout', name),
+                    tip: t('statusbar.lint_tip_timeout', name),
+                    warning: true
+                };
+            case 'not_approved':
+                return {
+                    words: t('statusbar.lint_not_approved'),
+                    tip: t('statusbar.lint_tip_not_approved'),
+                    warning: true
+                };
+            case 'failed':
+                return {
+                    words: t('statusbar.lint_failed', name),
+                    tip: failedTip(name, one.reason),
+                    warning: true
+                };
+        }
+    }
+
+    /** What a linter's failure says: its own line, or the sentence for a failure of oculus's. */
+    function failedTip(name: string, reason: string | undefined): string {
+        if (reason === undefined) return t('statusbar.lint_tip_no_answer', name);
+        if (reason === 'too_large') return t('statusbar.lint_tip_too_large', name);
+        if (reason === 'unreadable') return t('statusbar.lint_tip_unreadable', name);
+        if (reason === 'stopped') return t('statusbar.lint_tip_stopped', name);
+        return t('statusbar.lint_tip_failed', name, reason);
+    }
+
+    /** The linters that take the tab's file and have something to say. */
+    const linters = $derived(
+        (status.linters?.items ?? []).flatMap((one) => {
+            const item = lintItem(one);
+            return item === null ? [] : [{ id: one.id, state: one.state, ...item }];
+        })
+    );
+
+    /** A press: run the linters again, or approve the repository's ESLint configuration. */
+    function pressedLinter(state: string): void {
+        if (state === 'not_approved') onpalette(':eslint-config ');
+        else ask(instance, { kind: 'action', id: 'oculus.lint.rerun' });
+    }
+
     /** The compile database in force, by its name. */
     const database = $derived(databaseInForce(choices));
     /** The findings of the repository's `.oculus/cpp.yml`, which the item's tone and tip say. */
@@ -201,4 +276,19 @@
             />
         </span>
     {/if}
+{/if}
+
+{#if shown('linter') && linters.length > 0}
+    <span data-status="linter">
+        {#each linters as one (one.id)}
+            <ToolButton
+                label={one.words}
+                glyph="linter"
+                title={one.tip}
+                status
+                warning={one.warning}
+                onclick={() => pressedLinter(one.state)}
+            />
+        {/each}
+    </span>
 {/if}

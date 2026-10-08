@@ -13,6 +13,7 @@ import {
     inClosedPaths,
     pathSegmentsOpen
 } from '../../../data/helpers/files/apps.ts';
+import { webAddress } from '../../../data/hub-address.ts';
 import type { AppRow, Message } from '../../../data/model/index.ts';
 import type { AppsSettings } from '../../../data/sources/config/settings.ts';
 import { t } from '../../shared/words/text.ts';
@@ -111,26 +112,6 @@ function refuse(word: string): Promise<never> {
 }
 
 const isText = (value: unknown): value is string => typeof value === 'string';
-
-/** The most characters an address an app asks to open may have. */
-const ADDRESS_MAX = 2048;
-
-/**
- * The address an app asked to open, as the browser reads it, or null when it is not an `http:` or
- * `https:` address of at most `ADDRESS_MAX` characters with no user name or password in it.
- */
-function webAddress(value: unknown): string | null {
-    if (!isText(value) || value.length > ADDRESS_MAX) return null;
-    let parsed: URL;
-    try {
-        parsed = new URL(value);
-    } catch {
-        return null;
-    }
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
-    if (parsed.username !== '' || parsed.password !== '') return null;
-    return parsed.href;
-}
 
 /** The one own key of a plain object, or null when it has none or more. */
 function soleKey(value: unknown): string | null {

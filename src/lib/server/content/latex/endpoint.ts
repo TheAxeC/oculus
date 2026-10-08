@@ -49,7 +49,8 @@ import { foldersOf } from './recipes.ts';
 import { dependenciesOf, mainOfPdf, rootOf, type RootHow } from './root.ts';
 import { forward, inverse, placedIn, placesOf, programFor, sourceOf } from './synctex.ts';
 import { packagesOf, texdoc, texdocName } from './texdoc.ts';
-import { readCount, run, type Run, type Tools } from './tools.ts';
+import { run, type Run, type Tools } from '../../core/program.ts';
+import { readCount } from './tools.ts';
 
 /**
  * What a LaTeX read needs: the hub, the portfolio an id is checked against, and the served roots.
@@ -389,9 +390,13 @@ async function countAnswer(into: LatexTarget, scope: Scope, main: string): Promi
     }
     const args = ['-inc', '-total', '-sum', '-brief', '-utf8', main];
     const ran = await run('texcount', args, { cwd: scope.dir }, into.tools);
-    if (ran.kind === 'missing') return refuse(502, 'count-missing');
-    if (ran.kind === 'timeout') return refuse(504, 'count-timeout');
-    if (ran.kind === 'failed') return refuse(502, 'count-failed');
+    if (ran.kind !== 'done') {
+        return failure(ran, {
+            missing: 'count-missing',
+            timeout: 'count-timeout',
+            failed: 'count-failed'
+        });
+    }
     const counted = readCount(ran.stdout);
     if ('words' in counted) return json(counted, { headers: NO_STORE });
     return refuse(502, 'count-failed');
@@ -463,7 +468,7 @@ function failure(
     words: { missing: LatexRefusal; timeout: LatexRefusal; failed: LatexRefusal }
 ): Response {
     if (ran.kind === 'missing') return refuse(502, words.missing);
-    if (ran.kind === 'timeout') return refuse(504, words.timeout);
+    if (ran.kind === 'timeout' || ran.kind === 'overflow') return refuse(504, words.timeout);
     return refuse(502, words.failed);
 }
 

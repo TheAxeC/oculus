@@ -1,5 +1,36 @@
 # Oculus text owned by the source view.
 text:
+    lint:
+        chktex_fix_1: 'Terminate command with empty statement'
+        chktex_fix_11: 'Fix ellipsis'
+        chktex_fix_12: 'Add interword space (\ )'
+        chktex_fix_13: 'Add intersentence space (\@)'
+        chktex_fix_18: "Replace with ` or '"
+        chktex_fix_2: 'Convert to non-breaking space (~)'
+        chktex_fix_24: 'Remove extraneous space'
+        chktex_fix_26: 'Remove extraneous space'
+        chktex_fix_28: 'Remove incorrect \/'
+        chktex_fix_32: 'Replace with `'
+        chktex_fix_33: "Replace with '"
+        chktex_fix_34: "Replace with ` or '"
+        chktex_fix_35: 'Use suggested alternative'
+        chktex_fix_39: 'Remove extraneous space'
+        chktex_fix_4: 'Remove italic correction \/ (not in italic buffer)'
+        chktex_fix_42: 'Remove extraneous space'
+        chktex_fix_45: 'Use \[ ... \] instead of $$ ... $$'
+        chktex_fix_46: 'Use \( ... \) instead of $ ... $'
+        chktex_fix_5: 'Remove extraneous italic correction(s)'
+        chktex_fix_6: 'Add italic correction (\/)'
+        disable_file: 'Disable {0} for the entire file'
+        disable_line: 'Disable {0} for this line'
+        documentation: 'Show documentation for {0}'
+        fix_code: 'Fix {0}'
+        fix_rule: 'Fix this {0} problem'
+        fix_shellcheck: 'Apply fix for {0}'
+        name_chktex: ChkTeX
+        name_eslint: ESLint
+        name_ruff: Ruff
+        name_shellcheck: ShellCheck
     source:
         bar_blame: Toggle Blame
         bar_blame_title: Toggle Git Blame Editor Decoration
@@ -20,6 +51,8 @@ text:
         cmd_find_references: 'References: Find All References'
         cmd_latex_output: 'LaTeX: Show Language Server Output'
         cmd_latex_restart: 'LaTeX: Restart Language Server'
+        cmd_lint_fix_all: '{0}: Fix All Auto-fixable Problems'
+        cmd_lint_rerun: 'Linters: Run Again'
         cmd_next_reference: Go to Next Reference
         cmd_preview_side: 'Markdown: Open Preview to the Side'
         cmd_previous_reference: Go to Previous Reference

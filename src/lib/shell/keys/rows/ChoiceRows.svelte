@@ -14,7 +14,7 @@
     // and leaves the list open with the files as they are now.
 
     import { onMount } from 'svelte';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import ApprovalAsk from '$lib/shell/keys/rows/ApprovalAsk.svelte';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import type { ChoiceMode, ChoiceRow } from '$lib/shell/keys/palette-modes';
     import type { LspAnswer } from '$lib/state/system/machine/lsp/lsp.svelte';
@@ -114,22 +114,20 @@
 </script>
 
 {#if asking !== null && askedDetail !== null}
-    <Confirm
-        level="sheet"
+    <ApprovalAsk
         message={asking.pick?.kind === 'config'
             ? t('app.palette.config_ask')
             : t('app.palette.approve_ask')}
         detail={askedDetail}
-        confirm={asking.pick?.kind === 'config'
+        yes={asking.pick?.kind === 'config'
             ? t('app.palette.config_yes')
             : t('app.palette.approve_yes')}
-        cancel={t('ui.confirm_cancel')}
-        onconfirm={() => {
+        onyes={() => {
             const row = asking;
             asking = null;
             if (row !== null) void press(row, true);
         }}
-        oncancel={() => (asking = null)}
+        onno={() => (asking = null)}
     />
 {/if}
 {#each rows as row (row.value)}

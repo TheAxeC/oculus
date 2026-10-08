@@ -21,11 +21,11 @@
 // progress as `state` messages. Only `workspace/applyEdit` and the two refreshes reach the page.
 //
 // An entry may refuse a file (`refuses`: texlab's Sweave files), and may filter the diagnostics of
-// a file before the page sees them (`diagnostics`: texlab's own and ChkTeX's are kept, those it
-// reads from the build log are dropped). A server whose answer to a section of
-// `workspace/configuration` follows the shipped settings (texlab's build folders) is told
-// `workspace/didChangeConfiguration` once when `settingsChanged` finds the answer would now differ,
-// and nothing when it would not.
+// a file before the page sees them (`diagnostics`: texlab's own are kept, those it reads from the
+// build log are dropped; texlab runs no ChkTeX, whose findings are the linter's). A server whose
+// answer to a section of `workspace/configuration` follows the shipped settings (texlab's build
+// folders) is told `workspace/didChangeConfiguration` once when `settingsChanged` finds the answer
+// would now differ, and nothing when it would not.
 //
 // A server's page is its owner. A page that closes leaves its servers to end 60 s later unless a
 // page opens the same root and takes them over. A root that is no longer served ends its servers

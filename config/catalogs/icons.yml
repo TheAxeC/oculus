@@ -233,6 +233,7 @@ icons:
     interpreter: square-terminal
     compile_database: database
     svelte_config: file-cog
+    linter: list-checks
     references: list-tree
     lsp_output: scroll-text
     history: history

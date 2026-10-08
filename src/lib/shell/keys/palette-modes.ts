@@ -6,8 +6,10 @@
 // a new interpreter. The compile database list opens with a row for each finding of the
 // repository's `.oculus/cpp.yml`, which no press acts on. The Svelte configuration list names the
 // configuration files the Svelte server would run, which no press acts on, and one row that
-// approves them or, once approved, takes the approval back.
+// approves them or, once approved, takes the approval back. `:eslint-config` lists the same for the
+// ESLint configuration file of the source tab's file, whether or not a server serves it.
 
+import type { LintConfig } from '$lib/state/system/machine/lint/lint-model';
 import type { PaletteCommand, PaletteMatch, ParsedCommand } from '$lib/state/workbench/palette';
 import {
     databaseInForce,
@@ -29,12 +31,55 @@ const MODE_COMMANDS = [
     'language',
     'workspace',
     'workspace-save',
+    'eslint-config',
     ...Object.values(LSP_CHOICES).map((one) => one.command)
 ];
 
 /** Whether choosing a command types its name and a space, which opens its list. */
 export function opensAsMode(name: string): boolean {
     return MODE_COMMANDS.includes(name);
+}
+
+/** The file whose ESLint configuration the query lists, when it is `:eslint-config`. */
+export function lintConfigOf(
+    parsed: ParsedCommand | null,
+    linters: { at: { root: string; path: string } } | undefined
+): { root: string; path: string } | null {
+    return parsed?.name === 'eslint-config' && linters !== undefined ? linters.at : null;
+}
+
+/** One row of the `:eslint-config` list; a file row is shown and not pressed. */
+export type LintConfigRow = {
+    value: string;
+    /** The word the row is of: the configuration file, or the approval. */
+    kind: string;
+    label: string;
+    active: boolean;
+    /** What a press does: approve or take back the approval of the text with this key. */
+    change: { approve: boolean; key: string } | null;
+};
+
+/** The rows for the configuration file: the file, then the row that approves or revokes it. */
+export function lintConfigRows(config: LintConfig | null | undefined): LintConfigRow[] {
+    if (config === null || config === undefined) return [];
+    return [
+        ...config.files.map((file): LintConfigRow => ({
+            value: `eslint-config:${file}`,
+            kind: t('app.palette.kind_config_file'),
+            label: file,
+            active: false,
+            change: null
+        })),
+        {
+            value: config.approved ? 'eslint-config:revoke' : 'eslint-config:approve',
+            kind: t('app.palette.kind_eslint_config'),
+            label: config.approved
+                ? t('app.palette.eslint_config_revoke')
+                : t('app.palette.eslint_config_approve'),
+            active: config.approved,
+            change: { approve: !config.approved, key: config.key }
+        }
+    ];
 }
 
 /** The list a language-server command shows: the kind of choice it lists. */
@@ -167,6 +212,8 @@ export type ListedFacts = {
     choiceMode: ChoiceMode | null;
     commandList: PaletteCommand[];
     choiceList: { value: string }[];
+    /** The `:eslint-config` list: its rows while the query is that command, else null. */
+    lintList: { value: string }[] | null;
 };
 
 /**
@@ -198,6 +245,9 @@ export function listedRows(facts: ListedFacts): { count: number; values: string[
         };
     }
     if (saveMode) return { count: 1, values: ['workspace-save'] };
+    if (facts.lintList !== null) {
+        return { count: facts.lintList.length, values: facts.lintList.map((row) => row.value) };
+    }
     if (choiceMode !== null) {
         return { count: facts.choiceList.length, values: facts.choiceList.map((row) => row.value) };
     }

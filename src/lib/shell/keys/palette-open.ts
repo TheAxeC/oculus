@@ -7,7 +7,11 @@
 // and answers that tab's instance. Pin Editor and Unpin Editor are editor items too, and act on the
 // tab they name through the layout. A command a view offers runs the function the view handed in
 // and answers that view's instance.
+//
+// `landOn` gives the keyboard to the tab head of the pane that shows an instance once the page has
+// drawn it.
 
+import { tick } from 'svelte';
 import { z } from 'zod';
 import { readOr, rowsShape } from '$lib/data/shapes/shapes';
 import { instanceMap } from '$lib/state/workbench/layout';
@@ -16,6 +20,7 @@ import type { PaletteItem } from '$lib/state/workbench/palette';
 import type { PaletteSourceStore } from '$lib/state/workbench/palette-source.svelte';
 import type { UiStore } from '$lib/state/workbench/ui.svelte';
 import type { EditorStatusStore } from '$lib/state/workbench/navigation/editor-status.svelte';
+import { focusQuietly } from '$lib/ui/frame/quiet-focus';
 
 /** The names of the rows of the configuration's `themes` list that hold one as text. */
 const themeNamesShape = rowsShape(z.object({ name: z.string() }).transform((row) => row.name));
@@ -64,4 +69,13 @@ export function openPaletteItem(
 /** The names of the themes the configuration lists, which the `:theme` command accepts. */
 export function configuredThemes(config: Record<string, unknown>): string[] {
     return readOr(themeNamesShape, config.themes, []);
+}
+
+/** Give the keyboard to the selected tab head of the pane showing an instance, if one does. */
+export async function landOn(id: string): Promise<void> {
+    await tick();
+    const head = document.querySelector<HTMLElement>(
+        `[data-pane-active="${CSS.escape(id)}"] [role="tab"][aria-selected="true"]`
+    );
+    if (head !== null) focusQuietly(head);
 }

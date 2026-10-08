@@ -7,9 +7,10 @@
 // The tab's own actions are File: Save, File: Revert File, View: Toggle Word Wrap (Alt+Z),
 // Markdown: Toggle Rendered Half, Markdown: Open Preview to the Side, Slurm: Submit Job and Git:
 // Toggle Git Blame Editor Decoration, and for a LaTeX file the actions of
-// latex/latex-tab.svelte.ts. Each is in `tabActions` only while it applies, so the palette lists
-// what the tab on screen can do, whether or not it draws an editor, and an ask for an action that
-// does not apply does nothing.
+// latex/latex-tab.svelte.ts, then the linters' Run Again and each one's Fix All Auto-fixable
+// Problems (language/lint-fixes.ts). Each is in `tabActions` only while it applies, so the palette
+// lists what the tab on screen can do, whether or not it draws an editor, and an ask for an action
+// that does not apply does nothing.
 //
 // Cmd+S is the shell key action `save` (shell/keys/keys.ts), performed in workbench-keys.svelte.ts
 // by an ask to the source tab on screen, and Alt+Z is the key of word wrap in the editor.
@@ -47,6 +48,8 @@ export type TabActionDeps = {
     language: EditorOwnAction[];
     /** The actions of a LaTeX file (build, view, SyncTeX, editing), which follow the server's. */
     latex: EditorOwnAction[];
+    /** The actions of the linters that take the file (run again, Fix All), which follow LaTeX's. */
+    lint: EditorOwnAction[];
 };
 
 /** The actions of the tab that apply now, in the order the palette lists them. */
@@ -84,7 +87,7 @@ export function tabActions(deps: TabActionDeps): EditorOwnAction[] {
     if (deps.blameable) {
         listed.push({ id: 'oculus.blame', label: t('source.cmd_blame'), run: deps.toggleBlame });
     }
-    return [...listed, ...deps.language, ...deps.latex];
+    return [...listed, ...deps.language, ...deps.latex, ...deps.lint];
 }
 
 /** What performing an ask reads of the tab and calls on it. */
