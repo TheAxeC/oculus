@@ -1,14 +1,14 @@
-In flight (0 of 6 slots): none.
+In flight (1 of 6 slots):
+- M8 (the hub's YAML checked in the editor): building.
 
-Ready to prepare, in queue order: M6, M8 (its brief takes M8-premise-recheck-3's corrections, Z712 and D28's `options.yml` entries) and D33, now that D28 has landed.
+Ready to prepare: D33 (the Problems view), its brief being written.
 
-Queued, in order (16 steps):
-- M6 (the collection forms removed): ready.
+Queued, in order (15 steps):
+- M6 (the collection forms removed): after M8.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
-- M8 (the hub's YAML checked in the editor): brief check closed (Z706), G56 and the cockpit ruled (Z707, Z708), third recheck on main closed as Z712; ready.
 - D43 (LaTeX navigation through texlab): after M8.
-- D33 (the Problems view): ready.
+- D33 (the Problems view): brief being written.
 - D39 (hub keys as links): after M8.
 - D36 (linters on save): after D33.
 - D40 (the writing rules as editor marks): after D36.
