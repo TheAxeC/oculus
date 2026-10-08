@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z715 (2026-10-08, step M8, the orchestrator, automode): a top-level key other than `languages` in a repository's `.oculus/settings.yml`
+
+- Chosen: the generated schema declares only `languages`, so the editor marks any other top-level key (an `editor:` block, for one); `parseRepoSettings` names such a key as a skipped entry under the Settings view's Languages row, and `docs/files-and-search.md` says so, as Z701 (6) asks of a field no schema declares.
+- Not chosen: the schema marking the key while the reader stays silent, two rules for one file; the top level left open, the key neither marked nor listed (the lazy option).
+
+Where it applies: M8, written into its brief before dispatch. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z714 (2026-10-08, step D28, the orchestrator, automode): the brief check's choices
 
 - Chosen: the conflict compare as VS Code's, the source tab's own text editable on the right; each open-file poll checks the path is still inside the roots before reading; a dropped tab unsubscribes its file's channel on the wire and the server stops the poll; files over 2 MB signalled by their stat, at most 200 open-file channels per page; restored drafts keep their base; saves of one tab queued; the language-server edit refuses a NUL anywhere; autosave over every writable file; a 130-byte file drawn within 300 ms.

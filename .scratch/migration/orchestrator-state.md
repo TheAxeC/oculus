@@ -214,6 +214,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 07:05. /spec running for M6, M8 and D33: premise rechecks on main at 3bf3bf4c6 by ae36b6ca70a8c7a2e (M6), aa716dd6e7b642a9b (M8) and a0bfab6bc1676fec4 (D33), all claude-opus-5-5 (Agents section of plan.md). Each brief is then corrected or written, D33's brief checked, and each step dispatched. Open items 5, 6 and 7 for Axel.
 - 2026-10-08 07:00. D28 landed (saving a source file as VS Code does; booking in plan.md; `agents/reviews/D28-landing.md`) with the review over round 1's twelve findings and one look defect fixed at landing; the look ran on the 8796 scratch oculus. Nothing in flight. Open items 5, 6 and 7 for Axel. Next: prepare M8 (its brief corrected from `agents/reviews/M8-premise-recheck-3.md`, Z712 and D28's `options.yml` entries), then M6, D41, D43, D33, D39, D36 and D40.
 - 2026-10-08 05:20. D28 built (first report: two parts not run without a browser), reviewed (`agents/reviews/D28-refuter.md`, 16 items), repair round 1 sent (`agents/briefs/D28-round1.md`). Open items 5 and 6 for Axel.
 - 2026-10-08 03:00. D28 prepared (2441e0b53) and its builder a7fdeabbe3ca09dfa (claude-sonnet-5-5) launched in `.agents/worktrees/D28`. Every other queued step waits for D28 (M8 by Z712, M6 and D33 by their lines). Open item 5 for Axel.

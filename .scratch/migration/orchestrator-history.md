@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z715 (2026-10-08): automode, M8's fourth premise recheck: a repository's `.oculus/settings.yml` schema declares only `languages`; another top-level key is marked and named under the Languages row (C1 (a)).
 - Z714 (2026-10-08): automode, D28's brief check: VS Code's conflict compare, the poll re-resolving its path, an unsubscribe for `source:` channels, a 2 MB stat signal and channel bounds, restored bases and queued saves, the whole-file rule in `lsp-edit.ts`, autosave over every writable file, 300 ms for D13a-3.
 - Z713 (2026-10-08): automode, D28's premise recheck: the open-file poll kept with its reason corrected, the deleted state into X3e's struck label, VS Code's save order with no format on an `after_delay` save, one Revert File reading the disk, the side word `unsaved@<id>`.
 - Z530 carried out (2026-10-08): N1 to N6 written into `agents/guarded.md`: G8's and G2's Code lines, G28's text, and the new entries G58 (N2), G59 (N3) and G60 (N4); G57 stays the number open item 5 proposes.
