@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z717 (2026-10-08, step M8, the orchestrator, automode): a builder's case handed back, the worktree missing `deck/`
+
+- Chosen: the worktree paths of `.agents/plan.yaml` and the state file gain `deck` (the portfolio deck `config/sources.yml:24` names) and the hub's `docs`; M8's worktree and base copy gain `deck/`, and the builder resumes with G14's gate unchanged.
+- Not chosen: the deck finding and the portfolio-deck test accepted as the build's baseline (the lazy option).
+
+Where it applies: M8 (`agents/briefs/M8-cases.md`) and every worktree made from now on. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z716 (2026-10-08, step D33, the orchestrator, automode): the choices of D33's third premise recheck
+
+- Chosen: (N1) a single press on a Problems row opens the file in the preview tab and keeps the keyboard in the view; Enter or a double press opens a kept tab with the keyboard in the editor, as VS Code. (N2) D33 builds the one way to go to a place again: `openSourceFile` stamps a fresh `asked` value on every open, the source editor's go-to effect runs once per `asked` in place of once per line and column, and the end line and end column travel in the same tab state; M6, prepared after D33 and M8 land, uses that value and adds none of its own. (N3) Open Editors rows and file tabs draw the problem colour and count as the Files tree does, as VS Code's `workbench.editor.decorations.colors` and `.badges` defaults. (N4) each Settings card gets a card id unique in its pane, built from the file, the option key and its index path; Enter moves the keyboard into the card's first field. (Library) picomatch 4.0.7 as a direct dependency for the filter box's globs and `!` exclusions.
+- Not chosen: every press opening a kept tab; D33 waiting for M6, or a second go-again mechanism beside M6's; decorations on the Files tree alone (the lazy option); the colliding card ids left (the lazy option); minimatch; a filter with no globs (the lazy option); a repeated press doing nothing (the lazy option).
+
+Where it applies: D33, written into its brief before dispatch; M6's brief at its next /spec. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z715 (2026-10-08, step M8, the orchestrator, automode): a top-level key other than `languages` in a repository's `.oculus/settings.yml`
 
 - Chosen: the generated schema declares only `languages`, so the editor marks any other top-level key (an `editor:` block, for one); `parseRepoSettings` names such a key as a skipped entry under the Settings view's Languages row, and `docs/files-and-search.md` says so, as Z701 (6) asks of a field no schema declares.

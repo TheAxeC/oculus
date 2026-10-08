@@ -8,7 +8,7 @@ verify:                      # the quick list (Z351, Z421): from tools/oculus in
 verify_landing:              # the landing list (Z351, Z366): from tools/oculus on main, by the orchestrator at each landing.
 - npm run test:landing
 worktree_root: .agents/worktrees
-worktree_paths: [tools/oculus, tools/cockpit, feeds, registries, projects, funding, network, education, applications, tasks, side-projects, tools/present]   # as `.agents/plan.yaml` names them
+worktree_paths: [tools/oculus, tools/cockpit, feeds, registries, projects, funding, network, education, applications, tasks, side-projects, tools/present, deck, docs]   # as `.agents/plan.yaml` names them
 standards: [tools/oculus/.scratch/migration/agents/spec.md]
 executor: agent
 refute_after_repair: yes     # plan.yaml: /refute runs again over each repair round on a fresh reviewer; its findings are fixed at landing or booked, never sent back.
@@ -34,6 +34,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: d8f32d576
   launched: 2026-10-08
   report: agents/reviews/M8-report.md
+  builder_usage: first run, handed back case 10 (227,713 tokens, 37 tool uses, 5.0 min)
   brief_check: agents/reviews/M8-brief-check.md (a40f2578315ca7d21, claude-opus-5-5, 145,450 tokens, 197 tool uses, 25.4 min)
   landing: not-started
   round: 0
@@ -226,6 +227,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 08:30. M8's builder handed back case 10 (no `deck/` in the worktree); ruled as Z717 (`agents/briefs/M8-cases.md`), `deck` and `docs` added to the worktree paths, builder resumed. D33's brief written (`agents/briefs/D33.md`); its brief check next.
 - 2026-10-08 08:00. M8 prepared (d8f32d576, its brief corrected from rechecks 3 and 4, Z715) and its builder acd90a7603ba715c3 (claude-sonnet-5-5) launched in `.agents/worktrees/M8`. M6's recheck (`agents/reviews/M6-premise-recheck-2.md`) puts M6 after M8 (shared hub `schema:` blocks, DATA-MAP, findings.yml, validate.ts, vocab.yml); its eight choices are booked at its next /spec. D33's recheck saved (`agents/reviews/D33-premise-recheck-3.md`); its choices N1 to N4 and the glob library are being booked and its brief written.
 - 2026-10-08 07:05. /spec running for M6, M8 and D33: premise rechecks on main at 3bf3bf4c6 by ae36b6ca70a8c7a2e (M6), aa716dd6e7b642a9b (M8) and a0bfab6bc1676fec4 (D33), all claude-opus-5-5 (Agents section of plan.md). Each brief is then corrected or written, D33's brief checked, and each step dispatched. Open items 5, 6 and 7 for Axel.
 - 2026-10-08 07:00. D28 landed (saving a source file as VS Code does; booking in plan.md; `agents/reviews/D28-landing.md`) with the review over round 1's twelve findings and one look defect fixed at landing; the look ran on the 8796 scratch oculus. Nothing in flight. Open items 5, 6 and 7 for Axel. Next: prepare M8 (its brief corrected from `agents/reviews/M8-premise-recheck-3.md`, Z712 and D28's `options.yml` entries), then M6, D41, D43, D33, D39, D36 and D40.

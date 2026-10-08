@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z717 (2026-10-08): automode, M8's builder handed back case 10: the worktree had no `deck/`; the worktree paths gain `deck` and `docs`, and the builder resumes (`agents/briefs/M8-cases.md`).
+- Z716 (2026-10-08): automode, D33's third premise recheck: a press opens a preview and Enter a kept tab; D33 builds the go-again value on every open and M6 uses it; problem decorations on Open Editors and tabs; unique Settings card ids with Enter into the first field; picomatch for the filter (N1 to N4 (a), N2 as one mechanism built by D33).
 - Z715 (2026-10-08): automode, M8's fourth premise recheck: a repository's `.oculus/settings.yml` schema declares only `languages`; another top-level key is marked and named under the Languages row (C1 (a)).
 - Z714 (2026-10-08): automode, D28's brief check: VS Code's conflict compare, the poll re-resolving its path, an unsubscribe for `source:` channels, a 2 MB stat signal and channel bounds, restored bases and queued saves, the whole-file rule in `lsp-edit.ts`, autosave over every writable file, 300 ms for D13a-3.
 - Z713 (2026-10-08): automode, D28's premise recheck: the open-file poll kept with its reason corrected, the deleted state into X3e's struck label, VS Code's save order with no format on an `after_delay` save, one Revert File reading the disk, the side word `unsaved@<id>`.
