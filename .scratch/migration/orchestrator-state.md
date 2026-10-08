@@ -34,7 +34,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: d8f32d576
   launched: 2026-10-08
   report: agents/reviews/M8-report.md
-  builder_usage: first run, handed back case 10 (227,713 tokens, 37 tool uses, 5.0 min); resumed after Z717, with G61 and G62 added (303,454 tokens, 929 tool uses, 171.1 min); round 1, with the open item 8 change (238,593 tokens, 298 tool uses, 67.9 min)
+  builder_usage: first run, handed back case 10 (227,713 tokens, 37 tool uses, 5.0 min); resumed after Z717, with G61 and G62 added (303,454 tokens, 929 tool uses, 171.1 min); round 1, with the open item 8 change (238,741 tokens, 298 tool uses, 68.4 min)
   brief_check: agents/reviews/M8-brief-check.md (a40f2578315ca7d21, claude-opus-5-5, 145,450 tokens, 197 tool uses, 25.4 min)
   reviewer_report: agents/reviews/M8-refuter.md (ab7cdbacbd59ae325, claude-opus-5-5, 252,447 tokens, 189 tool uses, 34.2 min)
   landing: not-started
