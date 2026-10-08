@@ -4,6 +4,27 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z714 (2026-10-08, step D28, the orchestrator, automode): the brief check's choices
+
+- Chosen: the conflict compare as VS Code's, the source tab's own text editable on the right; each open-file poll checks the path is still inside the roots before reading; a dropped tab unsubscribes its file's channel on the wire and the server stops the poll; files over 2 MB signalled by their stat, at most 200 open-file channels per page; restored drafts keep their base; saves of one tab queued; the language-server edit refuses a NUL anywhere; autosave over every writable file; a 130-byte file drawn within 300 ms.
+- Not chosen: a read-only snapshot for Compare; polls living until the page closes; reading a growing log every half second; no bound on a page's channels (the lazy options).
+
+Where it applies: D28, written into its brief before dispatch. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z713 (2026-10-08, step D28, the orchestrator, automode): the change on disk, the deleted mark, the save's order, Revert File and the conflict pane
+
+- Chosen: the open-file channel polled every 500 ms stays (the `files` channel now covers every root but is up to 2 s late and names folders); a source tab's deleted state feeds the struck-through tab label X3e built; the trim runs before the format and the final newline after it, an `after_delay` save never formats, as VS Code; Revert File always reads the file again; the conflict pane's side word is `unsaved@<id>`.
+- Not chosen: the `files` channel with a hash read per tab; the label left on the folder listing alone; automatic saves never formatting; two Reverts with different results (the lazy options); reusing Compare Selected's pane shape.
+
+Where it applies: D28, written into its brief before dispatch. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z712 (2026-10-08, step M8, the orchestrator, automode): the schemas of the new oculus files, how they reach the YAML server, and the event roles' text
+
+- Chosen: `.oculus/commands.yml` and D11's `.oculus/launch.yml` get JSON Schemas generated from their readers' own zod shapes, one definition per file; the schemas leave the snapshot build through a callback of the portfolio watcher to the language server relay, so nothing new goes over the socket; `network/events.yml`'s header comment and intro name the new role `co-present`.
+- Not chosen: hand-written schemas beside zod readers; the schemas in the `portfolio` payload sent to every page; `launch.yml` checked for syntax only and the events text left incomplete (the lazy options).
+
+Where it applies: M8, prepared after D28 lands. Booked in `plan.md` Rulings and M8's Step 0, and the closed log of `orchestrator-history.md`.
+
 ## Z711 (2026-10-07, step X3e, the orchestrator, automode): the head pill on HEAD's graph row
 
 - Chosen: the head pill names the checked-out branch, and carries the short hash only while HEAD is detached, so the branch HEAD is on is read on its row without a tooltip, as in VS Code's graph.

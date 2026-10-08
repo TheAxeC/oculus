@@ -1,13 +1,13 @@
 In flight (0 of 6 slots): none.
 
-Ready to prepare: D28 (X3e has landed) and M8 (X3e and D11 have landed). D43 waits for M8; D33 waits for D28.
+Ready to prepare: D28 (X3e has landed), its premises being rechecked on main. M8 waits for D28 (both rewrite `options.yml` on the same lines, Z712); D43 waits for M8; D33 waits for D28.
 
 Queued, in order (17 steps):
 - D28 (saving a file as VS Code does): ready.
 - M6 (the collection forms removed): after X3e and D28.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
-- M8 (the hub's YAML checked in the editor): brief check closed (Z706), G56 and the cockpit ruled (Z707, Z708); ready.
+- M8 (the hub's YAML checked in the editor): brief check closed (Z706), G56 and the cockpit ruled (Z707, Z708), third recheck on main closed as Z712; after D28.
 - D43 (LaTeX navigation through texlab): after M8.
 - D33 (the Problems view): after D11 and D28.
 - D39 (hub keys as links): after M8.

@@ -4,6 +4,10 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z714 (2026-10-08): automode, D28's brief check: VS Code's conflict compare, the poll re-resolving its path, an unsubscribe for `source:` channels, a 2 MB stat signal and channel bounds, restored bases and queued saves, the whole-file rule in `lsp-edit.ts`, autosave over every writable file, 300 ms for D13a-3.
+- Z713 (2026-10-08): automode, D28's premise recheck: the open-file poll kept with its reason corrected, the deleted state into X3e's struck label, VS Code's save order with no format on an `after_delay` save, one Revert File reading the disk, the side word `unsaved@<id>`.
+- Z530 carried out (2026-10-08): N1 to N6 written into `agents/guarded.md`: G8's and G2's Code lines, G28's text, and the new entries G58 (N2), G59 (N3) and G60 (N4); G57 stays the number open item 5 proposes.
+- Z712 (2026-10-08): automode, M8's third premise recheck: commands and launch schemas from their zod readers, the schemas handed to the relay by the portfolio watcher, `events.yml` names `co-present`; M8 waits for D28 (both rewrite `options.yml`).
 - Z711 (2026-10-07): automode, X3e's Behaviour 2: on HEAD's graph row the head pill names the checked-out branch, and the short hash only while HEAD is detached; sent in X3e's round 1.
 - Z709 (2026-10-07): automode, D15's Behaviour 1 over round 1: the window's place is taken only by a viewer whose box was hidden; fixed at D15's landing.
 - Z708 (2026-10-07): the cockpit against Z650 in M8, raised to Axel (a clash of rulings); ruled (a): M8 leaves the cockpit untouched.
