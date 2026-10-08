@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z733 (2026-10-08, step D36, the orchestrator, automode): the linters' on and off keys, and D36's order
+
+- Chosen: each `lint.<linter>` key of `behavior.yml` is `true` or `false` with `control: toggle`, as the 22 toggles of `options.yml`; D36 runs after D43, since both rewrite the same lines of `recipes.ts` and that merge is not simple.
+- Not chosen: `on` and `off`, which no key of oculus's config uses and which a YAML 1.1 reader takes as booleans; D36 and D43 in flight at once.
+
+Where it applies: D36 (and D43's order). Booked in `plan.md` Rulings, D36's step line and the closed log of `orchestrator-history.md`.
+
 ## Z732 (2026-10-08, step D43, the orchestrator, automode): the choices of D43's brief
 
 - Chosen: the words the brief gives for texlab's status items, the not-found tip with its install command, the two LaTeX commands, the three options' help, the latexmkrc and weave approval ask and the waiting status item; a weave recipe approved under the `command:` kind with a `weave` member (repository, main folder, the recipe's tools as written), a weave step being one whose program is Rscript, julia or pweave, and an automatic build waiting on it as on a latexmkrc; the 2415 Unicode math symbols as a catalog file `config/catalogs/unimath.yml` pushed with the other catalogs, its byte cost measured in the report.

@@ -2,7 +2,7 @@ In flight (4 of 6 slots):
 - M6 (the collection forms removed): building.
 - D39 (hub keys as links): brief check running.
 - D43 (LaTeX navigation through texlab): brief check running.
-- D36 (linters on save): brief check running; its build waits for Axel's ruling on its guarded entries.
+- D36 (linters on save): brief check's findings being closed; builds after D43 has landed.
 
 Queued, in order (10 steps):
 - M7 (a project folder moved in Files): after M6 and D39.

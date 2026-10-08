@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open items 12, 13 and 14 (2026-10-08): Axel ruled (a) on all three: D36's, M6's and D43's guarded entries widened, their tests written by each builder, each entry written into `agents/guarded.md` at its step's landing.
+- Z733 (2026-10-08): D36's brief check F34 closed in automode, the `lint:` keys as `true` and `false`; D36 after D43 (F12).
 - Z732 (2026-10-08): D43's brief choices O1 to O3 closed in automode with their recommendations (`agents/briefs/D43.md`, `choices.md`); O4 raised as open item 14.
 - Z731 (2026-10-08): M6's brief choices closed in automode (`agents/briefs/M6.md`, `choices.md`): items 1, 2 and 4 with their recommendations, item 3 widened to a refusal in the client's write path for every write kind; G28's widening raised as open item 13.
 - Z730 (2026-10-08): D39's brief choices O1 to O5 closed in automode with their recommendations (`agents/briefs/D39.md`, `choices.md`).
