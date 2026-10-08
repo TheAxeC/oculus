@@ -34,9 +34,11 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 0e9bde803
   launched: 2026-10-08
   report: agents/reviews/M6-report.md
+  builder_usage: 313,550 tokens, 521 tool uses, 111.3 min (round 0)
+  reviewer_report: agents/reviews/M6-refuter.md (a89f8c70199b6a617, claude-opus-5-5, 237,976 tokens, 162 tool uses, 26.8 min)
   brief_check: agents/reviews/M6-brief-check.md (a0ebc241025bf8a8f, claude-opus-5-5, 338,515 tokens, 132 tool uses, 16.3 min; closed by ad9ce45922c35f90e, claude-opus-5-5, 150,543 tokens, 121 tool uses, 23.1 min; closed again in the brief at 0e9bde803)
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/M6-round1.md, sent 2026-10-08; the tree handed back copied to .agents/worktrees/M6-round0)
 - step: D43
   executor: agent
   worker: claude:sonnet at ordo-high

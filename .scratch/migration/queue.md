@@ -1,5 +1,5 @@
-In flight (2 of 6 slots building):
-- M6 (the collection forms removed): building.
+In flight (2 of 6 slots in use):
+- M6 (the collection forms removed): repair round 1 building.
 - D43 (LaTeX navigation through texlab): building.
 
 Queued, in order (12 steps):
