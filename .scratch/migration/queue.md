@@ -1,12 +1,12 @@
-In flight (1 of 6 slots):
+In flight (2 of 6 slots):
 - M8 (the hub's YAML checked in the editor): building (resumed after a case ruling).
+- D33 (the Problems view): building.
 
-Queued, in order (15 steps):
-- M6 (the collection forms removed): after M8.
+Queued, in order (14 steps):
+- M6 (the collection forms removed): after M8 and D33.
 - M7 (a project folder moved in Files): after M6.
 - D41 (links in Markdown checked): after M7.
 - D43 (LaTeX navigation through texlab): after M8.
-- D33 (the Problems view): brief check running.
 - D39 (hub keys as links): after M8.
 - D36 (linters on save): after D33.
 - D40 (the writing rules as editor marks): after D36.

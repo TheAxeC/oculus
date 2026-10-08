@@ -38,6 +38,19 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/M8-brief-check.md (a40f2578315ca7d21, claude-opus-5-5, 145,450 tokens, 197 tool uses, 25.4 min)
   landing: not-started
   round: 0
+- step: D33
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a9ae1281ebf50855a (builder, launched 2026-10-08)
+  worktree: .agents/worktrees/D33
+  base: 1439a44ec
+  launched: 2026-10-08
+  report: agents/reviews/D33-report.md
+  brief_check: agents/reviews/D33-brief-check.md (a0a67ffbec5451994, claude-opus-5-5, 335,815 tokens, 131 tool uses, 19.6 min)
+  shared_paths: package.json and package-lock.json (M8 and D33 add different dependencies; the one line both change, picomatch's devOptional, changes identically; the lock is regenerated at the second landing), DESIGN.md, docs/files-and-search.md, docs/views.md, config/text/statusbar.yml and views/system/workbench/editors/Editor.svelte on different lines, docs/diagrams regenerated: a simple merge
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -227,6 +240,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 09:10. D33 prepared (1439a44ec; brief check closed as Z718) and its builder a9ae1281ebf50855a (claude-sonnet-5-5) launched in `.agents/worktrees/D33`, beside M8's builder. Every other queued step waits for M8, D33 or M6 to land.
 - 2026-10-08 08:30. M8's builder handed back case 10 (no `deck/` in the worktree); ruled as Z717 (`agents/briefs/M8-cases.md`), `deck` and `docs` added to the worktree paths, builder resumed. D33's brief written (`agents/briefs/D33.md`); its brief check next.
 - 2026-10-08 08:00. M8 prepared (d8f32d576, its brief corrected from rechecks 3 and 4, Z715) and its builder acd90a7603ba715c3 (claude-sonnet-5-5) launched in `.agents/worktrees/M8`. M6's recheck (`agents/reviews/M6-premise-recheck-2.md`) puts M6 after M8 (shared hub `schema:` blocks, DATA-MAP, findings.yml, validate.ts, vocab.yml); its eight choices are booked at its next /spec. D33's recheck saved (`agents/reviews/D33-premise-recheck-3.md`); its choices N1 to N4 and the glob library are being booked and its brief written.
 - 2026-10-08 07:05. /spec running for M6, M8 and D33: premise rechecks on main at 3bf3bf4c6 by ae36b6ca70a8c7a2e (M6), aa716dd6e7b642a9b (M8) and a0bfab6bc1676fec4 (D33), all claude-opus-5-5 (Agents section of plan.md). Each brief is then corrected or written, D33's brief checked, and each step dispatched. Open items 5, 6 and 7 for Axel.
