@@ -122,6 +122,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G60. An automatic save writes only a tab that holds unsaved text, is writable and read whole, names a file on disk, and has heard of no change of that file since it read it, and it sends the base it read.
   Code: `src/lib/state/sessions/source/autosave.svelte.ts`, and the draft fields it reads, `src/lib/state/sessions/source/disk.svelte.ts` and `src/lib/state/sessions/source/draft.ts`.
   Test: `tests/state/sessions/autosave.client.test.ts`, the table 'the autosave store', its rows 'saves nothing under off, however long the reader waits', 'saves once, a delay after the last edit, and not before', 'starts the wait again at each edit, so typing every 500 ms for 3 s saves once', 'never formats the document, whatever the language says', 'saves each edit at a delay of 0, every save sending the hash the save ahead of it answered', 'saves a tab when its editor loses focus, formatting the document when the language says so', 'saves a tab whose editor is not open unformatted and says so on its line', 'saves every tab holding unsaved text when the page loses focus', 'saves nothing for a blur under off', 'from off to after_delay saves the tabs that hold unsaved text at once', "writes nothing for a tab marked changed, and the reader's own Save shows the conflict", 'writes nothing for a tab that is <what>' (six rows) and 'does not try a refused save again until the reader types'.
+- G62. The save-conflict compare is read again when the file on disk moves while it is open, and no other diff pane is read again for a change of its file.
+  Code: `readKeyOf` in `src/lib/views/sources/repositories/diff/diff-read.ts`.
+  Test: `tests/views/sources/repositories/diff/diff-read.test.ts`, the table 'the read key of a diff pane', its rows 'changes with the disk hash for the compare of a save conflict', 'stays the same for a working-tree compare when the file changes', 'stays the same for a Replace Preview when the file changes'; written by M8.
 
 ## It starts, and configuration is checked
 
@@ -140,6 +143,12 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G56. Each rule a hub schema states gives its finding naming the file and the line: a reference to a key that does not exist, a key that exists twice in the referenced file, a value outside its options, a field outside its `when:`, a required field missing, and a field no schema declares.
   Code: the hub validation through the generated schemas (`src/lib/data/snapshot/validate.ts` and the generator folder M8 adds under `src/lib/data/snapshot/`).
   Test: written by M8, one table over the validation function with one row per rule, its file and title named in M8's landing report.
+- G57. A root dropped on a Files tree reorders only that tree's roots: a drag from another tab, or one whose start was in another tree, writes no order, even when the tree's own last root drag ended without `dragend`.
+  Code: `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts`.
+  Test: `tests/views/shared/explorer/root-drag.test.ts`, describe 'the root drag of the tree': 'writes no order for a drag from another tab over a tree whose own drag never ended', "still takes the drop of the tree's own drag"; landed by D33.
+- G61. A configuration file written, added or removed is read by the next request that asks for the configuration, and one request keeps its one read for the rest of it.
+  Code: the config cache of the server context (`src/lib/server/root/context.ts`, its type in `src/lib/server/root/process/server-context.ts`), read through `src/hooks.server.ts`.
+  Test: `tests/server/root/config-cache.test.ts`, describe 'the config cache of the server context': 'parses a config folder once for requests over it, and again once a file of it is written', 'parses again for every request while an entry of the folder cannot be stat-ed', 'keeps the one read of a request for the rest of it, whatever is written meanwhile'; landed by M8.
 - G15. A manifest with a broken field still shows its project, with a finding.
   Code: `src/lib/data/snapshot/`.
   Test: `tests/data/snapshot/resources.test.ts`, 'answers a scalar compute: with the list-shape finding and reads it as none'; `tests/data/snapshot/cluster-folder.test.ts`, "a manifest's paths.cluster".

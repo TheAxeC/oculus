@@ -1,0 +1,6 @@
+# D33, one guarded test added to the step
+
+Axel ruled open item 5 (a): a new entry of `agents/guarded.md`, G57, whose test this step lands. Everything of the brief `agents/briefs/D33.md` and spec.md still holds; the paths of the brief are widened to `tests/views/shared/explorer/root-drag.test.ts`.
+
+1. G57, the Files tree's root drag. Add `tests/views/shared/explorer/root-drag.test.ts` from the patch `agents/reviews/X3e-root-drag-test.patch` (read it and write its file; you run no git, so do not `git apply` it), adjusted only where this step's change moves a name it imports from `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts` or `src/lib/state/sources/fs.ts`. Its describe 'the root drag of the tree' and its two titles stay word for word, as G57's Test line names them. The behaviour is preserved, so quote its passing run on the worktree before any change of yours to the tree and after your last change, each with `npx vitest run tests/views/shared/explorer/root-drag.test.ts`.
+2. The file keeps the conventions of spec.md (ASCII, comments at 100 columns, no history) and runs in `npm test`. The report gains a section "Guarded test G57" with the file, its line count, its titles and both runs.
