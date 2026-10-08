@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z729 (2026-10-08, step D36, the orchestrator, automode): the choices of D36's brief
+
+- Chosen: ChkTeX, ruff and ShellCheck run as one process per lint, ESLint held per repository in a child process of oculus's own (one file in 7 to 17 s through the CLI); the repository's ESLint runs only after an `eslint-config:` approval made in the palette list `:eslint-config`; a `lint:` block in `behavior.yml` (each linter on or off, its path, ChkTeX's arguments); a lint on save and when a clean tab opens; each linter's quick fix, a disable comment, the rule's documentation and Fix All; one status item per linter saying not found, failed, timed out or not approved; files chosen by extension (no `.zsh`, `.bib`, `.sty`; `.slurm` by ShellCheck; JavaScript by ESLint); no new dependency, and ShellCheck installed with brew before the look.
+- Not chosen: ESLint through its CLI on every save, ESLint with no approval, no settings, a lint on save only, marks with no fixes, nothing shown for a missing linter, the language map's file sets, eslint_d (the lazy options); the linters as language servers, which needs two servers per language in the relay and an unmaintained ESLint server.
+
+Where it applies: D36. Booked in `plan.md` Rulings, D36's step line and the closed log of `orchestrator-history.md`.
+
 ## Z726 (2026-10-08, step D43, the orchestrator, automode): the choices of D43's third premise recheck
 
 - Chosen: texlab started without `latexmk` on its PATH so it never runs a latexmkrc, the latexmkrc approval kept on the build and clean steps; a weave recipe asking once per repository, folder and tools; `brew install texlab` by the orchestrator before the look; an automatic build that waits on an unapproved latexmkrc, shown on the LaTeX status item, and a pressed build that asks.
