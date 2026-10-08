@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- M6 (the collection forms removed): repair round 1 building.
-- D43 (LaTeX navigation through texlab): building.
+- M6 (the collection forms removed): repair round 1 built; its review running.
+- D43 (LaTeX navigation through texlab): repair round 1 building.
 
 Queued, in order (12 steps):
 - D36 (linters as VS Code's): brief closed; prepared again after D43 lands.
