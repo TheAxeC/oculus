@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z718 (2026-10-08): automode, D33's brief check: its 50 findings closed in the brief; Copy as JSON, comma-split glob filter, root scope by key, F8 over the whole list, preview kept on a repeat press, `wentTo` across a reload, Enter into a Settings card's first field, VS Code's count words, Q118's cases restored.
 - Z717 (2026-10-08): automode, M8's builder handed back case 10: the worktree had no `deck/`; the worktree paths gain `deck` and `docs`, and the builder resumes (`agents/briefs/M8-cases.md`).
 - Z716 (2026-10-08): automode, D33's third premise recheck: a press opens a preview and Enter a kept tab; D33 builds the go-again value on every open and M6 uses it; problem decorations on Open Editors and tabs; unique Settings card ids with Enter into the first field; picomatch for the filter (N1 to N4 (a), N2 as one mechanism built by D33).
 - Z715 (2026-10-08): automode, M8's fourth premise recheck: a repository's `.oculus/settings.yml` schema declares only `languages`; another top-level key is marked and named under the Languages row (C1 (a)).

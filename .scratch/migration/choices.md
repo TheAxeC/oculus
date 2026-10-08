@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z718 (2026-10-08, step D33, the orchestrator, automode): the brief check's choices
+
+- Chosen: Copy copies a Problems row as VS Code's tab-indented JSON; the filter splits terms on commas, a term with a glob character is a path glob, a malformed glob matches literally; "filtered to the root" is a root-key scope drawn as a removable chip; F8 walks the whole problem list whatever a view's filter; a second single press on a preview tab's file keeps the preview and goes to the new place; a reload does not go to an opened place again (`wentTo` saved with the tab), a press after it does; Enter on a Settings card moves into its first field without changing it; the status counts read as VS Code's (1500 is `1K`, 9999 is `9K`); Q118's Audit cases restored whole.
+- Not chosen: a path-text filter for the root; F8 following a view's filter; `Intl.NumberFormat`'s `1.5K`; Q118's cases dropped (the lazy option); Monaco's F8 left bound beside the walk (the lazy option).
+
+Where it applies: D33, written into its brief before dispatch (`agents/briefs/D33.md`, "Closed"). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z717 (2026-10-08, step M8, the orchestrator, automode): a builder's case handed back, the worktree missing `deck/`
 
 - Chosen: the worktree paths of `.agents/plan.yaml` and the state file gain `deck` (the portfolio deck `config/sources.yml:24` names) and the hub's `docs`; M8's worktree and base copy gain `deck/`, and the builder resumes with G14's gate unchanged.
