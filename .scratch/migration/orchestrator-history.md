@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z727 (2026-10-08): automode, D33's case 8 sent as its second repair round; R1-1, R1-3 and R1-4 of the review over round 1 fixed at landing (`plan.md` Rulings Z727).
 - Z726 (2026-10-08): automode, the choices of D43's third premise recheck closed with their recommendations (`plan.md` Rulings Z726).
 - Z725 (2026-10-08): automode, the choices of D39's premise survey closed with their recommendations; its guarded entries raised as open item 10 (`plan.md` Rulings Z725).
 - Z724 (2026-10-08): automode, the choices of M6's third premise recheck closed with their recommendations (`plan.md` Rulings Z724).

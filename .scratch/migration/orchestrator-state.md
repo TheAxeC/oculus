@@ -36,11 +36,11 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D33-report.md
   builder_usage: first run, told of Z720 near its end (247,889 tokens, 760 tool uses, 226.6 min); round 1 (312,919 tokens, 198 tool uses, 33.5 min)
   diagnosis: agents/reviews/D33-diagnosis.md, Proof 1 (aecfa0b2710e743e8, claude-opus-5-5, 288,280 tokens, 92 tool uses, 21.3 min)
-  reviewer_report: agents/reviews/D33-refuter.md (a4557dd5285730c0d, claude-opus-5-5, 369,712 tokens, 90 tool uses, 20.7 min)
+  reviewer_report: agents/reviews/D33-refuter.md (a4557dd5285730c0d, claude-opus-5-5, 369,712 tokens, 90 tool uses, 20.7 min); over round 1: aba7f4b62b7054a8f, claude-opus-5-5, 334,877 tokens, 113 tool uses, 18.7 min
   brief_check: agents/reviews/D33-brief-check.md (a0a67ffbec5451994, claude-opus-5-5, 335,815 tokens, 131 tool uses, 19.6 min)
   shared_paths: package.json and package-lock.json (M8 and D33 add different dependencies; the one line both change, picomatch's devOptional, changes identically; the lock is regenerated at the second landing), DESIGN.md, docs/files-and-search.md, docs/views.md, config/text/statusbar.yml and views/system/workbench/editors/Editor.svelte on different lines, docs/diagrams regenerated: a simple merge
   landing: not-started
-  round: 1 (sent 2026-10-08, agents/briefs/D33-round1.md)
+  round: 2 (sent 2026-10-08, agents/briefs/D33-round2.md, Z727); round 1 sent 2026-10-08, agents/briefs/D33-round1.md
 ```
 
 ## The standing demands (from Axel, in force)
@@ -237,6 +237,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 ## Current position (rewrite at every package)
 
 - 2026-10-08 13:10. /spec running for M6 (Z722 closed its recheck-2 choices; premise recheck on main at 7c5514850 by addf5c4b95029cf06), D43 (premise recheck 3 by afc7fb00307ab9995) and D39 (premise survey by a26d8068dfc88ec1f), all claude-opus-5-5 (Agents section of plan.md). M6 is dispatched only after D33 lands (queue.md). D33 on repair round 1. Open item 9 for Axel.
+- 2026-10-08 14:20. D33's review over round 1 saved (aba7f4b62b7054a8f); its R1-1, R1-3 and R1-4 fixed and carried into the worktree; case 8 sent as repair round 2 (`agents/briefs/D33-round2.md`, Z727) to builder a9ae1281ebf50855a. Open items 9 and 10 for Axel. Next: D33's review over round 2, then /land D33, then M6, D39, D43, M7, D41, D36 and D40.
 - 2026-10-08 13:04. M8 landed (the hub's YAML checked and completed in the editor; booking in plan.md; `agents/reviews/M8-landing.md`) after one repair round, its review over round 1's ten findings closed at landing; the look ran on the 8796 scratch oculus with the gate as its hub. In flight: D33 (repair round 1, builder a9ae1281ebf50855a). Open item 9 for Axel. Next: D33's review over round 1, then /land D33, then M6 (with the Z719 EPIPE fix), M7, D41, D43, D39, D36 and D40.
 - 2026-10-08 10:30. M8 reviewed (`agents/reviews/M8-refuter.md`: 3 Spec, 3 Proof, 4 Standards, 4 Behaviour findings); repair round 1 sent to its builder (`agents/briefs/M8-round1.md`, 14 rulings). Open item 8 raised (M8's unentried tests). D33 building.
 - 2026-10-08 09:10. D33 prepared (1439a44ec; brief check closed as Z718) and its builder a9ae1281ebf50855a (claude-sonnet-5-5) launched in `.agents/worktrees/D33`, beside M8's builder. Every other queued step waits for M8, D33 or M6 to land.

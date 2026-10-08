@@ -216,3 +216,322 @@ The test `tests/views/shared/explorer/root-drag.test.ts` (the reviewer's point 6
 - The duration figure: `test:quick` took 58.3 s against its 45 s limit while other suites ran on the machine. That figure reflects the machine's load, not the step's code.
 
 Reviewer usage: agent id not visible to me (the runner's record holds it), served model claude-opus-5-5, about 330,000 tokens (approximate), about 90 tool uses, about 35 minutes (approximate, not measured). The runner's completion notice holds the exact figures.
+
+## Repair round 1, refuted
+
+Step D33, worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D33`, base 1439a44ec. Paths are relative to `tools/oculus` in the worktree unless absolute. My scratch folder is `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d33-r1-review`. I changed no file in the worktree, the main checkout or the ledger. `git status --short` gives the same 102 lines after my runs as before them. Nothing of mine is still running.
+
+**Summary:**
+- **Ruling 5:** not done, as the round says. The builder's finding reproduces, and Z723's rule is right on the tree, with one caveat on how paths are compared (see "Ruling 5 and Z723").
+- **New defect (R1-1):** a Problems view hidden with Cmd+Shift+M and shown again with the status item comes back with its state lost. The status item's path also keeps no state per page. This affects ruling 6 and three document sentences.
+- **Ruling 15:** broken. The builder reports two git calls of its own.
+- **Everything else:** every other closure I reran reproduces.
+
+### Verification lines (verbatim)
+
+Brief verify item 1 (`npm run diagrams` was not run, because it writes files; `npm run test:checks` below includes `tests/checks/diagrams/diagrams.test.ts`, which passed):
+```
+$ (tools/oculus) PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh /Users/axelfaes/.claude-work/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+ok      ASCII gate (0.4 s)
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      svelte-kit sync (1.7 s)
+ok      eslint (20.4 s)
+ok      svelte-check (20.7 s): 1791458371798 COMPLETED 432 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (32.8 s): Duration  29.74s (transform 60.65s, setup 0ms, import 74.84s, tests 37.31s, environment 199ms)
+test:quick: 33.2 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+checks: 1 commands passed
+exit 0
+```
+
+Item 3. Each file was run alone with `npx vitest run <file>`:
+```
+tests/data/sources/manifests.test.ts:  Test Files 1 passed (1)  Tests 1 passed (1)
+tests/data/sources/registries.test.ts:  Test Files 1 passed (1)  Tests 1 passed (1)
+tests/data/sources/collections.test.ts:  Test Files 1 passed (1)  Tests 1 passed (1)
+tests/data/sources/career.test.ts:  Test Files 1 passed (1)  Tests 2 passed (2)
+tests/data/sources/feeds.test.ts:  Test Files 1 passed (1)  Tests 1 passed (1)
+tests/data/sources/docs.test.ts:  Test Files 1 passed (1)  Tests 2 passed (2)
+tests/data/sources/present.test.ts:  Test Files 1 passed (1)  Tests 4 passed (4)
+tests/routes/docs/deck.test.ts:  Test Files 1 passed (1)  Tests 3 passed (3)
+tests/data/sources/personal.test.ts:  Test Files 1 passed (1)  Tests 2 passed (2)
+tests/data/snapshot/normalise.test.ts:  Test Files 1 passed (1)  Tests 1 passed (1)
+tests/state/sessions/source.test.ts:  Test Files 1 passed (1)  Tests 25 passed (25)
+tests/state/sessions/source-disk.client.test.ts:  Test Files 1 passed (1)  Tests 4 passed (4)
+tests/state/sessions/autosave.client.test.ts:  Test Files 1 passed (1)  Tests 23 passed (23)
+tests/shell/panes/strip/tab-menu.test.ts:  Test Files 1 passed (1)  Tests 4 passed (4)
+tests/state/workbench/navigation/pages.test.ts:  Test Files 1 passed (1)  Tests 5 passed (5)
+tests/checks/config/arrangements.test.ts:  Test Files 1 passed (1)  Tests 12 passed (12)
+tests/checks/config/config.test.ts:  Test Files 1 passed (1)  Tests 31 passed (31)
+tests/views/shared/explorer/root-drag.test.ts:  Test Files 1 passed (1)  Tests 2 passed (2)
+tests/server/machine/pty/channel.test.ts:  Test Files 1 passed (1)  Tests 12 passed (12)
+tests/server/machine/pty/sessions.test.ts:  Test Files 1 passed (1)  Tests 1 passed (1)
+tests/views/sources/bar-actions.test.ts:  Test Files 1 passed (1)  Tests 11 passed (11)
+tests/state/forms/manifest-draft.test.ts:  Test Files 1 passed (1)  Tests 3 passed (3)
+tests/checks/config/config-folder.test.ts:  Test Files 1 passed (1)  Tests 20 passed (20)
+npm run test:checks:  Test Files  17 passed (17) / Tests  243 passed (243)
+```
+
+Item 4:
+- `wc -l` over every changed or new file under `src`, `tests` and `config`: none is over 880 for a source file or 520 for a component. The closest are `Workbench.svelte` 519, `PaneView.svelte` 515 and `context.ts` 844.
+- `sh utils/folder-check.sh` exits 0.
+- `sh utils/unused-exports.sh` exits 0 and prints 371 lines. The base file `.agents/worktrees/D33-base/tools/oculus/unused-exports.txt` has 374 lines, three of which are knip errors ("ERROR: Error loading vite.config.ts ...", "knip stopped with status 2"). The only content line that differs is `layout/index.ts`, which now lacks `instanceFlag` (now used by `Problems.svelte`). The tree adds no line.
+
+Item 5:
+- The ASCII gate (spec.md:99 perl form, over `src tests bin config`) prints nothing, exit 0.
+- `LC_ALL=C grep -n '[^ -~]'` over `DESIGN.md HELP.md docs/views.md docs/window.md docs/files-and-search.md` exits 1.
+- `yaml.safe_load` over the 7 changed `.yml` files prints `yaml ok 7`.
+
+Item 6: `grep -rn "latex/Problems\|problemRows\|problemFile" src` exits 1; `grep -rn "data-card={at}" src` exits 1; `grep -rn "Marks the project-card control" src` exits 1.
+
+Item 9: I read every new and changed document sentence: `DESIGN.md:475`, `docs/views.md:79-81`, `docs/files-and-search.md:11`, `docs/window.md:82`. None breaks the list-item rule. Three sentences are false (R1-1).
+
+The builder's node runs, rerun from copies of its scripts in my scratch folder (`node --import ./register.mjs <n>.ts`, node v24.21.0):
+```
+n30: show (nothing kept)   open: i1 | records: []
+     reader sets state     open: i1 | records: [["i1",{"filter":"error","hideInfos":true,"scope":"r","asTable":true}]]
+     toggle hides          open: none | records: [["hidden-view:p1:problems",{"filter":"error","hideInfos":true,"scope":"r","asTable":true}]]
+     toggle shows (new id) open: i2 | records: [["i2",{"filter":"error","hideInfos":true,"scope":"r","asTable":true}]]
+     state of the new instance: {"filter":"error","hideInfos":true,"scope":"r","asTable":true}
+     close button then show open: i3 | records: []
+n31: read  {"line":3,"column":4,"endLine":3,"endColumn":2} -> {"line":3,"column":4,"endLine":0,"endColumn":0}
+     write {"line":3,"column":4,"endLine":3,"endColumn":2} -> {"root":"r","path":"a.py","label":"a.py","line":3,"column":4}
+     read  {"line":3,"column":4,"endLine":3,"endColumn":6} -> {"line":3,"column":4,"endLine":3,"endColumn":6}
+     write {"line":3,"column":4,"endLine":3,"endColumn":6} -> {"root":"r","path":"a.py","label":"a.py","line":3,"column":4,"endLine":3,"endColumn":6}
+     read  {"line":3,"column":4,"endLine":2,"endColumn":9} -> {"line":3,"column":4,"endLine":0,"endColumn":0}
+     write {"line":3,"column":4,"endLine":2,"endColumn":9} -> {"root":"r","path":"a.py","label":"a.py","line":3,"column":4}
+n32: SCROLLBACK_LINES 2000 | lines handed to note for the unlisted terminal: 3000
+     diagnostics read after the terminal is listed: 500 | first line number: 1001 | lines kept: 2000
+     chunked terminal: 3000 lines in two chunks; first line number read: 1001 | lines kept: 2000
+     short output (10 lines) kept whole: 9 diagnostics
+n33: fold: files a.py(2) b.py(2) | both files closed
+     tree lines (entriesOf, both closed): 2 = file,file
+     table rows (rowEntriesOf): 4 = ["r","a.py"]:m3 ["r","a.py"]:m9 ["r","b.py"]:m1 ["r","b.py"]:m4
+     filter that hides everything: files 0 | tree lines 0 | table rows 0 | message shown: No results found with provided filter criteria.
+     same closed fold, filter text "b.py": table rows 2 (only b.py rows)
+n34: repositoryOf(served root): {"repo":"<scratch>/served-eQsPdx"}
+     repositoryOf(served/nested, a git repository under it): {"repo":"<scratch>/served-eQsPdx/nested"}
+     repositoryOf(served/nested) when no root is served: {"error":"repo is not under a root the file browser serves"}
+```
+
+The VirtualRows test, rebuilt from the report's "Tests not landed" text. The three files are byte-identical to the diagnosis's (`diff` prints nothing for each). I ran it on two scratch copies outside the worktree:
+- a copy of the unchanged base tree `D33-base/tools/oculus`, whose `VirtualRows.svelte` equals the base commit's (I compared the `git diff 1439a44ec` hunks with a `diff -u` against the copy);
+- a copy of the worktree.
+
+Nothing was reverted or broken to produce the red run.
+```
+base copy:  x asks for no row past the end when a list of 20 shrinks to 3 inside an effect 18ms
+            "past": { "body": [], -"key": [], +"key": [ 3, ] }
+            +"thrown": "TypeError: Cannot read properties of undefined (reading 'id')
+            Test Files  1 failed (1) / Tests  1 failed (1)
+worktree:   Test Files  1 passed (1) / Tests  1 passed (1)
+```
+
+Other runs:
+- My own key and count run (`r2.ts`): `mac Cmd+Shift+M {"kind":"toggle-problems"}`, `non-mac Ctrl+Shift+M {"kind":"toggle-problems"}`, `mac Ctrl+Shift+M null`, `F8 {"kind":"next-problem","by":1} Shift+F8 {"kind":"next-problem","by":-1}`, `0=0 999=999 1000=1K 1500=1K 9999=9K 10000=10K+`.
+- Greps the report quotes, rerun: `grep -rn tabProblem src tests DESIGN.md docs` exits 1; `grep -rl "VirtualRows\|list/virtual" tests` exits 1; `grep -rn "entryAt\|\bGONE\b" src` prints only `state/workbench/layout.svelte.ts:91` and `:340`.
+- The report's line counts (`problems.svelte.ts` 317, `problem-sources.ts` 122, `place.ts` 95, `file-problems.ts` 26, `Problems.svelte` 385, `problem-rows.ts` 203, `command-marks.svelte.ts` 66, `root-drag.test.ts` 106, `context.ts` 844, `commands.svelte.ts` 830, `workbench-keys.svelte.ts` 547) all match `wc -l`. The folder counts are also right: `state/system` 10, `shell/panes` 10, `shell/panes/strip` 8.
+
+### Verdicts on the 17 rulings
+
+1. **Holds.**
+   - `shell/panes/strip/file-problems.ts` holds the page's function under a Svelte context.
+   - `+page.svelte:84-89` provides it, and `PaneView.svelte:89`, `:197` and `strip-tab.ts:32`, `:45` read it.
+   - `tabProblem` is gone (grep exits 1). `SHELL_STORES` is unchanged (`tests/checks` has no change in `git status`), and `test:checks` passes.
+   - The function reaches the panes through a context, where the status words reach the bar as props. The report's "Architecture note" states this, and every PaneView importer (`PageLeaf`, `FloatWindow`, `FloatLayer`) lies under `+page.svelte`.
+2. **Holds.** `rowEntriesOf` is at `problem-rows.ts:148`, and the table reads `rowEntries` (`Problems.svelte:119`, `:178-187`). The n33 rerun lists 4 table rows with both files closed, and the empty-filter message.
+3. **Holds by reading.** `pressed` serves both layouts: table `:276`, tree `:344`. The double press is `ondblclick` in the table (`:277`) and `onpressagain` in the tree (`:346-347`), both calling `show(row, true)`. Whether the keyboard really stays in the view is for the look.
+4. **Holds.** `docs/views.md:81` says the view is per page and lists the defaults; `docs/files-and-search.md:11` names the tab strip.
+5. **Not done.** The builder stopped at the ruling's first step, as the ruling allows; ruled as Z723 for landing. See "Ruling 5 and Z723".
+6. **Violated in part (R1-1).** n30 reproduces for the key path. The status item calls `toggleView(layout, ui, 'problems')` with no page (`StatusBar.svelte:178`), while the key passes `pageOf()` (`workbench-keys.svelte.ts:229`). So a view hidden by one and shown by the other comes back empty, and the status item's record is shared by every page.
+7. **Violated in part.**
+   - The table has before and after rows for rulings 3, 2 and 6.
+   - Its toggle row says "for that page", which R1-1 makes false for the status item.
+   - The same row says "survives a reload", which no run shows. I found no pruning of ui records at load (`ui.svelte.ts` `textsOf`, `clearInstanceStates`), but this is not verified.
+8. **Holds.** `DESIGN.md:475` says this, and `source-file.ts:6-11` imports `place.ts`, which the sentence names.
+9. **Holds.** `window.md:82` lists the problems item before the findings item, matching `LEFT_ITEMS` (`status-items.ts:36-45`).
+10. **Holds.** I measured every line of `Main.svelte:2-11`, `Latex.svelte:18-27` and `status-items.ts:14-29`. The short lines end a paragraph, or come before a token too long to fit, as in `Main.svelte:6` followed by `(state/sessions/latex/latex.svelte.ts)`, which would reach 107 columns.
+11. **Holds.** `OpenEditors.svelte:298-310` gives `.problems` its own comment, and `:312-313` puts the unsaved-mark comment back above `.dirty`.
+12. **Holds.** `endsBeforeStart` is at `draft.ts:276`. `placed` (`draft.ts:285-305`) and `openedAt` (`tab-state.ts:54-62`) both use it. The n31 rerun is above.
+13. **Holds.**
+   - `Problems.svelte:2-5` matches the explorer group grep (orders 0, 1, 2, 3, 5, 6, 7, 8).
+   - `COMMAND_OWNER` and `LATEX_OWNER` are defined once, at `problem-sources.ts:17-18`. The only other `'oculus-latex'` literal is `latex-editing.ts:62`, an undo source name.
+   - `latex-widget.ts` takes the owner through `LatexEditorDeps.owner`, since `ui/` may not import `state/`. That departs from the ruling's wording, and the report says why.
+   - A neighbouring point outside the ruling is R1-4.
+14. **Holds.** `vi.stubGlobal('Element', Box)` is in a `beforeEach` (`root-drag.test.ts:76`) and `vi.unstubAllGlobals()` in an `afterEach` (`:80`). No `globalThis` is left (grep prints nothing), and the file passes 2 of 2. It has no failing line on the base because its subject `dragging.svelte.ts` is unchanged. That follows from the ruled patch and is not a defect of this round.
+15. **Violated (R1-5).** The report says the builder ran `git --version` and `git diff --stat -- docs`. The round says no git command of any kind. Neither call changed the tree. That the full list ran exactly once is not verifiable from here.
+16. **Holds.**
+    - `SCROLLBACK_LINES` is at `model-machine.ts:197`, exported at `index.ts:601`, and imported by `sessions.ts:24`, `channel.ts:34` and `commands.svelte.ts:52`.
+    - `grep -rn SCROLLBACK_LINES src` finds no second definition.
+    - `hold` (`commands.svelte.ts:654-672`) bounds the text with `lastLines` (`:86-90`). The n32 rerun keeps 2000 lines.
+    - Side note: when the held text ends in a line break, `lastLines` counts the empty tail as a line and keeps 1999 full lines. This is harmless.
+17. **Holds.**
+    - The `VirtualRows.svelte` and `virtual.ts` hunks match the diagnosis's diff line for line.
+    - `GONE` and `entryAt` are gone, and `Problems.svelte` reads `entries[at]` at `:288`, `:295` and `:304`.
+    - The red and green runs reproduce: red on the unchanged base copy, green on the worktree copy.
+    - The three test files are out of the tree (`ls tests/ui` lists controls, frame, html.test.ts, menu, tabs).
+
+### Verdicts for the whole diff since the base
+
+Items of "What to build":
+1. **Partial.** The store, the three sources, registration (`context.ts:673-675`), the library hand-off, the fold and per-page creation hold by reading. Case 8 is unmet because ruling 5 is not done.
+2. **Holds.** Registration is order 8, `config/layout.yml:82` lists `problems`, the filter matches the earlier verified run, and the round's table fixes hold. R1-3 is a minor standards point.
+3. **Violated in part (R1-1).** The keys, F8, `freedKeys` (`chords.ts:28-29`, `:80`), the walk and the keys sheet (`app.yml:12`: s1-s8, Cmd+Shift+M, F8, Shift+F8, Enter) hold by the `r2.ts` run and greps. The toggle keeps the view's state only when the same caller both hides and shows it.
+4. **Holds.** `LEFT_ITEMS`, `packNumber` (run) and `statusbar.yml:10`, `:43-46`.
+5. **Holds.** n31; `draft.ts:57-72`; `place.ts`.
+6. **Holds.** `command-marks.svelte.ts`, composed at `tab-language.svelte.ts:74`.
+7. **Holds.** The tree, Open Editors and tab strip marks; the strip uses the ruling-1 shape.
+8. **Holds.** Both `Problems.svelte` files are absent (`ls`), `none_followed` names no problems (`latex.yml:85`), and the three greps exit 1.
+9. **Holds by reading.**
+   - `Audit.svelte:83-84` takes card ids from `cardIds` and marks the cursor row with `data-cursor`.
+   - `LaneCard.svelte:109` carries `dataCardToggle`.
+   - `rules.ts:195-207` holds `fileOf` and `NO_FILE`.
+10. **Holds by reading.** `Cards.svelte:95` (`idOf`), `:155-156`, and `data-card-focus`; `key-dom.ts:53-75`.
+11. **Holds by reading.** `workbench-keys.svelte.ts` adds `drawnCursor` (`:100-101`), the drawn-row guard in `moveCard`, the reworked `reconcilePane` and `syncCards`, and the reset in `stopCards`.
+12. **Holds except the sentences R1-1 makes false:**
+    - `docs/views.md:81` ("Hiding the view with the key or the status item keeps its filter ... for that page, and showing it again gives them back");
+    - `docs/window.md:82` ("keeps its filter, toggles, root scope and table choice for the page");
+    - `DESIGN.md:475` ("keeps them in the ui store under a record of the page and the view").
+
+Cases:
+- 1: met by reading; the keyboard staying in the view is not verifiable here (look).
+- 2: met by reading.
+- 3: met by reading.
+- 4: met by reading (`problem-sources.ts:33-40`).
+- 5: met by reading.
+- 6: met by reading.
+- 7: met by reading; the count matching the rows is not verifiable here.
+- 8: unmet (ruling 5 not done; Z723 at landing).
+- 9: met by reading.
+- 10: not rerun in this review; the earlier refuter's run is unchanged by this round, and `problem-rows.ts`'s filter code is untouched by it.
+- 11: met by reading (`Problems.svelte:258-262`).
+- 12: met (`r2.ts` run).
+- 13: met (n33 rerun and reading).
+- 14: met by reading.
+- 15: met by reading (one store per `createClientState`).
+- 16: met for the key function (`r2.ts`); the page and the app are the look's.
+- 17 to 21b: met by reading; the page behaviour is the look's.
+- 22: met by reading.
+- 23: met by reading.
+- 24: met by reading (ruling-1 path).
+- 25 to 25d: met by reading; 25b's gone tab and 25d's two panes are not verifiable here.
+- 26 to 26e: met by reading; the DOM behaviour is not verifiable here.
+- 27: met by reading (`cardIds`).
+- 28: met by reading; Tab then Enter and Space is not verifiable here.
+- 28a: met by reading.
+- 29: met by reading.
+- 30: met by reading; the focus is not verifiable here.
+- 30a: met, with one new key this round. The ui record `hidden-view:<page>:<view>` collides with no instance id format I found. Its empty-page form `hidden-view::problems` is the defect in R1-1.
+- 31, 32, 33: not verifiable here (page runs; the look on TEST).
+
+### Findings
+
+### Spec
+
+**R1-1. The status item's toggle loses the state the key kept, and keeps no state per page.**
+- **Place:** `src/lib/shell/status/StatusBar.svelte:178`, against `src/lib/shell/keys/workbench-keys.svelte.ts:229` and `src/lib/shell/keys/keys.ts:137-150`.
+- **Quoted hunk:**
+  ```
+  StatusBar.svelte:178   onclick={() => toggleView(layout, ui, 'problems')}
+  workbench-keys:229     toggleView(options.layout, options.ui, 'problems', pageOf());
+  keys.ts:138            const hidden = `hidden-view:${page ?? ''}:${view}`;
+  ```
+- **What is wrong:**
+  - The two callers file the hidden state under different records: `hidden-view:<page id>:problems` for the key, and `hidden-view::problems` for the status item.
+  - A view hidden by one and shown by the other opens fresh, and the first record stays behind.
+  - The status item's record names no page. The ui store is `localStorage` (`ui.svelte.ts:462`), so that record is shared by every page and every browser tab of the origin.
+  - Ruling 6 names both triggers and asks for the state "kept for that page and view".
+- **Run (my `r1.ts`, the n30 stub with the key's page then the item's none):**
+  ```
+  hidden by the key (page explorer) open: none | records: [["hidden-view:explorer:problems",{"filter":"error","asTable":true}]]
+  shown by the status item (no page) open: i2 | records: [["hidden-view:explorer:problems",{"filter":"error","asTable":true}]]
+  state of the new instance: undefined
+  ```
+- **Failure scenarios:**
+  - A reader filters to `!**/node_modules/**`, hides the view with Cmd+Shift+M, then presses the status item: the filter is gone.
+  - A reader hides the view with the status item on one page and shows it with the item on another page: the second page gets the first page's filter.
+- **Fix at landing:** make the record's page the same for both callers. Either `toggleView` resolves `page ?? layout.currentPage().id`, or `StatusBar.svelte` passes the current page.
+- **Verdict:** ruling 6 and item 3 violated in part; item 12 and ruling 7 violated for the three sentences named above.
+
+### Proof
+
+**R1-2. n33's quoted output is not what the script prints.**
+- **Place:** the report's ruling 2 block, `D33-report.md:26`.
+- **Quoted:** `table rows (rowEntriesOf): 4 = a.py:m3 a.py:m9 b.py:m1 b.py:m4`
+- **What is wrong:** the script prints the file key, so the run gives `table rows (rowEntriesOf): 4 = ["r","a.py"]:m3 ["r","a.py"]:m9 ["r","b.py"]:m1 ["r","b.py"]:m4`. The count and the order agree, but the line is presented as output and is edited.
+- **Failure scenario:** a reader comparing a rerun with the report takes the difference for a change in the code.
+- **Verdict:** ruling 2 still holds on my rerun; this is a report defect.
+
+**Not a finding, stated for the record:** the report says "show(row, true) the ondblclick of both (:277, :347)". The tree uses `onpressagain` (`Problems.svelte:346-347`), not `ondblclick`. The behaviour still goes through one handler, as ruling 3 asks.
+
+### Standards
+
+**R1-3. `RowEntry` is exported with no importer outside its file.**
+- **Place:** `src/lib/views/sources/search/problem-rows.ts:129`.
+- **Quoted:** `export type RowEntry = Extract<Entry, { kind: 'row' }>;`
+- **What is wrong:** `grep -rlw RowEntry src tests` finds only `problem-rows.ts`. spec.md's export rule says such an export is removed or made local. `unused-exports.sh` does not list types, so its clean line does not cover this.
+- **Failure scenario:** none at run time; an export with no reader stays in the module's surface.
+- **Verdict:** item 2 minor; fix at landing.
+
+**R1-4. The language server's marker owner is written in two places, and the new comment names only one.**
+- **Place:** `src/lib/state/system/problem-sources.ts:13-15` and `:59`, against `src/lib/ui/controls/editor/kit/lsp/markers.ts:11-12`.
+- **Quoted:**
+  ```
+  * share one, and a LaTeX build's markers have one. A language server's is `lsp-<language>`, built
+  * where its markers are set.
+  ...
+  owner: `lsp-${file.language}`,
+  ```
+  with `return \`lsp-${language}\`;` in `markerOwner`.
+- **What is wrong:** ruling 13 asked for the other two owners to be defined once. The `lsp-` owner is the same kind of rule, and it is written twice. The comment written this round says it is built where the markers are set, but the same file builds it too.
+  - Whether `state/` may import `markerOwner` from `ui/` under DESIGN.md's boundaries is not checked here. If it may not, the comment should say the word is built in both places.
+- **Failure scenario:** a rename of the owner in `markers.ts` leaves Problems rows naming the old one in the Copy JSON.
+- **Verdict:** outside ruling 13's list; minor.
+
+**R1-5. Two git commands in the round.**
+- **Place:** the report's "Deviations with no effect".
+- **Quoted:** "Two read-only git calls, which the round brief forbids: `git --version` once (output discarded) and `git diff --stat -- docs` once."
+- **What is wrong:** ruling 15 says no git command of any kind in this round. The report itself states the breach.
+- **Failure scenario:** none to the tree; a rule breach to note.
+- **Verdict:** ruling 15 violated.
+
+### Behaviour
+
+R1-1 is the round's one user-visible change the report states wrongly. The report's table says the kept state is "for that page" and "survives a reload". The first is false for the status item. The second is not verified by any run.
+
+Every other round change the report lists has a before and after: the table's press, the table with closed files, the strip counts, a reversed end on one line, and the held output bounded to 2000 lines. My reading of the diff since the base found no other change.
+
+### Ruling 5 and Z723 (your check)
+
+**The builder's finding reproduces.**
+- `server/machine/runs/commands/repo.ts:22-27` accepts a repository that lies inside a served root and is either a served root or holds `.git`. n34 shows a nested git repository is accepted, and is refused once no root serves it.
+- The page records that repository as the row's root: `CommandDiagnostic.root` is "The repository the command belongs to" (`model-sessions.ts:713-714`), set from `job.repo` at `commands.svelte.ts:715`.
+- So ruling 5's rule as written (the row goes when `root` is no longer a served root) would drop a nested repository's live rows.
+- The LaTeX store's only forgets are still at `latex.svelte.ts:315-316`, so its half is not done either. Case 8 stands as the first refuter found it.
+
+**Z723's rule is right on the tree.** "A command row goes when its repository lies under no served root" is the same test `repositoryOf` applies first (`repo.ts:22`). So the page drops exactly the rows whose command the server would no longer accept:
+- a repository under another root that is still served keeps its rows, remapped by `tabOfFile`;
+- case 6's rows (a served repository naming a file outside every root) stay listed under the path as written.
+
+Making the LaTeX store forget a root that leaves the served roots, at the store, ends the cause. A filter in `latexProblems` would leave dead targets in the store, and Z723 rightly names it the lazy option.
+
+**One caveat for the landing fix: compare paths in the same terms.**
+- `job.repo` is a real path (`repo.ts:17`, `realPath(folder)`).
+- The page's served roots (`context.ts:420`, `fs.roots()`) carry the configured `dir` with `~` expanded (`files.ts:181`) but not resolved through symlinks.
+- If a root's configured folder goes through a symlink, an "inside a served root" test on the page fails for every row of that root. The rows would then be dropped, where today they stay listed under their path.
+- Not verified on this machine; a fixture with a symlinked root in the landing run settles it.
+
+Also, case 8 covers the language-server rows of a removed root. Whether they go depends on the tab's model being released (`client.ts:516-526`), which I did not run. Z723's landing run, which lists the rows of each source before and after, should list them too.
+
+### Declined to judge
+
+- Brief verify item 7's page scripts and item 8 were not run, because builders and reviewers run no page under Z720. Cases 31, 32 and 33 and every DOM behaviour of cases 1, 16, 18 to 21b, 25b, 25d, 26 to 26e, 28 and 30 are the look on TEST.
+- `npm run diagrams` was not run because it writes files. `tests/checks/diagrams/diagrams.test.ts` passed inside `npm run test:checks`.
+- The claim that the full list ran once this round cannot be checked without the builder's transcript.
+- I did not rerun case 10 (the filter), case 28a (`fileOf` over a scratch tree) or the `add({` site table. This round does not touch them, and the earlier refuter's runs stand.
+- "Survives a reload" for the hidden-view record: not verified (needs a page).
+- Whether a tab under a removed root keeps its language-server rows: not verified (Ruling 5 section).
+- The Settings card, Audit and lane DOM behaviour: read only.
+
+Reviewer usage: aba7f4b62b7054a8f, claude-opus-5-5, 334,877 tokens, 113 tool uses, 18.7 min (from its completion notice).

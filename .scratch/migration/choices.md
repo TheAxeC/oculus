@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z727 (2026-10-08, step D33, the orchestrator, automode): case 8 sent as D33's second repair round
+
+- Chosen: the extra repair round for case 8 (a removed root takes its command and LaTeX rows with it, at the stores, nothing forgotten while the workspaces are read, real paths compared), with a unit test; three small findings of the review over round 1 fixed at landing and carried into the worktree.
+- Not chosen: the fix written inline at landing; a filter in the problem sources, or landing with case 8 unbuilt (the lazy options).
+
+Where it applies: D33. Booked in `plan.md` Rulings, D33's step line and the closed log of `orchestrator-history.md`.
+
 ## Z726 (2026-10-08, step D43, the orchestrator, automode): the choices of D43's third premise recheck
 
 - Chosen: texlab started without `latexmk` on its PATH so it never runs a latexmkrc, the latexmkrc approval kept on the build and clean steps; a weave recipe asking once per repository, folder and tools; `brew install texlab` by the orchestrator before the look; an automatic build that waits on an unapproved latexmkrc, shown on the LaTeX status item, and a pressed build that asks.
