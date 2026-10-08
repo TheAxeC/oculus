@@ -19,7 +19,7 @@ Queued, in order:
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D33 (the Problems view), 2026-10-08, landing commit below.
+- D33 (the Problems view), 2026-10-08, b081d9da4.
 - M8 (the hub's YAML checked and completed in the editor), 2026-10-08, 7c5514850.
 - D28 (saving a source file as VS Code does), 2026-10-08, 3bf3bf4c6.
 - X3e (the Files view's lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop), 2026-10-08, 1ae5e7c8d.

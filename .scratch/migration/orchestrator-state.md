@@ -114,6 +114,7 @@ dispatch: []   # steps in flight, up to six (Z632)
 - Briefs and repair briefs (Axel, 2026-10-02, Z253): every repair brief says "Rewrite the report whole for the state after this round. Copy the open items from the state file at the moment you write it." in place of any "Append a section", and "After the round's last change, run the full verify list and quote its final lines in the report; a red line in a file you touched is fixed before hand-back." Every brief that introduces a key or id names it and lists its empty, duplicated and colliding cases as acceptance items. The rule sentences for builders are in `agents/spec.md`.
 
 - Open items hold only questions with a real trade-off that needs Axel: two options that each cost something he would weigh. A choice between the correct option and an obviously wrong one, a test or a package with one sensible answer, a defect in delivered work, and work the orchestrator can do itself are decided and done, never parked as open items (Axel, 2026-10-05).
+- A landing whose diff changes `tools/oculus/package.json` or `package-lock.json` ends with `npm install --no-audit --no-fund` in main's `tools/oculus` and `npm ls --depth=0` printing no `missing`, `invalid` or `UNMET` line, with the lockfile unchanged, so Axel's next start of the dev server on main has the step's dependencies; it runs only while no server of Axel's is running from main.
 
 ## The pause
 
@@ -139,7 +140,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 11 (2026-10-08), D33's case 8 tests (a removed root takes its rows with it): the fix at landing (Z728) carries two test files, `tests/state/sessions/served-roots.client.test.ts` (six rows: a removed root's command and LaTeX rows go and a nested repository's and an outside file's stay; nothing is forgotten while the workspaces load, fail or read again, or at the first read; a root served through a symlink keeps its rows; a root with no real folder is read as its folder; later output of a repository outside the roots is not listed) and `tests/state/sources/workspaces-real.test.ts` (the workspaces answer's `real` folder: a symlink's target, empty for a missing folder, absent when the body carries none). No entry of `agents/guarded.md` covers them. (a) A guarded entry G69, 'A root that leaves the served roots takes its command and LaTeX rows with it, and nothing is forgotten while the roots are not read', with these two files as its test, landed with D33; (b) no entry, the two files left out and the fix resting on the quoted run and the look, the lazy option. Recommended: (a), since a row dropped while its error is live, or kept after its root went, misleads the reader of the Problems view.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
