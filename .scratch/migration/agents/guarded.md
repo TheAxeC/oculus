@@ -125,6 +125,15 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G62. The save-conflict compare is read again when the file on disk moves while it is open, and no other diff pane is read again for a change of its file.
   Code: `readKeyOf` in `src/lib/views/sources/repositories/diff/diff-read.ts`.
   Test: `tests/views/sources/repositories/diff/diff-read.test.ts`, the table 'the read key of a diff pane', its rows 'changes with the disk hash for the compare of a save conflict', 'stays the same for a working-tree compare when the file changes', 'stays the same for a Replace Preview when the file changes'; written by M8.
+- G66. Every value of a hub field whose `from` names a source is a reference to that source's entry, with its file and range, and the entry's definition is its identity line, or the manifest's `id:` line for a project.
+  Code: the reference index D39 builds.
+  Test: written by D39, one table over the index with one row per kind of reference, its file and title named in D39's landing report.
+- G67. Renaming a hub key changes every reference to it and the entry's own key, keeps each value's quoting, and changes no other byte; it refuses an empty key, a key that exists, a project id, a vocabulary key and a file over the write limit, and writes nothing then.
+  Code: the rename edit D39 builds.
+  Test: written by D39, one table over the rename with one row per outcome, its file and title named in D39's landing report.
+- G68. A rename's preview writes nothing before Apply, and Discard writes nothing.
+  Code: the rename preview D39 builds.
+  Test: written by D39, its file and title named in D39's landing report.
 
 ## It starts, and configuration is checked
 
@@ -152,6 +161,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G57. A root dropped on a Files tree reorders only that tree's roots: a drag from another tab, or one whose start was in another tree, writes no order, even when the tree's own last root drag ended without `dragend`.
   Code: `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts`.
   Test: `tests/views/shared/explorer/root-drag.test.ts`, describe 'the root drag of the tree': 'writes no order for a drag from another tab over a tree whose own drag never ended', "still takes the drop of the tree's own drag"; landed by D33.
+- G65. A list drawn by window asks its caller for no row past the end when the list shrinks inside an effect, so a view whose list gets shorter keeps updating.
+  Code: `src/lib/ui/tree/list/VirtualRows.svelte`, `src/lib/ui/tree/list/virtual.ts`.
+  Test: `tests/ui/tree/list/virtual-rows.client.test.ts`, 'asks for no row past the end when a list of 20 shrinks to 3 inside an effect' (with `ShrinkingRows.svelte` and `mini-dom.ts` beside it); landed by D33.
 - G61. A configuration file written, added or removed is read by the next request that asks for the configuration, and one request keeps its one read for the rest of it.
   Code: the config cache of the server context (`src/lib/server/root/context.ts`, its type in `src/lib/server/root/process/server-context.ts`), read through `src/hooks.server.ts`.
   Test: `tests/server/root/config-cache.test.ts`, describe 'the config cache of the server context': 'parses a config folder once for requests over it, and again once a file of it is written', 'parses again for every request while an entry of the folder cannot be stat-ed', 'keeps the one read of a request for the rest of it, whatever is written meanwhile'; landed by M8.

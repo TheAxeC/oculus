@@ -1,12 +1,12 @@
 In flight (1 of 6 slots):
-- D33 (the Problems view): repair round 1.
+- D33 (the Problems view): landing.
 
-Queued, in order (14 steps; M8 landed 2026-10-08 as 7c5514850):
-- M6 (the collection forms removed): after D33; recheck 3 saved and its choices closed (Z724), brief written after D33 lands.
-- D39 (hub keys as links): after D33; survey saved and its choices closed (Z725), open item 10 for its guarded entries; before M7 (Z725 C4).
+Queued, in order:
+- M6 (the collection forms removed): after D33.
+- D39 (hub keys as links): after D33.
 - M7 (a project folder moved in Files): after M6 and D39.
 - D41 (links in Markdown checked): after M7.
-- D43 (LaTeX navigation through texlab): after D33; recheck 3 saved and its choices closed (Z726).
+- D43 (LaTeX navigation through texlab): after D33.
 - D36 (linters on save): after D33.
 - D40 (the writing rules as editor marks): after D36.
 - Q72 (the architecture re-read): paused (Axel).
@@ -20,10 +20,11 @@ Queued, in order (14 steps; M8 landed 2026-10-08 as 7c5514850):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D28 (saving a source file as VS Code does), 2026-10-08; looked at on a scratch oculus, one fix from the look.
-- X3e (the Files view's lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop), 2026-10-08; looked at on a scratch oculus, its fixes at landing; open item 5 (the root drag's guarded entry) for Axel.
-- D11 (the debug client for rite), 2026-10-07; looked at on a scratch oculus, the look's fixes on main.
-- D15 (PDF reading), 2026-10-07, a84214da; looked at on TEST, two fixes from the look.
+- M8 (the hub's YAML checked and completed in the editor), 2026-10-08, 7c5514850.
+- D28 (saving a source file as VS Code does), 2026-10-08, 3bf3bf4c6.
+- X3e (the Files view's lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop), 2026-10-08, 1ae5e7c8d.
+- D11 (the debug client for rite), 2026-10-07, c88b76443.
+- D15 (PDF reading), 2026-10-07, a84214da.
 - D45 (LaTeX as VS Code's LaTeX Workshop), 2026-10-07, 0753a5e7.
 - D23b (rename, workspace symbols, hierarchies, the TypeScript and Svelte servers), 2026-10-07, 639820b9.
 - PR4 (Present's presenter screen), 2026-10-07, eede4598.

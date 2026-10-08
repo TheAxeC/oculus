@@ -4,6 +4,9 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z728 (2026-10-08): Axel ruled (b) on Z727: D33's case 8 fixed at landing as Z723 ruled; the second round's builder stopped, its partial changes put back.
+- Open item 10 (2026-10-08): Axel ruled (a): G66 to G68, D39's reference index, rename edit and rename preview; their tests written by D39's builder.
+- Open item 9 (2026-10-08): Axel ruled (a): G65, the windowed list never read past its end; its test, the three files of `agents/reviews/D33-diagnosis.md`, landed by D33.
 - Z727 (2026-10-08): automode, D33's case 8 sent as its second repair round; R1-1, R1-3 and R1-4 of the review over round 1 fixed at landing (`plan.md` Rulings Z727).
 - Z726 (2026-10-08): automode, the choices of D43's third premise recheck closed with their recommendations (`plan.md` Rulings Z726).
 - Z725 (2026-10-08): automode, the choices of D39's premise survey closed with their recommendations; its guarded entries raised as open item 10 (`plan.md` Rulings Z725).
