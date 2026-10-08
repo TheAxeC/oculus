@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z735 (2026-10-08): D39's brief check closed inline by the orchestrator (`agents/reviews/D39-brief-check.md`, Closed); the `map` attribute, refusals at the caret, the options catalog's vocabulary references and D39 after M6 and D43, in automode (`choices.md`); F19 raised as open item 15.
+- Z734 (2026-10-08): D43's brief check closed inline by the orchestrator (`agents/reviews/D43-brief-check.md`, Closed); the weave check widened to every non-TeX recipe tool and the status tip reworded, in automode (`choices.md`).
 - Open items 12, 13 and 14 (2026-10-08): Axel ruled (a) on all three: D36's, M6's and D43's guarded entries widened, their tests written by each builder, each entry written into `agents/guarded.md` at its step's landing.
 - Z733 (2026-10-08): D36's brief check F34 closed in automode, the `lint:` keys as `true` and `false`; D36 after D43 (F12).
 - Z732 (2026-10-08): D43's brief choices O1 to O3 closed in automode with their recommendations (`agents/briefs/D43.md`, `choices.md`); O4 raised as open item 14.

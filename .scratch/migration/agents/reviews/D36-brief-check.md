@@ -162,3 +162,48 @@ Findings:
 - The ESLint timings of 17.08 s and 6.98 s were not rerun. One unconfigured `.mjs` file took 14.8 s real here (`time eslint --format json utils/diagrams/diagrams.mjs`). Where the user-level ruff configuration lives was not found (`~/.config/ruff` and `~/Library/Application Support/ruff` are absent).
 
 Agent usage: ab66036bc6fe3c58d, claude-opus-5-5, 275,056 tokens, 102 tool uses, 15.1 min (completion notice).
+
+## Closed
+
+Closed by the orchestrating session in `agents/briefs/D36.md`, on main at fbc434269. The report numbers its findings F1 to F37 and holds no F33; the other 36 are closed below.
+
+- F1: item 1 and the path list name `server/machine/pty/latex/latex.ts` (its import at :40); D43's `programPath` moves with `onPath`.
+- F2: the head-comment list names `synctex.ts:6` and `approvals.ts:6-7`; item 1 and item 2 rewrite them.
+- F3: item 5 makes the `EditorStatus` field optional; `Diff.svelte` is read, unchanged.
+- F4: item 5 gives the id `linter`, `statusbar.item_linter: Linters`, the glyph and the icon; the path list adds `status-items.ts`, `glyphs.yml`, `icons.yml`.
+- F5: item 2 and the path list add `server/root/context.ts`, `server-context.ts` and `data/sources/config.ts`; Verify item 3 runs G61's test.
+- F6: item 2 stops a superseded run on the server, keyed by root, path and linter; the page keeps its counter; the request-signal claim is gone (decision 5); case 9 runs it.
+- F7: `settings.test.ts` gains the `lint.*` reader's case (item 6, case 30, Verify item 3, the path list).
+- F8: the parity table adds the three rows, all built; item 2 lists LaTeX Workshop 10.19.0's ChkTeX fixes (`latex-code-actions.js:43-64`); item 4 adds ESLint's file-wide Disable; item 3 and the path list add `problem-rows.ts` and `Problems.svelte`.
+- F9: the ledger is cited by step and ruling id; the step line is quoted as it reads now.
+- F10: item 2 maps `invalid-syntax`, `E902` and `F821` to error, accepts a null `url`, and offers no Disable or Show documentation for a row with no rule; case 4c.
+- F11: item 3 adds `forgetOutside(roots)` in the `watchServedRoots` callback; decision 4 and case 7 follow; G69's test runs in Verify.
+- F12: "Shared with the steps in flight" lists every path shared with D43; D43 first, D36's base after it (Z733).
+- F13: the Cases paragraph and cases 3 and 22 name an approvals file under the session scratchpad passed to `handleLint`.
+- F14: case 23 names a `.js` file of `tools/cockpit`.
+- F15: the `latexmkrc:` check is the orchestrator's at landing.
+- F16: case 2 gives the four-line file.
+- F17: Verify item 3 runs G31's, G38's, G55's and G32's tests.
+- F18: item 4 draws a row's own range; case 4a.
+- F19: item 2 names `eslint-child.mjs` resolved under `ownFolder()` and the instance in function scope; the built-server run is part of case 3.
+- F20: item 3 keeps the state per file and linter; item 5 reads its own tab's file.
+- F21: item 5 draws an item per linter that takes the tab's file; case 24 includes the status bar.
+- F22: item 2 makes `configKey`, `approveConfig` and `revokeConfig` take the kind, D43's copy folded in.
+- F23: the worktree is named and the base copy adds `DESIGN.md`, `HELP.md` and `docs`.
+- F24: item 4 and case 26 use `noqa_row`.
+- F25: item 2 converts ruff's columns to UTF-16 and takes ESLint's offsets over the text as read; case 4b.
+- F26: item 1 adds the `overflow` answer, read as `failed` with `too_large`; case 13a and the tooltip.
+- F27: item 2 drops `%f` from ChkTeX's format; case 24a.
+- F28: item 4 merges into an existing suppression; case 26.
+- F29: item 4 places each comment where it is valid; case 26.
+- F30: item 2 lints once under the deepest root; case 7a.
+- F31: item 3 lints a reloaded clean tab again; case 8.
+- F32: cases 23 (flat `.eslintrc`), 24a (symbolic links, spaces, a `:` in a name) and 31 (a very large file).
+- F34: item 6 and O3 take `true` and `false` with `control: toggle` (Z733).
+- F35: item 5 names each linter once (ChkTeX, Ruff, ESLint, ShellCheck), the VS Code names kept for the source column; case 12 follows.
+- F36: item 5 writes each tooltip in full with its path key and install command; `recipes.ts`'s tables are not read.
+- F37: item 2 reads ruff's first `Cause:` line; case 13.
+
+O6 is rewritten to Axel's ruling (a), open item 12, with the test files named in the Cases paragraph.
+
+Dictated lines held, each ASCII with no dash: `item_linter: Linters`; the seven `lint_*` status words and tooltips of item 5; the Disable comment forms of item 4.

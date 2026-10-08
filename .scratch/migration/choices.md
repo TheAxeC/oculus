@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z735 (2026-10-08, step D39, the orchestrator, automode): the choices of D39's brief check
+
+- Chosen: the deck schema's attribute for a map of records is `map: true`; a rename refusal travels as the error's message and shows at the caret, where VS Code shows a language client's refusal, and a null `prepareRename` from any server gives VS Code's "The element can't be renamed."; the options catalog's vocabulary fields (`project_types`, `status_chips`, `entry_statuses`, `slide_tags`) are references, so Find References on `manuscript` lists `sources.yml`'s scan type; D39 is prepared after M6 and D43 land, since D43 also splits `transport.ts` and changes the relay's constructor.
+- Not chosen: the word `keyed`, which two other schema readers use for other things; the refusal as a tab notice, which VS Code does not do; vocabulary references from the hub fields only (the lazy option); D39 in flight beside D43.
+
+Where it applies: D39. Booked in `plan.md` Rulings, D39's step line and the closed log of `orchestrator-history.md`. Open item 15 holds the guarded entries.
+
+## Z734 (2026-10-08, step D43, the orchestrator, automode): which recipe tools ask for a weave approval
+
+- Chosen: every recipe tool whose program is not a TeX program (latexmk, latex, pdflatex, xelatex, lualatex, bibtex, biber, makeindex, makeglossaries, tectonic) asks once per repository, folder and tools, so `R CMD Sweave`, `python -m pweave`, `quarto` or any program a reader adds is approved before it runs a document's code; the status tip reads 'An automatic build or clean of {0} waits for your approval of the code it would run. Press to see it.'
+- Not chosen: Z732 O2's three names `Rscript`, `julia` and `pweave` alone, which would run any other weave program unasked (the lazy option); a tip that names only latexmk's files.
+
+Where it applies: D43. Booked in `plan.md` Rulings, D43's step line and the closed log of `orchestrator-history.md`.
+
 ## Z733 (2026-10-08, step D36, the orchestrator, automode): the linters' on and off keys, and D36's order
 
 - Chosen: each `lint.<linter>` key of `behavior.yml` is `true` or `false` with `control: toggle`, as the 22 toggles of `options.yml`; D36 runs after D43, since both rewrite the same lines of `recipes.ts` and that merge is not simple.

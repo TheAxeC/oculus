@@ -1,8 +1,8 @@
-In flight (4 of 6 slots):
+In flight (2 of 6 slots building; every other step waits on one of them or on Axel):
 - M6 (the collection forms removed): building.
-- D39 (hub keys as links): brief check running.
-- D43 (LaTeX navigation through texlab): brief check running.
-- D36 (linters on save): brief check's findings being closed; builds after D43 has landed.
+- D43 (LaTeX navigation through texlab): brief check closed; its builder is being launched.
+- D36 (linters on save): brief check closed; prepared again after D43 lands.
+- D39 (hub keys as links): brief check closed; waits on open item 15 and on M6 and D43 landing.
 
 Queued, in order (10 steps):
 - M7 (a project folder moved in Files): after M6 and D39.
