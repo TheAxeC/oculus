@@ -1681,6 +1681,8 @@ Agents in no role the cost script prices:
 - a9503ab88614faf3d: premise recheck of step D28 on main at 1ae5e7c8d, claude-opus-5-5
 - aca73f6f335a1fa89: premise recheck of step M8 on main at 1ae5e7c8d, claude-opus-5-5
 - a148f9947c88c06e2: brief check of step D28, claude-opus-5-5
+- a7fdeabbe3ca09dfa: builder of step D28, claude-sonnet-5-5
+- a8d21c562b6b3a8c6: reviewer of step D28, claude-opus-5-5
 - ac977ea524e9d8d0a: premise recheck of step D11 on main at 8bd2070c, claude-opus-5-5
 - ac8eba7ca69860cb6: premise recheck of step D15 on main at 8bd2070c, claude-opus-5-5
 - a03399c1dcb660df0: premise recheck of step M8 on main at 8bd2070c, claude-opus-5-5
