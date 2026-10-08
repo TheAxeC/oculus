@@ -65,7 +65,7 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | F8 / Shift+F8 | go to the next / previous problem, across files |
 | Cmd+Shift+B | run the default build of the repository holding the open source file (Ctrl+Shift+B off macOS) |
 | Cmd+Alt+T | run the default test of that repository (Ctrl+Alt+T off macOS) |
-| Cmd+Alt+B / Cmd+Alt+C / Cmd+Alt+V | build, clean and view the PDF of the LaTeX root of the source tab or the PDF tab in front (Ctrl+Alt off macOS) |
+| Cmd+Alt+B / Cmd+Alt+C / Cmd+Alt+V | build, clean and view the PDF of the LaTeX root of the source tab or the PDF tab in front (Ctrl+Alt off macOS); a build or clean that would read a latexmkrc or run a weave tool you have not approved asks first |
 | Cmd+Alt+J | in a LaTeX source tab, show the line at the caret on the PDF page (SyncTeX forward search) |
 | Cmd+click / Ctrl+click | in a PDF tab, open the source line of the place clicked (a double click when `latex.reverse_synctex` is `double_click`) |
 | Cmd+Alt+M | open Math Preview beside a LaTeX source tab |

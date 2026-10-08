@@ -22,6 +22,21 @@
 // not itself a retry is cleaned and run once more when `latex.clean_and_retry` is true, and
 // `latex.auto_clean` cleans after the build that ended.
 //
+// A build or a clean the server will not start until the reader has approved the latexmkrc files it
+// would read or the recipe's weave tools answers with what it asks about (`RootBuild.approval`) and
+// starts nothing. A build or clean the reader pressed opens the ask at once; an automatic one (a
+// save, a change on disk, `latex.auto_clean`, the clean before a retry) only records it, so the
+// LaTeX status item shows that something waits. Approving posts the texts that were listed and then
+// runs the waiting step once; the server refuses when the files changed since, and the step is
+// asked again so the new list is shown. Cancel on the ask of a step the reader pressed drops the
+// approval from the entry, while the approval an automatic step recorded stays until it runs or is
+// approved. A Rerun or a Restart of a build or clean terminal is such a step: the entry holds the
+// terminal, and approving runs that terminal again. A failed build whose clean before the retry
+// waits on an approval ends as failed, and the entry keeps the clean's approval; approving it runs
+// the clean once and then the retry build, and a later build of the main file that succeeds lets
+// the clean's approval go. A step asked again keeps the time it began to wait and whether the
+// reader pressed it.
+//
 // `latex.auto_build` is `on_file_change`, `on_save` or `never`. On a change on disk the store asks
 // the server for the root's dependency set (the include closure and the files the last build read,
 // less what the build writes) on each `files` message for a root a view follows: the first answer
@@ -32,6 +47,7 @@
 
 import { joinPath } from '../../../data/helpers/files/paths.ts';
 import { isLatexFile } from '../../../data/prose/latex.ts';
+import type { LatexApproval } from '../../../data/model/index.ts';
 import type { LatexBuilding } from '../../../data/sources/config/settings.ts';
 import { HUB_ROOT } from '../../sources/fs.ts';
 import { t } from '../../shared/words/text.ts';
@@ -55,7 +71,7 @@ const QUIET_MS = 2000;
 
 /** What the builds read of the rest of the page. */
 export type BuildDeps = {
-    terminals: Pick<TerminalsStore, 'terminals' | 'latex'>;
+    terminals: Pick<TerminalsStore, 'terminals' | 'latex' | 'approveLatex'>;
     calls: Pick<LatexCalls, 'rootOf' | 'dependencies'>;
     /** What a build and its follow-ups are set by, or null while the page holds no catalog. */
     settings: () => LatexBuilding | null;
@@ -75,6 +91,10 @@ export type BuildDeps = {
     openLog: (terminal: string) => void;
     /** Show the Problems view limited to the root of the target. */
     showProblems: (target: LatexTarget) => void;
+    /** Open the question that asks the reader to approve what a main file's step waits on. */
+    openAsk: (target: LatexTarget, main: string) => void;
+    /** Run a build or clean terminal again, or restart it, as its Rerun or Restart does. */
+    again: (terminal: string, restart: boolean) => Promise<TerminalAnswer>;
     /** Tell the store that a build state moved, so the readers redraw. */
     touched: () => void;
     /** Read the count of moves, which makes the reader depend on every move. */
@@ -104,6 +124,12 @@ type Ask = {
     again?: boolean;
 };
 
+/** What a failed build owes after the clean that goes before its retry. */
+type Owed = { reader: boolean; again: boolean };
+
+/** How a build failed, for the entry that has to wait on its clean's approval. */
+type Failure = { reason: string; terminal: string };
+
 /** One run of a terminal the build of a root waits on: its build, or the clean of a retry. */
 type Run = {
     step: 'build' | 'clean';
@@ -130,6 +156,16 @@ type Entry = {
     notified: boolean;
     /** When the last build started, in milliseconds. */
     started: number;
+    /** The recipe and last recipe the step that is waiting on an approval was asked with. */
+    asked: LatexBuildAsk;
+    /** When the approval began to wait, in milliseconds. */
+    waitingSince: number;
+    /** True when the reader pressed the step the approval is for. */
+    pressed: boolean;
+    /** The terminal whose Rerun or Restart the approval is for, or null. */
+    rerun: { terminal: string; restart: boolean } | null;
+    /** What is owed after the clean the approval is for, a build that failed, or null. */
+    retry: Owed | null;
     timer: ReturnType<typeof setTimeout> | null;
     /** How many views follow the root's files. */
     follows: number;
@@ -155,6 +191,36 @@ export type BuildsStore = {
     run: (target: LatexTarget, main: string, ask?: LatexBuildAsk) => Promise<TerminalAnswer>;
     /** Build a main file with no reader asking: a save, a change on disk or an owed build. */
     build: (target: LatexTarget, main: string) => Promise<void>;
+    /**
+     * Clean a main file the reader asked for; the answer is the terminal's, the refusal, or the
+     * approval it waits on, which opens the question.
+     */
+    clean: (target: LatexTarget, main: string) => Promise<TerminalAnswer>;
+    /**
+     * Approve what the step of a main file waits on and run it once. The answer is the step's, or
+     * the refusal of the approval; `latex-changed` asks the step again so its new list is shown.
+     */
+    approve: (target: LatexTarget, main: string) => Promise<TerminalAnswer>;
+    /**
+     * The main file whose step has waited longest on an approval, or null: of the folder named
+     * when one is, else of every folder.
+     */
+    waiting: (folder?: { root: string; path: string }) => {
+        target: LatexTarget;
+        main: string;
+    } | null;
+    /**
+     * Hold what a Rerun or a Restart of a build or clean terminal of a main file waits on, and open
+     * the question; approving runs the terminal again.
+     */
+    holdRerun: (
+        target: LatexTarget,
+        approval: LatexApproval,
+        rerun: { terminal: string; restart: boolean },
+        recipe: string
+    ) => void;
+    /** Close the question of a main file unapproved; a pressed step's approval is dropped. */
+    cancel: (target: LatexTarget, main: string) => void;
     /** Interrupt the build of a main file. */
     stop: (target: LatexTarget, main: string) => Promise<TerminalAnswer>;
     /**
@@ -199,11 +265,17 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
     /** The recipe the last build named, which `latex.recipe_default` `last_used` asks for. */
     let last = '';
 
-    /** The place of a main file as the target names it, through the state held for a project. */
-    function placeOfTarget(target: LatexTarget, main: string): string {
-        if ('root' in target) return placeOf(target.root, target.path, main);
+    /** The root and folder a target names, through the state held for a project. */
+    function folderOf(target: LatexTarget): { root: string; path: string } {
+        if ('root' in target) return target;
         const held = deps.held(target);
-        return placeOf(held?.root ?? HUB_ROOT, held?.dir ?? '', main);
+        return { root: held?.root ?? HUB_ROOT, path: held?.dir ?? '' };
+    }
+
+    /** The place of a main file as the target names it. */
+    function placeOfTarget(target: LatexTarget, main: string): string {
+        const { root, path } = folderOf(target);
+        return placeOf(root, path, main);
     }
 
     function entryOf(target: LatexTarget, main: string): Entry {
@@ -218,6 +290,11 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
             stopped: false,
             notified: false,
             started: 0,
+            asked: {},
+            waitingSince: 0,
+            pressed: false,
+            rerun: null,
+            retry: null,
             timer: null,
             follows: 0,
             times: null,
@@ -277,6 +354,32 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         return { ok: false, id: '', error: error instanceof Error ? error.message : String(error) };
     }
 
+    /**
+     * Record what a step waits on, with the ask it was made with and whether the reader pressed
+     * it. What the earlier approval of the entry was owed to is let go. An entry that already waits
+     * keeps the time it began to wait, so asking a waiting step again does not reorder the waits.
+     */
+    function hold(
+        entry: Entry,
+        approval: LatexApproval,
+        asked: LatexBuildAsk,
+        pressed: boolean
+    ): void {
+        entry.asked = asked;
+        entry.pressed = pressed;
+        entry.rerun = null;
+        entry.retry = null;
+        if (entry.build.approval === null) entry.waitingSince = now();
+        setBuild(entry, { approval });
+    }
+
+    /** Drop the approval of an entry and what it was held for. */
+    function release(entry: Entry): void {
+        entry.rerun = null;
+        entry.retry = null;
+        setBuild(entry, { approval: null });
+    }
+
     /** The notice a failed build posts, with the actions that lead to its log and its problems. */
     function noticeFailure(entry: Entry, reader: boolean, message: string, terminal: string): void {
         if (!reader && entry.notified) return;
@@ -304,7 +407,8 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
             (rule === 'on_succeeded' && status === 'succeeded');
         if (!wanted) return;
         void deps.terminals.latex(entry.target, entry.main, 'clean').then((answer) => {
-            if (answer.ok) deps.watch(entry.target, answer.id);
+            if (answer.latexApproval !== undefined) hold(entry, answer.latexApproval, {}, false);
+            else if (answer.ok) deps.watch(entry.target, answer.id);
         });
     }
 
@@ -323,15 +427,18 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         const stopped = entry.stopped;
         entry.stopped = false;
         const failed = !stopped && exit !== null && exit !== 0;
+        const reason = failed ? t('latex.failed_exit', exit) : '';
         if (failed && !run.retry && deps.settings()?.cleanAndRetry === true) {
-            void cleanBeforeRetry(entry, run);
+            const owed = { reader: run.reader, again: run.again };
+            void cleanBeforeRetry(entry, owed, { reason, terminal: run.terminal ?? '' });
             return;
         }
         const status = stopped || exit === null ? 'stopped' : failed ? 'failed' : 'succeeded';
-        const reason = failed ? t('latex.failed_exit', exit) : '';
         setBuild(entry, { status, at: now(), reason });
         deps.reload(entry.target);
         if (status === 'succeeded') entry.notified = false;
+        // A build that succeeded owes no retry, so the clean held before one is let go.
+        if (status === 'succeeded' && entry.retry !== null) release(entry);
         if (status === 'failed') {
             noticeFailure(
                 entry,
@@ -346,8 +453,18 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         if (run.again) void start(entry.target, entry.main, { reader: false });
     }
 
-    /** Clean the files a failed build left, then build once more when the clean has ended. */
-    async function cleanBeforeRetry(entry: Entry, failed: Run): Promise<void> {
+    /**
+     * Clean the files a failed build left, then build once more when the clean has ended. A clean
+     * that waits on an approval ends the failed build as failed and keeps the approval and what is
+     * owed on the entry; approving it calls this again with no failure, which runs the clean and
+     * then the build.
+     */
+    async function cleanBeforeRetry(
+        entry: Entry,
+        owed: Owed,
+        failure: Failure | null
+    ): Promise<TerminalAnswer> {
+        entry.retry = null;
         const asked = deps.terminals.latex(entry.target, entry.main, 'clean').catch(failedRequest);
         const run: Run = {
             step: 'clean',
@@ -355,23 +472,37 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
             terminal: null,
             running: false,
             asking: false,
-            again: failed.again,
+            again: owed.again,
             retry: true,
-            reader: failed.reader
+            reader: owed.reader
         };
         entry.run = run;
         deps.touched();
         const answer = await asked;
+        if (answer.latexApproval !== undefined) {
+            if (entry.run === run) entry.run = null;
+            if (failure !== null) {
+                setBuild(entry, { status: 'failed', at: now(), reason: failure.reason });
+                deps.reload(entry.target);
+                const message = t('latex.failed_notice', entry.main);
+                noticeFailure(entry, owed.reader, message, failure.terminal);
+            }
+            hold(entry, answer.latexApproval, {}, failure === null);
+            entry.retry = owed;
+            if (failure === null) deps.openAsk(entry.target, entry.main);
+            return answer;
+        }
+        if (failure === null) setBuild(entry, { status: 'building', at: now(), reason: '' });
         if (!answer.ok || answer.id === '') {
             if (entry.run === run) entry.run = null;
-            await start(entry.target, entry.main, {
-                reader: failed.reader,
+            return start(entry.target, entry.main, {
+                reader: owed.reader,
                 retry: true,
-                again: failed.again
+                again: owed.again
             });
-            return;
         }
         attach(entry, run, answer);
+        return answer;
     }
 
     /** Name a run's terminal from the server's answer and see whether it has already ended. */
@@ -438,9 +569,11 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         const after = entry.build.status;
         const force =
             ask.force === true || ask.retry === true || after === 'failed' || after === 'stopped';
+        const sent = { recipe: ask.recipe, last };
         const asked = deps.terminals
-            .latex(target, main, 'build', { recipe: ask.recipe, last, force })
+            .latex(target, main, 'build', { ...sent, force })
             .catch(failedRequest);
+        const before = entry.build;
         const run: Run = {
             step: 'build',
             asked,
@@ -463,6 +596,13 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
             terminal: ''
         });
         const answer = await asked;
+        if (answer.latexApproval !== undefined) {
+            if (entry.run === run) entry.run = null;
+            entry.build = before;
+            hold(entry, answer.latexApproval, sent, ask.reader);
+            if (ask.reader) deps.openAsk(target, main);
+            return answer;
+        }
         if (!answer.ok || answer.id === '') {
             if (entry.run === run) {
                 entry.run = null;
@@ -475,6 +615,7 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
             last = answer.recipe;
             setBuild(entry, { recipe: answer.recipe });
         }
+        if (entry.build.approval?.step === 'build') release(entry);
         attach(entry, run, answer);
         return answer;
     }
@@ -489,6 +630,79 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
 
     async function build(target: LatexTarget, main: string): Promise<void> {
         await start(target, main, { reader: false });
+    }
+
+    async function clean(target: LatexTarget, main: string): Promise<TerminalAnswer> {
+        const entry = entryOf(target, main);
+        const answer = await deps.terminals.latex(target, main, 'clean').catch(failedRequest);
+        if (answer.latexApproval !== undefined) {
+            hold(entry, answer.latexApproval, {}, true);
+            deps.openAsk(target, main);
+        } else if (answer.ok && entry.build.approval?.step === 'clean') {
+            release(entry);
+        }
+        return answer;
+    }
+
+    function holdRerun(
+        target: LatexTarget,
+        approval: LatexApproval,
+        rerun: { terminal: string; restart: boolean },
+        recipe: string
+    ): void {
+        const entry = entryOf(target, approval.main);
+        hold(entry, approval, recipe === '' ? {} : { recipe }, true);
+        entry.rerun = rerun;
+        deps.openAsk(target, approval.main);
+    }
+
+    function cancel(target: LatexTarget, main: string): void {
+        const entry = entries.get(placeOfTarget(target, main));
+        if (entry?.pressed === true) release(entry);
+    }
+
+    async function approve(target: LatexTarget, main: string): Promise<TerminalAnswer> {
+        const entry = entryOf(target, main);
+        const approval = entry.build.approval;
+        if (approval === null) return { ok: false, id: '', error: '' };
+        const { asked, rerun, retry, pressed } = entry;
+        const posted = await deps.terminals
+            .approveLatex(target, main, approval, asked)
+            .catch(failedRequest);
+        if (!posted.ok && posted.refused === 'latexmkrc-unread') release(entry);
+        if (!posted.ok && posted.refused !== 'latex-changed') return posted;
+        if (posted.ok) release(entry);
+        // The files changed since they were listed, or the approval is written: the step is asked
+        // again, which starts it or lists what it waits on now.
+        const again =
+            rerun !== null
+                ? await deps.again(rerun.terminal, rerun.restart)
+                : approval.step === 'clean'
+                  ? await (retry === null
+                        ? clean(target, main)
+                        : cleanBeforeRetry(entry, retry, null))
+                  : await start(target, main, { reader: true, recipe: asked.recipe });
+        // A step asked again keeps whether the reader pressed it, so Cancel on the new list keeps
+        // what an automatic step waits on.
+        if (entry.build.approval !== null) entry.pressed = pressed;
+        return posted.ok ? again : posted;
+    }
+
+    function waiting(folder?: {
+        root: string;
+        path: string;
+    }): { target: LatexTarget; main: string } | null {
+        void deps.landings();
+        let longest: Entry | null = null;
+        for (const entry of entries.values()) {
+            if (entry.build.approval === null) continue;
+            if (folder !== undefined) {
+                const at = folderOf(entry.target);
+                if (at.root !== folder.root || at.path !== folder.path) continue;
+            }
+            if (longest === null || entry.waitingSince < longest.waitingSince) longest = entry;
+        }
+        return longest === null ? null : { target: longest.target, main: longest.main };
     }
 
     async function stop(target: LatexTarget, main: string): Promise<TerminalAnswer> {
@@ -625,6 +839,11 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         running,
         run,
         build,
+        clean,
+        approve,
+        waiting,
+        holdRerun,
+        cancel,
         stop,
         savingQuietly,
         log,

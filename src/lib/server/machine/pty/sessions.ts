@@ -227,7 +227,21 @@ const jobShape = z.object({
         .array(z.object({ name: z.string(), cwd: z.string() }))
         .optional()
         .catch(undefined),
-    latex: z.object({ step: z.string(), main: z.string() }).optional().catch(undefined)
+    latex: z
+        .object({
+            step: z.string(),
+            main: z.string(),
+            recipe: z.string().optional().catch(undefined),
+            target: z
+                .union([
+                    z.object({ id: z.string() }),
+                    z.object({ root: z.string(), path: z.string() })
+                ])
+                .optional()
+                .catch(undefined)
+        })
+        .optional()
+        .catch(undefined)
 });
 
 /** The job a task mark holds, or null for a mark that is not the JSON of one. */
@@ -661,13 +675,22 @@ function respawnArgs(id: string, command?: string): string[] {
     ];
 }
 
+/**
+ * Run a task terminal's line again, with the line `command` names when it is given. A `task` is
+ * written to the terminal's mark first, so the mark names the job the pane now runs.
+ */
 export async function respawnTerminal(
     id: string,
     options: RunOptions = {},
-    command?: string
+    command?: string,
+    task?: TerminalJob
 ): Promise<void> {
     if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
-    await (options.run ?? run)(respawnArgs(id, command), options);
+    const exec = options.run ?? run;
+    if (task !== undefined) {
+        await exec(['set-option', '-t', sessionName(id), TASK_OPTION, jobOption(task)], options);
+    }
+    await exec(respawnArgs(id, command), options);
 }
 
 /** The arguments that resize a terminal's window. */

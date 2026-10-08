@@ -6,14 +6,16 @@
     //
     // A source tab is read from the text the tab holds (so it follows what is typed, saved or not),
     // as the headings of a Markdown file and the sectioning commands of a LaTeX file nested by
-    // level; a press moves the tab's editor to the line. A Python, C or C++ tab a language server
-    // serves lists the symbols the server answered for it (state/system/machine/lsp/symbols.ts) as
-    // a tree: each row with its kind's icon coloured as VS Code's `symbolIcon.*` keys colour it,
-    // its detail beside it, and its name in the colour of the worst problem its range holds, as
-    // `outline.problems.colors` does. A press on a symbol selects its name in the tab's editor and
-    // gives the editor the keyboard. While the server has not answered the section says so, and a
-    // file with no server to answer says it has no symbols yet. A Doc tab and a Markdown preview
-    // tab hold no text here: they say which headings they draw
+    // level; a press moves the tab's editor to the line. A Python, C, C++, YAML or TypeScript tab a
+    // language server serves lists the symbols the server answered for it
+    // (state/system/machine/lsp/symbols.ts) as a tree: each row with its kind's icon coloured as VS
+    // Code's `symbolIcon.*` keys colour it, its detail beside it, and its name in the colour of the
+    // worst problem its range holds, as `outline.problems.colors` does. A press on a symbol selects
+    // its name in the tab's editor and gives the editor the keyboard. While the server has not
+    // answered the section says so, and a file with no server to answer, or whose server is not
+    // found or failed, says it has no symbols yet. A LaTeX or BibTeX tab shows the heading reader's
+    // rows until texlab answers a tree, and texlab's tree once it has. A Doc tab and a Markdown
+    // preview tab hold no text here: they say which headings they draw
     // (state/sources/explorer/sections/headings.svelte.ts), and a press scrolls that tab to the
     // heading. A source tab in another language says it has no symbols yet, and a page whose
     // followed tab shows no editor, or has no file tab, says the active editor cannot provide
@@ -31,7 +33,7 @@
     import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
     import { headKeys, type SectionMove } from './list-drag.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import { languageOf, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';
+    import { isLatexLanguage, languageOf, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';
     import { fileOfTab } from '$lib/state/workbench/navigation/pages';
     import type { FollowTab } from '$lib/state/sources/explorer/sections/followed-tab';
     import { symbolRows, type SymbolProblem } from '$lib/state/system/machine/lsp/symbols';
@@ -100,7 +102,7 @@
     );
 
     /** The text of the followed tab when it is LaTeX, whose outline is read after a load. */
-    const latexText = $derived(language === 'latex' && draft !== null ? draft.text : null);
+    const latexText = $derived(isLatexLanguage(language) && draft !== null ? draft.text : null);
 
     /** The last LaTeX outline to arrive and the tab it was read for. */
     let arrived = $state<{ tab: string; items: OutlineItem[] } | null>(null);
@@ -140,6 +142,14 @@
         }));
     });
 
+    /**
+     * Whether the rows are what a language server answered: a tab a server serves, but for a LaTeX
+     * tab whose server has not answered a list, which shows the heading reader's rows.
+     */
+    const fromServer = $derived(
+        served !== null && (latexText === null || typeof served !== 'string')
+    );
+
     /** The symbols of the followed source tab: null for a tab with none to read, else the list. */
     const items = $derived.by<OutlineItem[] | null>(() => {
         if (latexText !== null) return waiting ? [] : (arrived?.items ?? []);
@@ -162,17 +172,17 @@
                   : ''
               : draft !== null && !draft.loaded
                 ? ''
-                : served === 'loading'
-                  ? t('files.outline_loading')
-                  : served !== null
-                    ? symbols.length === 0
+                : fromServer
+                  ? served === 'loading'
+                      ? t('files.outline_loading')
+                      : symbols.length === 0
                         ? t('files.outline_none')
                         : ''
-                    : items === null
-                      ? t('files.outline_none')
-                      : items.length === 0 && !waiting
-                        ? t('files.outline_empty')
-                        : ''
+                  : items === null
+                    ? t('files.outline_none')
+                    : items.length === 0 && !waiting
+                      ? t('files.outline_empty')
+                      : ''
     );
 
     const rows = $derived.by<Row[]>(() => {
@@ -190,7 +200,7 @@
                 problem: null
             }));
         }
-        if (served !== null) return symbols;
+        if (fromServer) return symbols;
         return (items ?? []).map((one) => ({
             key: `outline:${String(one.line)}:${one.title}`,
             title: one.title,

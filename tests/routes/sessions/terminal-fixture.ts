@@ -11,6 +11,7 @@ import { scratchDir } from '../../fixtures/scratch.ts';
 import { type TerminalOptions } from '../../../src/lib/server/machine/pty/routes.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { SessionRecord } from '../../../src/lib/data/model/index.ts';
+import { Turns } from '../../../src/lib/server/machine/pty/latex/turns.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 import { pagePost } from '../../fixtures/doubles.ts';
 
@@ -207,4 +208,36 @@ export function command(argv: string[]): string {
 
 export async function answer(response: Response): Promise<Record<string, unknown>> {
     return (await response.json()) as Record<string, unknown>;
+}
+
+/** The project of the synthetic chat hub whose manuscript the latex route tests build in. */
+export const LATEX_PROJECT = 'projects/active/alpha';
+
+/** The home a latex request looks for latexmkrc files in, apart from the reader's `~`. */
+export const latexHome = (task: TaskConfig): string => join(task.root, 'latex-home');
+
+/** The approvals file a latex request reads and writes, apart from the reader's own. */
+export const approvalsFile = (task: TaskConfig): string => join(task.root, 'latex-approvals.json');
+
+/** The options of a latex request over the synthetic project, with `extra` laid over them. */
+export function latexRouteOptions(
+    task: TaskConfig,
+    turns: Turns,
+    run: TerminalOptions['run'],
+    extra: Partial<TerminalOptions> = {}
+): TerminalOptions {
+    return {
+        turns,
+        approvalsFor: () => approvalsFile(task),
+        latexHomesFor: () => ({ home: latexHome(task), xdg: undefined }),
+        engine: engineDir(),
+        run,
+        hubFor: () => task.chatHub,
+        configFor: () => BASE_CHAT_CONFIG,
+        projectFor: (id) =>
+            id === 'alpha' ? { title: 'Alpha Study', folder: LATEX_PROJECT } : null,
+        servedRootsFor: () => [{ key: 'hub', dir: task.chatHub }],
+        programFound: () => true,
+        ...extra
+    };
 }

@@ -622,6 +622,8 @@ export type {
     TerminalColor,
     TerminalInput,
     TerminalJob,
+    LatexApproval,
+    LatexJobTarget,
     TerminalKind,
     TerminalRefusal,
     TerminalResize,

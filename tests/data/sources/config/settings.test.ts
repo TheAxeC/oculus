@@ -82,6 +82,9 @@ const DEFAULTS: Record<string, unknown> = {
     'latex.reverse_synctex': 'double_click',
     'latex.texcount_autorun': 'on_save',
     'latex.context_menu': true,
+    'latex.texlab_path': '/a/texlab',
+    'latex.unimath_symbols': true,
+    'latex.includegraphics_preview': false,
     usage_refresh_min: 12,
     usage_refresh_model: 'm2',
     'git.autofetch_minutes': 7,
@@ -338,7 +341,10 @@ const BUILD_DEFAULTS = {
     synctexPath: '/a/synctex',
     reverseSynctex: 'double_click',
     texcountAutorun: 'on_save',
-    contextMenu: true
+    contextMenu: true,
+    texlabPath: '/a/texlab',
+    unimathSymbols: true,
+    includegraphicsPreview: false
 };
 
 describe('latexFormatting and the auto build', () => {
@@ -396,7 +402,10 @@ describe('latexBuild', () => {
         ['synctex_path', 'synctex', 'path', { synctexPath: '/a/synctex' }],
         ['reverse_synctex', 'x', 'choice', { reverseSynctex: 'double_click' }],
         ['texcount_autorun', 'x', 'choice', { texcountAutorun: 'on_save' }],
-        ['context_menu', 'yes', 'boolean', { contextMenu: true }]
+        ['context_menu', 'yes', 'boolean', { contextMenu: true }],
+        ['texlab_path', 3, 'text', { texlabPath: '/a/texlab' }],
+        ['unimath_symbols', 'yes', 'boolean', { unimathSymbols: true }],
+        ['includegraphics_preview', 'yes', 'boolean', { includegraphicsPreview: false }]
     ])('answers the default for a wrong %s and names the key', (key, bad, kind, value) => {
         expect(read({ [key]: bad })).toMatchObject({
             value,

@@ -132,7 +132,8 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // of a bibliography through it and the page aligns and sorts a `.bib` file through it, over a
 // parser it is handed. `data/sources/config/catalog/latex-tables` reads the tables of
 // config/catalogs/latex.yml: the editor's commands and the TeX view read them, and the server words
-// one finding for each list that lost a row from the same read.
+// one finding for each list that lost a row from the same read. The same module reads the symbols
+// of config/catalogs/unimath.yml the same way for the editor's completion.
 //
 // The shell's row names the state modules the workbench is made of, one at a time, and the folder
 // `state/workbench/navigation/`, whose modules (the rail's pages, the view catalogue and its keys,

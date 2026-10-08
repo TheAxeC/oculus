@@ -32,8 +32,7 @@
     import type { Bookmark } from './rail/rail';
     import DropLayer from './panes/DropLayer.svelte';
     import { createWorkbenchKeys } from './keys/workbench-keys.svelte';
-    import CommandAsk from './commands/CommandAsk.svelte';
-    import DebugAsk from './commands/DebugAsk.svelte';
+    import Asks from './commands/Asks.svelte';
     import DebugToolbar from './commands/DebugToolbar.svelte';
     import type { DebugKey } from '$lib/state/system/machine/debug/debug';
     import Palette from './keys/Palette.svelte';
@@ -432,8 +431,7 @@
     onupdate={openUpdate}
 />
 <UpdateTray open={updateOpen} onclose={() => (updateOpen = false)} />
-<CommandAsk />
-<DebugAsk />
+<Asks />
 <DebugToolbar />
 {#if sheetOpen}
     <KeySheet

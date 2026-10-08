@@ -46,6 +46,8 @@
     const asks = $derived(facts?.choices ?? []);
     const name = $derived(facts === undefined ? '' : t(facts.words.name));
     const where = $derived(served?.root ?? '');
+    /** The command that installs the server's program, empty for a server that has none named. */
+    const install = $derived(facts?.words.install === undefined ? '' : t(facts.words.install));
 
     // The relay answers a root's choices on request, and only for a root it holds a server of.
     $effect(() => {
@@ -84,7 +86,9 @@
             case 'ready':
                 return t('statusbar.ls_tip_ready', name, where);
             case 'not_found':
-                return t('statusbar.ls_tip_not_found', name, where);
+                return install === ''
+                    ? t('statusbar.ls_tip_not_found', name, where)
+                    : t('statusbar.ls_tip_not_found_install', name, where, install);
             case 'failed':
                 switch (server.code) {
                     case 'refused':

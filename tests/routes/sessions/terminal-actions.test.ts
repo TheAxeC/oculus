@@ -16,7 +16,6 @@ import {
     handleTerminal,
     type TerminalOptions
 } from '../../../src/lib/server/machine/pty/routes.ts';
-import { engineDir } from '../../../src/lib/data/sources/config.ts';
 import { taskTmux } from '../../server/machine/runs/commands/commands-fixture.ts';
 import { chatIndexPath } from '../../../src/lib/server/machine/pty/start/chat.ts';
 import { Turns } from '../../../src/lib/server/machine/pty/latex/turns.ts';
@@ -26,7 +25,9 @@ import {
     HERE,
     makeTaskConfig,
     type TaskConfig,
-    BASE_CHAT_CONFIG,
+    LATEX_PROJECT,
+    latexHome,
+    latexRouteOptions,
     CHAT_CONFIG,
     CHAT_CATALOG,
     tmux,
@@ -84,8 +85,7 @@ describe('POST /api/terminal, the task action', () => {
 });
 
 describe('POST /api/terminal, the latex action', () => {
-    /** A project of the synthetic chat hub whose manuscript holds main files and one include. */
-    const LATEX_PROJECT = 'projects/active/alpha';
+    /** The synthetic chat hub's project (LATEX_PROJECT) holds main files and one include. */
     test.beforeAll(() => {
         mkdirSync(join(task.chatHub, LATEX_PROJECT, 'manuscript'), { recursive: true });
         writeFileSync(
@@ -104,6 +104,7 @@ describe('POST /api/terminal, the latex action', () => {
             join(task.chatHub, LATEX_PROJECT, 'manuscript', '-v.tex'),
             '\\documentclass{article}\n'
         );
+        mkdirSync(latexHome(task), { recursive: true });
     });
 
     /** The name the terminals list shows, read through the catalog rather than typed here. */
@@ -118,17 +119,7 @@ describe('POST /api/terminal, the latex action', () => {
     const turns = new Turns();
 
     function latexOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
-        return {
-            turns,
-            engine: engineDir(),
-            run: driver.run,
-            hubFor: () => task.chatHub,
-            configFor: () => BASE_CHAT_CONFIG,
-            projectFor: (id) =>
-                id === 'alpha' ? { title: 'Alpha Study', folder: LATEX_PROJECT } : null,
-            servedRootsFor: () => [{ key: 'hub', dir: task.chatHub }],
-            programFound: () => true
-        };
+        return latexRouteOptions(task, turns, driver.run);
     }
 
     /** The manuscript folder of the synthetic project, which a build runs in and writes to. */
@@ -186,7 +177,7 @@ describe('POST /api/terminal, the latex action', () => {
             repo: folder,
             name,
             source: 'latex',
-            latex: { step: 'build', main: 'main.tex' }
+            latex: { step: 'build', main: 'main.tex', recipe: 'latexmk', target: { id: 'alpha' } }
         });
         expect(label).toEqual(['set-option', '-t', session, '@oculus_name', name]);
         expect(driver.calls.filter((args) => args[0] === 'set-option')).toEqual([]);

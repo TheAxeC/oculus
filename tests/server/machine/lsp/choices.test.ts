@@ -28,7 +28,7 @@ async function choose(
     const sent: LspToPage[] = [];
     await applyChoose(
         accepting(choice),
-        { root: repo, lsp: folder, approvals: join(folder, 'approvals.json') },
+        { root: repo, lsp: folder, approvals: join(folder, 'approvals.json'), env: {} },
         { oculus: 'choose', root: 'repo' },
         undefined,
         undefined,

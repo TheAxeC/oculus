@@ -10,6 +10,7 @@
 // file at a commit gets none of LaTeX's or rite's, since the build and the debugger read the
 // file on disk.
 
+import { isLatexLanguage } from '$lib/state/sources/fs';
 import type { EditorExtension } from '$lib/ui/controls/editor/types';
 
 /** What the choice reads: the tab's language and the extension each kind of language would add. */
@@ -50,7 +51,7 @@ export function languageExtension(choice: ExtensionChoice): EditorExtension | un
 
 /** The extension the tab's language adds, without the command markers. */
 function languageOnly(choice: ExtensionChoice): EditorExtension | undefined {
-    const latex = choice.language === 'latex' && !choice.version;
+    const latex = isLatexLanguage(choice.language) && !choice.version;
     const rite = choice.language === 'rite' && !choice.version;
     if (choice.served !== undefined) {
         if (latex) return together(choice.latex(), choice.served);

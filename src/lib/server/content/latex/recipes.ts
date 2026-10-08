@@ -237,12 +237,25 @@ function runnable(path: string): boolean {
     }
 }
 
-/** Whether a program is found: the path itself when it has a folder, else a folder of PATH. */
+/**
+ * Where a program is: the path itself, made absolute, when it has a folder, else the first folder
+ * of PATH that holds a file this process may run. Null when there is none.
+ */
+export function programPath(program: string, env: NodeJS.ProcessEnv = process.env): string | null {
+    if (program.includes('/')) {
+        const path = isAbsolute(program) ? program : resolve(program);
+        return runnable(path) ? path : null;
+    }
+    for (const folder of (env.PATH ?? '').split(delimiter)) {
+        const path = resolve(folder, program);
+        if (folder !== '' && runnable(path)) return path;
+    }
+    return null;
+}
+
+/** Whether a program is found, by the lookup of `programPath`. */
 export function onPath(program: string, env: NodeJS.ProcessEnv = process.env): boolean {
-    if (program.includes('/')) return runnable(isAbsolute(program) ? program : resolve(program));
-    return (env.PATH ?? '')
-        .split(delimiter)
-        .some((folder) => folder !== '' && runnable(join(folder, program)));
+    return programPath(program, env) !== null;
 }
 
 /** The refusal for a program that is not found, naming where it comes from when that is known. */

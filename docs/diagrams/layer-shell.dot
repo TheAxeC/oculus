@@ -11,7 +11,7 @@ digraph layer_shell {
         "folder shell/panes" [label="shell/panes"];
         "folder shell/keys" [label="shell/keys"];
         "folder shell/commands" [label="shell/commands"];
-        "folder shell to folder shell/commands" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell to folder shell/commands" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell to folder shell/frames" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell to folder shell/keys" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell to folder shell/panes" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -32,8 +32,8 @@ digraph layer_shell {
         "folder shell/keys to layer data" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/keys to layer state" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/keys to layer ui" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder shell/commands to layer state" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder shell/commands to layer ui" [label="11", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/commands to layer state" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/commands to layer ui" [label="14", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "layer state from folder shell" [label="state", style=dashed];
     "layer ui from folder shell" [label="ui", style=dashed];

@@ -5,7 +5,12 @@
 // agree on what a heading is.
 //
 // A symbol provider is registered per language, and a page holds many editors of one language, so
-// each provider answers for the model it was made for alone and for no other.
+// each provider answers for the model it was made for alone and for no other. While a language
+// server serves the model the provider answers nothing, as the brace folding does
+// (ui/controls/editor/kit/folding.ts): Monaco joins the symbols of every provider of a language, so
+// the headings and the server's tree together would draw one heading twice in sticky scroll and in
+// the path over the tab. The provider is registered again when what is served changes, which makes
+// Monaco ask once more.
 
 import type * as Monaco from 'monaco-editor';
 import type { OutlineItem } from '$lib/state/sources/explorer/sections/outline';
@@ -71,34 +76,46 @@ function symbolsOf(
 
 /**
  * The extension that registers the symbol provider of one model's language and answers with the
- * model's headings. It answers nothing for another model, for a request Monaco cancelled, for a
- * text typed into while the request waited, or after it was taken away with the tab.
+ * model's headings. It answers nothing for another model, for a model a language server serves,
+ * for a request Monaco cancelled, for a text typed into while the request waited, or after it was
+ * taken away with the tab.
  */
 export function symbolsExtension(read: SymbolReader): EditorExtension {
     return (kit, _editor, model) => {
         let alive = true;
         const stopped = (): boolean => !alive;
-        const registered = kit.monaco.languages.registerDocumentSymbolProvider(
-            model.getLanguageId(),
-            {
-                displayName: 'headings',
-                provideDocumentSymbols: async (asked, token) => {
-                    if (stopped() || asked !== model) return [];
-                    const version = model.getVersionId();
-                    const items = await read(model.getValue());
-                    if (
-                        stopped() ||
-                        token.isCancellationRequested ||
-                        model.getVersionId() !== version
-                    ) {
-                        return [];
-                    }
-                    return symbolsOf(headingTree(items, model.getLineCount()), kit.monaco, model);
+        const provider: Monaco.languages.DocumentSymbolProvider = {
+            displayName: 'headings',
+            provideDocumentSymbols: async (asked, token) => {
+                if (stopped() || asked !== model || kit.lsp.served.has(model)) return [];
+                const version = model.getVersionId();
+                const items = await read(model.getValue());
+                if (
+                    stopped() ||
+                    token.isCancellationRequested ||
+                    model.getVersionId() !== version
+                ) {
+                    return [];
                 }
+                return symbolsOf(headingTree(items, model.getLineCount()), kit.monaco, model);
             }
-        );
+        };
+        const register = (): Monaco.IDisposable =>
+            kit.monaco.languages.registerDocumentSymbolProvider(model.getLanguageId(), provider);
+        // Monaco has no event for a provider whose answer changed; registering it again makes the
+        // sticky scroll and the path over the tab ask once more.
+        let registered = register();
+        let serving = kit.lsp.served.has(model);
+        const watching = kit.lsp.served.onChange(() => {
+            const now = kit.lsp.served.has(model);
+            if (now === serving) return;
+            serving = now;
+            registered.dispose();
+            registered = register();
+        });
         return () => {
             alive = false;
+            watching.dispose();
             registered.dispose();
         };
     };

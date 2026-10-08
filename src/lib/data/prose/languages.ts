@@ -15,18 +15,19 @@
 // aliases (`languageNamed`), so a fence called `h` is C and one called `django` is plain text.
 //
 // The core build rather than the whole package, which carries close to two hundred languages
-// against the thirty-two names a research tree actually holds. The registration runs once at load
+// against the thirty-three names a research tree actually holds. The registration runs once at load
 // and is never written after, because the library keeps its own registry and there is nothing per
 // reader about which languages exist.
 //
-// Three names are not highlight.js's own. The package has no Svelte, rite or fixed-form Fortran
-// grammar, so `svelte` is painted with xml's grammar (its markup and style block colour, a
+// Four names are not highlight.js's own. The package has no Svelte, rite, BibTeX or fixed-form
+// Fortran grammar, so `svelte` is painted with xml's grammar (its markup and style block colour, a
 // `<script>` block without a `lang` attribute colours as JavaScript, and the `<script lang="ts">`
-// block every component here writes does not), `rite` is plain text, and `fortran-fixed` is painted
-// with the free-form grammar. `jinja` is the package's django grammar. Each of the three
-// borrowed grammars is registered without its aliases, so an alias keeps the language that owns it
-// (`html` and `svg` stay xml's, `f90` stays fortran's) and a fence called `svelte`, `rite` or
-// `fortran-fixed` finds only its own name. The editor colours these in Shiki's own grammars.
+// block every component here writes does not), `rite` is plain text, `bibtex` is painted with
+// latex's grammar, and `fortran-fixed` is painted with the free-form grammar. `jinja` is the
+// package's django grammar. Each of the four borrowed grammars is registered without its aliases,
+// so an alias keeps the language that owns it (`html` and `svg` stay xml's, `tex` stays latex's,
+// `f90` stays fortran's) and a fence called `svelte`, `rite`, `bibtex` or `fortran-fixed` finds
+// only its own name. The editor colours these in Shiki's own grammars.
 //
 // The text is escaped by highlight.js before any span is emitted, which is what lets the code
 // window and a rendered document put the result in the document; nothing else here touches the
@@ -77,6 +78,7 @@ function withoutAliases(definition: LanguageFn): LanguageFn {
 /** Every language the window registers. A name outside this map is drawn as plain text. */
 const REGISTERED: Record<string, LanguageFn> = {
     bash,
+    bibtex: withoutAliases(latex),
     c,
     cmake,
     cpp,

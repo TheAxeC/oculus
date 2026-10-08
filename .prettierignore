@@ -14,9 +14,12 @@ package-lock.json
 # tests/data/demo-hub.test.ts reads.
 demo/
 
+# config/catalogs/unimath.yml holds one symbol to a line, which a formatter pass would spread over
+# four times as many lines.
 config/appearance.yml
 config/behavior.yml
 config/catalogs/glyphs.yml
+config/catalogs/unimath.yml
 config/layout.yml
 config/schemas/
 config/sources.yml

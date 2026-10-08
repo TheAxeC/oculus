@@ -32,13 +32,15 @@
 // (`LatexMain.building`), whichever folder form the row was read by, since the span is kept per
 // main file of a folder of a root and not per form.
 
-import type { Message } from '../../../data/model/index.ts';
+import type { LatexApproval, Message } from '../../../data/model/index.ts';
 import { joinPath } from '../../../data/helpers/files/paths.ts';
 import type { LatexBuilding } from '../../../data/sources/config/settings.ts';
 import { latexBuild } from '../../../data/sources/config/settings.ts';
 import {
     readLatexEditing,
-    type LatexEditing
+    readLatexUnimath,
+    type LatexEditing,
+    type UnimathSymbol
 } from '../../../data/sources/config/catalog/latex-tables.ts';
 import { readAs, readJson } from '../../../data/shapes/shapes.ts';
 import { filesNamed, folderNamed } from '../../shared/answers/files-named.ts';
@@ -79,12 +81,32 @@ export type LatexHooks = {
     openLog: (terminal: string) => void;
     /** Show the Problems view limited to the root of the target. */
     showProblems: (target: LatexTarget) => void;
+    /** Run a build or clean terminal again, or restart it, as its Rerun or Restart does. */
+    again: (terminal: string, restart: boolean) => Promise<TerminalAnswer>;
+};
+
+/** The question of an approval: the main file it is about and what is to be approved. */
+type LatexApproving = {
+    target: LatexTarget;
+    main: string;
+    /** What the step waits on, or null when a refusal left nothing to approve. */
+    approval: LatexApproval | null;
+    /** The sentence of the refusal the last approval met, or the empty string. */
+    message: string;
 };
 
 /** One folder's LaTeX state per target, and what is asked of a main file of one. */
 export type LatexStore = Omit<
     BuildsStore,
-    'run' | 'build' | 'building' | 'sessionsMoved' | 'filesMoved'
+    | 'run'
+    | 'build'
+    | 'clean'
+    | 'approve'
+    | 'building'
+    | 'sessionsMoved'
+    | 'filesMoved'
+    | 'holdRerun'
+    | 'cancel'
 > &
     LatexCalls & {
         state: (target: LatexTarget) => LatexState;
@@ -103,6 +125,23 @@ export type LatexStore = Omit<
             step: LatexStep,
             ask?: LatexBuildAsk
         ) => Promise<TerminalAnswer>;
+        /**
+         * The question that asks the reader to approve what a main file's step waits on: the files
+         * and weave tools to approve, or null approval with the sentence of a refusal that leaves
+         * nothing to approve. Null while no question is open.
+         */
+        approving: () => LatexApproving | null;
+        /** Open the question for the approval a main file's step waits on. */
+        askApproval: (target: LatexTarget, main: string) => void;
+        /** Approve what the open question lists and run the waiting step once. */
+        approve: () => Promise<void>;
+        /** Close the question without approving. */
+        dismissApproval: () => void;
+        /**
+         * Hold what a Rerun or a Restart of a LaTeX build or clean terminal waits on and open the
+         * question; approving runs the terminal again.
+         */
+        holdAgain: (terminal: string, approval: LatexApproval, restart: boolean) => void;
         invalidate: (target: LatexTarget) => void;
         /**
          * Forget the folder states and the outlines of every target whose root is none of the
@@ -131,6 +170,8 @@ export type LatexStore = Omit<
         recipes: () => string[];
         /** The editing tables of config/catalogs/latex.yml: `@` suggestions, chords, symbols. */
         editing: () => LatexEditing;
+        /** The Unicode math symbols of config/catalogs/unimath.yml. */
+        unimath: () => UnimathSymbol[];
         /** Show one task terminal, a step's output, in the terminals view. */
         showTerminal: (terminal: string) => void;
     };
@@ -204,6 +245,8 @@ export function createLatex(
         count: (target, main) => count(target, main),
         openLog: hooks.openLog,
         showProblems: hooks.showProblems,
+        openAsk: (target, main) => askApproval(target, main),
+        again: hooks.again,
         touched,
         landings
     });
@@ -503,9 +546,59 @@ export function createLatex(
     ): Promise<TerminalAnswer> {
         if (step === 'build') return builds.run(target, main, options);
         if (step === 'stop') return builds.stop(target, main);
-        const answer = await terminals.latex(target, main, step);
-        if (answer.ok) watch(target, answer.id);
+        const answer =
+            step === 'clean'
+                ? await builds.clean(target, main)
+                : await terminals.latex(target, main, step);
+        if (answer.ok && answer.id !== '') watch(target, answer.id);
         return answer;
+    }
+
+    /** The question open on an approval: the main file and the sentence of the last refusal. */
+    let asking = $state<{ target: LatexTarget; main: string; message: string } | null>(null);
+
+    function askApproval(target: LatexTarget, main: string): void {
+        asking = { target, main, message: '' };
+    }
+
+    function approving(): LatexApproving | null {
+        const open = asking;
+        if (open === null) return null;
+        const approval = builds.buildOf(open.target, open.main).approval;
+        if (approval === null && open.message === '') return null;
+        return { ...open, approval };
+    }
+
+    /** Whether the open question is about the main file `open` was, which asking again reopens. */
+    function sameAsk(open: NonNullable<typeof asking>): boolean {
+        return (
+            asking !== null &&
+            asking.main === open.main &&
+            targetKey(asking.target).join('\n') === targetKey(open.target).join('\n')
+        );
+    }
+
+    async function approve(): Promise<void> {
+        const open = asking;
+        if (open === null) return;
+        const answer = await builds.approve(open.target, open.main);
+        // A step asked again opens the question afresh, which is the same question.
+        if (!sameAsk(open)) return;
+        const waits = builds.buildOf(open.target, open.main).approval !== null;
+        if (answer.ok && answer.id !== '') watch(open.target, answer.id);
+        const refused = !answer.ok && answer.error !== '';
+        asking = waits || refused ? { ...open, message: answer.error } : null;
+    }
+
+    function dismissApproval(): void {
+        if (asking !== null) builds.cancel(asking.target, asking.main);
+        asking = null;
+    }
+
+    function holdAgain(terminal: string, approval: LatexApproval, restart: boolean): void {
+        const kept = terminals.terminalById(terminal)?.job?.latex;
+        if (kept?.target === undefined) return;
+        builds.holdRerun(kept.target, approval, { terminal, restart }, kept.recipe ?? '');
     }
 
     function latexDiagnostics(): LatexDiagnostic[] {
@@ -545,6 +638,17 @@ export function createLatex(
         return tabled.read;
     }
 
+    /** The config the held symbols were read from, and the symbols. */
+    let symbolled: { from: unknown; read: UnimathSymbol[] } | null = null;
+
+    function unimath(): UnimathSymbol[] {
+        const config = entities.config()?.config;
+        if (symbolled === null || symbolled.from !== config) {
+            symbolled = { from: config, read: readLatexUnimath(config ?? {}).symbols };
+        }
+        return symbolled.read;
+    }
+
     function recipes(): string[] {
         return (settings()?.recipes ?? []).map((one) => one.name);
     }
@@ -553,6 +657,12 @@ export function createLatex(
         ...calls,
         buildOf: builds.buildOf,
         running: builds.running,
+        waiting: builds.waiting,
+        approving,
+        askApproval,
+        approve,
+        dismissApproval,
+        holdAgain,
         stop: builds.stop,
         log: builds.log,
         savingQuietly: builds.savingQuietly,
@@ -571,6 +681,7 @@ export function createLatex(
         settings,
         recipes,
         editing,
+        unimath,
         showTerminal: hooks.openLog
     };
 }

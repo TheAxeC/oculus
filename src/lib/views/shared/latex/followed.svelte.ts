@@ -1,12 +1,12 @@
 // Layer 3, shared view partial. The LaTeX tabs the TeX view and the Math Preview follow: the source
 // tab of a LaTeX file, or the PDF tab of a build, the reader looked at last on the page. A source
-// tab is one whose file the language map names `latex` (`.tex`, `.latex`, `.bib`, `.sty`, `.cls`),
-// a PDF tab one that shows a file ending in `.pdf`. The tab is read through `followedTab`
-// (state/sources/explorer/sections/followed-tab.ts), so a tab shown in another pane stays followed
-// while the reader is in the Files pane or a terminal.
+// tab is one whose file the language map names `latex` or `bibtex` (`.tex`, `.latex`, `.sty`,
+// `.cls`, `.bib`), a PDF tab one that shows a file ending in `.pdf`. The tab is read through
+// `followedTab` (state/sources/explorer/sections/followed-tab.ts), so a tab shown in another pane
+// stays followed while the reader is in the Files pane or a terminal.
 
 import type { ClientState } from '$lib/state/client/context';
-import { languageOf } from '$lib/state/sources/fs';
+import { isLatexLanguage, languageOf } from '$lib/state/sources/fs';
 import { followedTab, type FollowTab } from '$lib/state/sources/explorer/sections/followed-tab';
 import { panes } from '$lib/state/workbench/layout/instance';
 import { fileOfTab } from '$lib/state/workbench/navigation/pages';
@@ -34,7 +34,7 @@ export function createFollowed(client: ClientState): Followed {
 
     const isSource = (tab: FollowTab): boolean => {
         const file = tab.view === 'source' ? fileOfTab(tab) : null;
-        return file !== null && languageOf(file.path, languages()) === 'latex';
+        return file !== null && isLatexLanguage(languageOf(file.path, languages()));
     };
     const isPdf = (tab: FollowTab): boolean =>
         tab.view === 'file' && (fileOfTab(tab)?.path.toLowerCase().endsWith('.pdf') ?? false);

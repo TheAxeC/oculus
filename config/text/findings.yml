@@ -108,6 +108,7 @@ text:
             language_empty: language {0} lists an empty file name
             language_claimed: ending {0} is listed under {1} and under {2}; {1} keeps it
             latex_editing_row: '{0} of catalogs/latex.yml has a row that cannot be used (an empty prefix, body, name or source, or a chord that is not one key naming a command); the row is left out'
+            latex_unimath_row: 'latex_unimath of catalogs/unimath.yml has a row that cannot be used (a command that is not a name of letters, or an empty detail) or is not a list; the row is left out'
             nesting_not_a_map: patterns is not a map of parent name to the names nested under it; no file is nested
             nesting_key: pattern {0} has no usable parent name (empty, or holding a slash); the pattern is not read
             nesting_value: pattern {0} does not name its nested files as a list of non-empty texts; the pattern is not read

@@ -9,7 +9,11 @@
 // address all take one form.
 
 import { z } from 'zod';
-import { BUILD_OUTCOMES, type BuildOutcome } from '../../../data/model/index.ts';
+import {
+    BUILD_OUTCOMES,
+    type BuildOutcome,
+    type LatexApproval
+} from '../../../data/model/index.ts';
 import { MANUSCRIPT, PROGRAMS, type Program } from '../../../data/prose/latex.ts';
 import { joinPath } from '../../../data/helpers/files/paths.ts';
 import { anyNumberShape, rowsShape } from '../../../data/shapes/shapes.ts';
@@ -158,6 +162,11 @@ export type RootBuild = {
     reason: string;
     /** The terminal the last build ran in, the compiler log, or the empty string before one. */
     terminal: string;
+    /**
+     * What the server asked the reader to approve before it would start the build or clean of this
+     * root, or null when nothing waits.
+     */
+    approval: LatexApproval | null;
 };
 
 /** A root no build has run in. */
@@ -167,7 +176,8 @@ export const IDLE_BUILD: RootBuild = {
     step: 'build',
     at: null,
     reason: '',
-    terminal: ''
+    terminal: '',
+    approval: null
 };
 
 /** One place a source line was typeset at in a PDF: the page and the box, in PDF points. */

@@ -631,6 +631,18 @@ options:
             help: true adds Build and SyncTeX from Cursor to the editor's right-click menu of a LaTeX file.
             default: false
             control: toggle
+        latex.unimath_symbols:
+            heading: editor
+            section: LaTeX
+            help: Offer the Unicode math symbols in LaTeX completion, each with its glyph.
+            default: false
+            control: toggle
+        latex.includegraphics_preview:
+            heading: editor
+            section: LaTeX
+            help: 'Show the picture beside a file suggested inside \includegraphics.'
+            default: true
+            control: toggle
         latex.recipes:
             heading: editor
             section: LaTeX
@@ -675,6 +687,13 @@ options:
             heading: editor
             section: LaTeX
             help: Where badness is, when latex.formatter is badness. Empty finds it on PATH.
+            default: ''
+            control: path
+            empty: true
+        latex.texlab_path:
+            heading: editor
+            section: LaTeX
+            help: 'The texlab program the LaTeX language server runs. Empty: texlab on the PATH oculus was started with.'
             default: ''
             control: path
             empty: true

@@ -20,6 +20,7 @@
 /** Oculus's name for a language to the Shiki grammar that colours it. */
 const SHIKI_IDS: Record<string, string> = {
     bash: 'shellscript',
+    bibtex: 'bibtex',
     c: 'c',
     cmake: 'cmake',
     cpp: 'cpp',

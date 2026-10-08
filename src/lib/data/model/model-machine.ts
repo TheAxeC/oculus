@@ -243,7 +243,8 @@ export const TERMINAL_REFUSALS = [
     'latex-no-recipe',
     'latex-folder',
     'latex-building',
-    'latex-idle'
+    'latex-idle',
+    'latex-unmarked'
 ] as const;
 export type TerminalRefusal = (typeof TERMINAL_REFUSALS)[number];
 
@@ -261,8 +262,29 @@ export type TerminalJob = {
     source?: JobSource;
     token?: string;
     chain?: { name: string; cwd: string }[];
-    /** A LaTeX job's step and main file, which find its kept terminal whatever its name says. */
-    latex?: { step: string; main: string };
+    /**
+     * A LaTeX job's step and main file, which find its kept terminal whatever its name says, the
+     * recipe its line was made from (empty for a step of none) and the folder the request named,
+     * from which a Rerun or Restart works out what the step asks to have approved.
+     */
+    latex?: { step: string; main: string; recipe?: string; target?: LatexJobTarget };
+};
+
+/** The folder a LaTeX request named: a project by its id, or a folder of a served root. */
+export type LatexJobTarget = { id: string } | { root: string; path: string };
+
+/**
+ * What a build or a clean of one main file asks the reader to approve before it starts: the
+ * latexmkrc files latexmk would read, and the weave tools of the recipe with the recipe's name. The
+ * `texts` are the two approved texts that are missing, null for one that is held or not needed, and
+ * the page posts them back so the server can tell that nothing changed since they were listed.
+ */
+export type LatexApproval = {
+    main: string;
+    step: 'build' | 'clean';
+    latexmkrc: string[];
+    weave: { recipe: string; tools: string[] } | null;
+    texts: { latexmkrc: string | null; weave: string | null };
 };
 
 /**

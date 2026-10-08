@@ -19,18 +19,32 @@
 // Ctrl+C to the foreground of the kept build terminal and to no other terminal. A clean is refused
 // while the main's build runs, since both write the same files.
 //
+// A build whose recipe runs latexmk, and a clean, read the latexmkrc files latexmk would read, and
+// a build whose recipe runs a weave tool runs code of the document; each is approved once and asked
+// again when it changes (latex/approval.ts). A step with something unapproved starts nothing and
+// answers `approveLatex` with what the reader is asked to approve, and the `approve-latex` action
+// writes the approval for the texts it was shown, refused when they changed since. A Rerun or a
+// Restart of a build or clean terminal asks the same (`latexAgain`), from the step, main file,
+// recipe and folder the terminal's task mark holds, and respawns nothing while something is
+// unapproved. A checkcites run asks nothing.
+//
 // tmux keeps the pane after the line ended, with its exit status, so the output stays readable and
 // is the compiler log.
 
 import { json } from '@sveltejs/kit';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { z } from 'zod';
 import { loadLocal, textCatalog } from '../../../../data/sources/config.ts';
 import { latexBuild } from '../../../../data/sources/config/settings.ts';
-import type { BuildOutcome, Terminal, TerminalJob } from '../../../../data/model/index.ts';
+import type {
+    BuildOutcome,
+    LatexJobTarget,
+    Terminal,
+    TerminalJob
+} from '../../../../data/model/index.ts';
 import { MANUSCRIPT, stemOf } from '../../../../data/prose/latex.ts';
-import { realPath } from '../../../core/paths.ts';
+import { inside, realPath } from '../../../core/paths.ts';
 import { words } from '../../../core/words.ts';
 import { head, isMainOf } from '../../../content/latex.ts';
 import {
@@ -43,6 +57,7 @@ import {
     type Step
 } from '../../../content/latex/recipes.ts';
 import { projectDirectory, resolveRootPath } from '../../../files/files.ts';
+import { approveLatex, defaultApprovalsPath } from '../../approvals/approvals.ts';
 import { refusal } from '../refusal.ts';
 import type { TerminalOptions } from '../routes.ts';
 import {
@@ -53,6 +68,7 @@ import {
     stopForeground
 } from '../sessions.ts';
 import { shellWord } from '../shell-word.ts';
+import { latexItems, latexNeeds, processHomes, type NeedsInput } from './approval.ts';
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
@@ -80,8 +96,11 @@ const buildAskShape = z.object({
     force: z.boolean().optional().catch(undefined)
 });
 
-/** The folder of a latex request, what the terminal's name calls it, and what bounds its files. */
-type Folder = { dir: string; label: string; bound: string };
+/**
+ * The folder of a latex request, what the terminal's name calls it, what bounds its files, and the
+ * names the request gave it.
+ */
+type Folder = { dir: string; label: string; bound: string; target: LatexJobTarget };
 
 /**
  * The one terminal line a list of commands makes: each word quoted, the commands joined by `&&`.
@@ -163,7 +182,8 @@ function latexFolder(
         return {
             dir: found.path,
             label: named.data.path === '' ? named.data.root : named.data.path,
-            bound: realPath(served) ?? served
+            bound: realPath(served) ?? served,
+            target: { root: named.data.root, path: named.data.path }
         };
     }
     const project = (options.projectFor ?? (() => null))(named.data.id);
@@ -172,7 +192,8 @@ function latexFolder(
     return {
         dir: join(projectDirectory(hub, project.folder), MANUSCRIPT),
         label: named.data.id,
-        bound: realPath(hub) ?? hub
+        bound: realPath(hub) ?? hub,
+        target: { id: named.data.id }
     };
 }
 
@@ -239,6 +260,127 @@ function stepsOf(
     return 'refused' in plan ? refused(plan) : { steps: plan.steps, recipe: plan.recipe };
 }
 
+/** What the approval of a step reads: the step, the main, the recipe and where the files are. */
+function needsOf(
+    step: 'build' | 'clean',
+    folder: Folder,
+    main: string,
+    planned: Steps,
+    options: TerminalOptions
+): NeedsInput {
+    return {
+        step,
+        main,
+        path: join(folder.dir, main),
+        bound: folder.bound,
+        building: latexBuild(options.configFor()),
+        recipe: planned.recipe,
+        steps: planned.steps,
+        approvals: options.approvalsFor?.() ?? defaultApprovalsPath(),
+        homes: options.latexHomesFor?.() ?? processHomes()
+    };
+}
+
+/**
+ * What a build or a clean of one main file waits on, as the answer that starts nothing and lists
+ * it, or the refusal of a latexmkrc that cannot be read; null when the step waits on nothing.
+ */
+function approvalAsk(
+    step: 'build' | 'clean',
+    folder: Folder,
+    main: string,
+    planned: Steps,
+    options: TerminalOptions
+): Response | null {
+    const needs = latexNeeds(needsOf(step, folder, main, planned, options));
+    if (needs === null) return null;
+    if ('unread' in needs) return refusal('latexmkrc-unread', [needs.unread]);
+    return json({ approveLatex: needs.ask }, { headers: NO_STORE });
+}
+
+/**
+ * The folder of a served root that holds a terminal's working folder, as a LaTeX request names it,
+ * for a task mark that names no folder: the root whose real folder is the deepest one holding it.
+ * Null when no served root holds it.
+ */
+function targetOfRepo(repo: string, options: TerminalOptions): LatexJobTarget | null {
+    const real = realPath(repo) ?? repo;
+    let found: { key: string; dir: string } | null = null;
+    for (const root of options.servedRootsFor?.() ?? []) {
+        const dir = realPath(root.dir) ?? root.dir;
+        if (!inside(real, dir)) continue;
+        if (found === null || dir.length > found.dir.length) found = { key: root.key, dir };
+    }
+    if (found === null) return null;
+    return { root: found.key, path: relative(found.dir, real).split(sep).join('/') };
+}
+
+/**
+ * What a Rerun or a Restart of a listed terminal waits on: for the kept terminal of a build or a
+ * clean, the same answer the `latex` action gives that step of that main now, so a latexmkrc
+ * changed since the approval is asked about again, and a main file that is no longer one is refused
+ * as the action refuses it. A task mark that names no folder is read by the served root that holds
+ * the terminal's working folder. A LaTeX terminal whose mark names no step and main file, or whose
+ * folder no served root holds, is refused (`latex-unmarked`), since what it would run cannot be
+ * checked. Null for any other terminal, and for a step that waits on nothing.
+ */
+export function latexAgain(terminal: Terminal, options: TerminalOptions): Response | null {
+    const job = terminal.job;
+    if (job?.source !== 'latex') return null;
+    const kept = job.latex;
+    if (kept === undefined) return refusal('latex-unmarked');
+    if (kept.step !== 'build' && kept.step !== 'clean') return null;
+    const target = kept.target ?? targetOfRepo(job.repo, options);
+    if (target === null) return refusal('latex-unmarked');
+    const folder = latexFolder(target, options);
+    if (folder instanceof Response) return folder;
+    if (!isMainOf(folder.dir, kept.main)) return refusal('not-a-main');
+    const planned = stepsOf(kept.step, folder, kept.main, options, { recipe: kept.recipe });
+    if (planned instanceof Response) return planned;
+    return approvalAsk(kept.step, folder, kept.main, planned, options);
+}
+
+/** The texts of an `approve-latex` request: the ones the page was shown, null for one not shown. */
+const approveTextsShape = z.object({
+    latexmkrc: z.string().nullable(),
+    weave: z.string().nullable()
+});
+
+/**
+ * Approve what a build or a clean of one main file asked about. The request names the step and the
+ * recipe as the step did, and the texts it was shown; both texts are made again, and one that is
+ * not the shown text is refused with `latex-changed` and nothing is written. A text already
+ * approved is written again as one entry, so two pages approving the same text leave one.
+ */
+export function approveLatexStep(
+    message: Record<string, unknown>,
+    options: TerminalOptions
+): Response {
+    const asked = z.enum(['build', 'clean']).safeParse(message.step);
+    const shown = approveTextsShape.safeParse(message.texts);
+    if (!asked.success || !shown.success) return refusal('not-an-action');
+    const folder = latexFolder(message, options);
+    if (folder instanceof Response) return folder;
+    const main = message.main;
+    if (typeof main !== 'string' || !isMainOf(folder.dir, main)) return refusal('not-a-main');
+    const planned = stepsOf(asked.data, folder, main, options, message);
+    if (planned instanceof Response) return planned;
+    const items = latexItems(needsOf(asked.data, folder, main, planned, options));
+    if ('unread' in items) return refusal('latexmkrc-unread', [items.unread]);
+    const unchanged = (text: string | null, now: string | undefined): boolean =>
+        text === null || text === now;
+    if (
+        !unchanged(shown.data.latexmkrc, items.latexmkrc?.text) ||
+        !unchanged(shown.data.weave, items.weave?.text)
+    ) {
+        return refusal('latex-changed');
+    }
+    const file = options.approvalsFor?.() ?? defaultApprovalsPath();
+    const done = approveLatex(file, shown.data);
+    if (!done.ok) return refusal('approvals-unwritable', [file], 409);
+    return json({ ok: true }, { headers: NO_STORE });
+}
+
 /** Interrupt the build of one main file, which is refused when none is running. */
 async function stopBuild(
     folder: Folder,
@@ -291,19 +433,28 @@ async function runStep(
     }
     const planned = stepsOf(step, folder, main, options, message);
     if (planned instanceof Response) return planned;
+    if (step !== 'checkcites') {
+        const ask = approvalAsk(step, folder, main, planned, options);
+        if (ask !== null) return ask;
+    }
     const { recipe } = planned;
     const name = latexName(options, step, folder.label, main);
     const command = lineOf(planned.steps);
+    const job: TerminalJob = {
+        repo: folder.dir,
+        name,
+        source: 'latex',
+        latex: { step, main, recipe, target: folder.target }
+    };
     const kept = await keptLatex(folder, step, main, options);
     if (kept !== null) {
         if (kept.exit !== null) {
-            await respawnTerminal(kept.id, options, command);
+            await respawnTerminal(kept.id, options, command, job);
             options.refresh?.();
         }
         const again = (await listTerminals(options)).find((one) => one.id === kept.id);
         return json({ ok: true, terminal: again ?? kept, recipe }, { headers: NO_STORE });
     }
-    const job: TerminalJob = { repo: folder.dir, name, source: 'latex', latex: { step, main } };
     const terminal = await startTerminal(
         { kind: 'shell', cwd: folder.dir, cols: message.cols, rows: message.rows, name },
         { ...options, command, task: job }

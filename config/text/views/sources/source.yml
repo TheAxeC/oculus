@@ -18,6 +18,8 @@ text:
         cmd_clangd_restart: 'clangd: Restart language server'
         cmd_find_implementations: 'References: Find All Implementations'
         cmd_find_references: 'References: Find All References'
+        cmd_latex_output: 'LaTeX: Show Language Server Output'
+        cmd_latex_restart: 'LaTeX: Restart Language Server'
         cmd_next_reference: Go to Next Reference
         cmd_preview_side: 'Markdown: Open Preview to the Side'
         cmd_previous_reference: Go to Previous Reference

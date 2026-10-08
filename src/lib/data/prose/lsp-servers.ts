@@ -13,7 +13,7 @@
 // holds no sentence.
 
 /** The ids of the language servers. */
-export type LspServerId = 'pyright' | 'clangd' | 'typescript' | 'svelte' | 'yaml';
+export type LspServerId = 'pyright' | 'clangd' | 'typescript' | 'svelte' | 'yaml' | 'texlab';
 
 /**
  * What a server asks its reader to choose for a root: the Python interpreter, the compile
@@ -29,6 +29,11 @@ type LspServerWords = {
     restart: string;
     /** The title of the tab's Show Language Server Output action. */
     output: string;
+    /**
+     * The catalog key of the program's install command, which the not-found tooltip names. A server
+     * without one is told to be installed by name only.
+     */
+    install?: string;
     /** The title of the tab's action that opens the list of each choice the server asks for. */
     choice: Partial<Record<LspChoiceKind, string>>;
 };
@@ -64,6 +69,12 @@ export type LspServerFacts = {
     interpreterLibrary: boolean;
     /** The actions of its own the tab offers while the server answers. */
     extras: readonly LspExtra[];
+    /**
+     * The extensions, in lower case with the dot, of the files the server is never given although
+     * they are in a language it serves: the page registers no model of such a file, and the relay
+     * puts none on the server. Absent for a server that is given every file of its languages.
+     */
+    refusedExtensions?: readonly string[];
     /**
      * The kind of approval its start depends on beside its own choices: the server is started again
      * when that approval is made or taken back, as the Svelte server is for the Svelte
@@ -163,6 +174,26 @@ const LSP_SERVERS: readonly LspServerFacts[] = [
         interpreterLibrary: false,
         extras: [],
         approvedBy: null
+    },
+    {
+        id: 'texlab',
+        languages: ['latex', 'bibtex'],
+        program: 'texlab',
+        words: {
+            name: 'statusbar.server_texlab',
+            restart: 'source.cmd_latex_restart',
+            output: 'source.cmd_latex_output',
+            install: 'statusbar.ls_install_texlab',
+            choice: {}
+        },
+        semanticTokens: false,
+        formatOnType: false,
+        organizeImports: null,
+        choices: [],
+        interpreterLibrary: false,
+        extras: [],
+        refusedExtensions: ['.rnw', '.jnw', '.pnw'],
+        approvedBy: null
     }
 ];
 
@@ -171,6 +202,12 @@ export function serverFacts(id: LspServerId): LspServerFacts {
     const found = LSP_SERVERS.find((one) => one.id === id);
     if (found === undefined) throw new Error(`no language server ${id}`);
     return found;
+}
+
+/** Whether a server is never given a file of this name: its extension is one the entry refuses. */
+export function refusesFile(facts: LspServerFacts | undefined, name: string): boolean {
+    const lower = name.toLowerCase();
+    return (facts?.refusedExtensions ?? []).some((extension) => lower.endsWith(extension));
 }
 
 /**

@@ -7,17 +7,20 @@
 // and the `adapter` of its entry here names what it needs of a root (written in a folder of its own
 // under adapters/); nothing else names a server or a language.
 //
-// The registry is code and no reader edits it. There are five entries. pyright serves `python`,
-// the TypeScript server `javascript` and `typescript`, the Svelte server `svelte` and the YAML
-// server `yaml`; each runs under the node that runs oculus, from its package in oculus's own
-// `node_modules`, never a global install, never a `node` found on PATH. The TypeScript server runs
-// on oculus's own TypeScript, with automatic type acquisition and tsserver's log off, so no `npm`
-// runs and nothing is written into a repository. The YAML server runs under node's permission
-// model, which lets it read only oculus's own `node_modules`: a schema it is told of by a modeline
-// or a `$schema:` key that names a file on disk is not loaded, and the schemas it uses are the
-// ones the entry hands it from memory. clangd serves `c` and `cpp` and is the `clangd` on the
-// oculus process's PATH, with oculus's own arguments and no `--query-driver`; its index is written
-// under the folder oculus links the chosen compile database into, never into a repository.
+// The registry is code and no reader edits it. There are six entries. pyright serves `python`, the
+// TypeScript server `javascript` and `typescript`, the Svelte server `svelte`, the YAML server
+// `yaml`, clangd `c` and `cpp`, and texlab `latex` and `bibtex`. The first four run under the node
+// that runs oculus, from their packages in oculus's own `node_modules`, never a global install,
+// never a `node` found on PATH. The TypeScript server runs on oculus's own TypeScript, with
+// automatic type acquisition and tsserver's log off, so no `npm` runs and nothing is written into
+// a repository. The YAML server runs under node's permission model, which lets it read only
+// oculus's own `node_modules`: a schema it is told of by a modeline or a `$schema:` key that names
+// a file on disk is not loaded, and the schemas it uses are the ones the entry hands it from
+// memory. clangd is the `clangd` on the oculus process's PATH, with oculus's own arguments and no
+// `--query-driver`; its index is written under the folder oculus links the chosen compile database
+// into, never into a repository. texlab is the program `latex.texlab_path` names, else the
+// `texlab` on the oculus process's PATH, started by its absolute path with a PATH of its own that
+// holds links to the TeX programs and no `latexmk`, so it never runs the code of a latexmkrc.
 //
 // Every command is an argument array: a root's path is one argument whatever characters it
 // holds, and nothing is passed through a shell.
@@ -26,15 +29,18 @@ import { existsSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { LspCode, LspToPage, LspToServer } from '../../../data/model/index.ts';
-import { serverFacts, type LspServerId } from '../../../data/prose/lsp-servers.ts';
+import { refusesFile, serverFacts, type LspServerId } from '../../../data/prose/lsp-servers.ts';
 import { clangdAdapter } from './adapters/clangd/adapter.ts';
 import { pyrightAdapter } from './adapters/pyright/adapter.ts';
 import { svelteAdapter } from './adapters/web/svelte-adapter.ts';
 import { typescriptAdapter } from './adapters/web/typescript-adapter.ts';
+import { texlabAdapter } from './adapters/texlab/adapter.ts';
+import { texlabSettings } from './adapters/texlab/settings.ts';
 import { yamlAdapter } from './adapters/yaml/adapter.ts';
 import { yamlRequests } from './adapters/yaml/requests.ts';
 import { isMachineFile, isPrivateFile } from './adapters/yaml/machine-file.ts';
 import type { SchemaSet } from '../../../data/snapshot/schema/set.ts';
+import type { LatexBuilding } from '../../../data/sources/config/settings.ts';
 import type { ServedRoot } from './uris.ts';
 
 /** What an entry is told about the root it starts a server for. */
@@ -57,10 +63,24 @@ export type Setup = {
      * Svelte server runs trusted on and the TypeScript server loads the Svelte plugin on.
      */
     configApproved?: boolean;
+    /**
+     * The program an adapter found at an absolute path, with the environment it runs in, for an
+     * entry whose child gets an environment of its own (texlab).
+     */
+    resolved?: { path: string; env: NodeJS.ProcessEnv };
 };
 
-/** The program, its arguments and the folder it runs in. */
-export type Launch = { command: string; args: string[]; cwd: string; program: string };
+/**
+ * The program, its arguments and the folder it runs in. `env` is the whole environment of the
+ * child; absent, the child has oculus's own.
+ */
+export type Launch = {
+    command: string;
+    args: string[];
+    cwd: string;
+    program: string;
+    env?: NodeJS.ProcessEnv;
+};
 
 type ServerId = LspServerId;
 
@@ -77,6 +97,8 @@ export type RootEnv = {
     lsp: string;
     /** The approvals file. */
     approvals: string;
+    /** oculus's own environment, whose PATH finds the programs a server is started with. */
+    env: NodeJS.ProcessEnv;
     /** How a program is run to ask it a question; `execFile` unless a test hands one. */
     run?: (command: string, args: string[]) => Promise<string | null>;
     exists?: (path: string) => boolean;
@@ -160,6 +182,16 @@ export type ServerEntry = {
     registrations?: readonly string[];
     /** Whether a file is kept from the server: it is never put on one. */
     refuses?(real: string, roots: readonly ServedRoot[]): boolean;
+    /**
+     * The diagnostics of a file before the page sees them: the `publishDiagnostics` params with
+     * the entries the page is not shown taken out.
+     */
+    diagnostics?(params: Record<string, unknown>): Record<string, unknown>;
+    /**
+     * The sections of `workspace/configuration` that follow the shipped settings: the server is
+     * asked again when the answer for one changes.
+     */
+    followed?: readonly string[];
 };
 
 /** What an entry's handler of a server request knows: the server's root and the current schemas. */
@@ -183,6 +215,8 @@ export type ServersOptions = {
     node: string;
     /** Whether a path exists; `existsSync` unless a test says otherwise. */
     exists?: (path: string) => boolean;
+    /** The LaTeX settings in force, read at each start and each configuration answer. */
+    latex: () => LatexBuilding;
 };
 
 /**
@@ -574,6 +608,70 @@ function yaml(options: ServersOptions): ServerEntry {
     };
 }
 
+/** The characters texlab completes after: its own. */
+const TEXLAB_TRIGGERS = ['\\', '{', '}', '@', '/', ' '];
+
+/** The source texlab names the diagnostics it reads from the build log with. */
+const BUILD_LOG_SOURCE = 'latex';
+
+/**
+ * The texlab entry, for `latex` and `bibtex` files. It is the `texlab` program under the path
+ * `latex.texlab_path` names or on oculus's PATH, started with a PATH of its own (adapters/texlab/).
+ * Only what a reader gets from the language is on: no formatting (Format Document is the LaTeX
+ * formatter's), no code actions or commands, and none of texlab's build, clean and forward search,
+ * which are the LaTeX build's. texlab's ChkTeX is off and the diagnostics it reads from the build
+ * log are dropped, since the build's own errors are the LaTeX view's.
+ */
+function texlab(options: ServersOptions): ServerEntry {
+    return {
+        ...factsOf('texlab'),
+        adapter: texlabAdapter(options.latex),
+        launch: (setup) =>
+            setup.resolved === undefined
+                ? null
+                : {
+                      command: setup.resolved.path,
+                      args: [],
+                      cwd: setup.root,
+                      program: 'texlab',
+                      env: setup.resolved.env
+                  },
+        initializationOptions: () => ({}),
+        configuration: (section) => (section === 'texlab' ? texlabSettings(options.latex()) : null),
+        followed: ['texlab'],
+        refuses: (real) => refusesFile(serverFacts('texlab'), real),
+        diagnostics: (params) => ({
+            ...params,
+            diagnostics: Array.isArray(params.diagnostics)
+                ? params.diagnostics.filter(
+                      (one) =>
+                          typeof one !== 'object' ||
+                          one === null ||
+                          (one as { source?: unknown }).source !== BUILD_LOG_SOURCE
+                  )
+                : params.diagnostics
+        }),
+        capabilities: (language) => ({
+            textDocumentSync: INCREMENTAL,
+            hoverProvider: serving(language),
+            definitionProvider: serving(language),
+            referencesProvider: serving(language),
+            documentHighlightProvider: serving(language),
+            documentSymbolProvider: serving(language),
+            workspaceSymbolProvider: serving(language),
+            renameProvider: serving(language, { prepareProvider: true }),
+            completionProvider: serving(language, {
+                triggerCharacters: TEXLAB_TRIGGERS,
+                resolveProvider: true
+            }),
+            foldingRangeProvider: serving(language),
+            documentLinkProvider: serving(language),
+            inlayHintProvider: serving(language)
+        }),
+        commands: []
+    };
+}
+
 /** The registry for this machine. */
 export function createServers(options: ServersOptions): Servers {
     const entries = [
@@ -581,7 +679,8 @@ export function createServers(options: ServersOptions): Servers {
         clangd(),
         typescript(options),
         svelte(options),
-        yaml(options)
+        yaml(options),
+        texlab(options)
     ];
     return {
         entries,

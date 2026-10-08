@@ -11,7 +11,9 @@
 // A press that needs a decision is held here as the question (`asking`): the lines of the chain a
 // press would run and the reader has not approved, or the process a Restart would stop. A button
 // and a key ask the same question, and the shell draws it once, so the answer comes from one place
-// whichever started the run.
+// whichever started the run. A Rerun or a Restart of a LaTeX build or clean whose step waits on an
+// approval is answered with what it waits on, which is handed to the LaTeX store (`askLatex`), the
+// one that holds and asks the LaTeX approvals.
 //
 // A caller that needs to know how a press of a command ended registers `afterPress`. A press that
 // asked an approval has not ended: it ends with the answer, started once the command's terminal
@@ -46,6 +48,7 @@ import type {
     CommandDiagnostic,
     CommandSource,
     CommandsAnswer,
+    LatexApproval,
     ProjectCommand,
     Terminal
 } from '../../../data/model/index.ts';
@@ -179,6 +182,7 @@ export type CommandWrite = { ok: boolean; error: string };
 export type RunAnswer =
     | { approve: ChainLine[] }
     | { confirm: string }
+    | { latexApproval: LatexApproval }
     | { ok: false; error: string }
     | { ok: true; id: string; terminal?: Terminal };
 
@@ -308,6 +312,11 @@ export type CommandsDeps = {
     served: () => ServedRoot[];
     /** Open a repository's file in a source tab, at a line. */
     openFile: (repo: string, path: string, line: number) => boolean;
+    /**
+     * Hold what a Rerun or a Restart of a LaTeX build or clean terminal waits on, and ask the
+     * reader (state/sessions/latex/latex.svelte.ts).
+     */
+    askLatex: (terminal: string, approval: LatexApproval, restart: boolean) => void;
 };
 
 /**
@@ -467,6 +476,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         const answer = await postTerminal(body, writes);
         if (answer.approve !== undefined) return { approve: answer.approve };
         if (answer.confirm !== undefined) return { confirm: answer.confirm };
+        if (answer.latexApproval !== undefined) return { latexApproval: answer.latexApproval };
         if (!answer.ok) return { ok: false, error: answer.error };
         return {
             ok: true,
@@ -502,7 +512,8 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
 
     async function rerun(id: string): Promise<RunAnswer> {
         const answer = await post({ action: 'rerun', id });
-        if ('ok' in answer && answer.ok) clear(id);
+        if ('latexApproval' in answer) deps.askLatex(id, answer.latexApproval, false);
+        else if ('ok' in answer && answer.ok) clear(id);
         return answer;
     }
 
@@ -512,7 +523,8 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
             id,
             ...(confirmed ? { confirmed: true } : {})
         });
-        if ('ok' in answer && answer.ok) clear(id);
+        if ('latexApproval' in answer) deps.askLatex(id, answer.latexApproval, true);
+        else if ('ok' in answer && answer.ok) clear(id);
         return answer;
     }
 
@@ -526,6 +538,10 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         again: CommandAsking | null,
         who: { repo: string; name: string } | null = null
     ): boolean {
+        if ('latexApproval' in answer) {
+            finish(who, { kind: 'dropped' });
+            return false;
+        }
         if ('approve' in answer || 'confirm' in answer) {
             if (again === null) {
                 finish(who, { kind: 'dropped' });

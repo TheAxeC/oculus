@@ -1,7 +1,8 @@
 // Layer 2, server test support. Builds a complete inert ServerContext for route tests without
 // opening a watcher, running tmux, reading the real hub, or writing outside a test's own fixture.
 
-import { loadConfig, type LocalConfig } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, type LocalConfig } from '../../../src/lib/data/sources/config.ts';
+import { latexBuild } from '../../../src/lib/data/sources/config/settings.ts';
 import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { noApps } from '../../../src/lib/server/machine/apps/held.ts';
@@ -55,7 +56,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             node: process.execPath,
             roots: () => [],
             lspFolder: () => '/fixture/lsp',
-            approvals: () => '/fixture/approvals.json'
+            approvals: () => '/fixture/approvals.json',
+            latex: () => latexBuild(loadConfig(engineDir()).config)
         });
     const debug =
         overrides.debug ??

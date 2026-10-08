@@ -573,6 +573,9 @@ export type LatexBuilding = {
     reverseSynctex: ReverseSynctex;
     texcountAutorun: TexcountAutorun;
     contextMenu: boolean;
+    texlabPath: string;
+    unimathSymbols: boolean;
+    includegraphicsPreview: boolean;
 };
 
 /** The word of a choice key, which the catalog's `values` already holds to the list's words. */
@@ -758,7 +761,10 @@ export function latexBuild(
             read.text('latex.texcount_autorun'),
             'latex.texcount_autorun'
         ),
-        contextMenu: read.flag('latex.context_menu')
+        contextMenu: read.flag('latex.context_menu'),
+        texlabPath: read.text('latex.texlab_path'),
+        unimathSymbols: read.flag('latex.unimath_symbols'),
+        includegraphicsPreview: read.flag('latex.includegraphics_preview')
     };
 }
 

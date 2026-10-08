@@ -5,7 +5,7 @@
 // which a test replaces.
 
 import { z } from 'zod';
-import type { ChainLine, Terminal } from '../../../../data/model/index.ts';
+import type { ChainLine, LatexApproval, Terminal } from '../../../../data/model/index.ts';
 import {
     mapShape,
     optionalTextShape,
@@ -36,6 +36,8 @@ export type TerminalAnswer = {
     recipe?: string;
     /** The lines of the chain a project command run asked to have approved before it starts. */
     approve?: ChainLine[];
+    /** What a LaTeX build or clean asked to have approved before it starts, and started nothing. */
+    latexApproval?: LatexApproval;
     /** The seed, folder and agent a composer start with a task asked to have approved first. */
     seedApproval?: SeedApproval;
     /** The seed, folder and terminal name the server built for a task. */
@@ -67,6 +69,15 @@ const chainLineShape = z.object({ folder: z.string(), run: z.string() });
 /** The approval a composer start with a task asks for, as the server answers it under `approve`. */
 const seedApprovalShape = z.object({ seed: z.string(), cwd: z.string(), agent: z.string() });
 
+/** What a LaTeX build or clean asks to have approved, as the server answers it. */
+const latexApprovalShape = z.object({
+    main: z.string(),
+    step: z.enum(['build', 'clean']),
+    latexmkrc: z.array(z.string()),
+    weave: z.object({ recipe: z.string(), tools: z.array(z.string()) }).nullable(),
+    texts: z.object({ latexmkrc: z.string().nullable(), weave: z.string().nullable() })
+});
+
 /** What an action answers: the terminal a start made, its id, and a refusal's word and names. */
 const actionAnswerShape = z.object({
     id: optionalTextShape,
@@ -78,6 +89,7 @@ const actionAnswerShape = z.object({
         .union([z.array(chainLineShape), seedApprovalShape])
         .optional()
         .catch(undefined),
+    approveLatex: latexApprovalShape.optional().catch(undefined),
     seed: z.string().optional().catch(undefined),
     cwd: z.string().optional().catch(undefined),
     name: z.string().optional().catch(undefined),
@@ -161,6 +173,7 @@ export async function postTerminal(body: unknown, writes: TokenSource): Promise<
             ...(answer?.recipe === undefined ? {} : { recipe: answer.recipe }),
             ...(approve === undefined || !Array.isArray(approve) ? {} : { approve }),
             ...(approve === undefined || Array.isArray(approve) ? {} : { seedApproval: approve }),
+            ...(answer?.approveLatex === undefined ? {} : { latexApproval: answer.approveLatex }),
             ...(seeded === undefined ? {} : { seeded }),
             ...(answer?.confirm === undefined ? {} : { confirm: answer.confirm }),
             ...(answer?.output === undefined ? {} : { output: answer.output })

@@ -27,7 +27,8 @@ import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, loadLocal, textCatalog } from '../../../data/sources/config.ts';
 import type { Root } from '../../files/files.ts';
-import { startLatex } from './latex/latex.ts';
+import { approveLatexStep, startLatex } from './latex/latex.ts';
+import type { RcHomes } from './latex/approval.ts';
 import { captureTask, restartTask, rerunTask, startCommand } from '../runs/commands/run.ts';
 import { startChat, type ChatOptions } from './start/chat.ts';
 import { defaultApprovalsPath } from '../approvals/approvals.ts';
@@ -120,6 +121,8 @@ export type TerminalOptions = StartOptions &
         rootsFor?: () => string[];
         /** The approvals file the command texts are checked against. */
         approvalsFor?: () => string;
+        /** The home and XDG folders a build reads latexmkrc files from; the process's if absent. */
+        latexHomesFor?: () => RcHomes;
     };
 
 /** The options a list request takes: a tmux runner and the shell a busy read compares against. */
@@ -435,6 +438,9 @@ export async function handleTerminal(
         }
         if (message.action === 'latex') {
             return await startLatex(message, options);
+        }
+        if (message.action === 'approve-latex') {
+            return approveLatexStep(message, options);
         }
         if (message.action === 'command') {
             return await startCommand(message, options);

@@ -20,6 +20,7 @@ import {
     makeRelay,
     open,
     pageFile,
+    plantPrograms,
     plantRoot,
     recordingSink,
     settle,
@@ -40,7 +41,11 @@ type World = {
     folder: { value: string };
 };
 
-function world(behave?: (call: number) => Behaviour, files?: string[]): World {
+function world(
+    behave?: (call: number) => Behaviour,
+    files?: string[],
+    env?: NodeJS.ProcessEnv
+): World {
     const dir = plantRoot(files);
     const served = [{ key: 'repo', dir }];
     const spawned = stubSpawn(behave);
@@ -48,7 +53,8 @@ function world(behave?: (call: number) => Behaviour, files?: string[]): World {
     const relay = makeRelay({
         roots: () => served,
         spawn: spawned.spawn,
-        lspFolder: () => folder.value
+        lspFolder: () => folder.value,
+        env
     });
     return { relay, spawned, page: recordingSink(), served, folder };
 }
@@ -70,13 +76,19 @@ afterEach(async () => {
 /** Start a world and open `a.py` on its page, the server up. */
 async function opened(
     behave?: (call: number) => Behaviour,
-    tab: { channel: string; file: string; language: string; files?: string[] } = {
+    tab: {
+        channel: string;
+        file: string;
+        language: string;
+        files?: string[];
+        env?: NodeJS.ProcessEnv;
+    } = {
         channel: PYTHON,
         file: 'a.py',
         language: 'python'
     }
 ): Promise<World> {
-    const w = world(behave, tab.files);
+    const w = world(behave, tab.files, tab.env);
     made.push(w.relay);
     open(w.relay, w.page.sink, tab.channel, pageFile('repo', tab.file), tab.language);
     await settle();
@@ -325,6 +337,31 @@ const ROWS: Row[] = [
             await advance(MINUTE * 2);
             expect(spawned.children[0].ended).toBe(false);
             close(relay, page.sink, 'lsp:yaml', pageFile('repo', 'b.yaml'));
+            await advance(MINUTE - 1);
+            expect(spawned.children[0].ended).toBe(false);
+            await advance(1);
+            expect(spawned.children[0].ended).toBe(true);
+            expect(relay.pids()).toEqual([]);
+        }
+    },
+    {
+        name: 'is one texlab for a tex tab and a bib tab of one root on one page, which ends 60 s after the last closed',
+        tab: {
+            channel: 'lsp:latex',
+            file: 'a.tex',
+            language: 'latex',
+            files: ['a.tex', 'b.bib'],
+            env: plantPrograms().env
+        },
+        steps: async ({ relay, spawned, page }) => {
+            open(relay, page.sink, 'lsp:bibtex', pageFile('repo', 'b.bib'), 'bibtex');
+            await advance(0);
+            expect(spawned.children).toHaveLength(1);
+            expect(spawned.calls[0].command.endsWith('/texlab')).toBe(true);
+            close(relay, page.sink, 'lsp:latex', pageFile('repo', 'a.tex'));
+            await advance(MINUTE * 2);
+            expect(spawned.children[0].ended).toBe(false);
+            close(relay, page.sink, 'lsp:bibtex', pageFile('repo', 'b.bib'));
             await advance(MINUTE - 1);
             expect(spawned.children[0].ended).toBe(false);
             await advance(1);

@@ -67,7 +67,7 @@ export function refusalSentence(word: OpsRefusal, t: Say = catalogText): string 
 }
 
 /** The catalog's sentence for a word the LaTeX endpoint or terminal action refuses with. */
-function latexSentence(word: LatexRefusal): string {
+function latexSentence(word: LatexRefusal, names: readonly string[] = []): string {
     switch (word) {
         case 'no-project':
             return catalogText('latex.refused_no_project');
@@ -113,6 +113,10 @@ function latexSentence(word: LatexRefusal): string {
             return catalogText('latex.refused_texdoc_timeout');
         case 'texdoc-failed':
             return catalogText('latex.refused_texdoc_failed');
+        case 'latex-changed':
+            return catalogText('latex.refused_latex_changed');
+        case 'latexmkrc-unread':
+            return catalogText('latex.refused_latexmkrc_unread', names[0] ?? '');
     }
 }
 
@@ -148,7 +152,7 @@ export function refusedAnswer(
     const word = refusalWord(error);
     if (word !== null) return refusalSentence(word);
     const latex = latexWord(error);
-    if (latex !== null) return latexSentence(latex);
+    if (latex !== null) return latexSentence(latex, names);
     const terminal = terminalWord(error);
     if (terminal !== null) return terminalSentence(terminal, names);
     return catalogText('ui.answer_refused', status);

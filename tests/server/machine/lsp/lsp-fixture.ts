@@ -5,7 +5,7 @@
 // reads or writes the machine's own `~/.oculus`.
 
 import { EventEmitter } from 'node:events';
-import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import {
@@ -20,7 +20,33 @@ import type { LibraryRules } from '../../../../src/lib/server/machine/lsp/librar
 import { Relay } from '../../../../src/lib/server/machine/lsp/relay.ts';
 import type { Spawn } from '../../../../src/lib/server/machine/lsp/held/process.ts';
 import { createServers } from '../../../../src/lib/server/machine/lsp/servers.ts';
+import {
+    latexBuild,
+    type LatexBuilding
+} from '../../../../src/lib/data/sources/config/settings.ts';
+import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
 import { scratchDir } from '../../../fixtures/scratch.ts';
+
+/** The LaTeX settings the shipped configuration gives. */
+export function shippedLatex(): LatexBuilding {
+    return latexBuild(loadConfig(engineDir()).config);
+}
+
+/**
+ * A folder holding executable files named for the programs, and the environment whose PATH is that
+ * folder alone: texlab and the TeX programs it is given by default.
+ */
+export function plantPrograms(names: string[] = ['texlab', 'latex', 'kpsewhich']): {
+    bin: string;
+    env: NodeJS.ProcessEnv;
+} {
+    const bin = realpathSync(scratchDir('oculus-programs-'));
+    for (const name of names) {
+        writeFileSync(join(bin, name), '#!/bin/sh\n');
+        chmodSync(join(bin, name), 0o755);
+    }
+    return { bin, env: { PATH: bin } };
+}
 
 /** How a stub answers: `initialize`, `shutdown`, and what ends it. */
 export type Behaviour = {
@@ -107,12 +133,17 @@ export class Stub extends EventEmitter {
 export function stubSpawn(behave: (call: number, command: string) => Behaviour = () => ({})): {
     spawn: Spawn;
     children: Stub[];
-    calls: { command: string; args: readonly string[]; cwd: string }[];
+    calls: { command: string; args: readonly string[]; cwd: string; env?: NodeJS.ProcessEnv }[];
 } {
     const children: Stub[] = [];
-    const calls: { command: string; args: readonly string[]; cwd: string }[] = [];
+    const calls: {
+        command: string;
+        args: readonly string[];
+        cwd: string;
+        env?: NodeJS.ProcessEnv;
+    }[] = [];
     const spawn: Spawn = (command, args, options) => {
-        calls.push({ command, args, cwd: options.cwd });
+        calls.push({ command, args, cwd: options.cwd, env: options.env });
         const behaviour = behave(calls.length - 1, command);
         if (behaviour.missing === true) {
             throw Object.assign(new Error(`spawn ${command} ENOENT`), { code: 'ENOENT' });
@@ -171,7 +202,12 @@ export function makeRelay(options: {
     library?: () => LibraryRules;
     /** The oculus folder and the node program the servers are found under; stubs by default. */
     own?: { oculus: string; node: string };
+    /** The LaTeX settings; the shipped ones by default. */
+    latex?: () => LatexBuilding;
+    /** oculus's own environment, whose PATH finds a server's program; empty by default. */
+    env?: NodeJS.ProcessEnv;
 }): Relay {
+    const latex = options.latex ?? (() => shippedLatex());
     const home = realpathSync(scratchDir('oculus-lsp-home-'));
     const relay = new Relay({
         oculus: options.own?.oculus ?? '/oculus',
@@ -180,10 +216,13 @@ export function makeRelay(options: {
         lspFolder: options.lspFolder ?? (() => join(home, 'lsp')),
         approvals: () => join(home, 'approvals.json'),
         spawn: options.spawn,
+        latex,
+        env: options.env ?? {},
         servers: createServers({
             oculus: options.own?.oculus ?? '/oculus',
             node: options.own?.node ?? '/node',
-            exists: () => true
+            exists: () => true,
+            latex
         }),
         run: options.run ?? (() => Promise.resolve(null)),
         exists: options.exists ?? (() => false),

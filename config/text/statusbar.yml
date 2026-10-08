@@ -68,6 +68,7 @@ text:
         latex_tip_root: 'LaTeX root {0}'
         latex_tip_recipe: 'Recipe {0}'
         latex_tip_at: 'Last build at {0}'
+        latex_unapproved_tip: 'An automatic build or clean of {0} waits for your approval of the code it would run. Press to see it.'
         latex_tip_words: '{0} words'
         sessions_name: '{0} live sessions'
         sessions_tip: '{0} live sessions. Open the session list.'
@@ -98,6 +99,7 @@ text:
         server_typescript: typescript-language-server
         server_svelte: svelte-language-server
         server_yaml: yaml-language-server
+        server_texlab: texlab
         ls_waiting: '{0}'
         ls_starting: '{0}: starting'
         ls_indexing: '{0}: indexing {1} of {2}'
@@ -110,6 +112,8 @@ text:
         ls_tip_ready: '{0} serves {1}.'
         ls_tip_waiting: '{0} serves {1} once this file is open.'
         ls_tip_not_found: '{0} was not found for {1}. Install it, then restart the language server.'
+        ls_tip_not_found_install: '{0} was not found for {1}. Install it with {2}, then restart the language server.'
+        ls_install_texlab: brew install texlab
         ls_tip_exited: '{0} exited for {1}. Restart Language Server starts it again.'
         ls_tip_refused: '{0} refused to start for {1}. Its output says why.'
         ls_tip_no_answer: '{0} did not answer within 30 seconds for {1}. Its output says why.'
@@ -132,6 +136,7 @@ text:
         svelte_config_trusted_tip: The Svelte and Vite configuration of this repository is approved on this machine, and the Svelte server runs it with the repository's own Svelte, Prettier and preprocessors. Select to take the approval back.
         svelte_config_trusted_own_tip: The Svelte and Vite configuration of this repository is approved on this machine, and the Svelte server runs it with the repository's own Prettier and preprocessors. The repository has no svelte package, so the server uses its own Svelte 4. Select to take the approval back.
         language_bash: Shell Script
+        language_bibtex: BibTeX
         language_c: C
         language_cmake: CMake
         language_cpp: C++

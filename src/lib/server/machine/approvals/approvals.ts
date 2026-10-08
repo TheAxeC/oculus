@@ -4,7 +4,7 @@
 // project command is approved by is the whole chain a press runs, with the repository's path.
 //
 // The shape is the one every user of the processes rule shares, `{ version: 1, approved: { "<kind>:
-// <sha256>": { label, at, folder? } } }`. There are four kinds of key. A command is approved under
+// <sha256>": { label, at, folder? } } }`. There are five kinds of key. A command is approved under
 // `command:<sha256>` of its chain text, and a debug launch under the same kind of key of its own
 // text (`debugText`), whose `debug` member keeps it apart from a chain. An app is approved under
 // `app:<sha256>` of its content, with the real path of its folder, and at most one `app` entry is
@@ -12,12 +12,16 @@
 // of the JSON `[repository real path, interpreter path]`, so a changed path or another repository
 // asks again. The Svelte and Vite configuration a repository holds is approved under
 // `svelte-config:<sha256>` of the JSON `[repository real path, [[config file, SHA-256 of its
-// bytes], ...]]`, so a changed file or another repository asks again. An entry of a kind a call
-// does not write is kept as it stood. The file is private to its owner (mode 0600), and the default
-// file's folder, `~/.oculus`, is made mode 0700 when it is looser; the file is written whole by a
-// rename and read back to check the write. A file that is not JSON, or not that shape, is read as
-// holding no approvals, which asks again for everything and approves nothing by mistake, and a
-// write over it is refused with the reason, so the bytes the reader put there are never replaced.
+// bytes], ...]]`, so a changed file or another repository asks again. The latexmkrc files a LaTeX
+// main would read are approved under `latexmkrc:<sha256>` of the JSON `[repository real path,
+// [[file, SHA-256 of its bytes], ...]]` in path order, and a recipe's weave tools under a
+// `command:` key of their own text (pty/latex/approval.ts), written together with it by
+// `approveLatex`. An entry of a kind a call does not write is kept as it stood. The file is private
+// to its owner (mode 0600), and the default file's folder, `~/.oculus`, is made mode 0700 when it
+// is looser; the file is written whole by a rename and read back to check the write. A file that is
+// not JSON, or not that shape, is read as holding no approvals, which asks again for everything and
+// approves nothing by mistake, and a write over it is refused with the reason, so the bytes the
+// reader put there are never replaced.
 
 import { createHash } from 'node:crypto';
 import { chmodSync, mkdirSync, readFileSync, statSync } from 'node:fs';
@@ -311,6 +315,42 @@ export function revokeApp(file: string, folder: string): ApprovalWrite {
     const approved = withoutApp(loaded.approvals.approved, folder);
     if (Object.keys(approved).length === Object.keys(loaded.approvals.approved).length) {
         return { ok: true };
+    }
+    return store(file, approved);
+}
+
+/** The key of a latexmkrc set: `latexmkrc:` and the SHA-256 of its text as hex. */
+function latexmkrcKey(text: string): string {
+    return `latexmkrc:${createHash('sha256').update(text, 'utf8').digest('hex')}`;
+}
+
+/** Whether the reader approved this exact latexmkrc set on this machine. */
+export function isLatexmkrcApproved(file: string, text: string): boolean {
+    return latexmkrcKey(text) in readApprovals(file).approved;
+}
+
+/**
+ * Approve the texts a LaTeX step asked about: the latexmkrc set under its own key and the weave
+ * text under `command:`, either of which may be null. Both entries are written by one store, so
+ * both are written or neither is. Answers `{ ok: true }`, or the reason the file was left as it
+ * was.
+ */
+export function approveLatex(
+    file: string,
+    texts: { latexmkrc: string | null; weave: string | null },
+    now: Date = new Date()
+): ApprovalWrite {
+    const loaded = load(file);
+    if (!loaded.ok) return loaded;
+    const approved = { ...loaded.approvals.approved };
+    const at = now.toISOString();
+    if (texts.latexmkrc !== null) {
+        const key = latexmkrcKey(texts.latexmkrc);
+        if (!(key in approved)) approved[key] = { label: texts.latexmkrc, at };
+    }
+    if (texts.weave !== null) {
+        const key = commandKey(texts.weave);
+        if (!(key in approved)) approved[key] = { label: texts.weave, at };
     }
     return store(file, approved);
 }

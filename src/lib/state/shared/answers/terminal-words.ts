@@ -79,5 +79,7 @@ export function terminalSentence(word: TerminalRefusal, names: readonly string[]
             return catalogText('latex.refused_building', first);
         case 'latex-idle':
             return catalogText('latex.refused_idle', first);
+        case 'latex-unmarked':
+            return catalogText('latex.refused_unmarked');
     }
 }

@@ -2,7 +2,10 @@
 // of the latest build of this file as markers, the preview of math and pictures, Format Document
 // through the server's formatter (state/sessions/latex/latex.svelte.ts), the sectioning commands as
 // document symbols for sticky scroll (symbols.ts), and the editing commands (environments,
-// sectioning, formatting shortcuts, `@` suggestions, smart selection). The editor draws them
+// sectioning, formatting shortcuts, `@` suggestions, smart selection), the Unicode math symbols
+// after a backslash while `latex.unimath_symbols` is on (kit/latex/latex-unimath.ts) and the
+// picture beside a file suggested inside `\includegraphics` while `latex.includegraphics_preview`
+// is on (kit/latex/latex-pictures.ts). The editor draws them
 // (ui/controls/editor/kit/latex/latex-widget.ts and latex-editing.ts); this module is what the page
 // hands it.
 //
@@ -19,6 +22,8 @@ import { latexExtension } from '$lib/ui/controls/editor/kit/latex/latex-widget';
 import { latexEditing, type LatexCommands } from '$lib/ui/controls/editor/kit/latex/latex-editing';
 import { fileBytesUrl } from '$lib/state/sources/fs.svelte';
 import { latexSuggest } from '$lib/ui/controls/editor/kit/latex/latex-suggest';
+import { latexPictures } from '$lib/ui/controls/editor/kit/latex/latex-pictures';
+import { latexUnimath } from '$lib/ui/controls/editor/kit/latex/latex-unimath';
 import { blockOf } from '$lib/ui/controls/editor/kit/latex/references';
 import { readText } from '$lib/state/sources/fs-transport';
 import { t } from '$lib/state/shared/words/text';
@@ -70,22 +75,23 @@ export function latexEditor(
         .filter((one) => one.root === root && one.file === path)
         .map((one) => ({ line: one.line ?? 1, severity: one.severity, message: one.message }));
     let folder: Promise<string> | null = null;
+    const pictureFolder = (): Promise<string> => {
+        folder ??= client.latex
+            .rootOf(root, path)
+            .then((found) => (found === null ? folderOf(path) : found.path));
+        return folder;
+    };
+    const exists = async (target: string): Promise<boolean> => {
+        const listing = await client.fs.readListing(root, folderOf(target));
+        return listing.entries.some((one) => one.kind === 'file' && one.name === nameOf(target));
+    };
+    const address = (target: string): string => fileBytesUrl(root, target);
     const widgets = latexExtension({
         problems,
         owner: LATEX_OWNER,
-        folder: () => {
-            folder ??= client.latex
-                .rootOf(root, path)
-                .then((found) => (found === null ? folderOf(path) : found.path));
-            return folder;
-        },
-        exists: async (target) => {
-            const listing = await client.fs.readListing(root, folderOf(target));
-            return listing.entries.some(
-                (one) => one.kind === 'file' && one.name === nameOf(target)
-            );
-        },
-        address: (target) => fileBytesUrl(root, target),
+        folder: pictureFolder,
+        exists,
+        address,
         format: (text) => client.latex.format(text, path),
         say,
         label: async (name) => {
@@ -107,6 +113,17 @@ export function latexEditor(
         environments: client.latex.editing().environments,
         detail: t('latex.suggest_environment')
     });
+    const unimath = latexUnimath({
+        symbols: () => client.latex.unimath(),
+        enabled: () => client.latex.settings()?.unimathSymbols === true
+    });
+    const pictures = latexPictures({
+        enabled: () => client.latex.settings()?.includegraphicsPreview === true,
+        folder: pictureFolder,
+        exists,
+        address,
+        origin: () => window.location.origin
+    });
     const symbols = symbolsExtension((text) => latexOutline(client.latexReader, text));
     const editing = latexEditing({
         at: client.latex.editing().at,
@@ -117,6 +134,8 @@ export function latexEditor(
         const stops = [
             widgets(kit, editor, model),
             suggest(kit, editor, model),
+            unimath(kit, editor, model),
+            pictures(kit, editor, model),
             symbols(kit, editor, model),
             editing(kit, editor, model)
         ];

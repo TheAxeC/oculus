@@ -2,13 +2,28 @@
 // command is an argument array and the root's path is one argument (or one working folder) whatever
 // characters it holds, and nothing passes through a shell.
 
-import { existsSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
+import {
+    existsSync,
+    mkdirSync,
+    readdirSync,
+    readlinkSync,
+    realpathSync,
+    writeFileSync
+} from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 import { interpretersFor } from '../../../../src/lib/server/machine/lsp/adapters/pyright/interpreter.ts';
 import { createServers, ownFolder } from '../../../../src/lib/server/machine/lsp/servers.ts';
-import { makeRelay, open, pageFile, settle, stubSpawn } from './lsp-fixture.ts';
+import {
+    makeRelay,
+    open,
+    pageFile,
+    plantPrograms,
+    settle,
+    shippedLatex,
+    stubSpawn
+} from './lsp-fixture.ts';
 
 /** A folder name every shell would treat as more than one word, or as code. */
 const AWKWARD = `my repo; touch pwned $(id) \`id\` 'q' "d" & | > <`;
@@ -78,6 +93,61 @@ const ROWS: Row[] = [
         }
     },
     {
+        name: 'starts texlab by its absolute path with no arguments, the root one working folder whatever it holds, and the links folder as its whole PATH',
+        steps: async () => {
+            const dir = awkwardRoot(['a.tex']);
+            const { bin, env } = plantPrograms();
+            const lsp = realpathSync(scratchDir('oculus-lsp-links-'));
+            const spawned = stubSpawn();
+            const relay = makeRelay({
+                roots: () => [{ key: 'repo', dir }],
+                spawn: spawned.spawn,
+                lspFolder: () => lsp,
+                env
+            });
+            const page = { send: () => Promise.resolve(), close: () => undefined };
+            open(relay, page, 'lsp:latex', pageFile('repo', 'a.tex'), 'latex');
+            for (let turn = 0; turn < 30 && spawned.calls.length < 1; turn += 1) await settle();
+            expect(spawned.calls).toHaveLength(1);
+            const [call] = spawned.calls;
+            expect(call.command).toBe(join(bin, 'texlab'));
+            expect(call.args).toEqual([]);
+            expect(call.cwd).toBe(dir);
+            expect(call.env?.PATH).toBe(join(lsp, 'texlab', 'bin'));
+            await relay.close();
+        }
+    },
+    {
+        name: 'links latex and kpsewhich to the programs its PATH finds, tectonic only when found, never latexmk, and drops a link whose program is gone',
+        steps: async () => {
+            const dir = awkwardRoot(['a.tex']);
+            const lsp = realpathSync(scratchDir('oculus-lsp-links-'));
+            const links = join(lsp, 'texlab', 'bin');
+            const page = { send: () => Promise.resolve(), close: () => undefined };
+            const start = async (names: string[]): Promise<{ bin: string }> => {
+                const planted = plantPrograms(names);
+                const spawned = stubSpawn();
+                const relay = makeRelay({
+                    roots: () => [{ key: 'repo', dir }],
+                    spawn: spawned.spawn,
+                    lspFolder: () => lsp,
+                    env: planted.env
+                });
+                open(relay, page, 'lsp:latex', pageFile('repo', 'a.tex'), 'latex');
+                for (let turn = 0; turn < 30 && spawned.calls.length < 1; turn += 1) await settle();
+                await relay.close();
+                return planted;
+            };
+            const first = await start(['texlab', 'latex', 'kpsewhich', 'latexmk']);
+            expect(readdirSync(links).sort()).toEqual(['kpsewhich', 'latex']);
+            expect(readlinkSync(join(links, 'latex'))).toBe(join(first.bin, 'latex'));
+            expect(readlinkSync(join(links, 'kpsewhich'))).toBe(join(first.bin, 'kpsewhich'));
+            const second = await start(['texlab', 'latex', 'tectonic', 'latexmk']);
+            expect(readdirSync(links).sort()).toEqual(['latex', 'tectonic']);
+            expect(readlinkSync(join(links, 'tectonic'))).toBe(join(second.bin, 'tectonic'));
+        }
+    },
+    {
         name: "finds pyright under oculus's own folder, whatever folder the engine is",
         steps: () => {
             expect(
@@ -92,7 +162,8 @@ const ROWS: Row[] = [
             const servers = createServers({
                 oculus: '/oculus dir',
                 node: '/a node',
-                exists: () => true
+                exists: () => true,
+                latex: () => shippedLatex()
             });
             const setup = {
                 root: AWKWARD,

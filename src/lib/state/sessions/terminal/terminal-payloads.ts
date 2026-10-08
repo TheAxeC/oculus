@@ -29,7 +29,20 @@ export const terminalShape = z.object({
             name: z.string(),
             source: z.enum(['file', 'saved', 'found', 'latex']).optional(),
             token: z.string().optional(),
-            chain: z.array(z.object({ name: z.string(), cwd: z.string() })).optional()
+            chain: z.array(z.object({ name: z.string(), cwd: z.string() })).optional(),
+            latex: z
+                .object({
+                    step: z.string(),
+                    main: z.string(),
+                    recipe: z.string().optional(),
+                    target: z
+                        .union([
+                            z.object({ id: z.string() }),
+                            z.object({ root: z.string(), path: z.string() })
+                        ])
+                        .optional()
+                })
+                .optional()
         })
         .nullable(),
     foreign: z.boolean().optional()

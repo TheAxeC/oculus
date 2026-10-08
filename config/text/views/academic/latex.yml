@@ -1,6 +1,11 @@
 # Oculus text owned by the LaTeX view and the rows it shares with the project tab.
 text:
     latex:
+        approve: Approve and Build
+        approve_clean: Approve and Clean
+        approve_latexmkrc: 'latexmk reads these files, which run as code on this machine:'
+        approve_title: 'Run the LaTeX configuration of {0}?'
+        approve_weave: 'The recipe {0} runs the code of the document with:'
         bar_build: Build
         bar_build_title: Build the LaTeX project (Cmd+Alt+B)
         bar_building: Building
@@ -119,7 +124,10 @@ text:
         refused_format_none: No LaTeX formatter is chosen. Choose one under latex.formatter in Settings.
         refused_format_timeout: The formatter did not finish in time.
         refused_idle: '{0} has no build running.'
+        refused_unmarked: This LaTeX terminal does not record its main file and folder, so what it would run cannot be checked; press Build or Clean of its main file to run it again.
+        refused_latex_changed: The files changed since they were listed; they are listed again.
         refused_latexindent_missing: latexindent was not found. It comes with TeX Live and MacTeX, or name it in latex.latexindent_path.
+        refused_latexmkrc_unread: '{0} cannot be read, so it cannot be approved.'
         refused_no_project: No project of the portfolio has that id.
         refused_no_recipe: latex.recipes holds no recipe, so the build was not started.
         refused_not_a_file: That is not a file.

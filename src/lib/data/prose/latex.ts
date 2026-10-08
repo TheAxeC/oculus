@@ -29,6 +29,14 @@ import type { latexParser as lp } from 'latex-utensils';
 /** The parser the reader takes: latex-utensils' `latexParser.parse`. */
 export type Parse = (text: string, options?: { enableComment?: boolean }) => lp.LatexAst;
 
+/** The Monaco languages a LaTeX source file is drawn in: the TeX text and the BibTeX database. */
+const LATEX_LANGUAGES: readonly string[] = ['latex', 'bibtex'];
+
+/** Whether a Monaco language is one a LaTeX source tab has: the TeX text or the BibTeX database. */
+export function isLatexLanguage(language: string): boolean {
+    return LATEX_LANGUAGES.includes(language);
+}
+
 /** The folder a project's main files sit directly under. */
 export const MANUSCRIPT = 'manuscript';
 
@@ -63,7 +71,9 @@ export const LATEX_REFUSALS = [
     'texdoc-name',
     'texdoc-missing',
     'texdoc-timeout',
-    'texdoc-failed'
+    'texdoc-failed',
+    'latex-changed',
+    'latexmkrc-unread'
 ] as const;
 export type LatexRefusal = (typeof LATEX_REFUSALS)[number];
 

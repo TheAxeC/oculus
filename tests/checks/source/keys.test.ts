@@ -228,6 +228,12 @@ const COMPUTED_PREFIXES = [
         keys: () => LSP_SERVER_LIST.map((server) => server.words.name)
     },
     {
+        // The install command a server's not-found tooltip names, for each server that has one.
+        file: 'lib/shell/status/LanguageItems.svelte',
+        start: 't(facts.words.install',
+        keys: () => LSP_SERVER_LIST.flatMap((server) => server.words.install ?? [])
+    },
+    {
         file: 'lib/views/sources/source/language/lsp.ts',
         start: 't(facts.words.name',
         keys: () => LSP_SERVER_LIST.map((server) => server.words.name)

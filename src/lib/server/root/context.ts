@@ -17,6 +17,7 @@ import {
     type IconMemory,
     languageFindings,
     latexEditingFindings,
+    latexUnimathFindings,
     nestingFindings,
     optionFindings,
     schemaFindings,
@@ -72,7 +73,8 @@ import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.
 import { savedPath } from '../machine/runs/commands/saved.ts';
 import { defaultLspPath } from '../machine/lsp/choices.ts';
 import { DebugClient, type DebugOptions } from '../machine/debug/session.ts';
-import { createRelay, type Relay, type RelayOptions } from '../machine/lsp/relay.ts';
+import { createRelay, type Relay } from '../machine/lsp/relay.ts';
+import type { RelayOptions } from '../machine/lsp/relay-options.ts';
 import { SchemaFeed } from '../machine/lsp/schema-feed.ts';
 import { spawnChild } from '../machine/lsp/held/process.ts';
 import { withheldFolders } from '../machine/lsp/library/rules.ts';
@@ -251,6 +253,7 @@ export function createServerContext(
         roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local }),
         lspFolder: () => expandHome(local.lsp ?? defaultLspPath()),
         approvals: () => local.approvals ?? defaultApprovalsPath(),
+        latex: () => latexBuild(make.loadConfig(engine).config),
         changes: () => target(engine, make.loadConfig(engine).config, context).changes,
         library: () => ({
             closed: closedPaths(make.loadConfig(engine).config).folders,
@@ -285,6 +288,7 @@ export function createServerContext(
         ...settingFindings(engine, config),
         ...languageFindings(engine, config),
         ...latexEditingFindings(engine, config),
+        ...latexUnimathFindings(engine, config),
         ...nestingFindings(engine, config),
         ...optionFindings(engine, config),
         ...schemaFindings(engine, config),
@@ -315,7 +319,10 @@ export function createServerContext(
                 workspacesFile: local.workspaces ?? defaultWorkspacesPath()
             },
             {
-                built: () => built.live?.hostChanged(),
+                built: () => {
+                    built.live?.hostChanged();
+                    relay.settingsChanged();
+                },
                 schemas: (set) => schemas.publish(set)
             }
         );

@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z737 (2026-10-08): the review over D43's repair round 1 closed at landing in automode (`agents/reviews/D43-refuter.md`, Closed; `choices.md`): the status item's folder scope, old LaTeX marks read by their served root or refused `latex-unmarked`, the owed retry let go after a success, G55 as open item 14 ruled it.
+- Z736 (2026-10-08): D43's first review, the `approve-latex` body, case 24's wording and the longest-waiting entry kept as built, in automode (`choices.md`).
 - Open item 15 (2026-10-08): Axel ruled (a): G66, G67 and G68 widened to D39's rows, the text given by D39's builder and written into `agents/guarded.md` at D39's landing.
 - Z735 (2026-10-08): D39's brief check closed inline by the orchestrator (`agents/reviews/D39-brief-check.md`, Closed); the `map` attribute, refusals at the caret, the options catalog's vocabulary references and D39 after M6 and D43, in automode (`choices.md`); F19 raised as open item 15.
 - Z734 (2026-10-08): D43's brief check closed inline by the orchestrator (`agents/reviews/D43-brief-check.md`, Closed); the weave check widened to every non-TeX recipe tool and the status tip reworded, in automode (`choices.md`).

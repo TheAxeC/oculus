@@ -20,6 +20,13 @@
 // from the registry, `client/registerCapability` (the file watchers become held/watch.ts's),
 // progress as `state` messages. Only `workspace/applyEdit` and the two refreshes reach the page.
 //
+// An entry may refuse a file (`refuses`: texlab's Sweave files), and may filter the diagnostics of
+// a file before the page sees them (`diagnostics`: texlab's own and ChkTeX's are kept, those it
+// reads from the build log are dropped). A server whose answer to a section of
+// `workspace/configuration` follows the shipped settings (texlab's build folders) is told
+// `workspace/didChangeConfiguration` once when `settingsChanged` finds the answer would now differ,
+// and nothing when it would not.
+//
 // A server's page is its owner. A page that closes leaves its servers to end 60 s later unless a
 // page opens the same root and takes them over. A root that is no longer served ends its servers
 // and each page is told `root_gone`, and told again when the root is served again so that it sends
@@ -27,14 +34,10 @@
 // the interpreter and the compile database are choices.ts's, read when a server is made and written
 // when the page chooses.
 
-import type { watch } from 'node:fs';
 import type { LspRpc, LspToPage } from '../../../data/model/index.ts';
 import type { Sink } from '../../core/channels.ts';
-import type { ChangeLog } from '../../core/changes.ts';
-import type { Root } from '../../files/files.ts';
 import { WORKSPACE_LANGUAGE } from '../../../data/prose/lsp-servers.ts';
 import { reconfigure } from './choices.ts';
-import type { SchemaFeed } from './schema-feed.ts';
 import { adoptHeld, changeDocument, closeDocument, openingTarget } from './held/documents.ts';
 import { workspaceMessage } from './held/elsewhere.ts';
 import { handleOculus, heldOf, type OculusContext } from './held/oculus.ts';
@@ -51,10 +54,9 @@ import {
     type Session
 } from './held/held.ts';
 import { libraryAddresses, libraryFile, type LibraryContext } from './library/pages.ts';
-import type { LibraryRules } from './library/rules.ts';
 import { Library } from './library/tokens.ts';
-import type { Run } from './adapters/pyright/interpreter.ts';
 import { spawnChild, type Spawn } from './held/process.ts';
+import type { RelayOptions } from './relay-options.ts';
 import {
     createServers,
     initializeParams,
@@ -93,41 +95,6 @@ const REQUEST_CANCELLED = -32800;
 /** How long the served roots are remembered between two messages. */
 const ROOTS_MS = 1000;
 
-/** What the relay needs of the machine. */
-export type RelayOptions = {
-    /** The oculus folder, which holds `node_modules/pyright`. */
-    oculus: string;
-    /** The node that runs oculus. */
-    node: string;
-    /** The roots the file browser serves now. */
-    roots: () => Root[];
-    /** The folder the lsp key names, read at each use so a changed key is followed. */
-    lspFolder: () => string;
-    /** The approvals file. */
-    approvals: () => string;
-    /** The change log a choice is recorded in. */
-    changes?: () => ChangeLog | undefined;
-    /**
-     * What decides whether a file outside every root may be named to a page, read at each file a
-     * server names; absent, none may.
-     */
-    library?: () => LibraryRules;
-    /** How a child is made; the `node:child_process` one unless a test hands a stub. */
-    spawn?: Spawn;
-    /**
-     * The schemas of the latest snapshot build, which the YAML server is answered from and, when
-     * they change, is asked for its settings again. Absent, no file has a schema.
-     */
-    schemas?: SchemaFeed;
-    /** The registry; `createServers` over `oculus` and `node` unless a test hands one. */
-    servers?: Servers;
-    /** How an interpreter is asked its version. */
-    run?: Run;
-    exists?: (path: string) => boolean;
-    now?: () => number;
-    watchFolder?: typeof watch;
-};
-
 export class Relay {
     #options: RelayOptions;
     #servers: Servers;
@@ -150,7 +117,12 @@ export class Relay {
     constructor(options: RelayOptions) {
         this.#options = options;
         this.#servers =
-            options.servers ?? createServers({ oculus: options.oculus, node: options.node });
+            options.servers ??
+            createServers({
+                oculus: options.oculus,
+                node: options.node,
+                latex: options.latex
+            });
         this.#spawn = options.spawn ?? spawnChild;
         this.#now = options.now ?? Date.now;
         this.#library = { roots: () => this.#roots(), rules: options.library };
@@ -168,6 +140,19 @@ export class Relay {
             gone: (held) => this.#gone(held)
         };
         this.#unsubscribe = feed?.subscribe(() => this.#schemasChanged());
+    }
+
+    /**
+     * The shipped settings changed: a running server that follows a section of them, and would now
+     * be answered differently, is told its settings changed and asks again. A server whose answer
+     * is the same is told nothing.
+     */
+    settingsChanged(): void {
+        for (const held of this.#helds) {
+            if (held.takeSettingsChange()) {
+                void reconfigure(held.entry.adapter, this.#env(held.root), held);
+            }
+        }
     }
 
     /** The schemas changed: each running server that is answered from them asks its settings. */
@@ -657,6 +642,7 @@ export class Relay {
             root: root.real,
             lsp: this.#options.lspFolder(),
             approvals: this.#options.approvals(),
+            env: this.#options.env ?? process.env,
             run: this.#options.run,
             exists: this.#options.exists
         };
@@ -794,10 +780,12 @@ export class Relay {
         const page = held.owner as Page | null;
         const named = isRecord(params.textDocument) ? params.textDocument.uri : params.uri;
         const doc = held.docs.get(docKey(String(named)));
+        const shown =
+            message.method === 'textDocument/publishDiagnostics' && held.entry.diagnostics
+                ? held.entry.diagnostics(params)
+                : message.params;
         const mapped =
-            page === null
-                ? null
-                : toPage(held.pageVersions(message.params), this.#mapper(page, held));
+            page === null ? null : toPage(held.pageVersions(shown), this.#mapper(page, held));
         if (doc === undefined || page === null || mapped === null) return;
         this.#send(page, doc.channel, {
             jsonrpc: '2.0',

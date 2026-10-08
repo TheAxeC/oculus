@@ -13,7 +13,9 @@
 // both refuse the same things in the same order.
 //
 // `rerun` runs the line of an ended task terminal again in the same pane, and `restart` does the
-// same for a line still running once the reader confirmed the process that would be stopped.
+// same for a line still running once the reader confirmed the process that would be stopped. The
+// kept terminal of a LaTeX build or clean is answered with what its step waits on to be approved,
+// and nothing runs, while the latexmkrc files or weave tools of the step are not approved.
 // `capture` answers all the text a listed terminal's pane holds, which the page reads the
 // diagnostics of a task from when no pane shows it. Every refusal is a word of TERMINAL_REFUSALS
 // with the names its sentence is about (pty/refusal.ts).
@@ -28,7 +30,9 @@ import type {
     TerminalRefusal
 } from '../../../../data/model/index.ts';
 import { NOT_LISTED, NOT_OURS } from '../../pty/edit.ts';
+import { latexAgain } from '../../pty/latex/latex.ts';
 import { refusal } from '../../pty/refusal.ts';
+import type { TerminalOptions } from '../../pty/routes.ts';
 import {
     isTerminalId,
     listTerminals,
@@ -172,14 +176,20 @@ async function taskTerminal(
     return found;
 }
 
-/** Run an ended task terminal's line again; a line still running is refused. */
+/**
+ * Run an ended task terminal's line again; a line still running is refused. The kept terminal of a
+ * LaTeX build or clean whose step waits on an approval answers what it waits on and runs nothing
+ * (pty/latex/latex.ts, `latexAgain`).
+ */
 export async function rerunTask(
     message: Record<string, unknown>,
-    options: CommandRunOptions
+    options: TerminalOptions
 ): Promise<Response> {
     const terminal = await taskTerminal(message.id, options);
     if (typeof terminal === 'string') return refusal(terminal);
     if (terminal.exit === null) return refusal('still-running');
+    const waiting = latexAgain(terminal, options);
+    if (waiting !== null) return waiting;
     await respawnTerminal(terminal.id, options);
     options.refresh?.();
     return json({ ok: true, id: terminal.id }, { headers: NO_STORE });
@@ -188,17 +198,20 @@ export async function rerunTask(
 /**
  * Run a task terminal's line again. A line still running is stopped first, which asks for a
  * confirmation naming the process: the answer is `{ confirm: <process> }` until the request
- * carries `confirmed: true`. An ended line is run again as rerun does.
+ * carries `confirmed: true`. A line that may run again is run as rerun does, including the answer
+ * of a LaTeX step that waits on an approval.
  */
 export async function restartTask(
     message: Record<string, unknown>,
-    options: CommandRunOptions
+    options: TerminalOptions
 ): Promise<Response> {
     const terminal = await taskTerminal(message.id, options);
     if (typeof terminal === 'string') return refusal(terminal);
     if (terminal.exit === null && message.confirmed !== true) {
         return json({ confirm: terminal.command || terminal.name }, { headers: NO_STORE });
     }
+    const waiting = latexAgain(terminal, options);
+    if (waiting !== null) return waiting;
     await respawnTerminal(terminal.id, options);
     options.refresh?.();
     return json({ ok: true, id: terminal.id }, { headers: NO_STORE });

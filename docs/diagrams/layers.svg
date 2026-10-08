@@ -48,7 +48,7 @@
 <g id="node30" class="node">
 <title>state to data</title>
 <polygon fill="none" stroke="none" points="583.88,-70.08 566.12,-70.08 566.12,-57.6 583.88,-57.6 583.88,-70.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="575" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">279</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="575" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">280</text>
 </g>
 <!-- state&#45;&gt;state to data -->
 <g id="edge35" class="edge">
@@ -115,7 +115,7 @@
 <g id="node25" class="node">
 <title>shell to state</title>
 <polygon fill="none" stroke="none" points="560.88,-176.16 543.12,-176.16 543.12,-163.68 560.88,-163.68 560.88,-176.16"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="552" y="-167.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">131</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="552" y="-167.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">133</text>
 </g>
 <!-- shell&#45;&gt;shell to state -->
 <g id="edge25" class="edge">
@@ -126,7 +126,7 @@
 <g id="node26" class="node">
 <title>shell to ui</title>
 <polygon fill="none" stroke="none" points="652.88,-286.8 639.12,-286.8 639.12,-274.32 652.88,-274.32 652.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="646" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">82</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="646" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">85</text>
 </g>
 <!-- shell&#45;&gt;shell to ui -->
 <g id="edge27" class="edge">
@@ -154,7 +154,7 @@
 <g id="node35" class="node">
 <title>views to state</title>
 <polygon fill="none" stroke="none" points="624.88,-286.8 603.12,-286.8 603.12,-274.32 624.88,-274.32 624.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="614" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1038</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="614" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1040</text>
 </g>
 <!-- views&#45;&gt;views to state -->
 <g id="edge45" class="edge">
@@ -165,7 +165,7 @@
 <g id="node36" class="node">
 <title>views to ui</title>
 <polygon fill="none" stroke="none" points="714.88,-286.8 697.12,-286.8 697.12,-274.32 714.88,-274.32 714.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="706" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">857</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="706" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">859</text>
 </g>
 <!-- views&#45;&gt;views to ui -->
 <g id="edge47" class="edge">

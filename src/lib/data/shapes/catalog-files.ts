@@ -207,6 +207,16 @@ const latexFileShape = z.strictObject({
         .optional()
 });
 
+/** One Unicode math symbol: the command without its backslash, its glyph line and its words. */
+export const latexUnimathRow = z.strictObject({
+    command: text.regex(/^[A-Za-z]+$/),
+    detail: text.min(1),
+    documentation: text
+});
+
+/** config/catalogs/unimath.yml: the Unicode math symbols of the LaTeX completion. */
+const unimathFileShape = z.strictObject({ latex_unimath: z.array(latexUnimathRow).optional() });
+
 /** The words one control or field of the options catalog may carry. */
 const optionWords = {
     help: text,
@@ -333,6 +343,12 @@ export const CATALOG_FILES: readonly CatalogFile[] = [
         )
     },
     { name: 'catalogs/meta', file: 'catalogs/meta.yml', shape: metaFileShape, owned: under() },
+    {
+        name: 'catalogs/unimath',
+        file: 'catalogs/unimath.yml',
+        shape: unimathFileShape,
+        owned: under()
+    },
     {
         name: 'catalogs/options',
         file: 'catalogs/options.yml',

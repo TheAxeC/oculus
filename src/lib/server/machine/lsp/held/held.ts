@@ -129,6 +129,8 @@ export class Held {
     readonly output: string[] = [];
     /** What the server last registered, by the id it registered with. */
     readonly registrations = new Map<string, string>();
+    /** The text of the last answer to each section of `workspace/configuration`. */
+    readonly #answered = new Map<string, string>();
     #host: HeldHost;
     #proc: ServerProcess | null = null;
     #setup: Setup | null = null;
@@ -322,6 +324,26 @@ export class Held {
     }
 
     /**
+     * Whether a section the entry follows would be answered differently now than it was last
+     * answered. The text now answered is remembered, so the next call for the same settings says
+     * no; a section the server has not asked for yet is not a change.
+     */
+    takeSettingsChange(): boolean {
+        const setup = this.#setup;
+        if (setup === null || !this.running) return false;
+        let changed = false;
+        for (const section of this.entry.followed ?? []) {
+            const last = this.#answered.get(section);
+            if (last === undefined) continue;
+            const text = JSON.stringify(this.entry.configuration(section, setup));
+            if (text === last) continue;
+            this.#answered.set(section, text);
+            changed = true;
+        }
+        return changed;
+    }
+
+    /**
      * A request of the server that is the registry's and the root's to answer and no page's: its
      * settings, its registrations, a progress token, the folders it serves. False for a request
      * that is the page's or that nothing handles, which the relay answers.
@@ -339,9 +361,10 @@ export class Held {
                 return reply(
                     items.map((item) => {
                         const section = isRecord(item) ? item.section : undefined;
-                        return setup === null || typeof section !== 'string'
-                            ? null
-                            : this.entry.configuration(section, setup);
+                        if (setup === null || typeof section !== 'string') return null;
+                        const answer = this.entry.configuration(section, setup);
+                        this.#answered.set(section, JSON.stringify(answer));
+                        return answer;
                     })
                 );
             }
@@ -484,6 +507,7 @@ export class Held {
     #spawn(prepared: Extract<Prepared, { ok: true }>): void {
         this.#setup = prepared.setup;
         this.#progress.clear();
+        this.#answered.clear();
         const proc = new ServerProcess({
             launch: prepared.launch,
             spawn: this.#host.spawn,

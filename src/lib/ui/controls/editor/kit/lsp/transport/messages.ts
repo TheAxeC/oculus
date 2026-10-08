@@ -37,6 +37,16 @@ export type LspRange = {
 /** One edit of the protocol. */
 export type TextEdit = { range: LspRange; newText: string };
 
+/**
+ * What adds to the answer of a completion request made for one model: it is given the position the
+ * request was made at and the answer as the client will get it (a list of items or a list object),
+ * and answers that result, changed or as it was.
+ */
+export type CompletionHook = (
+    position: { line: number; character: number },
+    result: unknown
+) => Promise<unknown>;
+
 /** A JSON-RPC message as the client and the relay write it. */
 export type Rpc = {
     jsonrpc: '2.0';

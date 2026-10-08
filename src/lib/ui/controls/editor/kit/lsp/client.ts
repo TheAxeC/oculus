@@ -19,7 +19,14 @@
 
 import type * as Monaco from 'monaco-editor';
 import { LspTransport, type TransportHost } from './transport';
-import { APPLY_COMMAND, Closed, ORGANIZE, type TextEdit } from './transport/messages';
+import {
+    APPLY_COMMAND,
+    Closed,
+    ORGANIZE,
+    isRecord,
+    type CompletionHook,
+    type TextEdit
+} from './transport/messages';
 import { namedBy } from './transport/edits';
 import { factsForLanguage } from '$lib/data/prose/lsp-servers';
 import { inactiveDecorations, markerOwner, toMarkers } from './markers';
@@ -131,6 +138,8 @@ export type HostParts = {
     changed: Signal;
     /** The text of every document the servers of this language's entry hold, by page address. */
     held: (language: string) => Map<string, string>;
+    /** The hook that adds to the completion answers of the model with this address, if any. */
+    hooked: (address: string) => CompletionHook | undefined;
     now: () => number;
 };
 
@@ -436,6 +445,14 @@ export class LanguageHost {
                 if (entry.reg.place.root !== root) continue;
                 this.#unmark(entry);
                 this.#drop(entry.reg);
+                this.#parts.services.symbols(entry.reg.instance, 'none');
+            }
+        }
+        if (state === 'starting' && (before === 'failed' || before === 'not_found')) {
+            for (const entry of this.#entries.values()) {
+                if (entry.reg.place.root === root) {
+                    this.#parts.services.symbols(entry.reg.instance, 'loading');
+                }
             }
         }
         if (state === 'ready' && before !== 'ready') {
@@ -489,7 +506,17 @@ export class LanguageHost {
                     }
                 }
             },
-            notice: (key, ...words) => services.notice(key, ...words)
+            notice: (key, ...words) => services.notice(key, ...words),
+            completed: async (request, result) => {
+                const document = isRecord(request) ? request.textDocument : null;
+                const at = isRecord(request) ? request.position : null;
+                const hook =
+                    isRecord(document) && typeof document.uri === 'string'
+                        ? this.#parts.hooked(document.uri)
+                        : undefined;
+                if (hook === undefined || !isRecord(at)) return result;
+                return await hook(at as { line: number; character: number }, result);
+            }
         };
     }
 

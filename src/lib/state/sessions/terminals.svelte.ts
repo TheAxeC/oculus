@@ -39,6 +39,7 @@ import type { EntitiesStore, SocketStore, WritesStore } from '../shared/stores/s
 import { t } from '../shared/words/text.ts';
 import type {
     ComposeStart,
+    LatexApproval,
     SessionRecord,
     TaskRef,
     Terminal,
@@ -137,6 +138,16 @@ export type TerminalsStore = {
         ask?: LatexBuildAsk,
         cols?: number,
         rows?: number
+    ) => Promise<TerminalAnswer>;
+    /**
+     * Approve what a build or clean asked about, with the texts it was shown; the answer is ok, or
+     * the refusal, `latex-changed` when the files changed since they were listed.
+     */
+    approveLatex: (
+        target: LatexTarget,
+        main: string,
+        approval: LatexApproval,
+        ask?: LatexBuildAsk
     ) => Promise<TerminalAnswer>;
     startChat: (id: string | null, cols?: number, rows?: number) => Promise<TerminalAnswer>;
     resumeTerminal: (
@@ -505,6 +516,23 @@ export function createTerminals(
         return post({ action: 'latex', ...targetFields(target), main, step, ...ask, cols, rows });
     }
 
+    async function approveLatex(
+        target: LatexTarget,
+        main: string,
+        approval: LatexApproval,
+        ask: LatexBuildAsk = {}
+    ): Promise<TerminalAnswer> {
+        const { step, texts } = approval;
+        return post({
+            action: 'approve-latex',
+            ...targetFields(target),
+            main,
+            step,
+            ...ask,
+            texts
+        });
+    }
+
     /**
      * Start a project-focused or portfolio-wide Claude chat; the server supplies argv and
      * directory.
@@ -800,6 +828,7 @@ export function createTerminals(
         recoverDataset,
         startTask,
         latex,
+        approveLatex,
         startChat,
         resumeTerminal,
         stopTerminal,

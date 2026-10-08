@@ -43,10 +43,17 @@
 // address of the document in every message the transport sends.
 //
 // The messages the relay adds to the channel (those with an `oculus` field) belong to the state
-// side and are ignored here, but for the `state` of a root that is served again after `root_gone`,
-// which puts the open documents under it on the server again. Messages are handled one at a time
-// in the order they arrived, so a peek read in the middle of one answer never lets a later one
-// overtake it.
+// side and are ignored here, but for the `state` of a root (transport/roots.ts). A root that left
+// (`failed` with the code `root_gone`) holds none of its documents on the relay any more, so a
+// request for one of its documents is answered with a null result and not sent, and an error
+// answer for such a request that arrives after the root left is answered with a null result as
+// well, as a request the relay cancelled is; Monaco's client turns an error into a rejection that
+// it throws to the page. When the root is served again the open documents under it are put on the
+// server again. Messages are handled one at a time in the order they arrived, so a peek read in
+// the middle of one answer never lets a later one overtake it. The answer to a completion request
+// is given to the host last (`TransportHost.completed`), which may add to its items, and so is the
+// answer to the resolve of one of them, with the params of the completion request whose answer the
+// client listed when it asked for the resolve.
 
 import type { LspDiagnostic, LspEditOutcome, LspFrame, LspPort } from './services';
 import {
@@ -70,6 +77,8 @@ import {
     type TextEdit
 } from './transport/messages';
 import { Connection } from './transport/connection';
+import { GoneRoots } from './transport/roots';
+import { EDITING, type Doc, type Own, type Peek, type Waiting } from './transport/records';
 import {
     EditTokens,
     declaringEdits,
@@ -112,43 +121,13 @@ export type TransportHost = {
     declared(capabilities: Record<string, unknown>): void;
     /** Shows a notice by its catalog key, with the words it is said with. */
     notice(key: string, ...words: string[]): void;
+    /**
+     * The answer to a completion request, or the one item a resolve answers, in the client's form,
+     * for the host to add to; `request` is the client's params of the completion request. It
+     * answers `result` itself when it adds nothing.
+     */
+    completed(request: unknown, result: unknown): Promise<unknown>;
 };
-
-/** A document the server holds: the file, its models, the version last sent. */
-type Doc = {
-    place: Place;
-    page: string;
-    language: string;
-    models: LspModel[];
-    version: number;
-};
-
-/** A request of the client that waits for its answer. */
-type Waiting = {
-    method: string;
-    params: unknown;
-    asking: string | null;
-    /** The versions of the documents when the request was made, for a request that gets an edit. */
-    asked: ReadonlyMap<string, number> | null;
-};
-
-/** The requests whose answers hold an edit the transport applies. */
-const EDITING: readonly string[] = [
-    'textDocument/rename',
-    'textDocument/codeAction',
-    'codeAction/resolve'
-];
-
-/** A request of the host that waits for its answer. */
-type Own = {
-    resolve: (value: unknown) => void;
-    reject: (reason: Error) => void;
-    /** The root of the document the request was made for, null for a request of none. */
-    root: string | null;
-};
-
-/** A peek model and when it was made. */
-type Peek = { model: LspModel; page: string; made: number };
 
 /** The transport of one language over one open period of its port. */
 export class LspTransport {
@@ -167,12 +146,13 @@ export class LspTransport {
     /** The same addresses lower-cased, which is how the client looks a model up. */
     #lowered = new Map<string, string>();
     #peeks = new Map<string, Peek>();
-    /** The root keys whose server ended because the root stopped being served. */
-    #gone = new Set<string>();
+    #gone = new GoneRoots();
     #waiting = new Map<number | string, Waiting>();
     #tokens: EditTokens;
     #own = new Map<string, Own>();
     #next = 0;
+    /** The params of the last completion request answered, the list the client shows. */
+    #listed: unknown = null;
     #chain: Promise<void> = Promise.resolve();
     #closed = false;
     #stops: (() => void)[] = [];
@@ -371,12 +351,13 @@ export class LspTransport {
     #forward(id: number | string, method: string, given: unknown): Promise<void> {
         const asking = this.#askingOf(given);
         const params = this.#out(given);
-        if (params === null) {
+        if (params === null || this.#left(asking)) {
             this.#enqueue(() => this.#deliver({ jsonrpc: '2.0', id, result: null }));
             return Promise.resolve();
         }
         const asked = EDITING.includes(method) ? this.#versions() : null;
-        this.#waiting.set(id, { method, params: given, asking, asked });
+        const listed = method === 'completionItem/resolve' ? { listed: this.#listed } : {};
+        this.#waiting.set(id, { method, params: given, asking, asked, ...listed });
         this.#write({ jsonrpc: '2.0', id, method, params: params.value });
         return Promise.resolve();
     }
@@ -577,18 +558,12 @@ export class LspTransport {
     }
 
     /**
-     * The relay's `state` of a root. A root whose server ended because the root stopped being
-     * served (`failed` with the code `root_gone`) is remembered; the next state of that root says
-     * it is served again, and the open documents under it are put on the server again.
+     * The relay's `state` of a root. A root that is served again after its server ended with the
+     * code `root_gone` has the open documents under it put on the server again.
      */
     #rootState(frame: LspFrame): void {
-        const root = frame.root;
-        if (frame.oculus !== 'state' || typeof root !== 'string') return;
-        if (frame.state === 'failed' && frame.code === 'root_gone') {
-            this.#gone.add(root);
-            return;
-        }
-        if (!this.#gone.delete(root)) return;
+        const root = this.#gone.hear(frame);
+        if (root === null) return;
         for (const doc of this.#docs.values()) {
             if (doc.place.root === root) this.#sendOpen(doc);
         }
@@ -635,6 +610,11 @@ export class LspTransport {
             this.#deliver({ jsonrpc: '2.0', id, result: null });
             return;
         }
+        // The relay holds no document of a root that left, so its error for one is no answer.
+        if (message.error !== undefined && this.#left(waiting.asking)) {
+            this.#deliver({ jsonrpc: '2.0', id, result: null });
+            return;
+        }
         if (message.error !== undefined) {
             this.#deliver({ jsonrpc: '2.0', id, error: message.error });
             return;
@@ -668,7 +648,19 @@ export class LspTransport {
             return;
         }
         const turned = await this.#in(result, waiting.asking);
-        this.#deliver({ jsonrpc: '2.0', id, result: turned === DROP ? null : turned });
+        if (turned === DROP) {
+            this.#deliver({ jsonrpc: '2.0', id, result: null });
+            return;
+        }
+        if (waiting.method === 'textDocument/completion') this.#listed = waiting.params;
+        const request =
+            waiting.method === 'textDocument/completion'
+                ? waiting.params
+                : waiting.method === 'completionItem/resolve'
+                  ? waiting.listed
+                  : undefined;
+        const shown = request === undefined ? turned : await this.#host.completed(request, turned);
+        this.#deliver({ jsonrpc: '2.0', id, result: shown });
     }
 
     /** The capabilities the server declared at `initialize`, told to the host. */
@@ -691,6 +683,11 @@ export class LspTransport {
         if (address === null) return undefined;
         const page = this.#addresses.get(address);
         return page === undefined ? undefined : this.#docs.get(page);
+    }
+
+    /** Whether the document a client address names belongs to a root that left. */
+    #left(address: string | null): boolean {
+        return this.#gone.has(this.#docOf(address)?.place.root);
     }
 
     /** A request of the server's the relay passed on. */

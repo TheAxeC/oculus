@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z737 (2026-10-08, step D43, the orchestrator, automode): the review over D43's repair round 1, closed at landing
+
+- Chosen: the LaTeX status item counts the waiting main files of the followed main's own folder (the same served root and folder path); a Rerun or Restart of a LaTeX build or clean terminal whose task mark names no folder takes the folder from the served root holding the terminal's working folder, and one whose mark names no step and main file is refused with a new word `latex-unmarked` and the sentence "This LaTeX terminal does not record its main file and folder, so what it would run cannot be checked; press Build or Clean of its main file to run it again."; a Rerun of a file that is no longer a main is refused `not-a-main`, as Build is; the clean held before a retry is let go when a later build of that main succeeds; G55 is written with the widening open item 14 ruled, without the report's added clause about Rerun, which the widened sentence already covers, and the case-32 route row is filed under G31.
+- Not chosen: the served root as the item's scope, which would show on a hub tab a build waiting in any project; old terminals left ungated on Rerun (the lazy option, and a gap in G55); the owed retry kept after a success, which cleans a good build's files and forces a rebuild nobody asked for.
+
+Where it applies: D43. Booked in `plan.md` Rulings, the closed log of `orchestrator-history.md` and `agents/reviews/D43-refuter.md`, Closed.
+
+## Z736 (2026-10-08, step D43, the orchestrator, automode): D43's first review, what was not sent back
+
+- Chosen: the body of `approve-latex` carries `step`, `recipe` and `last` beside the brief's `target`, `main` and `texts`, so the server recomputes the same step and texts it showed; case 24 reads "`\alph` offers `\upalpha` and `\mitalpha` with their glyphs", since the unimath data has no `alpha` row; with no root followed, the status item reads the entry that has waited longest.
+- Not chosen: a body of `target`, `main` and `texts` alone, which cannot name the recipe a weave text came from; case 24 as written, which no data can meet; the entry that waited least long.
+
+Where it applies: D43. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z735 (2026-10-08, step D39, the orchestrator, automode): the choices of D39's brief check
 
 - Chosen: the deck schema's attribute for a map of records is `map: true`; a rename refusal travels as the error's message and shows at the caret, where VS Code shows a language client's refusal, and a null `prepareRename` from any server gives VS Code's "The element can't be renamed."; the options catalog's vocabulary fields (`project_types`, `status_chips`, `entry_statuses`, `slide_tags`) are references, so Find References on `manuscript` lists `sources.yml`'s scan type; D39 is prepared after M6 and D43 land, since D43 also splits `transport.ts` and changes the relay's constructor.

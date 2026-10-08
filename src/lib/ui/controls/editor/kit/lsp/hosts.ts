@@ -17,6 +17,7 @@ import { createPeeks } from './peeks';
 import type { LspServices } from './services';
 import { Signal } from './signal';
 import { SERVED_LANGUAGES, factsForLanguage } from '$lib/data/prose/lsp-servers';
+import { keyOf, type CompletionHook } from './transport/messages';
 import { libraryOfResource, placeOfResource, type Target } from './uris';
 
 export { SERVED_LANGUAGES };
@@ -39,6 +40,12 @@ export type LspKit = {
         reg: Registration
     ): LspHandle | null;
     served: Served;
+    /**
+     * Add to the answers of the completion requests made for a model, until the call it returns is
+     * made. The model's language server is unaware of it: the hook is given the answer the client
+     * is about to get.
+     */
+    answering(model: Monaco.editor.ITextModel, hook: CompletionHook): { dispose(): void };
 };
 
 /** What the kit reads of the page. */
@@ -59,6 +66,7 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
     const hosts = new Map<string, LanguageHost>();
     const commands = new Map<string, Command>();
     const changed = new Signal();
+    const hooks = new Map<string, CompletionHook>();
     const peeks = createPeeks(monaco, parts.ensureLanguage);
     const ClientClass = clientClassOf(monaco);
     const now = parts.now ?? (() => Date.now());
@@ -183,6 +191,7 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
                     registerCommand,
                     changed,
                     held: heldOf,
+                    hooked: (address) => hooks.get(address),
                     now
                 });
                 hosts.set(language, host);
@@ -192,6 +201,15 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
         served: {
             has: (model) => [...hosts.values()].some((host) => host.serves(model)),
             onChange: (listener) => changed.event(listener)
+        },
+        answering(model, hook) {
+            const key = keyOf(model);
+            hooks.set(key, hook);
+            return {
+                dispose: () => {
+                    if (hooks.get(key) === hook) hooks.delete(key);
+                }
+            };
         }
     };
 }

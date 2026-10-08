@@ -34,7 +34,12 @@ import type { EditorExtension, EditorOwnAction, KeyPress } from '$lib/ui/control
 import type { FormatOutcome, LspHandle } from '$lib/ui/controls/editor/kit/lsp/client';
 import type { LspServices } from '$lib/ui/controls/editor/kit/lsp/services';
 import { SERVED_LANGUAGES } from '$lib/ui/controls/editor/kit/lsp/hosts';
-import { LSP_CHOICES, factsForLanguage, type LspServerFacts } from '$lib/data/prose/lsp-servers';
+import {
+    LSP_CHOICES,
+    factsForLanguage,
+    refusesFile,
+    type LspServerFacts
+} from '$lib/data/prose/lsp-servers';
 import { LSP_EDIT_NOTICES } from '$lib/data/prose/text-edits';
 import { hierarchyBelow, hierarchyRoots } from '$lib/views/sources/source/language/hierarchy';
 import type { HierarchyDirection, HierarchyEntry } from '$lib/state/system/machine/lsp/hierarchy';
@@ -122,14 +127,17 @@ function servedLanguage(language: string): boolean {
 }
 
 /**
- * Whether a file is one the YAML server is not given, which the relay's YAML entry refuses as well:
- * the machine's `local.yml`, or a YAML file under the hub's `secrets` folder or under `~/.oculus`.
+ * Whether a file is one the server of its language is not given, which the relay's entry refuses as
+ * well: the machine's `local.yml`, or a YAML file under the hub's `secrets` folder or under
+ * `~/.oculus`, for the YAML server, and a file whose extension the entry lists in
+ * `refusedExtensions` (the Sweave sources texlab is not given).
  */
-function isMachineFile(
+function isRefusedFile(
     client: ClientState,
     language: string,
     file: { root: string; path: string }
 ): boolean {
+    if (refusesFile(factsForLanguage(language), file.path)) return true;
     return (
         language === 'yaml' && isWithheldFile(file, client.fs.roots(), client.fs.workspaces().home)
     );
@@ -378,7 +386,7 @@ export function createLspTab(input: LspTabInput): LspTab {
         if (!servedLanguage(language) || file.root === '' || file.path === '' || version) {
             return undefined;
         }
-        if (isMachineFile(input.client, language, file)) return undefined;
+        if (isRefusedFile(input.client, language, file)) return undefined;
         return (kit, editor, model) => {
             const handle = kit.lsp.register(services, model, {
                 instance: input.instance(),
@@ -421,7 +429,7 @@ export function createLspTab(input: LspTabInput): LspTab {
             servedLanguage(language) &&
             file.root !== '' &&
             file.path !== '' &&
-            !isMachineFile(input.client, language, file)
+            !isRefusedFile(input.client, language, file)
             ? { root: file.root, language }
             : null;
     }

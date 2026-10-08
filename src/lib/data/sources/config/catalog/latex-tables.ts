@@ -3,7 +3,11 @@
 // the math symbol groups the TeX view lists, with the notice of the project they follow. The page
 // reads them to build the editor's commands and the Math Symbols section, and the server words one
 // finding for each list that lost a row, from the same read, so the two cannot disagree about what
-// was left out.
+// was left out. The same module reads the Unicode math symbols of config/catalogs/unimath.yml
+// (`latex_unimath:`), the commands the editor completes while `latex.unimath_symbols` is true: per
+// row the command without its backslash, the detail line and the words that describe it. A row
+// whose command is not a name of letters or whose detail is empty is left out and the rest are
+// kept; a key that is absent is no symbols, and a value that is not a list is one dropped list.
 //
 // A row that cannot be used is left out and the rest are kept: an `@` suggestion with no prefix or
 // no body, an environment whose name is not letters with an optional star, a chord whose key is not
@@ -12,7 +16,12 @@
 // table, and a value that is not the shape the key names is one dropped list.
 
 import { z } from 'zod';
-import { latexAtRow, latexEnvironmentRow, latexSymbolRow } from '../../../shapes/catalog-files.ts';
+import {
+    latexAtRow,
+    latexEnvironmentRow,
+    latexSymbolRow,
+    latexUnimathRow
+} from '../../../shapes/catalog-files.ts';
 import { filledTextShape, mapShape, optionalTextShape } from '../../../shapes/shapes.ts';
 
 /** One `@` suggestion: what is typed after the `@`, the snippet it inserts, what it means. */
@@ -131,4 +140,23 @@ export function readLatexEditing(config: Record<string, unknown>): LatexEditingR
         },
         dropped
     };
+}
+
+/** One symbol: `\command` inserts it, `detail` is its glyph line, `documentation` describes it. */
+export type UnimathSymbol = { command: string; detail: string; documentation: string };
+
+/** The symbols of the catalog and how many rows were left out. */
+export type LatexUnimathRead = { symbols: UnimathSymbol[]; lost: number };
+
+/** Read the `latex_unimath:` rows out of the merged config. */
+export function readLatexUnimath(config: Record<string, unknown>): LatexUnimathRead {
+    const rows = config.latex_unimath;
+    if (rows === undefined) return { symbols: [], lost: 0 };
+    if (!Array.isArray(rows)) return { symbols: [], lost: 1 };
+    const symbols: UnimathSymbol[] = [];
+    for (const row of rows) {
+        const parsed = latexUnimathRow.safeParse(row);
+        if (parsed.success) symbols.push(parsed.data);
+    }
+    return { symbols, lost: rows.length - symbols.length };
 }

@@ -160,6 +160,7 @@ describe("oculus's own config directory", () => {
         'catalogs/glyphs.yml': ['glyphs'],
         'catalogs/icons.yml': ['icons'],
         'catalogs/latex.yml': ['latex_editing'],
+        'catalogs/unimath.yml': ['latex_unimath'],
         'layout.yml': [
             'rail',
             'nav_groups',

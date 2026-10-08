@@ -43,8 +43,15 @@ export type Child = {
     on(event: 'error', listener: (error: NodeJS.ErrnoException) => void): unknown;
 };
 
-/** How a child is made: the program, its argument array and the folder it runs in. */
-export type Spawn = (command: string, args: readonly string[], options: { cwd: string }) => Child;
+/**
+ * How a child is made: the program, its argument array, the folder it runs in and, when the launch
+ * names one, the whole environment it runs with.
+ */
+export type Spawn = (
+    command: string,
+    args: readonly string[],
+    options: { cwd: string; env?: NodeJS.ProcessEnv }
+) => Child;
 
 /** What a process tells its owner. */
 type ProcessEvents = {
@@ -115,7 +122,13 @@ export class ServerProcess {
         const { launch, spawn, events } = this.#options;
         let child: Child;
         try {
-            child = spawn(launch.command, launch.args, { cwd: launch.cwd });
+            child = spawn(
+                launch.command,
+                launch.args,
+                launch.env === undefined
+                    ? { cwd: launch.cwd }
+                    : { cwd: launch.cwd, env: launch.env }
+            );
         } catch (error) {
             this.#spawnFailed(error as NodeJS.ErrnoException);
             return;
@@ -235,5 +248,6 @@ export class ServerProcess {
 export const spawnChild: Spawn = (command, args, options) =>
     nodeSpawn(command, [...args], {
         cwd: options.cwd,
+        ...(options.env === undefined ? {} : { env: options.env }),
         stdio: ['pipe', 'pipe', 'pipe']
     }) as unknown as Child;

@@ -26,6 +26,9 @@ export const WRONG_SETTINGS: Record<string, unknown> = {
         reverse_synctex: 'x',
         texcount_autorun: 'x',
         context_menu: 'yes',
+        texlab_path: 3,
+        unimath_symbols: 'yes',
+        includegraphics_preview: 'yes',
         tools: [
             { name: 'one', command: 'x', args: [] },
             { name: 'one', command: 'y', args: [] },

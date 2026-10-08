@@ -24,22 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:   # steps in flight, up to six (Z632)
-- step: D43
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: aab41ff6fa6e753ea (builder, launched 2026-10-08)
-  worktree: .agents/worktrees/D43
-  base: 3eda0630e
-  launched: 2026-10-08
-  report: agents/reviews/D43-report.md
-  builder_usage: 336,904 tokens, 488 tool uses, 120.9 min (round 0)
-  reviewer_report: agents/reviews/D43-refuter.md (ab62f7d574ed7cb3f, claude-opus-5-5, 346,910 tokens, 90 tool uses, 21.8 min)
-  brief_check: agents/reviews/D43-brief-check.md (a87cb52c4ba0e7cc3, claude-opus-5-5, 295,723 tokens, 99 tool uses, 14.5 min; closed inline in the brief at 3eda0630e)
-  shared_paths: with M6, `config/sources.yml`, `DESIGN.md`, `docs/files-and-search.md` and `docs/views.md`, hunks at different lines in each, so a simple merge
-  landing: not-started
-  round: 1 (agents/briefs/D43-round1.md, sent 2026-10-08; the tree handed back copied to .agents/worktrees/D43-round0)
+dispatch: none   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -231,6 +216,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 19:55. D43 landed (LaTeX navigation through texlab; booking in plan.md; `agents/reviews/D43-landing.md`) after one repair round, the review over round 1's findings fixed at landing (Z737 and Z736 in automode, for Axel's review in `choices.md`); G55, G36, G31, G13 and G7 written into `agents/guarded.md`; gate green in `.agents/worktrees/gate`, G48's start test 5 of 5, the look on the 8796 scratch oculus. Nothing in flight. No open item. Next: /spec D36 and /spec D39 (D39's Step 0 holds the `diskName` item), then M7, D41 and D40.
 - 2026-10-08 23:30. M6 landed (the collection forms removed; booking in plan.md; `agents/reviews/M6-landing.md`) after one repair round, with the review over round 1's career-file finding fixed at landing and its `diskName` finding folded into D39's Step 0; G28's text written into `agents/guarded.md`; gate green in `.agents/worktrees/gate`, G48's start test 5 of 5, the look on the 8796 scratch oculus. In flight: D43 (repair round 1, builder aab41ff6fa6e753ea). No open item. Next: D43's round, its review over the round and /land D43, then /spec D36 and D39.
 - 2026-10-08 22:40. D43 built and reviewed (`agents/reviews/D43-refuter.md`, ab62f7d574ed7cb3f); its findings sent as repair round 1 (`agents/briefs/D43-round1.md`, Z736 in automode) to builder aab41ff6fa6e753ea. M6's repair round 1 built (report rewritten); its review over the round add334d586072988b (claude-opus-5-5) running. No open item. Next: D43's round report and its review, M6's review over round 1, then /land M6 and /land D43, then D36 and D39.
 - 2026-10-08 19:40. Axel ruled open items 12, 13 and 14 (a): D36's, M6's and D43's guarded entries widened, their tests written by each builder, each entry's text written into `agents/guarded.md` at its landing. No open item. M6 building; D39's and D43's brief checks and D36's closing running.

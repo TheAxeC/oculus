@@ -11,6 +11,7 @@
 // the reader asks for here that ends well shows the PDF beside the tab, once per tab.
 
 import { untrack } from 'svelte';
+import { isLatexLanguage } from '$lib/state/sources/fs';
 import { onMac } from '$lib/ui/controls/editor/kit/load';
 import type { LatexCommands } from '$lib/ui/controls/editor/kit/latex/latex-editing';
 import type { Choice } from '$lib/ui/forms/choice/quick-pick';
@@ -74,8 +75,6 @@ export type LatexTab = {
     actions: () => EditorOwnAction[];
 };
 
-const LATEX_LANGUAGE = 'latex';
-
 /** The key of a letter or digit as Monaco names it. */
 function codeOf(character: string): KeyPress['code'] {
     if (character === '-') return 'Minus';
@@ -100,7 +99,7 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
     const mac = onMac();
 
     const applies = $derived(
-        input.language() === LATEX_LANGUAGE &&
+        isLatexLanguage(input.language()) &&
             input.onDisk() &&
             input.root() !== '' &&
             input.path() !== ''

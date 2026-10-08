@@ -136,6 +136,7 @@ editor:
 # auto_build: on_file_change builds a main file when any file it includes changes on disk, whoever wrote it; on_save builds when a file of it is saved in the editor; never builds only when asked. auto_build_interval_ms is the shortest time between two automatic builds of one main file. clean_and_retry cleans and builds once more a build that ended in an error. auto_clean runs Clean after a build: never, on_failed, on_succeeded or on_built.
 # synctex_path is where the synctex program is (empty finds it on PATH); reverse_synctex is the click that opens the source from the PDF: ctrl_click (Cmd or Ctrl and a click) or double_click. texcount_autorun: on_save counts the words of the main file after each save of a LaTeX file; context_menu adds Build and SyncTeX to the editor's right-click menu.
 # formatter is the program Format Document runs on a .tex file: none, latexindent, tex-fmt or badness. Each *_path names where that program is; empty finds it on PATH.
+# texlab_path is the texlab program the LaTeX language server runs (an absolute path or one that starts with ~); empty finds texlab on the PATH oculus was started with. A change reaches a running texlab at its next start. unimath_symbols offers the Unicode math symbols of LaTeX Workshop in completion after a backslash, each with its glyph; includegraphics_preview shows the picture beside a file suggested inside \includegraphics.
 latex:
   recipe_default: first
   out_dir: "%DIR%"
@@ -148,10 +149,13 @@ latex:
   reverse_synctex: ctrl_click
   texcount_autorun: never
   context_menu: false
+  unimath_symbols: false
+  includegraphics_preview: true
   formatter: none
   latexindent_path: ''
   tex_fmt_path: ''
   badness_path: ''
+  texlab_path: ''
   recipes:
     - { name: latexmk, tools: [latexmk] }
     - { name: latexmk (latexmkrc), tools: [latexmk_rconly] }

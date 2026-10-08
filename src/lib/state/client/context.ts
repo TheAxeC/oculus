@@ -390,7 +390,7 @@ export function createClientState(
         if (id === '') return;
         ui.setInstanceState(id, { ...instanceMap(ui.instanceState(id)), scope: root });
     }
-    const latex = withQueries(
+    const latex: LatexStore = withQueries(
         'latex',
         createLatex(entities, terminals, fs, queries, writes, {
             notices,
@@ -409,6 +409,13 @@ export function createClientState(
             },
             showProblems: (target) => {
                 showProblems('root' in target ? target.root : latex.state(target).root);
+            },
+            again: async (terminal, restart) => {
+                const answer = await (restart
+                    ? commands.restart(terminal, true)
+                    : commands.rerun(terminal));
+                if ('ok' in answer && answer.ok) return { ok: true, id: answer.id, error: '' };
+                return { ok: false, id: '', error: 'error' in answer ? answer.error : '' };
             }
         })
     );
@@ -583,7 +590,8 @@ export function createClientState(
             focusedSource: () => editorStatus.focused(),
             gitRoots: selectors.gitRoots,
             served: servedRoots,
-            openFile: (repo, path, line) => repositories.openFile(repo, path, line)
+            openFile: (repo, path, line) => repositories.openFile(repo, path, line),
+            askLatex: latex.holdAgain
         })
     );
     // A root that leaves the served roots takes its command diagnostics and its LaTeX states with
