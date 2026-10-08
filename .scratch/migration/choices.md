@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z741 (2026-10-09, step D39, the orchestrator, automode): where a rename's refusal shows, and D39's first review
+
+- Chosen: a refusal that does not depend on the new name is given at `prepareRename` and shows at the caret, and every such check of the rename plan (a file over the write limit or not text, a private folder, unsaved text in another window, a key shared by two sources, from its reference or its definition) moves to the prepare answer; a refusal that depends on the new name is given at `rename` and shows as a notice, where Monaco 0.57 and VS Code put a rename-time reason. This absorbs a premise Z735 got wrong: VS Code shows a rename-time refusal as a notification, and Monaco's rename sends it to the notification service. The rest of D39's first review goes back as repair round 1 (`agents/briefs/D39-round1.md`), with new sentences for a refusal with no words, a closed file over 5 MB and a closed file that is not text.
+- Not chosen: every refusal at the caret through Monaco's message controller, which departs from VS Code and reaches into an editor contribution Monaco does not export as API; every rename-time refusal left as a notice with no check moved to the prepare answer, as built (the lazy option); a closed file the page cannot read reported in the report with the generic "could not be made" sentence kept (the lazy option).
+
+Where it applies: D39. Booked in `plan.md` Rulings and `agents/briefs/D39-round1.md`.
+
 ## Z740 (2026-10-08, step D36, the orchestrator, automode): the ESLint approval per configuration file, and D36's first review
 
 - Chosen: the ESLint approval and the held ESLint process are per configuration folder: the key is over the folder and the one `eslint.config.*` the process loads with `overrideConfigFile`, so the approval names exactly the code that runs, a nested configuration that was never approved is never loaded, and no lint walks the repository for every configuration file; `DESIGN.md:166`, `docs/files-and-search.md` and the `:eslint-config` list say so. The lint route's body carries an `action` (`lint`, `stop`, `config`, `approve`, `revoke`) and an approval carries the key the reader was shown, so an approval made after the file changed approves nothing; a lint answer carries the hash of the bytes its rows were read from. Sent back as repair round 1: a linter with no answer draws no item; a documentation address is opened only as an `http:` or `https:` address; Fix All is disabled while the tab's text is not the linted text; the hung-child end and the switch-off end get their test rows; the comments, the negation-contrast and the docs' switch values are fixed.

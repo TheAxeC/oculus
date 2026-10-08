@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D39 (hub keys as links): reviewed; repair round 1 next.
+- D39 (hub keys as links): repair round 1 sent (Z741).
 
 Queued, in order (10 steps):
 - M7 (a project folder moved in Files): after D39.
@@ -16,7 +16,7 @@ Queued, in order (10 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D36 (linters as VS Code's), 2026-10-09, its landing commit.
+- D36 (linters as VS Code's), 2026-10-09, 5ed0bc24c.
 - D43 (LaTeX navigation through texlab), 2026-10-08, a60dcb4fa.
 - M6 (the collection forms removed), 2026-10-08, 827d5b77c.
 - D33 (the Problems view), 2026-10-08, b081d9da4.
