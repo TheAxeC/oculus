@@ -365,7 +365,6 @@ describe('text keys', () => {
         expect(found.length).toBeGreaterThan(0);
     });
 
-    // Revert: call words(catalog, 'server.chat.' + name) anywhere under src.
     it('uses literals except at the documented computed prefixes', () => {
         const computed = unapproved(found);
         expect(computed.map((call) => `${call.file}: ${call.text}`)).toEqual([]);
@@ -405,7 +404,6 @@ describe('text keys', () => {
         expect(SENTENCE_KEYS.filter((key) => !key.startsWith('findings.'))).toEqual([]);
     });
 
-    // Revert: call findingText(rules.text, 'findings.validate.' + name) anywhere under src.
     it('reads every findingText key as a whole literal, except where a documented rule computes it', () => {
         const documented = (call: { file: string; key: string }): boolean =>
             COMPUTED_FINDING_KEYS.some(
@@ -438,8 +436,6 @@ describe('text keys', () => {
         ]);
     });
 
-    // Revert: drop the WORDS scan from calls(), or read `words` only when its first argument is
-    // `catalog`.
     it('catches a computed key and a literal key, and reads past neither', () => {
         const dir = scratchDir('oculus-keys-');
         const write = (name: string, body: string) => {

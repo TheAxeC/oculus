@@ -2,8 +2,9 @@
 // hub and the portfolio's projects to the server module, because route modules may export only HTTP
 // verbs. The roots are the list lib/server/files/roots.ts folds and nothing else, so a folder the
 // reader added in the file browser is a root a deck can be opened from. The projects are the ones
-// this request's server last published, and the configuration is `locals.config()`, read from disk
-// at this request. The POST reads the same deck over the drafts of the body.
+// this request's server last published, and the configuration is the one read `locals.config()`
+// keeps for the request, taken from the ServerContext's cache of the parse. The POST reads the same
+// deck over the drafts of the body.
 
 import { portfolioConfigFrom } from '$lib/data/index';
 import { handleDeck, handleDeckDrafts } from '$lib/server/content/deck/endpoint';

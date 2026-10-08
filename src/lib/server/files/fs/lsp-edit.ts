@@ -9,10 +9,12 @@
 // writes nothing. The checks are made per file in the order `outside` (a root not served, a path
 // out of it, or under a `node_modules` folder or a folder whose name starts with a dot, which are
 // never edited here), `missing`, `protected` (the machine's local.yml), `denied` (the file's mode
-// locks it), `binary` (bytes that are not text, or text that is not UTF-8), `too_large` (over what
-// the history keeps a copy of, as the file is and as the edit would leave it), `changed` (the bytes
-// are not the ones the edit was computed for, or a range names a line the file lacks). A file named
-// twice, no file at all, or two ranges of a file that overlap is `not-an-action`.
+// locks it), `binary` (a NUL byte in the first 8 KB), `too_large` (over what the history keeps a
+// copy of, as the file is and as the edit would leave it), `changed` (the bytes are not the ones
+// the edit was computed for, or a range names a line the file lacks), and after `changed` `binary`
+// again for a file with a NUL byte anywhere or bytes that are not UTF-8 throughout (the whole-file
+// rule of data/helpers/files/text-kind.ts). A file named twice, no file at all, or two ranges of a
+// file that overlap is `not-an-action`.
 //
 // Each file is then written once: its copy is kept in the local history first (kind `lsp-edit`),
 // the new text is written through the same atomic write a save uses with the file's byte order mark
@@ -21,10 +23,11 @@
 // at. The whole request is one `files` record, with the stamps of the files as they were (each
 // naming its copy) and as they are.
 
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import type { FileStamp, LspEditFile, OpsAnswer } from '../../../data/file-ops.ts';
+import { isWholeText } from '../../../data/helpers/files/text-kind.ts';
 import { applyTextEdits } from '../../../data/prose/text-edits.ts';
+import { hashOf, splitMark, withMark } from '../../core/file-bytes.ts';
 import { writeBytesAtomic } from '../../core/json.ts';
 import type { Root } from '../files.ts';
 import { stampOf } from './file-changes.ts';
@@ -42,9 +45,6 @@ export type LspEditScope = {
     note: (before: FileStamp[], after: FileStamp[]) => void;
 };
 
-/** The byte order mark of UTF-8, which a file may start with and the edit never touches. */
-const BOM = Buffer.from([0xef, 0xbb, 0xbf]);
-
 /** One file read, checked and its new bytes made, not yet written. */
 type Planned = { name: string; real: string; before: Buffer; after: Buffer };
 
@@ -58,11 +58,6 @@ function inLibraryFolder(path: string): boolean {
         .some((part) => part === 'node_modules' || part.startsWith('.') || part === '..');
 }
 
-/** The SHA-256 of bytes as lower-case hex. */
-function hashOf(bytes: Buffer): string {
-    return createHash('sha256').update(bytes).digest('hex');
-}
-
 /** One file of the request, read and checked, with the bytes its edit makes. */
 function plan(scope: LspEditScope, file: LspEditFile): Planned | Fail {
     if (inLibraryFolder(file.path)) return fail('outside');
@@ -70,14 +65,11 @@ function plan(scope: LspEditScope, file: LspEditFile): Planned | Fail {
     if (refused(read)) return read;
     const { bytes } = read;
     if (hashOf(bytes) !== file.hash) return fail('changed');
-    const marked = bytes.subarray(0, BOM.length).equals(BOM);
-    const body = marked ? bytes.subarray(BOM.length) : bytes;
-    const text = body.toString('utf8');
-    if (!Buffer.from(text, 'utf8').equals(body)) return fail('binary');
-    const edited = applyTextEdits(text, file.edits);
+    if (!isWholeText(bytes)) return fail('binary');
+    const { marked, body } = splitMark(bytes);
+    const edited = applyTextEdits(body.toString('utf8'), file.edits);
     if (!edited.ok) return fail(edited.reason === 'overlap' ? 'not-an-action' : 'changed');
-    const made = Buffer.from(edited.text, 'utf8');
-    const after = marked ? Buffer.concat([BOM, made]) : made;
+    const after = withMark(Buffer.from(edited.text, 'utf8'), marked);
     if (after.length > SAVE_MAX_BYTES) return fail('too_large');
     return { name: `${file.root}/${file.path}`, real: read.real, before: bytes, after };
 }

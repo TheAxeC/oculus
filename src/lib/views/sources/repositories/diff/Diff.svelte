@@ -38,13 +38,17 @@
     // cut by state/sources/repositories/diff/diff-patch.ts and applied by git
     // (diff/hunk-acts.svelte.ts). A revert throws work away, so it asks first.
     //
+    // A save conflict's comparison (a source tab's Compare) holds the file as the disk has it on
+    // the left, read again when the file changes, and the tab's own text on the right, which is
+    // typed into as the tab is. A tab closed meanwhile leaves the pane saying so.
+    //
     // The files are read when the pane opens, again when the instance is pointed at something else,
     // and again whenever the repository's state on the `git` channel moves (once, when the tab is
     // shown, for a state that came while it was hidden), so a hunk staged here or anywhere else
-    // redraws the pane; a read that changes nothing keeps what is drawn. Each
-    // file's diff editor view state (the runs revealed, the scroll and the caret) is kept in the
-    // instance state by the file's key (its path, or for a path git lists again the path and its
-    // place, from `fileKeys`), so a pane drawn again while its tab stays open shows what it showed.
+    // redraws the pane; a read that changes nothing keeps what is drawn. Each file's diff editor
+    // view state (the runs revealed, the scroll and the caret) is kept in the instance state by
+    // the file's key (its path, or for a path git lists again the path and its place, from
+    // `fileKeys`), so a pane drawn again while its tab stays open shows what it showed.
     // The pane lists its editor's actions for the palette as a source tab does, and runs the one
     // asked for.
 
@@ -58,7 +62,7 @@
     import DiffSection from './DiffSection.svelte';
     import { failureSentence } from './compare-words';
     import { HunkActs } from './hunk-acts.svelte';
-    import { readPaneDiff } from './diff-read';
+    import { readKeyOf, readPaneDiff } from './diff-read';
     import { latestRead } from '$lib/state/sources/repositories/diff/compare';
     import { diffReader } from '$lib/state/sources/repositories/answers';
     import {
@@ -73,7 +77,6 @@
         type LineChange
     } from '$lib/state/sources/repositories/diff/diff-hunks';
     import type { PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
-    import { previewKey } from '$lib/state/sources/repositories/replace-preview';
     import {
         diffActs,
         diffViewOf,
@@ -98,6 +101,7 @@
         repositories,
         selectors: { gitFor, gitRoots },
         writes,
+        source: { diskHash, editSourceDraft, sourceDraft },
         editorStatus: { asked: askedOf, forget, publish },
         layout: { instanceView },
         ui: { codeTheme, instanceState, setInstanceState, theme, textScale }
@@ -112,8 +116,10 @@
     const KEEP_AFTER_MS = 400;
 
     const held = $derived(heldDiff(instance.state));
-    /** What a read is made under: the pane's id, and for a Replace Preview its replacements. */
-    const readKey = $derived(`${held.id}${previewKey(held.replace)}`);
+    /** What a read is made under: the pane, its replacements and a conflict's disk hash. */
+    const readKey = $derived(readKeyOf(held, diskHash));
+    /** The source tab whose text is the right side of a save conflict's comparison, if any. */
+    const tab = $derived(held.unsaved === undefined ? null : sourceDraft(held.unsaved));
 
     let files: DiffSides[] = $state([]);
     let attributes: DiffAttributes | null = $state(null);
@@ -155,6 +161,10 @@
     );
 
     const keys = $derived(fileKeys(files));
+    /** The files as drawn: a save conflict's right side is the tab's text as it is now. */
+    const sides = $derived(
+        tab === null ? files : files.map((one) => ({ ...one, modified: tab.text }))
+    );
     const view = $derived(diffViewOf(instanceState(instance.id), loaded ? keys : undefined));
     const acts = $derived(diffActs(held) && held.path !== '');
     const grouped = $derived((held.group ?? '') !== '');
@@ -385,6 +395,8 @@
     >
         {#if !subject}
             <Empty message={t('repositories.diff_empty')} glyph={t('repositories.empty_glyph')} />
+        {:else if tab !== null && !tab.loaded}
+            <Empty message={t('source.conflict_gone')} glyph={t('repositories.empty_glyph')} />
         {:else if failure !== ''}
             <Empty error message={failure} action={again} />
         {:else if !loaded}
@@ -405,7 +417,13 @@
                 {#each files as file, index (keys[index])}
                     <DiffSection
                         bind:this={sections[index]}
-                        {file}
+                        file={sides[index]}
+                        editable={tab !== null}
+                        oninput={(text: string) => {
+                            if (held.unsaved !== undefined && text !== tab?.text) {
+                                editSourceDraft(held.unsaved, text);
+                            }
+                        }}
                         {index}
                         key={keys[index]}
                         model={`${instance.id}:${keys[index]}`}

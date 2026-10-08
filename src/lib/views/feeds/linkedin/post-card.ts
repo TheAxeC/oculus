@@ -3,7 +3,7 @@
 
 import { HUB_ROOT } from '$lib/state/sources/fs';
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
-import { sourceTabState } from '$lib/state/sessions/source.svelte';
+import { sourceTabState } from '$lib/state/sessions/source/draft';
 
 export function linkedinSourcePath(folder: string, file: string): string {
     return `${folder.replace(/\/$/, '')}/${file}`;

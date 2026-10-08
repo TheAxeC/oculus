@@ -3,9 +3,10 @@
 //
 // The roots are the file browser's own list, folded by lib/server/files/roots.ts and by nothing
 // else, so a folder the reader added in the file browser is listed there, opened in a source tab,
-// and searched here from one rule. The configuration is `locals.config()`, read from disk at this
-// request; the engine and the machine's own file come off the request's ServerContext; the roots
-// are folded once, so one request reads the workspaces file once.
+// and searched here from one rule. The configuration is the one read `locals.config()` keeps for
+// the request, taken from the ServerContext's cache of the parse; the engine and the machine's own
+// file come off the request's ServerContext; the roots are folded once, so one request reads the
+// workspaces file once.
 
 import { handleSearch } from '$lib/server/files/search-routes';
 import { browserRoots } from '$lib/server/files/roots';

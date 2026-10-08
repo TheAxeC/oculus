@@ -101,6 +101,8 @@
         oninput: (value: string) => void;
         /** Where the caret is now, said on every move. */
         oncaret?: (caret: EditorCaret) => void;
+        /** The editor lost focus. */
+        onblur?: () => void;
         /** The selected text on every caret move, empty with no selection. */
         onselect?: (text: string) => void;
         /** The editor's actions the palette offers, said once the editor has loaded. */
@@ -128,6 +130,7 @@
         writable = true,
         oninput,
         oncaret,
+        onblur,
         onselect,
         onactions
     }: Props = $props();
@@ -240,6 +243,7 @@
                 {extension}
                 {writable}
                 {oncaret}
+                {onblur}
                 {onselect}
                 onmark={gutter?.onmark}
                 onblame={gutter?.onblame}

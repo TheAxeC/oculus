@@ -493,6 +493,33 @@ options:
             description: Whether the editor keeps the headings and blocks that contain the first visible line at the top of the view, VS Code's editor.stickyScroll.enabled. The structure comes from the headings of a Markdown or LaTeX file, from the language service of TypeScript, JavaScript, JSON, CSS, SCSS, Less and HTML, from the symbols pyright and clangd answer for a Python, C or C++ file they serve, and from the braces of Java, Dart, R and Rite, and of C and C++ while no language server serves the file.
             default: true
             control: toggle
+        editor.autosave:
+            heading: editor
+            section: Source editor
+            description: 'off: An editor with changes is never automatically saved. after_delay: An editor with changes is automatically saved after the configured editor.autosave_delay_ms. on_focus_change: An editor with changes is automatically saved when the editor loses focus, and every such editor is saved when the page loses focus.'
+            default: 'off'
+            control: choice
+            values: ['off', after_delay, on_focus_change]
+        editor.autosave_delay_ms:
+            heading: editor
+            section: Source editor
+            description: Controls the delay in milliseconds after which an editor with unsaved changes is saved automatically. Only applies when editor.autosave is set to after_delay.
+            default: 1000
+            control: number
+            min: 0
+            whole: true
+        editor.trim_trailing_whitespace:
+            heading: editor
+            section: Source editor
+            description: When enabled, will trim trailing whitespace when saving a file.
+            default: false
+            control: toggle
+        editor.final_newline:
+            heading: editor
+            section: Source editor
+            description: When enabled, a save ends a last line of text with one line ending and takes off the empty lines after the last line that holds any character.
+            default: false
+            control: toggle
         editor.languages:
             heading: editor
             section: Source editor
@@ -523,6 +550,12 @@ options:
                     whole: true
                 format_on_save:
                     description: true formats the document with the language server before each save, false saves it as typed; a language whose server does not format, Python among them, saves as typed either way
+                    control: toggle
+                trim_trailing_whitespace:
+                    description: When enabled, will trim trailing whitespace when saving a file.
+                    control: toggle
+                final_newline:
+                    description: When enabled, a save ends a last line of text with one line ending and takes off the empty lines after the last line that holds any character.
                     control: toggle
         latex.auto_build:
             heading: editor

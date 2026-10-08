@@ -190,7 +190,9 @@
                     mark: tabMark,
                     pathOf,
                     dirty: unsaved,
-                    gone: (file) => client.fs.gone(file.root, file.path)
+                    gone: (file) =>
+                        client.fs.gone(file.root, file.path) ||
+                        client.ui.fileGone(file.root, file.path)
                 },
                 t
             )
@@ -291,7 +293,7 @@
 
     /** Cmd+W and Cmd+N arrive as commands (keys/key-dom.ts); the close question is this pane's. */
     function paneCommand(command: PaneCommand): void {
-        if (command === 'close-tab' && active !== '') closeTab(active);
+        if (command === 'close-tab' && active !== '') void closeTab(active);
         else if (command === 'new-text-file') openText(page, path);
     }
 

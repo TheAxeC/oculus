@@ -116,6 +116,8 @@
         paused?: number | null;
         onchange?: (text: string, edit: EditorEdit) => void;
         oncaret?: (caret: EditorCaret) => void;
+        /** The editor's text area lost focus. */
+        onblur?: () => void;
         /** The selected text on every caret move; empty with none or a selection too long. */
         onselect?: (text: string) => void;
         /** How far the text is scrolled, 0 at the top and 1 at the bottom. */
@@ -163,6 +165,7 @@
         paused = null,
         onchange,
         oncaret,
+        onblur,
         onselect,
         onscroll,
         onfirst,
@@ -228,6 +231,7 @@
         firstLine = followFirstLine(made, (line) => onfirst?.(line));
         listeners.push(
             made.onDidChangeCursorSelection((event) => caretMoved(event.selection)),
+            made.onDidBlurEditorWidget(() => onblur?.()),
             made.onDidScrollChange((event) => {
                 const room = event.scrollHeight - made.getLayoutInfo().height;
                 onscroll?.(room > 0 ? Math.min(1, event.scrollTop / room) : 0);

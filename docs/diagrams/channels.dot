@@ -7,6 +7,10 @@ digraph channels {
         "server/accounts/calendar/poll";
         "server/accounts/mail/poll";
     }
+    subgraph "cluster_publish server/files" {
+        label="server/files"; style=solid;
+        "server/files/fs/open-files";
+    }
     subgraph "cluster_publish server/machine" {
         label="server/machine"; style=solid;
         "server/machine/debug/console";
@@ -66,14 +70,21 @@ digraph channels {
     }
     subgraph "cluster_lost" {
         label="not placed"; style=dashed;
+        "? src/lib/server/files/fs/open-files.ts:150" [label="src/lib/server/files/fs/open-files.ts:150 publish(channel)"];
         "? src/lib/server/machine/debug/console.ts:98" [label="src/lib/server/machine/debug/console.ts:98 publish(CONSOLE_CHANNEL)"];
         "? src/lib/server/machine/debug/session.ts:179" [label="src/lib/server/machine/debug/session.ts:179 publish(DEBUG_CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
         "? src/lib/server/machine/runs/schedules/watch.ts:290" [label="src/lib/server/machine/runs/schedules/watch.ts:290 publish(CHANNEL)"];
-        "? src/lib/shell/panes/PaneView.svelte:468" [label="src/lib/shell/panes/PaneView.svelte:468 message()"];
+        "? src/lib/shell/panes/PaneView.svelte:470" [label="src/lib/shell/panes/PaneView.svelte:470 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
+        "? src/lib/state/sessions/source/disk.svelte.ts:119" [label="src/lib/state/sessions/source/disk.svelte.ts:119 channel === undefined"];
+        "? src/lib/state/sessions/source/disk.svelte.ts:133" [label="src/lib/state/sessions/source/disk.svelte.ts:133 channel === undefined"];
+        "? src/lib/state/sessions/source/disk.svelte.ts:150" [label="src/lib/state/sessions/source/disk.svelte.ts:150 channel === undefined"];
+        "? src/lib/state/sessions/source/disk.svelte.ts:153" [label="src/lib/state/sessions/source/disk.svelte.ts:153 .listen(name, (heard)"];
+        "? src/lib/state/sessions/source/disk.svelte.ts:153" [label="src/lib/state/sessions/source/disk.svelte.ts:153 message(name, heard)"];
+        "? src/lib/state/sessions/source/disk.svelte.ts:154" [label="src/lib/state/sessions/source/disk.svelte.ts:154 .subscribe([name])"];
         "? src/lib/state/system/apps/apps.svelte.ts:293" [label="src/lib/state/system/apps/apps.svelte.ts:293 message(channel)"];
         "? src/lib/state/system/config/editors/draft.ts:346" [label="src/lib/state/system/config/editors/draft.ts:346 message('notYaml', place.label, name)"];
         "? src/lib/state/system/config/editors/draft.ts:351" [label="src/lib/state/system/config/editors/draft.ts:351 message('where', place.label, name)"];
@@ -121,6 +132,7 @@ digraph channels {
         "state/life/present";
         "state/sessions/latex/actions";
         "state/sessions/latex/latex";
+        "state/sessions/source/disk";
         "state/sessions/terminal/commands";
         "state/sessions/terminal/pty/pty-wire";
         "state/sessions/terminals";
@@ -180,9 +192,14 @@ digraph channels {
         label="routes"; style=solid;
         "routes/+page";
     }
-    "? src/lib/shell/panes/PaneView.svelte:468" -> "shell/panes/PaneView";
+    "? src/lib/shell/panes/PaneView.svelte:470" -> "shell/panes/PaneView";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
     "? src/lib/state/client/queries.svelte.ts:79" -> "state/client/queries";
+    "? src/lib/state/sessions/source/disk.svelte.ts:119" -> "state/sessions/source/disk";
+    "? src/lib/state/sessions/source/disk.svelte.ts:133" -> "state/sessions/source/disk";
+    "? src/lib/state/sessions/source/disk.svelte.ts:150" -> "state/sessions/source/disk";
+    "? src/lib/state/sessions/source/disk.svelte.ts:153" -> "state/sessions/source/disk";
+    "? src/lib/state/sessions/source/disk.svelte.ts:154" -> "state/sessions/source/disk";
     "? src/lib/state/system/apps/apps.svelte.ts:293" -> "state/system/apps/apps";
     "? src/lib/state/system/config/editors/draft.ts:346" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:351" -> "state/system/config/editors/draft";
@@ -331,6 +348,7 @@ digraph channels {
     "ch usage" -> "views/system/workbench";
     "server/accounts/calendar/poll" -> "ch calendar";
     "server/accounts/mail/poll" -> "ch inbox";
+    "server/files/fs/open-files" -> "? src/lib/server/files/fs/open-files.ts:150";
     "server/machine/debug/console" -> "? src/lib/server/machine/debug/console.ts:98";
     "server/machine/debug/session" -> "? src/lib/server/machine/debug/session.ts:179";
     "server/machine/hpc/poll" -> "ch hpc";

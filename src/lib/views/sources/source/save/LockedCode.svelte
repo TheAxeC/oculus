@@ -4,8 +4,8 @@
     // index are drawn by the line over the read-only code window, which carries the tab's own
     // gutter, and the tab is told every scroll so the gutter's lines follow. A file this machine's
     // mode locks is drawn by the line alone, over the tab's editor in its read-only form
-    // (Source.svelte draws the editor), so the editor is never replaced when the mode changes. The
-    // line and the window are two rows of the tab's grid (Source.svelte).
+    // (SourceBody.svelte draws the editor), so the editor is never replaced when the mode changes.
+    // The line and the window are two rows of the tab's grid (SourceBody.svelte).
 
     import type { Snippet } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';

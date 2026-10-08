@@ -24,6 +24,7 @@ import {
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { ENGINE_ROOT, engineRoot, rootsFile } from '../../../src/lib/server/files/files.ts';
+import { readEditorOptions } from '../../../src/lib/data/sources/config/editor-options.ts';
 import { layoutFile } from '../../../src/lib/server/content/docs.ts';
 import { parse } from 'yaml';
 import { noop } from '../../fixtures/doubles.ts';
@@ -333,7 +334,6 @@ describe('loadConfig', () => {
         ]);
     });
 
-    // Revert: rethrow in mergeText every error flattenText raises that is not the not-a-map one.
     it('reports a catalog block whose aliases loop as a finding rather than throwing', () => {
         const engine = scratch();
         withSentences(engine);
@@ -420,12 +420,18 @@ describe('settingFindings', () => {
                 'calendar.days_back',
                 'calendar.poll_min',
                 'changes.keep',
+                'editor.autosave',
+                'editor.autosave_delay_ms',
+                'editor.final_newline',
                 'editor.languages.cobolx',
                 'editor.languages.cpp.format_on_save',
+                'editor.languages.cpp.trim_trailing_whitespace',
                 'editor.languages.markdown',
+                'editor.languages.python.final_newline',
                 'editor.languages.python.tab_size',
                 'editor.paint_limit_kb',
                 'editor.tab_size',
+                'editor.trim_trailing_whitespace',
                 'editor.word_wrap',
                 'files.confirm_delete',
                 'git.autofetch_minutes',
@@ -486,6 +492,38 @@ describe('settingFindings', () => {
         expect(lines).toContain(
             'editor.languages.cpp.format_on_save: editor.languages.cpp.format_on_save must be true or false; the field is not read'
         );
+        expect(lines).toContain(
+            'editor.languages.cpp.trim_trailing_whitespace: editor.languages.cpp.trim_trailing_whitespace must be true or false; the field is not read'
+        );
+        expect(lines).toContain(
+            'editor.autosave: editor.autosave must be one of off, after_delay, on_focus_change; the default is used'
+        );
+        expect(lines).toContain(
+            'editor.autosave_delay_ms: editor.autosave_delay_ms must be a whole number of at least 0; the default is used'
+        );
+        expect(lines).toContain(
+            'editor.trim_trailing_whitespace: editor.trim_trailing_whitespace must be true or false; the default is used'
+        );
+        expect(lines).toContain(
+            'editor.final_newline: editor.final_newline must be true or false; the default is used'
+        );
+        expect(lines).toContain(
+            'editor.languages.python.final_newline: editor.languages.python.final_newline must be true or false; the field is not read'
+        );
+        const read = readEditorOptions({ ...shipped, ...WRONG }).options;
+        expect(read).toMatchObject({
+            autosave: 'off',
+            autosaveDelay: 1000,
+            trimTrailingWhitespace: false,
+            finalNewline: false
+        });
+        expect(read.languages.cpp).toBeUndefined();
+        expect(read.languages.python).toBeUndefined();
+        const fraction = { ...shipped, editor: { autosave_delay_ms: 1.5 } };
+        expect(readEditorOptions(fraction).options.autosaveDelay).toBe(1000);
+        expect(said(fraction)).toEqual([
+            'editor.autosave_delay_ms: editor.autosave_delay_ms must be a whole number of at least 0; the default is used'
+        ]);
         expect(lines).toContain(
             'open.program_ext.pdf: open.program_ext.pdf must be an extension with its dot; the entry is not read'
         );
@@ -555,7 +593,6 @@ describe('themeFindings', () => {
     const CODE = (shown: string): string =>
         `appearance.yml code_theme: code_theme is ${shown}, which is neither tokens nor the id of a Shiki theme; the editor colours code from the tokens instead`;
 
-    // Revert: drop the code_theme check from themeFindings; no finding is raised for any value.
     it('names a code theme that is no listed id, one finding per value, case included', () => {
         expect(codeSaid({ code_theme: 'not-a-theme' })).toEqual([CODE('"not-a-theme"')]);
         expect(codeSaid({ code_theme: 5 })).toEqual([CODE('5')]);
@@ -566,7 +603,6 @@ describe('themeFindings', () => {
         expect(codeSaid({ code_theme: 'constructor' })).toEqual([CODE('"constructor"')]);
     });
 
-    // Revert: move the check after the early return for a config with no `themes:` list.
     it('names a bad code theme in a config that has no themes list', () => {
         expect(codeSaid({ themes: undefined, code_theme: 'nope' })).toEqual([CODE('"nope"')]);
         expect(
@@ -580,7 +616,6 @@ describe('themeFindings', () => {
         ).toHaveLength(2);
     });
 
-    // Revert: raise a finding for the absent key or a listed value.
     it('says nothing for an absent code_theme, tokens or a listed id', () => {
         expect(codeSaid({})).toEqual([]);
         expect(codeSaid({ code_theme: 'tokens' })).toEqual([]);
@@ -602,7 +637,6 @@ describe('themeFindings', () => {
 // them.
 
 describe('vocabCatalog', () => {
-    // Revert: leave code_theme out of VOCAB_KEYS; the first frame then carries no code theme.
     it('carries code_theme with the other appearance keys, and only when the config holds it', () => {
         const config = loadConfig(engineDir()).config;
         expect(vocabCatalog({ ...config, code_theme: 'nord' }).code_theme).toBe('nord');

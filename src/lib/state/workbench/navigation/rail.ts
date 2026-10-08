@@ -20,7 +20,7 @@ export { arrangementKeys, glyphNames, readRail };
 export type { RailEntry, RailProblem, RailRead };
 
 /** The state that opens a file as a source tab, which a bookmark inside an apps folder opens as. */
-export { sourceTabState } from '../../sessions/source.svelte.ts';
+export { sourceTabState } from '../../sessions/source/draft.ts';
 
 /** One choice of the rail's Bookmarks menu, as the file browser's module defines it. */
 export type { BookmarkRow as Bookmark } from '../../sources/fs.ts';

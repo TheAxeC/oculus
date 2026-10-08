@@ -428,6 +428,12 @@ export function bookmarkTitles(entries: Entry[]): string[] {
     return entries.map((one) => one.title);
 }
 
+/** The SHA-256 of bytes as lower-case hex, the digest the server's `source:` channel carries. */
+export async function digestOf(bytes: Uint8Array): Promise<string> {
+    const digest = await crypto.subtle.digest('SHA-256', new Uint8Array(bytes));
+    return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 /**
  * The SHA-256 of one file's bytes as lower-case hex, read through the file route, or null when the
  * file cannot be read. The read asks the server to revalidate, as `readText` does.
@@ -436,10 +442,7 @@ export async function readHash(root: string, path: string): Promise<string | nul
     try {
         const response = await fetch(fileBytesUrl(root, path), { cache: 'no-cache' });
         if (!response.ok) return null;
-        const digest = await crypto.subtle.digest('SHA-256', await response.arrayBuffer());
-        return [...new Uint8Array(digest)]
-            .map((byte) => byte.toString(16).padStart(2, '0'))
-            .join('');
+        return await digestOf(new Uint8Array(await response.arrayBuffer()));
     } catch {
         return null;
     }

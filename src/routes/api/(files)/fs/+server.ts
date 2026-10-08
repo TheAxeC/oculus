@@ -4,9 +4,10 @@
 // workspaces file and carries the token ServerContext minted, as with /api/write, /api/git and
 // /api/deposit.
 //
-// The configuration is the request's own read, and the hub and the write chain come off its
-// ServerContext, so one request reads the configuration once, local.yml no times, and one of the
-// reader's own files once: the workspaces, the bookmarks, or a note.
+// The configuration is the one read `locals.config` keeps for the request, taken from the
+// ServerContext's cache of the parse, and the hub and the write chain come off the ServerContext,
+// so one request holds one configuration, reads local.yml no times, and reads one of the reader's
+// own files once: the workspaces, the bookmarks, or a note.
 
 import { configuredRootsOf, rootsFrom } from '$lib/server/files/files';
 import {

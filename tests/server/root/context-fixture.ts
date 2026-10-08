@@ -1,11 +1,12 @@
 // Layer 2, server test support. Builds a complete inert ServerContext for route tests without
 // opening a watcher, running tmux, reading the real hub, or writing outside a test's own fixture.
 
-import type { LocalConfig } from '../../../src/lib/data/sources/config.ts';
+import { loadConfig, type LocalConfig } from '../../../src/lib/data/sources/config.ts';
 import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { noApps } from '../../../src/lib/server/machine/apps/held.ts';
 import { hostInfo, type ServerContext } from '../../../src/lib/server/root/context.ts';
+import { createConfigCache } from '../../../src/lib/server/root/process/config-cache.ts';
 import { RateLimiter } from '../../../src/lib/server/root/hooks.ts';
 import { DebugClient } from '../../../src/lib/server/machine/debug/session.ts';
 import { createRelay } from '../../../src/lib/server/machine/lsp/relay.ts';
@@ -73,6 +74,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         logged: new Set<string>(),
         recordFor: (session: string) => sessionRecord(hub, session)
     };
+    const engine = overrides.engine ?? '/fixture/engine';
     let closed = false;
     const context: ServerContext = {
         hub,
@@ -82,6 +84,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         debug,
         hooks,
         git: { refresh: () => Promise.resolve(), close: noop },
+        openFiles: { subscribed: () => [], unsubscribed: noop, remove: noop, close: noop },
         hpc: { refresh: () => Promise.resolve(), set: noop, close: noop },
         calendar: {
             refresh: () => Promise.resolve(),
@@ -131,7 +134,10 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         appsSecret: 'the-apps-secret-of-this-context',
         host: hostInfo(local.port),
         local,
-        engine: overrides.engine ?? '/fixture/engine',
+        engine,
+        configCache:
+            overrides.configCache ??
+            createConfigCache({ engine, load: () => loadConfig(engine), report: () => undefined }),
         fsWrites: overrides.fsWrites ?? fsWrites(),
         opsWrites: overrides.opsWrites ?? fsWrites(),
         gitRunning: overrides.gitRunning ?? createRunningGit(),

@@ -60,7 +60,7 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | g g | top of page |
 | G | bottom of page |
 | n | start a new agent session: the composer in the page's Terminal tab (a new one when it has none), in that tab's folder |
-| Cmd+S | save the source tab on screen (Ctrl+S off macOS); the browser's save dialog is never opened |
+| Cmd+S | save the source tab on screen (Ctrl+S off macOS), refused over a file that is not UTF-8 text throughout; the browser's save dialog is never opened |
 | Cmd+Shift+B | run the default build of the repository holding the open source file (Ctrl+Shift+B off macOS) |
 | Cmd+Alt+T | run the default test of that repository (Ctrl+Alt+T off macOS) |
 | Cmd+Alt+B / Cmd+Alt+C / Cmd+Alt+V | build, clean and view the PDF of the LaTeX root of the source tab or the PDF tab in front (Ctrl+Alt off macOS) |

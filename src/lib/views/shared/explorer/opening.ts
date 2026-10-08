@@ -18,7 +18,7 @@ import {
     type TreeRow
 } from '$lib/state/sources/fs';
 import { documentState } from '$lib/state/workbench/layout';
-import { sourceTabState } from '$lib/state/sessions/source.svelte';
+import { sourceTabState } from '$lib/state/sessions/source/draft';
 import type { ClientState } from '$lib/state/client/context';
 
 /** The store calls opening a file needs. */

@@ -170,9 +170,6 @@ describe('contrast', () => {
         expect(failures).toEqual([]);
     });
 
-    // Revert: take `readable(text, lane)` out of derive.ts, so `--c-<hue>-lane-txt` is the hue's
-    // plain `-txt`, and the lane pairs under the threshold are printed by the theme cases above;
-    // stop minting the lane surface and this case finds no lane pair.
     it('measures a lane header pair for every hue of every theme', () => {
         for (const name of NAMES) {
             const found = measured.get(name) ?? [];
@@ -188,8 +185,7 @@ describe('contrast', () => {
 
     // A theme that authors a token ending in `-lane` gets no lane of that token and keeps its own
     // lane surface for the hue; a theme with neither a panel nor a page gets no lane while its hues
-    // keep their text colours. Revert: drop the `-lane` skip in derive.ts, or mint a lane with no
-    // panel.
+    // keep their text colours.
     it('mints a lane only from a hue and only over a panel', () => {
         const authored = deriveTokens({
             '--bg': '#ffffff',
@@ -215,8 +211,7 @@ describe('contrast', () => {
     // background. It reads the text of each file on its own, so it finds a lane text token taken
     // into any view. It does not see a later rule that overrides the header's background, a
     // descendant with a background of its own, the wallpaper rules or a value built in code, and no
-    // case here covers the Focus headers for those. Revert: paint `--c-green-lane-txt` as `color`
-    // in any rule of a component whose background is `--panel`, and that line is printed.
+    // case here covers the Focus headers for those.
     it('finds lane text painted only over its own lane surface under src/', () => {
         const all = sources(SRC).map(([file, text]) => offLane(file, text));
         expect(all.reduce((sum, one) => sum + one.places, 0)).toBeGreaterThan(0);
@@ -227,9 +222,6 @@ describe('contrast', () => {
     // lane text beside no lane, one read in a block that fills with something else, a lane text
     // read outside any declaration, and the two shapes that are allowed.
     //
-    // Revert: in offLane above, drop the `--` branch (a property set to a lane text is then read as
-    // a paint), drop the `fills(line, lane)` arm (a token pair written on one line is then a
-    // finding), or drop the loop over the reads outside a declaration.
     it('reports every way of painting lane text off its lane', () => {
         const panel = '.x {\n    background: var(--panel);\n    color: var(--c-green-lane-txt);\n}';
         expect(offLane('a.css', panel).findings).toEqual([

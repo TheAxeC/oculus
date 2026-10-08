@@ -24,22 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:   # steps in flight, up to six (Z632)
-- step: D28
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a7fdeabbe3ca09dfa (builder, launched 2026-10-08)
-  worktree: .agents/worktrees/D28
-  base: 2441e0b53
-  launched: 2026-10-08
-  report: agents/reviews/D28-report.md
-  builder_usage: first run (310,478 tokens, 558 tool uses, 138.0 min)
-  brief_check: agents/reviews/D28-brief-check.md (a148f9947c88c06e2, claude-opus-5-5, 262,283 tokens, 78 tool uses, 12.7 min)
-  reviewer_report: agents/reviews/D28-refuter.md (a8d21c562b6b3a8c6, claude-opus-5-5, 239,746 tokens, 145 tool uses, 22.6 min)
-  round_1: agents/briefs/D28-round1.md, sent 2026-10-08 to the same builder
-  landing: not-started
-  round: 1
+dispatch: []   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -155,6 +140,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 - Open item 5 (2026-10-08, X3e's landing): the root drag of the Files tree has no guarded entry, so the test written for S-R1 (`tests/views/shared/explorer/root-drag.test.ts`: a drop over a tree whose own drag never ended, from a drag of another tab, writes no order; the tree's own drag still drops) is not landed and is kept as `agents/reviews/X3e-root-drag-test.patch`. A wrong drop writes the order of the roots into `sources.yml` or the workspace in force, a wrong configuration written. Options: (a) a new entry G57, "A root dropped on a Files tree reorders only that tree's roots: a drag from another tab, or one whose start was in another tree, writes no order", Code `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts`, Test the patch's file with its two titles, landed in the next step that touches the tree (D28); (b) no entry, the fix kept and the look the check, as for every view. Recommended (a): the failure writes the reader's configuration, the kind of cost spec.md names for a test, and the test runs in well under a second; (b) is the lazy option, since it leaves a configuration write with no check that runs.
 - Open item 6 (2026-10-08, D28's review): the server's held parse of the config folder (D28 keeps it, since it takes about 200 ms off every file press against D13a-3's 300 ms bound) has no guarded entry, so its test is not landed; its text is in D28's report under "The config cache's test, not landed". A cache that misses a write serves a stale configuration, a wrong configuration in force. Options: (a) a new entry G61, "A configuration file written, added or removed is read by the next request that asks for the configuration", Code the server context's config cache, Test that test, landed with D28 or the next step that touches the server context; (b) no entry, the cache checked only by reading. Recommended (a): the failure puts a configuration in force that the disk no longer holds, the cost spec.md names for a test, and the test runs in milliseconds; (b) is the lazy option.
+- Open item 7 (2026-10-08, D28's landing): the conflict compare's read key (`readKeyOf` in `src/lib/views/sources/repositories/diff/diff-read.ts`) has no guarded entry, so no test checks that the compare reads the file again when the file on disk moves while the compare is open. A key that misses the move leaves the compare's left side showing old disk text, and a reader who then presses Overwrite writes over a change they never saw, work lost. Options: (a) a new entry G62, "The save-conflict compare is read again when the file on disk moves, and no other diff pane is", Code `diff-read.ts` `readKeyOf`, Test a table of three rows (the conflict compare's key changes with the disk hash; a working-tree compare's key does not; a replace preview's key is unchanged), written in the next step that touches the diff panes; (b) no entry, the key checked by reading and by the look. Recommended (a): the failure loses the reader's work, the cost spec.md names for a test, and the rows run in milliseconds; (b) is the lazy option.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -228,6 +214,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 07:00. D28 landed (saving a source file as VS Code does; booking in plan.md; `agents/reviews/D28-landing.md`) with the review over round 1's twelve findings and one look defect fixed at landing; the look ran on the 8796 scratch oculus. Nothing in flight. Open items 5, 6 and 7 for Axel. Next: prepare M8 (its brief corrected from `agents/reviews/M8-premise-recheck-3.md`, Z712 and D28's `options.yml` entries), then M6, D41, D43, D33, D39, D36 and D40.
 - 2026-10-08 05:20. D28 built (first report: two parts not run without a browser), reviewed (`agents/reviews/D28-refuter.md`, 16 items), repair round 1 sent (`agents/briefs/D28-round1.md`). Open items 5 and 6 for Axel.
 - 2026-10-08 03:00. D28 prepared (2441e0b53) and its builder a7fdeabbe3ca09dfa (claude-sonnet-5-5) launched in `.agents/worktrees/D28`. Every other queued step waits for D28 (M8 by Z712, M6 and D33 by their lines). Open item 5 for Axel.
 - 2026-10-08 02:45. M8's recheck closed as Z712 (M8 after D28). D28's recheck closed as Z713; N1 to N6 written into guarded.md (G8, G2, G28; G58 to G60); D28's brief rewritten on main at 1ae5e7c8d; its brief check (a148f9947c88c06e2, claude-opus-5-5) running. Open item 5 for Axel.

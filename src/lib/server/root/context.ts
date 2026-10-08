@@ -54,6 +54,7 @@ import { Hub } from '../core/channels.ts';
 import { target } from '../edit/writes.ts';
 import { expandHome } from '../files/files.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
+import { createOpenFiles } from '../files/fs/open-files.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { defaultApprovalsPath } from '../machine/approvals/approvals.ts';
@@ -98,6 +99,7 @@ import { sessionFolders } from '../sessions/folders.ts';
 import { watchUsageRefresh, type UsageRefreshWatcher } from '../machine/usage/refresh.ts';
 import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
+import { createConfigCache } from './process/config-cache.ts';
 import type { ServerContext } from './process/server-context.ts';
 import { LISTEN_HOST, type PortMove } from './mover.ts';
 import { watchApps, type AppsWatcher, type AppsWatchOptions } from './watch/apps.ts';
@@ -126,7 +128,7 @@ export function hostInfo(port: number): HostInfo {
 export type { ServerContext };
 
 /** One finding on stderr, in the one format every config finding is said in. */
-export function reportFindings(findings: Finding[]): void {
+function reportFindings(findings: Finding[]): void {
     for (const finding of findings) {
         console.error(`config: ${finding.file} [${finding.key}] ${finding.message}`);
     }
@@ -222,10 +224,10 @@ export function createServerContext(
     // The read at start: the watchers and the pollers are built from it before any request
     // arrives, every config push hands the pollers the settings read again through
     // live-settings.ts, and every write of local.yml is read again by `reloadLocal` below. A
-    // request reads the disk again through `locals.config`, so a route never answers from this
-    // copy. A value the options catalog's rule refuses is the entry's default and a finding, so a
-    // typo costs one setting and the server starts; only a catalog with no rule for a key stops
-    // it here, naming the key.
+    // request parses the folder again through `locals.config` once a file of it was written, so a
+    // route never answers from this copy. A value the options catalog's rule refuses is the
+    // entry's default and a finding, so a typo costs one setting and the server starts; only a
+    // catalog with no rule for a key stops it here, naming the key.
     const { config } = make.loadConfig(engine);
     const slurm = slurmSettings(config);
     const calendarConfig = calendarSettings(config);
@@ -384,6 +386,14 @@ export function createServerContext(
     const usageRefresh = startUsageRefresh();
     const usage = startUsage({ sessions, usageRefresh });
     const git = startGitWatcher();
+    // The roots are read again after a configuration push or a change of the saved workspaces, as
+    // the git watcher's are, so a root added to sources.yml or saved in a workspace while the
+    // server runs is followed by the next tick of each open file.
+    const openFiles = createOpenFiles({
+        hub,
+        roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local }),
+        workspacesFile: local.workspaces ?? defaultWorkspacesPath()
+    });
     const autofetch = startAutofetchWatcher();
     const bookmarks = startBookmarks();
     const schedules = startSchedules();
@@ -456,6 +466,7 @@ export function createServerContext(
         hpc: polled.hpc,
         calendar: polled.calendar,
         mail: polled.mail,
+        openFiles,
         get usage() {
             return owned().usage;
         },
@@ -473,6 +484,11 @@ export function createServerContext(
         host,
         local,
         engine,
+        configCache: createConfigCache({
+            engine,
+            load: () => make.loadConfig(engine),
+            report: reportFindings
+        }),
         fsWrites: writes,
         opsWrites: fsWrites(),
         gitRunning: createRunningGit(),
@@ -498,6 +514,7 @@ export function createServerContext(
             closed = true;
             built.live?.close();
             localWatch.close();
+            openFiles.close();
             apps.close();
             const held = owned();
             held.usageRefresh.close();

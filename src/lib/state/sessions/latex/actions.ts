@@ -28,7 +28,7 @@
 import { SvelteMap } from 'svelte/reactivity';
 import { relativePath } from '../../../data/helpers/files/paths.ts';
 import { t } from '../../shared/words/text.ts';
-import { sourceTabState } from '../source.svelte.ts';
+import { sourceTabState } from '../source/draft.ts';
 import type { Jump, JumpMessage, Message } from '../../../data/model/index.ts';
 import type { LatexBuildAsk } from '../terminals.svelte.ts';
 import type { LatexStore } from './latex.svelte.ts';

@@ -60,7 +60,7 @@
         entities: { config },
         layout: { closePage, currentPage, openPage, pages, renamePage, resetPage, switchPage },
         registry: { viewFor },
-        ui: { unsaved, busyTerminals }
+        ui: { unsaved, busyTerminals, saveBeforeClose }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -94,6 +94,7 @@
             words,
             [found.page],
             unsaved,
+            saveBeforeClose,
             (instance) => tabNameOf(instance, viewFor),
             ask,
             () => {
@@ -132,7 +133,10 @@
         const ids = pageInstanceIds(found.page);
         void once(
             `page:${id}`,
-            () => busyTerminals(instancesOfPages([found.page])),
+            async () => {
+                await saveBeforeClose(ids);
+                return busyTerminals(instancesOfPages([found.page]));
+            },
             (busy) => {
                 const asked = closeAsk({
                     ids,

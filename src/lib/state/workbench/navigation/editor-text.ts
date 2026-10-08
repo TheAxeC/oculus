@@ -1,24 +1,31 @@
 // Layer 2, client state. The rules the status bar's source items read a file's text by: how the
 // file indents, which line ending it uses and how many lines it holds, and the language the editor
-// opens it under, and the options the editor takes for a tab. They are pure functions over the
+// opens it under, the options the editor takes for a tab, and what a save does to a tab's text
+// (trim, format, final newline). They are pure functions over the
 // text, so the source tab that applies them and the tests that hold them share one rule and no
 // browser. The editor itself moves the caret and rewrites the indentation and the line endings, on
 // its own model.
 
-import type { Indent } from '../../sessions/source.svelte.ts';
+import type { Indent, SourceDraft } from '../../sessions/source/draft.ts';
+import type { SaveRules } from '../../sessions/source/source.svelte.ts';
+import { languageOf, type LanguageMap } from '../../sources/fs.ts';
+import type { FileText } from '../../sources/fs-transport.ts';
 import { PLAIN } from '../../shared/words/languages.ts';
+import { REPO_SETTINGS, resolveEditor } from '../../../data/helpers/editor.ts';
+import type {
+    EditorOptions as ConfiguredEditor,
+    LanguageRecords
+} from '../../../data/helpers/editor.ts';
+import type { RepoSettings } from '../../../data/sources/config/editor-options.ts';
 
 export type { Indent };
 
 // The configured options and the order that resolves them for a tab, which data/helpers/editor.ts
 // holds, as the views read them.
 export { REPO_SETTINGS, resolveEditor, toggleWrap } from '../../../data/helpers/editor.ts';
-export type { RepoSettings } from '../../../data/sources/config/editor-options.ts';
-export type {
-    EditorOptions as ConfiguredEditor,
-    LanguageRecords,
-    WordWrap
-} from '../../../data/helpers/editor.ts';
+export type { RepoSettings };
+export type { ConfiguredEditor, LanguageRecords };
+export type { WordWrap } from '../../../data/helpers/editor.ts';
 
 /** The two line endings a text file is written with. */
 export type LineEnding = 'LF' | 'CRLF';
@@ -91,4 +98,57 @@ export function lineCount(text: string): number {
  */
 export function shownLanguage(language: string, text: string, limit: number | null): string {
     return limit !== null && text.length <= limit ? language : PLAIN;
+}
+
+/** What the rules of a save are resolved from. */
+export type SaveRulesInput = {
+    options: ConfiguredEditor | null;
+    languages: LanguageMap;
+    paintLimit: number | null;
+    /** The text of a root's settings file, as the file store holds it. */
+    fileText: (root: string, path: string) => FileText;
+    /** A settings file's text read by the rule of the configuration the page holds. */
+    repoSettings: (text: string) => RepoSettings;
+};
+
+/** The records of the root's settings file, null when it has none that can be read. */
+function recordsOf(input: SaveRulesInput, root: string): LanguageRecords | null {
+    if (root === '') return null;
+    const file = input.fileText(root, REPO_SETTINGS);
+    if (file.loading || file.error !== '' || file.truncated) return null;
+    const read = input.repoSettings(file.text);
+    return read.kind === 'read' ? read.languages : null;
+}
+
+/**
+ * What a save does to a source tab's text: whether it trims the spaces and tabs at the end of each
+ * line, whether it ends the text with one line ending and whether it formats the document first.
+ * They come from the configured options in the order `resolveEditor` states, for the language the
+ * editor draws the tab in: the repository's `.oculus/settings.yml` record, then `editor.languages`,
+ * then the global key. None is on until the configuration has arrived, since the page holds no
+ * default for any of them. The tab's own options (views/shared/prose/source-options.ts) resolve the
+ * same values by the same function; this is for the saves that no view makes, such as an automatic
+ * save.
+ */
+export function saveRulesOf(
+    input: SaveRulesInput,
+    draft: SourceDraft,
+    root: string,
+    path: string
+): SaveRules {
+    const { options } = input;
+    if (options === null) return { trim: false, finalNewline: false, formatOnSave: false };
+    const chosen = draft.language === '' ? languageOf(path, input.languages) : draft.language;
+    const resolved = resolveEditor({
+        language: shownLanguage(chosen, draft.text, input.paintLimit),
+        options,
+        root: recordsOf(input, root),
+        detected: null,
+        tab: { indent: draft.indent, wrap: draft.wrap }
+    });
+    return {
+        trim: resolved.trimTrailingWhitespace,
+        finalNewline: resolved.finalNewline,
+        formatOnSave: resolved.formatOnSave
+    };
 }

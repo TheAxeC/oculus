@@ -6,7 +6,7 @@
 import type { PromptRequest } from '$lib/ui/forms/prompt';
 import type { ClientState } from '$lib/state/client/context';
 import { refusalSentence } from '$lib/state/shared/answers/answers';
-import { sourceTabState } from '$lib/state/sessions/source.svelte';
+import { sourceTabState } from '$lib/state/sessions/source/draft';
 import { t } from '$lib/state/shared/words/text';
 
 /** What the first Save of one untitled tab reads of the tab and calls on it. */
@@ -17,7 +17,7 @@ export type UntitledDeps = {
     /** The roots of the current workspace, which the question offers as a choice. */
     roots: () => { key: string }[];
     create: ClientState['explorer']['create'];
-    saveDraft: (id: string, root: string, path: string) => Promise<void>;
+    saveDraft: (id: string, root: string, path: string) => Promise<boolean>;
     restate: (id: string, state: unknown) => void;
     /** Show a sentence under the editor. */
     said: (words: string) => void;

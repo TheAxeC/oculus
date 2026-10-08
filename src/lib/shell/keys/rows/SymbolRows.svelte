@@ -10,7 +10,7 @@
     import { untrack } from 'svelte';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import { symbolKindName } from '$lib/data/prose/symbol-kinds';
-    import { libraryTabState, sourceTabState } from '$lib/state/sessions/source.svelte';
+    import { libraryTabState, sourceTabState } from '$lib/state/sessions/source/draft';
     import type { SymbolRow } from '$lib/state/system/machine/lsp/workspace-symbols';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

@@ -45,6 +45,8 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/worktrees` likewise, the Repositories view naming the path a worktree will take and
 // the write making it; `data/helpers/files/text-kind`, the file browser deciding which tab a file
 // opens in and the source route refusing a save over bytes no editor could have read;
+// `data/helpers/files/save-text`, the trim and the final newline a save applies to a source tab's
+// text;
 // `data/helpers/files/opens-in-program`, the open endpoint opening only a file whose extension
 // `open.program_ext` lists and the cards and the file view offering the control for that name
 // alone; `data/helpers/files/languages`, the reader of the `languages:` map: the server words its
@@ -154,9 +156,9 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // of files read the one way; `data/prose/text-edits` is the protocol's text edit applied to a text,
 // which the server's `lsp-edit` and the page's edit of an open tab apply by one rule and whose
 // catalog keys the page words a refusal with; `data/prose/symbol-kinds` names the protocol's symbol
-// kinds, which the palette's `#` list words. `state/sessions/source` is the source tab's state,
-// which a row of that list opens a file in, and `state/system/machine/lsp/workspace-symbols` the
-// rows it draws.
+// kinds, which the palette's `#` list words. `state/sessions/source/draft` is the source tab's
+// state, which a row of that list opens a file in, and `state/system/machine/lsp/workspace-symbols`
+// the rows it draws.
 //
 // `state/client/context` is where the client's stores are wired together, and it names nothing of
 // layer 3: the view registry is a state module, and the page root makes the primitives' tooltip
@@ -191,7 +193,7 @@ const ALLOWED: Record<string, string[]> = {
         'state/system/machine/lsp/symbols',
         'state/system/machine/lsp/workspace-symbols',
         'state/sessions/terminals',
-        'state/sessions/source',
+        'state/sessions/source/draft',
         'state/sessions/latex/latex-state',
         'state/shared/words/format',
         'data/prose/latex',
@@ -222,6 +224,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/accounts/leads',
         'data/helpers/worktrees',
         'data/helpers/files/text-kind',
+        'data/helpers/files/save-text',
         'data/helpers/files/opens-in-program',
         'data/helpers/files/languages',
         'data/prose/latex',
@@ -710,8 +713,6 @@ describe('layer boundaries', () => {
             'views/Bad.svelte',
             '<div class="row"></div>\n<style>\n    .row :global(.tool) {\n        gap: 0;\n    }\n</style>'
         );
-        // Revert: in selectorAt of tests/checks/tree/boundaries.test.ts, strip comments from the
-        // span alone, and the brace inside the comment above the rule cuts its selector short.
         write(
             'shell/AlsoBad.svelte',
             '<div class="strip"></div>\n<style>\n    /* a } in prose */\n    .strip :global(.tool:hover) {\n        gap: 0;\n    }\n</style>'

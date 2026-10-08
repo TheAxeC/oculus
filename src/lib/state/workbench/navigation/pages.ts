@@ -40,7 +40,7 @@ import { nameOf } from '../../../data/helpers/files/paths.ts';
 import { opensInProgram } from '../../../data/helpers/files/opens-in-program.ts';
 import type { ProgramApps } from '../../../data/helpers/files/opens-in-program.ts';
 import type { Entry } from '../../../data/model/index.ts';
-import { headOf } from '../../sessions/source.svelte.ts';
+import { headOf } from '../../sessions/source/draft.ts';
 import { bookmarkAt, fileBytesUrl, markRefusal } from '../../sources/fs-transport.ts';
 import type { WriteAnswer } from '../../shared/stores/shapes.ts';
 
@@ -318,23 +318,27 @@ export function questionFor(show: (held: Question | null) => void): Asker {
 
 /**
  * Run a reset once the reader agreed to it: the reset's own question first, then, for each tab of
- * the pages it rebuilds or removes and of the floats it replaces that holds unsaved text, the
- * question closing that tab asks (closeQuestion over the one tab), one tab at a time, with the tab
- * and its page (or its float) named under it, since the tab may not be on screen; then, once, the
- * busy question naming each terminal of those pages running a program (`busy` is the fresh read). A
- * no to any of them ends it with nothing done. Answers whether the reset ran.
+ * the pages it rebuilds or removes and of the floats it replaces that holds unsaved text after
+ * `save` has saved the ones the autosave mode saves on a close, the question closing that tab asks
+ * (closeQuestion over the one tab), one tab at a time, with the tab and its page (or its float)
+ * named under it, since the tab may not be on screen; then, once, the busy question naming each
+ * terminal of those pages running a program (`busy` is the fresh read). A no to any of them ends it
+ * with nothing done. Answers whether the reset ran.
  */
 export async function resetAfterAsking(
     all: readonly Page[],
     words: { message: string; detail: string },
     touched: readonly Host[],
     unsaved: (id: string) => boolean,
+    save: (ids: string[]) => Promise<string[]>,
     name: (instance: Instance) => string,
     ask: Asker,
     act: () => void,
     busy: () => Promise<readonly BusyTerminal[]>
 ): Promise<boolean> {
     if (!(await ask(words.message, words.detail))) return false;
+    // The tabs `editor.autosave` saves on a close are saved, so only the ones left unsaved ask.
+    await save(touched.flatMap((page) => tabsOf(page.workbench.root).map((one) => one.id)));
     for (const page of touched) {
         for (const instance of tabsOf(page.workbench.root)) {
             if (closeQuestion([instance.id], unsaved) !== 'dirty') continue;

@@ -76,6 +76,8 @@
     const draft = $derived(sourceDraft(id));
     /** Whether the text differs from the saved one. */
     const dirty = $derived(draft.text !== draft.saved);
+    /** Whether Save has work: unsaved text, or a file deleted on disk to write again. */
+    const savable = $derived(dirty || draft.disk === 'gone');
 
     /** Open Preview to the Side: the preview tab in a new pane to the right, or the open one. */
     function previewSide(): void {
@@ -98,7 +100,7 @@
             label={t('source.bar_save')}
             title={t('source.bar_save_title', chordHint([SAVE_KEY], onMac()))}
             glyph="save"
-            disabled={!dirty}
+            disabled={!savable}
             onclick={onsave}
         />
         {#if dirty}
@@ -106,7 +108,7 @@
                 bare
                 label={t('source.bar_revert')}
                 glyph="revert"
-                onclick={() => revertSourceDraft(id)}
+                onclick={() => void revertSourceDraft(id)}
             />
         {/if}
     {/if}

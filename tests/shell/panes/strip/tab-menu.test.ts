@@ -32,9 +32,11 @@ describe('the closes of the tab menu, through its state', () => {
     /**
      * A pane of the tabs a, b, c and d on the real stores: `b` holds unsaved text and `d` is a
      * terminal running python. The menu is the tab menu's state over the pane's close question, and
-     * a right-click on the tab named is read before the pick, as the strip does.
+     * a right-click on the tab named is read before the pick, as the strip does. With `autosave`
+     * the ui store has a saver that records the ids a close hands it and, when it `takes` them,
+     * leaves them with no unsaved text, as the autosave store does for a tab its mode covers.
      */
-    function menuOver(withTerminal = true) {
+    function menuOver(withTerminal = true, autosave?: { takes: boolean }) {
         const client = createClientState();
         const tab = (id: string, view: string) => ({ id, view, state: {} });
         const pane = {
@@ -50,7 +52,16 @@ describe('the closes of the tab menu, through its state', () => {
         client.layout.loadLayout(
             fakeStorage(serialiseLayout(heldPages([pageAround('main', pane)], [])))
         );
-        client.ui.registerUnsaved((id) => id === 'b');
+        const dirty = new Set(['b']);
+        const handed: string[][] = [];
+        client.ui.registerUnsaved((id) => dirty.has(id));
+        if (autosave !== undefined) {
+            client.ui.registerSaveBeforeClose((ids) => {
+                handed.push(ids);
+                if (autosave.takes) for (const id of ids) dirty.delete(id);
+                return Promise.resolve();
+            });
+        }
         client.ui.registerTerminalOwner({
             running: (held) => held.filter((one) => one.view === 'terminal').map((one) => one.id),
             busy: (ids) =>
@@ -62,6 +73,8 @@ describe('the closes of the tab menu, through its state', () => {
             client.layout.layout(page).kind === 'pane'
                 ? (client.layout.layout(page) as typeof pane).tabs
                 : [];
+        /** The closes a pick started, each settled once its tabs closed or its question is put. */
+        const closes: Promise<void>[] = [];
         const question = createCloseQuestion({
             client,
             instances,
@@ -76,8 +89,12 @@ describe('the closes of the tab menu, through its state', () => {
             roots: () => [],
             stripItems: () => [],
             stripPick: () => undefined,
-            closeTab: question.closeTab,
-            askAndClose: question.askAndClose
+            closeTab: (id) => void closes.push(question.closeTab(id)),
+            askAndClose: (...args) => {
+                const closing = question.askAndClose(...args);
+                closes.push(closing);
+                return closing;
+            }
         });
         class Target {
             constructor(private readonly id: string) {}
@@ -89,13 +106,12 @@ describe('the closes of the tab menu, through its state', () => {
         const pick = async (id: string, on: string): Promise<void> => {
             menu.read({ target: new Target(on) } as unknown as MouseEvent);
             menu.pick(id);
-            for (let turn = 0; turn < 10; turn += 1) await Promise.resolve();
+            await Promise.all(closes);
         };
         const open = (): string[] => instances().map((one) => one.id);
-        return { question, pick, open };
+        return { question, pick, open, handed };
     }
 
-    // Revert: have close() call layout.closeInstance for each tab without the question.
     it('asks before Close Others closes a tab holding unsaved text, naming it, and No closes nothing', async () => {
         const { question, pick, open } = menuOver(false);
         await pick('close-others', 'a');
@@ -106,7 +122,6 @@ describe('the closes of the tab menu, through its state', () => {
         expect(open()).toEqual(['a', 'b', 'c']);
     });
 
-    // Revert: have close() call layout.closeInstance for each tab without the question.
     it('asks about the terminal running a program among the tabs an item closes', async () => {
         const { question, pick, open } = menuOver();
         await pick('close-right', 'c');
@@ -115,5 +130,22 @@ describe('the closes of the tab menu, through its state', () => {
         );
         question.cancel();
         expect(open()).toEqual(['a', 'b', 'c', 'd']);
+    });
+
+    it('closes a tab holding unsaved text with no question once the autosave mode saved it', async () => {
+        const { question, pick, open, handed } = menuOver(false, { takes: true });
+        await pick('close', 'b');
+        expect(handed).toEqual([['b']]);
+        expect(question.message()).toBeNull();
+        expect(open()).toEqual(['a', 'c']);
+    });
+
+    it('asks the question for a tab whose save the autosave mode refused, and closes nothing', async () => {
+        const { question, pick, open, handed } = menuOver(false, { takes: false });
+        await pick('close', 'b');
+        expect(handed).toEqual([['b']]);
+        expect(question.message()).toBe(catalog('ui.tab_close_dirty'));
+        question.cancel();
+        expect(open()).toEqual(['a', 'b', 'c']);
     });
 });

@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, primitive. The diff editor: Monaco's own, over two texts of one file, both sides
-    // read-only, on the page's one load, theme and chord removal as the text editor (kit/load.ts),
-    // with its actions listed for the palette as the text editor lists them. It takes values and
-    // callbacks, and imports nothing of the state, the views or the shell; the values it takes and
-    // hands back are types.ts's.
+    // read-only unless the parent makes the modified side editable (`editable`: the text typed
+    // there is handed back to `oninput`), on the page's one load, theme and chord removal as the
+    // text editor (kit/load.ts), with its actions listed for the palette as the text editor lists
+    // them. It takes values and callbacks, and imports nothing of the state, the views or the
+    // shell; the values it takes and hands back are types.ts's.
     //
     // It draws Monaco's diff: the two sides side by side or one inline, as the parent's layout
     // says, and inline whenever the editor is narrower than `NARROW` pixels, as VS Code's is. The
@@ -87,6 +88,10 @@
         options?: EditorOptions;
         /** Whether to hide the unchanged runs; off shows every line. */
         hideUnchanged?: boolean;
+        /** Whether the modified side can be typed into; the original side never can. */
+        editable?: boolean;
+        /** The modified side's text each time the reader changes it. */
+        oninput?: (text: string) => void;
         /** A value that changes whenever the tokens or the text size do. */
         look?: string;
         /** The code theme the syntax is coloured with: `tokens`, or the id of a Shiki theme. */
@@ -119,6 +124,8 @@
         mode,
         context,
         hideUnchanged = true,
+        editable = false,
+        oninput,
         options,
         look = '',
         codeTheme = 'tokens',
@@ -158,6 +165,8 @@
     /** The side the reader last worked in, where a palette action runs. */
     let focused: Monaco.editor.ICodeEditor | null = null;
     let saving = 0;
+    /** Whether the text is being replaced from the parent, which is not the reader typing. */
+    let replacing = false;
     const listeners: Monaco.IDisposable[] = [];
     const placed = lineBars();
     const placedOriginal = lineBars();
@@ -177,7 +186,7 @@
         const { monaco } = loaded;
         const made = monaco.editor.createDiffEditor(box, {
             automaticLayout: true,
-            readOnly: true,
+            readOnly: !editable,
             originalEditable: false,
             renderSideBySide: mode === 'side',
             useInlineViewWhenSpaceIsLimited: true,
@@ -207,6 +216,9 @@
         restore = view;
         listeners.push(
             made.onDidUpdateDiff(() => updated(made)),
+            pair.modified.onDidChangeContent(() => {
+                if (!replacing) oninput?.(pair.modified.getValue());
+            }),
             ...sides.flatMap((side) => [
                 side.onDidChangeCursorSelection(() => onselect?.(bothSelections(made))),
                 side.onDidFocusEditorText(() => (focused = side)),
@@ -284,8 +296,10 @@
                 return;
             }
             restore = made.saveViewState();
+            replacing = true;
             held.original.setValue(texts.original);
             held.modified.setValue(texts.modified);
+            replacing = false;
         });
     });
 

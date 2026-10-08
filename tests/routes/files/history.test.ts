@@ -3,6 +3,7 @@
 // system temporary directory. Both folders are asserted inside it before anything is written, so
 // no case writes ~/.oculus/history.
 
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
@@ -86,7 +87,10 @@ describe('the copy a save keeps', () => {
             [engineRoot(engine)],
             one.history
         );
-        expect(await answer.json()).toEqual({ ok: true });
+        expect(await answer.json()).toEqual({
+            ok: true,
+            hash: createHash('sha256').update('hub: /srv/x\n').digest('hex')
+        });
         expect(readFileSync(own, 'utf8')).toBe('hub: /srv/x\n');
         expect(existsSync(one.history)).toBe(false);
     });

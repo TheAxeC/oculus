@@ -3,11 +3,16 @@
 // instance ids.
 
 import { describe, expect, it } from 'vitest';
-import { closeAsk, pageInstanceIds } from '../../../../src/lib/state/workbench/navigation/pages.ts';
+import {
+    closeAsk,
+    closeWords,
+    pageInstanceIds
+} from '../../../../src/lib/state/workbench/navigation/pages.ts';
 import type { Page } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { bench, pane, split } from '../layout/layout-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
+import { createClientState } from '../../../fixtures/client.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -31,7 +36,6 @@ describe('what a close asks once a busy terminal is known', () => {
     const build = { id: 'a1a1a1-shell', name: 'build', command: 'npm' };
     const MANY = 'Close this pane and the 2 tabs in it?';
 
-    // Revert: drop the unsaved tab from the detail, or name the terminal before it.
     it('asks one question over a pane with unsaved text and a busy terminal, the text first', () => {
         const ask = closeAsk({
             ids: ['text', 't'],
@@ -45,5 +49,69 @@ describe('what a close asks once a busy terminal is known', () => {
         expect(detail).toContain('notes.md');
         expect(detail).toContain('build');
         expect(detail.indexOf('notes.md')).toBeLessThan(detail.indexOf('build'));
+    });
+});
+
+describe('what a close asks once the tabs the autosave mode saves were saved', () => {
+    const nameOf = (id: string): string => id;
+
+    /** A ui store whose tab `text` holds unsaved text until a saver takes it. */
+    function held(saver: (open: Set<string>, ids: string[]) => void) {
+        const { ui } = createClientState();
+        const open = new Set(['text']);
+        ui.registerUnsaved((id) => open.has(id));
+        ui.registerSaveBeforeClose((ids) => {
+            saver(open, ids);
+            return Promise.resolve();
+        });
+        return ui;
+    }
+
+    it('asks nothing for a tab the save took, and answers no tab left unsaved', async () => {
+        const ui = held((open, ids) => ids.forEach((id) => open.delete(id)));
+        expect(await ui.saveBeforeClose(['text'])).toEqual([]);
+        const asked = closeAsk({
+            ids: ['text'],
+            unsaved: ui.unsaved,
+            nameOf,
+            many: 'many',
+            busy: []
+        });
+        expect(asked).toBeNull();
+    });
+
+    it('asks the unsaved-text question for a tab whose save was refused', async () => {
+        const ui = held(() => undefined);
+        expect(await ui.saveBeforeClose(['text'])).toEqual(['text']);
+        const asked = closeAsk({
+            ids: ['text'],
+            unsaved: ui.unsaved,
+            nameOf,
+            many: 'many',
+            busy: []
+        });
+        expect(asked && closeWords(asked)).toBe(t('ui.tab_close_dirty'));
+    });
+
+    it('asks how many go when several tabs close, naming only the tabs left unsaved', async () => {
+        const ui = held((open, ids) => ids.forEach((id) => open.delete(id)));
+        const asked = closeAsk({
+            ids: ['text', 'other'],
+            unsaved: ui.unsaved,
+            nameOf,
+            many: 'Close 2 tabs?',
+            busy: []
+        });
+        expect(await ui.saveBeforeClose(['text', 'other'])).toEqual([]);
+        expect(asked?.message).toBe('Close 2 tabs?');
+        expect(asked?.detail).toContain('text');
+        const after = closeAsk({
+            ids: ['text', 'other'],
+            unsaved: ui.unsaved,
+            nameOf,
+            many: 'Close 2 tabs?',
+            busy: []
+        });
+        expect(after).toEqual({ message: 'Close 2 tabs?', detail: '' });
     });
 });

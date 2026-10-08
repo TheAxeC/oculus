@@ -4,7 +4,8 @@
 //
 // The keys are `locals.server.local.literature`, which the machine's file watcher keeps current, so
 // a key set while the server runs is used by the next search. The pacing and the cache are the
-// server context's own `literature` desk, and the settings are read from disk at this request.
+// server context's own `literature` desk, and the settings come from the one read `locals.config()`
+// keeps for the request, taken from the ServerContext's cache of the parse.
 
 import { handleLiterature } from '$lib/server/content/literature/handler';
 import { literatureSettings } from '$lib/data/sources/config';

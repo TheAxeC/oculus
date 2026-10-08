@@ -38,28 +38,38 @@
     // for a LaTeX file, Build, View PDF and Build Log, each where it applies, and nothing for the
     // tab row. Word wrap and the rendered half are the palette's, which lists Save, Revert File,
     // word wrap, the rendered half, Open Preview to the Side, Submit Job, Toggle Blame and the
-    // LaTeX actions while each applies (status/ask-perform.ts), and Cmd+S asks the tab on screen to
-    // save. The save outcome and what the tab said stay under the editor (save/SourceNote.svelte):
-    // an alert for a refusal, a status for Submit's progress. A file that could not be read is the
-    // message box with a control that reads it again (actions/read-again.ts), which opens what the
-    // file is when it is back as something other than text. A file the route says is gone opens
-    // here too, so this is the tab that says it cannot be opened.
+    // LaTeX actions while each applies (status/tab-asks.svelte.ts), and Cmd+S asks the tab on
+    // screen to save. The save outcome and what the tab said stay under the editor
+    // (save/SourceNote.svelte): an alert for a refusal, a status for Submit's progress; the line
+    // about the file on disk (changed under unsaved text, deleted, or a Save refused as newer) is
+    // save/DiskNote.svelte. A file that could not be read is the message box with a control that
+    // reads it again (actions/read-again.ts), which opens what the file is when it is back as
+    // something other than text. A file the route says is gone opens here too, so this is the tab
+    // that says it cannot be opened. While the draft is read the pane is empty.
     //
     // Submit Job, on a .slurm file on disk under a served root, is actions/submit-job.svelte.ts.
     //
     // A tab over a library file a language server named is this view too, read-only and with no
     // root or path (status/library-tab.svelte.ts).
     //
+    // What the pane draws, from the sentence that stands in for the editor to the row under the
+    // editor, is SourceBody.svelte; this file owns every value it draws.
+    //
     // A tab over an untitled text (New Text File) holds an empty draft and no file. Its first Save
     // asks for a served root of the current workspace and a name, makes the file there, writes the
     // text to it and becomes a tab over that file.
     //
     // What the status bar draws for the tab and what the bar and the palette ask of it are
-    // status/source-status.svelte.ts and status/ask-perform.ts; the editor's indentation, word wrap
-    // and rulers are views/shared/prose/source-options.ts. The editor keeps the text in the line
-    // ending it was opened in, so typing into a CRLF file is kept in CRLF. A rewrite of the text is
-    // an edit like typing, handed back as one and unsaved until Save. For a file in a repository
-    // the gutter carries the quick diff marks and each line's blame (source-gutter.svelte.ts).
+    // status/source-status.svelte.ts and status/ask-perform.ts, joined to the tab by
+    // status/tab-asks.svelte.ts; the editor's indentation, word wrap and rulers are
+    // views/shared/prose/source-options.ts. The editor keeps the text in the line ending it was
+    // opened in, so typing into a CRLF file is kept in CRLF. A rewrite of the text is an edit like
+    // typing, handed back as one and unsaved until Save. For a file in a repository the gutter
+    // carries the quick diff marks and each line's blame (source-gutter.svelte.ts).
+    //
+    // A save made without a press of Save (editor.autosave) is state/sessions/source/
+    // autosave.svelte.ts; the editor reports that it lost focus through `onblur`
+    // (save/tab-save.svelte.ts).
     //
     // What a language adds to the editor (Markdown headings, LaTeX's editing commands and markers,
     // a language server's registration and actions, and the format before a save when the
@@ -68,27 +78,21 @@
     // controls are drawn in the bar (latex/LatexButtons.svelte) and whose questions are
     // latex/LatexDialogs.svelte.
 
-    import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Prompt from '$lib/ui/forms/Prompt.svelte';
     import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import { servedFile } from '$lib/views/shared/links/file-bar';
-    import { ownListing } from '$lib/ui/controls/editor/chords';
-    import { onMac } from '$lib/ui/controls/editor/kit/load';
-    import Editor from './Editor.svelte';
+    import SourceBody from './SourceBody.svelte';
     import BarActions from './actions/BarActions.svelte';
     import Gutter from './Gutter.svelte';
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import LatexDialogs from './latex/LatexDialogs.svelte';
     import { createLatexTab } from './latex/latex-tab.svelte';
-    import LockedCode from './save/LockedCode.svelte';
     import { createSaid } from './save/tab-said.svelte';
-    import SourceNote from './save/SourceNote.svelte';
-    import { performAsk, tabActions } from './status/ask-perform';
-    import { connectSourceStatus } from './status/source-status.svelte';
+    import { createTabAsks } from './status/tab-asks.svelte';
     import { createTabFile } from './status/tab-file.svelte';
     import { createLibraryTab } from './status/library-tab.svelte';
-    import { isUntitled, openedAt } from './status/tab-state';
+    import { tabFacts } from './status/tab-state';
     import { tabShown } from './status/tab-shown';
     import { createSubmitJob } from './actions/submit-job.svelte';
     import ReadAgainButton from './actions/ReadAgainButton.svelte';
@@ -98,16 +102,8 @@
     import { createSourceGutter } from './source-gutter.svelte';
     import { createSourceOptions } from '$lib/views/shared/prose/source-options';
     import { markdownPreviewState, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';
-    import { instanceText } from '$lib/state/workbench/layout/instance';
-    import { headOf } from '$lib/state/sessions/source.svelte';
     import { blameStatus } from '$lib/state/sources/repositories/file-git';
-    import {
-        START,
-        lineCount,
-        lineEnding,
-        type Caret
-    } from '$lib/state/workbench/navigation/editor-text';
-    import type { EditorAction } from '$lib/state/workbench/navigation/editor-status.svelte';
+    import { START, lineEnding, type Caret } from '$lib/state/workbench/navigation/editor-text';
     import type { EditorHandle } from '$lib/ui/controls/editor/types';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -143,13 +139,9 @@
 
     let { instance }: ViewProps = $props();
 
-    const root = $derived(instanceText(instance.state, 'root'));
-    const path = $derived(instanceText(instance.state, 'path'));
-    const label = $derived(instanceText(instance.state, 'label'));
-    /** The version of the file the tab holds, when it is the file at HEAD or in the index. */
-    const head = $derived(headOf(instance.state));
-    /** The line and column the tab was opened at, and zero for one opened at the file itself. */
-    const { line, column } = $derived(openedAt(instance.state));
+    const { root, path, label, head, line, column, blocked, untitled } = $derived(
+        tabFacts(instance.state)
+    );
     const lib = createLibraryTab({
         client,
         instance: () => instance.id,
@@ -160,12 +152,9 @@
     const at = $derived(lib.address === '' ? { root, path } : { root: lib.root, path: lib.name });
     const title = $derived(label === '' ? t('views.source') : label);
     const draft = $derived(sourceDraft(instance.id));
-    /** Whether the tab names no file: an untitled text, or a state that lost its address. */
-    const blocked = $derived(root === '' || path === '');
-    const untitled = $derived(isUntitled(instance.state));
     /** What the tab says under the editor: a refusal or Submit's status lines. */
     const note = createSaid();
-    const { error, lock, read, editing, drawn, saveMessage, noted } = $derived(
+    const { error, lock, read, editing, drawn, saveMessage, disked, noted } = $derived(
         tabShown({
             head,
             draft,
@@ -305,68 +294,85 @@
     let selection = $state('');
     /** The editor, which performs the asks that act on its model. */
     let editor: EditorHandle | undefined = $state();
-    /** The editor's own actions the palette lists, as it labelled them once it loaded. */
-    let actions: EditorAction[] = $state([]);
-    /** The tab's actions that apply now: Save, Revert, word wrap, the rendered half, Blame. */
-    const own = $derived(
-        tabActions({
-            editing,
-            markdown,
-            previewable: file.previewable,
-            blameable: file.blameable,
-            submittable: submit.submittable,
-            save: () => void tabSave.save(),
-            revert: () => revertSourceDraft(instance.id),
-            toggleWrap: tabDraft.toggleWrap,
-            toggleRendered: () => toggleSourceRendered(instance.id),
-            submit: () => void submit.press(),
-            previewSide: () => openBeside(MARKDOWN_PREVIEW_VIEW, markdownPreviewState(root, path)),
-            toggleBlame: () => toggleSourceBlame(instance.id),
-            language: drawn ? tabLanguage.lsp.actions(options.shown, at) : [],
-            latex: latexTab.actions()
-        })
-    );
-    /** What the palette lists: the tab's actions, then the editor's while it is drawn. */
-    const listed = $derived([
-        ...ownListing(own, onMac()),
-        ...(drawn ? actions.filter((one) => !own.some((mine) => mine.id === one.id)) : [])
-    ]);
-    // What the status bar draws for this tab, said again whenever any of it changes, and the asks
-    // of the bar and the palette. A tab with no text yet says nothing, so the bar draws no source
-    // items over a tab still reading, and a tab whose indentation is not known yet (the
-    // configuration has not arrived) says nothing either.
-    connectSourceStatus({
+    /** What the tab offers the palette and the status bar, and what it does on their asks. */
+    const asks = createTabAsks({
         store: editorStatus,
         id: () => instance.id,
-        status: () =>
-            !read || indent === null
-                ? null
-                : {
-                      caret: drawn ? caret : null,
-                      lines: lineCount(draft.text),
-                      indent,
-                      ending,
-                      language,
-                      writable: editing,
-                      blame: editing ? blameStatus(blameMap.get(caret.line), gutter.readAt) : '',
-                      actions: listed,
-                      file: file.wholeFile,
-                      selection: drawn ? selection : '',
-                      served: tabLanguage.lsp.served(options.shown, at, drawn)
-                  },
-        perform: (ask) =>
-            performAsk(ask, {
-                editing,
-                drawn,
-                indent,
-                editor,
-                actions: own,
-                openCommit: () => gutter.openBlamed(blameMap.get(caret.line)),
-                setLanguage: (next) => setSourceLanguage(instance.id, next),
-                setIndent: (next) => setSourceIndent(instance.id, next),
-                select: tabLanguage.lsp.select
-            })
+        // Each fact is a getter, so a derived of the partial tracks only the facts it reads.
+        facts: {
+            get read() {
+                return read;
+            },
+            get editing() {
+                return editing;
+            },
+            get drawn() {
+                return drawn;
+            },
+            get markdown() {
+                return markdown;
+            },
+            get previewable() {
+                return file.previewable;
+            },
+            get blameable() {
+                return file.blameable;
+            },
+            get submittable() {
+                return submit.submittable;
+            },
+            get indent() {
+                return indent;
+            },
+            get ending() {
+                return ending;
+            },
+            get language() {
+                return language;
+            },
+            get text() {
+                return draft.text;
+            },
+            get caret() {
+                return caret;
+            },
+            get selection() {
+                return selection;
+            },
+            get editor() {
+                return editor;
+            },
+            get blame() {
+                return editing ? blameStatus(blameMap.get(caret.line), gutter.readAt) : '';
+            },
+            get file() {
+                return file.wholeFile;
+            },
+            get served() {
+                return tabLanguage.lsp.served(options.shown, at, drawn);
+            },
+            get languageActions() {
+                return tabLanguage.lsp.actions(options.shown, at);
+            },
+            get latexActions() {
+                return latexTab.actions();
+            }
+        },
+        does: {
+            save: () => void tabSave.save(),
+            revert: () => void revertSourceDraft(instance.id),
+            toggleWrap: tabDraft.toggleWrap,
+            toggleRendered: () => toggleSourceRendered(instance.id),
+            previewSide: () => openBeside(MARKDOWN_PREVIEW_VIEW, markdownPreviewState(root, path)),
+            submit: () => void submit.press(),
+            toggleBlame: () => toggleSourceBlame(instance.id),
+            openCommit: () => gutter.openBlamed(blameMap.get(caret.line)),
+            setLanguage: (next) => setSourceLanguage(instance.id, next),
+            setIndent: (next) => setSourceIndent(instance.id, next),
+            select: tabLanguage.lsp.select
+        }
     });
+    const own = $derived(asks.own);
 
     // The bar's actions go up to the pane while the tab is mounted and one of them applies
     // (ui/tabs/tab-actions.svelte.ts).
@@ -420,70 +426,47 @@
 {/snippet}
 
 <Pane {title} titled={false}>
-    <!-- Focus in the tab makes it the source a command run from another view reads. -->
-    <div
-        class="source"
-        class:lined={lock.words !== '' && error === '' && draft.loaded}
-        class:noted
-        data-instance={instance.id}
-        data-root={root}
-        data-path={path}
-        onfocusin={() => editorStatus.focus(instance.id)}
-    >
-        {#if error !== ''}
-            <div data-tab-focus tabindex="-1">
-                <Empty error={!lib.gone} message={error} action={blocked ? undefined : again} />
-            </div>
-        {:else if !draft.loaded}
-            <Empty message={t('app.waiting')} glyph="edit" />
-        {:else}
-            {#if lock.words !== ''}
-                <LockedCode
-                    {lock}
-                    text={draft.text}
-                    {language}
-                    {path}
-                    gutter={margin}
-                    onscrolled={(next: number) => (top = next)}
-                />
-            {/if}
-            {#if !lock.window}
-                <Editor
-                    bind:this={editor}
-                    path={at.path}
-                    {line}
-                    {column}
-                    first={draft.first}
-                    onfirst={(shown: number) => setSourceFirst(instance.id, shown)}
-                    {language}
-                    {indent}
-                    {ending}
-                    wrap={options.wrap}
-                    rulers={options.rulers}
-                    actions={own}
-                    instance={instance.id}
-                    text={draft.text}
-                    reached={() => sourceReach(instance.id)}
-                    rendered={draft.rendered}
-                    gutter={gutter.editor}
-                    extension={tabLanguage.extension}
-                    writable={lock.words === ''}
-                    oninput={tabDraft.typed}
-                    oncaret={(at: Caret) => (caret = at)}
-                    onselect={(text: string) => (selection = text)}
-                    onactions={(offered: EditorAction[]) => (actions = offered)}
-                />
-            {/if}
-        {/if}
-        {#if noted}
-            <SourceNote
-                message={saveMessage}
-                failed={draft.failed}
-                said={note.words}
-                tone={note.tone}
-            />
-        {/if}
-    </div>
+    <SourceBody
+        instance={instance.id}
+        {root}
+        {path}
+        onfocus={() => editorStatus.focus(instance.id)}
+        {error}
+        errored={!lib.gone}
+        again={blocked ? undefined : again}
+        loaded={draft.loaded}
+        {lock}
+        text={draft.text}
+        {language}
+        {margin}
+        onscrolled={(next: number) => (top = next)}
+        at={at.path}
+        {line}
+        {column}
+        first={draft.first}
+        onfirst={(shown: number) => setSourceFirst(instance.id, shown)}
+        {indent}
+        {ending}
+        wrap={options.wrap}
+        rulers={options.rulers}
+        actions={own}
+        rendered={draft.rendered}
+        reached={() => sourceReach(instance.id)}
+        gutter={gutter.editor}
+        extension={tabLanguage.extension}
+        oninput={tabDraft.typed}
+        onblur={tabSave.blurred}
+        oncaret={(at: Caret) => (caret = at)}
+        onselect={(text: string) => (selection = text)}
+        onactions={asks.offered}
+        bind:editor
+        {noted}
+        {disked}
+        {saveMessage}
+        failed={draft.failed}
+        said={note.words}
+        tone={note.tone}
+    />
 </Pane>
 
 {#if tabSave.asking !== null}
@@ -493,27 +476,3 @@
 <AskConfirm asking={submit.asking} onclose={submit.release} />
 
 <LatexDialogs tab={latexTab} />
-
-<style>
-    .source {
-        display: grid;
-        grid-template-rows: minmax(0, 1fr);
-        height: 100%;
-        min-height: 0;
-    }
-
-    /* A tab drawing the line and the window is two rows: the line takes what it needs. */
-    .source.lined {
-        grid-template-rows: auto minmax(0, 1fr);
-        gap: 6px;
-    }
-
-    /* The save outcome and what the tab said take a row of their own under the editor. */
-    .source.noted {
-        grid-template-rows: minmax(0, 1fr) auto;
-    }
-
-    .source.lined.noted {
-        grid-template-rows: auto minmax(0, 1fr) auto;
-    }
-</style>

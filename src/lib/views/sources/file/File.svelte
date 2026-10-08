@@ -104,7 +104,7 @@
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { fileTabState, openInBrowserTab } from '$lib/state/workbench/navigation/pages';
     import { extensionOf, nameOf, opensInProgram, typeOfFile } from '$lib/state/sources/fs';
-    import { sourceTabState } from '$lib/state/sessions/source.svelte';
+    import { sourceTabState } from '$lib/state/sessions/source/draft';
     import type { LatexRoot } from '$lib/state/sessions/latex/latex-state';
     import {
         instanceMap,

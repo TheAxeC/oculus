@@ -25,7 +25,7 @@
     import CodeText from '$lib/ui/display/CodeText.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { ENGINE_ROOT } from '$lib/state/sources/fs';
-    import { sourceTabState } from '$lib/state/sessions/source.svelte';
+    import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import { resetBrowserRow } from '$lib/state/system/config/browser';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';

@@ -95,6 +95,89 @@ export function applyTextEdits(
     return { ok: true, text: result + text.slice(at) };
 }
 
+/** The units of a text: each line with the line end that closes it, the last without one. */
+function unitsOf(text: string): string[] {
+    const starts = lineStarts(text);
+    const units = starts.map((start, at) => text.slice(start, starts[at + 1] ?? text.length));
+    return units[units.length - 1] === '' ? units.slice(0, -1) : units;
+}
+
+/** The length of a unit's own characters, before its line end. */
+function bodyLength(unit: string): number {
+    return unit.length - (unit.endsWith('\r\n') ? 2 : /[\r\n]$/.test(unit) ? 1 : 0);
+}
+
+/** The position of the start of unit `at` of these units, or of the end of the text past them. */
+function unitStart(units: string[], at: number): TextPosition {
+    if (at < units.length) return { line: at, character: 0 };
+    const last = units.at(-1);
+    if (last === undefined) return { line: 0, character: 0 };
+    return bodyLength(last) < last.length
+        ? { line: units.length, character: 0 }
+        : { line: units.length - 1, character: last.length };
+}
+
+/** The edit that turns one line, with its line end, into another, over what differs only. */
+function lineEdit(line: number, from: string, to: string): TextEdit | null {
+    if (from === to) return null;
+    let head = 0;
+    const most = Math.min(from.length, to.length);
+    while (head < most && from[head] === to[head]) head += 1;
+    // A cut never lands inside a pair of UTF-16 units that stand for one character.
+    if (head > 0 && /[\ud800-\udbff]/.test(from[head - 1])) head -= 1;
+    let tail = 0;
+    while (tail < most - head && from[from.length - 1 - tail] === to[to.length - 1 - tail]) {
+        tail += 1;
+    }
+    if (tail > 0 && /[\udc00-\udfff]/.test(from[from.length - tail])) tail -= 1;
+    const body = bodyLength(from);
+    const stop = from.length - tail;
+    return {
+        range: {
+            start: { line, character: head },
+            end: stop <= body ? { line, character: stop } : { line: line + 1, character: 0 }
+        },
+        newText: to.slice(head, to.length - tail)
+    };
+}
+
+/**
+ * The edits that turn one text into another, the smallest the lines allow: the lines the two texts
+ * share at the start and at the end are left, and what lies between is one edit per line when both
+ * texts have as many lines there, and one edit over the whole span when they do not. A line that
+ * differs is edited over the characters that differ. An editor that applies them keeps its
+ * selections and its scroll where the text did not change, and undoes them as one step.
+ */
+export function editsBetween(from: string, to: string): TextEdit[] {
+    if (from === to) return [];
+    const before = unitsOf(from);
+    const after = unitsOf(to);
+    const most = Math.min(before.length, after.length);
+    let head = 0;
+    while (head < most && before[head] === after[head]) head += 1;
+    let tail = 0;
+    while (
+        tail < most - head &&
+        before[before.length - 1 - tail] === after[after.length - 1 - tail]
+    ) {
+        tail += 1;
+    }
+    const removed = before.slice(head, before.length - tail);
+    const added = after.slice(head, after.length - tail);
+    if (removed.length !== added.length || removed.length === 0) {
+        return [
+            {
+                range: {
+                    start: unitStart(before, head),
+                    end: unitStart(before, before.length - tail)
+                },
+                newText: added.join('')
+            }
+        ];
+    }
+    return removed.flatMap((unit, at) => lineEdit(head + at, unit, added[at]) ?? []);
+}
+
 /**
  * The catalog keys, under `source.`, of the notices that say why an edit a language server asked
  * for was not made. The page's edit (state/system/machine/lsp/edits.ts) names one of them and the

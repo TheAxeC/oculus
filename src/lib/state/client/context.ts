@@ -110,14 +110,16 @@ import {
 } from '../system/machine/lsp/workspace-symbols.ts';
 import { createLsp, type LspStore } from '../system/machine/lsp/lsp.svelte.ts';
 import { createReferences, type ReferencesStore } from '../system/machine/lsp/references.svelte.ts';
+import { saveRulesOf } from '../workbench/navigation/editor-text.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
+import { createAutosave, type AutosaveStore } from '../sessions/source/autosave.svelte.ts';
+import { loadSource, sourceTabState, type SourceDraft } from '../sessions/source/draft.ts';
 import {
     createSource,
-    loadSource,
-    sourceTabState,
+    type SaveRules,
     type SourceStore
-} from '../sessions/source.svelte.ts';
+} from '../sessions/source/source.svelte.ts';
 import {
     createTerminals,
     terminalLabel,
@@ -188,6 +190,8 @@ export type ClientState = {
     deposit: DepositStore;
     transcripts: TranscriptsStore;
     source: SourceStore;
+    /** Saving a source tab by `editor.autosave`: the editor's blur reaches it here. */
+    autosave: AutosaveStore;
     formDrafts: FormDraftsStore;
     manifestDraft: ManifestDraftStore;
     feeds: FeedsStore;
@@ -446,13 +450,55 @@ export function createClientState(
     const deposit = withQueries('deposit', createDeposit(queries));
     const transcripts = withQueries('transcripts', createTranscripts(queries));
     // A saved file may be a LaTeX file whose main builds on save, which the latex store decides.
-    const source = createSource(writes, ui, (root, path) => {
-        fs.markText(root, path);
-        void latex.onSaved(root, path);
+    const saveRules = (id: string, draft: SourceDraft, root: string, path: string): SaveRules =>
+        saveRulesOf(
+            {
+                options: selectors.editorOptions(),
+                languages: selectors.languages(),
+                paintLimit: selectors.paintLimit(),
+                fileText: fs.fileText,
+                repoSettings: selectors.repoSettings
+            },
+            draft,
+            root,
+            path
+        );
+    const source = createSource(
+        writes,
+        ui,
+        (root, path) => {
+            fs.markText(root, path);
+            void latex.onSaved(root, path);
+        },
+        {
+            socket,
+            rules: saveRules,
+            kept: (id) => {
+                const caret = editorStatus.statusOf(id)?.caret;
+                return caret === null || caret === undefined ? [] : [caret];
+            }
+        }
+    );
+    const autosave = createAutosave({
+        source,
+        options: () => {
+            const options = selectors.editorOptions();
+            return options === null
+                ? null
+                : { autosave: options.autosave, autosaveDelay: options.autosaveDelay };
+        },
+        rules: saveRules,
+        timers: {
+            setTimeout: (run, ms) => setTimeout(run, ms),
+            clearTimeout: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>)
+        }
     });
+    if (typeof window !== 'undefined') autosave.followPage(window);
     // The pane asks the instance id whether a tab holds unsaved text before it closes it, and asks
     // the ui store rather than the source store, which the shell may not read.
     ui.registerUnsaved(source.sourceDirty);
+    ui.registerGone(source.fileGone);
+    ui.registerSaveBeforeClose(autosave.saveBeforeClose);
     ui.registerUnsaved(formDrafts.formsDirty);
     const feeds = createFeeds(entities);
     const hpc = createHpc(entities, writes);
@@ -688,6 +734,7 @@ export function createClientState(
         deposit,
         transcripts,
         source,
+        autosave,
         formDrafts,
         manifestDraft,
         feeds,

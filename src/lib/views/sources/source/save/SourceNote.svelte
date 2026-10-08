@@ -2,10 +2,12 @@
     // Layer 3, view partial of Source.svelte. The row under the editor: the save outcome while the
     // text may be written, and what the tab said, whether or not the text may be written: a refused
     // first Save, LaTeX action or Submit, drawn as an alert, and Submit's progress and success
-    // lines, drawn as a status. Source.svelte draws the row when either has words and hands in the
-    // save outcome only while the text may be written.
+    // lines, drawn as a status, and the disk line (save/DiskNote.svelte) while the file on disk is
+    // not the one the tab read. SourceBody.svelte draws the row when either has words and hands in
+    // the save outcome only while the text may be written.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import DiskNote from './DiskNote.svelte';
     import type { SaidTone } from './said-tone';
 
     type Props = {
@@ -17,12 +19,21 @@
         said: string;
         /** Whether `said` is a refusal or a status. */
         tone: SaidTone;
+        /** Whether the disk line is drawn: the file changed under unsaved text, or is gone. */
+        disked: boolean;
+        /** The tab's instance id and file, which the disk line's actions act on. */
+        id: string;
+        root: string;
+        path: string;
     };
 
-    let { message, failed, said, tone }: Props = $props();
+    let { message, failed, said, tone, disked, id, root, path }: Props = $props();
 </script>
 
 <div class="note">
+    {#if disked}
+        <DiskNote {id} {root} {path} />
+    {/if}
     {#if message !== ''}
         <span class="message" aria-live="polite">
             {#if failed}
@@ -44,6 +55,7 @@
     .note {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 8px;
         justify-content: flex-end;
         padding: 2px 12px;

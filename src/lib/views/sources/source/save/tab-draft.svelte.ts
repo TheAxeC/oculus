@@ -4,7 +4,7 @@
 
 import { untrack } from 'svelte';
 import type { createSourceOptions } from '$lib/views/shared/prose/source-options';
-import type { HeadStage } from '$lib/state/sessions/source.svelte';
+import type { HeadStage } from '$lib/state/sessions/source/draft';
 
 /** The word wrap the tab's options say the next toggle sets. */
 type Wrap = ReturnType<typeof createSourceOptions>['toggled'];

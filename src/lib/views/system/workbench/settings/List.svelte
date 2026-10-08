@@ -12,7 +12,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { ENGINE_ROOT } from '$lib/state/sources/fs';
-    import { sourceTabState } from '$lib/state/sessions/source.svelte';
+    import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import type { Group } from '$lib/state/system/config/groups';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';

@@ -248,6 +248,16 @@ export type Subscription = {
 };
 
 /**
+ * The message a page sends to drop channels from its subscription. The server acts on the
+ * `source:` channels of it, whose publisher stops when no socket holds the channel; every other
+ * channel stays subscribed until the socket closes.
+ */
+export type Unsubscription = {
+    type: 'unsubscribe';
+    channels: string[];
+};
+
+/**
  * The machine the server runs on: its name, as the operating system gives it, and the address the
  * server listens at. The status bar's first item draws the one and says the other.
  */
@@ -516,6 +526,7 @@ export type {
     UsageTool,
     UsageWindow,
     LiveEntry,
+    OpenFileMessage,
     SecondaryArea,
     SessionAgent,
     SessionCache,

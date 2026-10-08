@@ -31,7 +31,7 @@
         entities: { config },
         layout: { floats, pages, resetPages },
         registry: { viewFor },
-        ui: { unsaved, busyTerminals }
+        ui: { unsaved, busyTerminals, saveBeforeClose }
     } = useState();
 
     const rail = $derived(railPages(config()?.config));
@@ -60,6 +60,7 @@
             words,
             [...rebuilt, ...removed, ...replaced],
             unsaved,
+            saveBeforeClose,
             (instance) => tabNameOf(instance, viewFor),
             asker,
             () => {

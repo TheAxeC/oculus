@@ -165,6 +165,17 @@ export type UiStore = {
     instanceState: (id: string) => unknown;
     registerUnsaved: (reports: (id: string) => boolean) => void;
     unsaved: (id: string) => boolean;
+    /** Register what answers whether a file is deleted on disk under a tab that holds it. */
+    registerGone: (reports: (root: string, path: string) => boolean) => void;
+    /** Whether a tab over this file holds it as deleted on disk. */
+    fileGone: (root: string, path: string) => boolean;
+    /** Register what saves the tabs a close may save instead of asking about them. */
+    registerSaveBeforeClose: (save: (ids: string[]) => Promise<void>) => void;
+    /**
+     * Save the tabs among these that the autosave mode saves on a close, and answer the ids that
+     * hold unsaved text afterwards, which are the ones the close asks about.
+     */
+    saveBeforeClose: (ids: string[]) => Promise<string[]>;
     registerTerminalOwner: (owner: TerminalOwner) => void;
     busyTerminals: (instances: readonly OwnedInstance[]) => Promise<BusyTerminal[]>;
     endTerminals: (instances: readonly OwnedInstance[]) => void;
@@ -265,6 +276,12 @@ export function createUi(
     /** What the stores holding unsaved text registered, asked in turn by unsaved(). */
     const unsavedReports: ((id: string) => boolean)[] = [];
 
+    /** What the stores that know a file's state on disk registered, asked in turn by fileGone(). */
+    const goneReports: ((root: string, path: string) => boolean)[] = [];
+
+    /** What saves tabs on a close, registered by the autosave store. */
+    const closeSavers: ((ids: string[]) => Promise<void>)[] = [];
+
     /** The stores owning terminals that registered, asked by busyTerminals() and endTerminals(). */
     const terminalOwners: TerminalOwner[] = [];
 
@@ -350,6 +367,26 @@ export function createUi(
     /** Whether the instance holds unsaved text, which is what a close asks a confirmation about. */
     function unsaved(id: string): boolean {
         return unsavedReports.some((reports) => reports(id));
+    }
+
+    /** Register what answers whether a file under an open tab is deleted on disk. */
+    function registerGone(reports: (root: string, path: string) => boolean): void {
+        goneReports.push(reports);
+    }
+
+    /** Whether a tab over the file holds it as deleted on disk. */
+    function fileGone(root: string, path: string): boolean {
+        return goneReports.some((reports) => reports(root, path));
+    }
+
+    /** Register what saves tabs before a close asks about them. */
+    function registerSaveBeforeClose(save: (ids: string[]) => Promise<void>): void {
+        closeSavers.push(save);
+    }
+
+    async function saveBeforeClose(ids: string[]): Promise<string[]> {
+        for (const save of closeSavers) await save(ids);
+        return ids.filter(unsaved);
     }
 
     /** Register a store that owns terminals, at the point the client is wired. */
@@ -685,6 +722,10 @@ export function createUi(
         instanceState,
         registerUnsaved,
         unsaved,
+        registerGone,
+        fileGone,
+        registerSaveBeforeClose,
+        saveBeforeClose,
         registerTerminalOwner,
         busyTerminals,
         endTerminals,

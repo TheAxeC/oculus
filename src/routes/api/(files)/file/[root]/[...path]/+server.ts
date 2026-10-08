@@ -5,9 +5,10 @@
 // The origin guard in src/hooks.server.ts answers a request from another page before anything is
 // read from disk, whatever the roots turn out to be. The roots are the configured ones with the
 // current workspace's after them, so a folder the reader added in the file browser is served
-// exactly as a configured one is; the configuration is the request's own read and the hub comes off
-// its ServerContext, so one request reads the workspaces file once. A file inside an apps folder is
-// sent as plain text, since it is app code and a page that opens it shows its source.
+// exactly as a configured one is; the configuration is the one read `locals.config` keeps for the
+// request and the hub comes off the ServerContext, so one request reads the workspaces file once.
+// A file inside an apps folder is sent as plain text, since it is app code and a page that opens
+// it shows its source.
 
 import { serveFile } from '$lib/server/files/files';
 import { browserRoots } from '$lib/server/files/roots';

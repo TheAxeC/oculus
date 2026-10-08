@@ -18,6 +18,7 @@ import type { Hub } from '../../core/channels.ts';
 import type { RunningGit } from '../../core/git/running.ts';
 import type { FsWrites } from '../../core/json.ts';
 import type { IgnoredCache } from '../../files/fs.ts';
+import type { OpenFiles } from '../../files/fs/open-files.ts';
 import type { PickerState } from '../../files/fs/picker.ts';
 import type { Opener, PathOpener } from '../../files/open.ts';
 import type { Plan } from '../../git/deposit.ts';
@@ -31,6 +32,7 @@ import type { SchedulesWatcher } from '../../machine/runs/schedules/watch.ts';
 import type { UsageRefreshWatcher } from '../../machine/usage/refresh.ts';
 import type { UsageWatcher } from '../../machine/usage/watch.ts';
 import type { HookTarget } from '../hooks.ts';
+import type { ConfigCache } from './config-cache.ts';
 import type { AppsWatcher } from '../watch/apps.ts';
 import type { GitWatcher } from '../watch/git.ts';
 
@@ -43,6 +45,8 @@ export type ServerContext = {
     debug: DebugClient;
     hooks: HookTarget;
     git: GitWatcher;
+    /** The files open in source tabs, polled for a change on disk behind the `source:` channels. */
+    openFiles: OpenFiles;
     hpc: HpcWatcher;
     calendar: CalendarWatcher;
     mail: MailWatcher;
@@ -71,6 +75,11 @@ export type ServerContext = {
      * The directory the configuration was read from, so a route names a config file without a walk.
      */
     engine: string;
+    /**
+     * The parse of the config folder, kept between requests while no file of the folder changes;
+     * a request reads it once through `locals.config`.
+     */
+    configCache: ConfigCache;
     /** The write chain of the workspaces file, so two POSTs cannot lose one another's change. */
     fsWrites: FsWrites;
     /**

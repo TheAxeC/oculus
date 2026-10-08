@@ -5,7 +5,8 @@
 //
 // A value is taken from the first layer that sets it: the tab's own choice, the file's own
 // indentation, the repository's record, `editor.languages`, then the global key (`resolveEditor`);
-// `format_on_save` has no global key, so it is the record's or off.
+// `format_on_save` has no global key, so it is the record's or off. The trim of trailing whitespace
+// and the final newline of a save are global keys the records override the same way.
 // A tab's own indentation or word wrap is taken only when the catalog's entry for the key takes it
 // too, which the options carry as `fitsTabSize` and `fitsWrap`.
 
@@ -24,7 +25,12 @@ export type LanguageRecord = {
     wordWrap?: WordWrap;
     rulers?: number[];
     formatOnSave?: boolean;
+    trimTrailingWhitespace?: boolean;
+    finalNewline?: boolean;
 };
+
+/** When a tab with unsaved text is saved without a press of Save: `editor.autosave`. */
+export type Autosave = 'off' | 'after_delay' | 'on_focus_change';
 
 /** The records of a configuration or of a repository, by language, in a map with no prototype. */
 export type LanguageRecords = Record<string, LanguageRecord | undefined>;
@@ -37,6 +43,11 @@ export type EditorOptions = {
     minimap: boolean;
     renderWhitespace: Whitespace;
     stickyScroll: boolean;
+    autosave: Autosave;
+    /** The milliseconds after the last edit that `after_delay` saves a tab. */
+    autosaveDelay: number;
+    trimTrailingWhitespace: boolean;
+    finalNewline: boolean;
     languages: LanguageRecords;
     /** Whether a width of a step is one the catalog's `editor.tab_size` takes. */
     fitsTabSize: (size: number) => boolean;
@@ -73,6 +84,10 @@ export type EditorResolved = {
     rulers: number[];
     /** Whether a save first formats the document with its language server. */
     formatOnSave: boolean;
+    /** Whether a save takes the spaces and tabs off the end of each line. */
+    trimTrailingWhitespace: boolean;
+    /** Whether a save ends the text with one line ending and takes off the empty lines after it. */
+    finalNewline: boolean;
 };
 
 /**
@@ -114,7 +129,13 @@ export function resolveEditor(ask: EditorAsk): EditorResolved {
         wordWrap: tab.wrap !== null && options.fitsWrap(tab.wrap) ? tab.wrap : configuredWrap,
         configuredWrap,
         rulers: [...layered(ask, 'rulers', [] as number[])],
-        formatOnSave: layered(ask, 'formatOnSave', false)
+        formatOnSave: layered(ask, 'formatOnSave', false),
+        trimTrailingWhitespace: layered(
+            ask,
+            'trimTrailingWhitespace',
+            options.trimTrailingWhitespace
+        ),
+        finalNewline: layered(ask, 'finalNewline', options.finalNewline)
     };
 }
 

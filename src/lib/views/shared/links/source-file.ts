@@ -3,7 +3,7 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import type { OpenOptions } from '$lib/state/workbench/layout.svelte';
-import { libraryTabState, sourceTabState } from '$lib/state/sessions/source.svelte';
+import { libraryTabState, sourceTabState } from '$lib/state/sessions/source/draft';
 import type { ViewSource } from '$lib/state/sessions/view-source';
 
 /**

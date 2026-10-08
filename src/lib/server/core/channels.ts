@@ -172,6 +172,27 @@ export class Hub {
         this.#subscribers.delete(sink);
     }
 
+    /**
+     * Take channels off one sink's subscription, with whatever message was held back for it on
+     * them. A sink that holds none of them is left as it is.
+     */
+    unsubscribe(sink: Sink, channels: string[]): void {
+        const subscriber = this.#subscribers.get(sink);
+        if (subscriber === undefined) return;
+        for (const channel of channels) {
+            subscriber.channels.delete(channel);
+            subscriber.pending.delete(channel);
+        }
+    }
+
+    /**
+     * Forget a channel's current message, for a channel whose publisher has stopped: a sink that
+     * subscribes later is handed nothing in place of a message that stopped being true.
+     */
+    forget(channel: string): void {
+        this.#latest.delete(channel);
+    }
+
     #deliver(sink: Sink, subscriber: Subscriber, message: Message): void {
         if (subscriber.sending) {
             const held = subscriber.pending.get(message.channel);

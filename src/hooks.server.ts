@@ -1,7 +1,7 @@
-import { loadConfig, textCatalog } from '$lib/data/sources/config';
+import { textCatalog, type loadConfig } from '$lib/data/sources/config';
 import { byKey } from '$lib/data/helpers/guards';
 import { sameOrigin } from '$lib/server/core/auth';
-import { reportFindings, serverContext } from '$lib/server/root/context';
+import { serverContext } from '$lib/server/root/context';
 import { json, type Handle, type RequestEvent } from '@sveltejs/kit';
 
 /** The routes the origin guard judges: every API route, and not the page. */
@@ -64,12 +64,13 @@ function refused(event: RequestEvent): boolean {
 // string that has to be in it before the app starts, and it comes from the catalog like every other
 // string: app.html carries the placeholder, this replaces it per request.
 //
-// The configuration is read at most once a request, and only by a request that asks for it: the
-// page's title and its load function share the one read through `locals.config`, and a request to
-// an API route that never asks reads nothing. Reading and parsing every config file is the most
-// expensive thing a request does, and a page that boots makes several requests at once; each read
-// holds the one event loop the socket's upgrade waits on, so a read per request made the socket
-// open late on a loaded machine. A finding of the read is said on the read, so once a request.
+// The configuration is read only by a request that asks for it, through `locals.config`, which the
+// page's title and its load function share: the first call of a request reads it and the rest of
+// the request keeps that read, so one request sees one configuration, and a request to an API
+// route that never asks reads nothing. The read itself is the server context's `configCache`
+// (lib/server/root/process/config-cache.ts), which parses the config folder again only when a
+// file of it was added, removed or written, because a parse holds the one event loop the socket's
+// upgrade waits on and a page that boots makes several requests at once.
 //
 // The page's answer carries `Content-Security-Policy: frame-src 'self'`, which holds the frame of
 // an app, whose files are served from /apps/ outside the guard, to the addresses of this origin.
@@ -84,12 +85,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     event.locals.server = context;
     event.locals.token = context.token;
     let read: ReturnType<typeof loadConfig> | undefined;
-    event.locals.config = () => {
-        if (read !== undefined) return read;
-        read = loadConfig(context.engine);
-        reportFindings(read.findings);
-        return read;
-    };
+    event.locals.config = () => (read ??= context.configCache.read());
 
     // The lookup t() gives a component, in the one place that runs before the catalog reaches the
     // page. The key stays a literal so tests/checks/source/keys.test.ts checks it like every other.

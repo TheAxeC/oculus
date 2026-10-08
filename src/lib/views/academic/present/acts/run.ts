@@ -12,7 +12,7 @@
 import { base64Of, encoded } from '$lib/ui/forms/file/file-data';
 import type { Ask } from '$lib/views/shared/writes/ask';
 import { deckFile, deleteQuestion, dropRefusal, type SlideAct } from '$lib/state/life/present';
-import { loadSource, sourceTabState } from '$lib/state/sessions/source.svelte';
+import { loadSource, sourceTabState } from '$lib/state/sessions/source/draft';
 import { t } from '$lib/state/shared/words/text';
 import type { WriteAnswer, WritesStore } from '$lib/state/shared/stores/shapes';
 import type { Deck, DeckRef, DeckSlide } from '$lib/state/life/present';

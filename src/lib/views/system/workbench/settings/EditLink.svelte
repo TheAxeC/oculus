@@ -5,7 +5,7 @@
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { ENGINE_ROOT } from '$lib/state/sources/fs';
-    import { sourceTabState } from '$lib/state/sessions/source.svelte';
+    import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 

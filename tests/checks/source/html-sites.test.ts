@@ -298,8 +298,6 @@ describe('every {@html} site', () => {
         expect(Object.keys(ALLOWED).filter((named) => !live.includes(named))).toEqual([]);
     });
 
-    // Revert: in htmlSites of tests/checks/source/html-sites.test.ts, match `{@html` in the text,
-    // and the site inside the HTML comment is read as a site.
     it('reads a site inside an HTML comment as none', () => {
         expect(htmlSites('<!-- {@html bad} -->\n{@html good(x)}\n')).toEqual(['good(x)']);
     });

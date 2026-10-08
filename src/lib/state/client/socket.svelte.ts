@@ -52,9 +52,11 @@ import type {
     ConfigPayload,
     HostInfo,
     Message,
-    Subscription
+    Subscription,
+    Unsubscription
 } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
+import { SOURCE_PREFIX } from '../../data/helpers/files/address.ts';
 import type { SocketStore, Status } from '../shared/stores/shapes.ts';
 
 export type { SocketStore, Status };
@@ -208,10 +210,10 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     });
 
     /**
-     * Write one message on the open socket: the terminal input and resize, and nothing else the
-     * server accepts from a page. False when there is no open socket, which a caller shows rather
-     * than queueing: keystrokes held through a reconnect would be typed into whatever the pane
-     * shows by then.
+     * Write one message on the open socket: the terminal input and resize, the unsubscribe message
+     * of a `source:` channel, and nothing else the server accepts from a page. False when there is
+     * no open socket, which a caller shows rather than queueing: keystrokes held through a
+     * reconnect would be typed into whatever the pane shows by then.
      */
     function send(message: unknown): boolean {
         if (live?.readyState !== WebSocket.OPEN) return false;
@@ -231,12 +233,19 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     }
 
     /**
-     * Take channels out of the subscription. There is no unsubscribe message on the wire, so the
-     * server keeps sending on an open socket until it closes; what this stops is the next reconnect
-     * asking for them, and with the listener gone the messages that still arrive are dropped.
+     * Take channels out of the subscription: the next reconnect does not ask for them again, and
+     * with the listener gone the messages that arrive for them are dropped. The `source:` channels
+     * among them are also dropped on the server with an unsubscribe message, since the server polls
+     * a file for as long as some socket holds its channel; every other channel stays subscribed on
+     * an open socket until it closes.
      */
     function unsubscribe(names: string[]): void {
+        const dropped = names.filter((name) => channels.includes(name));
         channels = channels.filter((name) => !names.includes(name));
+        const files = dropped.filter((name) => name.startsWith(SOURCE_PREFIX));
+        if (files.length === 0) return;
+        const message: Unsubscription = { type: 'unsubscribe', channels: files };
+        send(message);
     }
 
     /**

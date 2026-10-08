@@ -53,7 +53,7 @@
         layout: { currentPage, openRailPage, openView, pages: allPages, resetPage },
         notices: { post },
         registry: { viewFor },
-        ui: { unsaved, busyTerminals }
+        ui: { unsaved, busyTerminals, saveBeforeClose }
     } = useState();
 
     type Props = {
@@ -147,6 +147,7 @@
             words,
             [made],
             unsaved,
+            saveBeforeClose,
             (instance) => tabNameOf(instance, viewFor),
             ask,
             () => {

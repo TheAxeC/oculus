@@ -37,7 +37,9 @@ import { allowedOrigin, carriesToken } from '../core/auth.ts';
 import type { Hub, Sink } from '../core/channels.ts';
 import { LSP_PREFIX } from '../machine/lsp/wire.ts';
 import { CHANNEL_PREFIX } from '../machine/pty/channel.ts';
-import type { Jump, JumpMessage, Subscription } from '../../data/model/index.ts';
+import type { Jump, JumpMessage, Subscription, Unsubscription } from '../../data/model/index.ts';
+import { SOURCE_PREFIX } from '../../data/helpers/files/address.ts';
+import type { OpenFiles } from '../files/fs/open-files.ts';
 
 /** The channel a jump goes out on. */
 const JUMP_CHANNEL = 'jump';
@@ -78,6 +80,11 @@ export type SocketOptions = {
      * The language server relay, when this process has one. Without it an `lsp:` frame is dropped.
      */
     relay?: RelaySink;
+    /**
+     * The open files, when this process has them: a `source:` channel is polled for a file only
+     * with it, and without it the channel is a plain one that nothing publishes on.
+     */
+    openFiles?: Pick<OpenFiles, 'subscribed' | 'unsubscribed' | 'remove'>;
 };
 
 export type Attached = {
@@ -94,6 +101,12 @@ const subscriptionShape = z.object({
     channels: z.array(z.string()),
     token: z.string().optional().catch(undefined)
 }) satisfies z.ZodType<Subscription>;
+
+/** The unsubscribe message a page sends: the channels it drops. */
+const unsubscriptionShape = z.object({
+    type: z.literal('unsubscribe'),
+    channels: z.array(z.string())
+}) satisfies z.ZodType<Unsubscription>;
 
 /**
  * The jump message a page sends: a source line of a root, which the main page named by `owner` is
@@ -120,6 +133,18 @@ export function parseJump(data: string): Jump | null {
     if (!message.success) return null;
     const { owner, root, file, line, column } = message.data;
     return column === undefined ? { owner, root, file, line } : { owner, root, file, line, column };
+}
+
+/** The channels an unsubscribe message drops, or null when the text is not one. */
+export function parseUnsubscription(data: string): string[] | null {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(data);
+    } catch {
+        return null;
+    }
+    const message = unsubscriptionShape.safeParse(parsed);
+    return message.success ? message.data.channels : null;
 }
 
 /** A subscribe message, with the write token when the page sent one, or null when it is not one. */
@@ -169,6 +194,7 @@ export function attachSocket(server: Server, hub: Hub, options: SocketOptions): 
         const drop = (): void => {
             options.relay?.remove(sink);
             options.terminals?.remove(sink);
+            options.openFiles?.remove(sink);
             hub.remove(sink);
         };
         ws.on('message', (data: unknown) => {
@@ -178,13 +204,25 @@ export function attachSocket(server: Server, hub: Hub, options: SocketOptions): 
                 if (carriesToken(subscription.token, options.token)) writable.add(sink);
                 // A terminal channel is subscribed by the terminals, which send the scrollback
                 // first, and a language server channel is the relay's and has no latest message;
-                // every other channel is the Hub's own and gets its latest message here.
+                // every other channel is the Hub's own and gets its latest message here. An
+                // open-file channel is the Hub's own once the open files poll it, and a name they
+                // refuse (outside every root, or past a bound) is left out.
+                const refused = options.openFiles?.subscribed(sink, subscription.channels) ?? [];
                 const plain = subscription.channels.filter(
                     (channel) =>
-                        !channel.startsWith(CHANNEL_PREFIX) && !channel.startsWith(LSP_PREFIX)
+                        !channel.startsWith(CHANNEL_PREFIX) &&
+                        !channel.startsWith(LSP_PREFIX) &&
+                        !refused.includes(channel)
                 );
                 if (plain.length > 0) hub.subscribe(sink, plain);
                 options.terminals?.subscribed(sink, subscription.channels);
+                return;
+            }
+            const dropped = parseUnsubscription(text);
+            if (dropped !== null) {
+                const names = dropped.filter((channel) => channel.startsWith(SOURCE_PREFIX));
+                options.openFiles?.unsubscribed(sink, names);
+                hub.unsubscribe(sink, names);
                 return;
             }
             const jump = parseJump(text);

@@ -162,3 +162,22 @@ describe('what an lsp-edit records', () => {
         expect(existsSync(join(w.hub, 'a.txt'))).toBe(true);
     });
 });
+
+describe('the bytes an lsp-edit replaces', () => {
+    /** `lead`, then one byte that is no text, then a line `foo`. */
+    const holding = (lead: number, bad: number): Buffer =>
+        Buffer.concat([Buffer.alloc(lead, 0x61), Buffer.from([bad]), Buffer.from('\nfoo\n')]);
+
+    it.each([
+        ['a Latin-1 byte after 9,000 bytes of ASCII', holding(9000, 0xe9)],
+        ['a NUL byte at byte 10,000', holding(10000, 0)]
+    ])('refuses a file holding %s, and leaves its bytes', async (_title, held) => {
+        const w = replaceWorld({ 'bin.txt': held });
+        const answer = await lspEditPost(w, [
+            lspFile('bin.txt', held, [lspEdit([1, 0], [1, 3], 'bar')])
+        ]);
+        expect(answer.status).toBe(400);
+        expect(answer.body).toMatchObject({ ok: false, error: 'binary', failed: 'hub/bin.txt' });
+        expect(bytes(w, 'bin.txt')).toEqual(held);
+    });
+});

@@ -2,7 +2,9 @@
 // program in a terminal they own, and what the dialog says about them. One question serves the
 // close control of a tab, Delete, the pane menu's Close and the tab menu's closes, so every way of
 // closing takes the same guard over the same ids, and no view is scanned for what it holds. A
-// second press of the same close while the read of the terminals is in flight does nothing.
+// second press of the same close while the saves and the read of the terminals are in flight does
+// nothing. The tabs `editor.autosave` saves on a close are saved before the question is put, so
+// the question names only the tabs left holding unsaved text.
 
 import type { ClientState } from '$lib/state/client/context';
 import { t } from '$lib/state/shared/words/text';
@@ -23,7 +25,7 @@ export type CloseQuestionDeps = {
 export function createCloseQuestion(deps: CloseQuestionDeps) {
     const {
         layout: { closeInstance },
-        ui: { busyTerminals, unsaved }
+        ui: { busyTerminals, saveBeforeClose, unsaved }
     } = deps.client;
 
     /**
@@ -43,7 +45,10 @@ export function createCloseQuestion(deps: CloseQuestionDeps) {
         const owned = deps.instances().filter((one) => ids.includes(one.id));
         return once(
             key,
-            () => busyTerminals(owned),
+            async () => {
+                await saveBeforeClose(ids);
+                return busyTerminals(owned);
+            },
             (busy) => {
                 const asked = closeAsk({ ids, unsaved, nameOf: deps.labelOf, many, busy });
                 if (asked === null) act();
@@ -52,9 +57,12 @@ export function createCloseQuestion(deps: CloseQuestionDeps) {
         );
     }
 
-    /** Close one tab, asking first when it holds unsaved text or runs a program. */
-    function closeTab(id: string): void {
-        void askAndClose(`tab:${id}`, [id], t('ui.tab_close_dirty'), () =>
+    /**
+     * Close one tab, asking first when it holds unsaved text or runs a program. Settles once the
+     * tab is closed or the question is put.
+     */
+    function closeTab(id: string): Promise<void> {
+        return askAndClose(`tab:${id}`, [id], t('ui.tab_close_dirty'), () =>
             closeInstance(id, deps.page())
         );
     }

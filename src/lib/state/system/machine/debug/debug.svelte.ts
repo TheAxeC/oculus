@@ -131,7 +131,7 @@ export type DebugDeps = {
     /** The source tabs over a `.rite` file on every page. */
     riteTabs: () => RiteTab[];
     draft: (id: string) => { text: string; saved: string; message: string };
-    saveDraft: (id: string, root: string, path: string) => Promise<void>;
+    saveDraft: (id: string, root: string, path: string) => Promise<boolean>;
     create: (
         into: { root: string; path: string },
         name: string,

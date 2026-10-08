@@ -30,6 +30,7 @@ import type {
 } from '../../../data/model/index.ts';
 import { z } from 'zod';
 import { compareUrl, savedUrl, type ReplacePreview } from '../../../data/file-ops.ts';
+import { fileBytesUrl } from '../../../data/helpers/files/address.ts';
 import {
     anyNumberShape,
     fieldItemsShape,
@@ -132,9 +133,11 @@ export function worktreeDiffUrl(root: string, path: string): string {
  * files between a ref and a commit (`compare`); or one file of a linked worktree against the main
  * worktree's (`workspace`). `against` is the file selected for compare, which makes the pane the
  * comparison of two files: the file at `root` and `path` on the right and `against` on the left.
- * `line` is the line of the new side the pane opens at, 0 for its top. `session` is the id of the
- * session record the pane was opened for, empty or absent for a pane opened from the Repositories
- * view.
+ * `unsaved` is the instance id of a source tab, which makes the pane the comparison of that tab's
+ * file as the disk holds it (left) with the tab's own text (right, editable): the tab's save
+ * conflict. `line` is the line of the new side the pane opens at, 0 for its top. `session` is the
+ * id of the session record the pane was opened for, empty or absent for a pane opened from the
+ * Repositories view.
  */
 export type DiffSubject = {
     root: string;
@@ -157,6 +160,8 @@ export type DiffSubject = {
     save?: string;
     /** The replacements of a Search tab, for the pane previewing them in the file. */
     replace?: ReplacePreview;
+    /** The source tab whose unsaved text is the right side, for the pane over a save conflict. */
+    unsaved?: string;
     line?: number;
     session?: string;
 };
@@ -174,6 +179,7 @@ function sideOf(subject: DiffSubject): string {
         return `compare@${subject.against.root}:${subject.against.path}`;
     if ((subject.save ?? '') !== '') return `save@${subject.save ?? ''}`;
     if (subject.replace !== undefined) return 'replace';
+    if ((subject.unsaved ?? '') !== '') return `unsaved@${subject.unsaved ?? ''}`;
     if ((subject.group ?? '') !== '') return `group@${subject.group ?? ''}`;
     if (subject.worktree) return 'worktree';
     if ((subject.commit ?? '') !== '') return `commit@${subject.commit ?? ''}`;
@@ -222,6 +228,7 @@ const heldDiffShape = z
         compare: compareShape.optional().catch(undefined),
         workspace: z.literal(true).optional().catch(undefined),
         replace: replacePreviewShape.optional().catch(undefined),
+        unsaved: z.string().optional().catch(undefined),
         line: anyNumberShape.catch(0),
         session: z.string().catch('')
     })
@@ -246,6 +253,7 @@ export function heldDiff(state: unknown): DiffState {
             compare: undefined,
             workspace: undefined,
             replace: undefined,
+            unsaved: undefined,
             line: 0,
             session: ''
         }
@@ -254,9 +262,11 @@ export function heldDiff(state: unknown): DiffState {
 
 /**
  * The address one diff pane reads, by what it is over. A Replace Preview is no address: it is read
- * by the POST `diffRequest` of answers.ts makes.
+ * by the POST `diffRequest` of answers.ts makes. A save conflict's address is the file route's,
+ * which answers the left side's text; the right side is the source tab's draft.
  */
 export function diffUrl(state: DiffSubject): string {
+    if ((state.unsaved ?? '') !== '') return fileBytesUrl(state.root, state.path);
     if (state.against !== undefined) return compareUrl(state, state.against);
     if ((state.save ?? '') !== '') return savedUrl(state, state.save ?? '');
     if (state.compare !== undefined)
@@ -282,6 +292,7 @@ export function diffActs(state: DiffSubject): boolean {
         state.compare === undefined &&
         state.workspace !== true &&
         state.replace === undefined &&
+        (state.unsaved ?? '') === '' &&
         state.against === undefined
     );
 }

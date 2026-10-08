@@ -55,10 +55,14 @@ export const WRONG_EDITOR: Record<string, unknown> = {
     paint_limit_kb: 0,
     tab_size: 9,
     word_wrap: 'wrap',
+    autosave: 'sometimes',
+    autosave_delay_ms: -5,
+    trim_trailing_whitespace: 'yes',
+    final_newline: 1,
     languages: {
         cobolx: { tab_size: 2 },
-        python: { tab_size: 99 },
-        cpp: { format_on_save: 'yes' },
+        python: { tab_size: 99, final_newline: 'sometimes' },
+        cpp: { format_on_save: 'yes', trim_trailing_whitespace: 'yes' },
         markdown: 5
     }
 };

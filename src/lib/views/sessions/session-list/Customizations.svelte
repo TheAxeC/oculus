@@ -25,7 +25,7 @@
     import type { CustomizationKind, CustomizationItem } from '$lib/state/sessions/agents.svelte';
     import { rootHolding } from '$lib/state/sources/fs';
     import { currentWorkspace } from '$lib/state/sources/fs-transport';
-    import { sourceTabState } from '$lib/state/sessions/source.svelte';
+    import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 

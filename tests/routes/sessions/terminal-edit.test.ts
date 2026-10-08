@@ -136,7 +136,6 @@ async function post(body: unknown, driver: ReturnType<typeof tmux>): Promise<Res
 }
 
 describe('the clear action', () => {
-    // Revert: drop the clear action from server/machine/pty/routes.ts, or its send-keys -R.
     it("resets that terminal's screen and then clears its history, and nothing else", async () => {
         const driver = tmux(SESSIONS);
         const response = await post({ action: 'clear', id: IDLE }, driver);

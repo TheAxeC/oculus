@@ -137,11 +137,34 @@ export function keepCopy(
 ): KeepResult {
     const real = realPath(file);
     if (real === null) return { ok: true, kept: null };
+    let bytes: Buffer;
     try {
         const info = statSync(real);
         const limit = kind === 'delete' ? DELETE_MAX_BYTES : SAVE_MAX_BYTES;
         if (!info.isFile() || info.size > limit) return { ok: true, kept: null };
-        const bytes = readFileSync(real);
+        bytes = readFileSync(real);
+    } catch (error) {
+        return { ok: false, reason: error instanceof Error ? error.message : String(error) };
+    }
+    return keepBytes(history, real, bytes, kind, now);
+}
+
+/**
+ * Copy bytes the caller already read from the file at `real` (its real path) into the history, by
+ * the limit and the pruning of `keepCopy`. A save keeps the text its compare saw this way, so the
+ * copy is the text the save replaced and not whatever the file holds by the time a second read
+ * runs.
+ */
+export function keepBytes(
+    history: string,
+    real: string,
+    bytes: Uint8Array,
+    kind: HistoryKind,
+    now: number = Date.now()
+): KeepResult {
+    const limit = kind === 'delete' ? DELETE_MAX_BYTES : SAVE_MAX_BYTES;
+    if (bytes.length > limit) return { ok: true, kept: null };
+    try {
         const folder = historyFolder(history, real);
         mkdirSync(folder, { recursive: true });
         const entries = savesOf(history, real);

@@ -6,7 +6,7 @@ text:
         bar_revert: Revert File
         bar_save: Save
         bar_save_title: 'Save ({0})'
-        binary: This file is not text on disk; the editor saves nothing over it.
+        binary: This file is not UTF-8 text throughout on disk; the editor saves nothing over it.
         cannot_open: 'Cannot open: {0}'
         cmd_blame: 'Git: Toggle Git Blame Editor Decoration'
         cmd_call_hierarchy: Show Call Hierarchy
@@ -35,9 +35,15 @@ text:
         cmd_typescript_output: 'TypeScript: Show Language Server Output'
         cmd_typescript_restart: 'TypeScript: Restart Language Server'
         code: '{0}, read only'
+        compare: Compare
+        conflict_gone: The tab this comparison was opened from is closed.
+        conflict_title: '{0} (in file) <-> {0} (in oculus): Resolve save conflict'
+        disk_changed: The file changed on disk after this tab read it; your changes are kept, and Save is refused until you compare, overwrite or revert.
+        disk_gone: The file was deleted on disk; Save writes it again.
         failed: failed
         format_failed: 'Saved without formatting: {0}'
         format_timeout: 'Saved without formatting: the language server did not answer within 60 seconds.'
+        format_unmounted: its editor is not open
         head_binary: This version of the file is not text, so it cannot be shown here.
         head_label: '{0} (HEAD)'
         head_locked: This is the file as the last commit holds it; it cannot be edited.
@@ -69,12 +75,17 @@ text:
         lsp_edit_typed: "{0} was typed into after the language server's edit was made, so the tabs were left as they are. {1} files were written, and History undoes them."
         lsp_edit_typed_one: "{0} was typed into after the language server's edit was made, so the tabs were left as they are. 1 file was written, and History undoes it."
         next_change: Go to Next Change
+        not_text: This file is not UTF-8 text throughout; it is shown read-only and nothing is saved over it.
         open_change: Open Change
+        overwrite: Overwrite
         preview_side: Open Preview to the Side
         previous_change: Go to Previous Change
         readonly: This file is read-only on this machine; the editor shows it and saves nothing.
         retry: Read again
+        revert: Revert
+        save_conflict: "Failed to save '{0}': The content of the file is newer. Please compare your version with the file contents or overwrite the content of the file with your changes."
         save_failed: save failed
+        save_folder: "Failed to save '{0}': A folder is where this file was, so nothing was written."
         saved: saved
         saved_without_copy: 'saved, but the local history could not keep a copy: {0}'
         saving: saving...

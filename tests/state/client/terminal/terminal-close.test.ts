@@ -122,7 +122,6 @@ function instances(ids: string[]) {
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe('a tab that is moved, split or reloaded', () => {
-    // Revert: call the ending from carryToPage or transferInstance.
     it('ends no terminal when it moves to another pane, to another page, or is split', async () => {
         const page = client.layout.currentPage().id;
         const id = owning([A]);
@@ -139,7 +138,6 @@ describe('a tab that is moved, split or reloaded', () => {
         expect(holds(id)).toBe(true);
     });
 
-    // Revert: end the terminals of every saved tab when the layout is loaded.
     it('ends no terminal when the layout is loaded again', async () => {
         const storage = fakeStorage();
         client.layout.loadLayout(storage);
@@ -152,7 +150,6 @@ describe('a tab that is moved, split or reloaded', () => {
 });
 
 describe('the busy read a close asks first', () => {
-    // Revert: name no program for a busy terminal in the store's busy read.
     it('names a terminal running a program, and not an idle shell', async () => {
         const id = owning([A, B]);
         listed([A, B]);

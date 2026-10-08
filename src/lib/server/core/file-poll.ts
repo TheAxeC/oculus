@@ -43,9 +43,10 @@ function reason(error: unknown): string {
 /**
  * What a stat says of a file's content: its inode, size and both times, which an atomic replace, an
  * append and an in-place write each move. A missing file and one the stat refuses are values too,
- * so the file appearing, going and coming back are changes like any other.
+ * so the file appearing, going and coming back are changes like any other. No file is `absent`.
  */
-function signature(file: string): string {
+function signature(file: string | null): string {
+    if (file === null) return 'absent';
     try {
         const stat = statSync(file, { throwIfNoEntry: false });
         if (stat === undefined) return 'absent';
@@ -69,14 +70,17 @@ export type FilePoll = {
  * Stat the file once a tick and call `changed` when its signature moved since the newest
  * `reading()`, which `changed` is expected to call before it reads. Until the first `reading()`
  * every signature is a change, so a file nothing has read yet is read at the first tick. A tick
- * whose `changed` closed the poll schedules no next one.
+ * whose `changed` closed the poll schedules no next one. The file is a path, or a function that
+ * names the path at each tick and answers null when no file is meant any more, so a poll follows
+ * a place that is resolved again at every tick.
  */
 export function pollFile(
-    file: string,
+    file: string | (() => string | null),
     options: { clock: Clock; every: number },
     changed: () => void
 ): FilePoll {
     const { clock, every } = options;
+    const place = (): string | null => (typeof file === 'function' ? file() : file);
     let seen = '';
     let timer: Timer | null = null;
     let closed = false;
@@ -85,14 +89,14 @@ export function pollFile(
         timer = clock.setTimeout(() => {
             timer = null;
             if (closed) return;
-            if (signature(file) !== seen) changed();
+            if (signature(place()) !== seen) changed();
             tick();
         }, every);
     };
     tick();
     return {
         reading(): void {
-            seen = signature(file);
+            seen = signature(place());
         },
         close(): void {
             closed = true;

@@ -1,9 +1,10 @@
 // Layer 3, view partial of Source.svelte. What a source tab shows of its text: the sentence that
 // replaces the editor when the file cannot be shown, the line saying why it may not be written,
 // whether the tab holds the file's text, whether that text may be written and whether the editor
-// draws it, and whether the row under the editor has anything to say.
+// draws it, and whether the row under the editor has anything to say: a save outcome, a sentence
+// the tab said, or the disk line (save/DiskNote.svelte) of a file that changed or is gone.
 
-import type { HeadStage, SourceDraft } from '$lib/state/sessions/source.svelte';
+import type { HeadStage, SourceDraft } from '$lib/state/sessions/source/draft';
 import { t } from '$lib/state/shared/words/text';
 import { lockedWords, type Locked } from '../save/locked-words';
 
@@ -40,7 +41,12 @@ export type TabShown = {
     drawn: boolean;
     /** The save outcome the row under the editor shows, only while the text may be written. */
     saveMessage: string;
-    /** Whether the row under the editor is drawn: a save outcome or a sentence the tab said. */
+    /**
+     * Whether the row under the editor draws the disk line: the file changed under unsaved text,
+     * it is gone, or a save of it was refused because it changed.
+     */
+    disked: boolean;
+    /** Whether the row under the editor is drawn: a save outcome, a sentence or the disk line. */
     noted: boolean;
 };
 
@@ -54,7 +60,13 @@ export function tabShown(input: TabShownInput): TabShown {
     const lock = lockedWords(input.head, draft, input.library);
     const read = error === '' && draft.loaded;
     const editing = read && lock.words === '';
-    const saveMessage = editing ? draft.message : '';
+    // The conflict's sentence is the disk line's, with its three actions.
+    const saveMessage = editing && !draft.conflict ? draft.message : '';
+    const disked =
+        editing &&
+        (draft.conflict ||
+            draft.disk === 'gone' ||
+            (draft.disk === 'changed' && draft.text !== draft.saved));
     return {
         error,
         lock,
@@ -62,6 +74,7 @@ export function tabShown(input: TabShownInput): TabShown {
         editing,
         drawn: read && !lock.window,
         saveMessage,
-        noted: saveMessage !== '' || input.said !== ''
+        disked,
+        noted: saveMessage !== '' || input.said !== '' || disked
     };
 }

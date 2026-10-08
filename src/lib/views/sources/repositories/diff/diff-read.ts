@@ -1,11 +1,18 @@
 // Layer 3, view helper of views/sources/repositories/diff/Diff.svelte. The reads a diff is made of:
 // the one request of a file's, a commit's, a stash's, a worktree's or a Replace Preview's diff (the
-// last a POST, answers.ts's diffRequest), or several reads joined
-// into one answer. A group of changes is one read per path, and a comparison of a ref with a commit
-// is one read of the files the two differ in and then one per file, each holding the file's two
-// sides. Reads of the same diff run a few at a time.
+// last a POST, answers.ts's diffRequest), or several reads joined into one answer. A group of
+// changes is one read per path, and a comparison of a ref with a commit is one read of the files
+// the two differ in and then one per file, each holding the file's two sides. Reads of the same
+// diff run a few at a time. The comparison of a save conflict is one read of the file as the disk
+// holds it, which is the left side; the right side is the source tab's own text, which the pane
+// puts in as the tab changes. `readKeyOf` is the key a pane's read is made under, which tells it
+// when to read again.
 
 import { readJson } from '$lib/data/shapes/shapes';
+import { refusedAnswer } from '$lib/state/shared/answers/answers';
+import { TEXT_LIMIT } from '$lib/state/sources/fs';
+import { readCapped } from '$lib/state/sources/fs.svelte';
+import { previewKey } from '$lib/state/sources/repositories/replace-preview';
 import {
     commitFilesOf,
     diffAnswerOf,
@@ -33,6 +40,31 @@ async function answer(request: DiffRequest): Promise<DiffAnswer> {
     return diffAnswerOf(response.ok, await readJson(response));
 }
 
+/** The file of a save conflict as the disk holds it; a file that is not there is an empty side. */
+async function diskSide(state: DiffState): Promise<DiffAnswer> {
+    const response = await fetch(diffUrl(state), { cache: 'no-cache' });
+    if (!response.ok && response.status !== 404) {
+        return {
+            ok: false,
+            files: null,
+            attributes: null,
+            conflicted: false,
+            error: refusedAnswer(response.status)
+        };
+    }
+    const original = response.ok ? (await readCapped(response, TEXT_LIMIT)).text : '';
+    const sides = {
+        oldPath: state.path,
+        newPath: state.path,
+        head: [],
+        binary: false,
+        encoded: false,
+        original,
+        modified: ''
+    };
+    return { ok: true, files: [sides], attributes: null, conflicted: false, error: undefined };
+}
+
 /**
  * What a diff pane shows for `state`: the one request (a Replace Preview's is a POST carrying the
  * page's write `token`), the files of a comparison, or one read per path of a group of the
@@ -44,6 +76,7 @@ export async function readPaneDiff(
     token: string
 ): Promise<DiffAnswer> {
     const { group, compare } = state;
+    if ((state.unsaved ?? '') !== '') return diskSide(state);
     const url = diffUrl(state);
     if (compare !== undefined) {
         const listing = await fetch(url);
@@ -71,4 +104,24 @@ export async function readPaneDiff(
             answer({ url: fileDiffUrl(state.root, path, group === 'staged') })
         )
     );
+}
+
+/**
+ * What a diff pane's read is made under: the pane's id, its replace field when it is a Replace
+ * Preview, and for the comparison of a save conflict (a pane naming the source tab whose text is
+ * its right side) the hash of the file on disk, so the comparison is read again when the file
+ * changes. A pane of any other kind is not read again for a change of the file.
+ */
+export function readKeyOf(
+    held: {
+        id: string;
+        root: string;
+        path: string;
+        replace?: Parameters<typeof previewKey>[0];
+        unsaved?: string | undefined;
+    },
+    diskHash: (root: string, path: string) => string | null | undefined
+): string {
+    const disk = held.unsaved === undefined ? '' : (diskHash(held.root, held.path) ?? '');
+    return `${held.id}${previewKey(held.replace)}${disk}`;
 }

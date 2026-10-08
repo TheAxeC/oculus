@@ -76,9 +76,13 @@ const answerShape = z.object({
     refused: survivorsShape(refusalShape).catch([]),
     output: optionalTextShape,
     branches: survivorsShape(branchShape).optional().catch(undefined),
-    id: optionalTextShape
+    id: optionalTextShape,
+    hash: optionalTextShape
 }) satisfies z.ZodType<
-    Pick<WriteAnswer, 'error' | 'code' | 'changed' | 'refused' | 'output' | 'branches' | 'id'>
+    Pick<
+        WriteAnswer,
+        'error' | 'code' | 'changed' | 'refused' | 'output' | 'branches' | 'id' | 'hash'
+    >
 >;
 
 /** The refusals an answer lists, however many of them are well formed. */
@@ -610,7 +614,8 @@ export function createWrites(
                     refused: held.refused,
                     output: held.output,
                     branches: held.branches,
-                    id: held.id
+                    id: held.id,
+                    hash: held.hash
                 }
             };
         } catch (error) {

@@ -1,6 +1,6 @@
 // Layer 1, data. The `editor:` block of config/behavior.yml and a repository's
 // `.oculus/settings.yml` read by the options catalog's rule (catalog/value-rule.ts), like every
-// other setting (settings.ts): the editor's six keys, and the records of `editor.languages`, each
+// other setting (settings.ts): the editor's keys, and the records of `editor.languages`, each
 // field of a record against the fields the catalog's `editor.languages` entry lists.
 //
 // A key that is missing is the catalog's `default`; a value the rule refuses is the `default` and
@@ -14,6 +14,7 @@
 
 import { parseDocument } from 'yaml';
 import type {
+    Autosave,
     EditorOptions,
     LanguageRecord,
     LanguageRecords,
@@ -91,6 +92,12 @@ function readRecord(
             case 'format_on_save':
                 if (typeof value === 'boolean') record.formatOnSave = value;
                 break;
+            case 'trim_trailing_whitespace':
+                if (typeof value === 'boolean') record.trimTrailingWhitespace = value;
+                break;
+            case 'final_newline':
+                if (typeof value === 'boolean') record.finalNewline = value;
+                break;
             default:
                 problems.push({ key: at, where: 'unknown-field' });
         }
@@ -146,6 +153,11 @@ export function readEditorOptions(config: Record<string, unknown>): {
             'editor.render_whitespace'
         ) as EditorOptions['renderWhitespace'],
         stickyScroll: read.flag('editor.sticky_scroll'),
+        // The rule has checked the word against the entry's values, which are the three modes.
+        autosave: read.text('editor.autosave') as Autosave,
+        autosaveDelay: read.number('editor.autosave_delay_ms'),
+        trimTrailingWhitespace: read.flag('editor.trim_trailing_whitespace'),
+        finalNewline: read.flag('editor.final_newline'),
         languages: records(),
         fitsTabSize: (size) => valueProblem(tabSize, size) === null,
         fitsWrap: (word): word is WordWrap => valueProblem(wrap, word) === null

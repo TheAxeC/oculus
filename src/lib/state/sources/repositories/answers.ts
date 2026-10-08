@@ -243,7 +243,12 @@ export type DiffRequest = {
 /** The request that reads one diff pane's subject; `token` is the page's write token. */
 export function diffRequest(state: DiffSubject, token: string): DiffRequest {
     const { replace } = state;
-    if (replace === undefined || state.against !== undefined || (state.save ?? '') !== '') {
+    if (
+        replace === undefined ||
+        state.against !== undefined ||
+        (state.save ?? '') !== '' ||
+        (state.unsaved ?? '') !== ''
+    ) {
         return { url: diffUrl(state) };
     }
     return {

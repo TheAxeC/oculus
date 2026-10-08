@@ -3,8 +3,9 @@
 //
 // The roots are the file browser's own list, folded by lib/server/files/roots.ts and by nothing
 // else: a folder the reader added in the file browser is read there and written here, so a file
-// that opens for editing is a file that saves. The configuration is the request's own read and the
-// hub comes off its ServerContext, so one request reads the workspaces file once.
+// that opens for editing is a file that saves. The configuration is the one read `locals.config`
+// keeps for the request, taken from the ServerContext's cache of the parse, and the hub comes off
+// the ServerContext, so one request reads the workspaces file once.
 
 import { textCatalog } from '$lib/data/sources/config';
 import { browserRoots } from '$lib/server/files/roots';

@@ -51,7 +51,7 @@
     const {
         layout: { activateInstance, closeInstance, currentPage, layout, transferInstance },
         fs: { gone },
-        ui: { unsaved },
+        ui: { saveBeforeClose, unsaved },
         source: { saveSourceDraft }
     } = useState();
 
@@ -94,9 +94,10 @@
     }
 
     /** Close these tabs, asking first when one holds unsaved text. */
-    function closing(ids: string[]): void {
-        confirming = closingEditors(ids, {
+    async function closing(ids: string[]): Promise<void> {
+        confirming = await closingEditors(ids, {
             unsaved,
+            saveBeforeClose,
             nameOf,
             close: (id) => closeInstance(id, page)
         });

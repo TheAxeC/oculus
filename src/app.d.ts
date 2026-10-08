@@ -15,8 +15,10 @@ declare global {
             /** The process-owned server objects carried by this raw request. */
             server: ServerContext;
             /**
-             * The configuration as the disk holds it, read at the first call of this request and
-             * held for the rest of it; a request that never calls it reads nothing.
+             * The configuration as the disk holds it. The first call of a request takes the server
+             * context's `configCache`, which parses the config folder again only when a file of it
+             * changed, and the request keeps that one read for every later call; a request that
+             * never calls it reads nothing.
              */
             config: () => ReturnType<typeof loadConfig>;
         }

@@ -119,6 +119,10 @@
         busy: boolean;
         /** The hunk the pane is at, by its place in this file, or -1. */
         current: number;
+        /** Whether the modified side can be typed into, for the comparison of a save conflict. */
+        editable?: boolean;
+        /** The modified side's text as the reader changes it. */
+        oninput?: (text: string) => void;
         onchanges: (changes: LineChange[]) => void;
         onview: (view: object) => void;
         onactions: (actions: EditorAction[]) => void;
@@ -154,6 +158,8 @@
         session = '',
         busy,
         current,
+        editable = false,
+        oninput,
         onchanges,
         onview,
         onactions,
@@ -407,6 +413,8 @@
                     {mode}
                     context={CONTEXT}
                     hideUnchanged={unchanged && !endings}
+                    {editable}
+                    {oninput}
                     {look}
                     {codeTheme}
                     {options}

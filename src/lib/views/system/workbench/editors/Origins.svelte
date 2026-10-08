@@ -5,7 +5,7 @@
     // opens its settings file in a source tab.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { sourceTabState } from '$lib/state/sessions/source.svelte';
+    import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { repoOrigins } from '$lib/state/system/config/editors/origins';

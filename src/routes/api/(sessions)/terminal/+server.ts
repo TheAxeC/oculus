@@ -24,8 +24,9 @@ export const POST: RequestHandler = ({ request, locals }) => {
                 local: server.local
             }),
         projectFor: (id) => project(server.hub, id),
-        // The request's own read of the disk, for the actions that read the config at the request:
-        // the chat launcher, the LaTeX words, the hub task seeds and the glyph catalog.
+        // The one read `locals.config` keeps for the request, for the actions that read the config
+        // at the request: the chat launcher, the LaTeX words, the hub task seeds and the glyph
+        // catalog.
         configFor: () => locals.config().config,
         localFor: () => server.local,
         // A project command runs in a repository under the roots the file browser serves, after the

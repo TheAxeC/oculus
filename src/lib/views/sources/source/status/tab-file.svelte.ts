@@ -5,7 +5,7 @@
 // that lost its address names no file. The values are derived from the tab's address and the
 // workspace's served roots and repositories, so they follow both.
 
-import type { HeadStage } from '$lib/state/sessions/source.svelte';
+import type { HeadStage } from '$lib/state/sessions/source/draft';
 import { repoOfFile, wholePath, type RepoFile } from '$lib/state/sources/repositories/file-git';
 import type { ClientState } from '$lib/state/client/context';
 

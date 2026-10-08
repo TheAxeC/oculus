@@ -141,6 +141,8 @@ export type WriteAnswer = {
      * The id the file gives the entry an entry write made or edited. Absent on every other write.
      */
     id?: string;
+    /** The SHA-256, in lower-case hex, of the bytes a source save wrote. */
+    hash?: string;
 };
 
 /**
