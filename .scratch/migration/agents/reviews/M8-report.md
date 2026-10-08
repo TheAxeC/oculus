@@ -75,7 +75,7 @@ Commands: the real-Relay harness under the session scratchpad (`e2e/page.ts`, a 
 | 13 | `run7.ts`: an unparsable `people.yml` gives one finding ("does not parse: Block collections are not allowed within flow collections at line 2, column 3:") and no mark and no completion on `collaborators: nobody-at-all`. |
 | 14 | `probe23` over a planted hub: a funding entry with a title and no key gives only "funding entry zz is awarded and has no statement"; `run4.ts` marks nothing on the real `funding.yml`. |
 | 15 | `run11.ts`: `compute:` offers `utwente,this-mac,data`; the parked resources `keptResources` drops are absent. |
-| 16 | `run1.ts` mapping: `side-projects/residual/project.yml` to `side-project`; `other:.oculus/project.yml` to `side-project`; `deck/present.yml` to `deck`; `tools/oculus/config/present.yml` to `config/present`; `tools/oculus/config/text/views/academic/present.yml` to `text`. `~/workspace/ordo/.oculus/project.yml` is the second root case: the `other:` root maps `.oculus/project.yml` to `side-project`. |
+| 16 | Through the server's own answers (`e2e/case16.ts`: a real `Relay` over yaml-language-server 1.24.0; each of the six files opened with its own text plus `zzbogus: 1`, then, after a close, with an empty text, completion at the top of the file). Marks: `Property zzbogus is not allowed.` on all six. Top-level completion: `side-projects/residual/project.yml` `title,object,status,eli5,next,links`; `ordo:.oculus/project.yml` the same six; `deck/present.yml` `deck,defaults,groups,order`; `projects/manuscripts/raw-pls/present/present.yml` `deck,defaults,groups,order`; `tools/oculus/config/present.yml` `defaults` (the options schema's `present.yml` section); `tools/oculus/config/text/views/academic/present.yml` `text,object` (the text schema). The two config files are not given the deck schema. |
 | 17 | `run9.ts`: a listener on 127.0.0.1 behind `$schema=http://127.0.0.1:<port>/s.json` (modeline and key): `network hits []`; the files are marked "Unable to load schema ... No content."; `run10.ts`: `network none`. |
 | 18 | `run14.ts`: `local marks undefined alias marks undefined`, `leak false`; `run9.ts`: `config/local.yml []`, `secret anywhere false`. |
 | 19 | `run1.ts`: `other:.agents/plan.yaml` has no schema; `run10.ts`: `.agents/plan.yaml` gets syntax marks only (`[]`) and a broken `plan2.yaml` gets "Flow sequence in block collection must be sufficiently indented and en...". |
@@ -91,7 +91,7 @@ Commands: the real-Relay harness under the session scratchpad (`e2e/page.ts`, a 
 | 29 | `run9.ts`: `c.yml`, `d.yml`, `e.yml` (a relative `$schema`, a key `$schema`, a `file://` modeline naming `config/local.yml` in a root under `$TMPDIR`) are marked "Unable to load schema from '<path>': No content."; `secret anywhere false` (`SECRET-LOCAL-TEXT` appears in no frame). The script's last line, a hover on `c.yml`, answers undefined, which its `.slice` call does not handle; every line above it printed. |
 | 30 | `run10.ts`: `.oculus/commands.yml`, `.oculus/launch.yml`, `.oculus/cpp.yml`, `.oculus/project.yml` and `.oculus/apps/x/app.yml` pass; a key the reader refuses is marked (`Property bogus is not allowed.`, `Property foo is not allowed.`, `Value must be 1.`); `run4.ts`: every real side-project and deck file in the served root marks 0. |
 | 31 | `run10.ts`: `tools/oculus/config/catalogs/glyphs.yml` passes, and a copy with `extra_top` and `zz_toolong` is marked; `config-folder.test.ts` passes every shipped catalog and text file through its schema. |
-| 32 | `run11.ts`: `.oculus/settings.yml` offers 32 language names under `languages:` and as record fields, and `app.yml` offers `name,object,title,description,glyph,bridge,entry,reads,writes,connects`; `run10.ts`/`run9.ts`: a top-level `editor:` is marked "Property editor is not allowed." and `bogus` the same; `tests/data/sources/config/repo-settings.test.ts` passes (the skipped entry is named). |
+| 32 | Through the server's own answers (`e2e/case32.ts`, `.oculus/settings.yml` of a repository root opened once for each text, with a close between). Opened with `languages:` / `yaml:` and an empty record: completion in the record offers 7 fields, `tab_size, insert_spaces, word_wrap, rulers, format_on_save, trim_trailing_whitespace, final_newline`. Opened with `tab_size: -3` and `final_newline: maybe`: marks at line 3 `Value is below the minimum of 1.` and line 4 `Incorrect type. Expected "boolean".`. The top-level `editor:` mark and `app.yml` keys are `run10.ts`/`run9.ts`/`run11.ts` (earlier lines of this table); `tests/data/sources/config/repo-settings.test.ts` is not landed (see "Tests not landed"). |
 | 33 | `run1.ts`: `tools/oculus/demo/projects/active/x/project.yml` and `tools/cockpit/dummy/projects/active/x/project.yml` map to no schema (`undefined`). |
 | 34 | `run4.ts`: 221 governed files, 0 marked (the integer `year`s, the radar entries, career, top-level `title`/`intro`/`meta`/`schema`, `datasets:`); `run11.ts`: `maps_to:` offers 95 values beginning with the manifest ids. |
 | 35 | `run1.ts`: `projects/manuscripts/dongho-ecg-clustering/admin/reviews/commitment-ledger.yml` maps to no schema; `run10.ts` shows the same for `.agents/plan.yaml`. |
@@ -223,12 +223,12 @@ Each row names the command run in this session and its output.
 | 17 | `src/lib/server/machine/lsp/adapters/web/typescript-adapter.ts` |
 | 15 | `src/lib/server/machine/lsp/adapters/yaml/adapter.ts` |
 
-New files outside `src`: `config/schemas/cpp-schema.yml` (18), `deck-schema.yml` (23), `manifest-schema.yml` (77), `side-project-schema.yml` (15); tests `tests/data/snapshot/schema-rules.test.ts` (151), `tests/data/snapshot/relation-shapes.test.ts` (92), `tests/data/sources/config/repo-settings.test.ts` (42), `tests/server/machine/lsp/versions.test.ts` (66), `tests/server/root/config-cache.test.ts` (84), `tests/views/sources/repositories/diff/diff-read.test.ts` (42). `config/catalogs/manifest-schema.yml` moved to `config/schemas/manifest-schema.yml`. `server/machine/lsp/` holds 10 items.
+New files outside `src`: `config/schemas/cpp-schema.yml` (18), `deck-schema.yml` (23), `manifest-schema.yml` (77), `side-project-schema.yml` (15); tests `tests/data/snapshot/schema-rules.test.ts` (151), `tests/data/snapshot/relation-shapes.test.ts` (92), `tests/server/machine/lsp/versions.test.ts` (136), `tests/server/root/config-cache.test.ts` (84), `tests/views/sources/repositories/diff/diff-read.test.ts` (42). `config/catalogs/manifest-schema.yml` moved to `config/schemas/manifest-schema.yml`. `server/machine/lsp/` holds 10 items.
 
 ## Judgment calls
 
-- **The YAML server needs `workspaceFolders: true` and `configuration: true` in the initialize capabilities** (`src/lib/server/machine/lsp/servers.ts`, `initializeParams`). yaml-language-server's `initialized` handler throws when the client lacks `workspace.workspaceFolders`, which skips registering its configuration handler, so a schema republish (`workspace/didChangeConfiguration`) revalidated nothing. With both set, a key added to `people.yml` reaches an open manifest (case 12).
-- **A reopened document keeps counting versions upward** (`Held.#sent`, `Held.versioned` in `held/held.ts`, `Doc.shift`): the YAML server caches its parse per URI and version, and a page reopening a document at version 1 after close was answered from the earlier text. The shift is added to the page's version on every change. `tests/server/machine/lsp/versions.test.ts` covers it.
+- **The YAML server needs `workspaceFolders: true` in the initialize capabilities, and only it gets it** (`ServerEntry.clientWorkspace` at `src/lib/server/machine/lsp/servers.ts:152`, set on the YAML entry at `:558` and spread into `initializeParams` at `:629`, beside `clientTextDocument`). yaml-language-server's `initialized` handler throws when the client lacks `workspace.workspaceFolders`, which skips registering its configuration handler, so a schema republish (`workspace/didChangeConfiguration`) revalidated nothing. With it set, a key added to `people.yml` reaches an open manifest (case 12). The other four servers get the initialize request they got on the base (`configuration: true`, no `workspaceFolders`).
+- **A reopened document keeps counting versions upward** (`Held.#sent`, `Held.versioned` in `held/held.ts`, `Doc.shift`): the YAML server caches its parse per URI and version, and a page reopening a document at version 1 after close was answered from the earlier text. The shift is added to the page's version on every change, and taken off every version a server names toward the page (`Held.pageVersions` in `held/held.ts`, applied in `relay.ts` to an answer, to a `workspace/applyEdit` request and to diagnostics), so an edit computed after a close and reopen passes the page's `staleFile` check. `tests/server/machine/lsp/versions.test.ts` covers both (guarded entry G63).
 - **A source that does not parse gives no list** (`Lists` returns `null`, `unreadSources` in `schema/lists.ts`): a value naming a registry that failed to parse is not marked, and the registry's own parse error is the finding (case 13). Without it every reference to an unparsable registry carried a false mark.
 - **`checkRelationShapes` is kept in `validate.ts`** for the six relation fields of a manifest (`domain`, `pillar`, `datasets`, `related`, `collaborators`, `waiting-on`): the schema passes a bare `key:` for every type, and these lists are read as lists downstream. A bare key or, for `waiting-on`, a non-list is one finding in the sentence of `findings.schema.type`. `docs/DATA-MAP.md` says so next to the bare-key rule.
 - **`buildPortfolio` is removed.** `buildPortfolioWithSchemas` (defaults for version, roots and checker) is the one build; the seven tests that called `buildPortfolio` call it and read `.snapshot`. This ends an export that nothing in `src` used.
@@ -237,7 +237,7 @@ New files outside `src`: `config/schemas/cpp-schema.yml` (18), `deck-schema.yml`
 - **`wallpapers` in the editor.** A `from` naming a source held by the page (the wallpaper folder) is offered by the Settings view and treated as any text by the editor, which has no page state (case 37 as written describes the Settings view).
 - **`vocabCatalog`** reads the `VOCAB_KEYS` across `vocab.yml` and `appearance.yml`, so `vocab.<key>` resolves in both.
 - **`venues.yml` is read both as a registry and as a collection**, so a parse failure of it is reported twice (case 36; the base does the same).
-- **New tests of code the step changed** that are ordinary tests and not guarded entries: `versions.test.ts`, `relation-shapes.test.ts`, `repo-settings.test.ts` and one row of `servers.test.ts` (initialize carries `workspaceFolders` and `configuration`). `versions.test.ts` and the `servers.test.ts` row fail on the unchanged tree because the base has no YAML server.
+- **Tests in the tree that are not guarded entries of the first round:** `versions.test.ts` (G63) and `relation-shapes.test.ts` (G64), which fail on the unchanged tree (the base has no YAML server and no `buildPortfolioWithSchemas`). **Tests not landed:** `repo-settings.test.ts` and the `servers.test.ts` row for the initialize capabilities, whose text is under "Tests not landed" in "Repair round 1".
 - **Brief line numbers offset:** the G13 Code line is `guarded.md:138`, not `:135` (`:135` is G12's).
 
 ## Guarded tests G61 and G62
@@ -749,7 +749,7 @@ For `agents/guarded.md` (the main checkout; this step writes nothing there):
 - G7's Code line (`guarded.md:26`): `src/routes/api/` commands, hpc, open; `src/lib/server/machine/lsp/servers.ts`, `src/lib/server/machine/lsp/adapters/pyright/interpreter.ts`; `src/lib/server/machine/lsp/adapters/web/svelte-adapter.ts`, `src/lib/server/machine/lsp/adapters/web/typescript-adapter.ts`.
 - G55's Code line (`guarded.md:38`): `src/lib/server/machine/lsp/adapters/web/svelte-adapter.ts`, `src/lib/server/machine/lsp/adapters/web/typescript-adapter.ts`, `src/lib/server/machine/lsp/adapters/web/approval.ts`, `src/lib/server/machine/lsp/adapters/web/config-files.ts` and `src/lib/server/machine/approvals/approvals.ts`.
 - G13's Code line (`guarded.md:138`, not `:135`): `... ; src/lib/server/machine/lsp/adapters/clangd/cpp-file.ts`.
-- G12's Code line (`guarded.md:135`): `config/`, `config/catalogs/`, `config/schemas/`, since `config-folder.test.ts` now covers the schemas folder.
+- G12's Code line (`guarded.md:135`): `config/`, `config/catalogs/`, `config/schemas/`, `src/lib/data/shapes/catalog-files.ts`, `src/lib/data/shapes/shape-issues.ts`, since `config-folder.test.ts` now covers the schemas folder and the shape findings of the catalogs and text files.
 
 ## Edits to existing assertions
 
@@ -767,6 +767,8 @@ For `agents/guarded.md` (the main checkout; this step writes nothing there):
 | `tests/server/machine/lsp/cpp-file.test.ts` | the import and the comment follow `adapters/clangd/` |
 | `tests/server/machine/lsp/lifetime.test.ts` | a row for the YAML server's lifetime |
 | `tests/server/machine/lsp/servers.test.ts` | the import follows `adapters/pyright/`; the page opens a `.yml` file; the spawn count is 5; one row for the YAML argument array with `--permission` and `--allow-fs-read` |
+| `tests/checks/config/config-folder.test.ts` (repair round 1) | one table `words a part of %s its shape refuses`, four rows (a stray key of `meta.yml`, a list for the `icons` map, a number for the `status_palette` map of `vocab.yml`, a stray top-level key of a text file), each asserting the file, the key and the catalog sentence |
+| `tests/data/sources/config/catalog/options.test.ts` (repair round 1) | one describe `the options file shape in loadConfig` with a stray key of an options entry (named by the shape) and an unknown control (left to `optionFindings`, no second finding) |
 
 ## unused-exports, folder check, history words
 
@@ -776,15 +778,545 @@ For `agents/guarded.md` (the main checkout; this step writes nothing there):
 
 ## Docs
 
-Changed: `docs/DATA-MAP.md` (+102 -75; the schema vocabulary, the generated JSON Schemas, the rules list including the unread-source rule and the bare-key rule with its six manifest fields, the config-folder rows), `DESIGN.md` (+7 -6: lines 23, 24, 44, 91, 166, 573), `README.md` (+1 -1: the two new dependencies), `docs/files-and-search.md` (+3 -3), `docs/configuration.md` (+5 -2: the `schemas/` folder and its files), `docs/views.md` (+1 -1), `docs/apps.md` (+1 -1: `from?` and the new fields). Still true and unchanged: the remaining sections of each file, read against the code for the paths and keys they name.
+Changed: `docs/DATA-MAP.md` (+102 -75; the schema vocabulary, the generated JSON Schemas, the rules list including the unread-source rule and the bare-key rule with its six manifest fields, the config-folder rows), `DESIGN.md` (+7 -6: lines 23, 24, 44, 91, 166, 573), `README.md` (+1 -1: the two new dependencies), `docs/files-and-search.md` (+3 -3), `docs/configuration.md` (+5 -2: the `schemas/` folder and its files; the shape findings of catalog and text files), `docs/views.md` (+1 -1), `docs/apps.md` (+1 -1: `from?` and the new fields). Still true and unchanged: the remaining sections of each file, read against the code for the paths and keys they name.
 
 ## Anything wrong or impossible in the brief
 
 - The brief's line numbers offset by 3 for G13 (`guarded.md:138`).
 - Case 37 as written describes the Settings view; the editor treats a page-held source as any text (judgment call above).
 - `picai --dry-run` ends in `KeyError: 'record'` in the base and the worktree alike.
-- `test:quick` took 47.2 s against its 45.0 s limit and still printed `checks: 1 commands passed`.
+- `test:quick` printed `24.6 s (limit 45.0 s)` and `checks: 1 commands passed` in the last run of repair round 1.
 
 ## Instructions followed
 
-The verify list ran from `tools/oculus` in the worktree with the coordinator's command; no git command was run by the step other than one `git status` run by mistake after the coordinator's second correction (read-only; it failed through a pipe error and had no effect). The base copy was read with `diff -rq` and `diff -u`. Nothing was written in the main checkout. Full-list runs: 2.
+The verify list ran from `tools/oculus` in the worktree with the coordinator's command; no git command was run by the step other than three read-only runs by mistake (a `git status` after the coordinator's second correction, a `git status` and a `git diff --stat` in repair round 1), each with its output discarded and no effect. The base copy was read with `diff -rq` and `diff -u`. Nothing was written in the main checkout. Full-list runs: 2.
+
+## Repair round 1
+
+All 14 rulings of `agents/briefs/M8-round1.md` are done, with the coordinator's change to ruling 2 applied: `versions.test.ts` and `relation-shapes.test.ts` are in the tree (G63, G64) and `repo-settings.test.ts` and the `servers.test.ts` row are not. Two points the orchestrator may want to rule on are stated first, because they are choices inside a ruling:
+
+- Ruling 1 (Spec 1). Each catalog file and each text file is parsed once with its whole-file shape at the merge (`src/lib/data/sources/config/merge.ts:202`), which is where a file's own content exists; the readers the ruling lists (`vocabCatalog`, `readCatalog`, the glyph, icon, meta, nesting, agents and latex readers) still read the merged map, because the merged map joins `vocab.yml` and `appearance.yml` and the merge is the only place a single file's content is held. A reader that holds a key table of its own now takes it from the shape (`catalog/agents.ts:41` from `AGENT_FILE_KEYS`). If the ruling meant that each reader open its own file and parse it there, that is a different design and needs a ruling.
+- Ruling 7 (Behaviour 4) and ruling 10 (Standards 2) widen the client row of the layer table in `tests/checks/tree/boundaries.test.ts` by three entries, `data/helpers/hub-names`, `data/helpers/files/private-folders` and `data/shapes/vocab-keys`, each with its reason in the file's head comment. The client row is where each pure data module the page reads is listed; the entries are the edit to an existing allow list that `agents/spec.md:59` asks to be listed.
+
+### The 14 items
+
+| # | Ruling | Done | File and line | Command that shows it |
+|---|---|---|---|---|
+| 1 | Spec 1: the catalogs and text files read through their whole-file shapes, a finding per issue | yes | `shapes/catalog-files.ts:283-375` (`CatalogFile.owned`, `fileShapeOf`, `AGENT_FILE_KEYS`), `shapes/shape-issues.ts` (new, 99 lines), `sources/config/merge.ts:202-208`, `catalog/agents.ts:41`, `config/text/findings.yml:79-83` (`findings.config.shape_unknown`, `shape_type`, `shape_value`, `shape_form`, `shape_other`) | `npx vitest run tests/checks/config/config-folder.test.ts` 25 passed (new table `words a part of %s its shape refuses`, 4 rows), `npx vitest run tests/data/sources/config/catalog/options.test.ts` 3 passed (new describe `the options file shape in loadConfig`); the real config folder gives no finding (`merges without a finding, so no key is defined in two files`, same file) |
+| 2 | Spec 2 as amended by the coordinator (open item 8 a): `versions.test.ts` and `relation-shapes.test.ts` stay in the tree as G63 and G64; `repo-settings.test.ts` and the `servers.test.ts` workspace-folders row are taken out | yes | in the tree: `tests/server/machine/lsp/versions.test.ts` (136 lines, two rows, the second is the row for item 4) and `tests/data/snapshot/relation-shapes.test.ts` (92 lines); deleted: `tests/data/sources/config/repo-settings.test.ts`; the row 'tells every server its client can have workspace folders, which the YAML server needs to pull its settings' removed from `tests/server/machine/lsp/servers.test.ts` (158 lines now) | `npx vitest run` of each of the two kept files (output below); `ls tests/data/sources/config/repo-settings.test.ts` prints `No such file or directory`; `grep -n "workspace folders" tests/server/machine/lsp/servers.test.ts` prints nothing; full texts of the two taken out under "Tests not landed" |
+| 3 | Spec 3: `workspaceFolders` on the YAML entry alone | yes | `servers.ts:152` (`clientWorkspace?`), `:558` (the YAML entry sets `{ workspaceFolders: true }`), `:629` (`...entry.clientWorkspace` in `initializeParams`) | the stub-spawn run below |
+| 4 | Behaviour 2: versions mapped back toward the page | yes | `held/held.ts:305-317` (`Held.pageVersions`), `relay.ts:708` (answers), `:741` (`workspace/applyEdit`), `:800` (diagnostics) | the relay-harness run below |
+| 5 | Behaviour 1: the Data view's edit form | yes | `state/boards/collection.ts:614` (`kindShape` maps `records` to `raw`), `:710-714` (`vocabOptions` reads a map's keys), `state/forms/schema.ts:190` (`vocabChoices`), `data/shapes/vocab-keys.ts` (new, the one `vocabKeys` that `snapshot/schema/lists.ts:22` also reads) | `node r1/form-refuse.mjs` and `form-save2.mjs` below |
+| 6 | Behaviour 3: the radar declares `dismissed` | yes | `feeds/literature-radar.yml:28` | `radar-dismiss.mjs` below; `npx vitest run tests/checks/config/integrity.test.ts` 8 passed |
+| 7 | Behaviour 4: `secrets` and `~/.oculus` refused | yes | `data/helpers/files/private-folders.ts` (new, the one definition, read by `library/rules.ts:41` `withheldFolders`), `adapters/yaml/machine-file.ts:36` (`isPrivateFile`), `servers.ts:562` (`refuses`), `state/system/config/config-files.ts:26` (`isWithheldFile`), `views/sources/source/language/lsp.ts:126`, `docs/files-and-search.md:85` and `DESIGN.md:573` | the `secrets/a.yml` run below |
+| 8 | A schema ajv cannot compile is a finding | yes | `snapshot/schema/check.ts:384-393`, `config/text/findings.yml:173` (`findings.schema.not_compiled`), `docs/DATA-MAP.md:395` | `node r1/item8.mjs` below |
+| 9 | Standards 1 | yes | `DESIGN.md:538`, `utils/migrations/rename-program-to-pillar.ts:17` | the `node -e "import(...)"` load and the greps below |
+| 10 | Standards 2: one definition of the two root words | yes | `data/helpers/hub-names.ts:10,19` (`HUB_ROOT`, `ENGINE_ROOT`); imported by `server/files/files.ts:26`, `state/sources/explorer/view/place.ts:11`, `adapters/yaml/machine-file.ts:12`, `snapshot/schema/set.ts:11`, `data/index.ts:25`, `state/system/apps/methods.ts`, `views/shared/card/card.ts`, `views/shared/card/CardDocs.svelte`, `views/boards/focus/lanes/Lanes.svelte` | the greps below |
+| 11 | Standards 3: `registries/career.yml` lines 1-6 | yes | `registries/career.yml:1-3` (three comment lines, one per paragraph) | `sed -n 1,3p registries/career.yml`; `python3 -c "import yaml; yaml.safe_load(open('registries/career.yml'))"` parses |
+| 12 | Standards 4: the `link` help | yes | `funding/funding.yml:16` | `sed -n 16p funding/funding.yml` |
+| 13 | Proof 1 and 2: cases 16 and 32 through the server's answers | yes | the two table rows in "Final run of the cases on the finished tree" are replaced | the two runs below |
+| 14 | Proof 3: `test:quick` time | no change | | the final run below |
+
+
+### Item 1 in detail
+
+`shapeIssues(name, content)` (`shapes/shape-issues.ts`) parses a file's content with the shape `fileShapeOf(name)` (`shapes/catalog-files.ts:370`) names for it and returns one issue per refusal, each classified as an unknown key, a wrong kind of value, a word outside the ones a key takes, a text not in the form a key takes, or any other. `loadConfig` (`sources/config/merge.ts:202-208`) turns each issue into a pending finding on the file and the key, worded by `issueText` from the five lines `findings.config.shape_*` of the text catalog, never from the library's message. Each entry of `CATALOG_FILES` carries `owned(key)`, which is true for the keys the file's own reader already words when it drops them (glyph stand-ins under `glyphs`, nesting entries under `patterns`, the four latex tables, the options entry's `control`, `from`, `form`, `heading`, `whole`, `slots` and `help`, every key of `agents.yml`, the `text:` body of a text file), so the shape adds no second finding about the same row. The merge still reads every key of a file the shape refuses part of, so a wrong key costs that key alone.
+
+The failing line of the new rows on the unchanged tree (the rows run in `$SP/h/tools/oculus`, whose `src` is the base): `AssertionError: expected [] to deeply equal [ { file: StringContaining{...}, ... } ]` for the config-folder table and `AssertionError: expected [] to deeply equal [ 'options.behavior.yml.probe.bogus' ]` for the options row.
+
+
+### Item 3: the initialize capabilities of pyright and of the YAML server (the stub spawn of `lsp-fixture.ts`, probe `r1/zprobe-init.test.ts`)
+
+```
+python {"configuration":true,"keys":["didChangeWatchedFiles","configuration","semanticTokens"]}
+yaml {"configuration":true,"workspaceFolders":true,"keys":["didChangeWatchedFiles","configuration","workspaceFolders","semanticTokens"]}
+c {"configuration":true,"keys":["didChangeWatchedFiles","configuration","semanticTokens"]}
+svelte {"configuration":true,"keys":["didChangeWatchedFiles","configuration","semanticTokens"]}
+```
+
+`python` is pyright, `yaml` is yaml-language-server. `workspaceFolders` is present for the YAML server alone; `configuration: true` is sent to every server as it was.
+
+
+### Item 4: the version a server names toward the page (relay harness, `versions.test.ts` row below)
+
+The row opens a file through the in-process relay with a stub server, closes it, opens it again, sends a `textDocument/rename`, and has the stub answer with `documentChanges` naming the server's version and then send a `workspace/applyEdit` request with the same edit. The run of the two files (`npx vitest run tests/server/machine/lsp/versions.test.ts`, then `tests/data/snapshot/relation-shapes.test.ts`):
+
+```
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+```
+
+On the unchanged tree (`$SP/h/tools/oculus`, the same two files copied in):
+
+```
+     x is above every version sent before for the file, after a close and an open again 6ms
+     x is the page version again in an answer and in an applyEdit request 5ms
+--- Failed Tests 2 ---
+TypeError: Cannot read properties of undefined (reading 'messages')
+AssertionError: expected 1 to be greater than 1
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+     x gives one finding for 'a bare domain' 3ms
+     x gives one finding for 'a bare pillar' 1ms
+     x gives one finding for 'a bare datasets' 1ms
+     x gives one finding for 'a bare related' 1ms
+     x gives one finding for 'a bare collaborators' 1ms
+     x gives one finding for 'a bare waiting-on' 1ms
+     x gives one finding for 'a waiting-on written as one text' 1ms
+     x gives none for a bare venue_id, funding or compute, which may be empty 2ms
+--- Failed Tests 8 ---
+TypeError: buildPortfolioWithSchemas is not a function
+TypeError: buildPortfolioWithSchemas is not a function
+ Test Files  1 failed (1)
+      Tests  8 failed (8)
+```
+
+The base has no YAML server (the first row's `Cannot read properties of undefined (reading 'messages')`), reopens a document at the page's version (the second row's `expected 1 to be greater than 1`), and has no `buildPortfolioWithSchemas` (every `relation-shapes.test.ts` row fails with `buildPortfolioWithSchemas is not a function`).
+
+
+### Item 5: the Data view's edit form over the real `registries/data.yml` (my copies of `form-refuse.mjs` and `form-save2.mjs`)
+
+```
+access field: {"field":"access","label":"access","kind":"select","options":["open","registration","credentialed","private"],"required":false,"help":"How the data is obtained: open, behind a registration, credentialed (a data use agreement) or private."}
+datasets 54 edit form unchanged and saved: {"saves":54}
+retrieval form kind: raw
+control holds: "{\"method\":\"direct\",\"base_url\":\"https://huggingface.co/datasets/zhengyun21/PMC-Patients/resolve/main/\",\"priority_first\":[\"PMC-Patients-V2.json\"],\"notes\":\"One curl, no credentials. Licence CC-BY-NC-SA-4.0, so it is fetched into ~/d
+save sends retrieval = "(raw untouched: not sent)"
+write with size changed: changed ["size"] refused []
+retrieval kept after the save: true
+```
+
+The 54 datasets save unchanged, the `access` field offers `open, registration, credentialed, private`, `retrieval` is the `raw` kind and an untouched one is not sent, and a save that changes `size` leaves the `retrieval` block as it was.
+
+
+### Item 6: the radar's `dismissed` (`r1/radar-dismiss.mjs` over a scratch copy of the whole hub with `dismissed: true` added to the first entry)
+
+```
+as on disk: 0 []
+one entry dismissed: 0 []
+```
+
+`npx vitest run tests/checks/config/integrity.test.ts`: 8 passed (G14, zero findings on the real hub).
+
+
+### Item 7: the YAML server is given no file of `secrets` or `~/.oculus` (relay with the stub spawn, `HOME` pointed at a scratch folder, `r1/zprobe-priv.test.ts`)
+
+```
+hub/secrets/a.yml: servers started 0, didOpen 0
+hub/notes/b.yml: servers started 1, didOpen 1
+state/c.yml: servers started 0, didOpen 0
+```
+
+`hub/secrets/a.yml` and `state/c.yml` (a root at `$HOME/.oculus`) start no server and give no `didOpen`; `hub/notes/b.yml` starts one and gives one. The page side (`isWithheldFile`, called with the roots and the home folder as the listing gives them):
+
+```
+PAGE hub/secrets/a.yml true
+PAGE hub/notes/b.yml false
+PAGE state/c.yml true
+PAGE engine/local.yml true
+PAGE engine/behavior.yml false
+PAGE hub/secretsx/a.yml false
+```
+
+The engine's `config/` folder stays served: `engine/behavior.yml` is `false`, only `engine/local.yml` is `true`.
+
+
+### Item 8: a schema ajv cannot compile (`r1/item8.mjs`)
+
+```
+[{"file":"/hub/registries/venues.yml","key":"","message":"the schema venues cannot be compiled, so this file is not checked against it"}]
+no schema for the file: []
+```
+
+
+### Item 9: `RENAMED_FIELDS` and the names the step moved
+
+```
+$ node -e "import('./utils/migrations/rename-program-to-pillar.ts').then(() => console.log('loaded'))"
+loaded
+```
+
+`grep -rn RENAMED_FIELDS src tests utils docs DESIGN.md`:
+
+```
+src/lib/data/snapshot/schema/check.ts:19:import { RENAMED_FIELDS } from '../../helpers/hub-names.ts';
+src/lib/data/snapshot/schema/check.ts:224:            const renamed = at.length === 0 ? RENAMED_FIELDS[name] : undefined;
+src/lib/data/helpers/hub-names.ts:59:export const RENAMED_FIELDS: Record<string, string> = { program: 'pillar' };
+utils/migrations/rename-program-to-pillar.ts:17:import { RENAMED_FIELDS } from '../../src/lib/data/helpers/hub-names.ts';
+utils/migrations/rename-program-to-pillar.ts:82:    const [from, to] = Object.entries(RENAMED_FIELDS)[0];
+DESIGN.md:538:- One word for a research line: pillar. The word is the same on every surface, in the file (`registries/pillars.yml`, `pillars_file`), the registry and the collection key (`pillars`), th
+```
+
+Greps over `src tests utils docs DESIGN.md README.md config ../../docs/DATA-MAP.md` for every name the step removed or moved (`grep -rnF`, one heading per name; a heading with no line under it has no hit):
+
+```
+== HUB_KEY
+== PERSON_FIELD
+src/lib/data/snapshot/normalise.ts:118:const PERSON_FIELD = 'person';
+src/lib/data/snapshot/normalise.ts:597:        const key = str(one.fields[PERSON_FIELD]);
+== SIDE_TIER
+src/lib/data/helpers/hub-names.ts:25:const SIDE_TIER = 'side-projects';
+src/lib/data/helpers/hub-names.ts:32:    return (rule.dir.split('/').pop() ?? rule.dir) === SIDE_TIER;
+tests/checks/config/integrity.test.ts:136:const SIDE_TIER = 'side-projects';
+tests/checks/config/integrity.test.ts:141:        const kind = rule.dir.split('/').pop() === SIDE_TIER ? 'personal' : 'projects';
+tests/checks/config/integrity.test.ts:175:        const folders = globSync('*/project.yml', { cwd: join(hub, SIDE_TIER) })
+tests/checks/config/integrity.test.ts:185:        expect(snapshot?.findings.filter((finding) => finding.file.includes(SIDE_TIER))).toEqual(
+== buildPortfolio
+src/lib/server/root/watch/portfolio.ts:26:import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../data/index.ts';
+src/lib/server/root/watch/portfolio.ts:602:            const { snapshot, schemas } = buildPortfolioWithSchemas(
+src/lib/data/index.ts:228:export function buildPortfolioWithSchemas(
+tests/checks/config/config-folder.test.ts:22:import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+tests/checks/config/config-folder.test.ts:590:        const { schemas } = buildPortfolioWithSchemas(HUB.hub, portfolio, 1, [], checker);
+tests/checks/config/integrity.test.ts:19:import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+tests/checks/config/integrity.test.ts:157:    const snapshot = present ? buildPortfolioWithSchemas(hub, config).snapshot : null;
+tests/data/snapshot/schema-rules.test.ts:3:// and a datasets registry that carry schemas, built through buildPortfolioWithSchemas, and the
+tests/data/snapshot/schema-rules.test.ts:10:import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+tests/data/snapshot/schema-rules.test.ts:128:        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings.filter((finding) =>
+tests/data/snapshot/schema-rules.test.ts:145:        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings;
+tests/data/snapshot/cluster-folder.test.ts:3:// through buildPortfolioWithSchemas, and the findings and the project list asserted. The sentence
+tests/data/snapshot/cluster-folder.test.ts:8:import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+tests/data/snapshot/cluster-folder.test.ts:46:        const { snapshot } = buildPortfolioWithSchemas(
+tests/data/real-hub.probe.ts:12:import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../src/lib/data/index.ts';
+tests/data/real-hub.probe.ts:81:const snapshot = buildPortfolioWithSchemas(hub, portfolio).snapshot;
+tests/data/snapshot/resources.test.ts:2:// planted in a scratch directory, built through buildPortfolioWithSchemas, and the project's
+tests/data/snapshot/resources.test.ts:8:import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+tests/data/snapshot/resources.test.ts:52:    return buildPortfolioWithSchemas(
+tests/data/sources/personal.test.ts:12:import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+tests/data/sources/personal.test.ts:80:        const { snapshot } = buildPortfolioWithSchemas(hub, configOver());
+== checkOrganisations
+== checkThemes
+== namedSchemaShape
+== schemaKeys
+== SchemaKeys
+== lsp/pyright/
+== lsp/clangd/
+== lsp/web/
+== catalogs/manifest-schema
+== manifest-schema.yml
+src/lib/server/edit/writes.ts:12:// manifest-schema.yml names, and one it does not name is refused. A collection entry's text,
+src/lib/state/forms/schema.ts:1:// Layer 2, client state. The manifest edit form as data: what config/schemas/manifest-schema.yml
+src/lib/state/forms/schema.ts:29:/** One field of the form, in the order config/schemas/manifest-schema.yml lists it. */
+src/lib/state/client/selectors.svelte.ts:343:    /** The edit form as config/schemas/manifest-schema.yml describes it, in file order. */
+src/lib/data/snapshot/schema/static.ts:34:    { key: 'manifest_schema', file: 'manifest-schema.yml' },
+src/lib/data/snapshot/schema/manifest.ts:1:// Layer 1, data. The `manifest_schema` of config/schemas/manifest-schema.yml as the JSON Schema of
+src/lib/data/snapshot/validate.ts:64: * maps with a `field` key, a map with a `fields` map inside (what the hub's manifest-schema.yml
+src/lib/data/shapes/catalog-files.ts:359:/** config/schemas/manifest-schema.yml: the project edit form as data. */
+src/lib/data/model/model-entities.ts:230: * One standing "do this later" note, the manifest's `followup:` (manifest-schema.yml's
+src/lib/data/sources/config/catalog/schemas/engine.ts:99:            configRule('schemas/manifest-schema.yml')
+src/lib/views/boards/focus/QuickAdd.svelte:61:     * config/schemas/manifest-schema.yml names (a bare `followup:` note in the file is expanded to
+src/lib/views/boards/editor/Editor.svelte:16:    // in config/schemas/manifest-schema.yml; "Decisions taken": "Unsaved form input is instance
+tests/checks/config/config-folder.test.ts:181:        'schemas/manifest-schema.yml': ['manifest_schema'],
+tests/server/edit/writes.test.ts:6:// for writing, and the schema it checks against is the real config/schemas/manifest-schema.yml,
+docs/configuration.md:19:| `schemas/manifest-schema.yml` | The project.yml edit form as data: its sections, its fields, the widget each field is edited by, and where a wi
+docs/views.md:247:Six views are opened for something rather than listed in the Views catalogue: `project` (one project as its own tab, with a LaTeX panel over its manuscr
+config/schemas/manifest-schema.yml:2:# manifest-schema.yml
+../../docs/DATA-MAP.md:180:| `project.yml` | the project itself | the file | folder name | folder name | `tools/oculus/config/schemas/manifest-schema.yml` | Projects, Coa
+../../docs/DATA-MAP.md:244:| `tools/oculus/config/schemas/manifest-schema.yml` | the `project.yml` edit form as data | `manifestSchemaFileShape` in `tools/oculus/src/lib/
+../../docs/DATA-MAP.md:343:| `project.yml` | `type` | it is read from the manifest on a nested tier; on a flat tier the scan rule sets it, and a different written value i
+../../docs/DATA-MAP.md:344:| `project.yml` | `outcome`, `doi` | any tier; a published or finished project carries them | the section "Outcome" of `tools/oculus/config/sch
+../../docs/DATA-MAP.md:345:| `project.yml` | `focus` | it names a lane of `focus_lanes` on any tier; `holding` only on the tiers `ideas`, `active` and `manuscripts`; an `
+../../docs/DATA-MAP.md:346:| `project.yml` | `followup.after` | `followup.do` is also written; the note stays hidden until that date | the help of `followup.after` in `to
+../../docs/DATA-MAP.md:364:`year` is in the section Core of `tools/oculus/config/schemas/manifest-schema.yml` and holds on any tier.
+../../docs/DATA-MAP.md:373:| `project.yml` | `tools/oculus/config/schemas/manifest-schema.yml` (top-level key `manifest_schema`) |
+../../docs/DATA-MAP.md:487:A field of `tools/oculus/config/schemas/manifest-schema.yml` has a `type` (the widget), a `section`, a `label` and optionally `from`, `options`
+../../docs/DATA-MAP.md:502:`type` is a `select` from `type_order`. A write refuses `id`, `tier` and `type` on every tier (`READ_ONLY` and `settable` in `tools/oculus/src/
+```
+
+Read: every `buildPortfolio` hit is the longer name `buildPortfolioWithSchemas`; `PERSON_FIELD` is a file-local constant of `normalise.ts`; `SIDE_TIER` is a file-local constant of `hub-names.ts` and a second one in `integrity.test.ts`; every `manifest-schema.yml` hit names the file in `config/schemas/`; no `catalogs/manifest-schema` and no `lsp/pyright/`, `lsp/clangd/` or `lsp/web/` path remains.
+
+
+### Item 10: one definition of the two root words
+
+`grep -rnE "(HUB_ROOT|ENGINE_ROOT) *= *'" src` (the definitions):
+
+```
+src/lib/data/helpers/hub-names.ts:10:export const HUB_ROOT = 'hub';
+src/lib/data/helpers/hub-names.ts:19:export const ENGINE_ROOT = 'engine';
+```
+
+`grep -rnE "import .*(HUB_ROOT|ENGINE_ROOT).* from|export { (ENGINE_ROOT|HUB_ROOT)" src` (the imports and the two re-exports):
+
+```
+src/lib/server/content/docs.ts:56:import { HUB_ROOT } from '../files/files.ts';
+src/lib/server/content/deck/read.ts:22:import { HUB_ROOT, resolveRootPath, type Root } from '../../files/files.ts';
+src/lib/server/edit/writes/config/roots.ts:30:import { ENGINE_ROOT, HUB_ROOT, expandHome, type Root } from '../../../files/files.ts';
+src/lib/server/machine/lsp/adapters/yaml/machine-file.ts:12:import { ENGINE_ROOT, HUB_ROOT } from '../../../../../data/helpers/hub-names.ts';
+src/lib/server/machine/apps/open.ts:19:import { ENGINE_ROOT, type Root } from '../../files/files.ts';
+src/lib/server/machine/apps/scan.ts:24:import { ENGINE_ROOT, type Root } from '../../files/files.ts';
+src/lib/server/files/source.ts:48:import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, type Root } from './files.ts';
+src/lib/server/files/roots.ts:9:import { configuredRootsOf, ENGINE_ROOT, expandHome, rootsFrom, type Root } from './files.ts';
+src/lib/server/files/fs/ops.ts:67:import { ENGINE_ROOT, resolveRootPath, type Root } from '../files.ts';
+src/lib/server/files/fs.ts:49:import { expandHome, HUB_ROOT, resolveRootPath, rootShape, type Root } from './files.ts';
+src/lib/server/files/open.ts:36:import { HUB_ROOT, resolveRootPath, type Root } from './files.ts';
+src/lib/server/files/files.ts:26:import { ENGINE_ROOT, HUB_ROOT } from '../../data/helpers/hub-names.ts';
+src/lib/server/files/files.ts:248:export { ENGINE_ROOT, HUB_ROOT };
+src/lib/state/life/present.svelte.ts:35:import { HUB_ROOT, type FsRoot } from '../sources/fs.ts';
+src/lib/state/system/config/config-files.ts:8:import { ENGINE_ROOT, HUB_ROOT } from '../../sources/explorer/view/place.ts';
+src/lib/state/system/apps/methods.ts:19:import { ENGINE_ROOT } from '../../sources/fs.ts';
+src/lib/state/sessions/latex/latex-state.ts:16:import { HUB_ROOT, normalisePath } from '../../sources/fs.ts';
+src/lib/state/sessions/latex/builds.ts:36:import { HUB_ROOT } from '../../sources/fs.ts';
+src/lib/state/sessions/view-source.ts:13:import { HUB_ROOT } from '../sources/fs.ts';
+src/lib/state/workbench/layout/open/show.ts:11:import { HUB_ROOT, nameOf, normalisePath, revealAsked, rootedState } from '../../../sources/fs.ts';
+src/lib/state/workbench/navigation/pages.ts:38:import { HUB_ROOT, type RowRef } from '../../sources/explorer/view/place.ts';
+src/lib/state/boards/collection.ts:32:import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
+src/lib/state/boards/board/personal.ts:18:import { HUB_ROOT } from '../../sources/fs.ts';
+src/lib/state/sources/explorer/view/place.ts:11:import { ENGINE_ROOT, HUB_ROOT } from '../../../../data/helpers/hub-names.ts';
+src/lib/state/sources/explorer/view/place.ts:16:export { ENGINE_ROOT, HUB_ROOT };
+src/lib/data/index.ts:25:import { HUB_ROOT } from './helpers/hub-names.ts';
+src/lib/data/snapshot/schema/set.ts:11:import { ENGINE_ROOT, HUB_ROOT } from '../../helpers/hub-names.ts';
+src/lib/views/shared/card/CardDocs.svelte:36:    import { HUB_ROOT } from '$lib/state/sources/fs';
+src/lib/views/shared/card/card.ts:8:import { HUB_ROOT } from '$lib/state/sources/fs';
+src/lib/views/shared/card/ProjectCard.svelte:28:    import { HUB_ROOT } from '$lib/state/sources/fs';
+src/lib/views/feeds/linkedin/PostCard.svelte:10:    import { HUB_ROOT } from '$lib/state/sources/fs';
+src/lib/views/feeds/linkedin/post-card.ts:4:import { HUB_ROOT } from '$lib/state/sources/fs';
+src/lib/views/system/workbench/Settings.svelte:52:    import { ENGINE_ROOT, HUB_ROOT } from '$lib/state/sources/fs';
+src/lib/views/system/workbench/settings/EditLink.svelte:7:    import { ENGINE_ROOT } from '$lib/state/sources/fs';
+src/lib/views/system/workbench/settings/Item.svelte:27:    import { ENGINE_ROOT } from '$lib/state/sources/fs';
+src/lib/views/system/workbench/settings/List.svelte:14:    import { ENGINE_ROOT } from '$lib/state/sources/fs';
+src/lib/views/boards/collection/EntryCard.svelte:54:    import { HUB_ROOT, opensInProgram } from '$lib/state/sources/fs';
+src/lib/views/boards/person/Person.svelte:39:    import { HUB_ROOT } from '$lib/state/sources/fs';
+src/lib/views/boards/focus/lanes/Lanes.svelte:39:    import { HUB_ROOT } from '$lib/state/sources/fs';
+src/lib/views/sources/doc/Doc.svelte:66:    import { HUB_ROOT } from '$lib/state/sources/fs';
+src/routes/+page.svelte:30:    import { bookmarkRows, HUB_ROOT } from '$lib/state/sources/fs';
+```
+
+`grep -rnE "['\"](hub|engine)['\"]" src`, outside `hub-names.ts` (every remaining hit, none a root key):
+
+```
+src/lib/server/machine/runs/schedules/file.ts:100:    return folder === 'hub' ? hub : expandHome(folder);
+src/lib/server/root/context.ts:742:        if (changed.includes('hub')) {
+src/lib/server/root/watch/local.ts:79:    'hub',
+src/lib/state/system/docs.svelte.ts:100:const HUB = 'hub';
+src/lib/state/system/machine/schedules/schedule.svelte.ts:265:        const folder = runs.folder === 'hub' ? runs.folder : lastSegment(runs.folder);
+src/lib/state/system/machine/schedules/schedule.svelte.ts:374:        return ['hub', ...(entities.schedule()?.folders ?? []).slice(1)];
+src/lib/state/system/machine/schedules/schedule.svelte.ts:385:            folder: 'hub',
+src/lib/state/boards/board/personal.ts:138:    return project.source.kind === 'hub' ? project.source.folder : project.source.key;
+src/lib/state/boards/board/personal.ts:143:    if (project.source.kind === 'hub') {
+src/lib/state/boards/board/personal.ts:155:    return project.source.kind === 'hub'
+src/lib/data/model/model-entities.ts:781:    { kind: 'hub'; folder: string } | { kind: 'root'; key: string; dir: string };
+src/lib/data/sources/manifests.ts:320:                    source: { kind: 'hub', folder: hubPath(hub, folderPath) },
+src/lib/data/sources/config/local.ts:158:    'hub',
+src/lib/data/sources/config/local.ts:461:        const hub = filledAt(record, 'hub');
+src/lib/data/sources/config/local.ts:462:        if (hub === undefined) problems.push(wrong('hub', 'a path'));
+src/lib/data/helpers/run/schedules.ts:116:    const path = raw.startsWith('/') || raw.startsWith('~/') || raw === 'hub';
+```
+
+The hits are the schedules' own `hub` folder keyword (`schedules/file.ts`, `schedule.svelte.ts`, `helpers/run/schedules.ts`), the `hub` key of `local.yml` (`config/local.ts`, `watch/local.ts`, `root/context.ts`), the `kind: 'hub'` discriminant of a project's source (`personal.ts`, `model-entities.ts`, `manifests.ts`) and the `HUB = 'hub'` namespace of the document queries (`docs.svelte.ts`). The test files write `'hub'` and `'engine'` as fixture data.
+
+### Item 13: cases 16 and 32 through the server's answers
+
+Case 16 (`e2e/case16.ts`, a real `Relay` over yaml-language-server 1.24.0):
+
+```
+hub:side-projects/residual/project.yml marks ["Property zzbogus is not allowed."]
+ordo:.oculus/project.yml marks ["Property zzbogus is not allowed."]
+hub:deck/present.yml marks ["Property zzbogus is not allowed."]
+hub:projects/manuscripts/raw-pls/present/present.yml marks ["Property zzbogus is not allowed."]
+hub:tools/oculus/config/present.yml marks ["Property zzbogus is not allowed."]
+hub:tools/oculus/config/text/views/academic/present.yml marks ["Property zzbogus is not allowed."]
+hub:side-projects/residual/project.yml completion at the top level 6 ["title","object","status","eli5","next","links"]
+ordo:.oculus/project.yml completion at the top level 6 ["title","object","status","eli5","next","links"]
+hub:deck/present.yml completion at the top level 4 ["deck","defaults","groups","order"]
+hub:projects/manuscripts/raw-pls/present/present.yml completion at the top level 4 ["deck","defaults","groups","order"]
+hub:tools/oculus/config/present.yml completion at the top level 1 ["defaults"]
+hub:tools/oculus/config/text/views/academic/present.yml completion at the top level 2 ["text","object"]
+```
+
+Case 32 (`e2e/case32.ts`, `.oculus/settings.yml` opened once for each text):
+
+```
+opened with the record empty: record fields 7 ["tab_size","insert_spaces","word_wrap","rulers","format_on_save","trim_trailing_whitespace","final_newline"]
+opened with the two values: marks [[3,"Value is below the minimum of 1."],[4,"Incorrect type. Expected \"boolean\"."]]
+```
+
+### Item 14: the final `test:quick`
+
+```
+test:quick: 168 changed file(s), from git since HEAD
+test:quick: 118 test file(s), 10 essential
+test:quick: 24.6 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+```
+
+### Reruns after the last change
+
+- `npm run format`: exit 0. `npm run lint`: exit 0 (`eslint .`, no problem printed). `npm run check`: exit 0, `COMPLETED 3466 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run diagrams`: exit 0, run after the last change to a file.
+- `sh .../land/templates/checks.sh .../orchestrator-state.md`, node v24.21.0 on PATH: `checks: 1 commands passed`, with `test:quick: 24.6 s (limit 45.0 s); every command passed` (item 14: no code change; the time is the one printed).
+- `npm run test:checks`: Test Files  17 passed (17) / Tests  248 passed (248).
+- `sh utils/folder-check.sh`: exit 0, no output. `sh utils/unused-exports.sh`: `Unused exports (248)` against the base file's `Unused exports (249)`; `diff` of the two lists shows only lines the worktree shortens or drops (`agents.ts` loses `AGENTS` and `AGENT_FLAGS`, `manifests.ts` loses `SIDE_TIER`, `validate.ts` loses its line), so no name is unused that was not unused in the base. `wc -l`: `relay.ts` 864, `held.ts` 667, `servers.ts` 642, `check.ts` 410, `catalog-files.ts` 375, `shape-issues.ts` 99, `private-folders.ts` 23, `vocab-keys.ts` 25, `lsp.ts` 554, `config-files.ts` 56.
+- Test files, each run alone with `npx vitest run <file>`, after the last change:
+
+```
+== tests/checks/config/config-folder.test.ts
+ Test Files  1 passed (1)
+      Tests  25 passed (25)
+== tests/data/sources/config/catalog/options.test.ts
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+== tests/server/machine/lsp/servers.test.ts
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+== tests/server/machine/lsp/versions.test.ts
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+== tests/data/snapshot/relation-shapes.test.ts
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+== tests/checks/source/keys.test.ts
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+== tests/checks/config/integrity.test.ts
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+== tests/checks/config/config.test.ts
+ Test Files  1 passed (1)
+      Tests  31 passed (31)
+== tests/server/machine/lsp/lifetime.test.ts
+ Test Files  1 passed (1)
+      Tests  25 passed (25)
+== tests/server/machine/lsp/relay.test.ts
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+== tests/server/machine/lsp/library.test.ts
+ Test Files  1 passed (1)
+      Tests  36 passed (36)
+== tests/data/snapshot/schema-rules.test.ts
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+== tests/state/system/apps/methods.test.ts
+ Test Files  1 passed (1)
+      Tests  47 passed (47)
+== tests/data/sources/present.test.ts
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+== tests/routes/docs/deck.test.ts
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+== tests/views/shared/explorer/opening-apps.test.ts
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+== tests/server/machine/lsp/cpp-file.test.ts
+ Test Files  1 passed (1)
+      Tests  18 passed (18)
+== tests/checks/tree/boundaries.test.ts
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+```
+
+
+### Tests not landed
+
+The two tests below are not in the tree. Each is given as it would read after this round. `versions.test.ts` and `relation-shapes.test.ts` are in the tree under G63 and G64.
+
+#### tests/data/sources/config/repo-settings.test.ts
+
+```ts
+// Layer 1, data tests. A repository's `.oculus/settings.yml` as parseRepoSettings reads it: the
+// `languages:` records, and every other top-level key skipped and named, so the Languages row of
+// the Settings view lists an `editor:` block that the file does not read.
+
+import { describe, expect, it } from 'vitest';
+import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
+import { parseRepoSettings } from '../../../../src/lib/data/sources/config/editor-options.ts';
+
+const MERGED: Record<string, unknown> = { ...loadConfig(engineDir()).config };
+
+describe('parseRepoSettings', () => {
+    it('names a top-level key other than languages as skipped, and reads the records', () => {
+        const read = parseRepoSettings(
+            'editor:\n  tab_size: 2\nlanguages:\n  yaml:\n    final_newline: true\nzzz: 1\n',
+            MERGED
+        );
+        expect(read.kind).toBe('read');
+        if (read.kind !== 'read') return;
+        expect(read.skipped).toEqual([
+            { key: 'editor', where: 'unknown-key' },
+            { key: 'zzz', where: 'unknown-key' }
+        ]);
+        expect(Object.keys(read.languages)).toEqual(['yaml']);
+    });
+
+    it('names a top-level key of a file without languages as skipped', () => {
+        const read = parseRepoSettings('editor:\n  tab_size: 2\n', MERGED);
+        expect(read).toMatchObject({
+            kind: 'read',
+            skipped: [{ key: 'editor', where: 'unknown-key' }]
+        });
+    });
+
+    it('skips nothing in a file that holds only languages', () => {
+        const read = parseRepoSettings('languages:\n  yaml:\n    final_newline: true\n', MERGED);
+        expect(read).toMatchObject({
+            kind: 'read',
+            languages: { yaml: { finalNewline: true } },
+            skipped: []
+        });
+    });
+});
+```
+
+#### tests/server/machine/lsp/servers.test.ts, one row of `ROWS`
+
+```ts
+    {
+        name: 'tells the YAML server alone that its client can have workspace folders, which it needs to pull its settings',
+        steps: async () => {
+            const dir = awkwardRoot(['a.yml', 'a.py']);
+            const spawned = stubSpawn();
+            const relay = makeRelay({ roots: () => [{ key: 'repo', dir }], spawn: spawned.spawn });
+            const page = { send: () => Promise.resolve(), close: () => undefined };
+            open(relay, page, 'lsp:yaml', pageFile('repo', 'a.yml'), 'yaml');
+            open(relay, page, 'lsp:python', pageFile('repo', 'a.py'), 'python');
+            for (let turn = 0; turn < 30 && spawned.children.length < 2; turn += 1) await settle();
+            await settle();
+            const workspaceOf = (child: number): Record<string, unknown> => {
+                const initialize = spawned.children[child].messages.find(
+                    (message) => message.method === 'initialize'
+                );
+                const params = initialize?.params as {
+                    capabilities: { workspace: Record<string, unknown> };
+                };
+                return params.capabilities.workspace;
+            };
+            const yaml = workspaceOf(0);
+            const pyright = workspaceOf(1);
+            expect(yaml.workspaceFolders).toBe(true);
+            expect(yaml.configuration).toBe(true);
+            expect(pyright.workspaceFolders).toBeUndefined();
+            expect(pyright.configuration).toBe(true);
+            await relay.close();
+        }
+    }
+```
+
+
+### Doc text, corrected
+
+For `agents/guarded.md` (the main checkout; this step writes nothing there). These replace the lines of the "Doc text" section above where they name the same entry:
+
+- G3 (`guarded.md:13`) reads: "The content of `config/local.yml` is never served, read into a page or written, and no file under the hub's `secrets` folder or `~/.oculus` is given to a language server." Its Code line adds `src/lib/server/machine/lsp/adapters/yaml/machine-file.ts`, `src/lib/data/helpers/files/private-folders.ts`.
+- G12 (`guarded.md:134`) reads "Every shipped config file and catalog reads with no finding, the findings of its whole-file shape included." Its Code line: `config/`, `config/catalogs/`, `config/schemas/`, `src/lib/data/shapes/catalog-files.ts`, `src/lib/data/shapes/shape-issues.ts`. The `config-folder.test.ts` row 'merges without a finding, so no key is defined in two files' is the test.
+- G13 (`guarded.md:137`) reads "A wrong config value is refused with a finding that names the key, and its default is used. A key, kind of value or word that the whole-file shape of a catalog or text file refuses is a finding naming the file and the key, and the rest of the file is read." Its Code line adds `src/lib/data/shapes/shape-issues.ts` and `src/lib/data/shapes/catalog-files.ts`; its Test line adds `tests/checks/config/config-folder.test.ts`, 'words a part of %s its shape refuses', and `tests/data/sources/config/catalog/options.test.ts`, 'names a key an entry does not take, and leaves a control to optionFindings'.
+- G63 (new entry): "The version a language server is sent for a file is above every version it was sent before for that file, after a close and an open again, and an edit the server sends back reaches the page under the page's own version."
+  Code: `src/lib/server/machine/lsp/held/held.ts`, `src/lib/server/machine/lsp/relay.ts`.
+  Test: `tests/server/machine/lsp/versions.test.ts`, describe 'the version a document is held at': 'is above every version sent before for the file, after a close and an open again', 'is the page version again in an answer and in an applyEdit request'; written by M8.
+- G64 (new entry): "A relation field of a manifest written as a bare key, or `waiting-on` written as one text, gives one type finding naming the field, and a bare `venue_id`, `funding` or `compute` gives none."
+  Code: `src/lib/data/snapshot/schema/check.ts`, `src/lib/data/snapshot/schema/`, and the catalog sentences `findings.schema.type`, `findings.schema.is_list`, `findings.schema.is_text` of `config/text/findings.yml`.
+  Test: `tests/data/snapshot/relation-shapes.test.ts`, describe 'the relation fields of a manifest': 'gives one finding for %s' (the rows 'a bare domain', 'a bare pillar', 'a bare datasets', 'a bare related', 'a bare collaborators', 'a bare waiting-on', 'a waiting-on written as one text') and 'gives none for a bare venue_id, funding or compute, which may be empty'; written by M8.
+- G7's Code line is unchanged from the section above.
+
+The sentences written into the project documents in this round:
+
+- `docs/files-and-search.md:85`: "`config/local.yml`, a file under the hub's `secrets` folder and a file under `~/.oculus` are never sent to the server, and the server reads nothing outside oculus's own `node_modules`." and, earlier in the paragraph, "`yaml-language-server` for every `.yml` and `.yaml` file except the ones named below as never sent to it,".
+- `DESIGN.md:573`: "... and `config/local.yml`, a file under the hub's `secrets` folder and a file under `~/.oculus` (the folders `withheldFolders` of `library/rules.ts` names beside the engine's config folder) are sent to no YAML server."
+- `DESIGN.md:538`: "... (`src/lib/data/snapshot/schema/check.ts`, over `RENAMED_FIELDS` of `src/lib/data/helpers/hub-names.ts`) ...".
+- `docs/DATA-MAP.md:195`: "The Radar view writes a third field, `dismissed`, into a radar entry when a paper is dismissed (`tools/oculus/src/lib/server/edit/feeds.ts`), and `feeds/literature-radar.yml` declares it in its own `schema:`."
+- `docs/DATA-MAP.md:395`: "A schema that ajv cannot compile gives one finding for each file it governs, naming the file and the schema, and those files are not checked against it."
+- `docs/configuration.md:32`: "A catalog or text file is also read through its whole-file shape (`src/lib/data/shapes/catalog-files.ts`): a key the file does not take, a value of the wrong kind and a word outside the ones a key takes are each a finding that names the file and the key, and the rest of the file is read as written."
+- `docs/views.md:247`: `catalogs/manifest-schema.yml` is now `schemas/manifest-schema.yml`.
+- Head comments rewritten and still true: `shapes/catalog-files.ts`, `sources/config/merge.ts`, `sources/career.ts`, `model/model-collections.ts`, `adapters/yaml/machine-file.ts`.
+
+Edits to existing assertions and allow lists in this round, from the `diff` against the base copy: the rows under "Edits to existing assertions" above gain `config-folder.test.ts` (one table), `options.test.ts` (one describe) and `servers.test.ts` (the workspace-folders row is taken out); `tests/checks/tree/boundaries.test.ts` gains three entries in the client row (`'data/helpers/files/private-folders'`, `'data/helpers/hub-names'`, `'data/shapes/vocab-keys'`) and the comment paragraph that names them.
