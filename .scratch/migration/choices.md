@@ -9,7 +9,7 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 - Chosen: the deck schema's attribute for a map of records is `map: true`; a rename refusal travels as the error's message and shows at the caret, where VS Code shows a language client's refusal, and a null `prepareRename` from any server gives VS Code's "The element can't be renamed."; the options catalog's vocabulary fields (`project_types`, `status_chips`, `entry_statuses`, `slide_tags`) are references, so Find References on `manuscript` lists `sources.yml`'s scan type; D39 is prepared after M6 and D43 land, since D43 also splits `transport.ts` and changes the relay's constructor.
 - Not chosen: the word `keyed`, which two other schema readers use for other things; the refusal as a tab notice, which VS Code does not do; vocabulary references from the hub fields only (the lazy option); D39 in flight beside D43.
 
-Where it applies: D39. Booked in `plan.md` Rulings, D39's step line and the closed log of `orchestrator-history.md`. Open item 15 holds the guarded entries.
+Where it applies: D39. Booked in `plan.md` Rulings, D39's step line and the closed log of `orchestrator-history.md`. Open item 15, ruled (a) by Axel, holds the guarded entries.
 
 ## Z734 (2026-10-08, step D43, the orchestrator, automode): which recipe tools ask for a weave approval
 

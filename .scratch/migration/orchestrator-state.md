@@ -165,9 +165,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-
-
-- Open item 15 (2026-10-08, D39's brief check F19): the guarded entries G66, G67 and G68 are narrower than the test rows D39's brief writes under them (G66 names no vocabulary definition, `domains:` map rule, overlay of open texts or position rule; G67 names five of its nine refusals; G68 names neither "Apply posts only the checked edits" nor "an Apply after a planned tab changed posts nothing"). (a) widen the three sentences to the rows, the builder giving the text in its report and the orchestrator writing it at landing; (b) keep the sentences and check the rows outside them by runs, with no test (the lazy option). Recommended: (a). D39 waits on this ruling and on M6 and D43 landing.
+None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 

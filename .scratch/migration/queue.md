@@ -1,10 +1,10 @@
-In flight (2 of 6 slots building; every other step waits on one of them or on Axel):
+In flight (2 of 6 slots building):
 - M6 (the collection forms removed): building.
 - D43 (LaTeX navigation through texlab): building.
-- D36 (linters on save): brief check closed; prepared again after D43 lands.
-- D39 (hub keys as links): brief check closed; waits on open item 15 and on M6 and D43 landing.
 
-Queued, in order (10 steps):
+Queued, in order (12 steps):
+- D36 (linters as VS Code's): brief closed; prepared again after D43 lands.
+- D39 (hub keys as links): brief closed; after M6 and D43 land.
 - M7 (a project folder moved in Files): after M6 and D39.
 - D41 (links in Markdown checked): after M7.
 - D40 (the writing rules as editor marks): after D36.
