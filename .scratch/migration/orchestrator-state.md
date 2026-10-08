@@ -37,6 +37,19 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/M6-brief-check.md (a0ebc241025bf8a8f, claude-opus-5-5, 338,515 tokens, 132 tool uses, 16.3 min; closed by ad9ce45922c35f90e, claude-opus-5-5, 150,543 tokens, 121 tool uses, 23.1 min; closed again in the brief at 0e9bde803)
   landing: not-started
   round: 0
+- step: D43
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: aab41ff6fa6e753ea (builder, launched 2026-10-08)
+  worktree: .agents/worktrees/D43
+  base: 3eda0630e
+  launched: 2026-10-08
+  report: agents/reviews/D43-report.md
+  brief_check: agents/reviews/D43-brief-check.md (a87cb52c4ba0e7cc3, claude-opus-5-5, 295,723 tokens, 99 tool uses, 14.5 min; closed inline in the brief at 3eda0630e)
+  shared_paths: with M6, `config/sources.yml`, `DESIGN.md`, `docs/files-and-search.md` and `docs/views.md`, hunks at different lines in each, so a simple merge
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
