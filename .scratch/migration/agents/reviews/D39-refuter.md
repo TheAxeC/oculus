@@ -144,3 +144,237 @@ Cases:
 - Whether to build the hint line override: Axel's ruling, a user-visible shape.
 
 Reviewer usage: a0406e6fb11a5db2d, claude-opus-5-5, tokens, tool uses and minutes not known (not verified).
+
+## Repair round 1, refuted
+
+Reviewer over D39's repair round 1, on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D39, base 58c7840d9. The round's delta is the `diff -ru` of `.agents/worktrees/D39-round0/tools/oculus` against `.agents/worktrees/D39/tools/oculus`: 26 files (24 changed, plus the new `tests/server/machine/yaml/hub-keys.test.ts` and `tests/ui/controls/editor/lsp-transport.test.ts`). I read it against the whole diff since the base.
+
+```
+$ npm run test:quick -- --base 58c7840d9        (from tools/oculus, node v24.21.0; exit 0)
+test:quick: 98 changed file(s), from git since 58c7840d9
+test:quick: 127 test file(s), 10 essential
+ok      ASCII gate (0.4 s)
+ok      prettier (0.9 s): All matched files use Prettier code style!
+ok      svelte-kit sync (16.1 s)
+ok      eslint (23.4 s)
+ok      svelte-check (32.1 s): 1791501491458 COMPLETED 437 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (60.5 s): Duration  43.57s (transform 80.37s, setup 0ms, import 100.34s, tests 64.03s, environment 385ms)
+test:quick: 61.0 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+
+$ npm run test:checks                            (exit 0)
+ Test Files  17 passed (17)
+      Tests  248 passed (248)
+   Duration  181.94s (transform 15.62s, setup 0ms, import 58.45s, tests 233.81s, environment 3ms)
+
+Scoped files, each `npx vitest run <file> --reporter=dot` alone, every exit 0:
+tests/data/snapshot/references.test.ts           Tests 33 passed (33)
+tests/data/snapshot/rename.test.ts               Tests 25 passed (25)
+tests/state/system/refactor-preview.test.ts      Tests 7 passed (7)
+tests/server/machine/yaml/hub-keys.test.ts       Tests 11 passed (11)
+tests/ui/controls/editor/lsp-transport.test.ts   Tests 6 passed (6)
+tests/routes/replace/lsp-edit.test.ts            Tests 11 passed (11)
+tests/routes/replace/replace-undo.test.ts        Tests 2 passed (2)
+tests/state/system/lsp/edits.test.ts             Tests 9 passed (9)
+tests/server/machine/lsp/relay.test.ts           Tests 5 passed (5)
+tests/server/machine/lsp/lifetime.test.ts        Tests 26 passed (26)
+tests/server/machine/lsp/versions.test.ts        Tests 2 passed (2)
+tests/server/machine/lsp/servers.test.ts         Tests 6 passed (6)
+tests/server/machine/lsp/uris.test.ts            Tests 29 passed (29)
+tests/server/machine/lsp/library.test.ts         Tests 36 passed (36)
+tests/data/snapshot/schema-rules.test.ts         Tests 7 passed (7)
+tests/data/snapshot/relation-shapes.test.ts      Tests 9 passed (9)
+tests/checks/config/config.test.ts               Tests 31 passed (31)
+tests/checks/config/config-folder.test.ts        Tests 25 passed (25)
+tests/data/sources/config/catalog/options.test.ts Tests 3 passed (3)
+tests/checks/config/integrity.test.ts            Tests 8 passed (8)
+tests/views/sources/repositories/diff/diff-read.test.ts Tests 4 passed (4)
+tests/data/sources/present.test.ts               Tests 4 passed (4)
+tests/data/helpers/hub-names.test.ts             Tests 11 passed (11)
+tests/state/client/held-unsaved.test.ts          Tests 3 passed (3)
+tests/state/sessions/source.test.ts              Tests 25 passed (25)
+
+ASCII gate (perl form of agents/spec.md over src tests config, ! -name local.yml): printed nothing, exit=0
+LC_ALL=C grep -n '[^ -~]' DESIGN.md HELP.md docs/*.md ../../docs/DATA-MAP.md: printed nothing, exit=1
+sh utils/folder-check.sh: printed nothing, exit=0
+wc -l of the changed sources, largest: relay.ts 880, transport.ts 874, repositories.ts 863, ops.ts 857,
+  state/client/context.ts 840, server/root/context.ts 811, servers.ts 793, source.svelte.ts 742, client.ts 732
+wc -l components: Diff.svelte 520, References.svelte 493, RefactorPreview.svelte 266
+sh utils/unused-exports.sh: exit 0, 364 lines; base unused-exports.txt 364 lines; diff of the sorted lists exit 0
+python3 yaml.safe_load of the 6 changed .yml: "yaml ok 6", exit 0
+grep -n "no formatting and no rename" docs/files-and-search.md: exit 1
+grep -n "Audit, `collections`" ../../docs/DATA-MAP.md: only the link rows 285, 291, 292, 293
+grep -rn no_waiting_on src config tests docs --exclude=local.yml: exit 1
+History-words grep over the round's added lines and the two new test files: 7 hits (DESIGN.md:576 "before the post",
+  files-and-search.md "before the box opens", rename.ts:18 "before a new key", edits.ts:157 "posted before",
+  edits.ts:161 "no longer matches", edits.test.ts:231 "no longer holds", lsp-transport.test.ts "still pending").
+  Each one describes the order or state of the running feature, and none is history.
+git status --short (worktree, outside .scratch): "?? tools/oculus/tests/server/machine/yaml/" and
+  "?? tools/oculus/tests/ui/controls/editor/lsp-transport.test.ts" (both untracked; the landing's wip commit must take them)
+
+The builder's unchanged-tree claim, rerun in its copy $S/r0/oculus (its src and config are identical to D39-round0
+by diff -rq; the four test files are the final ones, except type-only edits in two of them):
+$ npx vitest run tests/data/snapshot/rename.test.ts tests/server/machine/yaml/hub-keys.test.ts \
+    tests/ui/controls/editor/lsp-transport.test.ts tests/state/system/lsp/edits.test.ts      (exit 1)
+ Test Files  4 failed (4)
+      Tests  30 failed | 21 passed (51)
+  e.g. "refuses a person key that a reference also names as a project, from its definition"
+       AssertionError: expected null to be 'beta is a key of more than one source...'
+       "refuses a rename when a file is open in a tab of another window, at prepareRename"
+       AssertionError: expected null to be 'registries/venues.yml is open in a ta...'
+  This reproduces the report's section 3.
+The relation-shapes passing run on the unchanged tree: $S/d39/firstrun-final.txt:73-75 reads
+  "=== tests/data/snapshot/relation-shapes.test.ts / Test Files 1 passed (1) / Tests 9 passed (9)", as quoted.
+  I did not rerun it, because the base copy has no node_modules.
+grep -c "when it planned the edit" DESIGN.md: 1
+Report claim "`awk 'length($0)>100'` over the edited files printed nothing": my run prints 11 lines
+  (renames.ts:42, an eslint directive from round 0; the rest are test-title strings in rename.test.ts,
+  edits.test.ts and lsp-transport.test.ts). None of them is a comment the round rewrapped, and the
+  comment-width check passes inside test:checks. No decision rests on the claim.
+```
+
+`npm run diagrams` was not run, because it writes files. The builder's second full-list run printed 42.2 s against my 61.0 s for the same list. The round brief left the time limit out of the round ("Not sent"), and I record the difference only.
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1, the reference index: holds. G66, 33 passed. The round changed only comments here (`model.ts`, `scan.ts`, the catalog's `references.ts`).
+- 2, the relay hook and capabilities: holds. relay 5, servers 6 and lifetime 26 passed. `relay.ts` is at 880. That is at the limit of spec.md's "at or under 880", and item 2's own words ask for "under 880" (points, 1).
+- 3, the rename and its refusals: holds. The definition-side two-source refusal is `sharedSources` (`rename.ts:48`). The rename.test.ts row "a person key that a reference also names as a project, started at its definition" and the hub-keys.test.ts row both pass and failed on the unchanged tree. This closes Behaviour 1 of the first review.
+- 4, the page's refusals, preview key and preview: holds under Z741. Refusals that need no new key are given at `prepareRename` and the transport rejects them for the caret. Refusals that need the new key are given at `rename` as the notice `lsp_edit_refused`. Both are proven by lsp-transport.test.ts (6 passed). This closes Spec 1.
+- 5, the copy limit and the private folders: holds. The page now refuses a closed file over the limit or not text with sentences of its own (`edits.ts:327-332`). This closes Behaviour 3.
+- 6, the schema references: holds (relation-shapes 9 passed).
+- 7, the whole key selected: holds by reading. The round did not change it, and the look decides it.
+- 8, the documents: holds. `DESIGN.md:576` now says "the bytes the page read when it planned the edit". The Rename bullet, `docs/files-and-search.md`'s refusal paragraph and the `hub-keys.ts` head comment state the split. This closes Standards 3 and 4. The one false clause left is in `answers.ts`'s head comment (Standards 2 below).
+- 9, the tests: holds. Every file passes, with the Standards findings 1 and 4 below on the round's new test files.
+- 10, `sameDiskFile`/`diskPath`: holds (hub-names 11 and held-unsaved 3 passed). The round did not change it.
+
+Cases, over the whole diff:
+
+- 1-9, 9a, 9b, 10, 11, 15-18, 38-41, 43: met, from the G66 rows and the builder's runs, as in the first review. The round did not change them.
+- 12, 13, 14, 19, 20, 42, 44, 45, 47: met, as in the first review. The round did not change them, and they were not rerun.
+- 21, 22, 24: met (G67 rows).
+- 23: met under Z741. The prepare-time refusals are in the hub-keys.test.ts and rename.test.ts `prepare` rows. The rename-time refusals are in the `rename` rows and the lsp-transport notice rows. Where each shows on the page is the look.
+- 25: met (lsp-transport "rejects prepareRename with the catalog sentence when the server gave no range").
+- 26-30, 30a, 30b, 30c, 31-33: met, as in the first review. The edits.test.ts rows pass.
+- 34-36: met by reading. The look decides them.
+- 37: met. An empty refusal message now shows `lsp_rename_refused_empty`, "The language server refused this rename and gave no reason.", which has no placeholder. This closes Behaviour 2 (see Proof 4).
+- 46, 48: met, as in the first review.
+
+The round brief's items:
+
+- R1, refusals given where they depend: holds. `refusalOfKey` answers `prepareRename`, and `rename` runs `heldBack` and then `planRename`, which runs `refuseRename` again (`hub-keys.ts:203-240`). The head comment says which refusal shows where. Every moved check has a hub-keys.test.ts row that failed on the unchanged tree with "expected null to be ...". Three findings concern it: Standards 3 (duplicated rules), Standards 5 (a private-folder branch nothing can reach) and Behaviour 1 (the order of the refusals).
+- R2, a key shared by two sources, from its definition: holds (rows above, `sharedSources`).
+- R3, a refusal with no words: holds. The sentence is word for word in `source.yml`, and `renames.ts:59-61` and `transport.ts:641` use it. See Proof 4 on what the test covers.
+- R4, a closed file the page cannot read whole: holds. `context.ts:575-580` returns `'too_large'` or `'not_text'`. `edits.ts:327-332` refuses with `lsp_edit_too_large` and `lsp_edit_not_text`, word for word. The edits.test.ts row failed on the unchanged tree with a TypeError at `lineStarts`. The report states that the hash of a closed file is read at the plan.
+- R5, comments: holds. The doc comments of `model.ts:88-92` are one per declaration. The stale doc comment of `references.ts` is gone. The paragraphs of `scan.ts`, `diff-read.ts` and `edits.ts` are rewrapped with no short line inside a sentence.
+- R6, `DESIGN.md:576`: holds.
+- R7, the report: violated, Proof 1 and Proof 2.
+
+### 1. Spec
+
+- None of the builder's changes goes beyond the round brief, apart from what Standards 3 and 5 name.
+
+### 2. Proof
+
+- Proof 1. `agents/reviews/D39-report.md`, section 7, "Ruling O1", "Where an override goes": "The diff editor's `createDiffEditor` at `diff/DiffEditor.svelte:187` takes no such argument."
+  - What is wrong: `createDiffEditor(domElement, options, override)` takes the same third argument and calls `StandaloneServices.initialize(override || {})` (`node_modules/monaco-editor/esm/vs/editor/standalone/browser/standaloneEditor.js:87-89`, beside `create` at :43-45). So the override can be passed by whichever editor a page creates first, the diff editor included.
+  - The decision that rests on it: Axel's ruling on whether the hint line is built. The rest of that look matches Monaco (`renameWidget.js:174`, `:254`; `renameWidget.css` `.rename-label`; `rename.js:249-251`, `:457-461`; `bulkEditService.js:9`; `standaloneServices.js:513-520`; `client.ts:311-322`).
+  - Failure scenario: Axel reads that a page whose first editor is a diff (a Changes view restored before any source tab) cannot carry the override, and he weighs the hint line as harder or partial when it is not.
+  - Verdict: R7 violated. Fix at landing: correct the sentence in the report.
+- Proof 2. `agents/reviews/D39-report.md`, section 6: "G66, G68, G2, G8, G9, G28, G64: the Test and Code lines given in the first report stand unchanged by this round", and "the G66 and G68 sentences of the first report are unchanged by this round".
+  - What is wrong: the round brief says "Rewrite the report whole". The rewritten report on disk (`tools/oculus/.scratch/migration/agents/reviews/D39-report.md`, line 229) no longer holds the Doc text it points to. That text is G66's and G68's widened sentences under open item 15 (a), and the Test and Code lines of G2, G8, G9, G28 and G64, which the orchestrator writes into `agents/guarded.md` at landing.
+  - Not verified: whether the first report survives in git. The main checkout's copy is the rewritten one.
+  - Also, the DONE table's rows give summaries ("`lsp-transport.test.ts` 6 passed") where the round brief asked for the lines quoted whole. Only the full-list block is verbatim.
+  - Failure scenario: at landing the orchestrator has no Doc text for seven entries and writes them from memory or leaves them.
+  - Verdict: R7 violated. Fix at landing: recover the first report's section 6 and merge it with this one.
+- Proof 3. `agents/reviews/D39-report.md`, section 6, "G9 Test line gains: `tests/state/system/lsp/edits.test.ts`, 'names a closed file the page cannot read for the edit, and posts nothing' (the over-the-limit half)". The same test is listed under G67's Test line.
+  - What is wrong: `agents/guarded.md`'s head says "A test exists only as the test of one entry". G9 guarantees a logged write, its undo, the history copy and the atomic rename. Its Code line names server files only, and a page-side refusal before any post proves none of those.
+  - The row also does not fit G67. It renames `hub/sub/b.py` for any server, so it is no hub-key rename. G67's widened sentence takes in two guarantees of every server for the same reason: "A server's refusal with no words shows the catalog's sentence for it" and "a closed file the page cannot read whole is refused". The entry's subject is "Renaming a hub key".
+  - G67's Code line gains `held/answers.ts`, but no G67 test runs `answers.ts`. `hub-keys.test.ts` builds its own `PageView` with stub `read` and `heldElsewhere`. So the strict UTF-8 read and the `heldElsewhere` closure added this round run in no test, and the row title "refuses a rename when a file cannot be read as text" stands over a stub that returns null.
+  - Failure scenario: the orchestrator writes the Doc text as given. Then one test sits under two entries, and G67 claims to guard `answers.ts` with no test that runs it.
+  - Verdict: none. The orchestrator places the row under one entry (G2/G8's page test file is where the page plan's refusals already sit), and drops `answers.ts` from G67's Code line or names it untested.
+- Proof 4. `tests/ui/controls/editor/lsp-transport.test.ts:37`: "words: (key, ...words) => fillPlaceholders(TEXT[`source.${key}`] ?? key, words)".
+  - What is wrong: the host stand-in looks the key up in the catalog directly. The page's `words` is `noticeWords` (`views/sources/source/language/lsp.ts:115-124`), which resolves a key only when it is in `LSP_EDIT_NOTICES`. So the rows pass whether or not `lsp_rename_refused_empty` is in that list (it is, `text-edits.ts:227`). Line 103, `expect(EMPTY).not.toMatch(/[{}]/)`, asserts over the test's own constant, which spec.md says is not written.
+  - Failure scenario: a later edit takes the key out of `LSP_EDIT_NOTICES`. The page then shows the bare key "lsp_rename_refused_empty", and this test stays green.
+  - Verdict: none. Fix at landing: delete line 103. Building the host's `words` through the page's map would cover the rest.
+
+### 3. Standards
+
+- Standards 1. `tests/ui/controls/editor/lsp-transport.test.ts:75` and `:151`: "await new Promise((done) => setTimeout(done, 5));".
+  - What is wrong: `agents/spec.md` ("What every package obeys") says "A test waits on a signal (an event, a promise, a fake clock), never on a fixed sleep or a wall-clock margin". `endOf` also reads "pending" or "resolved" from whether the promise settled within those 5 ms.
+  - Failure scenario: a reader copies the pattern into a test whose answer arrives through a macrotask, and the row turns flaky under the six suites that run at once on this machine.
+  - Verdict: none. Fix at landing: await the request's own settlement (`await expect(sent).rejects.toBe(...)`, `.resolves`), and use a flushed microtask queue for the notice rows.
+- Standards 2. `src/lib/server/machine/lsp/held/answers.ts:29` and `:40`: "const STRICT = new TextDecoder('utf-8', { fatal: true });" ... "return { text: STRICT.decode(readFileSync(real)) };". The head comment at :6-7 says "only when its bytes are UTF-8 text throughout".
+  - What is wrong: the tree has one definition of "UTF-8 text throughout", `isWholeText` (`data/helpers/files/text-kind.ts:61-70`: no NUL byte, and a fatal decode after a BOM). Its head comment says both layers import it, and the page's draft, `lsp-edit.ts` and `server/files/source.ts` use it. `answers.ts` adds a second rule that accepts a NUL byte, so its head comment is false for such a file (agents/spec.md, "The principles": a rule exists once and is reused).
+  - Failure scenario: a hub YAML file that holds a NUL byte passes `prepareRename` and the box opens. After Enter the page refuses it with `lsp_edit_not_text`, which the rule meant to say at the caret.
+  - Verdict: none. Fix at landing: read the bytes, refuse with `isWholeText`, then decode.
+- Standards 3. Two copies of rules that already exist:
+  - `src/lib/server/machine/lsp/held/answers.ts:81-86`: "heldElsewhere: (real) => { const wanted = normal(real); for (const other of answering.pages()) { if (other !== page && other.tabs.has(wanted)) return true; } ...". This repeats the rule of `heldElsewhere` in `held/elsewhere.ts:27-38`.
+  - `src/lib/server/machine/lsp/adapters/yaml/hub-keys.ts:206-213` builds `named` from the targets and `referencesTo` and walks `graph.index.files`. That repeats `namedScans` in `rename.ts:61-68`, which the round wrote and did not export.
+  - What is wrong: agents/spec.md, "The principles": "a parser, a fold or a rule exists once and is reused".
+  - Failure scenario: a later change to how another page's tab is matched, or to which files a rename edits, reaches one copy. Prepare and the page plan then disagree on which file is held elsewhere, and `heldBack` and `planRename` disagree on which files are named.
+  - Verdict: none. Fix at landing: export a per-path predicate from `elsewhere.ts` and `namedScans` from `rename.ts`, and use them.
+- Standards 4. The new `tests/server/machine/yaml/hub-keys.test.ts` tests `src/lib/server/machine/lsp/adapters/yaml/hub-keys.ts`.
+  - What is wrong:
+    - The concern lives in `tests/server/machine/lsp/`, which is full at ten. agents/spec.md says a full folder "is split into folders named for what they hold, and a new file goes where its concern already lives". This adds a sibling `yaml` folder that reads as a machine feature of its own, and fills `tests/server/machine` to ten.
+    - The two new test files are not in the brief's "Paths this step writes", and the round brief names neither. The report's file list does not mark them as outside the write list with the reason (agents/spec.md, "Where you work").
+  - Failure scenario: a reader looking for the relay's YAML entry tests in `tests/server/machine/lsp/` does not find them, and the next step that needs a folder in `tests/server/machine` finds it full.
+  - Verdict: none. The orchestrator decides at landing (split `tests/server/machine/lsp/` with an `adapters/` folder, or keep it).
+- Standards 5. `src/lib/server/machine/lsp/adapters/yaml/hub-keys.ts:214`: "if (isPrivateFile(real, view.roots)) return { code: 'private', file: scan.file.path };". Its rows are `tests/server/machine/yaml/hub-keys.test.ts:155-160` and `:168-171`, with `extra: { 'secrets/leak.yml': 'venue_id: jbhi\n' }`.
+  - What is wrong:
+    - No real index can hold a scan under the private folders. The index never reads them (item 1, G3), and `overlay` only replaces scans the index already holds (`lookup.ts:55-70`).
+    - The rows prove the branch over a state that was built by hand.
+    - The round brief's premise was "move to the prepare answer every check of `planRename` that reads no new name (... a file in a private folder, a file with unsaved text in another window ...)". It does not reproduce: `grep -n "private\|secrets\|elsewhere"` over round 0's `rename.ts` and `hub-keys.ts` prints nothing, so those checks lived in the page plan (`edits.ts` `withheld`, `askHeld`) and the route. The report does not quote that premise as false (agents/spec.md, "Report").
+    - The other-window check is a new, reachable early refusal. The private-folder one is code for an input that cannot happen, and a wrong answer there costs nothing, since the page plan and `lsp-edit` refuse such a file (agents/spec.md test rule; refute "Standards", code larger than its job).
+  - Failure scenario: a reader takes the rows as evidence that the relay guards the private folders, when the guards that act are G2's.
+  - Verdict: none. The orchestrator decides at landing: keep it as a stated defence, or remove the branch and its two rows.
+
+### 4. Behaviour
+
+- Behaviour 1. `src/lib/server/machine/lsp/adapters/yaml/hub-keys.ts:221-224`: "return heldBack(asked, view) ?? refuseRename(graph, hit, (scan) => textOf(scan, view));".
+  - What is wrong: `heldBack` runs before the refusals of the key itself (`project`, `vocab`, `twice`, `sources`). The report does not state this order.
+  - Failure scenario: F2 on `hccnet-fl` in a `related` list while another window has open a manifest that names it. The caret shows "... is open in a tab of another window, so the language server's edit was not made.". The reader closes that tab, presses F2 again and only then learns that a project id is renamed through Files.
+  - Verdict: none. Fix at landing: run `refuseRename`'s key checks before `heldBack`, or report the order as chosen.
+
+### The points named in the dispatch
+
+1. `relay.ts` at exactly 880. The round's one line, `pages: () => this.#pages.values()` in `#givenBy`, is needed: `heldElsewhere` must see the other pages, and only the relay holds them. Reusing `elsewhere.ts` (Standards 3) would still need that line. The file is at spec.md's limit, while item 2's words say "under 880". D36's edit of `relay.ts` keeps its line count: base 852, main 852 (`wc -l`). So the merged file is 880, and any line added at landing forces the split item 2 asks for.
+2. The strict read in `held/answers.ts`. `readText` has one caller, `PageView.read`, whose only caller is `textOf` in `hub-keys.ts:199` (`grep -rn` over `src`). Another caller sees no change. A file that read before and is now `unread` is one whose bytes are not valid UTF-8. Before the round it decoded with U+FFFD and was refused only at the page plan (`notText`); now it is refused at `prepareRename` as "could not be read". The default `TextDecoder` strips a leading BOM where `readFileSync(..., 'utf8')` kept it, and `planRename` applies `withoutMark` first (`rename.ts`, `applyTextEdits(withoutMark(held.text), edits)`), so the edits do not change. None of the 155 hub and engine YAML files the index reads is affected: a Python decode prints "not utf8: [] ; nul: [] ; bom: []". The rule's mismatch with `isWholeText` is Standards 2.
+3. The private-folder check and the `secrets/leak.yml` row prove only a state built by hand (Standards 5).
+4. G67's widened sentence matches the code and the test titles for every refusal it lists: prepare-time `unparsed`, `project`, `vocab`, `twice`, `large`, `unread`, private, elsewhere and `sources` from a reference and from the definition; rename-time `empty`, `exists` and `readback`. Its last sentence is not about renaming a hub key, and the G9 addition fits neither G9 nor the one-entry rule (Proof 3).
+5. `lsp_edit_too_large`'s `{1}` reads 5: `String(WRITE_MAX_MEGABYTES)` at `edits.ts:329`, and `WRITE_MAX_MEGABYTES = WRITE_MAX_BYTES / (1024 * 1024)` at `file-ops.ts:41`. `hub-keys.ts`'s `rename_large` uses the same constant, so both stay tied to `WRITE_MAX_BYTES`. The edits.test.ts row asserts `['hub/sub/b.py', '5']`.
+6. The diagram labels, "state to data" 285 to 286 and "folder state/system to layer data" 54 to 55, come from `state/system/machine/lsp/edits.ts` importing the value `WRITE_MAX_MEGABYTES` from `data/file-ops.ts`; it had only a type import from there before. State importing data is allowed by DESIGN.md's layers, and `boundaries.test.ts` passes inside test:checks (248 of 248). The import is placed by the layer rules.
+7. The merge with D36 (5ed0bc24c). I listed its files with `git show --name-only --format= 5ed0bc24c` (read-only) and read the hunks by diffing the D39-base copy against main and against the worktree.
+   - Files both steps change (20): `DESIGN.md`, `HELP.md`, `docs/views.md`, `docs/files-and-search.md`, `config/text/views/sources/search.yml`, `config/text/views/sources/source.yml`, `src/lib/data/model/index.ts`, `src/lib/server/machine/lsp/relay.ts`, `src/lib/server/root/context.ts`, `src/lib/state/client/context.ts`, and ten diagram files (`channels`, `layer-server`, `layer-state`, `layer-views`, `layers`, each `.dot` and `.svg`).
+   - Hunks that touch the same lines, which the ledger's `shared_paths` does not list:
+     - `DESIGN.md:575`, the one-line language-servers paragraph. D36 adds "the ChkTeX findings of a LaTeX tab come from the ChkTeX linter", and D39 adds the hub-keys sentence. `shared_paths` names D36's 23, 166 and 476 only; D36 also changed 185 and 575.
+     - `docs/files-and-search.md:85`, the one-line paragraph. D36 adds "(the linter below does)"; D39 rewrites four other sentences.
+     - Both steps insert a new section right after `docs/files-and-search.md:86`.
+     Each is a textual conflict at the cherry-pick, resolved by keeping both sides.
+   - Every other shared hunk is one or more unchanged lines apart:
+     - `server/root/context.ts`: D39 257 and D36 249 and 269; D39 327 and D36's insert after 325, one unchanged line apart.
+     - `state/client/context.ts`: D39 219-228, 463, 565-591 and 810; D36 225, 436, 455, 597-610, 653 and 813.
+     - `relay.ts`: D39 18-22, 45, 68, 494-499 and 547-562; D36 24-28.
+     - `HELP.md`: D39 81 and 116; D36 118.
+     - `docs/views.md`: D39 69 and 253; D36 81.
+     - `search.yml`: D39 1, after 30 and after 151; D36 after 28.
+     - `source.yml`: D39 74-103; D36 after 2 and after 22.
+     - `data/model/index.ts`: D39 94-98; D36 572-609.
+   - No D39 hunk's meaning depends on code D36 changed:
+     - D39 drops the `readHash` import, and main has no other importer of it (`grep -rn readHash tools/oculus/src` prints `fs-transport.ts:432` and `context.ts:105` only).
+     - D36's lint fixes edit the tab model directly (`lint-fixes.ts`) and do not go through `lspEdits.apply`, whose contract D39 changes.
+     - Nothing on main imports `under` from `library/rules.ts` except `machine-file.ts`, which D39 rewrites. `withheldFolders`, which main's `server/root/context.ts:81` imports, is still exported by D39's `rules.ts:40`.
+   - Folder counts after the merge: `state/system/machine` is 8 (main 7 with `lint`, plus `refactor`), and `tests/server/machine` is 10. The merged `state/client/context.ts` is about 856 lines and `server/root/context.ts` about 840 (base 821 and 810 plus both steps' additions).
+
+### Declined to judge
+
+- The look (cases 1-9 underline and selection, 13, 14, 21, 23 and 25 at the caret and as notices, 29, 32-36): it needs a page, which the task forbids.
+- `npm run diagrams`: it writes files.
+- The relation-shapes run on the unchanged tree: the base copy has no `node_modules`. I read the builder's quoted file instead.
+- Cases 20, 30b, 42, 44, 45, 47: these are the builder's runs from the first build, carried unchanged. They need the real hub index or a running server.
+- Whether to build the rename box's hint line: Axel's ruling.
+- Whether the relay keeps the private-folder branch (Standards 5) and where the new hub-keys test lives (Standards 4): the orchestrator's call at landing.
+
+Reviewer usage: agent id not known to the reviewer; served model claude-opus-5-5, per the session's own model line; tokens, tool uses and minutes not known (not verified).

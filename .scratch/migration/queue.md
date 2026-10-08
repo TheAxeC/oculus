@@ -2,9 +2,8 @@ In flight (2 of 6 slots in use):
 - D39 (hub keys as links): repair round 1 built; its review over round 1 running.
 - D40 (the writing rules as editor marks): building (builder launched 2026-10-09, base 9fd6c6eac).
 
-Queued, in order (9 steps):
-- M7 (a project folder moved in Files): after D39; its scope waits on open item 21.
-- D41 (links in Markdown checked): after M7.
+Queued, in order (8 steps):
+- D41 (links in Markdown checked, with M7's two defects and the Audit's wrong `type` item): ready to prepare.
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (release readiness): paused (Axel).
 - O29 (retiring the cockpit): paused (Axel).
