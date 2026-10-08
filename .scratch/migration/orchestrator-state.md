@@ -49,6 +49,7 @@ dispatch:   # steps in flight, up to six (Z632)
   launched: 2026-10-08
   report: agents/reviews/D33-report.md
   builder_usage: first run, told of Z720 near its end (247,889 tokens, 760 tool uses, 226.6 min)
+  reviewer_report: agents/reviews/D33-refuter.md (a4557dd5285730c0d, claude-opus-5-5, 369,712 tokens, 90 tool uses, 20.7 min)
   brief_check: agents/reviews/D33-brief-check.md (a0a67ffbec5451994, claude-opus-5-5, 335,815 tokens, 131 tool uses, 19.6 min)
   shared_paths: package.json and package-lock.json (M8 and D33 add different dependencies; the one line both change, picomatch's devOptional, changes identically; the lock is regenerated at the second landing), DESIGN.md, docs/files-and-search.md, docs/views.md, config/text/statusbar.yml and views/system/workbench/editors/Editor.svelte on different lines, docs/diagrams regenerated: a simple merge
   landing: not-started
