@@ -1,4 +1,4 @@
-In flight (0 of 6 slots): none.
+In flight (1 of 6 slots): D28 (builder launched 2026-10-08).
 
 Ready to prepare: D28 (X3e has landed), its premises being rechecked on main. M8 waits for D28 (both rewrite `options.yml` on the same lines, Z712); D43 waits for M8; D33 waits for D28.
 

@@ -24,7 +24,19 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []   # steps in flight, up to six (Z632)
+dispatch:   # steps in flight, up to six (Z632)
+- step: D28
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a7fdeabbe3ca09dfa (builder, launched 2026-10-08)
+  worktree: .agents/worktrees/D28
+  base: 2441e0b53
+  launched: 2026-10-08
+  report: agents/reviews/D28-report.md
+  brief_check: agents/reviews/D28-brief-check.md (a148f9947c88c06e2, claude-opus-5-5, 262,283 tokens, 78 tool uses, 12.7 min)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -212,6 +224,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 03:00. D28 prepared (2441e0b53) and its builder a7fdeabbe3ca09dfa (claude-sonnet-5-5) launched in `.agents/worktrees/D28`. Every other queued step waits for D28 (M8 by Z712, M6 and D33 by their lines). Open item 5 for Axel.
 - 2026-10-08 02:45. M8's recheck closed as Z712 (M8 after D28). D28's recheck closed as Z713; N1 to N6 written into guarded.md (G8, G2, G28; G58 to G60); D28's brief rewritten on main at 1ae5e7c8d; its brief check (a148f9947c88c06e2, claude-opus-5-5) running. Open item 5 for Axel.
 - 2026-10-08 02:05. Orchestration goes on at Axel's order. Premise rechecks on main at 1ae5e7c8d running for D28 (a9503ab88614faf3d) and M8 (aca73f6f335a1fa89), both claude-opus-5-5; each is then prepared by /spec (brief corrected, D28's brief check, worktree, builder). Open item 5 for Axel.
 - 2026-10-08 01:55. X3e landed (the Files view's lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop; booking in plan.md; `agents/reviews/X3e-landing.md`). Axel's list of 21:45 is done: items 9 and 10 with it. The landing gate ran green in `.agents/worktrees/gate`; the look ran on the 8796 scratch oculus; the defect it found (a repository unreadable for good after a start) diagnosed by a9c92f106b8cabbf3 and fixed at landing. Open item 5 (the root drag's guarded entry). Nothing in flight. Next, at Axel's order to go on: the queue, D28 first (it waited for X3e), then M8 once its premises are checked again on main.
