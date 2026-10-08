@@ -744,3 +744,1099 @@ $ git worktree list | grep -c diagnose
 - This run's scripts in the session scratchpad (`cdp.mjs`, `red.mjs`, `red2.mjs`, `red3.mjs`, `panechange.mjs`, `filter.mjs`, `views.sh`, and the throwaway `explore*.mjs`, `tabs.mjs`, `dbg*.mjs`) were removed. Their sources are above.
 - No file of the main checkout was changed by this run: `git status --short` in the main checkout printed nothing at the end. The untracked `D23c.md` of the start was committed by the session in the meantime (`f2567dcd`).
 - Carried by the brief as its check: `red.mjs` (Focus, and every view through `views.sh`), `red2.mjs`, `panechange.mjs`, `red3.mjs` and `filter.mjs`, against a dev server of the step's worktree, or as the look on TEST.
+
+# Diagnosis: Proof 1 of D33, the entryAt / GONE guard and VirtualRows on a shrinking list
+
+Every quoted command output carries `<REDACTED>` in place of the value of a secret in it, as the rules file's rule on secrets in quoted command output says. None of the outputs below held a secret. A diagnosis of the same step later is appended below under its own heading at the level of the title above.
+
+Diagnosis agent: aecfa0b2710e743e8, claude-opus-5-5, 288,280 tokens, 92 tool uses, 21.3 min.
+
+Answers to the questions in the brief, in order:
+
+1. **Does the stale read happen?** Yes. `ui/tree/list/VirtualRows.svelte` asks the caller for keys and item bodies at indexes past the end of a list that has shrunk. It happens only when the list is written from inside a user `$effect`. The same shrink written outside an effect reads nothing past the end. A typed filter is written outside an effect: `Search.svelte:79` `oninput`, then `patch`, then `setInstanceState`. So the refuter's typed-filter scenario does not trigger it. The effect path is the language client. Its diagnostics are written from inside an editor's effect, as the comment in `documents.svelte.ts` `setDiagnostics` says and as the calls at `client.ts:312`, `:464-468` and `:525-526` show. That path is known by reading only; it was not run.
+2. **What is the cause?** The window the keyed each iterates is a `$state` (`windowed`) written only by a `$effect.pre` (`configure`) and by `onChange`. When the caller's list changes inside a user `$effect`, Svelte re-runs the dependent block effects at once (`eager_block_effects`, `batch.js:1108-1170`, marked at `sources.js:400`). Those are the each and the `{#if}` blocks inside item bodies, and they run before the `$effect.pre` has rewritten the window for the new count.
+3. **Which other callers are hit?** All four. Each reads by direct index and throws `TypeError` on the same past-end read:
+   - `Changes.svelte:234` and `:243`
+   - `Graph.svelte:425` and `:432`
+   - `Console.svelte:164-166`
+   - `Tree.svelte:308` and `:314`
+
+   Whether each caller's list is in fact written from inside an effect in the app was not verified per caller. The fix in VirtualRows covers every caller either way.
+4. **Can the guard's `''` key raise `each_key_duplicate`?** Yes, once two or more past-end indexes are keyed in one pass: the shrink from 20 to 3 raised `Svelte error: each_key_duplicate`. With exactly one past-end index (20 to 9) the guard hides the read and nothing is thrown.
+5. **The fix.** The window is a `$derived` of the current inputs in VirtualRows, which ends the cause for every caller. The guard in `problem-rows.ts` is removed and `Problems.svelte` reads `entries[at]` directly. The test and the red command are below. Adding the test to the suite needs a ruling, as "No test reaches it" says.
+
+## Symptom
+
+From `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/reviews/D33-refuter.md`, section "2. Proof", finding 1, its failure scenario, word for word:
+
+- Failure scenario: a filter typed that cuts the list from twenty rows to ten. If VirtualRows' each re-keys its stale window with the new `key`, ten stale indexes all answer `''` and the each block throws `each_key_duplicate`. If only the item bodies re-run, the guard hides the defect in the Problems view while staging the last files of a Changes group can hit the same past-end read.
+
+What the builder's report (`agents/reviews/D33-report.md`) says about the error it saw: line 81 says the last code change was "the `entryAt` guard in `views/sources/search/problem-rows.ts` and `Problems.svelte`". Line 205 says: "A list that shrinks asks the Problems tree for the row at an index past the end once before it drops that row; `entryAt` answers it with an empty row that is never drawn." The report quotes no error text and names no page run that showed it. Line 5 notes that page run `n23` "closed x.py before pressing, which removed the rows".
+
+## Where the probes run
+
+The scratch copy was `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.LniAti/tree`, a detached worktree at `1439a44ec` made from the main checkout. It was built in these steps:
+- The step's diff was taken with `git diff --binary 1439a44ec` from inside `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D33`, saved to `$tmp/step.diff` and applied with `git apply --allow-empty`.
+- The 8 `??` files from `git status --porcelain --untracked-files=all` were copied over.
+- `tools/oculus/node_modules` was a symlink to the D33 worktree's `node_modules`, used read-only and unlinked before the cleanup.
+
+The scratch tree's `git diff --binary 1439a44ec | shasum` matched the step's: `75b83a8c5f01cbd8e0ea4c6226e43d386ef95487`.
+
+The paths redirected under `$TMPDIR`: none. No command touched the home folder, the installed skills or the pinned checkout. No page, browser, server or port was used.
+
+Taken before the copy was made, from inside the step's worktree:
+
+```
+$ git status --short
+ M tools/oculus/DESIGN.md
+ M tools/oculus/HELP.md
+ M tools/oculus/config/layout.yml
+ M tools/oculus/config/text/app.yml
+ M tools/oculus/config/text/statusbar.yml
+ M tools/oculus/config/text/views/academic/latex.yml
+ M tools/oculus/config/text/views/sources/files.yml
+ M tools/oculus/config/text/views/sources/search.yml
+ M tools/oculus/config/text/views/system/audit.yml
+ M tools/oculus/docs/diagrams/channels.dot
+ M tools/oculus/docs/diagrams/channels.svg
+ M tools/oculus/docs/diagrams/layer-server.dot
+ M tools/oculus/docs/diagrams/layer-server.svg
+ M tools/oculus/docs/diagrams/layer-shell.dot
+ M tools/oculus/docs/diagrams/layer-shell.svg
+ M tools/oculus/docs/diagrams/layer-state.dot
+ M tools/oculus/docs/diagrams/layer-state.svg
+ M tools/oculus/docs/diagrams/layer-views.dot
+ M tools/oculus/docs/diagrams/layer-views.svg
+ M tools/oculus/docs/diagrams/layers.dot
+ M tools/oculus/docs/diagrams/layers.svg
+ M tools/oculus/docs/files-and-search.md
+ M tools/oculus/docs/views.md
+ M tools/oculus/docs/window.md
+ M tools/oculus/package-lock.json
+ M tools/oculus/package.json
+ M tools/oculus/src/lib/data/model/index.ts
+ M tools/oculus/src/lib/data/model/model-sessions.ts
+ M tools/oculus/src/lib/server/content/audit/projects.ts
+ M tools/oculus/src/lib/server/content/audit/publications.ts
+ M tools/oculus/src/lib/server/content/audit/rules.ts
+ M tools/oculus/src/lib/server/content/audit/scan.ts
+ M tools/oculus/src/lib/shell/Workbench.svelte
+ M tools/oculus/src/lib/shell/keys/key-dom.ts
+ M tools/oculus/src/lib/shell/keys/keys.ts
+ M tools/oculus/src/lib/shell/keys/workbench-keys.svelte.ts
+ M tools/oculus/src/lib/shell/panes/strip/strip-tab.ts
+ M tools/oculus/src/lib/shell/status/StatusBar.svelte
+ M tools/oculus/src/lib/shell/status/status-items.ts
+ M tools/oculus/src/lib/state/client/context.ts
+ M tools/oculus/src/lib/state/sessions/latex/builds.ts
+ M tools/oculus/src/lib/state/sessions/latex/latex-state.ts
+ M tools/oculus/src/lib/state/sessions/latex/latex.svelte.ts
+ M tools/oculus/src/lib/state/sessions/source/draft.ts
+ M tools/oculus/src/lib/state/sessions/source/source.svelte.ts
+ M tools/oculus/src/lib/state/sessions/terminal/commands.svelte.ts
+ M tools/oculus/src/lib/state/sources/explorer/rows/decorations.ts
+ M tools/oculus/src/lib/state/system/audit.ts
+ M tools/oculus/src/lib/state/system/machine/lsp/documents.svelte.ts
+ M tools/oculus/src/lib/state/workbench/navigation/pages.ts
+ M tools/oculus/src/lib/state/workbench/navigation/registry.ts
+ M tools/oculus/src/lib/state/workbench/navigation/status.ts
+ M tools/oculus/src/lib/state/workbench/rail-badges.svelte.ts
+ M tools/oculus/src/lib/ui/controls/editor/chords.ts
+ M tools/oculus/src/lib/ui/controls/editor/commands.ts
+ M tools/oculus/src/lib/ui/controls/editor/kit/lsp/client.ts
+ M tools/oculus/src/lib/ui/controls/editor/kit/lsp/hosts.ts
+ M tools/oculus/src/lib/ui/controls/editor/kit/lsp/services.ts
+ M tools/oculus/src/lib/ui/controls/editor/types.ts
+ M tools/oculus/src/lib/ui/controls/tool-button.ts
+ M tools/oculus/src/lib/ui/tabs/TabFace.svelte
+ M tools/oculus/src/lib/ui/tabs/tab-strip.ts
+ M tools/oculus/src/lib/views/academic/latex/Latex.svelte
+ D tools/oculus/src/lib/views/academic/latex/Problems.svelte
+ M tools/oculus/src/lib/views/boards/focus/lanes/LaneCard.svelte
+ M tools/oculus/src/lib/views/shared/explorer/RootedTree.svelte
+ M tools/oculus/src/lib/views/shared/explorer/rooted-tree.svelte.ts
+ M tools/oculus/src/lib/views/shared/explorer/tree/FileRow.svelte
+ M tools/oculus/src/lib/views/shared/explorer/tree/Tree.svelte
+ M tools/oculus/src/lib/views/shared/latex/Main.svelte
+ D tools/oculus/src/lib/views/shared/latex/Problems.svelte
+ M tools/oculus/src/lib/views/shared/latex/places.ts
+ M tools/oculus/src/lib/views/shared/links/source-file.ts
+ M tools/oculus/src/lib/views/sources/files/sections/OpenEditors.svelte
+ M tools/oculus/src/lib/views/sources/source/Editor.svelte
+ M tools/oculus/src/lib/views/sources/source/Source.svelte
+ M tools/oculus/src/lib/views/sources/source/SourceBody.svelte
+ M tools/oculus/src/lib/views/sources/source/language/extension.ts
+ M tools/oculus/src/lib/views/sources/source/language/lsp.ts
+ M tools/oculus/src/lib/views/sources/source/language/tab-language.svelte.ts
+ M tools/oculus/src/lib/views/sources/source/status/tab-state.ts
+ M tools/oculus/src/lib/views/system/audit/Audit.svelte
+ M tools/oculus/src/lib/views/system/workbench/editors/Cards.svelte
+ M tools/oculus/src/lib/views/system/workbench/editors/Editor.svelte
+ M tools/oculus/src/lib/views/system/workbench/editors/Rollup.svelte
+ M tools/oculus/src/routes/+page.svelte
+?? tools/oculus/.scratch/migration/agents/reviews/D33-report.md
+?? tools/oculus/src/lib/state/sessions/source/place.ts
+?? tools/oculus/src/lib/state/system/problem-sources.ts
+?? tools/oculus/src/lib/state/system/problems.svelte.ts
+?? tools/oculus/src/lib/views/sources/search/Problems.svelte
+?? tools/oculus/src/lib/views/sources/search/problem-rows.ts
+?? tools/oculus/src/lib/views/sources/source/language/command-marks.svelte.ts
+?? tools/oculus/tests/views/shared/explorer/root-drag.test.ts
+$ git diff --binary 1439a44ec | shasum
+75b83a8c5f01cbd8e0ea4c6226e43d386ef95487  -
+```
+
+After the run, the same commands from inside the step's worktree printed `75b83a8c5f01cbd8e0ea4c6226e43d386ef95487  -` and 94 status lines, the same count. The scratch tree's status had one more line, `?? tools/oculus/node_modules`, which was the symlink. The step's worktree was not changed.
+
+## Red command
+
+The project's vitest client project (`vite.config.ts`, `tests/ui/frame/client-runtime.ts`) runs Svelte's client runtime with no DOM, and no DOM library is installed. So the red command mounts VirtualRows on a small document written for it, `tests/ui/tree/list/mini-dom.diag.ts`. That document gives nodes and a parser for the template markup the compiler emits. Its layout is fixed: the `data-scroll` box is 100 px high and every other element 20 px, so the window draws rows 0 to 9.
+
+The red command has three parts:
+- The harness `tests/ui/tree/list/Shrinking.svelte` reads items by index, as the callers do. It records every key and every item-body read at an index the list no longer holds.
+- The rows are written from `$effect.pre` ("derived") or from `$effect` ("effect").
+- The key and body are read directly ("direct") or through a guard that answers `''` as `problem-rows.ts` does ("guard").
+
+The command, from `tools/oculus` in the scratch copy:
+
+```
+PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npx vitest run tests/ui/tree/list/shrink.client.test.ts --silent=false --reporter=verbose
+```
+
+Runs, with the output of each quoted (each run was filtered with `grep -E "DIAG-.*(key reads|body reads|thrown)|✓|×|Tests  "`; the three were identical):
+
+```
+== run 1
+DIAG-7c41 derived/direct past-end key reads: []
+DIAG-7c41 derived/direct past-end body reads: []
+DIAG-7c41 derived/direct thrown: none
+DIAG-7c41 effect/direct past-end key reads: [3]
+DIAG-7c41 effect/direct past-end body reads: []
+DIAG-7c41 effect/direct thrown: TypeError: Cannot read properties of undefined (reading 'id')
+DIAG-7c41 effect/guard past-end key reads: [3,3,4,4,5,5,6,6,7,7,8,8,9,9,3,4]
+DIAG-7c41 effect/guard past-end body reads: [3]
+DIAG-7c41 effect/guard thrown: Svelte error: each_key_duplicate
+ ✓ |client| tests/ui/tree/list/shrink.client.test.ts > shrinks from 20 to 3, rows written 'derived', read 'direct' 12ms
+ × |client| tests/ui/tree/list/shrink.client.test.ts > shrinks from 20 to 3, rows written 'effect', read 'direct' 10ms
+ × |client| tests/ui/tree/list/shrink.client.test.ts > shrinks from 20 to 3, rows written 'effect', read 'guard' 4ms
+      Tests  2 failed | 1 passed (3)
+== run 2
+(identical lines to run 1; derived/direct 11ms, effect/direct 10ms, effect/guard 4ms)
+      Tests  2 failed | 1 passed (3)
+== run 3
+(identical lines to run 1; derived/direct 11ms, effect/direct 10ms, effect/guard 4ms)
+      Tests  2 failed | 1 passed (3)
+```
+
+How to read the parts:
+- The "effect/direct" row is the symptom for the four callers that index directly: the key read past the end throws `TypeError`.
+- The "effect/guard" row is the symptom for the Problems view with the guard: ten stale indexes become seven `''` keys and `each_key_duplicate` is thrown.
+- The "derived/direct" row is the control: the same shrink, written outside a user effect, reads nothing past the end.
+
+Runs after the tightening: the red command runs in about 1 s (`Duration 908ms` to `1.63s` across the runs). It uses no network, no timer wait and no file outside the scratch copy. The tightening made two changes. The item body became `{@const row = rowAt(at)}{#if row.id !== ''}...{/if}`, a block effect as in Changes, Problems, Console and Tree. A log line naming each past-end key read was added. The three runs above are after the tightening.
+
+## No red command
+
+Not applicable.
+
+## Shrunk case
+
+| Cut | Result of the red command after it | Kept or put back |
+|---|---|---|
+| The write from inside a user effect, replaced by a write from `$effect.pre` (the "derived" row) | green: `derived/direct past-end key reads: []`, `thrown: none` | put back (needed) |
+| The shrink target: 20 to 10, so no drawn index (0 to 9) is past the new end | green: `effect/direct past-end key reads: []`, `effect/guard ... thrown: none` | put back (an index past the new end must be drawn) |
+| The shrink target cut to one past-end index: 20 to 9 | red: `effect/direct past-end key reads: [9]`, `TypeError ... (reading 'id')`; `effect/guard past-end key reads: [9,9,9]`, `body reads: [9]`, `thrown: none` | kept as a variant. One past-end index is enough for the stale read, but `each_key_duplicate` needs two or more. |
+| The list's starting length: 20 cut to 11 | red: `effect/direct past-end key reads: [3]`, `TypeError`; `effect/guard ... thrown: Svelte error: each_key_duplicate` | cut (not needed; 11 is enough) |
+| The scroll box: `data-scroll` removed, so `box` stays null and `drawn` is `firstWindow(count)`, derived from `count` | green: `effect/direct past-end key reads: []`, `effect/guard past-end key reads: []` | put back (needed) |
+
+The shrunk case, as it stands, has four parts, each needed for the red:
+- a VirtualRows that has found its scroll box, so `drawn` is the `windowed` state;
+- a list written from inside a user `$effect`;
+- a shrink that leaves a drawn index at or past the new length;
+- a key or body that reads the caller's list by that index.
+
+## Hypotheses
+
+1. If the cause is that the each iterates `windowed`, a `$state` only the `$effect.pre` (`configure`) and `onChange` write, then deriving the window in a `$derived` from the current `count`, `key`, `size`, `margin` and `kept` turns the red command green. Without the change, a write inside a user `$effect` makes Svelte re-run the each and the item-body blocks eagerly, before that `$effect.pre` runs. Falsified by: the red command still red with the window derived.
+2. If the eager re-run comes only from the each's `key` call reading the caller's list in a tracked context, then calling `key` untracked in the each turns the red command green. Falsified by: past-end key or body reads with `key` untracked.
+3. If the virtualizer hands `configure` or `onChange` a window with indexes at or past the count it was set to (its memoised range stale after `setOptions`), then the past-end read follows a window built that way. Falsified by: log lines showing every window `configure` and `onChange` built held only indexes below its count, and the past-end key read coming before any `configure` for the new count.
+4. If `onChange` writes `windowed` from a stale virtualizer state between the caller's write and the each's run, then an `onChange` line appears between the shrink and the past-end read. Falsified by: no `onChange` line between them.
+
+The reply to the hypotheses, or "none, no person present": none, no person present.
+
+The second list, when every hypothesis was falsified: not needed.
+
+## Probes
+
+| Hypothesis rank | The one change, as a diff | The run | Result |
+|---|---|---|---|
+| 3 and 4 (one logging probe at the boundary between the virtualizer and the each) | In `src/lib/ui/tree/list/VirtualRows.svelte`, `onChange`: `+ console.log('DIAG-7c41 onChange, count', virtualizer.options.count, 'window', virtualizer.getVirtualItems().map((one) => one.index).join(','));` and after `configure`'s `windowed = rowWindow(...)`: `+ console.log('DIAG-7c41 configure, count', rows, 'window', windowed.rows.map((one) => one.index).join(','));` | `-t "effect.*direct"`: `DIAG-7c41 onChange, count 0 window ` / `DIAG-7c41 configure, count 0 window ` / `DIAG-7c41 configure, count 20 window 0,1,2,3,4,5,6,7,8,9` / `DIAG-7c41 key asked past the end 3 of 3`. No `configure, count 3` and no `onChange` before the past-end read. | 3 falsified (every window held indexes below its count). 4 falsified (no `onChange` between the shrink and the read). |
+| 1 (logging, the call stack at the past-end key read; the change undone above was put back first) | In the harness's past-end branch of `key`: `console.log('DIAG-7c41 key asked past the end', at, 'of', list.length, <the stack lines under svelte/src, VirtualRows or Shrinking>)` | `Object.key (Shrinking.svelte:38)`, `VirtualRows.svelte:239` (the each's key), `svelte/src/internal/client/dom/blocks/each.js:304`, `update_reaction (runtime.js:258)`, `update_effect (runtime.js:486)`, `flush_queued_effects (reactivity/batch.js:1163)`, `Batch.#process (reactivity/batch.js:444)`, `Batch.flush (reactivity/batch.js:677)`. `batch.js:1163` is the `update_effect(e)` of the `eager_block_effects` loop. `batch.js:444` is `flush_queued_effects(effects)`, the user-effect pass. | still standing: the each is run eagerly from inside the user-effect pass |
+| 1 | The window derived: the diff under "Fix" below, the `VirtualRows.svelte` part (`windowed` and the `$effect.pre` removed, `moved` counter, `drawn = $derived.by(...)` calling `configure` and `rowWindow`) | `derived/direct`, `effect/direct` and `effect/guard`: `past-end key reads: []`, `past-end body reads: []`, `thrown: none`, each `drawn after: "   row 0 row 1 row 2 "`; `Tests  3 passed (3)` | still standing. Green with the change; red without it (the three runs above). |
+| 2 | `-{#each drawn.rows as row, at (key(row.index))}` / `+{#each drawn.rows as row, at (untrack(() => key(row.index)))}` in `VirtualRows.svelte` | `effect/direct past-end key reads: []`, `past-end body reads: [3]`, `thrown: TypeError: Cannot read properties of undefined (reading 'id')`; `effect/guard past-end body reads: [3,4,5,6,7,8,9]`; `Tests  2 failed \| 1 passed (3)` | falsified: the item-body `{#if}` blocks are eager reactions of the same write and read the stale indexes |
+
+Each probe's change was undone before the next. `VirtualRows.svelte` was copied back from a saved copy of the original, and `git diff --stat -- tools/oculus/src/lib/ui/tree/list/VirtualRows.svelte` printed nothing after each undo. The harness logging was part of the red command and was removed at the cleanup.
+
+## Cause
+
+Hypothesis 1, shown by the probe that derives the window: the red command is green with that change and red without it. Probe 1's log and stack show the order of events:
+- `VirtualRows.svelte:79` keeps the drawn window in `windowed`, a `$state` written only by `configure` (in a `$effect.pre`, `:134-142` of the step's file) and by the virtualizer's `onChange`.
+- When a caller's list changes inside a user `$effect`, Svelte 5.57.1 marks every block effect that depends on the written state as eager (`sources.js:400`). It runs those effects at once, ancestors first, inside `flush_queued_effects` (`batch.js:1140-1166`).
+- The each over `drawn.rows` (keyed by `key(row.index)`, `:239`) is such a block, and so is every `{#if}` inside an item body. Both run before the `$effect.pre` has set the virtualizer to the new count and rewritten `windowed`.
+- They therefore ask the caller for the key and the body of the old window's indexes against the shrunk list.
+
+The read is real for the key and for the body. It hits every caller that reads by index:
+- `Changes.svelte:234` and `:243`
+- `Graph.svelte:425` and `:432`
+- `Console.svelte:164-166`
+- `Tree.svelte:308` and `:314`
+
+Each throws `TypeError` when its list shrinks inside an effect while a drawn row is past the new end. The guard in `problem-rows.ts:129-156` answers that read with one key `''`, which hides the read when exactly one index is past the end. With two or more past-end indexes it raises `each_key_duplicate`.
+
+A list written outside a user effect does not show it. That covers a typed filter, which is written from an input event at `Search.svelte:79`. In that case the batch traversal runs the `$effect.pre` before the each, in tree order.
+
+## Fix and test
+
+Test, run on the tree without the fix. That tree is the step's four files copied back from the step's worktree, with `cmp` reporting each "same as step". The test is the final form below:
+
+```
+$ npx vitest run tests/ui/tree/list/virtual-rows.client.test.ts
+ ❯ |client| tests/ui/tree/list/virtual-rows.client.test.ts (1 test | 1 failed) 18ms
+   × asks for no row past the end when a list of 20 shrinks to 3 inside an effect 18ms
+ FAIL  |client| tests/ui/tree/list/virtual-rows.client.test.ts > asks for no row past the end when a list of 20 shrinks to 3 inside an effect
+AssertionError: expected { …(3) } to deeply equal { thrown: '', …(2) }
+- Expected
++ Received
+  {
+    "drawn": [
+      "row 0",
+      "row 1",
+      "row 2",
++     "row 3",
++     "row 4",
++     "row 5",
++     "row 6",
++     "row 7",
++     "row 8",
++     "row 9",
+    ],
+    "past": {
+      "body": [],
+-     "key": [],
++     "key": [
++       3,
++     ],
+    },
+-   "thrown": "",
++   "thrown": "TypeError: Cannot read properties of undefined (reading 'id')
++
++ 	in <unknown>
++ 	in VirtualRows.svelte
++ 	in ShrinkingRows.svelte
++ 	in undefined
++ ",
+  }
+ ❯ tests/ui/tree/list/virtual-rows.client.test.ts:39:73
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+```
+
+Fix, as a diff against the step's worktree (`diff -u` of the step's file and the fixed file):
+
+```
+--- a/tools/oculus/src/lib/ui/tree/list/VirtualRows.svelte
++++ b/tools/oculus/src/lib/ui/tree/list/VirtualRows.svelte
+@@ -75,8 +75,10 @@
+     let size = $state(0);
+     /** The list's offset in its scroll box, in px. */
+     let margin = $state(0);
+-    /** The window the virtualizer drew last, read again each time it says the window changed. */
+-    let windowed: RowWindow = $state(firstWindow(0));
++    /** Counts the virtualizer's word that its window moved, so the window is read again. */
++    let moved = $state(0);
++    /** The window read last, handed back to `rowWindow` so an unchanged window keeps its value. */
++    let held: RowWindow = firstWindow(0);
+     /** A row a key moved to that is not drawn yet, focused once it is. */
+     let pending = $state('');
+ 
+@@ -90,15 +92,25 @@
+         scrollToFn: elementScroll,
+         onChange: () => {
+             place();
+-            windowed = rowWindow(
+-                virtualizer,
+-                untrack(() => windowed)
+-            );
++            moved += 1;
+         }
+     });
+ 
+-    /** The rows drawn: the first ones until the list has found its scroll box, then the window. */
+-    const drawn = $derived(box === null ? firstWindow(count) : windowed);
++    /**
++     * The rows drawn: the first ones until the list has found its scroll box, then the window the
++     * virtualizer gives for the list as it is now. The window is read here rather than written by
++     * an effect, so whatever reads the rows (the each below, run by Svelte ahead of this
++     * component's effects when the caller's list changes inside an effect of its own) never gets a
++     * window of a list that has since shrunk.
++     */
++    const drawn = $derived.by(() => {
++        if (box === null) return firstWindow(count);
++        // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- the read is the dependency
++        moved;
++        configure(count, size, margin, key, kept);
++        held = rowWindow(virtualizer, held);
++        return held;
++    });
+     /** How many rows are not drawn, held after the first window at the tokens' row height. */
+     const rest = $derived(count - drawn.rows.length);
+     /** The items kept drawn: the caller's, and those holding the rows the tree keeps. */
+@@ -107,13 +119,13 @@
+         ...(nav?.kept() ?? []).map((id) => owns?.(id) ?? -1).filter((index) => index >= 0)
+     ]);
+ 
+-    /** Hand the virtualizer the list as it is now, and read the window it gives. */
++    /** Hand the virtualizer the list as it is now. */
+     function configure(
+         rows: number,
+         height: number,
+         offset: number,
+         keyOf: (index: number) => string,
+-        held: readonly number[]
++        keptRows: readonly number[]
+     ): void {
+         virtualizer.setOptions({
+             ...virtualizer.options,
+@@ -121,24 +133,10 @@
+             getItemKey: keyOf,
+             estimateSize: () => height,
+             scrollMargin: offset,
+-            rangeExtractor: (range: Range) => keptRange(range, held)
++            rangeExtractor: (range: Range) => keptRange(range, keptRows)
+         });
+-        windowed = rowWindow(
+-            virtualizer,
+-            untrack(() => windowed)
+-        );
+     }
+ 
+-    $effect.pre(() => {
+-        if (box === null) return;
+-        const rows = count;
+-        const height = size;
+-        const offset = margin;
+-        const keyOf = key;
+-        const held = kept;
+-        untrack(() => configure(rows, height, offset, keyOf, held));
+-    });
+-
+     /** Read the list's offset in its scroll box again, which moves when anything above it does. */
+     function place(): void {
+         if (box === null || top === undefined) return;
+--- a/tools/oculus/src/lib/ui/tree/list/virtual.ts
++++ b/tools/oculus/src/lib/ui/tree/list/virtual.ts
+@@ -34,9 +34,10 @@
+  * so each gap is measured from the list's top or from the end of the row drawn before it.
+  *
+  * Handed the window the list holds, it gives that same window back when nothing in it moved, so
+- * the list writes nothing and the rows drawn from it are not run again. A row whose effect makes
+- * the list configure itself again (the open commit's files, whose rows the Graph's kept items are
+- * counted from) would otherwise be run again by the window it caused, and again, without end.
++ * the list's window keeps its value and the rows drawn from it are not run again. A row whose
++ * effect makes the list read its window again (the open commit's files, whose rows the Graph's
++ * kept items are counted from) would otherwise be run again by the window it caused, and again,
++ * without end.
+  */
+ export function rowWindow<S extends Element | Window, I extends Element>(
+     virtualizer: Virtualizer<S, I>,
+--- a/tools/oculus/src/lib/views/sources/search/problem-rows.ts
++++ b/tools/oculus/src/lib/views/sources/search/problem-rows.ts
+@@ -126,35 +126,6 @@
+     | { kind: 'file'; id: string; file: ProblemFile; open: boolean }
+     | { kind: 'row'; id: string; parent: string; file: ProblemFile; row: Problem };
+ 
+-/**
+- * The line drawn for an index past the end of the list. A list that shrinks asks for the rows it
+- * drew, at their old indexes, once more before it drops them; this line answers that ask and is
+- * never shown.
+- */
+-const GONE: Entry = {
+-    kind: 'row',
+-    id: '',
+-    parent: '',
+-    file: { key: '', root: '', path: '', rows: [], counts: { errors: 0, warnings: 0, infos: 0 } },
+-    row: {
+-        root: '',
+-        path: '',
+-        owner: '',
+-        severity: 'info',
+-        line: 1,
+-        column: 0,
+-        endLine: 0,
+-        endColumn: 0,
+-        message: '',
+-        source: ''
+-    }
+-};
+-
+-/** The line at an index of the tree, or the line for an index past the end of the list. */
+-export function entryAt(entries: readonly Entry[], at: number): Entry {
+-    return entries.at(at) ?? GONE;
+-}
+-
+ /** The id of one problem row of the tree. */
+ function rowId(file: ProblemFile, at: number): string {
+     return `${file.key}#${String(at)}`;
+--- a/tools/oculus/src/lib/views/sources/search/Problems.svelte
++++ b/tools/oculus/src/lib/views/sources/search/Problems.svelte
+@@ -60,7 +60,6 @@
+     import {
+         copyText,
+         entriesOf,
+-        entryAt,
+         fileFolder,
+         fileName,
+         filterFiles,
+@@ -287,20 +286,20 @@
+                     <ul class="entries" role="none">
+                         <VirtualRows
+                             count={entries.length}
+-                            key={(at: number) => entryAt(entries, at).id}
++                            key={(at: number) => entries[at].id}
+                             {nav}
+                             owns={(id: string) => places.get(id) ?? -1}
+                             label={(id: string) => {
+                                 const at = places.get(id);
+                                 if (at === undefined) return undefined;
+-                                const entry = entryAt(entries, at);
++                                const entry = entries[at];
+                                 return entry.kind === 'file'
+                                     ? fileName(entry.file)
+                                     : entry.row.message;
+                             }}
+                         >
+                             {#snippet item(at: number, measure: Attachment<HTMLElement>)}
+-                                {@const entry = entryAt(entries, at)}
++                                {@const entry = entries[at]}
+                                 {#if entry.kind === 'file'}
+                                     <li
+                                         role="none"
+```
+
+The test's source as written. The scratch copy is gone, so all three files are quoted whole for the round. They are `tools/oculus/tests/ui/tree/list/virtual-rows.client.test.ts`, `tools/oculus/tests/ui/tree/list/ShrinkingRows.svelte` and `tools/oculus/tests/ui/tree/list/mini-dom.ts`:
+
+```ts
+// tools/oculus/tests/ui/tree/list/virtual-rows.client.test.ts
+// Layer 3, primitive tests. ui/tree/list/VirtualRows.svelte over a list that shrinks while rows
+// past its new end are drawn, the list written from inside an effect, mounted on the document of
+// tests/ui/tree/list/mini-dom.ts: the list asks its caller for no key and no item body at an index
+// past the end, throws nothing, and draws the rows left.
+//
+// It does not cover scrolling or measuring, which the look does.
+
+import { flushSync, mount, unmount } from 'svelte';
+import { afterEach, expect, it, onTestFinished, vi } from 'vitest';
+import { cell } from '../../frame/rooted.svelte.ts';
+import { documentGlobals } from './mini-dom.ts';
+import ShrinkingRows from './ShrinkingRows.svelte';
+
+const rowsOf = (count: number) =>
+    Array.from({ length: count }, (_, at) => ({ id: `r${String(at)}`, name: `row ${String(at)}` }));
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+});
+
+it('asks for no row past the end when a list of 20 shrinks to 3 inside an effect', () => {
+    const { globals, body } = documentGlobals();
+    for (const [name, value] of Object.entries(globals)) vi.stubGlobal(name, value);
+    const rows = cell(rowsOf(20));
+    const past = { key: [] as number[], body: [] as number[] };
+    const list = mount(ShrinkingRows, { target: body, props: { rows: () => rows.get(), past } });
+    onTestFinished(() => {
+        void unmount(list);
+    });
+    flushSync();
+    expect(body.textContent.match(/row \d+/g)).toHaveLength(10);
+    let thrown = '';
+    try {
+        rows.set(rowsOf(3));
+        flushSync();
+    } catch (error) {
+        thrown = String(error);
+    }
+    expect({ thrown, past, drawn: body.textContent.match(/row \d+/g) }).toEqual({
+        thrown: '',
+        past: { key: [], body: [] },
+        drawn: ['row 0', 'row 1', 'row 2']
+    });
+});
+```
+
+```svelte
+<!-- tools/oculus/tests/ui/tree/list/ShrinkingRows.svelte -->
+<script lang="ts">
+    // A caller of ui/tree/list/VirtualRows.svelte for the case in virtual-rows.client.test.ts. It
+    // reads its items by index, as the Changes, Graph, Console, Tree and Problems views do, and
+    // takes its list in from an effect, as a view does whose store a language client writes from
+    // inside an editor's effect. Every index it is asked for that the list no longer holds is
+    // written down, for the key and for an item's body apart.
+
+    import type { Attachment } from 'svelte/attachments';
+    import VirtualRows from '../../../../src/lib/ui/tree/list/VirtualRows.svelte';
+
+    type Row = { id: string; name: string };
+    type Props = {
+        rows: () => Row[];
+        past: { key: number[]; body: number[] };
+    };
+
+    let { rows, past }: Props = $props();
+
+    let list: Row[] = $state.raw([]);
+    $effect(() => {
+        list = rows();
+    });
+
+    function key(at: number): string {
+        if (at >= list.length) past.key.push(at);
+        return list[at].id;
+    }
+
+    function rowAt(at: number): Row {
+        if (at >= list.length) past.body.push(at);
+        return list[at];
+    }
+</script>
+
+<ul data-scroll>
+    <VirtualRows count={list.length} {key} {item} />
+</ul>
+
+{#snippet item(at: number, measure: Attachment<HTMLElement>)}
+    {@const row = rowAt(at)}
+    {#if row.id !== ''}
+        <li {@attach measure}>{row.name}</li>
+    {/if}
+{/snippet}
+```
+
+(The first line of the Svelte block above is a label for this record and is not in the file.)
+
+```ts
+// tools/oculus/tests/ui/tree/list/mini-dom.ts
+// Layer 4, test helper. The smallest document Svelte's client runtime and @tanstack/virtual-core
+// need to mount ui/tree/list/VirtualRows.svelte in the client project, which has no DOM: nodes, a
+// parser for the template markup the Svelte compiler emits, and a fixed layout in which an element
+// marked `data-scroll` (the scroll box) is BOX px high and every other element ROW px high, all at
+// the top of the page. A case hands `documentGlobals()` to `vi.stubGlobal` and unstubs them after.
+
+export const ROW = 20;
+export const BOX = 100;
+
+const VOID = new Set(['br', 'hr', 'img', 'input', 'meta', 'link', 'area', 'base', 'col', 'wbr']);
+
+class MiniNode {
+    static ELEMENT_NODE = 1;
+    static TEXT_NODE = 3;
+    static COMMENT_NODE = 8;
+    static DOCUMENT_FRAGMENT_NODE = 11;
+    nodeType = 0;
+    nodeName = '';
+    parentNode: MiniNode | null = null;
+    childNodes: MiniNode[] = [];
+    get ownerDocument(): unknown {
+        return doc;
+    }
+    get firstChild(): MiniNode | null {
+        return this.childNodes[0] ?? null;
+    }
+    get lastChild(): MiniNode | null {
+        return this.childNodes.at(-1) ?? null;
+    }
+    get nextSibling(): MiniNode | null {
+        const parent = this.parentNode;
+        if (parent === null) return null;
+        return parent.childNodes[parent.childNodes.indexOf(this) + 1] ?? null;
+    }
+    get previousSibling(): MiniNode | null {
+        const parent = this.parentNode;
+        if (parent === null) return null;
+        const at = parent.childNodes.indexOf(this);
+        return at > 0 ? parent.childNodes[at - 1] : null;
+    }
+    get parentElement(): MiniElement | null {
+        return this.parentNode instanceof MiniElement ? this.parentNode : null;
+    }
+    get isConnected(): boolean {
+        return (this as MiniNode) === doc.body || (this.parentNode?.isConnected ?? false);
+    }
+    get textContent(): string {
+        return this.childNodes.map((child) => child.textContent).join('');
+    }
+    set textContent(value: string) {
+        for (const child of [...this.childNodes]) child.parentNode = null;
+        this.childNodes = [];
+        if (value !== '') this.appendChild(new MiniText(value));
+    }
+    insertBefore(node: MiniNode, ref: MiniNode | null): MiniNode {
+        const moved = node.nodeType === 11 ? [...node.childNodes] : [node];
+        for (const one of moved) {
+            one.parentNode?.removeChild(one);
+            const at = ref === null ? this.childNodes.length : this.childNodes.indexOf(ref);
+            if (at < 0) throw new Error('insertBefore: the reference is not a child');
+            this.childNodes.splice(at, 0, one);
+            one.parentNode = this;
+        }
+        return node;
+    }
+    appendChild(node: MiniNode): MiniNode {
+        return this.insertBefore(node, null);
+    }
+    removeChild(node: MiniNode): MiniNode {
+        const at = this.childNodes.indexOf(node);
+        if (at < 0) throw new Error('removeChild: not a child');
+        this.childNodes.splice(at, 1);
+        node.parentNode = null;
+        return node;
+    }
+    remove(): void {
+        this.parentNode?.removeChild(this);
+    }
+    before(...nodes: (MiniNode | string)[]): void {
+        const parent = this.parentNode;
+        if (parent === null) return;
+        for (const node of nodes) parent.insertBefore(asNode(node), this);
+    }
+    after(...nodes: (MiniNode | string)[]): void {
+        const parent = this.parentNode;
+        if (parent === null) return;
+        const next = this.nextSibling;
+        for (const node of nodes) parent.insertBefore(asNode(node), next);
+    }
+    append(...nodes: (MiniNode | string)[]): void {
+        for (const node of nodes) this.appendChild(asNode(node));
+    }
+    replaceWith(...nodes: (MiniNode | string)[]): void {
+        this.before(...nodes);
+        this.remove();
+    }
+    contains(node: MiniNode | null): boolean {
+        for (let at = node; at !== null; at = at.parentNode) if (at === this) return true;
+        return false;
+    }
+    cloneNode(deep = false): MiniNode {
+        const copy = this.shallow();
+        if (deep) for (const child of this.childNodes) copy.appendChild(child.cloneNode(true));
+        return copy;
+    }
+    shallow(): MiniNode {
+        return new MiniFragment();
+    }
+    addEventListener(): void {
+        // No event reaches a node of this document.
+    }
+    removeEventListener(): void {
+        // No event reaches a node of this document.
+    }
+    dispatchEvent(): boolean {
+        return true;
+    }
+}
+
+function asNode(node: MiniNode | string): MiniNode {
+    return typeof node === 'string' ? new MiniText(node) : node;
+}
+
+class MiniCharacterData extends MiniNode {
+    data: string;
+    constructor(data: string) {
+        super();
+        this.data = data;
+    }
+    get nodeValue(): string {
+        return this.data;
+    }
+    set nodeValue(value: string) {
+        this.data = value;
+    }
+    override get textContent(): string {
+        return this.data;
+    }
+    override set textContent(value: string) {
+        this.data = value;
+    }
+}
+
+class MiniText extends MiniCharacterData {
+    override nodeType = 3;
+    override nodeName = '#text';
+    override shallow(): MiniNode {
+        return new MiniText(this.data);
+    }
+}
+
+class MiniComment extends MiniCharacterData {
+    override nodeType = 8;
+    override nodeName = '#comment';
+    override shallow(): MiniNode {
+        return new MiniComment(this.data);
+    }
+}
+
+class MiniFragment extends MiniNode {
+    override nodeType = 11;
+    override nodeName = '#document-fragment';
+}
+
+class MiniStyle {
+    props = new Map<string, string>();
+    setProperty(name: string, value: string): void {
+        this.props.set(name, value);
+    }
+    removeProperty(name: string): void {
+        this.props.delete(name);
+    }
+    getPropertyValue(name: string): string {
+        return this.props.get(name) ?? '';
+    }
+    get cssText(): string {
+        return [...this.props].map(([name, value]) => `${name}: ${value};`).join(' ');
+    }
+    set cssText(value: string) {
+        this.props.clear();
+        for (const part of value.split(';')) {
+            const [name, ...rest] = part.split(':');
+            if (name.trim() !== '') this.props.set(name.trim(), rest.join(':').trim());
+        }
+    }
+}
+
+class MiniElement extends MiniNode {
+    override nodeType = 1;
+    localName: string;
+    namespaceURI = 'http://www.w3.org/1999/xhtml';
+    attributes = new Map<string, string>();
+    style = new MiniStyle();
+    scrollTop = 0;
+    scrollLeft = 0;
+    constructor(tag: string) {
+        super();
+        this.localName = tag.toLowerCase();
+        this.nodeName = tag.toUpperCase();
+    }
+    get tagName(): string {
+        return this.nodeName;
+    }
+    getAttribute(name: string): string | null {
+        return this.attributes.get(name) ?? null;
+    }
+    setAttribute(name: string, value: string | number | boolean): void {
+        this.attributes.set(name, String(value));
+    }
+    removeAttribute(name: string): void {
+        this.attributes.delete(name);
+    }
+    hasAttribute(name: string): boolean {
+        return this.attributes.has(name);
+    }
+    get className(): string {
+        return this.getAttribute('class') ?? '';
+    }
+    set className(value: string) {
+        this.setAttribute('class', value);
+    }
+    get classList(): {
+        add: (n: string) => void;
+        remove: (n: string) => void;
+        toggle: (n: string, on?: boolean) => void;
+        contains: (n: string) => boolean;
+    } {
+        const names = (): string[] => this.className.split(/\s+/).filter((n) => n !== '');
+        const write = (list: string[]): void => this.setAttribute('class', list.join(' '));
+        return {
+            add: (n) => write([...new Set([...names(), n])]),
+            remove: (n) => write(names().filter((one) => one !== n)),
+            toggle: (n, on) =>
+                (on ?? !names().includes(n))
+                    ? write([...new Set([...names(), n])])
+                    : write(names().filter((one) => one !== n)),
+            contains: (n) => names().includes(n)
+        };
+    }
+    get dataset(): Record<string, string> {
+        return new Proxy(
+            {},
+            {
+                get: (_, key: string) => this.getAttribute(`data-${key}`) ?? undefined,
+                set: (_, key: string, value: string) => {
+                    this.setAttribute(`data-${key}`, value);
+                    return true;
+                }
+            }
+        );
+    }
+    /** The element or its nearest ancestor matching `[name]` or a tag name. */
+    closest(selector: string): MiniElement | null {
+        const attribute = /^\[([\w-]+)\]$/.exec(selector)?.at(1);
+        const matches =
+            attribute === undefined ? this.localName === selector : this.hasAttribute(attribute);
+        return matches ? this : (this.parentElement?.closest(selector) ?? null);
+    }
+    get offsetHeight(): number {
+        return this.hasAttribute('data-scroll') ? BOX : ROW;
+    }
+    readonly offsetWidth = 200;
+    getBoundingClientRect(): {
+        top: number;
+        left: number;
+        bottom: number;
+        right: number;
+        width: number;
+        height: number;
+        x: number;
+        y: number;
+    } {
+        const height = this.offsetHeight;
+        return { top: 0, left: 0, bottom: height, right: 200, width: 200, height, x: 0, y: 0 };
+    }
+    focus(): void {
+        // Focus moves nothing in this document.
+    }
+    override shallow(): MiniNode {
+        const copy = make(this.localName);
+        for (const [name, value] of this.attributes) copy.setAttribute(name, value);
+        return copy;
+    }
+}
+
+class MiniHTMLElement extends MiniElement {}
+
+class MiniTemplate extends MiniHTMLElement {
+    content: MiniNode = new MiniFragment();
+    set innerHTML(html: string) {
+        this.content = parse(html);
+    }
+    override shallow(): MiniNode {
+        const copy = new MiniTemplate('template');
+        copy.content = this.content.cloneNode(true);
+        return copy;
+    }
+}
+
+function make(tag: string): MiniElement {
+    return tag.toLowerCase() === 'template' ? new MiniTemplate(tag) : new MiniHTMLElement(tag);
+}
+
+function decode(text: string): string {
+    return text
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&');
+}
+
+/** Parse the markup the Svelte compiler emits for a template: elements, text and comments. */
+function parse(html: string): MiniFragment {
+    const root = new MiniFragment();
+    const open: MiniNode[] = [root];
+    let at = 0;
+    while (at < html.length) {
+        const top = open[open.length - 1];
+        if (html.startsWith('<!--', at)) {
+            const end = html.indexOf('-->', at + 4);
+            top.appendChild(new MiniComment(html.slice(at + 4, end)));
+            at = end + 3;
+        } else if (html.startsWith('</', at)) {
+            at = html.indexOf('>', at) + 1;
+            open.pop();
+        } else if (html[at] === '<') {
+            const tag = /^<([a-zA-Z][\w-]*)/.exec(html.slice(at))?.at(1);
+            if (tag === undefined) throw new Error(`no tag at ${String(at)} of ${html}`);
+            at += tag.length + 1;
+            const element = make(tag);
+            for (;;) {
+                const rest = html.slice(at);
+                const close = /^\s*(\/?)>/.exec(rest);
+                if (close !== null) {
+                    at += close[0].length;
+                    top.appendChild(element);
+                    if (close[1] !== '/' && !VOID.has(tag.toLowerCase())) open.push(element);
+                    break;
+                }
+                const attribute = /^\s*([^\s=/>]+)(?:="([^"]*)")?/.exec(rest);
+                if (attribute === null) throw new Error(`no attribute at ${String(at)} of ${html}`);
+                element.setAttribute(attribute[1], decode(attribute.at(2) ?? ''));
+                at += attribute[0].length;
+            }
+        } else {
+            const end = html.indexOf('<', at);
+            const text = html.slice(at, end < 0 ? html.length : end);
+            top.appendChild(new MiniText(decode(text)));
+            at += text.length;
+        }
+    }
+    return root;
+}
+
+/** An observer that never reports, since nothing in this document changes size. */
+class MiniResizeObserver {
+    observe(): void {
+        // Nothing is resized.
+    }
+    unobserve(): void {
+        // Nothing is resized.
+    }
+    disconnect(): void {
+        // Nothing is resized.
+    }
+}
+
+const doc = {
+    body: new MiniHTMLElement('body'),
+    activeElement: null as MiniElement | null,
+    defaultView: undefined as unknown,
+    createElement: (tag: string) => make(tag),
+    createElementNS: (_: string, tag: string) => make(tag),
+    createTextNode: (value: string) => new MiniText(value),
+    createComment: (value: string) => new MiniComment(value),
+    createDocumentFragment: () => new MiniFragment(),
+    importNode: (node: MiniNode, deep?: boolean) => node.cloneNode(deep),
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined
+};
+
+const win = {
+    document: doc,
+    ResizeObserver: MiniResizeObserver,
+    onscrollend: null,
+    setTimeout: (run: () => void, ms?: number) => setTimeout(run, ms),
+    clearTimeout: (id: ReturnType<typeof setTimeout>) => clearTimeout(id),
+    requestAnimationFrame: (run: () => void) => setTimeout(run, 0),
+    cancelAnimationFrame: (id: ReturnType<typeof setTimeout>) => clearTimeout(id),
+    getComputedStyle: () => ({ direction: 'ltr', getPropertyValue: () => '' }),
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined
+};
+doc.defaultView = win;
+
+/** The globals Svelte and the virtualizer read, and the body a case mounts into. */
+export function documentGlobals(): { globals: Record<string, unknown>; body: HTMLElement } {
+    doc.body.textContent = '';
+    return {
+        body: doc.body as unknown as HTMLElement,
+        globals: {
+            window: win,
+            document: doc,
+            navigator: { userAgent: 'mini-dom' },
+            Node: MiniNode,
+            Element: MiniElement,
+            HTMLElement: MiniHTMLElement,
+            HTMLTemplateElement: MiniTemplate,
+            Text: MiniText,
+            Comment: MiniComment,
+            DocumentFragment: MiniFragment,
+            ResizeObserver: MiniResizeObserver,
+            requestAnimationFrame: win.requestAnimationFrame,
+            cancelAnimationFrame: win.cancelAnimationFrame,
+            getComputedStyle: win.getComputedStyle
+        }
+    };
+}
+```
+
+Runs after the fix:
+
+```
+$ npx vitest run tests/ui/tree/list/virtual-rows.client.test.ts
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Duration  977ms (transform 381ms, setup 0ms, import 860ms, tests 11ms, environment 13ms)
+
+$ npx vitest run tests/ui/tree/list/shrink.client.test.ts --silent=false --reporter=verbose      (the red command)
+DIAG-7c41 derived/direct past-end key reads: []
+DIAG-7c41 derived/direct past-end body reads: []
+DIAG-7c41 derived/direct thrown: none
+DIAG-7c41 effect/direct past-end key reads: []
+DIAG-7c41 effect/direct past-end body reads: []
+DIAG-7c41 effect/direct thrown: none
+DIAG-7c41 effect/guard past-end key reads: []
+DIAG-7c41 effect/guard past-end body reads: []
+DIAG-7c41 effect/guard thrown: none
+ ✓ |client| ... shrinks from 20 to 3, rows written 'derived', read 'direct' 11ms
+ ✓ |client| ... shrinks from 20 to 3, rows written 'effect', read 'direct' 2ms
+ ✓ |client| ... shrinks from 20 to 3, rows written 'effect', read 'guard' 2ms
+      Tests  3 passed (3)
+
+The original, unshrunk case is the red command as first built, with its three rows above (20 to 3, the guard row included), plus the cut variants:
+$ DIAG_TO=9 npx vitest run tests/ui/tree/list/shrink.client.test.ts --reporter=verbose
+ ✓ ... shrinks from 20 to 9, rows written 'derived', read 'direct' 11ms
+ ✓ ... shrinks from 20 to 9, rows written 'effect', read 'direct' 2ms
+ ✓ ... shrinks from 20 to 9, rows written 'effect', read 'guard' 2ms
+      Tests  3 passed (3)
+$ DIAG_FROM=11 npx vitest run tests/ui/tree/list/shrink.client.test.ts --reporter=verbose
+ ✓ ... shrinks from 11 to 3, rows written 'derived', read 'direct' 11ms
+ ✓ ... shrinks from 11 to 3, rows written 'effect', read 'direct' 2ms
+ ✓ ... shrinks from 11 to 3, rows written 'effect', read 'guard' 2ms
+      Tests  3 passed (3)
+```
+
+Checks run on the fixed scratch tree:
+- `npx prettier --check` over the four fixed files and the three test files: "All matched files use Prettier code style!"
+- `npx eslint` over the same files: exit 0. `ShrinkingRows.svelte` is outside the eslint configuration, as the other test-side components are.
+- `npx svelte-check --tsconfig ./tsconfig.json --output machine`: `COMPLETED 3408 FILES 1 ERRORS`. The one error was in the diagnosis-only `shrink.client.test.ts`, deleted at the cleanup. No error was in `src/` or in the three test files.
+- `npx vitest run tests/checks/source/comment-width.test.ts`: the only line reported was `tests/ui/tree/list/Shrinking.svelte:14`, a diagnosis-only file deleted at the cleanup.
+- `grep -rl "VirtualRows|list/virtual|problem-rows|entryAt" tests` found no existing test of these files.
+
+What these runs do not cover, for the round and the look:
+- Scrolling, measuring, a text-scale change, `reveal` with focus, the kept rows of TreeView and the Graph's opened commit. In the old code, the Graph's opened commit led `configure` to run again (the loop `virtual.ts` `rowWindow` describes). Under the fix, `drawn` keeps its value when the window is unchanged.
+- The mini document reports no sizes after mount and runs no ResizeObserver.
+- No page was run. The look at landing settles the Explorer tree, Changes, Graph with a commit opened, the Debug Console and Problems: scroll each, close a file whose language-server rows fill the Problems list, and check that no row goes missing or stays stale.
+
+The round has to settle three points:
+- The fix writes `src/lib/ui/tree/list/VirtualRows.svelte` and `src/lib/ui/tree/list/virtual.ts`. Neither is in the brief's "Paths this step writes" (`agents/briefs/D33.md:149-211`; `awk 'NR>=149 && NR<=230' agents/briefs/D33.md | grep -c "ui/tree"` printed 0). The test adds `tests/ui/tree/list/`, which does not exist on main (`ls tools/oculus/tests/ui/tree` gives "No such file or directory").
+- The derived calls `virtualizer.setOptions` while it is evaluated. That changes the virtualizer's options and writes no Svelte state. `getVirtualItems` only updates `maybeNotify`'s deps and calls no `onChange` (`@tanstack/virtual-core/dist/esm/index.js:808-817`), so no state is written inside the derived. The red runs and the checks above raised no `state_unsafe_mutation`.
+- The tag `DIAG-7c41` was not unique to this diagnosis. The committed record `agents/reviews/O30-diagnosis.md` already uses it (lines 397, 401 and 509), so the cleanup grep below lists that file. No line this diagnosis added is left.
+
+No test reaches it: not applicable. The test above reaches the defect as it occurs. It cannot join the suite without a ruling, for two reasons:
+- spec.md's rule on tests says: "A test exists only as the test of one entry of `agents/guarded.md`" and "A step that needs a new entry stops and asks Axel for it". `agents/guarded.md` has no entry covering VirtualRows (`grep -n -i "virtual|VirtualRows|tree/list|Problems|problem-rows" agents/guarded.md` printed nothing).
+- spec.md also says "An effect's timing ... is tested in a file named `*.client.test.ts`, which runs in Svelte's client runtime with no DOM ... every other behaviour that needs a DOM stays with the look". The test needs the 420-line test-only document helper `mini-dom.ts` to mount the component.
+
+This is for the session to raise as an open item. The options are:
+- (a) Add a guarded.md entry for VirtualRows' window with these three files. A list that throws on a shrink stops updating that view, which is a failure that costs something.
+- (b) Write no test, and rest the fix on this record's red command and the look. Under the rule on the lazy option, (b) is the lazy one.
+
+No test is written: not applicable.
+
+## Cleanup
+
+```
+$ rm -f tests/ui/tree/list/shrink.client.test.ts tests/ui/tree/list/Shrinking.svelte tests/ui/tree/list/mini-dom.diag.ts
+$ grep -rln "DIAG-7c41" $D/tree --exclude-dir=node_modules --exclude=local.yml
+/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.LniAti/tree/tools/oculus/.scratch/migration/agents/reviews/O30-diagnosis.md
+$ git log --oneline -1 -- tools/oculus/.scratch/migration/agents/reviews/O30-diagnosis.md
+ef4fb22b3 Point the plan files at the rewritten commit hashes
+$ git status --short -- tools/oculus/.scratch/migration/agents/reviews/O30-diagnosis.md
+(nothing: the file is the committed base text, not a line this diagnosis added)
+$ grep -rn "DIAG-7c41" $D/tree/tools/oculus/src $D/tree/tools/oculus/tests; echo "src/tests grep exit $?"
+src/tests grep exit 1
+$ unlink $D/tree/tools/oculus/node_modules
+$ (from /Users/axelfaes/workspace/research-hub) git worktree remove --force "$D/tree"; echo "remove exit $?"
+remove exit 0
+$ rm -rf "$D"; ls -d "$D"
+ls: /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.LniAti: No such file or directory
+$ git worktree list | grep -c diagnose
+0
+$ (from the step's worktree) git diff --binary 1439a44ec | shasum; git status --short | wc -l
+75b83a8c5f01cbd8e0ea4c6226e43d386ef95487  -
+      94
+```
+
+`D` is `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/diagnose.LniAti`.
+- The scratch copy, its saved files and the probe diffs are gone.
+- No credential or `.env` file was copied.
+- The D33 worktree's `node_modules` is intact: 385 entries listed after the unlink.
+- No command is left running: every command ran in the foreground, and no background command, watch or tmux session was started.
+- The red command is carried by the round as its check. Its source and the hand-over test are quoted above, because the scratch copy is removed.

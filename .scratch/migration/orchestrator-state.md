@@ -49,11 +49,12 @@ dispatch:   # steps in flight, up to six (Z632)
   launched: 2026-10-08
   report: agents/reviews/D33-report.md
   builder_usage: first run, told of Z720 near its end (247,889 tokens, 760 tool uses, 226.6 min)
+  diagnosis: agents/reviews/D33-diagnosis.md, Proof 1 (aecfa0b2710e743e8, claude-opus-5-5, 288,280 tokens, 92 tool uses, 21.3 min)
   reviewer_report: agents/reviews/D33-refuter.md (a4557dd5285730c0d, claude-opus-5-5, 369,712 tokens, 90 tool uses, 20.7 min)
   brief_check: agents/reviews/D33-brief-check.md (a0a67ffbec5451994, claude-opus-5-5, 335,815 tokens, 131 tool uses, 19.6 min)
   shared_paths: package.json and package-lock.json (M8 and D33 add different dependencies; the one line both change, picomatch's devOptional, changes identically; the lock is regenerated at the second landing), DESIGN.md, docs/files-and-search.md, docs/views.md, config/text/statusbar.yml and views/system/workbench/editors/Editor.svelte on different lines, docs/diagrams regenerated: a simple merge
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-10-08, agents/briefs/D33-round1.md)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -146,6 +147,8 @@ dispatch:   # steps in flight, up to six (Z632)
 
 ## The pause
 
+Lifted 2026-10-08 by Axel: "Restarted, you may continue orchestration". The order below runs: M8's review over round 1 dispatched (a30f498743d2a8fdb, claude-opus-5-5), D33's Proof 1 diagnosed and its round 1 sent, then the landings and the queue.
+
 In force from 2026-10-08, Axel: "We're at 98% usage, so once the current 2 agents are done, please pause so I can switch accounts". The two agents running then (M8's builder acd90a7603ba715c3 on repair round 1, D33's reviewer a4557dd5285730c0d) run to their end; their reports are saved and booked, and a resume-point commit is made. Nothing else is dispatched, refuted, landed or prepared until he says go. On his go: `/refute` M8 over round 1, D33's repair round from its refuter report (with the orchestrator's three findings: the Problems toggle closing the tab and losing its state, `docs/views.md` and `Problems.svelte:2` on the view's place in the group, `tabProblem` reading the store through the client), then `/land` M8, then D33.
 
 Lifted 2026-10-07 by Axel: "Once you are done, please continue with the full orchestration / automode, fill all open slots as far as is possible, keep queue.md up to sate". The loop runs in automode with six slots, each choice closed with its recommendation and booked as "(the orchestrator, automode)".
@@ -165,6 +168,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Open item 9 (2026-10-08), D33's test of the list that shrinks: the diagnosis of D33's Proof 1 (`agents/reviews/D33-diagnosis.md`, second heading) found the cause in `ui/tree/list/VirtualRows.svelte` (the window a `$state` written by a `$effect.pre`, so a list that shrinks inside an effect is read past its end: `TypeError` in Changes, Graph, Console and the Explorer tree, `each_key_duplicate` under the Problems guard). The fix goes into D33's round 1. Its test (`tests/ui/tree/list/virtual-rows.client.test.ts`, with a 420-line test-only DOM helper `mini-dom.ts` that mounts the component) has no guarded entry, and spec.md keeps DOM behaviour with the look. (a) a guarded entry G65 for VirtualRows' window, the three files landing with D33; (b) no test, the fix resting on the diagnosis's red command and the look, the lazy option. Recommended: (a), since a list that throws stops that view updating.
 
 
 
