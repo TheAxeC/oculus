@@ -8,9 +8,9 @@
 # The rail: one button per page, drawn in this order, the digits 1 to 9 showing the first nine. `label` is the button's words, `glyph` a name in config/catalogs/glyphs.yml, and `page` a key of `arrangements:` below, which is what the page is first made from and what the saved page stays tied to, so a button renamed keeps its page. A page key named twice, or naming no arrangement, draws no second button and is a finding. The Settings view edits this list.
 rail:
   - { label: "Focus", glyph: compass, page: focus }
-  - { label: "Sessions", glyph: live, page: sessions }
   - { label: "Projects", glyph: paper, page: projects }
   - { label: "Incoming", glyph: email, page: incoming }
+  - { label: "Sessions", glyph: live, page: sessions }
   - { label: "Explorer", glyph: folder, page: explorer }
   - { label: "Academic Life", glyph: scout, page: academic }
   - { label: "Pillars", glyph: pillar, page: pillars }
