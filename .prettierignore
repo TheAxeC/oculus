@@ -18,7 +18,7 @@ config/appearance.yml
 config/behavior.yml
 config/catalogs/glyphs.yml
 config/layout.yml
-config/catalogs/manifest-schema.yml
+config/schemas/
 config/sources.yml
 config/catalogs/vocab.yml
 

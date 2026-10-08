@@ -14,7 +14,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import type { Dirent } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { RENAMED_FIELDS } from '../../src/lib/data/snapshot/validate.ts';
+import { RENAMED_FIELDS } from '../../src/lib/data/helpers/hub-names.ts';
 import { renameKey } from '../../src/lib/server/edit/yaml/yaml-edit.ts';
 
 /** The manifest filename every project folder holds. */

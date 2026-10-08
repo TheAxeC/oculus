@@ -29,6 +29,7 @@ import {
     latexEditingFindings,
     nestingFindings,
     optionFindings,
+    schemaFindings,
     textCatalog,
     themeFindings
 } from '../../../../data/sources/config.ts';
@@ -110,6 +111,7 @@ const FINDERS: ((config: Merged, engine: string, hub: string) => Finding[])[] = 
     (config, engine) => latexEditingFindings(engine, config),
     (config, engine) => nestingFindings(engine, config),
     (config, engine) => optionFindings(engine, config),
+    (config, engine) => schemaFindings(engine, config),
     (config, engine) => themeFindings(engine, config),
     (config, engine, hub) => docFindings(config, hub, layoutFile(engine)),
     (config, engine) => railFindings(config, layoutFile(engine), textCatalog(config))

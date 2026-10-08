@@ -1,10 +1,14 @@
-// Layer 1, data. Pure calendar-date formatting shared by client state and server writes: a moment's
-// local calendar day, and how long ago a stamp was as a count of one unit.
+// Layer 1, data. Pure calendar-date formatting shared by client state and server writes: the shape
+// of a calendar day as the hub's files write it, a moment's local calendar day, and how long ago a
+// stamp was as a count of one unit.
 // Local getters keep "today" on the machine's calendar around midnight in non-UTC timezones.
 //
 // The session list and the Repositories blame both say how long ago something happened, in words
 // of their own, from the one count here, so the two never disagree about what "now" or "2 weeks"
 // is: each asks for the largest unit its words go up to and words the count itself.
+
+/** The one shape a `date` field is written in: four digits, two and two, joined by dashes. */
+export const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The local calendar date at one moment, as YYYY-MM-DD, from a Unix timestamp or a Date. */
 export function localDate(now: number | Date): string {

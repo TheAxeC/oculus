@@ -3,9 +3,9 @@
 // finding and asking of interpreters is interpreter.ts's; this joins it to the choices file
 // (../choices.ts) and the approvals file (server/machine/approvals/approvals.ts).
 
-import { approveInterpreter, isInterpreterApproved } from '../../approvals/approvals.ts';
-import { chosenFor, notFound } from '../choices.ts';
-import type { Adapter, RootEnv, Setup } from '../servers.ts';
+import { approveInterpreter, isInterpreterApproved } from '../../../approvals/approvals.ts';
+import { chosenFor, notFound } from '../../choices.ts';
+import type { Adapter, RootEnv, Setup } from '../../servers.ts';
 import { interpretersFor, type Interpreters } from './interpreter.ts';
 
 /** The interpreters of a root, with the reader's choice for it in force. */

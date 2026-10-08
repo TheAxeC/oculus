@@ -89,10 +89,10 @@
     const canReset = $derived(entries.includes('reset'));
     const canCopy = $derived(entries.includes('copy'));
 
-    /** A family's fields, each with its description. */
+    /** A family's fields, each with its help line. */
     const fields = $derived(
         row.kind === 'config'
-            ? Object.entries(row.fields).map(([name, spec]) => [name, spec.description] as const)
+            ? Object.entries(row.fields).map(([name, spec]) => [name, spec.help] as const)
             : []
     );
 
@@ -173,7 +173,7 @@
         {/if}
     </div>
     {#if control !== 'toggle'}
-        <p class="description"><CodeText text={row.description} /></p>
+        <p class="description"><CodeText text={row.help} /></p>
     {/if}
     {#if row.kind === 'local'}
         <p class="path"><CodeText text={`\`${row.path}\``} /></p>

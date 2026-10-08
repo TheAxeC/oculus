@@ -1,0 +1,15 @@
+# ===========================================================================
+# side-project-schema.yml
+# oculus's own configuration - the keys of a side project's manifest, as the hub's `schema:` blocks
+# write them. It governs `side-projects/*/project.yml` in the hub and `.oculus/project.yml` in every
+# served root, the two files the Personal board reads. oculus turns it into a JSON Schema, so the YAML
+# editor completes the keys, shows each help line and marks a key or a value the reader refuses.
+# Merged with the other config/*.yml by loadConfig(); `side_project_schema` is its top-level key.
+# ===========================================================================
+
+side_project_schema:
+  - { field: title, type: text, required: true, help: "The project's name as the Personal board draws it." }
+  - { field: status, type: select, from: vocab.side_project_status, required: true, help: "Where the project stands, one of the side_project_status words of vocab.yml." }
+  - { field: eli5, type: textarea, help: "What the project is, in two plain sentences." }
+  - { field: next, type: textarea, help: "The next thing to do on the project." }
+  - { field: links, type: tags, help: "Web addresses or paths that belong to the project, one per entry." }

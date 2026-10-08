@@ -13,7 +13,7 @@
 
 <script lang="ts">
     // Layer 3, view. The project.yml edit form (DESIGN.md, "Configuration": the edit form is data
-    // in config/catalogs/manifest-schema.yml; "Decisions taken": "Unsaved form input is instance
+    // in config/schemas/manifest-schema.yml; "Decisions taken": "Unsaved form input is instance
     // state"): the sections of the schema in order, one widget per field, and a Save that posts
     // only what was changed. This file names no field, no section and no list of choices.
     //
@@ -201,14 +201,14 @@
             value={asText(valueOf(field.field))}
             label={field.label}
             empty={t('editor.empty_choice')}
-            choices={fieldChoices(field)}
+            choices={fieldChoices(field, project)}
             onchange={(value) => edit(field.field, value)}
         />
     {:else if field.type === 'chips' || field.type === 'tags'}
         <MultiSelect
             values={asList(valueOf(field.field))}
             label={field.label}
-            choices={fieldChoices(field)}
+            choices={fieldChoices(field, project)}
             onchange={(list) => edit(field.field, list)}
             search={t('editor.search')}
             remove={t('editor.remove')}

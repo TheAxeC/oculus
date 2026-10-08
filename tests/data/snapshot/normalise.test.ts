@@ -198,7 +198,7 @@ function portfolio(): RawPortfolio {
                     title: 'VENUES',
                     schema: [
                         { field: 'name', type: 'text' },
-                        { field: 'category', type: 'select', options_from: 'venue_categories' }
+                        { field: 'category', type: 'select', from: 'vocab.venue_categories' }
                     ]
                 }
             },

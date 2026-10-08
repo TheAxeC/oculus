@@ -41,7 +41,7 @@ function answers(row: Row, query: Query, heading: string): boolean {
     if (query.modified && !row.modified) return false;
     const path = row.path.toLowerCase();
     if (!query.ids.every((text) => path.includes(text))) return false;
-    const fields = [row.title, row.path, row.section, row.description, heading].map((field) =>
+    const fields = [row.title, row.path, row.section, row.help, heading].map((field) =>
         field.toLowerCase()
     );
     return query.words.every((word) => fields.some((field) => field.includes(word)));

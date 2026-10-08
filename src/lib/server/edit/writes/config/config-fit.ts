@@ -15,13 +15,16 @@
 // record that equals none of them each field is checked in full, except a field whose value the
 // file held at that same field (of the record at the same key in a map, of any record in a list)
 // and whose check reads no other field of its record. A field that does read another
-// (`allow_missing` naming a toggle, `values_by`) is always checked in full in a changed record.
+// (`allow_missing` naming a toggle, `from` picking by a field) is always checked in full in a
+// changed record.
 
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { byKey, isMap } from '../../../../data/helpers/guards.ts';
 import {
+    listedSources,
+    pickedSources,
     readsOther,
     type CatalogEntry,
     type FieldSpec
@@ -68,9 +71,9 @@ function stringList(value: unknown): value is string[] {
 
 /** The sentence for a word that is not in a field's list. */
 function notListed(spec: CatalogEntry, text: Record<string, string>): string {
-    const named = [...(spec.values_from ?? []), ...Object.values(spec.values_by?.sources ?? {})];
+    const named = [...listedSources(spec), ...Object.values(pickedSources(spec)?.sources ?? {})];
     return named.length === 0
-        ? words(text, 'server.config_key.not_choice', (spec.values ?? []).join(', '))
+        ? words(text, 'server.config_key.not_choice', (spec.options ?? []).join(', '))
         : words(text, 'server.config_key.not_in_source', named.join(', '));
 }
 
@@ -161,15 +164,16 @@ function listsFor(spec: CatalogEntry, ctx: Context, sources: Sources): RuleLists
     const add = (listed: string[] | null): void => {
         sourced = listed === null || sourced === null ? null : [...sourced, ...listed];
     };
-    for (const source of spec.values_from ?? []) add(sources.items(source));
-    if (spec.values_by !== undefined) {
-        const word = ctx.record?.[spec.values_by.field];
-        const source = typeof word === 'string' ? byKey(spec.values_by.sources, word) : undefined;
+    for (const source of listedSources(spec)) add(sources.items(source));
+    const picked = pickedSources(spec);
+    if (picked !== undefined) {
+        const word = ctx.record?.[picked.field];
+        const source = typeof word === 'string' ? byKey(picked.sources, word) : undefined;
         if (source === undefined) {
             return words(
                 ctx.fit.text,
                 'server.config_key.no_list_for',
-                spec.values_by.field,
+                picked.field,
                 typeof word === 'string' ? word : ''
             );
         }

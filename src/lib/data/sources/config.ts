@@ -96,4 +96,5 @@ export { languageFindings } from './config/languages.ts';
 export { latexEditingFindings } from './config/catalog/latex-editing.ts';
 export { nestingFindings } from './config/catalog/nesting.ts';
 export { optionFindings } from './config/catalog/option-findings.ts';
+export { schemaFindings } from './config/catalog/schema-findings.ts';
 export { themeFindings } from './config/themes.ts';

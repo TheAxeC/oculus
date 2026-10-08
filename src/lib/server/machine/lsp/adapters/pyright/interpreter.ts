@@ -23,7 +23,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import type { LspInterpreter } from '../../../../data/model/index.ts';
+import type { LspInterpreter } from '../../../../../data/model/index.ts';
 
 /** The milliseconds an interpreter may take to answer. */
 const PROBE_MS = 5000;

@@ -16,7 +16,7 @@ import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect } from 'vitest';
-import { buildPortfolio, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { tex } from '../../../src/lib/views/academic/present/markup.ts';
 import { ENTITY_KINDS } from '../../../src/lib/data/snapshot/normalise.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -154,7 +154,7 @@ function derivedCounts(): Record<string, number> {
 }
 
 describe.skipIf(!present)('the real hub', () => {
-    const snapshot = present ? buildPortfolio(hub, config) : null;
+    const snapshot = present ? buildPortfolioWithSchemas(hub, config).snapshot : null;
     const counts = present ? derivedCounts() : {};
 
     it('validates with no findings', () => {

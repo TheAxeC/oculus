@@ -9,7 +9,7 @@
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { buildPortfolio, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { readPersonal } from '../../../src/lib/data/sources/manifests.ts';
 import type { PortfolioConfig, ScanRule, Snapshot } from '../../../src/lib/data/model/index.ts';
@@ -77,7 +77,7 @@ describe('the fields of a manifest', () => {
         messages: string[];
     } {
         const hub = hubWith({ 'side-projects/slug/project.yml': body });
-        const snapshot = buildPortfolio(hub, configOver());
+        const { snapshot } = buildPortfolioWithSchemas(hub, configOver());
         return {
             project: snapshot.entities.personal['side:slug'],
             messages: snapshot.findings

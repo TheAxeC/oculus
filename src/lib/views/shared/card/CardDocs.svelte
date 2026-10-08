@@ -33,6 +33,7 @@
         opensInProgram,
         patchedFilesView
     } from '$lib/state/sources/fs';
+    import { HUB_ROOT } from '$lib/state/sources/fs';
     import { matchingFiles } from '$lib/state/sources/files.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { nameOf, openDocument, subOf, urlOf } from './card';
@@ -79,7 +80,7 @@
     /** Open a readable row from the file listing. */
     function openReadable(path: string): void {
         openPage(client, {
-            root: 'hub',
+            root: HUB_ROOT,
             path: `${held?.folder ?? ''}/${path}`,
             label: nameOf(path)
         });
@@ -146,7 +147,7 @@
                         />
                     {:else if opensInProgram(row.path, programApps())}
                         <ProgramButton
-                            root="hub"
+                            root={HUB_ROOT}
                             path={`${held.folder}/${row.path}`}
                             label={nameOf(row.path)}
                             {onsaid}

@@ -1,4 +1,4 @@
-# Oculus text owned by the data layer's findings: one sentence per problem the readers and the validation rules report.
+# Oculus text owned by the data layer's findings: one sentence per problem the readers, the validation rules and the schema check report.
 text:
     findings:
         file:
@@ -76,6 +76,11 @@ text:
             defined_twice: key {0} is already defined in {1}; {2} wins
             text_not_a_map: 'text catalog: {0} is not a map'
             glyph_no_icon: glyph {0} has no icon
+            shape_unknown: 'key {0} is not a key this file takes'
+            shape_type: '{0} must be {1}'
+            shape_value: '{0} must be one of {1}'
+            shape_form: '{0} is not written in the form this key takes'
+            shape_other: '{0} is not a value this key takes'
             glyph_not_ascii: glyph {0} has no stand-in of one to three printable ASCII characters
             icon_not_glyph: '{0} is not a name in config/catalogs/glyphs.yml'
             icon_not_shipped: the icon package ships no {0}.svg
@@ -110,8 +115,8 @@ text:
             control: control {0} is not one of the controls; the option is drawn as a text box
             control_missing: the option names no control; it is drawn as a text box
             source: the list {0} is not one the Settings view can draw; the option is drawn as a text box
-            no_values: a choice or multi with no values, values_from or values_by; the option is drawn as a text box
-            no_description: the entry or field has no description; a field is drawn as a text box
+            no_values: a choice or multi with no options or from; the option is drawn as a text box
+            no_help: the entry or field has no help line; a field is drawn as a text box
             no_fields: a records field names no fields; it is drawn as a text box
             range: min is above max; the option is drawn as a text box
             slots: slots is not a list of words; the option is drawn as a text box
@@ -152,50 +157,47 @@ text:
             is_list: a list
             is_map: a map
             is_other: a {0}
+        schema:
+            not_declared: 'key {0} is not declared by the schema of this file'
+            required: 'key {0} is required'
+            required_when: 'key {0} is required while {1}'
+            only_when: 'key {0} is allowed only while {1}'
+            no_key: '{0} is {1}, which is not a key of {2}'
+            not_allowed: '{0} is {1}, which is not one of {2}'
+            not_a_date: '{0} is {1}, which is not a day written YYYY-MM-DD'
+            not_form: '{0} is {1}, which does not match the form {2}'
+            below_min: '{0} is {1}, which is below {2}'
+            above_max: '{0} is {1}, which is above {2}'
+            type: '{0} must be {1}, not {2}'
+            invalid: '{0} does not fit the schema of this file'
+            not_compiled: 'the schema {0} cannot be compiled, so this file is not checked against it'
+            duplicate_key: 'two entries share the key {0}'
+            bad_from: 'the field {0} takes its keys from {1}, which is no registry, projects or vocab list'
+            bad_when: 'the field {0} is conditioned on {1}, which is no field of its record'
+            is_list: a list
+            is_map: a map
+            is_text: a text
+            is_number: a number
+            is_flag: true or false
+            or: or
+            snooze_help: A day, or true, until which the entry is kept off the ticker; oculus writes it when an entry is snoozed.
+            subtasks_help: A checklist of lines, each with what to do, a deadline, whether it is done and a snooze day; oculus writes it from the card.
         validate:
-            key_not_in_schema: key {0} is not in the manifest schema
             key_renamed: 'key {0} is now {1}: write the tags under {1}:'
-            type_not_in_vocab: type {0} is not one of the type vocabulary
-            focus_not_a_lane: focus {0} is not a lane of focus_lanes
-            must_be_list: '{0} must be a list, not {1}'
-            must_be_string: '{0} must be a string, not {1}'
-            must_be_list_or_null: '{0} must be a list or null, not {1}'
-            must_be_string_or_null: '{0} must be a string or null, not {1}'
-            no_venue: 'venue_id names no venue: {0}'
-            no_domain: 'domain names no domain: {0}'
-            no_funding: 'funding names no funding scheme: {0}'
-            no_dataset: 'datasets names no dataset: {0}'
-            no_pillar: 'pillar names no pillar: {0}'
-            no_related: 'related names no project: {0}'
-            no_resource: 'compute names no resource: {0}'
             bad_cluster: 'paths.cluster must be ~/ or / followed by folder names of letters, digits, . _ and -, not {0}'
             related_itself: 'related names the project itself: {0}'
             folder_shared: '{0} projects share the folder name {1}, so their ids collide'
-            no_collaborator: 'collaborators names no person: {0}'
             waiting_on_itself: 'waiting-on names the project itself: {0}'
             no_waiting_on: 'waiting-on names no person or project: {0}'
-            chips_not_a_list: 'status.chips must be a list, not {0}'
-            chip_not_a_string: chip {0} is not a string
-            chip_not_in_vocab: chip {0} is not in the chip vocabulary
             status_not_in_vocab: status {0} is not one of the status vocabulary
             schema_malformed: schema {0} is not a list of maps naming a field and a type
             identity_shared: two entries share the {0} {1}
             affiliation_retired: 'affiliation is read as a one-entry affiliations list; write affiliations'
-            no_affiliation: 'affiliations names no organisation: {0}'
             self_not_one: '{0} people entries carry self: true, and exactly one may'
-            kind_not_organisation: kind {0} is not one of the organisation kinds
-            kind_not_resource: kind {0} is not one of cluster, machine and storage
-            resource_duplicate: 'key {0} is held by an earlier entry, so this one is left out'
             resource_reserved: 'key {0} is reserved, so the entry is left out'
-            joint_work_no_person: entry has no {0}
-            joint_work_unknown_person: '{0} names no person: {1}'
-            no_funder: 'funder names no organisation: {0}'
             funding_no_identity: funding entry has neither a key nor a title
             funding_no_key: funding entry {0} is {1} and has no key
             funding_no_statement: funding entry {0} is {1} and has no statement
-            host_status: host status "{0}" is not one of the host status vocabulary
-            venue_theme: theme "{0}" is not one of the venue themes
-            dataset_theme: theme "{0}" is not one of the dataset themes
             theme_labels_retired: 'theme_labels is not read; the labels are data_themes in config/catalogs/vocab.yml'
         apps:
             name_empty: the name is missing or empty, so the folder is not an app

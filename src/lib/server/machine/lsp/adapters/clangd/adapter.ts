@@ -3,8 +3,8 @@
 // finding and linking of databases is databases.ts's, the reading of `.oculus/cpp.yml` is
 // cpp-file.ts's; this joins them to the choices file (../choices.ts).
 
-import { NO_APPROVAL, chosenFor, notFound } from '../choices.ts';
-import type { Adapter, Setup } from '../servers.ts';
+import { NO_APPROVAL, chosenFor, notFound } from '../../choices.ts';
+import type { Adapter, Setup } from '../../servers.ts';
 import { databasePlan, hasDatabase, linkDatabase } from './databases.ts';
 
 export const clangdAdapter: Adapter = {

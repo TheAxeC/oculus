@@ -19,7 +19,15 @@ import type { LspRefusal, LspToPage, LspToServer } from '../../../data/model/ind
 import { logChanges, type ChangeLog } from '../../core/changes.ts';
 import { readJsonChecked, writeTextAtomic } from '../../core/json.ts';
 import type { Held } from './held/held.ts';
-import type { Adapter, Applying, Choice, Prepared, RootEnv, ServerEntry } from './servers.ts';
+import type {
+    Adapter,
+    Applying,
+    Choice,
+    Prepared,
+    RootEnv,
+    ServerEntry,
+    Setup
+} from './servers.ts';
 
 const choiceShape = z.object({
     interpreter: z.string().optional(),
@@ -114,7 +122,11 @@ export async function sendChoices(
 }
 
 /** What a running server is given changed: it is told its settings changed and asks again. */
-async function reconfigure(adapter: Adapter, env: RootEnv, held: Held | undefined): Promise<void> {
+export async function reconfigure(
+    adapter: Adapter,
+    env: RootEnv,
+    held: Held | undefined
+): Promise<void> {
     const setup = held?.setup;
     if (held === undefined || !setup) return;
     held.update(await adapter.settings(env, setup));
@@ -212,6 +224,40 @@ export function notFound(entry: ServerEntry, where: string): Prepared {
         note: `${entry.program} is not installed${where}`
     };
 }
+
+/**
+ * The answer of `prepare` for a server that needs nothing of the root beyond its folder: the
+ * setup holds the root and whatever `extra` adds, and the program is looked for under the oculus
+ * folder.
+ */
+export function prepareBare(
+    entry: ServerEntry,
+    env: RootEnv,
+    extra: Partial<Setup> = {}
+): Prepared {
+    const setup: Setup = {
+        root: env.root,
+        interpreter: null,
+        interpreterPrefixes: [],
+        databaseFolder: null,
+        fallbackFlags: [],
+        ...extra
+    };
+    const launch = entry.launch(setup);
+    if (launch === null) return notFound(entry, ' under the oculus folder');
+    return { ok: true, setup, launch };
+}
+
+/** The adapter parts of a server with nothing to choose. */
+export const NO_CHOICE: Pick<Adapter, 'choices' | 'choose'> = {
+    choices() {
+        return {};
+    },
+
+    choose() {
+        return { choice: {}, apply: 'configuration' };
+    }
+};
 
 /**
  * The adapter parts of a server with no approval of its own, whose setup does not change after it

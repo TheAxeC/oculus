@@ -28,7 +28,13 @@ import {
     type TexcountAutorun
 } from '../../prose/latex.ts';
 import { mapShape, readAs } from '../../shapes/shapes.ts';
-import { catalogOf, configItems, type CatalogEntry, type FieldSpec } from './catalog/options.ts';
+import {
+    catalogOf,
+    configItems,
+    listedSources,
+    type CatalogEntry,
+    type FieldSpec
+} from './catalog/options.ts';
 import { valueProblem, type RuleLists, type ValueProblem } from './catalog/value-rule.ts';
 
 /**
@@ -76,7 +82,7 @@ export function noRule(key: string): Error {
 /** The items of the sources the entry names, together; null while one is not held. */
 function listsOf(entry: CatalogEntry, config: Record<string, unknown>): RuleLists {
     let sourced: string[] | null = [];
-    for (const source of entry.values_from ?? []) {
+    for (const source of listedSources(entry)) {
         const items = configItems(source, config);
         sourced = items === null || sourced === null ? null : [...sourced, ...items];
     }

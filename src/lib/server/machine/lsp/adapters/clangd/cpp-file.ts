@@ -20,8 +20,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import { isMap as isYamlMap, isNode, isSeq, parseDocument } from 'yaml';
-import type { CommandFinding } from '../../../../data/model/index.ts';
-import { inside, realPath } from '../../../core/paths.ts';
+import type { CommandFinding } from '../../../../../data/model/index.ts';
+import { inside, realPath } from '../../../../core/paths.ts';
 
 /** `.oculus/cpp.yml` of a repository, relative to it. */
 const CPP_FILE = join('.oculus', 'cpp.yml');

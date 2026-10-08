@@ -1,12 +1,12 @@
-// Layer 4, server test. The reader of a repository's `.oculus/cpp.yml` (server/machine/lsp/clangd/
-// cpp-file.ts): what each value that does not read is told as, a finding that names the key, and
-// that the entry is skipped and the rest of the file read.
+// Layer 4, server test. The reader of a repository's `.oculus/cpp.yml`
+// (server/machine/lsp/adapters/clangd/cpp-file.ts): what each value that does not read is told
+// as, a finding that names the key, and that the entry is skipped and the rest of the file read.
 
 import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
-import { readCppFile } from '../../../../src/lib/server/machine/lsp/clangd/cpp-file.ts';
+import { readCppFile } from '../../../../src/lib/server/machine/lsp/adapters/clangd/cpp-file.ts';
 
 /** A repository holding the given `.oculus/cpp.yml` text, a database in `build`, and a link out. */
 function repoWith(yml: string | null): string {

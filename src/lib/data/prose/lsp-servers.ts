@@ -13,7 +13,7 @@
 // holds no sentence.
 
 /** The ids of the language servers. */
-export type LspServerId = 'pyright' | 'clangd' | 'typescript' | 'svelte';
+export type LspServerId = 'pyright' | 'clangd' | 'typescript' | 'svelte' | 'yaml';
 
 /**
  * What a server asks its reader to choose for a root: the Python interpreter, the compile
@@ -142,6 +142,24 @@ const LSP_SERVERS: readonly LspServerFacts[] = [
         formatOnType: false,
         organizeImports: { command: null },
         choices: ['config'],
+        interpreterLibrary: false,
+        extras: [],
+        approvedBy: null
+    },
+    {
+        id: 'yaml',
+        languages: ['yaml'],
+        program: 'yaml-language-server',
+        words: {
+            name: 'statusbar.server_yaml',
+            restart: 'source.cmd_yaml_restart',
+            output: 'source.cmd_yaml_output',
+            choice: {}
+        },
+        semanticTokens: false,
+        formatOnType: false,
+        organizeImports: null,
+        choices: [],
         interpreterLibrary: false,
         extras: [],
         approvedBy: null

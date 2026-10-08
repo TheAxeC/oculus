@@ -50,6 +50,7 @@ import type { RefFile, RefLine, RefSearch } from '$lib/state/system/machine/lsp/
 import type { AstNode, MemoryTree } from '$lib/state/system/machine/lsp/clangd';
 import { symbolRowsOf, type SymbolRow } from '$lib/state/system/machine/lsp/workspace-symbols';
 import { t } from '$lib/state/shared/words/text';
+import { isWithheldFile } from '$lib/state/system/config/config-files';
 
 /** The milliseconds a save waits for the language server's formatting (VS Code's participant). */
 const FORMAT_TIMEOUT_MS = 60_000;
@@ -118,6 +119,20 @@ function noticeWords(key: string, words: string[]): string {
 /** Whether a language is one a server serves. */
 function servedLanguage(language: string): boolean {
     return SERVED_LANGUAGES.includes(language);
+}
+
+/**
+ * Whether a file is one the YAML server is not given, which the relay's YAML entry refuses as well:
+ * the machine's `local.yml`, or a YAML file under the hub's `secrets` folder or under `~/.oculus`.
+ */
+function isMachineFile(
+    client: ClientState,
+    language: string,
+    file: { root: string; path: string }
+): boolean {
+    return (
+        language === 'yaml' && isWithheldFile(file, client.fs.roots(), client.fs.workspaces().home)
+    );
 }
 
 /** The lines of a text, each as the text a location is shown with. */
@@ -363,6 +378,7 @@ export function createLspTab(input: LspTabInput): LspTab {
         if (!servedLanguage(language) || file.root === '' || file.path === '' || version) {
             return undefined;
         }
+        if (isMachineFile(input.client, language, file)) return undefined;
         return (kit, editor, model) => {
             const handle = kit.lsp.register(services, model, {
                 instance: input.instance(),
@@ -401,7 +417,11 @@ export function createLspTab(input: LspTabInput): LspTab {
         file: { root: string; path: string },
         drawn: boolean
     ): { root: string; language: string } | null {
-        return drawn && servedLanguage(language) && file.root !== '' && file.path !== ''
+        return drawn &&
+            servedLanguage(language) &&
+            file.root !== '' &&
+            file.path !== '' &&
+            !isMachineFile(input.client, language, file)
             ? { root: file.root, language }
             : null;
     }
@@ -445,7 +465,7 @@ export function createLspTab(input: LspTabInput): LspTab {
                 run: () => void switchHeader()
             });
         }
-        if (answering) {
+        if (answering && provides('referencesProvider')) {
             listed.push({
                 id: 'oculus.lsp.references',
                 label: t('source.cmd_find_references'),

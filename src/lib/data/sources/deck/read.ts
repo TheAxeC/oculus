@@ -38,13 +38,6 @@ import { splitSlides, type RawSlide } from './split.ts';
 /** The file that makes a folder a deck. */
 export const DECK_FILE = 'present.yml';
 
-/**
- * The key the hub is served under (`HUB_ROOT` of server/files/files.ts), which an address of a
- * figure of a project deck is built from; the snapshot holds no address, so only the route's reader
- * hands in the key it resolved.
- */
-export const HUB_KEY = 'hub';
-
 /** The folder a project keeps its deck in; its name is then the project's. */
 export const PROJECT_DECK = 'present';
 

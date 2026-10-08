@@ -33,6 +33,8 @@ import type { Sink } from '../../core/channels.ts';
 import type { ChangeLog } from '../../core/changes.ts';
 import type { Root } from '../../files/files.ts';
 import { WORKSPACE_LANGUAGE } from '../../../data/prose/lsp-servers.ts';
+import { reconfigure } from './choices.ts';
+import type { SchemaFeed } from './schema-feed.ts';
 import { adoptHeld, changeDocument, closeDocument, openingTarget } from './held/documents.ts';
 import { workspaceMessage } from './held/elsewhere.ts';
 import { handleOculus, heldOf, type OculusContext } from './held/oculus.ts';
@@ -51,7 +53,7 @@ import {
 import { libraryAddresses, libraryFile, type LibraryContext } from './library/pages.ts';
 import type { LibraryRules } from './library/rules.ts';
 import { Library } from './library/tokens.ts';
-import type { Run } from './pyright/interpreter.ts';
+import type { Run } from './adapters/pyright/interpreter.ts';
 import { spawnChild, type Spawn } from './held/process.ts';
 import {
     createServers,
@@ -112,6 +114,11 @@ export type RelayOptions = {
     library?: () => LibraryRules;
     /** How a child is made; the `node:child_process` one unless a test hands a stub. */
     spawn?: Spawn;
+    /**
+     * The schemas of the latest snapshot build, which the YAML server is answered from and, when
+     * they change, is asked for its settings again. Absent, no file has a schema.
+     */
+    schemas?: SchemaFeed;
     /** The registry; `createServers` over `oculus` and `node` unless a test hands one. */
     servers?: Servers;
     /** How an interpreter is asked its version. */
@@ -138,6 +145,7 @@ export class Relay {
     #host: HeldHost;
     #library: LibraryContext;
     #canWrite: (sink: Sink) => boolean = () => false;
+    #unsubscribe: (() => void) | undefined;
 
     constructor(options: RelayOptions) {
         this.#options = options;
@@ -146,6 +154,7 @@ export class Relay {
         this.#spawn = options.spawn ?? spawnChild;
         this.#now = options.now ?? Date.now;
         this.#library = { roots: () => this.#roots(), rules: options.library };
+        const feed = options.schemas;
         this.#host = {
             spawn: this.#spawn,
             initialize: (held, setup) => this.#initializeParams(held, setup),
@@ -154,9 +163,19 @@ export class Relay {
             appended: (held, lines) => this.#appended(held, lines),
             message: (held, message) => this.#fromServer(held, message),
             watchFolder: options.watchFolder,
+            schemas: feed === undefined ? undefined : () => feed.current(),
             stopped: (held) => this.#stopped(held),
             gone: (held) => this.#gone(held)
         };
+        this.#unsubscribe = feed?.subscribe(() => this.#schemasChanged());
+    }
+
+    /** The schemas changed: each running server that is answered from them asks its settings. */
+    #schemasChanged(): void {
+        for (const held of this.#helds) {
+            if (held.entry.requests === undefined || !held.running) continue;
+            void reconfigure(held.entry.adapter, this.#env(held.root), held);
+        }
     }
 
     // ------------------------------------------------------------------ what the socket calls
@@ -275,6 +294,7 @@ export class Relay {
 
     /** End every server and wait for them to be gone. */
     async close(): Promise<void> {
+        this.#unsubscribe?.();
         await Promise.all([...this.#helds].map((held) => held.close()));
         this.#pages.clear();
     }
@@ -568,7 +588,7 @@ export class Relay {
         if (typeof languageId !== 'string' || typeof version !== 'number') return;
         if (typeof text !== 'string' || page.docs.has(uri)) return;
         const target = openingTarget(this.#roots(), page, channel, entry, uri);
-        if (target === null) return;
+        if (target === null || entry.refuses?.(target.real, this.#roots()) === true) return;
         const key = heldKey(entry, target.root);
         const old = page.helds.get(key) ?? adoptHeld(page, key, this.#orphans);
         const held = old ?? this.#make(page, entry, target.root, key);
@@ -580,6 +600,7 @@ export class Relay {
             channel,
             languageId,
             version,
+            shift: 0,
             text
         });
     }
@@ -684,7 +705,8 @@ export class Relay {
             });
             return;
         }
-        const mapped = toPage(message.result ?? null, this.#mapper(pending.page, held, pending));
+        const result = held.pageVersions(message.result ?? null);
+        const mapped = toPage(result, this.#mapper(pending.page, held, pending));
         this.#reply(
             pending.page,
             pending.channel,
@@ -716,7 +738,7 @@ export class Relay {
                 return;
             case 'workspace/applyEdit': {
                 const edit = toPage(
-                    message.params,
+                    held.pageVersions(message.params),
                     page === null
                         ? { roots: [], opened: () => undefined, alias: (root) => root.key }
                         : this.#mapper(page, held)
@@ -772,7 +794,10 @@ export class Relay {
         const page = held.owner as Page | null;
         const named = isRecord(params.textDocument) ? params.textDocument.uri : params.uri;
         const doc = held.docs.get(docKey(String(named)));
-        const mapped = page === null ? null : toPage(message.params, this.#mapper(page, held));
+        const mapped =
+            page === null
+                ? null
+                : toPage(held.pageVersions(message.params), this.#mapper(page, held));
         if (doc === undefined || page === null || mapped === null) return;
         this.#send(page, doc.channel, {
             jsonrpc: '2.0',

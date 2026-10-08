@@ -1,11 +1,11 @@
 // Layer 1, data tests. The manifests' `compute:` list, read the way the server reads a hub: a hub
-// planted in a scratch directory, built through buildPortfolio, and the project's resource ids and
-// the findings asserted. Every sentence is looked up in the shipped catalog, so a finding whose
-// catalog key is missing fails the test that expects it.
+// planted in a scratch directory, built through buildPortfolioWithSchemas, and the project's
+// resource ids and the findings asserted. Every sentence is looked up in the shipped catalog, so a
+// finding whose catalog key is missing fails the test that expects it.
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { buildPortfolio, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { Finding, Snapshot } from '../../../src/lib/data/model/index.ts';
@@ -49,10 +49,10 @@ function build(registry: string | null, computes: Record<string, string>): Snaps
         files[join('projects/active', id, 'project.yml')] =
             `id: ${id}\ntype: active\ntitle: ${id}\n${compute}`;
     }
-    return buildPortfolio(
+    return buildPortfolioWithSchemas(
         plantScratch('oculus-resources-hub-', files, ['projects/active']),
         CONFIG
-    );
+    ).snapshot;
 }
 
 /** The findings about the resources registry and the manifests, not the other files' absence. */
@@ -75,15 +75,16 @@ describe("a project's compute list", () => {
     const projectOf = (snapshot: Snapshot, id = 'alpha'): string[] | undefined =>
         snapshot.entities.projects[id].resourceIds;
 
-    it('answers a scalar compute: with the list-shape finding and reads it as none', () => {
+    it('answers a scalar compute: with the type finding and reads it as none', () => {
         const snapshot = build(SEED, { alpha: 'compute: hpc\n' });
         expect(plain(about(snapshot))).toEqual([
             [
                 'project.yml',
                 'compute',
                 sentence(
-                    'findings.validate.must_be_list_or_null',
+                    'findings.schema.type',
                     'compute',
+                    sentence('findings.schema.is_list'),
                     sentence('findings.shape.is_other', 'string')
                 )
             ]

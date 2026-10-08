@@ -11,16 +11,19 @@ text:
         desc_agents: 'The composer of a new agent session: per agent, the models, efforts and permission modes it offers, each with the words it shows and the flag it passes, and each list with its default.'
         desc_appearance: "The UI theme list with the glyph each theme is offered under, the wallpaper behind the panels, the Memories wall's folder, the CRT default, the code theme of the editors, the terminal text size and the terminal's cursor style, cursor blinking, Option key and copy on selection."
         desc_behavior: "Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh strip, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, `editor.tab_size`, `editor.insert_spaces`, `editor.word_wrap`, `editor.minimap`, `editor.render_whitespace`, `editor.sticky_scroll` and the per-language `editor.languages` records, the Files view's `files.confirm_delete` (true asks before a delete to the Trash), the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`) and chat."
+        desc_cpp_schema: "The keys a repository's .oculus/cpp.yml may hold, each with its words and the values it takes, which the editor completes and checks."
+        desc_deck_schema: "The keys a deck's present.yml may hold, each with its words, which the editor completes and checks."
         desc_file_nesting: 'The files the Files view draws under another file when File Nesting is on: per parent name, the names nested under it, as VS Code lists them by default.'
         desc_glyphs: 'The glyph vocabulary: each name with the ASCII stand-in, one to three characters, that a terminal theme draws in place of its icon.'
         desc_icons: 'The line icon each glyph name is drawn as, one row per name in the glyph vocabulary.'
         desc_latex: 'What the LaTeX editing aids read: the notice of the project the tables follow, the @ suggestions, the keys of the formatting chords and the math symbol groups the TeX view lists.'
         desc_layout: "How things are arranged: the rail's pages and the arrangements each starts as, the view catalogue's groups, the hub documents, the board chrome, the tab rollups and the live badges."
         desc_local: "This machine's own values, read on their own and never merged into the configuration: the hub path, the port, the ssh alias of the cluster, the Claude command, the program an address is opened with, the account folders, the calendar accounts, the mail accounts and where the machine-local state is kept."
-        desc_manifest_schema: 'The project.yml edit form as data: its sections, its fields, the widget each field is edited by, and where a widget takes its choices from.'
+        desc_manifest_schema: 'The project.yml edit form as data: its sections, its fields, the widget each field is edited by, where a widget takes its choices from, and the rule the editor checks each field by.'
         desc_meta: 'The tool identity: the title and the subtitle the window carries.'
         desc_options: 'Every option of every config file: what it does, its default, and the control it is set with.'
         desc_present: 'What every deck the Present view draws starts from: the hue each tag class of a project slide wears.'
+        desc_side_project_schema: "The keys of a side project's project.yml, in the hub's side-projects folder and in a repository's .oculus folder, which the editor completes and checks."
         desc_sources: "What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from (the folders of the default workspace, which the Files view's Add Folder to Workspace and Remove Folder from Workspace write, keeping the file's comments), and the language each file name opens in."
         desc_vocab: 'Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers, the venue and dataset theme words and the radar buckets.'
         catalogs_about: The catalog files the configuration is merged from, in config/catalogs/.
@@ -50,6 +53,8 @@ text:
         list_loading: The list is still being read.
         local_tag: This machine
         not_in_list: not in the list
+        schemas_about: The schema files the editor checks the hub's YAML by, in config/schemas/.
+        schemas_title: Schemas
         texts_about: The words the views draw, one file per view, in config/text/ and the folders under it.
         texts_title: Texts
         unset: Not set
@@ -180,6 +185,7 @@ text:
         settings_origin_also: 'Also set in {0}: {1}'
         settings_origin_cut: 'longer than the file window reads'
         settings_origin_field: 'not a field of a language record'
+        settings_origin_key: 'not a key the file reads; only languages is read'
         settings_origin_language: 'not one of the languages that have colours'
         settings_origin_map: 'not a map'
         settings_origin_not_a_map: 'languages is not a map of language name to its record'

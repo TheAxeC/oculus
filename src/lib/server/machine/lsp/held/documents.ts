@@ -59,9 +59,8 @@ export function changeDocument(page: Page, params: unknown): void {
     if (open === undefined || !Array.isArray(changes)) return;
     // Only the address the document was opened under edits it; another name for it reads.
     if (page.opened.get(normal(open.doc.real)) !== uri) return;
-    const version = Number(params.textDocument.version);
+    const version = open.held.versioned(open.doc, Number(params.textDocument.version));
     open.doc.text = applyChanges(open.doc.text, changes);
-    open.doc.version = version;
     open.held.notify({
         jsonrpc: '2.0',
         method: 'textDocument/didChange',

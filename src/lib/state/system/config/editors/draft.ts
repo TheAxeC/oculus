@@ -123,7 +123,7 @@ function cardFields(row: ConfigRow, keyed: boolean): string[] {
 export function specsOf(row: ConfigRow, form: Draft['form']): Record<string, FieldSpec> {
     if (form === 'items') {
         const control = row.entry.items === 'number' ? 'number' : 'text';
-        return { item: { description: '', control } };
+        return { item: { help: '', control } };
     }
     if (form === 'multi') return { value: { ...row.entry, control: 'multi' } };
     if (form === 'rollup') return withoutKey(row.fields);
@@ -509,7 +509,7 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
             if (text.trim() === '') {
                 problems.push({ index, said: message('emptyItem', index + 1) });
             } else if (numbers) {
-                const written = writtenField({ description: '', control: 'number' }, text, {
+                const written = writtenField({ help: '', control: 'number' }, text, {
                     lists,
                     record: {},
                     held: []

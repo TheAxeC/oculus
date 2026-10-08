@@ -42,7 +42,11 @@
             <ul>
                 {#each found as finding, index (`${finding.file}:${finding.key}:${index}`)}
                     <li>
-                        <span class="file">{finding.file}</span>
+                        <span class="file"
+                            >{finding.line === undefined
+                                ? finding.file
+                                : `${finding.file}:${finding.line}`}</span
+                        >
                         <span class="key">{finding.key}</span>
                         <span class="message">{finding.message}</span>
                     </li>

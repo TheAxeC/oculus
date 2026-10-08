@@ -40,6 +40,13 @@ export const entryShape = z.object({
 
 export type Entry = z.infer<typeof entryShape>;
 
+/**
+ * The whole of `.oculus/commands.yml`: a `commands` list of entries. The file is read entry by
+ * entry so that one entry that fails leaves out itself alone; this shape is the file as the
+ * editor's JSON Schema describes it.
+ */
+export const commandsFileShape = z.strictObject({ commands: z.array(entryShape).nullish() });
+
 /** What a field must be, for the finding of a field of the wrong type. */
 const WRONG_TYPE: Record<string, string> = {
     name: 'must be text',

@@ -309,6 +309,30 @@ const ROWS: Row[] = [
         }
     },
     {
+        name: 'is one YAML server for a yml tab and a yaml tab of one root on one page, which ends 60 s after the last closed',
+        tab: {
+            channel: 'lsp:yaml',
+            file: 'a.yml',
+            language: 'yaml',
+            files: ['a.yml', 'b.yaml']
+        },
+        steps: async ({ relay, spawned, page }) => {
+            open(relay, page.sink, 'lsp:yaml', pageFile('repo', 'b.yaml'), 'yaml');
+            await advance(0);
+            expect(spawned.children).toHaveLength(1);
+            expect(spawned.calls[0].args).toContain('--permission');
+            close(relay, page.sink, 'lsp:yaml', pageFile('repo', 'a.yml'));
+            await advance(MINUTE * 2);
+            expect(spawned.children[0].ended).toBe(false);
+            close(relay, page.sink, 'lsp:yaml', pageFile('repo', 'b.yaml'));
+            await advance(MINUTE - 1);
+            expect(spawned.children[0].ended).toBe(false);
+            await advance(1);
+            expect(spawned.children[0].ended).toBe(true);
+            expect(relay.pids()).toEqual([]);
+        }
+    },
+    {
         name: 'is one pyright for two Python tabs of one root on one page',
         steps: async ({ relay, spawned, page }) => {
             open(relay, page.sink, PYTHON, pageFile('repo', 'b.py'), 'python');

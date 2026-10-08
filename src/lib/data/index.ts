@@ -22,11 +22,16 @@ import { readCollections } from './sources/collections.ts';
 import { CAREER_FILE, readCareer } from './sources/career.ts';
 import { readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
-import { createReader, HUB_KEY } from './sources/deck/read.ts';
+import { HUB_ROOT } from './helpers/hub-names.ts';
+import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
 import { textCatalog } from './sources/config.ts';
 import { normalise } from './snapshot/normalise.ts';
-import { validate } from './snapshot/validate.ts';
+import { sortFindings, validate } from './snapshot/validate.ts';
+import { createChecker, type Checker } from './snapshot/schema/check.ts';
+import { runSchemas } from './snapshot/schema/run.ts';
+import { withSchemas, type SchemaSet } from './snapshot/schema/set.ts';
+import { engineSchemas } from './sources/config/catalog/schemas/engine.ts';
 import type {
     CollectionFile,
     DocPresence,
@@ -88,33 +93,11 @@ function collectionFiles(value: unknown): CollectionFile[] {
 }
 
 /** The feed paths on the hub today, for a config that names none of them. */
-/**
- * The ideas backlog's `focus:` value. It is not a key of `focus_lanes` (vocab.yml says why beside
- * `holding_color`), and it is the one value beside the lanes a manifest's `focus:` may hold.
- */
-const BACKLOG = 'holding';
-
 const FEED_FILES: FeedFiles = {
     leads: 'feeds/position-leads.yml',
     radar: 'feeds/literature-radar.yml',
     linkedin: 'theaxec.github.io/_linkedin'
 };
-
-/** The name of one vocabulary list entry: its `key` when it is a map, else the entry itself. */
-const vocabKeyShape = z.union([
-    z.object({ key: z.string() }).transform((row) => row.key),
-    z.string()
-]);
-
-/** The names of a keyed vocabulary list, one per entry that has one. */
-const vocabKeysShape = rowsShape(vocabKeyShape);
-
-/**
- * The `key` of every entry of a keyed vocabulary list, `status_legend` being the one that matters.
- */
-function vocabKeys(value: unknown): string[] {
-    return readOr(vocabKeysShape, value, []);
-}
 
 /** The `tag_tones` of the engine's `defaults:`, each class with the hue name it wears. */
 function tagTones(defaults: unknown): Record<string, string> {
@@ -153,27 +136,9 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
         resources: path('resources_file', REGISTRY_FILES.resources)
     };
 
-    const vocab: Vocabulary = {
-        types: readOr(keysOfShape, merged.type_color, []),
-        statuses: readOr(keysOfShape, merged.status_palette, [])
-    };
-    const chips = vocabKeys(merged.status_legend);
-    if (chips.length > 0) vocab.chips = chips;
-    const hostStatuses = readAs(keysOfShape, merged.career_host_status);
-    if (hostStatuses !== null) vocab.hostStatuses = hostStatuses;
+    const vocab: Vocabulary = { statuses: readOr(keysOfShape, merged.status_palette, []) };
     const sideStatuses = readAs(keysOfShape, merged.side_project_status);
     if (sideStatuses !== null) vocab.sideStatuses = sideStatuses;
-    // The lanes a `focus:` may name, plus the ideas backlog: vocab.yml keeps `holding` out of
-    // `focus_lanes` on purpose (it is not a lane) and names it through `holding_color`, so it is
-    // added here when that colour is configured, which is the same file saying the backlog exists.
-    const lanes = vocabKeys(merged.focus_lanes);
-    if (lanes.length > 0) {
-        vocab.lanes = merged.holding_color === undefined ? lanes : [...lanes, BACKLOG];
-    }
-    const venueThemes = vocabKeys(merged.venue_themes);
-    if (venueThemes.length > 0) vocab.venueThemes = venueThemes;
-    const dataThemes = vocabKeys(merged.data_themes);
-    if (dataThemes.length > 0) vocab.dataThemes = dataThemes;
 
     const feeds: FeedFiles = {
         leads: path('leads_file', FEED_FILES.leads),
@@ -190,6 +155,7 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
         career: path('career_file', CAREER_FILE),
         schema: merged.manifest_schema,
         vocab,
+        merged,
         portfolioDeck: readAs(filledTextShape, merged.portfolio_deck) ?? null,
         tagTones: tagTones(merged.defaults),
         domains: readOr(keysOfShape, merged.domains, []),
@@ -233,7 +199,7 @@ function decks(
     manifests: RawManifest[],
     config: PortfolioConfig
 ): { decks: Record<Id, RawDeck>; findings: Finding[] } {
-    const root = { key: HUB_KEY, dir: hub };
+    const root = { key: HUB_ROOT, dir: hub };
     const reader = createReader({
         hub: root,
         projects: deckProjects(manifests),
@@ -247,19 +213,25 @@ function decks(
     return { decks: found, findings: reader.findings() };
 }
 
+/** The snapshot of one build and the schemas it was checked against, for the editor. */
+export type PortfolioBuild = { snapshot: Snapshot; schemas: SchemaSet };
+
 /**
- * Read the hub, check what was read, and hand back the snapshot. The three steps are the three
- * modules: the sources say what is on disk, validate says what is wrong with it, and normalise
- * turns it into the wire model with the findings carried inside it. `roots` are the directories
- * whose `.oculus/project.yml` is a side project beside the hub's own side-projects tier, read as
- * handed; the watcher's `personalRoots` decides which roots of the file browser they are.
+ * Read the hub, check what was read, and hand back the snapshot with the schemas the check used.
+ * The steps are the modules: the sources say what is on disk, validate and the schemas say what is
+ * wrong with it, and normalise turns it into the wire model with the findings carried inside it.
+ * `roots` are the directories whose `.oculus/project.yml` is a side project beside the hub's own
+ * side-projects tier, read as handed; the watcher's `personalRoots` decides which roots of the file
+ * browser they are. `checker` keeps the compiled validators from one build to the next, so a
+ * rebuild whose schemas did not change compiles nothing.
  */
-export function buildPortfolio(
+export function buildPortfolioWithSchemas(
     hub: string,
     config: PortfolioConfig,
     version = 0,
-    roots: PersonalRoot[] = []
-): Snapshot {
+    roots: PersonalRoot[] = [],
+    checker: Checker = createChecker()
+): PortfolioBuild {
     const manifests = readManifests(hub, config.scan, config.text);
     const personal = readPersonal(hub, config.scan, roots, config.text);
     const registries = readRegistries(hub, config.registries, config.text);
@@ -288,12 +260,17 @@ export function buildPortfolio(
         ]
     };
 
-    const findings = validate(raw, {
-        schema: config.schema,
-        vocab: config.vocab,
-        careerFile: join(hub, config.career),
-        datasetsFile: join(hub, config.registries.datasets),
-        text: config.text
-    });
-    return normalise(raw, findings, version, config.vocab.sideStatuses);
+    const run = runSchemas(hub, config, raw, checker);
+    const findings = sortFindings([
+        ...validate(raw, {
+            vocab: config.vocab,
+            datasetsFile: join(hub, config.registries.datasets),
+            text: config.text
+        }),
+        ...run.findings
+    ]);
+    return {
+        snapshot: normalise(raw, findings, version, config.vocab.sideStatuses),
+        schemas: withSchemas(run.set, engineSchemas(raw, config))
+    };
 }

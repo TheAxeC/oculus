@@ -54,7 +54,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { wallpaperOnTheme } from '$lib/state/shared/words/appearance';
     import { thisBrowserRows } from '$lib/state/system/config/browser';
-    import { CATALOGS } from '$lib/state/system/config/config-files';
+    import { CATALOGS, SCHEMAS } from '$lib/state/system/config/config-files';
     import { hasSavedDraft, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import { listsOf, type Folder } from '$lib/state/system/config/editors/sources';
     import {
@@ -159,6 +159,7 @@
             thisBrowserRows(ui, wallpaperOnTheme(ui.theme())),
             {
                 catalogs: listedFiles(CATALOGS, (path) => listing(ENGINE_ROOT, path)),
+                schemas: listedFiles(SCHEMAS, (path) => listing(ENGINE_ROOT, path)),
                 texts: listedFiles(TEXT, (path) => listing(ENGINE_ROOT, path))
             }
         )

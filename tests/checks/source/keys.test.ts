@@ -18,7 +18,11 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { CATALOGS, LOCAL_NAME } from '../../../src/lib/state/system/config/config-files.ts';
+import {
+    CATALOGS,
+    LOCAL_NAME,
+    SCHEMAS
+} from '../../../src/lib/state/system/config/config-files.ts';
 import { SETTINGS_MESSAGES } from '../../../src/lib/state/system/config/messages.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
@@ -166,16 +170,17 @@ const COMPUTED_PREFIXES = [
         keys: () => ['projects', 'coauthor', 'archive'].map((id) => `views.${id}`)
     },
     {
-        // One description per file of the engine's config folder and of its catalogs folder, keyed
-        // by the file's own name. The machine's own file is named whether or not this checkout
-        // holds one, since it is described for every machine and a clone that has not made one
-        // still reads the key.
+        // One description per file of the engine's config folder and of its catalogs and schemas
+        // folders, keyed by the file's own name. The machine's own file is named whether or not
+        // this checkout holds one, since it is described for every machine and a clone that has
+        // not made one still reads the key.
         file: 'lib/state/system/config/config-files.ts',
         start: 'lookup(descriptionKey(',
         keys: () => {
             const names = [
                 ...readdirSync(join(engineDir(), 'config')),
-                ...readdirSync(join(engineDir(), 'config', CATALOGS))
+                ...readdirSync(join(engineDir(), 'config', CATALOGS)),
+                ...readdirSync(join(engineDir(), 'config', SCHEMAS))
             ].filter((name) => name.endsWith('.yml'));
             return [...new Set([...names, LOCAL_NAME])].map((name) => descriptionKey(name));
         }

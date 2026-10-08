@@ -8,7 +8,15 @@
 // words the kind from its own text catalog. What needs the disk or the value the file held stays
 // with its caller: a folder or file that is there, a parked list's items, a family's shape.
 
-import { classOfHex, hueNames, hueOfClass, type CatalogEntry, type Form } from './options.ts';
+import {
+    classOfHex,
+    hueNames,
+    hueOfClass,
+    listedSources,
+    pickedSources,
+    type CatalogEntry,
+    type Form
+} from './options.ts';
 
 /** What is wrong with a value, and the arguments its words are filled in with. */
 export type ValueProblem =
@@ -35,7 +43,7 @@ export type ValueProblem =
 /** The lists a check of a value reads, each absent when the caller does not hold it. */
 export type RuleLists = {
     /**
-     * The items of every source the entry names in `values_from` and `values_by`, together; null
+     * The items of every source the entry names in `from`, together; null
      * while one of them is not held, in which case a word is not checked against the list.
      */
     sourced?: string[] | null;
@@ -50,7 +58,7 @@ export type RuleLists = {
 };
 
 /** What each form of a text looks like. */
-const FORM_PATTERNS: Record<Form, RegExp> = {
+export const FORM_PATTERNS: Record<Form, RegExp> = {
     program: /^[^/\s]+$/,
     extension: /^\.[^./\s]+$/,
     bundle_id: /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/
@@ -94,17 +102,17 @@ function formProblem(spec: CatalogEntry, text: string): ValueProblem | null {
 
 /** The words a choice may take, or null while a list the entry names is not held. */
 function itemsOf(spec: CatalogEntry, lists: RuleLists): string[] | null {
-    const named = (spec.values_from?.length ?? 0) > 0 || spec.values_by !== undefined;
-    if (!named) return spec.values ?? [];
+    const named = listedSources(spec).length > 0 || pickedSources(spec) !== undefined;
+    if (!named) return spec.options ?? [];
     if (lists.sourced === undefined || lists.sourced === null) return null;
-    return [...(spec.values ?? []), ...lists.sourced];
+    return [...(spec.options ?? []), ...lists.sourced];
 }
 
 /** The problem a word outside the list is: the sources the entry names, else its own words. */
 function notListed(spec: CatalogEntry): ValueProblem {
-    const sources = [...(spec.values_from ?? []), ...Object.values(spec.values_by?.sources ?? {})];
+    const sources = [...listedSources(spec), ...Object.values(pickedSources(spec)?.sources ?? {})];
     return sources.length === 0
-        ? { kind: 'choice', values: spec.values ?? [] }
+        ? { kind: 'choice', values: spec.options ?? [] }
         : { kind: 'source', sources };
 }
 

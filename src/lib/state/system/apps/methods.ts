@@ -16,6 +16,7 @@ import {
 import type { AppRow, Message } from '../../../data/model/index.ts';
 import type { AppsSettings } from '../../../data/sources/config/settings.ts';
 import { t } from '../../shared/words/text.ts';
+import { ENGINE_ROOT } from '../../sources/fs.ts';
 import type { WriteAnswer } from '../../shared/stores/shapes.ts';
 import { createLimiter } from './limits.ts';
 import {
@@ -319,7 +320,7 @@ export function createMethods(context: MethodsContext): Methods {
             const folders = settings().closedPaths.folders;
             if (folders === null) return closed();
             if (!pathSegmentsOpen(path) || inClosedPaths(path, folders)) return closed();
-            if (root === 'engine') return closed();
+            if (root === ENGINE_ROOT) return closed();
             if (row.root !== '' && root !== row.root) return closed();
             if (!context.shown(root)) return refuse(REFUSED.missing);
             const result = await context.check(root, path);

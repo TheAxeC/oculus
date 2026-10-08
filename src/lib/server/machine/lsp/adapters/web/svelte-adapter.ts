@@ -4,8 +4,8 @@
 // preprocessors) or untrusted (it loads neither and runs with reduced capabilities). An approval
 // or its taking back restarts the server, since the server reads the trust at `initialize` only.
 
-import { notFound } from '../choices.ts';
-import type { Adapter, Setup } from '../servers.ts';
+import { notFound } from '../../choices.ts';
+import type { Adapter, Setup } from '../../servers.ts';
 import { approveRootConfig, configOf, revokeRootConfig } from './approval.ts';
 
 export const svelteAdapter: Adapter = {

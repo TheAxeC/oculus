@@ -49,7 +49,7 @@ export type RowBase = {
     /** `<file>:<key path>`, or `this-browser:<name>`: the row's identity in the markup. */
     id: string;
     title: string;
-    description: string;
+    help: string;
     /** The key path, or the name of a per-browser value: what `@id:` looks in. */
     path: string;
     /** The heading the row is shown under. */
@@ -65,7 +65,7 @@ export type ConfigRow = RowBase & {
     control: Control | 'family';
     /** The catalog entry the row is drawn from: its control and the keys that shape it. */
     entry: CatalogEntry;
-    /** A family's fields, each with its description and control. */
+    /** A family's fields, each with its help line and control. */
     fields: Record<string, FieldSpec>;
     /** `lists` when each key of a family that is a map holds a list of records. */
     holds: 'lists' | undefined;
@@ -174,7 +174,7 @@ function rowOf(
         key,
         path: key,
         title: titleOf(key),
-        description: entry.description,
+        help: entry.help,
         section: sectionOf(key, entry.section),
         control,
         entry,
@@ -240,7 +240,7 @@ export function localRows(entries: Record<string, CatalogEntry>): LocalRow[] {
         key,
         path: key,
         title: titleOf(key),
-        description: entry.description,
+        help: entry.help,
         section: sectionOf(key, entry.section),
         modified: false
     }));

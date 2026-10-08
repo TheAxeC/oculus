@@ -11,9 +11,9 @@ import {
     isConfigApproved,
     revokeConfig,
     type ApprovalWrite
-} from '../../approvals/approvals.ts';
-import type { LspConfig } from '../../../../data/model/index.ts';
-import type { RootEnv } from '../servers.ts';
+} from '../../../approvals/approvals.ts';
+import type { LspConfig } from '../../../../../data/model/index.ts';
+import type { RootEnv } from '../../servers.ts';
 import { configFilesOf, hasSvelte } from './config-files.ts';
 
 /** The configuration of a root: its files and the approval over their present text. */

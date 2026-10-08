@@ -1,11 +1,11 @@
-// Layer 2, client state. The manifest edit form as data: what config/catalogs/manifest-schema.yml
+// Layer 2, client state. The manifest edit form as data: what config/schemas/manifest-schema.yml
 // says a field is, and what a field of choices may be set to. Pure, so the editor is tested without
 // a browser and the form is changed in the config rather than in a component.
 //
 // The `from` of a field names where its choices come from: one of the eight registries, the
-// projects themselves, or a vocabulary key of config/catalogs/vocab.yml. That is the only place a
-// widget learns what to offer, so adding a venue to the registry adds it to the form with no code
-// change.
+// projects themselves, or `vocab.<key>` for a list of config/catalogs/vocab.yml. That is the only
+// place a widget learns what to offer, so adding a venue to the registry adds it to the form with
+// no code change.
 //
 // The current values come from the snapshot's Project, which carries what the model declares and no
 // more. Five of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens
@@ -16,6 +16,7 @@
 import { z } from 'zod';
 import type { Id, Project, Resource, Snapshot } from '../../data/model/index.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
+import { vocabKeys } from '../../data/shapes/vocab-keys.ts';
 import { t } from '../shared/words/text.ts';
 import {
     filledTextShape,
@@ -25,7 +26,7 @@ import {
     stringItemsShape
 } from '../../data/shapes/shapes.ts';
 
-/** One field of the form, in the order config/catalogs/manifest-schema.yml lists it. */
+/** One field of the form, in the order config/schemas/manifest-schema.yml lists it. */
 export type FormField = {
     field: string;
     label: string;
@@ -175,11 +176,18 @@ const choiceShape = z.union([
         .transform((row) => ({ id: row.key, label: row.label ?? row.key }))
 ]) satisfies z.ZodType<Choice>;
 
+/** The prefix of a `from` that names a keyed list of config/catalogs/vocab.yml. */
+const VOCAB_PREFIX = 'vocab.';
+
 /** The entries of one keyed vocabulary list of config/catalogs/vocab.yml, as choices. */
 const vocabChoicesShape = rowsShape(choiceShape);
 
-/** The entries of one keyed vocabulary list of config/catalogs/vocab.yml, as choices. */
+/**
+ * The entries of one keyed vocabulary list of config/catalogs/vocab.yml, as choices, or the keys of
+ * one held as a map (`data_access`), read as the schema check reads them.
+ */
 function vocabChoices(raw: unknown): Choice[] {
+    if (readAs(mapShape, raw) !== null) return vocabKeys(raw).map((id) => ({ id, label: id }));
     return readAs(vocabChoicesShape, raw) ?? [];
 }
 
@@ -227,9 +235,17 @@ export function choicesFor(
     snapshot: Snapshot | null,
     config: Record<string, unknown>
 ): Choice[] {
-    if (field.options !== undefined) return field.options.map((one) => ({ id: one, label: one }));
-    const from = field.from;
-    if (from === undefined) return [];
+    const own = (field.options ?? []).map((one) => ({ id: one, label: one }));
+    if (field.from === undefined) return own;
+    return [...own, ...sourceChoices(field.from, snapshot, config)];
+}
+
+/** The choices a `from:` source offers: a registry's entities, the projects or a vocab list. */
+function sourceChoices(
+    from: string,
+    snapshot: Snapshot | null,
+    config: Record<string, unknown>
+): Choice[] {
     const entities = snapshot?.entities;
     if (from === 'venues') return entityChoices(entities?.venues, ['short', 'name']);
     if (from === 'datasets') return entityChoices(entities?.datasets, ['name']);
@@ -240,7 +256,9 @@ export function choicesFor(
     if (from === 'people') return entityChoices(entities?.people, ['name']);
     if (from === 'organisations') return entityChoices(entities?.organisations, ['name']);
     if (from === 'resources') return resourceChoices(entities?.resources);
-    return vocabChoices(byKey(config, from));
+    return from.startsWith(VOCAB_PREFIX)
+        ? vocabChoices(byKey(config, from.slice(VOCAB_PREFIX.length)))
+        : [];
 }
 
 /** The words of the notes that have some, one after another, and undefined when none has. */

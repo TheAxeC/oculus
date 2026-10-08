@@ -19,6 +19,9 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
+import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { createChecker, checkDocument } from '../../../src/lib/data/snapshot/schema/check.ts';
+import { schemaFor } from '../../../src/lib/data/snapshot/schema/set.ts';
 import { readRoots, rootsFile } from '../../../src/lib/server/files/files.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import {
@@ -30,6 +33,7 @@ import {
 // Importing the route loader registers views; collection registrations use sources.yml keys.
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { realHub } from '../../fixtures/real-hub.ts';
 import { treeFiles } from '../walk.ts';
 
 let client: ClientState;
@@ -97,7 +101,7 @@ function tracked(dir: string): string[] {
         readdirSync(join(dir, at))
             .filter((name) => name.endsWith('.yml') && name !== LOCAL_NAME)
             .map((name) => `${prefix}${name}`);
-    return [...own('', ''), ...own('catalogs', 'catalogs/')].sort();
+    return [...own('', ''), ...own('catalogs', 'catalogs/'), ...own('schemas', 'schemas/')].sort();
 }
 
 describe("oculus's own config directory", () => {
@@ -172,7 +176,10 @@ describe("oculus's own config directory", () => {
             'archive_label_mode',
             'map_label_mode'
         ],
-        'catalogs/manifest-schema.yml': ['manifest_schema'],
+        'schemas/cpp-schema.yml': ['cpp_schema'],
+        'schemas/deck-schema.yml': ['deck_schema'],
+        'schemas/manifest-schema.yml': ['manifest_schema'],
+        'schemas/side-project-schema.yml': ['side_project_schema'],
         'catalogs/meta.yml': ['meta'],
         'catalogs/options.yml': ['options'],
         'sources.yml': [
@@ -292,6 +299,32 @@ describe("oculus's own config directory", () => {
 
     it('merges without a finding, so no key is defined in two files', () => {
         expect(loadConfig(engineDir()).findings).toEqual([]);
+    });
+
+    // A catalog or text file with a part its whole-file shape refuses gives one finding for that
+    // part, worded from the catalog, that names the file and the key; the rest of the file is kept.
+    it.each([
+        ['catalogs/meta.yml', 'bogus: 1\n', 'bogus', 'key bogus is not a key this file takes'],
+        ['catalogs/icons.yml', 'icons: [1]\n', 'icons', 'icons must be a map'],
+        [
+            'catalogs/vocab.yml',
+            'palette:\n    "#fff": c-a\nstatus_palette: 3\n',
+            'status_palette',
+            'status_palette must be a map'
+        ],
+        [
+            'text/views/system/status.yml',
+            'text: {}\nstray: x\n',
+            'stray',
+            'key stray is not a key this file takes'
+        ]
+    ])('words a part of %s its shape refuses', (name, text, key, message) => {
+        const { config, findings } = loadConfig(engineDir(), { name, text });
+        const mine = findings.filter((one) => one.file.endsWith(name));
+        expect(
+            mine.map((one) => [one.file.endsWith(`/config/${name}`), one.key, one.message])
+        ).toEqual([[true, key, message]]);
+        expect(config.text).toBeDefined();
     });
 
     it('holds exactly the expected top-level keys, and no more', () => {
@@ -543,6 +576,39 @@ describe("oculus's own config directory", () => {
             .filter((view) => view.listed !== false)
             .filter((view) => !groups.has(view.group) || view.order < 0);
         expect(invalid.map((view) => view.id)).toEqual([]);
+    });
+
+    // Every YAML file of the folder is matched to a schema generated from the catalogs, and the
+    // files oculus ships pass it, both under the engine's own root and as the hub sees them under
+    // tools/oculus/config. Skipped where the hub's data is not on the machine, since the schemas
+    // list the registries' keys.
+    const HUB = realHub();
+    it.skipIf(!HUB.present)('passes every config file through the schema it is matched to', () => {
+        const { config } = loadConfig(engineDir());
+        const portfolio = portfolioConfigFrom(config);
+        const checker = createChecker();
+        const { schemas } = buildPortfolioWithSchemas(HUB.hub, portfolio, 1, [], checker);
+        const dir = join(engineDir(), 'config');
+        const unmatched: string[] = [];
+        const problems: string[] = [];
+        for (const rel of tracked(dir)) {
+            const engine = schemaFor(schemas, 'engine', rel);
+            const hub = schemaFor(schemas, 'hub', `tools/oculus/config/${rel}`);
+            if (engine === undefined || engine !== hub) {
+                unmatched.push(rel);
+                continue;
+            }
+            const text = readFileSync(join(dir, rel), 'utf8');
+            const found = checkDocument(
+                { name: engine, file: rel, text },
+                schemas.texts,
+                checker,
+                portfolio.text
+            );
+            problems.push(...found.map((one) => `${rel}:${one.line ?? 0} ${one.message}`));
+        }
+        expect(unmatched).toEqual([]);
+        expect(problems).toEqual([]);
     });
 
     it('reads each file on its own and finds its own keys there and nowhere else', () => {

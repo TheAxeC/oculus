@@ -50,6 +50,15 @@ const entryShape = z.object({
     before: z.string().nullish()
 });
 
+/**
+ * The whole of `.oculus/launch.yml`: a `configurations` list of entries, each of which names only
+ * the keys of KEYS. The file is read entry by entry; this shape is the file as the editor's JSON
+ * Schema describes it.
+ */
+export const launchFileShape = z.strictObject({
+    configurations: z.array(entryShape.strict()).nullish()
+});
+
 /** Every field of a configuration is text. */
 const WRONG_TYPE: Record<string, string> = {
     name: 'must be text',

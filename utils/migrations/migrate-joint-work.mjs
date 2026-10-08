@@ -270,7 +270,7 @@ intro: "The work I have going with each person, and where it stands. Who each pe
 schema:
   - { field: key,    type: text,     help: "short slug for this piece of work" }
   - { field: title,  type: text,     required: true, help: "what the work is, not who it is with" }
-  - { field: person, type: select,   options_from: people, required: true, help: "a registries/people.yml key" }
+  - { field: person, type: select,   from: people, required: true, help: "The person's key in registries/people.yml." }
   - { field: status, type: select,   options: [exploring, active, completed], required: true }
   - { field: meta,   type: metalist }
   - { field: tags,   type: tags }

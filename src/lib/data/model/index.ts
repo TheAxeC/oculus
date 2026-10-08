@@ -71,53 +71,21 @@ export type RawPortfolio = {
 
 /**
  * The controlled vocabularies validate checks values against, each a list of the allowed words.
- * `types` is a manifest's `type`, `statuses` a collection entry's `status`. `chips` is absent when
- * the config holds no chip vocabulary, and chips are then free strings and are not checked.
+ * `statuses` is a collection entry's `status`. `sideStatuses` are the keys of
+ * `side_project_status`, the words a side project's `status:` may use; absent when the config
+ * holds no such vocabulary, and a side project's status is then a free string and is not checked.
  */
 export type Vocabulary = {
-    types: string[];
     statuses: string[];
-    chips?: string[];
-    /**
-     * The keys of `career_host_status`. Absent when the config holds no such vocabulary, and a host
-     * status is then a free string and is not checked, which is how `chips` above behaves.
-     */
-    hostStatuses?: string[];
-    /**
-     * The keys of `focus_lanes` plus `holding`, the ideas backlog, which is what a manifest's
-     * `focus:` may name. Absent when the config holds no lanes, and `focus:` is then not checked. A
-     * value outside it is a card the board draws on no lane, which is why it is a finding and not a
-     * silence.
-     */
-    lanes?: string[];
-    /**
-     * The keys of `venue_themes`, the words a venue's `themes:` may use. Absent when the config
-     * holds no such list, and a venue theme is then not checked, as `chips` above.
-     */
-    venueThemes?: string[];
-    /**
-     * The keys of `data_themes`, the words a dataset's `themes:` may use; absent as `venueThemes`.
-     */
-    dataThemes?: string[];
-    /**
-     * The keys of `side_project_status`, the words a side project's `status:` may use; absent as
-     * `hostStatuses`.
-     */
     sideStatuses?: string[];
 };
 
 /**
- * What validate needs and nothing more. `schema` is the config's `manifest_schema` value, taken
- * unparsed because its shape is the config's business: validate reads the field names out of it.
+ * What validate needs and nothing more: the vocabularies, the text its sentences are read from,
+ * and the paths of the two files it names a finding on when the raw record carries none.
  */
 export type ValidationRules = {
-    schema: unknown;
     vocab: Vocabulary;
-    /**
-     * Absolute path of the career file, so a finding about a host status can name the file it is
-     * in. The raw career record is the parsed map alone and carries no provenance of its own.
-     */
-    careerFile?: string;
     /**
      * Absolute path of the dataset registry, so a finding about the file's own top-level keys names
      * it even when the file lists no dataset.
@@ -127,7 +95,7 @@ export type ValidationRules = {
     text: Record<string, string>;
 };
 
-/** Everything buildPortfolio needs: where to read, and what to check what it read against. */
+/** Everything a portfolio build needs: where to read, and what to check what it read against. */
 export type PortfolioConfig = {
     scan: ScanRule[];
     registries: RegistryFiles;
@@ -138,8 +106,14 @@ export type PortfolioConfig = {
     linkedinCadenceDays: number;
     /** The career file, hub-relative. */
     career: string;
+    /** The merged `manifest_schema`, the form the manifest's JSON Schema is made from. */
     schema: unknown;
     vocab: Vocabulary;
+    /**
+     * The merged configuration. The schemas of the side projects, the decks, the C++ file and
+     * oculus's own files, and the lists a `vocab.<key>` reads, are made from it.
+     */
+    merged: Record<string, unknown>;
     /** The hub folder of the portfolio deck, `portfolio_deck:` of sources.yml, or null. */
     portfolioDeck: string | null;
     /** The hue each `tag.class` wears, the engine's `defaults.tag_tones`. */
@@ -442,10 +416,12 @@ export type {
     Collection,
     Entry,
     Feeds,
+    FromPicked,
     Host,
     Lead,
     RawFeeds,
-    SchemaField
+    SchemaField,
+    When
 } from './model-collections.ts';
 
 export type {

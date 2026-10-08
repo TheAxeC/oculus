@@ -34,6 +34,8 @@ text:
         cmd_type_hierarchy: Show Type Hierarchy
         cmd_typescript_output: 'TypeScript: Show Language Server Output'
         cmd_typescript_restart: 'TypeScript: Restart Language Server'
+        cmd_yaml_output: 'YAML: Show Language Server Output'
+        cmd_yaml_restart: 'YAML: Restart Language Server'
         code: '{0}, read only'
         compare: Compare
         conflict_gone: The tab this comparison was opened from is closed.

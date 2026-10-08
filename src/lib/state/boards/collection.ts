@@ -13,6 +13,7 @@
 import { z } from 'zod';
 import { ADDRESSED, HOSTED, isHubPath } from '../../data/hub-address.ts';
 import { isMap } from '../../data/helpers/guards.ts';
+import { vocabKeys } from '../../data/shapes/vocab-keys.ts';
 import {
     anyNumberShape,
     anyValueShape,
@@ -131,8 +132,11 @@ export function parseCollectionState(raw: unknown): CollectionState {
 /** A string and nothing else, for a value the data layer types as unknown. */
 const stringShape = z.string();
 
-/** The `options_from:` value of a schema field whose value is a key of the people registry. */
+/** The `from:` source of a schema field whose value is a key of the people registry. */
 export const PEOPLE_OPTIONS = 'people';
+
+/** The prefix of a `from:` source that names a list of config/catalogs/vocab.yml. */
+const VOCAB_PREFIX = 'vocab.';
 
 const CHIP_FIELDS = ['tags', 'related'];
 const BODY_FIELDS = ['note', 'statement'];
@@ -152,12 +156,12 @@ const JOIN = ' | ';
  *
  * A field whose choices come from the people registry holds a person's key, so the card draws it as
  * the control that opens that person rather than as the key itself. The rule is the schema's own
- * `options_from:` and not the field's name, so a second field of people follows it with no change.
+ * `from:` and not the field's name, so a second field of people follows it with no change.
  */
-export function kindOf(field: string, type: string, optionsFrom?: string): FieldKind {
+export function kindOf(field: string, type: string, from?: SchemaField['from']): FieldKind {
     if (field === 'sub') return 'sub';
     if (field === STATUS_FIELD) return 'status';
-    if (optionsFrom === PEOPLE_OPTIONS) return 'person';
+    if (Array.isArray(from) && from.length === 1 && from[0] === PEOPLE_OPTIONS) return 'person';
     if (CHIP_FIELDS.includes(field) || type === 'tags') return 'chips';
     if (field === 'meta' || type === 'metalist') return 'meta';
     if (BODY_FIELDS.includes(field) || type === 'textarea') return 'body';
@@ -245,7 +249,7 @@ export function drawnFields(entry: Entry, schema: SchemaField[] | undefined): Dr
         named.add(field.field);
         if (field.field === TITLE_FIELD) continue;
         const held = entry.fields[field.field];
-        const kind = kindOf(field.field, field.type, field.optionsFrom);
+        const kind = kindOf(field.field, field.type, field.from);
         const values = valuesOf(kind, held);
         if (values.length > 0) {
             drawn.push({ field: field.field, label: field.label ?? field.field, kind, values });
@@ -602,9 +606,16 @@ export type FormField = {
     help?: string;
 };
 
-/** The kind a schema field's type names, and text for a word no control is written for. */
+/**
+ * The kind a schema field's type names, and text for a word no control is written for. A `records`
+ * field is a nested block of records, which the form draws as the raw control and sends only once
+ * it is edited.
+ */
 const kindShape = z
-    .enum(['text', 'textarea', 'select', 'tags', 'date', 'metalist', 'checkbox', 'raw'])
+    .union([
+        z.literal('records').transform((): FormKind => 'raw'),
+        z.enum(['text', 'textarea', 'select', 'tags', 'date', 'metalist', 'checkbox', 'raw'])
+    ])
     .catch('text') satisfies z.ZodType<FormKind>;
 
 /**
@@ -620,7 +631,7 @@ export function formFields(
         field: field.field,
         label: field.label ?? field.field,
         kind: readAs(kindShape, field.type) ?? 'text',
-        options: field.options ?? optionsFrom(config[field.optionsFrom ?? '']),
+        options: field.options ?? vocabOptions(config, field.from),
         required: field.required === true,
         ...(field.help === undefined ? {} : { help: field.help })
     }));
@@ -687,8 +698,20 @@ const optionShape = z.union([
 const optionsShape = rowsShape(optionShape);
 
 /** Select choices read from one merged-config value: strings, or assignable keyed rows. */
-function optionsFrom(value: unknown): string[] {
+function vocabWords(value: unknown): string[] {
     return readAs(optionsShape, value) ?? [];
+}
+
+/**
+ * The choices of a select whose `from:` names one list of config/catalogs/vocab.yml
+ * (`vocab.<key>`), and none for any other source: the registries' keys are the page's own data. A
+ * vocab key held as a map (`data_access`) offers its keys, read as the schema check reads them.
+ */
+function vocabOptions(config: Record<string, unknown>, from: SchemaField['from']): string[] {
+    const source = Array.isArray(from) && from.length === 1 ? from[0] : '';
+    if (!source.startsWith(VOCAB_PREFIX)) return [];
+    const held = config[source.slice(VOCAB_PREFIX.length)];
+    return isMap(held) ? vocabKeys(held) : vocabWords(held);
 }
 
 /** The project types the Funding view's synthetic card counts: the work that is still running. */

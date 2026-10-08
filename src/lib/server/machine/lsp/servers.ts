@@ -5,14 +5,17 @@
 // languages, the catalog keys of its words, its semantic tokens, its format-on-type, its Organize
 // Imports and the choices its root asks for. A new server is one entry in each of the two places,
 // and the `adapter` of its entry here names what it needs of a root (written in a folder of its own
-// beside this file); nothing else names a server or a language.
+// under adapters/); nothing else names a server or a language.
 //
-// The registry is code and no reader edits it. There are four entries. pyright serves `python` and
-// the TypeScript server `javascript` and `typescript`; each runs under the node that runs oculus,
-// from its package in oculus's own `node_modules`, never a global install, never a `node` found on
-// PATH, as does the Svelte server, which serves `svelte`. The TypeScript server runs on oculus's
-// own TypeScript, with automatic type acquisition and tsserver's log off, so no `npm` runs and
-// nothing is written into a repository. clangd serves `c` and `cpp` and is the `clangd` on the
+// The registry is code and no reader edits it. There are five entries. pyright serves `python`,
+// the TypeScript server `javascript` and `typescript`, the Svelte server `svelte` and the YAML
+// server `yaml`; each runs under the node that runs oculus, from its package in oculus's own
+// `node_modules`, never a global install, never a `node` found on PATH. The TypeScript server runs
+// on oculus's own TypeScript, with automatic type acquisition and tsserver's log off, so no `npm`
+// runs and nothing is written into a repository. The YAML server runs under node's permission
+// model, which lets it read only oculus's own `node_modules`: a schema it is told of by a modeline
+// or a `$schema:` key that names a file on disk is not loaded, and the schemas it uses are the
+// ones the entry hands it from memory. clangd serves `c` and `cpp` and is the `clangd` on the
 // oculus process's PATH, with oculus's own arguments and no `--query-driver`; its index is written
 // under the folder oculus links the chosen compile database into, never into a repository.
 //
@@ -24,10 +27,15 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { LspCode, LspToPage, LspToServer } from '../../../data/model/index.ts';
 import { serverFacts, type LspServerId } from '../../../data/prose/lsp-servers.ts';
-import { clangdAdapter } from './clangd/adapter.ts';
-import { pyrightAdapter } from './pyright/adapter.ts';
-import { svelteAdapter } from './web/svelte-adapter.ts';
-import { typescriptAdapter } from './web/typescript-adapter.ts';
+import { clangdAdapter } from './adapters/clangd/adapter.ts';
+import { pyrightAdapter } from './adapters/pyright/adapter.ts';
+import { svelteAdapter } from './adapters/web/svelte-adapter.ts';
+import { typescriptAdapter } from './adapters/web/typescript-adapter.ts';
+import { yamlAdapter } from './adapters/yaml/adapter.ts';
+import { yamlRequests } from './adapters/yaml/requests.ts';
+import { isMachineFile, isPrivateFile } from './adapters/yaml/machine-file.ts';
+import type { SchemaSet } from '../../../data/snapshot/schema/set.ts';
+import type { ServedRoot } from './uris.ts';
 
 /** What an entry is told about the root it starts a server for. */
 export type Setup = {
@@ -140,7 +148,22 @@ export type ServerEntry = {
     commands: readonly string[];
     /** What the server needs of the page's client beyond what the page declared, by section. */
     clientTextDocument?: Record<string, unknown>;
+    /** What the server needs of the client's `workspace` capabilities, which only it is told. */
+    clientWorkspace?: Record<string, unknown>;
+    /**
+     * The requests the server makes of its client that are the entry's to answer, by method. A
+     * handler returns the result, or throws to answer with an error; a method it does not name is
+     * left to the relay.
+     */
+    requests?: Readonly<Record<string, (params: unknown, ask: ServerAsk) => unknown>>;
+    /** The notifications sent to the server right after `initialized`, by method. */
+    registrations?: readonly string[];
+    /** Whether a file is kept from the server: it is never put on one. */
+    refuses?(real: string, roots: readonly ServedRoot[]): boolean;
 };
+
+/** What an entry's handler of a server request knows: the server's root and the current schemas. */
+export type ServerAsk = { root: ServedRoot; schemas: SchemaSet };
 
 /** The registry: the entries and the lookup by language. */
 export type Servers = {
@@ -264,19 +287,23 @@ function factsOf(id: ServerId): Pick<ServerEntry, 'id' | 'languages' | 'program'
     return { id, languages, program };
 }
 
-/** The launch of a package that runs under oculus's own node, or null when it is not installed. */
+/**
+ * The launch of a package that runs under oculus's own node, or null when it is not installed.
+ * `flags` are node's own, placed before the script.
+ */
 function packaged(
     options: ServersOptions,
     id: ServerId,
     entry: string[],
-    setup: Setup
+    setup: Setup,
+    flags: string[] = []
 ): Launch | null {
     const exists = options.exists ?? existsSync;
     const script = join(options.oculus, 'node_modules', ...entry);
     return exists(script)
         ? {
               command: options.node,
-              args: [script, '--stdio'],
+              args: [...flags, script, '--stdio'],
               cwd: setup.root,
               program: serverFacts(id).program
           }
@@ -495,9 +522,67 @@ function svelte(options: ServersOptions): ServerEntry {
     };
 }
 
+/** The sections the YAML server reads its settings from, as the one answer it is given. */
+const YAML_SETTINGS = {
+    schemas: {},
+    validate: true,
+    hover: true,
+    completion: true,
+    schemaStore: { enable: false },
+    kubernetesCRDStore: { enable: false },
+    hoverSchemaSource: false,
+    format: { enable: false },
+    yamlVersion: '1.2'
+};
+
+/**
+ * The YAML entry: `yaml-language-server`, under node's permission model with read access to
+ * oculus's own `node_modules` and nothing else, so no file a document names reaches it. No schema
+ * comes from the network or the schema store: the server asks its client, which answers from the
+ * schemas of the latest snapshot build (adapters/yaml/requests.ts). `local.yml` is never put on it.
+ */
+function yaml(options: ServersOptions): ServerEntry {
+    return {
+        ...factsOf('yaml'),
+        adapter: yamlAdapter,
+        launch: (setup) =>
+            packaged(
+                options,
+                'yaml',
+                ['yaml-language-server', 'bin', 'yaml-language-server'],
+                setup,
+                ['--permission', `--allow-fs-read=${join(options.oculus, 'node_modules')}`]
+            ),
+        initializationOptions: () => ({}),
+        // Its `initialized` handler throws without this, which skips pulling its settings.
+        clientWorkspace: { workspaceFolders: true },
+        configuration: (section) => (section === 'yaml' ? YAML_SETTINGS : null),
+        requests: yamlRequests,
+        registrations: ['yaml/registerCustomSchemaRequest', 'yaml/registerContentRequest'],
+        refuses: (real, roots) => isMachineFile(real, roots) || isPrivateFile(real, roots),
+        capabilities: (language) => ({
+            textDocumentSync: INCREMENTAL,
+            hoverProvider: serving(language),
+            completionProvider: serving(language),
+            documentSymbolProvider: serving(language),
+            definitionProvider: serving(language),
+            foldingRangeProvider: serving(language),
+            selectionRangeProvider: serving(language),
+            codeActionProvider: serving(language)
+        }),
+        commands: []
+    };
+}
+
 /** The registry for this machine. */
 export function createServers(options: ServersOptions): Servers {
-    const entries = [pyright(options), clangd(), typescript(options), svelte(options)];
+    const entries = [
+        pyright(options),
+        clangd(),
+        typescript(options),
+        svelte(options),
+        yaml(options)
+    ];
     return {
         entries,
         forLanguage: (language) => entries.find((one) => one.languages.includes(language)),
@@ -541,6 +626,7 @@ export function initializeParams(
                     dynamicRegistration: true
                 },
                 configuration: true,
+                ...entry.clientWorkspace,
                 semanticTokens: {
                     ...(workspace.semanticTokens as Record<string, unknown> | undefined),
                     refreshSupport: true

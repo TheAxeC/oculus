@@ -13,7 +13,8 @@ import {
     readAs,
     readJson,
     survivorsShape,
-    unchanged
+    unchanged,
+    unchangedAs
 } from '../../data/shapes/shapes.ts';
 import { failedAnswer, refusedAnswer } from '../shared/answers/answers.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
@@ -227,18 +228,31 @@ const bookmarkShape = unchanged(
     })
 ) satisfies z.ZodType<BookmarkEntry>;
 
+/** A condition of a schema field: each key a field of the record, each value a word or words. */
+const whenShape = z.record(z.string(), z.union([z.string(), z.array(z.string())]));
+
 /** One field of the bookmarks file's own schema, answered as the endpoint sent it. */
-const schemaFieldShape = unchanged(
-    z.object({
-        field: z.string(),
-        type: z.string(),
-        label: z.string().optional(),
-        options: z.array(z.string()).optional(),
-        optionsFrom: z.string().optional(),
-        required: z.boolean().optional(),
-        help: z.string().optional()
-    })
-) satisfies z.ZodType<SchemaField>;
+const schemaFieldShape: z.ZodType<SchemaField> = z.lazy(() =>
+    unchangedAs<SchemaField>(
+        z.object({
+            field: z.string(),
+            type: z.string(),
+            label: z.string().optional(),
+            options: z.array(z.string()).optional(),
+            from: z
+                .union([
+                    z.array(z.string()),
+                    z.object({ field: z.string(), sources: z.record(z.string(), z.string()) })
+                ])
+                .optional(),
+            required: z.union([z.boolean(), z.object({ when: whenShape })]).optional(),
+            help: z.string().optional(),
+            when: whenShape.optional(),
+            open: z.boolean().optional(),
+            fields: z.array(schemaFieldShape).optional()
+        })
+    )
+);
 
 /** The bookmarks answer: the well-formed entries and the well-formed fields of the schema. */
 export const bookmarksShape = z.object({

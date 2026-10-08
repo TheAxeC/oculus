@@ -52,7 +52,7 @@ import { fileBytesUrl } from '../../data/helpers/files/address.ts';
 import { renderDocumentParts } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
-import { isSideTier } from '../../data/sources/manifests.ts';
+import { isSideTier } from '../../data/helpers/hub-names.ts';
 import { HUB_ROOT } from '../files/files.ts';
 import type {
     Finding,

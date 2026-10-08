@@ -36,6 +36,7 @@
         type Project,
         type Venue
     } from '$lib/state/boards/focus';
+    import { HUB_ROOT } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { openPage } from '$lib/views/shared/explorer/opening';
@@ -150,7 +151,7 @@
         if (project.ghost) {
             if (hasReadme(project)) {
                 openPage(client, {
-                    root: 'hub',
+                    root: HUB_ROOT,
                     path: `${project.folder}/README.md`,
                     label: 'README.md'
                 });

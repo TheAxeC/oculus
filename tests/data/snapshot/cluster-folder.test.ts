@@ -1,11 +1,11 @@
 // Layer 1, data tests. A manifest's `paths.cluster`, the folder on the cluster that holds the
 // project's code, read the way the server reads a hub: a hub planted in a scratch directory, built
-// through buildPortfolio, and the findings and the project list asserted. The sentence is looked up
-// in the shipped catalog, so a finding whose catalog key is missing fails.
+// through buildPortfolioWithSchemas, and the findings and the project list asserted. The sentence
+// is looked up in the shipped catalog, so a finding whose catalog key is missing fails.
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { buildPortfolio, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
@@ -43,7 +43,7 @@ const ROWS = [
 describe("a manifest's paths.cluster", () => {
     it.each(ROWS)('$row', ({ written, shown, found }) => {
         const file = join('projects/active/alpha/project.yml');
-        const snapshot = buildPortfolio(
+        const { snapshot } = buildPortfolioWithSchemas(
             plantScratch(
                 'oculus-cluster-hub-',
                 {

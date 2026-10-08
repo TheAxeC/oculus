@@ -3,9 +3,9 @@
 // reload", the one that is identical in development and in production, and the reason the page
 // never polls.
 //
-// The whole snapshot is rebuilt on every burst rather than the part that changed. buildPortfolio on
-// the real hub was measured at 58 to 109 ms over three runs, so a partial rebuild would buy tens of
-// milliseconds and cost a second definition of what depends on what.
+// The whole snapshot is rebuilt on every burst rather than the part that changed. The build of
+// the real hub was measured at 58 to 109 ms over three runs, so a partial rebuild would buy tens
+// of milliseconds and cost a second definition of what depends on what.
 //
 // The filter is what keeps that cheap. `projects/` holds tens of thousands of files, nearly all of
 // them under a project's `code/` deposit or its `attic/`, so a build there would otherwise rebuild
@@ -23,7 +23,10 @@ import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
-import { buildPortfolio, portfolioConfigFrom } from '../../../data/index.ts';
+import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../data/index.ts';
+import { withOwnSchemas } from './own-schemas.ts';
+import { createChecker } from '../../../data/snapshot/schema/check.ts';
+import type { SchemaSet } from '../../../data/snapshot/schema/set.ts';
 import {
     AUDIT_PATHS,
     auditFindings,
@@ -40,6 +43,7 @@ import {
     latexEditingFindings,
     nestingFindings,
     optionFindings,
+    schemaFindings,
     loadConfig,
     readLocal,
     settingFindings,
@@ -47,7 +51,7 @@ import {
     themeFindings,
     type IconMemory
 } from '../../../data/sources/config.ts';
-import { MANIFEST, ROOT_FOLDER } from '../../../data/sources/manifests.ts';
+import { MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
 import { railFindings } from '../../../data/sources/config/rail.ts';
@@ -109,6 +113,11 @@ export type WatchOptions = {
      * and it is never called once the watcher is closed.
      */
     built?: () => void;
+    /**
+     * Called with the schemas each rebuild generated, right after its snapshot is published. The
+     * language server relay reads them; a rebuild that changed none hands over an equal set.
+     */
+    schemas?: (set: SchemaSet) => void;
 };
 
 export type Watcher = {
@@ -306,6 +315,8 @@ export function watchFile(file: string, changed: () => void): FSWatcher {
  */
 export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOptions = {}): Watcher {
     const debounce = options.debounce ?? DEBOUNCE;
+    /** The validators compiled so far, which a rebuild reuses. */
+    const checker = createChecker();
     const engineConfig = configDir(paths.engine);
     const handles = new Map<string, FSWatcher>();
     /** The folder each `parent:` handle watches, so a nearer ancestor replaces a farther one. */
@@ -535,6 +546,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                         ...latexEditingFindings(paths.engine, config),
                         ...nestingFindings(paths.engine, config),
                         ...optionFindings(paths.engine, config),
+                        ...schemaFindings(paths.engine, config),
                         ...themeFindings(paths.engine, config),
                         ...localFindings(paths.engine, config, readLocal(paths.engine).problems),
                         ...readRoots(config, rootsFile(paths.engine)).findings,
@@ -587,8 +599,15 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             openFile(join(paths.hub, portfolio.career));
             open(engineConfig, true);
             const version = hub.nextVersion('portfolio');
-            const snapshot = buildPortfolio(paths.hub, portfolio, version, roots);
+            const { snapshot, schemas } = buildPortfolioWithSchemas(
+                paths.hub,
+                portfolio,
+                version,
+                roots,
+                checker
+            );
             hub.publish('portfolio', snapshot);
+            options.schemas?.(withOwnSchemas(schemas));
             if (isClosed()) return;
             // The audit reads the disk, so it runs here, once per rebuild, and never per request.
             // It is published inside its own guard: a scan that throws leaves the previous audit

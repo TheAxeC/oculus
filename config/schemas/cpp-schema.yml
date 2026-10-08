@@ -1,0 +1,18 @@
+# ===========================================================================
+# cpp-schema.yml
+# oculus's own configuration - the keys of a repository's `.oculus/cpp.yml`, as the hub's `schema:`
+# blocks write them. The file tells clangd about the repository; oculus turns this schema into a JSON
+# Schema, so the YAML editor completes the keys, shows each help line and marks a key the reader
+# refuses. Whether `compile_commands` names a folder that holds a database is checked when the file
+# is read, since it depends on the disk.
+# Merged with the other config/*.yml by loadConfig(); `cpp_schema` is its top-level key.
+# ===========================================================================
+
+cpp_schema:
+  - field: configurations
+    type: records
+    help: "The compile configurations clangd can be started with, each picked by its name."
+    fields:
+      - { field: name, type: text, required: true, help: "The configuration's name, which no other configuration and no compile database folder of the repository shares." }
+      - { field: compile_commands, type: text, help: "The repository folder that holds the compile_commands.json, written relative to the repository; empty runs clangd on its flags alone." }
+      - { field: fallback_flags, type: tags, help: "Flags clangd uses for a file its database has no entry for; the paths of include options are resolved against the repository root." }

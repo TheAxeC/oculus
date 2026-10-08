@@ -1,6 +1,8 @@
-// Layer 1, data. The merge of the engine's config folder: the top-level files, the catalogs
-// folder's and every text fragment under text/, read in name order into one map, a key defined
-// twice named as a finding, and the text catalog flattened out of it.
+// Layer 1, data. The merge of the engine's config folder: the top-level files, the catalogs and
+// schemas folders' and every text fragment under text/, read in name order into one map, a key
+// defined twice named as a finding, and the text catalog flattened out of it. A catalog or text
+// file is also parsed with its whole-file shape (data/shapes/catalog-files.ts), and each issue of
+// the shape is a finding; the merge keeps every key the file holds, as the readers expect.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -9,6 +11,7 @@ import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { isMap } from '../../helpers/guards.ts';
 import type { Finding } from '../../model/index.ts';
+import { issueText, shapeIssues } from '../../shapes/shape-issues.ts';
 import { mapOfShape, readAs, textOrNumberOnlyShape } from '../../shapes/shapes.ts';
 import { errorLine } from '../yaml-file.ts';
 import { configDir } from './folder.ts';
@@ -16,6 +19,9 @@ import { LOCAL_NAME } from './local.ts';
 
 /** The folder under config/ holding the vocabulary catalogs, merged like the top-level files. */
 export const CATALOGS_DIR = 'catalogs';
+
+/** The folder under config/ holding the schemas of the hub's files, merged the same way. */
+export const SCHEMAS_DIR = 'schemas';
 
 /** The one top-level key more than one file may carry. Catalog fragments merge by dotted leaf. */
 export const TEXT_KEY = 'text';
@@ -78,8 +84,8 @@ function mergeText(
 }
 
 /**
- * Root config files, the catalogs folder's files and every text fragment, all named relative to
- * config and sorted.
+ * Root config files, the catalogs and schemas folders' files and every text fragment, all named
+ * relative to config and sorted.
  *
  * local.yml is left out by name: it is the machine's own and loadLocal reads it, so a key it
  * carries is never merged into the map and never reported as defined in two files.
@@ -102,6 +108,7 @@ function configNames(dir: string): string[] {
         }
     };
     collect(join(dir, CATALOGS_DIR));
+    collect(join(dir, SCHEMAS_DIR));
     collect(join(dir, 'text'));
     return names.map((file) => relative(dir, file)).sort();
 }
@@ -191,6 +198,13 @@ export function loadConfig(
                 words: (catalog) => findingText(catalog, 'findings.file.not_a_map')
             });
             continue;
+        }
+        for (const issue of shapeIssues(name, parsed)) {
+            pending.push({
+                file,
+                key: issue.key,
+                words: (catalog) => issueText(catalog, issue)
+            });
         }
         for (const [key, value] of Object.entries(top)) {
             if (key === TEXT_KEY) {

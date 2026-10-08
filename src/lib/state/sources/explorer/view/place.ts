@@ -8,18 +8,12 @@
 // the set survives a reload and a tab switch, and the rows drawn are computed from it.
 
 import { z } from 'zod';
+import { ENGINE_ROOT, HUB_ROOT } from '../../../../data/helpers/hub-names.ts';
 import { fieldItemsShape, readAs } from '../../../../data/shapes/shapes.ts';
 
-/** The root api/file serves the hub itself under, for a link that is a path inside the hub. */
-export const HUB_ROOT = 'hub';
-
-/**
- * The key the engine's own `config/` folder is served under, which is what the Settings view lists
- * and opens a file of. It is the client's half of the key lib/server/files/files.ts serves that
- * folder under, since nothing client-side may import a server module;
- * tests/routes/files/file.test.ts holds the two to one another.
- */
-export const ENGINE_ROOT = 'engine';
+// The keys the hub and the engine's config folder are served under, which the file browser's
+// callers import from here.
+export { ENGINE_ROOT, HUB_ROOT };
 
 /**
  * A path by its segments: the empty and the `.` ones dropped, and each `..` taking the segment

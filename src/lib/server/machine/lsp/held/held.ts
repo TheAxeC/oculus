@@ -22,6 +22,7 @@ import type { LspCode, LspRpc, LspState } from '../../../../data/model/index.ts'
 import { OUTPUT_LINES, ServerProcess, type Spawn } from './process.ts';
 import type { Sink } from '../../../core/channels.ts';
 import type { Library } from '../library/tokens.ts';
+import { emptySchemaSet, type SchemaSet } from '../../../../data/snapshot/schema/set.ts';
 import type { Prepared, ServerEntry, Setup } from '../servers.ts';
 import { RootWatch, globsOf, type FileChange } from './watch.ts';
 import { normal, type ServedRoot } from '../uris.ts';
@@ -58,7 +59,10 @@ export type Doc = {
     /** The channel, `lsp:<language>`, of the language it was opened under. */
     channel: string;
     languageId: string;
+    /** The version the server holds the text at: the page's version and `shift`. */
     version: number;
+    /** What is added to the page's versions, so one file's versions never repeat in a server. */
+    shift: number;
     text: string;
 };
 
@@ -74,6 +78,8 @@ export type HeldHost = {
     changed(held: Held): void;
     /** Lines were appended to the output. */
     appended(held: Held, lines: string[]): void;
+    /** The latest generated schemas, for an entry that answers requests about them. */
+    schemas?(): SchemaSet;
     /** A message from the server that is not the answer to something this module sent. */
     message(held: Held, message: LspRpc): void;
     /** The held server's process ended, for whatever reason, and what waited on it is answered. */
@@ -117,6 +123,8 @@ export class Held {
     /** Whether the page has yet to be told the legend: set when the server is ready or adopted. */
     legendDue = false;
     readonly docs = new Map<string, Doc>();
+    /** The highest version sent to the server for each file, kept after the file is closed. */
+    readonly #sent = new Map<string, number>();
     /** The last lines of the server's output. */
     readonly output: string[] = [];
     /** What the server last registered, by the id it registered with. */
@@ -265,9 +273,47 @@ export class Held {
 
     /** Put a document into the server, starting the server when it has none to put it into. */
     open(doc: Doc): void {
-        this.docs.set(docKey(doc.fileUri), doc);
+        const key = docKey(doc.fileUri);
+        const last = this.#sent.get(key);
+        // A server may keep what it parsed of a file by its version, so a file opened again, or
+        // changed to a version it already held, would be answered from the old text.
+        doc.shift = last === undefined ? 0 : Math.max(0, last + 1 - doc.version);
+        doc.version += doc.shift;
+        this.#sent.set(key, doc.version);
+        this.docs.set(key, doc);
         if (this.#proc?.alive === true) this.#proc.send(openOf(doc));
         else if (this.#restartable) this.start();
+    }
+
+    /** The version to send the server for a page version of an open file, which it is held at. */
+    versioned(doc: Doc, pageVersion: number): number {
+        const version = pageVersion + doc.shift;
+        this.#sent.set(
+            docKey(doc.fileUri),
+            Math.max(version, this.#sent.get(docKey(doc.fileUri)) ?? 0)
+        );
+        doc.version = version;
+        return version;
+    }
+
+    /**
+     * A message of the server with every version it names put back to the page's: each object
+     * holding a `uri` and a number `version` (a versioned text document identifier, the
+     * diagnostics of a file) for a document held with a shift loses the shift. A document the
+     * server names that is not held is left as it is.
+     */
+    pageVersions(value: unknown): unknown {
+        if (Array.isArray(value)) return value.map((one) => this.pageVersions(one));
+        if (!isRecord(value)) return value;
+        const doc = typeof value.uri === 'string' ? this.docs.get(docKey(value.uri)) : undefined;
+        const out: Record<string, unknown> = {};
+        for (const [key, inner] of Object.entries(value)) {
+            out[key] =
+                key === 'version' && typeof inner === 'number' && doc !== undefined
+                    ? inner - doc.shift
+                    : this.pageVersions(inner);
+        }
+        return out;
     }
 
     /** What the server is given from now on: a change of the interpreter, for one. */
@@ -316,8 +362,27 @@ export class Held {
                     { uri: pathToFileURL(this.root.real).href, name: basename(this.root.real) }
                 ]);
             default:
-                return false;
+                return this.#entryAnswer(message);
         }
+    }
+
+    /** A request the entry answers itself, by its method; false when the entry names none. */
+    #entryAnswer(message: LspRpc): boolean {
+        const requests = this.entry.requests;
+        const method = message.method ?? '';
+        if (requests === undefined || !Object.hasOwn(requests, method)) return false;
+        const ask = { root: this.root, schemas: this.#host.schemas?.() ?? emptySchemaSet() };
+        try {
+            this.notify({
+                jsonrpc: '2.0',
+                id: message.id,
+                result: requests[method](message.params, ask)
+            });
+        } catch (error) {
+            const text = error instanceof Error ? error.message : 'the request failed';
+            this.notify({ jsonrpc: '2.0', id: message.id, error: { code: -32603, message: text } });
+        }
+        return true;
     }
 
     /** A notification of the server that is progress or a log line; false for any other. */
@@ -423,6 +488,7 @@ export class Held {
             launch: prepared.launch,
             spawn: this.#host.spawn,
             initialize: this.#host.initialize(this, prepared.setup),
+            registrations: this.entry.registrations,
             events: {
                 message: (message) => {
                     if (this.#proc === proc) this.#host.message(this, message);

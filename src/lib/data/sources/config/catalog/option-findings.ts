@@ -1,6 +1,6 @@
 // Layer 1, data. What is wrong with the options catalog, config/catalogs/options.yml, that only its
 // reader can say, as findings on the config channel: a control word the vocabulary lacks, a source
-// it does not list, a choice with nothing to choose from, a field without a description, an entry
+// it does not list, a choice with nothing to choose from, a field without a help line, an entry
 // under no heading or an unknown one, a range whose minimum is above its maximum, a `whole` that is
 // not true, a `form` that is not one of the forms, and a list of slots that is not a list of words.
 // Each is a thing a saved edit can introduce while the server runs, where a throw would take the
@@ -33,8 +33,8 @@ function problemText(problem: OptionProblem, catalog: ReturnType<typeof textCata
             return findingText(catalog, 'findings.options.source', problem.word);
         case 'no_values':
             return findingText(catalog, 'findings.options.no_values');
-        case 'no_description':
-            return findingText(catalog, 'findings.options.no_description');
+        case 'no_help':
+            return findingText(catalog, 'findings.options.no_help');
         case 'no_fields':
             return findingText(catalog, 'findings.options.no_fields');
         case 'range':

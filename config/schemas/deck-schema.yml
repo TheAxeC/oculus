@@ -1,0 +1,23 @@
+# ===========================================================================
+# deck-schema.yml
+# oculus's own configuration - the keys of a deck's `present.yml`, as the hub's `schema:` blocks write
+# them. It governs `deck/present.yml` and every project's `present/present.yml`. oculus turns it into
+# a JSON Schema, so the YAML editor completes the keys, shows each help line and marks a key the
+# deck reader does not read. The values of `groups:` and `order:` are not looked into: the deck
+# reader reports a group or an entry it cannot read, with the key it is about.
+# Merged with the other config/*.yml by loadConfig(); `deck_schema` is its top-level key.
+# ===========================================================================
+
+deck_schema:
+  - field: deck
+    type: records
+    help: "The deck's own facts."
+    fields:
+      - { field: title, type: text, help: "The title shown on the first slide and in the deck list." }
+  - field: defaults
+    type: records
+    help: "Values the slides of this deck take when they name none."
+    fields:
+      - { field: tag_tones, type: raw, help: "A map from a slide tag to the name of the hue its chip wears." }
+  - { field: groups, type: raw, help: "A map from a group name to its find rule, its sort, whether it discovers further decks and its slides." }
+  - { field: order, type: raw, help: "The slides in the order they are shown: a slide file name, a group of slides, or a summary or a grid of a group." }

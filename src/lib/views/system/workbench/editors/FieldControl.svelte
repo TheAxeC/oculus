@@ -39,6 +39,7 @@
         offerFor,
         poolOf,
         numberRefusal,
+        suggests,
         textOf,
         toggleOf,
         wordsOf,
@@ -298,7 +299,7 @@
                 onclick={() => onpick([...items, ''])}
             />
         </div>
-    {:else if spec.suggest_from !== undefined}
+    {:else if suggests(spec)}
         <SuggestInput
             value={boxText}
             {label}

@@ -1,5 +1,8 @@
 // Layer 2, server. The reader of one app's `app.yml`: the map a folder's manifest holds, checked
-// key by key against what an app may name, and every refusal as a finding keyed `apps[<id>]`.
+// against the zod shape of the whole file (`appShape`) and then against what only the folder and
+// the install know, and every refusal as a finding keyed `apps[<id>]`. The shape is what the
+// editor's JSON Schema of `app.yml` is made from, so a key the editor marks is a key this reader
+// refuses.
 //
 // A manifest that names anything this oculus does not have, or anything closed to the app, refuses
 // the app when its folder is read, before there is anything to approve, so the reader never
@@ -9,6 +12,7 @@
 // is not usable leaves the app offered: it is drawn with the default glyph and the finding says so.
 
 import { readFileSync } from 'node:fs';
+import { z } from 'zod';
 import {
     APP_NAME,
     channelAccess,
@@ -18,19 +22,6 @@ import {
 import { findingText, type TextCatalog } from '../../../data/helpers/finding-text.ts';
 import type { Finding } from '../../../data/model/index.ts';
 import { parseYamlMap, errorLine } from '../../../data/sources/yaml-file.ts';
-
-/** The keys a manifest may hold. */
-const KEYS = [
-    'name',
-    'title',
-    'description',
-    'glyph',
-    'bridge',
-    'entry',
-    'reads',
-    'writes',
-    'connects'
-];
 
 /** The version of the bridge this oculus speaks, the only value `bridge` may hold. */
 const BRIDGE = 1;
@@ -44,6 +35,57 @@ const RESERVED_GLYPH = 'app';
 const TITLE_MAX = 40;
 const DESCRIPTION_MAX = 200;
 const DEFAULT_ENTRY = 'index.html';
+
+/** Whether a text holds a control character, which a title may not. */
+function hasControl(text: string): boolean {
+    for (const char of text) {
+        const code = char.codePointAt(0) ?? 0;
+        if (code < 0x20 || (code >= 0x7f && code < 0xa0)) return true;
+    }
+    return false;
+}
+
+/** Whether a title, trimmed, is one to forty characters and holds no control character. */
+function fitsTitle(title: string): boolean {
+    const trimmed = title.trim();
+    return trimmed.length >= 1 && trimmed.length <= TITLE_MAX && !hasControl(trimmed);
+}
+
+/**
+ * The whole of an `app.yml`: the keys an app may name and what each one holds. What needs the
+ * folder (the name is the folder's), the install (the glyphs, the port) or the channel tables is
+ * checked after the shape. A key left out is its default, except `name`, `title` and `bridge`.
+ */
+export const appShape = z.strictObject({
+    name: z.string().regex(APP_NAME),
+    title: z.string().refine(fitsTitle),
+    description: z.string().max(DESCRIPTION_MAX).optional(),
+    glyph: z.string().optional(),
+    bridge: z.literal(BRIDGE),
+    entry: z
+        .string()
+        .regex(/\.html$/)
+        .refine((entry) => pathSegmentsOpen(entry))
+        .optional(),
+    reads: z.array(z.string()).optional(),
+    writes: z.array(z.string()).optional(),
+    connects: z.array(z.string()).optional()
+});
+
+/** What the shape refuses of a manifest: the keys it does not name and the keys that do not fit. */
+type Flaws = { unknown: string[]; bad: Set<string> };
+
+/** The flaws of a manifest map against `appShape`. */
+function flawsOf(map: Record<string, unknown>): Flaws {
+    const flaws: Flaws = { unknown: [], bad: new Set() };
+    const read = appShape.safeParse(map);
+    if (read.success) return flaws;
+    for (const issue of read.error.issues) {
+        if (issue.code === 'unrecognized_keys') flaws.unknown.push(...issue.keys);
+        else if (typeof issue.path[0] === 'string') flaws.bad.add(issue.path[0]);
+    }
+    return flaws;
+}
 
 /** What a manifest says once every key passed. */
 type Manifest = {
@@ -84,15 +126,6 @@ export type ManifestRead = { manifest: Manifest | null; findings: Finding[]; byt
 /** The finding key of an app or folder: `apps[<root key>/<name>]`, or `apps[<name>]`. */
 export function findingKey(root: string, name: string): string {
     return root === '' ? `apps[${name}]` : `apps[${root}/${name}]`;
-}
-
-/** Whether a text holds a control character, which a title may not. */
-function hasControl(text: string): boolean {
-    for (const char of text) {
-        const code = char.codePointAt(0) ?? 0;
-        if (code < 0x20 || (code >= 0x7f && code < 0xa0)) return true;
-    }
-    return false;
 }
 
 /**
@@ -149,10 +182,9 @@ function shown(value: unknown): string {
     return typeof value === 'string' ? value : JSON.stringify(value);
 }
 
-/** The strings of a list key, or null when the value is no list of strings. */
-function stringList(value: unknown): string[] | null {
-    if (value === undefined) return [];
-    return Array.isArray(value) && value.every((one) => typeof one === 'string') ? value : null;
+/** The strings of a list key the shape passed, and none when the key is missing. */
+function stringList(value: unknown): string[] {
+    return Array.isArray(value) ? (value as string[]) : [];
 }
 
 /**
@@ -162,16 +194,16 @@ function stringList(value: unknown): string[] | null {
 function namesOf(
     value: unknown,
     list: 'reads' | 'writes',
+    flaws: Flaws,
     catalog: TextCatalog,
     refuse: (message: string) => void
 ): string[] {
-    const names = stringList(value);
-    if (names === null) {
+    if (flaws.bad.has(list)) {
         refuse(findingText(catalog, 'findings.apps.list_shape', list));
         return [];
     }
     const seen = new Set<string>();
-    for (const name of names) {
+    for (const name of stringList(value)) {
         if (seen.has(name)) refuse(findingText(catalog, 'findings.apps.list_repeated', name, list));
         seen.add(name);
     }
@@ -185,16 +217,16 @@ function namesOf(
 function originsOf(
     value: unknown,
     port: number,
+    flaws: Flaws,
     catalog: TextCatalog,
     refuse: (message: string) => void
 ): string[] {
-    const entries = stringList(value);
-    if (entries === null) {
+    if (flaws.bad.has('connects')) {
         refuse(findingText(catalog, 'findings.apps.list_shape', 'connects'));
         return [];
     }
     const origins: string[] = [];
-    for (const text of entries) {
+    for (const text of stringList(value)) {
         const origin = originOf(text, port);
         if (origin === null) {
             refuse(findingText(catalog, 'findings.apps.connect_shape', text));
@@ -240,45 +272,46 @@ export function readManifest(input: ManifestInput): ManifestRead {
         note(message);
     };
 
-    for (const one of Object.keys(map)) {
-        if (!KEYS.includes(one)) refuse(findingText(catalog, 'findings.apps.key_unknown', one));
+    const flaws = flawsOf(map);
+    for (const one of flaws.unknown) {
+        refuse(findingText(catalog, 'findings.apps.key_unknown', one));
     }
 
     const rawName = map.name;
-    if (rawName === undefined || rawName === null || rawName === '') {
-        refuse(findingText(catalog, 'findings.apps.name_empty'));
-    } else if (typeof rawName !== 'string' || !APP_NAME.test(rawName)) {
-        refuse(findingText(catalog, 'findings.apps.name_shape', shown(rawName)));
+    if (flaws.bad.has('name') || rawName === undefined) {
+        refuse(
+            rawName === undefined || rawName === null || rawName === ''
+                ? findingText(catalog, 'findings.apps.name_empty')
+                : findingText(catalog, 'findings.apps.name_shape', shown(rawName))
+        );
     } else if (rawName !== input.folder) {
-        refuse(findingText(catalog, 'findings.apps.name_not_folder', rawName, input.folder));
+        refuse(findingText(catalog, 'findings.apps.name_not_folder', shown(rawName), input.folder));
     }
 
     let title = '';
-    if (map.title === undefined) {
-        refuse(findingText(catalog, 'findings.apps.key_missing', 'title'));
-    } else if (typeof map.title !== 'string') {
-        refuse(findingText(catalog, 'findings.apps.title_shape'));
+    if (flaws.bad.has('title') || map.title === undefined) {
+        refuse(
+            map.title === undefined
+                ? findingText(catalog, 'findings.apps.key_missing', 'title')
+                : findingText(catalog, 'findings.apps.title_shape')
+        );
     } else {
-        title = map.title.trim();
-        if (title.length < 1 || title.length > TITLE_MAX || hasControl(title)) {
-            title = '';
-            refuse(findingText(catalog, 'findings.apps.title_shape'));
-        }
+        title = shown(map.title).trim();
     }
 
     let description = '';
-    if (map.description !== undefined) {
-        if (typeof map.description === 'string' && map.description.length <= DESCRIPTION_MAX) {
-            description = map.description;
-        } else {
-            refuse(findingText(catalog, 'findings.apps.description_shape'));
-        }
+    if (flaws.bad.has('description')) {
+        refuse(findingText(catalog, 'findings.apps.description_shape'));
+    } else if (map.description !== undefined) {
+        description = shown(map.description);
     }
 
-    if (map.bridge === undefined) {
-        refuse(findingText(catalog, 'findings.apps.key_missing', 'bridge'));
-    } else if (map.bridge !== BRIDGE) {
-        refuse(findingText(catalog, 'findings.apps.bridge_unknown', shown(map.bridge)));
+    if (flaws.bad.has('bridge') || map.bridge === undefined) {
+        refuse(
+            map.bridge === undefined
+                ? findingText(catalog, 'findings.apps.key_missing', 'bridge')
+                : findingText(catalog, 'findings.apps.bridge_unknown', shown(map.bridge))
+        );
     }
 
     let glyph = DEFAULT_GLYPH;
@@ -292,15 +325,15 @@ export function readManifest(input: ManifestInput): ManifestRead {
     }
 
     const entry = map.entry === undefined ? DEFAULT_ENTRY : shown(map.entry);
-    if (typeof map.entry === 'object' || !pathSegmentsOpen(entry) || !entry.endsWith('.html')) {
+    if (flaws.bad.has('entry')) {
         refuse(findingText(catalog, 'findings.apps.entry_shape', entry));
     } else if (!input.files.has(entry)) {
         refuse(findingText(catalog, 'findings.apps.entry_missing', entry));
     }
 
-    const reads = namesOf(map.reads, 'reads', catalog, refuse);
-    const writes = namesOf(map.writes, 'writes', catalog, refuse);
-    const connects = originsOf(map.connects, input.port, catalog, refuse);
+    const reads = namesOf(map.reads, 'reads', flaws, catalog, refuse);
+    const writes = namesOf(map.writes, 'writes', flaws, catalog, refuse);
+    const connects = originsOf(map.connects, input.port, flaws, catalog, refuse);
     for (const name of reads) {
         const access = channelAccess(name);
         if (access.access === 'unknown') {

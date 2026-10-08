@@ -5,7 +5,8 @@
 // test hands a stub whose streams answer `initialize`, `shutdown` and `exit`. The framing of the
 // protocol's messages on stdin and stdout is vscode-jsonrpc's `StreamMessageReader` and
 // `StreamMessageWriter`; the messages themselves are plain objects, and this module sends and reads
-// only the three it makes itself (`initialize`, `shutdown`, `exit`) by ids no page can hold.
+// only the three it makes itself (`initialize`, `shutdown`, `exit`) by ids no page can hold, and
+// writes the registrations an entry names right after `initialized`.
 //
 // A server that has been asked to end gets `shutdown` and `exit` at once, then SIGTERM two seconds
 // after `exit` and SIGKILL five seconds after it, unless it exited first. A server that answers no
@@ -65,6 +66,8 @@ export type ProcessOptions = {
     spawn: Spawn;
     /** The `initialize` request's params. */
     initialize: Record<string, unknown>;
+    /** The notifications written right after `initialized`, before anything queued. */
+    registrations?: readonly string[];
     events: ProcessEvents;
 };
 
@@ -171,6 +174,9 @@ export class ServerProcess {
             }
             this.#status = 'ready';
             this.#write({ jsonrpc: '2.0', method: 'initialized', params: {} });
+            for (const method of this.#options.registrations ?? []) {
+                this.#write({ jsonrpc: '2.0', method, params: {} });
+            }
             for (const queued of this.#queue.splice(0)) this.#write(queued);
             this.#options.events.ready(message.result);
             return;

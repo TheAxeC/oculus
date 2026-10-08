@@ -10,6 +10,8 @@ export type Finding = {
     /** The key, entry or folder the problem is about; empty when it is about the whole file. */
     key: string;
     message: string;
+    /** The line of the file the problem is on, counted from 1, when the check knows it. */
+    line?: number;
 };
 
 /** The seven scan tiers, the basename of each `dir` in the scan rules. */

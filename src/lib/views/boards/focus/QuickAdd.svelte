@@ -58,7 +58,7 @@
 
     /**
      * A follow-up is written as the manifest's `followup.do`, the field
-     * config/catalogs/manifest-schema.yml names (a bare `followup:` note in the file is expanded to
+     * config/schemas/manifest-schema.yml names (a bare `followup:` note in the file is expanded to
      * the map by the editor), a deadline as its `deadline:`. Both are one field of one manifest, so
      * both are one writeManifest call.
      *

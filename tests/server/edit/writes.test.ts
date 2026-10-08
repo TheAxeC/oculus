@@ -3,7 +3,7 @@
 //
 // The hub here is a synthetic one under the system temporary directory, and every path this file
 // writes is asserted to be inside it before it is written; nothing in this file opens the real hub
-// for writing, and the schema it checks against is the real config/catalogs/manifest-schema.yml,
+// for writing, and the schema it checks against is the real config/schemas/manifest-schema.yml,
 // so what the form offers and what the write accepts are the same list.
 //
 // A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is

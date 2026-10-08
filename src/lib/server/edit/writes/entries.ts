@@ -20,6 +20,7 @@
 // rather than reading the file's id rule a second time.
 
 import { z } from 'zod';
+import { ISO_DATE } from '../../../data/helpers/dates.ts';
 import { byKey, scalar } from '../../../data/helpers/guards.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
@@ -57,9 +58,6 @@ export function saved(file: string, source: string, edit: EditResult): WriteOutc
     return { found: true, changed: edit.changed, refused: edit.refused };
 }
 
-/** The one shape a `date` field is written in. */
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-
 /**
  * Why a value does not fit the type its schema field declares, or the empty string when it does.
  * The five types a form control writes are checked; a `tags`, `metalist` or `raw` field carries a
@@ -85,8 +83,8 @@ function typeRefusal(field: SchemaField, value: unknown): string {
     if (field.type !== 'select') return '';
     const options = field.options ?? [];
     if (typeof value !== 'string') return `${name} takes one of its own options`;
-    // A select whose options are a vocabulary key (`options_from`) has none of its own here, and
-    // the value is then checked as text: the vocabulary is the page's, not the file's.
+    // A select whose options come from a source (`from`) has none of its own here, and the value
+    // is then checked as text: the sources are the page's data, not the file's.
     if (options.length === 0) return '';
     return options.includes(value.trim()) ? '' : `${name} takes one of ${options.join(', ')}`;
 }

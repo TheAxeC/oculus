@@ -32,9 +32,15 @@ import { noRule, settingEntry, settingReader, type SettingProblem } from './sett
 export type EditorProblem =
     SettingProblem | { key: string; where: 'unknown-language' | 'unknown-field' | 'not-a-map' };
 
+/**
+ * Why an entry of a repository's settings file was skipped: an editor problem, or a top-level key
+ * the file does not read.
+ */
+export type RepoProblem = EditorProblem | { key: string; where: 'unknown-key' };
+
 /** What a repository's `.oculus/settings.yml` says: its records, or why it was not read. */
 export type RepoSettings =
-    | { kind: 'read'; languages: LanguageRecords; skipped: EditorProblem[] }
+    | { kind: 'read'; languages: LanguageRecords; skipped: RepoProblem[] }
     | { kind: 'unparsed'; line: string }
     | { kind: 'not-a-map' };
 
@@ -189,9 +195,10 @@ export function editorOptions(config: Record<string, unknown>): EditorOptions | 
 
 /**
  * Read a repository's settings file: the `languages:` map of the same records as
- * `editor.languages`, and no other key, each record read by the same rule against the same entry of
- * the merged configuration. An empty file, a file without `languages:` and `languages: null` set
- * nothing. A file that does not parse is `unparsed` with the parser's first line, and a
+ * `editor.languages`, each record read by the same rule against the same entry of the merged
+ * configuration. Any other top-level key is skipped and named. An empty file, a file without
+ * `languages:` and `languages: null` set nothing. A file that does not parse is `unparsed` with
+ * the parser's first line, and a
  * `languages:` that is not a map is `not-a-map`. An entry or field that cannot be read is skipped
  * and named under `languages.`, and the rest is read. A configuration that holds no catalog yet
  * sets nothing.
@@ -203,18 +210,20 @@ export function parseRepoSettings(text: string, config: Record<string, unknown>)
     }
     const top: unknown = document.toJS();
     const languages = isMap(top) ? top.languages : undefined;
-    const skipped: EditorProblem[] = [];
+    const keys: RepoProblem[] = isMap(top)
+        ? Object.keys(top)
+              .filter((key) => key !== 'languages')
+              .map((key) => ({ key, where: 'unknown-key' }))
+        : [];
     if (languages === undefined || languages === null) {
-        return { kind: 'read', languages: records(), skipped };
+        return { kind: 'read', languages: records(), skipped: keys };
     }
     if (!isMap(languages)) return { kind: 'not-a-map' };
+    const problems: EditorProblem[] = [];
     try {
-        return {
-            kind: 'read',
-            languages: readLanguages(languages, 'languages.', config, skipped),
-            skipped
-        };
+        const read = readLanguages(languages, 'languages.', config, problems);
+        return { kind: 'read', languages: read, skipped: [...keys, ...problems] };
     } catch {
-        return { kind: 'read', languages: records(), skipped };
+        return { kind: 'read', languages: records(), skipped: keys };
     }
 }

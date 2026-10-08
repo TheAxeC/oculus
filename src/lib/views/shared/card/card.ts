@@ -5,6 +5,7 @@
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
 import type { ClientState } from '$lib/state/client/context';
 import { findView, type Layout } from '$lib/state/workbench/layout';
+import { HUB_ROOT } from '$lib/state/sources/fs';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
 import { t } from '$lib/state/shared/words/text';
 import { openPage } from '../explorer/opening';
@@ -66,7 +67,7 @@ export function subOf(path: string): string {
 
 /** The encoded api/file address for a project-relative file. */
 export function urlOf(folder: string, path: string): string {
-    return fileBytesUrl('hub', `${folder}/${path}`);
+    return fileBytesUrl(HUB_ROOT, `${folder}/${path}`);
 }
 
 /**
@@ -80,7 +81,7 @@ export function goto(client: ClientState, view: string, label: string): void {
 
 /** Open one of a project's fixed documents in a document tab under the hub root. */
 export function openDocument(client: ClientState, folder: string, path: string): void {
-    openPage(client, { root: 'hub', path: `${folder}/${path}`, label: path });
+    openPage(client, { root: HUB_ROOT, path: `${folder}/${path}`, label: path });
 }
 
 /**

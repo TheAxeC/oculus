@@ -5,6 +5,7 @@
 
 import { join } from 'node:path';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
+import { REGISTRY_SHAPES } from '../helpers/hub-names.ts';
 import { filledText, itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
 import { readYamlMap } from './yaml-file.ts';
 import type {
@@ -29,22 +30,6 @@ export const REGISTRY_FILES: RegistryFiles = {
     people: 'registries/people.yml',
     organisations: 'registries/organisations.yml',
     resources: 'registries/resources.yml'
-};
-
-/**
- * How each file names its entry list and its id field. The seven registries keyed by `key` and the
- * venue registry keyed by `id` are what the files hold; funding's `key` is the cross-link anchor a
- * manifest names and its own schema marks it optional, so an entry without one is not a finding.
- */
-const SHAPES: Record<RegistryName, { list: string; idField: string; idRequired: boolean }> = {
-    venues: { list: 'entries', idField: 'id', idRequired: true },
-    datasets: { list: 'datasets', idField: 'key', idRequired: true },
-    pillars: { list: 'entries', idField: 'key', idRequired: true },
-    domains: { list: 'entries', idField: 'key', idRequired: true },
-    funding: { list: 'entries', idField: 'key', idRequired: false },
-    people: { list: 'entries', idField: 'key', idRequired: true },
-    organisations: { list: 'entries', idField: 'key', idRequired: true },
-    resources: { list: 'entries', idField: 'key', idRequired: true }
 };
 
 const NAMES: RegistryName[] = [
@@ -72,7 +57,7 @@ function readRegistry(
     catalog: TextCatalog,
     findings: Finding[]
 ): RawRegistry {
-    const shape = SHAPES[name];
+    const shape = REGISTRY_SHAPES[name];
     const file = join(hub, relPath);
     const data = readYamlMap(file, catalog, findings, () =>
         findingText(catalog, 'findings.registries.file_missing')

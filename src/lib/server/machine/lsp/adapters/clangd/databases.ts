@@ -28,7 +28,7 @@ import {
     unlinkSync
 } from 'node:fs';
 import { join } from 'node:path';
-import type { CommandFinding, LspDatabase } from '../../../../data/model/index.ts';
+import type { CommandFinding, LspDatabase } from '../../../../../data/model/index.ts';
 import { readCppFile, type Configuration } from './cpp-file.ts';
 
 /** The file a compile database is. */

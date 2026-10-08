@@ -23,6 +23,7 @@ digraph channels {
     }
     subgraph "cluster_publish server/root" {
         label="server/root"; style=solid;
+        "server/root/context";
         "server/root/hooks";
         "server/root/watch/apps";
         "server/root/watch/bookmarks";
@@ -76,6 +77,7 @@ digraph channels {
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
         "? src/lib/server/machine/runs/schedules/watch.ts:290" [label="src/lib/server/machine/runs/schedules/watch.ts:290 publish(CHANNEL)"];
+        "? src/lib/server/root/context.ts:319" [label="src/lib/server/root/context.ts:319 publish(set)"];
         "? src/lib/shell/panes/PaneView.svelte:470" [label="src/lib/shell/panes/PaneView.svelte:470 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
@@ -93,11 +95,11 @@ digraph channels {
         "? src/lib/state/system/config/editors/draft.ts:480" [label="src/lib/state/system/config/editors/draft.ts:480 message('emptyKey', at + 1)"];
         "? src/lib/state/system/config/editors/draft.ts:482" [label="src/lib/state/system/config/editors/draft.ts:482 message('duplicateKey', key)"];
         "? src/lib/state/system/config/editors/draft.ts:510" [label="src/lib/state/system/config/editors/draft.ts:510 message('emptyItem', index + 1)"];
-        "? src/lib/state/system/config/editors/fields.ts:361" [label="src/lib/state/system/config/editors/fields.ts:361 message('range', trouble.min, trouble.max)"];
-        "? src/lib/state/system/config/editors/fields.ts:364" [label="src/lib/state/system/config/editors/fields.ts:364 message('rangeMax', trouble.max ?? 0)"];
-        "? src/lib/state/system/config/editors/fields.ts:365" [label="src/lib/state/system/config/editors/fields.ts:365 message('rangeMin', trouble.min)"];
-        "? src/lib/state/system/config/editors/fields.ts:369" [label="src/lib/state/system/config/editors/fields.ts:369 message('noFolder', trouble.path)"];
-        "? src/lib/state/system/config/editors/fields.ts:371" [label="src/lib/state/system/config/editors/fields.ts:371 message('noFile', trouble.path)"];
+        "? src/lib/state/system/config/editors/fields.ts:364" [label="src/lib/state/system/config/editors/fields.ts:364 message('range', trouble.min, trouble.max)"];
+        "? src/lib/state/system/config/editors/fields.ts:367" [label="src/lib/state/system/config/editors/fields.ts:367 message('rangeMax', trouble.max ?? 0)"];
+        "? src/lib/state/system/config/editors/fields.ts:368" [label="src/lib/state/system/config/editors/fields.ts:368 message('rangeMin', trouble.min)"];
+        "? src/lib/state/system/config/editors/fields.ts:372" [label="src/lib/state/system/config/editors/fields.ts:372 message('noFolder', trouble.path)"];
+        "? src/lib/state/system/config/editors/fields.ts:374" [label="src/lib/state/system/config/editors/fields.ts:374 message('noFile', trouble.path)"];
         "? src/lib/state/system/config/editors/writer.ts:125" [label="src/lib/state/system/config/editors/writer.ts:125 message('changedSince', row.file)"];
         "? src/lib/state/system/config/rows.ts:219" [label="src/lib/state/system/config/rows.ts:219 message('loading', file)"];
         "? src/lib/state/system/config/rows.ts:221" [label="src/lib/state/system/config/rows.ts:221 message('unreadable', file, held.error)"];
@@ -208,11 +210,11 @@ digraph channels {
     "? src/lib/state/system/config/editors/draft.ts:480" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:482" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:510" -> "state/system/config/editors/draft";
-    "? src/lib/state/system/config/editors/fields.ts:361" -> "state/system/config/editors/fields";
     "? src/lib/state/system/config/editors/fields.ts:364" -> "state/system/config/editors/fields";
-    "? src/lib/state/system/config/editors/fields.ts:365" -> "state/system/config/editors/fields";
-    "? src/lib/state/system/config/editors/fields.ts:369" -> "state/system/config/editors/fields";
-    "? src/lib/state/system/config/editors/fields.ts:371" -> "state/system/config/editors/fields";
+    "? src/lib/state/system/config/editors/fields.ts:367" -> "state/system/config/editors/fields";
+    "? src/lib/state/system/config/editors/fields.ts:368" -> "state/system/config/editors/fields";
+    "? src/lib/state/system/config/editors/fields.ts:372" -> "state/system/config/editors/fields";
+    "? src/lib/state/system/config/editors/fields.ts:374" -> "state/system/config/editors/fields";
     "? src/lib/state/system/config/editors/writer.ts:125" -> "state/system/config/editors/writer";
     "? src/lib/state/system/config/rows.ts:219" -> "state/system/config/rows";
     "? src/lib/state/system/config/rows.ts:221" -> "state/system/config/rows";
@@ -357,6 +359,7 @@ digraph channels {
     "server/machine/pty/channel" -> "ch pty:*";
     "server/machine/runs/schedules/watch" -> "? src/lib/server/machine/runs/schedules/watch.ts:290";
     "server/machine/usage/watch" -> "ch usage";
+    "server/root/context" -> "? src/lib/server/root/context.ts:319";
     "server/root/hooks" -> "ch sessions";
     "server/root/watch/apps" -> "ch apps";
     "server/root/watch/bookmarks" -> "ch files";

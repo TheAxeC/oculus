@@ -33,11 +33,32 @@ export type SchemaField = {
     label?: string;
     /** The allowed values of a `select`. */
     options?: string[];
-    /** A key of the merged vocabulary whose values become a select's options. */
-    optionsFrom?: string;
-    required?: boolean;
+    /**
+     * Where the field's keys come from: registry names, `projects` or `vocab.<key>` offered
+     * together, or the source another field of the record picks. A `select` is held to them; a
+     * `text` is completed from them and held to nothing.
+     */
+    from?: string[] | FromPicked;
+    /** Whether the field must be present, always or while its `when` map holds. */
+    required?: boolean | { when: When };
+    /** The field's meaning in one plain sentence. */
     help?: string;
+    /** The condition under which the field is allowed in a record. */
+    when?: When;
+    /** The field takes keys it does not declare. */
+    open?: boolean;
+    /** The fields of each record of a `records` field. */
+    fields?: SchemaField[];
 };
+
+/** A `from` whose source is the one another field of the record picks by its word. */
+export type FromPicked = { field: string; sources: Record<string, string> };
+
+/**
+ * A condition: each key is a field of the record and holds a value or a list of values, all of
+ * which must hold. The key `path` is the file's path from the hub, matched as a glob.
+ */
+export type When = Record<string, string | string[]>;
 
 /**
  * One collection: a hub file of like records the reader edits through the file's own schema. Its
@@ -55,7 +76,8 @@ export type Collection = {
     file: string;
     /**
      * The file's own `schema:`, absent when the file has none and when what it has is not a list
-     * of field maps; validate.ts reports the second case as a finding.
+     * of field maps; the schema check (data/snapshot/schema/run.ts) reports the second case as a
+     * finding.
      */
     schema?: SchemaField[];
     entries: Entry[];

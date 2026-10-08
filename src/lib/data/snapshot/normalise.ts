@@ -12,6 +12,7 @@
 
 import { z } from 'zod';
 import { compact } from './compact.ts';
+import { fieldsOf } from './schema/field.ts';
 import { career } from './normalise-career.ts';
 import { sideProjects } from './normalise-personal.ts';
 import { indexing } from './indexing.ts';
@@ -55,7 +56,6 @@ import {
     readAs,
     readOr,
     rowsShape,
-    optionalItemsShape,
     stringItemsShape
 } from '../shapes/shapes.ts';
 
@@ -112,10 +112,10 @@ export const ENTITY_KINDS = [
  * that collection and nowhere else; state/boards/collection.ts holds the same word for the client
  * side, which may not import this module.
  */
-export const JOINT_WORK = 'joint-work';
+const JOINT_WORK = 'joint-work';
 
 /** The field of a joint-work entry that names its person. */
-export const PERSON_FIELD = 'person';
+const PERSON_FIELD = 'person';
 
 /** A finite number: NaN and Infinity are not JSON-safe and are dropped with them. */
 const numberShape = z.number();
@@ -562,45 +562,14 @@ function entry(raw: RawEntry, index: number, ident = 'title'): Entry {
     };
 }
 
-/** One field of a collection's `schema:` as the check reads it: a map naming a field and a type. */
-const namedFieldShape = z.object({ field: z.string(), type: z.string() });
-
-/** A collection's `schema:` as the check reads it: a list of maps naming a field and a type. */
-export const namedSchemaShape = z.array(namedFieldShape);
-
-/** One field of a collection's `schema:`, with the keys it may carry beside its name and type. */
-const schemaFieldShape = namedFieldShape
-    .extend({
-        label: optionalTextShape,
-        options: optionalItemsShape,
-        options_from: optionalTextShape,
-        required: z.boolean().optional().catch(undefined),
-        help: optionalTextShape
-    })
-    .transform((item): SchemaField => {
-        return compact({
-            field: item.field,
-            type: item.type,
-            label: item.label,
-            options: item.options,
-            optionsFrom: item.options_from,
-            required: item.required,
-            help: item.help
-        });
-    });
-
-/** A collection's `schema:` whole: a list of fields, or nothing when any one of them is wrong. */
-const schemaShape = z.array(schemaFieldShape);
-
 /**
  * The `schema:` a collection file carries, or undefined when it has none and when what it has is
  * not a list of maps naming a field and a type. It is all or nothing: half a schema would draw half
  * a record in a field order the file did not write, so a malformed one is left off whole.
- * validate.ts tests the same thing with `namedSchemaShape` and reports the case where the key is
- * there and nothing comes back.
+ * schema/run.ts reports the case where the key is there and nothing comes back.
  */
 export function collectionSchema(value: unknown): SchemaField[] | undefined {
-    return schemaShape.safeParse(value).data;
+    return fieldsOf(value);
 }
 
 function collection(raw: RawCollection): Collection {

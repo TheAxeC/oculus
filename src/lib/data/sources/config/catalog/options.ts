@@ -27,81 +27,23 @@
 // both may import.
 
 import { byKey, isMap, str, strings } from '../../../helpers/guards.ts';
+import {
+    CONTROLS,
+    FORMS,
+    HEADINGS,
+    SOURCES,
+    type Control,
+    type Form,
+    type Heading,
+    type Source
+} from '../../../shapes/catalog-words.ts';
 import { mapShape, readOr } from '../../../shapes/shapes.ts';
 
-/** The controls an option or a family field is set with, which decide what a value may be. */
-export const CONTROLS = [
-    'toggle',
-    'number',
-    'text',
-    'long',
-    'choice',
-    'multi',
-    'list',
-    'glyph',
-    'hue',
-    'colour',
-    'folder',
-    'file',
-    'path',
-    'parked',
-    'records'
-] as const;
-
-/** One of the words of CONTROLS. */
-export type Control = (typeof CONTROLS)[number];
-
-/** The subject headings of the Settings view, in the order they are drawn. */
-export const HEADINGS = [
-    'appearance',
-    'editor',
-    'terminal',
-    'sessions',
-    'cluster',
-    'boards',
-    'rail',
-    'presentation',
-    'sources',
-    'calendar',
-    'apps'
-] as const;
-
-/** One of the words of HEADINGS. */
-export type Heading = (typeof HEADINGS)[number];
+export { CONTROLS, HEADINGS };
+export type { Control, Form, Heading, Source };
 
 /** The heading of an entry that names none or names one HEADINGS lacks. */
 export const UNHEADED = 'unheaded';
-
-/** The lists a choice, a multi or a suggestion box can be drawn from. */
-const SOURCES = [
-    'domains',
-    'clusters',
-    'models',
-    'languages',
-    'arrangements',
-    'rail_pages',
-    'nav_groups',
-    'collections',
-    'project_types',
-    'status_chips',
-    'entry_statuses',
-    'slide_tags',
-    'code_themes',
-    'views',
-    'theme_classes',
-    'wallpapers',
-    'usage_tiers',
-    'bundle_ids'
-] as const;
-
-/** One of the words of SOURCES. */
-export type Source = (typeof SOURCES)[number];
-
-/** The forms a text can be held to, which value-rule.ts says what each looks like. */
-const FORMS = ['program', 'extension', 'bundle_id'] as const;
-
-/** One of the words of FORMS. */
-export type Form = (typeof FORMS)[number];
 
 /** Whether a word is one of the list. */
 function oneOf<T extends string>(list: readonly T[], word: unknown): word is T {
@@ -126,8 +68,10 @@ type ValuesBy = { field: string; sources: Record<string, Source> };
 
 /**
  * One option's control and the keys that shape it. A family field is this; so is the part of an
- * entry that is not its heading, section or default. `values` is a fixed list; `values_from` the
- * sources whose items are offered together; `suggest_from` the source a text box offers; `empty`
+ * entry that is not its heading, section or default. `options` is a fixed list; `from` the sources
+ * whose items are offered together, or `{ field, sources }`, the source another field of the record
+ * picks; on a text control `from` is the source the box suggests from and holds the value to
+ * nothing; `empty`
  * adds the empty value as a choice that writes `''` (`true`, or the words that say what empty
  * does, which the choice draws for its empty item); `min` and `max` bound a number, or each item
  * of a list of numbers; `whole` holds a number, or each item of a list of numbers, to a whole
@@ -138,12 +82,10 @@ type ValuesBy = { field: string; sources: Record<string, Source> };
  * `records` field.
  */
 export type FieldSpec = {
-    description: string;
+    help: string;
     control: Control;
-    values?: string[];
-    values_from?: Source[];
-    values_by?: ValuesBy;
-    suggest_from?: Source;
+    options?: string[];
+    from?: Source[] | ValuesBy;
     empty?: true | string;
     min?: number;
     max?: number;
@@ -160,7 +102,7 @@ export type FieldSpec = {
  * One option, or one family. A leaf option carries `default`, the value the Settings view's Reset
  * writes and its Modified filter compares with and, for a setting settings.ts reads, the value used
  * when the key is missing or wrong, and a `control`; a family carries `fields` and no control, and
- * so does a `local.yml` key, which has a description alone. A family that is a map may carry
+ * so does a `local.yml` key, which has a help line alone. A family that is a map may carry
  * `holds: lists`, meaning each key of the map holds a list: of records, or of values for a
  * key/value family (fields `key` and `value`); a family without it takes no list at a key.
  * `heading` is the subject the option is listed under (`unheaded` when it names none a HEADINGS
@@ -175,13 +117,22 @@ export type CatalogEntry = Omit<FieldSpec, 'control'> & {
     holds?: 'lists';
 };
 
+/** The sources a field's `from` lists, offered together; none when it picks by another field. */
+export function listedSources(spec: Pick<FieldSpec, 'from'>): Source[] {
+    return Array.isArray(spec.from) ? spec.from : [];
+}
+
+/** The `{ field, sources }` a field's `from` is, when the source is picked by another field. */
+export function pickedSources(spec: Pick<FieldSpec, 'from'>): ValuesBy | undefined {
+    return Array.isArray(spec.from) ? undefined : spec.from;
+}
+
 /**
- * Whether a check of this field reads another field of its record: its values come from the field
- * `values_by` names, or its path may be missing while the toggle field `allow_missing` names is
- * true.
+ * Whether a check of this field reads another field of its record: its options come from the field
+ * `from` picks by, or its path may be missing while the toggle field `allow_missing` names is true.
  */
 export function readsOther(spec: CatalogEntry): boolean {
-    return spec.values_by !== undefined || typeof spec.allow_missing === 'string';
+    return pickedSources(spec) !== undefined || typeof spec.allow_missing === 'string';
 }
 
 /** Config file name, then dotted key path, then entry. */
@@ -194,7 +145,7 @@ export type OptionProblem = {
         | 'control_missing'
         | 'source'
         | 'no_values'
-        | 'no_description'
+        | 'no_help'
         | 'no_fields'
         | 'range'
         | 'whole'
@@ -218,7 +169,7 @@ function finite(value: unknown): number | undefined {
     return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-/** The sources a `values_from` or `suggest_from` names, each checked against SOURCES. */
+/** The sources a `from` list names, each checked against SOURCES. */
 function sourcesOf(value: unknown, flag: (word: string) => void): Source[] {
     const words = typeof value === 'string' ? [value] : Array.isArray(value) ? strings(value) : [];
     const sources: Source[] = [];
@@ -229,7 +180,7 @@ function sourcesOf(value: unknown, flag: (word: string) => void): Source[] {
     return sources;
 }
 
-/** A `values_by` map read, or undefined when it is not `{ field, sources }`. */
+/** A `from` map read, or undefined when it is not `{ field, sources }`. */
 function valuesByOf(value: unknown, flag: (word: string) => void): ValuesBy | undefined {
     if (!isMap(value) || typeof value.field !== 'string' || !isMap(value.sources)) return undefined;
     const sources: Record<string, Source> = {};
@@ -253,19 +204,19 @@ function readSpec(
     local: boolean,
     problems: OptionProblem[]
 ): CatalogEntry {
-    const map = isMap(raw) ? raw : typeof raw === 'string' ? { description: raw } : {};
+    const map = isMap(raw) ? raw : typeof raw === 'string' ? { help: raw } : {};
     const fieldString = !top && typeof raw === 'string';
     const wrong = { any: false };
     const flag = (kind: OptionProblem['kind'], word = ''): void => {
         problems.push({ ...spot, kind, word });
         if (kind !== 'heading_missing' && kind !== 'heading_unknown') wrong.any = true;
     };
-    const entry: CatalogEntry = { description: '' };
-    const description = str(map.description);
-    if (description === undefined) {
-        if (!fieldString) flag('no_description');
+    const entry: CatalogEntry = { help: '' };
+    const help = str(map.help);
+    if (help === undefined) {
+        if (!fieldString) flag('no_help');
     } else {
-        entry.description = description;
+        entry.help = help;
     }
 
     if (isMap(map.fields)) {
@@ -295,19 +246,16 @@ function readSpec(
     }
     if (!top && family && entry.control !== 'records') delete entry.fields;
 
-    const values = Array.isArray(map.values) ? strings(map.values) : undefined;
-    if (values !== undefined) entry.values = values;
-    const from = sourcesOf(map.values_from, (source) => flag('source', source));
-    if (from.length > 0) entry.values_from = from;
-    const by = valuesByOf(map.values_by, (source) => flag('source', source));
-    if (by !== undefined) entry.values_by = by;
-    const suggested = sourcesOf(map.suggest_from, (source) => flag('source', source));
-    if (suggested.length > 0) entry.suggest_from = suggested[0];
+    const options = Array.isArray(map.options) ? strings(map.options) : undefined;
+    if (options !== undefined) entry.options = options;
+    const by = valuesByOf(map.from, (source) => flag('source', source));
+    const from = by === undefined ? sourcesOf(map.from, (source) => flag('source', source)) : [];
+    if (by !== undefined) entry.from = by;
+    else if (from.length > 0) entry.from = from;
     if (
         (entry.control === 'choice' || entry.control === 'multi') &&
-        (values === undefined || values.length === 0) &&
-        map.values_from === undefined &&
-        map.values_by === undefined
+        (options === undefined || options.length === 0) &&
+        map.from === undefined
     ) {
         flag('no_values');
     }

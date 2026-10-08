@@ -8,10 +8,7 @@
 // `tail`, so the view draws the root as a link inside the sentence.
 
 import { REPO_SETTINGS } from '../../../../data/helpers/editor.ts';
-import type {
-    EditorProblem,
-    RepoSettings
-} from '../../../../data/sources/config/editor-options.ts';
+import type { RepoProblem, RepoSettings } from '../../../../data/sources/config/editor-options.ts';
 import { refusedAnswer } from '../../../shared/answers/answers.ts';
 import { t } from '../../../shared/words/text.ts';
 import type { FileText } from '../../../sources/fs-transport.ts';
@@ -37,8 +34,10 @@ function cutAtRoot(root: string, filled: string): Pick<Origin, 'lead' | 'label' 
 }
 
 /** The words for why an entry was skipped: a value outside what the field takes, or a name. */
-function skippedReason(where: EditorProblem['where']): string {
+function skippedReason(where: RepoProblem['where']): string {
     switch (where) {
+        case 'unknown-key':
+            return t('workbench.settings_origin_key');
         case 'value':
         case 'entry':
         case 'field':
@@ -59,7 +58,7 @@ function skippedReason(where: EditorProblem['where']): string {
 }
 
 /** The dotted key of a skipped entry as the file spells it, below the `languages` map. */
-function entryName(problem: EditorProblem): string {
+function entryName(problem: RepoProblem): string {
     return problem.key.replace(/^languages\./, '');
 }
 

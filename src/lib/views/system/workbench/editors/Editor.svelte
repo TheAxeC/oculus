@@ -70,7 +70,7 @@
     const specs = $derived(draft === null ? {} : specsOf(row, draft.form));
     const keySpec = $derived(
         (Object.hasOwn(row.fields, 'key') ? row.fields.key : undefined) ?? {
-            description: '',
+            help: '',
             control: 'text' as const
         }
     );

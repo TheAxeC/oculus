@@ -25,20 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: M8
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: acd90a7603ba715c3 (builder, launched 2026-10-08)
-  worktree: .agents/worktrees/M8
-  base: d8f32d576
-  launched: 2026-10-08
-  report: agents/reviews/M8-report.md
-  builder_usage: first run, handed back case 10 (227,713 tokens, 37 tool uses, 5.0 min); resumed after Z717, with G61 and G62 added (303,454 tokens, 929 tool uses, 171.1 min); round 1, with the open item 8 change (238,741 tokens, 298 tool uses, 68.4 min)
-  brief_check: agents/reviews/M8-brief-check.md (a40f2578315ca7d21, claude-opus-5-5, 145,450 tokens, 197 tool uses, 25.4 min)
-  reviewer_report: agents/reviews/M8-refuter.md (ab7cdbacbd59ae325, claude-opus-5-5, 252,447 tokens, 189 tool uses, 34.2 min)
-  landing: not-started
-  round: 1 (sent 2026-10-08, agents/briefs/M8-round1.md)
 - step: D33
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -248,6 +234,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-08 13:04. M8 landed (the hub's YAML checked and completed in the editor; booking in plan.md; `agents/reviews/M8-landing.md`) after one repair round, its review over round 1's ten findings closed at landing; the look ran on the 8796 scratch oculus with the gate as its hub. In flight: D33 (repair round 1, builder a9ae1281ebf50855a). Open item 9 for Axel. Next: D33's review over round 1, then /land D33, then M6 (with the Z719 EPIPE fix), M7, D41, D43, D39, D36 and D40.
 - 2026-10-08 10:30. M8 reviewed (`agents/reviews/M8-refuter.md`: 3 Spec, 3 Proof, 4 Standards, 4 Behaviour findings); repair round 1 sent to its builder (`agents/briefs/M8-round1.md`, 14 rulings). Open item 8 raised (M8's unentried tests). D33 building.
 - 2026-10-08 09:10. D33 prepared (1439a44ec; brief check closed as Z718) and its builder a9ae1281ebf50855a (claude-sonnet-5-5) launched in `.agents/worktrees/D33`, beside M8's builder. Every other queued step waits for M8, D33 or M6 to land.
 - 2026-10-08 08:30. M8's builder handed back case 10 (no `deck/` in the worktree); ruled as Z717 (`agents/briefs/M8-cases.md`), `deck` and `docs` added to the worktree paths, builder resumed. D33's brief written (`agents/briefs/D33.md`); its brief check next.

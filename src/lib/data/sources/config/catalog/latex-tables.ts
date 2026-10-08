@@ -12,6 +12,7 @@
 // table, and a value that is not the shape the key names is one dropped list.
 
 import { z } from 'zod';
+import { latexAtRow, latexEnvironmentRow, latexSymbolRow } from '../../../shapes/catalog-files.ts';
 import { filledTextShape, mapShape, optionalTextShape } from '../../../shapes/shapes.ts';
 
 /** One `@` suggestion: what is typed after the `@`, the snippet it inserts, what it means. */
@@ -47,21 +48,21 @@ export type LatexEditing = {
 /** What is left out of the tables: the keys of the lists that lost a row, in the order read. */
 export type LatexEditingRead = { editing: LatexEditing; dropped: string[] };
 
+// The rows are the file shape's rows (shapes/catalog-files.ts) read leniently: a key the row does
+// not name is ignored, and an optional text that is missing or wrong is the empty text.
+
 const atShape = z.object({
-    prefix: z.string().min(1),
-    body: z.string().min(1),
+    ...latexAtRow.shape,
     description: z.string().catch('')
 });
 
 const environmentShape = z.object({
-    name: z.string().regex(/^[A-Za-z]+\*?$/),
+    ...latexEnvironmentRow.shape,
     arguments: optionalTextShape.transform((one) => one ?? '')
 });
 
 const symbolShape = z.object({
-    name: z.string().min(1),
-    source: z.string().min(1),
-    insert: z.string().min(1),
+    ...latexSymbolRow.shape,
     keywords: optionalTextShape.transform((one) => one ?? '')
 });
 

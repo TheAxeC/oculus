@@ -23,6 +23,7 @@ import { Readable } from 'node:stream';
 import mime from 'mime';
 import { z } from 'zod';
 import { inAppsFolder } from '../../data/helpers/files/apps.ts';
+import { ENGINE_ROOT, HUB_ROOT } from '../../data/helpers/hub-names.ts';
 import { configDir } from '../../data/sources/config.ts';
 import type { Finding } from '../../data/model/index.ts';
 import { inside, realPath } from '../core/paths.ts';
@@ -242,17 +243,9 @@ export function rootsFile(engine: string): string {
     return join(configDir(engine), 'sources.yml');
 }
 
-/** The key the hub itself is served under, so a collection's `link` to a file in the hub opens. */
-export const HUB_ROOT = 'hub';
-
-/**
- * The key the engine's own `config/` folder is served under. The Settings view lists that folder's
- * files and opens one in a source tab, and an edit saved there is an ordinary write under a root,
- * which the config watcher sees like any other. `local.yml` is a file of that folder and is
- * served, read and saved like the tracked ones. Nothing above the folder is served: the root is the
- * folder itself, so the rest of the engine directory stays outside every route.
- */
-export const ENGINE_ROOT = 'engine';
+// The keys the hub and the engine's config folder are served under, which the file routes' callers
+// import from here.
+export { ENGINE_ROOT, HUB_ROOT };
 
 /**
  * The engine's config folder as a root, which is the directory loadConfig merges its files from and

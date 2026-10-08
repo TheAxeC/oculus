@@ -17,8 +17,9 @@
 // every dot folder of the machine (`~/.ssh`) would then lie under it.
 
 import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps.ts';
+import { privateFolders } from '../../../../data/helpers/files/private-folders.ts';
 import { namesInterpreterLibrary } from '../../../../data/prose/lsp-servers.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { normal } from '../uris.ts';
@@ -38,7 +39,7 @@ export const NO_LIBRARY: LibraryRules = { closed: null, withheld: [] };
 
 /** The folders of this machine that hold its own state or secrets, from the engine and the hub. */
 export function withheldFolders(engineConfig: string, hub: string): string[] {
-    return [engineConfig, join(homedir(), '.oculus'), join(hub, 'secrets')];
+    return [engineConfig, ...privateFolders(hub, homedir())];
 }
 
 /** The server a path is asked for, and what it is the interpreter's folders of. */
@@ -56,7 +57,7 @@ function inClosed(path: string, closed: readonly string[]): boolean {
 }
 
 /** Whether a real path lies in one of the folders, each compared as written and as resolved. */
-function under(real: string, folders: readonly string[]): boolean {
+export function under(real: string, folders: readonly string[]): boolean {
     const target = normal(real);
     return folders.some((folder) => {
         const own = normal(resolve(folder));

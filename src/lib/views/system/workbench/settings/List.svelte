@@ -94,8 +94,8 @@
                                     onclick={() => openFile(row.file)}
                                 />
                             </div>
-                            {#if row.description !== ''}
-                                <p class="about"><CodeText text={row.description} /></p>
+                            {#if row.help !== ''}
+                                <p class="about"><CodeText text={row.help} /></p>
                             {/if}
                         </div>
                     {:else}

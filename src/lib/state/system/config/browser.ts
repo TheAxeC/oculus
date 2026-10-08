@@ -104,34 +104,34 @@ const FIELD: Record<BrowserName, keyof BrowserValues> = {
 };
 
 /** The words of each value, read when its row is made. */
-const WORDS: Record<BrowserName, () => { title: string; description: string }> = {
+const WORDS: Record<BrowserName, () => { title: string; help: string }> = {
     theme: () => ({
         title: t('workbench.settings_browser_theme'),
-        description: t('workbench.settings_browser_theme_about')
+        help: t('workbench.settings_browser_theme_about')
     }),
     code_theme: () => ({
         title: t('workbench.settings_browser_code_theme'),
-        description: t('workbench.settings_browser_code_theme_about')
+        help: t('workbench.settings_browser_code_theme_about')
     }),
     text_size: () => ({
         title: t('workbench.settings_browser_text_size'),
-        description: t('workbench.settings_browser_text_size_about')
+        help: t('workbench.settings_browser_text_size_about')
     }),
     terminal_font: () => ({
         title: t('workbench.settings_browser_terminal_font'),
-        description: t('workbench.settings_browser_terminal_font_about')
+        help: t('workbench.settings_browser_terminal_font_about')
     }),
     crt: () => ({
         title: t('workbench.settings_browser_crt'),
-        description: t('workbench.settings_browser_crt_about')
+        help: t('workbench.settings_browser_crt_about')
     }),
     wallpaper: () => ({
         title: t('workbench.settings_browser_wallpaper'),
-        description: t('workbench.settings_browser_wallpaper_about')
+        help: t('workbench.settings_browser_wallpaper_about')
     }),
     icons: () => ({
         title: t('workbench.settings_browser_icons'),
-        description: t('workbench.settings_browser_icons_about')
+        help: t('workbench.settings_browser_icons_about')
     })
 };
 

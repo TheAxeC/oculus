@@ -14,20 +14,12 @@ import type {
     ScanRule,
     Tier
 } from '../model/index.ts';
+import { MANIFEST, ROOT_FOLDER, isSideTier } from '../helpers/hub-names.ts';
 import { optionalText } from '../shapes/shapes.ts';
 import { errorLine, readYamlMap } from './yaml-file.ts';
 
 /** Folder names the walk never descends into: a project's own code and attic hold no manifests. */
 const NEVER_DESCEND = ['code', 'attic'];
-
-/** The one filename a scan tier's folder is read for. */
-export const MANIFEST = 'project.yml';
-
-/** The tier whose folders are side projects, which only the Personal board reads. */
-export const SIDE_TIER = 'side-projects';
-
-/** The folder of a repository that holds its side-project manifest. */
-export const ROOT_FOLDER = '.oculus';
 
 /**
  * The most a side project's manifest may hold. The five fields are a few lines each, so a larger
@@ -35,11 +27,6 @@ export const ROOT_FOLDER = '.oculus';
  * rebuild.
  */
 export const PERSONAL_MAX_BYTES = 64 * 1024;
-
-/** Whether a scan rule names the side-projects tier, by the last segment of its `dir`. */
-export function isSideTier(rule: ScanRule): boolean {
-    return (rule.dir.split('/').pop() ?? rule.dir) === SIDE_TIER;
-}
 
 /** Remove the filing prefix from a folder's display title. */
 function stripPrefix(name: string): string {

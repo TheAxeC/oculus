@@ -38,6 +38,7 @@ import { paintLimit, programApps } from '../../data/sources/config/settings.ts';
 import { languageMap, type LanguageMap } from '../../data/helpers/files/languages.ts';
 import type { ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
+import { movable } from '../boards/focus.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
 import { pinnedSession } from '../workbench/selection.svelte.ts';
 import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
@@ -124,7 +125,7 @@ export type SelectorsStore = {
     archiveDead: () => string[];
     manifestFields: () => FormField[];
     manifestSections: () => string[];
-    fieldChoices: (field: FormField) => Choice[];
+    fieldChoices: (field: FormField, project?: Project | null) => Choice[];
     contextWindow: () => number;
     waitingCount: () => number;
     sessionById: (id: string | null) => GroupedSession | null;
@@ -340,7 +341,7 @@ export function createSelectors(
         return readAs(stringItemsShape, configMap().archive_dead) ?? [];
     }
 
-    /** The edit form as config/catalogs/manifest-schema.yml describes it, in file order. */
+    /** The edit form as config/schemas/manifest-schema.yml describes it, in file order. */
     function manifestFields(): FormField[] {
         return formFields(configMap());
     }
@@ -353,8 +354,12 @@ export function createSelectors(
     /**
      * What one field of choices may be set to, over the snapshot and the vocabulary as they stand.
      */
-    function fieldChoices(field: FormField): Choice[] {
-        return choicesFor(field, entities.portfolio(), configMap());
+    function fieldChoices(field: FormField, project: Project | null = null): Choice[] {
+        const all = choicesFor(field, entities.portfolio(), configMap());
+        // The Focus lane of a project offers only what the board may move it to, so `holding` is
+        // not offered to a project of a tier the backlog does not draw.
+        if (project === null || field.field !== 'focus') return all;
+        return all.filter((choice) => movable(project, choice.id));
     }
 
     // ------------------------------------------------------------------ sessions The joins over

@@ -20,7 +20,7 @@ describe('optionFindings', () => {
 
     /** The entry every row starts from, a text option under a heading the vocabulary holds. */
     const SOUND = {
-        description: 'A sound entry.',
+        help: 'A sound entry.',
         heading: 'editor',
         control: 'text',
         default: ''
@@ -39,7 +39,7 @@ describe('optionFindings', () => {
         const rows: [Record<string, unknown>, string, string, string][] = [
             [{ ...SOUND, control: 'colours' }, 'behavior.yml:probe', 'text', 'editor'],
             [
-                { ...SOUND, control: 'choice', values_from: 'planets' },
+                { ...SOUND, control: 'choice', from: 'planets' },
                 'behavior.yml:probe',
                 'text',
                 'editor'
@@ -47,7 +47,7 @@ describe('optionFindings', () => {
             [{ ...SOUND, control: 'choice' }, 'behavior.yml:probe', 'text', 'editor'],
             [
                 {
-                    description: 'A family.',
+                    help: 'A family.',
                     heading: 'editor',
                     fields: { name: { control: 'text' } }
                 },
@@ -73,5 +73,30 @@ describe('optionFindings', () => {
             expect((field ?? read).control).toBe(control);
             expect(read.heading).toBe(heading);
         }
+    });
+});
+
+describe('the options file shape in loadConfig', () => {
+    /** The findings of loadConfig when options.yml holds one entry of behavior.yml. */
+    function loaded(entry: string) {
+        const text = `options:\n    behavior.yml:\n        probe:\n${entry}`;
+        const name = 'catalogs/options.yml';
+        return loadConfig(engineDir(), { name, text }).findings.filter((one) =>
+            one.file.endsWith(name)
+        );
+    }
+
+    it('names a key an entry does not take, and leaves a control to optionFindings', () => {
+        const sound = '            help: A sound entry.\n            control: text\n';
+        const found = loaded(`${sound}            bogus: 1\n`);
+        expect(
+            found.map((one) => [one.file.endsWith('/config/catalogs/options.yml'), one.key])
+        ).toEqual([[true, 'options.behavior.yml.probe.bogus']]);
+        expect(found[0].message).toBe(
+            'key options.behavior.yml.probe.bogus is not a key this file takes'
+        );
+        expect(loaded('            help: A sound entry.\n            control: colours\n')).toEqual(
+            []
+        );
     });
 });

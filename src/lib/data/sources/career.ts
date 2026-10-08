@@ -2,8 +2,9 @@
 // drawn from. Server side only: it reads the filesystem and no client module may import it.
 //
 // It parses and nothing else. What the sections mean is normalise.ts's, and whether a host status
-// is one the vocabulary allows is validate.ts's. A file that is not there is null with no finding,
-// since a hub need not keep a career plan; a file that is there and does not parse is a finding.
+// is one the vocabulary allows is the career schema's (data/snapshot/schema/run.ts). A file that is
+// not there is null with no finding, since a hub need not keep a career plan; a file that is there
+// and does not parse is a finding.
 
 import { join } from 'node:path';
 import type { TextCatalog } from '../helpers/finding-text.ts';

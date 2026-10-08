@@ -9,6 +9,7 @@ import { createRequire } from 'node:module';
 import { z } from 'zod';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import type { Finding } from '../../model/index.ts';
+import { standInShape } from '../../shapes/catalog-files.ts';
 import { mapOfShape, mapShape, readAs, readOr } from '../../shapes/shapes.ts';
 import { mustBe } from './catalog/value-words.ts';
 import { readEditorOptions, type EditorProblem } from './editor-options.ts';
@@ -91,12 +92,6 @@ function iconFile(icon: string): string | null {
         return null;
     }
 }
-
-/**
- * A stand-in: one to three printable ASCII characters, which a terminal font is sure to hold and
- * the three-character box of ui/display/Glyph.svelte is sure to fit.
- */
-const standInShape = z.string().regex(/^[\x20-\x7E]{1,3}$/);
 
 /** A map of strings out of a config key, dropping anything that is not one. */
 const stringMapShape = mapOfShape(z.string());

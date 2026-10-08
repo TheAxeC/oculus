@@ -9,7 +9,7 @@ import { readManifests } from '../../src/lib/data/sources/manifests.ts';
 import { readRegistries } from '../../src/lib/data/sources/registries.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
 import { PROJECT_DOCS, projectDocs } from '../../src/lib/data/sources/docs.ts';
-import { buildPortfolio, portfolioConfigFrom } from '../../src/lib/data/index.ts';
+import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { ENTITY_KINDS } from '../../src/lib/data/snapshot/normalise.ts';
 import { sessions } from '../../src/lib/server/sessions/index.ts';
 import { sessionFolders } from '../../src/lib/server/sessions/folders.ts';
@@ -78,7 +78,7 @@ console.log(`config keys: ${Object.keys(config.config).join(', ')}`);
 report('config', config.findings);
 
 // The whole of layer 1: read, validate, normalise. Read only, like everything above it.
-const snapshot = buildPortfolio(hub, portfolio);
+const snapshot = buildPortfolioWithSchemas(hub, portfolio).snapshot;
 console.log(`snapshot version: ${snapshot.version}`);
 console.log('entities:');
 for (const [kind, entities] of Object.entries(snapshot.entities)) {

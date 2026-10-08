@@ -19,6 +19,7 @@ import {
     latexEditingFindings,
     nestingFindings,
     optionFindings,
+    schemaFindings,
     loadConfig,
     localFile,
     localFindings,
@@ -72,6 +73,7 @@ import { savedPath } from '../machine/runs/commands/saved.ts';
 import { defaultLspPath } from '../machine/lsp/choices.ts';
 import { DebugClient, type DebugOptions } from '../machine/debug/session.ts';
 import { createRelay, type Relay, type RelayOptions } from '../machine/lsp/relay.ts';
+import { SchemaFeed } from '../machine/lsp/schema-feed.ts';
 import { spawnChild } from '../machine/lsp/held/process.ts';
 import { withheldFolders } from '../machine/lsp/library/rules.ts';
 import { followRoots } from '../machine/lsp/held/watch.ts';
@@ -241,7 +243,9 @@ export function createServerContext(
     const hub = make.createHub();
     registerFilesChannel(hub);
     const terminals = make.createTerminals(hub);
+    const schemas = new SchemaFeed();
     const relay = make.createRelay({
+        schemas,
         oculus: ownFolder(),
         node: process.execPath,
         roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local }),
@@ -283,6 +287,7 @@ export function createServerContext(
         ...latexEditingFindings(engine, config),
         ...nestingFindings(engine, config),
         ...optionFindings(engine, config),
+        ...schemaFindings(engine, config),
         ...themeFindings(engine, config),
         ...localFindings(engine, config, initial.problems),
         ...docFindings(config, local.hub, layoutFile(engine))
@@ -309,7 +314,10 @@ export function createServerContext(
                     browserRoots({ config: make.loadConfig(engine).config, engine, local }),
                 workspacesFile: local.workspaces ?? defaultWorkspacesPath()
             },
-            { built: () => built.live?.hostChanged() }
+            {
+                built: () => built.live?.hostChanged(),
+                schemas: (set) => schemas.publish(set)
+            }
         );
     const folders = (): ProjectFolder[] => {
         const message = hub.latest('portfolio');

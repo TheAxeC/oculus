@@ -52,8 +52,9 @@ export const BROWSER_GROUP = 'this-browser';
 /** The id of the group of the machine's own file. */
 const MACHINE_GROUP = 'machine';
 
-/** The ids of the groups listing the catalog files and the text files. */
+/** The ids of the groups listing the catalog files, the schema files and the text files. */
 export const CATALOGS_GROUP = 'catalogs';
+const SCHEMAS_GROUP = 'schemas';
 export const TEXTS_GROUP = 'texts';
 
 /** Every kind of row a group holds and a search reads. */
@@ -157,7 +158,7 @@ function folderGroup(
         file,
         title: file,
         path: file,
-        description: described ? describedAs(file) : '',
+        help: described ? describedAs(file) : '',
         section: '',
         modified: false
     }));
@@ -171,8 +172,8 @@ function folderGroup(
     };
 }
 
-/** The listings of the two folders the Catalogs and Texts groups are made from. */
-export type FolderListings = { catalogs: Listed; texts: Listed };
+/** The listings of the three folders the Catalogs, Schemas and Texts groups are made from. */
+export type FolderListings = { catalogs: Listed; schemas: Listed; texts: Listed };
 
 /** The file line of a tracked file over what was read of it. */
 function lineOf(file: string, status: FileStatus, said: Message | null): FileLine {
@@ -187,8 +188,8 @@ function lineOf(file: string, status: FileStatus, said: Message | null): FileLin
 
 /**
  * The groups of the view. `texts` answers the text of a tracked file, and is asked for the files
- * the catalog describes and no other. `folders` are the listings of the catalog and text folders,
- * and none leaves the two groups out.
+ * the catalog describes and no other. `folders` are the listings of the catalog, schema and text
+ * folders, and none leaves the three groups out.
  */
 export function settingsGroups(
     catalog: Catalog,
@@ -250,6 +251,13 @@ export function settingsGroups(
                 t('settings.catalogs_title'),
                 t('settings.catalogs_about'),
                 folders.catalogs,
+                true
+            ),
+            folderGroup(
+                SCHEMAS_GROUP,
+                t('settings.schemas_title'),
+                t('settings.schemas_about'),
+                folders.schemas,
                 true
             ),
             folderGroup(

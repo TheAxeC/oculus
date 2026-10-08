@@ -14,8 +14,11 @@
 #   select    one of a list | chips several of a list, with a filter | tags several free strings
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
 # `from:` names where the choices come from: a registry (venues, pillars, funding, datasets,
-# domains), `people`, `organisations`, `resources`, `projects`, or a vocabulary key of vocab.yml
-# (type_order, status_legend, focus_lanes, priority_levels). `options:` is a literal list instead.
+# domains), `people`, `organisations`, `resources`, `projects`, or a list of vocab.yml written
+# `vocab.<key>` (vocab.type_order, vocab.status_legend, vocab.focus_lanes, vocab.priority_levels).
+# `options:` is a literal list, and a select takes both. Every field has a `help:` line: the form
+# shows it and the YAML editor shows it on hover. oculus turns this file into the JSON Schema
+# of every project.yml, so a key not named here is marked in the editor and is a finding.
 manifest_schema:
   sections:
     Core: Core
@@ -23,52 +26,52 @@ manifest_schema:
     Connections: Connections
     Dates: Dates
     "Deposit & compute": "Deposit & compute"
-    "Archive (archive tier)": "Archive (archive tier)"
+    Outcome: Outcome
     "Overrides (rare)": "Overrides (rare)"
   fields:
     id:            { label: "id", type: readonly, section: Core, help: "The project's folder name. Set by the folder the project is in; rename the folder to change it." }
     tier:          { label: "Tier", type: readonly, section: Core, help: "Which board the project is on: projects, software, archive or coauthor. Set by the folder the project is in; move the folder to change it." }
-    type:          { label: "Type / outcome", type: select, from: type_order, section: Core, help: "On the Projects board, the project's stage (active, manuscript or idea); on Archive and Coauthor, how it ended (published, nogo, dropped and so on); on Software, software. The stage follows the folder the project is in, so move the folder rather than pick another stage here." }
-    short:         { label: "Short handle", type: text, section: Core }
-    title:         { label: "Title", type: text, section: Core }
-    lead:          { label: "Lead (first author)", type: text, section: Core }
+    type:          { label: "Type / outcome", type: select, from: vocab.type_order, section: Core, help: "On the Projects board, the project's stage (active, manuscript or idea); on Archive and Coauthor, how it ended (published, nogo, dropped and so on); on Software, software. The stage follows the folder the project is in, so move the folder rather than pick another stage here." }
+    short:         { label: "Short handle", type: text, section: Core, help: "A short name for the card and the lists, such as bttd or raw-pls." }
+    title:         { label: "Title", type: text, section: Core, help: "The full title of the project or paper." }
+    lead:          { label: "Lead (first author)", type: text, section: Core, help: "The first author or the person who leads the project." }
     authors:       { label: "Authors", type: tags, section: Core, help: "Everyone on the author list, in order, one name per entry. Type the names as they are written; they are not picked from the people list." }
-    "status.chips": { label: "Status chips", type: chips, from: status_legend, section: Core }
+    "status.chips": { label: "Status chips", type: chips, from: vocab.status_legend, section: Core, help: "The chips shown on the card, picked from the status legend." }
     "status.line": { label: "Status line", type: text, section: Core, help: "One short line a reader takes in at a glance, such as the page count and where it stands." }
-    focus:         { label: "Focus lane", type: select, from: focus_lanes, section: Core }
-    priority:      { label: "Priority", type: select, from: priority_levels, section: Core, help: "A flame on the card for High, Med or Low. It marks the card and does not change its place on the board." }
+    focus:         { label: "Focus lane", type: select, options: [holding], from: vocab.focus_lanes, section: Core, help: "The lane of the Focus board the project sits in; holding keeps an idea in the backlog." }
+    priority:      { label: "Priority", type: select, from: vocab.priority_levels, section: Core, help: "A flame on the card for High, Med or Low. It marks the card and does not change its place on the board." }
     pin:           { label: "Pin to top", type: checkbox, section: Core, help: "Tick to keep the card at the top of its board. Search and filters still hide it when it does not match." }
-    venue_id:      { label: "Venue", type: select, from: venues, section: Core }
-    year:          { label: "Year", type: text, section: Core }
-    eli5:          { label: "ELI5", type: textarea, section: Content }
-    next:          { label: "Next", type: textarea, section: Content }
-    latest:        { label: "Latest", type: textarea, section: Content }
+    venue_id:      { label: "Venue", type: select, from: venues, section: Core, help: "The venue the project is aimed at or published in, picked from the venues list by its id." }
+    year:          { label: "Year", type: text, section: Core, help: "The year of the paper or of the project, as a whole number." }
+    eli5:          { label: "ELI5", type: textarea, section: Content, help: "The project in two plain sentences for a reader outside the field." }
+    next:          { label: "Next", type: textarea, section: Content, help: "The next action on the project, the first thing to do when it is picked up again." }
+    latest:        { label: "Latest", type: textarea, section: Content, help: "What changed most recently in the project, in a sentence or two." }
     results:       { label: "Results", type: lines, section: Content, help: "One headline result per line, each one a result you can claim." }
     ideas:         { label: "Ideas", type: lines, section: Content, help: "One avenue to try per line." }
-    domain:        { label: "Domain", type: select, from: domains, section: Connections }
+    domain:        { label: "Domain", type: select, from: domains, section: Connections, help: "The research domain the project belongs to, picked from the domains list." }
     pillar:       { label: "Pillars", type: chips, from: pillars, section: Connections, help: "The research lines this project belongs to, picked from the pillars list." }
     funding:       { label: "Funding", type: chips, from: funding, section: Connections, help: "The grants that fund this project, picked from the funding list; pick as many as apply." }
     collaborators: { label: "Collaborators", type: chips, from: people, section: Connections, help: "The people who work on this project, picked from the people list; pick as many as apply." }
     "waiting-on":  { label: "Waiting on", type: tags, section: Connections, help: "Who or what this project is waiting for: a person from the people list or another project, one per entry." }
     related:       { label: "Related projects", type: chips, from: projects, section: Connections, help: "Other projects this one builds on or feeds, picked from the project list." }
     datasets:      { label: "Datasets", type: chips, from: datasets, section: Connections, help: "The datasets this project uses, picked from the data list." }
-    deadline:      { label: "Deadline", type: date, section: Dates }
+    deadline:      { label: "Deadline", type: date, section: Dates, help: "The day the next deadline falls on; it shows on the Focus radar while the project is live." }
     "followup.do": { label: "Follow-up: do", type: textarea, section: Dates, help: "A note of something to do later; it shows in the Follow-ups group on the Focus board." }
     "followup.after": { label: "Follow-up: not until", type: date, section: Dates, help: "Leave empty to show the note now, or pick the date before which it stays hidden." }
     snooze:        { label: "Snooze until", type: date, section: Dates, help: "Pick a date to keep this project off the ticker until then; clear it to bring the project back." }
-    "code_availability.status": { label: "Code deposit", type: select, options: [none, review-anon, deposited], section: "Deposit & compute" }
+    "code_availability.status": { label: "Code deposit", type: select, options: [none, review-anon, deposited], section: "Deposit & compute", help: "Whether the code is not deposited, deposited for anonymous review or deposited in the open." }
     "code_availability.date": { label: "Deposit date", type: date, section: "Deposit & compute", help: "The date the code was deposited. The deposit step fills it in when it creates the deposit." }
-    "code_availability.url": { label: "Deposit URL", type: text, section: "Deposit & compute" }
-    "code_availability.doi": { label: "Deposit DOI", type: text, section: "Deposit & compute" }
+    "code_availability.url": { label: "Deposit URL", type: text, section: "Deposit & compute", help: "The web address of the deposit." }
+    "code_availability.doi": { label: "Deposit DOI", type: text, section: "Deposit & compute", help: "The DOI the deposit was given." }
     "code_availability.repo": { label: "Repo name", type: text, section: "Deposit & compute", help: "The public repository name, in lowercase words joined by dashes, for example cirrhosis-competing-risks." }
-    "code_availability.description": { label: "Repo description", type: textarea, section: "Deposit & compute" }
-    "code_availability.homepage": { label: "Repo homepage", type: text, section: "Deposit & compute" }
+    "code_availability.description": { label: "Repo description", type: textarea, section: "Deposit & compute", help: "The description of the public repository." }
+    "code_availability.homepage": { label: "Repo homepage", type: text, section: "Deposit & compute", help: "The web address the repository points to as its homepage." }
     "code_availability.topics": { label: "Repo topics", type: tags, section: "Deposit & compute", help: "The GitHub topics of the repository, one per entry." }
-    "code_availability.visibility": { label: "Repo visibility", type: select, options: [public, private], section: "Deposit & compute" }
+    "code_availability.visibility": { label: "Repo visibility", type: select, options: [public, private], section: "Deposit & compute", help: "Whether the repository is public or private." }
     compute:       { label: "Compute", type: chips, from: resources, section: "Deposit & compute", help: "The clusters, machines and storage the project runs on, picked from the resources list." }
     "reproduced.date": { label: "Reproduced (date)", type: date, section: "Deposit & compute", help: "The date the whole pipeline was last run again from the raw data to regenerate the reported numbers." }
     "reproduced.note": { label: "Reproduced (note)", type: textarea, section: "Deposit & compute", help: "What was run again, and anything a rerun needs, such as a GPU cluster or credentialed data." }
-    outcome:       { label: "Outcome (citation / why-not)", type: textarea, section: "Archive (archive tier)" }
-    doi:           { label: "DOI", type: text, section: "Archive (archive tier)" }
+    outcome:       { label: "Outcome (citation / why-not)", type: textarea, section: Outcome, help: "How the project ended, as a citation for a published project or the reason for one that was stopped. Any project may carry it." }
+    doi:           { label: "DOI", type: text, section: Outcome, help: "The DOI of the published paper. Any project may carry it." }
     paths:         { label: "Path overrides", type: keymap, section: "Overrides (rare)", help: "Where a document is kept when it is not in its usual place. Change these only when a document has moved. It also holds cluster, the folder on the cluster that holds the project's code for Submit; its default is ~/projects/<id>." }
     subtasks:      { label: "Subtasks", type: keymap, section: Dates, help: "A checklist of lines, each with what to do, a deadline, whether it is done and a snooze date. Add and tick them on the project's card; this form does not change them." }

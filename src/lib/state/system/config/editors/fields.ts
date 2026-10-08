@@ -22,6 +22,8 @@ import {
     classOfHex,
     hueHex,
     hueOfClass,
+    listedSources,
+    pickedSources,
     readsOther,
     type CatalogEntry,
     type Control,
@@ -248,11 +250,12 @@ function addSource(pool: Pool, answer: SourceItems): void {
  * no source gives no items. The first source still loading or failed decides the pool's state.
  */
 export function poolOf(spec: CatalogEntry, record: Record<string, FieldValue>, lists: Lists): Pool {
-    const pool: Pool = { items: [...(spec.values ?? [])], state: 'ready', error: '' };
-    for (const source of spec.values_from ?? []) addSource(pool, lists.items(source));
-    if (spec.values_by !== undefined) {
-        const word = record[spec.values_by.field];
-        const source = typeof word === 'string' ? byKey(spec.values_by.sources, word) : undefined;
+    const pool: Pool = { items: [...(spec.options ?? [])], state: 'ready', error: '' };
+    for (const source of listedSources(spec)) addSource(pool, lists.items(source));
+    const picked = pickedSources(spec);
+    if (picked !== undefined) {
+        const word = record[picked.field];
+        const source = typeof word === 'string' ? byKey(picked.sources, word) : undefined;
         if (source !== undefined) addSource(pool, lists.items(source));
     }
     pool.items = [...new Set(pool.items)];
@@ -615,10 +618,16 @@ export type Offer = {
     error: string;
 };
 
+/** Whether a text box suggests from a source: its `from` names one and no value is held to it. */
+export function suggests(spec: CatalogEntry): boolean {
+    return controlOf(spec) === 'text' && listedSources(spec).length > 0;
+}
+
 /** The offer of a text box whose spec names a source. */
 function sourceOffer(spec: CatalogEntry, lists: Lists): Offer {
-    if (spec.suggest_from === undefined) return { items: [], note: null, error: '' };
-    const answer = lists.items(spec.suggest_from);
+    if (!suggests(spec)) return { items: [], note: null, error: '' };
+    const [suggested] = listedSources(spec);
+    const answer = lists.items(suggested);
     if (answer.state === 'ready') return { items: answer.items, note: null, error: '' };
     return {
         items: [],

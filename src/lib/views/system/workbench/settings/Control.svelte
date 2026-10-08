@@ -115,7 +115,7 @@
         <FieldControl
             spec={row.entry}
             {value}
-            label={control === 'toggle' ? row.description.replaceAll('`', '') : row.title}
+            label={control === 'toggle' ? row.help.replaceAll('`', '') : row.title}
             {lists}
             text={boxed ? typed : undefined}
             ontext={type}

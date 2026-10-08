@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
-import { interpretersFor } from '../../../../src/lib/server/machine/lsp/pyright/interpreter.ts';
+import { interpretersFor } from '../../../../src/lib/server/machine/lsp/adapters/pyright/interpreter.ts';
 import { createServers, ownFolder } from '../../../../src/lib/server/machine/lsp/servers.ts';
 import { makeRelay, open, pageFile, settle, stubSpawn } from './lsp-fixture.ts';
 
@@ -28,7 +28,14 @@ const ROWS: Row[] = [
     {
         name: 'starts each server and the interpreter probe with an argument array, the root path one argument whatever it holds',
         steps: async () => {
-            const dir = awkwardRoot(['a.py', 'x.c', 'a.ts', 'a.svelte', '.venv/bin/python']);
+            const dir = awkwardRoot([
+                'a.py',
+                'x.c',
+                'a.ts',
+                'a.svelte',
+                'a.yml',
+                '.venv/bin/python'
+            ]);
             const spawned = stubSpawn();
             const probes: { command: string; args: string[] }[] = [];
             const relay = makeRelay({
@@ -45,10 +52,12 @@ const ROWS: Row[] = [
             open(relay, page, 'lsp:c', pageFile('repo', 'x.c'), 'c');
             open(relay, page, 'lsp:typescript', pageFile('repo', 'a.ts'), 'typescript');
             open(relay, page, 'lsp:svelte', pageFile('repo', 'a.svelte'), 'svelte');
+            open(relay, page, 'lsp:yaml', pageFile('repo', 'a.yml'), 'yaml');
             // The venv's own interpreter is asked only once approved, so the one probe made is the
             // PATH's, by name; a typed or approved path is a single program argument as well.
-            for (let turn = 0; turn < 30 && spawned.calls.length < 4; turn += 1) await settle();
+            for (let turn = 0; turn < 30 && spawned.calls.length < 5; turn += 1) await settle();
             expect(spawned.calls.map((call) => call.command).sort()).toEqual([
+                '/node',
                 '/node',
                 '/node',
                 '/node',
@@ -59,6 +68,11 @@ const ROWS: Row[] = [
                 expect(call.cwd).toBe(dir);
                 expect(call.args.some((one) => one.includes(AWKWARD))).toBe(false);
             }
+            const yaml = spawned.calls.find((call) => call.args.includes('--permission'));
+            expect(yaml?.args.slice(0, 2)).toEqual([
+                '--permission',
+                '--allow-fs-read=/oculus/node_modules'
+            ]);
             expect(probes.every((one) => Array.isArray(one.args))).toBe(true);
             await relay.close();
         }
@@ -73,7 +87,7 @@ const ROWS: Row[] = [
         }
     },
     {
-        name: 'gives pyright its script and clangd its database folder as single arguments',
+        name: 'gives pyright its script, the YAML server its permission flags and clangd its database folder as single arguments',
         steps: () => {
             const servers = createServers({
                 oculus: '/oculus dir',
@@ -92,6 +106,17 @@ const ROWS: Row[] = [
                 args: ['/oculus dir/node_modules/pyright/langserver.index.js', '--stdio'],
                 cwd: AWKWARD,
                 program: 'pyright'
+            });
+            expect(servers.forId('yaml').launch(setup)).toEqual({
+                command: '/a node',
+                args: [
+                    '--permission',
+                    '--allow-fs-read=/oculus dir/node_modules',
+                    '/oculus dir/node_modules/yaml-language-server/bin/yaml-language-server',
+                    '--stdio'
+                ],
+                cwd: AWKWARD,
+                program: 'yaml-language-server'
             });
             expect(servers.forId('clangd').launch(setup)?.args).toEqual([
                 '--header-insertion=never',

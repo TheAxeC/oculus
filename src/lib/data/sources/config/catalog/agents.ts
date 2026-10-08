@@ -5,9 +5,9 @@
 // it is on and only the text knows lines. Every refusal is a finding and the rest of the file still
 // reads: a value the rule refuses is left out of its picker, and a picker whose flag is not one the
 // CLI takes, or whose default is not one of its values, is left out whole, so the composer never
-// offers a choice the start would then refuse. The flags each agent may be given are held here, and
-// a start builds its argv from the parsed file and nothing else: a pick is an id, and the words
-// that reach the command line are the file's.
+// offers a choice the start would then refuse. The flags each agent may be given are held in
+// data/shapes/catalog-words.ts, and a start builds its argv from the parsed file and nothing else:
+// a pick is an id, and the words that reach the command line are the file's.
 //
 // The yaml library's own node test is imported as `isYamlMap`, so a parsed value is never mistaken
 // for a node.
@@ -23,19 +23,9 @@ import type {
     AgentChoicesWhy,
     AgentId
 } from '../../../model/index.ts';
+import { AGENT_FLAGS, AGENTS } from '../../../shapes/catalog-words.ts';
+import { AGENT_FILE_KEYS } from '../../../shapes/catalog-files.ts';
 import { itemsShape, mapShape, readAs, readOr } from '../../../shapes/shapes.ts';
-
-/** The agents the file may name, in the order the composer offers them. */
-export const AGENTS: AgentId[] = ['claude', 'codex'];
-
-/**
- * The flags each agent's pickers may pass, from `claude --help` and `codex --help`. A picker that
- * names any other flag is refused, so the file cannot put an arbitrary option on a command line.
- */
-export const AGENT_FLAGS: Record<AgentId, string[]> = {
-    claude: ['--model', '--effort', '--permission-mode'],
-    codex: ['-m', '-c', '-s', '-a']
-};
 
 /** The values a flag with a closed set of them accepts, from the same two help texts. */
 const CLOSED: Record<string, string[]> = {
@@ -48,10 +38,7 @@ const CLOSED: Record<string, string[]> = {
 /** The configuration keys a `-c` pair may set. */
 const CONFIG_KEYS = ['model_reasoning_effort'];
 
-const TOP_KEYS = ['agents'];
-const AGENT_KEYS = ['label', 'lists'];
-const LIST_KEYS = ['label', 'flag', 'default', 'values', 'cache'];
-const VALUE_KEYS = ['id', 'label', 'pass', 'confirm'];
+const { top: TOP_KEYS, agent: AGENT_KEYS, list: LIST_KEYS, value: VALUE_KEYS } = AGENT_FILE_KEYS;
 
 /** What a read of the file gives: the agents it offers, and every line it refused. */
 export type AgentsRead = { agents: AgentChoices[]; findings: AgentChoicesFinding[] };
