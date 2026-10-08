@@ -200,6 +200,36 @@ Agent usage: a2cb4c691ca4ee98c, claude-opus-5-5; 296,952 tokens, 97 tool uses, 1
 
 ## Closed (the session's change to the brief for every finding above, and each dictated line added after the check, made before the preparation commit)
 
-- (left for the session)
+- Names, `lint-fixture.ts` and `settings.test.ts` outside the paths: both added to "Paths this step writes" and to item 7; `settings.test.ts` added to Verify 2 for G12 and G13.
+- Names, no lawful home for the highlighter and the catalog: item 2 now passes the worker's client and the catalog through `LintRouteOptions`, made in `server/root/context.ts` and held in `server-context.ts`, passed by the lint `+server.ts`, with `context-fixture.ts` and `lint-fixture.ts` giving a test's own; all five in the paths; `context.ts` added to "Shared with D39".
+- Names, item 11's `t()`: item 11 and Conventions now say the server words rows with `words(catalog, key, ...)` of `server/core/words.ts`.
+- Names, head comments made false: `lint.svelte.ts:1`, `lint-words.ts:8`, `problem-sources.ts:3` (its range widened to 1-35) and `server/core/program.ts:2` added to item 12 and to the paths.
+- Step line, ruling 18 written to (b): item 4 now gives each arrow's ASCII form as a `kind: 'fix'` and ` to ` as a suggestion; case 12 expects the `->` fix; the C4 choice section replaced by "Rulings this brief is written to"; the remove-unicode citation updated to line 50 after 310bbac94.
+- Step line, ruling 19 conditional: item 13, Paths, Verify 2 and the Cases note now make G71's test unconditional.
+- Step line, Folder Fix All with no requirement: item 14 added (the Files row menu, the plan through the lint route with its reparse and its cap, the confirm with a ticked box per file under open item 20.3 (a), the write as `op: 'writing-fix'` through `lsp-edit`'s checked chain with the private folders refused, the History copy and record), Decision 13, cases 50 to 55, the paths, the docs of item 12, and G1, G2, G3 (widened) and G9 in item 13.
+- Premises, case 4: now 13-28, sixteen lines.
+- Premises, case 41's paragraph count: case 41 now applies item 5's `$$` rule, and the orchestrator's counts at the base are written into the case before dispatch, a different number being a finding.
+- Premises, "13 under reviews": 12.
+- Premises, the head: "What is on the tree" now reads on main at 4d7c65f9f with one head named; case 3 names its entry by its text, since the state file moves with every commit.
+- Premises, remove-unicode line 50: the citation reads the line after 310bbac94.
+- Premises, `isPreferred`: 292.
+- Premises, transport.ts's path: named as `ui/controls/editor/kit/lsp/transport.ts` in the timing line.
+- Cases, case 1 against the Code-line convention: open item 20.1 (b), Axel: `agents/guarded.md` keeps its continuation lines and is in the skip default; case 1 now expects `off`, with the join only when the skip list is emptied; G71's Doc text is asked in the file's present form.
+- Cases, received text marked: open item 20.3 (a), Axel: the folder Fix All's confirm has a ticked box per file and only ticked files are written; item 7 and case 6 say so.
+- Cases, the page halves: a "Proof of the page halves" paragraph names cases 13, 15, 21, 30, 36, 39, 53 and the folder dialog as a run of the route or store half plus reading and the look for the page half.
+- The question, case 42 and Decision 4: Decision 4 replaced: comments are found in a worker thread from the start, with the scopes-only `tokenizeLine`, a 2,000-unit line cap and a 5 s limit (item 2); case 42 now times a read code file (a scratch copy of `page.py` with a planted dash) and shows the event loop free; cases 44 and 45 added for the worker.
+- The question, `.tsx`: item 3 now picks the Shiki id by extension, `tsx` and `jsx`; case 43 added.
+- The question, the join merging lists: item 5 now makes a join a `kind: 'fix'` only when the re-lex gives the same blocks; case 46 added.
+- The question, link definitions and HTML attribute URLs: item 6 leaves both out; case 47 added.
+- The question, G71 against docstrings: open item 20.2 (a), Axel: G71 names Python docstrings; item 13 holds the ruled words.
+- The question, the build and Shiki's runtime load: Verify 3 now asks for the worker's file in the server output, and cases 41, 42 and 44 load Shiki and the worker at run time.
+- Implied inputs, YAML quoted scalars and the line-start ellipsis: item 4 now escapes in quoted scalars, gives a line-start ellipsis only a suggestion, and reparses every YAML fix; case 48 added.
+- Implied inputs, the unspaced em dash: item 4 now replaces the dash and the spaces around it; case 49 added.
+- Implied inputs, a glyph-surface code file with arrows only: item 3's pre-scan ignores arrows there; case 19 says the file is not sent to the worker.
+- Implied inputs, concurrent first requests, after close, superseded, grammar failure, long line: item 2 and cases 44 and 45.
+- Implied inputs, the folder Fix All's refusals: cases 50 to 55.
+- Dictated text, the skip default against list B: item 7's default now skips `**/manuscript/**/*.tex` and `.bib` only, adds `tools/oculus/.scratch/migration/plan.md` and, by open item 20.1 (b), `agents/guarded.md`; `**/third_party/**` stays as vendored (Decision 14); received text is kept by the folder confirm's boxes (20.3 (a)).
+- Dictated text, G71's words and layout: ruled by Axel as 20.2 (a) and 20.1 (b); written in item 13.
+- Dictated lines added after the check, each read by the orchestrator: G71's words (item 13, Axel's ruling 20.2 (a), quoted as ruled); the folder menu item "Fix All Writing Problems in Folder...", the button "Fix N Files" and the History words "Fixed by the writing rules in {0} files" and "... in 1 file" (item 14), plain words in the catalog's form.
 
 Probes written by this check, all read-only: `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d40-check/` (`join.mjs`, `synth.json`, `synth2.json`, `paras.mjs`, `today-brief.mjs`, `skipfilter.mjs`, `shiki2.mjs`, `shiki3.mjs`, `cost.mjs`, `md-all.txt`, `md-kept.txt`, `mdyml-now.txt`).
