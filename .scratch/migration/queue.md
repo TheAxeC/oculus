@@ -1,13 +1,12 @@
-In flight (2 of 6 slots):
-- M8 (the hub's YAML checked in the editor): building (resumed after a case ruling).
-- D33 (the Problems view): building.
+In flight (1 of 6 slots):
+- D33 (the Problems view): repair round 1.
 
-Queued, in order (14 steps):
-- M6 (the collection forms removed): after M8 and D33.
-- M7 (a project folder moved in Files): after M6.
+Queued, in order (14 steps; M8 landed 2026-10-08 as 7c5514850):
+- M6 (the collection forms removed): after D33; recheck 3 saved and its choices closed (Z724), brief written after D33 lands.
+- D39 (hub keys as links): after D33; survey saved and its choices closed (Z725), open item 10 for its guarded entries; before M7 (Z725 C4).
+- M7 (a project folder moved in Files): after M6 and D39.
 - D41 (links in Markdown checked): after M7.
-- D43 (LaTeX navigation through texlab): after M8.
-- D39 (hub keys as links): after M8.
+- D43 (LaTeX navigation through texlab): ready to prepare.
 - D36 (linters on save): after D33.
 - D40 (the writing rules as editor marks): after D36.
 - Q72 (the architecture re-read): paused (Axel).

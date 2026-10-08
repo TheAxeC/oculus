@@ -4,6 +4,34 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z725 (2026-10-08, step D39, the orchestrator, automode): the choices of D39's premise survey
+
+- Chosen: hub-key definition, references and rename answered by the YAML server entry through a relay hook, from an index built with the snapshot and overlaid with open tabs; every reference declared in a schema, `waiting-on`, the deck groups and the engine's two keys included; vocabulary values navigable and their rename refused; a project id's rename refused and left to M7's folder move, D39 queued before M7; a Refactor Preview as VS Code's; the rename copy limit raised to the delete limit so the literature radar can be renamed in.
+- Not chosen: page-side providers over a new route; the 17 schema fields alone, which leave broken values; no navigation for vocabulary values; ids renamed with their folders left; a Confirm with counts; the radar refused; a disk read per request without the open tabs (each the lazy option of its choice).
+
+Where it applies: D39, M7's order. Booked in `plan.md` Rulings, D39's step line and the closed log of `orchestrator-history.md`.
+
+## Z724 (2026-10-08, step M6, the orchestrator, automode): the choices of M6's third premise recheck
+
+- Chosen: every control that writes a file disabled while a source tab on this browser page holds unsaved text of it; Edit's caret through D33's range when an empty range places a caret, otherwise the placement flag; `""` for a text field and an empty value for a `select` with `from` or a `date`; D33's `asked` nonce reused.
+- Not chosen: the three in-place controls alone, or the current workbench page alone (the lazy options); `""` for every field, which marks the first Add on Joint work wrong.
+
+Where it applies: M6. Booked in `plan.md` Rulings, M6's step line and the closed log of `orchestrator-history.md`.
+
+## Z723 (2026-10-08, step D33, the orchestrator, automode): a removed served root and the rows of a nested repository
+
+- Chosen: a command row goes when its repository lies under no served root, and the LaTeX store forgets the targets and diagnostics of a root that is no longer served; fixed at D33's landing.
+- Not chosen: rows dropped when their repository is not itself a served root, which removes a nested git repository's live rows; a filter at the problem lists that leaves the dead entries in the stores (the lazy option).
+
+Where it applies: D33. Booked in `plan.md` Rulings, D33's step line and the closed log of `orchestrator-history.md`.
+
+## Z722 (2026-10-08, step M6, the orchestrator, automode): the eight choices of M6's second premise recheck
+
+- Chosen: the Leads view stops sending `lead-add`, which stays a write kind apps may send; the existing identity check extended to empty identities, venues' `id` and the leads feed; M6's stub built on M8's schema format, M8 having landed; a card's in-place controls disabled while a source tab holds unsaved text of the same file; Edit's caret just after `<key>: `; every open of a source file stamped so a second press goes there again; the Literature search's add form kept.
+- Not chosen: `lead-add` retired from the apps API (a breaking change to a published shape); two new finding keys beside the existing identity check; an in-place write left to meet the save conflict, where Overwrite would erase it (the lazy option); the caret at the line alone (the lazy option); the second press fixed for M6's callers only (the lazy option); the radar file opened with a stub in place of the add form, which loses the hit's prefill.
+
+Where it applies: M6. Booked in `plan.md` Rulings, M6's step line and the closed log of `orchestrator-history.md`.
+
 ## Z719 (2026-10-08, step M6, the orchestrator, automode): the desktop app's EPIPE crash folded into M6
 
 - Chosen: M6, the next step to be prepared, drops a write to a closed output in `src/desktop/app.ts`'s `print` and makes `tests/server/desktop/app-harness.ts` end its Electron when the process that started it ends.

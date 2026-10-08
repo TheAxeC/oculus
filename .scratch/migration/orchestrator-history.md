@@ -4,6 +4,11 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z725 (2026-10-08): automode, the choices of D39's premise survey closed with their recommendations; its guarded entries raised as open item 10 (`plan.md` Rulings Z725).
+- Z724 (2026-10-08): automode, the choices of M6's third premise recheck closed with their recommendations (`plan.md` Rulings Z724).
+- D39's premise survey (a26d8068dfc88ec1f, 2026-10-08) broke the rule on private files: four of its commands passed `tools/oculus/config/local.yml` to `cat` or `grep` and one grep searched the hub's `secrets` folder for `.yml` files; it printed only a byte total, per-extension counts and file names, none of them under `secrets` or `local.yml` (its report, first section).
+- Z723 (2026-10-08): automode, D33's builder found ruling 5 of its round 1 wrong for a nested git repository; closed with option (a), fixed at D33's landing (`plan.md` Rulings Z723).
+- Z722 (2026-10-08): automode, the eight choices of M6's second premise recheck closed with their recommendations (`plan.md` Rulings Z722).
 - Z719 (2026-10-08): automode, an Electron of `start.test.ts` that D33's builder left orphaned by killing vitest hit EPIPE in `src/desktop/app.ts:55` and showed an error dialog on Axel's screen; the orchestrator ended it (pid 3812) and eight orphaned headless Chromes of the builder, corrected the builder, and folded the EPIPE fix and the harness's orphan into M6.
 - Open item 7 (2026-10-08): Axel ruled (a): G62, the save-conflict compare read again when the file on disk moves; its three-row test written by M8 (`agents/briefs/M8-guarded.md`).
 - Open item 6 (2026-10-08): Axel ruled (a): G61, the server context's config cache; its test, kept in D28's report, landed by M8 (`agents/briefs/M8-guarded.md`).
