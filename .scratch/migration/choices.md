@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z759 (2026-10-09, step D56, the orchestrator, automode): the kept workbench's view state, and Close in the Workbenches menu
+
+- Chosen: (a) each kept workbench entry carries `states: { <instanceId>: <state> }` in browser storage, the ui record of each tab snapshotted at close and written back at reopen, a source tab's unsaved text left out; (b) an optional trailing action on `MenuItem`, drawn as its own button, used for Close.
+- Not chosen: a kept layout with no view state (the lazy option: the reopened tabs lose their folder limit); two rows per workbench (the lazy option); a hand-drawn popover (against the Menu primitive).
+
+Where it applies: D56. Booked in `plan.md` Rulings, the closed log of `orchestrator-history.md` and `agents/briefs/D56-cases.md`.
+
 ## Z758 (2026-10-09, step D50, the orchestrator, automode): links in the carry-over, and the findings of D50's review over repair round 1
 
 - Chosen: (a) a link under a carried folder is copied only when its target lies inside that carried folder, so no secret of `~/.oculus` reaches the hub's tracked folder; (b) a carried path that is itself a link is copied as what it points to, unless it points into the secret folders or at `approvals.json`; (c) a dangling link is left out with a finding and the rest is copied; (d) the DATA-MAP sentences fixed at landing, the apps sentences after open item 31; (e) the test titles and the roots helper fixed at landing.
