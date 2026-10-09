@@ -190,7 +190,10 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
         );
     }
 
-    /** One Markdown document of the hub, by the path its `docs:` entry in layout.yml names. */
+    /**
+     * One Markdown document of the hub, by the path its `docs:` entry in layout.yml names or, on an
+     * entry's page, by the path of a Markdown file in the folder its `link` names.
+     */
     function hubDocument(path: string): DocState {
         if (path === '') return NOTHING;
         return reading(ownKey(HUB, path), `${DOCS}?hub=${encodeURIComponent(path)}`);

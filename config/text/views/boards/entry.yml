@@ -1,0 +1,23 @@
+# Oculus text owned by the entry view, the tab one collection entry whose link names a folder opens
+# as. The view is opened from the title of that entry's card, so its words name what the reader came
+# from: the card, the folder's documents and files, and the sessions working in the folder.
+text:
+    views:
+        entry: Entry
+        entry_glyph: cards
+    entry:
+        toolbar: Entry controls
+        none: This tab was opened for no entry. Press the title of a card whose link names a folder to open its page.
+        unknown: 'The file of {0} holds no entry with the key {1}.'
+        no_folder: This entry's link names no folder of the hub, so there are no documents, files or sessions to show.
+        reading: Reading the folder ...
+        open_collection: 'Show in {0}'
+        open_collection_tip: 'Open {0} and scroll to this entry'
+        documents: Documents
+        no_documents: The folder holds no Markdown file.
+        doc_loading: loading the document ...
+        doc_failed: 'the document was not read: {0}'
+        files: 'Files ({0})'
+        sessions: Sessions
+        no_sessions: No session has worked in this folder.
+        none_glyph: folder

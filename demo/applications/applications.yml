@@ -1,17 +1,21 @@
 # Job applications -> the Applications tab.
+# Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Applications
 schema:
+  - { field: key, type: text, required: true, help: "The application's short name, unique in this file; a write and Edit in File address the entry by it." }
   - { field: title,  type: text,   required: true }
   - { field: sub,    type: text }
   - { field: status, type: select, options: [in-prep, applied, rejected, declined, withdrawn] }
   - { field: date,   type: text }
   - { field: url,    type: text }
 entries:
-  - title: Assistant Professor, ML
+  - key: assistant-professor-ml
+    title: Assistant Professor, ML
     sub: Example University
     status: applied
     date: 2026-02
-  - title: Postdoc, graph learning
+  - key: postdoc-graph-learning
+    title: Postdoc, graph learning
     sub: Research Institute
     status: declined
     date: 2025-11

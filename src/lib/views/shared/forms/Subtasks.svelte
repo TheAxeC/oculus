@@ -9,7 +9,7 @@
     // open it.
     //
     // Two views draw it: views/shared/card/ProjectCard.svelte, which hands it the `{ id }` of one
-    // manifest, and views/boards/collection/EntryCard.svelte, which hands it the `{ id, collection
+    // manifest, and views/shared/forms/entry/EntryCard.svelte, which hands it the `{ id, collection
     // }` of one entry of one collection. The host is the only difference between the two, so it is
     // the prop, and `SubtaskTarget` is the write path's own type for it.
     //

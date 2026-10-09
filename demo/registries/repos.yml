@@ -3,9 +3,11 @@
 # of the portfolio (which projects have code deposited vs not - derived from each project.yml `code_availability:`).
 # Schema: tools/cockpit/README.md. status = active | finished | archived. Put the GitHub URL in `url:`.
 # `related:` ids cross-link to the project cards a repo backs. Edit in served mode on the Code tab.
+# Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Code
 intro: "Personal projects, research tools, and finished repos, plus the portfolio's code-availability coverage (which projects have a code deposit, which don't). A curated list; add your GitHub URLs (edit in the cockpit). Paper deposits also surface from each project's `code_availability`."
 schema:
+  - { field: key, type: text, required: true, help: "The repository's short name, unique in this file; a write and Edit in File address the entry by it." }
   - { field: title,   type: text,     required: true }
   - { field: sub,     type: text,     label: "Subtitle" }
   - { field: status,  type: select,   options: [active, finished, archived], required: true }
@@ -17,7 +19,8 @@ schema:
 
 entries:
   # -- Active ---------------------------------------------------------------
-  - title: "tensorkit - tensor decomposition toolkit"
+  - key: tensorkit-tensor-decomposition-toolkit
+    title: "tensorkit - tensor decomposition toolkit"
     sub: "A small library of tensor decompositions (CP, Tucker, block-term) with a scikit-learn-style API"
     status: active
     meta:
@@ -28,7 +31,8 @@ entries:
     note: "Backs several of the example projects (streaming-anomaly, robust-embeddings)."
     related: [robust-embeddings]
 
-  - title: "example-hub"
+  - key: example-hub
+    title: "example-hub"
     sub: "This fake research monorepo - projects, registries, and the cockpit demo"
     status: active
     meta:
@@ -37,7 +41,8 @@ entries:
     tags: [demo, research-hub, infrastructure]
 
   # -- Finished -------------------------------------------------------------
-  - title: "bench-suite"
+  - key: bench-suite
+    title: "bench-suite"
     sub: "Reproducible benchmark harness (finished, archived after the paper shipped)"
     status: finished
     meta:

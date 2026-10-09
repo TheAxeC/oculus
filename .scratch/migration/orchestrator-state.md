@@ -37,7 +37,7 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with D41, tools/oculus/DESIGN.md (D41 lines 23, 166, 503, 575-576, D46 line 142), src/lib/state/client/context.ts and src/lib/state/sources/explorer/ops.svelte.ts (D41 adds the Markdown edit wiring, D46 the open call; separate hunks), tests/checks/source/keys.test.ts (one line each), tests/checks/config/config.test.ts (each its own keys) and docs/files-and-search.md (D41 lines 69 and 85, D46 the search section near 140); with D57, tools/oculus/DESIGN.md (D57 line 238), docs/window.md (D57 line 15, D46 the palette section 72-80) and src/lib/state/workbench/layout/index.ts (D57 the KeepRule export, D46 one export line for tabForKind); different lines, each merge is simple
   cases_ruling: agents/briefs/D46-cases.md (case 9 to option A, the extra paths, the 50 ms bound for every keystroke); its second section (Z754): the file mode's matching in a Web Worker, the bound on the page's main thread; its third section (open item 28 (a)): `F1` removed from `FAMILIES` in `history.test.ts`, the file added to the paths
   builder_usage: 306,126 tokens, 80 tool uses, 16.3 min (the first run and the hand-back of case 9); after the ruling, to the hand-back on the 50 ms bound: 75,516 tokens, 155 tool uses, 69.5 min; resumed with the ruling on the 50 ms bound, to the hand-back on the F1 check: 243,385 tokens, 102 tool uses, 69.4 min; resumed with ruling 28, to the report: 319,997 tokens, 26 tool uses, 18.1 min; round 1: 216,918 tokens, 89 tool uses, 61.2 min
-  reviewer_report: agents/reviews/D46-refuter.md (a7cdb86a0c105ec03, claude-opus-5-5, 301,318 tokens, 80 tool uses, 33.0 min); over round 1: running (a2f2b3fa07ace87d6, claude-opus-5-5)
+  reviewer_report: agents/reviews/D46-refuter.md (a7cdb86a0c105ec03, claude-opus-5-5, 301,318 tokens, 80 tool uses, 33.0 min); over round 1: a2f2b3fa07ace87d6, claude-opus-5-5, 243,263 tokens, 64 tool uses, 25.1 min
   round_1: agents/briefs/D46-round1.md, sent to the builder over the tree copied at .agents/worktrees/D46-round0
   landing: not-started
   round: 1
@@ -55,21 +55,6 @@ dispatch:   # steps in flight, up to six (Z632)
   round_1: agents/briefs/D48-round1.md, sent to the builder over the tree copied at .agents/worktrees/D48-round0
   shared_paths: with D41, model-entities.ts (D41 lines 82, 103, 505; D48 SideProject 804-815), data/sources/manifests.ts (D41 lines 100-160; D48 the comments at 25 and 356-360), config/text/findings.yml (D41 removes line 36; D48 lines 43 and 45), vocab.yml (D41 line 228; D48 199-206), keys.test.ts (one line each), DESIGN.md (D41 23, 166, 503, 575-576; D48 552) and docs/views.md (D41 73 and its Audit section; D48 5-7, 21-23); with D41, portfolio.ts (D41 589-606; D48 92) and model/index.ts (D41 608; D48 147), the latter also with D46 (557); with D46, options.yml (D46 beside search.max_hits; D48 the `scan` help at 1230), keys.test.ts, HELP.md (D46 79-80; D48 105) and DESIGN.md (D46 142); with D47, keys.test.ts, HELP.md (D47 43, 134, 138-139), docs/views.md (D47 159-181) and DESIGN.md (D47 225, 456); with D57, DESIGN.md (D57 238); different lines, each merge simple
   landing: not-started
-  round: 1
-- step: D52
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a991368e85fbfbc0d (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D52
-  base: d7a654584
-  launched: 2026-10-09
-  report: agents/reviews/D52-report.md
-  builder_usage: 274,474 tokens, 244 tool uses, 74.8 min; round 1: 315,251 tokens, 157 tool uses, 78.3 min
-  brief_check: agents/reviews/D52-brief-check.md (af6a63a7f7aa23810, claude-opus-5-5, 227,555 tokens, 99 tool uses, 13.1 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: docs/views.md with D41 (73, the Audit section at 211), D47 (159-181), D48 (5-7, 21-23) and D51 (243), D52 lines 95-118 and 249-257; HELP.md with D46 (79-80), D47 (43) and D48 (105), D52 line 156; docs/window.md with D46 (72-80), D52 line 41, which D57 rewrote on main after D52's base, so line 41 is merged by hand at D52's landing; docs/DATA-MAP.md with D41 (69), D52 lines 156-177, 193-194, 284 and 352; src/lib/data/helpers/hub-names.ts with D48 (82), D52 93-106; config/text/findings.yml with D41 (keys it adds) and D48 (43, 45), D52 200-201; src/lib/data/snapshot/normalise.ts with D48 (234-280, 321-323, 530-531), D52 line 514; tests/checks/tree/allow-duplication.txt with D47 (23), D52 line 20; tests/checks/source/keys.test.ts with D41, D46, D47 and D48, each only the keys it adds or removes; network/events.yml and education/education.yml changed by Axel's f28e137f1 after D52's base, every entry gaining a key line. Different lines everywhere, so the merges are simple, except window.md line 41 and Axel's two files, which the landing merges by hand.
-  reviewer_report: agents/reviews/D52-refuter.md (a5a8ec477d9b19366, claude-opus-5-5, 351,361 tokens, 132 tool uses, 25.7 min); over round 1: a167dc35b5e39e07f, claude-opus-5-5, 286,288 tokens, 96 tool uses, 28.8 min
-  round_1: agents/briefs/D52-round1.md, sent to the builder over the tree copied at .agents/worktrees/D52-round0
-  landing: cherry-picking
   round: 1
 
 - step: D50
@@ -111,8 +96,8 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 82eaeace7
   launched: 2026-10-09
   report: agents/reviews/D53-report.md
-  builder_usage: 202,347 tokens, 160 tool uses, 53.4 min
-  reviewer_report: agents/reviews/D53-refuter.md (a52bc4284562a0424, claude-opus-5-5, 259,880 tokens, 69 tool uses, 23.5 min)
+  builder_usage: 202,347 tokens, 160 tool uses, 53.4 min; round 1: 317,432 tokens, 30 tool uses, 12.0 min
+  reviewer_report: agents/reviews/D53-refuter.md (a52bc4284562a0424, claude-opus-5-5, 259,880 tokens, 69 tool uses, 23.5 min); over round 1: running (ac5b1a39ceb0164f4, claude-opus-5-5)
   brief_check: agents/reviews/D53-brief-check.md (a12465afebb34bf1c, claude-opus-5-5, 254,223 tokens, 79 tool uses, 12.0 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: src/lib/state/client/context.ts with D41 and D46 (different lines; D53 adds the registerUnique call beside 762); ActivityRail.svelte with D50 (head comment only); Settings.svelte with D50 (D53 changes the registration line only); docs/window.md with D46 (72-80), D50 (25, 29) and D52 (41), D53 lines 21, 54 and a paragraph after 33; DESIGN.md with D41, D46, D48, D50 and D51, D53 a new bullet after 480; different lines everywhere, each merge simple
   landing: not-started
@@ -319,6 +304,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (after D52). D52 landed (a page per collection entry; booking in plan.md; `agents/reviews/D52-landing.md`) after one repair round and the review over it, its findings closed at landing; fixes at landing: the person page's Folder heading, the `apps.md` example's `status`, the `new-entry` undo narrowed, `valueNow`'s comment, the entry page's Files heading aligned (the look), three tests tagged slow under Z64. D41 and D53 are in repair round 1 (D53's review over the round running); D46 and D48 have their reviews over round 1 and wait to land, each with findings to fix at landing; D50's builder runs. Axel unpaused Q72 and R2. Next: /land D48, /land D46, R2 into the free slot, D56 after D53, D49 after D46, D55 after D50.
 - 2026-10-09 (D46 round 1). D46's first review saved (`agents/reviews/D46-refuter.md`); its findings sent as repair round 1 (`agents/briefs/D46-round1.md`) to builder a741dc49f99c07dba. In flight (6 of 6): D41, D50 and D53 (builders), D46, D48 and D52 (repair round 1). Next: each report and the review over each round as it arrives; D49 after D46, D56 after D52 and D53, D55 after D50.
 - 2026-10-09 (D53 launched). D53 prepared (base 82eaeace7, brief `agents/briefs/D53.md` with every closure of its brief check under "Closed") and its builder a852fc218b52cd9f6 (claude-sonnet-5-5) launched in `.agents/worktrees/D53`, base copy in `.agents/worktrees/D53-base`. In flight (6 of 6): D41 (builder), D46 (first review), D48 (repair round 1), D50 (builder, resumed with the cases ruling), D52 (repair round 1), D53 (builder). Next: each report, review and round as it arrives; D49 after D46, D56 after D52 and D53, D55 after D50.
 - 2026-10-09 (after D51). D51 landed (themes from VS Code's theme files; booking in plan.md; `agents/reviews/D51-landing.md`) after one repair round and the review over it, its two findings closed at landing; fixes at landing: the semantic rules that set no colour skipped, the `DESIGN.md:244` sentence, `tests/server/edit/deck-acts.test.ts` tagged slow under Z64. In flight: D41 (builder), D46 (first review), D48 (repair round 1), D50 (builder, resumed with the cases ruling `agents/briefs/D50-cases.md`), D52 (repair round 1). Next: D53's brief check findings closed in the brief, then its preparation commit and launch into D51's slot.

@@ -151,7 +151,7 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `settings` | [Settings](docs/views.md#settings) | The Settings editor over the options catalog, with a search box, a table of contents of the groups and a control per option. |
 | `pages` | [Pages](docs/views.md#pages) | Every page, with show, rename and close, and New page. |
 
-Six views are opened for something rather than listed in the catalogue, and a view drawn from one file of the hub carries that file's own control; both are in the [Views guide](docs/views.md#views-opened-for-something).
+The views opened for something, or from a file, are not listed in the catalogue, and a view drawn from one file of the hub carries that file's own control; both are in the [Views guide](docs/views.md#views-opened-for-something).
 
 ## Searching the files
 

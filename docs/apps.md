@@ -594,7 +594,7 @@ The address an app passes to `open({ url })` is a fourth way to put what it read
 
 ## 10. A worked example
 
-The example is a machine app named `task-demo`. It reads the `tasks` collection of the hub (the shipped `config/sources.yml` lists it as `tasks/tasks.yml`) and keeps notes in its store. It creates one task and deletes it again, opens an address and a view, and shows each refusal. The `tasks` file needs a schema whose first field names an entry. The example reads that field's name from the schema and falls back to `title`. If the hub has no collection `tasks`, the page says so and the Create button answers `refused:no collection tasks`. Change `COLLECTION` at the top of `app.js` to a collection you have.
+The example is a machine app named `task-demo`. It reads the `tasks` collection of the hub (the shipped `config/sources.yml` lists it as `tasks/tasks.yml`) and keeps notes in its store. It creates one task and deletes it again, opens an address and a view, and shows each refusal. The `tasks` file needs a schema whose first field names an entry. The example reads that field's name from the schema, falls back to `title`, and writes that field, `title` and `status: todo` into the task it creates, since the shipped `tasks` schema requires `key`, `title` and `status`. If the hub has no collection `tasks`, the page says so and the Create button answers `refused:no collection tasks`. Change `COLLECTION` at the top of `app.js` to a collection you have.
 
 Make the folder `~/.oculus/apps/task-demo/` and put the four files in it. Write `app.yml` last.
 
@@ -744,7 +744,7 @@ $('add-note').addEventListener('click', async () => {
 
 $('create').addEventListener('click', async () => {
     const id = `Task demo ${Date.now()}`;
-    const body = { kind: 'new-entry', collection: COLLECTION, fields: { [identity]: id } };
+    const body = { kind: 'new-entry', collection: COLLECTION, fields: { [identity]: id, title: id, status: 'todo' } };
     const written = await run('write new-entry', oculus.write('new-entry', body));
     if (!written.ok) return;
     await oculus.setState(id);
@@ -816,7 +816,7 @@ Run it in this order.
    - `Keep its own data in <home>/.oculus/app-data/task-demo.json.`, where `<home>` is your home folder written out in full.
 
    Press Approve.
-2. The page reads "Connected. The theme is light." and under Channel a line such as "2 entries in tasks; an entry is named by its title." That count came from `read('portfolio')`; `onChannel` redraws it whenever the hub changes.
+2. The page reads "Connected. The theme is light." and under Channel a line such as "2 entries in tasks; an entry is named by its key." That count came from `read('portfolio')`; `onChannel` redraws it whenever the hub changes.
 3. Type a note and press Add note. The note appears under Store. The file `~/.oculus/app-data/task-demo.json` holds `{"notes":["first note"]}`, and History lists an `app store` row that goes from 0 to 24 bytes. The file is not in the app's folder, so the approval holds.
 4. Press Create a task. The line `Created: Task demo <number>` appears and the entry is appended to `tasks/tasks.yml`. The id is kept with `setState` for the Delete button.
 5. Press Delete that task, then Cancel. The question reads `The app Task demo asks to delete an entry of a collection:` followed by the body as text. Under Refusals the page adds `write delete-entry: declined`, and the entry stays in the file. Press Delete that task again and Confirm. The entry leaves the file, the file is as it was, and the Created line empties.

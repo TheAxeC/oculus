@@ -1,16 +1,20 @@
 # Teaching & service -> the Education tab.
+# Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Education & Service
 schema:
+  - { field: key, type: text, required: true, help: "The entry's short name, unique in this file; a write and Edit in File address the entry by it." }
   - { field: title,  type: text,   required: true }
   - { field: sub,    type: text }
   - { field: status, type: select, options: [ongoing, done] }
   - { field: date,   type: text }
 entries:
-  - title: Machine Learning (MSc)
+  - key: machine-learning-msc
+    title: Machine Learning (MSc)
     sub: Lecturer | 2x
     status: ongoing
     date: 2025-
-  - title: 'Supervised: MSc thesis on graph transfer'
+  - key: supervised-msc-thesis-on-graph-transfer
+    title: 'Supervised: MSc thesis on graph transfer'
     sub: Daily supervisor
     status: done
     date: '2025'

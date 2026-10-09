@@ -140,3 +140,144 @@ Cases of the brief's "Cases":
 - One deviation of the reviewer's own: a `git init -q` was run in a scratch folder under `$TMPDIR` so that ripgrep would read the synthetic root's `.gitignore`; it touched no repository, and no other git command than `git diff 29b50632c` and `git status --short` was run on the worktree.
 
 Reviewer usage: agent id not exposed to this session, claude-opus-5-5, tokens not known (about 300,000), 63 tool uses, about 33 minutes.
+
+## Repair round 1, refuted
+
+Step D46 was reviewed in `.agents/worktrees/D46`, base 29b50632c. The round's delta is the worktree compared with `.agents/worktrees/D46-round0/tools/oculus`, read against the whole diff since the base.
+
+```
+# Verify 1, from tools/oculus. npm run diagrams was not run because it writes the diagram files; tests/checks/diagrams passed in the 17-file run below.
+npm run test:quick -- --base 29b50632c          (load average 17 to 25)
+test:quick: 62 changed file(s), from git since 29b50632c
+test:quick: 119 test file(s), 10 essential
+ok      prettier (14.0 s): All matched files use Prettier code style!
+ok      ASCII gate (14.0 s)
+ok      svelte-kit sync (38.3 s)
+ok      eslint (83.0 s)
+ok      svelte-check (96.8 s): 1791565829317 COMPLETED 444 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+FAILED  vitest (139.5 s)
+ FAIL  |unit| tests/routes/edit/roots.test.ts > the roots write > appends the folder as an entry under a key made from its name, keeping every other line   ("Test timed out in 5000ms.")
+ Test Files  1 failed | 115 passed | 3 skipped (119)
+      Tests  1 failed | 932 passed | 23 skipped (956)
+test:quick: 154.4 s (limit 45.0 s); failed: vitest
+  (The first run of the same command timed out instead in tests/server/machine/apps/manifest.test.ts, "a folder of 501 files, and one of more than 20 MB". Neither file is one the step changes.)
+npx vitest run --reporter=dot tests/routes/edit/roots.test.ts tests/server/machine/apps/manifest.test.ts
+ Test Files  2 passed (2)      Tests  67 passed (67)
+
+# Verify 2
+npx vitest run --reporter=dot <search.test.ts (server), search.test.ts (routes), keys.test.ts, size.test.ts, boundaries.test.ts, config-folder.test.ts>
+ Test Files  3 failed | 3 passed (6)   Tests  3 failed | 54 passed (57)   (config-folder, keys, boundaries: "Test timed out in 5000ms", load 18)
+npx vitest run --reporter=dot --testTimeout 0 --hookTimeout 0 <the same six>
+ Test Files  6 passed (6)      Tests  57 passed (57)
+
+# Verify 3
+wc -l: Palette.svelte 516, Workbench.svelte 520, workbench-keys.svelte.ts 559, server/files/search.ts 644, palette.ts 556,
+       ops.svelte.ts 680, search.svelte.ts 521, context.ts 858
+
+# Verify 6
+sh utils/folder-check.sh            -> exit 0
+sh utils/unused-exports.sh          -> 364 lines; base unused-exports.txt 364; diff: line 200, layout/index.ts loses `pageLeaves`
+ASCII gate (rules file form, over src tests config; bin does not exist) -> prints nothing, exit 0
+LC_ALL=C grep -n '[^ -~]' DESIGN.md HELP.md docs/window.md docs/files-and-search.md .scratch/migration/agents/reviews/D46-report.md -> nothing (exit 1)
+
+# Commands the report quotes, rerun
+npx vitest run --reporter=dot --testTimeout 0 --hookTimeout 0 tests/checks       -> Test Files 17 passed (17), Tests 248 passed (248)
+npx vitest run --testTimeout 0 settings.test.ts tests/views/shared/explorer tests/routes/files/search.test.ts tests/server/files/search.test.ts
+                                                                                 -> Test Files 6 passed (6), Tests 98 passed (98)
+LABEL=REVIEW PROBE=$TMPDIR/d46/names3.probe.test.ts npx vitest run --config $TMPDIR/d46/vitest.probe.config.mts
+  nested roots, root=hub: hub[15 paths] cut=false
+  nested roots, root=inner: inner[deep/d.md] cut=false
+  nested roots, root=all: hub[14 paths] inner[deep/d.md] cut=false
+  case 16, root=all, wt gets 1 ms: wt[] error=timed_out hub[15 paths] cut=false
+  case 22, root=all: hub paths 8905, engine paths 81; layout.yml under engine: 1, tools/oculus/config/layout.yml under hub: 0
+  case 22, root=hub: hub paths 8986; tools/oculus/config/layout.yml under hub: 1        (identical to the report's AFTER block)
+controller3 and matcher3 probes (client-runtime config, run with the real /private/var path): output identical line for line to the report's two blocks
+node $TMPDIR/d46/workerprobe.mjs   (load 10.6 to 10.1)
+  names message: postMessage 17.9 ms; first query waited 349 ms (worker-side 280 ms)
+  longest page-thread block per query: rpls 1.9, plan 2.0, oculus plan 2.0, palette rows 2.1, oculus plan md 2.2, raw pls 2.1,
+  src lib 1.7, tools oculus migration 1.9, src lib shell keys palette 3.4 ms; worker best-of-3 max 5.9 to 47.4 ms; burst of 14: 1 answered
+  (the report's table comes from $TMPDIR/d46/out/wp-final3.txt, written at 16:05. In the round, file-match.ts changed only in a comment, and the rerun reproduces the result that every page-thread figure is under 10 ms)
+
+# Reviewer's own probe ($SCRATCH/probe/rev-names.probe.test.ts, runNames over the builder's synthetic root, withheld <root>/secrets)
+root="hub": .agents/plan.yaml | .gitignore | .scratch/x.md | a b/with space.md | big.bin | f1..f8.txt | inner/deep/d.md | <non-ASCII dir>/<non-ASCII file>.txt  cut=false
+root="inner": deep/d.md;   root="all": hub (the same without inner/deep/d.md) ;; inner: deep/d.md
+root="": refused unknown_root;   root="nope": refused unknown_root;   root=hub max 3: hub 3 cut=true
+diff -rq (round0 to now, excluding node_modules, .svelte-kit, .scratch, local.yml): channels.dot/.svg, files-and-search.md, window.md, search.ts,
+  Workbench.svelte, PaletteRow.svelte, file-names.svelte.ts, FileRows.svelte, file-match.ts (comment only), file-matcher.svelte.ts,
+  search.svelte.ts; "Only in D46-round0/tools/oculus/tests/state/sources: search"
+```
+
+### Verdicts
+
+These verdicts cover the whole diff since the base.
+
+Items of "What to build":
+
+- 1: holds. The round left this item unchanged, and the reading in the first report still applies: `paletteKeyOf` is reached from `workbench-keys.svelte.ts:132-138` after the key-sheet return, and `grid-keys.ts:27` keeps the palette keys from a terminal's program.
+- 2: holds by reading. `freedKeys` lists F1 on both platforms (`chords.ts:88-90`), and `kit/load.ts:222-226` replaces `editor.action.quickCommand`. Whether the menu works is for the look.
+- 3: holds. Behaviour 4.1 and 4.2 are closed:
+  - "No file matches." is drawn only when `found.length === 0 && names.settled()` (`FileRows.svelte:68`).
+  - `settled` is true only when `answered() === typed()` (`file-names.svelte.ts:94`, `file-matcher.svelte.ts:85-87`), as the controller3 rerun shows.
+  - A refusal is drawn whatever the query, under the open files (`FileRows.svelte:60-64`).
+  - The 50 ms evidence is reproduced on the page thread. The time to draw the rows is the look's.
+  - One gap against the brief's own text is Spec finding 1 below (verdict none).
+- 4: holds. Spec 1.2 is closed. A one-root request lists the nested served root's files (`root="hub"` holds `inner/deep/d.md`), and a request for all roots lists each file once, under the deepest root (both reruns). The refusals, the token and the cap are unchanged.
+- 5: holds. The Cmd+K and `:` branches are unchanged, and so is `openPalette(prefill)`.
+- 6: holds. The text item is unchanged. The round rewrote `docs/window.md:76` and `docs/files-and-search.md:144`; the one remaining gap in the latter is Standards finding 2 (verdict none).
+- 7: holds. Sizes are as in Verify 3, `folder-check` exits 0, and `state/sources/search` holds 10 items.
+
+Cases of "Cases":
+
+- 1: met at unit level, as in the first report. The page side is for the look.
+- 2: met at unit level, as in the first report. The page side is for the look.
+- 3: not verifiable here. Monaco has to run in a page; the look settles it. The reading supports it (F1 freed, quickCommand replaced).
+- 4: met by reading. Monaco binds neither key.
+- 5: met for the handler. The print dialog is for the look.
+- 6: met by reading of `gridKeys` and `paletteKeyOf`.
+- 7: met by the report's `openFileEntries` probe. The page side is for the look.
+- 8: met by the report's probe over the worktree's names, as judged in the first report.
+- 9: met by reading of `tabForKind` and `paletteSource.openFile`. The pane and focus on a page are for the look.
+- 10: met by reading of `modeOf`.
+- 11: met by reading of the key handler.
+- 12: met by reading; the branches are unchanged.
+- 13: met. The new `it` passes (Verify 2), and its failure on the unchanged tree (`TypeError: runNames is not a function`) is quoted in the report.
+- 14: met by reading of `namesArgs`: one argument array, no shell.
+- 15: met. With `max 3` the reviewer's run gives `cut=true` and 3 names.
+- 16: met. `runNames` over two roots: `wt[] error=timed_out hub[15 paths]` (rerun). `files_partial` is drawn whatever the query (`FileRows.svelte:75-79`).
+- 17: met by the matcher3 rerun (an ended matcher reads nothing more and its worker stops) and by reading of `replace()` in `file-names.svelte.ts:49-52`.
+- 18: met. In the reviewer's run, hidden files are listed, `secrets/` and the ignored files are left out, and `big.bin` is listed.
+- 19: met, as judged in the first report.
+- 20: met by reading of `+server.ts`, which composes `browserRoots` on every request.
+- 21: not verifiable here; it needs a browser, and the look settles it.
+- 22: met. With `root=all`, `layout.yml` is listed under engine once and under hub 0 times (rerun).
+- 23: met. `tests/routes/files/search.test.ts` passes, and `requestFrom` reads as the case asks.
+- 24: not verifiable here beyond `shownTrees` for a float. Opening the file in the float's pane is for the look.
+- 25: met by reading. The palette keys sit after the key-sheet return.
+
+### Findings
+
+- 1, Spec. `src/lib/shell/keys/rows/FileRows.svelte:65-67`: "{:else if !listingOpen} {#if list === null} <p ... data-palette-files-loading>". The brief's item 3 says "While the names are being read, the list says so" with no exception. With nothing typed, the loading sentence is never drawn: the open tabs are listed and nothing says the names are on their way. Round ruling 3 says the loading sentence shows "as today", and before the round the code already had this exception, so the builder followed the ruling. Whether "as today" was meant to rule this point is the orchestrator's call. Failure scenario: Cmd+P over a root that is slow to list (up to `search.timeout_s`, 10 s). The palette shows the open tabs and no sign that a list is coming. Verdict: none.
+- 2, Standards. `docs/files-and-search.md:144`: "The machine's private folders are left out by an anchored glob that a search's arguments do not carry." Round item 7 asks that the paragraph name every difference the code has. `namesPlans` and `listRoot` (`search.ts:574`, `:592`) also list nothing for a served root that lies inside a private folder. That is done by the `private` flag, not by a glob, and a search over such a root does run. `roots.ts` does not refuse such a root (`grep -rn privateFolders src/lib/server/files/roots.ts`: nothing). Failure scenario: a reader who has added a folder under `~/.oculus` to the workspace expects Cmd+P to list its files, as the paragraph implies, and gets an empty root with no sentence. The search.ts head comment does state this rule. Verdict: none.
+- 3, Behaviour. `FileRows.svelte:68` with `file-names.svelte.ts:94`: "{:else if found.length === 0 && names.settled()}". The report's before and after for item 3 does not mention two consequences of round ruling 3, which the code follows to the letter:
+  - When the names arrive with a query already typed, the list is empty with no sentence and no rows until the worker has prepared and answered. That took 529 ms in the builder's probe and 349 ms in the reviewer's rerun, over 100,000 names.
+  - While nothing matches, each further keystroke removes "No file matches." until the worker answers (up to about 50 ms per keystroke in the probe), so the sentence blinks. The `file-matcher.svelte.ts:6-8` head comment says "so the list does not blank or flicker between keystrokes".
+  Failure scenario: the landing look reads a blank palette or a blinking sentence as a defect, or misses it, because the report gave no before and after for it. Verdict: none.
+
+The closures were checked for the three things the round asks about, and none was found:
+
+- No finding was closed by removing a check. Item 1's two tests were deleted by ruling, and the matcher3 and controller3 reruns reproduce what the tests showed.
+- No fix reaches beyond its finding. The comment rewording in `file-match.ts:131-133` belongs to the prose read item 9 asked for.
+- Every claimed closure reproduced in the reviewer's own reruns.
+
+### Declined to judge
+
+- Cases 3, 5 (the print dialog), 21 and 24 (the float's pane), and the page sides of 1, 2, 7, 9 and 11: they need a browser or the app, which this review may not start. The landing look settles them.
+- The page's time to draw up to 200 rows per answer: it needs a page. The report now says so.
+- The report's "before" block of names3 (`root=hub` with 14 paths): reproducing it would mean running the code as it was before the round. Only the source copy in `D46-round0` exists, and it has no `node_modules`. The "after" block reproduces.
+- The Vite bundle size of the worker (`file-match.worker-*.js` 53.30 kB): it needs a build, which the verify list does not name.
+- `npm run diagrams`: not run, because it writes files. `tests/checks/diagrams` passed.
+- The two 5 s timeouts in `test:quick` and the three in Verify 2's default run are in files that pass alone or without the timeout, under load 17 to 25.
+- The report's copy of the state file's open items at the moment it was written: that moment cannot be read back.
+- One command the review ran beyond the two named: `git -C .agents/worktrees/D46 status --short tests`. It is the read-only status command, scoped to `tests`, and it changed nothing.
+
+Reviewer usage: agent id not exposed to this session, claude-opus-5-5, tokens not known to this session, 46 tool uses, about 22 minutes.

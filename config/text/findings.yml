@@ -197,8 +197,6 @@ text:
             affiliation_retired: 'affiliation is read as a one-entry affiliations list; write affiliations'
             self_not_one: '{0} people entries carry self: true, and exactly one may'
             resource_reserved: 'key {0} is reserved, so the entry is left out'
-            funding_no_identity: funding entry has neither a key nor a title
-            funding_no_key: funding entry {0} is {1} and has no key
             funding_no_statement: funding entry {0} is {1} and has no statement
             theme_labels_retired: 'theme_labels is not read; the labels are data_themes in config/catalogs/vocab.yml'
         apps:

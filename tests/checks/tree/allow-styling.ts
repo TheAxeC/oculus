@@ -18,31 +18,31 @@ export const HELD: Styling[] = [
     },
     {
         line: 'views/boards/collection/Collection.svelte styles .card of ui/frame/Card.svelte through .cards > .slot > :global(.card)',
-        why: 'the rule at src/lib/views/boards/collection/Collection.svelte:403 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/boards/collection/EntryCard.svelte styles .bar of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
-        why: 'the rule at src/lib/views/boards/collection/EntryCard.svelte:418 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/boards/collection/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card .title)',
-        why: 'the rule at src/lib/views/boards/collection/EntryCard.svelte:422 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/boards/collection/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
-        why: 'the rule at src/lib/views/boards/collection/EntryCard.svelte:418 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/boards/collection/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card)',
-        why: 'the rule at src/lib/views/boards/collection/EntryCard.svelte:411 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/boards/collection/EntryCard.svelte styles .title of ui/frame/Card.svelte, ui/frame/Pane.svelte through .slot > :global(.card .title)',
-        why: 'the rule at src/lib/views/boards/collection/EntryCard.svelte:422 reaches into the primitive rather than asking it for the difference'
+        why: 'the rule at src/lib/views/boards/collection/Collection.svelte:405 reaches into the primitive rather than asking it for the difference'
     },
     {
         line: 'views/shared/card/CardDocs.svelte styles .tool of ui/controls/ToolButton.svelte through .doc.human :global(.tool)',
         why: 'the rule at src/lib/views/shared/card/CardDocs.svelte:162 reaches into the primitive rather than asking it for the difference'
+    },
+    {
+        line: 'views/shared/forms/entry/EntryCard.svelte styles .bar of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
+        why: 'the rule at src/lib/views/shared/forms/entry/EntryCard.svelte:413 reaches into the primitive rather than asking it for the difference'
+    },
+    {
+        line: 'views/shared/forms/entry/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card .title)',
+        why: 'the rule at src/lib/views/shared/forms/entry/EntryCard.svelte:417 reaches into the primitive rather than asking it for the difference'
+    },
+    {
+        line: 'views/shared/forms/entry/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
+        why: 'the rule at src/lib/views/shared/forms/entry/EntryCard.svelte:413 reaches into the primitive rather than asking it for the difference'
+    },
+    {
+        line: 'views/shared/forms/entry/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card)',
+        why: 'the rule at src/lib/views/shared/forms/entry/EntryCard.svelte:406 reaches into the primitive rather than asking it for the difference'
+    },
+    {
+        line: 'views/shared/forms/entry/EntryCard.svelte styles .title of ui/frame/Card.svelte, ui/frame/Pane.svelte through .slot > :global(.card .title)',
+        why: 'the rule at src/lib/views/shared/forms/entry/EntryCard.svelte:417 reaches into the primitive rather than asking it for the difference'
     },
     {
         line: 'views/shared/links/CrossLinks.svelte styles .label of ui/controls/Chip.svelte, ui/controls/Tag.svelte, ui/tabs/TabFace.svelte through .member :global(.label)',

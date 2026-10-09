@@ -1,8 +1,10 @@
 # Tasks & Service - standing to-dos, reviews, admin, service (FAKE example data). Dated tasks surface on the
 # Focus "This week" ticker. Edit in served mode on the Tasks & Service tab.
+# Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Tasks & Service
 intro: "Standing tasks: reviews, admin, service. A `deadline:` surfaces it on the Focus ticker; a `followup:` note goes to the Follow-ups group. <script>alert(1)</script>"
 schema:
+  - { field: key, type: text, required: true, help: "The task's short name, unique in this file; a write and Edit in File address the entry by it." }
   - { field: title,    type: text,     required: true }
   - { field: status,   type: select,   options: [todo, doing, done, dropped], required: true }
   - { field: deadline, type: date }
@@ -12,18 +14,21 @@ schema:
   - { field: followup, type: text, help: "a standing reminder -> the Follow-ups group" }
 
 entries:
-  - title: "Review 2 papers for MLShift Workshop"
+  - key: review-2-papers-for-mlshift-workshop
+    title: "Review 2 papers for MLShift Workshop"
     status: doing
     deadline: "2026-07-30"
     kind: review
     tags: [review]
 
-  - title: "Renew compute allocation"
+  - key: renew-compute-allocation
+    title: "Renew compute allocation"
     status: todo
     deadline: "2026-08-15"
     kind: admin
 
-  - title: "Update the lab wiki onboarding page"
+  - key: update-the-lab-wiki-onboarding-page
+    title: "Update the lab wiki onboarding page"
     status: todo
     kind: service
     followup: "after the new student starts in September"

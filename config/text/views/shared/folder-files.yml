@@ -1,0 +1,10 @@
+# Oculus text owned by the folder block, the heading and the list of files of one hub folder that
+# the person page and the entry page draw.
+text:
+    folder_files:
+        show_in_files: Show in Files
+        show_in_files_tip: 'Open {0} in a Files tab of its own'
+        loading: Reading the folder ...
+        outside: That is not a folder of the hub, so there is nothing to list.
+        empty: The folder holds no files.
+        open_file: 'Open {0} in a source tab'

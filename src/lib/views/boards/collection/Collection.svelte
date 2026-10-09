@@ -42,7 +42,8 @@
     // Layer 3, view. One collection file as its own tab: the file's title and intro, a search over
     // every word an entry holds and a facet bar of the statuses the file uses (both in the bar
     // under the header), an Add that opens the file with a new entry, and one card per entry, the
-    // pinned ones first.
+    // pinned ones first. The title of a card whose entry has a page opens it as the `entry` view's
+    // tab, which the card decides from the file store's listing of the entry's folder.
     //
     // It is registered once per collection key of config/sources.yml and reads which collection it
     // is from the id of the instance it was mounted as, exactly as Projects.svelte reads which
@@ -65,8 +66,8 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Coverage from './Coverage.svelte';
     import Software from './Software.svelte';
-    import EntryCard from './EntryCard.svelte';
-    import { taskCardActions } from './task-card';
+    import EntryCard from '../../shared/forms/entry/EntryCard.svelte';
+    import { taskCardActions } from '../../shared/forms/entry/task-card';
     import AddButton from '../../shared/forms/AddButton.svelte';
     import { addInFile, blockedBy } from '../../shared/forms/entry-file';
     import Intro from '../../shared/prose/Intro.svelte';
@@ -82,6 +83,7 @@
         identityValue,
         movedOrder,
         offeredStatuses,
+        pageState,
         parseCollectionState,
         pinnedFirst,
         statusFacets,
@@ -310,6 +312,7 @@
                             onsaid={(words: string) => (said = words)}
                             more={held.more.includes(entry.id)}
                             onmore={() => toggleMore(entry.id)}
+                            onpage={() => openView('entry', pageState(key, entry))}
                             extra={taskCardActions(key, entry, configMap(), startAgent)}
                         />
                     </Reveal>

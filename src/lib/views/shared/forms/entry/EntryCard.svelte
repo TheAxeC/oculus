@@ -1,8 +1,9 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/collection/Collection.svelte. One entry of one
-    // collection file as a card: the grip it is dragged by, the pin mark, the title, the status
-    // chip, the controls, the fields the file's own schema names, the projects that name the entry,
-    // its links, and its subtasks.
+    // Layer 3, shared view partial. One entry of one collection file as a card: the grip it is
+    // dragged by, the pin mark, the title, the status chip, the controls, the fields the file's own
+    // schema names, the projects that name the entry, its links, and its subtasks. The collection
+    // view draws one per entry, and the entry's page draws one open, with no grip, so the card
+    // lives here and not under either view.
     //
     // Nothing here knows what a scheme or an event is. Which fields are drawn and in what order is
     // drawnFields() over the file's `schema:`, which projects cross-link is crossLinks() over the
@@ -10,6 +11,12 @@
     // collection passes in (Start Agent on a task's card). A field the schema draws its choices
     // from the people registry for is the one exception in kind rather than in name: it holds a
     // person's key, so the card draws the control that opens that person by their name.
+    //
+    // An entry whose `link` names a folder of the hub has a page, and the card's title opens it
+    // through `onpage`; a card handed none draws its title as words. Whether a path is a folder is
+    // the file store's listing of the folder that holds it (state/boards/collection.ts's
+    // listsAsFolder), held and marked again when the folder changes, so the title becomes a button
+    // when the folder appears.
     //
     // The status, a deadline and a date change on the card (shared/forms/InPlace.svelte), every
     // other field in the file, which Edit in File opens at the entry. The controls that write are
@@ -24,45 +31,43 @@
     // write's answer on.
     //
     // The controls are views/shared/card/CardActions.svelte, shown under the pointer and kept on
-    // one line, and a hub path the entry's `link`, `url` or `folder` names is one of them, which
-    // selects that path in the Files view of this page; a long body field is
-    // views/shared/card/Clamp.svelte, open or cut by the view instance's state; the subtasks block
+    // one line, and a hub path the entry's `link`, `url` or `folder` names is one of them: a path
+    // that is a file is selected in the Files view of this page, and a path that is a folder opens
+    // a Files tab rooted at it. A long body field is views/shared/card/Clamp.svelte, open or cut by
+    // the view instance's state, and drawn whole by a card handed no `onmore`; the subtasks block
     // is drawn only for an entry that has subtasks, adding the first being one of the controls. The
     // card may draw past its own edge, so the More menu is not cut off at its foot.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import CardActions, { type CardAction } from '../../shared/card/CardActions.svelte';
+    import CardActions, { type CardAction } from '../../card/CardActions.svelte';
     import { entryActions } from './entry-actions';
-    import { blockedBy, fileNameOf, openEntry } from '../../shared/forms/entry-file';
-    import Clamp from '../../shared/card/Clamp.svelte';
+    import { blockedBy, fileNameOf, openEntry } from '../entry-file';
+    import Clamp from '../../card/Clamp.svelte';
     import Grip from './Grip.svelte';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
-    import InPlace from '../../shared/forms/InPlace.svelte';
-    import ProgramButton from '../../shared/links/ProgramButton.svelte';
-    import Subtasks from '../../shared/forms/Subtasks.svelte';
+    import InPlace from '../InPlace.svelte';
+    import Subtasks from '../Subtasks.svelte';
+    import EntryLink from './EntryLink.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
         crossLinks,
         drawnFields,
         entryStatus,
         entrySubtasks,
-        hrefOf,
         hubPathsOf,
-        isHubPath,
+        listsAsFolder,
         isPinned,
         identityValue,
+        pageFolder,
         type Entry,
         type IdentityFault,
         type Project,
         type SchemaField
     } from '$lib/state/boards/collection';
-    import { HUB_ROOT, opensInProgram } from '$lib/state/sources/fs';
+    import { HUB_ROOT } from '$lib/state/sources/fs';
     import type { ViewSource } from '$lib/state/sessions/view-source';
-    import { openPage } from '$lib/views/shared/explorer/opening';
     import { personName } from '$lib/state/boards/person';
     import { t } from '$lib/state/shared/words/text';
     import { statusTone } from '$lib/state/shared/words/tones';
@@ -71,8 +76,9 @@
     const client = useState();
     const {
         entities: { portfolio },
-        layout: { openView, showInFiles },
-        selectors: { archiveDead, programApps },
+        fs: { listing },
+        layout: { openView, showFolderInFiles, showInFiles },
+        selectors: { archiveDead },
         source: { unsavedFile },
         writes: { writeEntry }
     } = client;
@@ -97,14 +103,19 @@
         file: ViewSource | null;
         /** Why a write cannot address this entry, when the file's identities say so. */
         fault: IdentityFault | undefined;
-        /** The reader picked this card up by its grip, or dropped one on it. */
-        ondragfrom: (value: string) => void;
-        ondropon: (value: string) => void;
+        /**
+         * The reader picked this card up by its grip, or dropped one on it. A card handed neither
+         * is not reordered and draws no grip.
+         */
+        ondragfrom?: (value: string) => void;
+        ondropon?: (value: string) => void;
         onsaid: (said: string) => void;
         /** Whether the long body fields are drawn whole rather than cut to their clamp. */
         more: boolean;
-        /** Open or cut the long body fields. */
-        onmore: () => void;
+        /** Open or cut the long body fields; a card handed none draws them whole. */
+        onmore?: () => void;
+        /** Open the entry's page; a card handed none draws its title as words. */
+        onpage?: () => void;
         /** Controls the collection adds to the card's own, after them. */
         extra?: CardAction[];
     };
@@ -123,6 +134,7 @@
         onsaid,
         more,
         onmore,
+        onpage,
         extra = []
     }: Props = $props();
 
@@ -151,20 +163,34 @@
     /** True while the add-subtask form is open, from the block's own control or the card's. */
     let addingSubtask = $state(false);
 
+    /** The entries of one folder of the hub, from the file store's listing of it. */
+    const listed = (folder: string): ReturnType<typeof listing>['entries'] =>
+        listing(HUB_ROOT, folder).entries;
+
+    /** Whether the entry has a page, which is when its `link` names a folder of the hub. */
+    const hasPage = $derived(pageFolder(entry.fields, listed) !== undefined);
+
     /**
-     * One Show in Files control per hub path the entry's `link`, `url` or `folder` names. It needs
-     * no identity to write by, so a card of a file with no schema carries it too.
+     * One Show in Files control per hub path the entry's `link`, `url` or `folder` names: a folder
+     * opens a Files tab rooted at it and a file is selected in the page's Files tab. It needs no
+     * identity to write by, so a card of a file with no schema carries it too.
      */
     const shows: CardAction[] = $derived(
-        hubPathsOf(entry.fields).map((path): CardAction => ({
-            id: `files:${path}`,
-            label: t('collection.show_in_files'),
-            title: t('collection.show_in_files_tip', path),
-            glyph: 'show_in_files',
-            onclick: () => {
-                showInFiles(path);
-            }
-        }))
+        hubPathsOf(entry.fields).map((path): CardAction => {
+            const folder = listsAsFolder(path, listed);
+            return {
+                id: `files:${path}`,
+                label: t('collection.show_in_files'),
+                title: folder
+                    ? t('folder_files.show_in_files_tip', path)
+                    : t('collection.show_in_files_tip', path),
+                glyph: 'show_in_files',
+                onclick: () => {
+                    if (folder) showFolderInFiles(path);
+                    else showInFiles(path);
+                }
+            };
+        })
     );
 
     /** The card's controls, from what the card knows (entry-actions.ts). */
@@ -212,30 +238,8 @@
         openView('person', { key, label: personName(portfolio(), key) });
     }
 
-    /** Whether a link names an HTML file of the hub, which the document view can hold as a tab. */
-    function isDocument(link: string): boolean {
-        // The same rule the Show in Files control is drawn from, so one value is one answer: an
-        // address is not a document, and neither is a path climbing out of the hub.
-        return hubPathsOf({ link }).length > 0 && /^[^:]*\.html?$/i.test(link);
-    }
-
-    /** One local HTML file of the hub as its own tab, the way a bookmark of the rail opens one. */
-    function openDocument(link: string): void {
-        const parts = link.split('/').filter((one) => one !== '');
-        openPage(client, {
-            root: HUB_ROOT,
-            path: link,
-            label: parts[parts.length - 1] ?? link
-        });
-    }
-
-    /** Whether a link is a file of the hub the map names an application for. */
-    function programLink(link: string): boolean {
-        return isHubPath(link) && opensInProgram(link, programApps());
-    }
-
     function dragstart(): void {
-        ondragfrom(value);
+        ondragfrom?.(value);
     }
 
     function dragover(event: DragEvent): void {
@@ -245,9 +249,23 @@
     function drop(event: DragEvent): void {
         event.preventDefault();
         armed = false;
-        ondropon(value);
+        ondropon?.(value);
     }
 </script>
+
+<!-- A long body field: cut to its clamp and opened by the control, or whole where the card has no
+     control to open it. -->
+{#snippet text(words: string)}
+    {#if onmore === undefined}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+        {@html inlineMarkdown(words)}
+    {:else}
+        <Clamp open={more} ontoggle={onmore}>
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+            {@html inlineMarkdown(words)}
+        </Clamp>
+    {/if}
+{/snippet}
 
 <!-- The card is dragged by its grip and by nothing else: the grip arms it on mousedown and the
      drag disarms it again, so the words on the card stay selectable. -->
@@ -266,11 +284,12 @@
         id={value}
         {cursor}
         title={entry.title === '' ? entry.id : entry.title}
+        ontitle={hasPage ? onpage : undefined}
         tone={status === undefined ? undefined : statusTone(status)}
         {pinned}
     >
         {#snippet meta()}
-            {#if addressable}
+            {#if addressable && ondragfrom !== undefined}
                 <Grip {blocked} onpress={() => (armed = true)} />
             {/if}
             {#if status !== undefined && statusPick}
@@ -313,17 +332,13 @@
                 {:else if drawn.kind === 'body'}
                     {#if drawn.field === 'statement'}
                         <blockquote class="stmt" title={t('collection.fundstmt_tip')}>
-                            <Clamp open={more} ontoggle={onmore}>
-                                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                                {@html inlineMarkdown(drawn.values[0])}
-                            </Clamp>
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render text(drawn.values[0])}
                         </blockquote>
                     {:else}
                         <div class="body">
-                            <Clamp open={more} ontoggle={onmore}>
-                                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                                {@html inlineMarkdown(drawn.values[0])}
-                            </Clamp>
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render text(drawn.values[0])}
                         </div>
                     {/if}
                 {:else if drawn.kind === 'person'}
@@ -337,38 +352,7 @@
                         />
                     </div>
                 {:else if drawn.kind === 'link'}
-                    {#if isDocument(drawn.values[0])}
-                        <!-- A local HTML file opens in the document view, a hub file the list lets
-                             open opens in its program, and every other link leaves the page. -->
-                        <p class="body">
-                            <ToolButton
-                                label={drawn.values[0]}
-                                glyph={t('collection.folder_glyph')}
-                                onclick={() => openDocument(drawn.values[0])}
-                            />
-                        </p>
-                    {:else if programLink(drawn.values[0])}
-                        <p class="body">
-                            <ProgramButton
-                                root={HUB_ROOT}
-                                path={drawn.values[0]}
-                                label={drawn.values[0]}
-                                {onsaid}
-                            />
-                        </p>
-                    {:else}
-                        <p class="body">
-                            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
-                            <a href={hrefOf(drawn.values[0])} target="_blank" rel="noreferrer">
-                                <Glyph
-                                    name={drawn.field === 'url'
-                                        ? t('collection.link_glyph')
-                                        : t('collection.folder_glyph')}
-                                />
-                                {drawn.values[0]}
-                            </a>
-                        </p>
-                    {/if}
+                    <EntryLink field={drawn.field} value={drawn.values[0]} {onsaid} />
                 {:else if addressable && (drawn.field === 'deadline' || drawn.field === 'date')}
                     <div class="field">
                         <span class="label">{drawn.label}</span>
@@ -498,9 +482,5 @@
     .value {
         font-size: var(--fs-md);
         overflow-wrap: anywhere;
-    }
-
-    a {
-        color: var(--accent-txt, var(--accent));
     }
 </style>

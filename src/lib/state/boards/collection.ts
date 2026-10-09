@@ -27,6 +27,7 @@ import {
 import type { Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
 import { fileBytesUrl } from '../sources/fs-transport.ts';
 import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
+import { dirOf } from '../sources/repositories/change-tree.ts';
 import { realProjects } from '../sources/venues.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
@@ -313,6 +314,51 @@ export function hubPathsOf(fields: Record<string, unknown>): string[] {
     return found;
 }
 
+/** The entries of one folder of the hub, as the file store lists it: a name and what it is. */
+type FolderListing = (folder: string) => readonly { name: string; kind: string }[];
+
+/**
+ * Whether a hub path names a folder, by the listing of the folder that holds it. The listing is
+ * the file store's own, held and listed again when something in the folder changes, so a folder
+ * made or removed after the caller drew gives or takes the answer with no reload. A path whose
+ * parent has not been listed yet, or is not there, names no folder.
+ */
+export function listsAsFolder(path: string, listed: FolderListing): boolean {
+    if (path === '') return false;
+    const name = path.slice(path.lastIndexOf('/') + 1);
+    return listed(dirOf(path)).some((one) => one.name === name && one.kind === 'dir');
+}
+
+/**
+ * The hub folder an entry's `link` names, which is the folder its page is about, or undefined when
+ * the link is no path of the hub or names a file, an address, a folder that is not there or one
+ * the listing leaves out.
+ */
+export function pageFolder(
+    fields: Record<string, unknown>,
+    listed: FolderListing
+): string | undefined {
+    const path = hubPathsOf({ link: fields.link }).at(0);
+    return path !== undefined && listsAsFolder(path, listed) ? path : undefined;
+}
+
+/**
+ * The state an entry's page is opened with. Its `id` is what makes one entry one tab: the same
+ * entry asked for again activates its tab, another entry of the collection gets its own, and the
+ * same key in another collection is another entry.
+ */
+export function pageState(
+    collection: string,
+    entry: Entry
+): { id: string; collection: string; key: string; label: string } {
+    return {
+        id: `${collection}:${entry.id}`,
+        collection,
+        key: entry.id,
+        label: entry.title === '' ? entry.id : entry.title
+    };
+}
+
 /** The entry's status, when it has one as a word. */
 export function entryStatus(entry: Entry): string | undefined {
     return readAs(filledTextShape, entry.fields[STATUS_FIELD]) ?? undefined;
@@ -387,9 +433,9 @@ export function identityField(schema: SchemaField[] | undefined): string {
 const identityShape = z.union([z.string(), anyNumberShape.transform(String)]);
 
 /**
- * The value a write addresses one entry by. It is not the id: funding.yml's schema opens with
- * `title` while three of its entries carry a `key`, and the id the reader made is that key, so a
- * write names the identity field's own value and the server finds the entry by it.
+ * The value a write addresses one entry by. It is not always the id: a file whose schema opens with
+ * one field while its entries carry another of `id`, `key` and `title` has the other as its id, so
+ * a write names the identity field's own value and the server finds the entry by it.
  */
 export function identityValue(entry: Entry, schema: SchemaField[] | undefined): string {
     const held = readAs(identityShape, entry.fields[identityField(schema)]);

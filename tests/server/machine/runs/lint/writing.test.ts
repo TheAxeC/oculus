@@ -99,18 +99,25 @@ function at(text: string, needle: string, code: string, nth = 1) {
 }
 
 describe('G71: a mark falls only in text, and in a code file only in a comment or docstring', () => {
-    it('marks the comments of a TypeScript file and none of its strings, templates or expressions (case 21)', async () => {
-        const text = [
-            `const s = "a${EM}b"; // c${EM}d`,
-            `const t = \`x \${s} ${EM}\`;`,
-            `const r = /${EM}/;`,
-            `/* e${ELL} */`,
-            ''
-        ].join('\n');
-        const rows = await world({ 'a.ts': text })('a.ts');
-        expect(marked(rows.rows)).toEqual([at(text, EM, 'em-dash', 2), at(text, ELL, 'ellipsis')]);
-        expect(fixedText(text, rows.rows)).toBe(text.replace(ELL, '...'));
-    });
+    it(
+        'marks the comments of a TypeScript file and none of its strings, templates or expressions (case 21)',
+        { tags: ['slow'] },
+        async () => {
+            const text = [
+                `const s = "a${EM}b"; // c${EM}d`,
+                `const t = \`x \${s} ${EM}\`;`,
+                `const r = /${EM}/;`,
+                `/* e${ELL} */`,
+                ''
+            ].join('\n');
+            const rows = await world({ 'a.ts': text })('a.ts');
+            expect(marked(rows.rows)).toEqual([
+                at(text, EM, 'em-dash', 2),
+                at(text, ELL, 'ellipsis')
+            ]);
+            expect(fixedText(text, rows.rows)).toBe(text.replace(ELL, '...'));
+        }
+    );
 
     it('marks a Python comment and a docstring, and not a string or a string assigned to a name (case 22)', async () => {
         const text = [

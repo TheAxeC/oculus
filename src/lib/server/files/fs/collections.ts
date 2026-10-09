@@ -3,9 +3,8 @@
 // server/edit/writes/entries.ts and the seed of a task in server/machine/runs/seeds/task-seed.ts
 // read a collection through this module, so neither imports the other.
 //
-// An entry is addressed by its identity value, not by its id. funding.yml's schema opens with
-// `title` while three of its entries carry a `key`, and the id the reader made is that key, so
-// identityOf resolves the two rather than assuming they agree.
+// An entry is addressed by its identity value, not by its id. venues.yml's schema opens with `name`
+// while its entries carry an `id`, so identityOf resolves the two rather than assuming they agree.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
@@ -129,9 +128,9 @@ export function readCollection(
 }
 
 /**
- * The value the entry's identity field holds, which is what the text is addressed by. It is not the
- * id: funding.yml's schema opens with `title` while three of its entries carry a `key`, and the id
- * the reader made is that key, so the two are resolved here rather than assumed to agree.
+ * The value the entry's identity field holds, which is what the text is addressed by. It is not
+ * always the id: venues.yml's schema opens with `name` while its entries carry an `id`, and the id
+ * the reader made is that `id`, so the two are resolved here rather than assumed to agree.
  */
 export function identityOf(collection: Collection, id: string): string | null {
     for (const item of collection.items) {

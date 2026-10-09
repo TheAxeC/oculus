@@ -1,8 +1,10 @@
 # Statements - reusable boilerplate text (bio, funding acknowledgments, data statements) (FAKE example data).
 # Paste the verbatim `statement:` into a manuscript. Edit in served mode on the Statements tab.
+# Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Statements
 intro: "Reusable boilerplate: short bio, funding acknowledgments, data-availability statements. Copy the verbatim text into a paper."
 schema:
+  - { field: key, type: text, required: true, help: "The text block's short name, unique in this file; a write and Edit in File address the entry by it." }
   - { field: title,     type: text,     required: true }
   - { field: status,    type: select,   options: [draft, ready], required: true }
   - { field: tags,      type: tags }
@@ -10,17 +12,20 @@ schema:
   - { field: statement, type: textarea, help: "The verbatim boilerplate text" }
 
 entries:
-  - title: "Short bio (100 words)"
+  - key: short-bio-100-words
+    title: "Short bio (100 words)"
     status: ready
     tags: [bio]
     statement: "Jordan Example is a researcher in machine learning, working on streaming systems, graph learning, and robust representations. Their work spans anomaly detection, transfer learning, and reproducible benchmarks."
 
-  - title: "Data availability statement"
+  - key: data-availability-statement
+    title: "Data availability statement"
     status: ready
     tags: [data]
     statement: "All datasets used are public and cited in the manuscript. Preprocessing code and the exact splits are in the project's code/ deposit and reproduce from raw with a single command."
 
-  - title: "Funding acknowledgment (Example Grant)"
+  - key: funding-acknowledgment-example-grant
+    title: "Funding acknowledgment (Example Grant)"
     status: draft
     tags: [funding]
     statement: "This work was supported by the Example Foundation under grant EX-2025-042."

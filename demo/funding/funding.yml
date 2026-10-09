@@ -1,7 +1,9 @@
 # Funding pipeline -> the Funding tab. One entry per application or funded programme.
+# Each entry has a `key`, unique in this file, which a new entry needs; a manifest's `funding:` tag names it.
 title: Funding
 intro: "Grant applications and the programmes this work sits inside. (Example data.)"
 schema:
+  - { field: key,       type: text, required: true, help: "funding: tag the projects use" }
   - { field: title,     type: text,   required: true }
   - { field: sub,       type: text,   help: "Scheme | role | period" }
   - { field: status,    type: select, options: [in-prep, planned, submitted, awarded, rejected], required: true }
@@ -10,7 +12,6 @@ schema:
   - { field: meta,      type: metalist }
   - { field: tags,      type: tags }
   - { field: note,      type: textarea }
-  - { field: key,       type: text,   help: "funding: tag the projects use" }
 entries:
   - title: Early-Career Fellowship
     sub: "National science fund | personal grant | 3 years"
@@ -23,7 +24,8 @@ entries:
     tags: [fellowship, graphs]
     key: ecf
     note: "Interpretable transfer learning across graph domains. Two case studies."
-  - title: Open-Data Infrastructure Grant
+  - key: open-data-infrastructure-grant
+    title: Open-Data Infrastructure Grant
     sub: "Consortium | co-applicant | 2 years"
     status: rejected
     date: "2025"

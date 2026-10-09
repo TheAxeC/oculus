@@ -268,7 +268,7 @@ describe('taking a change back', () => {
         expect(back.entries).toEqual([{ title: 'Lead', status: 'open' }]);
     });
 
-    it('takes an added Lit Watch entry out again', async () => {
+    it('takes an added Lit Watch entry out again', { tags: ['slow'] }, async () => {
         const into = target();
         const radarFile = join(into.hub, 'feeds', 'literature-radar.yml');
         const radar = (): string => readFileSync(radarFile, 'utf8');

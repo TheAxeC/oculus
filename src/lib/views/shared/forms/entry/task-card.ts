@@ -1,13 +1,15 @@
-// Layer 3, view helper of views/boards/collection/Collection.svelte. The one control the tasks
-// collection's cards carry besides the shared ones: Start Agent, which opens the composer seeded
-// with the task. It is offered on an entry the focus board's ticker would list, so a task whose
-// status is terminal or whose deadline is met has none, and on no other collection's card.
+// Layer 3, shared view helper. The one control the tasks collection's cards carry besides the
+// shared ones: Start Agent, which opens the composer seeded with the task. The collection view
+// (views/boards/collection/Collection.svelte) and the entry page (views/boards/entry/Entry.svelte)
+// both draw a card with it, which is why the file is under views/shared/. It is offered on an
+// entry the focus board's ticker would list, so a task whose status is terminal or whose deadline
+// is met has none, and on no other collection's card.
 
 import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
 import { entryStatus, type Entry } from '$lib/state/boards/collection';
 import { deadlineMet, terminal } from '$lib/state/boards/focus';
 import { t } from '$lib/state/shared/words/text';
-import type { CardAction } from '../../shared/card/CardActions.svelte';
+import type { CardAction } from '../../card/CardActions.svelte';
 
 /** The collection whose entries are tasks. */
 const TASKS = 'tasks';

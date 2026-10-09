@@ -92,8 +92,9 @@ export function isSideTier(rule: ScanRule): boolean {
 
 /**
  * How each file names its entry list and its id field. The seven registries keyed by `key` and the
- * venue registry keyed by `id` are what the files hold; funding's `key` is the cross-link anchor a
- * manifest names and its own schema marks it optional, so an entry without one is not a finding.
+ * venue registry keyed by `id` are what the files hold, and `idRequired` in this table, whatever a
+ * file's schema marks, is what makes an entry without its id a finding. Funding's `key` is also the
+ * cross-link anchor a manifest names.
  */
 export const REGISTRY_SHAPES: Record<
     RegistryName,
@@ -103,7 +104,7 @@ export const REGISTRY_SHAPES: Record<
     datasets: { list: 'datasets', idField: 'key', idRequired: true },
     pillars: { list: 'entries', idField: 'key', idRequired: true },
     domains: { list: 'entries', idField: 'key', idRequired: true },
-    funding: { list: 'entries', idField: 'key', idRequired: false },
+    funding: { list: 'entries', idField: 'key', idRequired: true },
     people: { list: 'entries', idField: 'key', idRequired: true },
     organisations: { list: 'entries', idField: 'key', idRequired: true },
     resources: { list: 'entries', idField: 'key', idRequired: true }

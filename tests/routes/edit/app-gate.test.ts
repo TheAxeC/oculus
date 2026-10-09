@@ -5,6 +5,7 @@
 // The hub, the apps and the store folder are synthetic, under the system temporary directory.
 // What this does NOT cover: the page's own checks before a request is sent
 // (tests/state/system/apps/methods.test.ts) and a write kind's own writer beyond one open kind.
+// @module-tag slow: every row writes through the endpoint into a synthetic hub on disk.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

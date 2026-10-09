@@ -1,9 +1,9 @@
-// Layer 3, view helper of views/boards/collection/EntryCard.svelte. The controls one entry's card
+// Layer 3, view helper of views/shared/forms/entry/EntryCard.svelte. The controls one entry's card
 // carries in its meta row, from what the card knows: whether a write can address the entry, why the
 // controls that write are disabled, and the handlers the card gives each.
 
 import { t } from '$lib/state/shared/words/text';
-import type { CardAction } from '../../shared/card/CardActions.svelte';
+import type { CardAction } from '../../card/CardActions.svelte';
 
 /** What the card's controls are made from. */
 export type EntryActionInput = {

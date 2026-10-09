@@ -623,7 +623,7 @@
 <polygon fill="currentColor" stroke="currentColor" points="655.86,-1310.89 662.22,-1310.71 657.14,-1306.89 655.86,-1310.89"/>
 </g>
 <!-- views/feeds/leads -->
-<g id="node141" class="node">
+<g id="node140" class="node">
 <title>views/feeds/leads</title>
 <polygon fill="none" stroke="currentColor" points="778.81,-245.8 691,-245.8 691,-224.2 778.81,-224.2 778.81,-245.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-232" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/feeds/leads</text>
@@ -635,31 +635,31 @@
 <polygon fill="currentColor" stroke="currentColor" points="683.2,-234.33 689.04,-231.82 682.91,-230.14 683.2,-234.33"/>
 </g>
 <!-- views/feeds/literature -->
-<g id="node142" class="node">
+<g id="node141" class="node">
 <title>views/feeds/literature</title>
-<polygon fill="none" stroke="currentColor" points="786.58,-317.8 683.23,-317.8 683.23,-296.2 786.58,-296.2 786.58,-317.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-304" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/feeds/literature</text>
+<polygon fill="none" stroke="currentColor" points="786.58,-389.8 683.23,-389.8 683.23,-368.2 786.58,-368.2 786.58,-389.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-376" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/feeds/literature</text>
 </g>
 <!-- ch config&#45;&gt;views/feeds/literature -->
 <g id="edge62" class="edge">
 <title>ch config&#45;&gt;views/feeds/literature</title>
-<path fill="none" stroke="currentColor" d="M438.47,-439.14C480.52,-447.49 564.05,-456.89 612.74,-414 643.16,-387.2 603.43,-353.02 632.74,-325 644.26,-313.99 660.05,-308.47 675.74,-305.95"/>
-<polygon fill="currentColor" stroke="currentColor" points="675.75,-308.07 681.42,-305.2 675.2,-303.91 675.75,-308.07"/>
+<path fill="none" stroke="currentColor" d="M441.84,-435.55C482.01,-437.91 555.86,-438.02 612.74,-414 623.49,-409.46 622.19,-401.97 632.74,-397 646.05,-390.73 661.29,-386.63 675.83,-383.95"/>
+<polygon fill="currentColor" stroke="currentColor" points="675.85,-386.08 681.41,-383 675.14,-381.94 675.85,-386.08"/>
 </g>
 <!-- views/feeds/radar -->
-<g id="node143" class="node">
+<g id="node142" class="node">
 <title>views/feeds/radar</title>
-<polygon fill="none" stroke="currentColor" points="778.81,-389.8 691,-389.8 691,-368.2 778.81,-368.2 778.81,-389.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-376" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/feeds/radar</text>
+<polygon fill="none" stroke="currentColor" points="778.81,-317.8 691,-317.8 691,-296.2 778.81,-296.2 778.81,-317.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-304" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/feeds/radar</text>
 </g>
 <!-- ch config&#45;&gt;views/feeds/radar -->
 <g id="edge63" class="edge">
 <title>ch config&#45;&gt;views/feeds/radar</title>
-<path fill="none" stroke="currentColor" d="M441.84,-435.55C482.01,-437.91 555.86,-438.02 612.74,-414 623.49,-409.46 622.19,-401.97 632.74,-397 648.41,-389.62 666.76,-385.24 683.49,-382.66"/>
-<polygon fill="currentColor" stroke="currentColor" points="683.4,-384.79 689.05,-381.87 682.81,-380.64 683.4,-384.79"/>
+<path fill="none" stroke="currentColor" d="M438.47,-439.14C480.52,-447.49 564.05,-456.89 612.74,-414 643.16,-387.2 603.43,-353.02 632.74,-325 646.17,-312.16 665.42,-306.79 683.54,-304.93"/>
+<polygon fill="currentColor" stroke="currentColor" points="683.35,-307.05 689.16,-304.49 683.02,-302.87 683.35,-307.05"/>
 </g>
 <!-- views/sessions/terminal -->
-<g id="node144" class="node">
+<g id="node143" class="node">
 <title>views/sessions/terminal</title>
 <polygon fill="none" stroke="currentColor" points="791.04,-497.8 678.77,-497.8 678.77,-476.2 791.04,-476.2 791.04,-497.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-484" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/sessions/terminal</text>
@@ -1228,65 +1228,65 @@
 <path fill="none" stroke="currentColor" d="M441.94,-464.31C486.09,-454.66 569.23,-444.52 612.74,-491 665.46,-547.32 582.35,-1126.59 632.74,-1185 640.46,-1193.95 650.96,-1199.47 662.28,-1202.74"/>
 <polygon fill="currentColor" stroke="currentColor" points="661.62,-1204.74 667.95,-1204.14 662.63,-1200.66 661.62,-1204.74"/>
 </g>
-<!-- views/boards/collection -->
-<g id="node138" class="node">
-<title>views/boards/collection</title>
-<polygon fill="none" stroke="currentColor" points="791.03,-605.8 678.78,-605.8 678.78,-584.2 791.03,-584.2 791.03,-605.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-592" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/collection</text>
-</g>
-<!-- ch portfolio&#45;&gt;views/boards/collection -->
-<g id="edge122" class="edge">
-<title>ch portfolio&#45;&gt;views/boards/collection</title>
-<path fill="none" stroke="currentColor" d="M442.99,-465.03C486.22,-457.02 565.6,-449.78 612.74,-491 642.28,-516.83 604.27,-549.99 632.74,-577 643.15,-586.88 657.02,-592.33 671.13,-595.15"/>
-<polygon fill="currentColor" stroke="currentColor" points="670.76,-597.22 677.03,-596.15 671.46,-593.08 670.76,-597.22"/>
-</g>
 <!-- views/boards/focus -->
-<g id="node139" class="node">
+<g id="node138" class="node">
 <title>views/boards/focus</title>
-<polygon fill="none" stroke="currentColor" points="782.15,-425.8 687.66,-425.8 687.66,-404.2 782.15,-404.2 782.15,-425.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-412" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/focus</text>
+<polygon fill="none" stroke="currentColor" points="782.15,-569.8 687.66,-569.8 687.66,-548.2 782.15,-548.2 782.15,-569.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-556" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/focus</text>
 </g>
 <!-- ch portfolio&#45;&gt;views/boards/focus -->
-<g id="edge123" class="edge">
+<g id="edge122" class="edge">
 <title>ch portfolio&#45;&gt;views/boards/focus</title>
-<path fill="none" stroke="currentColor" d="M447.46,-475.59C488.89,-478.35 559.24,-478.19 612.74,-453 624.11,-447.65 621.59,-438.81 632.74,-433 647.14,-425.49 664.1,-421.04 679.97,-418.43"/>
-<polygon fill="currentColor" stroke="currentColor" points="680.05,-420.54 685.67,-417.58 679.43,-416.39 680.05,-420.54"/>
+<path fill="none" stroke="currentColor" d="M444.33,-465.69C487.04,-459.05 563.44,-454.11 612.74,-491 631.9,-505.34 614.18,-525.89 632.74,-541 646,-551.79 663.5,-557.02 680.22,-559.35"/>
+<polygon fill="currentColor" stroke="currentColor" points="679.61,-561.39 685.81,-560 680.1,-557.22 679.61,-561.39"/>
 </g>
 <!-- views/boards/person -->
-<g id="node140" class="node">
+<g id="node139" class="node">
 <title>views/boards/person</title>
-<polygon fill="none" stroke="currentColor" points="784.65,-461.8 685.16,-461.8 685.16,-440.2 784.65,-440.2 784.65,-461.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-448" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/person</text>
+<polygon fill="none" stroke="currentColor" points="784.65,-425.8 685.16,-425.8 685.16,-404.2 784.65,-404.2 784.65,-425.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-412" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/person</text>
 </g>
 <!-- ch portfolio&#45;&gt;views/boards/person -->
-<g id="edge124" class="edge">
+<g id="edge123" class="edge">
 <title>ch portfolio&#45;&gt;views/boards/person</title>
-<path fill="none" stroke="currentColor" d="M448.31,-469.67C503.75,-466.05 611.19,-459.02 677.33,-454.7"/>
-<polygon fill="currentColor" stroke="currentColor" points="677.43,-456.8 683.28,-454.31 677.15,-452.61 677.43,-456.8"/>
+<path fill="none" stroke="currentColor" d="M447.46,-475.59C488.89,-478.35 559.24,-478.19 612.74,-453 624.11,-447.65 621.59,-438.81 632.74,-433 646.4,-425.88 662.36,-421.51 677.51,-418.85"/>
+<polygon fill="currentColor" stroke="currentColor" points="677.78,-420.93 683.37,-417.92 677.12,-416.79 677.78,-420.93"/>
 </g>
 <!-- ch portfolio&#45;&gt;views/feeds/literature -->
-<g id="edge125" class="edge">
+<g id="edge124" class="edge">
 <title>ch portfolio&#45;&gt;views/feeds/literature</title>
-<path fill="none" stroke="currentColor" d="M442.68,-479.28C486.25,-487.9 566.89,-496.16 612.74,-453 654.66,-413.53 592.46,-366.14 632.74,-325 643.99,-313.5 659.88,-307.87 675.73,-305.4"/>
-<polygon fill="currentColor" stroke="currentColor" points="675.8,-307.51 681.49,-304.67 675.27,-303.34 675.8,-307.51"/>
+<path fill="none" stroke="currentColor" d="M443.81,-478.46C486.6,-485.45 563.87,-491.02 612.74,-453 633.6,-436.77 612.56,-414.06 632.74,-397 644.73,-386.86 660.43,-381.57 675.88,-378.98"/>
+<polygon fill="currentColor" stroke="currentColor" points="675.8,-381.12 681.45,-378.19 675.21,-376.96 675.8,-381.12"/>
 </g>
 <!-- ch portfolio&#45;&gt;views/feeds/radar -->
-<g id="edge126" class="edge">
+<g id="edge125" class="edge">
 <title>ch portfolio&#45;&gt;views/feeds/radar</title>
-<path fill="none" stroke="currentColor" d="M443.81,-478.46C486.6,-485.45 563.87,-491.02 612.74,-453 633.6,-436.77 612.56,-414.06 632.74,-397 646.75,-385.15 665.83,-379.92 683.65,-377.9"/>
-<polygon fill="currentColor" stroke="currentColor" points="683.37,-380.03 689.15,-377.39 682.99,-375.85 683.37,-380.03"/>
+<path fill="none" stroke="currentColor" d="M442.68,-479.28C486.25,-487.9 566.89,-496.16 612.74,-453 654.66,-413.53 592.46,-366.14 632.74,-325 645.85,-311.61 665.24,-306.18 683.54,-304.43"/>
+<polygon fill="currentColor" stroke="currentColor" points="683.41,-306.54 689.25,-304.02 683.11,-302.35 683.41,-306.54"/>
 </g>
 <!-- views/shared/card -->
-<g id="node145" class="node">
+<g id="node144" class="node">
 <title>views/shared/card</title>
-<polygon fill="none" stroke="currentColor" points="779.64,-569.8 690.17,-569.8 690.17,-548.2 779.64,-548.2 779.64,-569.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-556" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/shared/card</text>
+<polygon fill="none" stroke="currentColor" points="779.64,-461.8 690.17,-461.8 690.17,-440.2 779.64,-440.2 779.64,-461.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-448" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/shared/card</text>
 </g>
 <!-- ch portfolio&#45;&gt;views/shared/card -->
-<g id="edge127" class="edge">
+<g id="edge126" class="edge">
 <title>ch portfolio&#45;&gt;views/shared/card</title>
-<path fill="none" stroke="currentColor" d="M444.33,-465.69C487.04,-459.05 563.44,-454.11 612.74,-491 631.9,-505.34 614.18,-525.89 632.74,-541 646.6,-552.28 665.11,-557.49 682.5,-559.65"/>
-<polygon fill="currentColor" stroke="currentColor" points="682.18,-561.73 688.36,-560.25 682.61,-557.55 682.18,-561.73"/>
+<path fill="none" stroke="currentColor" d="M448.31,-469.67C505.16,-465.96 616.71,-458.66 682.31,-454.37"/>
+<polygon fill="currentColor" stroke="currentColor" points="682.33,-456.48 688.18,-453.99 682.05,-452.29 682.33,-456.48"/>
+</g>
+<!-- views/shared/forms -->
+<g id="node146" class="node">
+<title>views/shared/forms</title>
+<polygon fill="none" stroke="currentColor" points="782.7,-605.8 687.11,-605.8 687.11,-584.2 782.7,-584.2 782.7,-605.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-592" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/shared/forms</text>
+</g>
+<!-- ch portfolio&#45;&gt;views/shared/forms -->
+<g id="edge127" class="edge">
+<title>ch portfolio&#45;&gt;views/shared/forms</title>
+<path fill="none" stroke="currentColor" d="M442.99,-465.03C486.22,-457.02 565.6,-449.78 612.74,-491 642.28,-516.83 604.27,-549.99 632.74,-577 645.19,-588.82 662.58,-594.3 679.44,-596.53"/>
+<polygon fill="currentColor" stroke="currentColor" points="678.92,-598.58 685.11,-597.13 679.36,-594.41 678.92,-598.58"/>
 </g>
 <!-- views/structure/domains -->
 <g id="node148" class="node">
@@ -2003,7 +2003,7 @@
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="411.7" y="-1760" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/shared/changes/CommitBox.svelte:57 message(root)</text>
 </g>
 <!-- views/shared/changes -->
-<g id="node146" class="node">
+<g id="node145" class="node">
 <title>views/shared/changes</title>
 <polygon fill="none" stroke="currentColor" points="787.14,-785.8 682.67,-785.8 682.67,-764.2 787.14,-764.2 787.14,-785.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-772" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/shared/changes</text>

@@ -511,7 +511,10 @@ function domain(entry: RawRegistryEntry): Domain {
     });
 }
 
-/** A funding scheme is known by its `key` when it has one and by its `title` otherwise. */
+/**
+ * A funding scheme is known by its `key`. An entry with none, which the registry reader reports,
+ * is carried under its `title`.
+ */
 function funding(entry: RawRegistryEntry): Funding {
     const title = str(entry.title) ?? '';
     return compact({

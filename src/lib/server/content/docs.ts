@@ -450,7 +450,8 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
 
 /**
  * One Markdown document of the hub, named by a path relative to it: the documents the `docs:` list
- * of config/layout.yml lists in the view catalogue. Only a Markdown file is served, since nothing
+ * of config/layout.yml lists in the view catalogue and the Markdown files of the folder an entry's
+ * page shows (views/boards/entry/Entry.svelte). Only a Markdown file is served, since nothing
  * else renders, and the joined path is checked against the hub again before the file is opened, so
  * a path climbing out of it is a 404 and nothing is opened. The hub's own files are already served
  * to this page by api/file under the `hub` root; this is the same ground, rendered as prose.

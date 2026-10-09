@@ -34,8 +34,10 @@
     // state/system/docs.svelte.ts asks api/docs for the chosen one and the shared Markdown partial
     // draws what comes back, as the doc and help views draw theirs: one sanitised draw, one set of
     // document styles and one press on a link to a heading for every document the page shows.
+    //
+    // Each session working in the folder is views/shared/sessions/SessionRow.svelte, the row the
+    // entry page draws for the sessions in its folder too.
 
-    import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -44,17 +46,15 @@
     import Latex from './Latex.svelte';
     import ProjectCard from '../../shared/card/ProjectCard.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
+    import SessionRow from '../../shared/sessions/SessionRow.svelte';
     import { absentDocs, markdownDocNames, type BoardItem } from '$lib/state/boards/board';
     import { cardCursor, instanceText } from '$lib/state/workbench/layout/instance';
-    import { modelShort, stamp } from '$lib/state/shared/words/format';
-    import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
         docs: { document: docFor },
-        selection: { select, selected },
         selectors: { boardItemOf, sessionsForProject, staleLag },
         ui: { instanceState, setInstanceState }
     } = useState();
@@ -114,34 +114,7 @@
     function title(): string {
         return item === null ? t('views.project') : item.project.title;
     }
-
-    /** What a live row says of itself, the same two words the session list uses. */
-    function liveLabel(entry: GroupedSession): string {
-        if (entry.liveStatus === 'busy') return t('sessions.live_busy');
-        if (entry.liveStatus === 'idle') return t('sessions.live_idle');
-        return entry.liveStatus ?? '';
-    }
 </script>
-
-{#snippet sessionRow(entry: GroupedSession)}
-    <div class="session" class:on={entry.id === selected()}>
-        <RowButton title={t('sessions.select_tip')} onclick={() => select(entry.id)}>
-            <span class="top">
-                <Tag label={entry.tool} />
-                <span class="nm">{entry.title}</span>
-            </span>
-            <span class="meta">
-                {#if entry.live}
-                    <span class="st">{liveLabel(entry)}</span>
-                    <span class="sep">{t('sessions.meta_sep')}</span>
-                {/if}
-                <span class="mo">{modelShort(entry.model)}</span>
-                <span class="sep">{t('sessions.meta_sep')}</span>
-                <span class="ts">{stamp(entry.started, now)}</span>
-            </span>
-        </RowButton>
-    </div>
-{/snippet}
 
 <Pane title={title()}>
     <div class="project" data-instance={instance.id} data-project={id}>
@@ -200,8 +173,7 @@
                     <Empty message={t('project.no_sessions')} glyph={t('project.none_glyph')} />
                 {:else}
                     {#each rows as entry (entry.id)}
-                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render sessionRow(entry)}
+                        <SessionRow {entry} {now} />
                     {/each}
                 {/if}
             </section>
@@ -239,42 +211,6 @@
     .said {
         margin: 0;
         font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    /* The sessions, the same row the session list draws. */
-    .session {
-        display: flex;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        margin-bottom: 4px;
-        padding: 0 2px;
-        line-height: calc(var(--tree-row) * var(--text-scale, 1));
-    }
-
-    .session.on {
-        border-color: var(--accent);
-    }
-
-    .top {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        min-width: 0;
-    }
-
-    .nm {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: var(--fs-md);
-    }
-
-    .meta {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 

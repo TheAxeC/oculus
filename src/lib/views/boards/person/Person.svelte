@@ -22,22 +22,18 @@
     // One instance per person, and the person it is for is the `key` in its instance state, the way
     // the project tab reads its own `id`.
     //
-    // The folder is listed through the file store rather than carried in the snapshot, because the
-    // snapshot holds the portfolio's YAML and not what is in a folder; a file opens in the source
-    // tab exactly as a file browser row does, which is the one way a text file is opened, and the
-    // block's heading carries the control that selects the folder itself in the Files view of this
-    // page.
+    // The folder block is views/shared/links/FolderFiles.svelte, which lists the folder through the
+    // file store rather than carrying it in the snapshot and opens a file in the source tab exactly
+    // as a file browser row does; the entry page draws it for the folder an entry's link names.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import FolderFiles from '../../shared/links/FolderFiles.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
-    import { openSourceFile } from '../../shared/links/source-file';
     import { hubPathsOf } from '$lib/state/boards/collection';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
-    import { fileEntries } from '$lib/state/sources/fs-transport';
     import { personJoin, type PersonJoin } from '$lib/state/boards/person';
     import { optionalText } from '$lib/data/shapes/shapes';
     import { instanceText } from '$lib/state/workbench/layout/instance';
@@ -49,8 +45,7 @@
     const client = useState();
     const {
         entities: { portfolio },
-        fs: { listing },
-        layout: { openView, showFolderInFiles },
+        layout: { openView },
         selectors: { configMap }
     } = client;
 
@@ -60,17 +55,8 @@
     const key = $derived(instanceText(instance.state, 'key'));
     const join = $derived(personJoin(portfolio(), key));
     const folder = $derived(join.folder);
-    /**
-     * The folder as a path of the hub, which Show in Files can select, or nothing for one outside
-     * it.
-     */
+    /** The folder as a path of the hub, or nothing for one outside it. */
     const folderPath = $derived(hubPathsOf({ folder }).at(0));
-    // The listing is asked for the hub path and never for the raw value, so a folder that is an
-    // address or climbs above the hub asks the file route for nothing.
-    const files = $derived(folderPath === undefined ? null : listing(HUB_ROOT, folderPath));
-    // The block offers what a source tab can hold, so a folder inside the supervision folder is not
-    // a row: opening one would ask the file route for bytes a directory has none of.
-    const documents = $derived(fileEntries(files?.entries ?? []));
     const source = $derived(viewSourceFile('people', configMap()));
 
     /** The rows of the fact strip: what the registry holds about this person beyond their name. */
@@ -118,12 +104,6 @@
     /** Open the joint-work collection, where the entries drawn here are edited. */
     function openJointWork(): void {
         openView('joint-work');
-    }
-
-    /** Open one file of a student's supervision folder in the source tab. */
-    function openFile(name: string): void {
-        if (folderPath === undefined) return;
-        openSourceFile(client, { root: HUB_ROOT, path: `${folderPath}/${name}` });
     }
 </script>
 
@@ -209,45 +189,11 @@
 
             {#if folder !== ''}
                 <section class="block" data-block="folder">
-                    <div class="head">
-                        <h3>{t('person.folder', folder)}</h3>
-                        {#if folderPath !== undefined}
-                            <ToolButton
-                                label={t('person.show_in_files')}
-                                title={t('person.show_in_files_tip', folderPath)}
-                                glyph="show_in_files"
-                                compact
-                                onclick={() => {
-                                    showFolderInFiles(folderPath);
-                                }}
-                            />
-                        {/if}
-                    </div>
-                    {#if files === null}
-                        <Empty message={t('person.folder_outside')} glyph="warn" />
-                    {:else if files.loading}
-                        <Empty message={t('person.folder_loading')} />
-                    {:else if files.error !== ''}
-                        <Empty message={files.error} glyph="warn" />
-                    {:else if documents.length === 0}
-                        <Empty message={t('person.folder_empty')} />
-                    {:else}
-                        <ul class="rows">
-                            {#each documents as entry (entry.name)}
-                                <li>
-                                    <span class="link">
-                                        <ToolButton
-                                            plain
-                                            cut
-                                            label={entry.name}
-                                            title={t('person.open_file', entry.name)}
-                                            onclick={() => openFile(entry.name)}
-                                        />
-                                    </span>
-                                </li>
-                            {/each}
-                        </ul>
-                    {/if}
+                    <FolderFiles folder={folderPath}>
+                        {#snippet heading()}
+                            <h3>{t('person.folder', folder)}</h3>
+                        {/snippet}
+                    </FolderFiles>
                 </section>
             {/if}
         </div>
@@ -297,15 +243,7 @@
         color: var(--muted-txt, var(--muted));
     }
 
-    /* The folder block's heading carries the control that selects the folder in the Files view. */
-    .head {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-height: calc(var(--tree-row) * var(--text-scale, 1));
-    }
-
-    .head h3 {
+    [data-block='folder'] h3 {
         margin: 0;
     }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/collection/EntryCard.svelte. The handle a card is
+    // Layer 3, view partial of views/shared/forms/entry/EntryCard.svelte. The handle a card is
     // dragged by. While `blocked` holds the words saying why the file cannot be written, the handle
     // is drawn disabled with them as its title and a press arms nothing.
 

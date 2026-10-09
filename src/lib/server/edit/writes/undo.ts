@@ -119,8 +119,9 @@ function collectionFor(
 
 /**
  * What the file holds now at the address the change names, and whether that address is still there
- * at all. A `found: false` means the project, the entry, the host or the file has gone, which is as
- * good a reason to refuse an undo as a value that has moved.
+ * at all. A `found: false` means the project, the entry, the host or the file has gone, or that a
+ * collection record names its entry by a value that is not the entry's identity, which is as good
+ * a reason to refuse an undo as a value that has moved.
  */
 export function valueNow(into: WriteTarget, change: Change): { found: boolean; value: unknown } {
     if (change.kind === 'manifest') {
@@ -164,12 +165,45 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
     }
     const collection = collectionFor(into, change);
     if (collection === null) return { found: false, value: null };
+    if (namesOldIdentity(collection.held, change)) return { found: false, value: null };
     if (change.kind === 'reorder') return { found: true, value: identityOrder(collection.held) };
     const entry = entryOf(collection.held, change.key);
     if (change.kind === 'entry') {
         return { found: entry !== undefined, value: entry?.[change.field] ?? null };
     }
     return { found: true, value: entry ?? null };
+}
+
+/**
+ * Whether a collection record names its entry by a value that is not the entry's identity,
+ * which is what a record made while the file's first schema field was another field does: the
+ * entry the file lists under that field's value is not the one the record is about. A record of a
+ * new or a deleted entry holds the entry's fields, and the identity field of those fields must
+ * hold the value the record names it by; a new entry's record whose fields lack it still names its
+ * entry when the file holds an entry under the record's key, as when a title was already the key.
+ * A reorder record holds identity values, and one of them
+ * that is no identity now but is a field value of an entry now names an entry by that field.
+ * A field write is not asked: the entry its key names is looked up by the identity field, and an
+ * old key finds none.
+ */
+function namesOldIdentity(held: Collection, change: Change): boolean {
+    if (change.kind === 'new-entry' || change.kind === 'delete-entry') {
+        const fields = mapShape.safeParse(
+            change.kind === 'new-entry' ? change.after : change.before
+        );
+        const named = fields.success && scalar(fields.data[held.ident]) === change.key;
+        if (change.kind === 'delete-entry') return !named;
+        return !named && entryOf(held, change.key) === undefined;
+    }
+    if (change.kind !== 'reorder') return false;
+    const identities = new Set(identityOrder(held));
+    return wordsBeforeShape
+        .parse(change.after)
+        .some(
+            (word) =>
+                !identities.has(word) &&
+                held.items.some((item) => Object.values(item).some((one) => scalar(one) === word))
+        );
 }
 
 /** One feed entry by its feed-specific identity, or undefined when the feed no longer holds it. */

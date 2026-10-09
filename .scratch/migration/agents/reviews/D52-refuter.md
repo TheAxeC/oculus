@@ -185,3 +185,195 @@ Point 7: my `test:quick` took 92.9 s and 63.4 s at load averages of 10 to 15, wi
 - Separately: I ran one read-only `git status --short` inside `.agents/worktrees/D48`, outside the instruction that limits git to D52's worktree. It changed nothing; D48's files were then compared only by `diff` against `D48-base`.
 
 Reviewer usage: agent id not known to me, served model claude-opus-5-5, about 340,000 tokens, about 80 tool uses, about 35 minutes.
+
+## Repair round 1, refuted
+
+Reviewer over D52's repair round 1, on `.agents/worktrees/D52` (base d7a654584). The round's delta was read with `diff -ru -x node_modules -x .svelte-kit -x .scratch` of `.agents/worktrees/D52-round0/tools/oculus` against the worktree's `tools/oculus`, and against `git diff d7a654584` and `git status --short` for the whole step. The hub data files and `docs/DATA-MAP.md` sit outside the round-0 copy. Their mtimes (`ls -lT`: 15:44 and 16:05) are earlier than the round-0 copy (17:00), so the round did not change them. Nothing was edited. No skill or agent was used. `npm run diagrams` was not run, because it writes `docs/diagrams/`; `tests/checks/diagrams/diagrams.test.ts` passed inside the `tests/checks` run.
+
+```
+$ npm run test:quick -- --base d7a654584        (from tools/oculus, load average 13 to 18)
+test:quick: 54 changed file(s), from git since d7a654584
+test:quick: 78 test file(s), 10 essential
+        tests/checks/config/config-folder.test.ts: changed, run by npm run test:checks
+ok      ASCII gate (1.3 s)
+ok      prettier (2.7 s): All matched files use Prettier code style!
+ok      svelte-kit sync (4.1 s)
+ok      eslint (72.9 s)
+ok      vitest (120.6 s): Duration  110.23s (transform 266.20s, setup 0ms, import 323.09s, tests 91.96s, environment 1.34s)
+ok      svelte-check (119.4 s): 1791563039878 COMPLETED 445 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 123.8 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+
+$ npx vitest run <the brief's 12 files> --reporter=dot
+first run:   Test Files  1 failed | 11 passed (12) / Tests  1 failed | 170 passed (171)   (the failing case was not captured)
+second run:  Test Files  12 passed (12) / Tests  171 passed (171)
+third run:   Test Files  12 passed (12) / Tests  171 passed (171)   (grep for FAIL|Error|timed out printed nothing)
+
+$ npx vitest run tests/checks --testTimeout 0 --hookTimeout 0 --reporter=dot
+ Test Files  17 passed (17)
+      Tests  248 passed (248)
+
+$ python3 -c "import yaml,sys; ..." <the 14 hub and demo files>      -> yaml ok 14, rc=0
+$ LC_ALL=C perl -ne '<the rules file gate>' $(find src tests bin config -type f ! -name local.yml)  -> nothing printed, rc=0
+$ git diff d7a654584 -- <14 data files> | grep '^+' | LC_ALL=C grep -n '[^ -~]'
+44:+    title: "Umeå, Precision ZAP"
+122:+    title: "Research visit - Linköping (Sweden)"      (existing title lines re-indented under a new key line)
+$ sh utils/folder-check.sh            -> rc=0
+$ sh utils/unused-exports.sh          -> 364 lines; diff against D52-base/tools/oculus/unused-exports.txt rc=0, nothing printed
+$ wc -l: collection.ts 776, undo.ts 442, Entry.svelte 269, EntryCard.svelte 486, FolderFiles.svelte 131, Person.svelte 280, Collection.svelte 408, normalise.ts 809, validate.ts 406
+$ ls | wc -l: views/boards 9, views/shared/forms 10, views/shared/links 9, views/shared/sessions 7, config/text/views/boards 9, views/shared/forms/entry 5
+```
+
+The reviewer's own runs. Every scratch file is in the reviewer's scratchpad, and the hub copies are there too.
+
+```
+$ python3 -I keycheck.py <worktree> <base copies rebuilt from `git diff d7a654584` with patch -R>   (own implementation of item 1's rule)
+hub  funding 11 MATCH nodup text key True added 18 removed 9 other_added []
+hub  events 7 / education 21 / applications 25 / tasks 2 / repos 20 / boilerplate 2: MATCH nodup text key True other_added []
+demo funding 2 / events 3 / education 2 / applications 2 / tasks 3 / repos 3 / boilerplate 3: MATCH nodup text key True other_added []
+
+Undo, records made by my own copy of D52-base (engine-base) over the base files, undone over a copy of the changed files:
+== round0 engine (the D52-round0 copy)
+entry: record key "Flanders AI Research Program (FAIR)" answer {"error":"gone"}; file unchanged: true
+delete-entry: record key "Investigation" answer {"error":"refused","refused":[{"field":"key","reason":"a new entry needs a key"}]}; file unchanged: true
+new-entry: record key "Demo task" answer {"error":"moved"}; file unchanged: true
+reorder: record key "events" answer {"error":"moved"}; file unchanged: true
+== worktree engine
+entry: ... {"error":"gone"}; file unchanged: true
+delete-entry: record key "Investigation" answer {"error":"gone"}; file unchanged: true
+new-entry: record key "Demo task" answer {"error":"gone"}; file unchanged: true
+reorder: record key "events" answer {"error":"gone"}; file unchanged: true
+== records made by the worktree engine, undone by it (no false refusal)
+entry: record key "FAIR" answer {"found":true,"changed":["status"],...}; file unchanged: false
+delete-entry: record key "investigation" answer {"found":true,"changed":["entries"],"refused":[{"field":"subtasks",...}]...}; file unchanged: false
+new-entry: record key "demo-task" answer {"found":true,"changed":["entries"],...}; file unchanged: false
+reorder: record key "events" answer {"found":true,"changed":["entries"],...}; file unchanged: false
+
+Entry.svelte render (the builder's entry.scratch.test.ts copied to my scratchpad, its config pointed there; Test Files 1 passed):
+gamma (file link) while reading: "Reading the folder ..."
+alpha: <h3 class="heading">Documents</h3>, segment README.md (aria-checked true) / notes.md, <p>README body</p>;
+       <div class="folder" data-folder="funding/alpha"> <h3 class="heading">Files (funding/alpha)</h3> Show in Files; rows README.md, notes.md, budget.xlsx, plan.pdf;
+       <h3 class="heading">Sessions</h3> ... <span class="nm">Draft the budget</span>
+alpha, doc notes.md: notes.md aria-checked true, <p>NOTES body</p>
+beta: "The folder holds no Markdown file." / "The folder holds no files." / "No session has worked in this folder."
+gamma after reading: "This entry's link names no folder of the hub, so there are no documents, files or sessions to show."
+7 x class="heading svelte-l88dh" (one scoped hash for all three block headings)
+
+after.scratch.test.ts (the builder's, copied; D52_HUB = the worktree root):
+case 6: FAIR card id="FAIR" lists 8 projects; manifests naming FAIR 8; all listed true
+case 7: 2025-twente-cancer-ai pageFolder="applications/archive/accepted/2025-twente-cancer-ai"; nwo-veni (file) undefined; aaai-2027 undefined; bioinformatics "education/courses/bioinformatics"; missing, ../outside, https, /abs: undefined; trailing "/": the folder
+case 10: same entry equal=true; two entries differ=true; one key in two collections differ=true
+case 13: before pageFolder=undefined / after pageFolder="applications/zz-new-entry-folder"
+case 15: funding targets "nwo-open-competition-domain-science-xs-enw-xs", "2026-fwo-senior-transplant"; entry targets by key
+case 2 (line I added): findings naming the seven files 0 of 0
+Cases 3 and 19 over $scratch copies of funding.yml:
+h3: "two entries share the key FAIR" (entries[6].key, line 109)
+h19: "entry has no string key" (entries[3]) and "key entries[3].key is required" (line 69); no funding_no_identity, no funding_no_key
+Case 4: writeEntry(funding, nwo-veni-the-self-explaining-hospital, status awarded) -> changed ["status"], record key "nwo-veni-the-self-explaining-hospital"; diff: only 26c26 status submitted -> awarded
+Case 5: entryStub over funding / tasks / events: caret line 169 / 40 / 120 column 11, line `  - key: ""`, next `    title: ""`
+
+Item 5: for each file of `grep -rl "listed: false" src/lib/views` (18), its view id counted in docs/views.md 257-261: 1 each (the ids behind DIFF_VIEW, MERGE_VIEW, REFACTOR_VIEW and MARKDOWN_PREVIEW_VIEW resolved to repositories-diff, repositories-merge, refactor-preview and markdown-preview, each 1)
+History-word grep (the rules file's list) over the added lines of `git diff d7a654584` and over the new and moved files: 2 hits, docs/window.md (the words are in the unchanged part of the line) and undo.ts `change.before` (code); the new files give none
+```
+
+### The round's nine rulings
+
+1. Undo of records made before the keys: met, with Finding 3 (a reach beyond the ruling) and Finding 4 (a doc comment). My run gives `gone` for all four kinds made by the base engine, and records made after the step still undo. The scope is stated in the report (78 of 88).
+2. Block headings: partial (Finding 1). The entry page draws all three headings in one style (the render shows one scoped class). The person page does not keep its look on main.
+3. `task-card.ts` head comment: met (`task-card.ts:1-6` names both views and says why the file is shared).
+4. `docs/apps.md`: partial (Finding 2). Line 819 and the Create line are rewritten. Following the guide still gives a `required` finding.
+5. Views not in the catalogue: met (the 18 ids, each named once, the summing sentence; `HELP.md:156` gives no count).
+6. The registry comment: met (`hub-names.ts:93-98`; `registries.ts:96` reads `shape.idRequired`).
+7. Helpers: met. `parentFolder` is gone and `dirOf` (`change-tree.ts:111`) is imported (`collection.ts:30`; `Entry.svelte:55`). `listsAsFolder` collides with no export (grep). `FolderListing` is local (`collection.ts:318`). The unused-export list is unchanged.
+8. Render of cases 9, 12 and 11's file branch: met in substance. It is Svelte's server render over a client store filled through `stubFetch` and `settle`, and my rerun gives the same blocks. A client-runtime mount was not done. The reason given holds: the `client` environment has no DOM (`tests/ui/frame/client-runtime.ts:1-5`), and the blocks run no `$effect` (`Entry.svelte` has none).
+9. The report: met, except for the false claim of Finding 1. The history grep, the paths outside the write list, the opened long fields and `applykeys.py` with `check14.py` are all present, and no git command is named as run.
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. Own `keycheck.py`: 14 of 14 MATCH, no duplicate, all keys text, `key` the first schema row with `required: true`, and every added line a key line, a re-indented title, the schema row or the head comment. The first review's Spec note on `applykeys.py` stays as reported.
+- 2: holds. `idRequired: true` (`hub-names.ts:107`). Case 19 gives `entry_no_id` and `required` only. Case 6 shows manifests still link FAIR. The four undo runs give `gone`.
+- 3: holds. Cases 7 and 13 in `after.out`.
+- 4: violated in its last clause, "neither page's look changes" (Finding 1). The rest holds by my render and by reading `Entry.svelte`.
+- 5: holds. `EntryCard.svelte:287` `ontitle={hasPage ? onpage : undefined}`; `Collection.svelte:315`.
+- 6: holds. `EntryCard.svelte:177-193` calls `showFolderInFiles(path)` when `listsAsFolder`, else `showInFiles(path)`.
+- 7: holds. The moved files' head comments follow the move, `task-card.ts` included. The allow-list reasons cite the true lines (`EntryCard.svelte:406/413/417`, `Collection.svelte:405`, duplication at 130 and 218).
+- 8: holds. Item 8's own lines are true. The `docs/apps.md` example lies outside item 8's list and is Finding 2.
+- 9: holds. The `wc -l` and `ls | wc -l` figures above; `folder-check.sh` rc=0.
+
+Cases of the brief's "Cases":
+
+- 1: met. `keycheck.py`.
+- 2: met. `after.out` gives 0 findings over the worktree hub; `integrity.test.ts` passes in the `tests/checks` run.
+- 3: met. h3: "two entries share the key FAIR".
+- 4: met. Only line 26 changes.
+- 5: met. The caret is inside `key: ""` at column 11 in three files.
+- 6: met. `after.out`.
+- 7: met for the folder test and the wiring (`after.out`, `EntryCard.svelte:171,287`). The press is left to the landing look.
+- 8: met by reading `EntryCard.svelte:177-193` and `show.ts`. The press and the second press are left to the look.
+- 9: met by the render (the Documents segment with the first drawn, Files with Show in Files rooted at the folder, Sessions). The card's look and the absence of a grip are also left to the landing look.
+- 10: met. `after.out`.
+- 11: met. The render gives the no-folder sentence for a file link. The unknown-key branch is `Entry.svelte` `entry.unknown`, which the round did not change (round delta) and the first review rendered.
+- 12: met. The render of `beta`.
+- 13: met. `after.out` before and after, plus `relistFiles` as read by the first review (the round did not change `fs.svelte.ts`).
+- 14: met by reading. `Entry.svelte` hands `EntryCard` `file={source}` from `viewSourceFile('collection', ...)`, and `blockedBy` is inside the card.
+- 15: met. `after.out` funding targets are keys.
+- 16: met. `boundaries.test.ts` passes in the 12-file run.
+- 17: met. My undo run: entry record `{"error":"gone"}`, file unchanged.
+- 18: met by reading `Entry.svelte` (`collectionKey === '' || key === ''` draws `entry.none`). The first review rendered it; the round did not change the branch.
+- 19: met. h19.
+
+### Findings
+
+1. Behaviour, and the report's proof. `src/lib/views/boards/person/Person.svelte:193-195` with `:239`:
+   - The hunks: `{#snippet heading()} <h3>{t('person.folder', folder)}</h3> {/snippet}` and `.block h3 { margin: 0 0 4px; ... }`.
+   - What is wrong: at the base the folder heading's margin was `0` through `.head h3 { margin: 0; }`, which the step removed from `Person.svelte`. In round 0, `FolderFiles.svelte`'s own `h3 { margin: 0; ... }` kept it at `0`. This round removed that rule and draws the heading in Person's scope, so `.block h3` now gives it a 4 px bottom margin inside FolderFiles' `.head` flex row (`align-items: center`).
+   - The report says ".block h3 of Person.svelte:239 styles as before; the person page keeps its look". That claim is not reproduced by reading. Ruling 2 and item 4 ask that the person page keep the look it has on main.
+   - Failure scenario: on a student's person page, the "Folder" heading sits about 2 px above the Show in Files control's centre, and the row grows by up to 4 px. The landing look is read against "keeps its look" and finds a difference.
+   - Fix at landing: `margin: 0` for that heading, for example `[data-block='folder'] h3 { margin: 0; }` in `Person.svelte`.
+   - Verdict: item 4 violated (last clause); ruling 2 partial.
+
+2. Spec. `tools/oculus/docs/apps.md:594` and `:747`:
+   - The hunks: "writes that field and `title` into the task it creates, since the shipped `tasks` schema requires both `key` and `title`", and `fields: { [identity]: id, title: id }`.
+   - What is wrong: `tasks/tasks.yml:10` and `demo/tasks/tasks.yml:9` also mark `status` `required: true`, and `snapshot/schema/record.ts` turns every `required: true` into a required finding. The task the example creates therefore still gives `key entries[n].status is required`. Ruling 4 asked that following the guide give no finding. The sentence also leads a reader to think key and title are all the schema requires.
+   - Failure scenario: an app author runs the worked example and, between step 4 and step 5, finds a `required` finding for `status` that the guide does not mention.
+   - Fix at landing: add `status: 'todo'` to the fields and name `status` in the sentence at 594.
+   - Verdict: none for an item (outside item 8's list); ruling 4 partial.
+
+3. Spec, a fix that reaches beyond its ruling. `src/lib/server/edit/writes/undo.ts:187-191`:
+   - The hunk: `return !fields.success || scalar(fields.data[held.ident]) !== change.key;`.
+   - What is wrong: ruling 1 refuses a record that names an entry by a title that is no longer its identity. For the 10 `registries/repos.yml` entries whose title equals their key, a `new-entry` record made before the step names the entry by a value that is still its identity. Its fields hold no `key`, so the undo is refused as `gone`, and the gone sentence ("What this write addressed is no longer in the hub") is false while the entry is in the file under that key. The builder discloses this as a judgment call. My runs cover the 78 changed entries, not this branch; this point comes from reading.
+   - Failure scenario: an Add made from an app before the landing on a repos entry named, say, `rite`; Undo in History after the landing says the entry is gone while it is in the file.
+   - A narrower check for `new-entry` is `entryOf(held, change.key) === undefined`. It gives `gone` for the 78 entries and lets these records undo.
+   - Verdict: none.
+
+4. Standards, a doc comment the change makes incomplete. `src/lib/server/edit/writes/undo.ts`, the doc comment of `valueNow`:
+   - The hunk: "A `found: false` means the project, the entry, the host or the file has gone".
+   - What is wrong: `valueNow` now also answers `found: false` when `namesOldIdentity` holds, and the entry may still be in the file. The rules file asks that the doc comment of every touched function be re-read and made true. The report lists the undo paragraph as "still true" without this comment.
+   - Failure scenario: a reader debugging a `gone` answer on an entry that is in the file trusts the comment and looks for a missing file.
+   - Fix at landing: one clause naming the record that names its entry by a value that is not its identity.
+   - Verdict: none.
+
+5. Proof. The report's item 8 render outputs (`render1.txt`, `render2.txt`, 17:16 and 17:17 in `$TMPDIR/d52r1`) are older than `Entry.svelte`'s last change (mtime 17:50). The rules file asks that every quoted run be taken after the last change. My rerun over the current file gives the same blocks, so no decision rests on it. Verdict: none.
+
+### Declined to judge
+
+- Two points left to the landing look. On the entry page, the Files heading's `.heading` margin `0 0 6px` sits inside FolderFiles' centred flex row, so it may stand slightly above the Show in Files control, unlike the Documents and Sessions headings, which are not in a flex row. More generally, the look in a browser of all three headings.
+- Which test failed in the first run of the 12-file set. It was not captured; two reruns passed at load average 13, and the `tests/checks` run with timeouts off passed. The builder reports default-timeout failures of `config-folder.test.ts` and `keys.test.ts` at load 21.
+- Whether `test:quick`'s 123.8 s against its 45 s limit is the step's or the machine's: the load average was 13 to 18 during the run.
+- A pre-existing defect outside the step. Undoing a `delete-entry` on a `tasks` entry with `subtasks` refuses the `subtasks` field ("not a string, number, boolean, list of strings, metalist, map o...") and writes the entry without its subtasks. This shows in my run of a record made after the step. `entries.ts` `createEntry` is not in the step's diff.
+- How many History records made before the step exist in Axel's change log: counting them needs `~/.oculus`, which I may not open.
+- `npm run diagrams`, not run because it writes into the worktree. `diagrams.test.ts` passes, and the round's `.dot` changes are the edge counts and two `?` call nodes from the new `undo.ts` parse calls.
+
+Reviewer usage: agent id not known to me, claude-opus-5-5, about 280,000 tokens, about 65 tool uses, about 40 minutes (not measured).
+
+### Closed
+
+1. Finding 1 (the person page's Folder heading): fixed at landing, `[data-block='folder'] h3 { margin: 0; }` in `Person.svelte` after `.block h3`.
+2. Finding 2 (`docs/apps.md`, the example's task fields): fixed at landing, the example writes `status: 'todo'` (line 747) and the sentence at 597 names `key`, `title` and `status`.
+3. Finding 3 (`undo.ts`, a `new-entry` record whose entry is still under its key): fixed at landing, a `new-entry` record is refused only when the record names no identity and the file holds no entry under its key (`entryOf(held, change.key) === undefined`); a `delete-entry` record keeps the refusal, and the comment above says so.
+4. Finding 4 (`valueNow`'s doc comment): fixed at landing, the comment names a collection record that names its entry by a value that is not the entry's identity.
+5. Finding 5 (render outputs older than `Entry.svelte`): closed without code, the reviewer's rerun over the current file gives the same blocks.
+6. Declined point, the subtasks undo defect: booked in D55 by Axel's ruling "Subtasks on undo" in `plan.md`'s Rulings.
+7. Declined point, the Files heading against the Show in Files control: left to the landing look.

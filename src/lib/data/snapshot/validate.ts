@@ -242,16 +242,14 @@ export function identityFieldOf(schema: unknown): string {
  * value there can be addressed by nothing, and with two of one value an edit reaches the first and
  * the second can be neither edited nor removed. Each entry gives at most one finding:
  * `identity_empty` for an empty value (two empty values are not a shared one), `identity_shared`
- * for a value another entry also holds. An entry for which `exempt` answers true has its empty
- * value reported elsewhere. Closed entries are checked like the rest, so a caller passes every
- * entry of the file.
+ * for a value another entry also holds. Closed entries are checked like the rest, so a caller
+ * passes every entry of the file.
  */
 export function identityFindings(
     file: string,
     ident: string,
     entries: readonly Record<string, unknown>[],
-    catalog: TextCatalog,
-    exempt: (entry: Record<string, unknown>) => boolean = () => false
+    catalog: TextCatalog
 ): Finding[] {
     const values = entries.map((entry) => readAs(textOrNumberOnlyShape, entry[ident]));
     const counts = new Map<string, number>();
@@ -262,7 +260,6 @@ export function identityFindings(
     values.forEach((value, index) => {
         const key = `entries[${index}].${ident}`;
         if (value === null || value === '') {
-            if (exempt(entries[index])) return;
             const message = findingText(catalog, 'findings.validate.identity_empty', ident);
             findings.push({ file, key, message });
             return;
@@ -277,9 +274,8 @@ export function identityFindings(
 /**
  * The identity findings of every collection. A collection that is a registry whose schema opens
  * with the registry's own id field is left to the schema's duplicate-key rule (schema/lists.ts) and
- * to the registry reader's missing-id finding; venues open with `name` and funding with `title`, so
- * their write identity is checked here. A funding entry with neither a key nor a title is the
- * funding check's finding and is not reported twice.
+ * to the registry reader's missing-id finding; venues open with `name`, so their write identity is
+ * checked here.
  */
 function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
     const idFields = new Map(
@@ -287,17 +283,11 @@ function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: F
             raw.registries[name].entries.map((one) => [one.file, REGISTRY_SHAPES[name].idField])
         )
     );
-    const fundingFiles = new Set(raw.registries.funding.entries.map((one) => one.file));
-    const keyless = (entry: Record<string, unknown>): boolean =>
-        (readAs(textOrNumberOnlyShape, entry.key) ?? '') === '';
     for (const key of Object.keys(raw.collections).sort()) {
         const collection = raw.collections[key];
         const ident = identityFieldOf(collection.meta.schema);
         if (idFields.get(collection.file) === ident) continue;
-        const exempt = fundingFiles.has(collection.file) ? keyless : undefined;
-        findings.push(
-            ...identityFindings(collection.file, ident, collection.entries, catalog, exempt)
-        );
+        findings.push(...identityFindings(collection.file, ident, collection.entries, catalog));
     }
 }
 
@@ -329,23 +319,6 @@ function checkPeople(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[
     });
 }
 
-/**
- * A funding entry is known by its `key` when it has one and by its `title` otherwise, so an entry
- * with neither has no identity and normalise cannot carry it. The other four registries require an
- * id and their reader has already reported a missing one, so only funding is checked here.
- */
-function checkFundingIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
-    raw.registries.funding.entries.forEach((entry, index) => {
-        if (entry.key.length > 0) return;
-        if (typeof entry.title === 'string' && entry.title.length > 0) return;
-        findings.push({
-            file: entry.file,
-            key: `entries[${index}]`,
-            message: findingText(catalog, 'findings.validate.funding_no_identity')
-        });
-    });
-}
-
 /** The two texts of a funding entry the acknowledgment check reads, the empty text when wrong. */
 const fundingRowShape = z.object({ status: wordShape, title: wordShape });
 
@@ -353,9 +326,9 @@ const fundingRowShape = z.object({ status: wordShape, title: wordShape });
 const ACKNOWLEDGED = new Set(['awarded', 'contributing']);
 
 /**
- * An awarded or contributing funding entry is one a manifest tags and a manuscript acknowledges, so
- * it needs a `key` the tag can name and a `statement` the manuscript pastes. An application gets
- * both when it is granted; until then neither is asked for.
+ * An awarded or contributing funding entry is one a manuscript acknowledges, so it needs a
+ * `statement` the manuscript pastes. An application gets one when it is granted; until then none is
+ * asked for.
  */
 function checkFundingStatements(
     raw: RawPortfolio,
@@ -367,13 +340,6 @@ function checkFundingStatements(
         if (!ACKNOWLEDGED.has(status)) return;
         const name = entry.key.length > 0 ? entry.key : title;
         const statement = entry.statement;
-        if (entry.key.length === 0) {
-            findings.push({
-                file: entry.file,
-                key: `entries[${index}]`,
-                message: findingText(catalog, 'findings.validate.funding_no_key', name, status)
-            });
-        }
         if (typeof statement !== 'string' || statement.trim().length === 0) {
             findings.push({
                 file: entry.file,
@@ -430,7 +396,6 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     checkFolderNames(raw, catalog, findings);
     checkPeople(raw, catalog, findings);
     checkResources(raw, catalog, findings);
-    checkFundingIdentity(raw, catalog, findings);
     checkFundingStatements(raw, catalog, findings);
     checkEntryStatus(raw, rules.vocab.statuses, catalog, findings);
     checkEntryIdentity(raw, catalog, findings);
