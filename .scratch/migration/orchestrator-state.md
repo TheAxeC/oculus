@@ -99,6 +99,18 @@ dispatch:   # steps in flight, up to six (Z632)
   round: 0
 ```
 
+- step: D50
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a30b6993857882108 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D50
+  base: 2ed26dc28
+  launched: 2026-10-09
+  report: agents/reviews/D50-report.md
+  brief_check: agents/reviews/D50-brief-check.md (a25c58150d1a4695d, claude-opus-5-5, 266,958 tokens, 111 tool uses, 14.4 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: settings.ts with D46 (the whole file; D50 settingReader 148-151); portfolio.ts, model-machine, config.test.ts and docs/DATA-MAP.md line 69 with D41; server/edit/writes.ts with D48 (WriteTarget); content/docs.ts with D52 (451-456; D50 521-542); config/sources.yml with D48 (line 15, merged by hand); config/catalogs/vocab.yml with D41 (228) and D48 (199-206); config/catalogs/options.yml with D46 (857-860) and D48 (1230); HELP.md with D46 (79-80), D48 (105) and D52 (156; D50 170); docs/window.md with D46 (76) and D52 (41; D50 25, 29); docs/apps.md with D48 (248, 417, 419); docs/configuration.md with D48 (41); config/behavior.yml and config/app.yml with D46 (263-267); DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D48 (552) and D51 (72, 244, 521, 565; D50 91, 272, 306-308, 492, 547, 573); the gate's sparse checkout gains `.oculus` at landing; different lines, each merge simple except sources.yml line 15, merged by hand
+  landing: not-started
+  round: 0
 ## The standing demands (from Axel, in force)
 - A brief is written, its premises checked and its findings closed by the orchestrator itself through the `spec` skill, never by an agent (Axel, 2026-10-09): no brief-writing agent, no premise survey or premise recheck agent, no agent that edits a brief; the one agent `/spec` starts is the brief check, as the skill says.
 - A builder or reviewer never takes focus on Axel's screen and never reruns a case that starts the app (Axel, 2026-10-05): no `app.focus({steal:true})`, no `osascript activate`, no `Page.bringToFront`, no `focus()` or `show()` called from outside the app's code; a focus case is read from a recorder on `BrowserWindow.prototype.focus`; the app is started once for all window cases and closed by its pid; a case that does not show in that run is reported not verified and goes to the look. Every builder prompt that runs the desktop app restates this.
