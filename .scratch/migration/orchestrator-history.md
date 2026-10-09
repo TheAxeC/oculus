@@ -4,6 +4,11 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z744 (2026-10-09): the findings of D46's brief check closed in automode (`agents/reviews/D46-brief-check.md`, Closed; `choices.md`): the names request on the search route and its wire format, the `search.max_names` key, hidden files listed and private folders left out, `tabForKind` moved into state, the terminal and right-click routes to the palette.
+- Z743 (2026-10-09): the choices of D41's brief check closed in automode (`agents/reviews/D41-brief-check.md`, Closed; `choices.md`); G3's wording raised as open item 24.
+- Z742 (2026-10-09): the choices of D40's brief closed in automode (`choices.md`); C4 and C7 raised as open items 18 and 19.
+- Z741 (2026-10-09): where a rename's refusal shows, and D39's first review sent as repair round 1, closed in automode (`choices.md`; `agents/briefs/D39-round1.md`).
+- Z740 (2026-10-08): the ESLint approval per configuration file, and D36's first review sent as repair round 1, closed in automode (`choices.md`).
 - Z739 (2026-10-08): the choices C1 to C4 and C6 of D39's premise recheck closed in automode (`choices.md`); C5, the closed paths of `lsp-edit`, raised as open item 16.
 - Z738 (2026-10-08): the choices C1 to C5 of D36's premise recheck closed in automode (`agents/reviews/D36-premise-recheck.md`; `choices.md`): the `lint.*_path` rule as `latex.texlab_path`, the held ESLint following the served roots and the off switch, the relay comment, the folded key functions.
 - Z737 (2026-10-08): the review over D43's repair round 1 closed at landing in automode (`agents/reviews/D43-refuter.md`, Closed; `choices.md`): the status item's folder scope, old LaTeX marks read by their served root or refused `latex-unmarked`, the owed retry let go after a success, G55 as open item 14 ruled it.

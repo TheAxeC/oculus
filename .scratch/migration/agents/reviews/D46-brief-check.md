@@ -206,3 +206,20 @@ The brief dictates no product text: the placeholder, the key sheet rows, the HEL
 - Whether hidden files should be listed. That is a design choice for the orchestrator or Axel, and I give only its measured cost.
 
 Usage: Ordo brief-check agent; this session does not expose its agent id. About 62 tool calls, all read-only.
+
+## Closed
+
+Closed by the orchestrator in `agents/briefs/D46.md`, with Z744 (`plan.md` Rulings, `choices.md`), at main 6e47411cc.
+
+1. F1 from a terminal: "What is on the tree" quotes xterm's handling of F1 and Ctrl+P; item 1 keeps F1, and off macOS Ctrl+P and Ctrl+Shift+P, from the program in `grid-keys.ts`; case 6 rewritten with a unit run of `gridKeys` for both platforms; `grid-keys.ts` added to the paths.
+2. The open rule: the premise now names `views/shared/explorer/opening.ts` `tabForKind`; item 3 moves it to `state/sources/explorer/file-type.ts`, its importer `read-again.ts` following, and the `explorer` store gains the open call; case 9 covers a PDF, a picture, an HTML file and an apps folder; Z744 (d).
+3. The client side: the `search` store (`state/sources/search/search.svelte.ts`) asks for the names; added to the premises and the paths.
+4. The wire format: item 4 states `GET /api/search?list=names[&root=<key>]` and its answer; decision 1; Z744 (a).
+5. The parameter: the acceptance item says an absent `list` is a search as today, and empty, repeated or unknown is `400 { error: 'list' }`; case 23.
+6. The cap: the config key `search.max_names` in `behavior.yml`, `settings.ts` and `options.yml`; Z744 (b).
+7. Hidden files: listed with `--hidden`, `.gitignore` honoured, the private folders left out, no size limit; decisions 5 and 6; case 18 extended; Z744 (c).
+- Names: `runRipgrep`'s signature kept (premise); `openPalette(prefill)` kept, the file mode opened by its own option (item 3); `Workbench.svelte` in the size check and its line limit named (items 7 and verify 3); `PaletteRow.svelte` gains the icon and is in the paths; `DESIGN.md:142` and `editor-status.svelte.ts:14-15` in the text item and the paths.
+- Cases and checks: case 6's quoted first run replaced; case 13 drops the path that climbs out and adds a new `it` beside G2's, its title kept; the Search view regression is case 23; case 3 covers the diff editor and the right-click item; case 8 names the rows compared.
+- Items: item 2's right-click "Command Palette" opens oculus's command mode (decision 9; Z744 (f)).
+- Implied inputs: modifiers mac-aware (item 1); a float's own window (case 24); the key sheet and a confirmation (case 25); a file over 2 MB (case 18); the nested engine root (decision 7; case 22); slow roots run at once (item 4); a stated typing bound with 200 drawn rows (item 3; decision 8); names with spaces and non-ASCII (item 3); a kept tab with the keyboard in the content (decision 4); the empty-query recency across panes (item 3). A symlinked root and a link leading out: links are not followed (item 3), and the source route's refusal holds on open.
+- G1's test (`tests/routes/files/search.test.ts`), G16 and G12 added to verify 2.
