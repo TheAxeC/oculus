@@ -6,9 +6,9 @@ In flight (5 of 6 slots in use):
 - D52 (a page per collection entry): repair round 1 running, launched 2026-10-09.
 
 Queued, in order (8 steps):
-- D41 (links in Markdown checked): waits for Axel on open item 29 (the test of the fix its diagnosis found); its work kept as a patch.
+- D41 (links in Markdown checked): prepared again next with open item 29 ruled (a); its work kept as a patch.
 - D49 (the help pages cut): waits for D46, whose text in docs/window.md and docs/views.md it carries; D47's has landed.
-- D53 (unique views): waits for D56.
+- D53 (unique views): prepared next, before D56.
 - D55 (roots as hubs): waits for D50.
 - D56 (the workbench): waits for D52 (D47 landed).
 - Q72 (the architecture re-read): paused (Axel).
