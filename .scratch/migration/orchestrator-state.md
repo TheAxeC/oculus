@@ -50,9 +50,9 @@ dispatch:   # steps in flight, up to six (Z632)
   builder_usage: 294,570 tokens, 79 tool uses, 23.7 min; round 1: 300,733 tokens, 5 tool uses, 4.7 min
   brief_check: agents/reviews/D57-brief-check.md (a7d14de49f99d0e6e, claude-opus-5-5, 223,069 tokens, 63 tool uses, 8.7 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: tools/oculus/DESIGN.md with D41 (D41 lines 23, 166, 503, 575-576, D57 line 238; different lines, the merge is simple)
-  reviewer_report: agents/reviews/D57-refuter.md (a6cac719db08a46d2, claude-opus-5-5, 245,851 tokens, 62 tool uses, 23.9 min)
+  reviewer_report: agents/reviews/D57-refuter.md (a6cac719db08a46d2, claude-opus-5-5, 245,851 tokens, 62 tool uses, 23.9 min); over round 1: a084253d21de24f0c, claude-opus-5-5, 165,543 tokens, 41 tool uses, 17.7 min
   round_1: agents/briefs/D57-round1.md, sent to the builder over the tree copied at .agents/worktrees/D57-round0
-  landing: not-started
+  landing: cherry-picking
   round: 1
 - step: D46
   executor: agent
@@ -76,8 +76,10 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 5f08fde1a
   launched: 2026-10-09
   report: agents/reviews/D47-report.md
+  builder_usage: 118,882 tokens, 144 tool uses, 59.6 min
   brief_check: agents/reviews/D47-brief-check.md (a176332cf8ff0b352, claude-opus-5-5, 229,921 tokens, 87 tool uses, 10.2 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D46, config/text/app.yml line 13 (the same line: D47 changes `m1-m7`, D46 adds the palette rows; merged by hand at the later landing) and HELP.md (D47 lines 43, 134, 138-139, D46 lines 79-80); with D57, instances.ts (D57 line 83, D47 lines 139 and 164), saved/saved.ts (D57 lines 18, 372, 556-557, 604; D47 lines 526 and 562), config/layout.yml (D57 line 44, D47 line 65) and DESIGN.md (D57 line 238); with D41, DESIGN.md (D41 lines 23, 166, 575-576; D47 lines 225, 456), docs/views.md (D41 lines 73, 213; D47 lines 159-181) and sections/Outline.svelte (D41 the head comment and lines 147-151, D47 the import line); different lines except app.yml, each merge simple
+  reviewer_report: agents/reviews/D47-refuter.md (af6ed9204a4a55b6f, claude-opus-5-5, running)
   landing: not-started
   round: 0
 - step: D48
@@ -103,7 +105,7 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D51-brief-check.md (a3f85385ee8a110b3, claude-opus-5-5, 261,325 tokens, 73 tool uses, 15.3 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D47 (225, 456), D48 (552) and D57 (238), D51 lines 72, 244 and 565; docs/views.md with D41 (73, 213), D47 (159-181) and D48 (5-7, 21-23), D51 line 243; src/lib/ui/controls/editor/kit/load.ts with D46 (lines 64 and 221-226), D51 the rules lookup near 370-405; docs/diagrams/ regenerated at landing; different lines, each merge simple
   cases_ruling: agents/briefs/D51-cases.md (case 13 to option A, `--bg` from the side bar VS Code draws, the tint pairs for every theme)
-  builder_usage: first run and the hand-back of case 13, usage read at the final report
+  builder_usage: 218,072 tokens, 40 tool uses, 13.4 min (the first run and the hand-back of case 13)
   landing: not-started
   round: 0
 ```
@@ -222,7 +224,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- 25. D50: who may write an app in the hub's `.oculus/apps`. Ruling (9) moves the apps folder of `~/.oculus` into the hub, and my automode choice Z751(c) reads `<hub>/.oculus/apps` as the machine apps folder, so those apps keep every channel and may stay approved while they change. `docs/apps.md:11` gives the reason a root app gets fewer channels: whoever writes a repository, a `git pull` included, writes its apps. The hub is a git repository, so under Z751(c) a pull of the hub writes an app that reads every channel, and one kept approved runs the pulled change unasked until the server ends. (a) Recommended: Z751(c) kept, and `docs/apps.md` says a machine app lives in the hub's own `.oculus/apps`, which only the hub's owner writes, and a root app in any other root; your apps keep the channels they have. (b) The hub's `.oculus/apps` read as the hub root's apps, with a root app's fewer channels, no keeping approved while it changes and files opened only from the hub; an app of yours that reads a channel a root app is not offered stops working. (c) Apps left in `~/.oculus`, against ruling (9). (a) costs the least to build; it is recommended because ruling (9) moves your apps without taking channels from them, and the docs then state the pull risk plainly. D50 waits for this ruling.
+- 26. D50: four lines of the hub's registries name `tools/oculus/config/...` as the home of a key that moves into the hub's `.oculus/config/`: `registries/data.yml:28` and `registries/venues.yml:27` (the help the edit form shows for `themes`), `registries/domains.yml:1` (the `domains` map) and `registries/resources.yml:1` (`slurm.resource`). The rules file lets a builder reword hub text by hand only where a ruling of yours asks for it (`agents/spec.md:103`), and ruling (17) does not. (a) Recommended: you rule that D50 rewords these four lines by hand to name `.oculus/config/` of the hub, the report listing each before and after. (b) The lines are left naming the engine's file, which is false after D50; this is the lazy option. D50 waits for this ruling.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 

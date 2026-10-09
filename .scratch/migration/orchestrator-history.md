@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z753 (2026-10-09): the choices of D50's brief check closed in automode (`choices.md`): `.oculus/` tracked, `loadConfig(engine, hub?)`, no cluster as `''`, no LinkedIn feed when absent, an inserting hub-key write, the carry-over's links, approvals and note history, this hub's whole `docs:` list, per dotted key, this hub read only through G14. Open items 25 (the hub's apps trust) and 26 (the four registry lines) raised to Axel.
 - Z752 (2026-10-09): the choices of D52's brief check closed in automode (`choices.md`): funding's own identity checks removed, the session row and folder block shared, the task card moved with the card, no page for a file link, keys written by hand under ruling (13), an old-title undo refused.
 - Z751 (2026-10-09): the choices of D50's brief closed in automode (`choices.md`): the hub list of the settings layer, whole-value replacement, the apps folder in the hub read once, the copying carry-over, the engine's general values, the neutral chat instruction.
 - Z750 (2026-10-09): the choices of D51's brief check closed in automode (`choices.md`), replacing Z747: VS Code's registered defaults before oculus's base, each VS Code theme's own editor rules, text on the Source Control tints measured and nudged for every theme, the classes and labels from VS Code's shown labels, the converter's outputs in prettier's form.
