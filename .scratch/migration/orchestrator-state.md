@@ -50,8 +50,10 @@ dispatch:   # steps in flight, up to six (Z632)
   builder_usage: 294,570 tokens, 79 tool uses, 23.7 min
   brief_check: agents/reviews/D57-brief-check.md (a7d14de49f99d0e6e, claude-opus-5-5, 223,069 tokens, 63 tool uses, 8.7 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: tools/oculus/DESIGN.md with D41 (D41 lines 23, 166, 503, 575-576, D57 line 238; different lines, the merge is simple)
+  reviewer_report: agents/reviews/D57-refuter.md (a6cac719db08a46d2, claude-opus-5-5, 245,851 tokens, 62 tool uses, 23.9 min)
+  round_1: agents/briefs/D57-round1.md, sent to the builder over the tree copied at .agents/worktrees/D57-round0
   landing: not-started
-  round: 0
+  round: 1
 - step: D46
   executor: agent
   worker: claude:sonnet at ordo-high
