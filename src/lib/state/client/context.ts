@@ -762,6 +762,9 @@ export function createClientState(
     // document, a file), and the layout lands it apart from a page's tool views. The registry is
     // built over the layout, so the layout is told the rule once both exist.
     layout.registerOpened((view) => registry.viewFor(view)?.group === '');
+    // A view whose registration says `unique` is held once: the layout shows the instance a page or
+    // float holds instead of opening a second, and the rule reaches it the same way.
+    layout.registerUnique((view) => registry.viewFor(view)?.unique === true);
     const apps = createApps({
         entities,
         writes,

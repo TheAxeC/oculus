@@ -6,7 +6,8 @@
         label: 'views.focus',
         glyph: 'views.focus_glyph',
         group: 'focus',
-        order: 0
+        order: 0,
+        unique: true
     };
 </script>
 

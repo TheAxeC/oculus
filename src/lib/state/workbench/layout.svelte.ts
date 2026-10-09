@@ -34,25 +34,34 @@ import {
     createFloatOps,
     createLoad,
     createStorage,
+    defaultBeside,
     defaultPages,
     embedPage as embedIn,
     expand,
     findInstance,
-    floatsFrom,
     focusedPane,
     fold,
     hostsOf,
+    keptDefault,
     LAYOUT_KEY,
     maximise,
     newPage,
     PREVIOUS_KEY,
+    rebuiltPage,
+    resetAll,
     restore,
     settleFocus,
     showable,
+    startedOn,
     tabsOf,
     unembedPage as unembedIn,
+    withoutHeld,
+    withPage,
     writeHost,
     floatHost,
+    type Arranged,
+    type Away,
+    type Builds,
     type Edge,
     type Float,
     type FloatOps,
@@ -73,6 +82,7 @@ import {
     type SaveTurn,
     type Storable,
     type Touched,
+    type UniqueRule,
     type ViewId,
     type Workbench
 } from './layout/index.ts';
@@ -107,7 +117,10 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         /** The page or float whose tree holds this instance, or null when none does. */
         holding: (id: string) => Host | null;
         touchPane: (page: string) => void;
-        /** Whether a copy of this tab can open in a window of its own: a Terminal tab cannot. */
+        /**
+         * Whether a copy of this tab can open in a window of its own: a Terminal tab cannot, and
+         * neither can an instance of a unique view, which is held once.
+         */
         copiesToWindow: (id: string) => boolean;
         workbench: (page?: string) => Workbench;
         layout: (page?: string) => Layout;
@@ -125,7 +138,8 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         stopFollowing: () => void;
         /**
          * Show the page of one rail button, made from its arrangement the first time and switched
-         * to after that. It answers whether a page is on screen for the button.
+         * to after that. A unique view the arrangement names is moved into the page from the page
+         * or float holding it. It answers whether a page is on screen for the button.
          */
         openRailPage: (key: string, label: string, raw: unknown) => boolean;
         /**
@@ -167,15 +181,13 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         openView: Opening['openView'];
         openBeside: Opening['openBeside'];
         openInPane: Opening['openInPane'];
-        /**
-         * Open a view on a page in a pane that does not hold one instance, which is how the Views
-         * catalogue opens a view on its own page without covering itself.
-         */
-        openAway: (view: ViewId, state: unknown, page: string, avoid: string) => string;
-        /** Open a view on a page in a new pane beside the pane holding one instance. */
-        openNextTo: (view: ViewId, state: unknown, page: string, beside: string) => string;
-        /** Whether the pane at a path of a page holds one instance. */
-        paneHolds: (path: number[], id: string, page: string) => boolean;
+        /** How the Views catalogue opens a view on its own page without covering itself. */
+        openAway: Away['openAway'];
+        openNextTo: Away['openNextTo'];
+        moveAway: Away['moveAway'];
+        /** The id of the instance of a unique view that a page or float holds, else null. */
+        heldUnique: (view: ViewId) => string | null;
+        paneHolds: Away['paneHolds'];
         /**
          * Say which views are opened for something, which the registry knows and this store does
          * not: where such a view lands is layout/open/landing.ts's rule. Until a rule is registered
@@ -183,16 +195,24 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
          */
         registerOpened: (rule: (view: ViewId) => boolean) => void;
         /**
+         * Say which views are held once, which the registry knows and this store does not
+         * (registration.unique): opening one shows the instance a page or float holds, and a page
+         * or float made from the config takes it in. Until a rule is registered no view is unique.
+         */
+        registerUnique: (rule: UniqueRule) => void;
+        /**
          * Rebuild one page from a rail button's arrangement: its tabs made fresh, its id and rail
-         * key kept, its name the button's words. Answers whether it was rebuilt; an id naming no
-         * page or an arrangement that does not parse changes nothing.
+         * key kept, its name the button's words, a unique view it names moved in from the page or
+         * float holding it. Answers whether it was rebuilt; an id naming no page or an
+         * arrangement that does not parse changes nothing.
          */
         resetPage: (id: string, source: RailSource) => boolean;
         /**
          * Rebuild every saved page a rail button carries the key of from that button's arrangement
          * and remove every saved page carrying a key no button carries (navigation/pages.ts's
-         * resetPlan). A page with no rail key is left alone. The floats held are replaced by the
-         * shipped ones. Answers whether anything changed.
+         * resetPlan). A page with no rail key keeps its tabs, except a unique view an arrangement
+         * names, which moves to the page or float made from it. The floats held are replaced by
+         * the shipped ones. Answers whether anything changed.
          */
         resetPages: (rail: readonly RailSource[], floats: FloatSpec[]) => boolean;
         /**
@@ -371,6 +391,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     /** Which views are opened for something, as the registry says once it is registered. */
     let openedRule: (view: ViewId) => boolean = () => false;
 
+    /** Which views are held once, as the registry says once it is registered. */
+    let uniqueRule: UniqueRule = () => false;
+
     /**
      * What a page's pane that stays is left as when its last tab goes: an empty terminals pane for
      * a Terminal tab and an empty documents pane for any other view. Which panes stay is
@@ -379,10 +402,17 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
      */
     const keepRule: KeepRule = (view) => (view === TERMINAL_VIEW ? 'terminals' : 'documents');
 
+    /** What a page or float made from the config is built by: unique views and pane cleaning. */
+    const builds: Builds = { unique: (view) => uniqueRule(view), keep: keepRule };
+
     const attention = createAttention(access, where);
     const instances = createInstances(access, attention, keepRule);
-    const opening = createOpening(access, attention, instances.keepPreview, (view) =>
-        openedRule(view)
+    const opening = createOpening(
+        access,
+        attention,
+        instances.keepPreview,
+        (view) => openedRule(view),
+        (view) => uniqueRule(view)
     );
     const files = createShowInFiles(access, attention, opening.openView, opening.openInPane);
     const decks = createShowDeck(opening.openView, opening.openBeside);
@@ -395,7 +425,8 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         attention,
         opening.openView,
         instances.transferInstance,
-        instances.splitInstance
+        instances.splitInstance,
+        (view) => uniqueRule(view)
     );
     const floatOps = createFloatOps(access, keepRule);
     const load = createLoad(access, storage, {
@@ -419,7 +450,8 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
      * carries the key is the one the reader arranged and is switched to as it is; with none, a page
      * no button has taken yet whose name is the button's label becomes the button's page, which is
      * how a page opened by name before the rail had buttons is kept; with neither, the page is made
-     * from the arrangement, named with the label. An empty key, or an arrangement that does not
+     * from the arrangement, named with the label, and a unique view the arrangement names is moved
+     * into it from the page or float holding it. An empty key, or an arrangement that does not
      * parse when a page has to be made from it, changes nothing and says so.
      */
     function openRailPage(key: string, label: string, raw: unknown): boolean {
@@ -443,14 +475,16 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         const next = parseArrangement(raw);
         if (next === null) return false;
         attention.forgetTouched();
-        addPage(newPage(label, next, key));
+        savePages(withPage(store.current, newPage(label, next, key), builds));
         return true;
     }
 
     /**
      * The first rail page as the one page of a browser that had no saved layout: made from its
      * arrangement in place of the default page, so the reader starts on a page a button owns and
-     * digit 1 shows it again. Once any change was saved the pages are the reader's and stay.
+     * digit 1 shows it again, and the shipped floats made after it. A unique view named twice is
+     * kept by the first place that names it. Once any change was saved the pages are the reader's
+     * and stay.
      */
     function startOnRailPage(key: string, label: string, raw: unknown, shipped: FloatSpec[]): void {
         if (!fresh) return;
@@ -460,16 +494,18 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
             keepDefaultPage(shipped);
             return;
         }
-        const page = newPage(label, next, key);
         attention.forgetTouched();
-        savePages({ pages: [page], current: page.id, floats: floatsFrom(shipped) });
+        savePages(startedOn(store.current, newPage(label, next, key), shipped, builds));
     }
 
-    /** The default page stays the reader's first, beside the shipped floats. */
+    /**
+     * The default page stays the reader's first, beside the shipped floats. A unique view a shipped
+     * float names is moved into the float out of the default page, which keeps an empty pane.
+     */
     function keepDefaultPage(shipped: FloatSpec[]): void {
         if (!fresh) return;
         fresh = false;
-        if (shipped.length > 0) savePages({ ...store.current, floats: floatsFrom(shipped) });
+        if (shipped.length > 0) savePages(keptDefault(store.current, shipped, builds));
     }
 
     /**
@@ -490,9 +526,12 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         return store.current.pages.some((page) => page.id === held) ? held : null;
     }
 
-    /** A new page, on the default workbench, made current. */
+    /**
+     * A new page, on the default workbench, made current. A unique view a page or float holds is
+     * left out of it, so the new page is one empty pane then.
+     */
     function openPage(label: string): void {
-        addPage(newPage(label));
+        addPage(withoutHeld(store.current, newPage(label), builds));
     }
 
     /** Put a page at the end of the page list and show it. */
@@ -520,9 +559,10 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     /**
      * Close a page, with every tab on it. The page after it becomes current, or the one before it
      * when it was the last in the list; closing the only page leaves one fresh default page, since
-     * a workbench with no page to render is nothing at all. Every tab of the page's own tree is
-     * forgotten as its own close would forget it; a page one of its leaves shows is still in the
-     * list, so the tabs of that page are not the closed page's and keep what they hold.
+     * a workbench with no page to render is nothing at all, its pane empty when a float holds the
+     * unique view it starts on. Every tab of the page's own tree is forgotten as its own close
+     * would forget it; a page one of its leaves shows is still in the list, so the tabs of that
+     * page are not the closed page's and keep what they hold.
      */
     function closePage(id: string): void {
         const held = store.current.pages;
@@ -532,7 +572,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         attention.forgetPage(id);
         const left = held.filter((page) => page.id !== id);
         if (left.length === 0) {
-            savePages({ ...defaultPages(t('ui.page_default', 1)), floats: store.current.floats });
+            savePages(defaultBeside(t('ui.page_default', 1), store.current.floats, builds));
         } else {
             const next =
                 store.current.current === id
@@ -638,7 +678,8 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     /**
      * One page made again from a rail button's arrangement: fresh instances, the id kept so a page
      * showing it keeps showing it, the rail key kept so the button still reaches it, and the
-     * button's words as its name. What its old tabs held is forgotten as closing them would.
+     * button's words as its name. What its old tabs held is forgotten as closing them would, and a
+     * unique view the arrangement names is moved in from the page or float holding it.
      */
     function resetPage(id: string, source: RailSource): boolean {
         const found = pageOf(id);
@@ -646,12 +687,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         if (found === null || next === null) return false;
         attention.forgetPage(id);
         attention.forgetTouched();
-        savePages({
-            ...store.current,
-            pages: store.current.pages.map((page) =>
-                page.id === id ? { ...page, label: source.label, workbench: next } : page
-            )
-        });
+        savePages(rebuiltPage(store.current, id, source.label, next, builds));
         instances.forgetTabs(tabsOf(found.workbench.root));
         return true;
     }
@@ -659,7 +695,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     /**
      * Every rail page made again from its button's arrangement, and every page of a button that is
      * gone removed, in one save. A removed page is shown nowhere afterwards, as closing it leaves
-     * it, and the page on screen moves to the first page left when it was one of them.
+     * it, and the page on screen moves to the first page left when it was one of them. The pages
+     * are made first, then the floats, and a unique view an arrangement or a float names is moved
+     * in from a page that is kept; the first place to name it keeps it.
      */
     function resetPages(rail: readonly RailSource[], shipped: FloatSpec[]): boolean {
         const held = store.current;
@@ -672,26 +710,15 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         ) {
             return false;
         }
-        const gone = new Set(plan.removed.map((page) => page.id));
-        const pages = held.pages.flatMap((page): Page[] => {
-            if (gone.has(page.id)) return [];
+        const arranged = new Map<string, Arranged>();
+        for (const page of plan.rebuilt) {
             const source = rail.find((entry) => entry.page === page.rail);
-            const made = source === undefined ? null : parseArrangement(source.node);
-            if (!plan.rebuilt.includes(page) || source === undefined || made === null) {
-                return [page];
+            const workbench = source === undefined ? null : parseArrangement(source.node);
+            if (source !== undefined && workbench !== null) {
+                arranged.set(page.id, { label: source.label, workbench });
             }
-            return [{ ...page, label: source.label, workbench: made }];
-        });
-        const floats = floatsFrom(shipped);
-        let next: Pages =
-            pages.length === 0
-                ? { ...defaultPages(t('ui.page_default', 1)), floats }
-                : {
-                      pages,
-                      current: gone.has(held.current) ? pages[0].id : held.current,
-                      floats
-                  };
-        for (const id of gone) next = clearPage(next, id);
+        }
+        const next = resetAll(held, plan, arranged, shipped, t('ui.page_default', 1), builds);
         for (const page of [...plan.rebuilt, ...plan.removed]) attention.forgetPage(page.id);
         for (const float of held.floats) attention.forgetPage(float.id);
         attention.forgetTouched();
@@ -701,6 +728,15 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
             ...held.floats.flatMap((float) => float.pane.tabs)
         ]);
         return true;
+    }
+
+    /**
+     * Whether a copy of this tab can open in a window of its own: not a Terminal tab, and not an
+     * instance of a unique view, which no opener and no build makes a second instance of.
+     */
+    function copiesToWindow(id: string): boolean {
+        const view = instances.instanceView(id);
+        return view !== TERMINAL_VIEW && !(view !== undefined && uniqueRule(view));
     }
 
     /**
@@ -758,7 +794,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         openingInstance,
         instanceLayoutState: instances.instanceLayoutState,
         instanceView: instances.instanceView,
-        copiesToWindow: (id) => instances.instanceView(id) !== TERMINAL_VIEW,
+        copiesToWindow,
         restateInstance: instances.restateInstance,
         pinInstance: instances.pinInstance,
         pointInstance: instances.pointInstance,
@@ -775,6 +811,8 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         keepDefaultPage,
         adoptFloats,
         ...floatOps,
+        copyTabToWindow: (id, bounds) =>
+            copiesToWindow(id) ? floatOps.copyTabToWindow(id, bounds) : null,
         previousPage,
         openPage,
         switchPage,
@@ -802,6 +840,8 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         openInPane: opening.openInPane,
         openAway: away.openAway,
         openNextTo: away.openNextTo,
+        moveAway: away.moveAway,
+        heldUnique: opening.heldUnique,
         paneHolds: away.paneHolds,
         showInFiles: files.showInFiles,
         showTimeline: files.showTimeline,
@@ -816,6 +856,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         focusGiven: keeps.focusGiven,
         registerOpened: (rule) => {
             openedRule = rule;
+        },
+        registerUnique: (rule) => {
+            uniqueRule = rule;
         },
         resetPage,
         resetPages

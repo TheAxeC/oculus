@@ -68,10 +68,17 @@ export {
     START_H,
     START_W,
     adoptFloats,
-    floatsFrom,
+    defaultBeside,
+    keptDefault,
     placeFits,
+    rebuiltPage,
+    resetAll,
+    startedOn,
+    withPage,
+    withoutHeld,
     writeHost
 } from './open/float/pages.ts';
+export type { Arranged, Builds, UniqueRule } from './open/float/pages.ts';
 export { WINDOW_START, createFloatOps } from './open/float/store.ts';
 export type { FloatOps, WindowBounds } from './open/float/store.ts';
 export type { FloatSpec } from './open/float/pages.ts';
@@ -117,6 +124,7 @@ export { createOpening } from './open/opening.ts';
 export type { OpenOptions, Opening } from './open/opening.ts';
 export { createShowDeck, createShowInFiles } from './open/show.ts';
 export { createAway } from './open/away.ts';
+export type { Away } from './open/away.ts';
 export type { ShowDeck, ShowInFiles } from './open/show.ts';
 export {
     activePath,

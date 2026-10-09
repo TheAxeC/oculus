@@ -43,7 +43,10 @@ export type TabFacts = {
     pdf?: boolean;
     /** Whether the page is in the desktop app, which offers the moves into a new window. */
     windows?: boolean;
-    /** Whether the tab may be copied into a new window: a Terminal tab may not, it has one tab. */
+    /**
+     * Whether the tab may be copied into a new window: a Terminal tab may not, it has one tab, and
+     * the tab of a unique view may not, it is held once.
+     */
     copyable?: boolean;
 };
 
@@ -92,9 +95,9 @@ function tabEdge(id: string): Edge | null {
  * Files and Open Timeline, which shows the file's history in the Files view; the bookmark, Open in
  * New Tab and Open in New Window (a PDF), Open in Browser and Open in Program items; the compare
  * items; Keep Open and Pin or Unpin; the splits; in the desktop app, Move into New Window and, off
- * a Terminal tab, Copy into New Window. The file groups are offered for a tab showing a file only.
- * Close Others needs a second tab and Close to the Right a tab to the right; Keep Open is drawn on
- * every tab and enabled on a preview.
+ * a Terminal tab or the tab of a unique view, Copy into New Window. The file groups are offered
+ * for a tab showing a file only. Close Others needs a second tab and Close to the Right a tab to
+ * the right; Keep Open is drawn on every tab and enabled on a preview.
  */
 export function tabMenu(facts: TabFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string, disabled = false): MenuItem =>

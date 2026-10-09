@@ -8,7 +8,8 @@
         label: 'views.history',
         glyph: 'views.history_glyph',
         group: 'views',
-        order: 7
+        order: 7,
+        unique: true
     };
 </script>
 

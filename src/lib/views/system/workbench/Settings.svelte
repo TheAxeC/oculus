@@ -6,7 +6,8 @@
         label: 'views.settings',
         glyph: 'views.settings_glyph',
         group: 'views',
-        order: 0
+        order: 0,
+        unique: true
     };
 </script>
 

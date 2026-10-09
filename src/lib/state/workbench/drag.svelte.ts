@@ -46,12 +46,16 @@ export type Drop =
 export type DragSink = {
     /**
      * Open a view on a page and answer the instance it opened or activated, or the empty string
-     * when there is no such page; a dropped view is that instance moved to where it was dropped.
+     * when there is no such page; a dropped view is that instance moved to where it was dropped. A
+     * unique view a page or float holds is answered as it is, with nothing opened or activated.
      */
     open: (view: string, state: unknown, page?: string) => string;
     /** Whether the pane at a path holds one instance, the one a view was carried out of. */
     holds: (path: number[], id: string, page?: string) => boolean;
-    /** Open a view on a page in a pane other than the one holding `avoid`. */
+    /**
+     * Open a view on a page in a pane other than the one holding `avoid`; a unique view a page or
+     * float holds is moved there.
+     */
     away: (view: string, state: unknown, avoid: string, page?: string) => void;
     transfer: (id: string, path: number[], index: number, page?: string) => void;
     split: (id: string, path: number[], edge: Edge, page?: string) => void;
@@ -186,10 +190,17 @@ export function createDrag(layout: LayoutStore, desktop?: Desktop): DragStore {
     const store: { current: Held | null } = $state({ current: null });
 
     const storeSink: DragSink = {
-        open: (view, state, page) => layout.openView(view, state, page ?? layout.currentPage().id),
+        // A unique view a page or float holds is the instance the drop moves, and nothing
+        // is opened.
+        open: (view, state, page) =>
+            layout.heldUnique(view) ??
+            layout.openView(view, state, page ?? layout.currentPage().id),
         holds: (path, id, page) => layout.paneHolds(path, id, page ?? layout.currentPage().id),
         away: (view, state, avoid, page) => {
-            layout.openAway(view, state, page ?? layout.currentPage().id, avoid);
+            const held = layout.heldUnique(view);
+            const at = page ?? layout.currentPage().id;
+            if (held === null) layout.openAway(view, state, at, avoid);
+            else layout.moveAway(held, at, avoid);
         },
         transfer: (id, path, index, page) => layout.transferInstance(id, path, index, page),
         split: (id, path, edge, page) => layout.splitInstance(id, path, edge, page),

@@ -139,7 +139,7 @@ export const MIN_SIZE = 0.1;
 /** The most children a split can hold and still give each of them MIN_SIZE. */
 export const MAX_CHILDREN = Math.floor(1 / MIN_SIZE);
 
-/** The view a fresh page starts on. */
+/** The view a fresh page starts on, when no page or float holds it. */
 export const MAIN_VIEW = 'status';
 
 /**

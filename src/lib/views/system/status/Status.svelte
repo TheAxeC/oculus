@@ -6,7 +6,8 @@
         label: 'views.status',
         glyph: 'views.status_glyph',
         group: 'views',
-        order: 4
+        order: 4,
+        unique: true
     };
 </script>
 

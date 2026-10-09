@@ -99,6 +99,12 @@ export type Registration = {
      * `false`, since opened bare it can only report that it was opened for nothing.
      */
     listed?: boolean;
+    /**
+     * Whether the view is held once: no opener and no build makes a second instance of it, and
+     * opening it goes to an instance already held on a page or a float. Absent means the view may
+     * be open any number of times.
+     */
+    unique?: boolean;
     /** Live text drawn beside the view's glyph in the catalogue; an empty string draws no badge. */
     badge?: (state: BadgeClient) => string;
     /** A glyph name drawn in the badge before its text, for a badge that is a mark, not a count. */

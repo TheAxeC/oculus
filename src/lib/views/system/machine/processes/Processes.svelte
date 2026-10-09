@@ -7,7 +7,8 @@
         label: 'views.processes',
         glyph: 'views.processes_glyph',
         group: 'views',
-        order: 9
+        order: 9,
+        unique: true
     };
 </script>
 

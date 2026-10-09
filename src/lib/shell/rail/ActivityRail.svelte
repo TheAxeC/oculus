@@ -50,7 +50,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { currentPage, openRailPage, openView, pages: allPages, resetPage },
+        layout: { currentPage, heldUnique, openRailPage, openView, pages: allPages, resetPage },
         notices: { post },
         registry: { viewFor },
         ui: { unsaved, busyTerminals, saveBeforeClose }
@@ -158,14 +158,17 @@
     }
 
     /**
-     * Show the Settings view with its rail list in view, on the rail page that holds one, or on the
-     * page on screen when none does.
+     * Show the Settings view with its rail list in view: the one a page or float holds, since
+     * Settings is held once, else on the rail page whose arrangement names it, made first when it
+     * is not made yet, or on the page on screen when no rail page names it.
      */
     function openSettings(): void {
         const holder = pages.find((entry) =>
             railPageViews(allPages(), entry.page, entry.node).includes(SETTINGS_VIEW)
         );
-        if (holder !== undefined) openRailPage(holder.page, holder.label, holder.node);
+        if (holder !== undefined && heldUnique(SETTINGS_VIEW) === null) {
+            openRailPage(holder.page, holder.label, holder.node);
+        }
         openView(SETTINGS_VIEW, { reveal: 'rail' }, currentPage().id);
     }
 

@@ -6,7 +6,8 @@
         label: 'views.pages',
         glyph: 'views.pages_glyph',
         group: 'views',
-        order: 3
+        order: 3,
+        unique: true
     };
 </script>
 

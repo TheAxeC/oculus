@@ -2,12 +2,15 @@
 // and what it does to the tab a single click opened.
 //
 // A view already open is activated where it is rather than opened twice, so opening a view never
-// leaves two copies of it behind. Where a new tool view lands is the pane the reader was last in,
-// or a new pane beside it when the caller asked for one; a view opened for something (one
-// registered with no catalogue group) lands where layout/open/landing.ts says, whichever of the two
-// was asked, since a page keeps its documents apart from its tools. A pane hidden inside a folded
-// child is expanded first, since opening a view into something invisible would look like nothing
-// happening.
+// leaves two copies of it behind. A unique view (a registration marked `unique`) is held once for
+// every page and float: it is looked for in the pages drawn on the page on screen, then in the
+// floats, then in every other page, and the first instance found is shown where it is, by showing
+// the page that holds it when that page is not drawn on screen. Where a new tool view lands is the
+// pane the reader was last in, or a new pane beside it when the caller asked for one; a view opened
+// for something (one registered with no catalogue group) lands where layout/open/landing.ts says,
+// whichever of the two was asked, since a page keeps its documents apart from its tools. A pane
+// hidden inside a folded child is expanded first, since opening a view into something invisible
+// would look like nothing happening.
 
 import {
     activePath,
@@ -19,10 +22,29 @@ import {
 } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
-import { isPage, type Instance, type Pane, type ViewId } from '../model.ts';
+import {
+    floatHost,
+    isPage,
+    type Focus,
+    type Host,
+    type Instance,
+    type Page,
+    type Pane,
+    type ViewId
+} from '../model.ts';
+import { drawnBy } from '../nested.ts';
 import { landingFor } from './landing.ts';
+import { heldView, type UniqueRule } from './float/pages.ts';
 import { asPreview, isPreview, previewIn, retarget } from './preview.ts';
-import { activate, expandTo, openInstance, paneAt, restate, splitPane } from '../tree.ts';
+import {
+    activate,
+    expandTo,
+    openInstance,
+    pageLeaves,
+    paneAt,
+    restate,
+    splitPane
+} from '../tree.ts';
 import { focusedPane, restore } from '../workbench.ts';
 
 /** What an opener may ask for beyond the view and its state. */
@@ -47,23 +69,65 @@ export type Opening = {
      * already holds; answers its id, or the empty string for a page or pane that is not there.
      */
     openInPane: (view: ViewId, state: unknown, page: string, path: number[]) => string;
+    /**
+     * The id of the instance of a unique view that a page or float holds, the one openView would
+     * show, or null for a view that is not unique or that nothing holds. It changes nothing.
+     */
+    heldUnique: (view: ViewId) => string | null;
 };
+
+/** A unique view's instance with the page or float holding it, and whether the screen draws it. */
+type Holder = { host: Host; instance: Instance; drawn: boolean };
+
+/** Whether a path of a page lies inside the maximised pane, or nothing is maximised. */
+function shownAt(focus: Focus | null, path: number[]): boolean {
+    return focus === null || path.every((step, index) => focus.path[index] === step);
+}
+
+/**
+ * The page leaves, outermost first, that lead from the page `from` to the page `to` it draws: in
+ * each page on the way, the path of the leaf that holds the next page. Empty when `from` is `to`
+ * or draws it nowhere.
+ */
+function leavesTo(
+    pages: readonly Page[],
+    from: string,
+    to: string
+): { page: string; path: number[] }[] {
+    const seen = new Set<string>();
+    const walk = (at: string): { page: string; path: number[] }[] | null => {
+        if (seen.has(at)) return null;
+        seen.add(at);
+        const page = pages.find((one) => one.id === at);
+        if (page === undefined) return null;
+        for (const leaf of pageLeaves(page.workbench.root)) {
+            if (leaf.page === to) return [{ page: at, path: leaf.path }];
+            const rest = walk(leaf.page);
+            if (rest !== null) return [{ page: at, path: leaf.path }, ...rest];
+        }
+        return null;
+    };
+    return walk(from) ?? [];
+}
 
 /**
  * `opened` says whether a view is one opened for something, which the registry answers: a
- * registration with no catalogue group.
+ * registration with no catalogue group. `unique` says whether a view is held once, which the
+ * registry answers too: a registration marked `unique`.
  */
 export function createOpening(
     access: LayoutAccess,
     attention: Attention,
     keepPreview: (id: string) => void,
-    opened: (view: ViewId) => boolean = () => false
+    opened: (view: ViewId) => boolean,
+    unique: UniqueRule
 ): Opening {
     /**
      * Show a view: the instance already open is activated, so no opener makes a second copy of the
      * same view, and otherwise a new instance opens in the pane holding the instance activated
      * last. A pane hidden inside a folded child is expanded first, since opening a view into
-     * something invisible would look like nothing happening.
+     * something invisible would look like nothing happening. An instance of a unique view is
+     * activated wherever any page or float holds it (`showHeld`), whatever page the opener names.
      *
      * `state` is what the opener has to say to the view: the project a card wants opened or the
      * session a pane pins. A state carrying an `id` or `session` names which instance is wanted, so
@@ -121,6 +185,8 @@ export function createOpening(
         const held = page === undefined ? attention.touched() : access.at(page);
         if (held === null) return '';
         const host = held.id;
+        const holder = unique(view) ? holderOf(view) : null;
+        if (holder !== null) return showHeld(holder, state, preview);
         // A view open in a float is activated there when the host holds none of its own.
         const floated = findInFloats(view, stateId(state));
         if (
@@ -220,15 +286,13 @@ export function createOpening(
         const tree = bench.root;
         const focus = focusedPane(bench);
         const existing = findView(tree, view, stateId(state));
-        const shows = (path: number[]): boolean =>
-            focus === null || path.every((step, index) => focus.path[index] === step);
         if (existing !== null) {
             const at = activePath(tree, existing.id);
             attention.remembered(existing.id, host);
             attention.rememberReceived(host, existing.id, tree);
             access.apply(
                 {
-                    ...(shows(at) ? bench : restore(bench)),
+                    ...(shownAt(focus, at) ? bench : restore(bench)),
                     root: activate(
                         expandTo(
                             state === undefined ? tree : restate(tree, existing.id, state),
@@ -245,7 +309,8 @@ export function createOpening(
         const reader = activePath(tree, attention.active(host));
         const away = asker === undefined ? null : (findInstance(tree, asker)?.path ?? null);
         const landing = landingFor(tree, opened, attention.received(host), reader, away);
-        const base = landing.kind === 'pane' && shows(landing.path) ? bench : restore(bench);
+        const base =
+            landing.kind === 'pane' && shownAt(focus, landing.path) ? bench : restore(bench);
         const replaced =
             preview && landing.kind === 'pane' ? previewIn(paneAt(tree, landing.path)) : null;
         if (replaced !== null) {
@@ -271,6 +336,67 @@ export function createOpening(
         attention.remembered(instance.id, host);
         access.apply({ ...base, root }, host);
         attention.rememberReceived(host, instance.id, access.layout(host));
+        return instance.id;
+    }
+
+    /**
+     * Where a unique view is held, in the order the reader meets it: the pages drawn on the page on
+     * screen (that page first, then the pages it draws), the floats, which are drawn over every
+     * page, and then every other page in the page list's order. The instance is the first one in
+     * that order, whatever record its state names.
+     */
+    function holderOf(view: ViewId): Holder | null {
+        const { pages, floats } = access.held();
+        const drawn = drawnBy(pages, access.currentPage().id);
+        const shown = [...drawn].flatMap((id) => pages.filter((page) => page.id === id));
+        const apart = pages.filter((page) => !drawn.has(page.id));
+        const found = heldView([...shown, ...floats.map(floatHost), ...apart], view);
+        return found === null ? null : { ...found, drawn: drawn.has(found.host.id) };
+    }
+
+    function heldUnique(view: ViewId): string | null {
+        return unique(view) ? (holderOf(view)?.instance.id ?? null) : null;
+    }
+
+    /**
+     * Show the leaf at `path` of a page: a maximised pane that does not hold it is given back and a
+     * folded child holding it is expanded, so the page drawn in the leaf is on screen.
+     */
+    function showLeaf(page: string, path: number[]): void {
+        const bench = access.workbench(page);
+        const base = shownAt(focusedPane(bench), path) ? bench : restore(bench);
+        const root = expandTo(base.root, path);
+        if (base !== bench || root !== bench.root) access.apply({ ...base, root }, page);
+    }
+
+    /**
+     * Show the instance of a unique view where it is held, pointing it at `state` when the opener
+     * has one. A float's tab is activated in the float. On a page the tab is activated where it is,
+     * a pane hidden in a folded child is expanded and a maximised pane that is not the one holding
+     * it is given back, so the tab shows; this holds for the holder page and, when the screen draws
+     * the holder in a page leaf, for each page between the page on screen and the holder. A page
+     * the screen does not draw is then put on screen.
+     */
+    function showHeld(holder: Holder, state: unknown, preview: boolean): string {
+        const { host, instance } = holder;
+        if (!isPage(host)) return activateFloated({ host: host.id, instance }, state, preview);
+        if (holder.drawn) {
+            const screen = access.currentPage().id;
+            for (const hop of leavesTo(access.held().pages, screen, host.id)) {
+                showLeaf(hop.page, hop.path);
+            }
+        }
+        const bench = access.workbench(host.id);
+        const at = activePath(bench.root, instance.id);
+        const stated = state === undefined ? bench.root : restate(bench.root, instance.id, state);
+        const base = shownAt(focusedPane(bench), at) ? bench : restore(bench);
+        attention.remembered(instance.id, host.id);
+        access.apply({ ...base, root: activate(expandTo(stated, at), instance.id) }, host.id);
+        if (!holder.drawn) {
+            attention.forgetTouched();
+            access.save({ ...access.held(), current: host.id });
+        }
+        if (preview && isPreview(instance)) keepPreview(instance.id);
         return instance.id;
     }
 
@@ -317,5 +443,5 @@ export function createOpening(
         return pane.tabs.find((tab) => isInstanceOf(tab, view, id)) ?? null;
     }
 
-    return { openView, openBeside, openInPane };
+    return { openView, openBeside, openInPane, heldUnique };
 }

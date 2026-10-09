@@ -8,6 +8,7 @@
         glyph: 'views.audit_glyph',
         group: 'views',
         order: 6,
+        unique: true,
         badge: (client) => client.railBadges.auditBadge()
     };
 </script>

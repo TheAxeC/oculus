@@ -16,13 +16,17 @@
     // heading each belongs to, with the key that opens it and its live badge. A press opens the
     // entry on the page the reader was on before this one, where a view lands there, and shows that
     // page; a shift-press opens it in a pane beside, on that same page. With no page before this
-    // one, which is a load straight onto it, the entry opens on the first rail page.
+    // one, which is a load straight onto it, the entry opens on the first rail page. An entry that
+    // is a unique view a page or float holds is shown where it is held by either press, whatever
+    // page that is, and no page is shown on the way.
     //
     // An entry is also opened on the page the catalogue is on. Dragged onto a pane there it opens
     // where it was dropped, through the drag every tab takes, and each entry's right-click menu
     // offers Open on this page and Open beside on this page, which is the keyboard's way to the
     // same two places. None of them covers the catalogue: a view asked for in its own pane opens in
-    // another pane of the page, or beside the catalogue when its pane is the page's only one.
+    // another pane of the page, or beside the catalogue when its pane is the page's only one. A
+    // unique view another page or a float holds is shown there by the menu, and a drop carries it
+    // to where it is dropped.
     //
     // The sections and the keys are the fold of state/workbench/navigation/catalogue.ts, the same
     // one the shell's keyboard counts its chords over, so the key drawn beside an entry is the key
@@ -64,6 +68,7 @@
         entities: { config },
         layout: {
             currentPage,
+            heldUnique,
             openAway,
             openBeside,
             openNextTo,
@@ -96,9 +101,11 @@
     /**
      * Show the page an entry opens on. From the System page, the page the reader was on
      * before it, or the first rail page, made from its arrangement when it is not made yet, when
-     * there was none; from any other page the catalogue was moved onto, that page itself.
+     * there was none; from any other page the catalogue was moved onto, that page itself. A unique
+     * view a page or float holds shows no target: opening it goes to where it is held.
      */
-    function showTarget(): void {
+    function showTarget(view: string): void {
+        if (heldUnique(view) !== null) return;
         if (!onCataloguePage(currentPage().rail, railPages(merged), registration.id)) return;
         const back = previousPage();
         if (back !== null) {
@@ -111,11 +118,12 @@
 
     /**
      * A plain press opens the view where a view lands on the target page; a shift-press opens it in
-     * a pane beside there. A press that ends a drag is the drop's, not a click.
+     * a pane beside there. A unique view a page or float holds is shown where it is held by either
+     * press. A press that ends a drag is the drop's, not a click.
      */
     function open(view: string, state: unknown, event: MouseEvent): void {
         if (dragged(event)) return;
-        showTarget();
+        showTarget(view);
         if (event.shiftKey) openBeside(view, state);
         else openView(view, state);
     }

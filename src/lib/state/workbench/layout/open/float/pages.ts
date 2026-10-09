@@ -2,22 +2,41 @@
 // float docked to an edge, freed, put back into a page, moved and resized, and the shipped floats
 // taken in by a layout saved before there were floats. Each takes the pages
 // and answers new pages, or the pages it was given when it names nothing to change.
+//
+// The operations over a unique view (a registration marked `unique`) live here too, since they read
+// and change the pages and floats together: where one is held, what a page or float made from the
+// config takes of it, and what the default page leaves out of it.
 
-import { findInstance, tabsOf } from '../../instance.ts';
+import { findInstance, findView, tabsOf } from '../../instance.ts';
 import {
     addedPane,
     clamp,
+    defaultPages,
+    hostsOf,
     repane,
     type DockEdge,
     type Float,
     type FloatPlace,
+    type Host,
     type Instance,
     type Layout,
+    type Page,
     type Pages,
     type Pane,
+    type ViewId,
     type Workbench
 } from '../../model.ts';
-import { closePane, leafAt, removeTab, splitLeaf, type KeepRule } from '../../tree.ts';
+import { clearPage } from '../../nested.ts';
+import {
+    closeInstance,
+    closePane,
+    leafAt,
+    removeTab,
+    renameInstance,
+    restate,
+    splitLeaf,
+    type KeepRule
+} from '../../tree.ts';
 import { restore, settleFocus } from '../../workbench.ts';
 
 /** The smallest width or height of a free float and of a dock, in fractions of the window. */
@@ -98,9 +117,11 @@ function replacing(held: Pages, id: string, next: Float): Pages {
 
 /**
  * The floats a list of specs makes: each with an id of its own and a fresh id for each tab, so two
- * makings share none. Of two floats docked on one edge only the first is made.
+ * makings share none. Of two floats docked on one edge only the first is made. `settle` is handed
+ * each pane made and answers the pane to keep (`Claims.settle`, which takes a unique view from
+ * where it is held); a float whose pane is left with no tab is not made.
  */
-export function floatsFrom(specs: FloatSpec[]): Float[] {
+function floatsFrom(specs: FloatSpec[], settle: (pane: Pane) => Layout): Float[] {
     const made: Float[] = [];
     for (const spec of specs) {
         if (spec.place.kind === 'dock' && dockedOn(made, spec.place.edge) !== undefined) continue;
@@ -108,13 +129,194 @@ export function floatsFrom(specs: FloatSpec[]): Float[] {
         const tabs = spec.pane.tabs.map((tab) => ({ ...kept(tab), id: crypto.randomUUID() }));
         const at = spec.pane.tabs.findIndex((tab) => tab.id === spec.pane.active);
         const active = tabs[Math.max(at, 0)];
-        made.push({
-            id: crypto.randomUUID(),
-            pane: repane(spec.pane, tabs, active.id),
-            place: spec.place
-        });
+        const pane = repane(spec.pane, tabs, active.id);
+        const settled = settle(pane);
+        if (settled.kind !== 'pane' || settled.tabs.length === 0) continue;
+        made.push({ id: crypto.randomUUID(), pane: settled, place: spec.place });
     }
     return made;
+}
+
+/** Whether a view is held once, which the registry answers and the client hands the layout. */
+export type UniqueRule = (view: ViewId) => boolean;
+
+/**
+ * What a build of a page or float knows of views: which are held once, and how a pane that loses
+ * its last tab to a build is left (`KeepRule`).
+ */
+export type Builds = { unique: UniqueRule; keep?: KeepRule };
+
+/**
+ * The first of these hosts carrying an instance of a view, whatever state its instance names, with
+ * that instance; null when none does.
+ */
+export function heldView(
+    hosts: readonly Host[],
+    view: ViewId
+): { host: Host; instance: Instance } | null {
+    for (const host of hosts) {
+        const instance = findView(host.workbench.root, view);
+        if (instance !== null) return { host, instance };
+    }
+    return null;
+}
+
+/**
+ * What the pages and floats made from the config take of the pages and floats already held. A
+ * tree made from an arrangement holds every view the arrangement names, so each unique view in it
+ * is settled: the instance a page or float holds is moved into the place the arrangement gives it,
+ * with its id and its state, and taken out of where it was; a unique view the arrangement names a
+ * second time, or an earlier tree settled by the same claims already took, is left out of the tree.
+ */
+type Claims = {
+    /** The tree with each unique view it names settled. */
+    settle: (root: Layout) => Layout;
+    /** The pages and floats with every instance the settled trees took out of them. */
+    rest: () => Pages;
+};
+
+/**
+ * Claims over `held`, in the order the trees are settled: the first tree to name a unique view
+ * keeps it. The hosts in `apart` are not looked in, since the trees being made replace them.
+ */
+function createClaims(held: Pages, builds: Builds, apart: ReadonlySet<string> = new Set()): Claims {
+    let rest = held;
+    const placed = new Set<ViewId>();
+
+    function settle(root: Layout): Layout {
+        let tree = root;
+        for (const tab of tabsOf(root)) {
+            if (!builds.unique(tab.view)) continue;
+            if (placed.has(tab.view)) {
+                tree = closeInstance(tree, tab.id, builds.keep);
+                continue;
+            }
+            placed.add(tab.view);
+            const hosts = hostsOf(rest).filter((host) => !apart.has(host.id));
+            const found = heldView(hosts, tab.view);
+            if (found === null) continue;
+            const { id, state } = found.instance;
+            rest = dropInstance(rest, id, builds.keep);
+            tree = restate(renameInstance(tree, tab.id, id), id, state);
+        }
+        return tree;
+    }
+
+    return { settle, rest: () => rest };
+}
+
+/**
+ * A page made from the default, without the unique views the pages and floats `held` hold: the
+ * default page takes nothing from where a view is held and leaves its own copy out, its pane
+ * empty as `builds.keep` leaves it.
+ */
+export function withoutHeld(held: Pages, page: Page, builds: Builds): Page {
+    let root = page.workbench.root;
+    for (const tab of tabsOf(root)) {
+        if (builds.unique(tab.view) && heldView(hostsOf(held), tab.view) !== null) {
+            root = closeInstance(root, tab.id, builds.keep);
+        }
+    }
+    return { ...page, workbench: { root } };
+}
+
+/** One default page beside these floats, the unique views the floats hold left out of it. */
+export function defaultBeside(label: string, floats: Float[], builds: Builds): Pages {
+    const made = defaultPages(label);
+    const bare: Pages = { ...made, pages: [], floats };
+    return { ...made, pages: made.pages.map((page) => withoutHeld(bare, page, builds)), floats };
+}
+
+/**
+ * The pages with a page made from an arrangement put last and shown, and the unique views it
+ * names taken from the pages and floats that hold them.
+ */
+export function withPage(held: Pages, page: Page, builds: Builds): Pages {
+    const claims = createClaims(held, builds);
+    const made = { ...page, workbench: { root: claims.settle(page.workbench.root) } };
+    const rest = claims.rest();
+    return { ...rest, pages: [...rest.pages, made], current: made.id };
+}
+
+/**
+ * The pages of a browser with no saved layout started on a page made from an arrangement, which
+ * replaces the default page, and the shipped floats made after it.
+ */
+export function startedOn(held: Pages, page: Page, shipped: FloatSpec[], builds: Builds): Pages {
+    const claims = createClaims(held, builds, new Set(held.pages.map((one) => one.id)));
+    const made = { ...page, workbench: { root: claims.settle(page.workbench.root) } };
+    return { pages: [made], current: made.id, floats: floatsFrom(shipped, claims.settle) };
+}
+
+/**
+ * The pages with the default page kept beside the shipped floats, which take the unique views they
+ * name out of it.
+ */
+export function keptDefault(held: Pages, shipped: FloatSpec[], builds: Builds): Pages {
+    const claims = createClaims(held, builds);
+    const floats = floatsFrom(shipped, claims.settle);
+    return { ...claims.rest(), floats };
+}
+
+/**
+ * The pages with the page `id` made again from a workbench under a label, taking the unique views
+ * the workbench names from the other pages and the floats.
+ */
+export function rebuiltPage(
+    held: Pages,
+    id: string,
+    label: string,
+    workbench: Workbench,
+    builds: Builds
+): Pages {
+    const claims = createClaims(held, builds, new Set([id]));
+    const root = claims.settle(workbench.root);
+    const rest = claims.rest();
+    const pages = rest.pages.map((page) =>
+        page.id === id ? { ...page, label, workbench: { root } } : page
+    );
+    return { ...rest, pages };
+}
+
+/** A page of a rail button as a reset makes it again: its words and its arrangement. */
+export type Arranged = { label: string; workbench: Workbench };
+
+/**
+ * The pages and floats of a reset of every rail page: the pages of `plan.rebuilt` made again from
+ * their arrangements (`arranged`, by page id), the pages of `plan.removed` gone, the floats held
+ * replaced by the shipped ones, and one default page when no page is left (`label` names it). The
+ * pages are made first, then the floats, from the pages that are kept: a unique view an
+ * arrangement or a float names is moved in from a kept page, and the first place to name it keeps
+ * it. The page on screen moves to the first page left when it was removed.
+ */
+export function resetAll(
+    held: Pages,
+    plan: { rebuilt: readonly Page[]; removed: readonly Page[] },
+    arranged: ReadonlyMap<string, Arranged>,
+    shipped: FloatSpec[],
+    label: string,
+    builds: Builds
+): Pages {
+    const gone = new Set(plan.removed.map((page) => page.id));
+    const replaced = [...plan.rebuilt, ...plan.removed, ...held.floats];
+    const claims = createClaims(held, builds, new Set(replaced.map((one) => one.id)));
+    const made = new Map<string, Page>();
+    for (const page of plan.rebuilt) {
+        const source = arranged.get(page.id);
+        if (source === undefined) continue;
+        const workbench = { root: claims.settle(source.workbench.root) };
+        made.set(page.id, { ...page, label: source.label, workbench });
+    }
+    const floats = floatsFrom(shipped, claims.settle);
+    const pages = claims.rest().pages.flatMap((page): Page[] => {
+        return gone.has(page.id) ? [] : [made.get(page.id) ?? page];
+    });
+    let next: Pages =
+        pages.length === 0
+            ? defaultBeside(label, floats, builds)
+            : { pages, current: gone.has(held.current) ? pages[0].id : held.current, floats };
+    for (const id of gone) next = clearPage(next, id);
+    return next;
 }
 
 /**

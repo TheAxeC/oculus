@@ -8,6 +8,7 @@
         glyph: 'views.hpc_glyph',
         group: 'focus',
         order: 1,
+        unique: true,
         badge: (client) => client.hpc.badgeText(),
         badgeTitle: (client) => client.railBadges.queueBadgeTitle(),
         badgeCells: (client) => client.railBadges.queueCells(),

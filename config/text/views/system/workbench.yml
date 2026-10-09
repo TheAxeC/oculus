@@ -103,7 +103,7 @@ text:
         reset_all: Reset all pages
         reset_all_confirm: Reset every rail page to its arrangement?
         reset_all_none: Every rail page is as its arrangement makes it, no page of a removed button is left, and no float is held.
-        reset_all_tip: Rebuild every rail page from its arrangement and remove the pages of buttons the rail no longer has. Pages of your own are left alone. The floats are replaced by the ones the config ships.
+        reset_all_tip: Rebuild every rail page from its arrangement and remove the pages of buttons the rail no longer has. Pages of your own keep their tabs, except a unique view a rail page or a shipped float names, which moves to the page or float made from it. The floats are replaced by the ones the config ships.
         reset_float_tab: 'Tab: {0}, in a float.'
         reset_floats: 'Floats: replaced by the ones the config ships.'
         reset_page_confirm: Reset {0} to its arrangement?

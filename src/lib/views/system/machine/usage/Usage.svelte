@@ -9,7 +9,8 @@
         label: 'views.usage',
         glyph: 'views.usage_glyph',
         group: 'focus',
-        order: 2
+        order: 2,
+        unique: true
     };
 </script>
 
