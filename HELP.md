@@ -115,7 +115,7 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `search` | [Search](docs/views.md#search) | A pattern across the files of one root or of all of them, the hits grouped by file, with an optional replace. |
 | `references` | [References](docs/views.md#references) | The locations a language server found for Find All References or Find All Implementations in a source tab, which for a value in a YAML file of the hub that names an entry of another file are the files and lines that name it, and the call and type hierarchies of a symbol. |
 | `latex` | [TeX view](docs/views.md#tex-view) | LaTeX Workshop's side bar for the root of the LaTeX file in front: Commands, Structure and Math Symbols. |
-| `problems` | [Problems](docs/views.md#problems) | The errors, warnings and infos of the language servers, of project commands, of LaTeX builds and of the linters (ChkTeX, Ruff, ESLint and ShellCheck), one row per problem under its file. |
+| `problems` | [Problems](docs/views.md#problems) | The errors, warnings and infos of the language servers, of project commands, of LaTeX builds and of the linters (ChkTeX, Ruff, ESLint, ShellCheck and the writing rules), one row per problem under its file. |
 | `debug` | [Debug](docs/views.md#debug) | The debugger of rite: the launch configuration picker with Start, the findings of `.oculus/launch.yml`, and Variables, Watch, Call Stack and Breakpoints. |
 | `debug-console` | [Debug Console](docs/views.md#debug-console) | What the debugged program wrote and the expressions you evaluated in the paused frame. |
 | `funding` | [Funding](docs/views.md#funding) | The funding schemes, their stage and the statement each grant requires. |

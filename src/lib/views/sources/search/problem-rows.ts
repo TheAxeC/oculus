@@ -10,7 +10,7 @@
 // none, and no term that does. A glob that cannot be read is the text itself, so it matches only
 // that path.
 
-import picomatch from 'picomatch';
+import { globTest } from '$lib/state/sources/search/glob';
 import { fuzzyMatches } from '$lib/state/shared/words/fuzzy';
 import { t } from '$lib/state/shared/words/text';
 import type { Problem, ProblemFile, ProblemSeverity } from '$lib/state/system/problems.svelte';
@@ -59,19 +59,6 @@ function termsOf(text: string): Term[] {
             return { text: body, exclude, glob: /[*?[{]/.test(body) };
         })
         .filter((term) => term.text !== '');
-}
-
-/**
- * A path test for a glob: the glob's, or equality with its text when it cannot be read. A glob
- * without a slash is tested on the file's name as well, since picomatch's `basename` option tests
- * only the name and would stop a glob with a slash from matching.
- */
-function globTest(glob: string): (path: string) => boolean {
-    try {
-        return picomatch(glob, { dot: true, basename: !glob.includes('/') });
-    } catch {
-        return (path) => path === glob;
-    }
 }
 
 /** The rows one term matches. */

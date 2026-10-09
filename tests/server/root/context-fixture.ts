@@ -12,6 +12,7 @@ import { RateLimiter } from '../../../src/lib/server/root/hooks.ts';
 import { DebugClient } from '../../../src/lib/server/machine/debug/session.ts';
 import { createRelay } from '../../../src/lib/server/machine/lsp/relay.ts';
 import { HeldEslints } from '../../../src/lib/server/machine/runs/lint/eslint.ts';
+import { HeldComments } from '../../../src/lib/server/machine/runs/lint/writing/comments.ts';
 import { LintRuns } from '../../../src/lib/server/machine/runs/lint/runs.ts';
 import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
 import { HookStore, sessionRecord } from '../../../src/lib/server/sessions/stores/hooks.ts';
@@ -81,6 +82,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
     const engine = overrides.engine ?? '/fixture/engine';
     const lintRuns = new LintRuns();
     const eslint = new HeldEslints({ roots: () => [] });
+    const comments = new HeldComments();
     let closed = false;
     const context: ServerContext = {
         hub,
@@ -90,6 +92,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         debug,
         lintRuns,
         eslint,
+        comments,
         hooks,
         git: { refresh: () => Promise.resolve(), close: noop },
         openFiles: { subscribed: () => [], unsubscribed: noop, remove: noop, close: noop },
@@ -176,6 +179,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             debug.close();
             lintRuns.close();
             eslint.close();
+            comments.close();
             void relay.close();
         },
         ...overrides

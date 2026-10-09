@@ -133,6 +133,26 @@ export async function lspEditPost(w: ReplaceWorld, files: unknown[]) {
     return opsPost(w, { op: 'lsp-edit', files });
 }
 
+/** POST /api/ops with a `writing-fix` of these files, under the token unless it is null. */
+export async function writingFixPost(
+    w: ReplaceWorld,
+    files: unknown[],
+    token: string | null = OPS_TOKEN
+) {
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    if (token !== null) headers['x-oculus-token'] = token;
+    const response = await handleOps(
+        new Request('http://localhost/api/ops', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ op: 'writing-fix', files })
+        }),
+        OPS_TOKEN,
+        w.ops
+    );
+    return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+}
+
 /** POST /api/ops with the token a page holds. */
 async function opsPost(w: ReplaceWorld, message: unknown) {
     const response = await handleOps(

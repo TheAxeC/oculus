@@ -21,7 +21,9 @@
 //
 // An `lsp-edit` is the edit a language server asks for in files no tab holds: it names each file
 // by its root and path, the SHA-256 of the bytes the edit was computed for and the edits of the
-// protocol, and the server writes all of them or none.
+// protocol, and the server writes all of them or none. A `writing-fix` has the same shape: the
+// edits the writing rules' folder Fix All made for the files its reader ticked, written the same
+// way.
 //
 // Nothing here runs a process or touches a file: text in, a verdict out.
 
@@ -186,12 +188,13 @@ export type OpsRequest =
           /** The matches to replace; one the file no longer holds is left unreplaced. */
           hits: Pick<ReplaceHit, 'line' | 'at'>[];
       }
-    | { op: 'lsp-edit'; files: LspEditFile[] };
+    | { op: 'lsp-edit'; files: LspEditFile[] }
+    | { op: 'writing-fix'; files: LspEditFile[] };
 
 /**
- * One file of an `lsp-edit`: where it is, the SHA-256 of its bytes as the edit was computed for
- * them (lower-case hex), and the edits in the protocol's positions, which name the text before any
- * edit.
+ * One file of an `lsp-edit` or a `writing-fix`: where it is, the SHA-256 of its bytes as the edit
+ * was computed for them (lower-case hex), and the edits in the protocol's positions, which name
+ * the text before any edit.
  */
 export type LspEditFile = { root: string; path: string; hash: string; edits: TextEdit[] };
 
@@ -349,7 +352,8 @@ export const FILE_FIELDS = [
     'trash',
     'delete',
     'replace',
-    'lsp-edit'
+    'lsp-edit',
+    'writing-fix'
 ] as const;
 
 /** One of the operations a `files` record names. */

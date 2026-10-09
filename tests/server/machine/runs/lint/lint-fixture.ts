@@ -9,6 +9,7 @@ import { chmodSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 
 import { dirname, join } from 'node:path';
 import { LintRuns } from '../../../../../src/lib/server/machine/runs/lint/runs.ts';
 import { HeldEslints } from '../../../../../src/lib/server/machine/runs/lint/eslint.ts';
+import { HeldComments } from '../../../../../src/lib/server/machine/runs/lint/writing/comments.ts';
 import {
     handleLint,
     type LintRouteOptions
@@ -18,6 +19,7 @@ import { fsWrites } from '../../../../../src/lib/server/core/json.ts';
 import type { Root } from '../../../../../src/lib/server/files/files.ts';
 import type { Clock } from '../../../../../src/lib/server/core/file-poll.ts';
 import { scratchDir } from '../../../../fixtures/scratch.ts';
+import { TEXT } from '../../../text.ts';
 
 export const TOKEN = 'lint-test-token';
 
@@ -45,9 +47,11 @@ export function recorded(file: string): string[] | null {
 /** The settings of a case: every linter on, the paths named, ChkTeX's own arguments. */
 export function settingsOf(paths: Partial<LintSettings['paths']> = {}): LintSettings {
     return {
-        on: { chktex: true, ruff: true, eslint: true, shellcheck: true },
+        on: { chktex: true, ruff: true, eslint: true, shellcheck: true, writing: true },
         paths: { chktex: '', ruff: '', shellcheck: '', ...paths },
-        chktexArgs: ['-wall', '-n22', '-n30', '-e16', '-q']
+        chktexArgs: ['-wall', '-n22', '-n30', '-e16', '-q'],
+        writingSkip: [],
+        writingGlyphs: []
     };
 }
 
@@ -116,10 +120,13 @@ export function route(
         exited?: (pid: number) => void;
         limitMs?: number;
         approvals?: string;
+        comments?: HeldComments;
+        isProtected?: (real: string) => boolean;
     } = {}
 ): {
     options: LintRouteOptions;
     eslint: HeldEslints;
+    comments: HeldComments;
     approvals: string;
     post: (body: unknown, token?: string | null) => Promise<{ status: number; body: unknown }>;
 } {
@@ -129,18 +136,23 @@ export function route(
         ...(extra.clock === undefined ? {} : { clock: extra.clock }),
         ...(extra.exited === undefined ? {} : { exited: extra.exited })
     });
+    const comments = extra.comments ?? new HeldComments();
     const options: LintRouteOptions = {
         settings,
         approvals: () => approvals,
         writes: fsWrites(),
         runs: new LintRuns(),
         eslint,
+        comments,
+        catalog: () => TEXT,
+        isProtected: extra.isProtected ?? (() => false),
         env: extra.env ?? process.env,
         ...(extra.limitMs === undefined ? {} : { limitMs: extra.limitMs })
     };
     return {
         options,
         eslint,
+        comments,
         approvals,
         post: async (body, token = TOKEN) => {
             const headers: Record<string, string> = { 'content-type': 'application/json' };

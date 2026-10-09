@@ -49,10 +49,13 @@ export const WRONG_SETTINGS: Record<string, unknown> = {
         ruff: 'yes',
         eslint: 'yes',
         shellcheck: 'yes',
+        writing: 'yes',
         chktex_path: 'foo',
         ruff_path: 'foo',
         shellcheck_path: 'foo',
-        chktex_args: 'no'
+        chktex_args: 'no',
+        writing_skip: 'no',
+        writing_glyphs: 'no'
     },
     git: { autofetch_minutes: -1 },
     files: { confirm_delete: 'no' },

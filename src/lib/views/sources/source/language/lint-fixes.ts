@@ -3,7 +3,8 @@
 // for the whole file in ESLint), and Show documentation for the code. Each is one undoable edit of
 // the tab's text and writes nothing to disk. A disable comment is merged into a suppression comment
 // of its kind already on the line or above it (`# noqa: E501` becomes `# noqa: E501, F401`), and is
-// not offered where the rule is already disabled.
+// not offered where the rule is already disabled. The writing rules have no comment that disables
+// them (a file is left out of them by the `lint.writing_skip` setting), so they offer none.
 //
 // The rows are the linter's findings of the file on disk, so a fix is offered only while the tab
 // holds exactly that text: the tab has no unsaved edit and its disk hash is the hash the rows were
@@ -233,6 +234,7 @@ function disableLine(
     { linter, row }: Found,
     code: string
 ): Change | null {
+    if (linter === 'writing') return null;
     if (linter === 'ruff') return ruffDisable(model, row, code);
     if (linter === 'eslint') {
         return eslintDisableLine(model, row, code, model.getLanguageId() === 'svelte');

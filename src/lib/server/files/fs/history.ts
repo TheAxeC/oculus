@@ -13,15 +13,17 @@
 // `save`: a file of at most 256 KB, the newest 50 of that kind per file. A copy of kind `lsp-edit`,
 // made before an edit a language server asked for writes the file, is made for a file of at most
 // 5 MB, so a rename of a hub key keeps a copy of a large registry or feed file, and the newest 50
-// of that kind per file are kept. A copy of kind `delete`, made before a delete, is made for a file
-// of at most 5 MB and is not counted in those 50, since the undo of the delete reads it; the newest
-// 50 copies of kind `delete` over all files are kept, and when a delete adds one the oldest beyond
-// 50 are removed, so an undo of an older delete finds its copy gone. `deletes.json` beside the file
-// folders lists the copies of kind `delete` as `{ deletes: [{ folder, id, at }] }`, oldest first,
-// so a delete reads one index and the folders of the copies it removes, never every folder; a
-// missing or unreadable index is built again from the folders once. A folder left with no copy is
-// removed. A file bigger than the limit of its kind is not copied and that is not an error. A copy
-// that cannot be written is an error the caller says, and the save or the delete goes on.
+// of that kind per file are kept. A copy of kind `writing-fix`, made before the writing rules'
+// folder Fix All writes the file, has the limit and the pruning of a `save`. A copy of kind
+// `delete`, made before a delete, is made for a file of at most 5 MB and is not counted in those
+// 50, since the undo of the delete reads it; the newest 50 copies of kind `delete` over all files
+// are kept, and when a delete adds one the oldest beyond 50 are removed, so an undo of an older
+// delete finds its copy gone. `deletes.json` beside the file folders lists the copies of kind
+// `delete` as `{ deletes: [{ folder, id, at }] }`, oldest first, so a delete reads one index and
+// the folders of the copies it removes, never every folder; a missing or unreadable index is built
+// again from the folders once. A folder left with no copy is removed. A file bigger than the limit
+// of its kind is not copied and that is not an error. A copy that cannot be written is an error the
+// caller says, and the save or the delete goes on.
 //
 // A copy is read back only by an id taken from the file's own `entries.json`, so an id that names a
 // path (`../x`) or a copy the folder does not list reads as nothing.
@@ -60,15 +62,15 @@ export const DELETES_KEPT = 50;
 
 /**
  * What a copy was made before: a save of the file, a replace in it, an edit a language server asked
- * for in it, or the delete of it.
+ * for in it, a fix of the writing rules' folder Fix All in it, or the delete of it.
  */
-export type HistoryKind = 'save' | 'replace' | 'lsp-edit' | 'delete';
+export type HistoryKind = 'save' | 'replace' | 'lsp-edit' | 'writing-fix' | 'delete';
 
 /** The kinds of copy kept per file, newest `SAVES_KEPT` of each, which are the edits of a file. */
-const EDIT_KINDS: readonly HistoryKind[] = ['save', 'replace', 'lsp-edit'];
+const EDIT_KINDS: readonly HistoryKind[] = ['save', 'replace', 'lsp-edit', 'writing-fix'];
 
 /** The most bytes of a file a copy of this kind is made of. */
-function limitOf(kind: HistoryKind): number {
+export function copyLimit(kind: HistoryKind): number {
     return kind === 'delete' || kind === 'lsp-edit' ? DELETE_MAX_BYTES : SAVE_MAX_BYTES;
 }
 
@@ -85,7 +87,7 @@ const entriesShape = z.object({
             id: z.string().regex(/^\d{8}T\d{9}(-\d+)?$/),
             at: z.number(),
             size: z.number(),
-            kind: z.enum(['save', 'replace', 'lsp-edit', 'delete'])
+            kind: z.enum(['save', 'replace', 'lsp-edit', 'writing-fix', 'delete'])
         })
     )
 });
@@ -148,7 +150,7 @@ export function keepCopy(
     let bytes: Buffer;
     try {
         const info = statSync(real);
-        const limit = limitOf(kind);
+        const limit = copyLimit(kind);
         if (!info.isFile() || info.size > limit) return { ok: true, kept: null };
         bytes = readFileSync(real);
     } catch (error) {
@@ -170,7 +172,7 @@ export function keepBytes(
     kind: HistoryKind,
     now: number = Date.now()
 ): KeepResult {
-    const limit = limitOf(kind);
+    const limit = copyLimit(kind);
     if (bytes.length > limit) return { ok: true, kept: null };
     try {
         const folder = historyFolder(history, real);

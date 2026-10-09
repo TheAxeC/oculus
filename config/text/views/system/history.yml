@@ -80,3 +80,5 @@ text:
         file_replace_one: Replaced in 1 file
         file_lsp_edit: Edited by a language server in {0} files
         file_lsp_edit_one: Edited by a language server in 1 file
+        file_writing_fix: Fixed by the writing rules in {0} files
+        file_writing_fix_one: Fixed by the writing rules in 1 file

@@ -13,14 +13,23 @@ import { nameOf, shownOf, type FsEntry, type FsRoot, type TreeRow } from '$lib/s
 import type { DeckEditAct } from '$lib/state/shared/stores/shapes';
 import { rowsActed } from '$lib/state/sources/explorer/acts/selection';
 import { confirmDelete } from '$lib/state/sources/explorer/acts/confirm';
+import { writingFixOffered } from '$lib/state/sources/explorer/acts/writing-fix';
 import { absoluteOf, openComparison } from '$lib/state/workbench/navigation/pages';
 import { t } from '$lib/state/shared/words/text';
 import type { MenuItem } from '$lib/ui/menu/menu-items';
 import { targetOf } from '../drag';
 import { rowDropper } from '../menu/row-drop';
-import { rootNameIn, rowFacts, rowMenu, rowPicker, rowStores } from '../menu/row-menu';
+import {
+    ROW_WRITING_FIX,
+    rootNameIn,
+    rowFacts,
+    rowMenu,
+    rowPicker,
+    rowStores
+} from '../menu/row-menu';
 import { holdsContents, rowNaming, rowOpsPicker } from '../menu/row-ops';
 import type { Asking } from './asking.svelte';
+import { createFixing } from './fixing.svelte';
 import type { ViewAccess } from './view-access';
 
 export type PicksDeps = {
@@ -80,6 +89,8 @@ export function createPicks(deps: PicksDeps) {
     const acted = (row: TreeRow): TreeRow[] => rowsActed(view.picked(), deps.rows(), row);
 
     const stores = rowStores(client);
+
+    const fixing = createFixing(client);
 
     /**
      * One act that makes a deck, then the deck shown in a Present tab named as the folder is: the
@@ -158,6 +169,7 @@ export function createPicks(deps: PicksDeps) {
     function run(row: TreeRow, pick: string): void {
         say('');
         target = row;
+        if (pick === ROW_WRITING_FIX) void fixing.start(row, rootNameIn(deps.rows(), row.root));
         menuPicked(row, pick);
         opsPicked(row, pick);
     }
@@ -202,7 +214,8 @@ export function createPicks(deps: PicksDeps) {
                         client.fs.heldEntries(root, path, shown) ?? listingRead,
                     commandsRead,
                     client.selectors.programApps(),
-                    deps.isMarked(here)
+                    deps.isMarked(here),
+                    writingFixOffered(client.selectors.configMap())
                 ),
                 t
             );
@@ -233,6 +246,7 @@ export function createPicks(deps: PicksDeps) {
         acted,
         naming,
         dropper,
+        fixing,
         run,
         pickTarget,
         menuOf

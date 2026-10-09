@@ -137,6 +137,12 @@ export type ExplorerStore = {
      */
     lspEdit: (files: LspEditFile[]) => Promise<Outcome>;
     /**
+     * Post the edits the writing rules' folder Fix All planned for the files the reader ticked, as
+     * one operation, and read the answer; clean tabs of the files written read them again and the
+     * folders of the files written are listed again.
+     */
+    writingFix: (files: LspEditFile[]) => Promise<Outcome>;
+    /**
      * Whether an open source tab holds text of the file, or of a file under the folder, not saved.
      */
     unsaved: (item: OpsPlace, folder: boolean) => boolean;
@@ -326,6 +332,10 @@ export function createExplorer(
 
     function lspEdit(files: LspEditFile[]): Promise<Outcome> {
         return writeInPlace({ op: 'lsp-edit', files });
+    }
+
+    function writingFix(files: LspEditFile[]): Promise<Outcome> {
+        return writeInPlace({ op: 'writing-fix', files });
     }
 
     /** Post one request and read the answer. */
@@ -652,6 +662,7 @@ export function createExplorer(
         compareFile,
         selectForCompare,
         unsaved,
+        writingFix,
         paste,
         drop,
         answers: () => answeredCount,

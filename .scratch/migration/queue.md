@@ -1,5 +1,4 @@
-In flight (1 of 6 slots in use):
-- D40 (the writing rules as editor marks): building, resumed on its cases ruling (base 9fd6c6eac).
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (8 steps):
 - D41 (links in Markdown checked, with M7's two defects and the Audit's wrong `type` item): waiting for Axel's ruling on open item 23 (which library).
@@ -14,6 +13,7 @@ Queued, in order (8 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D40 (the writing rules as editor marks), 2026-10-09.
 - D39 (hub keys as links), 2026-10-09.
 - D36 (linters as VS Code's), 2026-10-09, 5ed0bc24c.
 - D43 (LaTeX navigation through texlab), 2026-10-08, a60dcb4fa.

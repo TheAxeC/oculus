@@ -29,6 +29,7 @@ import type { SubmitState } from '../../machine/hpc/submit.ts';
 import type { Relay } from '../../machine/lsp/relay.ts';
 import type { Terminals } from '../../machine/pty/channel.ts';
 import type { HeldEslints } from '../../machine/runs/lint/eslint.ts';
+import type { HeldComments } from '../../machine/runs/lint/writing/comments.ts';
 import type { LintRuns } from '../../machine/runs/lint/runs.ts';
 import type { SchedulesWatcher } from '../../machine/runs/schedules/watch.ts';
 import type { UsageRefreshWatcher } from '../../machine/usage/refresh.ts';
@@ -49,6 +50,8 @@ export type ServerContext = {
     lintRuns: LintRuns;
     /** The ESLint children held per repository, which `close` ends. */
     eslint: HeldEslints;
+    /** The thread that finds the comments of a code file for the writing rules; `close` ends it. */
+    comments: HeldComments;
     hooks: HookTarget;
     git: GitWatcher;
     /** The files open in source tabs, polled for a change on disk behind the `source:` channels. */

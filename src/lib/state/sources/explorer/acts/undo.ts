@@ -85,12 +85,13 @@ export function undoneMoves(record: FileRecord, roots: FsRoot[]): Move[] {
 }
 
 /**
- * The files taking a replace record or an lsp-edit record back writes, as the root and path each
+ * The files taking a replace, lsp-edit or writing-fix record back writes, as the root and path each
  * is served under, so the source tabs over them read the file again. A path outside the served
  * roots, and any other kind of operation, gives none.
  */
 export function replacedPlaces(record: FileRecord, roots: FsRoot[]): OpsPlace[] {
-    if (record.field !== 'replace' && record.field !== 'lsp-edit') return [];
+    const edits = ['replace', 'lsp-edit', 'writing-fix'];
+    if (!edits.includes(record.field)) return [];
     return stampPaths(record.after).flatMap((path): OpsPlace[] => {
         const held = rootHolding(roots, path);
         return held === null ? [] : [{ root: held.root.key, path: held.path }];

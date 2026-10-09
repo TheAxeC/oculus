@@ -1,6 +1,7 @@
 // Layer 2, server. How each linter that runs as one process per file is called: where its program
 // is, its arguments as a list, the folder it runs in and the exit codes that carry findings. ESLint
-// is not here; the repository's own ESLint is held by eslint.ts.
+// is not here; the repository's own ESLint is held by eslint.ts, and the writing rules run no
+// program (writing/).
 //
 // A program is the path `lint.<id>_path` names, else the one on the PATH oculus was started with. A
 // named path is an absolute path or one that starts with `~`, and a path that is relative, names a

@@ -129,6 +129,7 @@ text:
         menu_terminal: Open in Integrated Terminal
         menu_timeline: Open Timeline
         menu_upload: Upload...
+        menu_writing_fix: Fix All Writing Problems in Folder...
         move_button: Move
         move_question: "Are you sure you want to move '{0}' into '{1}'?"
         move_question_many: "Are you sure you want to move the following {0} files into '{1}'?"
@@ -258,6 +259,7 @@ text:
         timeline_save_diff: '{0} (Local History)'
         timeline_saved: File Saved
         timeline_unpin: Unpin the Current Timeline
+        timeline_writing_fixed: File Fixed by the Writing Rules
         toolbar: File browser controls
         tree: Roots and folders
         undo_button: Undo
@@ -266,6 +268,22 @@ text:
         upload_done: 'Files uploaded: {0}.'
         upload_refused: '{0} was not uploaded: {1}'
         workspace_default: Configured roots
+        writing_fix_button: Fix {0} Files
+        writing_fix_button_one: Fix 1 File
+        writing_fix_changed: The file changed after the writing rules read it.
+        writing_fix_count: '{0} fixes'
+        writing_fix_count_one: 1 fix
+        writing_fix_done: 'Fixed writing problems in {0} files.'
+        writing_fix_done_one: 'Fixed writing problems in 1 file.'
+        writing_fix_failed: The writing rules could not read the folder.
+        writing_fix_files: Files the writing rules would change
+        writing_fix_none: The writing rules have nothing to fix in this folder.
+        writing_fix_partial: 'The writing fixes stopped at {0} after {1} files were written. History undoes them.'
+        writing_fix_partial_one: 'The writing fixes stopped at {0} after 1 file was written. History undoes it.'
+        writing_fix_planning: Reading the files...
+        writing_fix_title: Fix writing problems in {0}
+        writing_fix_total: 'Fixes: {0}. Files: {1}.'
+        writing_fix_unsaved: A tab holds unsaved text of this file
     views:
         files: Files
         files_glyph: applications

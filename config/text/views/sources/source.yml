@@ -31,6 +31,40 @@ text:
         name_eslint: ESLint
         name_ruff: Ruff
         name_shellcheck: ShellCheck
+        name_writing: Writing rules
+        writing_fix_arrow: 'Replace the arrow with {0}'
+        writing_fix_ellipsis: 'Replace the ellipsis character with three periods'
+        writing_fix_hyphen: 'Replace the en dash with a hyphen'
+        writing_fix_join: "Join the paragraph's lines"
+        writing_fix_nbsp: 'Replace the no-break space with a space'
+        writing_fix_quote_double: 'Replace the curly quote with a straight double quote'
+        writing_fix_quote_single: 'Replace the curly quote with a straight single quote'
+        writing_folder_blocks: 'Joining the lines would change how a block is laid out'
+        writing_folder_large: 'The file is too large to change here'
+        writing_folder_off: 'The writing rules are switched off'
+        writing_folder_private: 'The writing rules do not read a private folder'
+        writing_folder_stopped: 'The scan was stopped'
+        writing_folder_too_many: 'The folder holds {0} files the writing rules read, and at most {1} are read at once; choose a smaller folder'
+        writing_folder_unapplied: 'The changes do not apply to the file as it is now'
+        writing_folder_unparsed: 'The changes would change the value the file holds'
+        writing_folder_unread: 'The file could not be read'
+        writing_message_arrow: 'An arrow character; write {0}'
+        writing_message_arrow_other: 'An arrow character; write a word'
+        writing_message_curly_quote: 'A curly quote; write a straight quote'
+        writing_message_ellipsis: 'An ellipsis character; write three periods'
+        writing_message_em_dash: 'An em dash; reword with a comma, colon, semicolon, parentheses or a new sentence'
+        writing_message_en_dash: 'An en dash; reword it, or write a hyphen in a compound word'
+        writing_message_en_dash_range: 'An en dash in a range; write a hyphen'
+        writing_message_nbsp: 'A no-break space; write a space'
+        writing_message_wrapped: 'A paragraph broken over {0} lines; write it as one line'
+        writing_reason_closed: 'The comment reader is closed'
+        writing_reason_ended: 'The comment reader ended before it answered'
+        writing_reason_grammar: 'The comments of the file cannot be read: {0}'
+        writing_reason_timeout: 'The comments of the file took too long to read'
+        writing_suggest_arrow: 'Replace the arrow with the word to'
+        writing_suggest_colon: 'Replace the dash with a colon'
+        writing_suggest_comma: 'Replace the dash with a comma'
+        writing_suggest_semicolon: 'Replace the dash with a semicolon'
     source:
         bar_blame: Toggle Blame
         bar_blame_title: Toggle Git Blame Editor Decoration

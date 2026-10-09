@@ -147,13 +147,14 @@ async function writeBack(target: FilesTarget, stamp: FileStamp, done: Done): Pro
 }
 
 /**
- * Write the files of a `replace` or `lsp-edit` record back from the copies it kept, keeping a copy
- * of each file as it is first, of the record's own kind, so that the record this undo makes can be
- * taken back too. Each stamp of `before` is paired with the stamp of `after` at the same place.
+ * Write the files of a `replace`, `lsp-edit` or `writing-fix` record back from the copies it kept,
+ * keeping a copy of each file as it is first, of the record's own kind, so that the record this
+ * undo makes can be taken back too. Each stamp of `before` is paired with the stamp of `after` at
+ * the same place.
  */
 function writeReplaced(
     target: FilesTarget,
-    via: 'replace' | 'lsp-edit',
+    via: 'replace' | 'lsp-edit' | 'writing-fix',
     before: FileStamp[],
     after: FileStamp[],
     done: Done
@@ -232,7 +233,7 @@ async function undoNow(
         } catch {
             return finish(done, 'unwritable');
         }
-    } else if (via === 'replace' || via === 'lsp-edit') {
+    } else if (via === 'replace' || via === 'lsp-edit' || via === 'writing-fix') {
         const paired = before.data.length === after.data.length;
         if (!paired || before.data.length === 0) return { error: 'nothing' };
         if (before.data.some((one, at) => one.path !== after.data[at]?.path)) {

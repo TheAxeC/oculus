@@ -626,18 +626,62 @@ export type DebugLaunches = {
     findings: CommandFinding[];
 };
 
-/** The linters oculus runs on a file, in the order the status bar draws them. */
-export const LINT_IDS = ['chktex', 'ruff', 'eslint', 'shellcheck'] as const;
+/**
+ * The linters oculus runs on a file, in the order the status bar draws them. Four run a program;
+ * `writing` runs none: it reads the hub's writing rules off the file's text (server/machine/runs/
+ * lint/writing/).
+ */
+export const LINT_IDS = ['chktex', 'ruff', 'eslint', 'shellcheck', 'writing'] as const;
 
 /** One linter's id. */
 export type LintId = (typeof LINT_IDS)[number];
 
-/** The extensions each linter takes, in lower case: ShellCheck takes no zsh, ChkTeX no .sty. */
+/**
+ * The extensions each linter takes, in lower case: ShellCheck takes no zsh, ChkTeX no .sty. The
+ * writing rules take Markdown and YAML whole and the comments of the code files they list (a
+ * comment finder per language is the reader's, which picks the grammar by extension).
+ */
 const LINT_EXTENSIONS: Record<LintId, readonly string[]> = {
     chktex: ['.tex', '.latex'],
     ruff: ['.py', '.pyi'],
     eslint: ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.svelte'],
-    shellcheck: ['.sh', '.bash', '.slurm']
+    shellcheck: ['.sh', '.bash', '.slurm'],
+    writing: [
+        '.md',
+        '.markdown',
+        '.mkdown',
+        '.mkd',
+        '.yml',
+        '.yaml',
+        '.py',
+        '.pyi',
+        '.ts',
+        '.mts',
+        '.cts',
+        '.tsx',
+        '.js',
+        '.mjs',
+        '.cjs',
+        '.jsx',
+        '.svelte',
+        '.sh',
+        '.bash',
+        '.zsh',
+        '.slurm',
+        '.css',
+        '.scss',
+        '.c',
+        '.cpp',
+        '.cc',
+        '.cxx',
+        '.hpp',
+        '.hh',
+        '.hxx',
+        '.h',
+        '.lua',
+        '.tex',
+        '.latex'
+    ]
 };
 
 /** The linters that take a file, by its extension. */
@@ -700,6 +744,30 @@ export type LintState = 'not_found' | 'failed' | 'timeout' | 'not_approved' | 'n
  */
 export type LintAnswer =
     { ok: true; rows: LintRow[]; hash: string } | { ok: false; state: LintState; reason?: string };
+
+/** A position of the Language Server Protocol: a line and a character of it, both from zero. */
+type LintFolderPosition = { line: number; character: number };
+
+/**
+ * One file of a folder's writing-rules plan: its path against the folder's root, the SHA-256 of the
+ * bytes the plan was made from, how many fixes its edits make, and the edits in the protocol's
+ * positions (the shape of a text edit in `data/prose/text-edits.ts`). A file the plan could not
+ * check carries no edits and `reason`, the sentence that says why.
+ */
+export type LintFolderFile = {
+    path: string;
+    hash: string;
+    count: number;
+    edits: { range: { start: LintFolderPosition; end: LintFolderPosition }; newText: string }[];
+    reason?: string;
+};
+
+/**
+ * The answer of POST /api/lint to the action `folder`: the files of the folder the writing rules
+ * can fix, or the sentence that refuses the folder.
+ */
+export type LintFolderAnswer =
+    { ok: true; files: LintFolderFile[] } | { ok: false; reason: string };
 
 /**
  * The `eslint.config.*` file ESLint is given for a file, as its path under the folder it sits in,

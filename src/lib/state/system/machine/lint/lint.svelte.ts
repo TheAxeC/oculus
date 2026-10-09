@@ -1,7 +1,7 @@
-// Layer 2, client state. What the linters (ChkTeX, Ruff, ESLint, ShellCheck) found in the files the
-// page holds, and what became of each linter's last run. The server runs a linter on the file on
-// disk (POST /api/lint, server/machine/runs/lint/routes.ts); this store decides which files the
-// page lints, when, and keeps the answers.
+// Layer 2, client state. What the linters (ChkTeX, Ruff, ESLint, ShellCheck, the writing rules)
+// found in the files the page holds, and what became of each linter's last run. The server runs a
+// linter on the file on disk (POST /api/lint, server/machine/runs/lint/routes.ts); this store
+// decides which files the page lints, when, and keeps the answers.
 //
 // A file is held while at least one source tab of it has its editor mounted (`hold` and `release`,
 // counted per mount). Only a file on disk in a served root is held, never a library file, a version
@@ -19,11 +19,13 @@
 // `forgetOutside` drops the files of a root the served roots do not hold now.
 //
 // The ESLint configuration actions (`config`, `approve`, `revoke`) post to the same route and lint
-// the held files that ESLint takes again.
+// the held files that ESLint takes again. The action `folder` asks for the writing rules' plan for
+// a folder (`folder`) and holds nothing: the dialog of the Files view keeps the answer.
 
 import type {
     LintAnswer,
     LintConfig,
+    LintFolderAnswer,
     LintId,
     LintRow,
     LintState
@@ -31,7 +33,7 @@ import type {
 import { LINT_IDS, lintersOf } from '../../../../data/model/index.ts';
 import { tabOfFile } from '../../../sources/repositories/file-git.ts';
 import { postWithToken, type TokenSource } from '../../../shared/stores/token-post.ts';
-import { lintAnswerShape, lintConfigShape } from './lint-answer.ts';
+import { lintAnswerShape, lintConfigShape, lintFolderShape } from './lint-answer.ts';
 
 /** What a linter's last run came to for a file: it ran, or why it gave no rows. */
 type LintStatus = { state: 'ok' } | { state: LintState; reason?: string };
@@ -83,6 +85,11 @@ export type LintStore = {
     registerFixer: (instance: string, fixer: (linter: LintId) => void) => () => void;
     /** Apply every non-overlapping fix of a linter in a tab, if the tab's editor said how. */
     fixAll: (instance: string, linter: LintId) => void;
+    /**
+     * The writing rules' plan for the files under a folder: what each would change, or why the
+     * folder is refused. A request that cannot be made or read answers the refusal with no reason.
+     */
+    folder: (root: string, path: string) => Promise<LintFolderAnswer>;
     /** Approve the configuration the reader was shown; lints the held files ESLint takes. */
     approve: (root: string, path: string, key: string) => Promise<boolean>;
     /** Take the approval back; lints the held files ESLint takes. */
@@ -309,6 +316,10 @@ export function createLint(deps: LintDeps): LintStore {
         config: async (root, path) => {
             const read = await configAction('config', root, path);
             return read === false ? null : read;
+        },
+        folder: async (root, path) => {
+            const read = lintFolderShape.safeParse(await post({ action: 'folder', root, path }));
+            return read.success ? read.data : { ok: false, reason: '' };
         },
         approve: async (root, path, key) => {
             const done = await configAction('approve', root, path, key);

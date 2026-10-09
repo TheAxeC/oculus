@@ -721,6 +721,12 @@ options:
             help: true runs ShellCheck on a .sh, .bash or .slurm file when it is saved and when a tab of it with no unsaved text opens, and shows its findings in the editor and the Problems view.
             default: true
             control: toggle
+        lint.writing:
+            heading: editor
+            section: Linting
+            help: true marks, in a Markdown or YAML file and in the comments of a code file, each character the hub's writing rules ban (em and en dashes, curly quotes, the ellipsis, arrows, the non-breaking space) and each Markdown paragraph broken across lines, in the editor and the Problems view, with a quick fix where the fix is exact. It runs no program.
+            default: true
+            control: toggle
         lint.chktex_path:
             heading: editor
             section: Linting
@@ -747,6 +753,52 @@ options:
             section: Linting
             help: The arguments ChkTeX runs with, as LaTeX Workshop's latex-workshop.linting.chktex.exec.args offers them. oculus adds the output format, -I0 and the .chktexrc it finds beside the file or in the root.
             default: [-wall, -n22, -n30, -e16, -q]
+            control: list
+        lint.writing_skip:
+            heading: editor
+            section: Linting
+            help: The globs of the files the writing rules leave alone, matched against the path from the file's root (a glob without a slash also matches a file name). A skipped file has no marks and no linter item. A file named glyphs.yml is skipped whatever this holds.
+            default:
+                [
+                    '.agents/**',
+                    '.claude/**',
+                    '**/vendor/**',
+                    '**/third_party/**',
+                    '**/bttrlib/**',
+                    '**/notes/thesis/**',
+                    '**/manuscript/**/*.tex',
+                    '**/manuscript/**/*.bib',
+                    '**/*_AUTO.md',
+                    '**/STATUS.md',
+                    feeds/literature-radar.yml,
+                    feeds/position-leads.yml,
+                    tools/oculus/.scratch/migration/plan.md,
+                    tools/oculus/.scratch/migration/agents/guarded.md
+                ]
+            control: list
+        lint.writing_glyphs:
+            heading: editor
+            section: Linting
+            help: The globs of the files that draw arrows as icons. The writing rules mark every banned character in them but arrows.
+            default:
+                [
+                    tools/cockpit/data/**,
+                    tools/cockpit/dummy/data/**,
+                    tools/cockpit/templates/**,
+                    tools/cockpit/assets/**,
+                    tools/cockpit/README.md,
+                    tools/cockpit/DESIGN.md,
+                    tools/cockpit/ARCHITECTURE.md,
+                    tools/cockpit/CLAUDE.md,
+                    tools/present/assets/**,
+                    registries/*.yml,
+                    funding/funding.yml,
+                    network/*.yml,
+                    applications/applications.yml,
+                    education/education.yml,
+                    tasks/tasks.yml,
+                    '**/project.yml'
+                ]
             control: list
         writes.timeout_seconds:
             heading: editor

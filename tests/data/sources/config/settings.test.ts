@@ -90,10 +90,13 @@ const DEFAULTS: Record<string, unknown> = {
     'lint.ruff': false,
     'lint.eslint': false,
     'lint.shellcheck': false,
+    'lint.writing': false,
     'lint.chktex_path': '/a/chktex',
     'lint.ruff_path': '/a/ruff',
     'lint.shellcheck_path': '/a/shellcheck',
     'lint.chktex_args': ['-q'],
+    'lint.writing_skip': ['skip/**'],
+    'lint.writing_glyphs': ['icons/**'],
     usage_refresh_min: 12,
     usage_refresh_model: 'm2',
     'git.autofetch_minutes': 7,
@@ -380,9 +383,11 @@ describe('latexFormatting and the auto build', () => {
 
 describe('lintSettings', () => {
     const DEFAULT = {
-        on: { chktex: false, ruff: false, eslint: false, shellcheck: false },
+        on: { chktex: false, ruff: false, eslint: false, shellcheck: false, writing: false },
         paths: { chktex: '/a/chktex', ruff: '/a/ruff', shellcheck: '/a/shellcheck' },
-        chktexArgs: ['-q']
+        chktexArgs: ['-q'],
+        writingSkip: ['skip/**'],
+        writingGlyphs: ['icons/**']
     };
     const read = (lint: unknown) => outcome((p) => lintSettings(mapWith({ lint }), p));
 
@@ -397,16 +402,21 @@ describe('lintSettings', () => {
                 ruff: true,
                 eslint: true,
                 shellcheck: true,
+                writing: true,
                 chktex_path: '~/bin/chktex',
                 ruff_path: '/b/ruff',
                 shellcheck_path: '/b/shellcheck',
-                chktex_args: ['-wall', '-e9']
+                chktex_args: ['-wall', '-e9'],
+                writing_skip: [' a/** ', '', 'b/*.md'],
+                writing_glyphs: ['c/**']
             })
         ).toStrictEqual({
             value: {
-                on: { chktex: true, ruff: true, eslint: true, shellcheck: true },
+                on: { chktex: true, ruff: true, eslint: true, shellcheck: true, writing: true },
                 paths: { chktex: '~/bin/chktex', ruff: '/b/ruff', shellcheck: '/b/shellcheck' },
-                chktexArgs: ['-wall', '-e9']
+                chktexArgs: ['-wall', '-e9'],
+                writingSkip: ['a/**', 'b/*.md'],
+                writingGlyphs: ['c/**']
             },
             problems: []
         });
@@ -417,10 +427,13 @@ describe('lintSettings', () => {
         ['ruff', 'maybe', 'boolean'],
         ['eslint', 'maybe', 'boolean'],
         ['shellcheck', 'maybe', 'boolean'],
+        ['writing', 'maybe', 'boolean'],
         ['chktex_path', 'chktex', 'path'],
         ['ruff_path', 'ruff', 'path'],
         ['shellcheck_path', '../shellcheck', 'path'],
-        ['chktex_args', 'no', 'strings']
+        ['chktex_args', 'no', 'strings'],
+        ['writing_skip', 'no', 'strings'],
+        ['writing_glyphs', 'no', 'strings']
     ])('answers the default for a wrong lint.%s and names the key', (key, bad, kind) => {
         expect(read({ [key]: bad })).toStrictEqual({
             value: DEFAULT,

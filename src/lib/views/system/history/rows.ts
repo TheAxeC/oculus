@@ -87,6 +87,12 @@ export function fileOperation(field: string, after: unknown): string {
             ? t('history.file_lsp_edit_one')
             : t('history.file_lsp_edit', String(files));
     }
+    if (field === 'writing-fix') {
+        const files = stampPaths(after).length;
+        return files === 1
+            ? t('history.file_writing_fix_one')
+            : t('history.file_writing_fix', String(files));
+    }
     return field;
 }
 

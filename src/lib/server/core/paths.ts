@@ -6,8 +6,10 @@
 // folder itself). Both resolve first, so a `..` is worked out before the test and a sibling whose
 // name starts with the folder's is never taken for a child of it. A folder of `/` holds only
 // itself, since no resolved path below it starts with `//`. `under` asks the same of a list of
-// folders for a real path, each folder compared as written and as resolved: it tells the folders
-// this machine keeps to itself (data/helpers/files/private-folders.ts) from the rest. It sits in
+// folders for a real path, each folder compared as written and as resolved and the path also in
+// the operating system's own spelling, so another letter case of a private folder is that folder:
+// it tells the folders this machine keeps to itself (data/helpers/files/private-folders.ts) from
+// the rest. It sits in
 // server/core, the bottom of the server's folder order, so every server module reads the one rule
 // from here.
 
@@ -34,13 +36,21 @@ export function below(path: string, dir: string): boolean {
     return full !== root && full.startsWith(root + sep);
 }
 
-/** Whether a real path lies in one of the folders, each compared as written and as resolved. */
+/**
+ * Whether a real path lies in one of the folders, each compared as written and as resolved. The
+ * path is also compared in the operating system's own spelling, so on a case-insensitive file
+ * system a path written in another letter case is in the folder it names.
+ */
 export function under(real: string, folders: readonly string[]): boolean {
-    const target = real.normalize('NFC');
+    const targets = [real, realPath(real, true)].flatMap((one) =>
+        one === null ? [] : [one.normalize('NFC')]
+    );
     return folders.some((folder) => {
         const own = resolve(folder).normalize('NFC');
-        const there = realPath(folder, true);
-        return inside(target, own) || (there !== null && inside(target, there.normalize('NFC')));
+        const there = realPath(folder, true)?.normalize('NFC') ?? null;
+        return targets.some(
+            (target) => inside(target, own) || (there !== null && inside(target, there))
+        );
     });
 }
 

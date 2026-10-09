@@ -2,7 +2,7 @@
 // them: a body that does not read is the linter having failed, never a throw.
 
 import { z } from 'zod';
-import type { LintAnswer, LintConfig } from '../../../../data/model/index.ts';
+import type { LintAnswer, LintConfig, LintFolderAnswer } from '../../../../data/model/index.ts';
 
 const edit = z.object({
     line: z.number().int(),
@@ -50,3 +50,27 @@ export const lintConfigShape = z.object({
         .object({ files: z.array(z.string()), approved: z.boolean(), key: z.string() })
         .nullable()
 }) satisfies z.ZodType<{ ok: true; config: LintConfig | null }>;
+
+const position = z.object({ line: z.number().int(), character: z.number().int() });
+
+/** The answer to the action `folder`: the files the writing rules can fix, or why not. */
+export const lintFolderShape = z.union([
+    z.object({
+        ok: z.literal(true),
+        files: z.array(
+            z.object({
+                path: z.string(),
+                hash: z.string(),
+                count: z.number().int(),
+                edits: z.array(
+                    z.object({
+                        range: z.object({ start: position, end: position }),
+                        newText: z.string()
+                    })
+                ),
+                reason: z.string().optional()
+            })
+        )
+    }),
+    z.object({ ok: z.literal(false), reason: z.string() })
+]) satisfies z.ZodType<LintFolderAnswer>;

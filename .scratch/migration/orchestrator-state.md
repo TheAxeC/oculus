@@ -24,22 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:   # steps in flight, up to six (Z632)
-- step: D40
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a55bd9e7057d5d802 (builder, launched 2026-10-09)
-  worktree: .agents/worktrees/D40
-  base: 9fd6c6eac
-  launched: 2026-10-09
-  report: agents/reviews/D40-report.md
-  builder_usage: first run 325,520 tokens, 62 tool uses, 7.5 min (stopped on case 20 before any change); after the cases ruling 322,044 tokens, 419 tool uses, 106.5 min
-  brief_check: agents/reviews/D40-brief-check.md (a2cb4c691ca4ee98c, claude-opus-5-5, 296,952 tokens, 97 tool uses, 18.4 min; closed inline in the brief by the orchestrator)
-  shared_paths: with D39, `data/model/index.ts` (D40 572-609, D39 94-98), `server/root/context.ts` (D40 240-290 around D39's 257, D39 also 327), `config/text/views/sources/source.yml` (D40 3-33, D39 62-82 and three `lsp_*` keys), `DESIGN.md` (D40 23, 166, 476; D39 526, 553, 575-576), `HELP.md` (D40 118, D39 81, 116), `docs/views.md` (D40 81, D39 67-69, 253), `docs/files-and-search.md` (D40 87-106, D39 85), `docs/diagrams/` (regenerated at landing); each a different block of the file, so the merge is by hunk, with context.ts 257 and HELP.md 116/118 merged by hand.
-  reviewer_report: agents/reviews/D40-refuter.md (aed703dd3c0db8631, claude-opus-5-5, 228,936 tokens, 141 tool uses, 27.7 min)
-  landing: not-started
-  round: 1 (agents/briefs/D40-round1.md, sent 2026-10-09; the tree as handed back at .agents/worktrees/D40-round0; cases ruling agents/briefs/D40-cases.md was round 0)
+dispatch: []   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -243,6 +228,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 05:50. D40 landed (the writing rules as editor marks, with the folder Fix All; booking in plan.md; `agents/reviews/D40-landing.md`) after one repair round, the review over round 1's findings, the merge with D39 and the look's defect fixed at landing ("Closed (at landing)" in `agents/reviews/D40-refuter.md`); G71 written whole into `agents/guarded.md` with G3's title and rows and the folder Fix All's lines of G1, G2 and G9; gate green in `.agents/worktrees/gate`, the look on the 8796 scratch oculus. Nothing in flight. Open items 22 (the rename box's hint line) and 23 (D41's library) for Axel; /spec D41 stopped on 23. Next: D41 after Axel rules on 23; D39b if Axel rules (a) on 22.
 - 2026-10-09 05:40. D40 built (report `agents/reviews/D40-report.md`) and reviewed (`agents/reviews/D40-refuter.md`, aed703dd3c0db8631, claude-opus-5-5); its findings sent as repair round 1 (`agents/briefs/D40-round1.md`) to builder a55bd9e7057d5d802. Open items 22 and 23 for Axel; /spec D41 stopped on 23. Next: D40's round report, the review over the round, /land D40 with the hand merge against D39.
 - 2026-10-09 04:30. D39 landed (hub keys as links; booking in plan.md; `agents/reviews/D39-landing.md`) after one repair round, the review over round 1's findings fixed or decided at landing ("Closed (at landing)" in `agents/reviews/D39-refuter.md`); G66, G67 and G68 written whole into `agents/guarded.md` with the new lines of G2, G8, G9, G13, G28 and G64; gate green in `.agents/worktrees/gate`, the look on the 8796 scratch oculus. In flight: D40 (resumed on its cases ruling, builder a55bd9e7057d5d802). Open items 22 (the rename box's hint line) and 23 (D41's library: the Markdown language server, recommended) for Axel; /spec D41 stopped on 23 with no brief. Next: D40's report, review and landing; D41 after Axel rules on 23.
 - 2026-10-09 03:30. D40 prepared on main at 9fd6c6eac (its brief closed inline by the orchestrator through `/spec`, no agent: open items 18, 19 and 20 and the Folder Fix All ruling written in, every brief-check finding closed under "Closed" in `agents/reviews/D40-brief-check.md`) and its builder a55bd9e7057d5d802 (claude-sonnet-5-5) launched in `.agents/worktrees/D40`. D39's review over round 1 (a9fc0373cde573248, claude-opus-5-5) is running. Next: D39's landing (its review over round 1 is in); D40 resumed on its cases ruling; D41 prepared.

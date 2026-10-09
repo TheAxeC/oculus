@@ -609,6 +609,8 @@ export type {
     LintConfig,
     LintEdit,
     LintFix,
+    LintFolderAnswer,
+    LintFolderFile,
     LintId,
     LintRow,
     LintState,

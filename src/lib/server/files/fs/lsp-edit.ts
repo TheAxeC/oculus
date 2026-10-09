@@ -1,6 +1,8 @@
 // Layer 2, server. The edit a language server asks for in files no tab holds, as POST /api/ops
-// `lsp-edit` (rename, a code action, `workspace/applyEdit`). server/files/fs/ops.ts dispatches to
-// it behind the same write chain `replace` runs behind.
+// `lsp-edit` (rename, a code action, `workspace/applyEdit`), and the edits of the writing rules'
+// folder Fix All, as `writing-fix`. server/files/fs/ops.ts dispatches both to it behind the same
+// write chain `replace` runs behind; the operation's name is the kind its history copies are kept
+// under.
 //
 // The request names each file by its root and path, the SHA-256 of the bytes the edit was computed
 // for, and its edits in the protocol's positions (data/prose/text-edits.ts: UTF-16 units over the
@@ -10,22 +12,21 @@
 // out of it, a path under a `node_modules` folder or a folder whose name starts with a dot, or a
 // file in the hub's `secrets` folder or in `~/.oculus`, none of which is ever edited here),
 // `missing`, `protected` (the machine's local.yml), `denied` (the file's mode locks it), `binary`
-// (a NUL byte in the first 8 KB), `too_large` (over 5 MB, the most a copy of kind `lsp-edit` is
-// kept for, as the file is and as the edit would leave it), `changed` (the bytes are not the ones
-// the edit was computed for, or a range names a line the file lacks), and after `changed` `binary`
-// again for a file with a NUL byte anywhere or bytes that are not UTF-8 throughout (the whole-file
-// rule of data/helpers/files/text-kind.ts). A file named twice, no file at all, or two ranges of a
-// file that overlap is `not-an-action`.
+// (a NUL byte in the first 8 KB), `too_large` (over the most a copy of the operation's kind is
+// kept for, 5 MB for `lsp-edit` and 256 KB for `writing-fix`, as the file is and as the edit would
+// leave it), `changed` (the bytes are not the ones the edit was computed for, or a range names a
+// line the file lacks), and after `changed` `binary` again for a file with a NUL byte anywhere or
+// bytes that are not UTF-8 throughout (the whole-file rule of data/helpers/files/text-kind.ts). A
+// file named twice, no file at all, or two ranges of a file that overlap is `not-an-action`.
 //
-// Each file is then written once: its copy is kept in the local history first (kind `lsp-edit`),
-// the new text is written through the same atomic write a save uses with the file's byte order mark
-// kept, and the file is read back and compared with what was meant to be written. A write that
-// fails stops the list there and the answer names the files done before it and the one it stopped
-// at. The whole request is one `files` record, with the stamps of the files as they were (each
-// naming its copy) and as they are.
+// Each file is then written once: its copy is kept in the local history first, under the kind of
+// the operation that writes it (`lsp-edit` or `writing-fix`), the new text is written through the
+// same atomic write a save uses with the file's byte order mark kept, and the file is read back and
+// compared with what was meant to be written. A write that fails stops the list there and the
+// answer names the files done before it and the one it stopped at. The whole request is one `files`
+// record, with the stamps of the files as they were (each naming its copy) and as they are.
 
 import { readFileSync } from 'node:fs';
-import { WRITE_MAX_BYTES } from '../../../data/file-ops.ts';
 import type { FileStamp, LspEditFile, OpsAnswer } from '../../../data/file-ops.ts';
 import { isWholeText } from '../../../data/helpers/files/text-kind.ts';
 import { applyTextEdits } from '../../../data/prose/text-edits.ts';
@@ -34,7 +35,7 @@ import { writeBytesAtomic } from '../../core/json.ts';
 import { under } from '../../core/paths.ts';
 import { resolveRootPath, type Root } from '../files.ts';
 import { stampOf } from './file-changes.ts';
-import { keepCopy } from './history.ts';
+import { copyLimit, keepCopy } from './history.ts';
 import { fail, readChecked, refused, type Fail } from './replace.ts';
 
 /** What an `lsp-edit` runs over: the roots, the files never changed, the history and the record. */
@@ -50,6 +51,9 @@ export type LspEditScope = {
     note: (before: FileStamp[], after: FileStamp[]) => void;
 };
 
+/** The operations that run this chain, which are also the kinds of history copy it keeps. */
+export type LspEditOperation = 'lsp-edit' | 'writing-fix';
+
 /** One file read, checked and its new bytes made, not yet written. */
 type Planned = { name: string; real: string; before: Buffer; after: Buffer };
 
@@ -64,11 +68,12 @@ function inLibraryFolder(path: string): boolean {
 }
 
 /** One file of the request, read and checked, with the bytes its edit makes. */
-function plan(scope: LspEditScope, file: LspEditFile): Planned | Fail {
+function plan(scope: LspEditScope, file: LspEditFile, operation: LspEditOperation): Planned | Fail {
     if (inLibraryFolder(file.path)) return fail('outside');
     const found = resolveRootPath(scope.roots, file.root, file.path);
     if ('path' in found && under(found.path, scope.withheld)) return fail('outside');
-    const read = readChecked(scope, file.root, file.path, WRITE_MAX_BYTES, true);
+    const limit = copyLimit(operation);
+    const read = readChecked(scope, file.root, file.path, limit, true);
     if (refused(read)) return read;
     const { bytes } = read;
     if (hashOf(bytes) !== file.hash) return fail('changed');
@@ -77,7 +82,7 @@ function plan(scope: LspEditScope, file: LspEditFile): Planned | Fail {
     const edited = applyTextEdits(body.toString('utf8'), file.edits);
     if (!edited.ok) return fail(edited.reason === 'overlap' ? 'not-an-action' : 'changed');
     const after = withMark(Buffer.from(edited.text, 'utf8'), marked);
-    if (after.length > WRITE_MAX_BYTES) return fail('too_large');
+    if (after.length > limit) return fail('too_large');
     return { name: `${file.root}/${file.path}`, real: read.real, before: bytes, after };
 }
 
@@ -91,13 +96,14 @@ function malformed(files: LspEditFile[]): boolean {
 /** One planned file written: its copy kept first, then the file, read back and compared. */
 function write(
     scope: LspEditScope,
-    one: Planned
+    one: Planned,
+    operation: LspEditOperation
 ): { before: FileStamp; after: FileStamp[] } | Fail {
     const was = stampOf(one.real);
     if (was === null) return fail('missing');
     let kept: string | undefined;
     if (scope.history !== undefined) {
-        const copy = keepCopy(scope.history, one.real, 'lsp-edit');
+        const copy = keepCopy(scope.history, one.real, operation);
         if (!copy.ok) return fail('denied');
         kept = copy.kept?.id;
     }
@@ -121,15 +127,19 @@ function write(
 }
 
 /**
- * POST /api/ops `lsp-edit`: the edits the request names, written file by file in order once every
- * file passed its checks. The answer names the files written as `root/path`, or the refusal, and
- * for a write that stopped part way the files done and the one it stopped at.
+ * POST /api/ops `lsp-edit` and `writing-fix`: the edits the request names, written file by file in
+ * order once every file passed its checks. The answer names the files written as `root/path`, or
+ * the refusal, and for a write that stopped part way the files done and the one it stopped at.
  */
-export function lspEditFiles(scope: LspEditScope, files: LspEditFile[]): OpsAnswer {
+export function lspEditFiles(
+    scope: LspEditScope,
+    files: LspEditFile[],
+    operation: LspEditOperation
+): OpsAnswer {
     if (malformed(files)) return fail('not-an-action');
     const planned: Planned[] = [];
     for (const file of files) {
-        const one = plan(scope, file);
+        const one = plan(scope, file, operation);
         if (refused(one)) {
             return { ok: false, error: one.error, done: [], failed: `${file.root}/${file.path}` };
         }
@@ -140,7 +150,7 @@ export function lspEditFiles(scope: LspEditScope, files: LspEditFile[]): OpsAnsw
     }
     const done: string[] = [];
     for (const one of planned) {
-        const outcome = write(scope, one);
+        const outcome = write(scope, one, operation);
         if (refused(outcome)) {
             return { ok: false, error: outcome.error, done, failed: one.name };
         }

@@ -6,7 +6,8 @@
     // `checked` null draws the native box indeterminate with the unset words after the label, and a
     // press goes from unset to on (`onchange(true)`), from on to off (`onchange(false)`) and from
     // off back to unset (`onunset()`). The box draws what `checked` says at every moment, so a
-    // press the caller does not take leaves it as it was.
+    // press the caller does not take leaves it as it was. A disabled box draws its state and takes
+    // no press.
 
     type Props = {
         /** The state drawn; null is unset and is drawn only when `unset` is given. */
@@ -18,9 +19,11 @@
         unset?: string;
         /** A press that ends in the unset state. */
         onunset?: () => void;
+        /** The box cannot be pressed and draws `checked`. */
+        disabled?: boolean;
     };
 
-    let { checked, label, onchange, unset, onunset }: Props = $props();
+    let { checked, label, onchange, unset, onunset, disabled = false }: Props = $props();
 
     let box: HTMLInputElement | null = $state(null);
 
@@ -49,8 +52,14 @@
     }
 </script>
 
-<label class="box">
-    <input type="checkbox" checked={checked === true} bind:this={box} onchange={pressed} />
+<label class="box" class:disabled>
+    <input
+        type="checkbox"
+        checked={checked === true}
+        bind:this={box}
+        onchange={pressed}
+        {disabled}
+    />
     <span class="words">{label}</span>
     {#if three && checked === null}
         <span class="unset">{unset}</span>
@@ -65,6 +74,11 @@
         font-size: var(--fs-sm);
         color: var(--ink-txt, var(--ink));
         cursor: pointer;
+    }
+
+    .box.disabled {
+        color: var(--muted-txt, var(--muted));
+        cursor: default;
     }
 
     input {

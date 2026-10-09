@@ -275,11 +275,12 @@ const COMPUTED_PREFIXES = [
         keys: () => CHKTEX_FIXABLE.map((number) => `lint.chktex_fix_${number}`)
     },
     {
-        // A linter that was not found is told how to install it, in its own words.
+        // A linter that was not found is told how to install it, in its own words. ESLint runs from
+        // the repository and the writing rules run in the server, so neither has a program to find.
         file: 'lib/shell/status/LanguageItems.svelte',
         start: 't(`statusbar.lint_tip_not_found_${',
         keys: () =>
-            LINT_IDS.filter((id) => id !== 'eslint').map(
+            LINT_IDS.filter((id) => id !== 'eslint' && id !== 'writing').map(
                 (id) => `statusbar.lint_tip_not_found_${id}`
             )
     },

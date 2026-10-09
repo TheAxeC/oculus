@@ -124,7 +124,7 @@ export type Scope = {
     roots: Root[];
     locals: Guard;
     trash: NonNullable<OpsDeps['trash']>;
-    /** The folders no language server's edit is made in (`privateFolders`). */
+    /** The folders no `lsp-edit` or `writing-fix` writes in (`privateFolders`). */
     withheld: readonly string[];
     history?: string;
     /** The search timeout and the ripgrep runner a replace uses. */
@@ -164,6 +164,21 @@ const position = z.object({
     line: z.number().int().min(0),
     character: z.number().int().min(0)
 });
+
+/** The files of an `lsp-edit` and of a `writing-fix`: each with the hash it was read at. */
+const editFiles = z.array(
+    z.object({
+        root: z.string(),
+        path: z.string(),
+        hash: z.string(),
+        edits: z.array(
+            z.object({
+                range: z.object({ start: position, end: position }),
+                newText: z.string()
+            })
+        )
+    })
+);
 
 /** The body of POST /api/ops, one shape per operation. */
 const opsShape = z.discriminatedUnion('op', [
@@ -221,22 +236,8 @@ const opsShape = z.discriminatedUnion('op', [
         path: z.string(),
         hits: z.array(z.object({ line: z.number().int().min(1), at: z.number().int().min(0) }))
     }),
-    z.object({
-        op: z.literal('lsp-edit'),
-        files: z.array(
-            z.object({
-                root: z.string(),
-                path: z.string(),
-                hash: z.string(),
-                edits: z.array(
-                    z.object({
-                        range: z.object({ start: position, end: position }),
-                        newText: z.string()
-                    })
-                )
-            })
-        )
-    })
+    z.object({ op: z.literal('lsp-edit'), files: editFiles }),
+    z.object({ op: z.literal('writing-fix'), files: editFiles })
 ]) satisfies z.ZodType<OpsRequest>;
 
 /** The refusal a system error stands for, or null for one that is not a refusal. */
@@ -684,6 +685,7 @@ function run(scope: Scope, request: Exclude<OpsRequest, { op: 'preview' }>): Pro
                 request
             );
         case 'lsp-edit':
+        case 'writing-fix':
             return Promise.resolve(
                 lspEditFiles(
                     {
@@ -691,9 +693,10 @@ function run(scope: Scope, request: Exclude<OpsRequest, { op: 'preview' }>): Pro
                         guarded: (path) => guarded(scope.locals, path),
                         withheld: scope.withheld,
                         history: scope.history,
-                        note: (before, after) => noted(scope, 'lsp-edit', before, after)
+                        note: (before, after) => noted(scope, request.op, before, after)
                     },
-                    request.files
+                    request.files,
+                    request.op
                 )
             );
     }

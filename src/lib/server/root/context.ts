@@ -93,6 +93,7 @@ import { readTable } from '../machine/processes/ps.ts';
 import { defaultSchedulesPath } from '../machine/runs/schedules/file.ts';
 import { defaultRecordPath } from '../machine/runs/schedules/record.ts';
 import { HeldEslints, type HeldEslintsOptions } from '../machine/runs/lint/eslint.ts';
+import { HeldComments } from '../machine/runs/lint/writing/comments.ts';
 import { LintRuns } from '../machine/runs/lint/runs.ts';
 import { runEntry } from '../machine/runs/schedules/run.ts';
 import {
@@ -274,6 +275,7 @@ export function createServerContext(
         catalog: () => textCatalog(make.loadConfig(engine).config)
     });
     const lintRuns = new LintRuns();
+    const comments = new HeldComments();
     const eslint = make.createEslints({
         roots: () =>
             servedRoots(
@@ -498,6 +500,7 @@ export function createServerContext(
         debug,
         lintRuns,
         eslint,
+        comments,
         hooks,
         get git() {
             return owned().git;
@@ -574,6 +577,7 @@ export function createServerContext(
             debug.close();
             lintRuns.close();
             eslint.close();
+            comments.close();
             closePicker(context.folderPicker);
             void relay.close();
         }

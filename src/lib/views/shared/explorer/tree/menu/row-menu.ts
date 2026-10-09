@@ -5,13 +5,14 @@
 // press opens it but in a pane beside (opening.ts), a file the configuration names an application
 // for (`open.program_ext`) handed to that application through the open endpoint, a picture, a PDF
 // or an HTML page opened in a browser tab of its own (a PDF also in a tab of the page and in a
-// window of its own), a file or folder bookmarked or its bookmark
-// taken out as the row's star does, a file or folder revealed in Finder through the open endpoint,
-// a shell started in the folder (state/shared/stores/shell.ts, `openShell`), the file's bytes saved
-// from api/file as the file view's link saves them, the Search view opened on the folder, the
-// view's add-root form, and its removal behind its question. The items that write (New File...,
-// Cut, Paste, Rename..., Delete, Upload..., the compare items) are drawn here and picked in
-// row-ops.ts.
+// window of its own), a file or folder bookmarked or its bookmark taken out as the row's star does,
+// a file or folder revealed in Finder through the open endpoint, a shell started in the folder
+// (state/shared/stores/shell.ts, `openShell`), the file's bytes saved from api/file as the file
+// view's link saves them, the Search view opened on the folder, the view's add-root form, and its
+// removal behind its question. Fix All Writing Problems in Folder... is picked in
+// tree/control/picks.svelte.ts, which opens the dialog of fixing.svelte.ts. The items that write
+// (New File..., Cut, Paste, Rename..., Delete, Upload..., the compare items) are drawn here and
+// picked in row-ops.ts.
 //
 // The items are a pure function of the row, so which items a row offers is asserted without a
 // DOM, and the words come in as `t` so every label is a catalog key. The picks take the stores and
@@ -74,6 +75,7 @@ const ROW_REMOVE_BOOKMARK = 'remove-bookmark';
 export const ROW_REVEAL = 'reveal';
 export const ROW_TERMINAL = 'terminal';
 export const ROW_FIND = 'find';
+export const ROW_WRITING_FIX = 'writing-fix';
 export const ROW_DOWNLOAD = 'download';
 export const ROW_COPY_PATH = 'copy-path';
 export const ROW_COPY_RELATIVE = 'copy-relative';
@@ -134,6 +136,8 @@ export type RowMenuFacts = {
     hints?: Readonly<Record<string, string>>;
     /** The project commands of the repository a root or a folder row is; none when omitted. */
     commands?: readonly ProjectCommand[];
+    /** Whether `lint.writing` is on, which Fix All Writing Problems in Folder needs. */
+    writing?: boolean;
 };
 
 /**
@@ -213,7 +217,8 @@ export function rowFacts(
     entriesOf: HeldEntries = () => null,
     commands: readonly ProjectCommand[] = [],
     programs: Readonly<Record<string, string>> = {},
-    bookmarked = false
+    bookmarked = false,
+    writing = false
 ): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
@@ -247,7 +252,8 @@ export function rowFacts(
                 (one) => one.kind === 'file' && one.name === DECK_FILE
             ),
         hints,
-        commands
+        commands,
+        writing
     };
 }
 
@@ -262,14 +268,15 @@ export function rowFacts(
  * it opened (picks.svelte.ts); New Presentation... is in that group on a folder or root whose
  * listing holds none, and New Presentation from Outline on a Markdown file.
  * A folder: New File... and New Folder...,
- * Reveal in Finder and its shell, Find in Folder..., Cut, Copy and Paste, Upload..., the two
- * copies, then Rename... and Delete. A folder or root that is a repository with project commands
- * also offers Run Command, a submenu of them. A root: those of a folder without Cut, Copy,
- * Rename... and Delete, and Add Folder to Workspace... with Remove Folder from Workspace on a root
- * the reader added. Compare with Selected needs a file selected for compare. With two or more rows
- * selected the menu is the one for the selection: Compare Selected for exactly two files, Cut and
- * Copy, the two copies of every path, and Delete. Each item carries the key hint its id has in
- * `hints`.
+ * Reveal in Finder and its shell, Find in Folder... with Fix All Writing Problems in Folder... (a
+ * folder Fix All of the writing rules, disabled while `lint.writing` is off), Cut, Copy and Paste,
+ * Upload..., the two copies, then Rename... and Delete. A folder or root that is a repository with
+ * project commands also offers Run Command, a submenu of them. A root: those of a folder without
+ * Cut, Copy, Rename... and Delete, and Add Folder to Workspace... with Remove Folder from Workspace
+ * on a root the reader added. Compare with Selected needs a file selected for compare. With two or
+ * more rows selected the menu is the one for the selection: Compare Selected for exactly two files,
+ * Cut and Copy, the two copies of every path, and Delete. Each item carries the key hint its id has
+ * in `hints`.
  */
 export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string): MenuItem => {
@@ -346,7 +353,10 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         item(ROW_NEW_FILE, t('files.menu_new_file')),
         item(ROW_NEW_FOLDER, t('files.menu_new_folder'))
     ];
-    const find = [item(ROW_FIND, t('files.menu_find'))];
+    const find = [
+        item(ROW_FIND, t('files.menu_find')),
+        { ...item(ROW_WRITING_FIX, t('files.menu_writing_fix')), disabled: facts.writing !== true }
+    ];
     const run: MenuItem[] =
         (facts.commands ?? []).length === 0
             ? []

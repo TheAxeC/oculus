@@ -139,9 +139,11 @@
     function named(row: Change): string {
         if (row.kind === FILE_RECORD) {
             const operation = fileOperation(row.field, row.after);
-            // A replace and an lsp-edit already say how many files they wrote; the files are the
-            // lists under them.
-            return row.field === 'replace' || row.field === 'lsp-edit'
+            // A replace, an lsp-edit and a writing-fix already say how many files they wrote; the
+            // files are the lists under them.
+            return row.field === 'replace' ||
+                row.field === 'lsp-edit' ||
+                row.field === 'writing-fix'
                 ? operation
                 : t('history.file_named', operation, row.file);
         }

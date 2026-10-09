@@ -1,5 +1,6 @@
 // Layer 2, server. Running an outside program and finding where one is: the one runner the LaTeX
-// endpoint's programs (texcount, the formatters, synctex, texdoc) and the linters share.
+// endpoint's programs (texcount, the formatters, synctex, texdoc) and the process linters (ChkTeX,
+// Ruff, ShellCheck) share; the writing rules run no program.
 //
 // A program runs with no shell and its arguments as a list, under a time limit and an output limit,
 // with standard input fed. A run ends in one of six ways, each its own answer because the pages

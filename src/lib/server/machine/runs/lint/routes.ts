@@ -5,16 +5,21 @@
 // linter on the file on disk and answers `{ ok: true, rows, hash }`, `hash` being the SHA-256 of
 // the bytes the rows were read from, or `{ ok: false, state, reason? }` when the linter gave no
 // rows: `not_found` (no such program), `failed` (with the first line the program wrote to stderr,
-// or `too_large`, `unreadable`, `stopped`), `timeout`, `not_approved`, `no_config` and `off`. The
+// or `too_large`, `unreadable`, `stopped`, or for the writing rules the sentence that says why a
+// code file's comments could not be read), `timeout`, `not_approved`, `no_config` and `off`. The
 // action `config` answers the ESLint configuration file the file is linted under and whether its
 // text is approved; `approve` and `revoke` write that approval, the first only for the key the
-// reader was shown. The action `stop` ends the runs in flight for a file.
+// reader was shown. The action `stop` ends the runs in flight for a file. The action `folder` names
+// a folder and answers `{ ok: true, files }`, the writing rules' plan for the files under it
+// (writing/folder.ts), or `{ ok: false, reason }`.
 //
 // The path is resolved inside its root before any process starts (a path that climbs out of the
 // root, a link that leads out of it, a folder and a file that is gone are refused), and every
 // program is started with an argument list and no shell. A new run of a file and linter stops the
 // one in flight. ESLint runs the repository's code, so its child starts only under an approved
-// configuration text, and until then no file of the repository is imported.
+// configuration text, and until then no file of the repository is imported. The writing rules run
+// no program: Markdown and YAML are read in this process and the comments of a code file by the
+// held worker thread (writing/comments.ts).
 
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -35,6 +40,7 @@ import { hashOf } from '../../../core/file-bytes.ts';
 import { chained, type FsWrites } from '../../../core/json.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { run as runProgram } from '../../../core/program.ts';
+import { words } from '../../../core/words.ts';
 import { resolveRootPath, type Root } from '../../../files/files.ts';
 import {
     approveConfig,
@@ -47,6 +53,9 @@ import type { HeldEslints } from './eslint.ts';
 import { chktexRc, planOf, programOf, tabSizeOf, type ProcessLinter } from './linters.ts';
 import { readChktex, readEslint, readRuff, readShellcheck, sourceOf } from './readers.ts';
 import type { LintRuns } from './runs.ts';
+import type { HeldComments } from './writing/comments.ts';
+import { planFolder } from './writing/folder.ts';
+import { runWriting } from './writing/writing.ts';
 
 /** The milliseconds a run is given before it is stopped. */
 const LINT_LIMIT_MS = 30_000;
@@ -63,6 +72,12 @@ export type LintRouteOptions = {
     runs: LintRuns;
     /** The held ESLint children. */
     eslint: HeldEslints;
+    /** The held thread that finds the comments of a code file for the writing rules. */
+    comments: HeldComments;
+    /** The text catalog the writing rules' rows and reasons are worded from. */
+    catalog: () => Record<string, string>;
+    /** Whether a real path is a file the server never writes: the machine's local.yml. */
+    isProtected: (real: string) => boolean;
     /** The environment the programs are found and run in. */
     env?: NodeJS.ProcessEnv;
     /** The milliseconds a run is given; `LINT_LIMIT_MS` unless a test says otherwise. */
@@ -78,7 +93,8 @@ const bodyShape = z.discriminatedUnion('action', [
     target.extend({ action: z.literal('stop') }),
     target.extend({ action: z.literal('config') }),
     target.extend({ action: z.literal('approve'), key: z.string() }),
-    target.extend({ action: z.literal('revoke') })
+    target.extend({ action: z.literal('revoke') }),
+    target.extend({ action: z.literal('folder') })
 ]);
 
 /** The names ESLint looks for a flat configuration under, in the order it takes them. */
@@ -277,6 +293,54 @@ function fileOf(
     return { real: found.path, rootReal: realPath(dir) ?? dir };
 }
 
+/** The folder a request names inside its root, or the refusal. */
+function folderOf(
+    roots: Root[],
+    root: string,
+    path: string
+): { real: string; rootReal: string } | Response {
+    const found = resolveRootPath(roots, root, path);
+    if ('error' in found) return refuse(404, found.error);
+    const dir = roots.find((one) => one.key === root)?.dir ?? '';
+    try {
+        if (!statSync(found.path).isDirectory()) return refuse(404, 'not_a_folder');
+    } catch {
+        return refuse(404, 'not_a_folder');
+    }
+    return { real: found.path, rootReal: realPath(dir) ?? dir };
+}
+
+/** The writing rules' plan for the files under a folder. */
+async function folder(
+    body: { root: string; path: string },
+    roots: Root[],
+    options: LintRouteOptions
+): Promise<Response> {
+    if (!options.settings().on.writing) {
+        const reason = words(options.catalog(), 'lint.writing_folder_off');
+        return json({ ok: false, reason }, { headers: NO_STORE });
+    }
+    const found = folderOf(roots, body.root, body.path);
+    if (found instanceof Response) return found;
+    const held = options.runs.begin(runKey(body.root, found.real, 'folder'));
+    try {
+        const plan = await planFolder(
+            {
+                roots,
+                settings: options.settings(),
+                comments: options.comments,
+                catalog: options.catalog(),
+                isProtected: options.isProtected
+            },
+            found,
+            held.signal
+        );
+        return json(plan, { headers: NO_STORE });
+    } finally {
+        held.end();
+    }
+}
+
 /** POST /api/lint. */
 export async function handleLint(
     request: Request,
@@ -293,6 +357,7 @@ export async function handleLint(
     const parsed = bodyShape.safeParse(read.body);
     if (!parsed.success) return refuse(400, 'bad_body');
     const body = parsed.data;
+    if (body.action === 'folder') return folder(body, roots, options);
     const file = fileOf(roots, body.root, body.path);
     if (file instanceof Response) return file;
     if (body.action === 'lint') return lint(body, file, options);
@@ -348,14 +413,22 @@ async function lint(
         const outcome =
             body.linter === 'eslint'
                 ? await runEslint(file.real, file.rootReal, content, options, held.signal)
-                : await runProcess(
-                      body.linter,
-                      file.real,
-                      file.rootReal,
-                      content,
-                      options,
-                      held.signal
-                  );
+                : body.linter === 'writing'
+                  ? await runWriting(body.path, content, {
+                        settings: options.settings(),
+                        comments: options.comments,
+                        catalog: options.catalog(),
+                        signal: held.signal
+                    })
+                  : await runProcess(
+                        body.linter,
+                        file.real,
+                        file.rootReal,
+                        content,
+                        options,
+                        held.signal
+                    );
+        if (held.signal.aborted) return answer({ ok: false, state: 'failed', reason: 'stopped' });
         return answer(outcome.ok ? { ...outcome, hash: hashOf(bytes) } : outcome);
     } finally {
         held.end();

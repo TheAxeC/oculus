@@ -155,6 +155,7 @@
         if (row.kind === 'commit') return row.subject;
         if (row.kind === 'replace') return t('files.timeline_replaced');
         if (row.kind === 'lsp-edit') return t('files.timeline_lsp_edited');
+        if (row.kind === 'writing-fix') return t('files.timeline_writing_fixed');
         return row.kind === 'save' ? t('files.timeline_saved') : t('files.timeline_deleted');
     }
 

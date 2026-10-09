@@ -5,7 +5,7 @@
 import type { LintId } from '../../../../data/model/index.ts';
 import { t } from '../../../shared/words/text.ts';
 
-/** The display name of a linter: ChkTeX, Ruff, ESLint, ShellCheck. */
+/** The display name of a linter: ChkTeX, Ruff, ESLint, ShellCheck, Writing rules. */
 export function lintName(id: LintId): string {
     return t(`lint.name_${id}`);
 }

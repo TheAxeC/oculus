@@ -1,8 +1,8 @@
 // Layer 2, client state. The sources that give the problems store its rows: the language servers'
 // diagnostics, the errors a project command printed, the errors and warnings of a LaTeX build, and
-// the findings of the linters (ChkTeX, Ruff, ESLint, ShellCheck). Each is a function the store
-// calls inside its fold, so it reads reactive stores and the store folds again whenever they
-// change.
+// the findings of the linters (ChkTeX, Ruff, ESLint, ShellCheck and the writing rules). Each is a
+// function the store calls inside its fold, so it reads reactive stores and the store folds again
+// whenever they change.
 
 import type { Diagnostic } from 'vscode-languageserver-protocol';
 import type { CommandDiagnostic, LintId } from '../../data/model/index.ts';
@@ -31,7 +31,8 @@ const LINT_SOURCES: Record<LintId, string> = {
     chktex: 'ChkTeX',
     ruff: 'Ruff',
     eslint: 'eslint',
-    shellcheck: 'shellcheck'
+    shellcheck: 'shellcheck',
+    writing: 'writing'
 };
 
 /** A root the page serves, by its key and the folder it is. */
