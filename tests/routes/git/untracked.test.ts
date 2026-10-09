@@ -30,6 +30,7 @@ function over(root: string, engine?: string, extra: Partial<GitOptions> = {}) {
     const trash = vi.fn<Trash>(() => Promise.resolve());
     const options: GitOptions = {
         config: loadConfig(engineDir()).config,
+        claudeBin: 'claude',
         rootsFor: () => [root],
         trash,
         guard: () =>

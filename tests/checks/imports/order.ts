@@ -42,6 +42,7 @@ const ORDER: Record<string, string[]> = {
         'data/shapes',
         'data/helpers',
         'data/prose',
+        'data/places',
         'data/model'
     ],
     server: [

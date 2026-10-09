@@ -16,7 +16,7 @@
 // `http:` or `https:` address (`webAddress`), since the page opens it.
 
 import { z } from 'zod';
-import { webAddress } from '../../../../data/hub-address.ts';
+import { webAddress } from '../../../../data/places/hub-address.ts';
 import { CHKTEX_FIXABLE } from '../../../../data/model/index.ts';
 import type { LintEdit, LintFix, LintRow } from '../../../../data/model/index.ts';
 import { chktexFix } from './chktex-fixes.ts';

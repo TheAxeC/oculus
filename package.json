@@ -5,8 +5,10 @@
     "type": "module",
     "main": "src/desktop/main.ts",
     "scripts": {
+        "predev": "node src/lib/server/root/process/start/first-run.ts",
         "dev": "vite dev",
         "build": "vite build",
+        "prepreview": "node src/lib/server/root/process/start/first-run.ts",
         "preview": "vite preview",
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
         "lint": "eslint .",
@@ -19,8 +21,13 @@
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "diagrams": "node utils/diagrams/diagrams.mjs",
+        "preapp": "node src/lib/server/root/process/start/first-run.ts --install",
         "app": "electron .",
         "app:package": "node src/desktop/package.ts"
+    },
+    "engines": {
+        "node": "^24.15.0 || >=26.0.0",
+        "npm": ">=11"
     },
     "devDependencies": {
         "@electron/packager": "20.3.0",

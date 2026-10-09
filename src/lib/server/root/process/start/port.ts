@@ -5,7 +5,7 @@
 // while local.yml is missing.
 
 import { existsSync } from 'node:fs';
-import { localFile, readLocal } from '../../../data/sources/config.ts';
+import { localFile, readLocal } from '../../../../data/sources/config.ts';
 
 /**
  * The reader of local.yml for a server started with `defaultPort`: the file's values, and the

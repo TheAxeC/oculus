@@ -13,7 +13,7 @@ import {
     inClosedPaths,
     pathSegmentsOpen
 } from '../../../data/helpers/files/apps.ts';
-import { webAddress } from '../../../data/hub-address.ts';
+import { webAddress } from '../../../data/places/hub-address.ts';
 import type { AppRow, Message } from '../../../data/model/index.ts';
 import type { AppsSettings } from '../../../data/sources/config/settings.ts';
 import { t } from '../../shared/words/text.ts';

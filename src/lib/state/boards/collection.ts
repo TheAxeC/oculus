@@ -11,7 +11,7 @@
 // A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
 import { z } from 'zod';
-import { ADDRESSED, HOSTED, isHubPath } from '../../data/hub-address.ts';
+import { ADDRESSED, HOSTED, isHubPath } from '../../data/places/hub-address.ts';
 import { isMap } from '../../data/helpers/guards.ts';
 import {
     anyNumberShape,

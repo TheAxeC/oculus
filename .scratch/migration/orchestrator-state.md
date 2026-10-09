@@ -42,23 +42,6 @@ dispatch:   # steps in flight, up to six (Z632)
   round_1: agents/briefs/D56-round1.md (the review's findings and Z763), sent to the builder
   landing: not-started
   round: 1
-- step: R2
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a924a8b4546426f6a (claude-sonnet-5-5, the transcript's message.model, read after launch; started on Axel's word to restart R2, taking over the partial build)
-  builders_before: a00e9759490ea453e (claude-sonnet-5-5; stopped by Axel part-way through its build, after its first run and the cases ruling; its first run kept at the session's scratchpad `R2-first-run.md` and given to the new builder)
-  worktree: .agents/worktrees/R2
-  base: 5120f89cf
-  launched: 2026-10-09
-  report: agents/reviews/R2-report.md
-  brief_check: agents/reviews/R2-brief-check.md (a57eea66538e91df5, claude-opus-5-5, 224,420 tokens, 82 tool uses, 12.2 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: with D50, src/lib/data/sources/config.ts (D50 line 53, an added export; R2 engineDir at 15-30 and the head comment), config/text/server.yml (D50 server.carry; R2 new keys under server.start), HELP.md and DESIGN.md (R2 line 509 and one bullet under Decisions taken); with D56, DESIGN.md and HELP.md on other sections; docs/diagrams/ regenerated at landing; each merge simple
-  builder_usage: 164,875 tokens, 34 tool uses, 6.3 min (the first run and the hand-back of the cases); a924a8b4546426f6a, claude-sonnet-5-5, 337,954 tokens, 122 tool uses, 31.2 min (the build); round 1: 167,159 tokens, 59 tool uses, 42.5 min
-  cases: agents/briefs/R2-cases.md (Z760), sent to the builder after its first run
-  reviewer_report: agents/reviews/R2-refuter.md (a89a4942c965eeb8a, claude-opus-5-5, 283,279 tokens, 86 tool uses, 24.2 min)
-  round_1: agents/briefs/R2-round1.md (the review's findings and Z761), sent to the builder
-  landing: not-started
-  round: 1
 ```
 
 ## The standing demands (from Axel, in force)
@@ -266,6 +249,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-10 (R2 landed). R2, the first-run check, landed (booking in plan.md; `agents/reviews/R2-landing.md`) after one repair round and the review over it, its four findings closed at landing; G73 written into `agents/guarded.md`. In flight (1 of 6): D56 (builder on repair round 1, `agents/briefs/D56-round1.md`, Z763). Next: D56's review over round 1 and /land D56, then /spec D49 and /spec D55.
 - 2026-10-09 (D50 landed). D50, the hub's own folder, its shareable files and its settings layer, landed with the carry-over removed and open item 31 (c) written in; `bookmarks.yml` and `workspaces.json` moved into the hub's `.oculus/`. D56 built (report saved) and in review (a17e012de19ee2885, claude-opus-5-5). R2 in repair round 1. D49 and D55 unblocked.
 - 2026-10-09 (The move). Axel ruled open item 31 (c) and The move: no carry-over code; D50 restored to its round-1 tree and landed with the carry-over removed at landing; the five files moved by the orchestrator while Axel's server is stopped. R2 built (report saved) and in review (a89a4942c965eeb8a, claude-opus-5-5). D56 building.
 - 2026-10-09 (all agents stopped). Axel stopped every agent and reopened open items 31 and 32 (no second D50 round was approved) with 33. R2 and D56 restarted on his word with new builders a924a8b4546426f6a and a6f65daca142e0c86 taking over the partial builds; D50 stopped in round 2, waiting for 31. In flight (3 of 6): D50 (stopped, waiting), D56 and R2 (builders).

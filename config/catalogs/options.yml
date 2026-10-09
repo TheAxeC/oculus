@@ -1417,7 +1417,7 @@ options:
             help: Where the schedules' run record lives, each schedule's latest runs and the last due time it handled. Without it the file is ~/.oculus/schedule.json, mode 0600 when oculus creates it. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         claude_bin:
             section: Programs
-            help: The Claude command line that the update tasks, the prompts of schedules and the chat terminal are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
+            help: The Claude command line that the chat terminals, the worktree agents, the usage refresh, the update tasks, the prompts of schedules and the suggested commit messages are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
         open_bin:
             section: Programs
             help: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to macOS's /usr/bin/open. A change is read again at once.

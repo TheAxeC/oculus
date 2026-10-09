@@ -19,6 +19,7 @@ import { engineDir } from '../lib/data/sources/config.ts';
 import { wordsOf } from '../lib/server/root/process/words.ts';
 import { LISTEN_HOST } from '../lib/server/root/mover.ts';
 import { appHandler } from '../lib/server/root/process/build-folders.ts';
+import { machineFacts, machineLacks } from '../lib/server/root/process/start/first-run.ts';
 import { parseAppArgs, type AppArgs } from './decide/args.ts';
 import { EVENT } from './decide/channels.ts';
 import { permissionGranted } from './decide/permissions.ts';
@@ -317,13 +318,30 @@ async function run(
         else env = { ...process.env, ...login };
     }
     if (state.quitting) return;
+    // The programs and the hub are looked up in the environment the server will get.
+    const lacks = machineLacks(await machineFacts(args.engine, options.defaultPort, env), t);
+    const required = lacks.filter((lack) => lack.required);
+    if (required.length > 0) {
+        const sentences = required.map((lack) => lack.sentence).join('\n');
+        await say(t('desktop.dialog.lack_refused', sentences), [t('desktop.dialog.quit')]);
+        app.exit(1);
+        return;
+    }
     await startServer(env);
-    // The notice is a sheet of the first window, which leaves the event loop running.
+    // One sheet of the first window says everything the reader should know once the app is up: the
+    // login shell that did not answer and the programs that were not found. A sheet leaves the
+    // event loop running.
     const first = windows.lastMain();
-    if (loginSlow && first !== null) {
+    const notices = [
+        ...(loginSlow ? [t('desktop.dialog.env_slow')] : []),
+        ...(lacks.length > 0
+            ? [t('desktop.dialog.lacks', lacks.map((lack) => lack.sentence).join('\n'))]
+            : [])
+    ];
+    if (notices.length > 0 && first !== null) {
         const pressed = await showDialog(
             {
-                message: t('desktop.dialog.env_slow'),
+                message: notices.join('\n\n'),
                 buttons: [t('desktop.dialog.continue'), t('desktop.dialog.quit')],
                 cancel: 0,
                 window: first.win

@@ -1,17 +1,16 @@
-In flight (3 of 6 slots in use):
-- D50 (the hub's own folder, its shareable files and its settings layer): stopped in repair round 2; waits for Axel's go on removing the carry-over and doing the move, and on open item 31.
-- D56 (the workbench): building, restarted 2026-10-09; its first-run cases ruled (Z759).
-- R2 (the first-run check): built; in review.
+In flight (1 of 6 slots in use):
+- D56 (the workbench): building repair round 1.
 
 Queued, in order (4 steps):
-- D49 (the help pages cut): waits for D50, whose edits to the guides, DATA-MAP and the docs list it folds.
-- D55 (roots as hubs): waits for D50.
+- D49 (the help pages cut): waits for D56, whose sections in `docs/window.md`, `docs/views.md` and `docs/files-and-search.md` it folds into HELP.md.
+- D55 (roots as hubs): waits for D56, which writes the same cards, entry page and client context; its shapes are ruled (Z762).
 - Q72 (the architecture re-read): waits for D49, D55 and D56 (open item 33 (a)).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D50 (the hub's own folder, its shareable files and its settings layer), 2026-10-09, b4cb416a3.
 - D41 (links in Markdown checked), 2026-10-09, 17c8ac9bc.
 - D53 (unique views), 2026-10-09, d29631c18.
 - D46 (the VS Code palette keys), 2026-10-09, 66e5eedc6.

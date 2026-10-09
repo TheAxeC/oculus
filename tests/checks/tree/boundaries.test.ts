@@ -29,74 +29,72 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // it too and it may reach no other view's partials.
 //
 // `data/helpers/guards`, `data/accounts/calendar`, `data/accounts/mail`, `data/accounts/connect`,
-// `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/editor`,
-// `data/accounts/leads`, `data/helpers/worktrees`, `data/helpers/files/text-kind`,
-// `data/helpers/files/opens-in-program`, `data/helpers/files/languages`, `data/helpers/run/tasks`,
-// `data/helpers/run/marker`, `data/helpers/search/**`, `data/helpers/finding-text` and
-// `data/helpers/code-themes` join `data/model` in the state row as pure helpers with no reader and
-// no I/O. `data/accounts/calendar` and `data/accounts/mail` are there because how a connector
-// account is named, and how old a thread is, are read by the server that builds the credential file
-// and reads the mailbox and by the page that presses Connect and draws the age on a card;
-// `data/accounts/connect` because the rule a new account's label and a provider's client half are
-// held to is read by the Add form and the setup page before they send and by the server before it
-// writes, and a copy on each side would let them disagree; `data/accounts/leads` for
-// the same reason, since the statuses that close a lead are read by the Position Leads view, its
-// badge and the ticker on the client, and by the summary the snapshot carries on the server;
-// `data/helpers/worktrees` likewise, the Repositories view naming the path a worktree will take and
-// the write making it; `data/helpers/files/text-kind`, the file browser deciding which tab a file
-// opens in and the source route refusing a save over bytes no editor could have read;
-// `data/helpers/files/save-text`, the trim and the final newline a save applies to a source tab's
-// text;
-// `data/helpers/files/opens-in-program`, the open endpoint opening only a file whose extension
-// `open.program_ext` lists and the cards and the file view offering the control for that name
-// alone; `data/helpers/files/languages`, the reader of the `languages:` map: the server words its
-// findings from it, and the file browser, the source tab and the diff and merge views read a file's
-// language through it, so the two cannot disagree about which entries the map dropped;
-// `data/helpers/files/nesting`, the reader of the `patterns:` map of file-nesting.yml and the rule
-// that nests a folder's names: the server words its findings from it and the Files view nests the
-// rows it draws through it, so the two cannot disagree about which patterns were dropped;
-// `data/helpers/run/tasks`, the server starting an update task and the tray listing the four;
-// `data/helpers/run/schedules` and `data/helpers/run/cron`, the rule for one entry of the schedules
-// file and the runs a cron pattern has: the schedule dialog checks an entry and previews a pattern
-// before it sends, and the server reads the file and runs the timer by the same rule, so the two
-// cannot disagree on what runs;
-// `data/helpers/run/marker`, the line a project command's chain prints before each command, which
-// the server writes into the chain's line and the page reads the task's output by;
-// `data/helpers/editor`, the order that resolves a tab's editor options (`resolveEditor`) and their
-// types, which the source tab and the diff view resolve a tab's options through; and
-// `data/helpers/search/**`, the Search view refusing a query before it sends it and the search
-// route refusing the same query when it arrives, from one rule and one argument list (`query`), and
-// the Search view drawing the replacement of each hit with the rules the server writes it by
-// (`replace`); and `data/helpers/finding-text`, whose placeholder rule is the one the client's t()
-// fills a catalog string with and the one the server words every finding with before the snapshot
-// carries it; `data/helpers/code-themes`, the list of Shiki's bundled themes (ids, display names,
-// dark or light), which the server words the finding for a bad `code_theme:` from, the appearance
-// store checks a saved pick against and the Settings view draws as the Code theme menu; and
-// `data/sources/config/rail`, the rule over the `rail:` list of config/layout.yml, which the page
-// drawing the rail, the Settings view editing it and the server writing it and wording its findings
-// all read, so the three agree on which entries are pages; and `data/sources/config/settings`, the
-// typed readers of single settings, which the page reads by the rule the server reads by: the Files
-// view `files.confirm_delete`, so a delete asks only while the setting says so, the source editor
-// the paint limit, the cards and the file view the `open.program_ext` map, and the Usage view the
-// refresh cadence; and `data/sources/config/catalog/value-rule`, the rule a value of an option is
-// wrong by (its control, `min`, `max` and values), which the Settings view refuses a value by
-// before it is sent and the server's write and readers by after it, so the three agree; and
+// `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/editor`, `data/accounts/leads`,
+// `data/helpers/worktrees`, `data/helpers/files/text-kind`, `data/helpers/files/opens-in-program`,
+// `data/helpers/files/languages`, `data/helpers/run/tasks`, `data/helpers/run/marker`,
+// `data/helpers/search/**`, `data/helpers/finding-text` and `data/helpers/code-themes` join
+// `data/model` in the state row as pure helpers with no reader and no I/O. `data/accounts/calendar`
+// and `data/accounts/mail` are there because how a connector account is named, and how old a thread
+// is, are read by the server that builds the credential file and reads the mailbox and by the page
+// that presses Connect and draws the age on a card; `data/accounts/connect` because the rule a new
+// account's label and a provider's client half are held to is read by the Add form and the setup
+// page before they send and by the server before it writes, and a copy on each side would let them
+// disagree; `data/accounts/leads` for the same reason, since the statuses that close a lead are
+// read by the Position Leads view, its badge and the ticker on the client, and by the summary the
+// snapshot carries on the server; `data/helpers/worktrees` likewise, the Repositories view naming
+// the path a worktree will take and the write making it; `data/helpers/files/text-kind`, the file
+// browser deciding which tab a file opens in and the source route refusing a save over bytes no
+// editor could have read; `data/helpers/files/save-text`, the trim and the final newline a save
+// applies to a source tab's text; `data/helpers/files/opens-in-program`, the open endpoint opening
+// only a file whose extension `open.program_ext` lists and the cards and the file view offering the
+// control for that name alone; `data/helpers/files/languages`, the reader of the `languages:` map:
+// the server words its findings from it, and the file browser, the source tab and the diff and
+// merge views read a file's language through it, so the two cannot disagree about which entries the
+// map dropped; `data/helpers/files/nesting`, the reader of the `patterns:` map of file-nesting.yml
+// and the rule that nests a folder's names: the server words its findings from it and the Files
+// view nests the rows it draws through it, so the two cannot disagree about which patterns were
+// dropped; `data/helpers/run/tasks`, the server starting an update task and the tray listing the
+// four; `data/helpers/run/schedules` and `data/helpers/run/cron`, the rule for one entry of the
+// schedules file and the runs a cron pattern has: the schedule dialog checks an entry and previews
+// a pattern before it sends, and the server reads the file and runs the timer by the same rule, so
+// the two cannot disagree on what runs; `data/helpers/run/marker`, the line a project command's
+// chain prints before each command, which the server writes into the chain's line and the page
+// reads the task's output by; `data/helpers/editor`, the order that resolves a tab's editor options
+// (`resolveEditor`) and their types, which the source tab and the diff view resolve a tab's options
+// through; and `data/helpers/search/**`, the Search view refusing a query before it sends it and
+// the search route refusing the same query when it arrives, from one rule and one argument list
+// (`query`), and the Search view drawing the replacement of each hit with the rules the server
+// writes it by (`replace`); and `data/helpers/finding-text`, whose placeholder rule is the one the
+// client's t() fills a catalog string with and the one the server words every finding with before
+// the snapshot carries it; `data/helpers/code-themes`, the list of Shiki's bundled themes (ids,
+// display names, dark or light), which the server words the finding for a bad `code_theme:` from,
+// the appearance store checks a saved pick against and the Settings view draws as the Code theme
+// menu; and `data/sources/config/rail`, the rule over the `rail:` list of config/layout.yml, which
+// the page drawing the rail, the Settings view editing it and the server writing it and wording its
+// findings all read, so the three agree on which entries are pages; and
+// `data/sources/config/settings`, the typed readers of single settings, which the page reads by the
+// rule the server reads by: the Files view `files.confirm_delete`, so a delete asks only while the
+// setting says so, the source editor the paint limit, the cards and the file view the
+// `open.program_ext` map, and the Usage view the refresh cadence; and
+// `data/sources/config/catalog/value-rule`, the rule a value of an option is wrong by (its control,
+// `min`, `max` and values), which the Settings view refuses a value by before it is sent and the
+// server's write and readers by after it, so the three agree; and
 // `data/sources/config/editor-options`, the reader of the editor's options and of a repository's
 // `.oculus/settings.yml` by that rule, which the source tab, the diff view and the Settings view's
 // lines under `editor.languages` read; and `data/sources/config/catalog/options`, the options
 // catalog's types and the reader of it from the merged config, which the Settings view's rows are
 // made from, so the rows and the server's write of one option
 // (server/edit/writes/config/config-key.ts) read one description of what an option is; and
-// `data/hub-address`, the rule telling a path of the hub from a web address, which the collection
-// card reads to decide what a click opens and the Audit reads to decide which links to look for on
-// disk, and the one check of an address the page opens, which an app's `open` and the linters'
-// documentation links read; and `data/prose/literature`, the rules of the literature search that
-// both sides read: how a DOI, a PubMed id and an arXiv id are written the one way and the bounds of
-// a request, which the Literature search refuses a query by before it sends it and the route
-// refuses the same query by when it arrives, and the rule by which Lit Watch holds a paper already.
-// `data/helpers/files/paths` holds the `/` path rules (a path's last name, the path under a
-// folder, the deepest folder holding a target) that the file browser, the source tab and the status
-// bar read a root or a repository by, so the three agree on which one holds a file.
+// `data/places/hub-address`, the rule telling a path of the hub from a web address, which the
+// collection card reads to decide what a click opens and the Audit reads to decide which links to
+// look for on disk, and the one check of an address the page opens, which an app's `open` and the
+// linters' documentation links read; and `data/prose/literature`, the rules of the literature
+// search that both sides read: how a DOI, a PubMed id and an arXiv id are written the one way and
+// the bounds of a request, which the Literature search refuses a query by before it sends it and
+// the route refuses the same query by when it arrives, and the rule by which Lit Watch holds a
+// paper already. `data/helpers/files/paths` holds the `/` path rules (a path's last name, the path
+// under a folder, the deepest folder holding a target) that the file browser, the source tab and
+// the status bar read a root or a repository by, so the three agree on which one holds a file.
 // `data/helpers/files/address` holds the one address `/api/file` answers a file at, which the
 // page's reads and downloads, the editor's picture addresses and a Present slide's figure all
 // build, so the escaping of a name is one rule. `data/helpers/files/apps` holds what an app may
@@ -263,7 +261,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/sources/config/catalog/latex-tables',
         'data/sources/config/catalog/options',
         'data/sources/config/catalog/value-rule',
-        'data/hub-address',
+        'data/places/hub-address',
         'data/prose/languages',
         'data/prose/literature',
         'data/prose/lsp-servers',

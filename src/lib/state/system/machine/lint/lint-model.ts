@@ -4,7 +4,7 @@
 // may import state modules but not data/model. `webAddress` is the check a documentation address
 // passes before the page opens it.
 
-export { webAddress } from '../../../../data/hub-address.ts';
+export { webAddress } from '../../../../data/places/hub-address.ts';
 export { LINT_IDS } from '../../../../data/model/index.ts';
 export type {
     LintConfig,

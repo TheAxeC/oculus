@@ -33,6 +33,7 @@ function options(extra: Partial<GitOptions> = {}): GitOptions {
     ran = [];
     return {
         config: loadConfig(engineDir()).config,
+        claudeBin: 'claude',
         rootsFor: () => [ROOT],
         run: (action, root, fields) => {
             ran.push({ action, root, fields });

@@ -11,7 +11,7 @@ import { stringify } from 'yaml';
 import { z } from 'zod';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
-import { isHubPath } from '../../../data/hub-address.ts';
+import { isHubPath } from '../../../data/places/hub-address.ts';
 import type { Project } from '../../../data/model/index.ts';
 import { PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import {

@@ -1,7 +1,8 @@
 // Layer 2, server (the desktop host). The app's dialogs: one box with a message and the buttons the
 // caller names, answering the index of the one pressed. The message is also printed on the app's
-// output, so a run that cannot see the screen reads what was said. Every word is a catalog word,
-// handed in by the caller.
+// output, so a run that cannot see the screen reads what was said. Every word is handed in by the
+// caller: a catalog word, or a literal of main.ts's dialog for a missing package, which is said
+// before the catalog can be read.
 
 import { dialog, type BrowserWindow } from 'electron';
 

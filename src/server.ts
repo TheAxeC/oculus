@@ -3,22 +3,29 @@
 // desktop host as a utility process it has a parent: it tells the parent each port it listens on
 // and a first listen that failed, and asks the parent to show the folder panel. Started from a
 // terminal it has none and prints.
+//
+// It begins with the first-run checks (lib/server/root/process/start/first-run.ts): the Node
+// version and the installed packages before any package is loaded, then the hub folder and the
+// programs oculus runs by name. A required lack ends the start with a sentence and exit 1, and a
+// missing program is a line while the start goes on.
 
 import { existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { engineDir } from './lib/data/sources/config.ts';
-import { parseEngineArgs } from './lib/server/root/process/args.ts';
-import { createServerContext } from './lib/server/root/context.ts';
+import { engineDir } from './lib/data/places/engine-dir.ts';
 import { LISTEN_HOST } from './lib/server/root/mover.ts';
-import { BODY_LIMIT_BYTES } from './lib/server/content/memories.ts';
 import { askParentToPick, parentOf, type ParentPort } from './lib/server/root/process/parent.ts';
-import { readLocalWithDefault } from './lib/server/root/process/port.ts';
 import { onShutdown } from './lib/server/root/process/shutdown.ts';
-import { serveContext, type Handler } from './lib/server/root/process/serve.ts';
-import { wordsOf } from './lib/server/root/process/words.ts';
+import { parseEngineArgs } from './lib/server/root/process/start/args.ts';
+import {
+    installLacks,
+    machineFacts,
+    machineLacks,
+    reportLacks
+} from './lib/server/root/process/start/first-run.ts';
+import type { Handler } from './lib/server/root/process/serve.ts';
 
 // The command line before anything else, so a mistyped flag, a directory holding no config/ or a
 // handler that is no file is said and the process ends without loading the build or opening the
@@ -36,6 +43,28 @@ if ('error' in parsed) {
     process.exit(1);
 }
 
+// The first part of the first-run check, before any package is loaded: every module below that
+// imports a package is loaded with `import()` after it, since a static import of one would end in
+// Node's own "Cannot find package" before any line here ran. It asks about the checkout the code
+// runs from, never the engine, which may be a copy holding only config/.
+const writeLack = (line: string): void => {
+    console.error(line);
+};
+if (reportLacks(installLacks(engineDir(), process.versions.node), writeLack)) process.exit(1);
+
+const { BODY_LIMIT_BYTES } = await import('./lib/server/content/memories.ts');
+const { createServerContext } = await import('./lib/server/root/context.ts');
+const { readLocalWithDefault } = await import('./lib/server/root/process/start/port.ts');
+const { serveContext } = await import('./lib/server/root/process/serve.ts');
+const { wordsOf } = await import('./lib/server/root/process/words.ts');
+
+const t = wordsOf(parsed.engine);
+
+// The second part, now that the catalog can be read: the hub folder ends the start, and a missing
+// program is said in a line while the start goes on.
+const facts = await machineFacts(parsed.engine, parsed.defaultPort, process.env);
+if (reportLacks(machineLacks(facts, t), writeLack)) process.exit(1);
+
 // How large a request body the built handler's parser accepts. It is a knob of the adapter this
 // process loads, read once when that module is evaluated and only from the environment, so this
 // process sets it before the import below; it is not a setting the reader has, which is why it is
@@ -46,11 +75,15 @@ process.env.BODY_SIZE_LIMIT = String(BODY_LIMIT_BYTES);
 
 // The parent port exists in a utility process alone; it is read here once and passed down.
 const parent = parentOf((process as { parentPort?: ParentPort }).parentPort);
-const t = wordsOf(parsed.engine);
 
-// The handler the command line names, or the built app of `npm run build`. A handler that does not
-// load is said through the catalog with its file and the error's message, and ends the process.
+// The handler the command line names, or the built app of `npm run build`. A default handler that
+// was never built is said with the command that makes it. A handler that does not load is said
+// through the catalog with its file and the error's message, and ends the process.
 const built = new URL('../build/handler.js', import.meta.url).href;
+if (parsed.handler === undefined && !existsSync(fileURLToPath(built))) {
+    console.error(t('server.start.handler_not_built', fileURLToPath(built), engineDir()));
+    process.exit(1);
+}
 const handlerUrl = parsed.handler === undefined ? built : pathToFileURL(parsed.handler).href;
 let loaded: { handler: Handler };
 try {

@@ -191,6 +191,8 @@ export type GitOptions = {
      * the text catalog every sentence of a write is worded from.
      */
     config: Record<string, unknown>;
+    /** The `claude_bin` of local.yml: the program that suggests a commit message. */
+    claudeBin: string;
     /** What an action does; the real git-write.ts operations when absent. */
     run?: GitRun;
     /** Which roots a request may name; the published workspaces and the hub when absent. */
@@ -300,12 +302,14 @@ async function suggestFor(
     roots: string[],
     config: Record<string, unknown>,
     text: Record<string, string>,
+    claudeBin: string,
     options: MessageOptions = {}
 ): Promise<Outcome> {
     return suggestMessage(
         root,
         messagePrompt(config),
         text,
+        claudeBin,
         { ...options, model: messageModel(config) },
         roots
     );
@@ -439,7 +443,14 @@ export async function handleGit(
         const answer = await (
             options.suggest ??
             ((selected, allowed) =>
-                suggestFor(selected, allowed, options.config, text, options.message))
+                suggestFor(
+                    selected,
+                    allowed,
+                    options.config,
+                    text,
+                    options.claudeBin,
+                    options.message
+                ))
         )(root, roots);
         if (!answer.ok) return json({ error: answer.error }, { status: 400, headers: NO_STORE });
         return json({ ok: true, output: answer.output }, { headers: NO_STORE });

@@ -1,5 +1,7 @@
 // Layer 2, server. The suggested commit message: the staged diff read by `claude -p` once, and the
-// text it answers with handed to the page for Axel to edit. Nothing here commits anything.
+// text it answers with handed to the page for Axel to edit. Nothing here commits anything. The
+// program is the `claude_bin` of local.yml, which the route passes in, so one key names the Claude
+// CLI for every caller.
 //
 // The instruction is the catalog's `git.message_prompt`, so the shape of a hub commit message (a
 // capitalised imperative subject, a blank line, `- Verb ...` bullets, no attribution of any kind)
@@ -13,9 +15,6 @@ import { execFile } from 'node:child_process';
 import { z } from 'zod';
 import { words } from '../core/words.ts';
 import { allowedRoots, MAX_OUTPUT, stagedDiff, type Outcome } from './git-write.ts';
-
-/** The CLI this asks. */
-export const CLAUDE = 'claude';
 
 /** Milliseconds the CLI is given to answer. */
 export const TIMEOUT_MS = 60000;
@@ -56,11 +55,12 @@ export async function suggestMessage(
     root: string,
     prompt: string,
     text: Record<string, string>,
+    claudeBin: string,
     options: MessageOptions = {},
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
     const read = options.diff ?? stagedDiff;
-    const asked = options.ask ?? ((one, model, input) => run(one, model, input, text));
+    const asked = options.ask ?? ((one, model, input) => run(claudeBin, one, model, input, text));
     const diff = await read(root, text, roots);
     if (!diff.ok) return diff;
     if (diff.output.trim() === '') {
@@ -84,6 +84,7 @@ export async function suggestMessage(
 
 /** The real subprocess: one non-interactive run, the diff on stdin, the text on stdout. */
 function run(
+    claudeBin: string,
     prompt: string,
     model: string,
     input: string,
@@ -92,7 +93,7 @@ function run(
     const args = model === '' ? ['-p', prompt] : ['--model', model, '-p', prompt];
     return new Promise((settle) => {
         const child = execFile(
-            CLAUDE,
+            claudeBin,
             args,
             { encoding: 'utf8', timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT },
             (error, stdout, stderr) => {

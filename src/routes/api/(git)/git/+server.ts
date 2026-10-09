@@ -19,6 +19,7 @@ const options = (locals: App.Locals) => {
     const server = locals.server;
     return {
         config: locals.config().config,
+        claudeBin: server.local.claudeBin,
         rootsFor: () => allowedRoots(gitRoots(server.hub), server.local.hub),
         refresh: (root: string) => server.git.refresh(root),
         writes: server.opsWrites,

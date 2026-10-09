@@ -289,7 +289,21 @@ text:
             unreadable: the manifest could not be read
         start:
             already_running: oculus is already running; its window is brought to the front
+            fix_brew: Run brew install {0}.
+            fix_claude: Install the Claude CLI from https://code.claude.com/docs/en/setup, or set claude_bin in {0} to its path.
+            fix_install: Install {0} with your package manager.
+            fix_perl_xcode: Perl comes with the macOS Command Line Tools; run xcode-select --install.
+            fix_xcode: Run xcode-select --install.
             handler_failed: 'oculus: the server handler {0} could not be loaded: {1}'
+            handler_not_built: 'oculus: the server handler {0} does not exist; run npm run build in {1} to make it'
+            lack_hub: '{0} is not a folder, so there is no research hub to read. Set hub in {1} to the folder of the research hub.'
+            lack_hub_unreadable: '{0} cannot be read ({1}), so there is no research hub to read. Allow oculus to read it, or set hub in {2} to the folder of the research hub.'
+            lack_program: '{0} was not found, so {1} do not work. {2}'
+            lack_stub: git is the macOS stub at /usr/bin/git and the Command Line Tools are not installed, so {0} do not work. {1}
+            needs_claude: the chat terminals, the worktree agents, the usage refresh, the update tasks, the prompts of schedules and the suggested commit messages
+            needs_git: Source Control and History
+            needs_perl: the line counts of the Status view
+            needs_tmux: the terminals and their sessions
             port_in_use: 'oculus: port {0} is in use'
         task:
             name: 'Task: {0}'

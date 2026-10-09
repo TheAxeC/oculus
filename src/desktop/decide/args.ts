@@ -5,7 +5,7 @@
 // `--default-port` and `--handler` are refused, since the app chooses its port and its handler; the
 // first two with the sentence parseEngineArgs gives.
 
-import { parseEngineArgs, type ArgsReader } from '../../lib/server/root/process/args.ts';
+import { parseEngineArgs, type ArgsReader } from '../../lib/server/root/process/start/args.ts';
 
 /** What the command line asks for. */
 export type AppArgs = { engine: string };

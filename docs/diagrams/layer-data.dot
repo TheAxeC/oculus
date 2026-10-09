@@ -11,6 +11,7 @@ digraph layer_data {
         "folder data/shapes" [label="data/shapes"];
         "folder data/helpers" [label="data/helpers"];
         "folder data/prose" [label="data/prose"];
+        "folder data/places" [label="data/places"];
         "folder data/model" [label="data/model"];
         "folder data to folder data/helpers" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data to folder data/shapes" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -19,6 +20,7 @@ digraph layer_data {
         "folder data/sources to folder data/accounts" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/helpers" [label="35", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data/sources to folder data/places" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/prose" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/shapes" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/snapshot" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -38,7 +40,8 @@ digraph layer_data {
     "folder data/accounts" -> "folder data/shapes" [style=invis, weight=10, minlen=2];
     "folder data/shapes" -> "folder data/helpers" [style=invis, weight=10, minlen=2];
     "folder data/helpers" -> "folder data/prose" [style=invis, weight=10, minlen=2];
-    "folder data/prose" -> "folder data/model" [style=invis, weight=10, minlen=2];
+    "folder data/prose" -> "folder data/places" [style=invis, weight=10, minlen=2];
+    "folder data/places" -> "folder data/model" [style=invis, weight=10, minlen=2];
     "folder data" -> "folder data to folder data/helpers" [arrowhead=none, minlen=5, weight=10];
     "folder data to folder data/helpers" -> "folder data/helpers" [];
     "folder data" -> "folder data to folder data/shapes" [arrowhead=none, minlen=3, weight=10];
@@ -51,8 +54,10 @@ digraph layer_data {
     "folder data/sources to folder data/accounts" -> "folder data/accounts" [];
     "folder data/sources" -> "folder data/sources to folder data/helpers" [arrowhead=none, minlen=3, weight=10];
     "folder data/sources to folder data/helpers" -> "folder data/helpers" [];
-    "folder data/sources" -> "folder data/sources to folder data/model" [arrowhead=none, minlen=5, weight=10];
+    "folder data/sources" -> "folder data/sources to folder data/model" [arrowhead=none, minlen=7, weight=10];
     "folder data/sources to folder data/model" -> "folder data/model" [];
+    "folder data/sources" -> "folder data/sources to folder data/places" [arrowhead=none, minlen=5, weight=10];
+    "folder data/sources to folder data/places" -> "folder data/places" [];
     "folder data/sources" -> "folder data/sources to folder data/prose" [arrowhead=none, minlen=5, weight=10];
     "folder data/sources to folder data/prose" -> "folder data/prose" [];
     "folder data/sources" -> "folder data/sources to folder data/shapes" [arrowhead=none, minlen=3, weight=10];
@@ -71,7 +76,7 @@ digraph layer_data {
     "folder data/shapes to folder data/helpers" -> "folder data/helpers" [];
     "folder data/shapes" -> "folder data/shapes to folder data/model" [arrowhead=none, minlen=3, weight=10];
     "folder data/shapes to folder data/model" -> "folder data/model" [];
-    "folder data/helpers" -> "folder data/helpers to folder data/model" [arrowhead=none, minlen=1, weight=10];
+    "folder data/helpers" -> "folder data/helpers to folder data/model" [arrowhead=none, minlen=3, weight=10];
     "folder data/helpers to folder data/model" -> "folder data/model" [];
     "folder data/helpers" -> "folder data/helpers to folder data/prose" [arrowhead=none, minlen=1, weight=10];
     "folder data/helpers to folder data/prose" -> "folder data/prose" [];
