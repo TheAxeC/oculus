@@ -35,8 +35,10 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D41-report.md
   builder_usage: 190,097 tokens, 596 tool uses, 147.6 min
   brief_check: agents/reviews/D41-brief-check.md (ac604810d19c5e3dc, claude-opus-5-5, 322,042 tokens, 110 tool uses, 15.3 min; closed inline in the brief by the orchestrator)
+  reviewer_report: agents/reviews/D41-refuter.md (a0542130f88439869, claude-opus-5-5, 78,020 tokens, 114 tool uses, 28.4 min)
+  round_1: agents/briefs/D41-round1.md, sent to the builder over the tree copied at .agents/worktrees/D41-round0
   landing: not-started
-  round: 0
+  round: 1
 - step: D57
   executor: agent
   worker: claude:sonnet at ordo-high

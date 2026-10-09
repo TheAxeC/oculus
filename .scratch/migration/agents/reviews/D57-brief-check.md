@@ -160,3 +160,23 @@ The brief dictates no paragraph word for word. What to build 4 dictates the cont
 - The ordering against D49. D49 removes `docs/window.md` and comes before D57 in the ledger (`plan.md:705` and `:713`), so if D49 lands first, What to build 4 and the write-list line `docs/window.md line 41` go stale. D49 is not in flight (`grep -n "step:" orchestrator-state.md` shows only D41), so this is not a premise at this head, only an ordering point for the orchestrator.
 
 Usage: brief-check agent for D57. Its agent id is not shown to this session.
+
+## Closed
+
+The G29 line under "What is on the tree", the G29 run under "Verify" item 2 and the rulings in decisions 1 and 2 were written while the check ran, so the check may not have seen them at its start; it re-read the brief and reports on that text. Each finding, and what changed:
+
+- Names, `registry.ts:203-204`: the comment is added to "What is on the tree" and to the paths, with its line range.
+- Names, the comments of `closePane` (`tree.ts:261-265`), `repane` (`model.ts:237-242`), `saved.ts:18-20`, `workbench.ts:42`, `nested.ts:168` and `:209`: listed under "What is on the tree", each marked in the report.
+- Names, the field name `added` is the brief's own choice: decision 1 keeps it and says the ruling gave no name; it is an internal key of the browser-saved layout.
+- Premises, line ranges of `KeepRule`, `removeTab`, `closeInstance`, `closePane`, `splitPane`: corrected.
+- Premise 1, `withoutLeaves` reached only by a saved layout's refused page leaf: corrected under "What is on the tree", in item 1 and in case 18.
+- Premise 2, the Explorer's left pane holds five views: case 3 names all five; `docs/window.md:15` is added to the paths and to item 4.
+- Premises 3 and 4, `floatTab`, `moveInstance`, `adoptFloats` and `floatPane`: added under "What is on the tree", in items 1 to 3, the Read list and cases 20 to 23.
+- Premise 5, the base copy: made at the preparation, before dispatch.
+- Case 3: names five views. Case 4: names the Explorer page and its views. Case 18: rewritten as the saved layout's refused page leaf.
+- The landing look: cases 1 to 4 run on a scratch oculus with rail pages made from their arrangements, cases 5, 12 and 13 on TEST.
+- Verify item 5 named standards pages the configuration does not list: it reads against `agents/spec.md`'s prose rules. Item 1 runs `npm run diagrams` first. Item 2 runs G31's and G28's tests with G29's.
+- The question, What to build 1 and 2 passing on a hand-built pane: a case's pane is made by the function that makes it in the product, never by hand.
+- The question, What to build 3 and 4 incomplete: the callers and the run-time panes the check listed are named in items 3 and 4, and cases 24 to 26 cover them.
+- Implied inputs 1 to 11: cases 20 to 28, case 5 (`moveInstance`, with its lines added to the Read list) and case 18.
+- Declined to judge, the order against D49: D49 removes `docs/window.md` and is not in flight; D49's brief carries the text D57 writes there.
