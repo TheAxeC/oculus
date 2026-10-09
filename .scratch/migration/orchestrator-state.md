@@ -50,7 +50,20 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D56-report.md
   brief_check: agents/reviews/D56-brief-check.md (ab76aa6336c81ae1d, claude-opus-5-5, 269,002 tokens, 103 tool uses, 13.1 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D50, config/layout.yml (D50 the docs list, the help arrangement and the layer comments; D56 a new top-level workbench key), ActivityRail.svelte (D50 53, 63-65, 161-171; D56 the Workbenches button), the head comment of views/sources/files/Files.svelte (D50 43-49), docs/window.md (D50 25 and 29; D56 a new section), DESIGN.md and HELP.md (D50 170; D56 other lines); different lines, each merge simple
+  builder_usage: 286,546 tokens, 70 tool uses, 11.0 min (the first run and the hand-back of the cases)
   cases: agents/briefs/D56-cases.md (Z759), sent to the builder after its first run
+  landing: not-started
+  round: 0
+- step: R2
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a00e9759490ea453e (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/R2
+  base: 5120f89cf
+  launched: 2026-10-09
+  report: agents/reviews/R2-report.md
+  brief_check: agents/reviews/R2-brief-check.md (a57eea66538e91df5, claude-opus-5-5, 224,420 tokens, 82 tool uses, 12.2 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: with D50, src/lib/data/sources/config.ts (D50 line 53, an added export; R2 engineDir at 15-30 and the head comment), config/text/server.yml (D50 server.carry; R2 new keys under server.start), HELP.md and DESIGN.md (R2 line 509 and one bullet under Decisions taken); with D56, DESIGN.md and HELP.md on other sections; docs/diagrams/ regenerated at landing; each merge simple
   landing: not-started
   round: 0
 ```
@@ -258,6 +271,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (R2 launched). D56's first-run cases ruled as Z759 (`agents/briefs/D56-cases.md`) and its builder resumed. R2 prepared (base 5120f89cf, brief `agents/briefs/R2.md` with G73 and every closure of its brief check) and its builder a00e9759490ea453e (claude-sonnet-5-5) launched in `.agents/worktrees/R2`, base copy in `.agents/worktrees/R2-base`. In flight (3 of 6): D50 (round 2), D56 (builder, after the cases ruling), R2 (builder).
 - 2026-10-09 (D50 round 2). Axel ruled open items 31 and 32 (a). D50's repair round 2 (`agents/briefs/D50-round2.md`: open item 31 (a), a kept machine app asks again after a change oculus did not write; Z758's carry-over links, dangling link, false sentences and test titles) sent to builder a30b6993857882108; R2 is prepared again with G73. Open item 33 (Q72's wait) raised. In flight (2 of 6): D50 (round 2), D56 (builder).
 - 2026-10-09 (D56 launched). D56 prepared (base dee635dbd, brief `agents/briefs/D56.md` with every closure of its brief check, the `context.ts` size reread after D41) and its builder a98f8c8c562caa8d7 (claude-sonnet-5-5) launched in `.agents/worktrees/D56`, base copy in `.agents/worktrees/D56-base`. In flight (2 of 6): D50 (waits for open item 31 before its landing; its review over round 1's findings closed as Z758, to be fixed at landing), D56 (builder).
 - 2026-10-09 (after D41). D41 landed (links in Markdown checked; booking in plan.md; `agents/reviews/D41-landing.md`) after its back-out, the diagnosis, the second build, one repair round and the review over it; the review's five findings closed at landing, with the folder-limit and comment-width fixes of the gate. `npm ci` was run in main's `tools/oculus` for the two new packages. D50's review over repair round 1 saved (a482febcba2c8b315); its landing is next. D56 is prepared next on the new head. In flight (1 of 6): D50.
