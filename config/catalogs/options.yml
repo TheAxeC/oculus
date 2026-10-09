@@ -829,7 +829,7 @@ options:
         git.message_model:
             heading: editor
             section: Git
-            help: The model the Changes view asks for a suggested commit message. Empty uses the command line's own default model.
+            help: The model the Changes section of the Session view asks for a suggested commit message. Empty uses the command line's own default model.
             default: ''
             control: choice
             from: models

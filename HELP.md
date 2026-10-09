@@ -40,7 +40,7 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | arrows, Home / End, a letter | in a tree (Files, Repositories and the other explorers): up and down a row, into and out of a folder, the first and last row, and the next row whose name starts with that letter (Cmd or Ctrl with a letter is the browser's, except Cmd+A, which selects every row of the tree and never page text; Cmd+Enter opens the file beside the pane) |
 | Delete | close the focused tab, asking first when it holds unsaved text; a pinned tab is not closed, the first tab that is not pinned is shown |
 | f1-f3 | open a view of the Focus page's group |
-| m1-m7 | open a view of the Sessions page's group |
+| m1-m5 | open a view of the Sessions page's group |
 | p1-p4 | open a view of the Projects page's group |
 | e1-e6 | open a view of the Incoming page's group |
 | s1-s8 | open a view of the Explorer page's group |
@@ -131,12 +131,10 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `inbox` | [Inbox](docs/views.md#inbox) | The reader's own mailboxes read live, one row per configured account, with each thread's wish and a drafted answer. |
 | `linkedin` | [LinkedIn](docs/views.md#linkedin) | The posts pipeline: what is posted and what is still an idea. |
 | `session-list` | [Sessions](docs/views.md#sessions) | Every agent session on this machine, grouped by workspace, with the terminals oculus runs below them. |
-| `session-detail` | [Session](docs/views.md#session) | One session in a tab of its own: what it is doing, its model, its workspace and its controls. |
+| `session-detail` | [Session](docs/views.md#session) | One session in a tab of its own, in three sections: Details (what it is doing, its model, its workspace and its controls), Changes (the git state of its workspace, the files it touched and the commit box) and Agents (the subagents its transcript names). |
 | `terminal` | [Terminal](docs/views.md#terminal) | A terminal panel of its own: each Terminal tab owns one or more terminals running Claude, Codex or a shell inside tmux. |
 | `transcript` | [Transcript](docs/views.md#transcript) | One session's turns as they were written, one tab per session. |
 | `timeline` | [Timeline](docs/views.md#timeline) | One session's turns over time. |
-| `changes` | [Changes](docs/views.md#changes) | The git state of the workspace a session works in: its branch, the files the session touched (each with its name first and its folder after it) and the commit box. |
-| `agents` | [Agents](docs/views.md#agents) | The agents a session has running under it: the subagents its transcript names. |
 | `status` | [Status](docs/views.md#status) | Whether the socket is up, which snapshot the page holds, and the line counts of oculus's own files. |
 | `findings` | [Findings](docs/views.md#findings) | Every problem the data layer found in the hub's files, each naming its file and key. |
 | `gallery` | [Gallery](docs/views.md#gallery) | Every primitive with sample data in one pane, opened under each theme. |

@@ -1,4 +1,4 @@
-# Oculus text owned by the session-detail view.
+# Oculus text owned by the Session view (session-detail) and its Details section.
 text:
     sessions:
         cache: prompt cache
@@ -38,6 +38,7 @@ text:
         resume_label: Resume
         resume_live: This session is still running. It can be resumed once it has ended.
         resume_unknown: The snapshot no longer holds this session.
+        section_details: Details
         tok_in: in {0}
         tok_out: out {0}
         tok_think: thinking {0}

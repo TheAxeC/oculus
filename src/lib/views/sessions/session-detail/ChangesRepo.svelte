@@ -1,10 +1,10 @@
 <script lang="ts">
-    // Layer 3, sessions view partial. The repository a session works in: its branch line, the
-    // new-branch field, its changes and the commit box. The commit box is
-    // views/shared/changes/CommitBox.svelte, the one the Repositories view draws, so a message
-    // typed here is the message that view shows for the same repository, the four ways to commit
-    // are the same four, and its one button says Sync Changes or Publish Branch where there is
-    // nothing to commit, which is how this panel pushes.
+    // Layer 3, partial of views/sessions/session-detail/ChangesRepository.svelte. The repository a
+    // session works in when git has read it: its branch line, the new-branch field, its changes and
+    // the commit box. The commit box is views/shared/changes/CommitBox.svelte, the one the
+    // Repositories view draws, so a message typed here is the message that view shows for the same
+    // repository, the four ways to commit are the same four, and its one button says Sync Changes
+    // or Publish Branch where there is nothing to commit, which is how this section pushes.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -16,6 +16,7 @@
     import { branchState } from '$lib/views/shared/changes/branch-state';
     import type { GitEntry, GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import SharedMark from './SharedMark.svelte';
 
     type Props = {
         root: string;
@@ -55,12 +56,7 @@
 </script>
 
 {#snippet mark(entry: GitEntry)}
-    {@const also = shared(entry.path)}
-    {#if also.length > 0}
-        <span class="mark" title={t('sessions.ch_shared_tip', also.join(', '))}
-            >{t('sessions.ch_shared')}</span
-        >
-    {/if}
+    <SharedMark also={shared(entry.path)} />
 {/snippet}
 
 <section class="sec" data-repo="readable">
@@ -127,11 +123,6 @@
         border-bottom: 1px solid var(--line);
         padding-bottom: 2px;
         margin-bottom: 4px;
-    }
-    .mark {
-        flex: 0 0 auto;
-        font-size: var(--fs-xs);
-        color: var(--c-amber-txt, var(--muted));
     }
     .busy {
         display: flex;

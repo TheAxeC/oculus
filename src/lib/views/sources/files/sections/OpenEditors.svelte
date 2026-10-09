@@ -18,11 +18,14 @@
     // a copy of the tabs. It holds nothing of its own but the close that waits on the dialog and
     // the row being dragged.
 
-    import Section from './Section.svelte';
+    import Section from '$lib/views/shared/explorer/sections/Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
-    import { headKeys, type SectionMove } from './list-drag.svelte';
+    import {
+        headKeys,
+        type SectionMove
+    } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';

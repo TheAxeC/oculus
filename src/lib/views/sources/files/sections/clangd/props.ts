@@ -3,7 +3,7 @@
 // the reader looked at last on the page, or null for none.
 
 import type { FollowTab } from '$lib/state/sources/explorer/sections/followed-tab';
-import type { SectionMove } from '../list-drag.svelte';
+import type { SectionMove } from '$lib/views/shared/explorer/sections/list-drag.svelte';
 
 export type ClangdProps = {
     open: boolean;

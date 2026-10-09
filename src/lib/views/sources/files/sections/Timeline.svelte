@@ -35,11 +35,14 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Section from './Section.svelte';
+    import Section from '$lib/views/shared/explorer/sections/Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
-    import { headKeys, type SectionMove } from './list-drag.svelte';
+    import {
+        headKeys,
+        type SectionMove
+    } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { nameOf, type FilesView, type RowRef } from '$lib/state/sources/fs';
     import {

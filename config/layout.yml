@@ -62,7 +62,7 @@ arrangements:
               children:
                 - { kind: pane, view: terminal }
                 - { kind: pane, view: [transcript, timeline] }
-        - { kind: pane, view: [session-detail, changes, agents, { view: files, state: { follow: true } }] }
+        - { kind: pane, view: [session-detail, { view: files, state: { follow: true } }] }
   projects:
     root: { kind: pane, view: [projects, coauthor, archive, personal] }
   incoming:

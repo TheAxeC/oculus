@@ -91,7 +91,6 @@ icons:
     funding: banknote
     pillar: layers
     code: code
-    changes: git-branch
     repositories: folder-git-2
     search: file-search
     diff: file-diff

@@ -16,11 +16,15 @@
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Failed from '$lib/views/shared/explorer/tree/Failed.svelte';
-    import Section from './Section.svelte';
+    import Section from '$lib/views/shared/explorer/sections/Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
-    import { createListDrag, listKeys, type ListSectionProps } from './list-drag.svelte';
+    import {
+        createListDrag,
+        listKeys,
+        type ListSectionProps
+    } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';

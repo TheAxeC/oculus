@@ -5,12 +5,15 @@
     // where the section can ask the server again, a Refresh before it. The caller draws the rows.
 
     import type { Snippet } from 'svelte';
-    import Section from '../Section.svelte';
+    import Section from '$lib/views/shared/explorer/sections/Section.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
-    import { headKeys, type SectionMove } from '../list-drag.svelte';
+    import {
+        headKeys,
+        type SectionMove
+    } from '$lib/views/shared/explorer/sections/list-drag.svelte';
 
     type Props = {
         /** The section's name, already translated. */

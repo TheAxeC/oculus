@@ -1,9 +1,9 @@
 // Layer 2, client state. What the views read out of the bodies of the git endpoints they fetch: the
-// branches the Changes tab lists, a commit's files, a diff, a page of the graph, the three sides of
-// a conflict and the gutter's marks and blame. The views keep the `fetch` and its failure; each
-// function here takes the status and the body `readJson` (data/shapes/shapes.ts) read, and answers
-// what the view draws, so a body that is no JSON, a field of the wrong type or an item a list
-// should not hold never reaches a view as the type the model declares for it.
+// branches the Changes section lists, a commit's files, a diff, a page of the graph, the three
+// sides of a conflict and the gutter's marks and blame. The views keep the `fetch` and its failure;
+// each function here takes the status and the body `readJson` (data/shapes/shapes.ts) read, and
+// answers what the view draws, so a body that is no JSON, a field of the wrong type or an item a
+// list should not hold never reaches a view as the type the model declares for it.
 //
 // A list is read item by item: the list itself when every item passes, a new list of the items
 // that pass otherwise. An item that passes is answered as it came. An `error` that is not text is

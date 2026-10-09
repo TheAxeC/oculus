@@ -18,13 +18,7 @@ export type Translate = (key: string, ...args: (string | number)[]) => string;
  * when the page holds one. A Terminal tab draws only the terminals it owns and follows no
  * selection, so it is not among them.
  */
-export const SESSION_VIEWS = [
-    'session-list',
-    'session-detail',
-    'timeline',
-    'changes',
-    'agents'
-] as const;
+export const SESSION_VIEWS = ['session-list', 'session-detail', 'timeline'] as const;
 
 /**
  * Whether a tree already shows a view that follows the selected session; when it shows none, a

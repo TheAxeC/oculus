@@ -8,6 +8,7 @@
 import { t } from '../../../shared/words/text.ts';
 import type { LayoutAccess } from '../access.ts';
 import { defaultPages, newPage, type Pages } from '../model.ts';
+import { treeWithoutRetired } from './migrate.ts';
 import { needsFloats, parseLayout, parseWorkbench } from './saved.ts';
 import {
     LAYOUT_KEY,
@@ -95,7 +96,11 @@ export function createLoad(access: LayoutAccess, storage: LayoutStorage, set: Lo
         const raw = storage.read(LAYOUT_KEY);
         const parsed = raw === null ? null : parseLayout(raw, first);
         if (raw !== null && raw !== '' && parsed === null) storage.remember(UNREAD_KEY, raw);
-        const previous = parseWorkbench(storage.read(PREVIOUS_KEY));
+        const before = parseWorkbench(storage.read(PREVIOUS_KEY));
+        // The workbench a browser held before pages gets the same carrying of retired views as a
+        // saved page (migrate.ts), so a retired tab in it draws as the view that replaced it.
+        const previous =
+            before === null ? null : { ...before, root: treeWithoutRetired(before.root) };
         set.clearAttention();
         // A browser that ran before pages holds one workbench, and holds the user's own arrangement
         // beside it when the rail control pages retired had put the sessions arrangement on screen.

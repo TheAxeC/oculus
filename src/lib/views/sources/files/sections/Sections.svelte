@@ -38,7 +38,7 @@
     import type { Entry } from '$lib/state/boards/collection';
     import type { FilesView, RowRef } from '$lib/state/sources/fs';
     import type { FollowTab } from '$lib/state/sources/explorer/sections/followed-tab';
-    import type { SectionMove } from './list-drag.svelte';
+    import type { SectionMove } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import { noteId } from '$lib/state/life/notes';
     import { refusal } from '$lib/state/sources/explorer/acts/refusal';
     import { sectionOpen } from '$lib/state/sources/explorer/sections/section-state';

@@ -53,21 +53,6 @@ dispatch:   # steps in flight, up to six (Z632)
   builder_usage: 306,126 tokens, 80 tool uses, 16.3 min (the first run and the hand-back of case 9); after the ruling, to the hand-back on the 50 ms bound: 75,516 tokens, 155 tool uses, 69.5 min; resumed with the ruling on the 50 ms bound, to the hand-back on the F1 check: 243,385 tokens, 102 tool uses, 69.4 min
   landing: not-started
   round: 0
-- step: D47
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a03cb689a744cc64c (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D47
-  base: 5f08fde1a
-  launched: 2026-10-09
-  report: agents/reviews/D47-report.md
-  builder_usage: 118,882 tokens, 144 tool uses, 59.6 min; round 1: 237,020 tokens, 71 tool uses, 28.3 min
-  brief_check: agents/reviews/D47-brief-check.md (a176332cf8ff0b352, claude-opus-5-5, 229,921 tokens, 87 tool uses, 10.2 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: with D46, config/text/app.yml line 13 (the same line: D47 changes `m1-m7`, D46 adds the palette rows; merged by hand at the later landing) and HELP.md (D47 lines 43, 134, 138-139, D46 lines 79-80); with D57, instances.ts (D57 line 83, D47 lines 139 and 164), saved/saved.ts (D57 lines 18, 372, 556-557, 604; D47 lines 526, 557 and 562; line 557 is shared and is merged by hand at D47's landing as main's paragraph followed by D47's one sentence), config/layout.yml (D57 line 44, D47 line 65) and DESIGN.md (D57 line 238); with D41, DESIGN.md (D41 lines 23, 166, 575-576; D47 lines 225, 456), docs/views.md (D41 lines 73, 213; D47 lines 159-181) and sections/Outline.svelte (D41 the head comment and lines 147-151, D47 the import line); different lines except app.yml, each merge simple; config/behavior.yml line 257 and config/catalogs/options.yml line 832 (the Changes view's sentence), with D46 (behavior.yml 263-267, options.yml), D48 and D50 (options.yml), different lines, the merge simple
-  reviewer_report: agents/reviews/D47-refuter.md (af6ed9204a4a55b6f, claude-opus-5-5, 295,499 tokens, 92 tool uses, 39.4 min); over round 1: a03935f40685cc337, claude-opus-5-5, 222,848 tokens, 63 tool uses, 20.3 min
-  round_1: agents/briefs/D47-round1.md, sent to the builder over the tree copied at .agents/worktrees/D47-round0
-  landing: cherry-picking
-  round: 1
 - step: D48
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -105,6 +90,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: d7a654584
   launched: 2026-10-09
   report: agents/reviews/D52-report.md
+  builder_usage: 274,474 tokens, 244 tool uses, 74.8 min
   brief_check: agents/reviews/D52-brief-check.md (af6a63a7f7aa23810, claude-opus-5-5, 227,555 tokens, 99 tool uses, 13.1 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: docs/views.md with D41 (73, the Audit section at 211), D47 (159-181), D48 (5-7, 21-23) and D51 (243), D52 lines 95-118 and 249-257; HELP.md with D46 (79-80), D47 (43) and D48 (105), D52 line 156; docs/window.md with D46 (72-80), D52 line 41, which D57 rewrote on main after D52's base, so line 41 is merged by hand at D52's landing; docs/DATA-MAP.md with D41 (69), D52 lines 156-177, 193-194, 284 and 352; src/lib/data/helpers/hub-names.ts with D48 (82), D52 93-106; config/text/findings.yml with D41 (keys it adds) and D48 (43, 45), D52 200-201; src/lib/data/snapshot/normalise.ts with D48 (234-280, 321-323, 530-531), D52 line 514; tests/checks/tree/allow-duplication.txt with D47 (23), D52 line 20; tests/checks/source/keys.test.ts with D41, D46, D47 and D48, each only the keys it adds or removes; network/events.yml and education/education.yml changed by Axel's f28e137f1 after D52's base, every entry gaining a key line. Different lines everywhere, so the merges are simple, except window.md line 41 and Axel's two files, which the landing merges by hand.
   landing: not-started
@@ -310,6 +296,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (after D47). D47 landed (one Session view; booking in plan.md; `agents/reviews/D47-landing.md`) after one repair round and the review over it, its three findings closed at landing; fixes at landing: the `saved.ts` comment merged with D57's, the report's `out-first.log` description corrected in the booking, `tests/routes/edit/roots.test.ts` tagged slow under Z64. In flight: D41 (taken back; its diagnosis came back with a cause and a fix, `agents/reviews/D41-diagnosis.md`), D46 (waiting for open item 28), D48 (first review running), D51 (repair round 1 running), D52 (first review running). Next: D41's cause into its Step 0, then /spec D41 again; D50 into the freed slot.
 - 2026-10-09 (D41 taken back). D41's landing stopped before main was touched: the gate passed `npm run test:landing` but for the integrity check of Axel's `network/events.yml` (open item 27), and the look failed case 34 (Shift+F12 on a Markdown heading finds no references; cause not known), recorded in D41's Step 0; the fixes at landing are committed on the branch D41 (ce1eafcc8), the guarded lines in `agents/reviews/D41-guarded.patch`. In flight: D46, D48, D52 (builders), D47 (review over round 1), D51 (first review), D41 (backed out, its slot held). Next: /diagnose D41 red line, then /spec D41 again; D50's preparation and dispatch when a slot frees.
 - 2026-10-09 (after D57). D57 landed (an empty pane closes; booking in plan.md; `agents/reviews/D57-landing.md`) after one repair round and the review over it; fixes at landing: the Page 1 sentence of `docs/window.md`, the `registry.ts` comment, three test files tagged slow under Z64. In flight: D41 (review over round 1 back, landing next), D46 (builder resumed with the ruling on the 50 ms bound), D47 (review back, repair round 1 being written), D48 and D51 (builders running). Next: D52 dispatched into D57's slot (base d7a654584); /land D41; D47's repair round 1. D50 waits for Axel on open items 25 and 26.
 - 2026-10-09 09:40. D41 prepared (base 53fa9b002, brief `agents/briefs/D41.md` with every closure of its brief check) and its builder af88be61741f59b6d (claude-sonnet-5-5) launched in `.agents/worktrees/D41`, base copy in `.agents/worktrees/D41-base`. Nothing else in flight; every other queued step is paused by Axel. Next: D41's build, /refute D41, /land D41.

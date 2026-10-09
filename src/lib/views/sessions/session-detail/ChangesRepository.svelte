@@ -1,51 +1,35 @@
-<script module lang="ts">
-    // Layer 3, view registration. Changes follows Session detail in the Sessions page's group.
-    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
-    export const registration: ViewRegistration = {
-        id: 'changes',
-        label: 'sessions.view_changes',
-        glyph: 'sessions.changes_glyph',
-        group: 'sessions',
-        order: 5
-    };
-</script>
-
 <script lang="ts">
-    // Layer 3, sessions view. The Changes frame asks before a write and presses through
+    // Layer 3, partial of views/sessions/session-detail/SessionDetail.svelte. The repository the
+    // session works in, drawn in the body of the Changes section in whichever of its six shapes the
+    // repository is in. It asks before a write and presses through
     // state/sources/repositories/repositories.svelte.ts, the store the Repositories view presses
     // through, so which repository has a write in flight and what the last write answered are the
-    // same in both. The touched files and the repository are drawn by partials of their own, since
-    // the two change independently.
+    // same in both. It is drawn while the section is open, so the branches are listed once when the
+    // section opens and again whenever the repository's state changes while it stays open, and not
+    // at all while it is closed.
 
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
-    import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
-    import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Pane from '$lib/ui/frame/Pane.svelte';
-    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { readJson } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
-    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { branchesOf } from '$lib/state/sources/repositories/answers';
     import { repoShape } from '$lib/state/sources/repositories/repositories';
     import ChangesRepo from './ChangesRepo.svelte';
-    import ChangesTouched from './ChangesTouched.svelte';
+    import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import { shownGate, useShown, useState } from '$lib/state/client/use';
 
     const {
         repositories,
-        selectors: { gitFor, sessionFor, touchers }
+        selectors: { gitFor, touchers }
     } = useState();
 
-    let { instance }: ViewProps = $props();
+    let { record }: { record: GroupedSession } = $props();
     const gate = shownGate(useShown());
     type Branch = { name: string; upstream: string; current: boolean };
 
-    const record = $derived(sessionFor(instance.id));
-    const workspace = $derived(record?.workspace ?? '');
-    const files = $derived(record?.files ?? []);
+    const workspace = $derived(record.workspace);
     const repo = $derived(workspace === '' ? null : gitFor(workspace));
     const shape = $derived(repoShape(workspace, repo));
     const readable = $derived(shape === 'readable' ? repo : null);
@@ -54,7 +38,7 @@
     let branches: Branch[] = $state([]);
     // Each listing asked for takes the next number, and only the newest one may write `branches`: a
     // listing that answers after the workspace changed, or after a later listing was asked for, is
-    // for a state the panel no longer draws.
+    // for a state the section does not draw.
     let asked = 0;
     const busy = $derived(workspace !== '' && repositories.busy(workspace));
     const outcome = $derived(workspace === '' ? '' : repositories.outcome(workspace));
@@ -88,7 +72,7 @@
     }
 
     function shared(path: string): string[] {
-        if (record === null || path === '') return [];
+        if (path === '') return [];
         return touchers(`${workspace}/${path}`, record.id).map((session) => session.title);
     }
 
@@ -142,85 +126,73 @@
     );
 </script>
 
-{#snippet bar()}
-    <Toolbar label={t('sessions.changes_bar')}>
-        <SessionPicker instance={instance.id} />
-    </Toolbar>
-{/snippet}
-
-<Pane title={t('sessions.view_changes')} {bar} tinted>
-    <div class="changes" data-instance={instance.id}>
-        {#if record === null}
-            <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
-        {:else}
-            <ChangesTouched recordId={record.id} {files} {workspace} />
-            {#if shape === 'unplaced'}
-                <section class="repo" data-repo="unplaced">
-                    <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
-                    <Empty message={t('sessions.ch_noworkspace')} />
-                </section>
-            {:else if shape === 'missing'}
-                <section class="repo" data-repo="missing">
-                    <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
-                    <div title={repo?.error ?? undefined}>
-                        <Empty message={t('sessions.ch_nofolder')} />
-                    </div>
-                </section>
-            {:else if shape === 'none'}
-                <section class="repo" data-repo="none">
-                    <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
-                    <div title={repo?.error ?? undefined}>
-                        <Empty message={t('sessions.ch_norepo')} />
-                    </div>
-                </section>
-            {:else if shape === 'failed'}
-                <section class="repo" data-repo="failed">
-                    <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
-                    <Empty error message={t('sessions.ch_failed', repo?.error ?? '')} />
-                </section>
-            {:else if shape === 'reading'}
-                <section class="repo" data-repo="reading">
-                    <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
-                    <Empty message={t('sessions.ch_reading')} />
-                </section>
-            {:else if readable !== null}
-                <ChangesRepo
-                    root={workspace}
-                    state={readable}
-                    {branchItems}
-                    {busy}
-                    {branchName}
-                    {outcome}
-                    {shared}
-                    onswitch={switchTo}
-                    onbranch={createBranch}
-                    onbranchname={(next: string) => (branchName = next)}
-                    onstage={stagePath}
-                    onunstage={unstagePath}
-                    ondiscard={discardPath}
-                    onresolve={(path: string) => void repositories.markResolved(workspace, path)}
-                    ongroup={groupAct}
-                    onopen={(path: string, kind: string) =>
-                        repositories.openChange(workspace, kind, path, record?.id)}
-                    onopenfile={(path: string) => void repositories.openFile(workspace, path)}
-                    oncancel={repositories.suggesting(workspace)
-                        ? undefined
-                        : () => void repositories.cancel(workspace)}
-                />
-            {/if}
-        {/if}
-    </div>
-</Pane>
+<div class="repository">
+    {#if shape === 'unplaced'}
+        <section class="repo" data-repo="unplaced">
+            <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
+            <Empty message={t('sessions.ch_noworkspace')} />
+        </section>
+    {:else if shape === 'missing'}
+        <section class="repo" data-repo="missing">
+            <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
+            <div title={repo?.error ?? undefined}>
+                <Empty message={t('sessions.ch_nofolder')} />
+            </div>
+        </section>
+    {:else if shape === 'none'}
+        <section class="repo" data-repo="none">
+            <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
+            <div title={repo?.error ?? undefined}>
+                <Empty message={t('sessions.ch_norepo')} />
+            </div>
+        </section>
+    {:else if shape === 'failed'}
+        <section class="repo" data-repo="failed">
+            <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
+            <Empty error message={t('sessions.ch_failed', repo?.error ?? '')} />
+        </section>
+    {:else if shape === 'reading'}
+        <section class="repo" data-repo="reading">
+            <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
+            <Empty message={t('sessions.ch_reading')} />
+        </section>
+    {:else if readable !== null}
+        <ChangesRepo
+            root={workspace}
+            state={readable}
+            {branchItems}
+            {busy}
+            {branchName}
+            {outcome}
+            {shared}
+            onswitch={switchTo}
+            onbranch={createBranch}
+            onbranchname={(next: string) => (branchName = next)}
+            onstage={stagePath}
+            onunstage={unstagePath}
+            ondiscard={discardPath}
+            onresolve={(path: string) => void repositories.markResolved(workspace, path)}
+            ongroup={groupAct}
+            onopen={(path: string, kind: string) =>
+                repositories.openChange(workspace, kind, path, record.id)}
+            onopenfile={(path: string) => void repositories.openFile(workspace, path)}
+            oncancel={repositories.suggesting(workspace)
+                ? undefined
+                : () => void repositories.cancel(workspace)}
+        />
+    {/if}
+</div>
 
 <AskConfirm {asking} onclose={() => (asking = null)} />
 
 <style>
-    .changes {
+    .repository {
         display: flex;
         flex-direction: column;
         gap: 12px;
+        padding: 4px 6px 6px;
     }
-    /* A section heading: the group label in the size of a label, bold and in capitals. */
+    /* A sub-heading of the section: the group label, in the size of a label, bold, in capitals. */
     .sec-h {
         display: flex;
         align-items: center;
@@ -234,7 +206,7 @@
         padding-bottom: 2px;
         margin-bottom: 4px;
     }
-    :global(body.rice) .changes {
+    :global(body.rice) .repository {
         font-family: var(--font-mono);
     }
 </style>

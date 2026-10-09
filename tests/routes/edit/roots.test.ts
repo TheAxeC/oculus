@@ -8,6 +8,8 @@
 //
 // A hook loads the configuration once, since the first load costs more than a later one, so no case
 // pays for it.
+// @module-tag slow: its writes go through the whole configuration load, which runs past the
+// default timeout under load.
 
 import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

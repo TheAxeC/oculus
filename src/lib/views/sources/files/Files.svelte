@@ -84,7 +84,7 @@
     import { refusal } from '$lib/state/sources/explorer/acts/refusal';
     import { sectionOpen } from '$lib/state/sources/explorer/sections/section-state';
     import { followedTab } from '$lib/state/sources/explorer/sections/followed-tab';
-    import { createListDrag } from './sections/list-drag.svelte';
+    import { createListDrag } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import { fileOfTab } from '$lib/state/workbench/navigation/pages';
     import { panes } from '$lib/state/workbench/layout';
     import type { Entry } from '$lib/state/boards/collection';

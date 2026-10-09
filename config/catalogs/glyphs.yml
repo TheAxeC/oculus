@@ -92,7 +92,6 @@ glyphs:
   funding: "<*>"
   pillar: "[ ]"
   code: "[_]"
-  changes: "+/-"
   repositories: "[R]"
   search: "(f)"
   diff: "<->"

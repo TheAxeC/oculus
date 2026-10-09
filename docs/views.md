@@ -158,7 +158,13 @@ The Sessions view lists every agent session on this machine, grouped by workspac
 
 ## Session
 
-One session in a tab of its own: what it is doing, its model, its workspace and its controls.
+One session in a tab of its own, in three sections: Details, Changes and Agents. One picker in the bar picks the session all three show, and the toolbar opens the session's Transcript and its Timeline. Each head names its section, and the heads of Changes and Agents count the files the session touched and the agents it dispatched. Each section starts open, opens and closes on a press on its head, and a closed section draws nothing and asks for nothing until it is opened. The heads are dragged among each other and moved with Alt+Up and Alt+Down, as the sections under the Files tree are; the tab keeps which sections are closed and their order, through a reload, a switch of tab and a pick of another session.
+
+Details is what the session is doing, its model, its workspace and its controls.
+
+Changes is the git state of the workspace a session works in (a file is shown as its name followed by its folder, dimmed and cut at its end when the pane is narrow, with the whole path as the tooltip, and the verb and the count of the files the session touched at the right edge of its row): its branch, the same commit box as the Repositories view, and its changes with Stage All, Unstage All and Discard All on the group heads (its commit box says Sync Changes or Publish Branch where there is nothing to commit, which is how the section pushes) and each row opening its own diff tab for the session, a conflicted path the merge editor; in that tab a `+` beside a line (or Add Comment on Line in the line's menu) opens a comment box after it, and Send hands the comment to the session as a prompt naming the file and line, typed into its terminal when oculus runs it and copied to the clipboard otherwise, with a line saying which; a repository with no commit yet included; or one line saying the session names no workspace folder, that the workspace folder is not there, that the folder is not a git repository, that git could not read the repository and why, or that git has not read the workspace yet.
+
+Agents are the agents a session has running under it: the subagents its transcript names. A subagent started in the background reads running until the session's notice that it stopped: done when it completed, stopped when it was killed, error otherwise; without a notice, until its own transcript has been still for 30 minutes. A subagent resumed after its notice reads running again once it writes its transcript, and its next notice ends it again.
 
 ## Terminal
 
@@ -171,14 +177,6 @@ One session's turns as they were written, one tab per session.
 ## Timeline
 
 One session's turns over time.
-
-## Changes
-
-The git state of the workspace a session works in (a file is shown as its name followed by its folder, dimmed and cut at its end when the pane is narrow, with the whole path as the tooltip, and the verb and the count of the files the session touched line up in columns): its branch, the same commit box as the Repositories view, and its changes with Stage All, Unstage All and Discard All on the group heads (its commit box says Sync Changes or Publish Branch where there is nothing to commit, which is how the panel pushes) and each row opening its own diff tab for the session, a conflicted path the merge editor; in that tab a `+` beside a line (or Add Comment on Line in the line's menu) opens a comment box after it, and Send hands the comment to the session as a prompt naming the file and line, typed into its terminal when oculus runs it and copied to the clipboard otherwise, with a line saying which; a repository with no commit yet included; or one line saying the session names no workspace folder, that the workspace folder is not there, that the folder is not a git repository, that git could not read the repository and why, or that git has not read the workspace yet.
-
-## Agents
-
-The agents a session has running under it: the subagents its transcript names. A subagent started in the background reads running until the session's notice that it stopped: done when it completed, stopped when it was killed, error otherwise; without a notice, until its own transcript has been still for 30 minutes. A subagent resumed after its notice reads running again once it writes its transcript, and its next notice ends it again.
 
 ## Status
 

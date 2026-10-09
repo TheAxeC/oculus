@@ -1,10 +1,12 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/sections/. One section under the file browser's
-    // trees: a head that opens and closes it and carries the controls that act on it (the one that
-    // adds a note or a bookmark, Save All and Close All of the open editors), the drag and Alt+Up
-    // and Alt+Down step that move it among the sections when the caller hands them in, and the
+    // Layer 3, shared view partial. One section of a view that stacks sections, each in a tree of
+    // its own: the sections under the file browser's trees and the sections of the Session view. A
+    // head that opens and closes it and carries the controls that act on it (the one that adds a
+    // note or a bookmark, Save All and Close All of the open editors), the drag and Alt+Up and
+    // Alt+Down step that move it among the sections when the caller hands them in, and the
     // section's own rows under it. The sections share the head and differ in their rows, so the
-    // head is drawn here once.
+    // head is drawn here once. A section that counts nothing (the Session view's Details) gives no
+    // count and its head draws none.
     //
     // `showActions` draws the head's control at full strength whether or not the pointer is over
     // the head, for a control a reader looks for before the pointer is there; without it the
@@ -20,8 +22,8 @@
         /** The section's name, already translated. */
         label: string;
         nav: TreeNav;
-        /** How many rows the section holds, drawn on its head. */
-        count: number;
+        /** How many rows the section holds, drawn on its head; omitted, the head draws none. */
+        count?: number;
         open: boolean;
         ontoggle: () => void;
         /** The head's adding control: its words, its tooltip and its glyph, already translated. */

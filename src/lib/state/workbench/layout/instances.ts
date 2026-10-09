@@ -11,6 +11,7 @@ import {
     activePath,
     findInstance,
     findView,
+    instanceMap,
     isInstanceOf,
     stateId,
     panes as panesIn,
@@ -125,7 +126,11 @@ export function createInstances(
         access.change((tree) => restate(tree, id, state), page.id);
     }
 
-    /** Pin one instance, or activate the same view's existing pin without changing the caller. */
+    /**
+     * Pin one instance, or activate the same view's existing pin without changing the caller. The
+     * pin is the `session` and `label` of the tab's state; the rest of the state (a view's closed
+     * sections and their order) stays.
+     */
     function pinInstance(id: string, session: string, label: string): void {
         const page = access.holding(id);
         if (page === null) return;
@@ -136,7 +141,7 @@ export function createInstances(
             activateInstance(existing.id, page.id);
             return;
         }
-        restateInstance(id, { session, label });
+        restateInstance(id, { ...instanceMap(instanceLayoutState(id)), session, label });
     }
 
     function pointInstance(id: string, state: unknown): boolean {
@@ -158,10 +163,14 @@ export function createInstances(
     }
 
     /**
-     * Clear the pin and label in place; another unpinned instance of the view may already exist.
+     * Clear the pin and label in place, keeping the rest of the tab's state; another unpinned
+     * instance of the view may already exist.
      */
     function unpinInstance(id: string): void {
-        restateInstance(id, {});
+        const kept = Object.entries(instanceMap(instanceLayoutState(id))).filter(
+            ([key]) => key !== 'session' && key !== 'label'
+        );
+        restateInstance(id, Object.fromEntries(kept));
     }
 
     /** Keep a preview tab. A tab that is not one, and an id no page holds, change nothing. */

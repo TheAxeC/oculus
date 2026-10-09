@@ -43,7 +43,7 @@ import {
 } from '../model.ts';
 import { placeFits } from '../open/float/pages.ts';
 import { withInfoFolded, withSystemLabel } from './fold.ts';
-import { treeWithoutConfig, withoutConfigTabs } from './migrate.ts';
+import { treeWithoutRetired, withoutRetiredTabs } from './migrate.ts';
 import { refusedLeaves, settlePageLeaves, type Refusal } from '../nested.ts';
 import { normaliseSizes } from '../tree.ts';
 import { focusedPane, settleFocus } from '../workbench.ts';
@@ -526,7 +526,7 @@ export function parseLayout(value: unknown, label: string): Pages | null {
         const only = readDockedWorkbench(envelope.workbench);
         return only === null
             ? null
-            : defaultPagesOf(newPage(label, { ...only, root: treeWithoutConfig(only.root) }));
+            : defaultPagesOf(newPage(label, { ...only, root: treeWithoutRetired(only.root) }));
     }
     const version = envelope.version;
     if (
@@ -557,12 +557,15 @@ export function parseLayout(value: unknown, label: string): Pages | null {
     // A saved info page is folded into the views page, which takes the System label (fold.ts), and
     // a `config` tab becomes a `settings` tab (migrate.ts); a leaf naming a page this envelope does
     // not hold, or one that would make a page show itself, then becomes an empty added pane: the
-    // rest of the arrangement is still the one the viewer left.
+    // rest of the arrangement is still the one the viewer left. A saved `changes` or `agents` tab
+    // is carried to a `session-detail` tab by the same step.
     const floats =
         version === LAYOUT_VERSION || version === FLOATS_VERSION
             ? readFloats(held.floats, pages)
             : [];
-    const migrated = withSystemLabel(withInfoFolded(withoutConfigTabs({ pages, current, floats })));
+    const migrated = withSystemLabel(
+        withInfoFolded(withoutRetiredTabs({ pages, current, floats }))
+    );
     const read: Pages = settlePageLeaves(migrated);
     return checkPages(read).length === 0 ? read : null;
 }

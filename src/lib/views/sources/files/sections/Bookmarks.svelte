@@ -23,7 +23,7 @@
     // where they are pressed from; this is where they are renamed, removed and put in order.
 
     import Failed from '$lib/views/shared/explorer/tree/Failed.svelte';
-    import Section from './Section.svelte';
+    import Section from '$lib/views/shared/explorer/sections/Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
@@ -31,7 +31,11 @@
     import Prompt from '$lib/ui/forms/Prompt.svelte';
     import type { PromptRequest } from '$lib/ui/forms/prompt';
     import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
-    import { createListDrag, listKeys, type ListSectionProps } from './list-drag.svelte';
+    import {
+        createListDrag,
+        listKeys,
+        type ListSectionProps
+    } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import type { BookmarkEntry } from '$lib/state/sources/fs.svelte';
     import { readOr } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
