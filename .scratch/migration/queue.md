@@ -1,7 +1,7 @@
 In flight (4 of 6 slots in use):
 - D41 (links in Markdown checked): repair round 1 running, launched 2026-10-09.
-- D46 (the VS Code palette keys): landing next, launched 2026-10-09.
-- D50 (the hub's own folder, its shareable files and its settings layer): first review running, launched 2026-10-09.
+- D46 (the VS Code palette keys): landing, launched 2026-10-09.
+- D50 (the hub's own folder, its shareable files and its settings layer): repair round 1 running, launched 2026-10-09.
 - D53 (unique views): waits to land after D46, launched 2026-10-09.
 
 Queued, in order (6 steps):
@@ -9,7 +9,7 @@ Queued, in order (6 steps):
 - D55 (roots as hubs): waits for D50.
 - D56 (the workbench): waits for D53 (D47 and D52 landed).
 - Q72 (the architecture re-read): waits for D49, D55 and D56, whose code it re-reads.
-- R2 (the first-run check): next, when a slot frees.
+- R2 (the first-run check): waits for Axel on open item 32.
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
