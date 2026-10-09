@@ -1,22 +1,22 @@
-In flight (6 of 6 slots in use):
+In flight (4 of 6 slots in use):
 - D41 (links in Markdown checked): repair round 1 running, launched 2026-10-09.
-- D46 (the VS Code palette keys): review over repair round 1 running, launched 2026-10-09.
-- D48 (side projects with the research keys that apply, and smaller Focus rows): waits to land after D52, launched 2026-10-09.
-- D50 (the hub's own folder, its shareable files and its settings layer): builder running, resumed with the cases ruling, launched 2026-10-09.
-- D52 (a page per collection entry): landing, launched 2026-10-09.
-- D53 (unique views): repair round 1 running, launched 2026-10-09.
+- D46 (the VS Code palette keys): landing next, launched 2026-10-09.
+- D50 (the hub's own folder, its shareable files and its settings layer): first review running, launched 2026-10-09.
+- D53 (unique views): waits to land after D46, launched 2026-10-09.
 
 Queued, in order (6 steps):
 - D49 (the help pages cut): waits for D46, whose text in docs/window.md and docs/views.md it carries; D47's has landed.
 - D55 (roots as hubs): waits for D50.
-- D56 (the workbench): waits for D52 and D53 (D47 landed).
-- Q72 (the architecture re-read): paused (Axel).
-- R2 (the first-run check): paused (Axel).
+- D56 (the workbench): waits for D53 (D47 and D52 landed).
+- Q72 (the architecture re-read): waits for D49, D55 and D56, whose code it re-reads.
+- R2 (the first-run check): next, when a slot frees.
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D48 (side projects with the research keys that apply, and smaller Focus rows), 2026-10-09, b00a6c468.
+- D52 (a page per collection entry), 2026-10-09, cd31fd9a3.
 - D51 (themes from VS Code's theme files), 2026-10-09, a5c4d21c8.
 - D47 (one Session view), 2026-10-09, acece2a09.
 - D57 (an empty pane closes), 2026-10-09, 8505da5e1.

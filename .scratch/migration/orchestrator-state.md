@@ -39,7 +39,7 @@ dispatch:   # steps in flight, up to six (Z632)
   builder_usage: 306,126 tokens, 80 tool uses, 16.3 min (the first run and the hand-back of case 9); after the ruling, to the hand-back on the 50 ms bound: 75,516 tokens, 155 tool uses, 69.5 min; resumed with the ruling on the 50 ms bound, to the hand-back on the F1 check: 243,385 tokens, 102 tool uses, 69.4 min; resumed with ruling 28, to the report: 319,997 tokens, 26 tool uses, 18.1 min; round 1: 216,918 tokens, 89 tool uses, 61.2 min
   reviewer_report: agents/reviews/D46-refuter.md (a7cdb86a0c105ec03, claude-opus-5-5, 301,318 tokens, 80 tool uses, 33.0 min); over round 1: a2f2b3fa07ace87d6, claude-opus-5-5, 243,263 tokens, 64 tool uses, 25.1 min
   round_1: agents/briefs/D46-round1.md, sent to the builder over the tree copied at .agents/worktrees/D46-round0
-  landing: not-started
+  landing: cherry-picking
   round: 1
 - step: D50
   executor: agent
@@ -50,11 +50,11 @@ dispatch:   # steps in flight, up to six (Z632)
   launched: 2026-10-09
   report: agents/reviews/D50-report.md
   builder_usage: 348,163 tokens, 105 tool uses, 20.9 min (the first run and the hand-back of the cases); resumed with the cases ruling, to the report: 320,932 tokens, 454 tool uses, 138.4 min
-  reviewer_report: running (a62a3b17bb5c16834, claude-opus-5-5)
+  reviewer_report: agents/reviews/D50-refuter.md (a62a3b17bb5c16834, claude-opus-5-5, 72,975 tokens, 88 tool uses, 22.5 min)
   brief_check: agents/reviews/D50-brief-check.md (a25c58150d1a4695d, claude-opus-5-5, 266,958 tokens, 111 tool uses, 14.4 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: settings.ts with D46 (the whole file; D50 settingReader 148-151); portfolio.ts, model-machine, config.test.ts and docs/DATA-MAP.md line 69 with D41; server/edit/writes.ts with D48 (WriteTarget); content/docs.ts with D52 (451-456; D50 521-542); config/sources.yml with D48 (line 15, merged by hand); config/catalogs/vocab.yml with D41 (228) and D48 (199-206); config/catalogs/options.yml with D46 (857-860) and D48 (1230); HELP.md with D46 (79-80), D48 (105) and D52 (156; D50 170); docs/window.md with D46 (76) and D52 (41; D50 25, 29); docs/apps.md with D48 (248, 417, 419); docs/configuration.md with D48 (41); config/behavior.yml and config/app.yml with D46 (263-267); DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D48 (552) and D51 (72, 244, 521, 565; D50 91, 272, 306-308, 492, 547, 573); the gate's sparse checkout gains `.oculus` at landing; different lines, each merge simple except sources.yml line 15, merged by hand
   landing: not-started
-  round: 0
+  round: 1
 - step: D41
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -203,6 +203,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Open item 31 (2026-10-09, D50's review, finding B1): two rulings disagree on who writes the machine apps' folder. Open item 25 (a) gives a machine app every channel (inbox, calendar, sessions, usage) because "only the hub's owner writes" `<hub>/.oculus/apps`; ruling (9) of Additions of 2026-10-09 moves the shareable files into the hub, and Z753 (a) tracks the hub's `.oculus/` in git, so a `git pull` also writes that folder. With an app kept approved, a collaborator's pushed change to its scripts runs with every channel and no question, until oculus restarts (`docs/apps.md:136-137`: approval holds through a change to any file but `app.yml` while the server runs). Options: (a), recommended: keep the folder tracked and every channel, and ask again for an app whose files change by anything other than oculus's own editor (a pull, another program), so an edit made in oculus keeps the approval and a pulled change never runs unasked; built in D50 before it lands, as a second repair round. (b) keep `<hub>/.oculus/apps` out of git (a `.gitignore` line in `.oculus/`), so only the owner writes it and the premise of 25 (a) holds again; apps then no longer travel with the hub, against ruling (9). (c) leave it as built and state the window in `docs/apps.md`; this is the lazy option, since it keeps the hole and only describes it.
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
