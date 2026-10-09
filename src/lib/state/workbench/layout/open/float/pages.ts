@@ -5,6 +5,7 @@
 
 import { findInstance, tabsOf } from '../../instance.ts';
 import {
+    addedPane,
     clamp,
     repane,
     type DockEdge,
@@ -121,9 +122,10 @@ export function floatsFrom(specs: FloatSpec[]): Float[] {
  * first tab of a view a shipped float holds is moved out of the page that holds it into that
  * float, its id kept, so what it held stays, and every other tab of that view leaves its page, so
  * no page draws the view beside the float; a view no page holds is made new. A float whose edge
- * another float already holds is not made.
+ * another float already holds is not made. A pane of a page that loses its last tab to a float is
+ * left as `keep` says.
  */
-export function adoptFloats(held: Pages, specs: FloatSpec[]): Pages {
+export function adoptFloats(held: Pages, specs: FloatSpec[], keep: KeepRule): Pages {
     let next = held;
     for (const spec of specs) {
         if (spec.place.kind === 'dock' && dockedOn(next.floats, spec.place.edge) !== undefined) {
@@ -142,7 +144,7 @@ export function adoptFloats(held: Pages, specs: FloatSpec[]): Pages {
                 left !== null;
                 left = tabNamedBy(next, tab.view)
             ) {
-                next = withoutTab(next, left.id);
+                next = withoutTab(next, left.id, keep);
             }
         }
         if (tabs.length === 0) continue;
@@ -214,8 +216,9 @@ export function dropInstance(held: Pages, id: string, keep?: KeepRule): Pages {
 
 /**
  * The pane at `path` of a page taken out of its tree and put over every page as a free float, in
- * the middle of the window, or at `place`. A page's only pane is left empty. A float's pane is
- * never floated again, and a page or path naming no pane holding a tab changes nothing.
+ * the middle of the window, or at `place`. A page's only pane is left empty. The float's pane
+ * carries no mark of an added pane, since a float is not a page. A float's pane is never floated
+ * again, and a page or path naming no pane holding a tab changes nothing.
  */
 export function floatPane(
     held: Pages,
@@ -228,11 +231,10 @@ export function floatPane(
     const found = leafAt(host.workbench.root, path);
     if (found?.kind !== 'pane' || found.tabs.length === 0) return held;
     const root = closePane(host.workbench.root, path);
-    const float: Float = {
-        id: crypto.randomUUID(),
-        pane: repane(found, found.tabs.map(kept), found.active),
-        place
-    };
+    const pane = repane(found, found.tabs.map(kept), found.active);
+    // A float is not a page, so its pane is not one added to a page; Return to Page adds it again.
+    delete pane.added;
+    const float: Float = { id: crypto.randomUUID(), pane, place };
     return {
         ...held,
         pages: held.pages.map((one) =>
@@ -389,8 +391,8 @@ function largestPane(root: Layout): number[] | null {
 }
 
 /**
- * A float's tabs put back into a page as a new pane split off the right of the page's largest pane,
- * by the share of the page each holds. The float goes, and the page is shown whole.
+ * A float's tabs put back into a page as a new added pane split off the right of the page's largest
+ * pane, by the share of the page each holds. The float goes, and the page is shown whole.
  */
 export function returnFloat(held: Pages, id: string, page: string): Pages {
     const float = held.floats.find((one) => one.id === id);
@@ -399,7 +401,7 @@ export function returnFloat(held: Pages, id: string, page: string): Pages {
     const target = largestPane(host.workbench.root);
     if (target === null) return held;
     const shown = restore(host.workbench);
-    const root = splitLeaf(shown.root, target, 'row', float.pane, false);
+    const root = splitLeaf(shown.root, target, 'row', addedPane(float.pane), false);
     return {
         ...held,
         pages: held.pages.map((one) =>

@@ -5,6 +5,7 @@
 // Every folder here is synthetic, under the system temporary directory. What this does NOT cover:
 // the watcher that calls the reader (tests/server/root/watch) and the shipped config's glyph
 // vocabulary beyond the names the table uses.
+// @module-tag slow: one row writes a folder of 501 files and one of more than 20 MB.
 
 import { chmodSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

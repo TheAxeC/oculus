@@ -5,6 +5,7 @@
 // in two places at once.
 
 import {
+    addedPane,
     emptyPane,
     pageLeaf,
     samePath,
@@ -165,11 +166,13 @@ function withWorkbench(held: Pages, id: string, workbench: Page['workbench']): P
 }
 
 /**
- * One tree with the leaves at these paths turned into empty panes, and the rest of it as it was.
+ * One tree with the leaves at these paths turned into empty added panes, and the rest of it as it
+ * was. No arrangement holds a page leaf, so the pane that takes a leaf's place is one the page's
+ * arrangement did not define.
  */
 function withoutLeaves(node: Layout, path: number[], paths: number[][]): Layout {
     if (node.kind === 'page') {
-        return paths.some((one) => samePath(one, path)) ? emptyPane() : node;
+        return paths.some((one) => samePath(one, path)) ? addedPane(emptyPane()) : node;
     }
     if (node.kind !== 'split') return node;
     const children = node.children.map((child, index) =>
@@ -206,10 +209,10 @@ function withoutPage(root: Layout, id: string): Layout {
 }
 
 /**
- * Every page with the leaves it may not draw turned into an empty pane: a leaf naming a page the
- * list does not hold, a leaf that would make a page draw itself, and a leaf drawing a page its own
- * page already draws. It is what a saved layout is read through, so an envelope written by another
- * version renders rather than being refused whole.
+ * Every page with the leaves it may not draw turned into an empty added pane: a leaf naming a page
+ * the list does not hold, a leaf that would make a page draw itself, and a leaf drawing a page its
+ * own page already draws. It is what a saved layout is read through, so an envelope written by
+ * another version renders rather than being refused whole.
  *
  * The leaves are judged by the rule checkPages judges them by, and the clearing is repeated until
  * no leaf is refused, since taking one leaf out can change what another page draws; a settled

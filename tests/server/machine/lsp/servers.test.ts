@@ -1,6 +1,7 @@
 // Layer 4, server test. How the language servers and the interpreter probe are started: each
 // command is an argument array and the root's path is one argument (or one working folder) whatever
 // characters it holds, and nothing passes through a shell.
+// @module-tag slow: the start row waits a fixed number of turns for five spawns.
 
 import {
     existsSync,

@@ -38,8 +38,9 @@ export function settleFocus(workbench: Workbench): Workbench {
  *
  * The split has to happen first: removing the instance can empty its pane and collapse a split,
  * which would leave `path` naming another node. The new pane therefore holds the instance under a
- * temporary id until the original is gone, so the tree never holds the id twice. The pane the
- * instance leaves stays, empty, when the rule keeps it, beside the new pane.
+ * temporary id until the original is gone, so the tree never holds the id twice. The new pane is an
+ * added pane. The pane the instance leaves stays, empty, beside it when the rule keeps it, and goes
+ * when it is an added pane too.
  */
 export function splitWith(
     workbench: Workbench,

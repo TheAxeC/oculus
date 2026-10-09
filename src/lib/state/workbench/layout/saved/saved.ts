@@ -15,9 +15,10 @@
 // floats, and the shipped ones would never arrive. A float that does not add up (no tab, a place
 // past the window, an id a page or another float already uses, a tab id held twice, a second float
 // docked on one edge, a window place with a size that is not finite or is under 200) is dropped on
-// reading and the rest kept. A pane carries `locked` (a pane without the field reads as unlocked)
-// and `recent`, the ids of the other tabs it showed (a version 5 envelope holds none), and a saved
-// pane whose pinned tabs are not first is put in that order on reading.
+// reading and the rest kept. A pane carries `locked` (a pane without the field reads as unlocked),
+// `added` (a pane without the field reads as one its page's arrangement defined, and a float's
+// pane never carries it) and `recent`, the ids of the other tabs it showed (a version 5 envelope
+// holds none), and a saved pane whose pinned tabs are not first is put in that order on reading.
 
 import { z } from 'zod';
 import { tabsOf } from '../instance.ts';
@@ -370,6 +371,8 @@ function readPane(
     if (tabs.length === 0 && value.keeps === 'terminals') read.keeps = 'terminals';
     // A pane saved before panes could be locked has no field, which reads as unlocked.
     if (value.locked === true) read.locked = true;
+    // A pane saved without `added`, or with any other value, is one its page's arrangement defined.
+    if (value.added === true) read.added = true;
     return read;
 }
 
@@ -553,8 +556,8 @@ export function parseLayout(value: unknown, label: string): Pages | null {
     }
     // A saved info page is folded into the views page, which takes the System label (fold.ts), and
     // a `config` tab becomes a `settings` tab (migrate.ts); a leaf naming a page this envelope does
-    // not hold, or one that would make a page show itself, then becomes an empty pane: the rest of
-    // the arrangement is still the one the viewer left.
+    // not hold, or one that would make a page show itself, then becomes an empty added pane: the
+    // rest of the arrangement is still the one the viewer left.
     const floats =
         version === LAYOUT_VERSION || version === FLOATS_VERSION
             ? readFloats(held.floats, pages)
@@ -602,6 +605,8 @@ function readFloat(
     if (pane?.kind !== 'pane' || pane.tabs.length === 0 || problems.length > 0) {
         return null;
     }
+    // A float is not a page, so its pane is never an added one.
+    delete pane.added;
     return { id: held.id, pane, place };
 }
 

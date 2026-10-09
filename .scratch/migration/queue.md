@@ -1,16 +1,15 @@
-In flight (6 of 6 slots in use):
-- D41 (links in Markdown checked): review over repair round 1 back, waits for D57's landing to land, launched 2026-10-09.
-- D57 (an empty pane closes): landing, launched 2026-10-09.
+In flight (5 of 6 slots in use):
+- D41 (links in Markdown checked): review over repair round 1 back, landing next, launched 2026-10-09.
 - D46 (the VS Code palette keys): builder resumed with the ruling on the 50 ms bound, launched 2026-10-09.
-- D47 (one Session view): built, review running, launched 2026-10-09.
+- D47 (one Session view): review back, repair round 1 being written, launched 2026-10-09.
 - D48 (side projects with the research keys that apply, and smaller Focus rows): builder running, launched 2026-10-09.
 - D51 (themes from VS Code's theme files): builder resumed with the ruling on a case of its first run, launched 2026-10-09.
 
 Queued, in order (9 steps):
 - D52 (a page per collection entry): brief ready (base d7a654584), waits for a free slot.
-- D49 (the help pages cut): waits for D46, D47 and D57, whose text in docs/window.md and docs/views.md it carries.
+- D49 (the help pages cut): waits for D46 and D47, whose text in docs/window.md and docs/views.md it carries.
 - D53 (unique views): waits for D56.
-- D50 (the hub's own folder, its shareable files and its settings layer): brief check back, its findings being closed in the brief; waits for Axel's rulings on open items 25 and 26.
+- D50 (the hub's own folder, its shareable files and its settings layer): brief check back, its findings closed in the brief; waits for Axel's rulings on open items 25 and 26.
 - D55 (roots as hubs): waits for D50.
 - D56 (the workbench): waits for D47 and D52.
 - Q72 (the architecture re-read): paused (Axel).

@@ -39,21 +39,6 @@ dispatch:   # steps in flight, up to six (Z632)
   round_1: agents/briefs/D41-round1.md, sent to the builder over the tree copied at .agents/worktrees/D41-round0
   landing: not-started
   round: 1
-- step: D57
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: aa332d0db41803a43 (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D57
-  base: 55d0ba416
-  launched: 2026-10-09
-  report: agents/reviews/D57-report.md
-  builder_usage: 294,570 tokens, 79 tool uses, 23.7 min; round 1: 300,733 tokens, 5 tool uses, 4.7 min
-  brief_check: agents/reviews/D57-brief-check.md (a7d14de49f99d0e6e, claude-opus-5-5, 223,069 tokens, 63 tool uses, 8.7 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: tools/oculus/DESIGN.md with D41 (D41 lines 23, 166, 503, 575-576, D57 line 238; different lines, the merge is simple)
-  reviewer_report: agents/reviews/D57-refuter.md (a6cac719db08a46d2, claude-opus-5-5, 245,851 tokens, 62 tool uses, 23.9 min); over round 1: a084253d21de24f0c, claude-opus-5-5, 165,543 tokens, 41 tool uses, 17.7 min
-  round_1: agents/briefs/D57-round1.md, sent to the builder over the tree copied at .agents/worktrees/D57-round0
-  landing: cherry-picking
-  round: 1
 - step: D46
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -79,7 +64,7 @@ dispatch:   # steps in flight, up to six (Z632)
   builder_usage: 118,882 tokens, 144 tool uses, 59.6 min
   brief_check: agents/reviews/D47-brief-check.md (a176332cf8ff0b352, claude-opus-5-5, 229,921 tokens, 87 tool uses, 10.2 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D46, config/text/app.yml line 13 (the same line: D47 changes `m1-m7`, D46 adds the palette rows; merged by hand at the later landing) and HELP.md (D47 lines 43, 134, 138-139, D46 lines 79-80); with D57, instances.ts (D57 line 83, D47 lines 139 and 164), saved/saved.ts (D57 lines 18, 372, 556-557, 604; D47 lines 526 and 562), config/layout.yml (D57 line 44, D47 line 65) and DESIGN.md (D57 line 238); with D41, DESIGN.md (D41 lines 23, 166, 575-576; D47 lines 225, 456), docs/views.md (D41 lines 73, 213; D47 lines 159-181) and sections/Outline.svelte (D41 the head comment and lines 147-151, D47 the import line); different lines except app.yml, each merge simple
-  reviewer_report: agents/reviews/D47-refuter.md (af6ed9204a4a55b6f, claude-opus-5-5, running)
+  reviewer_report: agents/reviews/D47-refuter.md (af6ed9204a4a55b6f, claude-opus-5-5, 295,499 tokens, 92 tool uses, 39.4 min)
   landing: not-started
   round: 0
 - step: D48
@@ -308,6 +293,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (after D57). D57 landed (an empty pane closes; booking in plan.md; `agents/reviews/D57-landing.md`) after one repair round and the review over it; fixes at landing: the Page 1 sentence of `docs/window.md`, the `registry.ts` comment, three test files tagged slow under Z64. In flight: D41 (review over round 1 back, landing next), D46 (builder resumed with the ruling on the 50 ms bound), D47 (review back, repair round 1 being written), D48 and D51 (builders running). Next: D52 dispatched into D57's slot (base d7a654584); /land D41; D47's repair round 1. D50 waits for Axel on open items 25 and 26.
 - 2026-10-09 09:40. D41 prepared (base 53fa9b002, brief `agents/briefs/D41.md` with every closure of its brief check) and its builder af88be61741f59b6d (claude-sonnet-5-5) launched in `.agents/worktrees/D41`, base copy in `.agents/worktrees/D41-base`. Nothing else in flight; every other queued step is paused by Axel. Next: D41's build, /refute D41, /land D41.
 - 2026-10-09 09:11. /spec D41 stopped on open item 24 (G3's wording for the Markdown server), after the brief check (`agents/reviews/D41-brief-check.md`, ac604810d19c5e3dc, claude-opus-5-5); every other finding closed as written under its "Closed" or as Z743 in automode. Open items 22 and 23 ruled (a). The brief draft is not in the ledger (the stop removes it); the next /spec writes it again with the closures. Nothing in flight; every other queued step is paused by Axel. Next: Axel's ruling on 24, then /spec D41.
 - 2026-10-09 05:50. D40 landed (the writing rules as editor marks, with the folder Fix All; booking in plan.md; `agents/reviews/D40-landing.md`) after one repair round, the review over round 1's findings, the merge with D39 and the look's defect fixed at landing ("Closed (at landing)" in `agents/reviews/D40-refuter.md`); G71 written whole into `agents/guarded.md` with G3's title and rows and the folder Fix All's lines of G1, G2 and G9; gate green in `.agents/worktrees/gate`, the look on the 8796 scratch oculus. Nothing in flight. Open items 22 (the rename box's hint line) and 23 (D41's library) for Axel; /spec D41 stopped on 23. Next: D41 after Axel rules on 23; D39b if Axel rules (a) on 22.

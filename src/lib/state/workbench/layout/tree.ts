@@ -2,10 +2,11 @@
 // change independently of workbench focus and persistence.
 
 import { item } from '../../../data/helpers/guards.ts';
-import { findInstance, panes } from './instance.ts';
+import { findInstance } from './instance.ts';
 import {
     MAX_CHILDREN,
     MIN_SIZE,
+    addedPane,
     clamp,
     emptyPane,
     pinned,
@@ -161,32 +162,26 @@ export function removeNode(layout: Layout, path: number[]): Layout {
 }
 
 /**
- * What a rule says of a view whose tab was a pane's last: `documents` for a view opened for
- * something, `terminals` for a Terminal tab, null for any other view. The store hands it to every
- * operation that can take a pane's last tab out.
+ * What an emptied pane is left as: `documents` for the pane where a view opened for something
+ * lands, `terminals` for the pane a Terminal tab left. The store hands it to every operation that
+ * can take a pane's last tab out of a page; a float has none, and a float whose last tab goes is
+ * removed.
  */
-export type KeepRule = (view: ViewId) => 'documents' | Keeps | null;
+export type KeepRule = (view: ViewId) => 'documents' | Keeps;
 
 /**
- * The empty pane to leave where a pane's last tab was, or null when the pane goes. The pane stays
- * when the rule names its tab's view and the tree holds no other empty pane of any kind, so a page
- * keeps never more than one empty pane, whether it is a documents pane or a terminals pane. A
- * locked empty pane is not counted, since nothing lands in it, and a locked pane stays whatever
- * the rule says.
+ * The empty pane to leave where a pane's last tab was, or null when the pane goes. A locked pane
+ * stays whatever else is true of it. Any other pane of a page stays unless it is added, a pane made
+ * while the page was used, which goes with its last tab. A pane that stays keeps its lock and its
+ * mark, and is a terminals pane when the rule names a terminals pane for its last tab's view.
  */
-function keptPane(layout: Layout, path: number[], view: ViewId, keep?: KeepRule): Pane | null {
-    const kind = keep?.(view) ?? null;
-    const locked = paneAt(layout, path)?.locked === true;
-    if (locked) {
-        return { ...(kind === 'terminals' ? emptiedTerminals() : emptyPane()), locked: true };
-    }
-    if (kind === null) return null;
-    const taken = panes(layout).some(
-        ({ path: where, pane }) =>
-            !samePath(where, path) && pane.tabs.length === 0 && pane.locked !== true
-    );
-    if (taken) return null;
-    return kind === 'terminals' ? emptiedTerminals() : emptyPane();
+function keptPane(pane: Pane, view: ViewId, keep?: KeepRule): Pane | null {
+    const locked = pane.locked === true;
+    if (!locked && (keep === undefined || pane.added === true)) return null;
+    const left = keep?.(view) === 'terminals' ? emptiedTerminals() : emptyPane();
+    if (pane.added === true) left.added = true;
+    if (locked) left.locked = true;
+    return left;
 }
 
 /** The empty pane a Terminal tab leaves. */
@@ -196,7 +191,7 @@ function emptiedTerminals(): Pane {
 
 /**
  * The tree with one tab gone from the pane at `path`, the pane cleaned away if it held only that,
- * or left empty when the rule keeps it.
+ * or left empty when `keptPane` keeps it.
  */
 export function removeTab(layout: Layout, path: number[], index: number, keep?: KeepRule): Layout {
     const pane = paneAt(layout, path);
@@ -205,7 +200,7 @@ export function removeTab(layout: Layout, path: number[], index: number, keep?: 
     if (removed === undefined) return layout;
     const tabs = pane.tabs.filter((_, at) => at !== index);
     if (tabs.length === 0) {
-        const kept = keptPane(layout, path, removed.view, keep);
+        const kept = keptPane(pane, removed.view, keep);
         if (kept === null) return removeNode(layout, path);
         return rewrite(layout, path, () => kept) ?? layout;
     }
@@ -259,9 +254,9 @@ export function closeInstance(layout: Layout, id: string, keep?: KeepRule): Layo
 }
 
 /**
- * Remove a whole pane and every tab it holds. The split it leaves with one child collapses into
- * that child, exactly as closing its last tab one at a time would leave it, and the root pane is
- * emptied rather than removed, since a tree is always at least one pane.
+ * Remove a whole pane and every tab it holds, whatever the rule would keep of it. The split it
+ * leaves with one child collapses into that child, and the root pane is emptied rather than
+ * removed, since a tree is always at least one pane.
  */
 export function closePane(layout: Layout, path: number[]): Layout {
     if (paneAt(layout, path) === null) return layout;
@@ -387,7 +382,8 @@ export function setLocked(layout: Layout, path: number[], locked: boolean): Layo
  * holding MAX_CHILDREN cannot give a further child MIN_SIZE, so that one nests instead.
  *
  * The new pane comes after the one it was split from, and `before` puts it in front of it instead,
- * which is what a drop on the left or the top edge of a pane asks for.
+ * which is what a drop on the left or the top edge of a pane asks for. The new pane is added: the
+ * page's arrangement did not define it, so it goes with its last tab.
  */
 export function splitPane(
     layout: Layout,
@@ -396,7 +392,7 @@ export function splitPane(
     instance: Instance,
     before = false
 ): Layout {
-    const fresh: Pane = { kind: 'pane', tabs: [instance], active: instance.id };
+    const fresh = addedPane({ kind: 'pane', tabs: [instance], active: instance.id });
     return splitLeaf(layout, path, dir, fresh, before);
 }
 

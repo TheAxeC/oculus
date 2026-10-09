@@ -3,6 +3,7 @@
 // result, and one table of the saves of text: the base the file must hold, the stats around the
 // write, the file made where none is, the copies of the history, the bytes it refuses to replace or
 // keeps (the whole-file UTF-8 rule and the byte order mark).
+// @module-tag slow: the save table writes up to fifty history copies of one file.
 
 import { createHash } from 'node:crypto';
 import {

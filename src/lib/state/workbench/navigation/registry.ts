@@ -200,8 +200,6 @@ export function createRegistry(layout: LayoutStore): RegistryStore {
      */
     function unregisterView(id: ViewId): void {
         if (!registry.has(id)) return;
-        // The tabs close while the registration is still held, since whether a pane is kept empty
-        // after its last tab goes is read from what the registry says that view is.
         layout.closeInstancesOfView(id);
         registry.delete(id);
     }

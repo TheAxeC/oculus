@@ -372,14 +372,12 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     let openedRule: (view: ViewId) => boolean = () => false;
 
     /**
-     * What a pane is left holding when its last tab goes: an empty terminals pane for a Terminal
-     * tab and an empty documents pane for a view opened for something (layout/tree.ts keeps at most
-     * one of each kind on a page).
+     * What a page's pane that stays is left as when its last tab goes: an empty terminals pane for
+     * a Terminal tab and an empty documents pane for any other view. Which panes stay is
+     * layout/tree.ts's rule: a pane its page's arrangement defined and a locked pane stay, and a
+     * pane added while the page was used goes.
      */
-    const keepRule: KeepRule = (view) => {
-        if (view === TERMINAL_VIEW) return 'terminals';
-        return openedRule(view) ? 'documents' : null;
-    };
+    const keepRule: KeepRule = (view) => (view === TERMINAL_VIEW ? 'terminals' : 'documents');
 
     const attention = createAttention(access, where);
     const instances = createInstances(access, attention, keepRule);
@@ -482,7 +480,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     function adoptFloats(shipped: FloatSpec[]): void {
         if (!pendingFloats) return;
         pendingFloats = false;
-        savePages(adoptFloatsIn(store.current, shipped));
+        savePages(adoptFloatsIn(store.current, shipped, keepRule));
     }
 
     /** The page on screen before the current one, while it is still one of the pages. */

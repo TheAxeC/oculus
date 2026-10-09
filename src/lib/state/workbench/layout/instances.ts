@@ -80,8 +80,8 @@ export type Instances = {
 };
 
 /**
- * `keep` is the rule that leaves a pane empty when its last tab goes. It applies to a page's panes
- * only: a float whose last tab goes is removed.
+ * `keep` is the rule that says what an emptied pane of a page is left as (tree.ts keptPane). It
+ * applies to a page's panes only: a float whose last tab goes is removed.
  */
 export function createInstances(
     access: LayoutAccess,
