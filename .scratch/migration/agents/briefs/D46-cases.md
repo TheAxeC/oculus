@@ -33,3 +33,7 @@ The builder's probe (`$TMPDIR/d46/fileperf2.probe.test.ts`, 100,000 names, load 
      - A, the stock figures accepted as a ruling, is the lazy option: it keeps a requirement unmet.
      - C, the rarest word matched first, returns wrong rows when two words both match many names.
      - D, a new meaning for a query of several words, changes what a user's query finds.
+
+## The F1 key and the history check (open item 28, ruled (a) by Axel)
+
+`F1` is removed from `FAMILIES` in `tests/checks/source/history.test.ts` (line 41 at the base), so a comment or document line that names the F1 key passes the check; the file is added to the paths this step writes. The comments and documents keep naming the key as the brief requires (HELP's key row, `docs/window.md`, `editor-status.svelte.ts`). Quote `npx vitest run tests/checks/source/history.test.ts` passing after the change, and its failure on the step's tree before this change, with the lines it named. Then finish the step to its report.
