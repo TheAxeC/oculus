@@ -33,6 +33,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap } from '$lib/state/workbench/layout';
     import { act, dateTail, fileBlock, openLine, rowMaker } from './rows';
+    import { openSourceFile } from '$lib/views/shared/links/source-file';
     import CommandCenterView from './CommandCenterView.svelte';
     import { useState } from '$lib/state/client/use';
 
@@ -90,6 +91,7 @@
         const days = -(line.days ?? 0);
         if (line.kind === 'paper') return t('focus.command.overdue_deadline', days);
         if (line.kind === 'funding') return t('focus.command.overdue_funding', days);
+        if (line.kind === 'side') return t('focus.command.overdue_deadline', days);
         return t('focus.command.overdue_generic', overdueWord(line.kind), days);
     }
 
@@ -98,6 +100,7 @@
         if (line.kind === 'paper') return t('focus.command.submission_deadline', days);
         if (line.kind === 'funding') return t('focus.command.funding_deadline', days);
         if (line.kind === 'position') return t('focus.command.position_deadline', days);
+        if (line.kind === 'side') return t('focus.command.side_deadline', days);
         if (line.kind === 'conference') {
             if (line.days !== null) return t('focus.command.conference_call', days);
             return t('focus.command.conference_call_approx', monthWords(line.months ?? 0));
@@ -128,9 +131,12 @@
     /** Everything the strip draws, and the line each row came from, by the row's own id. */
     const view = $derived.by(() => {
         const { index, row, kept } = rowMaker('r', fileBlock(client));
-        const byKind = (lines: TickerItem[]): { kind: string; rows: TickerRow[] }[] =>
+        const byKind = (
+            lines: TickerItem[]
+        ): { kind: string; side: boolean; rows: TickerRow[] }[] =>
             runsByKind(lines).map((run) => ({
                 kind: run.kind,
+                side: run.side,
                 rows: run.lines.map((line) => row(line, dateTail(line)))
             }));
         const categories = deadlinesByCategory(week?.deadlines ?? [], CATEGORIES).map((one) => ({
@@ -223,7 +229,7 @@
         const line = view.index[id];
         if (line === undefined) return;
         if (line.target?.kind === 'lead') reveal('leads', line.target.id, true);
-        else openLine(client.layout, line, onproject);
+        else openLine(client.layout, line, onproject, (file) => openSourceFile(client, file));
     }
 
     /** Open the view named by one attention line, revealing the exact venue when it names one. */

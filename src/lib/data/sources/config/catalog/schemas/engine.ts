@@ -15,6 +15,7 @@ import { hubLists } from '../../../../snapshot/schema/lists.ts';
 import {
     CATALOG_FILES,
     manifestSchemaFileShape,
+    sideProjectSchemaFileShape,
     textFileShape
 } from '../../../../shapes/catalog-files.ts';
 import { LOCAL_NAME } from '../../local.ts';
@@ -97,8 +98,15 @@ export function engineSchemas(raw: RawPortfolio, config: PortfolioConfig): Named
             configRule('schemas/manifest-schema.yml')
         )
     );
+    found.push(
+        ...fromShape(
+            'schemas/side-project-schema',
+            sideProjectSchemaFileShape,
+            configRule('schemas/side-project-schema.yml')
+        )
+    );
     for (const { key, file } of SCHEMA_FILES) {
-        if (key === 'manifest_schema') continue;
+        if (key === 'manifest_schema' || key === 'side_project_schema') continue;
         found.push({
             name: `schemas/${file.replace(/\.yml$/, '')}`,
             schema: blockFileSchema(key),

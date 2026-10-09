@@ -4,7 +4,8 @@
 //
 // A subtask hangs under one of two hosts, which is the whole of the difference between the two
 // views that draw the block: one manifest by its id, or one entry of one collection. subtaskHost
-// resolves either into the file, its text and, for an entry, the lines of that entry inside it.
+// resolves either into the file, its text and, for an entry, the lines of that entry inside it. A
+// manifest's id is a research project's or a side project's (writes/manifest.ts finds either).
 //
 // server/edit/writes.ts is the route and re-exports everything here.
 //
@@ -16,7 +17,6 @@ import { parse } from 'yaml';
 import { z } from 'zod';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { CAREER_FILE } from '../../../data/helpers/hub-names.ts';
-import { readManifests } from '../../../data/sources/manifests.ts';
 import {
     addSubtask,
     deleteSubtask,
@@ -27,13 +27,13 @@ import {
 } from '../entry-edit/index.ts';
 import { plain } from '../../core/changes.ts';
 import { mapShape } from '../../../data/shapes/shapes.ts';
-import { insideHub } from './manifest.ts';
+import { manifestSource } from './manifest.ts';
 import { identityOf, readCollection } from '../../files/fs/collections.ts';
 import { saved } from './entries.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 import type { EditResult } from '../yaml/yaml-edit.ts';
 import type { LineRange } from '../entry-edit/index.ts';
-import type { PortfolioConfig } from '../../../data/model/index.ts';
+import type { PortfolioConfig, SideProject } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 import { below } from '../../core/paths.ts';
 
@@ -46,6 +46,7 @@ type SubtaskHost = { file: string; source: string; range: LineRange | null };
 export function subtaskHost(
     hub: string,
     config: PortfolioConfig,
+    sides: readonly SideProject[],
     target: SubtaskTarget
 ): SubtaskHost | null {
     if (target.collection !== undefined) {
@@ -57,14 +58,8 @@ export function subtaskHost(
         if (range === null) return null;
         return { file: held.file, source: held.source, range };
     }
-    const { manifests } = readManifests(hub, config.scan, config.text);
-    const manifest = manifests.find((one) => one.id === target.id);
-    if (manifest === undefined || !insideHub(hub, config, manifest.file)) return null;
-    try {
-        return { file: manifest.file, source: readFileSync(manifest.file, 'utf8'), range: null };
-    } catch {
-        return null;
-    }
+    const manifest = manifestSource(hub, config, sides, target.id);
+    return manifest === null ? null : { ...manifest, range: null };
 }
 
 /**
@@ -105,12 +100,13 @@ export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
 export function writeSubtask(
     hub: string,
     config: PortfolioConfig,
+    sides: readonly SideProject[],
     target: SubtaskTarget,
     key: string,
     action: SubtaskAction,
     value?: string
 ): WriteOutcome {
-    const host = subtaskHost(hub, config, target);
+    const host = subtaskHost(hub, config, sides, target);
     if (host === null) return { found: false, changed: [], refused: [] };
     const edit =
         action === 'delete'
@@ -130,11 +126,12 @@ export function writeSubtask(
 export function restoreSubtask(
     hub: string,
     config: PortfolioConfig,
+    sides: readonly SideProject[],
     target: SubtaskTarget,
     key: string,
     before: Record<string, unknown>
 ): WriteOutcome {
-    const host = subtaskHost(hub, config, target);
+    const host = subtaskHost(hub, config, sides, target);
     if (host === null) return { found: false, changed: [], refused: [] };
     const now = subtaskValues(host.source, host.range)[key] ?? {};
     const fields: Record<string, unknown> = {};
@@ -150,10 +147,11 @@ export function restoreSubtask(
 export function writeSubtaskAdd(
     hub: string,
     config: PortfolioConfig,
+    sides: readonly SideProject[],
     target: SubtaskTarget,
     fields: Record<string, unknown>
 ): WriteOutcome {
-    const host = subtaskHost(hub, config, target);
+    const host = subtaskHost(hub, config, sides, target);
     if (host === null) return { found: false, changed: [], refused: [] };
     const edit = addSubtask(host.source, host.range, fields);
     const out = saved(host.file, host.source, edit);
@@ -205,10 +203,11 @@ function careerHost(data: unknown, name: string): Record<string, unknown> | unde
 export function subtaskValue(
     hub: string,
     config: PortfolioConfig,
+    sides: readonly SideProject[],
     target: SubtaskTarget,
     key: string
 ): { found: boolean; value: unknown } {
-    const host = subtaskHost(hub, config, target);
+    const host = subtaskHost(hub, config, sides, target);
     if (host === null) return { found: false, value: null };
     const values = subtaskValues(host.source, host.range);
     return { found: true, value: key in values ? values[key] : null };

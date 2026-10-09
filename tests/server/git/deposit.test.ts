@@ -120,6 +120,7 @@ test.beforeAll(() => {
         career: careerRules(loadConfig(engineDir()).config),
         overrides: join(dir, 'sessions.json'),
         projects: () => [],
+        sideProjects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),
         layoutFile: join(dir, 'layout.yml'),

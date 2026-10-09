@@ -113,6 +113,31 @@ const ROWS: Row[] = [
         ]
     },
     {
+        name: 'a collaborators value of a side project manifest that names a person',
+        at: ['hub', 'side-projects/idea/project.yml', 2, 16],
+        hub: {
+            'side-projects/idea/project.yml':
+                'title: An idea\nstatus: idea\ncollaborators: [amir]\n'
+        },
+        engine: {
+            'sources.yml': [
+                'scan:',
+                '  - { dir: projects/manuscripts, type: manuscript, tier: projects }',
+                '  - { dir: side-projects, type: side-project, tier: personal, optional: true }',
+                ''
+            ].join('\n')
+        },
+        kind: 'reference',
+        key: 'amir',
+        targets: ['hub:registries/people.yml:5'],
+        references: [
+            'hub:network/joint-work.yml:5:13',
+            'hub:projects/active/alpha/project.yml:6:13',
+            'hub:projects/active/alpha/project.yml:7:16',
+            'hub:side-projects/idea/project.yml:2:16'
+        ]
+    },
+    {
         name: 'a waiting-on value that names a project',
         at: ['hub', 'projects/active/alpha/project.yml', 6, 19],
         kind: 'reference',

@@ -16,6 +16,7 @@ import type {
     Project,
     SessionRecord,
     SessionsPayload,
+    SideProject,
     Workspace
 } from '../../../data/model/index.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
@@ -189,6 +190,19 @@ export function projects(hub: HubLike): Project[] {
         : Object.values(held)
               .filter(isMap)
               .map((one) => one as Project);
+}
+
+/**
+ * Every side project in the last published portfolio payload, for a write that names one by its
+ * `side:` or `root:` id.
+ */
+export function sideProjects(hub: HubLike): SideProject[] {
+    const held = entityMap(hub, 'personal');
+    return held === null
+        ? []
+        : Object.values(held)
+              .filter(isMap)
+              .map((one) => one as SideProject);
 }
 
 /**

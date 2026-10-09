@@ -16,7 +16,15 @@ import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/app
 import { gateWrite } from '../../../src/lib/server/edit/writes/app-gate.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { MANIFEST, notesFiles, PAGE, routeSetup } from '../apps/apps-fixture.ts';
-import { changesOf, request, target, TOKEN, warmConfig } from './write-fixture.ts';
+import {
+    changesOf,
+    request,
+    SIDE_MANIFEST,
+    sideTarget,
+    target,
+    TOKEN,
+    warmConfig
+} from './write-fixture.ts';
 
 beforeAll(warmConfig);
 
@@ -210,6 +218,27 @@ const ROWS: Row[] = [
             return [response.status, (await response.json()) as unknown, changesOf(into)];
         },
         [403, { error: 'kind' }, []]
+    ],
+    [
+        'the endpoint lets an app write a side project of the hub and answers not found for a repository root, leaving its file as it was',
+        async () => {
+            const { into } = appTarget();
+            const planted = sideTarget(into);
+            const headers = { [APP_HEADER]: 'app:notes', [KIND_HEADER]: 'manifest' };
+            const send = async (id: string): Promise<number> => {
+                const body = { kind: 'manifest', id, fields: { snooze: '2026-12-01' } };
+                return (await handleWrite(request(body, headers), TOKEN, planted.into)).status;
+            };
+            const status = { hub: await send('side:idea'), root: await send('root:r') };
+            const held = (id: 'side:idea' | 'root:r'): string =>
+                readFileSync(planted.files[id], 'utf8');
+            return {
+                ...status,
+                hubWritten: held('side:idea') === SIDE_MANIFEST.replace('2026-11-01', '2026-12-01'),
+                rootKept: held('root:r') === SIDE_MANIFEST
+            };
+        },
+        { hub: 200, root: 404, hubWritten: true, rootKept: true }
     ],
     [
         'the endpoint answers 403 kind to an app header from a target that holds no apps',

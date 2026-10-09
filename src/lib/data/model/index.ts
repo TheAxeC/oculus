@@ -144,7 +144,7 @@ export type Entities = {
     organisations: Record<Id, Organisation>;
     resources: Record<Id, Resource>;
     collections: Record<Id, Collection>;
-    /** The side projects of the Personal board, by their `side:` or `root:` id. */
+    /** The side projects of the Personal board and the Focus ticker, by `side:` or `root:` id. */
     personal: Record<Id, SideProject>;
     /** What the generated feeds say, which is a summary rather than a set of entities. */
     feeds: Feeds;

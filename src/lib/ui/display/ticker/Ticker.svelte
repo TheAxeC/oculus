@@ -129,9 +129,9 @@
         align-items: baseline;
         gap: 6px;
         min-width: 0;
-        min-height: calc(var(--tree-row) * var(--text-scale, 1));
-        font-size: var(--fs-md);
-        line-height: calc(var(--button-line) * var(--text-scale, 1));
+        min-height: calc(18px * var(--text-scale, 1));
+        font-size: var(--fs-xs);
+        line-height: calc(14px * var(--text-scale, 1));
     }
 
     .name {
@@ -140,7 +140,7 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         font: inherit;
-        font-weight: 600;
+        font-weight: 400;
         color: var(--ink-txt, var(--ink));
     }
 
@@ -163,10 +163,6 @@
         text-decoration: underline;
     }
 
-    .plain {
-        font-weight: 600;
-    }
-
     .tail {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
@@ -174,7 +170,7 @@
 
     .tail.toned {
         color: var(--tone-txt);
-        font-weight: 600;
+        font-weight: 400;
     }
 
     /* The buttons of a row, in one box: what it holds is what the row is drawing. The box sits on
@@ -189,12 +185,17 @@
     }
 
     /* A row's button is drawn as ToolButton.svelte's small text button, VS Code's: 11px words on a
-       14px line in 3px above and below and 6px beside, 22 px high, in the words the caller wrote.
-       It is a button of this list's own and not a ToolButton, since the list reads its buttons by
-       class to measure and reveal them and a ToolButton's wrapper would stand between. */
+       14px line with 6px beside, as high as the row (18px at the text scale), in the words the
+       caller wrote. It is a button of this list's own and not a ToolButton, since the list reads
+       its buttons by class to measure and reveal them and a ToolButton's wrapper would stand
+       between. */
     .act {
+        display: inline-flex;
         flex: 0 0 auto;
-        padding: 3px 6px;
+        align-items: center;
+        box-sizing: border-box;
+        height: calc(18px * var(--text-scale, 1));
+        padding: 0 6px;
         border: 1px solid var(--line);
         border-radius: var(--input-radius);
         background: var(--panel);
@@ -236,7 +237,7 @@
         }
 
         .reveal li.open .act {
-            display: inline-block;
+            display: inline-flex;
         }
 
         /* The box reaches no further than the row whatever it holds, so nothing is drawn outside

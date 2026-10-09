@@ -9,13 +9,14 @@
     import { hasCommandRows, type Ticker as FocusTicker } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { categoryLabel, runHeading } from './rows';
 
     const {
         layout: { openView },
         hpc: { pillText }
     } = useState();
 
-    type RowGroup = { kind: string; rows: TickerRow[] };
+    type RowGroup = { kind: string; side: boolean; rows: TickerRow[] };
     type ViewRows = {
         overdue: TickerRow[];
         categories: { category: string; rows: TickerRow[] }[];
@@ -69,18 +70,6 @@
     function manifestWord(count: number): string {
         return count === 1 ? t('focus.command.manifest') : t('focus.command.manifests');
     }
-
-    /** A deadline category's heading from the text catalog. */
-    function categoryLabel(category: string): string {
-        if (category === 'paper') return t('focus.command.dlcat_paper');
-        if (category === 'funding') return t('focus.command.dlcat_funding');
-        if (category === 'event') return t('focus.command.dlcat_event_label');
-        if (category === 'teaching') return t('focus.command.dlcat_teaching');
-        if (category === 'position') return t('focus.command.dlcat_position');
-        if (category === 'collab') return t('focus.command.dlcat_collab');
-        if (category === 'task') return t('focus.command.dlcat_task');
-        return t('focus.command.dlcat_conference');
-    }
 </script>
 
 {#snippet group(label: string, glyph: string, rows: TickerRow[])}
@@ -96,8 +85,8 @@
     {#if groups.length > 0}
         <div class="grp">
             <p class="lbl"><Glyph name={glyph} />{label}</p>
-            {#each groups as one (one.kind)}
-                <p class="sub">{one.kind === '' ? t('focus.command.kind_other') : one.kind}</p>
+            {#each groups as one (`${one.side}:${one.kind}`)}
+                <p class="sub">{runHeading(one)}</p>
                 <Ticker rows={one.rows} {onpick} {onaction} reveal kept={view.kept} />
             {/each}
         </div>

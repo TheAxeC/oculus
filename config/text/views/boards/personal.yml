@@ -6,6 +6,7 @@ text:
         next: Next
         none_match: No side project matches.
         none_match_glyph: circle_empty
+        related: related
         search: Search title | eli5 | next
         show_in_files: Show in Files
         show_in_files_tip: select {0} in the Files view

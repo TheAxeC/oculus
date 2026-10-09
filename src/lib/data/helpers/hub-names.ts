@@ -79,7 +79,7 @@ export const CAREER_FILE = 'registries/career.yml';
 /** The one filename a scan tier's folder is read for. */
 export const MANIFEST = 'project.yml';
 
-/** The tier whose folders are side projects, which only the Personal board reads. */
+/** The tier whose folders are side projects, which the Personal board and the Focus ticker read. */
 const SIDE_TIER = 'side-projects';
 
 /** The folder of a repository that holds its side-project manifest. */

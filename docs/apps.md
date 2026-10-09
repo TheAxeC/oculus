@@ -245,7 +245,7 @@ The payload is `{ version: number, entities, relations, findings: list of Findin
 | `organisations` | map of Organisation | `id`, `name`, `links`, `personIds`, `fundingIds`, and text `kind?`, `country?` |
 | `resources` | map of Resource | `id`, `name`, `kind` (`cluster`, `machine` or `storage`), `links`, `order` (number), and text `host?`, `access?` |
 | `collections` | map of Collection | `id`, `title`, `file` (absolute path), `entries` (list of Entry), `intro?`, `schema?` (list of `{ field, type, label?, options?, from?, required?, help?, when?, open?, map?, fields? }`; `field` and `type` are text, `options` a list of text, `from` a list of source names or a map `{ field, sources }`, `required` a boolean or `{ when }`, `when` a map of field to a value or a list of values, `open` a boolean, `map` a boolean that says a `records` field holds a map from a name to one record, `fields` a list of the same shape) |
-| `personal` | map of SideProject | `id`, `title`, `status`, `eli5`, `next` (text), `links` (list of text), `source`, `file` |
+| `personal` | map of SideProject | `id`, `title`, `status`, `eli5`, `next` (text), `links` (list of text), `source`, `file`, and the fields of a project that a side manifest takes when it holds the key: text `short?`, `priority?`, `latest?`, `deadline?`, `snooze?`; `pin?` (boolean); `waitingOn?`, `relatedIds?`, `collaborators?` (list of ids); `followups?` and `subtasks?` (as in a project) |
 | `feeds` | map | `leads` (list of `{ title, deadline: text or null, status, fit: text or null }`, or null), `radar` (`{ lastRun: text or null }` or null), `scout` (the same shape) and `linkedin` (`{ lastPost: text or null }` or null) |
 | `career` | map or null | the career strategy of `registries/career.yml` |
 
@@ -414,9 +414,9 @@ A UsageDay holds `tool` (`claude` or `codex`), `account`, `day` and `model` (tex
 
 | Kind | Body | Asks you first |
 |------|------|----------------|
-| `manifest` | `{ kind, id, fields }`: edit the fields of the project `id` | no |
+| `manifest` | `{ kind, id, fields }`: edit the fields of the project `id`, or of a side project of the hub, `id` as `side:<slug>`; a repository's side project, `root:<key>`, answers not found to an app | no |
 | `entry` | `{ kind, collection, id, fields }`: edit the fields of one entry | no |
-| `subtask` | `{ kind, target: { id, collection? }, key, action, value? }`, `action` one of `done`, `reopen`, `snooze`, `delete` | no |
+| `subtask` | `{ kind, target: { id, collection? }, key, action, value? }`, `action` one of `done`, `reopen`, `snooze`, `delete`; `id` may be a side project of the hub, `side:<slug>`, and a `root:<key>` answers not found to an app | no |
 | `subtask-add` | `{ kind, target: { id, collection? }, fields }`, `fields.do` the text of the subtask | no |
 | `host` | `{ kind, name, status }`: set the status of a career host | no |
 | `new-entry` | `{ kind, collection, fields }`: add an entry; `fields` must hold the collection's identity field | no |

@@ -4,15 +4,20 @@
 import type { Collection, Followup, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 import { z } from 'zod';
 import { text as str } from '../../data/helpers/guards.ts';
-import {
-    keyedRowsShape,
-    listOrOneShape,
-    readAs,
-    rowsShape,
-    wordShape
-} from '../../data/shapes/shapes.ts';
+import { listOrOneShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
 import { DEADLINE_SOON, daysUntil } from './board/index.ts';
+import {
+    GLYPHS,
+    dueFollowups,
+    item,
+    subtaskLines,
+    subtasksOf,
+    type SideManifest,
+    type TickerItem,
+    type TickerTarget
+} from './board/ticker-lines.ts';
+import { sideLines } from './board/side-lines.ts';
 import { entryDate, manifestsBehind, type ManifestBehind } from './focus-lanes.ts';
 import {
     deadlineMet,
@@ -28,6 +33,8 @@ import {
     type Tally
 } from './focus.ts';
 
+export { dueFollowups, type SideManifest, type TickerItem, type TickerTarget };
+
 /**
  * The deadline categories, in the order the ticker groups them. They are different jobs: your own
  * paper's submission date is not a conference's open call, and neither is a grant deadline.
@@ -40,23 +47,9 @@ export const CATEGORIES = [
     'position',
     'collab',
     'task',
+    'side',
     'conference'
 ];
-
-/** The glyph each category is drawn with, by the names of config/catalogs/glyphs.yml. */
-const GLYPHS: Record<string, string> = {
-    paper: 'paper',
-    funding: 'coin',
-    event: 'events',
-    teaching: 'teaching',
-    collab: 'collab',
-    task: 'tasks',
-    position: 'scout',
-    conference: 'conference',
-    overdue: 'overdue',
-    followup: 'followup',
-    subtask: 'pin'
-};
 
 /** Which collection each category of entry comes from, for the tab a click on it opens. */
 const COLLECTIONS: Record<string, string> = {
@@ -70,66 +63,6 @@ const COLLECTIONS: Record<string, string> = {
 
 /** The categories read out of a collection, and the collection each is read from. */
 const ENTRY_CATEGORIES = ['event', 'teaching', 'task', 'position', 'collab'];
-
-/**
- * One line of the ticker. `kind` says what it is, which the view turns into words; `days` is whole
- * days to the date, negative when it has passed and null when the line carries no date. Exactly one
- * of `id` (a project) and `entry` (the collection key of an entry) is set, and a line with neither
- * is not something the board can open.
- */
-/**
- * What a ticker line's buttons act on, and nothing about what they say. A view derives the buttons
- * from the shape: a `manifest` or an `entry` is snoozed, an `entry` carrying `statuses` also gets
- * its lifecycle buttons, a line carrying a `subtask` key is ticked, reopened, snoozed or deleted, a
- * `followup` is cleared, a snoozed line is woken, and a `lead` carries none: its line opens the
- * Leads view, where its actions are.
- *
- * Keeping the words out is what lets one view draw every group: the buttons are the write path's
- * vocabulary and the sentences are the text catalogs', and neither of them is here.
- */
-export type TickerTarget = {
-    kind: 'manifest' | 'entry' | 'funding' | 'venue' | 'lead' | 'followup';
-    /** The project id, the entry id, the scheme id, the venue id, or the lead's own title. */
-    id: string;
-    /** The collection an `entry` target sits in. */
-    collection?: string;
-    /** The key of the subtask line, for a line that is one. */
-    subtask?: string;
-    /**
-     * The lifecycle values of the entry's own collection, minus none; the view drops the current.
-     */
-    statuses?: string[];
-};
-
-export type TickerItem = {
-    kind: string;
-    glyph: string;
-    label: string;
-    days: number | null;
-    id?: Id;
-    entry?: string;
-    /** What this line's buttons write, and nothing when the line carries none. */
-    target?: TickerTarget;
-    /** The status the entry of an `entry` target carries now, so the view can drop that button. */
-    status?: string;
-    /**
-     * The `do` text of a subtask line, which its label joins to the parent's name. A reference to
-     * the line carries it, so a list whose items shifted names no task.
-     */
-    subtaskDo?: string;
-    /**
-     * The conference a paper's deadline is aimed at, folded into the paper's own line so the call
-     * is not listed twice. It is a name, and the view joins it to the label with the arrow glyph;
-     * building that sentence here would put words in a module that holds none.
-     */
-    venue?: string;
-    /**
-     * Whole months to a conference call whose exact date is not out yet, which is the one line that
-     * counts in months rather than days. It is set only on such a line, and `days` is then null.
-     */
-    months?: number;
-    snoozed: boolean;
-};
 
 /**
  * What the ticker answers. Each list is already in the order it is shown in. A line that carries a
@@ -165,36 +98,6 @@ export function collectionStatuses(collection: Collection | undefined): string[]
     return collection?.schema?.find((field) => field.field === 'status')?.options ?? [];
 }
 
-/** One ticker line. */
-function item(
-    kind: string,
-    glyph: string,
-    label: string,
-    days: number | null,
-    over: Partial<TickerItem> = {}
-): TickerItem {
-    return { kind, glyph, label, days, snoozed: false, ...over };
-}
-
-/** The follow-ups of one holder that are due: no `after:`, or an `after:` that has passed. */
-export function dueFollowups(
-    notes: Followup[],
-    now: number
-): { note: Followup; days: number | null }[] {
-    const out: { note: Followup; days: number | null }[] = [];
-    for (const note of notes) {
-        const after = note.after ?? '';
-        if (after === '') {
-            out.push({ note, days: null });
-            continue;
-        }
-        const days = daysUntil(after, now);
-        if (days !== null && days > 0) continue;
-        out.push({ note, days });
-    }
-    return out;
-}
-
 /** The whole ticker, in the order the board shows its groups. */
 export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now: number): Ticker {
     const horizon = setting(config, 'deadline_horizon_days', 90);
@@ -207,9 +110,13 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     const overdue: TickerItem[] = [];
     const dated: { category: string; line: TickerItem }[] = [];
     const followups: TickerItem[] = [];
-    const subtasks: TickerItem[] = [];
+    const sides = sideLines(snapshot, config, now);
+    const subtasks: TickerItem[] = [...sides.subtasks];
     const openEntries: TickerItem[] = [];
     const asleep: TickerItem[] = [];
+    overdue.push(...sides.overdue);
+    dated.push(...sides.dated.map((line) => ({ category: 'side', line })));
+    asleep.push(...sides.asleep);
 
     /**
      * A project's own submission deadline: overdue behind it, on the paper group before it. A line
@@ -334,7 +241,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
 
     /** Follow-ups: a project's, then every collection entry's, oldest due first. */
-    const notes: { days: number | null; line: TickerItem }[] = [];
+    const notes: { days: number | null; line: TickerItem }[] = [...sides.notes];
     for (const project of Object.values(snapshot.entities.projects)) {
         for (const { note, days } of dueFollowups(project.followups, now)) {
             notes.push({
@@ -434,6 +341,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
     subtasks.sort(
         (a, b) =>
+            Number(a.side !== undefined) - Number(b.side !== undefined) ||
             (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0) ||
             (a.days ?? Number.MAX_SAFE_INTEGER) - (b.days ?? Number.MAX_SAFE_INTEGER)
     );
@@ -497,52 +405,6 @@ function followupsOf(value: unknown): Followup[] {
     return readAs(followupsShape, readAs(listOrOneShape, value)) ?? [];
 }
 
-type SubtaskRow = { key: string; do: string; deadline?: string; done: boolean; snooze?: string };
-
-/** One line of an entry's checklist: a string, or a map with `do`, `deadline`, `done`, `snooze`. */
-const subtaskShape = z
-    .union([
-        z.string().transform((line) => ({ do: line, deadline: '', done: false, snooze: '' })),
-        z.object({
-            do: wordShape,
-            deadline: wordShape,
-            done: z.boolean().catch(false),
-            snooze: wordShape
-        })
-    ])
-    .refine((line) => line.do.trim() !== '');
-
-/** The `subtasks:` of a collection entry, as a map of lines or a list of them. */
-function subtasksOf(value: unknown): SubtaskRow[] {
-    return (readAs(keyedRowsShape, value) ?? []).flatMap(([key, held]) => {
-        const line = readAs(subtaskShape, held);
-        return line === null ? [] : [{ key, ...line }];
-    });
-}
-
-/** The pending lines of one checklist, each carrying its parent's `kind` as its grouping word. */
-function subtaskLines(
-    rows: SubtaskRow[],
-    parent: string,
-    kind: string,
-    now: number,
-    over: Partial<TickerItem>,
-    target: TickerTarget
-): TickerItem[] {
-    const out: TickerItem[] = [];
-    for (const row of rows) {
-        if (row.done) continue;
-        const days = daysUntil(row.deadline ?? '', now);
-        const line = item(kind, GLYPHS.subtask, `${parent}: ${row.do}`, days, {
-            ...over,
-            subtaskDo: row.do,
-            target: { ...target, subtask: row.key }
-        });
-        out.push(snoozed(row.snooze, now) ? { ...line, snoozed: true } : line);
-    }
-    return out;
-}
-
 /** The venues carrying too many in-flight papers, most-loaded first. */
 export function venueLoad(projects: Project[], venues: Record<Id, Venue>, warn: number): Tally[] {
     const counts: Record<string, number> = {};
@@ -572,13 +434,21 @@ export function daysTone(days: number | null): string | undefined {
     return days <= DEADLINE_SOON ? 'amber' : undefined;
 }
 
-/** The lines in runs of one kind each, in the order given: a kind met again opens a new run. */
-export function runsByKind(lines: TickerItem[]): { kind: string; lines: TickerItem[] }[] {
-    const runs: { kind: string; lines: TickerItem[] }[] = [];
+/**
+ * The lines in runs of one kind each, in the order given: a kind met again opens a new run. A line
+ * of a side project is never in a run with a research line of the same kind, since the empty kind
+ * of a project's checklist and a side project's are different headings.
+ */
+export function runsByKind(
+    lines: TickerItem[]
+): { kind: string; side: boolean; lines: TickerItem[] }[] {
+    const runs: { kind: string; side: boolean; lines: TickerItem[] }[] = [];
     for (const line of lines) {
         const held = runs.at(-1);
-        if (held?.kind !== line.kind) runs.push({ kind: line.kind, lines: [line] });
-        else held.lines.push(line);
+        const side = line.side !== undefined;
+        if (held?.kind !== line.kind || held.side !== side) {
+            runs.push({ kind: line.kind, side, lines: [line] });
+        } else held.lines.push(line);
     }
     return runs;
 }
@@ -596,18 +466,25 @@ export function deadlinesByCategory<C extends string>(
         .filter((one) => one.lines.length > 0);
 }
 
-/** The three groups of the tasks section, each holding its lines in the order given. */
-export type TaskGroups = { followups: TickerItem[]; subtasks: TickerItem[]; tasks: TickerItem[] };
+/** The four groups of the tasks section, each holding its lines in the order given. */
+export type TaskGroups = {
+    followups: TickerItem[];
+    subtasks: TickerItem[];
+    tasks: TickerItem[];
+    /** The undated follow-ups and the open subtasks of the live side projects. */
+    side: TickerItem[];
+};
 
 /**
- * The tasks section's lines by group: a subtask carries the key of its own line, and a follow-up
- * says so in its kind, which is what a scheme's note has instead of a target; every other line is
- * a task.
+ * The tasks section's lines by group: a line of a side project is in the side group, a subtask
+ * carries the key of its own line, and a follow-up says so in its kind, which is what a scheme's
+ * note has instead of a target; every other line is a task.
  */
 export function taskGroups(lines: readonly TickerItem[]): TaskGroups {
-    const groups: TaskGroups = { followups: [], subtasks: [], tasks: [] };
+    const groups: TaskGroups = { followups: [], subtasks: [], tasks: [], side: [] };
     for (const line of lines) {
-        if (line.target?.subtask !== undefined) groups.subtasks.push(line);
+        if (line.side !== undefined) groups.side.push(line);
+        else if (line.target?.subtask !== undefined) groups.subtasks.push(line);
         else if (line.kind === 'followup') groups.followups.push(line);
         else groups.tasks.push(line);
     }
@@ -616,7 +493,13 @@ export function taskGroups(lines: readonly TickerItem[]): TaskGroups {
 
 /** Whether any group of the tasks section holds a line. */
 export function hasTasks(groups: TaskGroups): boolean {
-    return groups.followups.length + groups.subtasks.length + groups.tasks.length > 0;
+    return (
+        groups.followups.length +
+            groups.subtasks.length +
+            groups.tasks.length +
+            groups.side.length >
+        0
+    );
 }
 
 /**

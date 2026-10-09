@@ -12,7 +12,7 @@
 # Where to find projects: each `dir` is relative to the hub root. A project is any subfolder that contains a project.yml; a flat rule gives every manifest its type, a nested rule reads the type from each manifest, and the folder name is the id.
 scan:
   - { dir: projects/ideas,       type: idea,       tier: projects }
-  - { dir: side-projects,        type: side-project, tier: personal, optional: true }   # the Personal board only; no research reader reads it
+  - { dir: side-projects,        type: side-project, tier: personal, optional: true }   # read by the Personal board and the Focus ticker; no research reader reads it
   - { dir: projects/active,      type: active,     tier: projects }
   - { dir: projects/manuscripts, type: manuscript, tier: projects }
   - { dir: projects/software,    type: software,   tier: software, optional: true }   # optional; a hub without the folder reports nothing

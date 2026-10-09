@@ -102,7 +102,7 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `projects` | [Projects](docs/views.md#projects) | The projects board, as cards or as a list, searchable, with the pin, the stale badge and each card's own controls. |
 | `coauthor` | [Coauthor](docs/views.md#coauthor) | The same board over the projects someone else leads. |
 | `archive` | [Archive](docs/views.md#archive) | The same board over finished work and dead ends. |
-| `personal` | [Personal](docs/views.md#personal) | One card per side project, from a folder of `side-projects/` or a repository that holds `.oculus/project.yml`. |
+| `personal` | [Personal](docs/views.md#personal) | One card per side project, from a folder of `side-projects/` or a repository that holds `.oculus/project.yml`; its deadline, follow-ups and subtasks are on Focus while its status is live. |
 | `pillars` | [Pillars](docs/views.md#pillars) | The research pillars and which projects sit under each. |
 | `domains` | [Domains](docs/views.md#domains) | The application domains and the projects in each. |
 | `map` | [Map](docs/views.md#map) | The portfolio as a graph of projects and what links them, filtered by project type and by pillar. |

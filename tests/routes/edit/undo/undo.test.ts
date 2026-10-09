@@ -27,6 +27,8 @@ import {
     manifestOf,
     overridesOf,
     request,
+    sideTarget,
+    SIDE_MANIFEST,
     target,
     tasksOf,
     undoneBack,
@@ -39,42 +41,111 @@ import { MANIFEST as APP_MANIFEST, notesFiles, routeSetup } from '../../apps/app
 
 test.beforeAll(warmConfig);
 
+type Files = ReturnType<typeof sideTarget>['files'];
+
+/**
+ * The manifest writes of the first table: the research project, then each side project's snooze
+ * set and woken. `now` is the value the write left and `was` the value it took the field from.
+ */
+const FIELD_ROWS = [
+    {
+        name: 'a research project',
+        body: GOOD,
+        field: 'status.line',
+        now: 'a new line',
+        was: 'the line',
+        original: MANIFEST,
+        read: (into: WriteTarget): string => manifestOf(into)
+    },
+    ...(['side:idea', 'root:r'] as const).flatMap((id) => [
+        {
+            name: `${id}: a snooze set`,
+            body: { kind: 'manifest', id, fields: { snooze: '2026-12-01' } },
+            field: 'snooze',
+            now: '2026-12-01',
+            was: '2026-11-01',
+            original: SIDE_MANIFEST,
+            read: (_into: WriteTarget, files: Files): string => readFileSync(files[id], 'utf8')
+        },
+        {
+            name: `${id}: a snooze woken`,
+            body: { kind: 'manifest', id, fields: { snooze: '' } },
+            field: 'snooze',
+            now: null,
+            was: '2026-11-01',
+            original: SIDE_MANIFEST,
+            read: (_into: WriteTarget, files: Files): string => readFileSync(files[id], 'utf8')
+        }
+    ])
+];
+
+/** The subtask writes of the second table: a collection entry's line, then each side project's. */
+const LINE_ROWS = [
+    {
+        name: 'a collection entry: a tick',
+        body: {
+            kind: 'subtask',
+            target: { collection: 'tasks', id: 'Review the draft' },
+            key: '0',
+            action: 'done'
+        },
+        read: (into: WriteTarget): string => tasksOf(into)
+    },
+    ...(['side:idea', 'root:r'] as const).flatMap((id) => [
+        {
+            name: `${id}: a tick`,
+            body: { kind: 'subtask', target: { id }, key: '0', action: 'done' },
+            read: (_into: WriteTarget, files: Files): string => readFileSync(files[id], 'utf8')
+        },
+        {
+            name: `${id}: an added line`,
+            body: { kind: 'subtask-add', target: { id }, fields: { do: 'write it up' } },
+            read: (_into: WriteTarget, files: Files): string => readFileSync(files[id], 'utf8')
+        }
+    ])
+];
+
 describe('taking a change back', () => {
     /** One write, and the change it left at the head of the log. */
-    async function made(into: WriteTarget, body: unknown): Promise<Change> {
-        expect((await handleWrite(request(body), TOKEN, into)).status).toBe(200);
+    async function made(into: WriteTarget, body: unknown, row = ''): Promise<Change> {
+        expect((await handleWrite(request(body), TOKEN, into)).status, row).toBe(200);
         const [change] = changesOf(into);
         expect(change).toBeDefined();
         return change;
     }
 
-    it('writes a manifest field back, logs the undo, and undoes the undo', async () => {
-        const into = target();
-        const change = await made(into, GOOD);
-        expect(manifestOf(into)).toContain('a new line');
+    it.each(FIELD_ROWS)(
+        'writes a manifest field back, logs the undo, and undoes the undo',
+        async (row) => {
+            const { into, files } = sideTarget();
+            const read = (): string => row.read(into, files);
+            const change = await made(into, row.body, row.name);
+            const written = read();
+            expect(written, row.name).not.toBe(row.original);
 
-        const response = await undone(into, change);
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({
-            ok: true,
-            changed: ['status.line'],
-            refused: []
-        });
-        expect(manifestOf(into)).toBe(MANIFEST);
+            const response = await undone(into, change);
+            expect(response.status, row.name).toBe(200);
+            expect(await response.json(), row.name).toEqual({
+                ok: true,
+                changed: [row.field],
+                refused: []
+            });
+            expect(read(), row.name).toBe(row.original);
 
-        const [taken] = changesOf(into);
-        expect(taken).toMatchObject({
-            kind: 'manifest',
-            field: 'status.line',
-            before: 'a new line',
-            after: 'the line',
-            undo: 'field',
-            undoes: change.at
-        });
+            const [taken] = changesOf(into);
+            expect(taken, row.name).toMatchObject({
+                kind: 'manifest',
+                field: row.field,
+                before: row.now,
+                after: row.was,
+                undo: 'field',
+                undoes: change.at
+            });
 
-        expect((await undone(into, taken)).status).toBe(200);
-        expect(manifestOf(into)).toContain('a new line');
-    });
+            expect((await undone(into, taken)).status, row.name).toBe(200);
+            expect(read(), row.name).toBe(written);
+        }
+    );
 
     it('takes a created entry out again and puts a deleted one back', async () => {
         const into = target();
@@ -157,20 +228,16 @@ describe('taking a change back', () => {
         expect(overridesOf(into)).toEqual({ sessions: {} });
     });
 
-    it('puts a subtask line back as it was', async () => {
-        const into = target();
-        const change = await made(into, {
-            kind: 'subtask',
-            target: { collection: 'tasks', id: 'Review the draft' },
-            key: '0',
-            action: 'done'
-        });
-        expect(tasksOf(into)).toContain('done: true');
+    it.each(LINE_ROWS)('puts a subtask line back as it was', async (row) => {
+        const { into, files } = sideTarget();
+        const read = (): string => row.read(into, files);
+        const original = read();
+        const change = await made(into, row.body, row.name);
+        expect(read(), row.name).not.toBe(original);
         expect(
             (await handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into)).status
         ).toBe(200);
-        expect(tasksOf(into)).not.toContain('done: true');
-        expect(tasksOf(into)).toContain('- { do: read it }');
+        expect(read(), row.name).toBe(original);
     });
 
     it('puts the lists of a deck write back, each record on its own, and a record keyed by the bare group name', async () => {

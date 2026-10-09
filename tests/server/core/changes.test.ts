@@ -21,7 +21,13 @@ import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { DECK_ORDER, DECK_PATH, deckTarget, targetOver } from '../../routes/edit/write-fixture.ts';
+import {
+    DECK_ORDER,
+    DECK_PATH,
+    deckTarget,
+    sideTarget,
+    targetOver
+} from '../../routes/edit/write-fixture.ts';
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
@@ -97,32 +103,94 @@ function request(body: unknown): Request {
 }
 
 /** One write, and the lines it left in the log, newest first. */
-async function written(into: WriteTarget, body: unknown): Promise<Change[]> {
+async function written(into: WriteTarget, body: unknown, row = ''): Promise<Change[]> {
     const response = await handleWrite(request(body), TOKEN, into);
-    expect(response.status).toBe(200);
+    expect(response.status, row).toBe(200);
     return readChanges(logOf(into));
 }
 
+type Files = ReturnType<typeof sideTarget>['files'];
+
+/**
+ * The manifest writes of the first table: the research project, then a side project of the hub,
+ * whose file is recorded by its path inside the hub, and a repository's, whose file is outside
+ * the hub and is recorded by its absolute path.
+ */
+const MANIFEST_ROWS = [
+    {
+        name: 'a research project',
+        id: 'alpha',
+        fields: { 'status.line': 'a new line' },
+        file: (): string => join('projects', 'manuscripts', 'alpha', 'project.yml'),
+        field: 'status.line',
+        before: 'the line',
+        after: 'a new line'
+    },
+    {
+        name: 'a side project of the hub',
+        id: 'side:idea',
+        fields: { snooze: '2026-12-01' },
+        file: (): string => join('side-projects', 'idea', 'project.yml'),
+        field: 'snooze',
+        before: '2026-11-01',
+        after: '2026-12-01'
+    },
+    {
+        name: 'a side project of a served root',
+        id: 'root:r',
+        fields: { snooze: '2026-12-01' },
+        file: (files: Files): string => files['root:r'],
+        field: 'snooze',
+        before: '2026-11-01',
+        after: '2026-12-01'
+    }
+];
+
+/** The subtask writes of the third table, by the host the write names. */
+const SUBTASK_ROWS = [
+    {
+        name: 'a collection entry',
+        host: { collection: 'tasks', id: 'Review the draft' },
+        key: 'Review the draft',
+        file: (): string => join('tasks', 'tasks.yml')
+    },
+    {
+        name: 'a side project of the hub',
+        host: { id: 'side:idea' },
+        key: 'side:idea',
+        file: (): string => join('side-projects', 'idea', 'project.yml')
+    },
+    {
+        name: 'a side project of a served root',
+        host: { id: 'root:r' },
+        key: 'root:r',
+        file: (files: Files): string => files['root:r']
+    }
+];
+
 describe('what each writer records', { tags: ['slow'] }, () => {
-    it('records one manifest field with the value it had and the value written', async () => {
-        const into = target();
-        const rows = await written(into, {
-            kind: 'manifest',
-            id: 'alpha',
-            fields: { 'status.line': 'a new line' }
-        });
-        expect(rows).toHaveLength(1);
-        expect(rows[0]).toMatchObject({
-            kind: 'manifest',
-            file: join('projects', 'manuscripts', 'alpha', 'project.yml'),
-            key: 'alpha',
-            field: 'status.line',
-            before: 'the line',
-            after: 'a new line',
-            undo: 'field'
-        });
-        expect(Date.parse(rows[0].at)).not.toBeNaN();
-    });
+    it.each(MANIFEST_ROWS)(
+        'records one manifest field with the value it had and the value written',
+        async (row) => {
+            const { into, files } = sideTarget(target());
+            const rows = await written(
+                into,
+                { kind: 'manifest', id: row.id, fields: row.fields },
+                row.name
+            );
+            expect(rows, row.name).toHaveLength(1);
+            expect(rows[0], row.name).toMatchObject({
+                kind: 'manifest',
+                file: row.file(files),
+                key: row.id,
+                field: row.field,
+                before: row.before,
+                after: row.after,
+                undo: 'field'
+            });
+            expect(Date.parse(rows[0].at)).not.toBeNaN();
+        }
+    );
 
     it('records a collection entry field, a new entry, a reorder and a deletion', async () => {
         const into = target();
@@ -161,42 +229,59 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         expect(rows[3]).toMatchObject({ key: 'Review the draft', before: 'open', after: 'done' });
     });
 
-    it('records a subtask ticked, a subtask added and a subtask taken out', async () => {
-        const into = target();
-        const ticked = await written(into, {
-            kind: 'subtask',
-            target: { collection: 'tasks', id: 'Review the draft' },
-            key: '0',
-            action: 'done'
-        });
-        expect(ticked[0]).toMatchObject({
-            kind: 'subtask',
-            key: 'Review the draft',
-            field: '0',
-            before: { do: 'read it' },
-            after: { do: 'read it', done: true },
-            undo: 'field'
-        });
-        const added = await written(into, {
-            kind: 'subtask-add',
-            target: { collection: 'tasks', id: 'Review the draft' },
-            fields: { do: 'write it up' }
-        });
-        expect(added[0]).toMatchObject({
-            kind: 'subtask-add',
-            field: '1',
-            before: null,
-            after: { do: 'write it up' },
-            undo: 'create'
-        });
-        const gone = await written(into, {
-            kind: 'subtask',
-            target: { collection: 'tasks', id: 'Review the draft' },
-            key: '1',
-            action: 'delete'
-        });
-        expect(gone[0]).toMatchObject({ field: '1', after: null, undo: 'delete' });
-    });
+    it.each(SUBTASK_ROWS)(
+        'records a subtask ticked, a subtask added and a subtask taken out',
+        async (row) => {
+            const { into, files } = sideTarget(target());
+            const ticked = await written(
+                into,
+                {
+                    kind: 'subtask',
+                    target: row.host,
+                    key: '0',
+                    action: 'done'
+                },
+                row.name
+            );
+            expect(ticked[0], row.name).toMatchObject({
+                kind: 'subtask',
+                file: row.file(files),
+                key: row.key,
+                field: '0',
+                before: { do: 'read it' },
+                after: { do: 'read it', done: true },
+                undo: 'field'
+            });
+            const added = await written(
+                into,
+                {
+                    kind: 'subtask-add',
+                    target: row.host,
+                    fields: { do: 'write it up' }
+                },
+                row.name
+            );
+            expect(added[0], row.name).toMatchObject({
+                kind: 'subtask-add',
+                file: row.file(files),
+                field: '1',
+                before: null,
+                after: { do: 'write it up' },
+                undo: 'create'
+            });
+            const gone = await written(
+                into,
+                {
+                    kind: 'subtask',
+                    target: row.host,
+                    key: '1',
+                    action: 'delete'
+                },
+                row.name
+            );
+            expect(gone[0], row.name).toMatchObject({ field: '1', after: null, undo: 'delete' });
+        }
+    );
 
     it('records a career host, a session override and a feed field', async () => {
         const into = target();

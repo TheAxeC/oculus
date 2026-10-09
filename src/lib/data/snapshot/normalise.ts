@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { compact } from './compact.ts';
 import { fieldsOf } from './schema/field.ts';
 import { career } from './normalise-career.ts';
+import { followups, subtasks } from './normalise-plans.ts';
 import { sideProjects } from './normalise-personal.ts';
 import { indexing } from './indexing.ts';
 import type {
@@ -26,7 +27,6 @@ import type {
     Entry,
     Feeds,
     Finding,
-    Followup,
     Funding,
     Id,
     Organisation,
@@ -44,20 +44,10 @@ import type {
     Resource,
     SchemaField,
     Snapshot,
-    Subtask,
     Venue
 } from '../model/index.ts';
 import { isMap, str, strings } from '../helpers/guards.ts';
-import {
-    keyedRowsShape,
-    listOrOneShape,
-    mapShape,
-    optionalTextShape,
-    readAs,
-    readOr,
-    rowsShape,
-    stringItemsShape
-} from '../shapes/shapes.ts';
+import { mapShape, readOr, rowsShape, stringItemsShape } from '../shapes/shapes.ts';
 
 /**
  * Registry-backed collection keys. Normalise carries these both as entities and collections so
@@ -218,67 +208,6 @@ function staleDays(found: DocPresence[] | undefined, manifest: number | undefine
     if (newest === 0) return 0;
     const lag = Math.round((dayOf(newest) - dayOf(manifest)) / DAY);
     return lag > 0 ? lag : 0;
-}
-
-/** One note of a `followup:`: a string, or a map with its `do` and `after`. */
-const noteShape = z.union([
-    z.string().transform((text) => ({ do: text, after: undefined as string | undefined })),
-    z.object({ do: optionalTextShape, after: optionalTextShape })
-]);
-
-/**
- * The `followup:` notes of a manifest or of a collection entry. The key holds one note as a string,
- * one as a `{ do, after }` map, or a list of either; all three arrive here as a list. A note with
- * no `do` is dropped in silence, the way str() drops a value of the wrong type.
- */
-export function followups(value: unknown): Followup[] {
-    const out: Followup[] = [];
-    for (const item of readOr(listOrOneShape, value, [])) {
-        const note = readAs(noteShape, item);
-        if (note?.do === undefined || note.do.trim() === '') continue;
-        out.push(compact({ do: note.do, after: note.after }));
-    }
-    return out;
-}
-
-/** One line of a `subtasks:` checklist: a string, or a map of its `do`, `deadline` and so on. */
-const lineShape = z.union([
-    z.string().transform((text) => ({
-        do: text,
-        deadline: undefined as string | undefined,
-        done: false,
-        snooze: undefined as string | undefined
-    })),
-    z.object({
-        do: optionalTextShape,
-        deadline: optionalTextShape,
-        done: z.boolean().catch(false),
-        snooze: optionalTextShape
-    })
-]);
-
-/**
- * The `subtasks:` checklist of a manifest or of a collection entry. The key holds a map of key to
- * line or a list of lines, and a line is a string or a `{ do, deadline, done, snooze }` map. The
- * key a line is addressed by is the map's own key, or the position for a list, so a write knows
- * which line it means whatever shape the file is written in.
- */
-export function subtasks(value: unknown): Subtask[] {
-    const out: Subtask[] = [];
-    for (const [key, item] of readOr(keyedRowsShape, value, [])) {
-        const line = readAs(lineShape, item);
-        if (line?.do === undefined || line.do.trim() === '') continue;
-        out.push(
-            compact({
-                key,
-                do: line.do,
-                deadline: line.deadline,
-                done: line.done,
-                snooze: line.snooze
-            })
-        );
-    }
-    return out;
 }
 
 /** The `authors:` of a manifest: one text, or the texts among a list. */

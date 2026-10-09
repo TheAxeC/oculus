@@ -8,7 +8,8 @@
 // has no toggle, so a card the vocabulary does not name is never hidden by a control it cannot see.
 
 import { z } from 'zod';
-import type { SideProject } from '../../../data/model/index.ts';
+import type { Id, SideProject, Snapshot } from '../../../data/model/index.ts';
+import { byKey } from '../../../data/helpers/guards.ts';
 import {
     fieldItemsShape,
     mapShape,
@@ -19,11 +20,17 @@ import { HUB_ROOT } from '../../sources/fs.ts';
 import { t } from '../../shared/words/text.ts';
 import { statusRows, type StatusRow } from '../../shared/words/status-rows.ts';
 import { UNKNOWN_TONE } from '../../shared/words/tones.ts';
+import { personNames } from '../person.ts';
+import { tagLabel } from './items.ts';
+import type { LinkedItem, RelatedTag } from './presets.ts';
 
 export type { SideProject } from '../../../data/model/index.ts';
 
 /** The status key of a card whose manifest names none of the vocabulary's. */
 export const UNKNOWN_SIDE_STATUS = 'unknown';
+
+/** The `live` flag of a `side_project_status` row; any value other than false is live. */
+const liveShape = z.object({ live: z.boolean().catch(true) });
 
 /** One status of `side_project_status`: the value a manifest carries, its words and its hue. */
 export type SideStatus = StatusRow;
@@ -60,7 +67,7 @@ function unknownStatus(): SideStatus {
 
 /**
  * The cards of the side projects: each under its status, sorted by the vocabulary's order, the
- * unknown ones last, then by title.
+ * unknown ones last, a pinned card first within its status, then by title.
  */
 export function sideCards(projects: SideProject[], statuses: SideStatus[]): SideCard[] {
     const unknown = unknownStatus();
@@ -76,10 +83,24 @@ export function sideCards(projects: SideProject[], statuses: SideStatus[]): Side
         .sort(
             (a, b) =>
                 rank(a) - rank(b) ||
+                Number(b.project.pin === true) - Number(a.project.pin === true) ||
                 a.project.title.localeCompare(b.project.title, undefined, {
                     sensitivity: 'base'
                 })
         );
+}
+
+/**
+ * Whether the Focus board reads a side project: its status row in `side_project_status` does not
+ * carry `live: false`. A status the vocabulary does not name is read.
+ */
+export function sideLive(
+    project: Pick<SideProject, 'status'>,
+    config: Record<string, unknown>
+): boolean {
+    const rows = readAs(mapShape, config.side_project_status);
+    const row = rows === null ? undefined : byKey(rows, project.status);
+    return readAs(liveShape, row)?.live !== false;
 }
 
 /** The state a view instance starts in: no search, every status shown, every explanation cut. */
@@ -155,4 +176,30 @@ export function folderTarget(project: SideProject): SideTarget {
     return project.source.kind === 'hub'
         ? { root: HUB_ROOT, path: project.source.folder }
         : { root: project.source.key, path: '' };
+}
+
+/**
+ * The people and projects a side project's card links to: its `collaborators:` as people, drawn by
+ * their names in the registry, and its `related:` as projects, drawn by their short name or title,
+ * and by the id itself, marked not held, when no project has it.
+ */
+export function sideLinks(project: SideProject, snapshot: Snapshot | null): LinkedItem {
+    const names = personNames(snapshot);
+    const projects = snapshot?.entities.projects ?? {};
+    const related = (project.relatedIds ?? []).map((id: Id): RelatedTag => {
+        const held = byKey(projects, id);
+        return { id, label: held === undefined ? id : tagLabel(held), held: held !== undefined };
+    });
+    return {
+        id: project.id,
+        pillars: [],
+        funding: [],
+        datasets: [],
+        collaborators: (project.collaborators ?? []).map((id) => ({
+            id,
+            label: byKey(names, id) ?? id
+        })),
+        software: [],
+        related
+    };
 }

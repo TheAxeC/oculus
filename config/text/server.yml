@@ -270,6 +270,22 @@ text:
             worktree_name: The name {0} is not one a worktree folder can carry
         latex:
             name: latex {0} {1}/{2}
+        manifest_write:
+            group: 'the field is a group; set its children, or clear it whole'
+            idea_exists: '{0}/{1} is already there'
+            idea_folder: not a folder name
+            idea_id: an id is lower case letters, digits and hyphens
+            idea_unparsed: the scaffold did not parse; nothing was written
+            list_not_strings: the list holds something not a string
+            map_field: a map field is not written by the form
+            not_in_hub: the manifest is not inside the hub
+            not_in_schema: the manifest schema does not name the field
+            not_list: the value is not a list
+            not_own_file: "the manifest is not the side project's own project.yml"
+            not_text: the value is not text
+            read_only: the field is read-only
+            unknown_type: unknown field type {0}
+            unreadable: the manifest could not be read
         start:
             already_running: oculus is already running; its window is brought to the front
             handler_failed: 'oculus: the server handler {0} could not be loaded: {1}'

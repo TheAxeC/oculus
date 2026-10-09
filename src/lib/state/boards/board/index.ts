@@ -21,6 +21,7 @@ export {
 export type {
     BoardColumn,
     BoardItem,
+    LinkedItem,
     BoardMode,
     BoardPreset,
     BoardState,

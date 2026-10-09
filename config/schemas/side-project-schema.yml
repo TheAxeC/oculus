@@ -2,9 +2,13 @@
 # side-project-schema.yml
 # oculus's own configuration - the keys of a side project's manifest, as the hub's `schema:` blocks
 # write them. It governs `side-projects/*/project.yml` in the hub and `.oculus/project.yml` in every
-# served root, the two files the Personal board reads. oculus turns it into a JSON Schema, so the YAML
-# editor completes the keys, shows each help line and marks a key or a value the reader refuses.
-# Merged with the other config/*.yml by loadConfig(); `side_project_schema` is its top-level key.
+# served root, the two files the Personal board and the Focus board read. oculus turns it into a JSON
+# Schema, so the YAML editor completes the keys, shows each help line and marks a key or a value the
+# reader refuses. The first five keys are a side project's own. The eleven after them are the
+# research manifest's keys that apply to a side project, with the type word and the `from:` of their
+# rows in manifest-schema.yml, so a value is written, read and checked the same way in both kinds of
+# manifest. Merged with the other config/*.yml by loadConfig(); `side_project_schema` is its
+# top-level key.
 # ===========================================================================
 
 side_project_schema:
@@ -13,3 +17,15 @@ side_project_schema:
   - { field: eli5, type: textarea, help: "What the project is, in two plain sentences." }
   - { field: next, type: textarea, help: "The next thing to do on the project." }
   - { field: links, type: tags, help: "Web addresses or paths that belong to the project, one per entry." }
+  - { field: deadline, type: date, help: "The day the next deadline falls on; it shows on the Focus board while the project's status is live." }
+  - { field: subtasks, type: keymap, help: "A checklist of lines, each with what to do, a deadline, whether it is done and a snooze date. The Focus board ticks, snoozes and deletes them; this form does not change them." }
+  - { field: followup.do, type: textarea, help: "A note of something to do later; it shows in the Follow-ups group on the Focus board." }
+  - { field: followup.after, type: date, help: "Leave empty to show the note now, or pick the date before which it stays hidden." }
+  - { field: snooze, type: date, help: "Pick a date to keep this project off the Focus board until then; clear it to bring the project back." }
+  - { field: priority, type: select, from: vocab.priority_levels, help: "A flame on the card for High, Med or Low. It marks the card and does not change its place on the board." }
+  - { field: pin, type: checkbox, help: "Tick to draw the card first among the cards of its status. A card that does not match the search or the status toggles is hidden, pinned or not." }
+  - { field: short, type: text, help: "A short name for the lines of the Focus board, such as bttd or raw-pls." }
+  - { field: latest, type: textarea, help: "What changed most recently in the project, in a sentence or two." }
+  - { field: collaborators, type: chips, from: people, help: "The people who work on this project, picked from the people list; pick as many as apply." }
+  - { field: waiting-on, type: tags, from: [people, projects], help: "Who or what this project is waiting for: a person from the people list or another project, one per entry." }
+  - { field: related, type: chips, from: projects, help: "Other projects this one builds on or feeds, picked from the project list." }

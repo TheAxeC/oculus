@@ -1,12 +1,23 @@
 // Layer 2, server. The manifest half of the write path: what a form value becomes, which paths may
 // be written at all, one project.yml edited, and one new idea folder scaffolded.
 //
-// The path written is the reader's, never the request's: the id names a manifest readManifests
-// already found under the hub's own scan directories, and insideHub checks the resolved path
-// against them again before the write. Nothing outside them is ever opened for writing.
+// A research manifest's path is the reader's, never the request's: the id names a manifest
+// readManifests already found under the hub's own scan directories, and insideHub checks the
+// resolved path against them again before the write.
+//
+// A side project is the one other manifest a write reaches. Its id (`side:<slug>` or `root:<key>`)
+// is found among the side projects of the portfolio the server last published, which carry the
+// absolute file readPersonal found, and not through readManifests, so the server's two readers stay
+// apart. The file must be the side project's own project.yml (the folder of the hub's side-projects
+// tier, or `.oculus/project.yml` of its served root), and no other file is opened for writing. The
+// fields a write may name are the rows of `side_project_schema`, where a research manifest's are
+// the fields of `manifest_schema`.
+//
+// Every reason a write refuses with is a line of config/text/server.yml under
+// `server.manifest_write`, worded with `words` from the configuration's text catalog.
 //
 // server/edit/writes.ts is the route and re-exports the writers an importer needs (`coerce`,
-// `createIdea`, `fieldTypes`, `insideHub` and `writeManifest`); the undo imports `manifestValue`
+// `createIdea`, `fieldTypes` and `writeManifest`); the undo imports `manifestValue`
 // from this file to read a manifest's value back before it writes.
 //
 // A write that clears a field puts the text it removed on that field's change record. The undo
@@ -23,10 +34,12 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { z } from 'zod';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
+import { ROOT_FOLDER, isSideTier } from '../../../data/helpers/hub-names.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
+import { words } from '../../core/words.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import { noteMapOf, setFields } from '../yaml/yaml-edit.ts';
 import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
@@ -34,39 +47,52 @@ import { insertRemoved, insertReplaced } from './restore.ts';
 import type { ChangeRecord, RemovedText, ReplacedText } from '../../core/changes.ts';
 import type { Refusal, SetFieldsResult } from '../yaml/yaml-edit.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
-import type { PortfolioConfig } from '../../../data/model/index.ts';
+import type { PortfolioConfig, SideProject } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 import { below } from '../../core/paths.ts';
 
 /** The name of the manifest file, which is the only name this module ever writes. */
 const MANIFEST = 'project.yml';
 
-/** One field of the schema's `fields` map, which declares a type when it holds a text `type`. */
+/** One field of a schema, which declares a type when it holds a text `type`. */
 const fieldTypeShape = z.looseObject({ type: z.string() });
 
+/** One row of a schema written as a list: a text `field` and a text `type`. */
+const fieldRowShape = z.looseObject({ field: z.string(), type: z.string() });
+
 /**
- * The type of every field of a schema's `fields` map that declares one, keyed by the map's own
- * keys in their order. An entry that is no map or has no text `type` is left out, and a schema with
- * no `fields` map declares none.
+ * The type of every field of a schema that declares one, keyed by the field's name in the order
+ * the schema gives them. The schema is a `fields` map (`manifest_schema`) or a list of rows with a
+ * `field` key (`side_project_schema`); an entry that is no map or has no text `type` is left out,
+ * and a schema of neither form declares none.
  */
 const fieldTypesShape = z
-    .object({ fields: mapShape })
-    .transform((schema) => {
-        const types: Record<string, string> = {};
-        for (const [name, entry] of Object.entries(schema.fields)) {
-            const declared = fieldTypeShape.safeParse(entry);
-            if (declared.success) types[name] = declared.data.type;
-        }
-        return types;
-    })
+    .union([
+        z.object({ fields: mapShape }).transform((schema) => {
+            const types: Record<string, string> = {};
+            for (const [name, entry] of Object.entries(schema.fields)) {
+                const declared = fieldTypeShape.safeParse(entry);
+                if (declared.success) types[name] = declared.data.type;
+            }
+            return types;
+        }),
+        z.array(z.unknown()).transform((rows) => {
+            const types: Record<string, string> = {};
+            for (const row of rows) {
+                const declared = fieldRowShape.safeParse(row);
+                if (declared.success) types[declared.data.field] = declared.data.type;
+            }
+            return types;
+        })
+    ])
     .catch(() => ({}));
 
 /**
- * The field types, read out of the same `manifest_schema` the client's state/forms/schema.ts reads.
- * The two readers are separate because the boundary table of DESIGN.md lets `state/` import
- * `data/model` and `data/helpers/guards` and nothing else of layer 1, so a shared module would be a
- * boundary violation rather than a saving; what they share is the config file, which is the point
- * of config as data.
+ * The field types, read out of the same `manifest_schema` the client's state/forms/schema.ts reads,
+ * and out of the list form of `side_project_schema`. The two readers are separate because the
+ * boundary table of DESIGN.md lets `state/` import `data/model` and `data/helpers/guards` and
+ * nothing else of layer 1, so a shared module would be a boundary violation rather than a saving;
+ * what they share is the config file, which is the point of config as data.
  */
 export function fieldTypes(schema: unknown): Record<string, string> {
     return fieldTypesShape.parse(schema);
@@ -99,10 +125,10 @@ export type ValueReading = 'form' | 'record';
  * Why a field of this type is never written, whichever way its value is read, or null when it may
  * be: the schema decides what may be written, for a record as for a form.
  */
-function unwritable(type: string): string | null {
-    if (type === 'readonly') return 'the field is read-only';
-    if (type === 'keymap') return 'a map field is not written by the form';
-    if (!WRITABLE.includes(type)) return `unknown field type ${type}`;
+function unwritable(type: string, catalog: Record<string, string>): string | null {
+    if (type === 'readonly') return words(catalog, 'server.manifest_write.read_only');
+    if (type === 'keymap') return words(catalog, 'server.manifest_write.map_field');
+    if (!WRITABLE.includes(type)) return words(catalog, 'server.manifest_write.unknown_type', type);
     return null;
 }
 
@@ -112,8 +138,13 @@ function unwritable(type: string): string | null {
  * the manifest holds as a number (`year`) stays a number, so editing the title beside it does not
  * turn it into a string.
  */
-export function coerce(type: string, raw: unknown, current: unknown): Coerced {
-    const reason = unwritable(type);
+export function coerce(
+    type: string,
+    raw: unknown,
+    current: unknown,
+    catalog: Record<string, string>
+): Coerced {
+    const reason = unwritable(type, catalog);
     if (reason !== null) return { reason };
     if (type === 'checkbox') {
         return { value: TRUE.includes(raw as string | number | boolean) ? true : null };
@@ -125,11 +156,11 @@ export function coerce(type: string, raw: unknown, current: unknown): Coerced {
                 : Array.isArray(raw)
                   ? raw
                   : null;
-        if (items === null) return { reason: 'the value is not a list' };
+        if (items === null) return { reason: words(catalog, 'server.manifest_write.not_list') };
         const strings: string[] = [];
         for (const item of items) {
             if (typeof item !== 'string')
-                return { reason: 'the list holds something not a string' };
+                return { reason: words(catalog, 'server.manifest_write.list_not_strings') };
             const trimmed = item.trim();
             if (trimmed !== '') strings.push(trimmed);
         }
@@ -137,7 +168,8 @@ export function coerce(type: string, raw: unknown, current: unknown): Coerced {
     }
     if (raw === null || raw === undefined) return { value: null };
     if (typeof raw === 'boolean' || typeof raw === 'number') return { value: raw };
-    if (typeof raw !== 'string') return { reason: 'the value is not text' };
+    if (typeof raw !== 'string')
+        return { reason: words(catalog, 'server.manifest_write.not_text') };
     const text = raw.trim();
     if (text === '') return { value: null };
     if (typeof current === 'number' && /^-?\d+(?:\.\d+)?$/.test(text))
@@ -150,10 +182,11 @@ function readValue(
     reading: ValueReading,
     type: string,
     raw: unknown,
-    current: unknown
+    current: unknown,
+    catalog: Record<string, string>
 ): { value: unknown } | { reason: string } {
-    if (reading === 'form') return coerce(type, raw, current);
-    const reason = unwritable(type);
+    if (reading === 'form') return coerce(type, raw, current, catalog);
+    const reason = unwritable(type, catalog);
     return reason === null ? { value: raw } : { reason };
 }
 
@@ -169,6 +202,103 @@ function currentOf(manifest: Record<string, unknown>, field: string): unknown {
 }
 
 /**
+ * A manifest a write may edit: its file, the keys it holds now, the schema that names the fields a
+ * write may touch, and why the file may not be written when it may not.
+ */
+type Home = {
+    file: string;
+    data: Record<string, unknown>;
+    schema: unknown;
+    refusal: string | null;
+};
+
+/** The manifest's keys as the file holds them, or null when the file is unreadable or no map. */
+function heldKeys(file: string): Record<string, unknown> | null {
+    try {
+        const parsed: unknown = parse(readFileSync(file, 'utf8'));
+        return isMap(parsed) ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Whether a side project's file is its own project.yml: the file in the folder its source names,
+ * under one of the hub's side-projects folders for a hub project, and `.oculus/project.yml` of the
+ * served root for a repository.
+ */
+function isOwnFile(hub: string, config: PortfolioConfig, side: SideProject): boolean {
+    const file = resolve(side.file);
+    if (basename(file) !== MANIFEST) return false;
+    if (side.source.kind === 'root') {
+        return file === resolve(join(side.source.dir, ROOT_FOLDER, MANIFEST));
+    }
+    const own = resolve(join(hub, side.source.folder, MANIFEST));
+    return (
+        file === own &&
+        config.scan.some((rule) => isSideTier(rule) && below(file, join(hub, rule.dir)))
+    );
+}
+
+/**
+ * The manifest an id names, or null when there is none. A research project is found by
+ * readManifests among the hub's scan directories; any other id is looked for among the side
+ * projects of the portfolio the server last published, whose manifest must read as a map. A
+ * research id is never taken for a side project.
+ */
+function homeOf(
+    hub: string,
+    config: PortfolioConfig,
+    sides: readonly SideProject[],
+    id: string
+): Home | null {
+    const { manifests } = readManifests(hub, config.scan, config.text);
+    const manifest = manifests.find((one) => one.id === id);
+    if (manifest !== undefined) {
+        return {
+            file: manifest.file,
+            data: manifest,
+            schema: config.schema,
+            refusal: insideHub(hub, config, manifest.file)
+                ? null
+                : words(config.text, 'server.manifest_write.not_in_hub')
+        };
+    }
+    const side = sides.find((one) => one.id === id);
+    if (side === undefined) return null;
+    const data = heldKeys(side.file);
+    if (data === null) return null;
+    return {
+        file: side.file,
+        data,
+        schema: config.merged.side_project_schema,
+        refusal: isOwnFile(hub, config, side)
+            ? null
+            : words(config.text, 'server.manifest_write.not_own_file')
+    };
+}
+
+/**
+ * The file one manifest id names and the text it holds, for a write that edits the file's lines
+ * (a subtask), or null when the id names no manifest or the manifest may not be written.
+ */
+export function manifestSource(
+    hub: string,
+    config: PortfolioConfig,
+    sides: readonly SideProject[],
+    id: string
+): { file: string; source: string } | null {
+    const home = homeOf(hub, config, sides, id);
+    if (home === null) return null;
+    if (home.refusal !== null) return null;
+    try {
+        return { file: home.file, source: readFileSync(home.file, 'utf8') };
+    } catch {
+        return null;
+    }
+}
+
+/**
  * The value one manifest field holds now, and whether the hub still has that project at all. It is
  * what an undo checks before it writes: a field the reader has since edited by hand is not written
  * over by taking an older change back.
@@ -176,25 +306,22 @@ function currentOf(manifest: Record<string, unknown>, field: string): unknown {
 export function manifestValue(
     hub: string,
     config: PortfolioConfig,
+    sides: readonly SideProject[],
     id: string,
     field: string
 ): { found: boolean; value: unknown } {
-    const { manifests } = readManifests(hub, config.scan, config.text);
-    const manifest = manifests.find((one) => one.id === id);
-    if (manifest === undefined) return { found: false, value: null };
-    const value = currentOf(manifest, field);
+    const home = homeOf(hub, config, sides, id);
+    if (home === null) return { found: false, value: null };
+    const value = currentOf(home.data, field);
     return { found: true, value: value === undefined ? null : value };
 }
 
 /** Whether a path is a manifest inside one of the hub's own scan directories. */
-export function insideHub(hub: string, config: PortfolioConfig, file: string): boolean {
+function insideHub(hub: string, config: PortfolioConfig, file: string): boolean {
     const path = resolve(file);
     if (basename(path) !== MANIFEST) return false;
     return config.scan.some((rule) => below(path, join(hub, rule.dir)));
 }
-
-/** Why a group name is not written with a value. */
-const GROUP_REFUSED = 'the field is a group; set its children, or clear it whole';
 
 /** The removed lines of a record: where they stood, what they said and the text after them. */
 const removedShape = z.object({
@@ -268,24 +395,24 @@ function putBack(
 export function writeManifest(
     hub: string,
     config: PortfolioConfig,
+    sides: readonly SideProject[],
     id: string,
     fields: Record<string, unknown>,
     reading: ValueReading = 'form',
     removed?: unknown,
     replaced?: unknown
 ): WriteOutcome {
-    const { manifests } = readManifests(hub, config.scan, config.text);
-    const manifest = manifests.find((one) => one.id === id);
-    if (manifest === undefined) return { found: false, changed: [], refused: [] };
-    if (!insideHub(hub, config, manifest.file)) {
+    const manifest = homeOf(hub, config, sides, id);
+    if (manifest === null) return { found: false, changed: [], refused: [] };
+    if (manifest.refusal !== null) {
         return {
             found: true,
             changed: [],
-            refused: [{ field: '', reason: 'the manifest is not inside the hub' }]
+            refused: [{ field: '', reason: manifest.refusal }]
         };
     }
 
-    const named = new Set(fieldNames(config.schema));
+    const named = new Set(fieldNames(manifest.schema));
     // The parents of the dotted names, `followup` for `followup.do` and `followup.after`: a group
     // the schema names by its children may be cleared whole by its parent name, since the file may
     // hold it as a bare note, a map or a list and clearing one child of a note is not a write the
@@ -293,7 +420,7 @@ export function writeManifest(
     const groups = new Set(
         [...named].filter((one) => one.includes('.')).map((one) => one.slice(0, one.indexOf('.')))
     );
-    const types = fieldTypes(config.schema);
+    const types = fieldTypes(manifest.schema);
     const single = reading === 'record' && Object.keys(fields).length === 1;
     const back = single ? removedOf(removed) : null;
     const note = single ? readAs(replacedShape, replaced) : null;
@@ -316,12 +443,18 @@ export function writeManifest(
             refused.push({
                 field,
                 reason: groups.has(field)
-                    ? GROUP_REFUSED
-                    : 'the manifest schema does not name the field'
+                    ? words(config.text, 'server.manifest_write.group')
+                    : words(config.text, 'server.manifest_write.not_in_schema')
             });
             continue;
         }
-        const out = readValue(reading, types[field] ?? 'text', raw, currentOf(manifest, field));
+        const out = readValue(
+            reading,
+            types[field] ?? 'text',
+            raw,
+            currentOf(manifest.data, field),
+            config.text
+        );
         if ('reason' in out) {
             refused.push({ field, reason: out.reason });
             continue;
@@ -336,13 +469,18 @@ export function writeManifest(
         return {
             found: true,
             changed: [],
-            refused: [...refused, { field: '', reason: 'the manifest could not be read' }]
+            refused: [
+                ...refused,
+                { field: '', reason: words(config.text, 'server.manifest_write.unreadable') }
+            ]
         };
     }
 
     const restored = putBackNote(source, wanted, note) ?? putBack(source, wanted, back);
     if (restored === null) {
-        for (const field of offered) refused.push({ field, reason: GROUP_REFUSED });
+        for (const field of offered) {
+            refused.push({ field, reason: words(config.text, 'server.manifest_write.group') });
+        }
     }
     const edit =
         restored ??
@@ -358,7 +496,7 @@ export function writeManifest(
             file: manifest.file,
             key: id,
             field,
-            before: plain(currentOf(manifest, field)),
+            before: plain(currentOf(manifest.data, field)),
             after: plain(wanted[field]),
             undo: 'field'
         };
@@ -405,14 +543,18 @@ const ideaFormShape = z.object({
  * Scaffold one idea project: `projects/ideas/<id>/project.yml` and a README beside it. A bad id and
  * a folder that is already there are both refused, so nothing existing is ever written over.
  */
-export function createIdea(hub: string, fields: Record<string, unknown>): WriteOutcome {
+export function createIdea(
+    hub: string,
+    catalog: Record<string, string>,
+    fields: Record<string, unknown>
+): WriteOutcome {
     const form = ideaFormShape.parse(fields);
     const { id } = form;
     if (!IDEA_ID.test(id)) {
         return {
             found: true,
             changed: [],
-            refused: [{ field: 'id', reason: 'an id is lower case letters, digits and hyphens' }]
+            refused: [{ field: 'id', reason: words(catalog, 'server.manifest_write.idea_id') }]
         };
     }
     const folder = resolve(join(hub, IDEA_DIR, id));
@@ -420,14 +562,19 @@ export function createIdea(hub: string, fields: Record<string, unknown>): WriteO
         return {
             found: true,
             changed: [],
-            refused: [{ field: 'id', reason: 'not a folder name' }]
+            refused: [{ field: 'id', reason: words(catalog, 'server.manifest_write.idea_folder') }]
         };
     }
     if (existsSync(folder)) {
         return {
             found: true,
             changed: [],
-            refused: [{ field: 'id', reason: `${IDEA_DIR}/${id} is already there` }]
+            refused: [
+                {
+                    field: 'id',
+                    reason: words(catalog, 'server.manifest_write.idea_exists', IDEA_DIR, id)
+                }
+            ]
         };
     }
 
@@ -457,7 +604,7 @@ export function createIdea(hub: string, fields: Record<string, unknown>): WriteO
         return {
             found: true,
             changed: [],
-            refused: [{ field: '', reason: 'the scaffold did not parse; nothing was written' }]
+            refused: [{ field: '', reason: words(catalog, 'server.manifest_write.idea_unparsed') }]
         };
     }
     const readme = `# ${title}\n\n${eli5}\n\n## Next\n\n${IDEA_NEXT}\n`;

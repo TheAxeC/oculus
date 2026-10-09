@@ -18,7 +18,7 @@
 
 import { posix } from 'node:path';
 import ts from 'typescript';
-import { arrowsAlong, labelledEdge } from './labels.mjs';
+import { arrowsAlong, labelledEdge, labelsAcross } from './labels.mjs';
 import { parseReader } from './parsed.mjs';
 import {
     BARE,
@@ -537,7 +537,8 @@ export const PORTS = [
 /**
  * The write diagram drawn, with no two arrows running along each other where a port can part
  * them: while arrowsAlong() names a pair, the later plain arrow of the pair (by name) is given the
- * next port of PORTS and the diagram is drawn again. A plain arrow joins two modules directly;
+ * next port of PORTS and the diagram is drawn again; so is a plain arrow that labelsAcross() names
+ * as running through the words of another arrow. A plain arrow joins two modules directly;
  * an arrow drawn through its words or its calls is not one, so a pair of a plain arrow and another
  * kind is parted by the plain one. The pair may leave one module or reach one: two arrows from one
  * module leave it at one point and two arrows into one module reach it at one point, and when their
@@ -560,10 +561,15 @@ export function writesDrawn(sources, draw, route = WRITE_ROUTE, read = parseRead
     for (;;) {
         const dot = writesDot(sources, route, ports, read);
         const svg = draw(dot);
-        const arrow = arrowsAlong(svg)
+        const along = arrowsAlong(svg)
             .map((line) => /^(.*) along (.*) for \d+$/.exec(line)?.slice(1) ?? [])
-            .map((pair) => pair.reverse().find((one) => !one.includes(' to ')))
-            .find((one) => one !== undefined && nextPort(one) < PORTS.length);
+            .map((pair) => pair.reverse().find((one) => !one.includes(' to ')));
+        const across = labelsAcross(svg).map(
+            (line) => /^.* label .* across (.*?)(?:: .*)?$/.exec(line)?.[1]
+        );
+        const arrow = [...along, ...across].find(
+            (one) => one !== undefined && !one.includes(' to ') && nextPort(one) < PORTS.length
+        );
         if (arrow === undefined) return { dot, svg };
         ports.set(arrow, PORTS[nextPort(arrow)]);
     }

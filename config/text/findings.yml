@@ -40,9 +40,14 @@ text:
             personal_too_large: project.yml is larger than {0} bytes and is not read
             personal_no_title: has no title, so the card is named {0}
             personal_status: 'status "{0}" is not one of {1}; the card is drawn as unknown and sorted last'
-            personal_field_type: '{0} is not text and is read as empty'
+            personal_field_type: '{0} is not {1} and is read as empty'
+            personal_type_text: text
+            personal_type_flag: true or false
+            personal_type_texts: a list of text
+            personal_type_followup: a text, a map of do and after, or a list of either
+            personal_type_subtasks: a map or a list of lines
             personal_links: links is not a list of text; the entries that are not text are dropped
-            personal_key: key {0} is not one of title, status, eli5, next and links and is not read
+            personal_key: key {0} is not a field of the side-project schema and is not read
         deck:
             path_outside: '{0} is outside {1}'
             figure_missing: figure {0} is not in {1}/

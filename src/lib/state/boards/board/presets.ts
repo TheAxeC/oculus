@@ -55,6 +55,23 @@ export type SessionsOf = (project: Project) => string;
 /** A tag on a card: the id a filter names it by, and the words the chip carries. */
 export type BoardTag = { id: Id; label: string };
 
+/** A tag for a project a side project names: `held` is false when no project has the id. */
+export type RelatedTag = BoardTag & { held: boolean };
+
+/**
+ * What a card's cross-link lines read. A project's board item is one, and so is the item of a side
+ * project, which has no tier and no pillars, funding, datasets or software, and may name related
+ * projects instead.
+ */
+export type LinkedItem = Pick<
+    BoardItem,
+    'id' | 'pillars' | 'funding' | 'datasets' | 'collaborators' | 'software'
+> & {
+    project?: Pick<BoardItem['project'], 'tier'>;
+    /** The projects a side project's `related:` names. */
+    related?: RelatedTag[];
+};
+
 /** One project as a board shows it: the entity, and every join a card or a row reads. */
 export type BoardItem = {
     id: Id;

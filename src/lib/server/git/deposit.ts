@@ -432,7 +432,7 @@ export async function push(
     }
 
     const status = deposit.visibility === 'private' ? 'review-anon' : 'deposited';
-    const outcome = writeManifest(into.hub, into.config, id, {
+    const outcome = writeManifest(into.hub, into.config, into.sideProjects(), id, {
         'code_availability.status': status,
         'code_availability.url': url,
         'code_availability.date': today()

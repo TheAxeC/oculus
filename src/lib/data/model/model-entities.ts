@@ -797,11 +797,33 @@ export type RawPersonal = {
 };
 
 /**
- * One side project of the Personal board: a hub folder under `side-projects/` or a repository with
- * a `.oculus/project.yml`. The id is `side:<slug>` for the first and `root:<key>` for the second.
- * `status` is a key of `side_project_status`, or `unknown` for any other value.
+ * The research keys a side project's manifest takes besides its own five, each named and typed as
+ * on `Project`. A key the manifest does not hold is absent from the record.
  */
-export type SideProject = {
+type SideResearchKeys = Partial<
+    Pick<
+        Project,
+        | 'short'
+        | 'pin'
+        | 'priority'
+        | 'latest'
+        | 'deadline'
+        | 'waitingOn'
+        | 'followups'
+        | 'snooze'
+        | 'subtasks'
+        | 'relatedIds'
+        | 'collaborators'
+    >
+>;
+
+/**
+ * One side project of the Personal board and the Focus ticker: a hub folder under `side-projects/`
+ * or a repository with a `.oculus/project.yml`. The id is `side:<slug>` for the first and
+ * `root:<key>` for the second. `status` is a key of `side_project_status`, or `unknown` for any
+ * other value.
+ */
+export type SideProject = SideResearchKeys & {
     id: Id;
     title: string;
     status: string;

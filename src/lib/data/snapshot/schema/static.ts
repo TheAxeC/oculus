@@ -2,7 +2,8 @@
 // decks, a repository's `.oculus/cpp.yml`, and the files of oculus's own configuration. Each is
 // made from a schema file under config/schemas/ (written in the hub's `schema:` vocabulary) or from
 // the reader of the file, and each is matched to files by a rule: the globs of the files it
-// governs, relative to the root they are served from.
+// governs, relative to the root they are served from. The side projects' manifest is made through
+// the translation the research manifest's schema goes through (schema/manifest.ts).
 //
 // These schemas serve the editor. The readers of their files report their own findings, so the gate
 // of the snapshot does not check these files again.
@@ -14,7 +15,7 @@ import { fileSchema } from './hub.ts';
 import type { JsonSchema } from './json.ts';
 import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files.ts';
 import { REGISTRIES, VOCAB_PREFIX } from './lists.ts';
-import { manifestSchema } from './manifest.ts';
+import { manifestSchema, sideSchema } from './manifest.ts';
 import type { Context, Lists, SchemaProblem } from './record.ts';
 import type { NamedSchema } from './set.ts';
 
@@ -54,6 +55,7 @@ export function schemaFileProblems(
         const problems: SchemaProblem[] = [];
         const ctx: Context = { lists, problems, at: '' };
         if (key === 'manifest_schema') manifestSchema(merged[key], ctx);
+        else if (key === 'side_project_schema') sideSchema(merged[key], ctx);
         else sections(merged[key], lists, problems);
         return { file, problems };
     });
@@ -66,7 +68,11 @@ export function projectFileSchemas(config: PortfolioConfig, lists: Lists): Named
         .filter((rule) => !isSideTier(rule))
         .map((rule) => rule.dir.replace(/\/+$/, ''));
     const side = config.scan.filter(isSideTier).map((rule) => rule.dir.replace(/\/+$/, ''));
-    const sideProject = sections(config.merged.side_project_schema, lists);
+    const sideProject = sideSchema(config.merged.side_project_schema, {
+        lists,
+        problems: [],
+        at: ''
+    });
     if (sideProject !== null) {
         found.push({
             name: 'side-project',

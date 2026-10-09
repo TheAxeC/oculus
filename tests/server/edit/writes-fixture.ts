@@ -10,6 +10,8 @@ import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { PortfolioConfig } from '../../../src/lib/data/model/index.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
+import { SIDE_SCAN, plantSides } from '../../routes/edit/write-fixture.ts';
+import type { PlantedSides } from '../../routes/edit/write-fixture.ts';
 
 export const MANIFEST = [
     'id: alpha',
@@ -117,4 +119,25 @@ export function wider(): string {
 
 export function tasksOf(root: string): string {
     return readFileSync(join(root, 'tasks', 'tasks.yml'), 'utf8');
+}
+
+/** The hub path and the root path of the two side manifests of `sideWorld`. */
+export type SideWorld = PlantedSides & {
+    /** The hub, with its research project and a side project at `side-projects/idea`. */
+    root: string;
+    /** The portfolio configuration, scanning the research folder and the side-projects folder. */
+    config: PortfolioConfig;
+};
+
+/**
+ * A hub with a side project in its `side-projects/` folder and a served root with another at
+ * `.oculus/project.yml`, both holding `SIDE_MANIFEST`.
+ */
+export function sideWorld(): SideWorld {
+    const root = hub();
+    const config = {
+        ...configFor(),
+        scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }, SIDE_SCAN]
+    };
+    return { root, config, ...plantSides(root) };
 }

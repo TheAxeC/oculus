@@ -9,11 +9,12 @@
     // The software kind is the one link between two projects, so its entries open a project tab
     // rather than a registered view, and its label says which end of the link the card is on: a
     // paper lists the software that implements it, and a software project lists the papers it
-    // names.
+    // names. The related kind, which only a side project's card carries, opens a project tab too,
+    // except for an id that no project holds, which is drawn as its tag with no press.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { BoardItem, BoardTag } from '$lib/state/boards/board';
+    import type { BoardTag, LinkedItem } from '$lib/state/boards/board';
     import { t } from '$lib/state/shared/words/text';
     import { goto, linkView, shownTags } from './card';
     import { useState } from '$lib/state/client/use';
@@ -26,12 +27,15 @@
     /** The kind whose entries are projects, opened as a tab rather than in a view of their own. */
     const SOFTWARE = 'software';
 
+    /** The kind of a side project's `related:`, whose entries are projects. */
+    const RELATED = 'related';
+
     /** The kind whose entries are people, each opening the Person view for its own key. */
     const COLLABORATORS = 'collaborators';
 
     type Props = {
-        /** The joined board item whose cross-links are shown. */
-        item: BoardItem;
+        /** The joined board item or side project whose cross-links are shown. */
+        item: LinkedItem;
     };
     let { item }: Props = $props();
 
@@ -71,11 +75,17 @@
         {
             key: SOFTWARE,
             label:
-                item.project.tier === 'software'
+                item.project?.tier === 'software'
                     ? t('project.card.software_papers')
                     : t('project.card.software'),
             glyph: t('project.card.software_glyph'),
             tags: item.software
+        },
+        {
+            key: RELATED,
+            label: t('personal.related'),
+            glyph: t('project.card.software_glyph'),
+            tags: item.related ?? []
         }
     ]);
 
@@ -93,7 +103,8 @@
 
     /** What pressing one entry does, and nothing for a kind whose entries are not cross-links. */
     function press(kind: Kind, tag: BoardTag): (() => void) | null {
-        if (kind.key === SOFTWARE)
+        if (kind.key === RELATED && 'held' in tag && tag.held === false) return null;
+        if (kind.key === SOFTWARE || kind.key === RELATED)
             return () => openView('project', { id: tag.id, label: tag.label });
         if (kind.key === COLLABORATORS)
             return () => openView('person', { key: tag.id, label: tag.label });

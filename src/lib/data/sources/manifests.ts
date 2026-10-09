@@ -22,7 +22,7 @@ import { errorLine, readYamlMap } from './yaml-file.ts';
 const NEVER_DESCEND = ['code', 'attic'];
 
 /**
- * The most a side project's manifest may hold. The five fields are a few lines each, so a larger
+ * The most a side project's manifest may hold. Its sixteen keys are a few lines each, so a larger
  * file is not one; the bound keeps a mistaken path (a log, a dump) from being read whole on every
  * rebuild.
  */
@@ -356,7 +356,8 @@ function rootPersonal(
  * Read every side project: the folders of the hub's side-projects tier and the `.oculus` manifests
  * of the roots. Nothing here shares a code path with readManifests, so a side project is never a
  * research record. Each result is a raw manifest with where it came from; what its fields hold is
- * checked and shaped by snapshot/normalise-personal.ts.
+ * checked and shaped by snapshot/normalise-personal.ts, and the Personal board and the Focus ticker
+ * read the records that make.
  */
 export function readPersonal(
     hub: string,

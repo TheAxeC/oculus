@@ -198,12 +198,12 @@ career_host_status:
   dropped:   { icon: fail, label: "dropped",         color: "#9ca3af" }
 
 
-# Side-project statuses (Personal board): status -> icon / label / colour. Order = the board's order of cards and of its status toggles; a status outside the list is drawn as unknown and sorted last.
+# Side-project statuses (Personal board): status -> icon / label / colour. Order = the board's order of cards and of its status toggles; a status outside the list is drawn as unknown and sorted last. `live: false` marks a status whose projects the Focus board leaves out: they draw no line and count in no waiting tally. A status with no `live` is live.
 side_project_status:
   running:  { icon: live,   label: "running",  color: "#16a34a" }
   building: { icon: active, label: "building", color: "#d4a017" }
   idea:     { icon: idea,   label: "idea",     color: "#0891b2" }
-  parked:   { icon: snooze, label: "parked",   color: "#9ca3af" }
+  parked:   { icon: snooze, label: "parked",   color: "#9ca3af", live: false }
 
 
 # Career score dimensions (Focus career card host chips): `field` = the registries/career.yml host key scored, `badge` = the terse chip letter, `label` = the hover tooltip. Author-specific (the host-scoring axes).

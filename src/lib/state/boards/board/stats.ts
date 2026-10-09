@@ -31,10 +31,11 @@ export type WaitingLine = { kind: 'people' | 'review' | 'blocked'; text: string 
 /**
  * What a project is waiting on. Explicit people win over submission review, which wins over a
  * generic external block. A `waiting-on:` value is a person drawn by name or another project
- * drawn by its label, through the one rule of waiting.ts.
+ * drawn by its label, through the one rule of waiting.ts. A side project has no chips and no venue,
+ * so only its explicit people can apply.
  */
 export function waitingLine(
-    project: Project,
+    project: Pick<Project, 'waitingOn'> & Partial<Pick<Project, 'chips' | 'venueId'>>,
     venues: Record<Id, Venue>,
     people: Record<Id, string>,
     projects: Record<Id, Project> = {}
@@ -43,7 +44,8 @@ export function waitingLine(
         const names = project.waitingOn.map((id) => waitingLabel(id, people, projects)).join(', ');
         return { kind: 'people', text: t('project.helper.waiting_on', names) };
     }
-    if (project.chips.includes('submitted')) {
+    const chips = project.chips ?? [];
+    if (chips.includes('submitted')) {
         const venue = project.venueId === undefined ? undefined : venues[project.venueId];
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
         const name = venue === undefined ? '' : venue.short?.trim() || venue.name;
@@ -55,7 +57,7 @@ export function waitingLine(
                     : t('project.helper.under_review_at', name)
         };
     }
-    if (project.chips.includes('blocked')) {
+    if (chips.includes('blocked')) {
         return { kind: 'blocked', text: t('project.helper.blocked_external') };
     }
     return null;

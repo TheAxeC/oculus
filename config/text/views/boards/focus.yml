@@ -28,6 +28,7 @@ text:
             dlcat_funding: funding
             dlcat_paper: papers
             dlcat_position: positions
+            dlcat_side: side projects
             dlcat_task: tasks
             dlcat_teaching: teaching
             emails: emails to reply / act on
@@ -65,6 +66,7 @@ text:
             refresh_litwatch_plain: Lit Watch - {0} | run /research-cockpit litwatch
             refresh_scout_plain: Position scout - ran {0}d ago | run /research-cockpit scout
             scout_glyph: scout
+            side_deadline: deadline in {0}d
             since_linkedin: since your last LinkedIn post
             snoozed: Snoozed ({0})
             snoozed_glyph: snooze

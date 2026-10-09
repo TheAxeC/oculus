@@ -159,3 +159,144 @@ The cases' first run is quoted for every case and reproduced by the reviewer. No
 - Whether Settings, which can hold form edits, loses unsaved text when a reset moves it: the moved instance keeps its id, so its ui state under that id is kept (`createClaims.settle` and `renameInstance`, read). Not run.
 
 Reviewer usage: agent id and token count are not visible to me; about 60 tool uses; minutes not verified.
+
+## Repair round 1, refuted
+
+```
+$ (scratch copy of the worktree's tools/oculus at $TMPDIR/d53r1rev/tree, node_modules linked) npm run diagrams
+diagrams exit 0
+$ diff -rq $TMPDIR/d53r1rev/tree/docs/diagrams .agents/worktrees/D53/tools/oculus/docs/diagrams   -> exit 0 (no difference; the worktree's diagrams are what its source makes)
+$ diff -rq .agents/worktrees/D53-round0/tools/oculus/docs/diagrams docs/diagrams                    -> exit 0
+
+$ cd .agents/worktrees/D53/tools/oculus && npm run test:quick -- --base 82eaeace7
+ok      svelte-kit sync (4.1 s)
+ok      prettier (4.1 s): All matched files use Prettier code style!
+ok      ASCII gate (4.2 s)
+ok      eslint (35.6 s)
+ok      vitest (46.9 s): Duration  41.64s (transform 97.53s, setup 0ms, import 123.92s, tests 3.09s, environment 195ms)
+ok      svelte-check (47.4 s): 1791567327222 COMPLETED 444 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 51.7 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+quick exit 0
+(git status --short afterwards: 27 lines, the 26 modified files and the untracked report, as before the run)
+
+$ npx vitest run <the 12 paths of verify 2> --reporter=dot      (worktree)
+ Test Files  14 passed (14)
+      Tests  122 passed (122)
+$ same, from $TMPDIR/d53-unchanged (diff -rq of src, tests, utils, config against .agents/worktrees/D53-base/tools/oculus: no output)
+ Test Files  14 passed (14)
+      Tests  122 passed (122)
+
+$ diff -ru (excluding node_modules, .svelte-kit, .scratch, build, local.yml) D53-round0/tools/oculus D53/tools/oculus
+7 files: DESIGN.md, config/text/views/system/workbench.yml, docs/window.md, layout/open/away.ts, layout/open/float/pages.ts, layout/open/opening.ts, views/system/workbench/PagesReset.svelte
+$ diff -rq --exclude=... .agents/worktrees/D53-round0/tools/oculus $TMPDIR/d53-round0   -> exit 0 (the builder's round-0 copy is the read-only copy)
+
+Reviewer's own copies of the builder's harness ($TMPDIR/d53r1rev/{round0,after,unch}, configs pointing include at those folders):
+$ cd $TMPDIR/d53-round0 && npx vitest run --config $TMPDIR/d53r1rev/round0/vitest.config.mts --reporter=default | grep -E "^CASE|FAIL|Tests |rror"
+CASE PROBE A: DIFFERS | id=hi page1: focus={"path":[0]} folded=[] | page1(screen)(max 0)=row([*files#f1], <page page2>) ; page2=[*history#hi findings#fi]
+CASE PROBE B: DIFFERS | id=hi page1: focus=null folded=[1] | page1(screen)=row([*files#f1], <page page2>) ; page2=[*history#hi findings#fi]
+CASE PROBE C: DIFFERS | id=hi page1: focus={"path":[0]} folded=[] ; page2: focus={"path":[0]} folded=[1] | ...
+CASE PROBE D: AS EXPECTED | id=hi unchanged=true
+CASE PROBE E: AS EXPECTED | id=hi page1: focus=null folded=[] ; page2: focus=null folded=[]
+cases, X1 to X5 and probes A to E: 40 AS EXPECTED, 3 DIFFERS (A, B, C), as the report says
+$ cd .agents/worktrees/D53/tools/oculus && npx vitest run --config $TMPDIR/d53r1rev/after/vitest.config.mts ...
+CASE PROBE A: AS EXPECTED | id=hi page1: focus=null folded=[] | page1(screen)=row([*files#f1], <page page2>) ; page2=[*history#hi findings#fi]
+CASE PROBE B: AS EXPECTED | id=hi page1: focus=null folded=[] | ...
+CASE PROBE C: AS EXPECTED | id=hi page1: focus=null folded=[] ; page2: focus=null folded=[] | ...
+43 AS EXPECTED, 0 DIFFERS; the 43 lines, sorted and with uuids masked, are identical to the report's "After the change" block (diff exit 0)
+$ cd $TMPDIR/d53-unchanged && npx vitest run --config $TMPDIR/d53r1rev/unch/vitest.config.mts ...
+Tests 30 passed (30); 13 AS EXPECTED, 25 DIFFERS; identical to the report's first-run block with uuids masked (diff exit 0)
+
+Reviewer's probes ($TMPDIR/d53r1rev/*/reviewer.test.ts), round-0 copy then worktree:
+R1 page1 (max 0) draws page2 and page3, page3 folded over a leaf of page4, page4 holds History:   DIFFERS -> AS EXPECTED (p1 focus=null, p3 folded=[], page2 untouched, page1 on screen)
+R2 keyboard focus in a float (openView('history', undefined, 'fl')), holder in a leaf under a maximised pane: DIFFERS -> AS EXPECTED (p1 focus=null, float fl=[*hpc#hp], one History)
+R3 leaf inside a folded inner split, outer pane maximised:   DIFFERS -> AS EXPECTED (p1 focus=null, inner folded=[])
+R4 saved loop page1<->page2, holder page3:                   AS EXPECTED both (load replaces both loop leaves by empty panes: page1=row([*files#f1], []) ; page2=row([*files#f2], []); page3 shown)
+R5 outer page maximised over the leaf and holder page maximised elsewhere: DIFFERS -> AS EXPECTED (p1=null p2=null)
+R6 catalogue openAway and openNextTo of History held in a hidden leaf: DIFFERS -> AS EXPECTED (both answer hi, p1 focus=null, one History)
+Text probes, worktree only:
+T1 page1=row([files f1],[search s1]) maximised [1]; openView('files'):  files=2 | page1(screen)(max 1)=row([*files#f1], [search#s1 *files#new])
+T2 page1=[files f1], float fl=[hpc]; openView('files', undefined, 'fl'): files=2 | page1(screen)=[*files#f1] ; float fl=[hpc#hp *files#new]
+T3 own + sys (rail views), reader's float fl=[status#stf {k:1}]; resetPages(rail, shipped): status=1 | ... sys=row(..., [*status#new findings#new ...]) ; float new=[*hpc#new usage#new]
+
+$ sh utils/folder-check.sh            -> folder-check exit 0
+$ sh utils/unused-exports.sh | wc -l  -> 364 (base file: 364)
+$ diff <base unused-exports.txt> <now>
+202c202
+< src/lib/state/workbench/layout/nested.ts: containsPage, embeddable, drawnBy
+---
+> src/lib/state/workbench/layout/nested.ts: containsPage, embeddable
+$ ls layout | wc -l ; ls layout/open | wc -l   -> 10 ; 10
+$ git diff 82eaeace7 --name-only | xargs wc -l (top): layout.svelte.ts 875, context.ts 859, pages.ts 626, DESIGN.md 587, drag.svelte.ts 488, opening.ts 447
+$ git diff 82eaeace7 --name-only | xargs env LC_ALL=C grep -n '[^ -~]'   -> exit 1 (no non-ASCII)
+$ (24 files of diff -rq against D53-base) xargs npx prettier --check -> "All matched files use Prettier code style!", exit 0; eslint over the .ts/.svelte among them -> exit 0
+$ grep -rn "floatsFrom(\|createOpening(\|createAway(" src tests   -> the 8 lines the report quotes, verbatim
+$ grep -rn "createOpening\|createAway\|floatsFrom" tests           -> exit 1 (no test calls them)
+$ grep -rn "leaf.page ===\|walk(leaf.page)\|pageLeaves(" src/lib
+  prints nested.ts:33 and opening.ts:104, :105 beside the six lines the report quotes; the report's block is a filtered copy. The decision it supports (no existing function returns the chain of leaves) holds by reading nested.ts: showsPage and drawnBy answer reachability only, withoutPage removes leaves.
+$ grep -rn "\bleavesTo\b\|\bshowLeaf\b" src tests   -> opening.ts:92, :365, :385, :386 only (both local)
+$ grep -n "git " D53-report.md -> no line; LC_ALL=C grep -n '[^ -~]' D53-report.md -> no line
+State file "Open items" (orchestrator-state.md, main checkout, read now): heading and its one paragraph, no item; the report's copy matches it.
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since 82eaeace7:
+
+- 1: holds. `unique?: boolean` with its comment on `Registration`; `grep -rln "unique: true" src` gives the ten registration files only (first run); the round did not touch it.
+- 2: holds. `registerUnique` at `context.ts:765`; the rule reaches `createOpening`, `createAway` and the builds (`layout.svelte.ts:419-439`), now a required argument of both factories.
+- 3: holds. Spec 1 of the first report is closed: probes A, B, C and the reviewer's R1, R2, R3, R5, R6 all show the hiding maximised pane restored and the folded child expanded in each page between the page on screen and the holder, with the page on screen kept and one instance; probe D shows a page nothing hides is not rewritten. Cases 1 to 6, 19, 20, 23 rerun met.
+- 4: holds. Cases 11 to 16, 24, 25 and X1 to X4 rerun met; the round changed only `floatsFrom`'s signature, whose three callers pass `claims.settle`.
+- 5: holds. Case 17 rerun met (`copiesToWindow(se)=false menu(settings)=move/no-copy`).
+- 6: holds. Cases 10 and 22 rerun met.
+- 7: holds. Cases 6, 20 and 21 rerun met through the harness copies of `Catalogue.svelte` and `ActivityRail.svelte`.
+- 8: holds. Case 18 and X5 rerun met.
+- 9: violated, Findings 1 and 2. The round's ruling 2 and ruling 3 texts and the leaf sentence are true to the code. However, a sentence on ordinary views, at line 35 and at line 21, is false while a pane is maximised. A second sentence, on what Reset all takes from a float, is also false.
+- 10: holds. folder-check exit 0; every changed source file at or under 880 lines, every component at or under 520; `layout/` and `layout/open/` at 10 items.
+
+Cases of the brief's "Cases": every case is met on the store side by the rerun above (the 38 case lines and X1 to X5 identical to the report). What the reader sees for 1, 3, 10, 11, 12 and 21 is the landing look's.
+
+- 1: met (store side). 2: met. 3: met (store side). 4: met, and also with the outer page maximised or folded (probes A, B, C, R1 to R3). 5: met. 6: met (rail and language). 7: met. 8: met. 9: met (beside and here). 10: met (store side, held and not held). 11: met (store side). 12: met (store side, same id `st`). 13: met (held and not held). 14: met. 15: met (fresh and keepDefault). 16: met. 17: met (app and browser). 18: met. 19: met. 20: met. 21: met (store side, click and shift). 22: met. 23: met. 24: met. 25: met.
+
+Closures claimed by the builder, checked for the three things the skill names:
+- Ruling 1 (Spec 1, Behaviour 1): closed by a change to `showHeld` (`opening.ts:383-388`, `leavesTo` 92-111, `showLeaf` 365-370), not by removing a check. Every requirement of the ruling is met: the maximised pane is restored and the folded child expanded in the page on screen, and in each page between it and the holder when leaves nest (C, R1). Probes A and B are quoted on the round-0 copy and after, and reproduce. Every case and X1 to X5 were run again and reproduce. Nested leaves, sibling branches, a folded inner split, a float as the opener's host and the catalogue's openAway/openNextTo paths all reproduce (R1 to R3, R5, R6).
+  - A cyclic leaf cannot reach `leavesTo` at run time: `settlePageLeaves` clears both leaves of a loop on load (R4 output, `saved.ts:569`), and `embedPage` refuses one (`embeddable`). `leavesTo`'s `seen` set still ends the walk, as `showsPage` does.
+  - A holder drawn in a float cannot exist: a float holds one `Pane` (`model.ts:126`, `Float = { id; pane: Pane; place }`), `embedPage` refuses a float host because `embeddable` requires the host among the pages, and a saved float is read only as `kind: 'pane'` (`saved.ts:607-608`).
+- Ruling 2 (Standards 1): the sentence is written in the words the ruling gave, and the leaf sentence is true after ruling 1. However, the ruling's own clause "opening one on a page that already holds it activates it there" is false under a maximised pane; see Finding 1.
+- Ruling 3 (Standards 2, Behaviour 2): `reset_all_tip`, the `PagesReset.svelte` head comment and `docs/window.md:33` each changed in that clause only (delta read), and they match `resetAll` (`pages.ts:286-321`) and case 13 held.
+  - The builder also added a floats clause to line 35, the same omission in the next sentence. It is not a fix beyond the finding, but it carries Finding 2.
+- Ruling 4 (Standards 3): closed. `settle` is required and its branch is gone; `unique` has no default in either factory; the caller grep is quoted and reproduces. One default of the same kind is left; see Finding 3.
+- Ruling 5: the report is rewritten whole. Visible changes 2 and 6 give the two required before-and-after entries, and no git command is named.
+
+### Findings
+
+- `tools/oculus/docs/window.md:35`: "Files, Search, Terminal and the session views are not unique: several pages and floats may hold one at once, and opening one on a page that already holds it activates it there." The same claim is at `docs/window.md:21`: "A view already open on that page is activated where it is rather than opened twice."
+  - What is wrong: while another pane of the page is maximised, `openInto` looks only in the maximised pane (`opening.ts:201-207`, `findIn`, whose comment states the rule) and opens a second instance there. Probe T1 shows `page1(screen)(max 1)=row([*files#f1], [search#s1 *files#new])`, files=2. With the keyboard focus in a float, the same open makes a second Files in the float (T2).
+  - Ruling 2 dictated the clause "as line 21 says". Brief item 9 asked that every sentence of line 21 be made true for an ordinary view. No sentence of `docs/window.md` states the maximised exception (`grep -o "[^.]*maximis[^.]*\."` over window.md, views.md, HELP.md).
+  - Heading: standards (`agents/spec.md`, "What every package obeys": a sentence a change makes false is a defect of the change).
+  - Failure scenario: a reader maximises the Search pane on a page whose other pane holds Files, presses the Files entry in the catalogue or its key, and gets a second Files tab in the maximised pane, where the guide told them the existing one would be activated.
+  - Verdict: item 9 violated. The fix is small and inside the brief: one clause in each of the two sentences naming the maximised pane.
+- `tools/oculus/docs/window.md:35`: "A page made from its arrangement (the first press of its rail button, Reset, Reset all pages) takes a unique view the arrangement names from the page or float that holds it, with its state, ... and the floats Reset all pages makes take a unique view they name in the same way".
+  - What is wrong: `resetAll` takes a held unique view only from a kept page. Its `createClaims` `apart` set holds every rebuilt and removed page and every held float (`pages.ts:300-301`, `:195`), and its comment says "is moved in from a kept page". A unique view in a float the reader has, or in another rail page being rebuilt, is closed with that host, and a new instance with no state is made. Probe T3 shows the reader's floated `status#stf` (state `{k:1}`) replaced by `status#new` on the System page. Case 13 shows the System page's own `settings#se` replaced by `settings#new`.
+  - The clause "from the page or float that holds it, with its state" is round-0 text. The round added "the floats Reset all pages makes take a unique view they name in the same way", and those floats never take from a float.
+  - Heading: standards (same rule as above).
+  - Failure scenario: a reader floats Status or Settings, runs Reset all pages expecting that tab and its state to move onto the System page as the guide says, and finds a fresh tab while the floated one is gone. The confirm asks about unsaved text first, so no draft is lost silently.
+  - Verdict: item 9 violated. The fix is small and inside the brief: "from a page of your own" for Reset all pages, in the words of `resetAll`'s comment.
+- `tools/oculus/src/lib/state/workbench/layout/open/opening.ts:122-123`:
+  ```
+      opened: (view: ViewId) => boolean = () => false,
+      unique: UniqueRule
+  ```
+  - What is wrong: with `unique` now required after it, `opened`'s default applies only to a caller that passes `undefined` explicitly. The one caller passes a function (`layout.svelte.ts:423`), and no test calls `createOpening` (grep exit 1). This is the default ruling 4 removed from `unique`, left on the parameter before it. The default is the base's own (base `opening.ts:60`), but the round made it a defaulted parameter before a required one.
+  - Heading: standards (`agents/spec.md`, "The principles every package is judged on", YAGNI; refute's "code larger than its job").
+  - Failure scenario: a maintainer reads the default as a supported call shape and writes `createOpening(access, attention, keep)`. That no longer type-checks, so the default misleads at no runtime cost. Low cost. The fix at landing drops `= () => false`.
+  - No verdict.
+
+### Declined to judge
+
+- What the reader sees for cases 1, 3, 10, 11, 12 and 21, and the clicks of `Catalogue.svelte` and `ActivityRail.svelte`: the landing look's, by the brief.
+- G54's own test (`tests/checks/config/arrangements.test.ts`): not run. It is under `tests/checks`, which `test:quick` does not run, and it runs at landing under `npm run test:landing`. `config/layout.yml` is not in `git diff 82eaeace7 --name-only`.
+- The wording of the fixes for Findings 1 and 2: the orchestrator's at landing.
+- The `test:quick` time (51.7 s here, 68.0 s in the report, against a 45.0 s limit): every command passed and no decision of this step rests on the figure. The machine's load was not measured.
+
+Reviewer usage: agent id and token count not visible to me; about 48 tool uses; minutes not verified.

@@ -89,7 +89,7 @@ export type WatchPaths = {
     /**
      * The directories the file browser serves, read at every rebuild. `personalRoots` below
      * decides which of them are repositories whose `.oculus/project.yml` is a side project of the
-     * Personal board; the reader takes the roots it is handed as they come.
+     * Personal board and the Focus ticker; the reader takes the roots it is handed as they come.
      */
     roots: () => Root[];
     /**

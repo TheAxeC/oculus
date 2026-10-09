@@ -26,7 +26,7 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { LOCAL_NAME, engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import type { Project, Tier } from '../../../src/lib/data/model/index.ts';
+import type { Project, SideProject, Tier } from '../../../src/lib/data/model/index.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
@@ -132,6 +132,7 @@ export function targetOver(
         career: careerRules(merged),
         overrides: files.overrides,
         projects: () => [],
+        sideProjects: () => [],
         bookmarks: files.bookmarks,
         behaviorFile: join(dir, 'behavior.yml'),
         layoutFile: join(dir, 'layout.yml'),
@@ -298,12 +299,90 @@ export function deckTarget(): WriteTarget {
         engine: engineDir(),
         career: careerRules(loadConfig(engineDir()).config),
         projects: () => projects,
+        sideProjects: () => [],
         files: { roots: () => [{ key: 'hub', dir }] },
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),
         layoutFile: join(dir, 'layout.yml'),
         glyphs: [],
         changes: { file: changes, keep: 500, writes: fsWrites() }
+    };
+}
+
+/** The manifest of each side project `plantSides` plants, with the research keys a write takes. */
+export const SIDE_MANIFEST = [
+    'title: "An idea"',
+    'status: idea',
+    'eli5: "what it is"',
+    'snooze: 2026-11-01',
+    'subtasks:',
+    '  - { do: read it }',
+    ''
+].join('\n');
+
+/** The scan rule that names the hub's side-projects folder. */
+export const SIDE_SCAN = { dir: 'side-projects', type: 'side-project' };
+
+/** What `plantSides` plants: the served root, the file of each side project and the projects. */
+export type PlantedSides = {
+    /** The served root that holds the second side project's `.oculus/project.yml`. */
+    served: string;
+    /** The manifest file of each side project, by its id. */
+    files: Record<'side:idea' | 'root:r', string>;
+    /** The two side projects as the server's published portfolio holds them. */
+    sides: SideProject[];
+};
+
+/**
+ * Two side projects planted, both holding `SIDE_MANIFEST`: `side:idea` in the `side-projects/`
+ * folder of `hubDir`, and `root:r` at `.oculus/project.yml` of a served root under the system
+ * temporary directory. Every path is asserted to be inside the folder it is planted in.
+ */
+export function plantSides(hubDir: string): PlantedSides {
+    const served = scratchDir('oculus-served-');
+    const files = {
+        'side:idea': join(hubDir, 'side-projects', 'idea', 'project.yml'),
+        'root:r': join(served, '.oculus', 'project.yml')
+    };
+    for (const [id, file] of Object.entries(files)) {
+        const inside = id === 'root:r' ? served : hubDir;
+        expect(resolve(file).startsWith(resolve(inside) + sep)).toBe(true);
+        mkdirSync(join(file, '..'), { recursive: true });
+        writeFileSync(file, SIDE_MANIFEST);
+    }
+    const record = (id: string, file: string, source: SideProject['source']): SideProject => ({
+        id,
+        title: 'An idea',
+        status: 'idea',
+        eli5: 'what it is',
+        next: '',
+        links: [],
+        source,
+        file
+    });
+    return {
+        served,
+        files,
+        sides: [
+            record('side:idea', files['side:idea'], { kind: 'hub', folder: 'side-projects/idea' }),
+            record('root:r', files['root:r'], { kind: 'root', key: 'r', dir: served })
+        ]
+    };
+}
+
+/** What `sideTarget` plants: the target, and the manifest file of each side project by its id. */
+export type SideTarget = { into: WriteTarget; files: PlantedSides['files'] };
+
+/**
+ * The target with the two side projects of `plantSides` planted, its scan naming the hub's
+ * `side-projects/` folder, and the target publishing both.
+ */
+export function sideTarget(base: WriteTarget = target()): SideTarget {
+    const { files, sides } = plantSides(base.hub);
+    const scan = [...base.config.scan, SIDE_SCAN];
+    return {
+        into: { ...base, config: { ...base.config, scan }, sideProjects: () => sides },
+        files
     };
 }
 

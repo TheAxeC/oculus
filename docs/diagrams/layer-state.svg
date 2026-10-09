@@ -430,7 +430,7 @@
 <g id="node44" class="node">
 <title>folder state/boards to layer data</title>
 <polygon fill="none" stroke="none" points="268.88,-351.28 255.12,-351.28 255.12,-338.8 268.88,-338.8 268.88,-351.28"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="262" y="-342.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">25</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="262" y="-342.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">27</text>
 </g>
 <!-- folder state/boards&#45;&gt;folder state/boards to layer data -->
 <g id="edge76" class="edge">

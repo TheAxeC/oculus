@@ -19,7 +19,7 @@ import {
 /**
  * The name a cross-link tag carries: the short handle when the manifest has one, else the title.
  */
-function tagLabel(project: Project): string {
+export function tagLabel(project: Pick<Project, 'title' | 'short'>): string {
     const short = project.short?.trim() ?? '';
     return short === '' ? project.title : short;
 }

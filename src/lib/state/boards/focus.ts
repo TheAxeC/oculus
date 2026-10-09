@@ -17,6 +17,7 @@ import { mapShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes
 // the Focus view names reach it from here, beside the functions that take and return them.
 export type { Id, Project, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
+import { sideLive } from './board/personal.ts';
 export { setting } from './board/index.ts';
 import { UNKNOWN_TONE, toneOf } from '../shared/words/tones.ts';
 import { waitingLabel } from './waiting.ts';
@@ -150,7 +151,10 @@ export function priorities(config: Record<string, unknown>): Priority[] {
 }
 
 /** How many flames a project's `priority:` draws, and none for a project carrying no priority. */
-export function flamesOf(project: Project, config: Record<string, unknown>): number {
+export function flamesOf(
+    project: Pick<Project, 'priority'>,
+    config: Record<string, unknown>
+): number {
     const held = project.priority;
     if (held === undefined) return 0;
     return priorities(config).find((level) => level.key === held)?.flames ?? 0;
@@ -250,7 +254,8 @@ export function venueLabel(venue: Venue | undefined): string {
  * every card that says "Waiting on" is counted. For each, the people named in `waiting-on:` first,
  * then the venue holding it when it is `submitted`. The blocked tally is over every project of
  * every tier on its own, whatever else the project is waiting for. A `waiting-on:` value is a
- * people key or another project's id, drawn by waiting.ts.
+ * people key or another project's id, drawn by waiting.ts. The people tally also counts the
+ * `waiting-on:` of every live side project, since a side project is read by the Focus board.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -287,6 +292,13 @@ export function waiting(
             held[name] = (held[name] ?? 0) + 1;
         }
     }
+    for (const side of Object.values(snapshot.entities.personal)) {
+        if (!sideLive(side, config)) continue;
+        for (const key of side.waitingOn ?? []) {
+            const name = waitingLabel(key, names, projects);
+            people[name] = (people[name] ?? 0) + 1;
+        }
+    }
     const grants = Object.values(snapshot.entities.funding)
         .filter((scheme) => deadlineMet(config, scheme.status ?? ''))
         .map((scheme) => scheme.title)
@@ -307,7 +319,7 @@ export function entriesOf(collections: Record<Id, Collection>, key: string): Ent
 }
 
 /** The label a card and a ticker line carry: the short handle whenever the manifest has one. */
-export function labelOf(project: Project): string {
+export function labelOf(project: Pick<Project, 'title' | 'short'>): string {
     const short = project.short ?? '';
     return short === '' ? project.title : short;
 }
@@ -316,7 +328,7 @@ export function labelOf(project: Project): string {
  * The name a Focus card and a ticker line carry for a project under `focus_label_mode`: the whole
  * title under `full`, the short handle (`labelOf`) under anything else.
  */
-export function focusLabel(project: Project, mode: unknown): string {
+export function focusLabel(project: Pick<Project, 'title' | 'short'>, mode: unknown): string {
     return mode === 'full' ? project.title : labelOf(project);
 }
 
