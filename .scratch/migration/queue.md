@@ -1,7 +1,6 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use): D41 (links in Markdown checked), builder launched 2026-10-09.
 
-Queued, in order (8 steps):
-- D41 (links in Markdown checked, with M7's two defects and the Audit's wrong `type` item): being prepared (/spec after ruling 24).
+Queued, in order (7 steps):
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (release readiness): paused (Axel).
 - O29 (retiring the cockpit): paused (Axel).

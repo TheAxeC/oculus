@@ -24,7 +24,18 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []   # steps in flight, up to six (Z632)
+dispatch:   # steps in flight, up to six (Z632)
+- step: D41
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: af88be61741f59b6d (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D41
+  base: 53fa9b002
+  launched: 2026-10-09
+  report: agents/reviews/D41-report.md
+  brief_check: agents/reviews/D41-brief-check.md (ac604810d19c5e3dc, claude-opus-5-5, 322,042 tokens, 110 tool uses, 15.3 min; closed inline in the brief by the orchestrator)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -224,7 +235,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-09 09:40. /spec D41 after ruling 24: the brief written again with every closure of its brief check (`agents/briefs/D41.md`); preparation commit, worktree and builder launch next. Nothing else in flight; every other queued step is paused by Axel. Next: D41's build, /refute D41, /land D41.
+- 2026-10-09 09:40. D41 prepared (base 53fa9b002, brief `agents/briefs/D41.md` with every closure of its brief check) and its builder af88be61741f59b6d (claude-sonnet-5-5) launched in `.agents/worktrees/D41`, base copy in `.agents/worktrees/D41-base`. Nothing else in flight; every other queued step is paused by Axel. Next: D41's build, /refute D41, /land D41.
 - 2026-10-09 09:11. /spec D41 stopped on open item 24 (G3's wording for the Markdown server), after the brief check (`agents/reviews/D41-brief-check.md`, ac604810d19c5e3dc, claude-opus-5-5); every other finding closed as written under its "Closed" or as Z743 in automode. Open items 22 and 23 ruled (a). The brief draft is not in the ledger (the stop removes it); the next /spec writes it again with the closures. Nothing in flight; every other queued step is paused by Axel. Next: Axel's ruling on 24, then /spec D41.
 - 2026-10-09 05:50. D40 landed (the writing rules as editor marks, with the folder Fix All; booking in plan.md; `agents/reviews/D40-landing.md`) after one repair round, the review over round 1's findings, the merge with D39 and the look's defect fixed at landing ("Closed (at landing)" in `agents/reviews/D40-refuter.md`); G71 written whole into `agents/guarded.md` with G3's title and rows and the folder Fix All's lines of G1, G2 and G9; gate green in `.agents/worktrees/gate`, the look on the 8796 scratch oculus. Nothing in flight. Open items 22 (the rename box's hint line) and 23 (D41's library) for Axel; /spec D41 stopped on 23. Next: D41 after Axel rules on 23; D39b if Axel rules (a) on 22.
 - 2026-10-09 05:40. D40 built (report `agents/reviews/D40-report.md`) and reviewed (`agents/reviews/D40-refuter.md`, aed703dd3c0db8631, claude-opus-5-5); its findings sent as repair round 1 (`agents/briefs/D40-round1.md`) to builder a55bd9e7057d5d802. Open items 22 and 23 for Axel; /spec D41 stopped on 23. Next: D40's round report, the review over the round, /land D40 with the hand merge against D39.
